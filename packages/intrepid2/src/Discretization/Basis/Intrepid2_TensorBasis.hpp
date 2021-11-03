@@ -890,9 +890,85 @@ struct OperatorTensorDecomposition
       */
     virtual OperatorTensorDecomposition getOperatorDecomposition(const EOperator operatorType) const
     {
-      OperatorTensorDecomposition opSimpleDecomposition = this->getSimpleOperatorDecomposition(operatorType);
-      std::vector<BasisPtr> componentBases {basis1_, basis2_};
-      return opSimpleDecomposition.expandedDecomposition(componentBases);
+      if ((operatorType >= OPERATOR_D1) && (operatorType <= OPERATOR_D10))
+      {
+        // ordering of the operators is reverse-lexicographic, reading left to right (highest-dimension is fastest-moving).
+        // first entry will be (operatorType, VALUE, …, VALUE)
+        // next will be (operatorType - 1, OP_D1, VALUE, …, VALUE)
+        // then         (operatorType - 1, VALUE, OP_D1, …, VALUE)
+        
+        ordinal_type numBasisComponents = tensorComponents_.size();
+        
+        auto opOrder = getOperatorOrder(operatorType); // number of derivatives that we take in total
+        const int dkCardinality = getDkCardinality(operatorType, numBasisComponents);
+        
+        std::vector< std::vector<EOperator> > ops(dkCardinality);
+        
+        std::vector<EOperator> prevEntry(numBasisComponents, OPERATOR_VALUE);
+        prevEntry[0] = operatorType;
+        
+        ops[0] = prevEntry;
+        
+        for (ordinal_type dkOrdinal=1; dkOrdinal<dkCardinality; dkOrdinal++)
+        {
+          std::vector<EOperator> entry = prevEntry;
+          
+          // decrement to follow reverse lexicographic ordering:
+          /*
+           How to tell when it is time to decrement the nth entry:
+           1. Let a be the sum of the opOrders for entries 0 through n-1.
+           2. Let b be the sum of the nth entry and the final entry.
+           3. If opOrder == a + b, then the nth entry should be decremented.
+           */
+          ordinal_type cumulativeOpOrder = 0;
+          ordinal_type finalOpOrder = getOperatorOrder(entry[numBasisComponents-1]);
+          for (ordinal_type compOrdinal=0; compOrdinal<numBasisComponents; compOrdinal++)
+          {
+            const ordinal_type thisOpOrder = getOperatorOrder(entry[compOrdinal]);
+            cumulativeOpOrder += thisOpOrder;
+            if (cumulativeOpOrder + finalOpOrder == opOrder)
+            {
+              // decrement this
+              EOperator decrementedOp;
+              if (thisOpOrder == 1)
+              {
+                decrementedOp = OPERATOR_VALUE;
+              }
+              else
+              {
+                decrementedOp = static_cast<EOperator>(OPERATOR_D1 + ((thisOpOrder - 1) - 1));
+              }
+              entry[compOrdinal]   = decrementedOp;
+              const ordinal_type remainingOpOrder = opOrder - cumulativeOpOrder + 1;
+              entry[compOrdinal+1] = static_cast<EOperator>(OPERATOR_D1 + (remainingOpOrder - 1));
+              for (ordinal_type i=compOrdinal+2; i<numBasisComponents; i++)
+              {
+                entry[i] = OPERATOR_VALUE;
+              }
+              break;
+            }
+          }
+          ops[dkOrdinal] = entry;
+          prevEntry = entry;
+        }
+        std::vector<double> weights(dkCardinality, 1.0);
+        
+        {
+          // DEBUGGING
+          if (dkCardinality == 6) // get a good breakpoint to check work manually
+          {
+            std::cout << "dkCardinality is 6.\n";
+          }
+        }
+        
+        return OperatorTensorDecomposition(ops, weights);
+      }
+      else
+      {
+        OperatorTensorDecomposition opSimpleDecomposition = this->getSimpleOperatorDecomposition(operatorType);
+        std::vector<BasisPtr> componentBases {basis1_, basis2_};
+        return opSimpleDecomposition.expandedDecomposition(componentBases);
+      }
     }
     
     /** \brief Allocate BasisValues container suitable for passing to the getValues() variant that takes a TensorPoints container as argument.
