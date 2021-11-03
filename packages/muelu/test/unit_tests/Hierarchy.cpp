@@ -86,9 +86,6 @@ namespace MueLuTests {
 
     RCP<Hierarchy> H = rcp(new Hierarchy);
 
-//    ParameterList printList = paramList.sublist("export data");
-    Teuchos::Array<int> array = Teuchos::Array<int>({2, 2, 2, 1, 1, 1});
-
     TEST_INEQUALITY(H, Teuchos::null);
 
   } //Constructor
@@ -121,7 +118,6 @@ namespace MueLuTests {
 
     Teuchos::ParameterList MueLuList;
     MueLuList.set("verbosity","none");
-    //MueLuList.set("verbosity","high");
     MueLuList.set("coarse: max size",numRows-1); // make it so we want two levels
     MueLuList.set("max levels",2);
 

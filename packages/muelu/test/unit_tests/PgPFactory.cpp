@@ -83,8 +83,19 @@ namespace MueLuTests {
 
     out << *pgpFactory << std::endl;
 
+    std::ostringstream oss;
+
     Level level;
+    std::streambuf* p_cout_streambuf = std::cout.rdbuf();
+    std::cout.rdbuf(oss.rdbuf());
+
+    // BuildP is currently a method that do nothing else than printing a "TODO: Remove me" message
     pgpFactory->BuildP(level, level);
+
+    std::cout.rdbuf(p_cout_streambuf); // restore
+
+    // Let's verify this content
+    TEST_EQUALITY(oss.str() == "TODO: remove me\n", true);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PgPFactory, nonsymExample, Scalar, LocalOrdinal, GlobalOrdinal, Node)

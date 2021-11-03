@@ -84,6 +84,8 @@
 #include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_RepartitionHeuristicFactory.hpp>
 #include <MueLu_SaPFactory.hpp>
+#include <MueLu_CoalesceDropFactory.hpp>
+#include <MueLu_CoarseMapFactory.hpp>
 //#include <MueLu_RebalanceAcFactory.hpp>
 //#include <MueLu_TrilinosSmoother.hpp>
 //#include <MueLu_CoupledAggregationFactory.hpp>
@@ -124,163 +126,78 @@ namespace MueLuTests {
 
   }
 
-  //this macro declares the unit-test-class:
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, BuildWithImporter, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     #include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
+    // Default is Laplace1D with nx = 8748.
+    // It's a nice size for 1D and perfect aggregation. (6561 = 3^8)
+    //Nice size for 1D and perfect aggregation on small numbers of processors. (8748 = 4*3^7)
+    Teuchos::CommandLineProcessor clp(false);
+    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
+    Xpetra::Parameters xpetraParameters(clp);                   // manage parameters o
 
-    // create coarsest smoother
-    RCP<SmootherPrototype> coarsestSmooProto;
-    std::string type = "";
-    Teuchos::ParameterList coarsestSmooList;
-#if defined(HAVE_AMESOS_SUPERLU)
-    coarsestSmooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
-#else
-    coarsestSmooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
-#endif
-    RCP<SmootherFactory> coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
+    Level aLevel;
+    Level corseLevel;
 
+    RCP<FactoryManager> factoryHandler = rcp(new FactoryManager());
+    factoryHandler->SetKokkosRefactor(false);
+    aLevel.SetFactoryManager(factoryHandler);
+    corseLevel.SetFactoryManager(factoryHandler);
+    corseLevel.SetPreviousLevel(rcpFromRef(aLevel));
+    aLevel.SetLevelID(0);
+    corseLevel.SetLevelID(1);
 
-    // Configure FactoryManager
-    FactoryManager M;
-    M.SetKokkosRefactor(false);
-    M.SetFactory("CoarseSolver", coarsestSmooFact);
-
-    RCP<Hierarchy> H = rcp ( new Hierarchy() );
-    H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-    GO maxCoarseSize=1;
-    H->SetMaxCoarseSize(maxCoarseSize);
-
-    Teuchos::ParameterList matrixParams;
-    matrixParams.set("matrixType","Laplace2D");
-    double factor=10;
-    matrixParams.set("stretchx",1.0);
-    matrixParams.set("stretchy",factor);
-//    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixParams,TestHelpers::Parameters::getLib());
-
-    Teuchos::CommandLineProcessor clp(false); // Note:
-
-    // - Levels
-    LO  optMaxLevels     = 4;              clp.setOption("maxLevels",      &optMaxLevels,          "maximum number of levels allowed");
-    int optMaxCoarseSize = 1;              clp.setOption("maxCoarseSize",  &optMaxCoarseSize,      "maximum #dofs in coarse operator"); //FIXME clp doesn't like long long int
-
-    // - Repartitioning
-    #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MUELU_ISORROPIA)
-    int    optRepartition    = 1;             clp.setOption("repartition",    &optRepartition,        "enable repartitioning");
-    LO     optMinRowsPerProc = 50;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
-    double optNnzImbalance   = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
-    #else
-    int optRepartition = 0;
-    #endif
-
-    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 256); // manage parameters of the test case
-    Xpetra::Parameters             xpetraParameters(clp);      // manage parameters of xpetra
-
-    // TUTORIALSPLIT ===========================================================
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
     RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
-    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-    RCP<Matrix>  A = Pr->BuildMatrix();
-    int nDofsPerNode = 3;
-    A->SetFixedBlockSize(nDofsPerNode);   // 2 velocity dofs and 1 pressure dof per node.
 
-    // build default null space
-    LocalOrdinal numPDEs = 1;
-    if(A->IsView("stridedMaps")==true) {
-      Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps"); // note: "stridedMaps are always non-overlapping (correspond to range and domain maps!)
-      numPDEs = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap())->getFixedBlockSize();
-      oldView = A->SwitchToView(oldView);
-    }
-    RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
-    nullspace->putScalar( (SC) 1.0);
-    Level *level = H->GetLevel().get();
-    level->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-    level->Set("A", A);
-    level->Set("Nullspace",   nullspace);
+    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(aLevel, corseLevel);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(2); //can be an empty operator
+    corseLevel.Set("A", A);
+    RCP<const Import> importer = ImportFactory::Build(A->getRowMap(), map);
+    corseLevel.Set("Importer", importer);
 
-    // Add Factory
-    // build non-rebalanced transfer operators
-    RCP<PgPFactory> Pfact = rcp( new PgPFactory() );
-    RCP<Factory> Rfact  = rcp( new GenericRFactory());
-    //RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
-    //RCP<Factory>   Rfact  = rcp( new TransPFactory() );
-    RCP<RAPFactory> Acfact = rcp( new RAPFactory() );
-    Acfact->setVerbLevel(Teuchos::VERB_HIGH);
-    Rfact->SetFactory("P", Pfact);
-    Acfact->SetFactory("P", Pfact);
-    Acfact->SetFactory("R", Rfact);
-
-    // define rebalancing factory for coarse block matrix A(1,1)
-    RCP<AmalgamationFactory> rebAmalgFact = rcp(new AmalgamationFactory());
-    rebAmalgFact->SetFactory("A", Acfact);
-
-    // Repartitioning (decides how many partitions are built)
-    RCP<Factory> RepartitionHeuristicFact = rcp(new RepartitionHeuristicFactory());
-    {
-      Teuchos::ParameterList paramList;
-      paramList.set("repartition: min rows per proc", optMinRowsPerProc);
-      paramList.set("repartition: max imbalance", optNnzImbalance);
-      RepartitionHeuristicFact->SetParameterList(paramList);
-    }
-    RepartitionHeuristicFact->SetFactory("A", Acfact);
-
-    // create amalgamated "Partition"
-    RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
-    isoInterface->SetFactory("A", Acfact);
-    isoInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
-    isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
-
-
-    // create "Partition" by unamalgamtion
-    RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
-    repInterface->SetFactory("A", Acfact);
-    repInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
-    repInterface->SetFactory("AmalgamatedPartition", isoInterface);
-
-    // Repartitioning (creates "Importer" from "Partition")
-    RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
-    RepartitionFact->SetFactory("A", Acfact);
-    RepartitionFact->SetFactory("number of partitions", RepartitionHeuristicFact);
-    RepartitionFact->SetFactory("Partition", repInterface);
-
-
-    // Reordering of the transfer operators
-    RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
-    RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
-    RebalancedPFact->SetFactory("P", Pfact);
-    RebalancedPFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
-
-    RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
-    RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
-    RebalancedRFact->SetFactory("R", Rfact);
-
-    auto RebalancedAFact = rcp(new RebalanceAcFactory());
-    RebalancedAFact->SetFactory("A", Acfact);
-
-//    RebalancedAFact->AddRebalanceFactory(RebalancedPFact);
-//    RebalancedAFact->AddRebalanceFactory(RebalancedRFact);
-
-
-    M.SetFactory("A", RebalancedAFact);
-    M.SetFactory("P", RebalancedPFact);
-    M.SetFactory("R", RebalancedRFact);
-    M.SetFactory("Nullspace",   RebalancedPFact);
-//    M.SetFactory("Coordinates", RebalancedPFact);
-    M.SetFactory("Importer",    RepartitionFact);
-
-    int startLevel = 0;
-    H->Setup(M, startLevel, optMaxLevels);
-
-    RebalancedAFact->Build(*level, *level);
-
+    RCP<RebalanceAcFactory> RebalancedAFact = rcp(new RebalanceAcFactory());
+    RebalancedAFact->SetDefaultVerbLevel(MueLu::Extreme);
+    RebalancedAFact->Build(aLevel, corseLevel);
 
   }
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, Build2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, BuildWithoutImporter, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    #include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    Level aLevel;
+    Level corseLevel;
+
+    RCP<FactoryManager> factoryHandler = rcp(new FactoryManager());
+    factoryHandler->SetKokkosRefactor(false);
+    aLevel.SetFactoryManager(factoryHandler);
+    corseLevel.SetFactoryManager(factoryHandler);
+    corseLevel.SetPreviousLevel(rcpFromRef(aLevel));
+    aLevel.SetLevelID(0);
+    corseLevel.SetLevelID(1);
+
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+    TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(aLevel, corseLevel);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(2); //can be an empty operator
+    corseLevel.Set("A", A);
+    RCP<const Import> importer  = Teuchos::null;
+    corseLevel.Set("Importer", importer);
+
+    RCP<RebalanceAcFactory> RebalancedAFact = rcp(new RebalanceAcFactory());
+    RebalancedAFact->Build(aLevel, corseLevel);
+
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, BuildWithCompleteFactoryManager, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     #include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
@@ -288,64 +205,52 @@ namespace MueLuTests {
     out << "version: " << MueLu::Version() << std::endl;
 
     // - Smoothed-Aggregation
-    Scalar optSaDamping = 4./3;
-      int optMaxCoarseSize = 50;
-      LO optMinRowsPerProc = 2000;
-      double optNnzImbalance = 1.2;
-      Teuchos::CommandLineProcessor clp(false);
-LO  optMaxLevels     = 10;
-      // Default is Laplace1D with nx = 8748.
-      // It's a nice size for 1D and perfect aggregation. (6561 = 3^8)
-      //Nice size for 1D and perfect aggregation on small numbers of processors. (8748 = 4*3^7)
-      Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-      Xpetra::Parameters xpetraParameters(clp);                   // manage parameters of xpetra
+    int optMaxCoarseSize = 50;
+    LO optMinRowsPerProc = 2000;
+    double optNnzImbalance = 1.2;
+    Teuchos::CommandLineProcessor clp(false);
+    LO  optMaxLevels     = 10;
+    // Default is Laplace1D with nx = 8748.
+    // It's a nice size for 1D and perfect aggregation. (6561 = 3^8)
+    //Nice size for 1D and perfect aggregation on small numbers of processors. (8748 = 4*3^7)
+    Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
+    Xpetra::Parameters xpetraParameters(clp);                   // manage parameters of xpetra
 
-      // create coarsest smoother
-      RCP<SmootherPrototype> coarsestSmooProto;
-      std::string type = "";
-      Teuchos::ParameterList coarsestSmooList;
+    // create coarsest smoother
+    RCP<SmootherPrototype> coarsestSmooProto;
+    std::string type = "";
+    Teuchos::ParameterList coarsestSmooList;
   #if defined(HAVE_AMESOS_SUPERLU)
       coarsestSmooProto = Teuchos::rcp( new DirectSolver("Superlu", coarsestSmooList) );
   #else
       coarsestSmooProto = Teuchos::rcp( new DirectSolver("Klu", coarsestSmooList) );
   #endif
-      RCP<SmootherFactory> coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
+    RCP<SmootherFactory> coarsestSmooFact = rcp(new SmootherFactory(coarsestSmooProto, Teuchos::null));
+
+    RCP<MultiVector> coordinates;
+
+    // USER GUIDE // define communicator
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+    RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+    RCP<Matrix>  A = Pr->BuildMatrix();
+    int nDofsPerNode = 3;
+    A->SetFixedBlockSize(nDofsPerNode);   // 2 velocity dofs and 1 pressure dof per node.
 
 
-      RCP<const Map> map;
-      RCP<Matrix> A;
+    // Laplace 1D
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters.GetParameterList());
 
-      RCP<MultiVector> coordinates;
+    // USER GUIDE   // define near null space
+    RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), 1);
+    nullspace->putScalar( (SC) 1.0);
+    // USER GUIDE   //
 
-      // USER GUIDE // define communicator
-      RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-      Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
-
-      map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
-      Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-          Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
-      A = Pr->BuildMatrix();
-      if (matrixParameters.GetMatrixType() == "Laplace1D") {
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters.GetParameterList());
-      }
-      else if (matrixParameters.GetMatrixType() == "Laplace2D") {
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters.GetParameterList());
-      }
-      else if (matrixParameters.GetMatrixType() == "Laplace3D") {
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters.GetParameterList());
-      }
-
-      // USER GUIDE   // define near null space
-      RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
-      nullspace->putScalar( (SC) 1.0);
-      // USER GUIDE   //
-//      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
-
-//      nullspace->norm1(norms);
-
-      // USER GUIDE   // create new hierarchy
-      RCP<MueLu::Hierarchy<SC, LO, GO, NO> > H;
-      // USER GUIDE   //
+    // USER GUIDE   // create new hierarchy
+    RCP<MueLu::Hierarchy<SC, LO, GO, NO> > H;
+    // USER GUIDE   //
 
 
     // USER GUIDE     // instantiate new Hierarchy object
@@ -360,107 +265,110 @@ LO  optMaxLevels     = 10;
     Finest->Set("Nullspace",   nullspace);
     Finest->Set("Coordinates", coordinates); //FIXME: XCoordinates, YCoordinate
 
-    FactoryManager M;
-    M.SetKokkosRefactor(false);
-    M.SetFactory("CoarseSolver", coarsestSmooFact);
+    RCP<FactoryManager> M = rcp(new FactoryManager());
+    M->SetKokkosRefactor(false);
+    M->SetFactory("CoarseSolver", coarsestSmooFact);
 
-      // USER GUIDE       // declare some factories (potentially overwrite default factories)
-      RCP<PgPFactory> PFact = rcp(new PgPFactory());
-//      PFact->SetParameter("sa: damping factor", Teuchos::ParameterEntry(optSaDamping));
+    // USER GUIDE       // declare some factories (potentially overwrite default factories)
+    RCP<PgPFactory> PFact = rcp(new PgPFactory());
 
-      RCP<Factory>    RFact = rcp(new GenericRFactory());
+    RCP<Factory>    RFact = rcp(new GenericRFactory());
 
-      RCP<RAPFactory> AFact = rcp(new RAPFactory());
-      AFact->setVerbLevel(Teuchos::VERB_HIGH);
+    RCP<RAPFactory> AFact = rcp(new RAPFactory());
+    AFact->setVerbLevel(Teuchos::VERB_HIGH);
 
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN)
-      // Repartitioning
+    // Repartitioning
 
-      // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
-      // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
-      RFact->SetFactory("P", PFact);
-      //
-      AFact->SetFactory("P", PFact);
-      AFact->SetFactory("R", RFact);
+    // The Factory Manager will be configured to return the rebalanced versions of P, R, A by default.
+    // Everytime we want to use the non-rebalanced versions, we need to explicitly define the generating factory.
+    RFact->SetFactory("P", PFact);
+    AFact->SetFactory("P", PFact);
+    AFact->SetFactory("R", RFact);
 
-      // Transfer coordinates
-      RCP<CoordinatesTransferFactory> TransferCoordinatesFact = rcp(new CoordinatesTransferFactory());
-      AFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
+    // Transfer coordinates
+    RCP<CoordinatesTransferFactory> TransferCoordinatesFact = rcp(new CoordinatesTransferFactory());
+    AFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
 
-      // define rebalancing factory for coarse block matrix A(1,1)
-      RCP<AmalgamationFactory> rebAmalgFact = rcp(new AmalgamationFactory());
-      rebAmalgFact->SetFactory("A", AFact);
+    // define rebalancing factory for coarse block matrix A(1,1)
+    RCP<AmalgamationFactory> rebAmalgFact = rcp(new AmalgamationFactory());
+    rebAmalgFact->SetFactory("A", AFact);
 
-      // Repartitioning (decides how many partitions are built)
-      RCP<Factory> RepartitionHeuristicFact = rcp(new RepartitionHeuristicFactory());
-      {
-        Teuchos::ParameterList paramList;
-        paramList.set("repartition: min rows per proc", optMinRowsPerProc);
-        paramList.set("repartition: max imbalance", optNnzImbalance);
-        RepartitionHeuristicFact->SetParameterList(paramList);
-      }
-      RepartitionHeuristicFact->SetFactory("A", AFact);
+    // Repartitioning (decides how many partitions are built)
+    RCP<Factory> RepartitionHeuristicFact = rcp(new RepartitionHeuristicFactory());
+    {
+      Teuchos::ParameterList paramList;
+      paramList.set("repartition: min rows per proc", optMinRowsPerProc);
+      paramList.set("repartition: max imbalance", optNnzImbalance);
+      RepartitionHeuristicFact->SetParameterList(paramList);
+    }
+    RepartitionHeuristicFact->SetFactory("A", AFact);
 
-      // create amalgamated "Partition"
-      RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
-      isoInterface->SetFactory("A", AFact);
-      isoInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
-      isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
+    // create amalgamated "Partition"
+    RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
+    isoInterface->SetFactory("A", AFact);
+    isoInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
+    isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
 
-      // create "Partition" by unamalgamtion
-      RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
-      repInterface->SetFactory("A", AFact);
-      repInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
-      repInterface->SetFactory("AmalgamatedPartition", isoInterface);
+    // create "Partition" by unamalgamtion
+    RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
+    repInterface->SetFactory("A", AFact);
+    repInterface->SetFactory("number of partitions", RepartitionHeuristicFact);
+    repInterface->SetFactory("AmalgamatedPartition", isoInterface);
 
-      // Repartitioning (creates "Importer" from "Partition")
-      RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
-      RepartitionFact->SetFactory("A", AFact);
-      RepartitionFact->SetFactory("number of partitions", RepartitionHeuristicFact);
-      RepartitionFact->SetFactory("Partition", repInterface);
+    // Repartitioning (creates "Importer" from "Partition")
+    RCP<Factory> RepartitionFact = rcp(new RepartitionFactory());
+    RepartitionFact->SetFactory("A", AFact);
+    RepartitionFact->SetFactory("number of partitions", RepartitionHeuristicFact);
+    RepartitionFact->SetFactory("Partition", repInterface);
 
-      // Reordering of the transfer operators
-      RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
-      RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
-      RebalancedPFact->SetFactory("P", PFact);
-      RebalancedPFact->SetFactory("Coordinates", TransferCoordinatesFact);
-      RebalancedPFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
+    // Reordering of the transfer operators
+    RCP<Factory> RebalancedPFact = rcp(new RebalanceTransferFactory());
+    RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
+    RebalancedPFact->SetFactory("P", PFact);
+    RebalancedPFact->SetFactory("Coordinates", TransferCoordinatesFact);
+    RebalancedPFact->SetFactory("Nullspace", M->GetFactory("Ptent")); // TODO
 
-      RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
-      RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
-      RebalancedRFact->SetFactory("R", RFact);
+    RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
+    RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
+    RebalancedRFact->SetFactory("R", RFact);
 
-      // Compute Ac from rebalanced P and R
-      RCP<RebalanceAcFactory> RebalancedAFact = rcp(new RebalanceAcFactory());
-      RebalancedAFact->SetFactory("A", AFact);
+    // Compute Ac from rebalanced P and R
+    RCP<RebalanceAcFactory> RebalancedAFact = rcp(new RebalanceAcFactory());
+    RebalancedAFact->SetFactory("A", AFact);
+    // Add Factory
+    RebalancedAFact->AddRebalanceFactory(rcp(new RebalanceTransferFactory()));
+    RebalancedAFact->AddRebalanceFactory(rcp(new RebalanceTransferFactory()));
 
-      // Configure FactoryManager
-      M.SetFactory("A", RebalancedAFact);
-      M.SetFactory("P", RebalancedPFact);
-      M.SetFactory("R", RebalancedRFact);
-      M.SetFactory("Nullspace",   RebalancedPFact);
-      M.SetFactory("Coordinates", RebalancedPFact);
-      M.SetFactory("Importer",    RepartitionFact);
+    // Configure FactoryManager
+    M->SetFactory("P", RebalancedPFact);
+    M->SetFactory("R", RebalancedRFact);
+    M->SetFactory("A", RebalancedAFact);
+    M->SetFactory("Nullspace",   RebalancedPFact);
+    M->SetFactory("Coordinates", RebalancedPFact);
+    M->SetFactory("Importer",    RepartitionFact);
 
   #else
           TEUCHOS_TEST_FOR_EXCEPT(true);
   #endif
-      //
-      // Setup preconditioner
-      //
+    //
+    // Setup preconditioner
+    //
 
-      // USER GUIDE     // setup multigrid hierarchy
-      int startLevel = 0;
-      H->Setup(M, startLevel, optMaxLevels);
-//      RebalancedAFact->Build(*Finest.get(), *Finest.get());
+    // USER GUIDE     // setup multigrid hierarchy
+    int startLevel = 0;
+    H->Setup(*M.get(), startLevel, optMaxLevels);
+    RCP<Level> l0 = H->GetLevel(0);
+    l0->SetFactoryManager(M);
+    TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
 
-      // USER GUIDE     //
   }
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, Constructor, Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, Build2, Scalar, LO, GO, Node)
-//    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, Build, Scalar, LO, GO, Node)
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, Constructor, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, BuildWithImporter, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, BuildWithoutImporter, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, BuildWithCompleteFactoryManager, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
