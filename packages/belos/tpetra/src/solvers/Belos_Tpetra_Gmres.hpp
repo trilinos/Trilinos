@@ -780,7 +780,7 @@ protected:
     return output;
   }
 
-  // ! compute condition number
+  // ! compute matrix norm
   real_type
   computeNorm(dense_matrix_type &T)
   {
