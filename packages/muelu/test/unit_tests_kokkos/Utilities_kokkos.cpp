@@ -88,26 +88,37 @@ namespace MueLuTests
     MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using real_type = typename Teuchos::ScalarTraits<SC>::coordinateType;
-    using RealValuedMultiVector = Xpetra::MultiVector<real_type, LO, GO, NO>;
-
     // Build the problem
-    RCP<Matrix> A = MueLuTests::TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(2001);
-    RCP<const Map> map = A->getMap();
-    RCP<RealValuedMultiVector> coordinates = Xpetra::MultiVectorFactory<real_type, LO, GO, NO>::Build(map, 1);
-    RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
-    nullspace->putScalar(Teuchos::ScalarTraits<SC>::one());
-
-    MueLu::Utilities_kokkos<SC, LO, GO, NO>::Transpose(*A); // compile test
+    RCP<Matrix> A = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(2001);
 
     // CM Test
-    RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> ordering = MueLu::Utilities_kokkos<SC, LO, GO, NO>::CuthillMcKee(*A);
+    {
+      auto ordering = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CuthillMcKee(*A);
+      ordering->describe(out, Teuchos::VERB_EXTREME);
+      TEST_EQUALITY(ordering->getLocalLength(), A->getNodeNumRows());
+      TEST_EQUALITY(ordering->getGlobalLength(), A->getGlobalNumRows());
 
-    RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> ordering2 = MueLu::Utilities_kokkos<SC, LO, GO, NO>::ReverseCuthillMcKee(*A);
+      auto orderingView = ordering->getHostLocalView(Xpetra::Access::ReadOnly);
+      for (LocalOrdinal index = 0; index < static_cast<LocalOrdinal>(ordering->getLocalLength()); index++)
+      {
+        TEST_EQUALITY(orderingView(index, 0), index);
+      }
+    }
 
-    TEST_EQUALITY(1, 1);
+    // RCM Test
+    {
+      auto ordering = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReverseCuthillMcKee(*A);
+      ordering->describe(out, Teuchos::VERB_EXTREME);
+      TEST_EQUALITY(ordering->getLocalLength(), A->getNodeNumRows());
+      TEST_EQUALITY(ordering->getGlobalLength(), A->getGlobalNumRows());
+
+      auto orderingView = ordering->getHostLocalView(Xpetra::Access::ReadOnly);
+      const LocalOrdinal initialVal = ordering->getLocalLength() - 1;
+      for (LocalOrdinal index = initialVal; index >= 0; index--)
+      {
+        TEST_EQUALITY(orderingView(index, 0), initialVal - index);
+      }
+    }
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, DetectDirichletRows, Scalar, LocalOrdinal, GlobalOrdinal, Node)
