@@ -650,7 +650,7 @@ namespace Tpetra {
   bool
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   transferArrived() const {
-    return true;
+    return distributorActor_.isReady();
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

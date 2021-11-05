@@ -232,11 +232,11 @@ namespace {
     template <typename TransferMethod>
     void performTransfer(const TransferMethod& transfer) {
       transfer(sourceMat, targetMat);
-      targetMat->fillComplete();
     }
 
     template <typename ReferenceSolution>
     void checkResults(const ReferenceSolution& referenceSolution) {
+      targetMat->fillComplete();
       RCP<const crs_type> referenceMat = referenceSolution.generateUsingAllInOne(sourceMat, targetMap);
       checkMatrixIsDiagonal(targetMat);
       checkMatrixIsDiagonal(referenceMat);
@@ -403,12 +403,13 @@ namespace {
     template <typename TransferMethod>
     void performTransfer(const TransferMethod& transfer) {
       transfer(sourceMat, targetMat);
-      targetMat->fillComplete();
     }
 
     void checkResults() {
       using lids_type = typename crs_type::local_inds_host_view_type;
       using vals_type = typename crs_type::values_host_view_type;
+
+      targetMat->fillComplete();
 
       const RCP<const map_type> colMap = targetMat->getColMap();
 
@@ -820,6 +821,41 @@ namespace {
   }
 
 
+  template <typename Packet, typename LO, typename GO>
+  class CheckTransferNotArrivedForwardImport {
+  private:
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
+
+  public:
+    CheckTransferNotArrivedForwardImport(FancyOStream& o, bool& s)
+      : out(o),
+        success(s)
+    { }
+
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      Import<LO, GO> importer(source->getMap(), target->getMap());
+      int myRank = target->getMap()->getComm()->getRank();
+
+      if (myRank == 0) {
+        target->beginImport(*source, importer, INSERT);
+        TEST_ASSERT(!target->transferArrived());
+      }
+    }
+
+  private:
+    FancyOStream& out;
+    bool& success;
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, MultiVector_forwardImportFalse, Scalar, LO, GO )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup(0);
+    fixture.performTransfer(CheckTransferNotArrivedForwardImport<Scalar, LO, GO>(out, success));
+  }
+
+
   //
   // INSTANTIATIONS
   //
@@ -847,6 +883,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, CrsMatrix_forwardImportTrue, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardExportTrue, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, CrsMatrix_forwardExportTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardImportFalse, SC, LO, GO ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
