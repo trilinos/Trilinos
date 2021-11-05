@@ -88,6 +88,8 @@ public:
 
   void doWaits(const DistributorPlan& plan);
 
+  bool isReady() const;
+
 private:
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;
 
