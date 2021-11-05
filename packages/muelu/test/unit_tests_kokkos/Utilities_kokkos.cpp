@@ -59,7 +59,7 @@ namespace MueLuTests
 {
 
   template <typename SC, typename LO, typename GO, typename NO>
-  void CreateDirchletRow(Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO>> &A, LO localRowToZero, SC value = Teuchos::ScalarTraits<SC>::zero())
+  void CreateDirichletRow(Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO>> &A, LO localRowToZero, SC value = Teuchos::ScalarTraits<SC>::zero())
   {
     Teuchos::ArrayView<const LO> indices;
     Teuchos::ArrayView<const SC> values;
@@ -134,7 +134,7 @@ namespace MueLuTests
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
     LocalOrdinal localRowToZero = 5;
 
-    CreateDirchletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero);
+    CreateDirichletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero);
 
     auto drows = Utils_Kokkos::DetectDirichletRows(*A);
     auto drowsHost = Kokkos::create_mirror_view(drows);
@@ -143,7 +143,7 @@ namespace MueLuTests
     TEST_EQUALITY(drowsHost(localRowToZero), true);
     TEST_EQUALITY(drowsHost(localRowToZero - 1), false);
 
-    CreateDirchletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero, Teuchos::as<Scalar>(0.25));
+    CreateDirichletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero, Teuchos::as<Scalar>(0.25));
 
     // row 5 should not be Dirichlet
     drows = Utils_Kokkos::DetectDirichletRows(*A, TST::magnitude(0.24));
@@ -175,7 +175,7 @@ namespace MueLuTests
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
 
     LocalOrdinal localRowToZero = 5;
-    CreateDirchletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero);
+    CreateDirichletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero);
 
     auto drows = Utils_Kokkos::DetectDirichletRows(*A);
     auto dcols = Utils_Kokkos::DetectDirichletCols(*A, drows);
@@ -313,7 +313,7 @@ namespace MueLuTests
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
 
     LocalOrdinal localRowToZero = 5;
-    CreateDirchletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero);
+    CreateDirichletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero);
 
     auto drows = Utils_Kokkos::DetectDirichletRows(*A);
     Kokkos::View<bool *, typename Node::device_type> dirichletCols("dirichletCols", A->getColMap()->getNodeNumElements());
@@ -345,7 +345,7 @@ namespace MueLuTests
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
 
     LocalOrdinal localRowToZero = 5;
-    CreateDirchletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero);
+    CreateDirichletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero);
 
     auto drows = Utils_Kokkos::DetectDirichletRows(*A);
     auto dcols = Utils_Kokkos::DetectDirichletCols(*A, drows);
