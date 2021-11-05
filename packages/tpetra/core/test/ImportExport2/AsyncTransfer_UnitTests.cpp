@@ -833,10 +833,13 @@ namespace {
     { }
 
     void operator()(DistObjectRCP source, DistObjectRCP target) const {
-      Import<LO, GO> importer(source->getMap(), target->getMap());
-      int myRank = target->getMap()->getComm()->getRank();
+      auto comm = target->getMap()->getComm();
+      int myRank = comm->getRank();
+      int numProcs = comm->getSize();
 
-      if (myRank == 0) {
+      Import<LO, GO> importer(source->getMap(), target->getMap());
+
+      if (numProcs > 1 && myRank == 0) {
         target->beginImport(*source, importer, INSERT);
         TEST_ASSERT(!target->transferArrived());
       }
@@ -868,10 +871,13 @@ namespace {
     { }
 
     void operator()(DistObjectRCP source, DistObjectRCP target) const {
-      Export<LO, GO> exporter(source->getMap(), target->getMap());
-      int myRank = target->getMap()->getComm()->getRank();
+      auto comm = target->getMap()->getComm();
+      int myRank = comm->getRank();
+      int numProcs = comm->getSize();
 
-      if (myRank == 0) {
+      Export<LO, GO> exporter(source->getMap(), target->getMap());
+
+      if (numProcs > 1 && myRank == 0) {
         target->beginExport(*source, exporter, INSERT);
         TEST_ASSERT(!target->transferArrived());
       }
