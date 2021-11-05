@@ -88,14 +88,14 @@ namespace FROSch {
 
     protected:
 
-        using XMatrix               = Matrix<SC,LO,GO,NO>;
+        using XMatrix               = Xpetra::Matrix<SC,LO,GO,NO>;
         using XMatrixPtr            = RCP<XMatrix>;
         using ConstXMatrixPtr       = RCP<const XMatrix>;
 
-        using XVector               = Vector<SC,LO,GO,NO>;
+        using XVector               = Xpetra::Vector<SC,LO,GO,NO>;
         using XVectorPtr            = RCP<XVector>;
 
-        using XMultiVector          = MultiVector<SC,LO,GO,NO>;
+        using XMultiVector          = Xpetra::MultiVector<SC,LO,GO,NO>;
         using XMultiVectorPtr       = RCP<XMultiVector>;
         using ConstXMultiVectorPtr  = RCP<const XMultiVector>;
 
