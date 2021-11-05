@@ -304,10 +304,6 @@ public:
   using ConnectedOrdinals = util::StridedArray<const stk::mesh::ConnectivityOrdinal>;
   using Permutations      = util::StridedArray<const stk::mesh::Permutation>;
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-  STK_DEPRECATED unsigned get_num_nodes_per_entity() const { return topology().num_nodes(); }
-#endif
-
   ConnectedEntities get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
     return ConnectedEntities(begin(offsetIntoBucket, connectedRank),
                              num_connectivity(offsetIntoBucket, connectedRank));

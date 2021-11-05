@@ -264,6 +264,7 @@ public:
 
   void rotate_multistate_data();
 
+ private:
   stk::ngp::ExecSpace& get_execution_space() const {
     return m_execSpace;
   }
@@ -280,7 +281,6 @@ public:
     m_execSpace = Kokkos::DefaultExecutionSpace();
   }
 
-private:
   template<class A>
     const A * declare_attribute_no_delete(const A * a) {
       return m_attribute.template insert_no_delete<A>(a);

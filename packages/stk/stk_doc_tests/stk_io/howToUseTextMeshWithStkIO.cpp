@@ -32,18 +32,58 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <stk_expreval/Variable.hpp>
-#include <stk_expreval/Evaluator.hpp>
+#include <gtest/gtest.h>
+#include <stk_unit_test_utils/getOption.h>
+#include <unistd.h>
 
-namespace stk {
-namespace expreval {
+#include <stk_io/StkMeshIoBroker.hpp>
+#include <stk_io/WriteMesh.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_unit_test_utils/ioUtils.hpp>
 
-VariableMap::Resolver &
-VariableMap::getDefaultResolver()
+namespace
 {
-  static DefaultResolver default_resolver;
-  return default_resolver;
+TEST(StkIoHowTo, useTextMesh)
+{
+  stk::unit_test_util::initialize_stk_io_for_text_mesh();
+  stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);
+
+  std::string textMeshDesc = "textmesh:0,1,HEX_8,1,2,3,4,5,6,7,8";
+
+  stkIo.add_mesh_database(textMeshDesc, stk::io::READ_MESH);
+
+  Ioss::Region* ioRegion = stkIo.get_input_io_region().get();
+  EXPECT_TRUE(ioRegion != nullptr);
+
+  Ioss::DatabaseIO* ioDatabase = ioRegion->get_database();
+  EXPECT_TRUE(ioDatabase != nullptr);
+  EXPECT_TRUE(ioDatabase->ok(true));
+  EXPECT_EQ(ioDatabase->get_format(), "TextMesh");
 }
 
-} // namespace expreval
-} // namespace stk
+TEST(StkIoHowTo, useTextMesh_withAllOptions)
+{
+  stk::unit_test_util::initialize_stk_io_for_text_mesh();
+  stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);
+
+  std::string textMeshDesc =
+      "textmesh:"
+      "0,1,QUAD_4_2D,1,2,5,4\n"
+      "0,2,QUAD_4_2D,2,3,6,5"
+      "|coordinates:0,0, 1,0, 2,0, 0,1, 1,1, 2,1"
+      "|dimension:2";
+
+  stkIo.add_mesh_database(textMeshDesc, stk::io::READ_MESH);
+
+  Ioss::Region* ioRegion = stkIo.get_input_io_region().get();
+  EXPECT_TRUE(ioRegion != nullptr);
+
+  Ioss::DatabaseIO* ioDatabase = ioRegion->get_database();
+  EXPECT_TRUE(ioDatabase != nullptr);
+  EXPECT_TRUE(ioDatabase->ok(true));
+  EXPECT_EQ(ioDatabase->get_format(), "TextMesh");
+}
+
+}  // namespace

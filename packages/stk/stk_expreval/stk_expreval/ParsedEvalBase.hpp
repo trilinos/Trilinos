@@ -30,35 +30,29 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 
-#ifndef STK_MESH_NGPSPACES_HPP
-#define STK_MESH_NGPSPACES_HPP
+#ifndef PARSEDEVALBASE_HPP
+#define PARSEDEVALBASE_HPP
 
 #include <Kokkos_Core.hpp>
-#include <stk_util/ngp/NgpSpaces.hpp>
-
-#ifdef KOKKOS_ENABLE_OPENMP
-#include <Kokkos_OpenMP.hpp>
-#endif
 
 namespace stk {
-namespace mesh {
+namespace expreval {
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-using ExecSpace STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")
-                          = stk::ngp::ExecSpace;    
-using HostExecSpace STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")
-                          = stk::ngp::HostExecSpace;    
-using MemSpace STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")
-                          = stk::ngp::MemSpace;    
-using UVMMemSpace STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")
-                          = stk::ngp::UVMMemSpace;    
-using HostPinnedSpace STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp") 
-                          = stk::ngp::HostPinnedSpace;    
-using ScheduleType STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")
-                          = stk::ngp::ScheduleType;    
-#endif // STK_HIDE_DEPRECATED_CODE
+static constexpr int DEFAULT_RESULT_BUFFER_SIZE = 16;
+
+class ParsedEvalBase
+{
+public:
+  ParsedEvalBase() = default;
+  KOKKOS_DEFAULTED_FUNCTION ParsedEvalBase(const ParsedEvalBase&) = default;
+  KOKKOS_DEFAULTED_FUNCTION virtual ~ParsedEvalBase() = default;
+
+  virtual int get_result_buffer_size() = 0;
+};
+
 }
 }
 
-#endif
+#endif // PARSEDEVALBASE_HPP
