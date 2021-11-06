@@ -261,7 +261,7 @@ namespace
     
     Teuchos::RCP<Intrepid2::Cubature<DeviceType, PointScalar, WeightScalar>> quadrature;
     
-   const int numTensorialExtrusions = basis1.getNumTensorialExtrusions();
+    const int numTensorialExtrusions = basis1.getNumTensorialExtrusions();
     if (numTensorialExtrusions == 0)
     {
       quadrature = baseTopoQuadrature;

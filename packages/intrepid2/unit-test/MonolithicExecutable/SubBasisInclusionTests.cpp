@@ -308,11 +308,13 @@ namespace
   void runSubBasisTests(shards::CellTopology &cellTopo, Teuchos::FancyOStream &out, bool &success)
   {
     const double tol = TEST_TOLERANCE_TIGHT;
-    const int maxDegree = 4;
+    const int maxDegree = 2;
     
     std::vector<Intrepid2::EFunctionSpace> functionSpaces_1D = {FUNCTION_SPACE_HGRAD,FUNCTION_SPACE_HVOL};
     std::vector<Intrepid2::EFunctionSpace> functionSpaces_2D = {FUNCTION_SPACE_HGRAD,FUNCTION_SPACE_HCURL,FUNCTION_SPACE_HDIV,FUNCTION_SPACE_HVOL};
-    std::vector<Intrepid2::EFunctionSpace> functionSpaces_3D = {FUNCTION_SPACE_HGRAD,FUNCTION_SPACE_HCURL,FUNCTION_SPACE_HDIV,FUNCTION_SPACE_HVOL};
+//    std::vector<Intrepid2::EFunctionSpace> functionSpaces_3D = {FUNCTION_SPACE_HGRAD,FUNCTION_SPACE_HCURL,FUNCTION_SPACE_HDIV,FUNCTION_SPACE_HVOL};
+    
+    std::vector<Intrepid2::EFunctionSpace> functionSpaces_3D = {FUNCTION_SPACE_HDIV};
     
     std::vector<std::vector<Intrepid2::EFunctionSpace> > functionSpacesForDimension = {functionSpaces_1D,functionSpaces_2D,functionSpaces_3D};
     
@@ -333,7 +335,7 @@ namespace
       }
       for (auto continuousBasis : continuousBasisValues) // corresponds to "defineVertexFunctions" in line basis definitions
       {
-        for (int degree=1; degree<=maxDegree; degree++)
+        for (int degree=2; degree<=maxDegree; degree++)
         {
           testSubBasis(cellTopo, fs, tol, out, success, degree,degree,degree,continuousBasis);
         }

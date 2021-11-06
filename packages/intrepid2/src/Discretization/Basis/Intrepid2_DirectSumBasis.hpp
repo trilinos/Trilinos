@@ -98,6 +98,8 @@ namespace Intrepid2
       INTREPID2_TEST_FOR_EXCEPTION(basis1->getBasisType() != basis2->getBasisType(), std::invalid_argument, "basis1 and basis2 must agree in basis type");
       INTREPID2_TEST_FOR_EXCEPTION(basis1->getBaseCellTopology().getKey() != basis2->getBaseCellTopology().getKey(),
                                  std::invalid_argument, "basis1 and basis2 must agree in cell topology");
+      INTREPID2_TEST_FOR_EXCEPTION(basis1->getNumTensorialExtrusions() != basis2->getNumTensorialExtrusions(),
+                                   std::invalid_argument, "basis1 and basis2 must agree in number of tensorial extrusions");
       INTREPID2_TEST_FOR_EXCEPTION(basis1->getCoordinateSystem() != basis2->getCoordinateSystem(),
                                  std::invalid_argument, "basis1 and basis2 must agree in coordinate system");
       
@@ -431,6 +433,11 @@ namespace Intrepid2
       {
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported outputValues rank");
       }
+    }
+    
+    virtual int getNumTensorialExtrusions() const override
+    {
+      return basis1_->getNumTensorialExtrusions();
     }
   };
 } // end namespace Intrepid2

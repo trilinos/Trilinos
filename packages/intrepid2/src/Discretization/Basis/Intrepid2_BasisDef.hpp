@@ -955,7 +955,7 @@ namespace Intrepid2 {
           OutputViewAllocatable dataView("BasisValues HVOL VALUE data", numFields, numPoints);
           return dataView;
         }
-        else if (operatorIsDk)
+        else if (operatorIsDk || (operatorType == OPERATOR_GRAD))
         {
           ordinal_type dkCardinality = getDkCardinality(operatorType, spaceDim);
           OutputViewAllocatable dataView("BasisValues HVOL Dk data", numFields, numPoints, dkCardinality);
