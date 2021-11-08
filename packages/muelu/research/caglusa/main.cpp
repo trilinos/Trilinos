@@ -156,51 +156,54 @@ namespace Tpetra {
                Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
                Scalar beta  = Teuchos::ScalarTraits<Scalar>::zero()) const {
       const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      bool flip = true;
 
       allocateMemory(X.getNumVectors());
 
       // near field
       nearField_->apply(X, Y, mode, alpha, beta);
 
-      // auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
-      // Y.describe(*out, Teuchos::VERB_EXTREME);
-
       // upward pass
-      basisMatrix_->apply(X, *coefficients_, Teuchos::TRANS);
+      {
+        basisMatrix_->localApply(X, *coefficients_, Teuchos::TRANS);
 
-      bool flip = true;
-      for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--)
-        if (flip) {
-          coefficients2_->assign(*coefficients_);
-          transferMatrices_[i]->apply(*coefficients_, *coefficients2_, Teuchos::NO_TRANS, one, one);
-          flip = false;
-        } else {
-          coefficients_->assign(*coefficients2_);
-          transferMatrices_[i]->apply(*coefficients2_, *coefficients_, Teuchos::NO_TRANS, one, one);
-          flip = true;
-        }
+        for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--)
+          if (flip) {
+            coefficients2_->assign(*coefficients_);
+            transferMatrices_[i]->localApply(*coefficients_, *coefficients2_, Teuchos::NO_TRANS, one, one);
+            flip = false;
+          } else {
+            coefficients_->assign(*coefficients2_);
+            transferMatrices_[i]->localApply(*coefficients2_, *coefficients_, Teuchos::NO_TRANS, one, one);
+            flip = true;
+          }
+      }
 
-      if (flip)
-        kernelApproximations_->apply(*coefficients_, *coefficients2_, mode, alpha);
-      else
-        kernelApproximations_->apply(*coefficients2_, *coefficients_, mode, alpha);
-      // coefficients2_->describe(*out, Teuchos::VERB_EXTREME);
+      // far field interactions
+      {
+        if (flip)
+          kernelApproximations_->apply(*coefficients_, *coefficients2_, mode, alpha);
+        else
+          kernelApproximations_->apply(*coefficients2_, *coefficients_, mode, alpha);
+      }
 
       // downward pass
-      for (size_t i = 0; i<transferMatrices_.size(); i++)
-        if (flip) {
-          coefficients_->assign(*coefficients2_);
-          transferMatrices_[i]->apply(*coefficients2_, *coefficients_, Teuchos::TRANS, one, one);
-          flip = false;
-        } else {
-          coefficients2_->assign(*coefficients_);
-          transferMatrices_[i]->apply(*coefficients_, *coefficients2_, Teuchos::TRANS, one, one);
-          flip = true;
-        }
-      if (flip)
-        basisMatrix_->apply(*coefficients2_, Y, Teuchos::NO_TRANS, one, one);
-      else
-        basisMatrix_->apply(*coefficients_, Y, Teuchos::NO_TRANS, one, one);
+      {
+        for (size_t i = 0; i<transferMatrices_.size(); i++)
+          if (flip) {
+            coefficients_->assign(*coefficients2_);
+            transferMatrices_[i]->localApply(*coefficients2_, *coefficients_, Teuchos::TRANS, one, one);
+            flip = false;
+          } else {
+            coefficients2_->assign(*coefficients_);
+            transferMatrices_[i]->localApply(*coefficients_, *coefficients2_, Teuchos::TRANS, one, one);
+            flip = true;
+          }
+        if (flip)
+          basisMatrix_->localApply(*coefficients2_, Y, Teuchos::NO_TRANS, one, one);
+        else
+          basisMatrix_->localApply(*coefficients_, Y, Teuchos::NO_TRANS, one, one);
+      }
     }
 
 
