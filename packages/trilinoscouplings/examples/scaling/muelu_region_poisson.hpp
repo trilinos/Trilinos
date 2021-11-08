@@ -138,6 +138,7 @@ std::vector<unsigned int> renumberPerceptCellsToLexicographic(const unsigned int
 
   // notice the numbering is ccw in the xy plane
   // assuming the indexing is [x][y][z]... this looks backwards as far as access patterns go
+  //Kokkos::View<unsigned int***,HostSpace> percept(2,2,2);
   percept[0][0][0] = 0;
   percept[1][0][0] = 1;
   percept[1][1][0] = 2;
@@ -430,7 +431,7 @@ namespace Example {
   {
     using Teuchos::RCP;
 
-    Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
+    RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
     ir_degree = ir.cubature_degree;
 
     source = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
@@ -498,8 +499,8 @@ namespace Example {
   {
     using Teuchos::RCP;
 
-    Teuchos::RCP<PHX::DataLayout> data_layout_scalar = ir.dl_scalar;
-    Teuchos::RCP<PHX::DataLayout> data_layout_vector = ir.dl_vector;
+    RCP<PHX::DataLayout> data_layout_scalar = ir.dl_scalar;
+    RCP<PHX::DataLayout> data_layout_vector = ir.dl_vector;
     ir_degree = ir.cubature_degree;
 
     solution = PHX::MDField<ScalarT,Cell,Point>(name, data_layout_scalar);
@@ -573,7 +574,7 @@ namespace Example {
       TEUCHOS_TEST_FOR_EXCEPTION(!models.isSublist(model_id), std::logic_error, msg.str());
     }
 
-    std::vector<Teuchos::RCP<const panzer::PureBasis> > bases;
+    std::vector<RCP<const panzer::PureBasis> > bases;
     fl.uniqueBases(bases);
 
     const ParameterList& my_models = models.sublist(model_id);
@@ -598,11 +599,11 @@ namespace Example {
           evaluators->push_back(e);
         }
 
-        for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
+        for (std::vector<RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
             basis_itr != bases.end(); ++basis_itr) { // at BASIS
           input.set("Name", key);
           input.set("Value", plist.get<double>("Value"));
-          Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
+          RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
           input.set("Data Layout", basis->functional);
           RCP< Evaluator<panzer::Traits> > e =
               rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
@@ -650,7 +651,7 @@ namespace Example {
           }
 
           {
-            Teuchos::RCP<const panzer::PointRule> pr = ir;
+            RCP<const panzer::PointRule> pr = ir;
             std::vector<std::string> values(2);
             values[0] = key+"_DIFF";
             values[1] = key+"_DIFF";
@@ -713,7 +714,7 @@ namespace Example {
           }
 
           {
-            Teuchos::RCP<const panzer::PointRule> pr = ir;
+            RCP<const panzer::PointRule> pr = ir;
             std::vector<std::string> values(2);
             values[0] = "GRAD_"+key+"_DIFF";
             values[1] = "GRAD_"+key+"_DIFF";
@@ -730,7 +731,7 @@ namespace Example {
           }
 
           {
-            Teuchos::RCP<const panzer::PointRule> pr = ir;
+            RCP<const panzer::PointRule> pr = ir;
             std::vector<std::string> values(2);
             values[0] = key+"_H1_L2DIFF";
             values[1] = key+"_H1_L2DIFF";

@@ -147,8 +147,10 @@ int main(int argc, char *argv[]) {
 
 #include <MueLu_UseShortNames.hpp>
 
-  Kokkos::initialize(argc,argv);
-  { // Kokkos scope
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Kokkos::initialize (argc, argv);
+  Tpetra::initialize (&argc, &argv);
+  { // Parallel initialization scope
 
 
     ////////////////////////////////////////////////////////////////////////////////////
@@ -167,8 +169,6 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Teuchos::FancyOStream> fancydebug = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::FancyOStream& debug = *fancydebug; // use on all ranks
 
-    // TODO: comb back through everything and make sure I'm using MPI comms properly when necessary
-    Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
     const int numRanks = comm->getSize();
@@ -970,14 +970,10 @@ int main(int argc, char *argv[]) {
         if(unstructuredRanks[idx] == myRank) {useUnstructured = true;}
       }
       
-      // Retrieve matrix parameters (they may have been changed on the command line)
-      // [for instance, if we changed matrix type from 2D to 3D we need to update nz]
-      //ParameterList galeriList = galeriParameters.GetParameterList();
 
       // =========================================================================
       // Problem construction
       // =========================================================================
-      //std::ostringstream galeriStream;
 #ifdef HAVE_MUELU_OPENMP
       //std::string node_name = Node::name();
       //if(!comm->getRank() && !node_name.compare("OpenMP/Wrapper"))
@@ -1619,8 +1615,11 @@ int main(int argc, char *argv[]) {
       }
     }
 
-  } // Kokkos scope
+  } // Parallel initialization scope
+  Tpetra::finalize();
   Kokkos::finalize();
+
+  // TODO: Does this need to be scoped again for MPI? Double-check based on review
 
   return 0;
 } // main
