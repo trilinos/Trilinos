@@ -5,6 +5,11 @@
 #include <sstream>
 #include <unistd.h>
 
+// Kokkos headers have to go first
+#include "Kokkos_View.hpp"
+#include "Kokkos_DynRankView_Fad.hpp"
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+
 // TrilinosCouplings headers
 #include "TrilinosCouplings_config.h"
 
@@ -67,9 +72,21 @@
 #include "SetupRegionVector_def.hpp"
 #include "SetupRegionMatrix_def.hpp"
 #include "SetupRegionHierarchy_def.hpp"
+#include "SolveRegionHierarchy_def.hpp"
 
 // Shards headers
 #include "Shards_CellTopology.hpp"
+
+// Tpetra headers
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_FECrsMatrix.hpp"
+#include "Tpetra_Import.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+
+// Include factories for boundary conditions and other Panzer setup
+// Most of which is taken from PoissonExample in Panzer_STK
+#include "muelu_region_poisson.hpp"
 
 // Panzer headers
 #include "Panzer_AssemblyEngine.hpp"
@@ -101,17 +118,6 @@
 #include <percept/PerceptMesh.hpp>
 #include <adapt/UniformRefinerPattern.hpp>
 #include <adapt/UniformRefiner.hpp>
-
-// Tpetra headers
-#include "Tpetra_Core.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_FECrsMatrix.hpp"
-#include "Tpetra_Import.hpp"
-#include "MatrixMarket_Tpetra.hpp"
-
-// Include factories for boundary conditions and other Panzer setup
-// Most of which is taken from PoissonExample in Panzer_STK
-#include "muelu_region_poisson.hpp"
 
 
 // need this for debugging purposes... technically any class that has a size()
@@ -932,8 +938,6 @@ int main(int argc, char *argv[]) {
       using Teuchos::TimeMonitor;
       using Teuchos::ParameterList;
 
-      using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
-
       // =========================================================================
       // Convenient definitions
       // =========================================================================
@@ -941,6 +945,7 @@ int main(int argc, char *argv[]) {
       SC zero = STS::zero(), one = STS::one();
       using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
       using real_type = typename STS::coordinateType;
+      using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
 
       ParameterList paramList;

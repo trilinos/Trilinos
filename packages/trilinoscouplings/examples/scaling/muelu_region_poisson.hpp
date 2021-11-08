@@ -125,7 +125,7 @@
  */
 std::vector<unsigned int> renumberPerceptCellsToLexicographic(const unsigned int num_levels_refinement, const bool print_details=false)
 {
-  std::vector<unsigned int> renumber;
+  std::vector<unsigned int> renumber; // output array
 
   const unsigned int d = 3; // spatial dimension (only 2 or 3 makes sense)...
   const unsigned int r = num_levels_refinement; // levels of recursion/refinement
@@ -134,19 +134,28 @@ std::vector<unsigned int> renumberPerceptCellsToLexicographic(const unsigned int
   const unsigned int num_cells = (d<3)? cells_per_dim*cells_per_dim : cells_per_dim*cells_per_dim*cells_per_dim; // evil ternary op code to avoid using pow
   const unsigned int num_points = (d<3)? points_per_dim*points_per_dim : points_per_dim*points_per_dim*points_per_dim; // evil ternary op code to avoid using pow
 
-  unsigned int percept[2][2][2];
+  //unsigned int percept[2][2][2];
 
   // notice the numbering is ccw in the xy plane
   // assuming the indexing is [x][y][z]... this looks backwards as far as access patterns go
-  //Kokkos::View<unsigned int***,HostSpace> percept(2,2,2);
-  percept[0][0][0] = 0;
-  percept[1][0][0] = 1;
-  percept[1][1][0] = 2;
-  percept[0][1][0] = 3;
-  percept[0][0][1] = 4;
-  percept[1][0][1] = 5;
-  percept[1][1][1] = 6;
-  percept[0][1][1] = 7;
+  Kokkos::View<unsigned int***,Kokkos::HostSpace> percept_view("Percept ordering",2,2,2);
+  percept_view(0,0,0) = 0;
+  percept_view(1,0,0) = 1;
+  percept_view(1,1,0) = 2;
+  percept_view(0,1,0) = 3;
+  percept_view(0,0,1) = 4;
+  percept_view(1,0,1) = 5;
+  percept_view(1,1,1) = 6;
+  percept_view(0,1,1) = 7;
+
+  // percept[0][0][0] = 0;
+  // percept[1][0][0] = 1;
+  // percept[1][1][0] = 2;
+  // percept[0][1][0] = 3;
+  // percept[0][0][1] = 4;
+  // percept[1][0][1] = 5;
+  // percept[1][1][1] = 6;
+  // percept[0][1][1] = 7;
 
   // scope in case I decide to copypasta
   {
@@ -155,24 +164,24 @@ std::vector<unsigned int> renumberPerceptCellsToLexicographic(const unsigned int
     // severely affects performance, but we'll likely keep num_refinements<=8
 
     // initialize to 0
-    unsigned int outputorder[cells_per_dim][cells_per_dim][cells_per_dim];
+    Kokkos::View<unsigned int***,Kokkos::HostSpace> outputorder("Multi-level re-numbering indices",cells_per_dim,cells_per_dim,cells_per_dim);
     for(unsigned int i=0; i<cells_per_dim; ++i)
       for(unsigned int j=0; j<cells_per_dim; ++j)
         for(unsigned int k=0; k<cells_per_dim; ++k)
-          outputorder[i][j][k] = 0;
+          outputorder(i,j,k) = 0;
 
     // do this for the first levels
     for(unsigned int level=0; level<(r-1); ++level)
       for(unsigned int i=0; i<cells_per_dim; ++i)
         for(unsigned int j=0; j<cells_per_dim; ++j)
           for(unsigned int k=0; k<cells_per_dim; ++k)
-            outputorder[i][j][k] = outputorder[i][j][k] + (1<<(d*level))*percept[(i%(2<<level))/(1<<level)][(j%(2<<level))/(1<<level)][(k%(2<<level))/(1<<level)];
+            outputorder(i,j,k) = outputorder(i,j,k) + (1<<(d*level))*percept_view((i%(2<<level))/(1<<level), (j%(2<<level))/(1<<level), (k%(2<<level))/(1<<level));
 
     // do this for the top level
     for(unsigned int i=0; i<cells_per_dim; ++i)
       for(unsigned int j=0; j<cells_per_dim; ++j)
         for(unsigned int k=0; k<cells_per_dim; ++k)
-          outputorder[i][j][k] = outputorder[i][j][k] + (1<<(d*(r-1)))*percept[i/(cells_per_dim/2)][j/(cells_per_dim/2)][k/(cells_per_dim/2)];
+          outputorder(i,j,k) = outputorder(i,j,k) + (1<<(d*(r-1)))*percept_view(i/(cells_per_dim/2), j/(cells_per_dim/2), k/(cells_per_dim/2));
 
     // note: there's a lot of nonsense here to prettily format the output and make sure things look correct
     if(d==2)
@@ -182,25 +191,23 @@ std::vector<unsigned int> renumberPerceptCellsToLexicographic(const unsigned int
         std::cout << "Outputting Percept's order in 2D... " << std::endl;
         for(int j=cells_per_dim-1; j>=0; --j)
         {
-          std::cout << outputorder[0][j][0];
+          std::cout << outputorder(0,j,0);
           for(unsigned int i=1; i<cells_per_dim; ++i)
-          {
-            std::cout << " " << outputorder[i][j][0];
-          }
+            std::cout << " " << outputorder(i,j,0);
           std::cout << std::endl;
         }
 
         std::cout << "Outputting the lexicographic reordering..." << std::endl;
         for(unsigned int j=0; j<cells_per_dim; ++j)
           for(unsigned int i=0; i<cells_per_dim; ++i)
-            std::cout << " " << outputorder[i][j][0];
+            std::cout << " " << outputorder(i,j,0);
         std::cout << std::endl;
       }
 
       // fill the renumber lexicographically
       for(unsigned int j=0; j<cells_per_dim; ++j)
         for(unsigned int i=0; i<cells_per_dim; ++i)
-          renumber.push_back(outputorder[i][j][0]);
+          renumber.push_back(outputorder(i,j,0));
     }
     else
     {
@@ -211,11 +218,9 @@ std::vector<unsigned int> renumberPerceptCellsToLexicographic(const unsigned int
         {
           for(int j=cells_per_dim-1; j>=0; --j)
           {
-            std::cout << outputorder[0][j][k];
+            std::cout << outputorder(0,j,k);
             for(unsigned int i=1; i<cells_per_dim; ++i)
-            {
-              std::cout << " " << outputorder[i][j][k];
-            }
+              std::cout << " " << outputorder(i,j,k);
             std::cout << std::endl;
           }
           std::cout << std::endl;
@@ -225,7 +230,7 @@ std::vector<unsigned int> renumberPerceptCellsToLexicographic(const unsigned int
         for(unsigned int k=0; k<cells_per_dim; ++k)
           for(unsigned int j=0; j<cells_per_dim; ++j)
             for(unsigned int i=0; i<cells_per_dim; ++i)
-              std::cout << " " << outputorder[i][j][k];
+              std::cout << " " << outputorder(i,j,k);
         std::cout << std::endl;
       }
 
@@ -233,7 +238,7 @@ std::vector<unsigned int> renumberPerceptCellsToLexicographic(const unsigned int
       for(unsigned int k=0; k<cells_per_dim; ++k)
         for(unsigned int j=0; j<cells_per_dim; ++j)
           for(unsigned int i=0; i<cells_per_dim; ++i)
-            renumber.push_back(outputorder[i][j][k]);
+            renumber.push_back(outputorder(i,j,k));
     }
   }
 
