@@ -134,10 +134,8 @@ std::vector<unsigned int> renumberPerceptCellsToLexicographic(const unsigned int
   const unsigned int num_cells = (d<3)? cells_per_dim*cells_per_dim : cells_per_dim*cells_per_dim*cells_per_dim; // evil ternary op code to avoid using pow
   const unsigned int num_points = (d<3)? points_per_dim*points_per_dim : points_per_dim*points_per_dim*points_per_dim; // evil ternary op code to avoid using pow
 
-  //unsigned int percept[2][2][2];
-
   // notice the numbering is ccw in the xy plane
-  // assuming the indexing is [x][y][z]... this looks backwards as far as access patterns go
+  // assuming the indexing is (x,y,z)... this looks backwards as far as access patterns go, but probably not important for performance since this is only called once
   Kokkos::View<unsigned int***,Kokkos::HostSpace> percept_view("Percept ordering",2,2,2);
   percept_view(0,0,0) = 0;
   percept_view(1,0,0) = 1;
@@ -148,21 +146,8 @@ std::vector<unsigned int> renumberPerceptCellsToLexicographic(const unsigned int
   percept_view(1,1,1) = 6;
   percept_view(0,1,1) = 7;
 
-  // percept[0][0][0] = 0;
-  // percept[1][0][0] = 1;
-  // percept[1][1][0] = 2;
-  // percept[0][1][0] = 3;
-  // percept[0][0][1] = 4;
-  // percept[1][0][1] = 5;
-  // percept[1][1][1] = 6;
-  // percept[0][1][1] = 7;
-
   // scope in case I decide to copypasta
   {
-    // TODO: this uses VLAs on the stack for simplicity, but using a different
-    // data structure on the heap would be safer. we'll return to this if it
-    // severely affects performance, but we'll likely keep num_refinements<=8
-
     // initialize to 0
     Kokkos::View<unsigned int***,Kokkos::HostSpace> outputorder("Multi-level re-numbering indices",cells_per_dim,cells_per_dim,cells_per_dim);
     for(unsigned int i=0; i<cells_per_dim; ++i)
