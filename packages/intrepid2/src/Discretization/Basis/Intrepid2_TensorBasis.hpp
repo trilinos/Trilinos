@@ -66,6 +66,8 @@
 #include "Intrepid2_TensorViewIterator.hpp"
 #include "Intrepid2_Utils.hpp" // defines FAD_VECTOR_SIZE, VECTOR_SIZE
 
+#include "Intrepid2_CellTopology.hpp"
+
 namespace Intrepid2
 {
   template<ordinal_type spaceDim>
@@ -681,72 +683,83 @@ struct OperatorTensorDecomposition
       }
       else
       {
-        // at the moment, "raw" TensorBasis on tensor topologies does not support dof tagging; we hope to fix that soon.
-        // TODO: work out how to do the tags recursively, making reference to basis1_ and basis2_'s tags to set up the tensor product tags.
-        // the below is copied from setShardsTopologyAndTags(); we'll want to something similar, but not quite identical…  We may want to
-        // define a TensorTopology class that handles the subcell numbering in the presence of extrusions (see Camellia's CellTopology for
-        // a reference implementation of this).
+        // we build tags recursively, making reference to basis1_ and basis2_'s tags to produce the tensor product tags.
   //      // initialize tags
-  //      const auto & cardinality = this->basisCardinality_;
-  //
-  //      // Basis-dependent initializations
-  //      const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-  //      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
-  //      const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-  //      const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-  //
-  //      OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
-  //
-  //      shards::CellTopology cellTopo = this->basisCellTopology_;
-  //      for (ordinal_type d=0; d<=spaceDim; d++) // d: tensorial dimension
-  //      {
-  //        int subcellOffset = 0; // for this dimension of tensor subcells, how many subcells have we already counted with other d2/d1 combos?
-  //        for (ordinal_type d2=0; d2<=1; d2++) // choosing either a point or a line topology from the extrusion
-  //        {
-  //          ordinal_type d1 = d-d2;
-  //          if (d1 > spaceDim1) continue;
-  //
-  //          ordinal_type subcellCount2 = cellTopo2.getSubcellCount(d2);
-  //          ordinal_type subcellCount1 = cellTopo1.getSubcellCount(d1);
-  //          for (ordinal_type subcellOrdinal2=0; subcellOrdinal2<subcellCount2; subcellOrdinal2++)
-  //          {
-  //            ordinal_type subcellDofCount2 = basis2_->getDofCount(d2, subcellOrdinal2);
-  //            for (ordinal_type subcellOrdinal1=0; subcellOrdinal1<subcellCount1; subcellOrdinal1++)
-  //            {
-  //              ordinal_type subcellDofCount1 = basis1_->getDofCount(d1, subcellOrdinal1);
-  //              ordinal_type tensorLocalDofCount = subcellDofCount1 * subcellDofCount2;
-  //              for (ordinal_type localDofID2 = 0; localDofID2<subcellDofCount2; localDofID2++)
-  //              {
-  //                ordinal_type fieldOrdinal2 = basis2_->getDofOrdinal(d2, subcellOrdinal2, localDofID2);
-  //                OrdinalTypeArray1DHost degreesField2;
-  //                if (this->basisType_ == BASIS_FEM_HIERARCHICAL) degreesField2 = basis2_->getPolynomialDegreeOfField(fieldOrdinal2);
-  //                for (ordinal_type localDofID1 = 0; localDofID1<subcellDofCount1; localDofID1++)
-  //                {
-  //                  ordinal_type fieldOrdinal1 = basis1_->getDofOrdinal(d1, subcellOrdinal1, localDofID1);
-  //                  ordinal_type tensorLocalDofID = localDofID2 * subcellDofCount1 + localDofID1;
-  //                  ordinal_type tensorFieldOrdinal = fieldOrdinal2 * basis1_->getCardinality() + fieldOrdinal1;
-  //                  tagView(tensorFieldOrdinal*tagSize+0) = d; // subcell dimension
-  //                  tagView(tensorFieldOrdinal*tagSize+1) = topoMap.getCompositeSubcellOrdinal(d1, subcellOrdinal1, d2, subcellOrdinal2);
-  //                  tagView(tensorFieldOrdinal*tagSize+2) = tensorLocalDofID;
-  //                  tagView(tensorFieldOrdinal*tagSize+3) = tensorLocalDofCount;
-  //                } // localDofID1
-  //              } // localDofID2
-  //            } // subcellOrdinal1
-  //          } // subcellOrdinal2
-  //          subcellOffset += subcellCount1 * subcellCount2;
-  //        }
-  //      }
-  //
-  //      //        // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-  //      //        // tags are constructed on host
-  //      this->setOrdinalTagData(this->tagToOrdinal_,
-  //                              this->ordinalToTag_,
-  //                              tagView,
-  //                              this->basisCardinality_,
-  //                              tagSize,
-  //                              posScDim,
-  //                              posScOrd,
-  //                              posDfOrd);
+        const auto & cardinality = this->basisCardinality_;
+  
+        // Basis-dependent initializations
+        const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+        const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
+        const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+        const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+        const ordinal_type posDfCnt = 3;        // position in the tag, counting from 0, of DoF count for the subcell
+  
+        OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
+  
+        // we assume that basis2_ is defined on a line, and that basis1_ is defined on a domain that is once-extruded in by that line.
+        auto cellTopo = CellTopology::cellTopology(this->basisCellTopology_, numTensorialExtrusions_);
+        auto basis1Topo = cellTopo->getTensorialComponent();
+        
+        const ordinal_type spaceDim = spaceDim1 + spaceDim2;
+        const ordinal_type sideDim   = spaceDim - 1;
+        
+        const OrdinalTypeArray2DHost ordinalToTag1 = basis1_->getAllDofTags();
+        const OrdinalTypeArray2DHost ordinalToTag2 = basis2_->getAllDofTags();
+                
+        for (int fieldOrdinal1=0; fieldOrdinal1<basis1_->getCardinality(); fieldOrdinal1++)
+        {
+          ordinal_type subcellDim1   = ordinalToTag1(fieldOrdinal1,posScDim);
+          ordinal_type subcellOrd1   = ordinalToTag1(fieldOrdinal1,posScOrd);
+          ordinal_type subcellDfCnt1 = ordinalToTag1(fieldOrdinal1,posDfCnt);
+          for (int fieldOrdinal2=0; fieldOrdinal2<basis2_->getCardinality(); fieldOrdinal2++)
+          {
+            ordinal_type subcellDim2   = ordinalToTag2(fieldOrdinal2,posScDim);
+            ordinal_type subcellOrd2   = ordinalToTag2(fieldOrdinal2,posScOrd);
+            ordinal_type subcellDfCnt2 = ordinalToTag2(fieldOrdinal2,posDfCnt);
+            
+            ordinal_type subcellDim = subcellDim1 + subcellDim2;
+            ordinal_type subcellOrd;
+            if (subcellDim2 == 0)
+            {
+              // vertex node in extrusion; the subcell is not extruded but belongs to one of the two "copies"
+              // of the basis1 topology
+              ordinal_type sideOrdinal = cellTopo->getTensorialComponentSideOrdinal(subcellOrd2); // subcellOrd2 is a "side" of the line topology
+              subcellOrd = CellTopology::getSubcellOrdinalMap(cellTopo, sideDim, sideOrdinal,
+                                                              subcellDim1, subcellOrd1);
+            }
+            else
+            {
+              // line subcell in time; the subcell *is* extruded in final dimension
+              subcellOrd = cellTopo->getExtrudedSubcellOrdinal(subcellDim1, subcellOrd1);
+              if (subcellOrd == -1)
+              {
+                std::cout << "ERROR: -1 subcell ordinal.\n";
+                subcellOrd = cellTopo->getExtrudedSubcellOrdinal(subcellDim1, subcellOrd1);
+              }
+            }
+            ordinal_type tensorFieldOrdinal = fieldOrdinal2 * basis1_->getCardinality() + fieldOrdinal1;
+      //        cout << "(" << fieldOrdinal1 << "," << fieldOrdinal2 << ") --> " << i << endl;
+            ordinal_type dofOffsetOrdinal1 = ordinalToTag1(fieldOrdinal1,posDfOrd);
+            ordinal_type dofOffsetOrdinal2 = ordinalToTag2(fieldOrdinal2,posDfOrd);
+            ordinal_type dofsForSubcell1   = ordinalToTag1(fieldOrdinal1,posDfCnt);
+            ordinal_type dofOffsetOrdinal  = dofOffsetOrdinal2 * dofsForSubcell1 + dofOffsetOrdinal1;
+            tagView(tagSize*tensorFieldOrdinal + posScDim) = subcellDim; // subcellDim
+            tagView(tagSize*tensorFieldOrdinal + posScOrd) = subcellOrd; // subcell ordinal
+            tagView(tagSize*tensorFieldOrdinal + posDfOrd) = dofOffsetOrdinal;  // ordinal of the specified DoF relative to the subcell
+            tagView(tagSize*tensorFieldOrdinal + posDfCnt) = subcellDfCnt1 * subcellDfCnt2; // total number of DoFs associated with the subcell
+          }
+        }
+        
+        //        // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
+        //        // tags are constructed on host
+        this->setOrdinalTagData(this->tagToOrdinal_,
+                                this->ordinalToTag_,
+                                tagView,
+                                this->basisCardinality_,
+                                tagSize,
+                                posScDim,
+                                posScOrd,
+                                posDfOrd);
       }
     }
     
