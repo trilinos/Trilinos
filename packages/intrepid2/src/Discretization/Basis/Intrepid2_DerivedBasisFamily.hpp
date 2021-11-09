@@ -198,7 +198,7 @@ namespace Intrepid2
     }
   }
 
-/** \brief  Factory method for isotropic HGRAD bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology, and will not support tag lookups, at least in the current implementation of TensorBasis.
+/** \brief  Factory method for isotropic HGRAD bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.
       \param [in] polyOrder - the polynomial order of the basis.
     \param [in] pointType - type of lattice used for creating the DoF coordinates.
    */
@@ -221,7 +221,7 @@ static typename BasisFamily::BasisPtr getHypercubeBasis_HGRAD(int polyOrder, int
   return tensorBasis;
 }
 
-/** \brief  Factory method for isotropic HVOL bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology, and will not support tag lookups, at least in the current implementation of TensorBasis.
+/** \brief  Factory method for isotropic HVOL bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.
       \param [in] polyOrder - the polynomial order of the basis.
     \param [in] pointType - type of lattice used for creating the DoF coordinates.
    */
