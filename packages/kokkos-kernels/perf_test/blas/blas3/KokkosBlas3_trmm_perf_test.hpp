@@ -274,14 +274,14 @@ void __do_trmm_serial_batched_template(options_t options,
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
-  using tag = Algo::Trmm::Unblocked;
+  using tag = KokkosBatched::Algo::Trmm::Unblocked;
 
   for (uint32_t j = 0; j < warm_up_n; ++j) {
     for (int i = 0; i < options.start.a.k; ++i) {
       auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
       auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
 
-      SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args.alpha, A, B);
+      KokkosBatched::SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args.alpha, A, B);
     }
     // Fence after submitting each batch operation
     Kokkos::fence();
@@ -293,7 +293,7 @@ void __do_trmm_serial_batched_template(options_t options,
       auto A = Kokkos::subview(trmm_args.A, i, Kokkos::ALL(), Kokkos::ALL());
       auto B = Kokkos::subview(trmm_args.B, i, Kokkos::ALL(), Kokkos::ALL());
 
-      SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args.alpha, A, B);
+      KokkosBatched::SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args.alpha, A, B);
     }
     // Fence after submitting each batch operation
     Kokkos::fence();
@@ -314,6 +314,11 @@ void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args) {
   char __side = tolower(trmm_args.side), __uplo = tolower(trmm_args.uplo),
        __trans = tolower(trmm_args.trans);
   //__diag = tolower(diag[0]);
+
+  using KokkosBatched::Diag;
+  using KokkosBatched::Side;
+  using KokkosBatched::Trans;
+  using KokkosBatched::Uplo;
 
   STATUS;
 
@@ -482,7 +487,7 @@ struct parallel_batched_trmm {
     auto svA = Kokkos::subview(trmm_args_.A, i, Kokkos::ALL(), Kokkos::ALL());
     auto svB = Kokkos::subview(trmm_args_.B, i, Kokkos::ALL(), Kokkos::ALL());
 
-    SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args_.alpha, svA,
+    KokkosBatched::SerialTrmm<side, uplo, trans, diag, tag>::invoke(trmm_args_.alpha, svA,
                                                      svB);
   }
 };
@@ -493,7 +498,7 @@ void __do_trmm_parallel_batched_template(options_t options,
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
-  using tag             = Algo::Trmm::Unblocked;
+  using tag             = KokkosBatched::Algo::Trmm::Unblocked;
   using execution_space = typename device_type::execution_space;
   using functor_type =
       parallel_batched_trmm<side, uplo, trans, diag, tag, execution_space>;
@@ -529,6 +534,11 @@ void __do_trmm_parallel_batched(options_t options, trmm_args_t trmm_args) {
   char __side = tolower(trmm_args.side), __uplo = tolower(trmm_args.uplo),
        __trans = tolower(trmm_args.trans);
   //__diag = tolower(diag[0]);
+
+  using KokkosBatched::Diag;
+  using KokkosBatched::Side;
+  using KokkosBatched::Trans;
+  using KokkosBatched::Uplo;
 
   STATUS;
 

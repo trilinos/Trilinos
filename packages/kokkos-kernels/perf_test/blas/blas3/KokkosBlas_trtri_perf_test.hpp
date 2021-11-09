@@ -244,13 +244,13 @@ void __do_trtri_serial_batched_template(options_t options,
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
-  using tag = Algo::Trtri::Unblocked;
+  using tag = KokkosBatched::Algo::Trtri::Unblocked;
 
   for (uint32_t j = 0; j < warm_up_n; ++j) {
     for (int i = 0; i < options.start.a.k; ++i) {
       auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
 
-      SerialTrtri<uplo, diag, tag>::invoke(A);
+      KokkosBatched::SerialTrtri<uplo, diag, tag>::invoke(A);
     }
     // Fence after each batch operation
     Kokkos::fence();
@@ -261,7 +261,7 @@ void __do_trtri_serial_batched_template(options_t options,
     for (int i = 0; i < options.start.a.k; ++i) {
       auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
 
-      SerialTrtri<uplo, diag, tag>::invoke(A);
+      KokkosBatched::SerialTrtri<uplo, diag, tag>::invoke(A);
     }
     // Fence after each batch operation
     Kokkos::fence();
@@ -280,6 +280,9 @@ void __do_trtri_serial_batched_template(options_t /*options*/,
 template <class scalar_type, class vta, class device_type>
 void __do_trtri_serial_batched(options_t options, trtri_args_t trtri_args) {
   char __uplo = tolower(trtri_args.uplo), __diag = tolower(trtri_args.diag);
+
+  using KokkosBatched::Diag;
+  using KokkosBatched::Uplo;
 
   STATUS;
 
@@ -373,7 +376,7 @@ struct parallel_batched_trtri {
   void operator()(const int& i) const {
     auto svA = Kokkos::subview(trtri_args_.A, i, Kokkos::ALL(), Kokkos::ALL());
 
-    SerialTrtri<uplo, diag, tag>::invoke(svA);
+    KokkosBatched::SerialTrtri<uplo, diag, tag>::invoke(svA);
   }
 };
 
@@ -383,7 +386,7 @@ void __do_trtri_parallel_batched_template(options_t options,
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
-  using tag             = Algo::Trtri::Unblocked;
+  using tag             = KokkosBatched::Algo::Trtri::Unblocked;
   using execution_space = typename device_type::execution_space;
   using functor_type = parallel_batched_trtri<uplo, diag, tag, execution_space>;
   functor_type parallel_batched_trtri_functor(trtri_args);
@@ -415,6 +418,8 @@ void __do_trtri_parallel_batched_template(options_t options,
 template <class scalar_type, class vta, class device_type>
 void __do_trtri_parallel_batched(options_t options, trtri_args_t trtri_args) {
   char __uplo = tolower(trtri_args.uplo), __diag = tolower(trtri_args.diag);
+  using KokkosBatched::Diag;
+  using KokkosBatched::Uplo;
 
   STATUS;
 

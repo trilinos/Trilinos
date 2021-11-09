@@ -58,8 +58,6 @@
 #include "KokkosBatched_Trmm_Decl.hpp"
 #include "KokkosBatched_Trmm_Serial_Impl.hpp"
 
-using namespace KokkosBatched;
-
 namespace KokkosBlas {
 namespace Impl {
 
@@ -68,6 +66,13 @@ void SerialTrmm_Invoke(const char side[], const char uplo[], const char trans[],
                        const char /*diag*/[],
                        typename BViewType::const_value_type& alpha,
                        const AViewType& A, const BViewType& B) {
+  using KokkosBatched::Algo;
+  using KokkosBatched::Diag;
+  using KokkosBatched::SerialTrmmInternalLeftLower;
+  using KokkosBatched::SerialTrmmInternalLeftUpper;
+  using KokkosBatched::SerialTrmmInternalRightLower;
+  using KokkosBatched::SerialTrmmInternalRightUpper;
+
   char __side = tolower(side[0]), __uplo = tolower(uplo[0]),
        __trans = tolower(trans[0]);
   //__diag = tolower(diag[0]);
