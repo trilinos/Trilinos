@@ -343,8 +343,8 @@ namespace
     
     // for non-"DG" bases, check that the topological associations match up
     // to check for DG-ness of basis, examine how many dofs are associated with the interior
-    shards::CellTopology cellTopo = basis1.getBaseCellTopology();
-    const int interiorDim = cellTopo.getDimension();
+    auto cellTopo = ::Intrepid2::CellTopology::cellTopology(basis1.getBaseCellTopology(), basis1.getNumTensorialExtrusions());
+    const int interiorDim = cellTopo->getDimension();
     const int interiorSubcellOrdinal = 0;
     const int firstDofOrdinalForSubcell = 0;
     
@@ -392,7 +392,7 @@ namespace
           break; // we've already checked all subcell dimensions that have any dofs associated with them
         }
         
-        const int subcellCount = cellTopo.getSubcellCount(subcellDim);
+        const int subcellCount = cellTopo->getSubcellCount(subcellDim);
         for (int subcellOrdinal=0; subcellOrdinal<subcellCount; subcellOrdinal++)
         {
           // need to find the first dof ordinal for the subcell to get the basis cardinality on the subcell
@@ -594,6 +594,25 @@ namespace
       testBasisEquivalence<DefaultTestDeviceType>(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
     }
   }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HexahedronHierarchicalCGVersusHypercube3D_HGRAD )
+  {
+    using CGBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_HEX;
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-11;
+    const double absTol=1e-11;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    for (int polyOrder=1; polyOrder<3; polyOrder++)
+    {
+      CGBasis cgBasis(polyOrder);
+      const int spaceDim = 3;
+      auto hypercubeBasis = getHypercubeBasis_HGRAD<HierarchicalBasisFamily<DefaultTestDeviceType>>(polyOrder, spaceDim);
+      testBasisEquivalence<DefaultTestDeviceType>(cgBasis, *hypercubeBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, HexahedronNodalVersusHierarchicalCG_HGRAD )
   {
@@ -652,7 +671,7 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HGRAD )
   {
-    const int maxSpaceDim = 4;
+    const int maxSpaceDim = 7; // we only test polyDegree = 1 for spaceDim > 5, due to test performance considerations
     const int maxDegreeForCardinalityTests = 2;
     
     using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
@@ -662,8 +681,8 @@ namespace
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
-    const double relTol=1e-11; // 7e-13 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
-    const double absTol=1e-12; // 2e-14 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    const double relTol=1e-14;
+    const double absTol=1e-14;
     
     Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HGRAD;
     
@@ -673,9 +692,42 @@ namespace
       out << "** polyDegree " << polyDegree << " **\n";
       for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
       {
+        if ((polyDegree > 1) && (spaceDim > 5)) continue; // skip this case in the interest of test performance
         out << "** spaceDim " << spaceDim << " **\n";
         auto hierarchicalBasis = getHypercubeBasis_HGRAD<HierarchicalBasisFamily>(polyDegree, spaceDim);
         auto nodalBasis        = getHypercubeBasis_HGRAD<NodalBasisFamily>(polyDegree, spaceDim);
+        testBasisEquivalence<DefaultTestDeviceType>(*nodalBasis, *hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HVOL )
+  {
+    const int maxSpaceDim = 7; // we only test polyDegree = 0,1 for spaceDim > 5, due to test performance considerations
+    const int maxDegreeForCardinalityTests = 2;
+    
+    using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using NodalBasisFamily = NodalBasisFamily<DefaultTestDeviceType>;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher-order bases in higher dimensions)
+    const double relTol=1e-10;
+    const double absTol=1e-10;
+    
+    Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HVOL;
+    
+    const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+    for (int polyDegree = minDegree; polyDegree <= maxDegreeForCardinalityTests; polyDegree++)
+    {
+      out << "** polyDegree " << polyDegree << " **\n";
+      for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
+      {
+        if ((polyDegree > 1) && (spaceDim > 5)) continue; // skip this case in the interest of test performance
+        out << "** spaceDim " << spaceDim << " **\n";
+        auto hierarchicalBasis = getHypercubeBasis_HVOL<HierarchicalBasisFamily>(polyDegree, spaceDim);
+        auto nodalBasis        = getHypercubeBasis_HVOL<NodalBasisFamily>(polyDegree, spaceDim);
         testBasisEquivalence<DefaultTestDeviceType>(*nodalBasis, *hierarchicalBasis, opsToTest, relTol, absTol, out, success);
       }
     }
@@ -740,9 +792,9 @@ namespace
 //      const int faceDim = 2;
 //      for (int intrepid2FaceOrdinal=0; intrepid2FaceOrdinal<4; intrepid2FaceOrdinal++)
 //      {
-//        int vertex0 = cellTopo.getNodeMap(faceDim, intrepid2FaceOrdinal, 0);
-//        int vertex1 = cellTopo.getNodeMap(faceDim, intrepid2FaceOrdinal, 1);
-//        int vertex2 = cellTopo.getNodeMap(faceDim, intrepid2FaceOrdinal, 2);
+//        int vertex0 = cellTopo->getNodeMap(faceDim, intrepid2FaceOrdinal, 0);
+//        int vertex1 = cellTopo->getNodeMap(faceDim, intrepid2FaceOrdinal, 1);
+//        int vertex2 = cellTopo->getNodeMap(faceDim, intrepid2FaceOrdinal, 2);
 //        std::cout << "face " << intrepid2FaceOrdinal << ": " << vertex0 << vertex1 << vertex2 << std::endl;
 //      }
       
