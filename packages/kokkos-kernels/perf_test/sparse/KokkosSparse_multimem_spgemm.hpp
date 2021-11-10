@@ -58,22 +58,7 @@ namespace Experiment{
     typedef Kokkos::Device<exec_space, sbm_mem_space> mySlowExecSpace;
 
     typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, myFastDevice, void, size_type > fast_crstmat_t;
-    //typedef typename fast_crstmat_t::StaticCrsGraphType fast_graph_t;
-    //typedef typename fast_crstmat_t::row_map_type::non_const_type fast_row_map_view_t;
-    typedef typename fast_crstmat_t::index_type::non_const_type   fast_cols_view_t;
-    typedef typename fast_crstmat_t::values_type::non_const_type fast_values_view_t;
-    typedef typename fast_crstmat_t::row_map_type::const_type const_fast_row_map_view_t;
-    typedef typename fast_crstmat_t::index_type::const_type   const_fast_cols_view_t;
-    typedef typename fast_crstmat_t::values_type::const_type const_fast_values_view_t;
-
     typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, mySlowExecSpace, void, size_type > slow_crstmat_t;
-    //typedef typename slow_crstmat_t::StaticCrsGraphType slow_graph_t;
-    //typedef typename slow_crstmat_t::row_map_type::non_const_type slow_row_map_view_t;
-    typedef typename slow_crstmat_t::index_type::non_const_type   slow_cols_view_t;
-    typedef typename slow_crstmat_t::values_type::non_const_type slow_values_view_t;
-    typedef typename slow_crstmat_t::row_map_type::const_type const_slow_row_map_view_t;
-    typedef typename slow_crstmat_t::index_type::const_type   const_slow_cols_view_t;
-    typedef typename slow_crstmat_t::values_type::const_type const_slow_values_view_t;
 
     char *a_mat_file = params.a_mtx_bin_file;
     char *b_mat_file = params.b_mtx_bin_file;
@@ -248,41 +233,26 @@ namespace Experiment{
 
     if (c_mat_file != NULL){
       if (params.c_mem_space == 1){
-
-        fast_cols_view_t sorted_adj("sorted adj", c_fast_crsmat.graph.entries.extent(0));
-        fast_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.extent(0));
-
-        KokkosKernels::Impl::kk_sort_graph
-        <const_fast_row_map_view_t, const_fast_cols_view_t, const_fast_values_view_t, fast_cols_view_t, fast_values_view_t, myExecSpace>(
-            c_fast_crsmat.graph.row_map,
-            c_fast_crsmat.graph.entries,
-            c_fast_crsmat.values, sorted_adj, sorted_vals);
+        KokkosKernels::sort_crs_matrix(c_fast_crsmat);
 
         KokkosKernels::Impl::write_graph_bin(
             (lno_t) (c_fast_crsmat.numRows()),
             (size_type) (c_fast_crsmat.graph.entries.extent(0)),
             c_fast_crsmat.graph.row_map.data(),
-            sorted_adj.data(),
-            sorted_vals.data(),
+            c_fast_crsmat.graph.entries.data(),
+            c_fast_crsmat.values.data(),
             c_mat_file);
       }
       else {
-        slow_cols_view_t sorted_adj("sorted adj", c_fast_crsmat.graph.entries.extent(0));
-        slow_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.extent(0));
-
-        KokkosKernels::Impl::kk_sort_graph<
-        const_slow_row_map_view_t, const_slow_cols_view_t, const_slow_values_view_t, slow_cols_view_t, slow_values_view_t, myExecSpace>(
-            c_slow_crsmat.graph.row_map,
-            c_slow_crsmat.graph.entries,
-            c_slow_crsmat.values, sorted_adj, sorted_vals);
+        KokkosKernels::sort_crs_matrix(c_slow_crsmat);
 
         KokkosKernels::Impl::write_graph_bin(
             (lno_t) c_slow_crsmat.numRows(),
             (size_type) c_slow_crsmat.graph.entries.extent(0),
             c_slow_crsmat.graph.row_map.data(),
-            sorted_adj.data(),
-            sorted_vals.data(),
-                    c_mat_file);
+            c_slow_crsmat.graph.entries.data(),
+            c_slow_crsmat.values.data(),
+            c_mat_file);
       }
     }
   }

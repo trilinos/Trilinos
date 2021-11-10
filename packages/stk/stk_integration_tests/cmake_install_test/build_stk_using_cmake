@@ -77,7 +77,7 @@ exe "TRILINOS_DIR=${trilinos_dir} \
      TRILINOS_INSTALL_DIR=${trilinos_install_dir} \
      CMAKE_BUILD_TYPE=${build_type} \
      CUDA=${cuda_on_or_off} \
-     ./run_cmake_stk ${stk_build_dir}/tpl_paths >& ${stk_config_log}"
+     ./run_cmake_stk >& ${stk_config_log}"
 
 printf "Now building trilinos/stk using make...\n";
 exe "make VERBOSE=1 -j8 >& ${stk_make_log}";

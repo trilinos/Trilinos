@@ -101,11 +101,11 @@ dot (const XVector& x, const YVector& y)
   using result_type =
     typename KokkosBlas::Impl::DotAccumulatingScalar<dot_type>::type;
   using RVector_Internal = Kokkos::View<dot_type,
-    Kokkos::LayoutLeft,
+    typename XVector_Internal::array_layout,
     Kokkos::HostSpace,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using RVector_Result = Kokkos::View<result_type,
-    Kokkos::LayoutLeft,
+    typename XVector_Internal::array_layout,
     Kokkos::HostSpace,
     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
@@ -213,13 +213,17 @@ dot (const RV& R, const XMV& X, const YMV& Y,
   }
 
   // Create unmanaged versions of the input Views.
+  using UnifiedXLayout = typename
+    KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
+  using UnifiedRVLayout = typename
+    KokkosKernels::Impl::GetUnifiedLayoutPreferring<RV, UnifiedXLayout>::array_layout;
 
   typedef Kokkos::View<
     typename Kokkos::Impl::if_c<
       RV::rank == 0,
       typename RV::non_const_value_type,
       typename RV::non_const_value_type* >::type,
-    typename KokkosKernels::Impl::GetUnifiedLayout<RV>::array_layout,
+    UnifiedRVLayout,
     typename RV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV_Internal;
   typedef Kokkos::View<
@@ -227,7 +231,7 @@ dot (const RV& R, const XMV& X, const YMV& Y,
       XMV::rank == 1,
       typename XMV::const_value_type*,
       typename XMV::const_value_type** >::type,
-    typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
+    UnifiedXLayout,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV_Internal;
   typedef Kokkos::View<

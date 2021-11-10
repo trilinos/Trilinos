@@ -67,7 +67,6 @@ struct CudaBlasSingleton {
 // If LAPACK TPL is enabled, it is preferred over magma's LAPACK
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA
 #include "magma_v2.h"
-#include "magma_lapack.h"
 
 namespace KokkosBlas {
 namespace Impl {

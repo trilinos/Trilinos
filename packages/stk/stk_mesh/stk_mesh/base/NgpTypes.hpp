@@ -45,7 +45,7 @@ namespace mesh {
 using DeviceCommMapIndices      = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
 using EntityKeyViewType         = Kokkos::View<EntityKey*, stk::ngp::MemSpace>;
 using EntityViewType            = Kokkos::View<Entity*, stk::ngp::MemSpace>;
-using BucketConnectivityType    = Kokkos::View<Entity**, stk::ngp::MemSpace>;
+using BucketConnectivityType    = Kokkos::View<Entity*, stk::ngp::MemSpace>;
 using UnsignedViewType          = Kokkos::View<unsigned*, stk::ngp::MemSpace>;
 using BoolViewType              = Kokkos::View<bool*, stk::ngp::MemSpace>;
 using OrdinalViewType           = Kokkos::View<ConnectivityOrdinal*, stk::ngp::MemSpace>;

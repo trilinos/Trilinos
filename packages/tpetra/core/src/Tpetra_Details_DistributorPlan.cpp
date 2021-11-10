@@ -679,6 +679,7 @@ void DistributorPlan::computeReceives()
       toProcsFromMe[procIdsToSendTo_[i]] = 1;
     }
 #ifdef HAVE_TPETRA_DEBUG
+    // Note that SHARED_TEST_FOR_EXCEPTION does a global reduction
     SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
         "Tpetra::Distributor::computeReceives: There was an error on at least "
         "one process in counting the number of messages send by that process to "

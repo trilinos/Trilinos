@@ -47,6 +47,7 @@
 #include <Kokkos_Core.hpp>
 
 #include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosKernels_Sorting.hpp"
 #include <Kokkos_Concepts.hpp>
 #include <string>
 #include <stdexcept>
@@ -66,10 +67,13 @@ using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
-#ifndef kokkos_complex_double
-#define kokkos_complex_double Kokkos::complex<double>
-#define kokkos_complex_float Kokkos::complex<float>
-#endif
+// #ifndef kokkos_complex_double
+// #define kokkos_complex_double Kokkos::complex<double>
+// #define kokkos_complex_float Kokkos::complex<float>
+// #endif
+
+typedef Kokkos::complex<double> kokkos_complex_double;
+typedef Kokkos::complex<float> kokkos_complex_float;
 
 namespace Test {
 
@@ -126,8 +130,8 @@ namespace Test {
 
   size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
   if (c_nnz_size){
-    entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-    valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    entriesC = lno_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+    valuesC = scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
   }
   spgemm_jacobi(
       &kh,
@@ -174,24 +178,7 @@ bool is_same_mat(crsMat_t output_mat1, crsMat_t output_mat2){
   size_t nentries2 = output_mat2.graph.entries.extent(0) ;
   size_t nvals2 = output_mat2.values.extent(0);
 
-
-  lno_nnz_view_t h_ent1 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries1);
-  scalar_view_t h_vals1 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals1);
-
-
-  KokkosKernels::Impl::kk_sort_graph<typename graph_t::row_map_type,
-    typename graph_t::entries_type,
-    typename crsMat_t::values_type,
-    lno_nnz_view_t,
-    scalar_view_t,
-    typename device::execution_space
-    >(
-    output_mat1.graph.row_map, output_mat1.graph.entries, output_mat1.values,
-    h_ent1, h_vals1
-  );
-
-  lno_nnz_view_t h_ent2 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries2);
-  scalar_view_t h_vals2 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals2);
+  KokkosKernels::sort_crs_matrix(output_mat1);
 
   if (nrows1 != nrows2) { 
      std::cout << "nrows1:" << nrows1 << " nrows2:" << nrows2 << std::endl;
@@ -206,17 +193,7 @@ bool is_same_mat(crsMat_t output_mat1, crsMat_t output_mat2){
     return false;
   }
 
-  KokkosKernels::Impl::kk_sort_graph
-      <typename graph_t::row_map_type,
-      typename graph_t::entries_type,
-      typename crsMat_t::values_type,
-      lno_nnz_view_t,
-      scalar_view_t,
-      typename device::execution_space
-      >(
-      output_mat2.graph.row_map, output_mat2.graph.entries, output_mat2.values,
-      h_ent2, h_vals2
-    );
+  KokkosKernels::sort_crs_matrix(output_mat2);
 
   bool is_identical = true;
   is_identical = KokkosKernels::Impl::kk_is_identical_view
@@ -232,12 +209,12 @@ bool is_same_mat(crsMat_t output_mat1, crsMat_t output_mat2){
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
-      typename device::execution_space>(h_ent1, h_ent2, 0 );
+      typename device::execution_space>(output_mat1.graph.entries, output_mat2.graph.entries, 0 );
 
   if (!is_identical) {
     std::cout << "entries are different." << std::endl;
-    KokkosKernels::Impl::kk_print_1Dview(h_ent1);
-    KokkosKernels::Impl::kk_print_1Dview(h_ent2);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat1.graph.entries);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat2.graph.entries);
     return false;
   }
 
@@ -247,12 +224,12 @@ bool is_same_mat(crsMat_t output_mat1, crsMat_t output_mat2){
 
   is_identical = KokkosKernels::Impl::kk_is_relatively_identical_view
       <scalar_view_t, scalar_view_t, eps_type,
-      typename device::execution_space>(h_vals1, h_vals2, eps);
+      typename device::execution_space>(output_mat1.values, output_mat2.values, eps);
 
   if (!is_identical) {
     std::cout << "values are different for eps: " << eps << std::endl;
-    KokkosKernels::Impl::kk_print_1Dview(h_vals1);
-    KokkosKernels::Impl::kk_print_1Dview(h_vals2);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat1.values);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat2.values);
 
     return false;
   }
@@ -399,4 +376,4 @@ TEST_F( TestCategory, sparse ## _ ## spgemm_jacobi ## _ ## SCALAR ## _ ## ORDINA
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
-
+#undef EXECUTE_TEST

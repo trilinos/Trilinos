@@ -100,18 +100,23 @@ void mkl_symbolic(
 
 
   typedef typename KernelHandle::HandleExecSpace MyExecSpace;
-/*
-  if (!(
-      (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device1::memory_space>::accessible) &&
-      (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device2::memory_space>::accessible) &&
-      (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device3::memory_space>::accessible) )
-      ){
-    throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN HOST DEVICE for MKL\n");
-    return;
-  }
-*/
-  if (std::is_same<idx, int>::value){
-
+  /*
+    if (!(
+        (Kokkos::SpaceAccessibility<typename
+    Kokkos::HostSpace::execution_space, typename
+    device1::memory_space>::accessible) &&
+        (Kokkos::SpaceAccessibility<typename
+    Kokkos::HostSpace::execution_space, typename
+    device2::memory_space>::accessible) &&
+        (Kokkos::SpaceAccessibility<typename
+    Kokkos::HostSpace::execution_space, typename
+    device3::memory_space>::accessible) )
+        ){
+      throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN HOST DEVICE for
+    MKL\n"); return;
+    }
+  */
+  if (std::is_same<idx, int>::value) {
     int *a_xadj = NULL;
     int *b_xadj = NULL;
     int_temp_work_view_t a_xadj_v, b_xadj_v;
@@ -126,7 +131,7 @@ void mkl_symbolic(
 
       //TODO test this case.
 
-      Kokkos::Impl::Timer copy_time;
+      Kokkos::Timer copy_time;
       const int max_integer = 2147483647;
       if (entriesB.extent(0) > max_integer|| entriesA.extent(0) > max_integer){
         throw std::runtime_error ("MKL requires integer values for size type for SPGEMM. Copying to integer will cause overflow.\n");
@@ -197,7 +202,7 @@ void mkl_symbolic(
       }
 
 
-      Kokkos::Impl::Timer timer1;
+      Kokkos::Timer timer1;
       bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
       if (verbose)
       std::cout << "Actual FLOAT MKL SPMM Time in symbolic:" << timer1.seconds() << std::endl;
@@ -281,7 +286,7 @@ void mkl_symbolic(
       }
 
 
-      Kokkos::Impl::Timer timer1;
+      Kokkos::Timer timer1;
       bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
       if (verbose)
       std::cout << "Actual DOUBLE MKL SPMM Time Without Free:" << timer1.seconds() << std::endl;
@@ -313,7 +318,7 @@ void mkl_symbolic(
         }
         if (handle->mkl_keep_output)
         {
-          Kokkos::Impl::Timer copy_time;
+          Kokkos::Timer copy_time;
 
           KokkosKernels::Impl::copy_vector<MKL_INT *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
           idx nnz = row_mapC(m) =  rows_end[m - 1];
@@ -403,8 +408,22 @@ void mkl_symbolic(
     typedef typename KernelHandle::HandleTempMemorySpace HandleTempMemorySpace;
     typedef typename Kokkos::View<int *, HandleTempMemorySpace> int_temp_work_view_t;
 
-
-
+  /*
+      if (!(
+          (Kokkos::SpaceAccessibility<typename
+     Kokkos::HostSpace::execution_space, typename
+     device1::memory_space>::accessible) &&
+          (Kokkos::SpaceAccessibility<typename
+     Kokkos::HostSpace::execution_space, typename
+     device2::memory_space>::accessible) &&
+          (Kokkos::SpaceAccessibility<typename
+     Kokkos::HostSpace::execution_space, typename
+     device3::memory_space>::accessible) )
+          ){
+        throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN HOST DEVICE for
+     MKL\n"); return;
+      }
+  */
     typedef typename KernelHandle::nnz_scalar_t value_type;
 
     
@@ -414,9 +433,9 @@ void mkl_symbolic(
     typedef typename KernelHandle::HandleExecSpace MyExecSpace;
 /*
     if (!(
-        (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device1::memory_space>::accessible) &&
-        (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device2::memory_space>::accessible) &&
-        (Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device3::memory_space>::accessible) )
+        (Kokkos::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device1::memory_space>::accessible) &&
+        (Kokkos::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device2::memory_space>::accessible) &&
+        (Kokkos::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device3::memory_space>::accessible) )
         ){
       throw std::runtime_error ("MEMORY IS NOT ALLOCATED IN HOST DEVICE for MKL\n");
       return;
@@ -438,7 +457,7 @@ void mkl_symbolic(
 
         //TODO test this case.
 
-        Kokkos::Impl::Timer copy_time;
+        Kokkos::Timer copy_time;
         const int max_integer = 2147483647;
         if (entriesB.extent(0) > max_integer|| entriesA.extent(0) > max_integer){
           throw std::runtime_error ("MKL requires integer values for size type for SPGEMM. Copying to integer will cause overflow.\n");
@@ -507,7 +526,7 @@ void mkl_symbolic(
         }
 
 
-        Kokkos::Impl::Timer timer1;
+        Kokkos::Timer timer1;
         bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
         if (verbose)
         std::cout << "Actual FLOAT MKL SPMM Time:" << timer1.seconds() << std::endl;
@@ -595,7 +614,7 @@ void mkl_symbolic(
         }
 
 
-        Kokkos::Impl::Timer timer1;
+        Kokkos::Timer timer1;
         bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
         if (verbose)
         std::cout << "Actual DOUBLE MKL SPMM Time Without Free:" << timer1.seconds() << std::endl;
@@ -628,7 +647,7 @@ void mkl_symbolic(
           }
           if (handle->mkl_keep_output)
           {
-            Kokkos::Impl::Timer copy_time;
+            Kokkos::Timer copy_time;
 
             //KokkosKernels::Impl::copy_vector<MKL_INT *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
             //idx nnz = row_mapC(m) = rows_end[m - 1];

@@ -5490,11 +5490,11 @@
         {
           bool stk_auto= stk::mesh::is_auto_declared_part(*parts[ip]);
           if (stk_auto) continue;
-          unsigned per = parts[ip]->primary_entity_rank();
+          stk::mesh::EntityRank per = parts[ip]->primary_entity_rank();
           if (per == element_rank())
             {
               const CellTopologyData *const topology = this->get_cell_topology(*parts[ip]);
-              if (!topology || topology->dimension != per)
+              if (!topology || topology->dimension != static_cast<unsigned>(per))
                 {
                   std::cout << "Warning: PerceptMesh::get_skin_part: skipping part with dimension < element_rank, part name= " << parts[ip]->name() << std::endl;
                   continue;
@@ -6158,7 +6158,7 @@
           if (!data_traits.is_floating_point)
             continue;
 
-          unsigned field_rank = field->entity_rank();
+          stk::mesh::EntityRank field_rank = field->entity_rank();
           if (field_rank == stk::topology::NODE_RANK)
             {
               continue;

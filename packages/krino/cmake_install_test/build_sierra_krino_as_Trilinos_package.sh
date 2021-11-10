@@ -44,7 +44,7 @@ function build_yaml()
     unset CXX
 }
 
-function build_trilinos_with_krino()
+function setup_trilinos_with_krino()
 {
     productName=trilinos
     
@@ -56,12 +56,12 @@ function build_trilinos_with_krino()
     
     if [ ! -d Trilinos ] ; then
       execute git clone -b develop https://github.com/trilinos/Trilinos.git Trilinos
-    #else
-      #execute cd Trilinos
-      #execute git checkout develop
-      #execute git reset --hard origin/develop
-      #execute git pull
-      #execute cd ..
+    else
+      execute cd Trilinos
+      execute git checkout develop
+      execute git reset --hard origin/develop
+      execute git pull
+      execute cd ..
     fi
     
     if [ -d Trilinos/packages/krino ] ; then
@@ -69,14 +69,31 @@ function build_trilinos_with_krino()
     fi
     if [ ! -L Trilinos/packages/krino ] ; then
       execute ln -s ${sierra_proj}/krino Trilinos/packages
-    fi
+    fi   
+}
 
+function build_trilinos_with_krino()
+{
+    productName=trilinos
+
+    execute cd ${output_dir}/${productName}
+    
     rm -rf ${productName}_install
     cd_to_new_dir ${productName}_build
 
     export TRILINOS_INSTALL_DIR=../${productName}_install
-    $sierra_proj/krino/cmake_install_test/run_cmake_krino
+    execute $sierra_proj/krino/cmake_install_test/run_cmake_krino_pull_request
     make_and_install $productName    
+}
+
+
+function setup_environment()
+{
+    source ${output_dir}/trilinos/Trilinos/cmake/std/sems/PullRequestGCC7.2.0TestingEnv.sh
+
+    # fixup for python 2
+    module unload sems-python/3.5.2
+    module load sems-python/2.7.9 
 }
 
 function runTests()
@@ -93,16 +110,17 @@ cuda_on_or_off=${CUDA:-OFF}
 build_type=${CMAKE_BUILD_TYPE:-release}
 date_suffix=`date +%F_%H-%M-%S`
 
-source $sierra_proj/krino/cmake_install_test/load_gcc_modules
-
 if [ ! -d ${output_dir} ] ; then
   execute mkdir ${output_dir}
 fi
 
+setup_trilinos_with_krino
+setup_environment
+
+build_trilinos_with_krino
 build_yaml
 build_trilinos_with_krino
 
 #runTests morph/morph_build "Morph"
 #runTests morph_and_sgm/morph_and_sgm_build "Morph and SGM"
 #runTests morphWithExe/morphWithExe_build "MorphWithExe"
-

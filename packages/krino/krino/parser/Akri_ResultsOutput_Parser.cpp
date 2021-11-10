@@ -11,22 +11,22 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Region.hpp>
 #include <Akri_ResultsOutputOptions.hpp>
-#include <Akri_YAML_Parser.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
+#include "Akri_Parser.hpp"
 
 namespace krino {
 
 void
-ResultsOutput_Parser::parse(const YAML::Node & region_node, Region & region)
+ResultsOutput_Parser::parse(const Parser::Node & region_node, Region & region)
 {
-  const YAML::Node results_node = YAML_Parser::get_map_if_present(region_node, "output");
+  const Parser::Node results_node = region_node.get_map_if_present("output");
   if ( results_node )
   {
     ResultsOutputOptions * options = region.get_results_options();
 
     std::string results_database_name;
-    if (YAML_Parser::get_if_present(results_node, "database_name", results_database_name))
+    if (results_node.get_if_present("database_name", results_database_name))
     {
       options->set_filename(results_database_name);
     }
@@ -36,31 +36,31 @@ ResultsOutput_Parser::parse(const YAML::Node & region_node, Region & region)
     }
 
     std::string results_title;
-    if (YAML_Parser::get_if_present(results_node, "title", results_title))
+    if (results_node.get_if_present("title", results_title))
     {
       options->set_title(results_title);
     }
 
     bool compose_results;
-    if (YAML_Parser::get_if_present(results_node, "compose_results", compose_results))
+    if (results_node.get_if_present("compose_results", compose_results))
     {
       if (compose_results) options->add_property(Ioss::Property("COMPOSE_RESULTS", 1));
     }
 
     int output_frequency = 1;
-    if (YAML_Parser::get_if_present(results_node, "output_frequency", output_frequency))
+    if (results_node.get_if_present("output_frequency", output_frequency))
     {
       options->add_step_increment(0, output_frequency);
     }
 
-    const YAML::Node nodal_variable_nodes = YAML_Parser::get_sequence_if_present(results_node, "nodal_variables");
+    const Parser::Node nodal_variable_nodes = results_node.get_sequence_if_present("nodal_variables");
     for ( auto && variable_node : nodal_variable_nodes )
     {
       const std::string field_name = variable_node.as<std::string>();
       options->add_nodal_field(field_name, field_name);
     }
 
-    const YAML::Node element_variable_nodes = YAML_Parser::get_sequence_if_present(results_node, "element_variables");
+    const Parser::Node element_variable_nodes = results_node.get_sequence_if_present("element_variables");
     for ( auto && variable_node : element_variable_nodes )
     {
       const std::string field_name = variable_node.as<std::string>();
@@ -68,5 +68,6 @@ ResultsOutput_Parser::parse(const YAML::Node & region_node, Region & region)
     }
   }
 }
+
 
 } // namespace krino

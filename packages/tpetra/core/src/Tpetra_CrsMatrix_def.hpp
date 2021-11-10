@@ -1307,9 +1307,20 @@ namespace Tpetra {
         "Caught exception while calling graph->getNodePackedIndices(): "
         << e.what ());
     }
+
+    // UVM REMOVAL:  10/21
+    // This function originally returned unpacked values.  But ...
+    // (1) it was used in tandem with getNodePackedIndices, which intends
+    //     to return packed indices;
+    // (2) unpacked values are not useful without a count of number
+    //     of valid indices in the row, which is not provided by this function;
+    // (3) in most cases, graphs are storageOptimized, so packed and unpacked
+    //     row pointers are the same.
+    // To match getNodePackedIndices, we change this function to return 
+    // packed values
     Teuchos::ArrayRCP<const impl_scalar_type> vals =
 //      Kokkos::Compat::persistingView (k_values1D_);
-      Kokkos::Compat::persistingView (valuesUnpacked_wdv.getHostView(Access::ReadOnly));
+      Kokkos::Compat::persistingView (valuesPacked_wdv.getHostView(Access::ReadOnly));
     values = Teuchos::arcp_reinterpret_cast<const Scalar> (vals);
   }
 
@@ -1324,7 +1335,7 @@ namespace Tpetra {
       relevantGraph.is_null (), std::runtime_error,
       "Requires that getCrsGraph() is not null.");
     Teuchos::ArrayRCP<impl_scalar_type> vals =
-      Kokkos::Compat::persistingView (k_values1D_);
+      Kokkos::Compat::persistingView (valuesPacked_wdv.getHostView(Access::ReadWrite));
     values = Teuchos::arcp_reinterpret_cast<Scalar> (vals);
   }
 

@@ -11,45 +11,45 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_LevelSet.hpp>
 #include <Akri_Phase_Support.hpp>
-#include <Akri_YAML_Parser.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
+#include "Akri_Parser.hpp"
 
 namespace krino {
 
 void
-Phase_Parser::parse(const YAML::Node & fem_node, const std::string & fem_model_name)
+Phase_Parser::parse(const Parser::Node & fem_node, const std::string & fem_model_name)
 {
   PhaseVec & mesh_phases = Phase_Support::get_phases(fem_model_name);
 
-  const YAML::Node subdom_nodes = YAML_Parser::get_sequence_if_present(fem_node, "subdomains");
+  const Parser::Node subdom_nodes = fem_node.get_sequence_if_present("subdomains");
 
   if (subdom_nodes)
   {
     for ( auto && subdom_node : subdom_nodes )
     {
       std::string subdom_name;
-      YAML_Parser::get_if_present(subdom_node, "name", subdom_name);
+      subdom_node.get_if_present("name", subdom_name);
       if (subdom_name.empty())
       {
         stk::RuntimeDoomedAdHoc() << "Missing subdomain name in finite element model " << fem_model_name;
       }
       mesh_phases.push_back(NamedPhase(subdom_name));
 
-      const YAML::Node where_nodes = YAML_Parser::get_sequence_if_present(subdom_node, "level_set_regions");
+      const Parser::Node where_nodes = subdom_node.get_sequence_if_present("level_set_regions");
 
       if (where_nodes)
       {
         for ( auto && where_node : where_nodes )
         {
           std::string negative_ls_name;
-          if (YAML_Parser::get_if_present(where_node, "negative_level_set", negative_ls_name))
+          if (where_node.get_if_present("negative_level_set", negative_ls_name))
           {
             mesh_phases.back().tag().add(LevelSet::get_identifier(negative_ls_name),-1);
           }
 
           std::string positive_ls_name;
-          if (YAML_Parser::get_if_present(where_node, "positive_level_set", positive_ls_name))
+          if (where_node.get_if_present("positive_level_set", positive_ls_name))
           {
             mesh_phases.back().tag().add(LevelSet::get_identifier(positive_ls_name),+1);
           }
@@ -57,7 +57,7 @@ Phase_Parser::parse(const YAML::Node & fem_node, const std::string & fem_model_n
       }
 
       std::string smallest_ls_name;
-      if (YAML_Parser::get_if_present(subdom_node, "smallest_level_set", smallest_ls_name))
+      if (subdom_node.get_if_present("smallest_level_set", smallest_ls_name))
       {
         if ( where_nodes )
         {
@@ -69,7 +69,7 @@ Phase_Parser::parse(const YAML::Node & fem_node, const std::string & fem_model_n
     }
   }
 
-  const YAML::Node part_nodes = YAML_Parser::get_sequence_if_present(fem_node, "parts");
+  const Parser::Node part_nodes = fem_node.get_sequence_if_present("parts");
 
   if (part_nodes)
   {
@@ -78,13 +78,13 @@ Phase_Parser::parse(const YAML::Node & fem_node, const std::string & fem_model_n
     for ( auto && part_node : part_nodes )
     {
       std::string part_name;
-      YAML_Parser::get_if_present(part_node, "name", part_name);
+      part_node.get_if_present("name", part_name);
       if (part_name.empty())
       {
         stk::RuntimeDoomedAdHoc() << "Missing part name in finite element model " << fem_model_name;
       }
 
-      const YAML::Node part_subdom_nodes = YAML_Parser::get_sequence_if_present(part_node, "subdomains");
+      const Parser::Node part_subdom_nodes = part_node.get_sequence_if_present("subdomains");
       if (part_subdom_nodes)
       {
         std::vector<std::string> & block_phase_names = FEmodel_block_phase_names[part_name];

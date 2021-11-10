@@ -1,193 +1,21 @@
-#include "gtest/gtest.h"
-#include "mpi.h"
-#include <string>
-#include <vector>
-#include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_io/IossBridge.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Field.hpp>  // for Field
+#include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/MetaData.hpp>  // for MetaData, put_field, etc
+#include <stk_unit_test_utils/GetMeshSpec.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
-#include <stk_unit_test_utils/GetMeshSpec.hpp>
+#include <stk_unit_test_utils/TextMeshFixture.hpp>
+#include <string>
+#include <vector>
 
-namespace {
+#include "gtest/gtest.h"
+#include "mpi.h"
 
-class TextMeshFixture : public stk::unit_test_util::MeshFixture
+namespace
 {
-protected:
-  TextMeshFixture(unsigned spatialDim) : stk::unit_test_util::MeshFixture(spatialDim)
-  { }
-
-  void verify_shared_nodes(const stk::mesh::EntityIdVector& nodeIds, int sharingProc)
-  {
-    std::vector<size_t> counts;
-    stk::mesh::count_entities(get_meta().globally_shared_part(), get_bulk(), counts);
-    EXPECT_EQ(nodeIds.size(), counts[stk::topology::NODE_RANK]);
-
-    for (stk::mesh::EntityId nodeId : nodeIds) {
-      EXPECT_TRUE(get_bulk().in_shared(stk::mesh::EntityKey(stk::topology::NODE_RANK, nodeId), sharingProc));
-    }
-  }
-
-  void verify_num_elements(size_t goldCount)
-  {
-    std::vector<size_t> counts;
-    stk::mesh::count_entities(get_meta().universal_part(), get_bulk(), counts);
-    EXPECT_EQ(goldCount, counts[stk::topology::ELEM_RANK]);
-  }
-
-  void verify_single_element(stk::mesh::EntityId elemId,
-                             stk::topology topology,
-                             const stk::mesh::EntityIdVector& nodeIds)
-  {
-    stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
-    EXPECT_TRUE(get_bulk().is_valid(element));
-    EXPECT_EQ(topology, get_bulk().bucket(element).topology());
-    verify_nodes_on_element(element, nodeIds);
-  }
-
-  struct PartInfo
-  {
-    std::string blockName;
-    std::set<stk::mesh::EntityId> ids;
-  };
-
-  void verify_part_membership(const std::vector<PartInfo> golds)
-  {
-    for (const PartInfo& gold : golds) {
-      stk::mesh::Part* blockPart = get_meta().get_part(gold.blockName);
-
-      verify_part(blockPart);
-      verify_elements_on_part(blockPart, gold.ids);
-    }
-  }
-
-  using PartNameId = std::pair<std::string, unsigned>;
-
-  void verify_part_ids(const std::vector<PartNameId>& golds)
-  {
-    for (const PartNameId& gold : golds) {
-      stk::mesh::Part* blockPart = get_meta().get_part(gold.first);
-
-      verify_part(blockPart);
-      EXPECT_EQ(blockPart->id(), gold.second);
-    }
-  }
-
-  void verify_coordinates(const stk::mesh::EntityIdVector& goldNodeIds, const std::vector<double>& goldCoordinates)
-  {
-    CoordinateVerifier cv(get_bulk(), goldNodeIds, goldCoordinates);
-    cv.verify();
-  }
-
-private:
-  void verify_nodes_on_element(stk::mesh::Entity element, const stk::mesh::EntityIdVector& goldNodeIds)
-  {
-    stk::mesh::EntityVector nodes(get_bulk().begin_nodes(element), get_bulk().end_nodes(element));
-    EXPECT_EQ(goldNodeIds, get_node_ids(nodes));
-  }
-
-  stk::mesh::EntityIdVector get_node_ids(const stk::mesh::EntityVector& nodes)
-  {
-    stk::mesh::EntityIdVector nodeIds;
-    for(const stk::mesh::Entity& node : nodes) {
-      nodeIds.emplace_back(get_bulk().identifier(node));
-    }
-    return nodeIds;
-  }
-
-  void verify_part(stk::mesh::Part* blockPart)
-  {
-    ASSERT_TRUE(blockPart != nullptr);
-    EXPECT_TRUE(stk::io::is_part_io_part(*blockPart));
-  }
-
-  void verify_elements_on_part(stk::mesh::Part* blockPart, const std::set<stk::mesh::EntityId>& goldIds)
-  {
-    stk::mesh::EntityVector elems;
-    stk::mesh::get_selected_entities(*blockPart, get_bulk().buckets(stk::topology::ELEM_RANK), elems);
-
-    ASSERT_EQ(goldIds.size(), elems.size());
-    for (const stk::mesh::Entity& elem : elems) {
-      stk::mesh::EntityId elemId = get_bulk().identifier(elem);
-      EXPECT_EQ(1u, goldIds.count(elemId));
-    }
-  }
-
-  class CoordinateVerifier
-  {
-  public:
-    CoordinateVerifier(const stk::mesh::BulkData& b,
-                       const stk::mesh::EntityIdVector& ids,
-                       const std::vector<double>& coords)
-      : bulk(b), meta(bulk.mesh_meta_data()),
-        spatialDim(meta.spatial_dimension()),
-        goldNodeIds(ids), goldCoordinates(coords)
-    { }
-
-    void verify()
-    {
-      verify_num_nodes();
-
-      for(size_t nodeIndex=0; nodeIndex<goldNodeIds.size(); nodeIndex++) {
-        stk::mesh::EntityId nodeId = goldNodeIds[nodeIndex];
-        EXPECT_TRUE(bulk.is_valid(get_node(nodeId)));
-
-        const double* nodalCoords = get_nodal_coordinates(nodeId);
-        const double* goldCoords = &goldCoordinates[nodeIndex*spatialDim];
-
-        verify_nodal_coordinates(nodeId, goldCoords, nodalCoords);
-      }
-    }
-
-  private:
-    void verify_num_nodes()
-    {
-      stk::mesh::EntityVector nodes;
-      stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
-      EXPECT_EQ(goldNodeIds.size(), nodes.size());
-    }
-
-    const double* get_nodal_coordinates(const stk::mesh::EntityId& nodeId)
-    {
-      const stk::mesh::CoordinatesField& coordsField =
-          static_cast<const stk::mesh::CoordinatesField&>(*meta.coordinate_field());
-      return stk::mesh::field_data(coordsField, get_node(nodeId));
-    }
-
-    const stk::mesh::Entity get_node(const stk::mesh::EntityId& nodeId)
-    {
-      return bulk.get_entity(stk::topology::NODE_RANK, nodeId);
-    }
-
-    void verify_nodal_coordinates(const stk::mesh::EntityId& nodeId,
-                                  const double* goldCoords,
-                                  const double* nodalCoords)
-    {
-      for (unsigned i=0; i<spatialDim; i++) {
-        EXPECT_NEAR(goldCoords[i], nodalCoords[i], 1.0e-9) << error_message(nodeId, i);
-      }
-    }
-
-    std::string error_message(const stk::mesh::EntityId& nodeId, unsigned coordIndex)
-    {
-      std::stringstream message;
-      message << "Proc " << bulk.parallel_rank() << ", Node ID " << nodeId << ", coord index " << coordIndex;
-      return message.str();
-    }
-
-    const stk::mesh::BulkData& bulk;
-    const stk::mesh::MetaData& meta;
-
-    const unsigned spatialDim;
-
-    const stk::mesh::EntityIdVector& goldNodeIds;
-    const std::vector<double>& goldCoordinates;
-  };
-};
-
-class TestTextMesh : public TextMeshFixture
+class TestTextMesh : public stk::unit_test_util::TextMeshFixture
 {
 protected:
   TestTextMesh() : TextMeshFixture(3)
@@ -773,9 +601,33 @@ TEST_F(TestTextMesh, tooManyCoordinates)
   EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates), std::logic_error);
 }
 
-TEST_F(TestTextMesh, tooLittleData)
+TEST_F(TestTextMesh, tooLittleData_empty)
+{
+  std::string meshDesc = "";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, tooLittleData_startsWithString)
+{
+  std::string meshDesc = "hi";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, tooLittleData_noGlobalId)
+{
+  std::string meshDesc = "0 ";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, tooLittleData_noTopology)
 {
   std::string meshDesc = "0,1,";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, tooLittleData_noNodes)
+{
+  std::string meshDesc = "0,1,HEX_8";
   EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
 }
 
@@ -827,6 +679,18 @@ TEST_F(TestTextMesh, spatialDimInconsistentWithMetaDataWithCoordinates)
   EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates), std::logic_error);
 }
 
+TEST_F(TestTextMesh, endingWithNewlineIsOk)
+{
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n";
+  EXPECT_NO_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc));
+}
+
+TEST_F(TestTextMesh, stringAfterPartNameIsError)
+{
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1,bogus\n";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
 TEST_F(TestTextMesh, particleHex)
 {
   if (get_parallel_size() != 1) return;
@@ -855,7 +719,7 @@ TEST_F(TestTextMesh, particleHexWithCoordinates)
   verify_coordinates(stk::mesh::EntityIdVector{1,2,3,4,5,6,7,8,9}, coordinates);
 }
 
-class TestTextMeshAura : public TextMeshFixture
+class TestTextMeshAura : public stk::unit_test_util::TextMeshFixture
 {
 protected:
   TestTextMeshAura() : TextMeshFixture(3)
@@ -893,7 +757,7 @@ TEST_F(TestTextMeshAura, twoQuadShellWithCoordinates)
   if (rank == 1) verify_shared_nodes(stk::mesh::EntityIdVector{2,5}, 0);
 }
 
-class TestTextMesh2d : public TextMeshFixture
+class TestTextMesh2d : public stk::unit_test_util::TextMeshFixture
 {
 protected:
   TestTextMesh2d() : TextMeshFixture(2)
@@ -1008,7 +872,7 @@ TEST_F(TestTextMesh2d, twoQuadOneShellParallel)
   }
 }
 
-class TestTextMesh1d : public TextMeshFixture
+class TestTextMesh1d : public stk::unit_test_util::TextMeshFixture
 {
 protected:
   TestTextMesh1d() : TextMeshFixture(1)
@@ -1053,4 +917,4 @@ TEST(GetMeshSpecTest, TestGetMeshSpecWithMultiProc)
   test_get_mesh_spec(blockCountToDist, numProcs, expectedDist);
 }
 
-} // namespace
+}  // namespace

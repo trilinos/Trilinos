@@ -12,22 +12,22 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_MeshInputOptions.hpp>
 #include <Akri_Phase_Parser.hpp>
-#include <Akri_YAML_Parser.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
+#include "Akri_Parser.hpp"
 
 namespace krino {
 
 void
-MeshInput_Parser::parse(const YAML::Node & base_node)
+MeshInput_Parser::parse(const Parser::Node & base_node)
 {
-  const YAML::Node fem_nodes = YAML_Parser::get_sequence_if_present(base_node, "finite_element_models");
+  const Parser::Node fem_nodes = base_node.get_sequence_if_present("finite_element_models");
   if (!fem_nodes) return;
 
   for ( auto && fem_node : fem_nodes )
   {
     std::string model_name;
-    YAML_Parser::get_if_present(fem_node, "name", model_name);
+    fem_node.get_if_present("name", model_name);
     if (model_name.empty())
     {
       stk::RuntimeDoomedAdHoc() << "Missing finite element model name.\n";
@@ -37,7 +37,7 @@ MeshInput_Parser::parse(const YAML::Node & base_node)
     const bool has_generated_mesh = parse_generated_mesh(fem_node, *options);
 
     std::string mesh_name;
-    YAML_Parser::get_if_present(fem_node, "mesh", mesh_name);
+    fem_node.get_if_present("mesh", mesh_name);
     if (!mesh_name.empty() && !has_generated_mesh)
     {
       options->set_filename(mesh_name);
@@ -48,7 +48,7 @@ MeshInput_Parser::parse(const YAML::Node & base_node)
     }
 
     std::string decomposition_method;
-    if (YAML_Parser::get_if_present(fem_node, "decomposition_method", decomposition_method))
+    if (fem_node.get_if_present("decomposition_method", decomposition_method))
     {
       // no checking here for validity
       std::transform(decomposition_method.begin(), decomposition_method.end(), decomposition_method.begin(), ::toupper);
@@ -60,20 +60,20 @@ MeshInput_Parser::parse(const YAML::Node & base_node)
 }
 
 bool
-MeshInput_Parser::parse_generated_mesh(const YAML::Node & fem_node, MeshInputOptions & options)
+MeshInput_Parser::parse_generated_mesh(const Parser::Node & fem_node, MeshInputOptions & options)
 {
-  const YAML::Node generated_mesh_node = YAML_Parser::get_map_if_present(fem_node, "generated_mesh");
+  const Parser::Node generated_mesh_node = fem_node.get_map_if_present("generated_mesh");
   if (!generated_mesh_node) return false;
 
   double mesh_size = 0.0;
-  if (!YAML_Parser::get_if_present(generated_mesh_node, "mesh_size", mesh_size) || mesh_size < 0.0)
+  if (!generated_mesh_node.get_if_present("mesh_size", mesh_size) || mesh_size < 0.0)
   {
     stk::RuntimeDoomedAdHoc() << "Missing or invalid mesh_size for generated_mesh.\n";
   }
   options.set_generated_mesh_size(mesh_size);
 
   std::vector<double> domain;
-  if (YAML_Parser::get_if_present(generated_mesh_node, "domain", domain))
+  if (generated_mesh_node.get_if_present("domain", domain))
   {
     if (options.get_generated_mesh_domain_type() != MeshInputOptions::NO_GENERATED_MESH)
     {
@@ -88,7 +88,7 @@ MeshInput_Parser::parse_generated_mesh(const YAML::Node & fem_node, MeshInputOpt
   }
 
   int interface_spatial_dim = 0;
-  if (YAML_Parser::get_if_present(generated_mesh_node, "interface_bounding_box_with_dimension", interface_spatial_dim))
+  if (generated_mesh_node.get_if_present("interface_bounding_box_with_dimension", interface_spatial_dim))
   {
     if (options.get_generated_mesh_domain_type() != MeshInputOptions::NO_GENERATED_MESH)
     {
@@ -106,7 +106,7 @@ MeshInput_Parser::parse_generated_mesh(const YAML::Node & fem_node, MeshInputOpt
   }
 
   std::string generated_mesh_element_type_string;
-  if (YAML_Parser::get_if_present(generated_mesh_node, "element_type", generated_mesh_element_type_string))
+  if (generated_mesh_node.get_if_present("element_type", generated_mesh_element_type_string))
   {
     std::transform(generated_mesh_element_type_string.begin(), generated_mesh_element_type_string.end(), generated_mesh_element_type_string.begin(), ::toupper);
     static std::map<std::string, stk::topology> valid_entries =
@@ -121,7 +121,7 @@ MeshInput_Parser::parse_generated_mesh(const YAML::Node & fem_node, MeshInputOpt
     auto it = valid_entries.find(generated_mesh_element_type_string);
     if (it == valid_entries.end())
     {
-      stk::RuntimeDoomedAdHoc() << "Invalid cdfem_simplex_generation_method type: " << YAML_Parser::info(generated_mesh_node);
+      stk::RuntimeDoomedAdHoc() << "Invalid cdfem_simplex_generation_method type: " << generated_mesh_node.info();
     }
     else
     {
@@ -142,7 +142,7 @@ MeshInput_Parser::parse_generated_mesh(const YAML::Node & fem_node, MeshInputOpt
   }
 
   std::string generated_mesh_type_string;
-  if (YAML_Parser::get_if_present(generated_mesh_node, "mesh_type", generated_mesh_type_string))
+  if (generated_mesh_node.get_if_present("mesh_type", generated_mesh_type_string))
   {
     std::transform(generated_mesh_type_string.begin(), generated_mesh_type_string.end(), generated_mesh_type_string.begin(), ::toupper);
     static std::map<std::string, BoundingBoxMeshStructureType> valid_entries =
@@ -154,7 +154,7 @@ MeshInput_Parser::parse_generated_mesh(const YAML::Node & fem_node, MeshInputOpt
     auto it = valid_entries.find(generated_mesh_type_string);
     if (it == valid_entries.end())
     {
-      stk::RuntimeDoomedAdHoc() << "Invalid mesh_type: " << YAML_Parser::info(generated_mesh_node);
+      stk::RuntimeDoomedAdHoc() << "Invalid mesh_type: " << generated_mesh_node.info();
     }
     else
     {

@@ -146,8 +146,8 @@ void triangle_enumerate(
 
     typename clno_row_view_t_::value_type c_nnz_size = handle->get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
-      entriesC1 = clno_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      //entriesC2 = clno_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      entriesC1 = clno_nnz_view_t_ (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+      //entriesC2 = clno_nnz_view_t_ (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
     }
   }
 
@@ -236,7 +236,7 @@ void triangle_generic(
   using namespace KokkosSparse;
 
   spgemmHandleType *sh = handle->get_spgemm_handle();
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
 
   //////SORT BASE ON THE SIZE OF ROWS/////
   int sort_lower_triangle = sh->get_sort_lower_triangular();
@@ -255,7 +255,7 @@ void triangle_generic(
   if (should_i_sort){
 
     if(sh->get_lower_triangular_permutation().data() == NULL){
-      nnz_lno_persistent_work_view_t new_indices(Kokkos::ViewAllocateWithoutInitializing("new_indices"), m);
+      nnz_lno_persistent_work_view_t new_indices(Kokkos::view_alloc(Kokkos::WithoutInitializing, "new_indices"), m);
       int sort_decreasing_order = 1;
       ////If true we place the largest row to top, so that largest row size will be minimized in lower triangle.
       if (sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_AI || sh->get_algorithm_type() == SPGEMM_KK_TRIANGLE_LU){

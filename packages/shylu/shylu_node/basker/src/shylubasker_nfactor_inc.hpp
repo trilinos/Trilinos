@@ -18,7 +18,7 @@
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #else
 #include <omp.h>
 #endif
@@ -55,7 +55,7 @@ namespace BaskerNS
 
     //====TIMER==
     #ifdef BASKER_TIME
-    //Kokkos::Impl::Timer       timer;
+    //Kokkos::Timer       timer;
     #endif
     //===TIMER===
 
@@ -158,7 +158,7 @@ namespace BaskerNS
 	  }
 
 	#ifdef BASKER_KOKKOS
-	//Kokkos::Impl::Timer  timer_inner_sep;
+	//Kokkos::Timer  timer_inner_sep;
 	#ifdef BASKER_NO_LAMBDA
 	
 	kokkos_nfactor_sep2_inc_lvl <Int, Entry, Exe_Space>
@@ -240,7 +240,7 @@ namespace BaskerNS
       {
 	//=====Timer
 	#ifdef BASKER_TIME
-	//Kokkos::Impl::Timer  timer_btf;
+	//Kokkos::Timer  timer_btf;
 	#endif
 	//====Timer
 	

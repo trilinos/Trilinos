@@ -941,10 +941,38 @@ void field_fill(const Scalar alpha, const FieldBase& xField, const Selector& sel
 
 template<class Scalar>
 inline
+void field_fill(const Scalar alpha, const std::vector<const FieldBase*>& xFields, const Selector& selector)
+{
+    ThrowAssert(xFields.size() >= 1 );
+
+    stk::mesh::EntityRank fieldEntityRank = xFields[0]->entity_rank();
+    BucketVector const& buckets = xFields[0]->get_mesh().get_buckets(fieldEntityRank,selector);
+
+    for (auto&& bucket : buckets){
+        for (unsigned int i=0; i<xFields.size(); ++i){
+            const FieldBase& xField = *xFields[i];
+            ThrowAssert( is_compatible<Scalar>(xField) );
+            ThrowAssert(fieldEntityRank == xField.entity_rank());
+            BucketSpan<Scalar> x(xField, *bucket);
+            FortranBLAS<Scalar>::fill(x.size(),alpha,x.data());
+        }
+    }
+}
+
+template<class Scalar>
+inline
 void field_fill(const Scalar alpha, const FieldBase& xField)
 {
     const Selector selector = selectField(xField);
     field_fill(alpha,xField,selector);
+}
+
+template<class Scalar>
+inline
+void field_fill(const Scalar alpha, const std::vector<const FieldBase*>& xFields)
+{
+    const Selector selector = selectField(*xFields[0]);
+    field_fill(alpha,xFields,selector);
 }
 
 template<class Scalar>

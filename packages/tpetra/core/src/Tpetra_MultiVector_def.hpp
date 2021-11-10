@@ -2741,22 +2741,6 @@ namespace Tpetra {
     // was replaced with a Map with fewer processes, and finally the
     // original Map was restored on this call to replaceMap.
 
-#ifdef HAVE_TEUCHOS_DEBUG
-    // mfh 28 Mar 2013: We can't check for compatibility across the
-    // whole communicator, unless we know that the current and new
-    // Maps are nonnull on _all_ participating processes.
-    // TEUCHOS_TEST_FOR_EXCEPTION(
-    //   origNumProcs == newNumProcs && ! this->getMap ()->isCompatible (*map),
-    //   std::invalid_argument, "Tpetra::MultiVector::project: "
-    //   "If the input Map's communicator is compatible (has the same number of "
-    //   "processes as) the current Map's communicator, then the two Maps must be "
-    //   "compatible.  The replaceMap() method is not for data redistribution; "
-    //   "use Import or Export for that purpose.");
-
-    // TODO (mfh 28 Mar 2013) Add compatibility checks for projections
-    // of the Map, in case the process counts don't match.
-#endif // HAVE_TEUCHOS_DEBUG
-
     if (this->getMap ().is_null ()) { // current Map is null
       // If this->getMap() is null, that means that this MultiVector
       // has already had replaceMap happen to it.  In that case, just

@@ -64,6 +64,7 @@
 #define DEFAULT_USE_AUTO 0
 #define DEFAULT_BATCH_SIZE_LAST_DIM 0
 #define DEFAULT_VERIFY 1
+#define DEFAULT_NINTER 4
 
 /************************ blas routine structure definitions **********/
 struct perf_test_trmm_args {
@@ -138,6 +139,7 @@ static std::string loop_e_str[LOOP_N] = {"serial", "parallel"};
  */
 typedef enum TEST {
   BLAS,
+  BATCHED_HEURISTIC,
   BATCHED_SERIAL,
   BATCHED_SERIAL_BLOCKED,
   BATCHED_SERIAL_SIMD,
@@ -155,10 +157,10 @@ typedef enum TEST {
 } test_e;
 
 static std::string test_e_str[TEST_N]{
-    "blas", "batched_serial", "batched_serial_blocked", "batched_serial_simd",
-    "batched_serial_simd_blocked", "batched_serial_compact_mkl", "batched_team",
-    "batched_team_blocked", "batched_team_vector",
-    "batched_team_vector_blocked", "batched_team_simd",
+    "blas", "batched_heuristic", "batched_serial", "batched_serial_blocked",
+    "batched_serial_simd", "batched_serial_simd_blocked",
+    "batched_serial_compact_mkl", "batched_team", "batched_team_blocked",
+    "batched_team_vector", "batched_team_vector_blocked", "batched_team_simd",
     "batched_team_simd_blocked",
     // ADD MORE TEST TYPES HERE
     "experiment"};
@@ -195,6 +197,7 @@ typedef struct matrix_dims matrix_dims_t;
  * @var blas_routines: Selects which supported blas routines to test.
  * @var verify:        Performs verification of the blas routine for each input
  *                     before timing it.
+ * @var ninter:        The number of interleaved matrices for armpl.
  */
 struct perf_test_options {
   test_e test;
@@ -209,6 +212,7 @@ struct perf_test_options {
   blas_args_t blas_args;
   std::string blas_routines;
   bool verify;
+  int ninter;
 };
 typedef struct perf_test_options options_t;
 

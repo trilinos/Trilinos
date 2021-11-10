@@ -11,34 +11,34 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Simulation.hpp>
 #include <Akri_Region_Parser.hpp>
-#include <Akri_YAML_Parser.hpp>
+#include <Akri_Parser.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
 
 namespace krino {
 
 void
-Simulation_Parser::parse(const YAML::Node & node)
+Simulation_Parser::parse(const Parser::Node & node)
 {
-  const YAML::Node sim_node = YAML_Parser::get_map_if_present(node, "simulation");
+  const Parser::Node sim_node = node.get_map_if_present("simulation");
   if ( sim_node )
   {
     Simulation & simulation = Simulation::build("krino simulation");
 
     double start_time = 0.0;
-    if (YAML_Parser::get_if_present(sim_node, "start_time", start_time))
+    if (sim_node.get_if_present("start_time", start_time))
     {
       simulation.set_current_time(start_time);
     }
 
     double stop_time = 0.0;
-    if (YAML_Parser::get_if_present(sim_node, "stop_time", stop_time))
+    if (sim_node.get_if_present("stop_time", stop_time))
     {
       simulation.set_stop_time(stop_time);
     }
 
     double time_step = 0.0;
-    if (YAML_Parser::get_if_present(sim_node, "time_step", time_step))
+    if (sim_node.get_if_present("time_step", time_step))
     {
       simulation.set_time_step(time_step);
     }

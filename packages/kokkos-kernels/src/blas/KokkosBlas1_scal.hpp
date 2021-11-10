@@ -78,27 +78,26 @@ scal (const RMV& R, const AV& a, const XMV& X)
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 
+  using UnifiedRLayout = typename
+    KokkosKernels::Impl::GetUnifiedLayout<RMV>::array_layout;
+  using UnifiedXLayout = typename
+    KokkosKernels::Impl::GetUnifiedLayoutPreferring<XMV, UnifiedRLayout>::array_layout;
+
   // Create unmanaged versions of the input Views.  RMV and XMV may be
   // rank 1 or rank 2.  AV may be either a rank-1 View, or a scalar
   // value.
   typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      RMV::rank == 1,
-      typename RMV::non_const_value_type*,
-      typename RMV::non_const_value_type** >::type,
-    typename KokkosKernels::Impl::GetUnifiedLayout<RMV>::array_layout,
+    typename RMV::non_const_data_type,
+    UnifiedRLayout,
     typename RMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RMV_Internal;
-  typedef typename KokkosKernels::Impl::GetUnifiedScalarViewType<
-    AV, XMV, true>::type AV_Internal;
   typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      XMV::rank == 1,
-      typename XMV::const_value_type*,
-      typename XMV::const_value_type** >::type,
-    typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
+    typename XMV::const_data_type,
+    UnifiedXLayout,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV_Internal;
+  typedef typename KokkosKernels::Impl::GetUnifiedScalarViewType<
+    AV, XMV_Internal, true>::type AV_Internal;
 
   RMV_Internal R_internal = R;
   AV_Internal  a_internal = a;

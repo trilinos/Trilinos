@@ -306,21 +306,6 @@ public:
     using offset_device_view_type =
           typename row_ptrs_device_view_type::non_const_type;
 
-
-//KDDKDD INROW    using local_inds_host_view_type = 
-//KDDKDD INROW          typename local_inds_dualv_type::t_host::const_type;
-
-//KDDKDD INROW    using global_inds_host_view_type = 
-//KDDKDD INROW          typename global_inds_dualv_type::t_host::const_type;
-
-    //! The Kokkos::View type for views of local ordinals on device
-//KDDKDD INROW    using local_inds_device_view_type = 
-//KDDKDD INROW          typename local_inds_dualv_type::t_dev::const_type;
-
-    //! The Kokkos::View type for views of global ordinals on device
-//KDDKDD INROW    using global_inds_device_view_type = 
-//KDDKDD INROW          typename global_inds_dualv_type::t_dev::const_type;
-
     //! @name Constructor/Destructor Methods
     //@{
 
@@ -2298,11 +2283,6 @@ public:
     // indices array.  (Karen is skeptical that !OptimizedStorage works)
     // When OptimizedStorage, rowPtrsUnpacked_ = k_rowPtrsPacked_
 
-//KDDKDD INROW    using row_ptrs_device_view_type = 
-//KDDKDD INROW          Kokkos::View<const typename local_graph_device_type::size_type *, 
-//KDDKDD INROW                       device_type> ;
-//KDDKDD INROW    using row_ptrs_host_view_type = 
-//KDDKDD INROW          typename row_ptrs_device_view_type::HostMirror::const_type;
     row_ptrs_device_view_type rowPtrsUnpacked_dev_;
     row_ptrs_host_view_type rowPtrsUnpacked_host_;
 
@@ -2329,9 +2309,8 @@ public:
     }
     
   
-//KDDKDD Make private -- matrix shouldn't access directly
     /// \brief Local ordinals of colum indices for all rows
-    /// KDDKDD UVM Removal:   Device view takes place of k_lclInds1D_
+    /// UVM REMOVAL:   Device view takes place of k_lclInds1D_
     /// Valid when isLocallyIndexed is true
     /// If OptimizedStorage, storage is PACKED after fillComplete
     /// If not OptimizedStorate, storage is UNPACKED after fillComplete; 
@@ -2342,10 +2321,12 @@ public:
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is locally indexed
+
+    // TODO: Make private -- matrix shouldn't access directly
     local_inds_wdv_type lclIndsUnpacked_wdv;
 
     /// \brief Local ordinals of colum indices for all rows
-    /// KDDKDD UVM Removal:   Device view takes place of lclGraph_.entries
+    /// UVM REMOVAL:   Device view takes place of lclGraph_.entries
     /// Valid when isLocallyIndexed is true
     /// Built during fillComplete or non-fillComplete constructors
     /// Storage is PACKED after fillComplete
@@ -2358,15 +2339,15 @@ public:
     ///   - The graph is locally indexed
     mutable local_inds_wdv_type lclIndsPacked_wdv;
 
-//KDDKDD Make private -- matrix shouldn't access directly
     /// \brief Global ordinals of column indices for all rows
-    /// KDDKDD UVM Removal:   Device view takes place of k_gblInds1D_
+    /// UVM REMOVAL:   Device view takes place of k_gblInds1D_
     ///
     /// This is allocated only if
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is globally indexed
 
+    // TODO: Make private -- matrix shouldn't access directly
     global_inds_wdv_type gblInds_wdv;
 
     /// \brief Get a const, locally indexed view of the

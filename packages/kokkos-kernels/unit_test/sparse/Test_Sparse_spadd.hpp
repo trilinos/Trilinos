@@ -100,7 +100,7 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
   handle.create_spadd_handle(sortRows);
   crsMat_t A = randomMatrix<crsMat_t, lno_t>(numRows, numCols, minNNZ, maxNNZ, sortRows);
   crsMat_t B = randomMatrix<crsMat_t, lno_t>(numRows, numCols, minNNZ, maxNNZ, sortRows);
-  row_map_type c_row_map(Kokkos::ViewAllocateWithoutInitializing("C row map"), numRows + 1);
+  row_map_type c_row_map(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C row map"), numRows + 1);
   //Make sure that nothing relies on any specific entry of c_row_map being zero initialized
   Kokkos::deep_copy(c_row_map, (size_type) 5);
   auto addHandle = handle.get_spadd_handle();
@@ -115,7 +115,7 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
   (&handle, A.graph.row_map, A.graph.entries, B.graph.row_map, B.graph.entries, c_row_map);
   size_type c_nnz = addHandle->get_c_nnz();
   //Fill values, entries with incorrect incorret
-  values_type c_values(Kokkos::ViewAllocateWithoutInitializing("C values"), c_nnz);
+  values_type c_values(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C values"), c_nnz);
   Kokkos::deep_copy(c_values, ((typename KAT::mag_type) 5) * KAT::one());
   entries_type c_entries("C entries", c_nnz);
   Kokkos::deep_copy(c_entries, (lno_t) 5);
@@ -192,12 +192,58 @@ void test_spadd(lno_t numRows, lno_t numCols, size_type minNNZ, size_type maxNNZ
   }
 }
 
+//Test spadd simplified interface: make sure C's dimensions match A and B, even when there are empty rows/cols
+template <typename scalar_t, typename lno_t, typename size_type, class Device>
+void test_spadd_known_columns()
+{
+  using crsMat_t = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type>;
+  using row_map_type = typename crsMat_t::row_map_type::non_const_type;
+  using entries_type = typename crsMat_t::index_type::non_const_type;
+  using values_type = typename crsMat_t::values_type::non_const_type;
+  using KAT = Kokkos::ArithTraits<scalar_t>;
+  using KernelHandle = typename KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t,
+        typename Device::execution_space, typename Device::memory_space, typename Device::memory_space>;
+  //Create A and B as 4x4 identity matrix, at the top-left of a 6x7 matrix of zeros
+  int nrows = 6;
+  int ncols = 7;
+  row_map_type Arowmap("rowmap", nrows + 1);
+  entries_type Aentries("rowmap", 4);
+  values_type Avalues("rowmap", 4);
+  {
+    auto rowmapHost = Kokkos::create_mirror_view(Arowmap);
+    auto entriesHost = Kokkos::create_mirror_view(Aentries);
+    auto valuesHost = Kokkos::create_mirror_view(Avalues);
+    for(int i = 0; i < 5; i++)
+      rowmapHost(i) = i;
+    for(int i = 5; i < nrows + 1; i++)
+      rowmapHost(i) = rowmapHost(i - 1);
+    for(int i = 0; i < 4; i++)
+    {
+      entriesHost(i) = i;
+      valuesHost(i) = KAT::one();
+    }
+    Kokkos::deep_copy(Arowmap, rowmapHost);
+    Kokkos::deep_copy(Aentries, entriesHost);
+    Kokkos::deep_copy(Avalues, valuesHost);
+  }
+  crsMat_t A("A", nrows, ncols, 4, Avalues, Arowmap, Aentries);
+  crsMat_t C;
+  KernelHandle kh;
+  kh.create_spadd_handle(true);
+  KokkosSparse::spadd_symbolic(&kh, A, A, C);
+  KokkosSparse::spadd_numeric(&kh, KAT::one(), A, KAT::one(), A, C);
+  ASSERT_EQ(nrows, C.numRows());
+  ASSERT_EQ(ncols, C.numCols());
+  ASSERT_EQ(A.nnz(), C.nnz());
+}
+
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory,sparse ## _ ## spadd_sorted_input ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 10, 0, 0, true); \
   test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 10, 0, 2, true); \
   test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (100, 100, 50, 100, true); \
   test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (50, 50, 75, 100, true); \
+  test_spadd_known_columns<SCALAR,ORDINAL,OFFSET,DEVICE> (); \
 } \
 TEST_F( TestCategory,sparse ## _ ## spadd_unsorted_input ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   test_spadd<SCALAR,ORDINAL,OFFSET,DEVICE> (10, 10, 0, 0, false); \
@@ -303,3 +349,4 @@ TEST_F( TestCategory,sparse ## _ ## spadd_unsorted_input ## _ ## SCALAR ## _ ## 
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
+#undef EXECUTE_TEST

@@ -50,7 +50,7 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas.hpp>
 #include <KokkosSparse_spmv.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include <WrapMPI.hpp>
 
@@ -113,8 +113,8 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
     norm_res  = sqrt( old_rdot );
     iteration = 0 ;
 
-    Kokkos::Impl::Timer wall_clock ;
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer wall_clock ;
+    Kokkos::Timer timer;
 
     while ( tolerance < norm_res && iteration < maximum_iteration ) {
 

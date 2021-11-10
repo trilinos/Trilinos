@@ -261,10 +261,13 @@ bool testAtomic(const TagType& tag, Teuchos::FancyOStream& out)
 
   // Create and fill view
   ViewType v;
+  ScalarViewType s0;
 #if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
-  v = ViewType ("view", num_rows);
+  v  = ViewType ("view", num_rows);
+  s0 = ScalarViewType ("");
 #else
-  v = ViewType ("view", num_rows, fad_size+1);
+  v  = ViewType ("view", num_rows, fad_size+1);
+  s0 = ScalarViewType ("", fad_size+1);
 #endif
   host_view_type h_v = Kokkos::create_mirror_view(v);
   for (size_type i=0; i<num_rows; ++i)
@@ -272,15 +275,16 @@ bool testAtomic(const TagType& tag, Teuchos::FancyOStream& out)
       generate_fad<FadType>(num_rows, size_type(1), fad_size, i, size_type(0));
   Kokkos::deep_copy(v, h_v);
 
+  Kokkos::deep_copy(s0, tag.init());
+
   // Create scalar view
   ScalarViewType s;
-  FadType s0 = FadType(fad_size,tag.init());
 #if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
   s = ScalarViewType ("scalar view");
 #else
   s = ScalarViewType ("scalar view", fad_size+1);
 #endif
-  Kokkos::deep_copy( s, s0 );
+  Kokkos::deep_copy( s, tag.init() );
 
   // Call atomic_add kernel, which adds up entries in v
   AtomicKernel<ViewType,ScalarViewType,OperFetch>::apply( tag, v, s );
@@ -290,12 +294,14 @@ bool testAtomic(const TagType& tag, Teuchos::FancyOStream& out)
   Kokkos::deep_copy(hs, s);
 
   // Compute correct result
-  FadType b = s0;
+  auto b = Kokkos::create_mirror_view(s0);
+  Kokkos::deep_copy(b, s0);
+
   for (size_type i=0; i<num_rows; ++i)
-    b = tag.apply(b, h_v(i));
+    b() = tag.apply(b(), h_v(i));
 
   // Check
-  bool success = checkFads(b, hs(), out);
+  bool success = checkFads(b(), hs(), out);
 
   return success;
 }
