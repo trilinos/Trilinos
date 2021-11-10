@@ -908,6 +908,13 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
     if (sendType_ == Details::DISTRIBUTOR_RSEND ||
         sendType_ == Details::DISTRIBUTOR_SSEND) {
       // User requested a deprecated send type; change it back to default
+#ifdef HAVE_TPETRA_DEBUG
+      if (comm_->getRank() == 0)
+        std::cout << "Tpetra send type " 
+                  << DistributorSendTypeEnumToString(sendType_)
+                  << " is deprecated; send type = Send will be used."
+                  << std::endl;
+#endif
       sendType_ = Details::DISTRIBUTOR_SEND;
     }
 #endif

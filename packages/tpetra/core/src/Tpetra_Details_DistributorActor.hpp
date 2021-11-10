@@ -360,6 +360,18 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     //     The "send buffer" code path
     //     doesn't currently work with nonblocking sends.
     // Now, we opt to just do the communication in a way that works.
+#ifdef HAVE_TPETRA_DEBUG
+    if (sendType != Details::DISTRIBUTOR_SEND) {
+      if (plan.getComm()->getRank() == 0)
+        std::cout << "The requested Tpetra send type " 
+                  << DistributorSendTypeEnumToString(sendType)
+                  << " requires Distributor data to be ordered by"
+                  << " the receiving processor rank.  Since these"
+                  << " data are not ordered, Tpetra will use Send"
+                  << " instead." << std::endl;
+    }
+#endif
+
     Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray",
         plan.getMaxSendLength() * numPackets);
 
@@ -636,6 +648,18 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     //     The "send buffer" code path
     //     doesn't currently work with nonblocking sends.
     // Now, we opt to just do the communication in a way that works.
+#ifdef HAVE_TPETRA_DEBUG
+    if (sendType != Details::DISTRIBUTOR_SEND) {
+      if (plan.getComm()->getRank() == 0)
+        std::cout << "The requested Tpetra send type " 
+                  << DistributorSendTypeEnumToString(sendType)
+                  << " requires Distributor data to be ordered by"
+                  << " the receiving processor rank.  Since these"
+                  << " data are not ordered, Tpetra will use Send"
+                  << " instead." << std::endl;
+    }
+#endif
+
     Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray", 
                                                         maxNumPackets);
 
