@@ -8,33 +8,17 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_TEST(
   ImportExport2_UnitTests
-  NAME ImportExport2_UnitTests_Send_NoBarrier
+  NAME ImportExport2_UnitTests_Send
   COMM serial mpi
-  ARGS "--distributor-send-type=Send --no-barrier-between --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+  ARGS "--distributor-send-type=Send --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
   STANDARD_PASS_OUTPUT
   )
 
 TRIBITS_ADD_TEST(
   ImportExport2_UnitTests
-  NAME ImportExport2_UnitTests_Send_Barrier
+  NAME ImportExport2_UnitTests_ISend
   COMM serial mpi
-  ARGS "--distributor-send-type=Send --barrier-between --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_TEST(
-  ImportExport2_UnitTests
-  NAME ImportExport2_UnitTests_ISend_NoBarrier
-  COMM serial mpi
-  ARGS "--distributor-send-type=Isend --no-barrier-between --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_TEST(
-  ImportExport2_UnitTests
-  NAME ImportExport2_UnitTests_ISend_Barrier
-  COMM serial mpi
-  ARGS "--distributor-send-type=Isend --barrier-between --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+  ARGS "--distributor-send-type=Isend --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
   STANDARD_PASS_OUTPUT
   )
 

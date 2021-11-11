@@ -186,7 +186,9 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   const bool doBarrier = plan.barrierBetweenRecvSend();
+#endif
 
   size_t selfReceiveOffset = 0;
 
@@ -263,6 +265,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     }
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   if (doBarrier) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3KV_barrier_);
@@ -270,6 +273,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
     plan.getComm()->barrier ();
   }
+#endif
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   Teuchos::TimeMonitor timeMonSends (*timer_doPosts3KV_sends_);
@@ -458,7 +462,9 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   const bool doBarrier = plan.barrierBetweenRecvSend();
+#endif
 
   const int myProcID = plan.getComm()->getRank ();
   size_t selfReceiveOffset = 0;
@@ -547,6 +553,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     }
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   if (doBarrier) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts4KV_barrier_);
@@ -554,6 +561,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
     plan.getComm()->barrier ();
   }
+#endif
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   Teuchos::TimeMonitor timeMonSends (*timer_doPosts4KV_sends_);

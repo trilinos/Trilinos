@@ -199,7 +199,9 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::setStringToIntegralParameter;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     const bool barrierBetween = Details::barrierBetween_default;
+#endif
     const bool useDistinctTags = Details::useDistinctTags_default;
     const bool debug = tpetraDistributorDebugDefault;
 
@@ -216,14 +218,14 @@ namespace Tpetra {
 #endif
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
-    plist->set ("Barrier between receives and sends", barrierBetween,
-                "Whether to execute a barrier between receives and sends in do"
-                "[Reverse]Posts().  "
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    plist->set ("Barrier between receives and sends", barrierBetween,
+                "(DEPRECATED) Whether to execute a barrier between receives and sends in do"
+                "[Reverse]Posts().  "
                 "Required for correctness when \"Send type\""
                 "=\"Rsend\", otherwise "
-#endif
                 "Correct but not recommended.");
+#endif
     setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
@@ -235,7 +237,7 @@ namespace Tpetra {
     plist->set ("Timer Label","","Label for Time Monitor output");
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    plist->set ("Enable MPI CUDA RDMA support", true, "Assume that MPI can "
+    plist->set ("Enable MPI CUDA RDMA support", true, "(DEPRECATED) Assume that MPI can "
                 "tell whether a pointer points to host memory or CUDA device "
                 "memory.  You don't need to specify this option any more; "
                 "Tpetra assumes it is always true.  This is a very light "
@@ -351,8 +353,10 @@ namespace Tpetra {
         << ", Parameters: {"
         << "Send type: "
         << DistributorSendTypeEnumToString (plan_.getSendType())
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
         << ", Barrier between receives and sends: "
         << (plan_.barrierBetweenRecvSend() ? "true" : "false")
+#endif
         << ", Use distinct tags: "
         << (plan_.useDistinctTags() ? "true" : "false")
         << ", Debug: " << (verbose_ ? "true" : "false")
@@ -466,8 +470,10 @@ namespace Tpetra {
         Teuchos::OSTab tab2 (out);
         out << "\"Send type\": "
             << DistributorSendTypeEnumToString (plan_.getSendType()) << endl
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
             << "\"Barrier between receives and sends\": "
             << (plan_.barrierBetweenRecvSend() ? "true" : "false") << endl
+#endif
             << "\"Use distinct tags\": "
             << (plan_.useDistinctTags() ? "true" : "false") << endl
             << "\"Debug\": " << (verbose_ ? "true" : "false") << endl;
