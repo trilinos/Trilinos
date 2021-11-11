@@ -873,8 +873,8 @@ namespace Intrepid2
 #else
       auto hostPolicy = Kokkos::MDRangePolicy<HostExecSpace,Kokkos::Rank<2>>({0,0},{numSubdivisions,nodesPerCell});
       Kokkos::parallel_for("fill cellNodesHost", hostPolicy,
-                           [=,this] (const int &subdivisionOrdinal, const int &nodeInCell) {
-        auto node = gridCellNodeForSubdivisionNode(gridCellOrdinal, subdivisionOrdinal, nodeInCell);
+                           [this,gridCellOrdinal,cellNodesHost] (const int &subdivisionOrdinal, const int &nodeInCell) {
+        auto node = this->gridCellNodeForSubdivisionNode(gridCellOrdinal, subdivisionOrdinal, nodeInCell);
         cellNodesHost(subdivisionOrdinal,nodeInCell) = node;
       });
 #endif

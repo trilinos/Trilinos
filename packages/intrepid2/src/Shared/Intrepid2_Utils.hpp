@@ -107,9 +107,15 @@ namespace Intrepid2 {
     throw x(msg);                                                                           \
   }
 #else
-  #define INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(test, x, msg) device_assert(!(test));
+#define INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(test, x, msg)          \
+  if (test) {                                                           \
+    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    printf("            Test that evaluated to true: %s\n", #test);     \
+    printf("            %s \n", msg);                                   \
+    Kokkos::abort(  "[Intrepid2] Abort\n");                             \
+  }
 #endif
-  
+#if defined(INTREPID2_ENABLE_DEBUG) || defined(NDEBUG) || 1
 #define INTREPID2_TEST_FOR_ABORT(test, msg)                             \
   if (test) {                                                           \
     printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
@@ -117,20 +123,9 @@ namespace Intrepid2 {
     printf("            %s \n", msg);                                   \
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
-
-#ifndef INTREPID2_ENABLE_DEVICE
-#define INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(test, msg)                             \
-  if (test) {                                                           \
-    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
-    printf("            Test that evaluated to true: %s\n", #test);     \
-    printf("            %s \n", msg);                                   \
-    Kokkos::abort(  "[Intrepid2] Abort\n");                             \
-  }
 #else
-  #define INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(test, msg) device_assert(!(test));
+#define INTREPID2_TEST_FOR_ABORT(test, msg) ((void)0)      
 #endif
-
-
   // check the first error only
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #define INTREPID2_TEST_FOR_DEBUG_ABORT(test, info, msg)                 \
