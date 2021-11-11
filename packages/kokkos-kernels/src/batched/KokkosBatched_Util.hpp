@@ -20,7 +20,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Complex.hpp"
 #include "Kokkos_ArithTraits.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 #include "KokkosKernels_config.h"
 
@@ -43,6 +43,7 @@
 
 namespace KokkosBatched {
 
+//////// Helper macros, functions, and classes ////////
 #define Int2StringHelper(A) #A
 #define Int2String(A) Int2StringHelper(A)
 #define StringCat(A,B) A B
@@ -178,7 +179,7 @@ namespace KokkosBatched {
 
   struct Timer {
     std::string _label;
-    Kokkos::Impl::Timer _clock;
+    Kokkos::Timer _clock;
     Timer (const std::string label)
       : _label(label), _clock() {};
 
@@ -221,7 +222,7 @@ namespace KokkosBatched {
     using value_type = T;
   };
 
-  // Tags for BLAS
+  //////// Tags for BLAS ////////
   struct Trans {
     struct Transpose {};
     struct NoTranspose {};
@@ -243,6 +244,36 @@ namespace KokkosBatched {
     struct NonUnit { static const bool use_unit_diag = false; };
   };
 
+  
+  /// \brief: BatchLayout class used to specify where the batch dimension is allocated in
+  ///         the input views for host-level Batched BLAS/LAPACK routines.
+  /// \var Left  Batch dimension is the leftmost dimension within input views
+  /// \var Right Batch dimension is the rightmost dimension within input views
+  struct BatchLayout {
+    struct Left {};
+    struct Right {};
+  };
+
+  /// \brief ResultsPerThread class used to specify how to divide a given
+  ///        BLAS/LAPACK operation among Kokkos threads
+  /// \var Rank0 Each Kokkos thread calculates a 0-rank result
+  /// \var Rank1 Each Kokkos thread calculates a 1-rank result
+  /// \var Rank2 Each Kokkos thread calculates a 2-rank result
+  struct ResultsPerThread {
+    struct Rank0 {};
+    struct Rank1 {};
+    struct Rank2 {};
+  };
+
+  /// \brief BoundsCheck class used to specify whether to check view bounds in
+  ///        BLAS/LAPACK DblBuf algorithms.
+  /// /var Yes Use functor with    bounds check
+  /// /var No  Use functor without bound checks
+  struct BoundsCheck {
+    struct Yes {};
+    struct No {};
+  };
+
   struct Direct {
     struct Forward {};
     struct Backward {};
@@ -250,7 +281,7 @@ namespace KokkosBatched {
 
   struct Mode {
     struct Serial {
-      static const char *name() { return "Serial"; }        
+      static const char *name() { return "Serial"; }
     };
     struct Team {
       static const char *name() { return "Team"; }
@@ -441,7 +472,7 @@ namespace KokkosBatched {
       : as1(arg_as1), AL(NULL), AR(NULL) {}
 
     KOKKOS_INLINE_FUNCTION
-    void partWithAL(ValueType *A, const int nA, const int nAL) {
+    void partWithAL(ValueType *A, const int /* nA */, const int nAL) {
       AL = A; AR = AL+nAL*as1;
     }
 
@@ -496,7 +527,7 @@ namespace KokkosBatched {
       : as0(arg_as0), AT(NULL), AB(NULL) {}
 
     KOKKOS_INLINE_FUNCTION
-    void partWithAT(ValueType *A, const int mA, const int mAT) {
+    void partWithAT(ValueType *A, const int /* mA */, const int mAT) {
       AT = A;
       AB = AT+mAT*as0;
     }
@@ -564,7 +595,7 @@ namespace KokkosBatched {
 
     KOKKOS_INLINE_FUNCTION
     void partWithATL(ValueType *A, 
-                     const int mA, const int nA, 
+                     const int /* mA */, const int /* nA */, 
                      const int mATL, const int nATL) {
       ATL = A;            ATR = ATL+nATL*as1; 
       ABL = ATL+mATL*as0; ABR = ABL+nATL*as1;
@@ -609,21 +640,165 @@ namespace KokkosBatched {
       
     KOKKOS_INLINE_FUNCTION
     void partWithABR(const Partition2x2<ValueType> &part, const int mA11, const int nA11) {
-      A00 = part.ATL;            A01 = part.ATR;            A02 = part.ATR + nA11*as1;
-      A10 = part.ABL;            A11 = part.ABR;            A12 = part.ABR + nA11*as1;
-      A20 = part.ABL + mA11*as0; A21 = part.ABR + mA11*as0; A22 = part.ABR + mA11*as0 + nA11*as1;
+      A00 = part.ATL;
+      A01 = part.ATR;
+      A02 = part.ATR + nA11 * as1;
+      A10 = part.ABL;
+      A11 = part.ABR;
+      A12 = part.ABR + nA11 * as1;
+      A20 = part.ABL + mA11 * as0;
+      A21 = part.ABR + mA11 * as0;
+      A22 = part.ABR + mA11 * as0 + nA11 * as1;
     }
 
     KOKKOS_INLINE_FUNCTION
-    void partWithATL(const Partition2x2<ValueType> &part, const int mA11, const int nA11) {
-      A00 = part.ATL;            A01 = part.ATR - nA11*as1;            A02 = part.ATR;
-      A10 = part.ABL - mA11*as0; A11 = part.ABR - mA11*as0 - nA11*as1; A12 = part.ABR - mA11*as0;
-      A20 = part.ABL;            A21 = part.ABR            - nA11*as1; A22 = part.ABR;
+    void partWithATL(const Partition2x2<ValueType> &part, const int mA11,
+                     const int nA11) {
+      A00 = part.ATL;
+      A01 = part.ATR - nA11 * as1;
+      A02 = part.ATR;
+      A10 = part.ABL - mA11 * as0;
+      A11 = part.ABR - mA11 * as0 - nA11 * as1;
+      A12 = part.ABR - mA11 * as0;
+      A20 = part.ABL;
+      A21 = part.ABR - nA11 * as1;
+      A22 = part.ABR;
     }
   };
-    
-    
-}
 
+  template <class ViewType>
+  KOKKOS_INLINE_FUNCTION auto transpose_2d_view(ViewType v, const int *order) {
+    constexpr int rank             = 2;
+    const int dim[]            = {v.extent_int(1), v.extent_int(0)};
+    using view_value_type      = typename ViewType::value_type;
+    using execution_space_type = typename ViewType::execution_space;
+    using view_type = Kokkos::View<view_value_type **, Kokkos::LayoutStride,
+                                   execution_space_type>;
+    Kokkos::LayoutStride stride =
+        Kokkos::LayoutStride::order_dimensions(rank, order, dim);
 
-#endif
+    return view_type(v.data(), stride);
+  }
+
+  template <class ViewType>
+  KOKKOS_INLINE_FUNCTION auto transpose_2d_view(ViewType v,
+                                                const BatchLayout::Left &) {
+    const int order[] = {0, 1};  // v is LayoutRight
+    return transpose_2d_view(v, order);
+  }
+
+  template <class ViewType>
+  KOKKOS_INLINE_FUNCTION auto transpose_2d_view(ViewType v,
+                                                const BatchLayout::Right &) {
+    const int order[] = {1, 0};  // v is LayoutLeft
+    return transpose_2d_view(v, order);
+  }
+
+  ///// subview_wrapper overloads for handling 3-rank BatchLayout::Left views
+  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
+  KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
+                                              IdxType2 i2, IdxType3 i3,
+                                              const BatchLayout::Left &) {
+    return Kokkos::subview(v, i1, i2, i3);
+  }
+  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
+  KOKKOS_INLINE_FUNCTION auto subview_wrapper(
+      ViewType v, IdxType1 i1, IdxType2 i2, IdxType3 i3,
+      const BatchLayout::Left &layout_tag, const Trans::NoTranspose) {
+    return subview_wrapper(v, i1, i2, i3, layout_tag);
+  }
+  template <class ViewType, class IdxType1>
+  KOKKOS_INLINE_FUNCTION auto subview_wrapper(
+      ViewType v, IdxType1 i1, Kokkos::Impl::ALL_t i2, Kokkos::Impl::ALL_t i3,
+      const BatchLayout::Left &layout_tag, const Trans::Transpose) {
+    auto sv_nt = subview_wrapper(v, i1, i3, i2, layout_tag);
+
+    return transpose_2d_view(sv_nt, layout_tag);
+  }
+  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
+  KOKKOS_INLINE_FUNCTION auto subview_wrapper(
+      ViewType v, IdxType1 i1, IdxType2 i2, IdxType3 i3,
+      const BatchLayout::Left &layout_tag, const Trans::Transpose) {
+    auto sv_nt = subview_wrapper(v, i1, i3, i2, layout_tag);
+
+    return sv_nt;
+  }
+
+  //// subview_wrapper overloads for handling 3-rank BatchLayout::Right views
+  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
+  KOKKOS_INLINE_FUNCTION auto subview_wrapper(ViewType v, IdxType1 i1,
+                                              IdxType2 i2, IdxType3 i3,
+                                              const BatchLayout::Right &) {
+    return Kokkos::subview(v, i2, i3, i1);
+  }
+  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
+  KOKKOS_INLINE_FUNCTION auto subview_wrapper(
+      ViewType v, IdxType1 i1, IdxType2 i2, IdxType3 i3,
+      const BatchLayout::Right &layout_tag, const Trans::NoTranspose &) {
+    return subview_wrapper(v, i1, i2, i3, layout_tag);
+  }
+  template <class ViewType, class IdxType1>
+  KOKKOS_INLINE_FUNCTION auto subview_wrapper(
+      ViewType v, IdxType1 i1, Kokkos::Impl::ALL_t i2, Kokkos::Impl::ALL_t i3,
+      const BatchLayout::Right &layout_tag, const Trans::Transpose &) {
+    auto sv_nt = subview_wrapper(v, i1, i3, i2, layout_tag);
+
+    return transpose_2d_view(sv_nt, layout_tag);
+  }
+  template <class ViewType, class IdxType1, class IdxType2, class IdxType3>
+  KOKKOS_INLINE_FUNCTION auto subview_wrapper(
+      ViewType v, IdxType1 i1, IdxType2 i2, IdxType3 i3,
+      const BatchLayout::Right &layout_tag, const Trans::Transpose &) {
+    auto sv_nt = subview_wrapper(v, i1, i3, i2, layout_tag);
+
+    return sv_nt;
+  }
+
+  template <class ViewValueType, class ViewType>
+  KOKKOS_INLINE_FUNCTION ViewValueType
+  access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::Yes &) {
+    if (m < v.extent_int(0) && n < v.extent_int(1)) return v(m, n);
+    return (ViewValueType)0.0F;
+  }
+
+  template <class ViewValueType, class ViewType>
+  KOKKOS_INLINE_FUNCTION ViewValueType
+  access_view_bounds_check(ViewType v, int m, int n, const BoundsCheck::No &) {
+    return v(m, n);
+  }
+
+  template <class ViewType, class SizeType, class ViewValueType,
+            class ScalarType>
+  KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m,
+                                               SizeType n, ViewValueType reg_c,
+                                               ScalarType beta,
+                                               const BoundsCheck::Yes &) {
+    if (m < v.extent_int(0) && n < v.extent_int(1))
+      v(m, n) = reg_c + v(m, n) * beta;
+  }
+
+  template <class ViewType, class SizeType, class ViewValueType,
+            class ScalarType>
+  KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m,
+                                               SizeType n, ViewValueType reg_c,
+                                               ScalarType beta,
+                                               const BoundsCheck::No &) {
+    v(m, n) = reg_c + v(m, n) * beta;
+  }
+
+  template <class ViewType, class SizeType, class ScalarType>
+  KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m,
+                                               SizeType n, ScalarType reg_c,
+                                               const BoundsCheck::Yes &) {
+    if (m < v.extent_int(0) && n < v.extent_int(1)) v(m, n) = reg_c;
+  }
+
+  template <class ViewType, class SizeType, class ScalarType>
+  KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m,
+                                               SizeType n, ScalarType reg_c,
+                                               const BoundsCheck::No &) {
+    v(m, n) = reg_c;
+  }
+
+  }  // namespace KokkosBatched
+#endif  // __KOKKOSBATCHED_UTIL_HPP__

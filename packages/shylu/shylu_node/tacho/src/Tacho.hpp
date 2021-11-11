@@ -4,7 +4,7 @@
 #include "Tacho_config.h" 
 
 #include "Kokkos_Core.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 #include <cstddef>
 #include <fstream>

@@ -2335,7 +2335,17 @@ namespace Tpetra {
     const char prefix[] = "Tpetra::CrsGraph::getNodeRowPtrs: ";
     const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
-    const size_t size = rowPtrsUnpacked_host_.extent (0);
+    // UVM REMOVAL:  10/21
+    // This function originally returned unpacked RowPtrs.  But ...
+    // (1) it was used in tandem with getNodePackedIndices, which intends
+    //     to return packed indices;
+    // (2) unpacked row pointers are not useful without a count of number
+    //     of valid indices in the row, which is not provided by this function;
+    // (3) in most cases, graphs are storageOptimized, so packed and unpacked
+    //     row pointers are the same.
+    // To match getNodePackedIndices, we change this function to return 
+    // packed row pointers.
+    const size_t size = rowPtrsPacked_host_.extent (0);
     constexpr bool same = std::is_same<size_t, row_offset_type>::value;
 
     if (size == 0) {
@@ -2345,13 +2355,13 @@ namespace Tpetra {
     ArrayRCP<const row_offset_type> ptr_rot;
     ArrayRCP<const size_t> ptr_st;
     if (same) { // size_t == row_offset_type
-      ptr_rot = Kokkos::Compat::persistingView (rowPtrsUnpacked_host_);
+      ptr_rot = Kokkos::Compat::persistingView (rowPtrsPacked_host_);
     }
     else { // size_t != row_offset_type
       typedef Kokkos::View<size_t*, device_type> ret_view_type;
       ret_view_type ptr_d (ViewAllocateWithoutInitializing ("ptr"), size);
 
-      ::Tpetra::Details::copyOffsets (ptr_d, rowPtrsUnpacked_dev_);
+      ::Tpetra::Details::copyOffsets (ptr_d, rowPtrsPacked_dev_);
 
       typename ret_view_type::HostMirror ptr_h = 
                                          Kokkos::create_mirror_view (ptr_d);
@@ -2389,15 +2399,15 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNodePackedIndices () const
   {
-    // KDDKDD  UVM REMOVAL:  3/21
-    // KDDKDD  This function used to return k_lclInds1D_.  
-    // KDDKDD  I retain its behavior by return lclIndsUnpacked_wdv.getHostView.
-    // KDDKDD  However, k_lclInds1D_ was not necessarily PACKED;
-    // KDDKDD  PACKED indices are in the static graph.
-    // KDDKDD  However, with OptimizeStorage, k_lclInds1D_ was PACKED.
-    // return Kokkos::Compat::persistingView (k_lclInds1D_);
+    // UVM REMOVAL:  10/21
+    // This function used to return k_lclInds1D_, which was not 
+    // necessarily packed. It was packed only when storage was optimized
+    // which, as the default in fillComplete, was probably always in 
+    // applications. 
+    // With UVM removal, we change the behavior to match the original
+    // function name (getNodePackedIndices).
     return Kokkos::Compat::persistingView (
-                           lclIndsUnpacked_wdv.getHostView(Access::ReadOnly));
+                           lclIndsPacked_wdv.getHostView(Access::ReadOnly));
   }
 
 

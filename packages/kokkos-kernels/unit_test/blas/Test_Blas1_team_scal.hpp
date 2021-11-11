@@ -1,3 +1,9 @@
+// Note: Luc Berger-Vergiat 04/14/21
+//       This tests uses KOKKOS_LAMBDA so we need
+//       to make sure that these are enabled in
+//       the CUDA backend before including this test.
+#if !defined(TEST_CUDA_BLAS_CPP) || defined(KOKKOS_ENABLE_CUDA_LAMBDA)
+
 #include<gtest/gtest.h>
 #include<Kokkos_Core.hpp>
 #include<Kokkos_Random.hpp>
@@ -347,3 +353,5 @@ TEST_F( TestCategory, team_scal_double_mv_int ) {
     test_team_scal_mv<double,int,TestExecSpace> ();
 }
 #endif
+
+#endif // Check for lambda availability in CUDA backend

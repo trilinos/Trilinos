@@ -56,8 +56,6 @@
 #include "KokkosBatched_Trtri_Decl.hpp"
 #include "KokkosBatched_Trtri_Serial_Impl.hpp"
 
-using namespace KokkosBatched;
-
 namespace KokkosBlas {
   namespace Impl {
 
@@ -68,6 +66,11 @@ namespace KokkosBlas {
                             const char diag[],
                             const AViewType &A)
     { 
+      using KokkosBatched::Algo;
+      using KokkosBatched::Diag;
+      using KokkosBatched::SerialTrtriInternalLower;
+      using KokkosBatched::SerialTrtriInternalUpper;
+
       char __uplo = tolower(uplo[0]),
            __diag = tolower(diag[0]);
 

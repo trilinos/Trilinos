@@ -4067,19 +4067,6 @@ public:
     Teuchos::RCP<      Graph>     myGraph_;
     //@}
 
-    //! The local sparse matrix, wrapped in a multiply operator.
-// KDDKDD DELETE
-//    std::shared_ptr<local_multiply_op_type> lclMatrix_;
-// KDDKDD DELETE
-
-    /// \brief Sparse matrix values, as part of compressed sparse row
-    ///   ("1-D") storage.
-    ///
-    /// Before allocation, this array is empty.
-// KDDKDD DELETE
-    typename local_matrix_device_type::values_type k_values1D_;
-// KDDKDD DELETE
-
 protected:
     /// \brief Status of the matrix's storage, when not in a
     ///   fill-complete state.

@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <Kokkos_Core.hpp>
 #include <gtest/gtest.h>
@@ -41,11 +41,12 @@
 #include <limits>
 #include <iomanip>
 #include <cmath>
+#include <memory>
 
 namespace {
 
 bool
-has_variable(const std::vector<std::string>& variableNames, const std::string& variableName) 
+has_variable(const std::vector<std::string>& variableNames, const std::string& variableName)
 {
   return (std::find(variableNames.begin(), variableNames.end(), variableName) != variableNames.end());
 }
@@ -96,28 +97,24 @@ double evaluate(const std::string & expression,
 }
 
 double device_evaluate(const std::string & expression,
-                std::vector<ScalarBinding> boundScalars = std::vector<ScalarBinding>(),
-                std::vector<VectorBinding> boundVectors = std::vector<VectorBinding>(),
-                const stk::expreval::Variable::ArrayOffset arrayOffsetType = stk::expreval::Variable::ZERO_BASED_INDEX)
+                       std::vector<ScalarBinding> boundScalars = std::vector<ScalarBinding>(),
+                       std::vector<VectorBinding> boundVectors = std::vector<VectorBinding>(),
+                       const stk::expreval::Variable::ArrayOffset arrayOffsetType = stk::expreval::Variable::ZERO_BASED_INDEX)
 {
-  #ifdef KOKKOS_ENABLE_CUDA
-    cudaDeviceSetLimit(cudaLimitStackSize, 1024*4);
-  #endif
-
   stk::expreval::Eval eval(expression, arrayOffsetType);
   eval.parse();
-  
+
   int    variableIndices[10];
   int    variableSizes[10];
-  Kokkos::View<double[10][10], Kokkos::LayoutRight, stk::ngp::MemSpace> variableDeviceValues("device values"); 
+  Kokkos::View<double[10][10], Kokkos::LayoutRight, stk::ngp::MemSpace> variableDeviceValues("device values");
   Kokkos::View<double[10][10], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror variableHostValues("input variables");
-  
+
   for (unsigned varIndex = 0; varIndex < boundScalars.size(); ++varIndex) {
     variableIndices[varIndex] = eval.get_variable_index(boundScalars[varIndex].varName);
     variableSizes[varIndex]   = 1;
     variableHostValues(varIndex, 0)  = boundScalars[varIndex].varValue;
   }
-  
+
   for (unsigned varIndex = 0; varIndex < boundVectors.size(); ++varIndex) {
     variableIndices[varIndex + boundScalars.size()] = eval.get_variable_index(boundVectors[varIndex].varName);
     variableSizes[varIndex + boundScalars.size()]   = boundVectors[varIndex].varValues.size();
@@ -128,7 +125,7 @@ double device_evaluate(const std::string & expression,
 
   Kokkos::deep_copy(variableDeviceValues, variableHostValues);
   const unsigned numBoundVariables = boundScalars.size() + boundVectors.size();
-  stk::expreval::ParsedEval& parsedEval = eval.get_parsed_eval();
+  auto & parsedEval = eval.get_parsed_eval();
 
   double result = 0.0;
   Kokkos::parallel_reduce(Kokkos::RangePolicy<stk::ngp::ExecSpace>(0,1), KOKKOS_LAMBDA (const int& i, double& localResult) {
@@ -144,30 +141,26 @@ double device_evaluate(const std::string & expression,
 
 template <int numThreads>
 std::vector<double> threaded_device_evaluate(const std::string & expression,
-                std::vector<ThreadedScalarBinding> boundScalars = std::vector<ThreadedScalarBinding>(),
-                std::vector<ThreadedVectorBinding> boundVectors = std::vector<ThreadedVectorBinding>(),
-                const stk::expreval::Variable::ArrayOffset arrayOffsetType = stk::expreval::Variable::ZERO_BASED_INDEX)
+                                             std::vector<ThreadedScalarBinding> boundScalars = std::vector<ThreadedScalarBinding>(),
+                                             std::vector<ThreadedVectorBinding> boundVectors = std::vector<ThreadedVectorBinding>(),
+                                             const stk::expreval::Variable::ArrayOffset arrayOffsetType = stk::expreval::Variable::ZERO_BASED_INDEX)
 {
-  #ifdef KOKKOS_ENABLE_CUDA
-    cudaDeviceSetLimit(cudaLimitStackSize, 1024*4);
-  #endif
-
   stk::expreval::Eval eval(expression, arrayOffsetType);
   eval.parse();
-  
+
   int    variableIndices[10];
   int    variableSizes[10];
-  Kokkos::View<double[10][10][10], Kokkos::LayoutRight, stk::ngp::MemSpace> variableDeviceValues("device values"); 
+  Kokkos::View<double[10][10][10], Kokkos::LayoutRight, stk::ngp::MemSpace> variableDeviceValues("device values");
   Kokkos::View<double[10][10][10], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror variableHostValues("input variables");
 
-  Kokkos::View<double[numThreads], stk::ngp::MemSpace> deviceResults("device results"); 
+  Kokkos::View<double[numThreads], stk::ngp::MemSpace> deviceResults("device results");
   typename Kokkos::View<double[numThreads], stk::ngp::MemSpace>::HostMirror hostResults = Kokkos::create_mirror_view(deviceResults);
-  
+
   for (unsigned varIndex = 0; varIndex < boundScalars.size(); ++varIndex) {
     variableIndices[varIndex] = eval.get_variable_index(boundScalars[varIndex].varName);
     variableSizes[varIndex]   = 1;
     ThrowRequireMsg(numThreads == boundScalars[varIndex].varValue.size(), "Number of threads doesn't match declared number of threads in scalar bound data");
-    for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) { 
+    for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       variableHostValues(threadIndex, varIndex, 0)  = boundScalars[varIndex].varValue[threadIndex];
     }
   }
@@ -176,7 +169,7 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
     variableIndices[varIndex + boundScalars.size()] = eval.get_variable_index(boundVectors[varIndex].varName);
     variableSizes[varIndex + boundScalars.size()]   = boundVectors[varIndex].varValues.size();
     ThrowRequireMsg(numThreads == boundVectors[varIndex].varValues.size(), "Number of threads doesn't match declared number of threads in vector bound data");
-    for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) { 
+    for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       for (unsigned varComponent = 0; varComponent < boundVectors[varIndex].varValues[threadIndex].size(); ++varComponent) {
         variableHostValues(threadIndex, varIndex + boundScalars.size(), varComponent) = boundVectors[varIndex].varValues[threadIndex][varComponent];
       }
@@ -185,7 +178,7 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
 
   Kokkos::deep_copy(variableDeviceValues, variableHostValues);
   const unsigned numBoundVariables = boundScalars.size() + boundVectors.size();
-  stk::expreval::ParsedEval& parsedEval = eval.get_parsed_eval();
+  auto & parsedEval = eval.get_parsed_eval();
 
   Kokkos::parallel_for(numThreads, KOKKOS_LAMBDA (const int& i) {
     stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
@@ -660,10 +653,10 @@ TEST(UnitTestEvaluator, deviceVariableMap_too_small)
   stk::expreval::Eval eval("x+y+z");
   eval.parse();
 
-  stk::expreval::ParsedEval& parsedEval = eval.get_parsed_eval();
+  auto & parsedEval = eval.get_parsed_eval();
   Kokkos::parallel_for(1, KOKKOS_LAMBDA (const int& i) {
     EXPECT_ANY_THROW(stk::expreval::DeviceVariableMap<2> deviceVariableMap(parsedEval));
-  });  
+  });
 }
 #endif
 
@@ -691,11 +684,14 @@ TEST(UnitTestEvaluator, Ngp_testOpcode_CONSTANT)
 
 TEST(UnitTestEvaluator, testOpcode_ADD)
 {
-  EXPECT_DOUBLE_EQ(evaluate("1+2"),          3);
-  EXPECT_DOUBLE_EQ(evaluate("1+4+9"),        14);
-  EXPECT_DOUBLE_EQ(evaluate("1+4+9+16"),     30);
-  EXPECT_DOUBLE_EQ(evaluate("(1+4)+(9+16)"), 30);
-  EXPECT_DOUBLE_EQ(evaluate("1.25+2.5"),     3.75);
+  EXPECT_DOUBLE_EQ(evaluate("1+2"),                     3);
+  EXPECT_DOUBLE_EQ(evaluate("1+4+9"),                   14);
+  EXPECT_DOUBLE_EQ(evaluate("1+4+9+16"),                30);
+  EXPECT_DOUBLE_EQ(evaluate("(1+4)+(9+16)"),            30);
+  EXPECT_DOUBLE_EQ(evaluate("(1+4+9+16)+(9+16+25+36)"), 116);
+  EXPECT_DOUBLE_EQ(evaluate("1+(2+(3+(4+(5+6))))"),     21);
+  EXPECT_DOUBLE_EQ(evaluate("((((1+2)+3)+4)+5)+6"),     21);
+  EXPECT_DOUBLE_EQ(evaluate("1.25+2.5"),                3.75);
 }
 
 TEST(UnitTestEvaluator, Ngp_testOpcode_ADD)
@@ -829,37 +825,6 @@ TEST(UnitTestEvaluator, Ngp_testOpcode_EXPONENTIATION)
   EXPECT_DOUBLE_EQ(device_evaluate("3^2^2"),       81);
   EXPECT_DOUBLE_EQ(device_evaluate("(2^2)^(2^2)"), 256);
   EXPECT_DOUBLE_EQ(device_evaluate("2^-1"),        0.5);
-}
-
-TEST(UnitTestEvaluator, testOpcode_compoundSimpleMath)
-{
-  EXPECT_DOUBLE_EQ(evaluate("1+2*3"),           7);
-  EXPECT_DOUBLE_EQ(evaluate("1+2*-3"),         -5);
-  EXPECT_DOUBLE_EQ(evaluate("2*3+1"),           7);
-  EXPECT_DOUBLE_EQ(evaluate("12*3/3*5/5"),      12);
-  EXPECT_DOUBLE_EQ(evaluate("(4+5)/3"),         3);
-  EXPECT_DOUBLE_EQ(evaluate("(1+2+3)^2"),       36);
-  EXPECT_DOUBLE_EQ(evaluate("(1+2+3+4)^(1+1)"), 100);
-  EXPECT_DOUBLE_EQ(evaluate("15%(1+1+1)"),      0);
-  EXPECT_DOUBLE_EQ(evaluate("1-7"),            -6);
-  EXPECT_DOUBLE_EQ(evaluate("1--7"),            8);
-  EXPECT_DOUBLE_EQ(evaluate("1---7"),          -6);
-}
-
-TEST(UnitTestEvaluator, Ngp_testOpcode_compoundSimpleMath)
-{
-  EXPECT_DOUBLE_EQ(device_evaluate("1+2*3"),           7);
-  EXPECT_DOUBLE_EQ(device_evaluate("1+2*-3"),         -5);
-  EXPECT_DOUBLE_EQ(device_evaluate("2*3+1"),           7);
-  EXPECT_DOUBLE_EQ(device_evaluate("12*3/3*5/5"),      12);
-  EXPECT_DOUBLE_EQ(device_evaluate("(4+5)/3"),         3);
-  EXPECT_DOUBLE_EQ(device_evaluate("(1+2+3)^2"),       36);
-  EXPECT_DOUBLE_EQ(device_evaluate("(1+2+3+4)^(1+1)"), 100);
-  EXPECT_DOUBLE_EQ(device_evaluate("15%(1+1+1)"),      0);
-  EXPECT_DOUBLE_EQ(device_evaluate("1-7"),            -6);
-  EXPECT_DOUBLE_EQ(device_evaluate("1--7"),            8);
-  EXPECT_DOUBLE_EQ(device_evaluate("1---7"),          -6);
-  EXPECT_DOUBLE_EQ(device_evaluate("1+1+1+1+1+1+1+1+1+1+1"),   11);
 }
 
 TEST(UnitTestEvaluator, testOpcode_EQUAL)
@@ -1036,24 +1001,42 @@ TEST(UnitTestEvaluator, Ngp_testOpcode_LOGICAL_OR)
 
 TEST(UnitTestEvaluator, testOpcode_TERNARY)
 {
-  EXPECT_DOUBLE_EQ(evaluate("1 ? 1 : 2"),           1);
-  EXPECT_DOUBLE_EQ(evaluate("0 ? 1 : 2"),           2);
+  EXPECT_DOUBLE_EQ(evaluate("1 ? 2 : 3"),           2);
+  EXPECT_DOUBLE_EQ(evaluate("0 ? 2 : 3"),           3);
+  EXPECT_DOUBLE_EQ(evaluate("(4 > 5) ? 2 : 3"),     3);
   EXPECT_DOUBLE_EQ(evaluate("1 ? (1+1) : 1"),       2);
   EXPECT_DOUBLE_EQ(evaluate("0 ? 1 : (1+1)"),       2);
   EXPECT_DOUBLE_EQ(evaluate("0 ? 1 : 2"),           2);
   EXPECT_DOUBLE_EQ(evaluate("0.000001 ? 1 : 2"),    1);
   EXPECT_DOUBLE_EQ(evaluate("(1 ? 0 : 1) ? 2 : 3"), 3);
+  EXPECT_DOUBLE_EQ(evaluate("1 ? (1 ? 0 : 1) : 2"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("1 ? (0 ? 0 : 1) : 2"), 1);
+  EXPECT_DOUBLE_EQ(evaluate("0 ? (1 ? 0 : 1) : 2"), 2);
+  EXPECT_DOUBLE_EQ(evaluate("0 ? (0 ? 0 : 1) : 2"), 2);
+  EXPECT_DOUBLE_EQ(evaluate("1 ? 0 : (1 ? 1 : 2)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("1 ? 0 : (0 ? 1 : 2)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("0 ? 0 : (1 ? 1 : 2)"), 1);
+  EXPECT_DOUBLE_EQ(evaluate("0 ? 0 : (0 ? 1 : 2)"), 2);
 }
 
 TEST(UnitTestEvaluator, Ngp_testOpcode_TERNARY)
 {
-  EXPECT_DOUBLE_EQ(device_evaluate("1 ? 1 : 2"),           1);
-  EXPECT_DOUBLE_EQ(device_evaluate("0 ? 1 : 2"),           2);
+  EXPECT_DOUBLE_EQ(device_evaluate("1 ? 2 : 3"),           2);
+  EXPECT_DOUBLE_EQ(device_evaluate("0 ? 2 : 3"),           3);
+  EXPECT_DOUBLE_EQ(device_evaluate("(4 > 5) ? 2 : 3"),     3);
   EXPECT_DOUBLE_EQ(device_evaluate("1 ? (1+1) : 1"),       2);
   EXPECT_DOUBLE_EQ(device_evaluate("0 ? 1 : (1+1)"),       2);
   EXPECT_DOUBLE_EQ(device_evaluate("0 ? 1 : 2"),           2);
   EXPECT_DOUBLE_EQ(device_evaluate("0.000001 ? 1 : 2"),    1);
   EXPECT_DOUBLE_EQ(device_evaluate("(1 ? 0 : 1) ? 2 : 3"), 3);
+  EXPECT_DOUBLE_EQ(device_evaluate("1 ? (1 ? 0 : 1) : 2"), 0);
+  EXPECT_DOUBLE_EQ(device_evaluate("1 ? (0 ? 0 : 1) : 2"), 1);
+  EXPECT_DOUBLE_EQ(device_evaluate("0 ? (1 ? 0 : 1) : 2"), 2);
+  EXPECT_DOUBLE_EQ(device_evaluate("0 ? (0 ? 0 : 1) : 2"), 2);
+  EXPECT_DOUBLE_EQ(device_evaluate("1 ? 0 : (1 ? 1 : 2)"), 0);
+  EXPECT_DOUBLE_EQ(device_evaluate("1 ? 0 : (0 ? 1 : 2)"), 0);
+  EXPECT_DOUBLE_EQ(device_evaluate("0 ? 0 : (1 ? 1 : 2)"), 1);
+  EXPECT_DOUBLE_EQ(device_evaluate("0 ? 0 : (0 ? 1 : 2)"), 2);
 }
 
 TEST(UnitTestEvaluator, testOpcode_ASSIGN)
@@ -1112,6 +1095,37 @@ TEST(UnitTestEvaluator, Ngp_testOpcode_RVALUE)
   EXPECT_DOUBLE_EQ(device_evaluate("x=0.4; (x > 0.5) ? 2 : 3"), 3);
   EXPECT_DOUBLE_EQ(device_evaluate("x=0.6; (x > 0.5) ? 2 : 3"), 2);
   EXPECT_DOUBLE_EQ(device_evaluate("x=0.5; x*(x + 1)"),         0.75);
+}
+
+TEST(UnitTestEvaluator, testOpcode_compoundSimpleMath)
+{
+  EXPECT_DOUBLE_EQ(evaluate("1+2*3"),           7);
+  EXPECT_DOUBLE_EQ(evaluate("1+2*-3"),         -5);
+  EXPECT_DOUBLE_EQ(evaluate("2*3+1"),           7);
+  EXPECT_DOUBLE_EQ(evaluate("12*3/3*5/5"),      12);
+  EXPECT_DOUBLE_EQ(evaluate("(4+5)/3"),         3);
+  EXPECT_DOUBLE_EQ(evaluate("(1+2+3)^2"),       36);
+  EXPECT_DOUBLE_EQ(evaluate("(1+2+3+4)^(1+1)"), 100);
+  EXPECT_DOUBLE_EQ(evaluate("15%(1+1+1)"),      0);
+  EXPECT_DOUBLE_EQ(evaluate("1-7"),            -6);
+  EXPECT_DOUBLE_EQ(evaluate("1--7"),            8);
+  EXPECT_DOUBLE_EQ(evaluate("1---7"),          -6);
+}
+
+TEST(UnitTestEvaluator, Ngp_testOpcode_compoundSimpleMath)
+{
+  EXPECT_DOUBLE_EQ(device_evaluate("1+2*3"),           7);
+  EXPECT_DOUBLE_EQ(device_evaluate("1+2*-3"),         -5);
+  EXPECT_DOUBLE_EQ(device_evaluate("2*3+1"),           7);
+  EXPECT_DOUBLE_EQ(device_evaluate("12*3/3*5/5"),      12);
+  EXPECT_DOUBLE_EQ(device_evaluate("(4+5)/3"),         3);
+  EXPECT_DOUBLE_EQ(device_evaluate("(1+2+3)^2"),       36);
+  EXPECT_DOUBLE_EQ(device_evaluate("(1+2+3+4)^(1+1)"), 100);
+  EXPECT_DOUBLE_EQ(device_evaluate("15%(1+1+1)"),      0);
+  EXPECT_DOUBLE_EQ(device_evaluate("1-7"),            -6);
+  EXPECT_DOUBLE_EQ(device_evaluate("1--7"),            8);
+  EXPECT_DOUBLE_EQ(device_evaluate("1---7"),          -6);
+  EXPECT_DOUBLE_EQ(device_evaluate("1+1+1+1+1+1+1+1+1+1+1"),   11);
 }
 
 TEST(UnitTestEvaluator, unboundScalar)
@@ -1173,6 +1187,7 @@ TEST(UnitTestEvaluator, bindVector)
   EXPECT_DOUBLE_EQ(evaluate("z = 1; a[0]+a[z]+a[2]",    {},         {{"a", {1, 2, 3}}}), 6);
   EXPECT_DOUBLE_EQ(evaluate("a[z[0]] + a[z[1]] + a[z[2]]",
                             {}, {{"a", {1, 2, 3}}, {"z", {0, 1, 2}}}),                   6);
+  EXPECT_DOUBLE_EQ(evaluate("a[0]=(1) ? 2 : 3",         {},         {{"a", {0, 0, 0}}}), 2);
 
   EXPECT_ANY_THROW(evaluate("a[0]+a[1]+a[3]",           {},         {{"a", {1, 2, 3}}}));
   EXPECT_ANY_THROW(evaluate("a[0]+a[1]+a[2]",           {},         {{"a", {1, 2, 3}}}, stk::expreval::Variable::ONE_BASED_INDEX));
@@ -1192,6 +1207,7 @@ TEST(UnitTestEvaluator, Ngp_bindVector)
   EXPECT_DOUBLE_EQ(device_evaluate("z = 1; a[0]+a[z]+a[2]",    {},         {{"a", {1, 2, 3}}}), 6);
   EXPECT_DOUBLE_EQ(device_evaluate("a[z[0]] + a[z[1]] + a[z[2]]",
                             {}, {{"a", {1, 2, 3}}, {"z", {0, 1, 2}}}),                   6);
+  EXPECT_DOUBLE_EQ(device_evaluate("a[0]=(1) ? 2 : 3",         {},         {{"a", {0, 0, 0}}}), 2);
 
   #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMP)
   EXPECT_ANY_THROW(device_evaluate("a[0]+a[1]+a[3]",           {},         {{"a", {1, 2, 3}}}));
@@ -1203,33 +1219,33 @@ TEST(UnitTestEvaluator, Ngp_bindVector)
 TEST(UnitTestEvaluator, Ngp_bindThreaded)
 {
   EXPECT_EQ(threaded_device_evaluate<4>("x",                    {{"x", {1, 2, 3, 4}}}, {}), (std::vector<double>{1, 2, 3, 4}));
-  EXPECT_EQ(threaded_device_evaluate<4>("a[0]+a[1]+a[2]",                          {}, {{"a", {{1, 2, 3}, 
-                                                                                               {2, 3, 4}, 
-                                                                                               {3, 4, 5}, 
+  EXPECT_EQ(threaded_device_evaluate<4>("a[0]+a[1]+a[2]",                          {}, {{"a", {{1, 2, 3},
+                                                                                               {2, 3, 4},
+                                                                                               {3, 4, 5},
                                                                                                {4, 5, 6}}}}), (std::vector<double>{6, 9, 12, 15}));
-  EXPECT_EQ(threaded_device_evaluate<4>("a[0]=x*a[1]+a[2]",     {{"x", {4, 4, 4, 4}}}, {{"a", {{5,  1, 2}, 
-                                                                                               {5,  0, 3}, 
+  EXPECT_EQ(threaded_device_evaluate<4>("a[0]=x*a[1]+a[2]",     {{"x", {4, 4, 4, 4}}}, {{"a", {{5,  1, 2},
+                                                                                               {5,  0, 3},
                                                                                                {5, -1, 4},
                                                                                                {5,  1, 5}}}}), (std::vector<double>{6, 3, 0, 9}));
-  EXPECT_EQ(threaded_device_evaluate<4>("a[1]=x+a[0]; a[1]*2",  {{"x", {0, 1, 2, 3}}}, {{"a", {{1, 2}, 
-                                                                                               {2, 3}, 
-                                                                                               {3, 4}, 
+  EXPECT_EQ(threaded_device_evaluate<4>("a[1]=x+a[0]; a[1]*2",  {{"x", {0, 1, 2, 3}}}, {{"a", {{1, 2},
+                                                                                               {2, 3},
+                                                                                               {3, 4},
                                                                                                {5, 6}}}}), (std::vector<double>{2, 6, 10, 16}));
-  EXPECT_EQ(threaded_device_evaluate<4>("a[0]*b[0] + a[1]*b[1] + a[2]*b[2]",       {}, {{"a", {{ 0,  1, -1}, 
-                                                                                               { 1, -1,  0}, 
-                                                                                               {-1,  0,  1}, 
-                                                                                               { 1,  0, -1}}}, 
-                                                                                        {"b", {{ 1,  0, -1}, 
-                                                                                               { 0, -1,  1}, 
-                                                                                               {-1,  1,  0}, 
+  EXPECT_EQ(threaded_device_evaluate<4>("a[0]*b[0] + a[1]*b[1] + a[2]*b[2]",       {}, {{"a", {{ 0,  1, -1},
+                                                                                               { 1, -1,  0},
+                                                                                               {-1,  0,  1},
+                                                                                               { 1,  0, -1}}},
+                                                                                        {"b", {{ 1,  0, -1},
+                                                                                               { 0, -1,  1},
+                                                                                               {-1,  1,  0},
                                                                                                { 1, -1,  0}}}}), (std::vector<double>{1, 1, 1, 1}));
-  EXPECT_EQ(threaded_device_evaluate<4>("a[1]*b[1] + a[2]*b[2] + a[3]*b[3]",       {}, {{"a", {{ 0,  1, -1}, 
-                                                                                               { 1, -1,  0}, 
-                                                                                               {-1,  0,  1}, 
-                                                                                               { 1,  0, -1}}}, 
-                                                                                        {"b", {{ 1,  0, -1}, 
-                                                                                               { 0, -1,  1}, 
-                                                                                               {-1,  1,  0}, 
+  EXPECT_EQ(threaded_device_evaluate<4>("a[1]*b[1] + a[2]*b[2] + a[3]*b[3]",       {}, {{"a", {{ 0,  1, -1},
+                                                                                               { 1, -1,  0},
+                                                                                               {-1,  0,  1},
+                                                                                               { 1,  0, -1}}},
+                                                                                        {"b", {{ 1,  0, -1},
+                                                                                               { 0, -1,  1},
+                                                                                               {-1,  1,  0},
                                                                                                { 1, -1,  0}}}}, stk::expreval::Variable::ONE_BASED_INDEX),
                                                                                               (std::vector<double>{1, 1, 1, 1}));
 }
@@ -1279,7 +1295,7 @@ TEST(UnitTestEvaluator, testFunction_max)
   EXPECT_DOUBLE_EQ(evaluate("max(-1,-2)"),       -1);
   EXPECT_DOUBLE_EQ(evaluate("max(-1,-2,-3)"),    -1);
   EXPECT_DOUBLE_EQ(evaluate("max(-1,-2,-3,-4)"), -1);
-  EXPECT_DOUBLE_EQ(evaluate("max(3+2,2+1)"),      5);
+  EXPECT_DOUBLE_EQ(evaluate("max(1+2,2+3)"),      5);
 }
 
 TEST(UnitTestEvaluator, Ngp_testFunction_max)
@@ -2488,6 +2504,35 @@ TEST(UnitTestEvaluator, Ngp_testFunction_gamma_pdf)
   EXPECT_DOUBLE_EQ(device_evaluate("gamma_pdf(8, 5, 1)"),   reference_gamma_pdf(8, 5, 1));
   EXPECT_DOUBLE_EQ(device_evaluate("gamma_pdf(10, 5, 1)"),  reference_gamma_pdf(10, 5, 1));
   EXPECT_DOUBLE_EQ(device_evaluate("gamma_pdf(12, 5, 1)"),  reference_gamma_pdf(12, 5, 1));
+}
+
+class Length2Array : public stk::expreval::CFunctionBase {
+public:
+  Length2Array()
+    : CFunctionBase(1),
+      m_data{1, 2}
+  {}
+  virtual double operator()(int , const double *argv) override {
+    const int index = static_cast<int>(argv[0]);
+    if (index > 1) {
+      std::abort();
+    }
+    return m_data[index];
+  }
+private:
+  double m_data[2];
+};
+
+TEST(UnitTestEvaluator, testAvoidEvaluatingUnsafeTernaryBranch)
+{
+  EXPECT_DOUBLE_EQ(evaluate("(1) ? a[1] : a[2]", {}, {{"a", {1, 2}}}), 2);
+  EXPECT_DOUBLE_EQ(evaluate("(0) ? a[2] : a[1]", {}, {{"a", {1, 2}}}), 2);
+
+  Length2Array length2Array;
+  stk::expreval::addFunction("length_two_array", &length2Array);
+  EXPECT_DOUBLE_EQ(evaluate("(1) ? length_two_array(1) : length_two_array(2)"), 2);
+  EXPECT_DOUBLE_EQ(evaluate("(0) ? length_two_array(2) : length_two_array(1)"), 2);
+  stk::expreval::getCFunctionMap().erase("length_two_array");
 }
 
 void testRandom(const char * expression)

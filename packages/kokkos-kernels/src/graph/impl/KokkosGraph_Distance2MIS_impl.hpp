@@ -103,9 +103,9 @@ struct D2_MIS_RandomPriority
     //Each value in rowStatus represents the status and priority of each row.
     //Each value in colStatus represents the lowest nonzero priority of any row adjacent to the column.
     //  This counts up monotonically as vertices are eliminated (given status OUT_SET)
-    rowStatus = status_view_t(Kokkos::ViewAllocateWithoutInitializing("RowStatus"), numVerts);
-    colStatus = status_view_t(Kokkos::ViewAllocateWithoutInitializing("ColStatus"), numVerts);
-    allWorklists = Kokkos::View<lno_t**, Kokkos::LayoutLeft, mem_space>(Kokkos::ViewAllocateWithoutInitializing("AllWorklists"), numVerts, 3);
+    rowStatus = status_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "RowStatus"), numVerts);
+    colStatus = status_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "ColStatus"), numVerts);
+    allWorklists = Kokkos::View<lno_t**, Kokkos::LayoutLeft, mem_space>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "AllWorklists"), numVerts, 3);
   }
 
   struct RefreshRowStatus
@@ -450,7 +450,7 @@ struct D2_MIS_RandomPriority
     //build a compact list of the vertices which are IN_SET.
     lno_t numInSet = 0;
     Kokkos::parallel_reduce(range_pol(0, numVerts), CountInSet(rowStatus), numInSet);
-    lno_view_t setList(Kokkos::ViewAllocateWithoutInitializing("D2MIS"), numInSet);
+    lno_view_t setList(Kokkos::view_alloc(Kokkos::WithoutInitializing, "D2MIS"), numInSet);
     Kokkos::parallel_scan(range_pol(0, numVerts), CompactInSet(rowStatus, setList));
     return setList;
   }
@@ -519,8 +519,8 @@ struct D2_MIS_FixedPriority
 
   D2_MIS_FixedPriority(const rowmap_t& rowmap_, const entries_t& entries_)
     : rowmap(rowmap_), entries(entries_), numVerts(rowmap.extent(0) - 1), colUpdateBitset(numVerts),
-    worklist1(Kokkos::ViewAllocateWithoutInitializing("WL1"), numVerts),
-    worklist2(Kokkos::ViewAllocateWithoutInitializing("WL2"), numVerts)
+    worklist1(Kokkos::view_alloc(Kokkos::WithoutInitializing, "WL1"), numVerts),
+    worklist2(Kokkos::view_alloc(Kokkos::WithoutInitializing, "WL2"), numVerts)
   {
     status_t i = numVerts + 1;
     nvBits = 0;
@@ -532,8 +532,8 @@ struct D2_MIS_FixedPriority
     //Each value in rowStatus represents the status and priority of each row.
     //Each value in colStatus represents the lowest nonzero priority of any row adjacent to the column.
     //  This counts up monotonically as vertices are eliminated (given status OUT_SET)
-    rowStatus = status_view_t(Kokkos::ViewAllocateWithoutInitializing("RowStatus"), numVerts);
-    colStatus = status_view_t(Kokkos::ViewAllocateWithoutInitializing("ColStatus"), numVerts);
+    rowStatus = status_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "RowStatus"), numVerts);
+    colStatus = status_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "ColStatus"), numVerts);
     KokkosKernels::Impl::graph_min_max_degree<device_t, lno_t, rowmap_t>(rowmap, minDegree, maxDegree);
     //Compute row statuses 
     Kokkos::parallel_for(range_pol(0, numVerts), InitRowStatus(rowStatus, rowmap, numVerts, nvBits, minDegree, maxDegree));
@@ -829,7 +829,7 @@ struct D2_MIS_FixedPriority
     //build a compact list of the vertices which are IN_SET.
     lno_t numInSet = 0;
     Kokkos::parallel_reduce(range_pol(0, numVerts), CountInSet(rowStatus), numInSet);
-    lno_view_t setList(Kokkos::ViewAllocateWithoutInitializing("D2MIS"), numInSet);
+    lno_view_t setList(Kokkos::view_alloc(Kokkos::WithoutInitializing, "D2MIS"), numInSet);
     Kokkos::parallel_scan(range_pol(0, numVerts), CompactInSet(rowStatus, setList));
     return setList;
   }
@@ -869,7 +869,7 @@ struct D2_MIS_Coarsening
   D2_MIS_Coarsening(const rowmap_t& rowmap_, const entries_t& entries_, const labels_t& mis2_)
     : rowmap(rowmap_), entries(entries_), mis2(mis2_),
       numVerts(rowmap.extent(0) - 1),
-      labels(Kokkos::ViewAllocateWithoutInitializing("Cluster Labels"), numVerts)
+      labels(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Cluster Labels"), numVerts)
   {
     Kokkos::deep_copy(labels, (lno_t) -1);
   }

@@ -106,7 +106,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(yelems+1)*(xelems+1)*(zelems+1));
 
    std::vector<stk::mesh::Entity> all_edges;
-   mesh->getAllEdges(panzer_stk::STK_Interface::edgeBlockString, all_edges);
+   mesh->getAllEdges("line_2_"+panzer_stk::STK_Interface::edgeBlockString, all_edges);
    TEST_EQUALITY(all_edges.size(),xelems*(yelems+1)*(zelems+1)
                                  +yelems*(xelems+1)*(zelems+1)
                                  +zelems*(xelems+1)*(yelems+1));
@@ -114,7 +114,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
    std::vector<stk::mesh::Entity> my_edges;
    if (numprocs==1) {
      // all edges belong to rank0, so getMyEdges() is equivalent to getAllEdges()
-     mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, my_edges);
+     mesh->getMyEdges("line_2_"+panzer_stk::STK_Interface::edgeBlockString, my_edges);
      TEST_EQUALITY(my_edges.size(),all_edges.size());
      TEST_EQUALITY(my_edges.size(),xelems*(yelems+1)*(zelems+1)
                                   +yelems*(xelems+1)*(zelems+1)
@@ -126,7 +126,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
      std::size_t my_xelems=xelems/2;
      std::size_t my_yelems=yelems;
      std::size_t my_zelems=zelems;
-     mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, my_edges);
+     mesh->getMyEdges("line_2_"+panzer_stk::STK_Interface::edgeBlockString, my_edges);
      TEST_EQUALITY(my_edges.size(),my_xelems*(my_yelems+1)*(my_zelems+1)
                                   +my_yelems*(my_xelems+1)*(my_zelems+1)
                                   +my_zelems*(my_xelems+1)*(my_yelems+1));
@@ -136,7 +136,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
      std::size_t my_xelems=xelems/2;
      std::size_t my_yelems=yelems;
      std::size_t my_zelems=zelems;
-     mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, my_edges);
+     mesh->getMyEdges("line_2_"+panzer_stk::STK_Interface::edgeBlockString, my_edges);
      TEST_EQUALITY(my_edges.size(),my_xelems*(my_yelems+1)*(my_zelems+1)
                                   +my_yelems*(my_xelems+1)*(my_zelems+1)
                                   +my_zelems*(my_xelems+1)*(my_yelems+1)
@@ -191,13 +191,13 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, is_edge_local)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(yelems+1)*(xelems+1)*(zelems+1));
 
    std::vector<stk::mesh::Entity> my_edges;
-   mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, my_edges);
+   mesh->getMyEdges("line_2_"+panzer_stk::STK_Interface::edgeBlockString, my_edges);
    for ( auto edge : my_edges ) {
       TEST_ASSERT(mesh->isEdgeLocal(edge));
    }
 
    std::vector<stk::mesh::Entity> all_edges;
-   mesh->getAllEdges(panzer_stk::STK_Interface::edgeBlockString, all_edges);
+   mesh->getAllEdges("line_2_"+panzer_stk::STK_Interface::edgeBlockString, all_edges);
    for ( auto edge : all_edges ) {
       if (mesh->getBulkData()->parallel_owner_rank(edge)==rank) {
         TEST_ASSERT(mesh->isEdgeLocal(edge));
@@ -234,7 +234,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, add_edge_field)
    stk::mesh::Field<double> * edge_field_2 = mesh->getEdgeField("edge_field_2", "eblock-0_0_0");
 
    std::vector<stk::mesh::Entity> edges;
-   mesh->getAllEdges(panzer_stk::STK_Interface::edgeBlockString, edges);
+   mesh->getAllEdges("line_2_"+panzer_stk::STK_Interface::edgeBlockString, edges);
    for(auto edge : edges) {
      double* data = stk::mesh::field_data(*edge_field_1, edge);
      // set the edge's field value to edge's entity ID
@@ -260,7 +260,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, add_edge_field)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1)*(5+1));
 
-   mesh->getAllEdges(panzer_stk::STK_Interface::edgeBlockString, edges);
+   mesh->getAllEdges("line_2_"+panzer_stk::STK_Interface::edgeBlockString, edges);
    TEST_EQUALITY(edges.size(),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
 }
 
@@ -292,7 +292,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, set_edge_field_data)
    mesh->addEdgeField("edge_field_4", "eblock-0_0_0");
 
    std::vector<stk::mesh::Entity> edges;
-   mesh->getMyEdges(panzer_stk::STK_Interface::edgeBlockString, edges);
+   mesh->getMyEdges("line_2_"+panzer_stk::STK_Interface::edgeBlockString, edges);
 
    Kokkos::DynRankView<double,PHX::Device> edgeValues;
    edgeValues = Kokkos::createDynRankView(edgeValues,"edgeValues",edges.size());
@@ -334,7 +334,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, set_edge_field_data)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1)*(5+1));
 
-   mesh->getAllEdges(panzer_stk::STK_Interface::edgeBlockString, edges);
+   mesh->getAllEdges("line_2_"+panzer_stk::STK_Interface::edgeBlockString, edges);
    TEST_EQUALITY(edges.size(),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
 }
 

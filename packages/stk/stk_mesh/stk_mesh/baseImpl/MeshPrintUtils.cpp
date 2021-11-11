@@ -187,20 +187,6 @@ void print_connectivity_of_rank(const BulkData& M, Entity entity,
     }
 }
 
-void print_upward_connectivity(const BulkData& bulk, Entity entity, std::ostream& out)
-{
-  EntityRank nextRank = static_cast<EntityRank>(bulk.entity_rank(entity)+1);
-  EntityRank endRank = static_cast<EntityRank>(bulk.mesh_meta_data().entity_rank_count());
-
-  for(EntityRank rank = nextRank; rank < endRank; ++rank) {
-    const unsigned num = bulk.num_connectivity(entity, rank);
-    const Entity* conn = bulk.begin(entity, rank);
-    for(unsigned i=0; i<num; ++i) {
-      out<<bulk.entity_key(conn[i])<<" ";
-    }
-  }
-}
-
 } // namespace impl
 } // namespace mesh
 } // namespace stk

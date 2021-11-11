@@ -194,7 +194,7 @@ TEST(UnitTestingOfBucket, bucketSortChangeEntityId)
 
 void test_nodes_and_permutation(stk::mesh::BulkData& bulk, stk::mesh::Entity elem, stk::mesh::Entity side, stk::mesh::EntityVector& nodes)
 {
-    stk::mesh::EntityRank sideRank = bulk.entity_rank(side);
+    stk::mesh::EntityRank rank = bulk.entity_rank(side);
     Entity const *rels_itr = bulk.begin_nodes(side);
     unsigned num_nodes = bulk.num_nodes(side);
 
@@ -205,7 +205,7 @@ void test_nodes_and_permutation(stk::mesh::BulkData& bulk, stk::mesh::Entity ele
 
     stk::mesh::Permutation const *perms = bulk.begin_permutations(side, stk::topology::ELEM_RANK);
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
-            stk::mesh::get_ordinal_and_permutation(bulk, elem, sideRank, nodes);
+            stk::mesh::get_ordinal_and_permutation(bulk, elem, rank, nodes);
 
     stk::mesh::Permutation gold_permutation = ordinalAndPermutation.second;
     ASSERT_TRUE(gold_permutation!=stk::mesh::INVALID_PERMUTATION);
@@ -226,8 +226,8 @@ void test_nodes_and_permutation(stk::mesh::BulkData& bulk, stk::mesh::Entity ele
 
     stk::mesh::ConnectivityOrdinal elements_side_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
 
-    unsigned num_sides = bulk.num_connectivity(elem, sideRank);
-    const stk::mesh::Entity *sides = bulk.begin(elem, sideRank);
+    unsigned num_sides = bulk.num_connectivity(elem, rank);
+    const stk::mesh::Entity *sides = bulk.begin(elem, rank);
     for (unsigned i=0;i<num_sides;++i)
     {
         if (sides[i]==side)
@@ -237,7 +237,7 @@ void test_nodes_and_permutation(stk::mesh::BulkData& bulk, stk::mesh::Entity ele
         }
     }
 
-    const stk::mesh::Permutation* perms2 = bulk.begin_permutations(elem, sideRank);
+    stk::mesh::Permutation const *perms2 = bulk.begin_permutations(elem, rank);
     EXPECT_EQ(gold_permutation, perms2[elements_side_offset]);
 }
 
@@ -324,36 +324,6 @@ TEST_F(BucketHex, testing_valid_permutation_on_various_ranks)
     }
 }
 
-class BucketTester : public stk::mesh::Bucket
-{
-public:
-  bool my_declare_relation(unsigned bucket_ordinal, stk::mesh::Entity e_to,
-                           stk::mesh::ConnectivityOrdinal ordinal,
-                           stk::mesh::Permutation permutation)
-  {
-    return stk::mesh::Bucket::declare_relation(bucket_ordinal, e_to, ordinal, permutation);
-  }
-};
-
-TEST_F(BucketHex, declare_relation_returns_false_if_node_already_connected)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
-
-  setup_mesh(1, 1, 1);
-
-  stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
-  stk::mesh::Bucket& bucket = get_bulk().bucket(elem1);
-  unsigned bucket_ordinal = get_bulk().bucket_ordinal(elem1);
-  EXPECT_EQ(0u, bucket_ordinal);
-
-  const stk::mesh::Entity* nodes = bucket.begin_nodes(bucket_ordinal);
-  stk::mesh::ConnectivityOrdinal ord = 0;
-  stk::mesh::Permutation perm = stk::mesh::INVALID_PERMUTATION;
-
-  BucketTester& bktTester = static_cast<BucketTester&>(bucket);
-  EXPECT_FALSE(bktTester.my_declare_relation(bucket_ordinal, nodes[0], ord, perm));
-}
-
 TEST_F(BucketHex, changing_conn_on_bucket_for_face_to_element)
 {
     if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
@@ -386,31 +356,41 @@ TEST_F(BucketHex, changing_conn_on_bucket_for_face_to_element)
         std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
                     stk::mesh::get_ordinal_and_permutation(bulk, elem, stk::topology::FACE_RANK, new_nodes);
 
-        stk::mesh::ConnectivityOrdinal faceElemOrdinal = ordinalAndPermutation.first;
         stk::mesh::Permutation new_permutation = ordinalAndPermutation.second;
 
-        stk::mesh::ConnectivityOrdinal elemFaceOrdinal = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-        unsigned num_faces = bulk.num_faces(elem);
-        const stk::mesh::Entity *faces = bulk.begin_faces(elem);
-        const stk::mesh::ConnectivityOrdinal *faceOrds = bulk.begin_ordinals(elem, stk::topology::FACE_RANK);
-        for (unsigned i=0;i<num_faces;++i)
+        unsigned faces_element_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+        unsigned num_elems = bulk.num_elements(side);
+        const stk::mesh::Entity *elements = bulk.begin_elements(side);
+        for (unsigned i=0;i<num_elems;++i)
         {
-            if (faces[i]==side)
+            if (elements[i]==elem)
             {
-                elemFaceOrdinal = faceOrds[i];
+                faces_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
                 break;
             }
         }
 
-        ASSERT_TRUE(elemFaceOrdinal!=stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
+        unsigned elements_face_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+        unsigned num_faces = bulk.num_faces(elem);
+        const stk::mesh::Entity *faces = bulk.begin_faces(elem);
+        for (unsigned i=0;i<num_faces;++i)
+        {
+            if (faces[i]==side)
+            {
+                elements_face_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
+                break;
+            }
+        }
+
+        ASSERT_TRUE(elements_face_offset!=stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
 
         stk::mesh::unit_test::BucketTester& bucket_side = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(side));
         bucket_side.my_change_connected_nodes(bulk.bucket_ordinal(side), &new_nodes[0]);
-        bucket_side.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(side), faceElemOrdinal, new_permutation);
+        bucket_side.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(side), faces_element_offset, new_permutation);
 
         stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(elem));
 
-        bucket_elem.my_change_existing_permutation_for_connected_face(bulk.bucket_ordinal(elem), elemFaceOrdinal, new_permutation);
+        bucket_elem.my_change_existing_permutation_for_connected_face(bulk.bucket_ordinal(elem), elements_face_offset, new_permutation);
 
         test_nodes_and_permutation(bulk, elem, side, new_nodes);
     }
@@ -444,33 +424,42 @@ TEST_F(BucketHex, changing_conn_on_bucket_for_edge_to_element)
         std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
                     stk::mesh::get_ordinal_and_permutation(bulk, elem, stk::topology::EDGE_RANK, new_nodes);
 
-        stk::mesh::ConnectivityOrdinal edgeElemOrdinal = ordinalAndPermutation.first;
         stk::mesh::Permutation new_permutation = ordinalAndPermutation.second;
 
-        stk::mesh::ConnectivityOrdinal elemEdgeOrdinal = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-        unsigned num_edges = bulk.num_edges(elem);
-        const stk::mesh::Entity *edges = bulk.begin_edges(elem);
-        const stk::mesh::ConnectivityOrdinal *edgeOrds = bulk.begin_ordinals(elem, stk::topology::EDGE_RANK);
-        for (unsigned i=0;i<num_edges;++i)
+        unsigned edges_element_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+        unsigned num_elems = bulk.num_elements(edge);
+        const stk::mesh::Entity *elements = bulk.begin_elements(edge);
+        for (unsigned i=0;i<num_elems;++i)
         {
-            if (edges[i]==edge)
+            if (elements[i]==elem)
             {
-                elemEdgeOrdinal = edgeOrds[i];
+                edges_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
                 break;
             }
         }
 
-        ASSERT_TRUE(elemEdgeOrdinal != stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
+        unsigned elements_edge_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+        unsigned num_edges = bulk.num_edges(elem);
+        const stk::mesh::Entity *edges = bulk.begin_edges(elem);
+        for (unsigned i=0;i<num_edges;++i)
+        {
+            if (edges[i]==edge)
+            {
+                elements_edge_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
+                break;
+            }
+        }
+
+        ASSERT_TRUE(elements_edge_offset != stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
 
         stk::mesh::unit_test::BucketTester& bucket_edge = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(edge));
 
         bucket_edge.my_change_connected_nodes(bulk.bucket_ordinal(edge), &new_nodes[0]);
-
-        bucket_edge.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(edge), edgeElemOrdinal, new_permutation);
+        bucket_edge.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(edge), edges_element_offset, new_permutation);
 
         stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(elem));
 
-        bucket_elem.my_change_existing_permutation_for_connected_edge(bulk.bucket_ordinal(elem), elemEdgeOrdinal, new_permutation);
+        bucket_elem.my_change_existing_permutation_for_connected_edge(bulk.bucket_ordinal(elem), elements_edge_offset, new_permutation);
 
         test_nodes_and_permutation(bulk, elem, edge, new_nodes);
     }
@@ -481,6 +470,8 @@ void do_nonmodifying_debug_check(const stk::mesh::BulkData & bulk, const stk::me
 {
   const stk::mesh::BucketVector & buckets = bulk.buckets(stk::topology::NODE_RANK);
   ASSERT_EQ(buckets.size(), 1u);
+
+  buckets[0]->check_size_invariant();
 
   EXPECT_FALSE(buckets[0]->get_ngp_field_bucket_is_modified(coordsField.mesh_meta_data_ordinal()));
 }

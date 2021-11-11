@@ -8,7 +8,7 @@
 
 #ifndef KRINO_KRINO_PARSER_AKRI_YAML_HPP_
 #define KRINO_KRINO_PARSER_AKRI_YAML_HPP_
-#include <string>
+#include <Akri_config.hpp>
 
 #ifdef KRINO_HAVE_YAML
 
@@ -23,26 +23,7 @@
 #pragma GCC diagnostic pop
 #endif
 
-#else
-// Fake struct to mimic YAML Node if we don't have YAML
-namespace YAML {
-  struct NodeType {
-    enum value { Undefined, Null, Scalar, Sequence, Map };
-  };
 
-  struct Node {
-    NodeType::value Type() const { return NodeType::Null; }
-
-    template<typename T> const T as() const { return T(); }
-
-    explicit operator bool() const { return false; }
-
-    Node * begin() const { return nullptr; }
-    Node * end() const { return nullptr; }
-
-    Node operator[](std::string) const { return Node(); }
-  };
-}
 #endif
 
 #endif /* KRINO_KRINO_PARSER_AKRI_YAML_HPP_ */

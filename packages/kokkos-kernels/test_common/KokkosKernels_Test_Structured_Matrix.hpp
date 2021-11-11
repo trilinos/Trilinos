@@ -128,7 +128,7 @@ namespace Test {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator() (const exteriorTag&, const size_type idx) const {
+    void operator() (const exteriorTag&, const size_type /*idx*/) const {
       // LeftBC
       rowmap(1) = 2;
 
@@ -476,7 +476,7 @@ namespace Test {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator() (const cornerFDTag&, const size_type idx) const {
+    void operator() (const cornerFDTag&, const size_type /*idx*/) const {
       // Bottom-left corner
       ordinal_type rowIdx = 0;
       size_type rowOffset = cornerStencilLength;
@@ -727,7 +727,7 @@ namespace Test {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator() (const cornerFETag&, const size_type idx) const {
+    void operator() (const cornerFETag&, const size_type /*idx*/) const {
       // Bottom-left corner
       ordinal_type rowIdx = 0;
       size_type rowOffset = cornerStencilLength;
@@ -1775,7 +1775,7 @@ namespace Test {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator() (const cornerFDTag&, const size_type idx) const {
+    void operator() (const cornerFDTag&, const size_type /*idx*/) const {
       // Bottom corners
       ordinal_type rowIdx = 0;
       size_type rowOffset = cornerStencilLength;
@@ -3151,7 +3151,7 @@ namespace Test {
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator() (const cornerFETag&, const size_type idx) const {
+    void operator() (const cornerFETag&, const size_type /*idx*/) const {
       // Bottom corners
       ordinal_type rowIdx = 0;
       size_type rowOffset = cornerStencilLength;

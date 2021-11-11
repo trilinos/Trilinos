@@ -10,27 +10,17 @@ namespace Test {
 
     typedef typename ViewTypeA::value_type ScalarA;
 
-    typedef Kokkos::View<ScalarA*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeA::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeA;
+    ViewTypeA a("A", N);
 
-
-    BaseTypeA b_a("A",N);
-
-    ViewTypeA a = Kokkos::subview(b_a,Kokkos::ALL(),0);
-
-    typename BaseTypeA::HostMirror h_b_a = Kokkos::create_mirror_view(b_a);
-
-    typename ViewTypeA::HostMirror h_a = Kokkos::subview(h_b_a,Kokkos::ALL(),0);
+    typename ViewTypeA::HostMirror h_a = Kokkos::create_mirror_view(a);
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
     ScalarA randStart, randEnd;
     Test::getRandomBounds(10.0, randStart, randEnd);
-    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
+    Kokkos::fill_random(a, rand_pool, randStart, randEnd);
 
-    Kokkos::deep_copy(h_b_a,b_a);
+    Kokkos::deep_copy(h_a, a);
 
     typename ViewTypeA::const_type c_a = a;
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
@@ -163,12 +153,12 @@ int test_sum_mv() {
 
 #if defined(KOKKOSKERNELS_INST_FLOAT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, sum_float ) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_float"); 
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_float");
     test_sum<float,TestExecSpace> ();
   Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, sum_mv_float ) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_float"); 
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_float");
     test_sum_mv<float,TestExecSpace> ();
   Kokkos::Profiling::popRegion();
 }
@@ -176,12 +166,12 @@ TEST_F( TestCategory, sum_mv_float ) {
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, sum_double ) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_double"); 
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_double");
     test_sum<double,TestExecSpace> ();
   Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, sum_mv_double ) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_double"); 
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_double");
     test_sum_mv<double,TestExecSpace> ();
   Kokkos::Profiling::popRegion();
 }
@@ -189,12 +179,12 @@ TEST_F( TestCategory, sum_mv_double ) {
 
 #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, sum_complex_double ) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_complex_double"); 
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_complex_double");
     test_sum<Kokkos::complex<double>,TestExecSpace> ();
   Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, sum_mv_complex_double ) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_complex_double"); 
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_complex_double");
     test_sum_mv<Kokkos::complex<double>,TestExecSpace> ();
   Kokkos::Profiling::popRegion();
 }
@@ -202,12 +192,12 @@ TEST_F( TestCategory, sum_mv_complex_double ) {
 
 #if defined(KOKKOSKERNELS_INST_INT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
 TEST_F( TestCategory, sum_int ) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_int"); 
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_int");
     test_sum<int,TestExecSpace> ();
   Kokkos::Profiling::popRegion();
 }
 TEST_F( TestCategory, sum_mv_int ) {
-  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_int"); 
+  Kokkos::Profiling::pushRegion("KokkosBlas::Test::sum_mv_int");
     test_sum_mv<int,TestExecSpace> ();
   Kokkos::Profiling::popRegion();
 }

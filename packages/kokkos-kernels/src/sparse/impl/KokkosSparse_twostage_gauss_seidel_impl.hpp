@@ -624,7 +624,7 @@ namespace KokkosSparse{
       {
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         double tic;
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
         Kokkos::fence();
         tic = timer.seconds ();
 #endif
@@ -698,23 +698,23 @@ namespace KokkosSparse{
         timer.reset();
 #endif
         // allocate memory to store local D
-        values_view_t viewD (Kokkos::ViewAllocateWithoutInitializing("diags"), num_rows);
+        values_view_t viewD (Kokkos::view_alloc(Kokkos::WithoutInitializing, "diags"), num_rows);
 
         // allocate memory to store local L
-        entries_view_t  column_viewL (Kokkos::ViewAllocateWithoutInitializing("entriesL"), nnzL);
-        values_view_t   values_viewL (Kokkos::ViewAllocateWithoutInitializing("valuesL"),  nnzL);
+        entries_view_t  column_viewL (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesL"), nnzL);
+        values_view_t   values_viewL (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesL"),  nnzL);
 
         // allocate memory to store local U
-        entries_view_t  column_viewU (Kokkos::ViewAllocateWithoutInitializing("entriesU"), nnzU);
-        values_view_t   values_viewU (Kokkos::ViewAllocateWithoutInitializing("valuesU"),  nnzU);
+        entries_view_t  column_viewU (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesU"), nnzU);
+        values_view_t   values_viewU (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesU"),  nnzU);
 
         // allocate memory to store complement of U+D
-        entries_view_t  column_viewLa (Kokkos::ViewAllocateWithoutInitializing("entriesLa"), nnzLa);
-        values_view_t   values_viewLa (Kokkos::ViewAllocateWithoutInitializing("valuesLa"),  nnzLa);
+        entries_view_t  column_viewLa (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesLa"), nnzLa);
+        values_view_t   values_viewLa (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesLa"),  nnzLa);
 
         // allocate memory to store complement of L+D
-        entries_view_t  column_viewUa (Kokkos::ViewAllocateWithoutInitializing("entriesUa"), nnzUa);
-        values_view_t   values_viewUa (Kokkos::ViewAllocateWithoutInitializing("valuesUa"),  nnzUa);
+        entries_view_t  column_viewUa (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesUa"), nnzUa);
+        values_view_t   values_viewUa (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesUa"),  nnzUa);
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         Kokkos::fence();
         tic = timer.seconds ();
@@ -763,7 +763,7 @@ namespace KokkosSparse{
           gsHandle->setLa (crsmatLa);
           gsHandle->setUa (crsmatUa);
 
-          values_view_t viewDa (Kokkos::ViewAllocateWithoutInitializing("diags"), num_rows);
+          values_view_t viewDa (Kokkos::view_alloc(Kokkos::WithoutInitializing, "diags"), num_rows);
           gsHandle->setDa (viewDa);
         }
 
@@ -786,7 +786,7 @@ namespace KokkosSparse{
       {
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         double tic;
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
         Kokkos::fence();
         timer.reset();
 #endif
@@ -845,9 +845,9 @@ namespace KokkosSparse{
           if (sptrsv_algo == SPTRSVAlgorithm::SPTRSV_CUSPARSE) { // symbolic with CuSparse needs values
             // CuSparse needs matrix sorted by column indexes for each row
             // TODO: may need to move this to symbolic/numeric of sptrsv
-            KokkosKernels::Impl::sort_crs_matrix <execution_space, const_row_map_view_t, entries_view_t, values_view_t>
+            KokkosKernels::sort_crs_matrix <execution_space, const_row_map_view_t, entries_view_t, values_view_t>
               (rowmap_viewL, column_viewL, values_viewL);
-            KokkosKernels::Impl::sort_crs_matrix <execution_space, const_row_map_view_t, entries_view_t, values_view_t>
+            KokkosKernels::sort_crs_matrix <execution_space, const_row_map_view_t, entries_view_t, values_view_t>
               (rowmap_viewU, column_viewU, values_viewU);
 
             // now do symbolic
@@ -869,13 +869,13 @@ namespace KokkosSparse{
                   scalar_t omega = ST::one(),
                   bool apply_forward = true,
                   bool apply_backward = true,
-                  bool update_y_vector = true)
+                  bool /*update_y_vector*/ = true)
       {
         const_scalar_t one = Kokkos::Details::ArithTraits<scalar_t>::one ();
         const_scalar_t zero = Kokkos::Details::ArithTraits<scalar_t>::zero ();
 #ifdef KOKKOSSPARSE_IMPL_TIME_TWOSTAGE_GS
         double tic;
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
         Kokkos::fence();
         tic = timer.seconds ();
 #endif

@@ -25,7 +25,7 @@ int driver (int argc, char *argv[]) {
   if (r_parse) return 0; // print help return
 
   Kokkos::initialize(argc, argv);
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   const bool detail = false;
 
   typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type device_type;

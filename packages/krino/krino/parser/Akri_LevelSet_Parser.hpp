@@ -9,12 +9,12 @@
 #ifndef Akri_LevelSet_Parser_h
 #define Akri_LevelSet_Parser_h
 
-namespace YAML { class Node; }
+namespace krino { namespace Parser { class Node; } }
 namespace krino { class RegionInterface; }
 
 namespace krino {
 namespace LevelSet_Parser {
- void parse(const YAML::Node & node, RegionInterface & region);
+  void parse(const Parser::Node & node, RegionInterface & region);
 }
 }
 

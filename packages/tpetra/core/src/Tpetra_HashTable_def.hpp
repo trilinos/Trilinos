@@ -147,7 +147,7 @@ HashTable( const int size, const unsigned int seed )
   Size_ = getRecommendedSize(size);
   Container_ = new Node * [Size_];
   for( KeyType i = 0; i < Size_; ++i ) Container_[i] = NULL;
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
   maxc_ = 0;
   nc_ = 0;
 #endif
@@ -160,7 +160,7 @@ HashTable( const HashTable & obj )
     Size_(obj.Size_),
     Seed_(obj.Seed_)
 {
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
   maxc_ = 0;
   nc_ = 0;
 #endif
@@ -199,19 +199,19 @@ HashTable<KeyType, ValueType>::
 get( const KeyType key ) {
   Node * n = Container_[ hashFunc(key) ];
 
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
   int k = 0;
 #endif
 
   while( n && (n->Key != key) ){
     n = n->Ptr;
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     ((k+1 > maxc_) ? maxc_ = k+1 : 0) ;
     k++;
 #endif
   }
 
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
   if (k != 0) nc_++;
 #endif
   if( n ) return n->Value;
@@ -272,7 +272,7 @@ void HashTable<KeyType, ValueType>::describe(
         out << "Size_: " << Size_ << endl;
       }
       out << "}" << endl;
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
       out << "Debug info: {" << endl;
       {
         OSTab tab2 (rcpFromRef (out));
@@ -280,7 +280,7 @@ void HashTable<KeyType, ValueType>::describe(
             << "Total number of collisions: " << nc_ << endl;
       }
       out << "}" << endl;
-#endif // HAVE_TEUCHOS_DEBUG
+#endif // HAVE_TPETRA_DEBUG
 
       if (vl >= VERB_EXTREME) {
         out << "Contents: ";

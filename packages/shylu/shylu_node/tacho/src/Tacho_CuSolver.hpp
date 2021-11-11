@@ -82,7 +82,7 @@ namespace Tacho {
         printf("cuSolver: Analyze\n");
         printf("=================\n");
       }
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       _m = m; 
 
@@ -140,7 +140,7 @@ namespace Tacho {
         printf("cuSolver: Factorize\n");
         printf("===================\n");
       }
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
       size_t internalDataInBytes, workspaceInBytes;
@@ -186,7 +186,7 @@ namespace Tacho {
         printf("cuSolver: Solve\n");
         printf("===============\n");
       }
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       
       timer.reset();
       /// solve A x = t

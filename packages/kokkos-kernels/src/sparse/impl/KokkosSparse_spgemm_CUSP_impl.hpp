@@ -181,7 +181,7 @@ void CUSP_apply(
   cuspMatrix C;
 
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   cusp::multiply(A,B,C);
   KernelHandle::HandleExecSpace().fence();
   std::cout << "Actual CUSP SPMM Time:" << timer1.seconds() << std::endl;
@@ -196,8 +196,8 @@ void CUSP_apply(
 
   handle->set_c_nnz( C.values.size());
 
-  entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") ,  C.column_indices.size());
-  valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC"),  C.values.size());
+  entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::view_alloc(Kokkos::WithoutInitializing, "EntriesC") ,  C.column_indices.size());
+  valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"),  C.values.size());
 
   Kokkos::parallel_for (my_exec_space (0, m + 1) , CopyArrayToCuspArray<typename cin_row_index_view_type::non_const_type,
       idx >(row_mapC, (idx *) thrust::raw_pointer_cast(C.row_offsets.data())));

@@ -9,7 +9,7 @@
 
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #endif 
 
 namespace BaskerNS
@@ -203,7 +203,7 @@ namespace BaskerNS
 	  //for(i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
 
 	  //Debug of dim
-	  //Kokkos::Impl::Timer timer;
+	  //Kokkos::Timer timer;
 	  if(Options.same_pattern == BASKER_FALSE)
 	    {
 	  for(Int i = M.col_ptr(k+1)-1; i >= M.col_ptr(k); --i)
