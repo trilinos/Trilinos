@@ -28,7 +28,7 @@ FOREACH(ETI_DEVICE_NAME IN LISTS Intrepid2_TEST_ETI_DEVICE_NAME)
       SET(ETI_DEVICE "Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>")
     ENDIF()
     SET(ETI_NAME "${ETI_FILE}_${ETI_DEVICE_NAME}")
-    MESSAGE(STATUS "Generating TEST: ${ETI_NAME}.cpp")
+    MESSAGE(STATUS "Generating TEST: RealSpaceTools ${ETI_NAME}.cpp")
     CONFIGURE_FILE(eti/${ETI_FILE}_ETI.in ${ETI_NAME}.cpp)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
