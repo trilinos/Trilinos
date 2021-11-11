@@ -4819,6 +4819,7 @@ mj_create_new_partitions(
   // the last member is utility used for atomically inserting the values.
   // Sorting here avoids potential indeterminancy in the partitioning results
   if(track_on_cuts.size() > 0) { // size 0 unused, or size is minimum of 2
+    Kokkos::fence("TODO RemoveThisFenceAfterKokkosGithub4526IsFixed; see Trilinos #9909");
     auto track_on_cuts_sort = Kokkos::subview(track_on_cuts,
       std::pair<mj_lno_t, mj_lno_t>(0, track_on_cuts.size() - 1)); // do not sort last element
     Kokkos::sort(track_on_cuts_sort);
