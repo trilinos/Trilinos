@@ -557,7 +557,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
   }
 
+  RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer = rcp(new Teuchos::StackedTimer("Hierarchical Driver"));
+  Teuchos::RCP<Teuchos::FancyOStream> verbose_out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
+  verbose_out->setShowProcRank(true);
+  stacked_timer->setVerboseOstream(verbose_out);
+  Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
+
   using HOp = Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using matrix_type = typename HOp::matrix_type;
+  using map_type = typename HOp::map_type;
+  using vec_type = typename HOp::vec_type;
+  using coord_mv = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>;
 
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   Teuchos::FancyOStream& out = *fancy;
@@ -566,41 +578,55 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
-  RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::ParameterList         hierachicalParams;
+  RCP<const map_type>            map, clusterCoeffMap, ghosted_clusterCoeffMap;
+  RCP<matrix_type>               nearField, basisMatrix, kernelApproximations, auxOp;
+  RCP<vec_type>                  X_ex, RHS, X;
+  RCP<coord_mv>                  coords;
+  std::vector<RCP<matrix_type> > transferMatrices;
+  {
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Read files")));
 
-  Teuchos::ParameterList hierachicalParams;
-  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlHierachical, Teuchos::Ptr<Teuchos::ParameterList>(&hierachicalParams), *comm);
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlHierachical, Teuchos::Ptr<Teuchos::ParameterList>(&hierachicalParams), *comm);
 
-  // row, domain and range map of the operator
-  auto map = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("map"), lib, comm);
-  // 1-to-1 map for the cluster coefficients
-  auto clusterCoeffMap = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("coefficient map"), lib, comm);
-  // overlapping map for the cluster coefficients
-  auto ghosted_clusterCoeffMap = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("ghosted coefficient map"), lib, comm);
+    // row, domain and range map of the operator
+    map = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("map"), lib, comm);
+    // 1-to-1 map for the cluster coefficients
+    clusterCoeffMap = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("coefficient map"), lib, comm);
+    // overlapping map for the cluster coefficients
+    ghosted_clusterCoeffMap = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("ghosted coefficient map"), lib, comm);
 
-  // near field interactions
-  auto nearField = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("near field matrix"), map);
+    // near field interactions
+    nearField = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("near field matrix"), map);
 
-  // far field basis expansion coefficients
-  auto basisMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map);
-  // far field interactions
-  auto kernelApproximations = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap);
+    // far field basis expansion coefficients
+    basisMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map);
+    // far field interactions
+    kernelApproximations = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap);
 
-  auto transfersList = hierachicalParams.sublist("shift coefficient matrices");
-  std::vector<RCP<typename HOp::matrix_type> > transferMatrices;
-  for (int i = 0; i < transfersList.numParams(); i++) {
-    std::string filename = transfersList.get<std::string>(std::to_string(i));
-    auto transfer = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap);
-    transferMatrices.push_back(transfer);
+    auto transfersList = hierachicalParams.sublist("shift coefficient matrices");
+    for (int i = 0; i < transfersList.numParams(); i++) {
+      std::string filename = transfersList.get<std::string>(std::to_string(i));
+      auto transfer = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap);
+      transferMatrices.push_back(transfer);
+    }
+
+    X_ex = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("exact solution"), map);
+    RHS  = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("right-hand side"), map);
+    X    = MultiVectorFactory::Build(map, 1);
+
+    auxOp  = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("auxiliary operator"), map);
+    coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("coordinates"), map);
   }
 
-  auto op = rcp(new HOp(nearField, kernelApproximations, basisMatrix, transferMatrices));
+  RCP<HOp> op;
+  {
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Operator construction")));
+    op = rcp(new HOp(nearField, kernelApproximations, basisMatrix, transferMatrices));
 
-  out << "Compression: " << op->getCompression() << " of dense matrix."<< std::endl;
+    out << "Compression: " << op->getCompression() << " of dense matrix."<< std::endl;
+  }
 
-  auto X_ex = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("exact solution"), map);
-  auto RHS  = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("right-hand side"), map);
-  auto X    = MultiVectorFactory::Build(map, 1);
 
   {
     op->apply(*X_ex, *X);
@@ -635,6 +661,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     out << "\n*********************************************************\n";
     out << "Unpreconditioned Krylov method\n";
     out << "*********************************************************\n\n";
+
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Unpreconditioned solve")));
 
     using MV = typename HOp::vec_type;
     using OP = Belos::OperatorT<MV>;
@@ -680,106 +708,122 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   {
     // Solve linear system using a AMG preconditioned Krylov method
 
-    ////////////////////////////////////////////////////////////////
-    // Build the auxiliary hierachy
-    out << "\n*********************************************************\n";
-    out << "Building the auxiliary hierachy\n";
-    out << "*********************************************************\n\n";
+    RCP<Hierarchy> auxH, H;
 
-    auto auxOp  = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("auxiliary operator"), map);
-    auto coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("coordinates"), map);
+    {
+      ////////////////////////////////////////////////////////////////
+      // Build the auxiliary hierachy
+      out << "\n*********************************************************\n";
+      out << "Building the auxiliary hierachy\n";
+      out << "*********************************************************\n\n";
 
-    Teuchos::ParameterList auxParams;
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlAuxHierarchy, Teuchos::Ptr<Teuchos::ParameterList>(&auxParams), *comm);
-    auxParams.sublist("user data").set("Coordinates", coords);
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct auxiliary hierachy")));
 
-    auto auxH = MueLu::CreateXpetraPreconditioner(auxOp, auxParams);
+      Teuchos::ParameterList auxParams;
+      Teuchos::updateParametersFromXmlFileAndBroadcast(xmlAuxHierarchy, Teuchos::Ptr<Teuchos::ParameterList>(&auxParams), *comm);
+      auxParams.sublist("user data").set("Coordinates", coords);
 
-    ////////////////////////////////////////////////////////////////
-    // Construct the main hierarchy
-    out << "\n*********************************************************\n";
-    out << "Building the main hierachy\n";
-    out << "*********************************************************\n\n";
-
-    Teuchos::ParameterList params;
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlMueLu, Teuchos::Ptr<Teuchos::ParameterList>(&params), *comm);
-    params.set("coarse: max size", 1);
-    params.set("max levels", auxH->GetNumLevels());
-
-    auto H = rcp(new Hierarchy());
-    RCP<Level> lvl = H->GetLevel(0);
-    lvl->Set("A", rcp_dynamic_cast<Operator>(op));
-    lvl->Set("Coordinates", coords);
-    for(int lvlNo = 1; lvlNo<auxH->GetNumLevels(); lvlNo++) {
-      H->AddNewLevel();
-      RCP<Level> auxLvl = auxH->GetLevel(lvlNo);
-      // auto mgr = auxLvl->GetFactoryManager();
-      // auxLvl->print(std::cout, MueLu::Debug);
-      RCP<Level> fineLvl = H->GetLevel(lvlNo-1);
-      lvl = H->GetLevel(lvlNo);
-      auto P = auxLvl->Get<RCP<Matrix> >("P");
-      lvl->Set("P", P);
-      params.sublist("level "+std::to_string(lvlNo)).set("P", P);
-
-      auto fineA = rcp_dynamic_cast<HOp>(fineLvl->Get<RCP<Operator> >("A"));
-      auto coarseA = fineA->restrict(P);
-      if (lvlNo+1 == auxH->GetNumLevels())
-        lvl->Set("A", coarseA->toMatrix());
-      else
-        lvl->Set("A", rcp_dynamic_cast<Operator>(coarseA));
+      auxH = MueLu::CreateXpetraPreconditioner(auxOp, auxParams);
     }
 
-    RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(params,op->getDomainMap()->getComm()));
-    H->setlib(op->getDomainMap()->lib());
-    H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
-    mueLuFactory->SetupHierarchy(*H);
-    H->IsPreconditioner(true);
+    {
+      ////////////////////////////////////////////////////////////////
+      // Construct the main hierarchy
+      out << "\n*********************************************************\n";
+      out << "Building the main hierachy\n";
+      out << "*********************************************************\n\n";
+
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct hierachy")));
+
+      Teuchos::ParameterList params;
+      Teuchos::updateParametersFromXmlFileAndBroadcast(xmlMueLu, Teuchos::Ptr<Teuchos::ParameterList>(&params), *comm);
+      params.set("coarse: max size", 1);
+      params.set("max levels", auxH->GetNumLevels());
+
+      H = rcp(new Hierarchy());
+      RCP<Level> lvl = H->GetLevel(0);
+      lvl->Set("A", rcp_dynamic_cast<Operator>(op));
+      lvl->Set("Coordinates", coords);
+      for(int lvlNo = 1; lvlNo<auxH->GetNumLevels(); lvlNo++) {
+        H->AddNewLevel();
+        RCP<Level> auxLvl = auxH->GetLevel(lvlNo);
+        // auto mgr = auxLvl->GetFactoryManager();
+        // auxLvl->print(std::cout, MueLu::Debug);
+        RCP<Level> fineLvl = H->GetLevel(lvlNo-1);
+        lvl = H->GetLevel(lvlNo);
+        auto P = auxLvl->Get<RCP<Matrix> >("P");
+        lvl->Set("P", P);
+        params.sublist("level "+std::to_string(lvlNo)).set("P", P);
+
+        auto fineA = rcp_dynamic_cast<HOp>(fineLvl->Get<RCP<Operator> >("A"));
+        auto coarseA = fineA->restrict(P);
+        if (lvlNo+1 == auxH->GetNumLevels())
+          lvl->Set("A", coarseA->toMatrix());
+        else
+          lvl->Set("A", rcp_dynamic_cast<Operator>(coarseA));
+      }
+
+      RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(params,op->getDomainMap()->getComm()));
+      H->setlib(op->getDomainMap()->lib());
+      H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
+      mueLuFactory->SetupHierarchy(*H);
+      H->IsPreconditioner(true);
+    }
 
 
 #ifdef HAVE_MUELU_BELOS
-    ////////////////////////////////////////////////////////////////
-    // Set up the Krylov solver
+    {
+      ////////////////////////////////////////////////////////////////
+      // Set up the Krylov solver
 
-    using MV = typename HOp::vec_type;
-    using OP = Belos::OperatorT<MV>;
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Preconditioned solve")));
 
-    X->putScalar(zero);
-    RCP<OP> belosOp = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(op));
-    RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H));
-    RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, RHS));
+      using MV = typename HOp::vec_type;
+      using OP = Belos::OperatorT<MV>;
 
-    std::string belosType = "Pseudoblock CG";
-    RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
-    belosList->set("Maximum Iterations",    1000); // Maximum number of iterations allowed
-    belosList->set("Convergence Tolerance", 1e-5);    // Relative convergence tolerance requested
-    belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-    belosList->set("Output Frequency",      1);
-    belosList->set("Output Style",          Belos::Brief);
+      X->putScalar(zero);
+      RCP<OP> belosOp = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(op));
+      RCP<OP> belosPrec = rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H));
+      RCP<Belos::LinearProblem<Scalar, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<Scalar, MV, OP>(belosOp, X, RHS));
 
-    belosProblem->setRightPrec(belosPrec);
+      std::string belosType = "Pseudoblock CG";
+      RCP<Teuchos::ParameterList> belosList = Teuchos::parameterList();
+      belosList->set("Maximum Iterations",    1000); // Maximum number of iterations allowed
+      belosList->set("Convergence Tolerance", 1e-5);    // Relative convergence tolerance requested
+      belosList->set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+      belosList->set("Output Frequency",      1);
+      belosList->set("Output Style",          Belos::Brief);
 
-    bool set = belosProblem->setProblem();
-    if (set == false) {
-      throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+      belosProblem->setRightPrec(belosPrec);
+
+      bool set = belosProblem->setProblem();
+      if (set == false) {
+        throw MueLu::Exceptions::RuntimeError("ERROR:  Belos::LinearProblem failed to set up correctly!");
+      }
+
+      // Create an iterative solver manager
+      Belos::SolverFactory<Scalar, MV, OP> solverFactory;
+      RCP< Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosList);
+      solver->setProblem(belosProblem);
+
+      // Perform solve
+      Belos::ReturnType ret = solver->solve();
+      int numIts = solver->getNumIters();
+
+      // Get the number of iterations for this solve.
+      out << "Number of iterations performed for this solve: " << numIts << std::endl;
+
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X.mtx", *X);
+      X->update(one, *X_ex, -one);
+      out << "|X-X_ex| = " << X->getVector(0)->norm2() << std::endl;
+
+      success &= (ret == Belos::Converged);
     }
 
-    // Create an iterative solver manager
-    Belos::SolverFactory<Scalar, MV, OP> solverFactory;
-    RCP< Belos::SolverManager<Scalar, MV, OP> > solver = solverFactory.create(belosType, belosList);
-    solver->setProblem(belosProblem);
-
-    // Perform solve
-    Belos::ReturnType ret = solver->solve();
-    int numIts = solver->getNumIters();
-
-    // Get the number of iterations for this solve.
-    out << "Number of iterations performed for this solve: " << numIts << std::endl;
-
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X.mtx", *X);
-    X->update(one, *X_ex, -one);
-    out << "|X-X_ex| = " << X->getVector(0)->norm2() << std::endl;
-
-    success &= (ret == Belos::Converged);
+    stacked_timer->stop("Hierarchical Driver");
+    Teuchos::StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stacked_timer->report(out, comm, options);
 
 #endif // HAVE_MUELU_BELOS
   }
