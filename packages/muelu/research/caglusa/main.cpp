@@ -543,7 +543,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
   #include "MueLu_UseShortNames.hpp"
 
-  std::string xmlHierachical  = "hierarchical.xml";
+  std::string xmlHierachical  = "hierarchical-1d-mm.xml";
   std::string xmlMueLu        = "muelu.xml";
   std::string xmlAuxHierarchy = "aux.xml";
   clp.setOption("xml",    &xmlHierachical);
@@ -571,6 +571,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   using vec_type = typename HOp::vec_type;
   using coord_mv = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>;
 
+  using IO = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   Teuchos::FancyOStream& out = *fancy;
   out.setOutputToRootOnly(0);
@@ -579,7 +581,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
   Teuchos::ParameterList         hierachicalParams;
-  RCP<const map_type>            map, clusterCoeffMap, ghosted_clusterCoeffMap;
+  RCP<const map_type>            map, near_colmap, clusterCoeffMap, ghosted_clusterCoeffMap, aux_colmap;
   RCP<matrix_type>               nearField, basisMatrix, kernelApproximations, auxOp;
   RCP<vec_type>                  X_ex, RHS, X;
   RCP<coord_mv>                  coords;
@@ -588,34 +590,39 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Read files")));
 
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlHierachical, Teuchos::Ptr<Teuchos::ParameterList>(&hierachicalParams), *comm);
+    const bool readBinary = hierachicalParams.get<bool>("read binary", false);
 
     // row, domain and range map of the operator
-    map = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("map"), lib, comm);
+    map = IO::ReadMap(hierachicalParams.get<std::string>("map"), lib, comm);
+    // colmap of near field
+    near_colmap = IO::ReadMap(hierachicalParams.get<std::string>("near colmap"), lib, comm);
     // 1-to-1 map for the cluster coefficients
-    clusterCoeffMap = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("coefficient map"), lib, comm);
+    clusterCoeffMap = IO::ReadMap(hierachicalParams.get<std::string>("coefficient map"), lib, comm);
     // overlapping map for the cluster coefficients
-    ghosted_clusterCoeffMap = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMap(hierachicalParams.get<std::string>("ghosted coefficient map"), lib, comm);
+    ghosted_clusterCoeffMap = IO::ReadMap(hierachicalParams.get<std::string>("ghosted coefficient map"), lib, comm);
+    // colmap of auxiliary operator
+    aux_colmap = IO::ReadMap(hierachicalParams.get<std::string>("aux colmap"), lib, comm);
 
     // near field interactions
-    nearField = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("near field matrix"), map);
+    nearField = IO::Read(hierachicalParams.get<std::string>("near field matrix"), map, near_colmap, map, map, true, readBinary);
 
     // far field basis expansion coefficients
-    basisMatrix = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map);
+    basisMatrix = IO::Read(hierachicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map, true, readBinary);
     // far field interactions
-    kernelApproximations = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap);
+    kernelApproximations = IO::Read(hierachicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
 
     auto transfersList = hierachicalParams.sublist("shift coefficient matrices");
     for (int i = 0; i < transfersList.numParams(); i++) {
       std::string filename = transfersList.get<std::string>(std::to_string(i));
-      auto transfer = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap);
+      auto transfer = IO::Read(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
       transferMatrices.push_back(transfer);
     }
 
-    X_ex = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("exact solution"), map);
-    RHS  = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("right-hand side"), map);
+    X_ex = IO::ReadMultiVector(hierachicalParams.get<std::string>("exact solution"), map);
+    RHS  = IO::ReadMultiVector(hierachicalParams.get<std::string>("right-hand side"), map);
     X    = MultiVectorFactory::Build(map, 1);
 
-    auxOp  = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(hierachicalParams.get<std::string>("auxiliary operator"), map);
+    auxOp  = IO::Read(hierachicalParams.get<std::string>("auxiliary operator"), map, aux_colmap, map, map, true, readBinary);
     coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("coordinates"), map);
   }
 
@@ -635,6 +642,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     X->update(one, *RHS, -one);
     out << "|op*X_ex - RHS| = " << X->getVector(0)->norm2() << std::endl;
     // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff.mtx", *X);
+    TEUCHOS_ASSERT(X->getVector(0)->norm2() < 1e-9);
   }
 
   {
@@ -644,6 +652,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     X->update(one, *RHS, one);
     out << "|(-op)*X_ex + RHS| = " << X->getVector(0)->norm2() << std::endl;
     // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff2.mtx", *X);
+    TEUCHOS_ASSERT(X->getVector(0)->norm2() < 1e-9);
   }
 
   {
@@ -653,6 +662,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     X->update(one, *RHS, one);
     out << "|(-op^T)*X_ex + RHS| = " << X->getVector(0)->norm2() << std::endl;
     // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff2.mtx", *X);
+    TEUCHOS_ASSERT(X->getVector(0)->norm2() < 1e-9);
   }
 
 #ifdef HAVE_MUELU_BELOS

@@ -12,18 +12,19 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE
   TRIBITS_ADD_TEST(
     HierarchicalDriver
     NAME "HierarchicalDriver-fractionalLaplacian1D"
+    ARGS
+    "--xml=hierarchical-1d-mm.xml"
+    "--xml=hierarchical-1d-binary.xml"
     COMM mpi
     NUM_MPI_PROCS 4
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(caglusa_cp
     SOURCE_FILES
-    hierarchical.xml muelu.xml aux.xml
-    rowmap.mtx coeffmap.mtx ghosted_coeffmap.mtx
-    Anear.mtx basismatrix.mtx kernelApproximations.mtx
-    transfer0.mtx transfer1.mtx transfer2.mtx transfer3.mtx transfer4.mtx
-    X_ex.mtx RHS.mtx
-    aux.mtx coords.mtx
+    hierarchical-1d-mm.xml hierarchical-1d-binary.xml muelu.xml aux.xml
     )
+
+  ADD_SUBDIRECTORY(1d-mm)
+  ADD_SUBDIRECTORY(1d-binary)
 
 ENDIF()
