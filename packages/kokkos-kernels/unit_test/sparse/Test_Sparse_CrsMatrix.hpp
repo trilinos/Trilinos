@@ -242,7 +242,7 @@ testCrsMatrixHostMirror ()
   typename crs_matrix::index_type::HostMirror entriesHost("entries host", A.nnz());
   crs_graph_host graphHost(entriesHost, rowmapHost);
   //Test the two CrsMatrix constructors that take the StaticCrsGraph
-  crs_matrix_host Ahost1("Ahost1", graphHost);
+  crs_matrix_host Ahost1("Ahost1", graphHost, A.numCols());
   crs_matrix_host Ahost2("Ahost2", A.numCols(), valuesHost, graphHost);
   //Test deep copy constructor (can copy between any two spaces)
   {

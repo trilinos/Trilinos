@@ -101,7 +101,6 @@ namespace {
   using Tpetra::INSERT;
   using Tpetra::Map;
   using Tpetra::REPLACE;
-  using Tpetra::StaticProfile;
 
   using std::cerr;
   using std::cout;
@@ -255,10 +254,10 @@ namespace {
         out << "Creating source and target CrsGraphs" << endl;
       }
       RCP<CrsGraph<LO, GO> > src_graph =
-        rcp (new CrsGraph<LO, GO> (src_map, 1, StaticProfile,
+        rcp (new CrsGraph<LO, GO> (src_map, 1,
                                    getCrsGraphParameterList ()));
       RCP<CrsGraph<LO, GO> > tgt_graph =
-        rcp (new CrsGraph<LO, GO> (tgt_map, 1, StaticProfile,
+        rcp (new CrsGraph<LO, GO> (tgt_map, 1,
                                    getCrsGraphParameterList ()));
 
       // Create a simple diagonal source graph.
@@ -327,10 +326,10 @@ namespace {
           createContigMap<LO, GO> (INVALID, tgt_num_local, comm);
 
         RCP<CrsGraph<LO, GO> > src_graph =
-          rcp (new CrsGraph<LO, GO> (src_map, 24, StaticProfile,
+          rcp (new CrsGraph<LO, GO> (src_map, 24,
                                      getCrsGraphParameterList ()));
         RCP<CrsGraph<LO, GO> > tgt_graph =
-          rcp (new CrsGraph<LO, GO> (tgt_map, 24, StaticProfile,
+          rcp (new CrsGraph<LO, GO> (tgt_map, 24,
                                      getCrsGraphParameterList ()));
 
         // This time make src_graph be a full lower-triangular graph.
@@ -447,10 +446,10 @@ namespace {
 
       // Create CrsMatrix objects.
       RCP<CrsMatrix<Scalar, LO, GO> > src_mat =
-        rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 1, StaticProfile,
+        rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 1,
                                             crsMatPlist));
       RCP<CrsMatrix<Scalar, LO, GO> > tgt_mat =
-        rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 1, StaticProfile,
+        rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 1,
                                             crsMatPlist));
 
       // Create a simple diagonal source graph.
@@ -497,7 +496,6 @@ namespace {
       // constructor.  The returned matrix should also be diagonal and
       // should equal tgt_mat.
       Teuchos::ParameterList dummy;
-      typedef CrsMatrix<Scalar, LO, GO> crs_type;
       RCP<crs_type> A_tgt2 =
         Tpetra::importAndFillCompleteCrsMatrix<crs_type> (src_mat, importer,
                                                           Teuchos::null,
@@ -605,9 +603,9 @@ namespace {
           createContigMap<LO, GO> (INVALID, tgt_num_local, comm);
 
         RCP<CrsMatrix<Scalar, LO, GO> > src_mat =
-          rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 24, StaticProfile, crsMatPlist));
+          rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 24, crsMatPlist));
         RCP<CrsMatrix<Scalar, LO, GO> > tgt_mat =
-          rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 24, StaticProfile, crsMatPlist));
+          rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 24, crsMatPlist));
 
         // This time make src_mat a full lower-triangular matrix.  Each
         // row of column-indices will have length 'globalrow', and
@@ -3035,12 +3033,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, GetPids, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, GetTwoTransferOwnershipVector, LO, GO )
 
-#define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                   \
+// These are the tests associated to UNIT_TEST_GROUP_SC_LO_GO that work for all backends.
+#define UNIT_TEST_GROUP_SC_LO_GO_COMMON( SC, LO, GO )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixImportExport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVectorImport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, doImport, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Import_Util, UnpackAndCombineWithOwningPIDs, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, MueLuStyle, LO, GO, SC )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Import_Util, UnpackAndCombineWithOwningPIDs, LO, GO, SC )
+
+// FIXME_SYCL requires querying free device memory in KokkosKernels, see
+// https://github.com/kokkos/kokkos-kernels/issues/1062.
+// The SYCL specifications don't allow asking for that.
+#ifdef HAVE_TPETRA_SYCL
+  #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )  \
+    UNIT_TEST_GROUP_SC_LO_GO_COMMON( SC, LO, GO )
+#else
+  #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                                      \
+    UNIT_TEST_GROUP_SC_LO_GO_COMMON( SC, LO, GO )                                     \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, MueLuStyle, LO, GO, SC )
+#endif
 
   // Note: This test fails.  Should fix later.
   //      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ReverseImportExport, doImport, ORDINAL, SCALAR )

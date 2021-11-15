@@ -43,7 +43,7 @@
 #include <iostream>
 
 #include "Kokkos_Core.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 #include "Stokhos_Update.hpp"
 #include "Stokhos_CrsMatrix.hpp"
@@ -221,7 +221,7 @@ test_product_tensor_matrix(
   //------------------------------
 
   Device().fence();
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Kokkos::deep_copy( x, x0 ); // akin to import
     Stokhos::multiply( matrix , x , y );
@@ -322,7 +322,7 @@ test_product_tensor_diagonal_matrix(
   //------------------------------
 
   Device().fence();
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
@@ -481,7 +481,7 @@ test_product_flat_commuted_matrix(
   //------------------------------
 
   Device().fence();
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
@@ -636,7 +636,7 @@ test_product_flat_original_matrix(
   //------------------------------
 
   Device().fence();
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
@@ -739,7 +739,7 @@ test_tiled_product_tensor_matrix(
   //------------------------------
 
   Device().fence();
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
@@ -849,7 +849,7 @@ test_simple_tiled_product_tensor_matrix(
   //------------------------------
 
   Device().fence();
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
@@ -954,7 +954,7 @@ test_lexo_block_tensor(
   //------------------------------
 
   Device().fence();
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
@@ -1062,7 +1062,7 @@ test_linear_tensor(
   //------------------------------
 
   Device().fence();
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
     Stokhos::multiply( matrix , x , y );
   }
@@ -1163,7 +1163,7 @@ test_original_matrix_free_vec(
 
   Device().fence();
   SparseMatOps smo;
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   int n_apply = 0;
   int n_add = 0;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
@@ -1301,7 +1301,7 @@ test_original_matrix_free_view(
 
   Device().fence();
   SparseMatOps smo;
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   int n_apply = 0;
   int n_add = 0;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {
@@ -1451,7 +1451,7 @@ test_original_matrix_free_kokkos(
   }
 
   Device().fence();
-  Kokkos::Impl::Timer clock ;
+  Kokkos::Timer clock ;
   int n_apply = 0;
   int n_add = 0;
   for ( int iter = 0 ; iter < iterCount ; ++iter ) {

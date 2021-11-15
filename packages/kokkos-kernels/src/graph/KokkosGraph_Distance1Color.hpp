@@ -63,7 +63,7 @@ void graph_color_symbolic(
     lno_nnz_view_t_ entries,
     bool /* is_symmetric */ = true){
 
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
 
   typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
 

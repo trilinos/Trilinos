@@ -97,11 +97,9 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap =
       rcp (new map_type (INV, myGblRowInds (), indexBase, comm));
 
-    const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
     bool insertLocalEntryValues[] = { true, false };
 
-    // Test both dynamic and static profile.
-    for (Tpetra::ProfileType profileType : profileTypes) {
+    {
 
       Teuchos::OSTab tab2 (out);
 
@@ -116,7 +114,7 @@ namespace { // (anonymous)
         Teuchos::OSTab tab3 (out);
 
         const size_t maxNumEntPerRow = static_cast<size_t> (insertLocalEntry ? 2 : 1);
-        crs_graph_type G (rowMap, maxNumEntPerRow, profileType);
+        crs_graph_type G (rowMap, maxNumEntPerRow);
 
         const GO gblRow0 = static_cast<GO> (myRank);
         const GO gblRow1 = static_cast<GO> ((myRank + 1) % numProcs);
@@ -211,7 +209,7 @@ namespace { // (anonymous)
           return;
         }
       } // insertLocalEntry
-    } // profileType
+    } 
   }
 
   //

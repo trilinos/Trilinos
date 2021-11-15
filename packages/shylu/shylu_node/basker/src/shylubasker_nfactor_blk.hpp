@@ -11,7 +11,7 @@
 
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #endif 
 
 #include "Teuchos_ScalarTraits.hpp"
@@ -164,7 +164,7 @@ namespace BaskerNS
     #endif
 
     #ifdef BASKER_TIME
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
     #endif
 
     Int i, j;

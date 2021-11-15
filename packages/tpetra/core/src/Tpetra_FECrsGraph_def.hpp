@@ -78,7 +78,7 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
            const Teuchos::RCP<const map_type> & ownedDomainMap,
            const Teuchos::RCP<const map_type> & ownedRangeMap,
            const Teuchos::RCP<Teuchos::ParameterList>& params):
-  crs_graph_type(ownedPlusSharedRowMap, maxNumEntriesPerRow, StaticProfile, params),
+  crs_graph_type(ownedPlusSharedRowMap, maxNumEntriesPerRow, params),
   ownedRowsImporter_(ownedPlusSharedToOwnedimporter),
   ownedDomainMap_(ownedDomainMap.is_null() ? ownedRowMap : ownedDomainMap),
   ownedRangeMap_(ownedRangeMap.is_null() ? ownedRowMap : ownedRangeMap)
@@ -114,7 +114,7 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
             const Teuchos::RCP<const map_type> & ownedDomainMap,
             const Teuchos::RCP<const map_type> & ownedRangeMap,
             const Teuchos::RCP<Teuchos::ParameterList>& params):
-  crs_graph_type( ownedPlusSharedRowMap, numEntPerRow, StaticProfile, params),
+  crs_graph_type( ownedPlusSharedRowMap, numEntPerRow, params),
   ownedRowsImporter_(ownedPlusSharedToOwnedimporter),
   ownedDomainMap_(ownedDomainMap.is_null() ? ownedRowMap : ownedDomainMap),
   ownedRangeMap_(ownedRangeMap.is_null() ? ownedRowMap : ownedRangeMap)
@@ -152,7 +152,7 @@ FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
            const Teuchos::RCP<const map_type> & ownedDomainMap,
            const Teuchos::RCP<const map_type> & ownedRangeMap,
            const Teuchos::RCP<Teuchos::ParameterList>& params):
-  crs_graph_type(ownedPlusSharedRowMap, ownedPlusSharedColMap,maxNumEntriesPerRow, StaticProfile, params),
+  crs_graph_type(ownedPlusSharedRowMap, ownedPlusSharedColMap,maxNumEntriesPerRow, params),
   ownedRowsImporter_(ownedPlusSharedToOwnedimporter),
   ownedDomainMap_(ownedDomainMap.is_null() ? ownedRowMap : ownedDomainMap),
   ownedRangeMap_(ownedRangeMap.is_null() ? ownedRowMap : ownedRangeMap)
@@ -189,7 +189,7 @@ FECrsGraph (const Teuchos::RCP<const map_type> & ownedRowMap,
             const Teuchos::RCP<const map_type> & ownedDomainMap,
             const Teuchos::RCP<const map_type> & ownedRangeMap,
             const Teuchos::RCP<Teuchos::ParameterList>& params):
-  crs_graph_type(ownedPlusSharedRowMap, ownedPlusSharedColMap, numEntPerRow, StaticProfile, params),
+  crs_graph_type(ownedPlusSharedRowMap, ownedPlusSharedColMap, numEntPerRow, params),
   ownedRowsImporter_(ownedPlusSharedToOwnedimporter),
   ownedDomainMap_(ownedDomainMap.is_null() ? ownedRowMap : ownedDomainMap),
   ownedRangeMap_(ownedRangeMap.is_null() ? ownedRowMap : ownedRangeMap)

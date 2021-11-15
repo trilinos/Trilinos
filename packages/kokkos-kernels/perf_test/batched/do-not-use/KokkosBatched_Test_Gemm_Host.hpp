@@ -12,7 +12,7 @@
 #endif
 
 #include "Kokkos_Core.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 #include "Kokkos_Random.hpp"
 
 #include "KokkosBatched_Vector.hpp"
@@ -70,7 +70,7 @@ namespace KokkosBatched {
       const double tmax = 1.0e15;
 
       const int iter_begin = -10, iter_end = 100;
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       Kokkos::View<value_type***,Kokkos::LayoutRight,HostSpaceType> cref;
       Kokkos::View<value_type***,Kokkos::LayoutRight,HostSpaceType> 

@@ -238,37 +238,6 @@ void impl::Heartbeat::add_global_ref(const std::string &name,
     }
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-STK_DEPRECATED void impl::Heartbeat::define_global_ref(const std::string &name,
-                                        const STK_ANY_NAMESPACE::any *value,
-                                        stk::util::ParameterType::Type type,
-                                        int copies,
-                                        Ioss::Field::RoleType role)
-{
-  internal_define_global_ref(name, value, type, copies, role);
-}
-
-STK_DEPRECATED void impl::Heartbeat::add_global_ref(const std::string &name,
-                                     const STK_ANY_NAMESPACE::any *value,
-                                     stk::util::ParameterType::Type type,
-                                     int copies,
-                                     Ioss::Field::RoleType role)
-{
-    if (m_processor == 0) {
-        ThrowErrorMsgIf (m_currentStep != 0,
-                         "At least one output step has been written to the history/heartbeat file. "
-                         "Variables cannot be added anymore.");
-
-        Ioss::State currentState = m_region->get_state();
-        if(currentState != Ioss::STATE_DEFINE_TRANSIENT) {
-            m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
-        }
-
-        internal_define_global_ref(name, value, type, copies, role);
-    }
-}
-#endif
-
 void impl::Heartbeat::internal_define_global_ref(const std::string &name,
                                         const STK_ANY_NAMESPACE::any *value,
                                         const std::string &storage,
@@ -290,18 +259,6 @@ void impl::Heartbeat::internal_define_global_ref(const std::string &name,
         m_fields.emplace_back(name, value, type.second);
     }
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-STK_DEPRECATED void impl::Heartbeat::define_global_ref(const std::string &name,
-                                        const STK_ANY_NAMESPACE::any *value,
-                                        const std::string &storage,
-                                        Ioss::Field::BasicType dataType,
-                                        int copies,
-                                        Ioss::Field::RoleType role)
-{
-  internal_define_global_ref(name, value, storage, dataType, copies, role);
-}
-#endif
 
 void impl::Heartbeat::define_global_ref(const std::string &name,
                                         const stk::util::Parameter &param,
@@ -333,29 +290,6 @@ void impl::Heartbeat::add_global_ref(const std::string &name,
         internal_define_global_ref(name, &param.value, storage, dataType, copies, role);
     }
 }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-STK_DEPRECATED void impl::Heartbeat::add_global_ref(const std::string &name,
-                                     const STK_ANY_NAMESPACE::any *value,
-                                     const std::string &storage,
-                                     Ioss::Field::BasicType dataType,
-                                     int copies,
-                                     Ioss::Field::RoleType role)
-{
-    if (m_processor == 0) {
-        ThrowErrorMsgIf (m_currentStep != 0,
-                         "At least one output step has been written to the history/heartbeat file. "
-                         "Variables cannot be added anymore.");
-
-        Ioss::State currentState = m_region->get_state();
-        if(currentState != Ioss::STATE_DEFINE_TRANSIENT) {
-            m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
-        }
-
-        internal_define_global_ref(name, value, storage, dataType, copies, role);
-    }
-}
-#endif
 
 void impl::Heartbeat::process_output_pre_write(int step, double time)
 {

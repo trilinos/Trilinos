@@ -45,7 +45,7 @@
 #ifndef KOKKOS_SPMV_INSPECTOR_HPP_
 #define KOKKOS_SPMV_INSPECTOR_HPP_
 
-#include<Kokkos_SPMV.hpp>
+#include"Kokkos_SPMV.hpp"
 
 
 template<class AMatrix,

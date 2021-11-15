@@ -10,7 +10,7 @@
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #else
 #include <omp.h>
 #endif
@@ -1677,7 +1677,7 @@ namespace BaskerNS
   {
     printf( "\n get_L \n\n" );
     //Add Check
-    //Kokkos::Impl::Timer timer;
+    //Kokkos::Timer timer;
     n   = gn;
     nnz = get_Lnnz();
     (*col_ptr) = new Int[gn+1]();

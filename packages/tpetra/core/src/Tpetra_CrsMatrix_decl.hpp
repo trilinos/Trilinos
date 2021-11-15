@@ -538,15 +538,23 @@ namespace Tpetra {
     ///   entries per row.  This is a strict upper bound.  It may
     ///   differ on different processes.
     ///
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \param pftype [in] If you specify this, then this must always
     ///   be StaticProfile.  No other values exist or are permitted.
+#endif
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const size_t maxNumEntriesPerRow,
-               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype,
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+#endif
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+               const size_t maxNumEntriesPerRow,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying (possibly different) number of entries in each row.
@@ -557,15 +565,23 @@ namespace Tpetra {
     ///   entries to allocate for each row.  This is a strict upper
     ///   bound.  It may differ on different processes.
     ///
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \param pftype [in] If you specify this, then this must always
     ///   be StaticProfile.  No other values exist or are permitted.
+#endif
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
-               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype,
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+#endif
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 
@@ -583,16 +599,25 @@ namespace Tpetra {
     ///   per row.  This is a strict upper bound.  It may differ on
     ///   different processes.
     ///
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \param pftype [in] If you specify this, then this must always
     ///   be StaticProfile.  No other values exist or are permitted.
+#endif
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const size_t maxNumEntPerRow,
-               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype,
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+#endif
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::RCP<const map_type>& colMap,
+               const size_t maxNumEntPerRow,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and number of entries in each row.
@@ -609,18 +634,26 @@ namespace Tpetra {
     ///   entries to allocate for each row.  This is a strict upper
     ///   bound.  It may differ on different processes.
     ///
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \param pftype [in] If you specify this, then this must always
     ///   be StaticProfile.  No other values exist or are permitted.
+#endif
     ///
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
-               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
+               const ProfileType pftype,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-
+#endif
+    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::RCP<const map_type>& colMap,
+               const Teuchos::ArrayView<const size_t>& numEntPerRowToAlloc,
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying a matrix and a previously
     ///   constructed graph, presumably a subset of the matrix's graph.
@@ -953,10 +986,6 @@ namespace Tpetra {
     ///   possible upper bounds on the number of entries in each row
     ///   of the matrix.  This will avoid expensive reallocation if
     ///   your bound was not large enough.</li>
-    /// <li>If your upper bound on the number of entries in each row
-    ///   will always be correct, create the matrix with
-    ///   StaticProfile.  This uses a faster and more compact data
-    ///   structure to store the matrix.</li>
     /// <li>If you plan to reuse a matrix's graph structure, but
     ///   change its values, in repeated fillComplete() / resumeFill()
     ///   cycles, you can get the best performance by creating the
@@ -1018,10 +1047,6 @@ namespace Tpetra {
     ///   possible upper bounds on the number of entries in each row
     ///   of the matrix.  This will avoid expensive reallocation if
     ///   your bound was not large enough.</li>
-    /// <li>If your upper bound on the number of entries in each row
-    ///   will always be correct, create the matrix with
-    ///   StaticProfile.  This uses a faster and more compact data
-    ///   structure to store the matrix.</li>
     /// <li>If you plan to reuse a matrix's graph structure, but
     ///   change its values, in repeated fillComplete() / resumeFill()
     ///   cycles, you can get the best performance by creating the
@@ -2471,8 +2496,10 @@ namespace Tpetra {
     */
     bool isStorageOptimized () const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Returns \c true if the matrix was allocated with static data structures.
-    ProfileType getProfileType () const;
+    TPETRA_DEPRECATED ProfileType getProfileType () const;
+#endif
 
     //! Indicates that the graph is static, so that new entries cannot be added to this matrix.
     bool isStaticGraph () const;
@@ -4040,19 +4067,6 @@ public:
     Teuchos::RCP<      Graph>     myGraph_;
     //@}
 
-    //! The local sparse matrix, wrapped in a multiply operator.
-// KDDKDD DELETE
-//    std::shared_ptr<local_multiply_op_type> lclMatrix_;
-// KDDKDD DELETE
-
-    /// \brief Sparse matrix values, as part of compressed sparse row
-    ///   ("1-D") storage.
-    ///
-    /// Before allocation, this array is empty.
-// KDDKDD DELETE
-    typename local_matrix_device_type::values_type k_values1D_;
-// KDDKDD DELETE
-
 protected:
     /// \brief Status of the matrix's storage, when not in a
     ///   fill-complete state.
@@ -4152,9 +4166,8 @@ protected:
   {
     using matrix_type =
       CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
     return Teuchos::rcp(new matrix_type(map, maxNumEntriesPerRow,
-                                        pftype, params));
+                                        params));
   }
 
   template<class CrsMatrixType>

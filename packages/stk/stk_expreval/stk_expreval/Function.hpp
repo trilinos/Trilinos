@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,50 +30,105 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef stk_expreval_function_hpp
 #define stk_expreval_function_hpp
 
-#include <stk_expreval/Constants.hpp>
-#include <stk_util/util/string_case_compare.hpp>
-#include <stk_util/util/ReportHandler.hpp>
+#include "Kokkos_Core.hpp"
+#include "stk_expreval/Constants.hpp"
+#include "stk_util/util/string_case_compare.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include <string>
-#include <limits>
 #include <algorithm>
-#include <vector>
 #include <map>
-#include <set>
 #include <stdexcept>
 #include <cctype>
-#include<cmath>
+#include <cmath>
 #include <ctime>
-#include <Kokkos_Core.hpp>
 #include <iostream>
 
 namespace stk {
 namespace expreval {
 
+enum class FunctionType {
+  ABS,
+  MAX,
+  MIN,
+  SIGN,
+  IPART,
+  FPART,
+  CEIL,
+  FLOOR,
+  MOD,
+  POW,
+  SQRT,
+  EXP,
+  LN,
+  LOG10,
+
+  DEG,
+  RAD,
+  SIN,
+  COS,
+  TAN,
+  ASIN,
+  ACOS,
+  ATAN,
+  ATAN2,
+  SINH,
+  COSH,
+  TANH,
+  ASINH,
+  ACOSH,
+  ATANH,
+  ERF,
+  ERFC,
+  POLTORECTX,
+  POLTORECTY,
+  RECTTOPOLR,
+  RECTTOPOLA,
+
+  UNIT_STEP,
+  CYCLOIDAL_RAMP,
+  COS_RAMP,
+  HAVERSINE_PULSE,
+  POINT2D,
+  POINT3D,
+
+  EXPONENTIAL_PDF,
+  LOG_UNIFORM_PDF,
+  NORMAL_PDF,
+  WEIBULL_PDF,
+  GAMMA_PDF,
+
+  RAND,
+  SRAND,
+  RANDOM,
+  TS_RANDOM,
+  TS_NORMAL,
+  TIME,
+
+  UNDEFINED
+};
+
 KOKKOS_INLINE_FUNCTION
 double cycloidal_ramp(double t, double t1, double t2)
 {
-  if( t < t1 )
-  {
+  if (t < t1) {
     return 0.0;
   }
-  else if( t < t2 )
-  {
+  else if (t < t2) {
     return (t-t1)/(t2-t1)-1/(two_pi())*sin(two_pi()/(t2-t1)*(t-t1));
   }
-  else 
-  {
+  else {
     return 1.0;
   }
 }
 
 /// extract signed integral value from floating-point number
 KOKKOS_INLINE_FUNCTION
-double ipart(double x) 
+double ipart(double x)
 {
   double y;
   std::modf(x, &y);
@@ -82,7 +137,7 @@ double ipart(double x)
 
 /// Extract fractional value from floating-point number
 KOKKOS_INLINE_FUNCTION
-double fpart(double x) 
+double fpart(double x)
 {
   double y;
   return std::modf(x, &y);
@@ -91,40 +146,40 @@ double fpart(double x)
 /// Interface to the pseudo-random number generator function rand
 /// provided by ANSI C math library.
 KOKKOS_INLINE_FUNCTION
-double real_rand() 
+double real_rand()
 {
-  #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-    return static_cast<double>(std::rand()) / (static_cast<double>(RAND_MAX) + 1.0);
-  #else
-    NGP_ThrowErrorMsg("The rand function is not supported on GPUs");
-    return 0.0;
-  #endif
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+  return static_cast<double>(std::rand()) / (static_cast<double>(RAND_MAX) + 1.0);
+#else
+  NGP_ThrowErrorMsg("The rand function is not supported on GPUs");
+  return 0.0;
+#endif
 }
 
 /// Sets x as the random number seed. Interface to the srand function provided by the
 /// ANSI C math library.
 KOKKOS_INLINE_FUNCTION
-double real_srand(double x) 
+double real_srand(double x)
 {
-  #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-    std::srand(static_cast<int>(x));
-    return 0.0;
-  #else
-    NGP_ThrowErrorMsg("The srand function is not supported on GPUs");
-    return 0.0;
-  #endif
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+  std::srand(static_cast<int>(x));
+  return 0.0;
+#else
+  NGP_ThrowErrorMsg("The srand function is not supported on GPUs");
+  return 0.0;
+#endif
 }
 
 /// Return the current time
 KOKKOS_INLINE_FUNCTION
 double current_time()
 {
-  #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-    return static_cast<double>(::time(nullptr));
-  #else
-    NGP_ThrowErrorMsg("The time function is not supported on GPUs");
-    return 0.0;
-  #endif
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+  return static_cast<double>(::time(nullptr));
+#else
+  NGP_ThrowErrorMsg("The time function is not supported on GPUs");
+  return 0.0;
+#endif
 }
 
 extern int sRandomRangeHighValue;
@@ -132,41 +187,42 @@ extern int sRandomRangeLowValue;
 
 /// Sets x as the "seed" for the pseudo-random number generator.
 KOKKOS_INLINE_FUNCTION
-void random_seed(double x) 
+void random_seed(double x)
 {
-  #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-    int y = std::hash<double>{}(x);
-    sRandomRangeHighValue =  y;
-    sRandomRangeLowValue  = ~y;
-  #endif
-}
-/// Non-platform specific (pseudo) random number generator.
-KOKKOS_INLINE_FUNCTION
-double random0() 
-{
-  #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-    sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
-    sRandomRangeHighValue += sRandomRangeLowValue;
-    sRandomRangeLowValue += sRandomRangeHighValue;
-    int val = std::abs(sRandomRangeHighValue);
-    return double(val) / double(RAND_MAX);
-  #else
-    NGP_ThrowErrorMsg("The random function is not supported on GPUs");
-    return 0.0;
-  #endif
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+  int y = std::hash<double>{}(x);
+  sRandomRangeHighValue =  y;
+  sRandomRangeLowValue  = ~y;
+#endif
 }
 
 /// Non-platform specific (pseudo) random number generator.
 KOKKOS_INLINE_FUNCTION
-double random1(double seed) 
+double random0()
 {
-  #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-    random_seed(seed);
-    return random0();
-  #else
-    NGP_ThrowErrorMsg("The random function is not supported on GPUs");
-    return 0.0;
-  #endif
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+  sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
+  sRandomRangeHighValue += sRandomRangeLowValue;
+  sRandomRangeLowValue += sRandomRangeHighValue;
+  int val = std::abs(sRandomRangeHighValue);
+  return double(val) / double(RAND_MAX);
+#else
+  NGP_ThrowErrorMsg("The random function is not supported on GPUs");
+  return 0.0;
+#endif
+}
+
+/// Non-platform specific (pseudo) random number generator.
+KOKKOS_INLINE_FUNCTION
+double random1(double seed)
+{
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+  random_seed(seed);
+  return random0();
+#else
+  NGP_ThrowErrorMsg("The random function is not supported on GPUs");
+  return 0.0;
+#endif
 }
 
 /// Non-platform specific (pseudo) random number generator that
@@ -174,115 +230,112 @@ double random1(double seed)
 KOKKOS_INLINE_FUNCTION
 double time_space_random(double t, double x, double y, double z)
 {
-  #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-    double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
-    random_seed(ts);
-    return random0();
-  #else
-    NGP_ThrowErrorMsg("The ts_random function is not supported on GPUs");
-    return 0.0;
-  #endif
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+  double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
+  random_seed(ts);
+  return random0();
+#else
+  NGP_ThrowErrorMsg("The ts_random function is not supported on GPUs");
+  return 0.0;
+#endif
 }
 
 KOKKOS_INLINE_FUNCTION
 double time_space_normal(double t, double x, double y, double z, double mu, double sigma, double minR, double maxR)
 {
-  #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-    double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
-    random_seed(ts);
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
+  double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
+  random_seed(ts);
 
-    static const double epsilon = DBL_MIN;
+  static const double epsilon = DBL_MIN;
 
-    // Box-Muller transformation from two uniform random numbers
-    // to a gaussian distribution
-    double u1 = std::fmax(epsilon, random0());
-    double u2 = std::fmax(epsilon, random0());
+  // Box-Muller transformation from two uniform random numbers
+  // to a gaussian distribution
+  double u1 = std::fmax(epsilon, random0());
+  double u2 = std::fmax(epsilon, random0());
 
-    double z0 = std::sqrt(-2.0 * std::log(u1)) * std::cos(two_pi() * u2);
+  double z0 = std::sqrt(-2.0 * std::log(u1)) * std::cos(two_pi() * u2);
 
-    return std::fmax(minR, std::fmin(maxR, z0*sigma + mu));
-  #else
-    NGP_ThrowErrorMsg("The ts_normal function is not supported on GPUs");
-    return 0.0;
-  #endif
+  return std::fmax(minR, std::fmin(maxR, z0*sigma + mu));
+#else
+  NGP_ThrowErrorMsg("The ts_normal function is not supported on GPUs");
+  return 0.0;
+#endif
 }
 
 /// Returns the angle (input in radians) in degrees.
 KOKKOS_INLINE_FUNCTION
-double deg(double a)  
+double deg(double a)
 {
   return radian_to_degree() * a;
 }
 
 /// Returns the angle (input in degrees) in radians.
 KOKKOS_INLINE_FUNCTION
-double rad(double a)  
+double rad(double a)
 {
   return degree_to_radian() * a;
 }
 
 /// Returns the minimum value among its arguments
 KOKKOS_INLINE_FUNCTION
-double min_2(double a, double b) 
+double min_2(double a, double b)
 {
   return std::fmin(a, b);
 }
 
 /// Returns the minimum value among its arguments
 KOKKOS_INLINE_FUNCTION
-double min_3(double a, double b, double c) 
+double min_3(double a, double b, double c)
 {
   return std::fmin(std::fmin(a, b), c);
 }
 
 /// Returns the minimum value among its arguments
 KOKKOS_INLINE_FUNCTION
-double min_4(double a, double b, double c, double d) 
+double min_4(double a, double b, double c, double d)
 {
   return std::fmin(std::fmin(a, b), std::fmin(c,d));
 }
 
 /// Returns the maximum value among its arguments
 KOKKOS_INLINE_FUNCTION
-double max_2(double a, double b) 
+double max_2(double a, double b)
 {
   return std::fmax(a, b);
 }
 
 /// Returns the maximum value among its arguments
 KOKKOS_INLINE_FUNCTION
-double max_3(double a, double b, double c) 
+double max_3(double a, double b, double c)
 {
   return std::fmax(std::fmax(a, b), c);
 }
 
 /// Returns the maximum value among its arguments
 KOKKOS_INLINE_FUNCTION
-double max_4(double a, double b, double c, double d) 
+double max_4(double a, double b, double c, double d)
 {
   return std::fmax(std::fmax(a, b), std::fmax(c,d));
 }
 
 /// Convert rectangular coordinates into polar radius.
 KOKKOS_INLINE_FUNCTION
-double recttopolr(double x, double y) 
+double recttopolr(double x, double y)
 {
   return std::sqrt((x * x) + (y * y));
 }
 
 KOKKOS_INLINE_FUNCTION
-double cosine_ramp3(double t, double t1, double t2) 
+double cosine_ramp3(double t, double t1, double t2)
 {
-  if( t < t1    )
-  {
+  if (t < t1) {
     return 0.0;
   }
-  else if( t < t2 )
-  {
+  else if (t < t2) {
     return (1.0 - std::cos((t-t1)*pi() /(t2-t1)))/2.0;
   }
-  else 
-  {
+  else {
     return 1.0;
   }
 }
@@ -290,16 +343,13 @@ double cosine_ramp3(double t, double t1, double t2)
 KOKKOS_INLINE_FUNCTION
 double haversine_pulse(double t, double t1, double t2)
 {
-  if( t < t1 )
-  {
+  if (t < t1) {
     return 0.0;
   }
-  else if( t < t2 )
-  {
+  else if (t < t2) {
     return std::pow(std::sin(pi() *(t-t1)/(t2-t1)),2);
   }
-  else 
-  {
+  else {
     return 0.0;
   }
 }
@@ -319,13 +369,13 @@ double point_3(double x, double y, double z, double r, double w)
 }
 
 KOKKOS_INLINE_FUNCTION
-double cosine_ramp1(double t) 
+double cosine_ramp1(double t)
 {
   return cosine_ramp3(t, 0.0, 1.0);
 }
 
 KOKKOS_INLINE_FUNCTION
-double cosine_ramp2(double t, double rampEndTime) 
+double cosine_ramp2(double t, double rampEndTime)
 {
   return cosine_ramp3(t, 0.0, rampEndTime);
 }
@@ -348,13 +398,13 @@ double normal_pdf(double x, double mean, double standard_deviation)
 /// Exponential Uniform distribution probability distribution function
 KOKKOS_INLINE_FUNCTION
 double exponential_pdf(double x, double beta)
-{ 
+{
   return (x >= 0.0) ? std::exp(-x/beta)/beta : 0.0;
 }
 
 /// Log Uniform distribution probability distribution function
 KOKKOS_INLINE_FUNCTION
-double log_uniform_pdf(double x, double lower_range, double upper_range) 
+double log_uniform_pdf(double x, double lower_range, double upper_range)
 {
   return (x >= lower_range && x <= upper_range) ? 1.0/((std::log(upper_range) - std::log(lower_range))*x) : 0.0;
 }
@@ -368,58 +418,44 @@ double gamma_pdf(double x, double shape, double scale)
 
 /// Returns -1 or 1 depending on whether x is negative or positive.
 KOKKOS_INLINE_FUNCTION
-double sign(double a)  
+double sign(double a)
 {
-  return ( a >= 0.0 ) ? 1.0 : -1.0;
+  return (a >= 0.0) ? 1.0 : -1.0;
 }
 
 /// Returns 1.0 if the input value t is greater than tstart and less than tstop.
 KOKKOS_INLINE_FUNCTION
-double unit_step3(double t, double tstart, double tstop)  
+double unit_step3(double t, double tstart, double tstop)
 {
   return (t < tstart || t > tstop) ? 0.0 : 1.0;
 }
 
 /// Convert rectangular coordinates into polar angle.
 KOKKOS_INLINE_FUNCTION
-double recttopola(double x, double y) 
+double recttopola(double x, double y)
 {
   double tmp = std::atan2(y, x);
   // Convert to 0.0 to 2 * PI
-  return ( tmp < 0.0 ) ? tmp + two_pi() : tmp;
+  return (tmp < 0.0) ? tmp + two_pi() : tmp;
 }
 
 /// Convert polar coordinates (r,theta) into x coordinate.
 KOKKOS_INLINE_FUNCTION
-double poltorectx(double r, double theta) 
+double poltorectx(double r, double theta)
 {
   return r * std::cos(theta);
 }
 
 /// Convert polar coordinates (r,theta) into y coordinate.
 KOKKOS_INLINE_FUNCTION
-double poltorecty(double r, double theta) 
+double poltorecty(double r, double theta)
 {
   return r * std::sin(theta);
 }
 
-/**
- * @brief Class <b>CFunctionBase</b> is a base class for calling a function from the
- * expression evaluator.  Classes which inherit from this function must implement a
- * <b>operator()</b> function which accepts an argument count and an array of length
- * that count of pointer to the argument values.  This function should perform whatever
- * argument manipulation is required to call the actual implementation of the function.
- *
- */
 class CFunctionBase
 {
 public:
-  /**
-   * Creates a new <b>CFunctionBase</b> instance.
-   *
-   * @param arg_count		an <b>int</b> value of the number of arguments
-   *				expected when <b>operator()</b> is called.
-   */
   explicit CFunctionBase(int arg_count)
     : m_argCount(arg_count)
   {}
@@ -427,84 +463,28 @@ public:
   virtual ~CFunctionBase()
   {}
 
-  /**
-   * @brief Member function <b>operator()</b> is the pure virtual interface to the
-   * function.  This function is overloaded to implement the calculation to be performed
-   * when the function is called.
-   *
-   * @param argc		an <b>int</b> value of the number of arguments.
-   *
-   * @param argv		a <b>double</b> pointer to an array of double
-   *				pointers to the actual function arguments.
-   *
-   * @return			a <b>double</b> value of the result of the execution
-   *				of the function.
-   */
-  virtual double operator()(int argc, const double *argv) = 0;
+  virtual double operator()(int argc, const double * argv) = 0;
 
-  /**
-   * @brief Member function <b>getArgCount</b> returns the argument count for this
-   * function.
-   *
-   * @return			an <b>int</b> value of the argument count for this
-   *				function.
-   */
-  int getArgCount() const {
-    return m_argCount;
-  }
+  int getArgCount() const { return m_argCount; }
 
 private:
-  int		m_argCount;			///< Argument count for this function
+  int  m_argCount;
 };
 
 
-/**
- * @brief Class <b>CFunction</b> declares a base template for template instantiation
- * of C-like called functions.
- */
 template <class S>
 class CFunction;
 
-/**
- * @brief Class <b>CFunctionMap</b> maps (function names, num arguments) to c-style function pointers via
- * the <b>CFunctionBase</b> base class.  The mapping is case insensitive.
- */
-class CFunctionMap : public std::multimap< std::string, CFunctionBase *, LessCase>
+class CFunctionMap : public std::multimap<std::string, CFunctionBase *, LessCase>
 {
 public:
-  /**
-   * Creates a new <b>CFunctionMap</b> instance.
-   *
-   * The <b>CFunctionMap</b> is populated with common C functions on construction.
-   */
   CFunctionMap();
-
-  /**
-   * Destroys a <b>CFunctionMap</b> instance.
-   */
   ~CFunctionMap();
 };
 
-/**
- * @brief Member function <b>getCFunctionMap</b> returns a reference to the
- * C-style function map.
- *
- * @return			a <b>CFunctionMap</b> reference to the C-style
- *				function map.
- */
 CFunctionMap &getCFunctionMap();
 
-/**
- * @brief Member function <b>addFunction</b> adds a C-style function to the
- * C-style function map.
- *
- * @param name		a <b>std::string</b> const reference to the function
- *				name.
- *
- * @param function		a <b>CFunctionBase</b> pointer to the C-style
- *				function.
- */
-inline void addFunction(const std::string &name, CFunctionBase *function) {
+inline void addFunction(const std::string & name, CFunctionBase * function) {
   getCFunctionMap().insert(std::make_pair(name, function));
 }
 

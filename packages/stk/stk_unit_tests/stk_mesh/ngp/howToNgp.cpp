@@ -380,7 +380,7 @@ void run_connected_face_test(const stk::mesh::BulkData& bulk)
 TEST_F(NgpHowTo, loopOverElemFaces)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
-    return;
+    GTEST_SKIP();
   }
   auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
   double init = 0.0;
@@ -388,6 +388,79 @@ TEST_F(NgpHowTo, loopOverElemFaces)
   setup_mesh("generated:1x1x1|sideset:xXyYzZ", stk::mesh::BulkData::NO_AUTO_AURA);
 
   run_connected_face_test(get_bulk());
+}
+
+void add_constraint_on_nodes_1_thru_4(stk::mesh::BulkData& bulk,
+                                      stk::mesh::EntityId constraintId)
+{
+  bulk.modification_begin();
+  stk::mesh::Entity constraintEntity = bulk.declare_constraint(constraintId);
+  for(stk::mesh::EntityId nodeId = 1; nodeId <= 4; ++nodeId) {
+    stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeId);
+    stk::mesh::ConnectivityOrdinal ord = static_cast<stk::mesh::ConnectivityOrdinal>(nodeId-1);
+    bulk.declare_relation(constraintEntity, node, ord);
+  }
+  bulk.modification_end();
+}
+
+void run_constraint_node_test(const stk::mesh::BulkData& bulk,
+                              stk::mesh::EntityId constraintId)
+{
+  stk::mesh::Entity constraint = bulk.get_entity(stk::topology::CONSTRAINT_RANK, constraintId);
+  ASSERT_TRUE(bulk.is_valid(constraint));
+  stk::mesh::Entity node0 = bulk.begin_nodes(constraint)[0];
+  stk::mesh::Entity node1 = bulk.begin_nodes(constraint)[1];
+  stk::mesh::Entity node2 = bulk.begin_nodes(constraint)[2];
+  stk::mesh::Entity node3 = bulk.begin_nodes(constraint)[3];
+  ASSERT_TRUE(bulk.is_valid(node0));
+  ASSERT_TRUE(bulk.is_valid(node1));
+  ASSERT_TRUE(bulk.is_valid(node2));
+  ASSERT_TRUE(bulk.is_valid(node3));
+
+  const unsigned expectedNumNodes = bulk.num_nodes(constraint);
+
+  const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+  Kokkos::parallel_for(1,
+    KOKKOS_LAMBDA(const unsigned& i) {
+      stk::mesh::FastMeshIndex constraintMeshIndex = ngpMesh.fast_mesh_index(constraint);
+
+      stk::mesh::NgpMesh::ConnectedEntities ngpNodes = ngpMesh.get_connected_entities(stk::topology::CONSTRAINT_RANK, constraintMeshIndex, stk::topology::NODE_RANK);
+      NGP_EXPECT_EQ(expectedNumNodes, ngpNodes.size());
+      NGP_EXPECT_EQ(node0, ngpNodes[0]);
+      NGP_EXPECT_EQ(node1, ngpNodes[1]);
+      NGP_EXPECT_EQ(node2, ngpNodes[2]);
+      NGP_EXPECT_EQ(node3, ngpNodes[3]);
+
+      stk::mesh::NgpMesh::ConnectedOrdinals ngpOrdinals = ngpMesh.get_connected_ordinals(stk::topology::CONSTRAINT_RANK, constraintMeshIndex, stk::topology::NODE_RANK);
+      NGP_EXPECT_EQ(4u, ngpOrdinals.size());
+      NGP_EXPECT_EQ(0, ngpOrdinals[0]);
+      NGP_EXPECT_EQ(1, ngpOrdinals[1]);
+      NGP_EXPECT_EQ(2, ngpOrdinals[2]);
+      NGP_EXPECT_EQ(3, ngpOrdinals[3]);
+    }
+  );
+}
+
+class NgpHowToConstraint : public stk::unit_test_util::MeshFixture 
+{
+public:
+  NgpHowToConstraint() : MeshFixture(3, {"node", "edge", "face", "elem", "constraint"})
+  {}
+};
+
+TEST_F(NgpHowToConstraint, checkNodalConnectivity)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    GTEST_SKIP();
+  }
+  auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
+  double init = 0.0;
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  setup_mesh("generated:1x1x1", stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::EntityId constraintId = 1;
+  add_constraint_on_nodes_1_thru_4(get_bulk(), constraintId);
+
+  run_constraint_node_test(get_bulk(), constraintId);
 }
 
 void run_connected_face_ordinal_test(const stk::mesh::BulkData& bulk)
@@ -794,6 +867,7 @@ TEST_F(NgpHowTo, setAllScalarFieldValues)
   double initialValue = 0.0;
   stk::mesh::Field<double> &stkField = create_field_with_num_states_and_init<double>(get_meta(), "myField", numStates, initialValue);
   setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+  stkField.sync_to_device();
 
   stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
   stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
@@ -818,6 +892,7 @@ TEST_F(NgpHowTo, setAllVectorFieldValues)
                                                                         fieldDimension,
                                                                         initialValue);
   setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+  stkField.sync_to_device();
 
   stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
   const stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
@@ -1078,6 +1153,10 @@ NGP_TEST_F(NgpHowTo, ReuseNgpField)
   stk::mesh::Field<double>                &doubleStkField = create_field_with_num_states_and_init(get_meta(), "field10", numStates, (double)0);
 
   setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+  auto fields = get_meta().get_fields();
+  for(auto field : fields) {
+    field->sync_to_device();
+  }
 
   {
     fill_field_on_device(get_bulk(), shortStkField, (short)42);
@@ -1208,6 +1287,7 @@ TEST(NgpMesh, meshIndices)
   stk::mesh::put_field_on_mesh(field, meta.universal_part(), &init);
 
   stk::io::fill_mesh("generated:1x1x1", bulk);
+  field.sync_to_device();
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   stk::mesh::NgpField<int> & ngpField = stk::mesh::get_updated_ngp_field<int>(field);
   int fieldVal = 5;

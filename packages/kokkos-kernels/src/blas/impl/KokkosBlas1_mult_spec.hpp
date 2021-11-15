@@ -99,8 +99,7 @@ struct mult_eti_spec_avail {
          Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, \
-                      std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
-                               Kokkos::LayoutLeft, LAYOUT>::type, \
+                      LAYOUT, \
                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -228,7 +227,7 @@ struct Mult<YV, AV, XV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>
       printf("KokkosBlas1::mult<> non-ETI specialization for < %s , %s , %s >\n",typeid(YV).name(),typeid(AV).name(),typeid(XV).name());
     }
     #endif
- 
+
     const size_type numRows = Y.extent(0);
     if (numRows < static_cast<int> (INT_MAX)) {
       V_Mult_Generic<YV, AV, XV, int> (gamma, Y, alpha, A, X);
@@ -265,8 +264,7 @@ extern template struct Mult< \
                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, \
-                      std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
-                               Kokkos::LayoutLeft, LAYOUT>::type, \
+                      LAYOUT, \
                       Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         1, false, true>;
@@ -300,8 +298,7 @@ extern template struct Mult< \
      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<const SCALAR*, \
-                  std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
-                                            Kokkos::LayoutLeft, LAYOUT>::type, \
+                  LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -313,8 +310,7 @@ template struct Mult< \
      Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<const SCALAR*, \
-                  std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
-                                            Kokkos::LayoutLeft, LAYOUT>::type, \
+                  LAYOUT, \
                   Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \

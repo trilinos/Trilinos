@@ -55,18 +55,26 @@ namespace minitensor {
 //
 template<typename T>
 KOKKOS_INLINE_FUNCTION
+T
+abs(T const & a)
+{
+  return a < T(0) ? -a : a;
+}
+
+//
+//
+//
+template<typename T>
+KOKKOS_INLINE_FUNCTION
 void
 swap(T & a, T & b)
 {
   // Guard against the same memory location.
   if (&a == &b) return;
 
-  // XOR algorithm
-  a ^= b;
-  b ^= a;
-  a ^= b;
-
-  return;
+  auto const c = a;
+  a = b;
+  b = c;
 }
 
 //
@@ -75,7 +83,7 @@ swap(T & a, T & b)
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
-max(const T & a, const T & b)
+max(T const & a, T const & b)
 {
   return a > b ? a : b;
 }
@@ -86,7 +94,7 @@ max(const T & a, const T & b)
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
-min(const T & a, const T & b)
+min(T const & a, T const & b)
 {
   return a < b ? a : b;
 }

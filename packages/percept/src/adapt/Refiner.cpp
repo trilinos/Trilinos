@@ -1552,7 +1552,7 @@
                           bool stk_auto= stk::mesh::is_auto_declared_part(*parts[ip]);
 
                           if (stk_auto) continue;
-                          unsigned per = parts[ip]->primary_entity_rank();
+                          stk::mesh::EntityRank per = parts[ip]->primary_entity_rank();
 
                           if (per == m_eMesh.side_rank())
                             {
@@ -1934,7 +1934,7 @@
               numSubDimNeededEntities = 1;
             }
 
-          if (needed_entity_ranks[ineed_ent].first >= new_sub_entity_nodes.size())
+          if (static_cast<unsigned>(needed_entity_ranks[ineed_ent].first) >= new_sub_entity_nodes.size())
             {
               throw std::logic_error("Refiner::createNewNeededNodeIds logic err #1");
             }
@@ -2129,7 +2129,7 @@
                   if (side_auto_part)
                     continue;
 
-                  unsigned per = side_parts[isp]->primary_entity_rank();
+                  stk::mesh::EntityRank per = side_parts[isp]->primary_entity_rank();
                   if (per != side_rank_iter)
                     continue;
 

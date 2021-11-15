@@ -389,12 +389,6 @@ namespace stk {
       bool get_global(const std::string &variableName,
               stk::util::Parameter &param,
               bool abort_if_not_found=true) const;
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-      STK_DEPRECATED bool get_global(const std::string &variableName,
-              STK_ANY_NAMESPACE::any &value,
-              stk::util::ParameterType::Type type,
-              bool abort_if_not_found=true) const;
-#endif
       bool get_global(const std::string &variableName,
               int &globalVar,
               bool abort_if_not_found=true) const;
@@ -489,16 +483,7 @@ namespace stk {
         validate_output_file_index(output_file_index);
         m_outputFiles[output_file_index]->add_global(variableName, value, type);
       }
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-      STK_DEPRECATED void add_global_ref(size_t output_file_index,
-			  const std::string &variableName,
-			  const STK_ANY_NAMESPACE::any *value,
-			  stk::util::ParameterType::Type type);
-      STK_DEPRECATED void add_global(size_t output_file_index,
-		      const std::string &variableName,
-		      const STK_ANY_NAMESPACE::any &value,
-		      stk::util::ParameterType::Type type);
-#endif
+
       void add_global(size_t output_file_index,
 		      const std::string &variableName,
 		      Ioss::Field::BasicType dataType);
@@ -557,12 +542,6 @@ namespace stk {
                         const std::string& variableName,
                         const stk::util::Parameter& param) const;
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-      STK_DEPRECATED void write_global(size_t output_file_index,
-              const std::string &variableName,
-              const STK_ANY_NAMESPACE::any &value,
-              stk::util::ParameterType::Type type) const;
-#endif
       void write_global(size_t output_file_index,
 			const std::string &variableName,
       double data) const;
@@ -609,38 +588,6 @@ namespace stk {
                                 Ioss::Field::BasicType dataType,
                                 int copies = 1,
                                 Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-      STK_DEPRECATED void define_heartbeat_global(size_t index,
-                                   const std::string &name,
-                                   const STK_ANY_NAMESPACE::any *value,
-                                   stk::util::ParameterType::Type type,
-                                   int copies = 1,
-                                   Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
-
-      STK_DEPRECATED void define_heartbeat_global(size_t index,
-                                   const std::string &globalVarName,
-                                   const STK_ANY_NAMESPACE::any *value,
-                                   const std::string &storage,
-                                   Ioss::Field::BasicType dataType,
-                                   int copies = 1,
-                                   Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
-
-      STK_DEPRECATED void add_heartbeat_global(size_t index,
-                                const std::string &name,
-                                const STK_ANY_NAMESPACE::any *value,
-                                stk::util::ParameterType::Type type,
-                                int copies = 1,
-                                Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
-  
-      STK_DEPRECATED void add_heartbeat_global(size_t index,
-                                const std::string &globalVarName,
-                                const STK_ANY_NAMESPACE::any *value,
-                                const std::string &storage,
-                                Ioss::Field::BasicType dataType,
-                                int copies = 1,
-                                Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
-#endif
 
       bool has_heartbeat_global(size_t output_file_index,
                                 const std::string &globalVarName) const;
@@ -961,54 +908,6 @@ namespace stk {
       STKIORequire(index < m_heartbeat.size());
       m_heartbeat[index]->add_global_ref(globalVarName, param, storage, dataType, copies, role);
     }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-    STK_DEPRECATED inline void StkMeshIoBroker::define_heartbeat_global(size_t index,
-                                                         const std::string &name,
-                                                         const STK_ANY_NAMESPACE::any *value,
-                                                         stk::util::ParameterType::Type type,
-                                                         int copies,
-                                                         Ioss::Field::RoleType role)
-    {
-      STKIORequire(index < m_heartbeat.size());
-      m_heartbeat[index]->define_global_ref(name, value, type, copies, role);
-    }
-
-    inline void StkMeshIoBroker::define_heartbeat_global(size_t index,
-                                                         const std::string &globalVarName,
-                                                         const STK_ANY_NAMESPACE::any *value,
-                                                         const std::string &storage,
-                                                         Ioss::Field::BasicType dataType,
-                                                         int copies,
-                                                         Ioss::Field::RoleType role)
-    {
-      STKIORequire(index < m_heartbeat.size());
-      m_heartbeat[index]->define_global_ref(globalVarName, value, storage, dataType, copies, role);
-    }
-
-    STK_DEPRECATED inline void StkMeshIoBroker::add_heartbeat_global(size_t index,
-						      const std::string &name,
-						      const STK_ANY_NAMESPACE::any *value,
-						      stk::util::ParameterType::Type type,
-						      int copies,
-						      Ioss::Field::RoleType role)
-    {
-      STKIORequire(index < m_heartbeat.size());
-      m_heartbeat[index]->add_global_ref(name, value, type, copies, role);
-    }
-  
-    STK_DEPRECATED inline void StkMeshIoBroker::add_heartbeat_global(size_t index,
-                                                      const std::string &globalVarName,
-                                                      const STK_ANY_NAMESPACE::any *value,
-                                                      const std::string &storage,
-                                                      Ioss::Field::BasicType dataType,
-                                                      int copies,
-                                                      Ioss::Field::RoleType role)
-    {
-      STKIORequire(index < m_heartbeat.size());
-      m_heartbeat[index]->add_global_ref(globalVarName, value, storage, dataType, copies, role);
-    }
-#endif
 
     inline void StkMeshIoBroker::process_heartbeat_output(size_t index, int step, double time)
     {

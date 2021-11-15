@@ -140,7 +140,7 @@ createTriDiagonalTpetraOperator(const int numLocalRows)
 
   // Create a Tpetra::Matrix using the Map, with a static allocation dictated by numNz
   RCP< Tpetra::CrsMatrix<Scalar> > A =
-    Teuchos::rcp( new Tpetra::CrsMatrix<Scalar>(map, numNz (), Tpetra::StaticProfile) );
+    Teuchos::rcp( new Tpetra::CrsMatrix<Scalar>(map, numNz ()) );
 
   // We are done with NumNZ
   {

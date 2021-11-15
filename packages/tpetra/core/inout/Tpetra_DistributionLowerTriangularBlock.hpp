@@ -373,10 +373,6 @@ public:
     Teuchos::broadcast<int,gno_t>(*comm, 0, chunkCuts(0,nChunks+1));
     chunksComputed = true;
 
-    //std::cout << comm->getRank() << " KDDKDD chunkCuts: ";
-    //for (int kdd=0; kdd <= nChunks; kdd++) std::cout << chunkCuts[kdd] << " ";
-    //std::cout << std::endl;
-
     // Determine new owner of each nonzero; buffer for sending
     Teuchos::Array<gno_t> iOut(localNZ.size());
     Teuchos::Array<gno_t> jOut(localNZ.size());
@@ -393,13 +389,6 @@ public:
         vOut[sendCnt] = it->second;
         pOut[sendCnt] = procFromChunks(iOut[sendCnt], jOut[sendCnt]);
 
-        //std::cout << comm->getRank() 
-        //          << "    KDDKDD IJ (" 
-        //          << it->first.first << "," << it->first.second
-        //          << ") permuted to ("
-        //          << iOut[sendCnt] << "," << jOut[sendCnt] 
-        //          << ") being sent to " << pOut[sendCnt]
-        //          << std::endl;
         sendCnt++;
       }
     }

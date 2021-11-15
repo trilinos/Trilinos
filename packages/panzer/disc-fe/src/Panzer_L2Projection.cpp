@@ -363,7 +363,7 @@ namespace panzer {
     }
 
     Teuchos::ArrayView<const size_t> nEntriesPerRowView(nEntriesPerRow);
-    RCP<GraphType> ghostedGraph = rcp(new GraphType(ghostedTargetMap,ghostedSourceMap,nEntriesPerRowView,Tpetra::StaticProfile));
+    RCP<GraphType> ghostedGraph = rcp(new GraphType(ghostedTargetMap,ghostedSourceMap,nEntriesPerRowView));
 
     for (blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
       std::string blockId = *blockItr;

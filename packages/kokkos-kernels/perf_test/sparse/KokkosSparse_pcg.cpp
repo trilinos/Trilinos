@@ -115,7 +115,7 @@ void run_experiment(
     kh.create_gs_handle();
   else
     kh.create_gs_handle(KokkosSparse::CLUSTER_BALLOON, clusterSize);
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   KokkosKernels::Experimental::Example::pcgsolve(
         kh
       , crsmat

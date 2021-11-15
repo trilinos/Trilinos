@@ -1620,6 +1620,47 @@ namespace MueLuTests {
 
 
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, SignedClassicalSA, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#   include <MueLu_UseShortNames.hpp>
+    typedef Teuchos::ScalarTraits<SC> STS;
+    typedef typename STS::magnitudeType real_type;
+
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    GO nx = 10*comm->getSize();
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx",nx);
+    matrixList.set("ny",(GO)10);
+    matrixList.set("nz",(GO)10);
+    matrixList.set("matrixType","Laplace3D");
+    RCP<Matrix> A =TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixList,lib);
+
+    Level fineLevel;
+    fineLevel.Set("A", A);
+   
+
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    CoalesceDropFactory coalesceDropFact;
+    coalesceDropFact.SetFactory("UnAmalgamationInfo",amalgFact);
+    coalesceDropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(0.0));
+    coalesceDropFact.SetParameter("aggregation: drop scheme",Teuchos::ParameterEntry(std::string("signed classical sa")));
+    fineLevel.Request("Graph",&coalesceDropFact);
+    fineLevel.Request("DofsPerNode", &coalesceDropFact);
+
+    coalesceDropFact.Build(fineLevel);
+
+    RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &coalesceDropFact);
+    LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
+  }
+
+
+
 #define MUELU_ETI_GROUP(SC,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,Constructor,SC,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,Build,SC,LO,GO,Node) \
@@ -1642,7 +1683,8 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,BlockDiagonalDistanceLaplacian,SC,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,BlockDiagonalDistanceLaplacianWeighted,SC,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,DistanceLaplacianWeighted,SC,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,AggresiveDroppingIsMarkedAsBoundary,SC,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,AggresiveDroppingIsMarkedAsBoundary,SC,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,SignedClassicalSA,SC,LO,GO,Node) \
 
 #include <MueLu_ETI_4arg.hpp>
 

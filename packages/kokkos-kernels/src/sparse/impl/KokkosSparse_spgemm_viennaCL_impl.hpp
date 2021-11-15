@@ -140,7 +140,7 @@ namespace Impl{
        */
 
 
-      Kokkos::Impl::Timer timerset;
+      Kokkos::Timer timerset;
       if (verbose)
 	std::cout << "viennacl matrix create begins here" << std::endl;
 #ifdef VIENNACL_WITH_CUDA
@@ -159,7 +159,7 @@ namespace Impl{
       std::cout << "VIENNACL compress matrix create:" << timerset.seconds() << std::endl;
 
 
-      Kokkos::Impl::Timer timer1;
+      Kokkos::Timer timer1;
       viennacl::compressed_matrix<value_type> C = viennacl::linalg::prod(A, B);
       MyExecSpace().fence();
 
@@ -184,10 +184,10 @@ namespace Impl{
 #endif
 
         {
-          Kokkos::Impl::Timer copy_time;
-          //row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
-          entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , cnnz);
-          valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  cnnz);
+          Kokkos::Timer copy_time;
+          //row_mapC = typename cin_row_index_view_type::non_const_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "rowmapC"), c_rows + 1);
+          entriesC = typename cin_nonzero_index_view_type::non_const_type (Kokkos::view_alloc(Kokkos::WithoutInitializing, "EntriesC") , cnnz);
+          valuesC = typename cin_nonzero_value_view_type::non_const_type (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC") ,  cnnz);
 	  MyExecSpace().fence();
           KokkosKernels::Impl::copy_vector<unsigned int const *, typename cin_row_index_view_type::non_const_type, MyExecSpace> (m + 1, rows_start, row_mapC);
           KokkosKernels::Impl::copy_vector<unsigned int const *, typename cin_nonzero_index_view_type::non_const_type, MyExecSpace> (cnnz, columns, entriesC);

@@ -1060,7 +1060,6 @@ Superlu<Matrix,Vector>::triangular_solve_factor()
   if (data_.options.ConditionNumber == SLU::YES) {
     using STM = Teuchos::ScalarTraits<magnitude_type>;
     const magnitude_type eps = STM::eps ();
-    int n = data_.perm_r.extent(0);
 
     SCformat *Lstore = (SCformat*)(data_.L.Store);
     int nsuper = 1 + Lstore->nsuper;
@@ -1077,6 +1076,7 @@ Superlu<Matrix,Vector>::triangular_solve_factor()
     condition_flag = (((double)max_cols * nsuper) * eps * multiply_fact >= data_.rcond);
 
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
+    int n = data_.perm_r.extent(0);
     std::cout << this->getComm()->getRank()
               << " : anorm = " << data_.anorm << ", rcond = " << data_.rcond << ", n = " << n
               << ", num super cols = " << nsuper << ", max super cols = " << max_cols
