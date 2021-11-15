@@ -27,7 +27,7 @@ template <class T> inline RefHolder<T> ByRef(T &t) { return RefHolder<T>(t); }
 
 class ScopeGuardImplBase
 {
-  ScopeGuardImplBase &operator=(const ScopeGuardImplBase &);
+  ScopeGuardImplBase &operator=(const ScopeGuardImplBase &) = delete;
 
 protected:
   ~ScopeGuardImplBase() = default;

@@ -207,10 +207,10 @@ class View
 
   using view_type::operator();
   
-  STK_INLINE
+  KOKKOS_INLINE_FUNCTION
   my_type & DownCast() const { return static_cast< my_type & > (*this); }
 
-  STK_INLINE
+  KOKKOS_INLINE_FUNCTION
   const my_type & ConstDownCast() const { return static_cast< const my_type & > (*this); }
 
   //----------------------------------------
@@ -241,19 +241,19 @@ class View
                 typename traits::host_mirror_space >
     HostMirror ;
 
-  STK_INLINE View() : Kokkos::View< DataType, array_layout, execution_space, memory_traits >() {}
+  KOKKOS_INLINE_FUNCTION View() : Kokkos::View< DataType, array_layout, execution_space, memory_traits >() {}
 
 
-  STK_INLINE
+  KOKKOS_DEFAULTED_FUNCTION
   View( const View & rhs ) = default;
 
-  STK_INLINE
+  KOKKOS_DEFAULTED_FUNCTION
   View( View && rhs ) = default;
 
-  STK_INLINE
+  KOKKOS_DEFAULTED_FUNCTION
   View & operator = ( const View & rhs ) = default;
 
-  STK_INLINE
+  KOKKOS_DEFAULTED_FUNCTION
   View & operator = ( View && rhs ) = default;
 
   //----------------------------------------
@@ -261,13 +261,13 @@ class View
   // may assign unmanaged from managed.
 
   template< class RT , class ... RP >
-  STK_INLINE
+  KOKKOS_INLINE_FUNCTION
   View( const View<RT,RP...> & rhs )
     : view_type( rhs.ConstDownCast() )
     {}
 
   template< class RT , class ... RP >
-  STK_INLINE
+  KOKKOS_INLINE_FUNCTION
   View & operator = (const View<RT,RP...> & rhs )
   {
     view_type::operator = ( rhs.ConstDownCast() );
@@ -284,7 +284,7 @@ class View
     {}
 
   template< typename Label >
-  explicit STK_INLINE
+  explicit KOKKOS_INLINE_FUNCTION
   View( const Label & arg_label
       , const size_t arg_N0 = KOKKOS_INVALID_INDEX 
       , const size_t arg_N1 = KOKKOS_INVALID_INDEX
@@ -309,7 +309,7 @@ class View
   // one argument
 
   template <typename I0>
-  STK_FORCE_INLINE
+  KOKKOS_FORCEINLINE_FUNCTION
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && is_layout_right_simd, simd_reference_type>::type 
   operator() (const I0 i0) const {
     static_assert(rank==1, VALID_NUM_INDICES_ERROR_MSG);
@@ -317,7 +317,7 @@ class View
   }
 
   template <typename I0>
-  STK_FORCE_INLINE
+  KOKKOS_FORCEINLINE_FUNCTION
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && !is_layout_right_simd, simd_reference_type >::type 
   operator() (const I0 i0) const {
     static_assert(rank==1, VALID_NUM_INDICES_ERROR_MSG);
@@ -328,7 +328,7 @@ class View
   // two arguments
  
   template< typename I0, typename I1 >
-  STK_FORCE_INLINE
+  KOKKOS_FORCEINLINE_FUNCTION
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && is_layout_right_simd, simd_reference_type >::type 
   operator() (const I0 i0, const I1 i1) const {
     static_assert(rank==2, VALID_NUM_INDICES_ERROR_MSG);
@@ -337,7 +337,7 @@ class View
   }
 
   template< typename I0, typename I1 >
-  STK_FORCE_INLINE
+  KOKKOS_FORCEINLINE_FUNCTION
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && !is_layout_right_simd, simd_reference_type >::type 
   operator() (const I0 i0, const I1 i1) const {
     static_assert(rank==2, VALID_NUM_INDICES_ERROR_MSG);
@@ -349,7 +349,7 @@ class View
   // three arguments
   
   template< typename I0, typename I1, typename I2 >
-  STK_FORCE_INLINE
+  KOKKOS_FORCEINLINE_FUNCTION
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && is_layout_right_simd, simd_reference_type >::type 
   operator() (const I0 i0, const I1 i1, const I2 i2) const {
     static_assert(rank==3, VALID_NUM_INDICES_ERROR_MSG);
@@ -361,7 +361,7 @@ class View
   }
 
   template< typename I0, typename I1, typename I2 >
-  STK_FORCE_INLINE
+  KOKKOS_FORCEINLINE_FUNCTION
   typename std::enable_if< std::is_same<I0, stk::simd::Index>::value && !is_device_gpu && !is_layout_right_simd, simd_reference_type >::type 
   operator() (const I0 i0, const I1 i1, const I2 i2) const {
     static_assert(rank==3, VALID_NUM_INDICES_ERROR_MSG);
@@ -371,7 +371,7 @@ class View
     return stk::simd::simd_ref_cast((*this)(simd_width*int_index(i0), i1, i2));
   }
 
-  STK_FORCE_INLINE
+  KOKKOS_FORCEINLINE_FUNCTION
   size_t simd_dimension() const {
     return is_device_gpu ? this->extent(0) : simd_pad<base_type>( this->extent(0) ) / simd_width;
   }

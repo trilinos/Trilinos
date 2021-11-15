@@ -48,7 +48,7 @@
 #include <iomanip>
 
 #include "Kokkos_Core.hpp"
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include "Teuchos_CommandLineProcessor.hpp"
 

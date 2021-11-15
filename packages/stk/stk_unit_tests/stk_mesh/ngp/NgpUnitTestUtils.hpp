@@ -9,7 +9,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetNgpMesh.hpp>
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
 
@@ -84,7 +84,7 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk, const std::vect
     }
   }
 
-  using BucketPartOrdinalType = Kokkos::View<stk::mesh::PartOrdinal*, stk::mesh::MemSpace>;
+  using BucketPartOrdinalType = Kokkos::View<stk::mesh::PartOrdinal*, stk::ngp::MemSpace>;
   BucketPartOrdinalType bucketPartOrdinals("bucketPartOrdinals", numBuckets);
   BucketPartOrdinalType::HostMirror hostBucketPartOrdinals = Kokkos::create_mirror_view(bucketPartOrdinals);
   for (size_t i = 0; i < buckets.size(); ++i) {
@@ -100,7 +100,7 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk, const std::vect
                          }
                        });
 
-  using BucketEntitiesType = Kokkos::View<stk::mesh::EntityId*, stk::mesh::MemSpace>;
+  using BucketEntitiesType = Kokkos::View<stk::mesh::EntityId*, stk::ngp::MemSpace>;
   BucketEntitiesType bucketEntities("bucketEntities", numElemsAcrossBuckets+numBuckets);
   BucketEntitiesType::HostMirror hostBucketEntities = Kokkos::create_mirror_view(bucketEntities);
   size_t index = 0;

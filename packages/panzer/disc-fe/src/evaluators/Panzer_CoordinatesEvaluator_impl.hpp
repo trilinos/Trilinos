@@ -78,13 +78,17 @@ CoordinatesEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData d)
 { 
-  PHX::MDField<double,Cell,NODE,Dim> coords = this->wda(d).cell_vertex_coordinates;
+  auto coords = this->wda(d).cell_vertex_coordinates.get_static_view();
+  auto coordinate_v = coordinate.get_static_view();
+  auto l_dimension = dimension;
   // const Kokkos::DynRankView<double,PHX::Device> & coords = this->wda(d).cell_vertex_coordinates;
 
   // copy coordinates directly into the field
-  for(index_t i=0;i<d.num_cells;i++)
-    for(int j=0;j<coords.extent_int(1);j++)
-      coordinate(i,j) = coords(i,j,dimension);       
+  Kokkos::parallel_for(d.num_cells, KOKKOS_LAMBDA (int i) {
+      for(int j=0;j<coords.extent_int(1);j++)
+	coordinate_v(i,j) = coords(i,j,l_dimension);       
+    });
+  Kokkos::fence();
 }
 
 //**********************************************************************

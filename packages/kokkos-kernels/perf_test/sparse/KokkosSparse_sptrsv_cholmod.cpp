@@ -75,11 +75,14 @@ cholmod_factor* factor_cholmod(const size_type nrow, const size_type nnz, scalar
   // Start Cholmod
   cholmod_common *cm = Comm;
   if (std::is_same<cholmod_int_type, long>::value == true) {
+    std::cout << " > calling with long " << std::endl;
     cholmod_l_start (cm);
   } else if (std::is_same<cholmod_int_type, int>::value == true) {
+    std::cout << " > calling with int " << std::endl;
     cholmod_start (cm);
   }
   cm->supernodal = CHOLMOD_SUPERNODAL;
+  cm->print = 5;
 
   // Manually, initialize the matrix
   cholmod_sparse A;
@@ -115,6 +118,7 @@ cholmod_factor* factor_cholmod(const size_type nrow, const size_type nnz, scalar
 
   // Symbolic factorization
   cholmod_factor *L;
+  printf( " ** calling cholmod_analyze **\n" );
   if (std::is_same<cholmod_int_type, long>::value == true) {
     L = cholmod_l_analyze (&A, cm);
   } else if (std::is_same<cholmod_int_type, int>::value == true) {
@@ -126,6 +130,7 @@ cholmod_factor* factor_cholmod(const size_type nrow, const size_type nnz, scalar
 
   // Numerical factorization
   int cholmod_stat = 0;
+  printf( " ** calling cholmod_factorize **\n" );
   if (std::is_same<cholmod_int_type, long>::value == true) {
     cholmod_stat = cholmod_l_factorize (&A, L, cm);
   } else if (std::is_same<cholmod_int_type, int>::value == true) {
@@ -166,8 +171,8 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool u_in_cs
   using STS = Kokkos::Details::ArithTraits<scalar_type>;
   using mag_type = typename STS::mag_type;
 
-  using cholmod_int_type = long;
-  //using cholmod_int_type = int;
+  //using cholmod_int_type = long;
+  using cholmod_int_type = int;
 
   // using int (for CuSparse on GPU)
   using ordinal_type = int;
@@ -479,16 +484,16 @@ int test_sptrsv_perf(std::vector<int> tests, std::string& filename, bool u_in_cs
 
 void print_help_sptrsv() {
   printf("Options:\n");
-  printf("  --test [OPTION] : Use different kernel implementations\n");
-  printf("                    Options:\n");
-  printf("                    cholmod_naive, cholmod_etree\n\n");
-  printf("  -f [file]       : Read in Matrix Market formatted text file 'file'.\n");
-  printf("  --offset [O]    : Subtract O from every index.\n");
-  printf("                    Useful in case the matrix market file is not 0 based.\n\n");
-  printf("  -rpt [K]        : Number of Rows assigned to a thread.\n");
-  printf("  -ts [T]         : Number of threads per team.\n");
-  printf("  -vl [V]         : Vector-length (i.e. how many Cuda threads are a Kokkos 'thread').\n");
-  printf("  --loop [LOOP]   : How many spmv to run to aggregate average time. \n");
+  printf("  --test [OPTION]        : Use different kernel implementations\n");
+  printf("                           Options:\n");
+  printf("                           cholmod_naive, cholmod_etree\n\n");
+  printf("  -f [file]              : Read in Matrix Market formatted text file 'file'.\n");
+  printf("  --loop [LOOP]          : How many time to run the test.\n");
+  printf("  --u-in-csc             : To store U-factor in CSC, needed for invert.\n");
+  printf("  --invert-diag          : To invert diagonal blocks.\n");
+  printf("  --invert-offdiag       : To apply inverse to off-diagonal blocks.\n");
+  printf("  --block-size [SIZE]    : To specify the threshold to switch device and bached kernel.\n");
+  printf("  --scalar-type [d or z] :\n");
 }
 
 
@@ -595,10 +600,10 @@ int main(int argc, char **argv)
   return 0;
 }
 #else // defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
-int main(int argc, char **argv)
+int main()
 {
   std::cout << std::endl << "** CHOLMOD NOT ENABLED **" << std::endl << std::endl;
-  return 0;
+  return 1;
 }
 #endif
 
@@ -617,6 +622,6 @@ int main() {
   #endif
   std::cout << " CUDA_VERSION = " << CUDA_VERSION << std::endl;
 #endif
-  return 0;
+  return 1;
 }
 #endif

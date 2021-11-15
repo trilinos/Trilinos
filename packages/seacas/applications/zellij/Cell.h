@@ -20,6 +20,7 @@
 //     -- rank (for parallel -- which rank does this entry exist on)
 //
 
+#include <array>
 #include <memory>
 #include <utility>
 

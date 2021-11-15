@@ -50,6 +50,7 @@ namespace stk
 {
 namespace unit_test_util
 {
+void initialize_stk_io_for_text_mesh();
 
 // Example:  meshSizeSpec = "2x2x1"
 void generated_mesh_to_file_in_serial(const std::string& meshSizeSpec, const std::string& fileName);

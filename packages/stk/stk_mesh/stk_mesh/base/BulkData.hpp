@@ -52,7 +52,7 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
 #include <stk_mesh/base/Ngp.hpp>
-#include "stk_mesh/base/NgpSpaces.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <string>                       // for char_traits, string
@@ -863,9 +863,6 @@ void get_entities(EntityRank rank, Selector const& selector, EntityVector& outpu
   std::vector<SideSet *> get_sidesets();
   std::vector<const SideSet *> get_sidesets() const;
   void synchronize_sideset_sync_count();
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after August 2021
-  STK_DEPRECATED void clone_solo_side_id_generator(const stk::mesh::BulkData &oldBulk);
-#endif
   void create_side_entities(const SideSet &sideSet, const stk::mesh::PartVector& parts);
 
   bool supports_large_ids() const {return m_supportsLargeIds; }
@@ -1268,8 +1265,6 @@ private:
 
   void set_ngp_mesh(NgpMeshBase * ngpMesh) const { m_ngpMeshBase = ngpMesh; }
   NgpMeshBase * get_ngp_mesh() const { return m_ngpMeshBase; }
-
-  uint8_t * get_ngp_field_sync_buffer() const;
 
   void record_entity_deletion(Entity entity);
   void break_boundary_relations_and_delete_buckets(const std::vector<impl::RelationEntityToNode> & relationsToDestroy, const stk::mesh::BucketVector & bucketsToDelete);

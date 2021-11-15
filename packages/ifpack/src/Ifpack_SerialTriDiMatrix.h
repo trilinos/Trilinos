@@ -103,7 +103,7 @@ method in the Epetra_CompObject base class.
 
 
 //=========================================================================
-class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiMatrix : public Epetra_CompObject, public Epetra_Object, public Epetra_BLAS {
+class Ifpack_SerialTriDiMatrix : public Epetra_CompObject, public Epetra_Object, public Epetra_BLAS {
 
   public:
 

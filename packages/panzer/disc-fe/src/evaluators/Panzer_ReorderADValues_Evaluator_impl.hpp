@@ -209,8 +209,12 @@ evaluateFields(typename TRAITS::EvalData /* workset */)
 
   for(std::size_t fieldIndex = 0; fieldIndex < inFields_.size(); ++fieldIndex) {
 
-    const PHX::MDField<const ScalarT>& inField = inFields_[fieldIndex];                                                                                                    
-    const PHX::MDField<ScalarT>& outField = outFields_[fieldIndex];
+    
+    const auto & inField_v = inFields_[fieldIndex].get_view();
+    const auto & outField_v = outFields_[fieldIndex].get_view();
+    auto inField = Kokkos::create_mirror_view(inField_v);
+    auto outField = Kokkos::create_mirror_view(outField_v);
+    Kokkos::deep_copy(inField, inField_v);
 
     if(inField.size()>0) {
 
@@ -275,7 +279,7 @@ evaluateFields(typename TRAITS::EvalData /* workset */)
       }
 
     }
-
+    Kokkos::deep_copy(outField_v, outField);
   }
 
 //Irina TOFIX

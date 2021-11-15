@@ -43,7 +43,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
-    rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
+    rcp(new Tpetra_CrsGraph(map, size_t(2)));
   Array<GlobalOrdinal> columnIndices(2);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();
@@ -139,7 +139,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
     Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
       nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
-    rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
+    rcp(new Tpetra_CrsGraph(map, size_t(2)));
   Array<GlobalOrdinal> columnIndices(2);
   ArrayView<const GlobalOrdinal> myGIDs = map->getNodeElementList();
   const size_t num_my_row = myGIDs.size();

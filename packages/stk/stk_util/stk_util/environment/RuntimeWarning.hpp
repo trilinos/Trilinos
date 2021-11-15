@@ -55,6 +55,9 @@ typedef std::ios_base &(*IOSBaseFunctionPtr)(std::ios_base &);
  */
 unsigned get_warning_count();
 
+unsigned get_warning_printed_count();
+unsigned get_warning_printed_count(const MessageCode &messageCode);
+
 /**
  * @brief Function <b>reset_warning_count</b> sets the accumulated warning count to zero.
  */

@@ -34,7 +34,13 @@
 #ifndef STK_MESH_NGPFIELD_AUX_HPP
 #define STK_MESH_NGPFIELD_AUX_HPP
 
-#include "stk_mesh/base/NgpSpaces.hpp"
+#include "stk_mesh/base/Bucket.hpp"
+#include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_mesh/base/FieldBase.hpp"
+#include "stk_mesh/base/NgpTypes.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include <Kokkos_Core.hpp>
 
 namespace stk {
@@ -49,39 +55,156 @@ enum NgpFieldSyncMode {
   DEVICE_TO_HOST_ASYNC = 4
 };
 
-struct AsyncCopyState {
+template <typename DeviceViewType, typename DeviceUnsignedViewType, typename ExecSpaceType>
+void transpose_from_pinned_and_mapped_memory(ExecSpaceType & execSpace,
+                                             const FieldBase & stkField,
+                                             FieldDataPointerDeviceViewType& ptrToPinnedAndMappedMemory,
+                                             DeviceViewType & deviceView,
+                                             DeviceUnsignedViewType & bucketSizes,
+                                             DeviceUnsignedViewType & fieldBucketNumComponentsPerEntity)
+{
+  using ValueType = typename DeviceViewType::value_type;
+  using TeamHandleType = typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type;
 
-  AsyncCopyState()
-  : execSpace(Kokkos::DefaultExecutionSpace()),
-    syncMode(INVALID)
-  {}
+  Selector selector = selectField(stkField);
+  size_t numBuckets = bucketSizes.extent(0);
 
-  KOKKOS_FUNCTION
-  AsyncCopyState(const AsyncCopyState& state)
-  : execSpace(state.execSpace),
-    syncMode(state.syncMode)
-  {}
+  const auto& teamPolicy = Kokkos::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+  Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
+                       KOKKOS_LAMBDA(const TeamHandleType & team) {
+                         const unsigned bucketIndex = team.league_rank();
+                         const unsigned bucketSize = bucketSizes(bucketIndex);
+                         const unsigned numComponentsPerEntity = fieldBucketNumComponentsPerEntity(bucketIndex);
 
-  void set_state(const ExecSpace& space, NgpFieldSyncMode mode)
-  {
-    execSpace = space;
-    syncMode = mode;
-  }
+                         bool isScalar = (numComponentsPerEntity == 1);
 
-  void set_execution_space(const ExecSpace& space)
-  {
-    execSpace = space;
-  }
+                         if(isScalar) {
+                          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, bucketSize),
+                                                [=](const int& entityIdx) {
+                                                  for (unsigned i = 0; i < numComponentsPerEntity; ++i) {
+                                                    ValueType* bucketPtr = reinterpret_cast<ValueType*>(ptrToPinnedAndMappedMemory(bucketIndex));
+                                                    uint64_t offset = numComponentsPerEntity * entityIdx + i;
+                                                    ValueType* data = bucketPtr + offset;
 
-  void reset_state()
-  {
-    execSpace = Kokkos::DefaultExecutionSpace();
-    syncMode = INVALID;
-  }
+                                                    deviceView(bucketIndex, ORDER_INDICES(entityIdx, i)) = *data;
+                                                  }
+                                                });
+                         } else {
+                          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numComponentsPerEntity),
+                                                [=](const int& componentIdx) {
+                                                  for (unsigned i = 0; i < bucketSize; ++i) {
+                                                    ValueType* bucketPtr = reinterpret_cast<ValueType*>(ptrToPinnedAndMappedMemory(bucketIndex));
+                                                    uint64_t offset = numComponentsPerEntity * i + componentIdx;
+                                                    ValueType* data = bucketPtr + offset;
 
-  ExecSpace execSpace;
-  NgpFieldSyncMode syncMode;
-};
+                                                    deviceView(bucketIndex, ORDER_INDICES(i, componentIdx)) = *data;
+                                                  }
+                                                });
+                         }
+                       });
+}
+
+template <typename DeviceViewType, typename DeviceUnsignedViewType, typename DeviceBoolViewType, typename ExecSpaceType>
+void transpose_new_and_modified_buckets_to_device(ExecSpaceType & execSpace,
+                                                  const FieldBase & stkField,
+                                                  FieldDataPointerDeviceViewType& ptrToPinnedAndMappedMemory,
+                                                  DeviceViewType & deviceView,
+                                                  DeviceUnsignedViewType & bucketSizes,
+                                                  DeviceUnsignedViewType & fieldBucketNumComponentsPerEntity,
+                                                  DeviceBoolViewType & bucketsMarkedModified)
+{
+  using ValueType = typename DeviceViewType::value_type;
+  using TeamHandleType = typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type;
+
+  Selector selector = selectField(stkField);
+  size_t numBuckets = bucketSizes.extent(0);
+
+  const auto& teamPolicy = Kokkos::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+  Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
+                       KOKKOS_LAMBDA(const TeamHandleType & team) {
+                         const unsigned bucketIndex = team.league_rank();
+                         const unsigned bucketSize = bucketSizes(bucketIndex);
+                         const unsigned numComponentsPerEntity = fieldBucketNumComponentsPerEntity(bucketIndex);
+
+                         if(!bucketsMarkedModified(bucketIndex)) { return; }
+
+                         bool isScalar = (numComponentsPerEntity == 1);
+
+                         if(isScalar) {
+                          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, bucketSize),
+                                                [=](const int& entityIdx) {
+                                                  for (unsigned i = 0; i < numComponentsPerEntity; ++i) {
+                                                    ValueType* bucketPtr = reinterpret_cast<ValueType*>(ptrToPinnedAndMappedMemory(bucketIndex));
+                                                    uint64_t offset = numComponentsPerEntity * entityIdx + i;
+                                                    ValueType* data = bucketPtr + offset;
+
+                                                    deviceView(bucketIndex, ORDER_INDICES(entityIdx, i)) = *data;
+                                                  }
+                                                });
+                         } else {
+                          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numComponentsPerEntity),
+                                                [=](const int& componentIdx) {
+                                                  for (unsigned i = 0; i < bucketSize; ++i) {
+                                                    ValueType* bucketPtr = reinterpret_cast<ValueType*>(ptrToPinnedAndMappedMemory(bucketIndex));
+                                                    uint64_t offset = numComponentsPerEntity * i + componentIdx;
+                                                    ValueType* data = bucketPtr + offset;
+
+                                                    deviceView(bucketIndex, ORDER_INDICES(i, componentIdx)) = *data;
+                                                  }
+                                                });
+                         }
+                       });
+}
+
+template <typename DeviceViewType, typename DeviceUnsignedViewType, typename ExecSpaceType>
+void transpose_to_pinned_and_mapped_memory(ExecSpaceType & execSpace,
+                                             const FieldBase & stkField,
+                                             FieldDataPointerDeviceViewType& ptrToPinnedAndMappedMemory,
+                                             DeviceViewType & deviceView,
+                                             DeviceUnsignedViewType & bucketSizes,
+                                             DeviceUnsignedViewType & fieldBucketNumComponentsPerEntity)
+{
+  using ValueType = typename DeviceViewType::value_type;
+  using TeamHandleType = typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type;
+
+  Selector selector = selectField(stkField);
+  size_t numBuckets = bucketSizes.extent(0);
+
+  const auto& teamPolicy = Kokkos::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
+  Kokkos::parallel_for("transpose_to_zero_copy_pinned_memory", teamPolicy,
+                       KOKKOS_LAMBDA(const TeamHandleType & team) {
+
+                         const unsigned bucketIndex = team.league_rank();
+                         const unsigned bucketSize = bucketSizes(bucketIndex);
+                         const unsigned numComponentsPerEntity = fieldBucketNumComponentsPerEntity(bucketIndex);
+
+                         bool isScalar = (numComponentsPerEntity == 1);
+
+                         if(isScalar) { 
+                          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, bucketSize),
+                                                [=](const int& entityIdx) {
+                                                  for (unsigned i = 0; i < numComponentsPerEntity; ++i) {
+                                                    ValueType* bucketPtr = reinterpret_cast<ValueType*>(ptrToPinnedAndMappedMemory(bucketIndex));
+                                                    uint64_t offset = numComponentsPerEntity * entityIdx + i;
+                                                    ValueType* data = bucketPtr + offset;
+
+                                                    *data = deviceView(bucketIndex, ORDER_INDICES(entityIdx, i));
+                                                  }
+                                                });
+                         } else {
+                          Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numComponentsPerEntity),
+                                                [=](const int& componentIdx) {
+                                                  for (unsigned i = 0; i < bucketSize; ++i) {
+                                                    ValueType* bucketPtr = reinterpret_cast<ValueType*>(ptrToPinnedAndMappedMemory(bucketIndex));
+                                                    uint64_t offset = numComponentsPerEntity * i + componentIdx;
+                                                    ValueType* data = bucketPtr + offset;
+
+                                                    *data = deviceView(bucketIndex, ORDER_INDICES(i, componentIdx));
+                                                  }
+                                                });
+                         }
+                       });
+}
 
 }
 }

@@ -37,11 +37,11 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(AdvancedSet)
+include(AdvancedSet)
 
-SET( ${PROJECT_NAME}_HOSTTYPE_DEFAULT ${CMAKE_HOST_SYSTEM_NAME} )
+set( ${PROJECT_NAME}_HOSTTYPE_DEFAULT ${CMAKE_HOST_SYSTEM_NAME} )
 
-ADVANCED_SET( ${PROJECT_NAME}_HOSTTYPE ${${PROJECT_NAME}_HOSTTYPE_DEFAULT}
+advanced_set( ${PROJECT_NAME}_HOSTTYPE ${${PROJECT_NAME}_HOSTTYPE_DEFAULT}
   CACHE STRING
   "Name used to identify a system system type (defaults to ${CMAKE_HOST_SYSTEM_NAME})"
    )

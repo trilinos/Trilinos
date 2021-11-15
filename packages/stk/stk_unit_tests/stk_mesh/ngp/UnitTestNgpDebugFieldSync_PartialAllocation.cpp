@@ -1302,7 +1302,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_MoveBucketOffField_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_MoveBucketOffField_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2", "Part3"});
@@ -1317,7 +1317,6 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
   check_no_warnings(stdoutString);
 }
 
@@ -1341,7 +1340,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_DuringMeshModification_MoveBucketOffField_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_DuringMeshModification_MoveBucketOffField_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2", "Part3"});
@@ -1355,7 +1354,6 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
   check_no_warnings(stdoutString);
 }
 

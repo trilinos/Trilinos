@@ -88,7 +88,7 @@ class InstallProgramDriver:
       supportedVersionsTxt = "Versions supported include:\n   "+\
         str(self.installObj.getProductSupportedVersions())
     else:
-      supportedVersionsTxt = "Arbirary versions are supported."
+      supportedVersionsTxt = "Arbitrary versions are supported."
       
     usageHelp = scriptName+\
 r""" [OPTIONS] [--install-dir=<install-dir> ...]

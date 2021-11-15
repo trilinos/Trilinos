@@ -93,11 +93,13 @@ class StkSimdView3dTester {
 
     set_b_to_2a_plus_b_functor_with_tag(a, b);
     test_view_equal_to_index_multiple(stk::simd::copy_from_device(b), 5);
-    
+ 
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     auto aHost = stk::simd::copy_from_device(a);
     auto bHost = stk::simd::copy_from_device(b);
     set_b_to_3a_plus_b_for_each_lambda(aHost, bHost);
     test_view_equal_to_index_multiple(bHost, 8);
+#endif
   }
   
   void parallel_reduce_test(int loopSize, int j, int k) const {
@@ -119,7 +121,7 @@ class StkSimdView3dTester {
   struct AddFunctor {
     AddFunctor(ConstSimdView a_, SimdView b_) : a(a_), b(b_) {}
 
-    STK_INLINE
+    KOKKOS_INLINE_FUNCTION
     void operator() (const DeviceIndex& i) const {
       for (int j=0; j < dim1; ++j) {
         for (int k=0; k < dim2; ++k) {
@@ -129,7 +131,7 @@ class StkSimdView3dTester {
       }
     }
 
-    STK_INLINE
+    KOKKOS_INLINE_FUNCTION
     void operator() (SomeTag, const DeviceIndex& i) const {
       for (int j=0; j < dim1; ++j) {
         for (int k=0; k < dim2; ++k) {
@@ -179,7 +181,7 @@ class StkSimdView3dTester {
     
   struct ReduceSumFunctor {
     ReduceSumFunctor(SimdView a_, int j_, int k_) : a(a_), j(j_), k(k_) {}
-    STK_INLINE void operator() (const DeviceIndex& i, DeviceReal& v) const {
+    KOKKOS_INLINE_FUNCTION void operator() (const DeviceIndex& i, DeviceReal& v) const {
       v += a(i,j,k);
     }
    private:
@@ -189,7 +191,7 @@ class StkSimdView3dTester {
 
   struct ReduceSumFunctorWithTag {
     ReduceSumFunctorWithTag(SimdView a_, int j_, int k_) : a(a_), j(j_), k(k_) {}
-    STK_INLINE void operator() (SomeTag, const DeviceIndex& i, DeviceReal& v) const {
+    KOKKOS_INLINE_FUNCTION void operator() (SomeTag, const DeviceIndex& i, DeviceReal& v) const {
       v += a(i,j,k);
     }
    private:

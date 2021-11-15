@@ -502,20 +502,7 @@ void MetaData::commit()
 #endif
 }
 
-MetaData::~MetaData()
-{
-  // Destroy the properties, used 'new' to allocate so now use 'delete'
-
-  try {
-    std::vector<shards::CellTopologyManagedData*>::iterator i = m_created_topologies.begin();
-    for ( ; i != m_created_topologies.end(); ++i) {
-      delete *i;
-    }
-  } catch(...) {}
-
-  // PartRepository is member data
-  // FieldRepository is member data
-}
+MetaData::~MetaData() {}
 
 void MetaData::internal_declare_known_cell_topology_parts()
 {
@@ -1108,12 +1095,9 @@ get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<
             first_found_part = &part;
         }
         else {
-          if ( top != stk::topology::INVALID_TOPOLOGY && top != topology) {
-              std::ostringstream os;
-              os << "topology defined as both " << topology.name() << " and as " << top.name()
-                 << "; a given mesh entity must have only one topology.";
-              throw std::runtime_error(os.str());
-          }
+          ThrowRequireMsg(top == stk::topology::INVALID_TOPOLOGY || top == topology,
+              "topology defined as both " << topology.name() << " and as " << top.name()
+                  << "; a given mesh entity must have only one topology.");
         }
       }
     }

@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,38 +30,24 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
+#include "stk_expreval/Function.hpp"
 #include <cmath>
 #include <ctime>
-#include <math.h>       //Needed for erf and erfc on solaris.
-
-#include <stk_expreval/Function.hpp>
-#include <stk_expreval/Constants.hpp>
-
-#include <boost/math/distributions.hpp>
 
 namespace stk {
 namespace expreval {
 
-  namespace bmp  = boost::math::policies;
-
-  using weibull_dist = boost::math::weibull_distribution< double, bmp::policy< bmp::overflow_error<bmp::ignore_error> > >;
-  using gamma_dist   = boost::math::gamma_distribution< double, bmp::policy< bmp::overflow_error<bmp::ignore_error> > >;
-  using normal_dist  = boost::math::normal_distribution< double, bmp::policy< bmp::overflow_error<bmp::ignore_error> > >;
-
-extern "C" {
-  typedef double (*CExtern0)();
-  typedef double (*CExtern1)(double);
-  typedef double (*CExtern2)(double, double);
-  typedef double (*CExtern3)(double, double, double);
-  typedef double (*CExtern4)(double, double, double, double);
-  typedef double (*CExtern5)(double, double, double, double, double);
-  typedef double (*CExtern8)(double, double, double, double, double, double, double, double);
-}
-
-static int sRandomRangeHighValue = 3191613;
-static int sRandomRangeLowValue  = 1739623;
+int sRandomRangeHighValue = 3191613;
+int sRandomRangeLowValue  = 1739623;
+typedef double (*CExtern0)();
+typedef double (*CExtern1)(double);
+typedef double (*CExtern2)(double, double);
+typedef double (*CExtern3)(double, double, double);
+typedef double (*CExtern4)(double, double, double, double);
+typedef double (*CExtern5)(double, double, double, double, double);
+typedef double (*CExtern8)(double, double, double, double, double, double, double, double);
 
 template <>
 class CFunction<CExtern0> : public CFunctionBase
@@ -77,7 +63,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) 
+  virtual double operator()(int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 0 arguments"); }
@@ -104,7 +90,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) 
+  virtual double operator()(int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 1 argument"); }
@@ -131,7 +117,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) 
+  virtual double operator()(int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 2 arguments"); }
@@ -157,7 +143,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) 
+  virtual double operator()(int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 3 arguments"); }
@@ -183,7 +169,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) 
+  virtual double operator()(int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 4 arguments"); }
@@ -255,296 +241,12 @@ typedef CFunction<CExtern4> CFunction4;
 typedef CFunction<CExtern5> CFunction5;
 typedef CFunction<CExtern8> CFunction8;
 
-extern "C" {
-  double cycloidal_ramp(double t, double t1, double t2)
-  {
-    if( t < t1 )
-    {
-      return 0.0;
-    }
-    else if( t < t2 )
-    {
-      return (t-t1)/(t2-t1)-1/(two_pi())*sin(two_pi()/(t2-t1)*(t-t1));
-    }
-    else 
-    {
-      return 1.0;
-    }
-  }
-}
 
-namespace {
-extern "C" {
-  /// extract signed integral value from floating-point number
-  double ipart(double x) 
-  {
-    double y;
-    std::modf(x, &y);
-    return y;
-  }
-
-  /// Extract fractional value from floating-point number
-  double fpart(double x) 
-  {
-    double y;
-    return std::modf(x, &y);
-  }
-
-  /// Interface to the pseudo-random number generator function rand
-  /// provided by ANSI C math library.
-  double real_rand() 
-  {
-    return static_cast<double>(std::rand()) / (static_cast<double>(RAND_MAX) + 1.0);
-  }
-
-  /// Sets x as the random number seed. Interface to the srand function provided by the
-  /// ANSI C math library.
-  double real_srand(double x) 
-  {
-    std::srand(static_cast<int>(x));
-    return 0.0;
-  }
-
-  /// Return the current time
-  double current_time()
-  {
-    return static_cast<double>(::time(nullptr));
-  }
-
-  /// Sets x as the "seed" for the pseudo-random number generator.
-  void random_seed(double x) 
-  {
-    int y = std::hash<double>{}(x);
-    sRandomRangeHighValue =  y;
-    sRandomRangeLowValue  = ~y;
-  }
-
-  /// Non-platform specific (pseudo) random number generator.
-  double random0() 
-  {
-    sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
-    sRandomRangeHighValue += sRandomRangeLowValue;
-    sRandomRangeLowValue += sRandomRangeHighValue;
-    int val = std::abs(sRandomRangeHighValue);
-    return double(val) / double(RAND_MAX);
-  }
-
-  /// Non-platform specific (pseudo) random number generator.
-  double random1(double seed) 
-  {
-    random_seed(seed);
-    return random0();
-  }
-
-  /// Non-platform specific (pseudo) random number generator that
-  /// is deterministic for a given point in time and space
-  double time_space_random(double t, double x, double y, double z)
-  {
-    double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
-    random_seed(ts);
-    return random0();
-  }
-
-  double time_space_normal(double t, double x, double y, double z, double mu, double sigma, double minR, double maxR)
-  {
-    double ts = t + x + y + z + x*y + y*z + x*z + x*y*z;
-    random_seed(ts);
-
-    static const double epsilon = std::numeric_limits<double>::min();
-
-    // Box-Muller transformation from two uniform random numbers
-    // to a gaussian distribution
-    double u1 = std::max(epsilon, random0());
-    double u2 = std::max(epsilon, random0());
-
-    double z0 = std::sqrt(-2.0 * std::log(u1)) * std::cos(two_pi() * u2);
-
-    return std::max(minR, std::min(maxR, z0*sigma + mu));
-  }
-
-  /// Returns the angle (input in radians) in degrees.
-  double deg(double a)  
-  {
-    return radian_to_degree() * a;
-  }
-
-  /// Returns the angle (input in degrees) in radians.
-  double rad(double a)  
-  {
-    return degree_to_radian() * a;
-  }
-
-  /// Returns the minimum value among its arguments
-  double min_2(double a, double b) 
-  {
-    return std::min(a, b);
-  }
-
-  /// Returns the minimum value among its arguments
-  double min_3(double a, double b, double c) 
-  {
-    return std::min(std::min(a, b), c);
-  }
-
-  /// Returns the minimum value among its arguments
-  double min_4(double a, double b, double c, double d) 
-  {
-    return std::min(std::min(a, b), std::min(c,d));
-  }
-
-  /// Returns the maximum value among its arguments
-  double max_2(double a, double b) 
-  {
-    return std::max(a, b);
-  }
-
-  /// Returns the maximum value among its arguments
-  double max_3(double a, double b, double c) 
-  {
-    return std::max(std::max(a, b), c);
-  }
-
-  /// Returns the maximum value among its arguments
-  double max_4(double a, double b, double c, double d) 
-  {
-    return std::max(std::max(a, b), std::max(c,d));
-  }
-
-  /// Convert rectangular coordinates into polar radius.
-  double recttopolr(double x, double y) 
-  {
-    return std::sqrt((x * x) + (y * y));
-  }
-
-  double cosine_ramp3(double t, double t1, double t2) 
-  {
-    if( t < t1    )
-    {
-      return 0.0;
-    }
-    else if( t < t2 )
-    {
-      return (1.0 - std::cos((t-t1)*pi() /(t2-t1)))/2.0;
-    }
-    else 
-    {
-      return 1.0;
-    }
-  }
-
-  double haversine_pulse(double t, double t1, double t2)
-  {
-    if( t < t1 )
-    {
-      return 0.0;
-    }
-    else if( t < t2 )
-    {
-      return std::pow(std::sin(pi() *(t-t1)/(t2-t1)),2);
-    }
-    else 
-    {
-      return 0.0;
-    }
-  }
-
-  double point_2(double x, double y, double r, double w)
-  {
-    const double ri = std::sqrt(x*x + y*y);
-    return 1.0 - cosine_ramp3(ri, r-0.5*w, r+0.5*w);
-  }
-
-  double point_3(double x, double y, double z, double r, double w)
-  {
-    const double ri = std::sqrt(x*x + y*y + z*z);
-    return 1.0 - cosine_ramp3(ri, r-0.5*w, r+0.5*w);
-  }
-
-  double cosine_ramp1(double t) 
-  {
-    return cosine_ramp3(t, 0.0, 1.0);
-  }
-
-  double cosine_ramp2(double t, double rampEndTime) 
-  {
-    return cosine_ramp3(t, 0.0, rampEndTime);
-  }
-
-  /// Weibull distribution probability distribution function.
-  double weibull_pdf(double x, double shape, double scale)
-  {
-    weibull_dist weibull1(shape, scale);
-    return boost::math::pdf(weibull1, x);
-  }
-
-  /// Normal (Gaussian) distribution probability distribution function.
-  double normal_pdf(double x, double mean, double standard_deviation)
-  {
-    normal_dist normal1(mean, standard_deviation);
-    return boost::math::pdf(normal1, x);
-  }
-
-  /// Exponential Uniform distribution probability distribution function
-  double exponential_pdf(double x, double beta)
-  { 
-    return std::exp(-x/beta)/beta; 
-  }
-
-  /// Log Uniform distribution probability distribution function
-  double log_uniform_pdf(double x, double lower_range, double upper_range) 
-  { 
-    return 1.0/(std::log(upper_range) - std::log(lower_range))/x; 
-  }
-
-  /// Gamma continuous probability distribution function.
-  double gamma_pdf(double x, double shape, double scale)
-  {
-    return boost::math::pdf(gamma_dist(shape,scale), x);
-  }
-
-  /// Returns -1 or 1 depending on whether x is negative or positive.
-  double sign(double a)  
-  {
-    return ( a >= 0.0 ) ? 1.0 : -1.0;
-  }
-
-  /// Returns 1.0 if the input value t is greater than tstart and less than tstop.
-  double unit_step3(double t, double tstart, double tstop)  
-  {
-    return (t < tstart || t > tstop) ? 0.0 : 1.0;
-  }
-
-  /// Convert rectangular coordinates into polar angle.
-  double recttopola(double x, double y) 
-  {
-    double tmp = std::atan2(y, x);
-    // Convert to 0.0 to 2 * PI
-    return ( tmp < 0.0 ) ? tmp + two_pi() : tmp;
-  }
-
-  /// Convert polar coordinates (r,theta) into x coordinate.
-  double poltorectx(double r, double theta) 
-  {
-    return r * std::cos(theta);
-  }
-
-  /// Convert polar coordinates (r,theta) into y coordinate.
-  double poltorecty(double r, double theta) 
-  {
-    return r * std::sin(theta);
-  }
-}
-}
-
-CFunctionMap::CFunctionMap() 
+CFunctionMap::CFunctionMap()
 {
-  /// These random number functions support calls to
-  /// the ANSI C random number generator.
   (*this).emplace("rand",         new CFunction0(real_rand));
   (*this).emplace("srand",        new CFunction1(real_srand));
 
-  /// These random number functions support a platform
-  /// independent random number function.
   (*this).emplace("random",          new CFunction0(random0));
   (*this).emplace("random",          new CFunction1(random1));
   (*this).emplace("time",            new CFunction0(current_time));
@@ -557,8 +259,8 @@ CFunctionMap::CFunctionMap()
   (*this).emplace("log10",           new CFunction1(std::log10));
   (*this).emplace("pow",             new CFunction2(std::pow));
   (*this).emplace("sqrt",            new CFunction1(std::sqrt));
-  (*this).emplace("erfc",            new CFunction1(erfc));
-  (*this).emplace("erf",             new CFunction1(erf));
+  (*this).emplace("erfc",            new CFunction1(std::erfc));
+  (*this).emplace("erf",             new CFunction1(std::erf));
 
   (*this).emplace("acos",            new CFunction1(std::acos));
   (*this).emplace("asin",            new CFunction1(std::asin));
@@ -619,8 +321,7 @@ CFunctionMap::CFunctionMap()
 
 CFunctionMap::~CFunctionMap()
 {
-  for (CFunctionMap::iterator it = begin(); it != end(); ++it) 
-  {
+  for (CFunctionMap::iterator it = begin(); it != end(); ++it) {
     delete (*it).second;
   }
 }

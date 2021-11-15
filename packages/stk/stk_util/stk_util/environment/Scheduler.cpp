@@ -377,18 +377,21 @@ bool Scheduler::is_it_time(double t, Step step)
   // it is called again, it will compare time with lastTime_ and if
   // they match, return true again.
 
+  // force_write always causes a write even if the time is outside
+  // the bounds set by startTime and terminationTime...
+  //    Needs to happen before the "time == lastime" check to make
+  //    sure force flag is unset
+  if (force_schedule()) {
+    lastTime_ = time;
+    return true;
+  }
+
   // If called multiple times, return same response...
   if (time == lastTime_)
   {
     return true;
   }
 
-  // force_write always causes a write even if the time is outside
-  // the bounds set by startTime and terminationTime...
-  if (force_schedule()) {
-    lastTime_ = time;
-    return true;
-  }
 
   // If user specified a start time; that overrides
   // everything except for the force_write setting.

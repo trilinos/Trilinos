@@ -42,7 +42,7 @@ usage: zellij [options] -lattice <lattice_definition_file>
 		Elements handed out to id % proc_count)
 	-random (Use the random method to decompose the input mesh in a parallel run.
 		Elements assigned randomly to processors in a way that preserves balance
-		(do *not* use for a real run))
+		(do _not_ use for a real run))
 
 	-ranks <$val> (Number of ranks to decompose mesh across)
 	-start_rank <$val> (In partial output mode, start outputting decomposed files at this rank)
@@ -178,17 +178,17 @@ END_LATTICE
 ## Unit Cell Template Mesh Requirements
 Zellij requires that the boundary mesh (`X` and `Y` faces) of each of the unit cell templates be a _regular_ "structured" mesh.  Basically this means that the faces of the mesh elements on the boundary are in a regular rectangular grid such that each mesh face is rectangular (90 degree corners) and that the boundary mesh on the minimum `X` face is the same as that on the maximum `X` face and similarly for the minimum `Y` face and the maximum `Y` face.
 
-Additionally, the X faces on *all* unit cells must match and the Y faces on *all* 
+Additionally, the X faces on _all_ unit cells must match and the Y faces on _all_ 
 unit cells must match both in structure and in coordinate extent. This requirement is verified during execution. The `Z` faces are less constrained with the only requirement being that the coordinate extents of all `Z` faces must be the same (which follows from the `X` and `Y` face requirement); the structure of the mesh on the `Z` faces is arbitrary.
 
-The unit cell meshes can contain any number of element blocks; however, each element block *must* contain hexahedral elements with 8-nodes per element.  The element blocks do not need to be the same in each unit cell mesh, but if they do share the same element block `id`, then those elements will be combined into the same element block in the output mesh with the same `id`.  
+The unit cell meshes can contain any number of element blocks; however, each element block _must_ contain hexahedral elements with 8-nodes per element.  The element blocks do not need to be the same in each unit cell mesh, but if they do share the same element block `id`, then those elements will be combined into the same element block in the output mesh with the same `id`.  
 
 The output mesh will contain the union of all element blocks existing on the input mesh unit cells.  For example, if:
 
-* unit cell `0001` has element blocks `1 10 100`
-* unit cell `0002` has element blocks `2 20 200`
-* unit cell `0003` has element blocks `1 2 10 20`
-* unit cell `0004` has element blocks `10 20 100 200`
+*  unit cell `0001` has element blocks `1 10 100`
+*  unit cell `0002` has element blocks `2 20 200`
+*  unit cell `0003` has element blocks `1 2 10 20`
+*  unit cell `0004` has element blocks `10 20 100 200`
 
 The output mesh will have element blocks `1 2 10 20 100 200`
 
@@ -206,12 +206,12 @@ mesh via the command line option `-generate_sidesets <axes>` where
 on which to generate a sideset.  Valid letters are `xyzXYZ` or
 `ijkIJK` which correspond to:
 
- * `x` or `i` for surface on minimum X coordinate (default name = `min_i`)
- * `y` or `j` for surface on minimum Y coordinate (default name = `min_j`)
- * `z` or `k` for surface on minimum Z coordinate (default name = `min_k`)
- * `X` or `I` for surface on maximum X coordinate (default name = `max_i`)
- * `Y` or `J` for surface on maximum Y coordinate (default name = `max_j`)
- * `Z` or `K` for surface on maximum Z coordinate (default name = `max_k`)
+*  `x` or `i` for surface on minimum X coordinate (default name = `min_i`)
+*  `y` or `j` for surface on minimum Y coordinate (default name = `min_j`)
+*  `z` or `k` for surface on minimum Z coordinate (default name = `min_k`)
+*  `X` or `I` for surface on maximum X coordinate (default name = `max_i`)
+*  `Y` or `J` for surface on maximum Y coordinate (default name = `max_j`)
+*  `Z` or `K` for surface on maximum Z coordinate (default name = `max_k`)
 
 For example `-generate_sidesets xyXY` would generate sideset on the
 surfaces corresponding to the minimum and maximum X and Y coordinates
@@ -225,7 +225,6 @@ and `name` is the name of the specified sideset.  For example,
 `-sideset_names x:left,X:right`  would name the sidesets on the
 minimum x and maximum X faces `left` and `right` respectively.  There
 will be an error if two or more sidesets have the same name.
-
 
 ## Parallel Execution
 Zellij can produce a mesh decomposed into a file-per-rank for use in a
@@ -243,12 +242,12 @@ algorithm that is used to break the lattice into `number_of_ranks`
 pieces each with approximately the same computational complexity.  The
 decomposition methods are:
 
-* `-rcb` Use recursive coordinate bisection method to decompose the input mesh in a parallel run.
-* `-rib` Use recursive inertial bisection method to decompose the input mesh in a parallel run.
-* `-hsfc` Use hilbert space-filling curve method to decompose the input mesh in a parallel run.
-* `-linear` Use the linear method to decompose the input mesh in a parallel run. Elements in order first `n/p` to proc 0, next to proc 1.
-* `-cyclic` Use the cyclic method to decompose the input mesh in a parallel run.	Elements handed out to `id % proc_count`.
-* `-random` Use the random method to decompose the input mesh in a parallel run.	Elements are assigned randomly to processors in a way that preserves balance (do *not* use for a real run))
+*   `-rcb` Use recursive coordinate bisection method to decompose the input mesh in a parallel run.
+*   `-rib` Use recursive inertial bisection method to decompose the input mesh in a parallel run.
+*   `-hsfc` Use hilbert space-filling curve method to decompose the input mesh in a parallel run.
+*   `-linear` Use the linear method to decompose the input mesh in a parallel run. Elements in order first `n/p` to proc 0, next to proc 1.
+*   `-cyclic` Use the cyclic method to decompose the input mesh in a parallel run.	Elements handed out to `id % proc_count`.
+*   `-random` Use the random method to decompose the input mesh in a parallel run.	Elements are assigned randomly to processors in a way that preserves balance (do _not_ use for a real run))
 
 The `-hsfc` method is the default if no other decomposition method is
 specified. Note that the decomposition occurs at the _grid_ level so
@@ -289,14 +288,18 @@ Most compute systems have a limit on the number of files that a program can have
 limit is 1024.  The files that zellij deals with are (1) the unit cell meshes and (2) the per-rank output files, and (3) the
 standard input, output, and error files. Because of this, it is somewhat easy for a zellij execution to exceed the open file
 limit.  Zellij attempts to handle this automatically using logic similar to:
-* If the unit cell count exceeds the open file limit, then close each unit cell after each access before opening the next unit
+
+*  If the unit cell count exceeds the open file limit, then close each unit cell after each access before opening the next unit
 cell mesh.
-* If the number of `-ranks` that zellij is creating exceeds the open file count, then determine how many output files can be
+
+*  If the number of `-ranks` that zellij is creating exceeds the open file count, then determine how many output files can be
 open at one time (max_open = open file limit - 3 - number of unit cells open simultaneously) and run zellij in a `subcycle` mode
 where it is only writing to `max_open` files at one time.
-* If the `max_open` calculated in the above bullet is too small, then set the mode to only open a single unit cell mesh at a
+
+*  If the `max_open` calculated in the above bullet is too small, then set the mode to only open a single unit cell mesh at a
 time and redo the calculation.
-* If all else fails, run with only a single unit cell file open and only a single output mesh rank file open.
+
+*  If all else fails, run with only a single unit cell file open and only a single output mesh rank file open.
 
 If the above logic fails and Zellij is unable to run without exceeding the open file count, you can specify the behavior
 manually using a combination of the `-minimize_open_files=<UNIT|OUTPUT|ALL>` option and the `-subcycle` and `-rank_count <#>`
@@ -304,18 +307,18 @@ options.
 
 The options to `-minimize_open_files` are:
 
-* `UNIT` - only have a single unit cell mesh open at one time; close before accessing another unit cell mesh.
-* `OUTPUT` - only have a single output rank mesh file open at one time.
-* `ALL` - both of the above options.
+*  `UNIT` - only have a single unit cell mesh open at one time; close before accessing another unit cell mesh.
+*  `OUTPUT` - only have a single output rank mesh file open at one time.
+*  `ALL` - both of the above options.
 
 The `-subcycle` and `-rank_count <#>` options cause zellij to output `#` output files at a time and then cycle to the next `#`
 output files until all files have been output.  For example, `zellij -ranks 1024 -subcycle -rank_count 256` would do the
 following:
 
-* First cycle would output ranks 0 to 255,
-* Second cycle would output ranks 256 to 511,
-* Third cycle would output ranks 512 to 767,
-* Fourth cycle would output ranks 768 to 1023.
+*  First cycle would output ranks 0 to 255,
+*  Second cycle would output ranks 256 to 511,
+*  Third cycle would output ranks 512 to 767,
+*  Fourth cycle would output ranks 768 to 1023.
 
 In this mode, there will the `#` output files open simultaneously (unless
 `-minimize_open_files=OUTPUT|ALL` was specified also).  So the total number of open files will be `unit cell count + 3 + #` or
@@ -330,14 +333,14 @@ time efficiency.
 
 Zellij stores the following data:
 
-* For each unit cell template mesh:
-  * metadata
-  * 64-bit Ids of nodes on each min_I, max_I, min_J, max_J face
-* For each entry in the lattice definition:
-  * metadata (approximately 1KiByte)
-  * temporarily it will hold 64-bit Ids of nodes on the max_I and max_J faces. This will be deleted once the upper `I` and upper `J` "neighbor" entry has been processed (see below)
-* For the lattice:
-  * vector containing the lattice definition.
+*  For each unit cell template mesh:
+  *  metadata
+  *  64-bit Ids of nodes on each min_I, max_I, min_J, max_J face
+*  For each entry in the lattice definition:
+  *  metadata (approximately 1KiByte)
+  *  temporarily it will hold 64-bit Ids of nodes on the max_I and max_J faces. This will be deleted once the upper `I` and upper `J` "neighbor" entry has been processed (see below)
+*  For the lattice:
+  *  vector containing the lattice definition.
 
 The main memory use once the output file is being processed is the temporary storage containing the nodes on the `max_I` and `max_J` faces.  The lattice is processed cell by cell.  For an `II by JJ` sized grid, the cells are processed in the order `(1,1), (2,1), ... , (II, 1), (1,2), (2,2), ..., (II, JJ)`.  The temporary storage on the `max_I` face is only needed until the next cell is processed.  That is, for cell `(i,j)`, its `max_I` nodes will be used during the processing of cell `(i+1, j)` and then deleted.
 
@@ -345,8 +348,8 @@ The temporary storage on the `max_J` face is retained for a longer time.  For ce
 
 For a grid of size `(II, JJ)`, there will at most be:
 
-* 1 temporary vector of size `max_I` nodes
-* `II` temporary vectors of size `max_J` nodes.
+*  1 temporary vector of size `max_I` nodes
+*  `II` temporary vectors of size `max_J` nodes.
 
 If you have a lattice that is rectangular (`II != JJ`), then it is more efficient for memory usage to make the `I` direction the smallest value if possible.
 
@@ -378,9 +381,9 @@ The memory being used by zellij during execution will be output if the `--debug 
 
 For a large model, the majority of the execution time is related to:
 
-* Read/process/write element block connectivity
-* Read/process/write nodal coordinates
-* Categorize boundary nodes on each unit cell mesh
+*  Read/process/write element block connectivity
+*  Read/process/write nodal coordinates
+*  Categorize boundary nodes on each unit cell mesh
 
 ### Efficiency at the NetCDF level
 The Exodus format which is used for the unit cell template meshes and the output mesh uses the NetCDF library for on-disk storage.  There are several variants of the NetCDF on-disk storage including the format: `netcdf3`, `netcdf4`, and `netcdf5` and the integer size (32-bit integers or 64-bit integers).  Although these details are usually transparent to the user, they can affect the execution time especially when very large meshes are being processed.
@@ -403,10 +406,10 @@ The benefit of the compression is that it can result in much smaller output (and
 #### Recommendations
 For minimal overhead, it is recommended that:
 
-* Use the `netcdf4` format for all input and output meshes
-* Use the same integer size for all input and output meshes
-  * The integer size of the output mesh can be specified using the `-32` or `-64` options.  
-  * The `-64` option is the default.
+*  Use the `netcdf4` format for all input and output meshes
+*  Use the same integer size for all input and output meshes
+  *  The integer size of the output mesh can be specified using the `-32` or `-64` options.  
+  *  The `-64` option is the default.
 
 It is most efficient if the format and integer size of the input mesh matches the output mesh.  The format of the input meshes can be converted using the `io_shell` application with the `-netcdf4` and `-64` or `-32` options. The format and integer size of a mesh can be queried using the `exo_format` application.
          
@@ -428,4 +431,3 @@ For illustration, here is the execution time for several runs with different for
 The fastest option is both input and output using 32-bit integers and the `netcdf4` format.  Almost as fast is the case where the input format is `netcdf3` and the output `netcdf4`.  The `64-bit` integer options with both input and output using `netcdf4` are slightly slower, but this is probably due to the doubling of the size of the integer data being read and written.
 
 The output mesh in this case consisted of 37.3 million elements and 38.5 million nodes in a grid of 46 x 46 unit cells.  There were 56 unit cell template meshes.
-

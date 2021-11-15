@@ -2,6 +2,16 @@
 Release Notes for TriBITS
 ----------------------------------------
 
+2021/06/17:
+
+(*) MINOR: Added tool tribits/python_utils/lower_case_cmake.py and driver
+    tribits/refactoring/lower-case-cmake-tree.sh that can make CMake command
+    calls lower-case and make macro and function definition names lowe case.
+    This was applied to the entire TriBITS repository (and then minor
+    modifications for fix a few issues).  This should not impact users of
+    TriBITS but it does change the case of commands in the TriBITS error
+    messages.  (See TriBITSPub/TriBITS#274)
+
 2021/05/15:
 
 (*) MAJOR: Changed so that all arguments passed to ctest -S command in
@@ -267,10 +277,10 @@ Trilinos 11.3:
     TRIBITS_ADD_EXECUTABLE_AND_TEST().
 
 (*) MINOR: TriBITS Core: Fixed the generation of headers for explicit
-    instantation system for subpackages: Now subpackages that use the macro
+    instantiation system for subpackages: Now subpackages that use the macro
     TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS() to generate XXX.hpp header files
-    with or without explicit instantation will key off of the parent package's
-    explicit instantation setting.  In addition, packages that use the macro
+    with or without explicit instantiation will key off of the parent package's
+    explicit instantiation setting.  In addition, packages that use the macro
     TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS() will also need to add a call to
     TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION() in their top-level
     CMakeLists.txt file.

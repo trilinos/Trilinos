@@ -56,7 +56,7 @@
 #include <Kokkos_Pair.hpp>
 #include <Kokkos_UnorderedMap.hpp>
 
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include <fenl.hpp>
 #include <BoxElemFixture.hpp>
@@ -134,7 +134,7 @@ public:
       //--------------------------------
       // Guess at capacity required for the map:
 
-      Kokkos::Impl::Timer wall_clock ;
+      Kokkos::Timer wall_clock ;
 
       wall_clock.reset();
 
@@ -268,14 +268,14 @@ public:
       const unsigned row_node = key.first ;
       const unsigned col_node = key.second ;
 
+      using atomic_incr_type = typename std::remove_reference< decltype( row_count(0) ) >::type;
+
       if ( row_node < row_count.extent(0) ) {
-        typedef typename std::remove_reference< decltype( row_count(0) ) >::type atomic_incr_type;
         const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , atomic_incr_type(1) );
         graph.entries( offset ) = col_node ;
       }
 
       if ( col_node < row_count.extent(0) && col_node != row_node ) {
-        typedef typename std::remove_reference< decltype( row_count(0) ) >::type atomic_incr_type;
         const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , atomic_incr_type(1) );
         graph.entries( offset ) = row_node ;
       }

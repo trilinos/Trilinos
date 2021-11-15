@@ -37,12 +37,12 @@
 
 #include <stk_util/util/GetEnv.hpp>
 #include <stk_util/environment/Env.hpp>
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 
 namespace stk {
 namespace mesh {
 
-template <typename ExecSpaceType = ExecSpace>
+template <typename ExecSpaceType = stk::ngp::ExecSpace>
 class ExecSpaceWrapper {
  public:
   operator const ExecSpaceType&() { return space; }
@@ -73,7 +73,7 @@ struct ExecSpaceAndCudaStreamDeleter {
     streamPtr = deleter.streamPtr;
   }
 
-  void operator()(ExecSpace* e) const {
+  void operator()(stk::ngp::ExecSpace* e) const {
     cudaStreamDestroy(*streamPtr);
     delete streamPtr;
     delete e;

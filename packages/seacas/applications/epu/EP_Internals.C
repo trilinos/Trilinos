@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-, 20212021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -21,7 +21,8 @@
 #include <string> // for string, basic_string
 #include <vector> // for vector
 
-#ifdef _WIN32
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
 #include <Shlwapi.h>
 #endif
 
@@ -83,7 +84,8 @@ namespace {
 
 bool Excn::is_path_absolute(const std::string &path)
 {
-#ifdef _WIN32
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
   return path[0] == '\\' || path[1] == ':';
 #else
   return path[0] == '/';
@@ -445,6 +447,13 @@ int Excn::Internals<INT>::put_metadata(const Mesh &mesh, const CommunicationMeta
       ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
+
+    struct ex__file_item *file = ex__find_file_item(exodusFilePtr);
+    if (file) {
+      file->time_varid = varid;
+    }
+
+    ex__compress_variable(exodusFilePtr, varid, -2); /* don't compress, but do set collective io */
   }
 
   if (mesh.nodeCount > 0) {
@@ -1159,56 +1168,37 @@ namespace {
     int         varid;
 
     if (nodes > 0) {
-      if (ex_large_model(exodusFilePtr) == 1) {
-        // node coordinate arrays -- separate storage...
-        dim[0] = node_dim;
-        if (dimension > 0) {
-          status =
-              nc_def_var(exodusFilePtr, VAR_COORD_X, nc_flt_code(exodusFilePtr), 1, dim, &varid);
-          if (status != NC_NOERR) {
-            ex_opts(EX_VERBOSE);
-            errmsg = fmt::format("Error: failed to define node x coordinate array in file id {}",
-                                 exodusFilePtr);
-            ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
-            return (EX_FATAL);
-          }
-          ex__compress_variable(exodusFilePtr, varid, 2);
-        }
-
-        if (dimension > 1) {
-          status =
-              nc_def_var(exodusFilePtr, VAR_COORD_Y, nc_flt_code(exodusFilePtr), 1, dim, &varid);
-          if (status != NC_NOERR) {
-            ex_opts(EX_VERBOSE);
-            errmsg = fmt::format("Error: failed to define node y coordinate array in file id {}",
-                                 exodusFilePtr);
-            ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
-            return (EX_FATAL);
-          }
-          ex__compress_variable(exodusFilePtr, varid, 2);
-        }
-
-        if (dimension > 2) {
-          status =
-              nc_def_var(exodusFilePtr, VAR_COORD_Z, nc_flt_code(exodusFilePtr), 1, dim, &varid);
-          if (status != NC_NOERR) {
-            ex_opts(EX_VERBOSE);
-            errmsg = fmt::format("Error: failed to define node z coordinate array in file id {}",
-                                 exodusFilePtr);
-            ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
-            return (EX_FATAL);
-          }
-          ex__compress_variable(exodusFilePtr, varid, 2);
-        }
-      }
-      else {
-        // node coordinate arrays:  -- all stored together (old method)2
-        dim[0] = dim_dim;
-        dim[1] = node_dim;
-        status = nc_def_var(exodusFilePtr, VAR_COORD, nc_flt_code(exodusFilePtr), 2, dim, &varid);
+      // node coordinate arrays -- separate storage...
+      dim[0] = node_dim;
+      if (dimension > 0) {
+        status = nc_def_var(exodusFilePtr, VAR_COORD_X, nc_flt_code(exodusFilePtr), 1, dim, &varid);
         if (status != NC_NOERR) {
           ex_opts(EX_VERBOSE);
-          errmsg = fmt::format("Error: failed to define node coordinate array in file id {}",
+          errmsg = fmt::format("Error: failed to define node x coordinate array in file id {}",
+                               exodusFilePtr);
+          ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+          return (EX_FATAL);
+        }
+        ex__compress_variable(exodusFilePtr, varid, 2);
+      }
+
+      if (dimension > 1) {
+        status = nc_def_var(exodusFilePtr, VAR_COORD_Y, nc_flt_code(exodusFilePtr), 1, dim, &varid);
+        if (status != NC_NOERR) {
+          ex_opts(EX_VERBOSE);
+          errmsg = fmt::format("Error: failed to define node y coordinate array in file id {}",
+                               exodusFilePtr);
+          ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
+          return (EX_FATAL);
+        }
+        ex__compress_variable(exodusFilePtr, varid, 2);
+      }
+
+      if (dimension > 2) {
+        status = nc_def_var(exodusFilePtr, VAR_COORD_Z, nc_flt_code(exodusFilePtr), 1, dim, &varid);
+        if (status != NC_NOERR) {
+          ex_opts(EX_VERBOSE);
+          errmsg = fmt::format("Error: failed to define node z coordinate array in file id {}",
                                exodusFilePtr);
           ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
           return (EX_FATAL);

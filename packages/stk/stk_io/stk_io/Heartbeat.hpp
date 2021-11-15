@@ -89,26 +89,24 @@ public:
     ~Heartbeat() {};
 
     void define_global_ref(const std::string &variableName,
-                           const STK_ANY_NAMESPACE::any *value,
-                           stk::util::ParameterType::Type type,
+                           const stk::util::Parameter &param,
                            int copies = 1,
                            Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
     void define_global_ref(const std::string &name,
-                           const STK_ANY_NAMESPACE::any *value,
+                           const stk::util::Parameter &param,
                            const std::string &storage,
                            Ioss::Field::BasicType dataType,
                            int copies = 1,
                            Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
     void add_global_ref(const std::string &variableName,
-                        const STK_ANY_NAMESPACE::any *value,
-                        stk::util::ParameterType::Type type,
+                        const stk::util::Parameter &param,
                         int copies = 1,
                         Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
     void add_global_ref(const std::string &name,
-                        const STK_ANY_NAMESPACE::any *value,
+                        const stk::util::Parameter &param,
                         const std::string &storage,
                         Ioss::Field::BasicType dataType,
                         int copies = 1,
@@ -130,6 +128,19 @@ public:
     bool has_global(const std::string &name);
 
 private:
+    void internal_define_global_ref(const std::string &variableName,
+                           const STK_ANY_NAMESPACE::any *value,
+                           stk::util::ParameterType::Type type,
+                           int copies = 1,
+                           Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
+    void internal_define_global_ref(const std::string &name,
+                           const STK_ANY_NAMESPACE::any *value,
+                           const std::string &storage,
+                           Ioss::Field::BasicType dataType,
+                           int copies = 1,
+                           Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
     std::vector<GlobalAnyVariable> m_fields;
     Teuchos::RCP<Ioss::Region> m_region;
 

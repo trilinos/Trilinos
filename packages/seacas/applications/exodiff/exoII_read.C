@@ -82,7 +82,6 @@ template <typename INT> std::string ExoII_Read<INT>::Close_File()
 
   if (err < 0) {
     Error(fmt::format("ExoII_Read::Close_File(): {}: Unable to close file!  Aborting...\n", err));
-    exit(1);
   }
   if (err > 0) {
     return fmt::format("WARNING: {} issued upon close", err);
@@ -114,14 +113,14 @@ template <typename INT> const std::string &ExoII_Read<INT>::Nodal_Var_Name(int i
   return nodal_vars[index];
 }
 
-template <typename INT> const std::string &ExoII_Read<INT>::Elmt_Var_Name(int index) const
+template <typename INT> const std::string &ExoII_Read<INT>::Element_Var_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < elmt_vars.size());
   return elmt_vars[index];
 }
 
-template <typename INT> const std::string &ExoII_Read<INT>::Elmt_Att_Name(int index) const
+template <typename INT> const std::string &ExoII_Read<INT>::Element_Att_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < elmt_atts.size());
@@ -157,14 +156,14 @@ template <typename INT> const std::string &ExoII_Read<INT>::FB_Var_Name(int inde
 }
 
 template <typename INT>
-Exo_Block<INT> *ExoII_Read<INT>::Get_Elmt_Block_by_Index(size_t block_index) const
+Exo_Block<INT> *ExoII_Read<INT>::Get_Element_Block_by_Index(size_t block_index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(block_index < num_elmt_blocks);
   return &eblocks[block_index];
 }
 
-template <typename INT> Exo_Block<INT> *ExoII_Read<INT>::Get_Elmt_Block_by_Id(size_t id) const
+template <typename INT> Exo_Block<INT> *ExoII_Read<INT>::Get_Element_Block_by_Id(size_t id) const
 {
   SMART_ASSERT(Check_State());
   for (size_t i = 0; i < num_elmt_blocks; i++) {
@@ -176,7 +175,7 @@ template <typename INT> Exo_Block<INT> *ExoII_Read<INT>::Get_Elmt_Block_by_Id(si
 }
 
 template <typename INT>
-Exo_Block<INT> *ExoII_Read<INT>::Get_Elmt_Block_by_Name(const std::string &name) const
+Exo_Block<INT> *ExoII_Read<INT>::Get_Element_Block_by_Name(const std::string &name) const
 {
   SMART_ASSERT(Check_State());
   for (size_t i = 0; i < num_elmt_blocks; i++) {
@@ -386,7 +385,7 @@ Face_Block<INT> *ExoII_Read<INT>::Get_Face_Block_by_Name(const std::string &name
 }
 
 template <typename INT>
-std::string ExoII_Read<INT>::Load_Elmt_Block_Description(size_t block_index) const
+std::string ExoII_Read<INT>::Load_Element_Block_Description(size_t block_index) const
 {
   SMART_ASSERT(Check_State());
   if (!Open()) {
@@ -401,7 +400,7 @@ std::string ExoII_Read<INT>::Load_Elmt_Block_Description(size_t block_index) con
   return "";
 }
 
-template <typename INT> std::string ExoII_Read<INT>::Load_Elmt_Block_Descriptions() const
+template <typename INT> std::string ExoII_Read<INT>::Load_Element_Block_Descriptions() const
 {
   SMART_ASSERT(Check_State());
   if (!Open()) {
@@ -409,13 +408,12 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Elmt_Block_Description
   }
   for (size_t b = 0; b < num_elmt_blocks; ++b) {
     eblocks[b].Load_Connectivity();
-    //    eblocks[b].Load_Attributes();
   }
 
   return "";
 }
 
-template <typename INT> std::string ExoII_Read<INT>::Free_Elmt_Block(size_t block_index) const
+template <typename INT> std::string ExoII_Read<INT>::Free_Element_Block(size_t block_index) const
 {
   SMART_ASSERT(Check_State());
 
@@ -423,13 +421,11 @@ template <typename INT> std::string ExoII_Read<INT>::Free_Elmt_Block(size_t bloc
 
   eblocks[block_index].Free_Connectivity();
   eblocks[block_index].Free_Attributes();
-  //  eblocks[idx].Free_Connectivity();
-  //  eblocks[idx].Free_Attributes();
 
   return "";
 }
 
-template <typename INT> std::string ExoII_Read<INT>::Free_Elmt_Blocks() const
+template <typename INT> std::string ExoII_Read<INT>::Free_Element_Blocks() const
 {
   SMART_ASSERT(Check_State());
 
@@ -439,15 +435,6 @@ template <typename INT> std::string ExoII_Read<INT>::Free_Elmt_Blocks() const
   }
 
   return "";
-}
-
-template <typename INT>
-std::string ExoII_Read<INT>::Give_Connectivity(size_t block_index, size_t &num_e, size_t &npe,
-                                               INT *&new_conn)
-{
-  SMART_ASSERT(block_index < num_elmt_blocks);
-
-  return eblocks[block_index].Give_Connectivity(num_e, npe, new_conn);
 }
 
 template <typename INT> size_t ExoII_Read<INT>::Block_Id(size_t block_index) const
@@ -479,7 +466,6 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Node_Map()
 
   if (err < 0) {
     Error(fmt::format("Unable to load node map; Exodus error = {}.  Aborting...\n", err));
-    exit(1);
   }
   else if (err > 0) {
     return "WARNING: Default node map being used.";
@@ -497,7 +483,7 @@ template <typename INT> std::string ExoII_Read<INT>::Free_Node_Map()
   return "";
 }
 
-template <typename INT> std::string ExoII_Read<INT>::Load_Elmt_Map()
+template <typename INT> std::string ExoII_Read<INT>::Load_Element_Map()
 {
   SMART_ASSERT(Check_State());
 
@@ -519,7 +505,6 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Elmt_Map()
 
   if (err < 0) {
     Error(fmt::format("Unable to load element map; Exodus error = {}.  Aborting...\n", err));
-    exit(1);
   }
   else if (err > 0) {
     return "WARNING: Default element map being used.";
@@ -527,7 +512,7 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Elmt_Map()
   return "";
 }
 
-template <typename INT> std::string ExoII_Read<INT>::Free_Elmt_Map()
+template <typename INT> std::string ExoII_Read<INT>::Free_Element_Map()
 {
   SMART_ASSERT(Check_State());
 
@@ -559,7 +544,6 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Nodal_Coordinates()
     int err = ex_get_coord(file_id, x, y, z);
     if (err < 0) {
       Error("Failed to get nodal coordinates!  Aborting...\n");
-      exit(1);
     }
     else if (err > 0) {
       delete[] nodes;
@@ -609,7 +593,6 @@ std::string ExoII_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index
     if (err < 0) {
       Error("ExoII_Read::Load_Nodal_Results(): Failed to get "
             "nodal variable values!  Aborting...\n");
-      exit(1);
     }
     else if (err > 0) {
       delete[] results[var_index];
@@ -650,7 +633,6 @@ const double *ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
   if (err < 0) {
     Error("ExoII_Read::Get_Nodal_Results(): Failed to get "
           "nodal variable values!  Aborting...\n");
-    exit(1);
   }
 
   if (t1 != t2) {
@@ -662,7 +644,6 @@ const double *ExoII_Read<INT>::Get_Nodal_Results(int t1, int t2, double proporti
     if (err < 0) {
       Error("ExoII_Read::Load_Nodal_Results(): Failed to get "
             "nodal variable values!  Aborting...\n");
-      exit(1);
     }
 
     // Interpolate the values...
@@ -732,7 +713,6 @@ template <typename INT> std::string ExoII_Read<INT>::Load_Global_Results(int tim
   if (err < 0) {
     Error("ExoII_Read::Load_Global_Results(): Failed to get "
           "global variable values!  Aborting...\n");
-    exit(1);
   }
   else if (err > 0) {
     return fmt::format("ExoII_Read::Load_Global_Results(): WARNING:  "
@@ -774,7 +754,6 @@ std::string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proporti
   if (err < 0) {
     Error("ExoII_Read::Load_Global_Results(): Failed to get "
           "global variable values!  Aborting...\n");
-    exit(1);
   }
 
   if (t2 != t1) {
@@ -782,7 +761,6 @@ std::string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proporti
     if (err < 0) {
       Error("ExoII_Read::Load_Global_Results(): Failed to get "
             "global variable values!  Aborting...\n");
-      exit(1);
     }
 
     // Do the interpolation...
@@ -846,29 +824,26 @@ Face_Block<INT> *ExoII_Read<INT>::Get_Face_Block_by_Index(size_t face_block_inde
 // This function converts an Exodus global element number (1-offset) into
 // its block index (0-offset) and block element index (0-offset).
 template <typename INT>
-std::string ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt_num, int &block_index,
-                                                   size_t &local_elmt_index) const
+std::pair<int, size_t> ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt_num) const
 {
   SMART_ASSERT(Check_State());
 
   if (!Open()) {
-    return "exodiff: ERROR:  File not open!";
+    Error("exodiff: ERROR:  File not open!");
   }
   if (global_elmt_num < 1 || global_elmt_num > num_elmts) {
-    return fmt::format("exodiff: ERROR:  global_elmt_num = {:L} is out of bounds [1, {:L}]!",
-                       global_elmt_num, num_elmts);
+    Error(fmt::format("exodiff: ERROR:  global_elmt_num = {:L} is out of bounds [1, {:L}]!",
+                      global_elmt_num, num_elmts));
   }
 
-  block_index = 0;
+  int block_index = 0;
 
   size_t total = 0;
   while (total + eblocks[block_index].Size() < global_elmt_num) {
     total += eblocks[block_index++].Size();
   }
 
-  local_elmt_index = global_elmt_num - total - 1;
-
-  return "";
+  return std::make_pair(block_index, global_elmt_num - total - 1);
 }
 
 template <typename INT> int ExoII_Read<INT>::Check_State() const
@@ -976,12 +951,13 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     Error(fmt::format("Failed to get init data!"
                       " Error number = {}.  Aborting...\n",
                       err));
-    exit(1);
   }
 
   dimension       = info.num_dim;
   num_nodes       = info.num_nodes;
   num_elmts       = info.num_elem;
+  num_faces       = info.num_face;
+  num_edges       = info.num_edge;
   num_elmt_blocks = info.num_elem_blk;
   num_node_sets   = info.num_node_sets;
   num_side_sets   = info.num_side_sets;
@@ -1005,7 +981,6 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
                       " ... Aborting...\n",
                       dimension, num_nodes, num_elmts, num_elmt_blocks, num_node_sets,
                       num_edge_blocks, num_face_blocks, num_side_sets));
-    exit(1);
   }
 
   int num_qa   = ex_inquire_int(file_id, EX_INQ_QA);
@@ -1017,7 +992,6 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
                       "         num_info = {}\n"
                       " ... Aborting...\n",
                       num_qa, num_info));
-    exit(1);
   }
 
   //                   Coordinate Names...
@@ -1026,7 +1000,6 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   err           = ex_get_coord_names(file_id, coords);
   if (err < 0) {
     Error("Failed to get coordinate names!  Aborting...\n");
-    exit(1);
   }
 
   coord_names.clear();
@@ -1050,7 +1023,6 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
     if (err < 0) {
       Error("Failed to get element block ids!  Aborting...\n");
-      exit(1);
     }
 
     size_t e_count = 0;
@@ -1102,7 +1074,6 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
     if (err < 0) {
       Error("Failed to get nodeset ids!  Aborting...\n");
-      exit(1);
     }
 
     for (size_t nset = 0; nset < num_node_sets; ++nset) {
@@ -1131,7 +1102,6 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
     if (err < 0) {
       Error("Failed to get sideset ids!  Aborting...\n");
-      exit(1);
     }
 
     for (size_t sset = 0; sset < num_side_sets; ++sset) {
@@ -1160,7 +1130,6 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
     if (err < 0) {
       Error("Failed to get edgeblock ids!  Aborting...\n");
-      exit(1);
     }
 
     for (size_t edge_block = 0; edge_block < num_edge_blocks; ++edge_block) {
@@ -1189,7 +1158,6 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
     if (err < 0) {
       Error("Failed to get faceblock ids!  Aborting...\n");
-      exit(1);
     }
 
     for (size_t face_block = 0; face_block < num_face_blocks; ++face_block) {
@@ -1213,43 +1181,36 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   err = ex_get_variable_param(file_id, EX_GLOBAL, &num_global_vars);
   if (err < 0) {
     Error("Failed to get number of global variables!  Aborting...\n");
-    exit(1);
   }
 
   err = ex_get_variable_param(file_id, EX_NODAL, &num_nodal_vars);
   if (err < 0) {
     Error("Failed to get number of nodal variables!  Aborting...\n");
-    exit(1);
   }
 
   err = ex_get_variable_param(file_id, EX_ELEM_BLOCK, &num_elmt_vars);
   if (err < 0) {
     Error("Failed to get number of element variables!  Aborting...\n");
-    exit(1);
   }
 
   err = ex_get_variable_param(file_id, EX_NODE_SET, &num_ns_vars);
   if (err < 0) {
     Error("Failed to get number of nodeset variables!  Aborting...\n");
-    exit(1);
   }
 
   err = ex_get_variable_param(file_id, EX_SIDE_SET, &num_ss_vars);
   if (err < 0) {
     Error("Failed to get number of sideset variables!  Aborting...\n");
-    exit(1);
   }
 
   err = ex_get_variable_param(file_id, EX_EDGE_BLOCK, &num_edge_vars);
   if (err < 0) {
     Error("Failed to get number of edgeblock variables!  Aborting...\n");
-    exit(1);
   }
 
   err = ex_get_variable_param(file_id, EX_FACE_BLOCK, &num_face_vars);
   if (err < 0) {
     Error("Failed to get number of faceblock variables!  Aborting...\n");
-    exit(1);
   }
 
   if (num_global_vars < 0 || num_nodal_vars < 0 || num_elmt_vars < 0 || num_ns_vars < 0 ||
@@ -1266,7 +1227,6 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
                       " ... Aborting...\n",
                       num_global_vars, num_nodal_vars, num_elmt_vars, num_ns_vars, num_ss_vars,
                       num_edge_vars, num_face_vars));
-    exit(1);
   }
 
   read_vars(file_id, EX_GLOBAL, "Global", num_global_vars, global_vars);
@@ -1281,15 +1241,13 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   num_times = ex_inquire_int(file_id, EX_INQ_TIME);
   if (num_times < 0) {
     Error(fmt::format("Number of time steps came back negative ({})!  Aborting...\n", num_times));
-    exit(1);
   }
 
   if ((num_global_vars > 0 || num_nodal_vars > 0 || num_elmt_vars > 0 || num_ns_vars > 0 ||
        num_ss_vars > 0 || num_edge_vars > 0 || num_face_vars > 0) &&
       num_times == 0) {
-    Error("Consistency error -- The database contains transient variables, but no "
-          "timesteps!\n");
-    exit(1);
+    Warning("Consistency error -- The database contains transient variables, but no "
+            "timesteps!\n");
   }
 
   if (num_times) {
@@ -1300,9 +1258,9 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
   if (num_nodal_vars != 0) {
     if (num_times == 0) {
-      Error(fmt::format("Consistency error--The database contains {}"
-                        " nodal variables, but there are no time steps defined.\n",
-                        num_nodal_vars));
+      Warning(fmt::format("Consistency error--The database contains {}"
+                          " nodal variables, but there are no time steps defined.\n",
+                          num_nodal_vars));
     }
     if (num_times) {
       results = new double *[num_nodal_vars];
@@ -1325,7 +1283,6 @@ namespace {
 
       if (err < 0) {
         Error(fmt::format("Failed to get {} variable names!  Aborting...\n", type));
-        exit(1);
       }
       else if (err > 0 && !interFace.quiet_flag) {
         fmt::print(
@@ -1347,8 +1304,7 @@ namespace {
             fmt::print(out, "\t\t{}) \"{}\"\n", k, varnames[k - 1]);
           }
           fmt::print(out, "                 Aborting...\n");
-          DIFF_OUT(out);
-          exit(1);
+          Error(out);
         }
 
         std::string n(varnames[vg]);

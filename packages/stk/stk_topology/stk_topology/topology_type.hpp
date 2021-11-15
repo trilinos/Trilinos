@@ -34,6 +34,7 @@
 #ifndef STKTOPOLOGY_TOPOLOGY_TYPE_HPP
 #define STKTOPOLOGY_TOPOLOGY_TYPE_HPP
 
+// IWYU pragma: private, include "stk_topology/topology.hpp"
 #include "stk_topology/topology_decl.hpp"
 #include "stk_topology/topology_utils.hpp"
 #include "stk_topology/topology_detail/topology_data.hpp"

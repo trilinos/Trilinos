@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -67,15 +67,12 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
  */
 INT icbrt(unsigned x)
 {
-  INT      s;
-  unsigned y, b;
-
-  s = 30;
-  y = 0;
+  INT      s = 30;
+  unsigned y = 0;
   while (s >= 0) { /* Do 11 times. */
-    y = 2 * y;
-    b = (3 * y * (y + 1) + 1) << s;
-    s = s - 3;
+    y          = 2 * y;
+    unsigned b = (3 * y * (y + 1) + 1) << s;
+    s          = s - 3;
     if (x >= b) {
       x = x - b;
       y = y + 1;
@@ -141,10 +138,6 @@ int main(int argc, char *argv[])
   int         int64bit          = 0;
   size_t      size;
 
-  realtyp *x;
-  realtyp *y;
-  realtyp *z;
-
   ex_opts(EX_VERBOSE | EX_ABORT);
 
   /* Parse Input */
@@ -155,9 +148,9 @@ int main(int argc, char *argv[])
   /* Create Coordinates and Connectivity Array */
   num_elements_1d = icbrt(num_elements);
   num_nodes       = (num_elements_1d + 1) * (num_elements_1d + 1) * (num_elements_1d + 1);
-  x               = malloc(num_nodes * sizeof(realtyp));
-  y               = malloc(num_nodes * sizeof(realtyp));
-  z               = malloc(num_nodes * sizeof(realtyp));
+  realtyp *x      = malloc(num_nodes * sizeof(realtyp));
+  realtyp *y      = malloc(num_nodes * sizeof(realtyp));
+  realtyp *z      = malloc(num_nodes * sizeof(realtyp));
   assert(x != NULL && y != NULL && z != NULL);
 
   num_elements = num_elements_1d * num_elements_1d * num_elements_1d;
@@ -339,14 +332,11 @@ void parse_input(int argc, char *argv[], bool *debug, INT *map_origin, INT *num_
 void make_mesh(realtyp *x, realtyp *y, realtyp *z, INT *connect, INT map_origin,
                INT num_elements_1d)
 {
-  size_t i, j, k, m, base, cnt;
-  size_t elp1sq = (num_elements_1d + 1) * (num_elements_1d + 1);
-
   /* create global coordinates */
-
-  for (m = 0, k = 0; m < (num_elements_1d + 1); m++) {
-    for (i = 0; i < (num_elements_1d + 1); i++) {
-      for (j = 0; j < (num_elements_1d + 1); j++, k++) {
+  size_t k = 0;
+  for (size_t m = 0; m < (num_elements_1d + 1); m++) {
+    for (size_t i = 0; i < (num_elements_1d + 1); i++) {
+      for (size_t j = 0; j < (num_elements_1d + 1); j++, k++) {
         x[k] = (realtyp)j;
         y[k] = (realtyp)i;
         z[k] = (realtyp)m;
@@ -355,11 +345,13 @@ void make_mesh(realtyp *x, realtyp *y, realtyp *z, INT *connect, INT map_origin,
   }
 
   /* build connectivity array (node list) for mesh */
-
-  for (m = 0, k = 0, cnt = 0; m < num_elements_1d; m++) {
-    for (i = 0, k = 0; i < num_elements_1d; i++) {
-      for (j = 0; j < num_elements_1d; j++, k++) {
-        base           = (m * elp1sq) + k + i + map_origin;
+  size_t elp1sq = (num_elements_1d + 1) * (num_elements_1d + 1);
+  size_t cnt    = 0;
+  for (size_t m = 0; m < num_elements_1d; m++) {
+    k = 0;
+    for (size_t i = 0; i < num_elements_1d; i++) {
+      for (size_t j = 0; j < num_elements_1d; j++, k++) {
+        size_t base    = (m * elp1sq) + k + i + map_origin;
         connect[cnt++] = base;
         connect[cnt++] = base + 1;
         connect[cnt++] = base + num_elements_1d + 2;
@@ -381,34 +373,31 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
                     INT num_element_fields, INT num_timesteps, realtyp *x, realtyp *y, realtyp *z,
                     INT *connect, int compression_level, int shuffle, int int64bit)
 {
-  int  CPU_word_size = sizeof(realtyp);
-  int  IO_word_size  = sizeof(realtyp);
-  int  exoid, err, num_dim, num_elem_blk, num_node_sets, num_side_sets;
-  INT  i, j, t, index, loc_num_elements, loc_num_nodes, len_connect;
-  INT *elem_map = NULL, *node_map = NULL, *domain_connect = NULL, *loc_connect = NULL;
-  int *elem_var_tab;
-  INT  accum_num_elements = 0;
-  INT  loc_node_size      = -1;
-
   realtyp *loc_xcoords = NULL;
   realtyp *loc_ycoords = NULL;
   realtyp *loc_zcoords = NULL;
   realtyp *globals     = NULL;
 
-  char   temporary_name[MAX_STRING_LEN];
-  char **var_name;
+  INT  accum_num_elements = 0;
+  INT  loc_num_elements, loc_num_nodes;
+  INT *elem_map       = NULL;
+  INT *node_map       = NULL;
+  INT *domain_connect = NULL;
+  INT *loc_connect    = NULL;
 
-  accum_num_elements = 0;
-  for (i = 0; i < num_domains; i++) {
+  for (INT i = 0; i < num_domains; i++) {
     int mymode = EX_MAPS_INT64_API | EX_BULK_INT64_API | EX_IDS_INT64_API;
     if (int64bit) {
       mymode |= EX_MAPS_INT64_DB | EX_BULK_INT64_DB | EX_IDS_INT64_DB;
     }
 
     /* create the EXODUSII file */
+    char temporary_name[MAX_STRING_LEN];
     get_file_name(file_name, "e", i, num_domains, NULL, temporary_name);
 
-    exoid = ex_create(temporary_name, EX_CLOBBER | mymode, &CPU_word_size, &IO_word_size);
+    int CPU_word_size = sizeof(realtyp);
+    int IO_word_size  = sizeof(realtyp);
+    int exoid = ex_create(temporary_name, EX_CLOBBER | mymode, &CPU_word_size, &IO_word_size);
 
     if (exoid < 0) {
       fprintf(stderr, "after ex_create, error = %d\n", exoid);
@@ -436,10 +425,8 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
         }
       }
 
-      len_connect = NUM_NODES_PER_ELEM * loc_num_elements;
-
       /* malloc things we need */
-
+      INT len_connect = NUM_NODES_PER_ELEM * loc_num_elements;
       if (i == 0) { /* first time through; max size arrays occur on
                        first iteration */
         elem_map       = malloc(loc_num_elements * sizeof(INT));
@@ -481,13 +468,13 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
       fprintf(stderr, "\n loc_num_nodes: %" PRId64 "\n", loc_num_nodes);
     }
 
-    num_dim       = 3;
-    num_elem_blk  = 1;
-    num_node_sets = 0;
-    num_side_sets = 0;
+    int num_dim       = 3;
+    int num_elem_blk  = 1;
+    int num_node_sets = 0;
+    int num_side_sets = 0;
 
-    err = ex_put_init(exoid, "This is an EXODUSII performance test.", num_dim, loc_num_nodes,
-                      loc_num_elements, num_elem_blk, num_node_sets, num_side_sets);
+    int err = ex_put_init(exoid, "This is an EXODUSII performance test.", num_dim, loc_num_nodes,
+                          loc_num_elements, num_elem_blk, num_node_sets, num_side_sets);
 
     if (err) {
       fprintf(stderr, "after ex_put_init, error = %d\n", err);
@@ -497,15 +484,43 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
 
     /* Extract the local x and y coordinates */
     if (num_domains > 1) {
+      INT loc_node_size = -1;
       if (loc_num_nodes > loc_node_size) {
-        loc_xcoords   = realloc(loc_xcoords, loc_num_nodes * sizeof(realtyp));
-        loc_ycoords   = realloc(loc_ycoords, loc_num_nodes * sizeof(realtyp));
-        loc_zcoords   = realloc(loc_zcoords, loc_num_nodes * sizeof(realtyp));
+        realtyp *tmpx = realloc(loc_xcoords, loc_num_nodes * sizeof(realtyp));
+        if (tmpx == NULL) {
+          free(loc_xcoords);
+          fprintf(stderr, "error realloc'ing loc_xcoords\n");
+          ex_close(exoid);
+          exit(-1);
+        }
+        {
+          loc_xcoords = tmpx;
+        }
+        realtyp *tmpy = realloc(loc_ycoords, loc_num_nodes * sizeof(realtyp));
+        if (tmpy == NULL) {
+          free(loc_ycoords);
+          fprintf(stderr, "error realloc'ing loc_ycoords\n");
+          ex_close(exoid);
+          exit(-1);
+        }
+        {
+          loc_ycoords = tmpy;
+        }
+        realtyp *tmpz = realloc(loc_zcoords, loc_num_nodes * sizeof(realtyp));
+        if (tmpz == NULL) {
+          free(loc_zcoords);
+          fprintf(stderr, "error realloc'ing loc_zcoords\n");
+          ex_close(exoid);
+          exit(-1);
+        }
+        {
+          loc_zcoords = tmpz;
+        }
         loc_node_size = loc_num_nodes;
       }
 
-      for (j = 0; j < loc_num_nodes; j++) {
-        index          = node_map[j] - map_origin;
+      for (INT j = 0; j < loc_num_nodes; j++) {
+        INT index      = node_map[j] - map_origin;
         loc_xcoords[j] = x[index];
         loc_ycoords[j] = y[index];
         loc_zcoords[j] = z[index];
@@ -598,14 +613,12 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
       exit(-1);
     }
 
+    int *elem_var_tab = NULL;
     if (num_element_fields > 0) {
       elem_var_tab = malloc(num_element_fields * sizeof(int));
-      for (j = 0; j < num_element_fields; j++) {
+      for (INT j = 0; j < num_element_fields; j++) {
         elem_var_tab[j] = 1;
       }
-    }
-    else {
-      elem_var_tab = 0;
     }
     err = ex_put_all_var_param(exoid, num_global_fields, num_nodal_fields, num_element_fields,
                                elem_var_tab, 0, 0, 0, 0);
@@ -615,15 +628,21 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
       exit(-1);
     }
 
+    char **var_name;
     if (num_nodal_fields > 0) {
 
       var_name = malloc(num_nodal_fields * sizeof(char *));
-      for (j = 0; j < num_nodal_fields; j++) {
+      for (INT j = 0; j < num_nodal_fields; j++) {
         var_name[j] = malloc((MAX_STRING_LEN + 1) * sizeof(char));
         sprintf(var_name[j], "node_field_%" PRId64, j + 1);
       }
       err = ex_put_variable_names(exoid, EX_NODAL, num_nodal_fields, var_name);
-      for (j = 0; j < num_nodal_fields; j++) {
+      if (err) {
+        fprintf(stderr, "after ex_put_variable_names (nodal), error = %d\n", err);
+        ex_close(exoid);
+        exit(-1);
+      }
+      for (INT j = 0; j < num_nodal_fields; j++) {
         free(var_name[j]);
       }
       free(var_name);
@@ -632,13 +651,18 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
     if (num_global_fields > 0) {
       globals  = malloc(num_global_fields * sizeof(realtyp));
       var_name = malloc(num_global_fields * sizeof(char *));
-      for (j = 0; j < num_global_fields; j++) {
+      for (INT j = 0; j < num_global_fields; j++) {
         var_name[j] = malloc((MAX_STRING_LEN + 1) * sizeof(char));
         sprintf(var_name[j], "global_field_%" PRId64, j + 1);
         globals[j] = j;
       }
       err = ex_put_variable_names(exoid, EX_GLOBAL, num_global_fields, var_name);
-      for (j = 0; j < num_global_fields; j++) {
+      if (err) {
+        fprintf(stderr, "after ex_put_variable_names (global), error = %d\n", err);
+        ex_close(exoid);
+        exit(-1);
+      }
+      for (INT j = 0; j < num_global_fields; j++) {
         free(var_name[j]);
       }
       free(var_name);
@@ -647,12 +671,17 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
     if (num_element_fields > 0) {
       free(elem_var_tab);
       var_name = malloc(num_element_fields * sizeof(char *));
-      for (j = 0; j < num_element_fields; j++) {
+      for (INT j = 0; j < num_element_fields; j++) {
         var_name[j] = malloc((MAX_STRING_LEN + 1) * sizeof(char));
         sprintf(var_name[j], "element_field_%" PRId64, j + 1);
       }
       err = ex_put_variable_names(exoid, EX_ELEM_BLOCK, num_element_fields, var_name);
-      for (j = 0; j < num_element_fields; j++) {
+      if (err) {
+        fprintf(stderr, "after ex_put_variable_names, error = %d\n", err);
+        ex_close(exoid);
+        exit(-1);
+      }
+      for (INT j = 0; j < num_element_fields; j++) {
         free(var_name[j]);
       }
       free(var_name);
@@ -660,7 +689,7 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
 
     if (num_nodal_fields + num_global_fields + num_element_fields > 0) {
       fprintf(stderr, "Domain %" PRId64 "/%" PRId64 ", Writing Timestep: ", i + 1, num_domains);
-      for (t = 0; t < num_timesteps; t++) {
+      for (INT t = 0; t < num_timesteps; t++) {
         realtyp time = t;
         ex_put_time(exoid, t + 1, &time);
         fprintf(stderr, "%" PRId64 ", ", t + 1);
@@ -672,7 +701,7 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
             exit(-1);
           }
         }
-        for (j = 0; j < num_nodal_fields; j++) {
+        for (INT j = 0; j < num_nodal_fields; j++) {
           err = ex_put_var(exoid, t + 1, EX_NODAL, j + 1, 0, loc_num_nodes, x);
           if (err) {
             fprintf(stderr, "after ex_put_nodal_var, error = %d\n", err);
@@ -680,7 +709,7 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
             exit(-1);
           }
         }
-        for (j = 0; j < num_element_fields; j++) {
+        for (INT j = 0; j < num_element_fields; j++) {
           err = ex_put_var(exoid, t + 1, EX_ELEM_BLOCK, j + 1, EBLK_ID, loc_num_elements, x);
           if (err) {
             fprintf(stderr, "after ex_put_element_var, error = %d\n", err);
@@ -731,9 +760,7 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
  ***********************************************************************/
 void create_elem_map(INT loc_num_elems, INT elem_num, INT *elem_map, INT map_origin)
 {
-  INT i;
-
-  for (i = 0; i < loc_num_elems; i++) {
+  for (INT i = 0; i < loc_num_elems; i++) {
     elem_map[i] = map_origin + elem_num++;
   }
 }
@@ -751,12 +778,12 @@ void create_elem_map(INT loc_num_elems, INT elem_num, INT *elem_map, INT map_ori
 void extract_connect(INT element_offset, INT num_elem, INT *elem_map, INT *connect,
                      INT *domain_connect, INT map_origin)
 {
-  INT i, j, k, m, offset;
-
-  for (i = element_offset, j = 0, m = 0; j < num_elem; j++) {
+  INT i = element_offset;
+  INT m = 0;
+  for (INT j = 0; j < num_elem; j++) {
     if (elem_map[j] == i + map_origin) { /* extract this element */
-      offset = (i * NUM_NODES_PER_ELEM);
-      for (k = offset; k < offset + NUM_NODES_PER_ELEM; k++) {
+      INT offset = (i * NUM_NODES_PER_ELEM);
+      for (INT k = offset; k < offset + NUM_NODES_PER_ELEM; k++) {
         domain_connect[m++] = connect[k];
       }
       i++;
@@ -774,17 +801,16 @@ void extract_connect(INT element_offset, INT num_elem, INT *elem_map, INT *conne
 void create_node_map(INT len_map, INT len_connect, INT *domain_connect, INT *node_map,
                      INT *loc_num_nodes, INT map_origin)
 {
-  INT cnt, i;
-  for (i = 0; i < len_map; i++) {
+  for (INT i = 0; i < len_map; i++) {
     node_map[i] = 0;
   }
 
-  for (i = 0; i < len_connect; i++) {
+  for (INT i = 0; i < len_connect; i++) {
     node_map[domain_connect[i] - map_origin] = 1;
   }
 
-  cnt = 0;
-  for (i = 0; i < len_map; i++) {
+  INT cnt = 0;
+  for (INT i = 0; i < len_map; i++) {
     if (node_map[i] > 0) {
       node_map[cnt++] = i + map_origin;
     }
@@ -810,10 +836,8 @@ void create_node_map(INT len_map, INT len_connect, INT *domain_connect, INT *nod
 void create_local_connect(INT *node_map, INT len_node_map, INT len_connect, INT *domain_connect,
                           INT *loc_connect, INT map_origin)
 {
-  INT i, index;
-
-  for (i = 0; i < len_connect; i++) {
-    index = bin_search2(domain_connect[i], len_node_map, node_map);
+  for (INT i = 0; i < len_connect; i++) {
+    INT index = bin_search2(domain_connect[i], len_node_map, node_map);
     if (index != -1) { /* found */
       loc_connect[i] = index + map_origin;
     }
@@ -837,12 +861,11 @@ void create_local_connect(INT *node_map, INT len_node_map, INT len_connect, INT 
 
 INT bin_search2(INT value, INT num, INT List[])
 {
-  INT top, bottom = 0, middle, g_mid;
-
-  top = num - 1;
+  INT bottom = 0;
+  INT top    = num - 1;
   while (bottom <= top) {
-    middle = (bottom + top) >> 1;
-    g_mid  = List[middle];
+    INT middle = (bottom + top) >> 1;
+    INT g_mid  = List[middle];
     if (value < g_mid) {
       top = middle - 1;
     }
@@ -860,9 +883,6 @@ INT bin_search2(INT value, INT num, INT List[])
 void get_file_name(const char *base, const char *ext, int rank, int nprocs, const char *other,
                    char *output)
 {
-  INT  i1, iTemp1;
-  INT  iMaxDigit = 0, iMyDigit = 0;
-  char cTemp[128];
 
   output[0] = '\0';
   ex_copy_string(output, base, MAX_STRING_LEN);
@@ -878,8 +898,8 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
      * This allows numbers like 01-99, i.e., prepending zeros to the
      * name to preserve proper alphabetic sorting of the files.
      */
-
-    iTemp1 = nprocs;
+    INT iMaxDigit = 0, iMyDigit = 0;
+    INT iTemp1 = nprocs;
     do {
       iTemp1 /= 10;
       iMaxDigit++;
@@ -891,15 +911,17 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
       iMyDigit++;
     } while (iTemp1 >= 1);
 
-    strcat(output, ".");
+    char cTemp[128];
     sprintf(cTemp, "%d", nprocs);
+
+    strcat(output, ".");
     strcat(output, cTemp);
     strcat(output, ".");
 
     /*
      * Append the proper number of zeros to the filename.
      */
-    for (i1 = 0; i1 < iMaxDigit - iMyDigit; i1++) {
+    for (INT i1 = 0; i1 < iMaxDigit - iMyDigit; i1++) {
       strcat(output, "0");
     }
 

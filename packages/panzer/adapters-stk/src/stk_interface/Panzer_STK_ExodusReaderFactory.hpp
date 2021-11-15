@@ -132,17 +132,32 @@ protected:
    void registerElementBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
    void registerSidesets(STK_Interface & mesh) const;
    void registerNodesets(STK_Interface & mesh) const;
-   void registerEdgeBlocks(STK_Interface & mesh) const;
-   void registerFaceBlocks(STK_Interface & mesh) const;
+   void registerEdgeBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
+   void registerFaceBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
 
    void addEdgeBlocks(STK_Interface & mesh) const;
    void addFaceBlocks(STK_Interface & mesh) const;
+
+   std::string mkBlockName(std::string base, std::string topo_name) const;
+   void createUniqueEdgeTopologyMap(STK_Interface & mesh, const stk::mesh::Part *elemBlockPart) const;
+   void createUniqueFaceTopologyMap(STK_Interface & mesh, const stk::mesh::Part *elemBlockPart) const;
 
    void buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const;
 
    std::string fileName_;
    int restartIndex_;
    bool isExodus_;
+
+   /* The ExodusReaderFactory creates one edge/face block for each
+    * unique edge/face topology in the mesh.  There are a few
+    * situations where it's desirable to have a list of unique
+    * topologies for each element block.  Instead of creating it
+    * on the fly, they are created and saved when the element
+    * blocks are added to the STK_Interface in
+    * registerElementBlocks().
+    */
+   mutable std::map<std::string,std::vector<stk::topology>> elemBlockUniqueEdgeTopologies_;
+   mutable std::map<std::string,std::vector<stk::topology>> elemBlockUniqueFaceTopologies_;
 
 private:
 

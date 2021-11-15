@@ -1036,8 +1036,7 @@ buildTpetraGhostedGraph(int i,int j) const
       }
    }
    Teuchos::ArrayView<const size_t> nEntriesPerRowView(nEntriesPerRow);
-   RCP<CrsGraphType> graph  = rcp(new CrsGraphType(map_i,map_j, nEntriesPerRowView,
-                                                   Tpetra::StaticProfile));
+   RCP<CrsGraphType> graph  = rcp(new CrsGraphType(map_i,map_j, nEntriesPerRowView));
 
 
 

@@ -63,6 +63,32 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
 
 void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
 
+void remove_entities_not_connected_to_other_nodes(const BulkData& mesh, EntityRank rank,
+                                                  unsigned numNodes, const Entity* nodes,
+                                                  std::vector<Entity>& elementsInCommon);
+
+template<class Pred>
+void find_entities_these_nodes_have_in_common_and(const BulkData& mesh, EntityRank rank,
+                                                  unsigned numNodes, const Entity* nodes,
+                                                  std::vector<Entity>& elementsInCommon,
+                                                  const Pred& pred)
+{
+    elementsInCommon.clear();
+    if(numNodes > 0)
+    {
+        const Entity* begin = mesh.begin(nodes[0], rank);
+        const Entity* end = mesh.end(nodes[0], rank);
+        elementsInCommon.reserve(std::distance(begin,end));
+        for(const Entity* ent = begin; ent != end; ++ent) {
+          if (pred(*ent)) {
+            elementsInCommon.push_back(*ent);
+          }
+        }
+
+        remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
+    }
+}
+
 bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes);
 
 void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems);
@@ -298,9 +324,16 @@ void check_declare_element_side_inputs(const BulkData & mesh,
                                        const Entity elem,
                                        const unsigned localSideId);
 
-void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
+bool connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
 void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face);
 
+bool has_upward_recv_ghost_connectivity(const stk::mesh::BulkData &bulk,
+                                        const stk::mesh::Ghosting& ghosting,
+                                        stk::mesh::Entity entity);
+bool has_upward_send_ghost_connectivity(const stk::mesh::BulkData &bulk,
+                                        const stk::mesh::Ghosting& ghosting,
+                                        int proc,
+                                        stk::mesh::Entity entity);
 bool has_upward_connectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity);
 
 bool can_destroy_entity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity);

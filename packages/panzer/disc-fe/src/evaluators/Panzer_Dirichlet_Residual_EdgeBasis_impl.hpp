@@ -122,10 +122,10 @@ postRegistrationSetup(
   const int edgeDim = 1;
   const int faceDim = 2;
   if(cellTopo.getDimension() > edgeDim)
-    edgeParam = Intrepid2::RefSubcellParametrization<PHX::Device>::get(edgeDim, cellTopo.getKey());
+    edgeParam = Intrepid2::RefSubcellParametrization<Kokkos::HostSpace>::get(edgeDim, cellTopo.getKey());
 
   if(cellTopo.getDimension() > faceDim)
-    faceParam = Intrepid2::RefSubcellParametrization<PHX::Device>::get(faceDim, cellTopo.getKey());
+    faceParam = Intrepid2::RefSubcellParametrization<Kokkos::HostSpace>::get(faceDim, cellTopo.getKey());
 }
 
 //**********************************************************************
@@ -157,9 +157,14 @@ evaluateFields(
     const WorksetDetails & details = workset;
 
     //const bool is_normalize = true;
-    auto work = Kokkos::createDynRankView(residual.get_static_view(),"work", 4, cellDim);
+    auto work = Kokkos::create_mirror_view(Kokkos::createDynRankView(residual.get_static_view(),"work", 4, cellDim));
 
     // compute residual
+    auto residual_h = Kokkos::create_mirror_view(residual.get_static_view());
+    auto dof_h = Kokkos::create_mirror_view(dof.get_static_view());
+    auto value_h = Kokkos::create_mirror_view(value.get_static_view());
+    Kokkos::deep_copy(dof_h, dof.get_static_view());
+    Kokkos::deep_copy(value_h, value.get_static_view());
     switch (subcellDim) {
     case 1: {  // 2D element Tri and Quad
       if (intrepid_basis->getDofCount(1, subcellOrd)) {
@@ -169,6 +174,7 @@ evaluateFields(
         const int ndofsEdge = intrepid_basis->getDofCount(1, subcellOrd);
         const int numEdges = cellTopo.getEdgeCount();
         /* */ int edgeOrts[4] = {};
+	
         for(index_t c=0;c<workset.num_cells;c++) {
           orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
           
@@ -180,11 +186,11 @@ evaluateFields(
 
           for (int i=0;i<ndofsEdge;++i) {
             const int b = intrepid_basis->getDofOrdinal(1, subcellOrd, i);
-            auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
+            auto J = Kokkos::create_mirror_view(Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL()));
             Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);            
             
             for(int d=0;d<cellDim;d++) {
-              residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyEdgeTan(d);
+              residual_h(c,b) += (dof_h(c,b,d)-value_h(c,b,d))*phyEdgeTan(d);
             }
           }
         }
@@ -217,11 +223,11 @@ evaluateFields(
                 edgeOrts[edgeOrd]);
 
             {
-              auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
+              auto J = Kokkos::create_mirror_view(Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL()));
               Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);
               
               for(int d=0;d<dof.extent_int(2);d++) {
-                residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyEdgeTan(d);
+                residual_h(c,b) += (dof_h(c,b,d)-value_h(c,b,d))*phyEdgeTan(d);
               }
             }
           }
@@ -245,13 +251,13 @@ evaluateFields(
               faceOrts[subcellOrd]);
 
           for(int b=0;b<dof.extent_int(1);b++) {
-            auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
+            auto J = Kokkos::create_mirror_view(Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL()));
             Intrepid2::Kernels::Serial::matvec_product(phyFaceTanU, J, ortFaceTanU);
             Intrepid2::Kernels::Serial::matvec_product(phyFaceTanV, J, ortFaceTanV);
             
             for(int d=0;d<dof.extent_int(2);d++) {
-              residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyFaceTanU(d);
-              residual(c,b) += (dof(c,b,d)-value(c,b,d))*phyFaceTanV(d);
+              residual_h(c,b) += (dof_h(c,b,d)-value_h(c,b,d))*phyFaceTanU(d);
+              residual_h(c,b) += (dof_h(c,b,d)-value_h(c,b,d))*phyFaceTanV(d);
             }
           }
         }
@@ -260,6 +266,7 @@ evaluateFields(
       break;
     }
     }
+    Kokkos::deep_copy(residual.get_static_view(), residual_h);
   }
   
 }

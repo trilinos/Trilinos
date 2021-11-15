@@ -27,18 +27,17 @@
 #include <cctype>
 #include <cstring>
 #include <ctime>
-#ifndef _MSC_VER
-#include <sys/times.h>
-#include <sys/utsname.h>
-#endif
 
 #include "add_to_log.h"
 #include "adler.h"
 #include "copy_string_cpp.h"
+#include "format_time.h"
+#include "sys_info.h"
 #if !USE_STD_SORT
 #include "pdqsort.h"
 #endif
 #include "smart_assert.h"
+#include "time_stamp.h"
 #include <exodusII.h>
 
 #if EX_API_VERS_NODOT <= 467
@@ -134,9 +133,7 @@ namespace {
     T      timeValue;
   };
 
-  std::string time_stamp(const std::string &format);
-  std::string format_time(double seconds);
-  int         get_width(size_t max_value);
+  int get_width(size_t max_value);
 
   ex_entity_type exodus_object_type(const Excn::ObjectType &conjoin_type)
   {
@@ -2072,7 +2069,7 @@ namespace {
 
     {
       size_t i = 0;
-      for (auto set_id : set_ids) {
+      for (auto &set_id : set_ids) {
         glob_sets[i].id        = set_id;
         glob_sets[i].position_ = i;
         i++;
@@ -2711,25 +2708,8 @@ namespace {
     // Maximum size of string is 'size' (not including terminating nullptr)
     // This is used as information data in the concatenated results file
     // to help in tracking when/where/... the file was created
-#ifndef _MSC_VER
-    struct utsname sys_info
-    {
-    };
-    uname(&sys_info);
-
-    std::string info = "CONJOIN: ";
-    info += sys_info.nodename;
-    info += ", OS: ";
-    info += sys_info.sysname;
-    info += " ";
-    info += sys_info.release;
-    info += ", ";
-    info += sys_info.version;
-    info += ", Machine: ";
-    info += sys_info.machine;
-    const char *sinfo = info.c_str();
-    copy_string(info_record, sinfo, size + 1);
-#endif
+    auto info = sys_info("CONJOIN");
+    copy_string(info_record, info, size + 1);
   }
 
   inline bool is_whitespace(char c)
@@ -2777,43 +2757,6 @@ namespace {
     while (i > 0 && is_whitespace(obuf[i])) {
       obuf[i--] = '\0';
     }
-  }
-
-  std::string time_stamp(const std::string &format)
-  {
-    if (format == "") {
-      return std::string("");
-    }
-
-    time_t      calendar_time = std::time(nullptr);
-    struct tm * local_time    = std::localtime(&calendar_time);
-    std::string time_string   = fmt::format(format, *local_time);
-    return time_string;
-  }
-
-  std::string format_time(double seconds)
-  {
-    char suffix = 'u';
-    if (seconds > 0.0 && seconds < 1.0) {
-      return " <1s";
-    }
-
-    if (seconds > 86400) {
-      suffix = 'd';
-      seconds /= 86400.;
-    }
-    else if (seconds > 3600) {
-      suffix = 'h';
-      seconds /= 3600.;
-    }
-    else if (seconds > 60) {
-      suffix = 'm';
-      seconds /= 60.;
-    }
-    else {
-      suffix = 's';
-    }
-    return fmt::format("{:.2}{}", seconds, suffix);
   }
 
   int get_width(size_t max_value)

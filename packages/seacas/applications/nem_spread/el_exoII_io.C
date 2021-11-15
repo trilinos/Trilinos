@@ -272,8 +272,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     int mode   = EX_READ | int64api;
     mesh_exoid = ex_open(ExoFile.c_str(), mode, &cpu_ws, &io_ws, &version);
     if (mesh_exoid < 0) {
-      fmt::print(stderr, "{}Exodus returned error opening mesh file, {}\n", __func__,
-                 ExoFile.c_str());
+      fmt::print(stderr, "{}Exodus returned error opening mesh file, {}\n", __func__, ExoFile);
       exit(1);
     }
   }
@@ -578,7 +577,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
     /* Create the parallel Exodus file for writing */
     if (Debug_Flag >= 7) {
-      fmt::print("{}Parallel mesh file name is {}\n", __func__, Parallel_File_Name.c_str());
+      fmt::print("{}Parallel mesh file name is {}\n", __func__, Parallel_File_Name);
     }
     else {
       if (iproc % 10 == 0 || iproc == Proc_Info[2] - 1) {
@@ -595,7 +594,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     if ((mesh_exoid = ex_create(Parallel_File_Name.c_str(), mode, &cpu_ws, &io_ws)) == -1) {
 
       fmt::print(stderr, "[{}] Could not create parallel Exodus file:\n\t{}\n", __func__,
-                 Parallel_File_Name.c_str());
+                 Parallel_File_Name);
       exit(1);
     }
 
@@ -785,9 +784,8 @@ void NemSpread<T, INT>::read_node_set_ids(int mesh_exoid, INT num_nodes_in_node_
  */
 
 {
-  int error;
   if (globals.Num_Node_Set > 0) {
-    error = ex_get_ids(mesh_exoid, EX_NODE_SET, Node_Set_Ids);
+    int error = ex_get_ids(mesh_exoid, EX_NODE_SET, Node_Set_Ids);
     check_exodus_error(error, "ex_get_node_set_ids");
 
     error = ex_get_names(mesh_exoid, EX_NODE_SET, Node_Set_Names);
@@ -840,9 +838,8 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, INT num_elem_in_ssets[
  */
 
 {
-  int error;
   if (globals.Num_Side_Set > 0) {
-    error = ex_get_ids(mesh_exoid, EX_SIDE_SET, Side_Set_Ids);
+    int error = ex_get_ids(mesh_exoid, EX_SIDE_SET, Side_Set_Ids);
     check_exodus_error(error, "ex_get_side_set_ids");
 
     error = ex_get_names(mesh_exoid, EX_SIDE_SET, Side_Set_Names);

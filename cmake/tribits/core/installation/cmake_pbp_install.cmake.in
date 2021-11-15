@@ -24,13 +24,13 @@ if (NOT global_install_rtn EQUAL 0)
     )
 
   foreach (pkg_binary_dir ${TRIBITS_ENABLED_PACKAGES_BINARY_DIRS})
-    message("\nRunning install comamnds for '${pkg_binary_dir}/':")
+    message("\nRunning install commands for '${pkg_binary_dir}/':")
     execute_process(COMMAND @CMAKE_COMMAND@ -P cmake_install.cmake
       WORKING_DIRECTORY ${pkg_binary_dir}
       RESULT_VARIABLE pkg_install_rtn)
   endforeach()
 
-  message("\nRunning install comamnds for 'add_project_install_commands/':")
+  message("\nRunning install commands for 'add_project_install_commands/':")
   execute_process(COMMAND @CMAKE_COMMAND@ -P cmake_install.cmake
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}/add_project_install_commands"
     RESULT_VARIABLE project_install_rtn)

@@ -1,0 +1,24 @@
+<ParameterList name="1D fractional Laplacian">
+  <Parameter name="map" type="string" value="rowmap.mtx"/>
+  <Parameter name="coefficient map" type="string" value="coeffmap.mtx"/>
+  <Parameter name="ghosted coefficient map" type="string" value="ghosted_coeffmap.mtx"/>
+
+  <Parameter name="near field matrix" type="string" value="Anear.mtx"/>
+
+  <Parameter name="basis expansion coefficient matrix" type="string" value="basismatrix.mtx"/>
+  <Parameter name="far field interaction matrix" type="string" value="kernelApproximations.mtx"/>
+
+  <ParameterList name="shift coefficient matrices">
+    <Parameter name="0" type="string" value="transfer0.mtx"/>
+    <Parameter name="1" type="string" value="transfer1.mtx"/>
+    <Parameter name="2" type="string" value="transfer2.mtx"/>
+    <Parameter name="3" type="string" value="transfer3.mtx"/>
+    <Parameter name="4" type="string" value="transfer4.mtx"/>
+  </ParameterList>
+
+  <Parameter name="right-hand side" type="string" value="RHS.mtx"/>
+  <Parameter name="exact solution" type="string" value="X_ex.mtx"/>
+
+  <Parameter name="auxiliary operator" type="string" value="aux.mtx"/>
+  <Parameter name="coordinates" type="string" value="coords.mtx"/>
+</ParameterList>

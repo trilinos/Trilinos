@@ -26,7 +26,7 @@
 #include <tokenize.h>
 #include <vector>
 
-#ifndef _WIN32
+#if !defined(__IOSS_WINDOWS__)
 #include <sys/ioctl.h>
 #include <sys/utsname.h>
 #endif
@@ -42,7 +42,7 @@
 #endif
 
 // For memory utilities...
-#if defined(_WIN32)
+#if defined(__IOSS_WINDOWS__)
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #if 0
@@ -776,7 +776,7 @@ void Ioss::Utils::get_fields(int64_t entity_count, // The number of objects in t
 
 std::string Ioss::Utils::platform_information()
 {
-#ifndef _WIN32
+#if !defined(__IOSS_WINDOWS__)
   struct utsname sys_info
   {
   };
@@ -794,7 +794,7 @@ size_t Ioss::Utils::get_memory_info()
 {
   // Code from http://nadeausoftware.com/sites/NadeauSoftware.com/files/getRSS.c
   size_t memory_usage = 0;
-#if defined(_WIN32)
+#if defined(__IOSS_WINDOWS__)
 #if 0
   /* Windows -------------------------------------------------- */
   PROCESS_MEMORY_COUNTERS info;
@@ -862,7 +862,7 @@ size_t Ioss::Utils::get_hwm_memory_info()
 {
   // Code from http://nadeausoftware.com/sites/NadeauSoftware.com/files/getRSS.c
   size_t memory_usage = 0;
-#if defined(_WIN32)
+#if defined(__IOSS_WINDOWS__)
 #if 0
   /* Windows -------------------------------------------------- */
   PROCESS_MEMORY_COUNTERS info;
@@ -1019,10 +1019,9 @@ unsigned int Ioss::Utils::hash(const std::string &name)
 
   const char * symbol = name.c_str();
   unsigned int hashval;
-  unsigned int g;
   for (hashval = 0; *symbol != '\0'; symbol++) {
     hashval = (hashval << 4) + *symbol;
-    g       = hashval & 0xf0000000;
+    auto g  = hashval & 0xf0000000;
     if (g != 0) {
       hashval = hashval ^ (g >> 24);
       hashval = hashval ^ g;
@@ -1085,7 +1084,8 @@ bool Ioss::Utils::substr_equal(const std::string &prefix, const std::string &str
 
 std::string Ioss::Utils::uppercase(std::string name)
 {
-  std::transform(name.begin(), name.end(), name.begin(), [](char c) { return std::toupper(c); });
+  std::transform(name.begin(), name.end(), name.begin(),
+                 [](char c) { return static_cast<char>(std::toupper(c)); });
   return name;
 }
 

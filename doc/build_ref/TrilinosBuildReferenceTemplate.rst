@@ -101,8 +101,9 @@ that support them.  To print the timers at the end of the program, call
 Select different TriBITS implementation
 ----------------------------------------
 
-In order do co-development of TriBTS and Trilinos (see
-http://http://trac.trilinos.org/wiki/TriBITSTrilinosDev), set, for example::
+When co-developing TriBTS and Trilinos (after cloning the TriBITS repo
+https://github.com/TriBITSPub/TriBITS under the local Trilinos git repo)
+configure Trilinos to use that TriBITS implementation using, for example::
 
    -D Trilinos_TRIBITS_DIR:STRING=TriBITS/tribits
 

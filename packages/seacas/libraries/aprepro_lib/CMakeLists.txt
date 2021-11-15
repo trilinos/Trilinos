@@ -35,7 +35,6 @@ SET(HEADERS
 SET(SOURCES
  apr_aprepro.cc
  apr_util.cc
- apr_stats.cc
  apr_init.cc
  apr_builtin.cc
  apr_units.cc

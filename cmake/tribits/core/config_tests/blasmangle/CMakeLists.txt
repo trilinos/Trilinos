@@ -37,8 +37,8 @@
 # ************************************************************************
 # @HEADER
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(blasmangle C)
-SET(CMAKE_VERBOSE_MAKEFILE ON)
-ADD_EXECUTABLE(blasmangle blasmangle.c)
-ADD_DEFINITIONS(${MANGLE_FLAGS})
+cmake_minimum_required(VERSION 2.6)
+project(blasmangle C)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+add_executable(blasmangle blasmangle.c)
+add_definitions(${MANGLE_FLAGS})

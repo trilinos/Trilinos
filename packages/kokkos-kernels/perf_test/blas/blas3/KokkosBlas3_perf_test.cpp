@@ -52,23 +52,25 @@
 static struct option long_options[] = {
     {"help", no_argument, 0, 'h'},
     {"test", required_argument, 0, 't'},
-    {"loop_type", required_argument, 0, 'l'},
-    {"matrix_size_start", required_argument, 0, 'b'},
-    {"matrix_size_stop", required_argument, 0, 'e'},
-    {"matrix_size_step", required_argument, 0, 's'},
     {"warm_up_loop", required_argument, 0, 'w'},
-    {"iter", required_argument, 0, 'i'},
-    {"csv", required_argument, 0, 'c'},
-    {"routines", required_argument, 0, 'r'},
     {"trmm_options", required_argument, 0, 'o'},
     {"trmm_alpha", required_argument, 0, 'a'},
     {"gemm_options", required_argument, 0, 'g'},
     {"gemm_scalars", required_argument, 0, 'p'},
     {"team_size", required_argument, 0, 'z'},
     {"vector_len", required_argument, 0, 'n'},
+    {"use_auto", required_argument, 0, 'u'},
     {"batch_size", required_argument, 0, 'k'},
     {"batch_size_last_dim", required_argument, 0, 'd'},
+    {"loop_type", required_argument, 0, 'l'},
+    {"matrix_size_start", required_argument, 0, 'b'},
+    {"matrix_size_stop", required_argument, 0, 'e'},
+    {"matrix_size_step", required_argument, 0, 's'},
+    {"iter", required_argument, 0, 'i'},
+    {"csv", required_argument, 0, 'c'},
+    {"routines", required_argument, 0, 'r'},
     {"verify", required_argument, 0, 'v'},
+    {"ninter", required_argument, 0, 'j'},
     {0, 0, 0, 0}};
 
 static void __print_help_blas3_perf_test() {
@@ -218,9 +220,17 @@ static void __print_help_blas3_perf_test() {
       "verify before timing. "
       "(default: %d)\n",
       DEFAULT_VERIFY);
+
+  printf("\t-j, --ninter=NINTER\n");
+  printf("\t\tInterleaving size for armpl. (untimed)\n");
+  printf(
+    "\t\t\tValid values for NINTER is any positive integer "
+    "that evenly divides the batch size. "
+    "(default: %d)\n",
+    DEFAULT_NINTER);
 }
 
-static void __blas3_perf_test_input_error(char **argv, char short_opt,
+static void __blas3_perf_test_input_error(char ** /*argv*/, char short_opt,
                                           char *getopt_optarg) {
   fprintf(stderr, "ERROR: invalid option \"-%c %s\". Try --help.\n", short_opt,
           getopt_optarg);
@@ -270,6 +280,7 @@ int main(int argc, char **argv) {
   options.blas_args.use_auto            = DEFAULT_USE_AUTO;
   options.blas_args.batch_size_last_dim = DEFAULT_BATCH_SIZE_LAST_DIM;
   options.verify                        = DEFAULT_VERIFY;
+  options.ninter                        = DEFAULT_NINTER;
 
   options.blas_args.trmm.trmm_args = DEFAULT_TRMM_ARGS;
   options.blas_args.trmm.alpha     = DEFAULT_TRMM_ALPHA;
@@ -279,7 +290,7 @@ int main(int argc, char **argv) {
   options.blas_args.gemm.beta      = DEFAULT_GEMM_BETA;
 
   while (
-      (ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:",
+      (ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:j:",
                          long_options, &option_idx)) != -1) {
     switch (ret) {
       case 'h': __print_help_blas3_perf_test(); return 0;
@@ -402,6 +413,7 @@ int main(int argc, char **argv) {
         break;
       case 'd': options.blas_args.batch_size_last_dim = atoi(optarg); break;
       case 'v': options.verify = atoi(optarg); break;
+      case 'j': options.ninter = atoi(optarg); break;
       case 'z': options.blas_args.team_size = atoi(optarg); break;
       case 'n': options.blas_args.vector_len = atoi(optarg); break;
       case 'u': options.blas_args.use_auto = atoi(optarg); break;
@@ -428,6 +440,7 @@ int main(int argc, char **argv) {
   }
 
   Kokkos::initialize(argc, argv);
+  atexit(Kokkos::finalize);
 
   int err = 0;
   for (i = 0; i < BLAS_ROUTINES_N; i++) {
@@ -453,8 +466,6 @@ int main(int argc, char **argv) {
   }
 
   if (out_file != nullptr) fb.close();
-
-  Kokkos::finalize();
 
   return 0;
 }

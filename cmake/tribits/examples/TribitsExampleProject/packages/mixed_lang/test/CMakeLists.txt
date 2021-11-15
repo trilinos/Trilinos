@@ -1,4 +1,4 @@
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+tribits_add_executable_and_test(
   RayTracerTests
   SOURCES
     tstRay_Tracer.cc

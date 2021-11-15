@@ -232,7 +232,7 @@ namespace MueLu {
       bool validate = paramList.get("ML validate parameter list", true); /* true = default in ML */
       if (validate) {
 
-#if defined(HAVE_MUELU_ML)
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
         // Validate parameter list using ML validator
         int depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
         TEUCHOS_TEST_FOR_EXCEPTION(! ML_Epetra::ValidateMLPParameters(paramList, depth), Exceptions::RuntimeError,
@@ -617,7 +617,7 @@ namespace MueLu {
           Teuchos::ArrayRCP<Scalar> coordsi  = coordinates->getDataNonConst(i);
           const size_t              myLength = coordinates->getLocalLength();
           for (size_t j = 0; j < myLength; j++) {
-            coordsi[j] = coordPTR[0][j];
+            coordsi[j] = coordPTR[i][j];
           }
         }
         fineLevel->Set("Coordinates",coordinates);
@@ -782,7 +782,7 @@ namespace MueLu {
   void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupOperator(Operator & Op) const {
     try {
       Matrix& A = dynamic_cast<Matrix&>(Op);
-      if (A.GetFixedBlockSize() != blksize_)
+      if (A.IsFixedBlockSizeSet() && (A.GetFixedBlockSize() != blksize_))
         this->GetOStream(Warnings0) << "Setting matrix block size to " << blksize_ << " (value of the parameter in the list) "
             << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
 

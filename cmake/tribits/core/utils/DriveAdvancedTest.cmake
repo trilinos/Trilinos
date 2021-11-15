@@ -37,463 +37,463 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(PrintVar)
-INCLUDE(AppendStringVar)
-INCLUDE(Join)
-INCLUDE(TimingUtils)
-INCLUDE(TribitsGetCategoriesString)
+include(PrintVar)
+include(AppendStringVar)
+include(Join)
+include(TimingUtils)
+include(TribitsGetCategoriesString)
 
 
-FUNCTION(PRINT_CURRENT_DATE_TIME  PREFIX_STR)
-  EXECUTE_PROCESS( COMMAND  date  OUTPUT_STRIP_TRAILING_WHITESPACE
+function(print_current_date_time  PREFIX_STR)
+  execute_process( COMMAND  date  OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE  DATE_TIME )
-  MESSAGE("${PREFIX_STR} ${DATE_TIME}\n")
-ENDFUNCTION()
+  message("${PREFIX_STR} ${DATE_TIME}\n")
+endfunction()
 
 
-FUNCTION(PRINT_UPTIME  PREFIX_STR)
-  EXECUTE_PROCESS( COMMAND  uptime  OUTPUT_STRIP_TRAILING_WHITESPACE
+function(print_uptime  PREFIX_STR)
+  execute_process( COMMAND  uptime  OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE  MACHINE_LOAD )
-  MESSAGE("${PREFIX_STR} ${MACHINE_LOAD}")
-ENDFUNCTION()
+  message("${PREFIX_STR} ${MACHINE_LOAD}")
+endfunction()
 
 
-FUNCTION(PRINT_SINGLE_CHECK_RESULT  MSG_BEGIN  TEST_CASE_PASSED_IN)
-  IF (TEST_CASE_PASSED_IN)
-    MESSAGE("${MSG_BEGIN} [PASSED]")
-  ELSE()
-    MESSAGE("${MSG_BEGIN} [FAILED]")
-  ENDIF()
-ENDFUNCTION()
+function(print_single_check_result  MSG_BEGIN  TEST_CASE_PASSED_IN)
+  if (TEST_CASE_PASSED_IN)
+    message("${MSG_BEGIN} [PASSED]")
+  else()
+    message("${MSG_BEGIN} [FAILED]")
+  endif()
+endfunction()
 
 
-FUNCTION(DELETE_CREATE_WORKING_DIRECTORY  WORKING_DIR_IN   SKIP_CLEAN)
-  IF (EXISTS "${WORKING_DIR_IN}" AND NOT SKIP_CLEAN)
-    MESSAGE("Removing existing working directory"
+function(delete_create_working_directory  WORKING_DIR_IN   SKIP_CLEAN)
+  if (EXISTS "${WORKING_DIR_IN}" AND NOT SKIP_CLEAN)
+    message("Removing existing working directory"
       " '${WORKING_DIR_IN}'\n")
-    IF (NOT SHOW_COMMANDS_ONLY)
-      FILE(REMOVE_RECURSE "${WORKING_DIR_IN}")
-    ENDIF()
-  ENDIF()
-  IF (NOT EXISTS "${WORKING_DIR_IN}")
-    MESSAGE("Creating new working directory"
+    if (NOT SHOW_COMMANDS_ONLY)
+      file(REMOVE_RECURSE "${WORKING_DIR_IN}")
+    endif()
+  endif()
+  if (NOT EXISTS "${WORKING_DIR_IN}")
+    message("Creating new working directory"
       " '${WORKING_DIR_IN}'\n")
-    IF (NOT SHOW_COMMANDS_ONLY)
-      FILE(MAKE_DIRECTORY "${WORKING_DIR_IN}")
-    ENDIF()
-  ENDIF()
-ENDFUNCTION()
+    if (NOT SHOW_COMMANDS_ONLY)
+      file(MAKE_DIRECTORY "${WORKING_DIR_IN}")
+    endif()
+  endif()
+endfunction()
 
 
-MACRO(SETUP_AND_RUN_TEST_IDX_COPY_FILES_BLOCK)
+macro(setup_and_run_test_idx_copy_files_block)
 
-  MESSAGE(
+  message(
     "Copy files from:\n"
     "    ${TEST_${CMND_IDX}_SOURCE_DIR}/\n"
     "  to:\n"
     "    ${TEST_${CMND_IDX}_DEST_DIR}/\n")
 
-  SPLIT("${TEST_${CMND_IDX}_COPY_FILES_TO_TEST_DIR}"
+  split("${TEST_${CMND_IDX}_COPY_FILES_TO_TEST_DIR}"
     "," COPY_FILES_TO_TEST_DIR_ARRAY)
 
-  SET(TEST_CASE_PASSED TRUE)
+  set(TEST_CASE_PASSED TRUE)
 
-  MESSAGE("${OUTPUT_SEP}\n")
+  message("${OUTPUT_SEP}\n")
 
   # Make the dest directory if not exists (cmake -E copy will not create it)
-  IF (NOT EXISTS "${TEST_${CMND_IDX}_DEST_DIR}")
-    MESSAGE("Creating dest directory ${TEST_${CMND_IDX}_DEST_DIR}/ ...")
-    EXECUTE_PROCESS(
+  if (NOT EXISTS "${TEST_${CMND_IDX}_DEST_DIR}")
+    message("Creating dest directory ${TEST_${CMND_IDX}_DEST_DIR}/ ...")
+    execute_process(
       COMMAND ${CMAKE_COMMAND} -E make_directory "${TEST_${CMND_IDX}_DEST_DIR}"
       RESULT_VARIABLE MKDIR_COMMAND_RTN
       )
-    IF (NOT MKDIR_COMMAND_RTN EQUAL 0)
-      SET(TEST_CASE_PASSED FALSE)
-    ENDIF()
-    # NOTE: Above, it would have been great to be able use FILE(MAKE_DIRECTORY
+    if (NOT MKDIR_COMMAND_RTN EQUAL 0)
+      set(TEST_CASE_PASSED FALSE)
+    endif()
+    # NOTE: Above, it would have been great to be able use file(MAKE_DIRECTORY
     # ...)  but if that fails it will just abortS the cmake -P script.  There
     # is no way to handle that gracefully.  Therefore, we have to use
-    # EXECUTE_PROCESS(cmake -E make_directory ...).
-  ENDIF()
+    # execute_process(cmake -E make_directory ...).
+  endif()
 
   # Copy the full list of files to the dest dir
-  FOREACH(FILENAME ${COPY_FILES_TO_TEST_DIR_ARRAY})
-    MESSAGE("Copy file ${FILENAME} ...") 
-    EXECUTE_PROCESS(
+  foreach(FILENAME ${COPY_FILES_TO_TEST_DIR_ARRAY})
+    message("Copy file ${FILENAME} ...") 
+    execute_process(
       COMMAND ${CMAKE_COMMAND} -E copy
         "${TEST_${CMND_IDX}_SOURCE_DIR}/${FILENAME}"
         "${TEST_${CMND_IDX}_DEST_DIR}/"
       RESULT_VARIABLE COPY_COMMAND_RTN
       )
-    IF (NOT COPY_COMMAND_RTN EQUAL 0)
-      SET(TEST_CASE_PASSED FALSE)
-   ENDIF()
-  ENDFOREACH()
+    if (NOT COPY_COMMAND_RTN EQUAL 0)
+      set(TEST_CASE_PASSED FALSE)
+   endif()
+  endforeach()
 
   # NOTE: Above, it would have been great to be able use
-  # CONFIGURE_FILE(... COPYONLY) but if that fails it will just abortS the
+  # configure_file(... COPYONLY) but if that fails it will just abortS the
   # cmake -P script.  There is no way to handle that gracefully.  Therefore,
-  # we have to use EXECUTE_PROCESS(cmake -E copy ...).  Also, it would have
+  # we have to use execute_process(cmake -E copy ...).  Also, it would have
   # been great to just copy the files all at once with `cmake -E copy
   # <srcDir>/<file0> <srDir>/<file1> ... <distDir>/` but older versions of
   # CMake don't support that mode.  They only support copying the files one at
   # a time :-(
 
-  MESSAGE("\n${OUTPUT_SEP}\n")
+  message("\n${OUTPUT_SEP}\n")
 
-  MESSAGE("") # Need a vertical space for readability of the output
+  message("") # Need a vertical space for readability of the output
 
-ENDMACRO()
+endmacro()
 
 
-MACRO(SETUP_AND_RUN_TEST_IDX_CMND_BLOCK)
+macro(setup_and_run_test_idx_cmnd_block)
 
   # Address working directory for this TEST_<IDX> block if set
-  IF (TEST_${CMND_IDX}_WORKING_DIRECTORY)
-    IF (NOT  IS_ABSOLUTE  "${TEST_${CMND_IDX}_WORKING_DIRECTORY}")
-      SET(TEST_${CMND_IDX}_WORKING_DIRECTORY
+  if (TEST_${CMND_IDX}_WORKING_DIRECTORY)
+    if (NOT  IS_ABSOLUTE  "${TEST_${CMND_IDX}_WORKING_DIRECTORY}")
+      set(TEST_${CMND_IDX}_WORKING_DIRECTORY
         ${BASE_WORKING_DIRECTORY}/${TEST_${CMND_IDX}_WORKING_DIRECTORY})
-    ENDIF()
-    DELETE_CREATE_WORKING_DIRECTORY("${TEST_${CMND_IDX}_WORKING_DIRECTORY}"
+    endif()
+    delete_create_working_directory("${TEST_${CMND_IDX}_WORKING_DIRECTORY}"
       ${TEST_${CMND_IDX}_SKIP_CLEAN_WORKING_DIRECTORY})
-  ENDIF()
+  endif()
 
   # Set up the TEST_<IDX> command block
-  JOIN( TEST_CMND_STR " " TRUE ${TEST_${CMND_IDX}_CMND} )
-  MESSAGE("Running: ${TEST_CMND_STR}\n")
-  SET(EXEC_CMND COMMAND ${TEST_${CMND_IDX}_CMND})
+  join( TEST_CMND_STR " " TRUE ${TEST_${CMND_IDX}_CMND} )
+  message("Running: ${TEST_CMND_STR}\n")
+  set(EXEC_CMND COMMAND ${TEST_${CMND_IDX}_CMND})
 
   # Set up the workig directory that this TEST_<IDX> CMND block will run in
 
-  SET(WORKING_DIR_SET)
-  IF (TEST_${CMND_IDX}_WORKING_DIRECTORY)
-    SET(WORKING_DIR_SET "${TEST_${CMND_IDX}_WORKING_DIRECTORY}")
-  ELSEIF(OVERALL_WORKING_DIRECTORY)
-    SET(WORKING_DIR_SET "${OVERALL_WORKING_DIRECTORY}")
-  ENDIF()
+  set(WORKING_DIR_SET)
+  if (TEST_${CMND_IDX}_WORKING_DIRECTORY)
+    set(WORKING_DIR_SET "${TEST_${CMND_IDX}_WORKING_DIRECTORY}")
+  elseif(OVERALL_WORKING_DIRECTORY)
+    set(WORKING_DIR_SET "${OVERALL_WORKING_DIRECTORY}")
+  endif()
 
-  IF (WORKING_DIR_SET)
-    MESSAGE("  Running in working directory \"${WORKING_DIR_SET}\"\n")
-    SET(WORKING_DIR "${WORKING_DIR_SET}")
-  ELSE()
-    SET(WORKING_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-  ENDIF()
+  if (WORKING_DIR_SET)
+    message("  Running in working directory \"${WORKING_DIR_SET}\"\n")
+    set(WORKING_DIR "${WORKING_DIR_SET}")
+  else()
+    set(WORKING_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+  endif()
 
-  # Set the actual command that will be run with EXECUTE_PROCES()
+  # Set the actual command that will be run with execute_proces()
 
-  SET(EXEC_CMND ${EXEC_CMND}
+  set(EXEC_CMND ${EXEC_CMND}
     WORKING_DIRECTORY "${WORKING_DIR}"
     )
 
-  # Set up the optional output file that the EXECUTE_PROCESS() command will write to
+  # Set up the optional output file that the execute_process() command will write to
 
-  IF (TEST_${CMND_IDX}_OUTPUT_FILE)
-    IF (NOT  IS_ABSOLUTE  "${TEST_${CMND_IDX}_OUTPUT_FILE}")
-      SET(OUTPUT_FILE_USED "${WORKING_DIR}/${TEST_${CMND_IDX}_OUTPUT_FILE}")
-    ELSE()
-      SET(OUTPUT_FILE_USED "${TEST_${CMND_IDX}_OUTPUT_FILE}")
-    ENDIF()
-    MESSAGE("  Writing output to file \"${OUTPUT_FILE_USED}\"\n")
-  ENDIF()
+  if (TEST_${CMND_IDX}_OUTPUT_FILE)
+    if (NOT  IS_ABSOLUTE  "${TEST_${CMND_IDX}_OUTPUT_FILE}")
+      set(OUTPUT_FILE_USED "${WORKING_DIR}/${TEST_${CMND_IDX}_OUTPUT_FILE}")
+    else()
+      set(OUTPUT_FILE_USED "${TEST_${CMND_IDX}_OUTPUT_FILE}")
+    endif()
+    message("  Writing output to file \"${OUTPUT_FILE_USED}\"\n")
+  endif()
 
-  # Run the actual command with EXECUTTE_PROCESS() (or just print what would run) ...
+  # Run the actual command with executte_process() (or just print what would run) ...
 
-  IF (NOT SHOW_COMMANDS_ONLY)
+  if (NOT SHOW_COMMANDS_ONLY)
 
     # Provide the test configuration in an environment variable.
-    IF(TEST_CONFIG)
-      SET(ENV{TEST_CONFIG} "${TEST_CONFIG}")
-    ENDIF(TEST_CONFIG)
+    if(TEST_CONFIG)
+      set(ENV{TEST_CONFIG} "${TEST_CONFIG}")
+    endif(TEST_CONFIG)
 
-    EXECUTE_PROCESS(
+    execute_process(
       ${EXEC_CMND}
       OUTPUT_VARIABLE TEST_CMND_OUT
       ERROR_VARIABLE TEST_CMND_OUT
       RESULT_VARIABLE EXEC_RESULT
       )
 
-    IF (TEST_${CMND_IDX}_OUTPUT_FILE)
-      FILE(WRITE "${OUTPUT_FILE_USED}" "${TEST_CMND_OUT}")
-    ENDIF()
+    if (TEST_${CMND_IDX}_OUTPUT_FILE)
+      file(WRITE "${OUTPUT_FILE_USED}" "${TEST_CMND_OUT}")
+    endif()
 
-    MESSAGE("${OUTPUT_SEP}\n")
+    message("${OUTPUT_SEP}\n")
 
-    IF (NOT TEST_${CMND_IDX}_NO_ECHO_OUTPUT)
-      MESSAGE("${TEST_CMND_OUT}")
-    ELSE()
-      MESSAGE("NO_ECHO_OUTPUT\n")
-    ENDIF()
+    if (NOT TEST_${CMND_IDX}_NO_ECHO_OUTPUT)
+      message("${TEST_CMND_OUT}")
+    else()
+      message("NO_ECHO_OUTPUT\n")
+    endif()
 
-  ELSE()
+  else()
 
-    MESSAGE("\n*** Not running command on request ***")
+    message("\n*** Not running command on request ***")
 
-  ENDIF()
+  endif()
 
-  MESSAGE("${OUTPUT_SEP}\n")
+  message("${OUTPUT_SEP}\n")
 
-ENDMACRO()
+endmacro()
 
 
-MACRO(DETERMINE_TEST_IDX_CMND_BLOCK_PASS_FAIL)
+macro(determine_test_idx_cmnd_block_pass_fail)
 
-  MESSAGE("TEST_${CMND_IDX}: Return code = ${EXEC_RESULT}")
+  message("TEST_${CMND_IDX}: Return code = ${EXEC_RESULT}")
 
   # A) Apply first set of pass/fail logic
-  SET(TEST_CASE_PASSED FALSE)
-  IF (TEST_${CMND_IDX}_PASS_ANY)
-    SET(TEST_CASE_PASSED TRUE)
-    PRINT_SINGLE_CHECK_RESULT(
+  set(TEST_CASE_PASSED FALSE)
+  if (TEST_${CMND_IDX}_PASS_ANY)
+    set(TEST_CASE_PASSED TRUE)
+    print_single_check_result(
       "TEST_${CMND_IDX}: Pass criteria = Pass Any"
       ${TEST_CASE_PASSED} )
-  ELSEIF (TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION)
-    STRING(REGEX MATCH "${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION}"
+  elseif (TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION)
+    string(REGEX MATCH "${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION}"
       MATCH_STR "${TEST_CMND_OUT}" )
-    IF (MATCH_STR)
-      SET(TEST_CASE_PASSED TRUE)
-    ELSE()
-      SET(TEST_CASE_PASSED FALSE)
-    ENDIF()
-    PRINT_SINGLE_CHECK_RESULT(
+    if (MATCH_STR)
+      set(TEST_CASE_PASSED TRUE)
+    else()
+      set(TEST_CASE_PASSED FALSE)
+    endif()
+    print_single_check_result(
       "TEST_${CMND_IDX}: Pass criteria = Match REGEX {${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION}}"
       ${TEST_CASE_PASSED})
-  ELSEIF (TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL)
-    SET(TEST_CASE_PASSED TRUE)
-    FOREACH(REGEX_STR ${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL})
-      STRING(REGEX MATCH "${REGEX_STR}" MATCH_STR "${TEST_CMND_OUT}" )
-      IF (NOT "${MATCH_STR}" STREQUAL "")
-        SET(THIS_REGEX_MATCHED  TRUE)
-      ELSE()
-        SET(THIS_REGEX_MATCHED  FALSE)
-      ENDIF()
-      IF (NOT  THIS_REGEX_MATCHED)
-        SET(TEST_CASE_PASSED FALSE)
-      ENDIF()
-      PRINT_SINGLE_CHECK_RESULT(
+  elseif (TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL)
+    set(TEST_CASE_PASSED TRUE)
+    foreach(REGEX_STR ${TEST_${CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL})
+      string(REGEX MATCH "${REGEX_STR}" MATCH_STR "${TEST_CMND_OUT}" )
+      if (NOT "${MATCH_STR}" STREQUAL "")
+        set(THIS_REGEX_MATCHED  TRUE)
+      else()
+        set(THIS_REGEX_MATCHED  FALSE)
+      endif()
+      if (NOT  THIS_REGEX_MATCHED)
+        set(TEST_CASE_PASSED FALSE)
+      endif()
+      print_single_check_result(
         "TEST_${CMND_IDX}: Pass criteria = Match REGEX {${REGEX_STR}}"
         ${THIS_REGEX_MATCHED} )
-    ENDFOREACH()
-  ELSE()
-    IF (EXEC_RESULT EQUAL 0)
-      SET(TEST_CASE_PASSED TRUE)
-    ELSE()
-      SET(TEST_CASE_PASSED FALSE)
-    ENDIF()
-    PRINT_SINGLE_CHECK_RESULT(
+    endforeach()
+  else()
+    if (EXEC_RESULT EQUAL 0)
+      set(TEST_CASE_PASSED TRUE)
+    else()
+      set(TEST_CASE_PASSED FALSE)
+    endif()
+    print_single_check_result(
       "TEST_${CMND_IDX}: Pass criteria = Zero return code"
       ${TEST_CASE_PASSED} )
-  ENDIF()
+  endif()
 
   # B) Check for failing regex matching?
-  IF (TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION)
-    STRING(REGEX MATCH "${TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION}"
+  if (TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION)
+    string(REGEX MATCH "${TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION}"
       MATCH_STR "${TEST_CMND_OUT}" )
-    IF (MATCH_STR)
-      SET(TEST_CASE_PASSED FALSE)
-    ENDIF()
-    PRINT_SINGLE_CHECK_RESULT(
+    if (MATCH_STR)
+      set(TEST_CASE_PASSED FALSE)
+    endif()
+    print_single_check_result(
       "TEST_${CMND_IDX}: Pass criteria = Not match REGEX {${TEST_${CMND_IDX}_FAIL_REGULAR_EXPRESSION}}"
      ${TEST_CASE_PASSED} )
-  ENDIF()
+  endif()
 
   # C) Check for return code always 0?
-  IF (TEST_${CMND_IDX}_ALWAYS_FAIL_ON_NONZERO_RETURN)
-    IF (NOT EXEC_RESULT EQUAL 0)
-      SET(ALWAYS_FAIL_ON_NONZERO_RETURN_PASSED FALSE)
-      SET(TEST_CASE_PASSED FALSE)
-    ELSE()
-      SET(ALWAYS_FAIL_ON_NONZERO_RETURN_PASSED TRUE)
-    ENDIF()
-    PRINT_SINGLE_CHECK_RESULT(
+  if (TEST_${CMND_IDX}_ALWAYS_FAIL_ON_NONZERO_RETURN)
+    if (NOT EXEC_RESULT EQUAL 0)
+      set(ALWAYS_FAIL_ON_NONZERO_RETURN_PASSED FALSE)
+      set(TEST_CASE_PASSED FALSE)
+    else()
+      set(ALWAYS_FAIL_ON_NONZERO_RETURN_PASSED TRUE)
+    endif()
+    print_single_check_result(
       "TEST_${CMND_IDX}: Pass criteria = ALWAYS_FAIL_ON_NONZERO_RETURN"
       ${ALWAYS_FAIL_ON_NONZERO_RETURN_PASSED} )
-  ELSEIF (TEST_${CMND_IDX}_ALWAYS_FAIL_ON_ZERO_RETURN)
-    IF (EXEC_RESULT EQUAL 0)
-      SET(ALWAYS_FAIL_ON_ZERO_RETURN_PASSED FALSE)
-      SET(TEST_CASE_PASSED FALSE)
-    ELSE()
-      SET(ALWAYS_FAIL_ON_ZERO_RETURN_PASSED TRUE)
-    ENDIF()
-    PRINT_SINGLE_CHECK_RESULT(
+  elseif (TEST_${CMND_IDX}_ALWAYS_FAIL_ON_ZERO_RETURN)
+    if (EXEC_RESULT EQUAL 0)
+      set(ALWAYS_FAIL_ON_ZERO_RETURN_PASSED FALSE)
+      set(TEST_CASE_PASSED FALSE)
+    else()
+      set(ALWAYS_FAIL_ON_ZERO_RETURN_PASSED TRUE)
+    endif()
+    print_single_check_result(
       "TEST_${CMND_IDX}: Pass criteria = ALWAYS_FAIL_ON_ZERO_RETURN"
       ${ALWAYS_FAIL_ON_ZERO_RETURN_PASSED} )
-  ENDIF()
+  endif()
 
   # D) Invert pass/fail result?
-  IF (TEST_${CMND_IDX}_WILL_FAIL)
-    IF (TEST_CASE_PASSED)
-      SET(TEST_CASE_PASSED FALSE)
-    ELSE()
-      SET(TEST_CASE_PASSED TRUE)
-    ENDIF()
-    PRINT_SINGLE_CHECK_RESULT(
+  if (TEST_${CMND_IDX}_WILL_FAIL)
+    if (TEST_CASE_PASSED)
+      set(TEST_CASE_PASSED FALSE)
+    else()
+      set(TEST_CASE_PASSED TRUE)
+    endif()
+    print_single_check_result(
       "TEST_${CMND_IDX}: Pass criteria = WILL_FAIL (invert the above 'Pass critera')"
       ${TEST_CASE_PASSED} )
-  ENDIF()
+  endif()
 
-ENDMACRO()
+endmacro()
 
 
-FUNCTION(DRIVE_ADVANCED_TEST)
+function(drive_advanced_test)
 
   #
   # A) Print the header for the advanced test
   #
 
-  SET(ADVANDED_TEST_SEP
+  set(ADVANDED_TEST_SEP
     "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 
-  SET(TEST_SEP
+  set(TEST_SEP
     "================================================================================")
 
-  SET(OUTPUT_SEP
+  set(OUTPUT_SEP
     "--------------------------------------------------------------------------------")
 
-  MATH(EXPR LAST_CMND_IDX ${NUM_CMNDS}-1)
+  math(EXPR LAST_CMND_IDX ${NUM_CMNDS}-1)
 
-  MESSAGE("\n${ADVANDED_TEST_SEP}\n")
-  MESSAGE("Advanced Test: ${TEST_NAME}\n")
+  message("\n${ADVANDED_TEST_SEP}\n")
+  message("Advanced Test: ${TEST_NAME}\n")
 
-  MESSAGE("Selected Test/CTest Propeties:")
-  TRIBITS_GET_CATEGORIES_STRING("${CATEGORIES}" CATEGORIES_IN_COMMAS)
-  MESSAGE("  CATEGORIES = ${CATEGORIES_IN_COMMAS}")
-  MESSAGE("  PROCESSORS = ${PROCESSORS}")
-  IF (TIMEOUT)
-    MESSAGE("  TIMEOUT    = ${TIMEOUT}\n")
-  ELSE()
-    MESSAGE("  TIMEOUT    = DEFAULT\n")
-  ENDIF()
+  message("Selected Test/CTest Properties:")
+  tribits_get_categories_string("${CATEGORIES}" CATEGORIES_IN_COMMAS)
+  message("  CATEGORIES = ${CATEGORIES_IN_COMMAS}")
+  message("  PROCESSORS = ${PROCESSORS}")
+  if (TIMEOUT)
+    message("  TIMEOUT    = ${TIMEOUT}\n")
+  else()
+    message("  TIMEOUT    = DEFAULT\n")
+  endif()
 
-  IF (SHOW_MACHINE_LOAD  AND  NOT  SHOW_COMMANDS_ONLY)
-    PRINT_UPTIME("Starting Uptime:")
-  ENDIF()
+  if (SHOW_MACHINE_LOAD  AND  NOT  SHOW_COMMANDS_ONLY)
+    print_uptime("Starting Uptime:")
+  endif()
 
-  IF (SHOW_START_END_DATE_TIME  AND  NOT  SHOW_COMMANDS_ONLY)
-    PRINT_CURRENT_DATE_TIME("Starting at:")
-  ENDIF()
+  if (SHOW_START_END_DATE_TIME  AND  NOT  SHOW_COMMANDS_ONLY)
+    print_current_date_time("Starting at:")
+  endif()
 
-  IF (OVERALL_WORKING_DIRECTORY)
-    IF (NOT  IS_ABSOLUTE  "${OVERALL_WORKING_DIRECTORY}")
-      SET(OVERALL_WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${OVERALL_WORKING_DIRECTORY})
-    ENDIF()
-    DELETE_CREATE_WORKING_DIRECTORY("${OVERALL_WORKING_DIRECTORY}"
+  if (OVERALL_WORKING_DIRECTORY)
+    if (NOT  IS_ABSOLUTE  "${OVERALL_WORKING_DIRECTORY}")
+      set(OVERALL_WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${OVERALL_WORKING_DIRECTORY})
+    endif()
+    delete_create_working_directory("${OVERALL_WORKING_DIRECTORY}"
       ${SKIP_CLEAN_OVERALL_WORKING_DIRECTORY})
-    SET(BASE_WORKING_DIRECTORY "${OVERALL_WORKING_DIRECTORY}")
-  ELSE()
-    SET(BASE_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-  ENDIF()
+    set(BASE_WORKING_DIRECTORY "${OVERALL_WORKING_DIRECTORY}")
+  else()
+    set(BASE_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+  endif()
 
-  FOREACH ( CMND_IDX RANGE ${LAST_CMND_IDX} )
-    IF (CMND_IDX EQUAL 0)
-      SET(TEST_NAMES_STR "TEST_0")
-    ELSE()
-      APPEND_STRING_VAR( TEST_NAMES_STR ", TEST_${CMND_IDX}" )
-    ENDIF()
-  ENDFOREACH()
-  MESSAGE("Running test commands: ${TEST_NAMES_STR}")
+  foreach ( CMND_IDX RANGE ${LAST_CMND_IDX} )
+    if (CMND_IDX EQUAL 0)
+      set(TEST_NAMES_STR "TEST_0")
+    else()
+      append_string_var( TEST_NAMES_STR ", TEST_${CMND_IDX}" )
+    endif()
+  endforeach()
+  message("Running test commands: ${TEST_NAMES_STR}")
 
-  IF (SHOW_START_END_DATE_TIME AND NOT SHOW_COMMANDS_ONLY)
-   TIMER_GET_RAW_SECONDS(TEST_CMND_START)
-   SET(TEST_OVERALL_START ${TEST_CMND_START})
-  ENDIF()
+  if (SHOW_START_END_DATE_TIME AND NOT SHOW_COMMANDS_ONLY)
+   timer_get_raw_seconds(TEST_CMND_START)
+   set(TEST_OVERALL_START ${TEST_CMND_START})
+  endif()
 
   #
   # B) Loop over and run the TEST_<IDX> blocks one at a time
   #
 
-  SET(OVERALL_TEST_PASSED TRUE)
+  set(OVERALL_TEST_PASSED TRUE)
 
-  FOREACH ( CMND_IDX RANGE ${LAST_CMND_IDX} )
-    MESSAGE("\n${TEST_SEP}\n")
-    MESSAGE("TEST_${CMND_IDX}\n")
+  foreach ( CMND_IDX RANGE ${LAST_CMND_IDX} )
+    message("\n${TEST_SEP}\n")
+    message("TEST_${CMND_IDX}\n")
 
     # Print the message for this TEST_<IDX> block if set
-    IF (TEST_${CMND_IDX}_MESSAGE)
-      MESSAGE("${TEST_${CMND_IDX}_MESSAGE}\n")
-    ENDIF()
+    if (TEST_${CMND_IDX}_MESSAGE)
+      message("${TEST_${CMND_IDX}_MESSAGE}\n")
+    endif()
 
     # Run the TEST_<IDX> block (Copy files or CMND)
-    IF (TEST_${CMND_IDX}_COPY_FILES_TO_TEST_DIR)
-      SETUP_AND_RUN_TEST_IDX_COPY_FILES_BLOCK()
-    ELSE()
-      SETUP_AND_RUN_TEST_IDX_CMND_BLOCK()
-    ENDIF()
+    if (TEST_${CMND_IDX}_COPY_FILES_TO_TEST_DIR)
+      setup_and_run_test_idx_copy_files_block()
+    else()
+      setup_and_run_test_idx_cmnd_block()
+    endif()
 
     # Print the load and/or timing info for TEST_<IDX> block
 
-    IF (SHOW_MACHINE_LOAD   AND  NOT  SHOW_COMMANDS_ONLY)
-      PRINT_UPTIME("TEST_${CMND_IDX}: Uptime:")
-    ENDIF()
+    if (SHOW_MACHINE_LOAD   AND  NOT  SHOW_COMMANDS_ONLY)
+      print_uptime("TEST_${CMND_IDX}: Uptime:")
+    endif()
 
-    IF (SHOW_START_END_DATE_TIME  AND  NOT  SHOW_COMMANDS_ONLY)
-      TIMER_GET_RAW_SECONDS(TEST_CMND_END)
-      IF (TEST_CMND_START AND TEST_CMND_END)
-        TIMER_PRINT_REL_TIME(${TEST_CMND_START} ${TEST_CMND_END}
+    if (SHOW_START_END_DATE_TIME  AND  NOT  SHOW_COMMANDS_ONLY)
+      timer_get_raw_seconds(TEST_CMND_END)
+      if (TEST_CMND_START AND TEST_CMND_END)
+        timer_print_rel_time(${TEST_CMND_START} ${TEST_CMND_END}
            "TEST_${CMND_IDX}: Time")
-      ELSE()
-        MESSAGE("ERROR: Not able to return test times! Is 'date' in your path?")
-      ENDIF()
-      SET(TEST_CMND_START ${TEST_CMND_END})
-    ENDIF()
+      else()
+        message("ERROR: Not able to return test times! Is 'date' in your path?")
+      endif()
+      set(TEST_CMND_START ${TEST_CMND_END})
+    endif()
 
     # Determine pass/fail for the TEST_<IDX> CMND block
 
-    IF (NOT SHOW_COMMANDS_ONLY)
+    if (NOT SHOW_COMMANDS_ONLY)
 
       # Determine pass/fail for TEST_<IDX> copy files or CMND
 
-      IF (TEST_${CMND_IDX}_COPY_FILES_TO_TEST_DIR)
+      if (TEST_${CMND_IDX}_COPY_FILES_TO_TEST_DIR)
         # Pass/fail already determined by setting TEST_CASE_PASSED in
         # SETUP_AND_RUN_TEST_IDX_COPY_FILES_BLOCK above.
-      ELSE()
-        DETERMINE_TEST_IDX_CMND_BLOCK_PASS_FAIL()
-      ENDIF()
+      else()
+        determine_test_idx_cmnd_block_pass_fail()
+      endif()
 
       # Print final pass/fail for the TEST_<IDX> block
 
-      IF (TEST_CASE_PASSED)
-        MESSAGE("TEST_${CMND_IDX}: Result = PASSED")
-      ELSE()
-        MESSAGE("TEST_${CMND_IDX}: Result = FAILED")
-        SET(OVERALL_TEST_PASSED FALSE)
-        IF (FAIL_FAST)
-          MESSAGE("TEST_${CMND_IDX}: FAIL FAST, SKIPPING REST OF TEST CASES!")
-          BREAK()
-        ENDIF()
-      ENDIF()
+      if (TEST_CASE_PASSED)
+        message("TEST_${CMND_IDX}: Result = PASSED")
+      else()
+        message("TEST_${CMND_IDX}: Result = FAILED")
+        set(OVERALL_TEST_PASSED FALSE)
+        if (FAIL_FAST)
+          message("TEST_${CMND_IDX}: FAIL FAST, SKIPPING REST OF TEST CASES!")
+          break()
+        endif()
+      endif()
 
-    ENDIF(NOT SHOW_COMMANDS_ONLY)
+    endif(NOT SHOW_COMMANDS_ONLY)
 
-  ENDFOREACH()
+  endforeach()
 
-  MESSAGE("\n${TEST_SEP}\n")
+  message("\n${TEST_SEP}\n")
 
   #
   # C) Print the final test data and pass/fail
   #
 
-  IF (NOT SHOW_COMMANDS_ONLY)
+  if (NOT SHOW_COMMANDS_ONLY)
 
-    IF (SHOW_START_END_DATE_TIME)
-      PRINT_CURRENT_DATE_TIME("Ending at:")
-      IF (TEST_OVERALL_START AND TEST_CMND_END)
-        TIMER_PRINT_REL_TIME(${TEST_OVERALL_START} ${TEST_CMND_END}
+    if (SHOW_START_END_DATE_TIME)
+      print_current_date_time("Ending at:")
+      if (TEST_OVERALL_START AND TEST_CMND_END)
+        timer_print_rel_time(${TEST_OVERALL_START} ${TEST_CMND_END}
           "OVERALL TEST TIME")
-      ELSE()
-        MESSAGE("ERROR: Not able to return test times! Is 'date' in your path?")
-      ENDIF()
-      MESSAGE("")
-    ENDIF()
+      else()
+        message("ERROR: Not able to return test times! Is 'date' in your path?")
+      endif()
+      message("")
+    endif()
 
-    IF (OVERALL_TEST_PASSED)
-      MESSAGE("OVERALL FINAL RESULT: TEST PASSED (${TEST_NAME})")
-    ELSE()
-      MESSAGE("OVERALL FINAL RESULT: TEST FAILED (${TEST_NAME})")
-    ENDIF()
-  ELSE()
-    MESSAGE("OVERALL FINAL RESULT: DID NOT RUN COMMANDS (${TEST_NAME})")
-  ENDIF()
+    if (OVERALL_TEST_PASSED)
+      message("OVERALL FINAL RESULT: TEST PASSED (${TEST_NAME})")
+    else()
+      message("OVERALL FINAL RESULT: TEST FAILED (${TEST_NAME})")
+    endif()
+  else()
+    message("OVERALL FINAL RESULT: DID NOT RUN COMMANDS (${TEST_NAME})")
+  endif()
 
-  MESSAGE("\n${ADVANDED_TEST_SEP}\n")
+  message("\n${ADVANDED_TEST_SEP}\n")
 
-ENDFUNCTION()
+endfunction()

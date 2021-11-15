@@ -539,14 +539,14 @@ namespace Xpetra {
                                               offset
                                               );
 
-      if(IsView("stridedMaps") == true) RemoveView("stridedMaps");
+      if(IsFixedBlockSizeSet()) RemoveView("stridedMaps");
       CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
     }
 
     //==========================================================================
 
     LocalOrdinal GetFixedBlockSize() const {
-      if(IsView("stridedMaps")==true) {
+      if(IsFixedBlockSizeSet()) {
         Teuchos::RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> > rangeMap = Teuchos::rcp_dynamic_cast<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >(getRowMap("stridedMaps"));
         Teuchos::RCP<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> > domainMap = Teuchos::rcp_dynamic_cast<const StridedMap<LocalOrdinal, GlobalOrdinal, Node> >(getColMap("stridedMaps"));
         TEUCHOS_TEST_FOR_EXCEPTION(rangeMap  == Teuchos::null, Exceptions::BadCast, "Xpetra::Matrix::GetFixedBlockSize(): rangeMap is not of type StridedMap");
@@ -557,6 +557,11 @@ namespace Xpetra {
         //TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Xpetra::Matrix::GetFixedBlockSize(): no strided maps available."); // TODO remove this
         return 1;
     }; //TODO: why LocalOrdinal?
+
+    //! Returns true, if `SetFixedBlockSize` has been called before.
+    bool IsFixedBlockSizeSet() const {
+      return IsView("stridedMaps");
+    };
 
     // ----------------------------------------------------------------------------------
 

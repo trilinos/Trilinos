@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -890,7 +890,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
         }
       }
       else {
-        elem_var_tab = 0;
+        elem_var_tab = NULL;
       }
       err = ex_put_all_var_param(exoid[npd], num_global_fields, num_nodal_fields,
                                  num_element_fields, elem_var_tab, 0, 0, 0, 0);
@@ -1183,10 +1183,6 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
 void get_file_name(const char *base, const char *ext, int rank, int nprocs, const char *other,
                    char *output)
 {
-  int  i1, iTemp1;
-  int  iMaxDigit = 0, iMyDigit = 0;
-  char cTemp[128];
-
   output[0] = '\0';
   ex_copy_string(output, base, MAX_STRING_LEN);
   strcat(output, ".");
@@ -1202,8 +1198,8 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
      * This allows numbers like 01-99, i.e., prepending zeros to the
      * name to preserve proper alphabetic sorting of the files.
      */
-
-    iTemp1 = nprocs;
+    int iMaxDigit = 0, iMyDigit = 0;
+    int iTemp1 = nprocs;
     do {
       iTemp1 /= 10;
       iMaxDigit++;
@@ -1216,6 +1212,8 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
     } while (iTemp1 >= 1);
 
     strcat(output, ".");
+
+    char cTemp[128];
     sprintf(cTemp, "%d", nprocs);
     strcat(output, cTemp);
     strcat(output, ".");
@@ -1223,7 +1221,7 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
     /*
      * Append the proper number of zeros to the filename.
      */
-    for (i1 = 0; i1 < iMaxDigit - iMyDigit; i1++) {
+    for (int i1 = 0; i1 < iMaxDigit - iMyDigit; i1++) {
       strcat(output, "0");
     }
 

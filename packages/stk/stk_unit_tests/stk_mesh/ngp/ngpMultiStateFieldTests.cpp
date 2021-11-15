@@ -78,7 +78,7 @@ private:
   stk::mesh::NgpField<double> m_ngpField;
 };
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 #define MY_LAMBDA KOKKOS_LAMBDA
 #else
 #define MY_LAMBDA [&]
@@ -87,7 +87,7 @@ private:
 ClassWithNgpField* create_class_on_device(const stk::mesh::NgpField<double>& ngpField)
 {
   ClassWithNgpField* devicePtr = static_cast<ClassWithNgpField*>(
-        Kokkos::kokkos_malloc<stk::mesh::MemSpace>("device class memory", sizeof(ClassWithNgpField)));
+        Kokkos::kokkos_malloc<stk::ngp::MemSpace>("device class memory", sizeof(ClassWithNgpField)));
   Kokkos::parallel_for("construct class on device", 1,
       MY_LAMBDA(const int i) { new (devicePtr) ClassWithNgpField(ngpField); }
   );
@@ -101,7 +101,7 @@ void delete_class_on_device(ClassWithNgpField* devicePtr)
       KOKKOS_LAMBDA(const int i) { devicePtr->~ClassWithNgpField(); }
   );
   Kokkos::fence();
-  Kokkos::kokkos_free<stk::mesh::MemSpace>(static_cast<void*>(devicePtr));
+  Kokkos::kokkos_free<stk::ngp::MemSpace>(static_cast<void*>(devicePtr));
 }
 
 class NgpMultiStateFieldTest : public stk::mesh::fixtures::TestHexFixture
@@ -228,4 +228,68 @@ NGP_TEST_F(NgpMultiStateFieldTest, persistentDeviceField_hasCorrectDataAfterStat
   check_field_data_value_on_device(ngpMesh, stk::topology::NODE_RANK, persistentDeviceClass, valueOld);
 
   delete_class_on_device(persistentDeviceClass);
+}
+
+NGP_TEST_F(NgpMultiStateFieldTest, persistentSyncToDeviceCountAfterStateRotation)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
+  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(get_field_old());
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_device(), ngpFieldOld.num_syncs_to_device());
+
+  ngpFieldNew.modify_on_host();
+  ngpFieldNew.sync_to_device();
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_device(), ngpFieldOld.num_syncs_to_device()+1);
+
+  perform_field_state_rotation();
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_device()+1, ngpFieldOld.num_syncs_to_device());
+}
+
+NGP_TEST_F(NgpMultiStateFieldTest, persistentSyncToHostCountAfterStateRotation)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
+  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(get_field_old());
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_device(), ngpFieldOld.num_syncs_to_device());
+
+  ngpFieldOld.modify_on_device();
+  ngpFieldOld.sync_to_host();
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_host()+1, ngpFieldOld.num_syncs_to_host());
+
+  perform_field_state_rotation();
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_host(), ngpFieldOld.num_syncs_to_host()+1);
+}
+
+NGP_TEST_F(NgpMultiStateFieldTest, persistentModifyOnHostAfterStateRotation)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
+  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(get_field_old());
+  ngpFieldNew.clear_sync_state();
+  ngpFieldOld.clear_sync_state();
+
+  ngpFieldNew.modify_on_host();
+
+  EXPECT_TRUE(ngpFieldNew.need_sync_to_device());
+  EXPECT_FALSE(ngpFieldOld.need_sync_to_device());
+
+  get_bulk().update_field_data_states();
+
+  EXPECT_FALSE(ngpFieldNew.need_sync_to_device());
+  EXPECT_TRUE(ngpFieldOld.need_sync_to_device());
 }

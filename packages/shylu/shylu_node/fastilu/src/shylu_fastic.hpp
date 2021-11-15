@@ -56,7 +56,7 @@
 
 #include <assert.h>
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include "shylu_fastilu.hpp"
 
@@ -167,7 +167,7 @@ class FastICPrec
 
         void initialize()
         {
-            Kokkos::Impl::Timer timer;
+            Kokkos::Timer timer;
             //Here we have to allocate memory for L, U.
             if((level > 0) && (guessFlag != 0))
             {
@@ -755,7 +755,7 @@ class FastICPrec
 
         void compute()
         {
-            Kokkos::Impl::Timer timer;
+            Kokkos::Timer timer;
             if((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec->compute();
@@ -784,7 +784,7 @@ class FastICPrec
         void apply(ScalarArray &x, ScalarArray &y)
         {
 
-            Kokkos::Impl::Timer timer;
+            Kokkos::Timer timer;
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(nRows, xTemp, x);
             ExecSpace().fence();
             Kokkos::parallel_for(nRows, parCopyFunctor);

@@ -45,9 +45,9 @@
 # will return the directory of the calling file. If called within a
 # function or macro, this will return the directory containing the
 # caller.
-FUNCTION(GET_CURRENT_LIST_DIR output_variable)
-  IF(NOT DEFINED CMAKE_CURRENT_LIST_DIR)
-    GET_FILENAME_COMPONENT(CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
-  ENDIF()
-  SET(${output_variable} "${CMAKE_CURRENT_LIST_DIR}" PARENT_SCOPE)
-ENDFUNCTION()
+function(get_current_list_dir output_variable)
+  if(NOT DEFINED CMAKE_CURRENT_LIST_DIR)
+    get_filename_component(CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)
+  endif()
+  set(${output_variable} "${CMAKE_CURRENT_LIST_DIR}" PARENT_SCOPE)
+endfunction()

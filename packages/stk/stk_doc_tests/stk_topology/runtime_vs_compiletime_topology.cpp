@@ -32,8 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_topology/topology.hpp>
+#include "gtest/gtest.h"              // for Test, EXPECT_EQ, Message, SuiteApiResolver, TestInf...
+#include "stk_topology/topology.hpp"  // for topology, topology::HEX_8, topology::topology_type
 
 namespace {
 //-BEGIN

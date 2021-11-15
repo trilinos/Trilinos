@@ -39,7 +39,7 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Time.hpp"
 
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 // For vtune
 #include <sys/types.h>
@@ -244,7 +244,7 @@ do_time_fad(const size_t m, const size_t n, const size_t p, const size_t nloop,
   Kokkos::deep_copy(A, a);
   Kokkos::deep_copy(b, a);
 
-  Kokkos::Impl::Timer wall_clock;
+  Kokkos::Timer wall_clock;
   Perf perf;
 
   // Execute the kernel once to warm up
@@ -327,7 +327,7 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
   Kokkos::deep_copy(A, a);
   Kokkos::deep_copy(b, a);
 
-  Kokkos::Impl::Timer wall_clock;
+  Kokkos::Timer wall_clock;
   Perf perf;
 
 #if defined(SACADO_KOKKOS_USE_MEMORY_POOL)
@@ -388,7 +388,7 @@ do_time_val(const size_t m, const size_t n, const size_t nloop,
   Kokkos::deep_copy(A, 1.0);
   Kokkos::deep_copy(b, 1.0);
 
-  Kokkos::Impl::Timer wall_clock;
+  Kokkos::Timer wall_clock;
   Perf perf;
 
   // Execute the kernel once to warm up

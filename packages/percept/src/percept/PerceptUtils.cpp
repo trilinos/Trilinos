@@ -189,7 +189,9 @@ void convert_stk_topology_to_ioss_name(
         const stk::topology stk_topo,
         std::string& ioss_topo)
 {
-    if      (stk_topo == stk::topology::LINE_2)
+    if      (stk_topo == stk::topology::NODE)
+      ioss_topo = "sphere";
+    else if (stk_topo == stk::topology::LINE_2)
       ioss_topo = "edge2";
     else if (stk_topo == stk::topology::LINE_3)
       ioss_topo = "edge3";

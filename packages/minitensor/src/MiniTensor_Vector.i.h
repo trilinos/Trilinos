@@ -39,6 +39,7 @@
 // ************************************************************************
 // @HEADER
 
+#include "Kokkos_ArithTraits.hpp"
 #if !defined(MiniTensor_Vector_i_h)
 #define MiniTensor_Vector_i_h
 
@@ -812,16 +813,16 @@ norm_infinity(Vector<T, N> const & u)
 
   default:
     for (Index i = 0; i < dimension; ++i) {
-      s = std::max(s, std::abs(u(i)));
+      s = max(minitensor::abs(u(i)), s);
     }
     break;
 
   case 3:
-    s = std::max(std::max(std::abs(u(0)), std::abs(u(1))), std::abs(u(2)));
+    s = max(max(minitensor::abs(u(0)), minitensor::abs(u(1))), minitensor::abs(u(2)));
     break;
 
   case 2:
-    s = std::max(std::abs(u(0)), std::abs(u(1)));
+    s = max(minitensor::abs(u(0)), minitensor::abs(u(1)));
     break;
   }
 
@@ -842,11 +843,8 @@ unit(Vector<T, N> const & u)
 //
 // Compute Householder vector
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Vector<T, N>, T>
-house(Vector<T, N> const & x)
-{
+template <typename T, Index N>
+std::pair<Vector<T, N>, T> house(Vector<T, N> const &x) {
   Vector<T, N>
   v = x;
 

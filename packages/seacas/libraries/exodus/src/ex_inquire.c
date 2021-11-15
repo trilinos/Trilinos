@@ -13,23 +13,24 @@
 static int ex__get_dimension_value(int exoid, int64_t *var, int default_value,
                                    const char *dimension_name, int missing_ok)
 {
-  int    status;
-  char   errmsg[MAX_ERR_LENGTH];
-  size_t idum;
-  int    dimid;
+  int status;
+  int dimid;
 
   if ((status = nc_inq_dimid(exoid, dimension_name, &dimid)) != NC_NOERR) {
     *var = default_value;
     if (missing_ok) {
       return (EX_NOERR);
     }
+    char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to retrieve dimension %s for file id %d",
              dimension_name, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     return (EX_FATAL);
   }
+  size_t idum;
   if ((status = nc_inq_dimlen(exoid, dimid, &idum)) != NC_NOERR) {
     *var = default_value;
+    char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to retrieve value for dimension %s for file id %d", dimension_name,
              exoid);
@@ -44,18 +45,14 @@ static int ex_get_concat_set_len(int exoid, int64_t *set_length, const char *set
                                  const char *set_num_dim, const char *set_stat_var,
                                  const char *set_size_root, int missing_ok)
 {
-  int    i;
-  int    status;
-  char   errmsg[MAX_ERR_LENGTH];
-  size_t idum;
-  int    dimid, varid;
-  size_t num_sets;
-  int *  stat_vals = NULL;
-
   *set_length = 0; /* default return value */
 
-  if ((status = nc_inq_dimid(exoid, set_num_dim, &dimid)) == NC_NOERR) {
+  int dimid;
+  if (nc_inq_dimid(exoid, set_num_dim, &dimid) == NC_NOERR) {
+    int    status;
+    size_t num_sets;
     if ((status = nc_inq_dimlen(exoid, dimid, &num_sets)) != NC_NOERR) {
+      char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s sets in file id %d",
                set_name, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -63,7 +60,9 @@ static int ex_get_concat_set_len(int exoid, int64_t *set_length, const char *set
     }
 
     /* Allocate space for stat array */
+    int *stat_vals = NULL;
     if (!(stat_vals = malloc((int)num_sets * sizeof(int)))) {
+      char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to allocate memory for %s set status "
                "array for file id %d",
@@ -73,11 +72,13 @@ static int ex_get_concat_set_len(int exoid, int64_t *set_length, const char *set
     }
 
     /* get variable id of status array */
-    if ((status = nc_inq_varid(exoid, set_stat_var, &varid)) == NC_NOERR) {
+    int varid;
+    if (nc_inq_varid(exoid, set_stat_var, &varid) == NC_NOERR) {
       /* if status array exists, use it, otherwise assume, object exists
          to be backward compatible */
       if ((status = nc_get_var_int(exoid, varid, stat_vals)) != NC_NOERR) {
         free(stat_vals);
+        char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s set status array from file id %d",
                  set_name, exoid);
         ex_err_fn(exoid, __func__, errmsg, status);
@@ -85,17 +86,18 @@ static int ex_get_concat_set_len(int exoid, int64_t *set_length, const char *set
       }
     }
     else { /* default: status is true */
-      for (i = 0; i < num_sets; i++) {
+      for (int i = 0; i < num_sets; i++) {
         stat_vals[i] = 1;
       }
     }
 
-    for (i = 0; i < num_sets; i++) {
+    for (int i = 0; i < num_sets; i++) {
       if (stat_vals[i] == 0) { /* is this object null? */
         continue;
       }
 
-      if ((status = nc_inq_dimid(exoid, ex__catstr(set_size_root, i + 1), &dimid)) != NC_NOERR) {
+      size_t idum;
+      if (nc_inq_dimid(exoid, ex__catstr(set_size_root, i + 1), &dimid) != NC_NOERR) {
         if (missing_ok) {
           idum = 0;
         }
@@ -106,7 +108,7 @@ static int ex_get_concat_set_len(int exoid, int64_t *set_length, const char *set
         }
       }
       else {
-        if ((status = nc_inq_dimlen(exoid, dimid, &idum)) != NC_NOERR) {
+        if (nc_inq_dimlen(exoid, dimid, &idum) != NC_NOERR) {
           *set_length = 0;
           free(stat_vals);
           return (EX_FATAL);
@@ -127,16 +129,13 @@ static void flt_cvt(float *xptr, double x) { *xptr = (float)x; }
 static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float *ret_float,
                                char *ret_char)
 {
-  int       dimid, varid, rootid;
-  void_int *ids = NULL;
-  size_t    i;
-  size_t    ldum = 0;
-  size_t    num_sets, idum;
-  int *     stat_vals;
-  char      errmsg[MAX_ERR_LENGTH];
-  int       status;
-  char      tmp_title[2048];
-  int       num_var;
+  int    dimid, varid;
+  size_t ldum = 0;
+  size_t num_sets, idum;
+  int *  stat_vals;
+  char   errmsg[MAX_ERR_LENGTH];
+  int    status;
+  int    num_var;
 
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
     return (EX_FATAL);
@@ -151,7 +150,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
     return (EX_FATAL);
   }
 
-  rootid = exoid & EX_FILE_ID_MASK;
+  int rootid = exoid & EX_FILE_ID_MASK;
 
   switch (req_info) {
   case EX_INQ_FILE_TYPE:
@@ -296,6 +295,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
     else {
       /* returns the title of the database */
       /* Title is stored at root level... */
+      char tmp_title[2048];
       if ((status = nc_get_att_text(rootid, NC_GLOBAL, ATT_TITLE, tmp_title)) != NC_NOERR) {
         *ret_char = '\0';
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get database title for file id %d",
@@ -407,7 +407,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
         return (EX_FATAL);
       }
 
-      for (i = 0; i < num_sets; i++) {
+      for (size_t i = 0; i < num_sets; i++) {
         if ((status = nc_inq_varid(exoid, VAR_FACT_NS(i + 1), &varid)) != NC_NOERR) {
           if (status == NC_ENOTVAR) {
             idum = 0; /* this dist factor doesn't exist */
@@ -470,6 +470,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
         return (EX_FATAL);
       }
 
+      int *ids = NULL;
       if (!(ids = malloc(num_sets * sizeof(int64_t)))) { /* May be getting 2x what is
                                                             needed, but should be OK */
         snprintf(errmsg, MAX_ERR_LENGTH,
@@ -510,14 +511,14 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
         }
       }
       else { /* default: status is true */
-        for (i = 0; i < num_sets; i++) {
+        for (size_t i = 0; i < num_sets; i++) {
           stat_vals[i] = 1;
         }
       }
 
       /* walk id list, get each side set node length and sum for total */
 
-      for (i = 0; i < num_sets; i++) {
+      for (size_t i = 0; i < num_sets; i++) {
         ex_entity_id id;
         if (stat_vals[i] == 0) { /* is this object null? */
           continue;
@@ -587,7 +588,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
         return (EX_FATAL);
       }
 
-      for (i = 0; i < num_sets; i++) {
+      for (size_t i = 0; i < num_sets; i++) {
         if ((status = nc_inq_dimid(exoid, DIM_NUM_DF_SS(i + 1), &dimid)) != NC_NOERR) {
           if (status == NC_EBADDIM) {
             ldum = 0; /* this dist factor doesn't exist */

@@ -172,8 +172,9 @@ void test_sincos_fsa(const bool use_combined_method,
                                 DxDp0, Teuchos::null, Teuchos::null);
     const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
     const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
-    const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver
-          = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer, false, false, sens_method));
+    const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver 
+          = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, 
+				  observer, false, false, sens_method));
     integrator->setObserver(tempusObserver);
 
     const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
@@ -189,6 +190,8 @@ void test_sincos_fsa(const bool use_combined_method,
     Thyra::MEB::OutArgs<double> outArgs = tempus_solver->createOutArgs();
     const int solutionResponseIndex = tempus_solver->Ng() - 1;
     const int parameterIndex = 0;
+    tempus_solver->resetSensitivityParamIndex(parameterIndex); 
+    tempus_solver->resetResponseFnIndex(solutionResponseIndex); 
     const Thyra::MEB::Derivative<double> dxdp_deriv =
         Thyra::create_DgDp_mv(*tempus_solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
     const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();

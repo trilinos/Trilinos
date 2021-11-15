@@ -45,7 +45,7 @@
 
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosKernels_TestParameters.hpp"
-
+#include "KokkosKernels_Sorting.hpp"
 
 #define TRANPOSEFIRST false
 #define TRANPOSESECOND false
@@ -69,24 +69,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
   size_t nentries2 = output_mat2.graph.entries.extent(0) ;
   size_t nvals2 = output_mat2.values.extent(0);
 
-
-  lno_nnz_view_t h_ent1 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries1);
-  scalar_view_t h_vals1 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals1);
-
-
-  KokkosKernels::Impl::kk_sort_graph<typename graph_t::row_map_type,
-    typename graph_t::entries_type,
-    typename crsMat_t::values_type,
-    lno_nnz_view_t,
-    scalar_view_t,
-    typename device::execution_space
-    >(
-    output_mat1.graph.row_map, output_mat1.graph.entries, output_mat1.values,
-    h_ent1, h_vals1
-  );
-
-  lno_nnz_view_t h_ent2 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries2);
-  scalar_view_t h_vals2 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals2);
+  KokkosKernels::sort_crs_matrix(output_mat1);
 
   if (nrows1 != nrows2) {
 	  std::cerr <<"row count is different" << std::endl;
@@ -101,17 +84,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
 	  return false;
   }
 
-  KokkosKernels::Impl::kk_sort_graph
-      <typename graph_t::row_map_type,
-      typename graph_t::entries_type,
-      typename crsMat_t::values_type,
-      lno_nnz_view_t,
-      scalar_view_t,
-      typename device::execution_space
-      >(
-      output_mat2.graph.row_map, output_mat2.graph.entries, output_mat2.values,
-      h_ent2, h_vals2
-    );
+  KokkosKernels::sort_crs_matrix(output_mat2);
 
   bool is_identical = true;
   is_identical = KokkosKernels::Impl::kk_is_identical_view
@@ -124,21 +97,23 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
-      typename device::execution_space>(h_ent1, h_ent2, 0 );
+      typename device::execution_space>(output_mat1.graph.entries, output_mat2.graph.entries, 0 );
   if (!is_identical) {
 	  for (size_t i = 0; i <  nrows1; ++i){
-		  size_t rb = output_mat1.graph.row_map[i];
-		  size_t re = output_mat1.graph.row_map[i + 1];
+		  size_t rb = output_mat1.graph.row_map(i);
+		  size_t re = output_mat1.graph.row_map(i + 1);
 		  bool incorrect =false;
 		  for (size_t j = rb; j <  re; ++j){
-			 if (h_ent1[j] != h_ent2[j]){
+			 if (output_mat1.graph.entries(j) != output_mat2.graph.entries(j)){
 				 incorrect = true;
 				 break;
 			 }
 		  }
 		  if (incorrect){
 			  for (size_t j = rb; j <  re; ++j){
-				 	 std::cerr << "row:" << i << " j:" << j <<   " h_ent1[j]:" << h_ent1[j]  << " h_ent2[j]:" << h_ent2[j] << " rb:" << rb << " re:" << re<< std::endl;
+                            std::cerr << "row:" << i << " j:" << j <<
+                              " h_ent1(j):" << output_mat1.graph.entries(j) << " h_ent2(j):" << output_mat2.graph.entries(j) <<
+                              " rb:" << rb << " re:" << re << std::endl;
 			  }
 		  }
 
@@ -149,7 +124,7 @@ bool is_same_matrix(crsMat_t output_mat1, crsMat_t output_mat2){
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <scalar_view_t, scalar_view_t, typename scalar_view_t::value_type,
-      typename device::execution_space>(h_vals1, h_vals2, 0.000001);
+      typename device::execution_space>(output_mat1.values, output_mat2.values, 0.000001);
   if (!is_identical) {
     std::cerr << "Incorret values" << std::endl;
   }
@@ -259,8 +234,8 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
 
 
     size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
-    entriesC_ref = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-    valuesC_ref =  scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    entriesC_ref = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+    valuesC_ref =  scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
 
     spgemm_numeric(
         &sequential_kh,
@@ -315,7 +290,7 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
     entriesC = lno_nnz_view_t ("entriesC (empty)", 0);
     valuesC = scalar_view_t ("valuesC (empty)", 0);
 
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
     spgemm_symbolic (
         &kh,
         m,
@@ -333,12 +308,12 @@ crsMat_t3 run_experiment(crsMat_t crsMat, crsMat_t2 crsMat2, Parameters params)
     ExecSpace().fence();
     double symbolic_time = timer1.seconds();
 
-    Kokkos::Impl::Timer timer3;
+    Kokkos::Timer timer3;
     size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (verbose)  std::cout << "C SIZE:" << c_nnz_size << std::endl;
     if (c_nnz_size){
-      entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+      entriesC = lno_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+      valuesC = scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
     }
     spgemm_numeric(
         &kh,

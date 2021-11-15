@@ -1,4 +1,4 @@
-TRIBITS_PACKAGE(Addon1)
-ADD_SUBDIRECTORY(src)
-TRIBITS_ADD_TEST_DIRECTORIES(tests)
-TRIBITS_PACKAGE_POSTPROCESS()
+tribits_package(Addon1)
+add_subdirectory(src)
+tribits_add_test_directories(tests)
+tribits_package_postprocess()

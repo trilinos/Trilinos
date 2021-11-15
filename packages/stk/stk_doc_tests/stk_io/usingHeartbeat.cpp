@@ -100,7 +100,7 @@ namespace
 	//+ Tell heartbeat which variables to output at each step...
 	//+ NOTE: The address of the value to be output is needed since the
 	//+       value is output in the process_heartbeat_output call.
-	stkIo.add_heartbeat_global(hb,paramName, &param.value, param.type);
+	stkIo.add_heartbeat_global(hb,paramName, param);
       }/*@\label{io:hb:end_add}*/
 
       // Application's "Execution Loop"

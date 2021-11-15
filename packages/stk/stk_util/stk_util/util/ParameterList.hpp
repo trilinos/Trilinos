@@ -35,15 +35,10 @@
 #ifndef PARAMETERLIST_HPP
 #define PARAMETERLIST_HPP
 
-#include "stk_util/stk_config.h"  // for STK_HAVE_BOOST
+#include "stk_util/stk_config.h"
 
-#ifdef STK_HAVE_BOOST
-#include "boost/any.hpp"          // for any, any_cast
-#define STK_ANY_NAMESPACE boost
-#else
 #include "Teuchos_any.hpp"
 #define STK_ANY_NAMESPACE Teuchos
-#endif
 
 #include <cstdint>                // for int64_t
 #include <iostream>               // for operator<<, basic_ostream, ostream, cerr
@@ -128,6 +123,18 @@ struct Parameter{
       toResultsFile(false),
       toRestartFile(false)
   {}
+
+  template<typename T>
+  T get_value() const
+  {
+    if (type == ParameterType::get_type(T())) {
+      return STK_ANY_NAMESPACE::any_cast<T>(value);
+    } else {
+      std::cerr << "ERROR: Parameter has an incorrect type specified for the get_value"
+                << " template type.\n";
+    }
+    return T();
+  }
 };
 
 typedef std::map<const std::string, Parameter> ParameterMapType;
@@ -177,14 +184,7 @@ public:
   template <typename T> T get_value (const std::string name)
   {
     Parameter p = get_param(name);
-    if (p.type == ParameterType::get_type(T())) {
-      return STK_ANY_NAMESPACE::any_cast<T>(p.value);
-    } else {
-      std::cerr << "ERROR: Parameter named '" << name
-                << "' has an incorrect type specified for the get_value"
-                << " template type.\n";
-    }
-    return T();
+    return p.get_value<T>();
   }
 
   void write_parameter_list(std::ostream & stream);

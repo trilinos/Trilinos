@@ -271,19 +271,23 @@ namespace panzer {
     bool is_uniform_;
 
     // Only valid for uniform reference space
-    PHX::MDField<Scalar,IP,Dim>           cubature_points_uniform_ref_;
+    PHX::MDField<const Scalar,IP,Dim>           cubature_points_uniform_ref_;
 
     // For non-uniform reference space
-    PHX::MDField<Scalar,Cell,IP,Dim>      cubature_points_ref_;
+    PHX::MDField<const Scalar,Cell,IP,Dim>      cubature_points_ref_;
 
     // Geometry objects that represent cubature/point values
-    PHX::MDField<Scalar,Cell,IP,Dim,Dim>  cubature_jacobian_;
-    PHX::MDField<Scalar,Cell,IP>          cubature_jacobian_determinant_;
-    PHX::MDField<Scalar,Cell,IP,Dim,Dim>  cubature_jacobian_inverse_;
-    PHX::MDField<Scalar,Cell,IP>          cubature_weights_;
+    PHX::MDField<const Scalar,Cell,IP,Dim,Dim>  cubature_jacobian_;
+    PHX::MDField<const Scalar,Cell,IP>          cubature_jacobian_determinant_;
+    PHX::MDField<const Scalar,Cell,IP,Dim,Dim>  cubature_jacobian_inverse_;
+    PHX::MDField<const Scalar,Cell,IP>          cubature_weights_;
 
-    PHX::MDField<Scalar,Cell,NODE,Dim> cell_vertex_coordinates_;
+    PHX::MDField<const Scalar,Cell,NODE,Dim> cell_vertex_coordinates_;
 
+    // Number of cells to apply orientations to (required in situations where virtual cells exist)
+    int num_orientations_cells_;
+
+    // Orientations object
     Teuchos::RCP<const OrientationsInterface>   orientations_;
 
     /// Used to check if arrays have been cached
@@ -325,10 +329,10 @@ namespace panzer {
      */
     void
     setup(const Teuchos::RCP<const panzer::BasisIRLayout> & basis,
-          PHX::MDField<Scalar, Cell, IP, Dim>               reference_points,
-          PHX::MDField<Scalar, Cell, IP, Dim, Dim>          point_jacobian,
-          PHX::MDField<Scalar, Cell, IP>                    point_jacobian_determinant,
-          PHX::MDField<Scalar, Cell, IP, Dim, Dim>          point_jacobian_inverse,
+          PHX::MDField<const Scalar, Cell, IP, Dim>         reference_points,
+          PHX::MDField<const Scalar, Cell, IP, Dim, Dim>    point_jacobian,
+          PHX::MDField<const Scalar, Cell, IP>              point_jacobian_determinant,
+          PHX::MDField<const Scalar, Cell, IP, Dim, Dim>    point_jacobian_inverse,
           const int                                         num_evaluated_cells = -1);
 
     /**
@@ -346,19 +350,20 @@ namespace panzer {
      */
     void
     setupUniform(const Teuchos::RCP<const panzer::BasisIRLayout> & basis,
-                 PHX::MDField<Scalar, IP, Dim>                     reference_points,
-                 PHX::MDField<Scalar, Cell, IP, Dim, Dim>          point_jacobian,
-                 PHX::MDField<Scalar, Cell, IP>                    point_jacobian_determinant,
-                 PHX::MDField<Scalar, Cell, IP, Dim, Dim>          point_jacobian_inverse,
+                 PHX::MDField<const Scalar, IP, Dim>               reference_points,
+                 PHX::MDField<const Scalar, Cell, IP, Dim, Dim>    point_jacobian,
+                 PHX::MDField<const Scalar, Cell, IP>              point_jacobian_determinant,
+                 PHX::MDField<const Scalar, Cell, IP, Dim, Dim>    point_jacobian_inverse,
                  const int                                         num_evaluated_cells = -1);
 
     /// Set the orientations object for applying orientations using the lazy evaluation path - required for certain bases
     void
-    setOrientations(const Teuchos::RCP<const OrientationsInterface> & orientations);
+    setOrientations(const Teuchos::RCP<const OrientationsInterface> & orientations,
+                    const int num_orientations_cells = -1);
 
     /// Set the cubature weights (weighted measure) for the basis values object - required to get weighted basis objects
     void
-    setWeightedMeasure(PHX::MDField<Scalar, Cell, IP> weighted_measure);
+    setWeightedMeasure(PHX::MDField<const Scalar, Cell, IP> weighted_measure);
 
     /// Set the cell vertex coordinates (required for getBasisCoordinates())
     void

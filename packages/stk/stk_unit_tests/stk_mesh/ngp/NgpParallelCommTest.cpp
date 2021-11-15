@@ -4,7 +4,7 @@
 #include "Kokkos_Core.hpp"
 #include <Kokkos_StaticCrsGraph.hpp>
 #include "stk_mesh/base/NgpParallelComm.hpp"
-#include "stk_mesh/base/NgpSpaces.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 
 namespace  {
 
@@ -16,23 +16,23 @@ protected:
   }
 };
 
-using NeighborCrsViewType = Kokkos::StaticCrsGraph<int, stk::mesh::MemSpace>;
-using ValueViewType = Kokkos::View<double*, stk::mesh::MemSpace>;
+using NeighborCrsViewType = Kokkos::StaticCrsGraph<int, stk::ngp::MemSpace>;
+using ValueViewType = Kokkos::View<double*, stk::ngp::MemSpace>;
 
 class ParallelDataExchangeSymPackUnpackHandler
 {
 public:
-  ParallelDataExchangeSymPackUnpackHandler(std::vector<std::vector<int>> & neighbors,
-                                           ValueViewType & deviceValues)
+  ParallelDataExchangeSymPackUnpackHandler(std::vector<std::vector<int>>& neighbors,
+                                           ValueViewType& deviceValues)
     : m_neighbors(neighbors),
       m_deviceNeighbors(Kokkos::create_staticcrsgraph<NeighborCrsViewType>("DeviceNeighborsCrs", neighbors)),
       m_deviceValues(deviceValues)
   {
   }
 
-  ParallelDataExchangeSymPackUnpackHandler(const ParallelDataExchangeSymPackUnpackHandler & rhs) = default;
+  ParallelDataExchangeSymPackUnpackHandler(const ParallelDataExchangeSymPackUnpackHandler& rhs) = default;
 
-  void hostSizeMessages(int proc, size_t & numValues) const
+  void hostSizeMessages(int proc, size_t& numValues) const
   {
     numValues = 0;
     for (size_t i = 0; i < m_neighbors.size(); ++i) {
@@ -45,7 +45,7 @@ public:
   }
 
   STK_FUNCTION
-  void devicePackMessage(int myProc, int proc, ValueViewType & sendData) const
+  void devicePackMessage(int myProc, int proc, ValueViewType& sendData) const
   {
     size_t bufIdx = 0;
     for (size_t i = 0; i < m_deviceNeighbors.numRows(); ++i) {
@@ -60,7 +60,7 @@ public:
   }
 
   STK_FUNCTION
-  void deviceUnpackMessage(int myProc, int proc, ValueViewType & recvData) const
+  void deviceUnpackMessage(int myProc, int proc, ValueViewType& recvData) const
   {
     size_t valueLocation[3];
     size_t valueLocationIdx = 0;
@@ -97,7 +97,7 @@ public:
   }
 
 private:
-  std::vector<std::vector<int>> m_neighbors;
+  std::vector<std::vector<int>>& m_neighbors;
   NeighborCrsViewType m_deviceNeighbors;
   ValueViewType m_deviceValues;
 };
@@ -197,7 +197,7 @@ std::vector<std::vector<int>> get_neighbors(int pSize, int pRank)
   return neighbors;
 }
 
-NGP_TEST_F(NgpParallelComm, DISABLED_symmetricPackUnpack)
+NGP_TEST_F(NgpParallelComm, symmetricPackUnpack)
 {
   const int pSize = stk::parallel_machine_size(MPI_COMM_WORLD);
   const int pRank = stk::parallel_machine_rank(MPI_COMM_WORLD);

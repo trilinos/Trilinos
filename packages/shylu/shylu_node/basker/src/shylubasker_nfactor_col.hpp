@@ -15,7 +15,7 @@
 
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #endif 
 
 #ifdef BASKER_DEBUG
@@ -155,7 +155,7 @@ namespace BaskerNS
         BASKER_BOOL sep_lvl_flg = BASKER_FALSE;
 
         #ifdef BASKER_DEBUG_TIME
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
         #endif
 
         //-----------Upper Col Factor------------//

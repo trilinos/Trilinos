@@ -50,7 +50,7 @@
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 
 // Include the actual functors
-#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY 
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosBlas1_sum_impl.hpp>
 #endif
 
@@ -74,7 +74,7 @@ struct sum_eti_spec_avail {
 #define KOKKOSBLAS1_SUM_ETI_SPEC_AVAIL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
     template<> \
     struct sum_eti_spec_avail< \
-        Kokkos::View<SCALAR, Kokkos::LayoutLeft, Kokkos::HostSpace, \
+        Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -91,8 +91,7 @@ struct sum_eti_spec_avail {
     template<> \
     struct sum_eti_spec_avail< \
         Kokkos::View<SCALAR*, \
-                     typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
-                                               Kokkos::LayoutLeft, LAYOUT>::type, \
+                     LAYOUT, \
                      Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -205,7 +204,7 @@ struct Sum<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 //
 #define KOKKOSBLAS1_SUM_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 extern template struct Sum< \
-         Kokkos::View<SCALAR, Kokkos::LayoutLeft, Kokkos::HostSpace, \
+         Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -218,7 +217,7 @@ extern template struct Sum< \
 //
 #define KOKKOSBLAS1_SUM_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template struct Sum< \
-         Kokkos::View<SCALAR, Kokkos::LayoutLeft, Kokkos::HostSpace, \
+         Kokkos::View<SCALAR, LAYOUT, Kokkos::HostSpace, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -234,8 +233,7 @@ template struct Sum< \
 #define KOKKOSBLAS1_SUM_MV_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 extern template struct Sum< \
          Kokkos::View<SCALAR*, \
-                      typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
-                                                Kokkos::LayoutLeft, LAYOUT>::type, \
+                      LAYOUT, \
                       Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -250,8 +248,7 @@ extern template struct Sum< \
 #define KOKKOSBLAS1_SUM_MV_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template struct Sum< \
          Kokkos::View<SCALAR*, \
-                      typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
-                                                Kokkos::LayoutLeft, LAYOUT>::type, \
+                      LAYOUT, \
                       Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \

@@ -193,7 +193,7 @@ bool impl::Heartbeat::has_global(const std::string &name)
     return m_region->field_exists(name);
 }
 
-void impl::Heartbeat::define_global_ref(const std::string &name,
+void impl::Heartbeat::internal_define_global_ref(const std::string &name,
                                         const STK_ANY_NAMESPACE::any *value,
                                         stk::util::ParameterType::Type type,
                                         int copies,
@@ -211,9 +211,16 @@ void impl::Heartbeat::define_global_ref(const std::string &name,
     }
 }
 
+void impl::Heartbeat::define_global_ref(const std::string &name,
+                                        const stk::util::Parameter &param,
+                                        int copies,
+                                        Ioss::Field::RoleType role)
+{
+  internal_define_global_ref(name, &param.value, param.type, copies, role);
+}
+
 void impl::Heartbeat::add_global_ref(const std::string &name,
-                                     const STK_ANY_NAMESPACE::any *value,
-                                     stk::util::ParameterType::Type type,
+                                     const stk::util::Parameter &param,
                                      int copies,
                                      Ioss::Field::RoleType role)
 {
@@ -227,11 +234,11 @@ void impl::Heartbeat::add_global_ref(const std::string &name,
             m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
         }
 
-        define_global_ref(name, value, type, copies, role);
+        internal_define_global_ref(name, &param.value, param.type, copies, role);
     }
 }
 
-void impl::Heartbeat::define_global_ref(const std::string &name,
+void impl::Heartbeat::internal_define_global_ref(const std::string &name,
                                         const STK_ANY_NAMESPACE::any *value,
                                         const std::string &storage,
                                         Ioss::Field::BasicType dataType,
@@ -253,8 +260,18 @@ void impl::Heartbeat::define_global_ref(const std::string &name,
     }
 }
 
+void impl::Heartbeat::define_global_ref(const std::string &name,
+                                        const stk::util::Parameter &param,
+                                        const std::string &storage,
+                                        Ioss::Field::BasicType dataType,
+                                        int copies,
+                                        Ioss::Field::RoleType role)
+{
+  internal_define_global_ref(name, &param.value, storage, dataType, copies, role);
+}
+
 void impl::Heartbeat::add_global_ref(const std::string &name,
-                                     const STK_ANY_NAMESPACE::any *value,
+                                     const stk::util::Parameter &param,
                                      const std::string &storage,
                                      Ioss::Field::BasicType dataType,
                                      int copies,
@@ -270,7 +287,7 @@ void impl::Heartbeat::add_global_ref(const std::string &name,
             m_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
         }
 
-        define_global_ref(name, value, storage, dataType, copies, role);
+        internal_define_global_ref(name, &param.value, storage, dataType, copies, role);
     }
 }
 

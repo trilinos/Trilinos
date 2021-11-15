@@ -152,6 +152,11 @@ int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws, int run
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
+#if defined NC_NOATTCREORD
+  /* Disable attribute creation order tracking if available... */
+  nc_mode |= NC_NOATTCREORD;
+#endif
+
   if ((status = nc_create(path, nc_mode, &exoid)) != NC_NOERR) {
 #if NC_HAS_HDF5
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", path);

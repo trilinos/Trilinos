@@ -38,54 +38,54 @@
 #include <Kokkos_Core.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 
 namespace stk {
 namespace mesh {
 
 template<typename T>
-STK_FUNCTION
+KOKKOS_FUNCTION
 T reduction_value_type_from_field_value(const T& i, const int, const T&) 
 {
   return i;
 }
 
 template<typename T>
-STK_FUNCTION
+KOKKOS_FUNCTION
 Kokkos::MinMaxScalar<T> reduction_value_type_from_field_value(const T& i, const unsigned, const Kokkos::MinMaxScalar<T>&)
 {
   return {i,i};
 }
 
 template<typename T>
-STK_FUNCTION
+KOKKOS_FUNCTION
 Kokkos::ValLocScalar<T, stk::mesh::EntityId> reduction_value_type_from_field_value(const T& i, const unsigned index, const Kokkos::ValLocScalar<T, stk::mesh::EntityId>&)
 {
   return {i,index};
 }
 
 template<typename T>
-STK_FUNCTION
+KOKKOS_FUNCTION
 Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId> reduction_value_type_from_field_value(const T& i, const unsigned index, const Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId>&)
 {
   return {i,i,index,index};
 }
 
 template<typename T, typename Mesh>
-STK_FUNCTION
+KOKKOS_FUNCTION
 void replace_loc_with_entity_id(T & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
 {
 }
 
 template<typename T, typename Mesh>
-STK_FUNCTION
+KOKKOS_FUNCTION
 void replace_loc_with_entity_id(Kokkos::ValLocScalar<T, stk::mesh::EntityId> & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
 {
   t.loc = mesh.identifier(bucket[t.loc]);
 }
 
 template<typename T, typename Mesh>
-STK_FUNCTION
+KOKKOS_FUNCTION
 void replace_loc_with_entity_id(Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId> & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
 {
   t.min_loc = mesh.identifier(bucket[t.min_loc]);
@@ -94,7 +94,7 @@ void replace_loc_with_entity_id(Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId> 
 
 template<typename T>
 struct identity {
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   T operator()(const T t) const {
     return t;
   }
@@ -104,10 +104,10 @@ template<typename Mesh, typename Field, typename ReductionOp, typename Modifier 
 struct FieldAccessFunctor{
   using value_type = typename ReductionOp::value_type;
   using reduction_op = ReductionOp;
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FieldAccessFunctor(Field f, ReductionOp r, const int comp = -1) :
     field(f), bucket_id(0), reduction(r), fm(Modifier()), component(comp) {}
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   value_type operator()(const unsigned i, const unsigned j) const
   {
     const int comp_index = (component > -1) ? component : j;
@@ -116,14 +116,14 @@ struct FieldAccessFunctor{
     value_type input = reduction_value_type_from_field_value(value, i, reduction.reference());
     return input;
   }
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   stk::mesh::EntityRank get_rank() const { return field.get_rank(); }
-  STK_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   FieldAccessFunctor(const FieldAccessFunctor& rhs) = default;
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FieldAccessFunctor(const FieldAccessFunctor& rhs, unsigned b_id, ReductionOp r)
     : field(rhs.field), bucket_id(b_id), reduction(r), fm(Modifier()), component(rhs.component) {}
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   int num_components(const int i) const {
     if(component > -1) return 1;
     stk::mesh::FastMeshIndex f = {bucket_id, static_cast<unsigned>(i)};
@@ -142,21 +142,21 @@ struct ReductionTeamFunctor
 {
   using ReductionOp = typename Accessor::reduction_op;
   using value_type = typename ReductionOp::value_type;
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ReductionTeamFunctor(const Mesh m, stk::NgpVector<unsigned> b, Accessor a)
     : mesh(m), bucketIds(b), accessor(a) {}
 
-  using TeamHandleType = typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::mesh::ScheduleType>::member_type;
-  STK_FUNCTION
+  using TeamHandleType = typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type;
+  KOKKOS_FUNCTION
   void join(value_type& dest, const value_type& src) const {
     accessor.reduction.join(dest,src);
   }
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   void join(volatile value_type& dest, volatile const value_type& src) const {
     accessor.reduction.join(dest,src);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   void operator()(const TeamHandleType& team, value_type& update) const
   {
     const int bucketIndex = bucketIds.device_get(team.league_rank());

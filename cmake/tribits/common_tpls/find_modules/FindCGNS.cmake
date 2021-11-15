@@ -290,8 +290,8 @@ if ( NOT CGNS_FIND_QUIETLY )
   message(STATUS "\tCGNS_TOOLS_FOUND       = ${CGNS_TOOLS_FOUND}")
 
 endif()
-# For compatability with TriBITS:
-SET(DOCSTR "List of semi-colon separated paths to look for the TPL CGNS")
+# For compatibility with TriBITS:
+set(DOCSTR "List of semi-colon separated paths to look for the TPL CGNS")
 
 set(TPL_CGNS_LIBRARIES ${CGNS_LIBRARIES} CACHE PATH ${DOCSTR})
 set(TPL_CGNS_INCLUDE_DIRS ${CGNS_INCLUDE_DIRS} CACHE PATH ${DOCSTR})

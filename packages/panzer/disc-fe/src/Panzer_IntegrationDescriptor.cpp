@@ -66,7 +66,7 @@ IntegrationDescriptor::setup(const int cubature_order, const int integration_typ
   _cubature_order = cubature_order;
   _side = side;
 
-  if(_integration_type == SIDE or _integration_type == CV_BOUNDARY){
+  if((_integration_type == SIDE) or (_integration_type == CV_BOUNDARY)){
     TEUCHOS_ASSERT(side >= 0);
   } else {
     TEUCHOS_ASSERT(side == -1);

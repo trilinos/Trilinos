@@ -155,7 +155,7 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
-  RCP<crs_graph_type> crs_graph = rcp(new crs_graph_type(row_map, maxEntriesPerRow, Tpetra::StaticProfile));
+  RCP<crs_graph_type> crs_graph = rcp(new crs_graph_type(row_map, maxEntriesPerRow));
 
   // Using 4 because we're using quads for this example, so there will be 4 nodes associated with each element.
   Teuchos::Array<global_ordinal_type> global_ids_in_row(4);
@@ -435,7 +435,7 @@ executeTotalElementLoopSPKokkos_
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
-  RCP<crs_graph_type> crs_graph = rcp(new crs_graph_type(row_map, maxEntriesPerRow, Tpetra::StaticProfile));
+  RCP<crs_graph_type> crs_graph = rcp(new crs_graph_type(row_map, maxEntriesPerRow));
 
   // Using 4 because we're using quads for this example, so there will be 4 nodes associated with each element.
   Teuchos::Array<global_ordinal_type> global_ids_in_row(4);

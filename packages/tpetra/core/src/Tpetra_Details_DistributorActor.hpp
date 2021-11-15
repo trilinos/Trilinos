@@ -517,7 +517,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   const int myProcID = plan.getComm()->getRank ();
   size_t selfReceiveOffset = 0;
 
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
   // Different messages may have different numbers of packets.
   size_t totalNumImportPackets = 0;
   for (size_type ii = 0; ii < numImportPacketsPerLID.size (); ++ii) {
@@ -529,7 +529,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
       "enough entries to hold the expected number of import packets.  "
       "imports.extent(0) = " << imports.extent (0) << " < "
       "totalNumImportPackets = " << totalNumImportPackets << ".");
-#endif // HAVE_TEUCHOS_DEBUG
+#endif // HAVE_TPETRA_DEBUG
 
   // MPI tag for nonblocking receives and blocking sends in this
   // method.  Some processes might take the "fast" path
@@ -539,12 +539,12 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   const int pathTag = 1;
   const int tag = plan.getTag(pathTag);
 
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION
     (requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
      "doPosts(4 args, Kokkos): Process " << myProcID << ": requests_.size () = "
      << requests_.size () << " != 0.");
-#endif // HAVE_TEUCHOS_DEBUG
+#endif // HAVE_TPETRA_DEBUG
   // Distributor uses requests_.size() as the number of outstanding
   // nonblocking message requests, so we resize to zero to maintain
   // this invariant.

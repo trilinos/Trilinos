@@ -372,8 +372,8 @@ size_t KokkosSPGEMM
 
   //size_t write_index = num_collapsed_triplets_per_thread[0];
 
-  entriesC_ = c_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC_"),overall_size);
-  valuesC_ = c_scalar_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC_"),overall_size);
+  entriesC_ = c_lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC_"),overall_size);
+  valuesC_ = c_scalar_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC_"),overall_size);
   rowmapC_(0) = 0;
   rowmapC_(this->a_row_cnt) = overall_size;
 #pragma omp parallel
@@ -605,10 +605,10 @@ void KokkosSPGEMM
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, this->concurrency , b_row_cnt);
 
   //step-1 tranpose the first matrix.
-  Kokkos::Impl::Timer timer1, timer_all;
+  Kokkos::Timer timer1, timer_all;
   row_lno_temp_work_view_t transpose_col_xadj ("transpose_col_xadj", b_row_cnt + 1);
-  nnz_lno_temp_work_view_t transpose_col_adj (Kokkos::ViewAllocateWithoutInitializing("transpose_col_adj"), entriesA.extent(0));
-  scalar_temp_work_view_t tranpose_vals (Kokkos::ViewAllocateWithoutInitializing("transpose_col_values"), entriesA.extent(0));
+  nnz_lno_temp_work_view_t transpose_col_adj (Kokkos::view_alloc(Kokkos::WithoutInitializing, "transpose_col_adj"), entriesA.extent(0));
+  scalar_temp_work_view_t tranpose_vals (Kokkos::view_alloc(Kokkos::WithoutInitializing, "transpose_col_values"), entriesA.extent(0));
 
   KokkosKernels::Impl::transpose_matrix
   <const_a_lno_row_view_t, const_a_lno_nnz_view_t, const_a_scalar_nnz_view_t,
@@ -637,7 +637,7 @@ void KokkosSPGEMM
   ////////////////////////////////////////
   timer1.reset();
   typedef Kokkos::View <size_t *,  mySlowMemory> size_t_view_t;
-  size_t_view_t flop_per_row (Kokkos::ViewAllocateWithoutInitializing("flops per row"), b_row_cnt);
+  size_t_view_t flop_per_row (Kokkos::view_alloc(Kokkos::WithoutInitializing, "flops per row"), b_row_cnt);
   FlopsPerRowOuter<
   row_lno_temp_work_view_t,
   const_b_lno_row_view_t,
@@ -699,12 +699,12 @@ void KokkosSPGEMM
   timer1.reset();
   typedef Kokkos::View <Triplet *,  myFastMemory> fast_triplet_view_t;
   fast_triplet_view_t fast_memory_triplets (
-      //Kokkos::ViewAllocateWithoutInitializing(
+      //Kokkos::view_alloc(Kokkos::WithoutInitializing, 
       "triplets"
       //    )
       , block_size);
   fast_triplet_view_t collapsed_fast_memory_triplets (
-      //Kokkos::ViewAllocateWithoutInitializing(
+      //Kokkos::view_alloc(Kokkos::WithoutInitializing, 
       "triplets"
       //    )
       , block_size);
@@ -804,7 +804,7 @@ void KokkosSPGEMM
     ////////////////////////////////////////
     timer1.reset();
 
-    host_triplet_arrays[bi] = slow_triplet_view_t(Kokkos::ViewAllocateWithoutInitializing("thv"), outsize);
+    host_triplet_arrays[bi] = slow_triplet_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "thv"), outsize);
     KokkosKernels::Impl::kk_copy_vector
     <fast_triplet_view_t, slow_triplet_view_t, MyExecSpace>(
         outsize,collapsed_fast_memory_triplets, host_triplet_arrays[bi]);
@@ -879,10 +879,10 @@ void KokkosSPGEMM
 <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
 b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
 KokkosSPGEMM_numeric_outer(
-    c_row_view_t &rowmapC_,
-    c_lno_nnz_view_t &entriesC_,
-    c_scalar_nnz_view_t &valuesC_,
-    KokkosKernels::Impl::ExecSpaceType my_exec_space_){
+    c_row_view_t & /*rowmapC_*/,
+    c_lno_nnz_view_t & /*entriesC_*/,
+    c_scalar_nnz_view_t & /*valuesC_*/,
+    KokkosKernels::Impl::ExecSpaceType /*my_exec_space_*/){
   throw std::runtime_error ("Cannot run outer product. ENABLE openmp and outer product to run\n");
 }
 #endif
@@ -896,10 +896,10 @@ void KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
     b_lno_row_view_t_, b_lno_nnz_view_t_, b_scalar_nnz_view_t_>::
     KokkosSPGEMM_numeric_outer(
-    c_row_view_t &rowmapC_,
-    c_lno_nnz_view_t &entriesC_,
-    c_scalar_nnz_view_t &valuesC_,
-    KokkosKernels::Impl::ExecSpaceType my_exec_space_){
+    c_row_view_t &/*rowmapC_*/,
+    c_lno_nnz_view_t &/*entriesC_*/,
+    c_scalar_nnz_view_t &/*valuesC_*/,
+    KokkosKernels::Impl::ExecSpaceType /*my_exec_space_*/){
   throw std::runtime_error ("Cannot run outer product. ENABLE openmp and outer product to run\n");
 }
 #endif

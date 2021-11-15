@@ -39,20 +39,20 @@
 
 
 #
-# @MACRO: DUAL_SCOPE_SET()
+# @MACRO: dual_scope_set()
 #
 # Macro that sets a variable name both in the current scope and the
 # parent scope.
 #
 # Usage::
 #
-#    DUAL_SCOPE_SET(<varName> [other args])
+#    dual_scope_set(<varName> [other args])
 #
-# It turns out that when one calls ``ADD_SUBDIRECTORY(<someDir>)`` or enters a
+# It turns out that when one calls ``add_subdirectory(<someDir>)`` or enters a
 # ``FUNCTION`` that CMake actually creates a copy of all of the regular
 # non-cache variables in the current scope in order to create a new set of
 # variables for the ``CMakeLists.txt`` file in ``<someDir>``.  This means that
-# if you call ``SET(SOMEVAR Blah PARENT_SCOPE)`` that it will not affect the
+# if you call ``set(SOMEVAR Blah PARENT_SCOPE)`` that it will not affect the
 # value of ``SOMEVAR`` in the current scope!  This macro therefore is designed
 # to set the value of the variable in the current scope and the parent scope
 # in one shot to avoid confusion.
@@ -61,11 +61,11 @@
 # ``CMakeLists.txt`` file or enters a ``FUNCTION``, then a local copy of the
 # variable is *not* created.  If one sets the variable locally, it will shadow
 # the global variable.  However, if one sets the global cache value with
-# ``SET(SOMEVAR someValue CACHE INTERNAL "")``, then the value will get
+# ``set(SOMEVAR someValue CACHE INTERNAL "")``, then the value will get
 # changed in the current subordinate scope and in all parent scopes all in one
 # shot!
 #
-MACRO(DUAL_SCOPE_SET VARNAME)
-  SET(${VARNAME} ${ARGN} PARENT_SCOPE)
-  SET(${VARNAME} ${ARGN})
-ENDMACRO()
+macro(dual_scope_set VARNAME)
+  set(${VARNAME} ${ARGN} PARENT_SCOPE)
+  set(${VARNAME} ${ARGN})
+endmacro()

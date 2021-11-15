@@ -44,31 +44,6 @@
 namespace stk {
 namespace mesh {
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after April 2021 and delete this header after trilinos/percept is updated
-
-STK_DEPRECATED relation_stencil_ptr get_element_node_stencil(size_t spatial_dimension);
-
-template<class TopologyTraits, EntityRank element_rank >
-STK_DEPRECATED int element_node_stencil( EntityRank , EntityRank , unsigned );
-
-
-template<class TopologyTraits, EntityRank element_rank >
-STK_DEPRECATED int element_node_stencil( EntityRank from_type , EntityRank to_type , unsigned identifier )
-{
-  enum { number_node = TopologyTraits::node_count };
-
-  int ordinal = -1 ;
-
-  if ( element_rank == from_type &&
-       stk::topology::NODE_RANK == to_type &&
-       identifier < number_node ) {
-    ordinal = static_cast<int>(identifier);
-  }
-
-  return ordinal ;
-}
-
-#endif // STK_HIDE_DEPRECATED_CODE
 
 } // namespace mesh
 } // namespace stk

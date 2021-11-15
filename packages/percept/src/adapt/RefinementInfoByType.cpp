@@ -283,16 +283,15 @@
               //const percept::MyPairIterRelation elem_nodes (m_eMesh, element, stk::topology::NODE_RANK);
               if (num_elem_marked)
                 {
-                  for (unsigned irank=1; irank <= ((unsigned)rank); ++irank)
+                  for (stk::mesh::EntityRank irank=stk::topology::EDGE_RANK; irank <= rank; ++irank)
                     {
                       unsigned numSubDimNeededEntities = 0;
-                      stk::mesh::EntityRank crank =  (stk::mesh::EntityRank)irank;
 
-                      if (irank == (unsigned)eMesh.edge_rank())
+                      if (irank == eMesh.edge_rank())
                         {
                           numSubDimNeededEntities = cell_topo_data->edge_count;
                         }
-                      else if (irank == (unsigned)eMesh.side_rank())
+                      else if (irank == eMesh.side_rank())
                         {
                           numSubDimNeededEntities = cell_topo_data->side_count;
                         }
@@ -303,7 +302,7 @@
 
                       for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
                         {
-                          NodeIdsOnSubDimEntityType* nodeIds_onSE_ptr = nodeRegistry.getNewNodesOnSubDimEntity(element, crank, iSubDimOrd);
+                          NodeIdsOnSubDimEntityType* nodeIds_onSE_ptr = nodeRegistry.getNewNodesOnSubDimEntity(element, irank, iSubDimOrd);
                           if (nodeIds_onSE_ptr == 0)
                             {
                               continue;

@@ -50,7 +50,7 @@
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 
 // Include the actual functors
-#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY 
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #include <KokkosBlas1_nrm1_impl.hpp>
 #endif
 
@@ -91,8 +91,7 @@ struct nrm1_eti_spec_avail {
     template<> \
     struct nrm1_eti_spec_avail< \
         Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
-                     typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
-                                               Kokkos::LayoutLeft, LAYOUT>::type, \
+                     LAYOUT, \
                      Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
         Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -235,8 +234,7 @@ template struct Nrm1< \
 #define KOKKOSBLAS1_NRM1_MV_ETI_SPEC_DECL( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 extern template struct Nrm1< \
          Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
-                      typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
-                                                Kokkos::LayoutLeft, LAYOUT>::type, \
+                      LAYOUT, \
                       Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR*, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
@@ -251,8 +249,7 @@ extern template struct Nrm1< \
 #define KOKKOSBLAS1_NRM1_MV_ETI_SPEC_INST( SCALAR, LAYOUT, EXEC_SPACE, MEM_SPACE ) \
 template struct Nrm1< \
          Kokkos::View<typename Kokkos::Details::InnerProductSpaceTraits<SCALAR>::mag_type*, \
-                      typename std::conditional<std::is_same<LAYOUT,Kokkos::LayoutRight>::value, \
-                                                Kokkos::LayoutLeft, LAYOUT>::type, \
+                      LAYOUT, \
                       Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
          Kokkos::View<const SCALAR**, LAYOUT, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \

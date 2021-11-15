@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -28,9 +28,6 @@
 #include <iostream>
 #include <pthread.h>
 #include <string>
-#ifndef _MSC_VER
-#include <sys/times.h>
-#endif
 #include <unistd.h>
 #include <vector>
 
@@ -51,13 +48,6 @@
 // ========================================================================
 
 namespace {
-  struct my_numpunct : std::numpunct<char>
-  {
-  protected:
-    char        do_thousands_sep() const { return ','; }
-    std::string do_grouping() const { return "\3"; }
-  };
-
   int  rank      = 0;
   bool mem_stats = false;
 
@@ -127,8 +117,6 @@ int main(int argc, char *argv[])
   ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
-  std::cerr.imbue(std::locale(std::locale(), new my_numpunct));
-
 #ifdef SEACAS_HAVE_KOKKOS
   Kokkos::ScopeGuard kokkos(argc, argv);
 #endif
@@ -168,11 +156,11 @@ int main(int argc, char *argv[])
 
   if (rank == 0 && !interFace.quiet) {
     if (num_proc > 1) {
-      fmt::print(stderr, "\n\n\tTotal Execution time = {:.5} seconds on {} processors.\n",
+      fmt::print(stderr, "\n\n\tTotal Execution Time = {:.5} seconds on {} processors.\n",
                  end - begin, num_proc);
     }
     else {
-      fmt::print(stderr, "\n\n\tTotal Execution time = {:.5} seconds.\n", end - begin);
+      fmt::print(stderr, "\n\n\tTotal Execution Time = {:.5} seconds.\n", end - begin);
     }
   }
 
@@ -822,8 +810,7 @@ namespace {
 
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const auto &fss         = region.get_sidesets();
-    size_t      total_sides = 0;
+    const auto &fss = region.get_sidesets();
     for (const auto &ss : fss) {
       const std::string &name = ss->name();
       if (debug) {
@@ -846,8 +833,7 @@ namespace {
       }
     }
     if (!debug) {
-      DO_OUTPUT << " Number of        SideSets            =" << std::setw(12) << fss.size() << "\t"
-                << "Number of element sides =" << std::setw(12) << total_sides << "\n";
+      DO_OUTPUT << " Number of        SideSets            =" << std::setw(12) << fss.size() << "\n";
     }
     else {
       DO_OUTPUT << '\n';

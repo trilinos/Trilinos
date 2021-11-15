@@ -78,7 +78,7 @@ cmake \
 -DTpetra_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DTrilinos_ENABLE_KokkosKernels:BOOL=ON \
 -DTrilinos_ENABLE_Zoltan:BOOL=ON \
--DTrilinos_ENABLE_Fortran:BOOL=OFF \
+-DTrilinos_ENABLE_Fortran:BOOL=ON \
 -DCMAKE_CXX_FLAGS:STRING="-DNOT_HAVE_STK_SEACASAPREPRO_LIB -D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \

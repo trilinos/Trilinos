@@ -262,11 +262,11 @@ def getTestingDayDateFromBuildStartTimeStr(
 # To extract just the year, month and day from the returned datetime object as
 # a datetime object, use the function getDateOnlyFromDateTime().
 #
-# To extract the "<YYYY>-<MM>-<DD>" string from teh returned datetime object,
+# To extract the "<YYYY>-<MM>-<DD>" string from the returned datetime object,
 # use the function getDateStrFromDateTime().
 # 
 def getRelativeCDashBuildStartTime(
-  cdashBuildStartTimeUtc,   # CDash build start time in UTC (datetime objet)
+  cdashBuildStartTimeUtc,   # CDash build start time in UTC (datetime object)
   cdashProjectStartTimeUtc, # CDash start time in UTC (timedelta object)
   dayIncr,                  # Day increment in past or future (timedelta object)
   ):

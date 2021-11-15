@@ -310,7 +310,7 @@ namespace Tacho {
       stat_level.n_device_factorize = 0;   stat_level.n_device_solve = 0;
       stat_level.n_team_factorize= 0;      stat_level.n_team_solve = 0;
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
 
@@ -931,7 +931,7 @@ namespace Tacho {
     factorizeCholesky(const value_type_array &ax,
                       const ordinal_type verbose) {
       constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
       value_type_array work;
@@ -1505,7 +1505,7 @@ namespace Tacho {
 
       // solve U^{H} (U x) = b 
       const ordinal_type nrhs = x.extent(1);
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       stat_level.n_kernel_launching = 0;
 
@@ -1690,7 +1690,7 @@ namespace Tacho {
     factorizeLDL(const value_type_array &ax,
                  const ordinal_type verbose) {
       constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       
       timer.reset();
       value_type_array work;
@@ -1840,7 +1840,7 @@ namespace Tacho {
 
       // solve L D L^{H} x = b 
       const ordinal_type nrhs = x.extent(1);
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       stat_level.n_kernel_launching = 0;
 

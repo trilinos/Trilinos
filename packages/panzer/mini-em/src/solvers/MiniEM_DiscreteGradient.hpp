@@ -96,7 +96,7 @@ void addDiscreteGradientToRequestHandler(
     RCP<const map> domainmap = global_tloc->getMapForBlock(nBlockIndex);
     RCP<const map> rowmap    = global_tloc->getMapForBlock(eBlockIndex);
     RCP<const map> colmap    = ghosted_tloc->getMapForBlock(nBlockIndex);
-    RCP<matrix> grad_matrix = rcp(new matrix(rowmap, colmap, 2, Tpetra::StaticProfile));
+    RCP<matrix> grad_matrix = rcp(new matrix(rowmap, colmap, 2));
 
     RCP<const panzer::FieldPattern> field_pattern = blockedDOFMngr->getGeometricFieldPattern();
     shards::CellTopology cell_topology = field_pattern->getCellTopology();
@@ -116,9 +116,13 @@ void addDiscreteGradientToRequestHandler(
         eUgi->getElementGIDs(elementIds[elemIter],eGIDs);
         std::vector<GlobalOrdinal> nGIDs;
         nUgi->getElementGIDs(elementIds[elemIter],nGIDs);
-        auto eLIDs = eUgi->getElementLIDs(elementIds[elemIter]);
-        auto nLIDs = nUgi->getElementLIDs(elementIds[elemIter]);
- 
+        auto eLIDs_k = eUgi->getElementLIDs(elementIds[elemIter]);
+        auto nLIDs_k = nUgi->getElementLIDs(elementIds[elemIter]);
+	auto eLIDs = Kokkos::create_mirror_view(eLIDs_k);
+	auto nLIDs = Kokkos::create_mirror_view(nLIDs_k);
+	Kokkos::deep_copy(eLIDs, eLIDs_k);
+	Kokkos::deep_copy(nLIDs, nLIDs_k);
+
         std::vector<bool> isOwned;
         eUgi->ownedIndices(eGIDs,isOwned);
 
@@ -208,8 +212,12 @@ void addDiscreteGradientToRequestHandler(
         eUgi->getElementGIDs(elementIds[elemIter],eGIDs);
         std::vector<panzer::GlobalOrdinal> nGIDs;
         nUgi->getElementGIDs(elementIds[elemIter],nGIDs);
-        auto eLIDs = eUgi->getElementLIDs(elementIds[elemIter]);
-        auto nLIDs = nUgi->getElementLIDs(elementIds[elemIter]);
+        auto eLIDs_k = eUgi->getElementLIDs(elementIds[elemIter]);
+        auto nLIDs_k = nUgi->getElementLIDs(elementIds[elemIter]);
+	auto eLIDs = Kokkos::create_mirror_view(eLIDs_k);
+	auto nLIDs = Kokkos::create_mirror_view(nLIDs_k);
+	Kokkos::deep_copy(eLIDs, eLIDs_k);
+	Kokkos::deep_copy(nLIDs, nLIDs_k);
 
         std::vector<bool> isOwned;
         eUgi->ownedIndices(eGIDs,isOwned);

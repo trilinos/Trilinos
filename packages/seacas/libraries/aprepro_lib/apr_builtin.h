@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -79,6 +79,7 @@ namespace SEAMS {
   double do_time();
 
   const char *do_dumpsym();
+  const char *do_dumpsym_json();
   const char *do_dumpfunc();
   const char *do_dumpvar();
   const char *do_get_date();

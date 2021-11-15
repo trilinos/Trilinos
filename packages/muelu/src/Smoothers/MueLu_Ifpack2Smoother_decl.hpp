@@ -234,7 +234,7 @@ namespace MueLu {
     RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_;
 
     //! matrix, used in apply if solving residual equation
-    RCP<Matrix> A_;
+    RCP<Operator> A_;
 
   }; // class Ifpack2Smoother
 

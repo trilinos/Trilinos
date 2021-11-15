@@ -46,9 +46,12 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_ML)
-#include <ml_ValidateParameters.h>
-#include <ml_MultiLevelPreconditioner.h> // for default values
-#include <ml_RefMaxwell.h>
+# include <ml_config.h>
+# if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
+#  include <ml_ValidateParameters.h>
+#  include <ml_MultiLevelPreconditioner.h> // for default values
+#  include <ml_RefMaxwell.h>
+# endif
 #endif
 
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
@@ -161,6 +164,8 @@ namespace MueLu {
       else { mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"2\"/>" << std::endl; }
       if ( paramList.isParameter("smoother: Chebyshev alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: Chebyshev alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
       else { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"20\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
+      if ( paramList.isParameter("eigen-analysis: type") ) {  mueluss << "<Parameter name=\"eigen-analysis: type\" type=\"string\" value=\"" << paramList.get<std::string>("eigen-analysis: type") << "\"/>" << std::endl; adaptingParamList.remove("eigen-analysis: type",false); }
+      else { mueluss << "<Parameter name=\"eigen-analysis: type\" type=\"string\" value=\"cg\"/>" << std::endl; }
     }
 
     // MLS
@@ -171,6 +176,8 @@ namespace MueLu {
       if ( paramList.isParameter("smoother: MLS alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: MLS alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: MLS alpha",false); }
       else if ( paramList.isParameter("smoother: Chebyshev alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: Chebyshev alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
       else { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"20\"/>" << std::endl; }
+      if ( paramList.isParameter("eigen-analysis: type") ) {  mueluss << "<Parameter name=\"eigen-analysis: type\" type=\"string\" value=\"" << paramList.get<std::string>("eigen-analysis: type") << "\"/>" << std::endl; adaptingParamList.remove("eigen-analysis: type",false); }
+      else { mueluss << "<Parameter name=\"eigen-analysis: type\" type=\"string\" value=\"cg\"/>" << std::endl; }
     }
 
     // parameters for ILU based preconditioners
@@ -198,7 +205,7 @@ namespace MueLu {
 
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); // TODO: use internal out (GetOStream())
 
-#if defined(HAVE_MUELU_ML)
+#if defined(HAVE_MUELU_ML) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
     // TODO alternative with standard parameterlist from ML user guide?
 
@@ -218,9 +225,9 @@ namespace MueLu {
 #else
     if (defaultVals != "") {
         // If no validator available: issue a warning and set parameter value to false in the output list
-        *out << "Warning: MueLu_ENABLE_ML=OFF and/or MueLu_ENABLE_Epetra=OFF. No ML default values available." << std::endl;
+        *out << "Warning: MueLu_ENABLE_ML=OFF, ML_ENABLE_Epetra=OFF or ML_ENABLE_TEUCHOS=OFF. No ML default values available." << std::endl;
     }
-#endif // HAVE_MUELU_ML
+#endif // HAVE_MUELU_ML && HAVE_ML_EPETRA && HAVE_ML_TEUCHOS
 
     //
     // Move smoothers/aggregation/coarse parameters to sublists
@@ -240,19 +247,37 @@ namespace MueLu {
       bool validate = paramList.get("ML validate parameter list", true); /* true = default in ML */
       if (validate && defaultVals!="refmaxwell") {
 
-#if defined(HAVE_MUELU_ML)
+#if defined(HAVE_MUELU_ML) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
         // Validate parameter list using ML validator
         int depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
         TEUCHOS_TEST_FOR_EXCEPTION(! ML_Epetra::ValidateMLPParameters(paramList, depth), Exceptions::RuntimeError,
                                    "ERROR: ML's Teuchos::ParameterList contains incorrect parameter!");
 #else
         // If no validator available: issue a warning and set parameter value to false in the output list
-        *out << "Warning: MueLu_ENABLE_ML=OFF and/or MueLu_ENABLE_Epetra=OFF. The parameter list cannot be validated." << std::endl;
+        *out << "Warning: MueLu_ENABLE_ML=OFF, ML_ENABLE_Epetra=OFF or ML_ENABLE_TEUCHOS=OFF. The parameter list cannot be validated." << std::endl;
         paramList.set("ML validate parameter list", false);
 
-#endif // HAVE_MUELU_ML
+#endif // HAVE_MUELU_ML && HAVE_ML_EPETRA && HAVE_ML_TEUCHOS
       } // if(validate)
     } // scope
+
+
+    {
+      // Special handling of ML's aux aggregation
+      //
+      // In ML, when "aggregation: aux: enable" == true, the threshold
+      // is set via "aggregation: aux: threshold" instead of
+      // "aggregation: threshold". In MueLu, we use "aggregation: drop
+      // tol" regardless of "sa: use filtering". So depending on
+      // "aggregation: aux: enable" we use either one or the other
+      // threshold to set "aggregation: drop tol".
+      if (paramListWithSubList.isParameter("aggregation: aux: enable") && paramListWithSubList.get<bool>("aggregation: aux: enable")) {
+        if (paramListWithSubList.isParameter("aggregation: aux: threshold")) {
+          paramListWithSubList.set("aggregation: threshold", paramListWithSubList.get<double>("aggregation: aux: threshold"));
+          paramListWithSubList.remove("aggregation: aux: threshold");
+          }
+      }
+    }
 
     // stringstream for concatenating xml parameter strings.
     std::stringstream mueluss;

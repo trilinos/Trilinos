@@ -206,20 +206,6 @@
       msg << " Failure on at least one process, including process " << gbl_throw-1 << "." << std::endl); \
 }
 
-#ifdef HAVE_TEUCHOS_DEBUG
-//! If TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION. Otherwise, it calls TEUCHOS_TEST_FOR_EXCEPTION
-#define SWITCHED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
-{ \
-    SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm); \
-}
-#else
-//! If TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION. Otherwise, it calls TEUCHOS_TEST_FOR_EXCEPTION
-#define SWITCHED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
-{ \
-    TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg); \
-}
-#endif
-
 namespace Tpetra {
 
   /// \brief Efficiently insert or replace an entry in an std::map.

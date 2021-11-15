@@ -24,7 +24,7 @@
 #include <limits>
 
 #include "Kokkos_Core.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 #if defined (__INTEL_MKL__)
 #include "mkl.h"

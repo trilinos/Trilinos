@@ -279,7 +279,7 @@ template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList> getTimeStepControlStrategyCompositePL()
 {
   auto t = rcp(new Tempus::TimeStepControlStrategyComposite<Scalar>());
-  auto tscs = rcp(new Tempus::TimeStepControlStrategyConstant<double>());
+  auto tscs = rcp(new Tempus::TimeStepControlStrategyConstant<Scalar>());
   t->addStrategy(tscs);
   return Teuchos::rcp_const_cast<Teuchos::ParameterList> (t->getValidParameters());
 }
