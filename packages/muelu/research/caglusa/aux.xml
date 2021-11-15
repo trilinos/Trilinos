@@ -15,7 +15,7 @@
   <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
 
   <!-- start of default values for general options (can be omitted) -->
-  <Parameter        name="max levels"                	          type="int"      value="10"/>
+  <Parameter        name="max levels"                	        type="int"      value="10"/>
   <Parameter        name="number of equations"                  type="int"      value="1"/>
   <Parameter        name="sa: use filtered matrix"              type="bool"     value="true"/>
   <!-- end of default values -->
@@ -28,11 +28,11 @@
   <!-- <Parameter        name="aggregation: drop tol"                type="double"   value="0.02"/> -->
 
   <!-- ===========  SMOOTHING  =========== -->
-  <Parameter        name="coarse: type"                           type="string"   value="none"/>
-  <Parameter        name="smoother: pre or post"                  type="string"   value="none"/>
+  <Parameter        name="coarse: type"                         type="string"	value="none"/>
+  <Parameter	    name="smoother: pre or post"		type="string"	value="none"/>
 
   <!-- ===========  REPARTITIONING  =========== -->
-  <Parameter        name="repartition: enable"                  type="bool"     value="false"/>
+  <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
   <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/>
   <Parameter        name="repartition: start level"             type="int"      value="2"/>
   <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/>

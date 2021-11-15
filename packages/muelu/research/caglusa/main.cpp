@@ -591,6 +591,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlHierachical, Teuchos::Ptr<Teuchos::ParameterList>(&hierachicalParams), *comm);
     const bool readBinary = hierachicalParams.get<bool>("read binary", false);
+    const bool readLocal = hierachicalParams.get<bool>("read local", false);
 
     // row, domain and range map of the operator
     map = IO::ReadMap(hierachicalParams.get<std::string>("map"), lib, comm);
@@ -603,26 +604,46 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // colmap of auxiliary operator
     aux_colmap = IO::ReadMap(hierachicalParams.get<std::string>("aux colmap"), lib, comm);
 
-    // near field interactions
-    nearField = IO::Read(hierachicalParams.get<std::string>("near field matrix"), map, near_colmap, map, map, true, readBinary);
+    if (readLocal) {
+      // near field interactions
+      nearField = IO::ReadLocal(hierachicalParams.get<std::string>("near field matrix"), map, near_colmap, map, map, true, readBinary);
 
-    // far field basis expansion coefficients
-    basisMatrix = IO::Read(hierachicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map, true, readBinary);
-    // far field interactions
-    kernelApproximations = IO::Read(hierachicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
+      // far field basis expansion coefficients
+      basisMatrix = IO::ReadLocal(hierachicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map, true, readBinary);
+      // far field interactions
+      kernelApproximations = IO::ReadLocal(hierachicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
 
-    auto transfersList = hierachicalParams.sublist("shift coefficient matrices");
-    for (int i = 0; i < transfersList.numParams(); i++) {
-      std::string filename = transfersList.get<std::string>(std::to_string(i));
-      auto transfer = IO::Read(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
-      transferMatrices.push_back(transfer);
+      auto transfersList = hierachicalParams.sublist("shift coefficient matrices");
+      for (int i = 0; i < transfersList.numParams(); i++) {
+        std::string filename = transfersList.get<std::string>(std::to_string(i));
+        auto transfer = IO::ReadLocal(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
+        transferMatrices.push_back(transfer);
+      }
+
+      auxOp  = IO::ReadLocal(hierachicalParams.get<std::string>("auxiliary operator"), map, aux_colmap, map, map, true, readBinary);
+    } else {
+      // near field interactions
+      nearField = IO::Read(hierachicalParams.get<std::string>("near field matrix"), map, near_colmap, map, map, true, readBinary);
+
+      // far field basis expansion coefficients
+      basisMatrix = IO::Read(hierachicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map, true, readBinary);
+      // far field interactions
+      kernelApproximations = IO::Read(hierachicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
+
+      auto transfersList = hierachicalParams.sublist("shift coefficient matrices");
+      for (int i = 0; i < transfersList.numParams(); i++) {
+        std::string filename = transfersList.get<std::string>(std::to_string(i));
+        auto transfer = IO::Read(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
+        transferMatrices.push_back(transfer);
+      }
+
+      auxOp  = IO::Read(hierachicalParams.get<std::string>("auxiliary operator"), map, aux_colmap, map, map, true, readBinary);
     }
 
     X_ex = IO::ReadMultiVector(hierachicalParams.get<std::string>("exact solution"), map);
     RHS  = IO::ReadMultiVector(hierachicalParams.get<std::string>("right-hand side"), map);
     X    = MultiVectorFactory::Build(map, 1);
 
-    auxOp  = IO::Read(hierachicalParams.get<std::string>("auxiliary operator"), map, aux_colmap, map, map, true, readBinary);
     coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierachicalParams.get<std::string>("coordinates"), map);
   }
 
@@ -754,7 +775,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       RCP<Level> lvl = H->GetLevel(0);
       lvl->Set("A", rcp_dynamic_cast<Operator>(op));
       lvl->Set("Coordinates", coords);
-      for(int lvlNo = 1; lvlNo<auxH->GetNumLevels(); lvlNo++) {
+      for(int lvlNo = 1; lvlNo < auxH->GetNumLevels(); lvlNo++) {
         H->AddNewLevel();
         RCP<Level> auxLvl = auxH->GetLevel(lvlNo);
         // auto mgr = auxLvl->GetFactoryManager();
