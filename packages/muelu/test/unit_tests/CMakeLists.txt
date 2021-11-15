@@ -64,6 +64,7 @@ APPEND_SET(SOURCES
   Utilities.cpp
   VariableContainer.cpp
   VariableDofLaplacianFactory.cpp
+  MueLu_CoupledRBMFactory.cpp
 )
 
 APPEND_SET(SOURCES_INTREPID2
