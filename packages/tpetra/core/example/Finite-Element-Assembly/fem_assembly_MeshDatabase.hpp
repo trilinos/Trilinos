@@ -202,9 +202,10 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
     num_my_nodes *= (myNodeStop_[k]-myNodeStart_[k]);
   }
 
+
   // Generate the owned element ids
+  ownedElementGlobalIDs_ = global_ordinal_view_type(globalDualViewType("ownedElementGlobalIDs_",num_my_elements));
   auto ownedElementGlobalIDs = ownedElementGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
-  Kokkos::resize(ownedElementGlobalIDs,num_my_elements);
   int ect=0;
   for(global_ordinal_type j=myElementStart_[1]; j<myElementStop_[1]; j++) {
     for(global_ordinal_type i=myElementStart_[0]; i<myElementStop_[0]; i++) {
@@ -213,10 +214,12 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
       ect++;
     }
   }
-
+  
+  
   // Generate the owned node ids
+  ownedNodeGlobalIDs_ = global_ordinal_view_type(globalDualViewType("ownedNodeGlobalIDs_",num_my_nodes));
   auto _ownedNodeGlobalIDs = ownedNodeGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
-  Kokkos::resize(_ownedNodeGlobalIDs,num_my_nodes);
+  
   int nct=0;
   for(global_ordinal_type j=myNodeStart_[1]; j<myNodeStop_[1]; j++) {
     for(global_ordinal_type i=myNodeStart_[0]; i<myNodeStop_[0]; i++) {
@@ -226,10 +229,11 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
     }
   }
 
+
   // Generate the element-to-node map
   // NOTE: Hardwired to QUAD4's.  Nodes are ordered exodus-style (counter-clockwise) within an element
+  ownedElementToNode_ = global_ordinal_2d_array_type(global2DArrayDualViewType("ownedElementToNode_",num_my_elements));
   auto _ownedElementToNode = ownedElementToNode_.getHostView(Tpetra::Access::ReadWrite);
-  Kokkos::resize(_ownedElementToNode,num_my_elements);
   int cct=0;
   for(global_ordinal_type j=myElementStart_[1]; j<myElementStop_[1]; j++) {
     for(global_ordinal_type i=myElementStart_[0]; i<myElementStop_[0]; i++) {
@@ -263,10 +267,10 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
   }
 
   // NOTE: This are not recorded in Aztec/Ifpack/ML ordering.  Because most apps don't do that.
+  ghostElementGlobalIDs_ = global_ordinal_view_type(globalDualViewType("ghostElementGlobalIDs_",my_ghost_elements.size()));
+  ghostElementToNode_    = global_ordinal_2d_array_type(global2DArrayDualViewType("ghostElementToNode_",my_ghost_elements.size()));
   auto _ghostElementGlobalIDs = ghostElementGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
   auto _ghostElementToNode = ghostElementToNode_.getHostView(Tpetra::Access::ReadWrite);
-  Kokkos::resize(_ghostElementGlobalIDs,my_ghost_elements.size());
-  Kokkos::resize(_ghostElementToNode,my_ghost_elements.size());
   for(size_t k=0; k<my_ghost_elements.size(); k++) {
     global_ordinal_type i,j, eidx= my_ghost_elements[k];
     _ghostElementGlobalIDs(k) = eidx;
@@ -308,9 +312,8 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
 void MeshDatabase::initializeOwnedAndGhostNodeGlobalIDs(void)
 {
   size_t total_size = getNumOwnedNodes() + getNumGhostNodes();
-
+  ownedAndGhostNodeGlobalIDs_ = global_ordinal_view_type(globalDualViewType("ownedAndGhostGlobalIDs_",total_size));
   auto _ownedAndGhostNodeGlobalIDs = ownedAndGhostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
-  Kokkos::resize(_ownedAndGhostNodeGlobalIDs, total_size);
 
   {
     size_t insert_idx = 0;
@@ -331,8 +334,8 @@ void MeshDatabase::initializeOwnedAndGhostNodeGlobalIDs(void)
 void MeshDatabase::initializeOwnedAndGhostElementGlobalIDs(void)
 {
   size_t total_size = getNumOwnedElements() + getNumGhostElements();
+  ownedAndGhostElementGlobalIDs_ = global_ordinal_view_type(globalDualViewType("ownedAndGhostElementIDs_",total_size));
   auto _ownedAndGhostElementGlobalIDs = ownedAndGhostElementGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
-  Kokkos::resize(_ownedAndGhostElementGlobalIDs, total_size);
 
   {
     size_t insert_idx = 0;
