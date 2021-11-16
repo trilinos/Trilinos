@@ -150,6 +150,8 @@ namespace MueLu {
 
     void SatisfyPConstraints(RCP<Matrix> A, RCP<Matrix>& P) const;
 
+    void newSatisfyPConstraints( RCP<Matrix>& P) const;
+
     //@}
 
   };
