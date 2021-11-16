@@ -368,11 +368,11 @@ namespace MueLu {
     } else if(MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal distance laplacian")) {
       useCoordinates_ = true;
       useBlockNumber_ = true;
-    } else if(MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal") || 
+    } else if(MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal") ||
               MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal classical") ||
               MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal signed classical") ||
               MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal colored signed classical") ||
-              MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "signed classical")) {      
+              MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "signed classical")) {
       useBlockNumber_ = true;
     } else if(paramList.isSublist("smoother: params")) {
       const auto smooParamList = paramList.sublist("smoother: params");
@@ -396,11 +396,11 @@ namespace MueLu {
             useCoordinates_ = true;
             useBlockNumber_ = true;
           }
-          else if (MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: drop scheme", std::string, "block diagonal") || 
+          else if (MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: drop scheme", std::string, "block diagonal") ||
                    MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: drop scheme", std::string, "block diagonal classical") ||
                    MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal signed classical") ||
                    MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal colored signed classical") ||
-                   MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "signed classical")) {             
+                   MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "signed classical")) {
             useBlockNumber_ = true;
           }
         }
@@ -459,6 +459,9 @@ namespace MueLu {
 
     // Detect if we use fuse prolongation and update
     (void)MUELU_TEST_AND_SET_VAR(paramList, "fuse prolongation and update", bool, this->fuseProlongationAndUpdate_);
+
+    // Detect if we suppress the dimension check of the user-given nullspace
+    (void)MUELU_TEST_AND_SET_VAR(paramList, "nullspace: suppress dimension check", bool, this->suppressNullspaceDimensionCheck_);
 
     if (paramList.isSublist("matvec params"))
       this->matvecParams_ = Teuchos::parameterList(paramList.sublist("matvec params"));
@@ -617,7 +620,7 @@ namespace MueLu {
     // === BlockNumber ===
     if(levelID == 0)
       UpdateFactoryManager_BlockNumber(paramList, defaultList, manager, levelID, keeps);
-    
+
     // === Aggregation ===
     if(multigridAlgo == "unsmoothed reitzinger" || multigridAlgo == "smoothed reitzinger")
       UpdateFactoryManager_Reitzinger(paramList, defaultList, manager, levelID, keeps);
@@ -998,19 +1001,19 @@ namespace MueLu {
                                                FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
    {
      RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
-     
+
      // These are all going to be user provided, so NoFactory
      rFactory->SetFactory("Pnodal", NoFactory::getRCP());
      rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
-     
+
      if(levelID > 1)
        rFactory->SetFactory("D0", this->GetFactoryManager(levelID-1)->GetFactory("D0"));
-     else 
-       rFactory->SetFactory("D0", NoFactory::getRCP());     
+     else
+       rFactory->SetFactory("D0", NoFactory::getRCP());
 
      manager.SetFactory("Ptent", rFactory);
      manager.SetFactory("D0", rFactory);
- 
+
    }
 
    // =====================================================================================================
@@ -1028,7 +1031,7 @@ namespace MueLu {
      MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
      TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab","notay","classical"}).count(aggType),
                                 Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
-     
+
 
      // Only doing this for classical because otherwise, the gold tests get broken badly
      RCP<AmalgamationFactory> amalgFact;
@@ -1163,14 +1166,14 @@ namespace MueLu {
       ParameterList mapParams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",             bool, mapParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, mapParams);
-      
+
       ParameterList tempParams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme", std::string, tempParams);
       std::string drop_algo = tempParams.get<std::string>("aggregation: drop scheme");
       if(drop_algo == "block diagonal colored signed classical") {
         mapParams.set("aggregation: coloring: use color graph",true);
         mapFact->SetFactory("Coloring Graph", manager.GetFactory("Coloring Graph"));
-        
+
       }
       mapFact->SetParameterList(mapParams);
       mapFact->SetFactory("Graph", manager.GetFactory("Graph"));
@@ -1180,7 +1183,7 @@ namespace MueLu {
       manager.SetFactory("CoarseMap", mapFact);
 
 
-      aggFactory = rcp(new ClassicalPFactory());      
+      aggFactory = rcp(new ClassicalPFactory());
       ParameterList aggParams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: classical scheme", std::string, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme", std::string, aggParams);
@@ -1196,12 +1199,12 @@ namespace MueLu {
         else
           aggFactory->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
       }
-      
-      // Now we short-circuit, because we neither need nor want TentativePFactory here      
+
+      // Now we short-circuit, because we neither need nor want TentativePFactory here
       manager.SetFactory("Ptent",     aggFactory);
       manager.SetFactory("P Graph",     aggFactory);
 
-      
+
       if (reuseType == "tP" && levelID) {
         //        keeps.push_back(keep_pair("Nullspace", Ptent.get()));
         keeps.push_back(keep_pair("Ptent",aggFactory.get()));
@@ -1477,12 +1480,12 @@ namespace MueLu {
   {
     if(useBlockNumber_) {
       ParameterList myParams;
-      RCP<Factory> fact = rcp(new InitialBlockNumberFactory());      
+      RCP<Factory> fact = rcp(new InitialBlockNumberFactory());
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: block diagonal: interleaved blocksize", int, myParams);
       fact->SetParameterList(myParams);
       manager.SetFactory("BlockNumber",fact);
     }
-      
+
   }
 
 
@@ -2015,7 +2018,7 @@ namespace MueLu {
       // FilteredAFactory into the CoalesceDropFactory.
       if (!useKokkos_) {
         RCP<Factory> filterFactory = rcp(new FilteredAFactory());
-        
+
         ParameterList fParams;
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, fParams);
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, fParams);
@@ -2033,7 +2036,7 @@ namespace MueLu {
         filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
 
         P->SetFactory("A", filterFactory);
-        
+
       } else {
         P->SetFactory("A", manager.GetFactory("Graph"));
       }
@@ -2251,6 +2254,11 @@ namespace MueLu {
       if (hieraList.isParameter("fuse prolongation and update")) {
         this->fuseProlongationAndUpdate_ = hieraList.get<bool>("fuse prolongation and update");
         hieraList.remove("fuse prolongation and update");
+      }
+
+      if (hieraList.isParameter("nullspace: suppress dimension check")) {
+        this->suppressNullspaceDimensionCheck_ = hieraList.get<bool>("nullspace: suppress dimension check");
+        hieraList.remove("nullspace: suppress dimension check");
       }
 
       if (hieraList.isParameter("number of vectors")) {
