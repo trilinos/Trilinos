@@ -3609,7 +3609,6 @@ namespace Tpetra {
         ArrayRCP<size_t> rowPtr;
         ArrayRCP<global_ordinal_type> colInd;
         ArrayRCP<scalar_type> values;
-        size_t maxNumEntriesPerRow = 0;
 
         // Proc 0 first merges duplicate entries, and then converts
         // the coordinate-format matrix data to CSR.
@@ -3790,8 +3789,6 @@ namespace Tpetra {
         ArrayRCP<size_t> gatherNumEntriesPerRow = arcp<size_t>(myNumRows);
         for (size_type i_ = 0; i_ < myNumRows; i_++) {
           gatherNumEntriesPerRow[i_] = numEntriesPerRow[myRows[i_]-indexBase];
-          if (gatherNumEntriesPerRow[i_] > maxNumEntriesPerRow)
-            maxNumEntriesPerRow = gatherNumEntriesPerRow[i_];
         }
 
         // Create a matrix using this Map, and fill in on Proc 0.  We
@@ -3839,9 +3836,6 @@ namespace Tpetra {
           colInd = null;
           values = null;
         } // if myRank == rootRank
-
-        //FIXME this is no longer needed
-        broadcast<int,size_t> (*pComm, 0, &maxNumEntriesPerRow);
 
         RCP<sparse_matrix_type> A;
         typedef Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
