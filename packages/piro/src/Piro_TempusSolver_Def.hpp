@@ -265,7 +265,7 @@ void Piro::TempusSolver<Scalar>::initialize(
       Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
       model_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
         sublist(tempusPL,"Stratimikos", true), origModel, const_mass_matrix, lump_mass_matrix, false));
-      if (lump_mass_matrix == false) { //don't need adjointModel_ if doing mass lumping
+      if ((lump_mass_matrix == false) && (adjointModel_ != Teuchos::null)) { //don't need adjointModel_ if doing mass lumping
 	//IKT 8/25/2021: warning - have not tested this block of code
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origAdjointModel = adjointModel_;
         adjointModel_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
@@ -280,7 +280,7 @@ void Piro::TempusSolver<Scalar>::initialize(
       Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
       model_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
         sublist(tempusPL,"Stratimikos", true), origModel, const_mass_matrix, lump_mass_matrix, true));
-      if (lump_mass_matrix == false) { //don't need adjointModel_ if doing mass lumping
+      if ((lump_mass_matrix == false) && (adjointModel_ != Teuchos::null)) { //don't need adjointModel_ if doing mass lumping
 	//IKT 8/25/2021: warning - have not tested this block of code
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origAdjointModel = adjointModel_;
         adjointModel_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
