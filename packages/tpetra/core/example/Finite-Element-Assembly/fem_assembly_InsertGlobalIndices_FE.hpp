@@ -131,8 +131,6 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   int nex = opts.numElementsX;
   int ney = opts.numElementsY;
 
-  printf("CMS: nex = %d ney = %d procx = %d procy = %d\n",nex,ney,procx,procy);
-
   MeshDatabase mesh(comm,nex,ney,procx,procy);
 
   if(opts.verbose) mesh.print(std::cout);
