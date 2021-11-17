@@ -235,7 +235,7 @@ namespace MueLuTests {
     RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
     sapFactory->newSatisfyPConstraints( P );
 
-    Xpetra::IO<SC, LO, GO, NO>::Write("SaP_constrainTest_P.m", *P);
+    //Xpetra::IO<SC, LO, GO, NO>::Write("SaP_constrainTest_P.m", *P);
 
     // check that row sums are all one by checking the norm of the vector
     RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(), 1);

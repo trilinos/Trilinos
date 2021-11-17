@@ -52,7 +52,6 @@
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosSparse_spmv.hpp"
-#include "Kokkos_Sort.hpp"
 #endif
 #include "MueLu_SaPFactory_kokkos_decl.hpp"
 
@@ -422,7 +421,7 @@ struct newConstraintKernel {
          if ((Kokkos::ArithTraits<SC>::real(rsumTarget) >= Kokkos::ArithTraits<SC>::real(leftBound*as<Scalar>(nnz))) && 
              (Kokkos::ArithTraits<SC>::real(rsumTarget) <= Kokkos::ArithTraits<SC>::real(rghtBound*as<Scalar>(nnz))))
            hasFeasible = true;
-         else {
+         else { //TODO: put all code in above if statement
            hasFeasible=false;
            //return hasFeasibleSol; 
          }
@@ -436,12 +435,6 @@ struct newConstraintKernel {
          }
          aBigNumber = aBigNumber+ (Kokkos::ArithTraits<SC>::magnitude(leftBound) + Kokkos::ArithTraits<SC>::magnitude(rghtBound))*as<Scalar>(100.0);
 
-
-         ////////////////////////////
-         //origSorted  = &scalarData[0];
-         //fixedSorted = &(scalarData[nnz]);
-         //inds        = (LO    *) &(scalarData[2*nnz]);
-
          LO ind = 0;
          for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++){
              origSorted(rowIdx, ind) = values(entryIdx);
@@ -449,16 +442,28 @@ struct newConstraintKernel {
              ind++;
          }
 
-         auto sortMe = Kokkos::subview( origSorted, rowIdx, Kokkos::ALL() );
-         auto sortInd = Kokkos::subview( inds, rowIdx, std::make_pair(0,ind));
-         std::cout<<rowIdx<<" ... "<<sortMe.extent(0)<<" ... "<<ind<<" ... "<<nnz<<std::endl;
-         //std::sort(inds.data(), inds.data()+nnz,
-         std::sort(sortInd.data(), sortInd.data()+nnz,
-                   [sortMe](LO leftIndex, LO rightIndex)
-                        { return Kokkos::ArithTraits<SC>::real(sortMe(leftIndex)) < Kokkos::ArithTraits<SC>::real(sortMe(rightIndex));});
-         for(LO i =0;i<(LO)nnz;i++){
-         std::cout<<inds(rowIdx,i)<<std::endl;
+         auto sortVals = Kokkos::subview( origSorted, rowIdx, Kokkos::ALL() );
+         auto sortInds = Kokkos::subview( inds, rowIdx, Kokkos::make_pair(0,ind));
+//         std::sort(sortInds.data(), sortInds.data()+nnz,
+//                   [sortVals](LO leftIndex, LO rightIndex)
+//                        { return Kokkos::ArithTraits<SC>::real(sortVals(leftIndex)) < Kokkos::ArithTraits<SC>::real(sortVals(rightIndex));});
+
+         // serial insertion sort workaround from https://github.com/kokkos/kokkos/issues/645
+         for (LO i = 1; i < (LO) nnz; ++i){
+           ind = sortInds(i);
+           LO j = i;
+           
+           if (sortVals(sortInds(i)) < sortVals(sortInds(0))){
+             for ( ; j > 0; --j) sortInds(j) = sortInds(j - 1);
+
+             sortInds[0] = ind;
+           } else {
+             for ( ; sortVals(ind) < sortVals(sortInds(j-1)); --j) sortInds(j) = sortInds(j-1);
+
+             sortInds(j) = ind;
+           }
          }
+
 
          for (LO i = 0; i < (LO) nnz; i++) origSorted(rowIdx, i) = values(rowPtr(rowIdx) + inds(rowIdx, i)); //values is no longer used
          // find entry in origSorted just to the right of the leftBound
@@ -566,16 +571,16 @@ struct newConstraintKernel {
 
          /* check that no constraints are violated */
 
-         bool lowerViolation = false;
-         bool upperViolation = false;
-         bool sumViolation = false;
-         temp = zero;
-         for (LO i = 0; i < (LO) nnz; i++)  { 
-           if (Kokkos::ArithTraits<SC>::real(values(rowStart+i)) < Kokkos::ArithTraits<SC>::real(notFlippedLeftBound)) lowerViolation = true;
-           if (Kokkos::ArithTraits<SC>::real(values(rowStart+i)) > Kokkos::ArithTraits<SC>::real(notFlippedRghtBound)) upperViolation = true;
-           temp += values(rowStart+i);
-         }
-         if (Kokkos::ArithTraits<SC>::magnitude(temp - rsumTarget) > Kokkos::ArithTraits<SC>::magnitude(as<Scalar>(1.0e-8)*rsumTarget)) sumViolation = true;
+         //bool lowerViolation = false;
+         //bool upperViolation = false;
+         //bool sumViolation = false;
+         //temp = zero;
+         //for (LO i = 0; i < (LO) nnz; i++)  { 
+         //  if (Kokkos::ArithTraits<SC>::real(values(rowStart+i)) < Kokkos::ArithTraits<SC>::real(notFlippedLeftBound)) lowerViolation = true;
+         //  if (Kokkos::ArithTraits<SC>::real(values(rowStart+i)) > Kokkos::ArithTraits<SC>::real(notFlippedRghtBound)) upperViolation = true;
+         //  temp += values(rowStart+i);
+         //}
+         //if (Kokkos::ArithTraits<SC>::magnitude(temp - rsumTarget) > Kokkos::ArithTraits<SC>::magnitude(as<Scalar>(1.0e-8)*rsumTarget)) sumViolation = true;
 
            //TEUCHOS_TEST_FOR_EXCEPTION(lowerViolation, Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in a lower bound violation??? ");
            //TEUCHOS_TEST_FOR_EXCEPTION(upperViolation, Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in an upper bound violation??? ");
@@ -584,7 +589,7 @@ struct newConstraintKernel {
        }
 
        if (!hasFeasible) { // just set all entries to the same value giving a row sum of 1
-//         for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++) values(entryIdx) = one/as<Scalar>(nnz);
+         for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++) values(entryIdx) = one/as<Scalar>(nnz);
        }
      }
 
@@ -600,7 +605,7 @@ struct newConstraintKernel {
 
     using local_mat_type = typename Matrix::local_matrix_type;
     constraintKernel<local_mat_type> myKernel(nPDEs,P->getLocalMatrixDevice() );
-    //newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getLocalMatrixDevice() );
+    //newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getLocalMatrixDevice() );//TODO
     Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getNodeNumElements() ),
                         myKernel );
 
@@ -613,7 +618,8 @@ struct newConstraintKernel {
     LO nPDEs = 1;//A->GetFixedBlockSize();
 
     using local_mat_type = typename Matrix::local_matrix_type;
-    newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getGlobalMaxNumRowEntries(),P->getLocalMatrixDevice() );
+    //newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getGlobalMaxNumRowEntries(),P->getLocalMatrixDevice() );
+    newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getNodeMaxNumRowEntries(),P->getLocalMatrixDevice() );
     Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getNodeNumElements() ),
                         myKernel );
 
