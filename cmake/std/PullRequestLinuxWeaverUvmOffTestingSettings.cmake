@@ -142,7 +142,6 @@ set (Trilinos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
 set (Teuchos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
 set (Tpetra_INST_COMPLEX_DOUBLE ON CACHE BOOL "Testing for #9025")
 
-
 ### Tests disabled to get the cuda build moved to weaver ####
 set (Anasazi_BlockDavidson_complex_test_0_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Anasazi_BlockDavidson_complex_test_2_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")

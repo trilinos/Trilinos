@@ -139,7 +139,6 @@ set (Trilinos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
 set (Teuchos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
 set (Tpetra_INST_COMPLEX_DOUBLE ON CACHE BOOL "Testing for #9025")
 
-
 #Tests turned off to be able to move the cuda pr build to weaver
 set (_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Anasazi_BlockDavidson_complex_test_0_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
@@ -307,6 +306,5 @@ set (Stratimikos_test_amesos_thyra_driver_MPI_1_DISABLE ON CACHE BOOL "Temporary
 set (Stratimikos_Thyra_Belos_StatusTest_UnitTests_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (ThyraCore_MultiVector_RowStatScaledOp_UnitTests_MPI_2_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (TrilinosCouplings_Example_Maxwell_Tpetra_MueLu_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
-
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
