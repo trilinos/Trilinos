@@ -1761,7 +1761,10 @@ namespace MueLu {
       // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
       // the "Nullspace" of the manager
       // NOTE: This really needs to be set on the *NullSpaceFactory*, not manager.get("Nullspace").
+      ParameterList newNullparams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "nullspace: calculate rotations", bool, newNullparams);
       nullSpaceFactory->SetFactory("Nullspace", newP);
+      nullSpaceFactory->SetParameterList(newNullparams);
 #else
       paramList.set("repartition: enable",false);
       this->GetOStream(Warnings0) << "No repartitioning available for a serial run\n";
