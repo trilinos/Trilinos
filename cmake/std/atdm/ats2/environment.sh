@@ -112,6 +112,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
   # NOTE: The above export overrides the value set by the module load above
 
   # CUDA Settings
+  unset NVCC_WRAPPER_TMPDIR
   if [[ ! -d /tmp/${USER} ]] ; then
     echo "Creating /tmp/${USER} for nvcc wrapper!"
     mkdir /tmp/${USER}
