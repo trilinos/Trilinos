@@ -146,7 +146,7 @@ namespace MueLu {
       }
       if (Coords->getNumVectors() > 2) {
         zvals = Coords->getData(2);
-        cz    = Coords->getVector(1)->meanValue();
+        cz    = Coords->getVector(2)->meanValue();
       }
     }
 

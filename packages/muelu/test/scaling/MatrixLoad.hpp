@@ -156,8 +156,8 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
       Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
     A = Pr->BuildMatrix();
     nullspace = Pr->BuildNullspace();
-    //  The coordinates used by Galeri here might not match the coordinates thta come into this function.
-    //  In particular, they might correspond to different strretch factors. To fix this, we overwrite the 
+    //  The coordinates used by Galeri here might not match the coordinates that come into this function.
+    //  In particular, they might correspond to different stretch factors. To fix this, we overwrite the 
     //  coordinate array with those that Galeri now provides. 
     
 
