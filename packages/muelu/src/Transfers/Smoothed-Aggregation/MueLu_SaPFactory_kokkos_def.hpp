@@ -386,211 +386,177 @@ struct newConstraintKernel {
    KOKKOS_INLINE_FUNCTION
    void operator() (const size_t rowIdx) const {
 
-     bool hasFeasible = false;
-
-     auto rowPtr = localP.graph.row_map;//P->getLocalRowView((LocalOrdinal) i, indices, vals1);
+     auto rowPtr = localP.graph.row_map;
      auto values = localP.values;
 
      auto nnz = rowPtr(rowIdx+1) - rowPtr(rowIdx);
-
-     //LO  maxEntriesPerRow = 100; // increased later if needed 
-     //Teuchos::ArrayRCP<Scalar> scalarData(3*maxEntriesPerRow);
 
      if (nnz != 0) {
 
        Scalar rsumTarget = zero;
        for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++) rsumTarget += values(entryIdx);
 
-       //if (nnz > as<size_t>(maxEntriesPerRow)) {
-       //  maxEntriesPerRow = nnz*3;
-       //  //scalarData->resize(3*maxEntriesPerRow);
-       //}
        {
-         SC notFlippedLeftBound, notFlippedRghtBound, aBigNumber;
-         //SC *origSorted, *fixedSorted;
+         SC aBigNumber;
          SC rowSumDeviation, temp, delta;
          SC closestToLeftBoundDist, closestToRghtBoundDist;
          LO closestToLeftBound, closestToRghtBound;
-         //LO *inds; 
          bool   flipped;
 
          SC leftBound = zero;
          SC rghtBound = one;
-         notFlippedLeftBound = zero;//leftBound; 
-         notFlippedRghtBound = one;//rghtBound; 
          if ((Kokkos::ArithTraits<SC>::real(rsumTarget) >= Kokkos::ArithTraits<SC>::real(leftBound*as<Scalar>(nnz))) && 
-             (Kokkos::ArithTraits<SC>::real(rsumTarget) <= Kokkos::ArithTraits<SC>::real(rghtBound*as<Scalar>(nnz))))
-           hasFeasible = true;
-         else { //TODO: put all code in above if statement
-           hasFeasible=false;
-           //return hasFeasibleSol; 
-         }
-         flipped    = false;
-         // compute aBigNumber to handle some corner cases where we need
-         // something large so that an if statement will be false
-         aBigNumber = Kokkos::ArithTraits<SC>::zero();
-         for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++){
-           if ( Kokkos::ArithTraits<SC>::magnitude( values(entryIdx) ) > Kokkos::ArithTraits<SC>::magnitude(aBigNumber)) 
-             aBigNumber = Kokkos::ArithTraits<SC>::magnitude( values(entryIdx) );
-         }
-         aBigNumber = aBigNumber+ (Kokkos::ArithTraits<SC>::magnitude(leftBound) + Kokkos::ArithTraits<SC>::magnitude(rghtBound))*as<Scalar>(100.0);
+             (Kokkos::ArithTraits<SC>::real(rsumTarget) <= Kokkos::ArithTraits<SC>::real(rghtBound*as<Scalar>(nnz)))){ // has Feasible solution
 
-         LO ind = 0;
-         for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++){
-             origSorted(rowIdx, ind) = values(entryIdx);
-             inds(rowIdx, ind) = ind;
-             ind++;
-         }
-
-         auto sortVals = Kokkos::subview( origSorted, rowIdx, Kokkos::ALL() );
-         auto sortInds = Kokkos::subview( inds, rowIdx, Kokkos::make_pair(0,ind));
-//         std::sort(sortInds.data(), sortInds.data()+nnz,
-//                   [sortVals](LO leftIndex, LO rightIndex)
-//                        { return Kokkos::ArithTraits<SC>::real(sortVals(leftIndex)) < Kokkos::ArithTraits<SC>::real(sortVals(rightIndex));});
-
-         // serial insertion sort workaround from https://github.com/kokkos/kokkos/issues/645
-         for (LO i = 1; i < (LO) nnz; ++i){
-           ind = sortInds(i);
-           LO j = i;
-           
-           if (sortVals(sortInds(i)) < sortVals(sortInds(0))){
-             for ( ; j > 0; --j) sortInds(j) = sortInds(j - 1);
-
-             sortInds[0] = ind;
-           } else {
-             for ( ; sortVals(ind) < sortVals(sortInds(j-1)); --j) sortInds(j) = sortInds(j-1);
-
-             sortInds(j) = ind;
+           flipped    = false;
+           // compute aBigNumber to handle some corner cases where we need
+           // something large so that an if statement will be false
+           aBigNumber = Kokkos::ArithTraits<SC>::zero();
+           for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++){
+             if ( Kokkos::ArithTraits<SC>::magnitude( values(entryIdx) ) > Kokkos::ArithTraits<SC>::magnitude(aBigNumber)) 
+               aBigNumber = Kokkos::ArithTraits<SC>::magnitude( values(entryIdx) );
            }
-         }
-
-
-         for (LO i = 0; i < (LO) nnz; i++) origSorted(rowIdx, i) = values(rowPtr(rowIdx) + inds(rowIdx, i)); //values is no longer used
-         // find entry in origSorted just to the right of the leftBound
-         closestToLeftBound = 0;
-         while ((closestToLeftBound < (LO) nnz) && (Kokkos::ArithTraits<SC>::real(origSorted(rowIdx, closestToLeftBound)) <= Kokkos::ArithTraits<SC>::real(leftBound))) closestToLeftBound++;
-
-         // find entry in origSorted just to the right of the rghtBound
-         closestToRghtBound = closestToLeftBound;
-         while ((closestToRghtBound < (LO) nnz) && (Kokkos::ArithTraits<SC>::real(origSorted(rowIdx, closestToRghtBound)) <= Kokkos::ArithTraits<SC>::real(rghtBound))) closestToRghtBound++;
-
-         // compute distance between closestToLeftBound and the left bound and the 
-         // distance between closestToRghtBound and the right bound. 
-      
-         closestToLeftBoundDist = origSorted(rowIdx, closestToLeftBound) - leftBound;
-         if (closestToRghtBound == (LO) nnz) closestToRghtBoundDist= aBigNumber;
-         else                                closestToRghtBoundDist= origSorted(rowIdx, closestToRghtBound) - rghtBound;
-
-         // compute how far the rowSum is off from the target row sum taking into account
-         // numbers that have been shifted to satisfy bound constraint
-
-         rowSumDeviation = leftBound*as<Scalar>(closestToLeftBound) + as<Scalar>((nnz-closestToRghtBound))*rghtBound - rsumTarget; 
-         for (LO i=closestToLeftBound; i < closestToRghtBound; i++) rowSumDeviation += origSorted(rowIdx, i);
-
-         // the code that follow after this if statement assumes that rowSumDeviation is positive. If this
-         // is not the case, flip the signs of everything so that rowSumDeviation is now positive. 
-         // Later we will flip the data back to its original form.
-         if (Kokkos::ArithTraits<SC>::real(rowSumDeviation) < Kokkos::ArithTraits<SC>::real(Kokkos::ArithTraits<SC>::zero())) {
-           flipped = true;
-           temp = leftBound; leftBound = -rghtBound; rghtBound = temp; 
-       
-           /* flip sign of origSorted and reverse ordering so that the negative version is sorted */
-       
-           if ((nnz%2) == 1) origSorted(rowIdx, (nnz/2)  ) =  -origSorted(rowIdx, (nnz/2)  );
-           for (LO i=0; i < (LO) nnz/2; i++) {
-             temp=origSorted(rowIdx, i);
-             origSorted(rowIdx, i) = -origSorted(rowIdx, nnz-1-i); 
-             origSorted(rowIdx, nnz-i-1) = -temp;
+           aBigNumber = aBigNumber+ (Kokkos::ArithTraits<SC>::magnitude(leftBound) + Kokkos::ArithTraits<SC>::magnitude(rghtBound))*as<Scalar>(100.0);
+  
+           LO ind = 0;
+           for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++){
+               origSorted(rowIdx, ind) = values(entryIdx);
+               inds(rowIdx, ind) = ind;
+               ind++;
            }
-         
-           /* reverse bounds */
-       
-           LO itemp = closestToLeftBound; 
-           closestToLeftBound = nnz-closestToRghtBound;
-           closestToRghtBound = nnz-itemp; 
+  
+           auto sortVals = Kokkos::subview( origSorted, rowIdx, Kokkos::ALL() );
+           auto sortInds = Kokkos::subview( inds, rowIdx, Kokkos::make_pair(0,ind));
+           // Need permutation indices to sort row values from smallest to largest,
+           // and unsort once row constraints are applied.
+           // serial insertion sort workaround from https://github.com/kokkos/kokkos/issues/645
+           for (LO i = 1; i < (LO) nnz; ++i){
+             ind = sortInds(i);
+             LO j = i;
+             
+             if (sortVals(sortInds(i)) < sortVals(sortInds(0))){
+               for ( ; j > 0; --j) sortInds(j) = sortInds(j - 1);
+  
+               sortInds[0] = ind;
+             } else {
+               for ( ; sortVals(ind) < sortVals(sortInds(j-1)); --j) sortInds(j) = sortInds(j-1);
+  
+               sortInds(j) = ind;
+             }
+           }
+  
+  
+           for (LO i = 0; i < (LO) nnz; i++) origSorted(rowIdx, i) = values(rowPtr(rowIdx) + inds(rowIdx, i)); //values is no longer used
+           // find entry in origSorted just to the right of the leftBound
+           closestToLeftBound = 0;
+           while ((closestToLeftBound < (LO) nnz) && (Kokkos::ArithTraits<SC>::real(origSorted(rowIdx, closestToLeftBound)) <= Kokkos::ArithTraits<SC>::real(leftBound))) closestToLeftBound++;
+  
+           // find entry in origSorted just to the right of the rghtBound
+           closestToRghtBound = closestToLeftBound;
+           while ((closestToRghtBound < (LO) nnz) && (Kokkos::ArithTraits<SC>::real(origSorted(rowIdx, closestToRghtBound)) <= Kokkos::ArithTraits<SC>::real(rghtBound))) closestToRghtBound++;
+  
+           // compute distance between closestToLeftBound and the left bound and the 
+           // distance between closestToRghtBound and the right bound. 
+        
            closestToLeftBoundDist = origSorted(rowIdx, closestToLeftBound) - leftBound;
            if (closestToRghtBound == (LO) nnz) closestToRghtBoundDist= aBigNumber;
            else                                closestToRghtBoundDist= origSorted(rowIdx, closestToRghtBound) - rghtBound;
-       
-           rowSumDeviation = -rowSumDeviation;
-         }
-
-         // initial fixedSorted so bounds are satisfied and interiors correspond to origSorted
-       
-         for (LO i =                  0; i < closestToLeftBound; i++) fixedSorted(rowIdx, i) = leftBound;
-         for (LO i = closestToLeftBound; i < closestToRghtBound; i++) fixedSorted(rowIdx, i) = origSorted(rowIdx, i);
-         for (LO i = closestToRghtBound; i < (LO) nnz;           i++) fixedSorted(rowIdx, i) = rghtBound;
-       
-         while ((Kokkos::ArithTraits<SC>::magnitude(rowSumDeviation) > Kokkos::ArithTraits<SC>::magnitude(as<Scalar>(1.e-10)*rsumTarget))){ // && ( (closestToLeftBound < nEntries ) || (closestToRghtBound < nEntries))) {
-          if (closestToRghtBound !=  closestToLeftBound)
-               delta = rowSumDeviation/ as<Scalar>(closestToRghtBound -  closestToLeftBound);
-          else delta = aBigNumber; 
-       
-          if (Kokkos::ArithTraits<SC>::magnitude(closestToLeftBoundDist) <= Kokkos::ArithTraits<SC>::magnitude(closestToRghtBoundDist)) {
-             if (Kokkos::ArithTraits<SC>::magnitude(delta) <= Kokkos::ArithTraits<SC>::magnitude(closestToLeftBoundDist)) {
-               rowSumDeviation = zero;
-               for (LO i = closestToLeftBound; i < closestToRghtBound ; i++) fixedSorted(rowIdx, i) = origSorted(rowIdx, i) - delta;
+  
+           // compute how far the rowSum is off from the target row sum taking into account
+           // numbers that have been shifted to satisfy bound constraint
+  
+           rowSumDeviation = leftBound*as<Scalar>(closestToLeftBound) + as<Scalar>((nnz-closestToRghtBound))*rghtBound - rsumTarget; 
+           for (LO i=closestToLeftBound; i < closestToRghtBound; i++) rowSumDeviation += origSorted(rowIdx, i);
+  
+           // the code that follow after this if statement assumes that rowSumDeviation is positive. If this
+           // is not the case, flip the signs of everything so that rowSumDeviation is now positive. 
+           // Later we will flip the data back to its original form.
+           if (Kokkos::ArithTraits<SC>::real(rowSumDeviation) < Kokkos::ArithTraits<SC>::real(Kokkos::ArithTraits<SC>::zero())) {
+             flipped = true;
+             temp = leftBound; leftBound = -rghtBound; rghtBound = temp; 
+         
+             /* flip sign of origSorted and reverse ordering so that the negative version is sorted */
+         
+             if ((nnz%2) == 1) origSorted(rowIdx, (nnz/2)  ) =  -origSorted(rowIdx, (nnz/2)  );
+             for (LO i=0; i < (LO) nnz/2; i++) {
+               temp=origSorted(rowIdx, i);
+               origSorted(rowIdx, i) = -origSorted(rowIdx, nnz-1-i); 
+               origSorted(rowIdx, nnz-i-1) = -temp;
              }
-             else {
-               rowSumDeviation = rowSumDeviation - closestToLeftBoundDist; 
-               fixedSorted(rowIdx, closestToLeftBound) = leftBound;
-               closestToLeftBound++;
-               if (closestToLeftBound < (LO) nnz) closestToLeftBoundDist = origSorted(rowIdx, closestToLeftBound) - leftBound;
-               else                               closestToLeftBoundDist = aBigNumber;
-             }
-          }
-          else {
-             if (Kokkos::ArithTraits<SC>::magnitude(delta) <= Kokkos::ArithTraits<SC>::magnitude(closestToRghtBoundDist)) {
-               rowSumDeviation = 0;
-               for (LO i = closestToLeftBound; i < closestToRghtBound ; i++) fixedSorted(rowIdx, i) = origSorted(rowIdx, i) - delta;
-             }
-             else {
-               rowSumDeviation = rowSumDeviation + closestToRghtBoundDist;
-       //        if (closestToRghtBound < nEntries) { 
-                 fixedSorted(rowIdx, closestToRghtBound) = origSorted(rowIdx, closestToRghtBound);
-                 closestToRghtBound++;
-        //       }
-               if (closestToRghtBound >= (LO) nnz) closestToRghtBoundDist = aBigNumber;
-               else                                closestToRghtBoundDist = origSorted(rowIdx, closestToRghtBound) - rghtBound;
+           
+             /* reverse bounds */
+         
+             LO itemp = closestToLeftBound; 
+             closestToLeftBound = nnz-closestToRghtBound;
+             closestToRghtBound = nnz-itemp; 
+             closestToLeftBoundDist = origSorted(rowIdx, closestToLeftBound) - leftBound;
+             if (closestToRghtBound == (LO) nnz) closestToRghtBoundDist= aBigNumber;
+             else                                closestToRghtBoundDist= origSorted(rowIdx, closestToRghtBound) - rghtBound;
+         
+             rowSumDeviation = -rowSumDeviation;
+           }
+  
+           // initial fixedSorted so bounds are satisfied and interiors correspond to origSorted
+         
+           for (LO i =                  0; i < closestToLeftBound; i++) fixedSorted(rowIdx, i) = leftBound;
+           for (LO i = closestToLeftBound; i < closestToRghtBound; i++) fixedSorted(rowIdx, i) = origSorted(rowIdx, i);
+           for (LO i = closestToRghtBound; i < (LO) nnz;           i++) fixedSorted(rowIdx, i) = rghtBound;
+         
+           while ((Kokkos::ArithTraits<SC>::magnitude(rowSumDeviation) > Kokkos::ArithTraits<SC>::magnitude(as<Scalar>(1.e-10)*rsumTarget))){ // && ( (closestToLeftBound < nEntries ) || (closestToRghtBound < nEntries))) {
+            if (closestToRghtBound !=  closestToLeftBound)
+                 delta = rowSumDeviation/ (SC)(closestToRghtBound -  closestToLeftBound);
+            else delta = aBigNumber; 
+         
+            if (Kokkos::ArithTraits<SC>::magnitude(closestToLeftBoundDist) <= Kokkos::ArithTraits<SC>::magnitude(closestToRghtBoundDist)) {
+               if (Kokkos::ArithTraits<SC>::magnitude(delta) <= Kokkos::ArithTraits<SC>::magnitude(closestToLeftBoundDist)) {
+                 rowSumDeviation = zero;
+                 for (LO i = closestToLeftBound; i < closestToRghtBound ; i++) fixedSorted(rowIdx, i) = origSorted(rowIdx, i) - delta;
+               }
+               else {
+                 rowSumDeviation = rowSumDeviation - closestToLeftBoundDist; 
+                 fixedSorted(rowIdx, closestToLeftBound) = leftBound;
+                 closestToLeftBound++;
+                 if (closestToLeftBound < (LO) nnz) closestToLeftBoundDist = origSorted(rowIdx, closestToLeftBound) - leftBound;
+                 else                               closestToLeftBoundDist = aBigNumber;
+               }
+            }
+            else {
+               if (Kokkos::ArithTraits<SC>::magnitude(delta) <= Kokkos::ArithTraits<SC>::magnitude(closestToRghtBoundDist)) {
+                 rowSumDeviation = 0;
+                 for (LO i = closestToLeftBound; i < closestToRghtBound ; i++) fixedSorted(rowIdx, i) = origSorted(rowIdx, i) - delta;
+               }
+               else {
+                 rowSumDeviation = rowSumDeviation + closestToRghtBoundDist;
+         //        if (closestToRghtBound < nEntries) { 
+                   fixedSorted(rowIdx, closestToRghtBound) = origSorted(rowIdx, closestToRghtBound);
+                   closestToRghtBound++;
+          //       }
+                 if (closestToRghtBound >= (LO) nnz) closestToRghtBoundDist = aBigNumber;
+                 else                                closestToRghtBoundDist = origSorted(rowIdx, closestToRghtBound) - rghtBound;
+               }
              }
            }
-         }
-
-         auto rowStart = rowPtr(rowIdx);
-         if (flipped) {
-           /* flip sign of fixedSorted and reverse ordering so that the positve version is sorted */
-
-           if ((nnz%2) == 1) fixedSorted(rowIdx, (nnz/2)  ) =  -fixedSorted(rowIdx, (nnz/2)  );
-           for (LO i=0; i < (LO) nnz/2; i++) {
-             temp=fixedSorted(rowIdx, i);
-             fixedSorted(rowIdx, i) = -fixedSorted(rowIdx, nnz-1-i); 
-             fixedSorted(rowIdx, nnz-i-1) = -temp;
+  
+           auto rowStart = rowPtr(rowIdx);
+           if (flipped) {
+             /* flip sign of fixedSorted and reverse ordering so that the positve version is sorted */
+  
+             if ((nnz%2) == 1) fixedSorted(rowIdx, (nnz/2)  ) =  -fixedSorted(rowIdx, (nnz/2)  );
+             for (LO i=0; i < (LO) nnz/2; i++) {
+               temp=fixedSorted(rowIdx, i);
+               fixedSorted(rowIdx, i) = -fixedSorted(rowIdx, nnz-1-i); 
+               fixedSorted(rowIdx, nnz-i-1) = -temp;
+             }
            }
+           // unsort and update row values with new values
+           for (LO i = 0; i < (LO) nnz; i++)  values(rowStart + inds(rowIdx, i)) = fixedSorted(rowIdx, i);
+
+         } else { // row does not have feasible solution to match constraint
+           // just set all entries to the same value giving a row sum of 1
+           for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++) values(entryIdx) = one/( (SC)(nnz) );
          }
-         for (LO i = 0; i < (LO) nnz; i++)  values(rowStart + inds(rowIdx, i)) = fixedSorted(rowIdx, i);
-
-         /* check that no constraints are violated */
-
-         //bool lowerViolation = false;
-         //bool upperViolation = false;
-         //bool sumViolation = false;
-         //temp = zero;
-         //for (LO i = 0; i < (LO) nnz; i++)  { 
-         //  if (Kokkos::ArithTraits<SC>::real(values(rowStart+i)) < Kokkos::ArithTraits<SC>::real(notFlippedLeftBound)) lowerViolation = true;
-         //  if (Kokkos::ArithTraits<SC>::real(values(rowStart+i)) > Kokkos::ArithTraits<SC>::real(notFlippedRghtBound)) upperViolation = true;
-         //  temp += values(rowStart+i);
-         //}
-         //if (Kokkos::ArithTraits<SC>::magnitude(temp - rsumTarget) > Kokkos::ArithTraits<SC>::magnitude(as<Scalar>(1.0e-8)*rsumTarget)) sumViolation = true;
-
-           //TEUCHOS_TEST_FOR_EXCEPTION(lowerViolation, Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in a lower bound violation??? ");
-           //TEUCHOS_TEST_FOR_EXCEPTION(upperViolation, Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in an upper bound violation??? ");
-           //TEUCHOS_TEST_FOR_EXCEPTION(sumViolation,   Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in a row sum violation??? ");
-
        }
 
-       if (!hasFeasible) { // just set all entries to the same value giving a row sum of 1
-         for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++) values(entryIdx) = one/as<Scalar>(nnz);
-       }
      }
 
    }
@@ -605,7 +571,6 @@ struct newConstraintKernel {
 
     using local_mat_type = typename Matrix::local_matrix_type;
     constraintKernel<local_mat_type> myKernel(nPDEs,P->getLocalMatrixDevice() );
-    //newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getLocalMatrixDevice() );//TODO
     Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getNodeNumElements() ),
                         myKernel );
 
