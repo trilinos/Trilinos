@@ -161,6 +161,7 @@ elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GNU-7.2.0_OPENMPI-4.0.3" ]; the
   export MPIF90=`which mpif90`
 
   # CUDA Settings
+  unset NVCC_WRAPPER_TMPDIR
   if [[ ! -d /tmp/${USER} ]] ; then
     echo "Creating /tmp/${USER} for nvcc wrapper!"
     mkdir /tmp/${USER}
