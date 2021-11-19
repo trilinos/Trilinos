@@ -362,7 +362,7 @@ struct constraintKernel {
 };
 
 template<typename local_matrix_type>
-struct newConstraintKernel {
+struct optimalSatisfyConstraintsForScalarPDEsKernel {
 
    using Scalar= typename local_matrix_type::non_const_value_type;
    using SC=Scalar;
@@ -376,7 +376,7 @@ struct newConstraintKernel {
    Kokkos::View<SC**, Device> fixedSorted;
    Kokkos::View<LO**, Device> inds;
 
-  newConstraintKernel(LO nPDEs_, LO maxRowEntries_, local_matrix_type localP_) : nPDEs(nPDEs_), localP(localP_)
+   optimalSatisfyConstraintsForScalarPDEsKernel(LO nPDEs_, LO maxRowEntries_, local_matrix_type localP_) : nPDEs(nPDEs_), localP(localP_)
    {
      origSorted  =  Kokkos::View<SC**, Device>("origSorted" , localP_.numRows(), maxRowEntries_);
      fixedSorted =  Kokkos::View<SC**, Device>("fixedSorted", localP_.numRows(), maxRowEntries_);
@@ -405,8 +405,8 @@ struct newConstraintKernel {
 
          SC leftBound = zero;
          SC rghtBound = one;
-         if ((Kokkos::ArithTraits<SC>::real(rsumTarget) >= Kokkos::ArithTraits<SC>::real(leftBound*as<Scalar>(nnz))) && 
-             (Kokkos::ArithTraits<SC>::real(rsumTarget) <= Kokkos::ArithTraits<SC>::real(rghtBound*as<Scalar>(nnz)))){ // has Feasible solution
+         if ((Kokkos::ArithTraits<SC>::real(rsumTarget) >= Kokkos::ArithTraits<SC>::real(leftBound*((SC)nnz))) && 
+             (Kokkos::ArithTraits<SC>::real(rsumTarget) <= Kokkos::ArithTraits<SC>::real(rghtBound*((SC)nnz)))){ // has Feasible solution
 
            flipped    = false;
            // compute aBigNumber to handle some corner cases where we need
@@ -416,7 +416,7 @@ struct newConstraintKernel {
              if ( Kokkos::ArithTraits<SC>::magnitude( values(entryIdx) ) > Kokkos::ArithTraits<SC>::magnitude(aBigNumber)) 
                aBigNumber = Kokkos::ArithTraits<SC>::magnitude( values(entryIdx) );
            }
-           aBigNumber = aBigNumber+ (Kokkos::ArithTraits<SC>::magnitude(leftBound) + Kokkos::ArithTraits<SC>::magnitude(rghtBound))*as<Scalar>(100.0);
+           aBigNumber = aBigNumber+ (Kokkos::ArithTraits<SC>::magnitude(leftBound) + Kokkos::ArithTraits<SC>::magnitude(rghtBound))*((SC)100.0);
   
            LO ind = 0;
            for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++){
@@ -465,7 +465,7 @@ struct newConstraintKernel {
            // compute how far the rowSum is off from the target row sum taking into account
            // numbers that have been shifted to satisfy bound constraint
   
-           rowSumDeviation = leftBound*as<Scalar>(closestToLeftBound) + as<Scalar>((nnz-closestToRghtBound))*rghtBound - rsumTarget; 
+           rowSumDeviation = leftBound*((SC)closestToLeftBound) + ((SC)(nnz-closestToRghtBound))*rghtBound - rsumTarget; 
            for (LO i=closestToLeftBound; i < closestToRghtBound; i++) rowSumDeviation += origSorted(rowIdx, i);
   
            // the code that follow after this if statement assumes that rowSumDeviation is positive. If this
@@ -502,7 +502,7 @@ struct newConstraintKernel {
            for (LO i = closestToLeftBound; i < closestToRghtBound; i++) fixedSorted(rowIdx, i) = origSorted(rowIdx, i);
            for (LO i = closestToRghtBound; i < (LO) nnz;           i++) fixedSorted(rowIdx, i) = rghtBound;
          
-           while ((Kokkos::ArithTraits<SC>::magnitude(rowSumDeviation) > Kokkos::ArithTraits<SC>::magnitude(as<Scalar>(1.e-10)*rsumTarget))){ // && ( (closestToLeftBound < nEntries ) || (closestToRghtBound < nEntries))) {
+           while ((Kokkos::ArithTraits<SC>::magnitude(rowSumDeviation) > Kokkos::ArithTraits<SC>::magnitude(((SC)1.e-10)*rsumTarget))){ // && ( (closestToLeftBound < nEntries ) || (closestToRghtBound < nEntries))) {
             if (closestToRghtBound !=  closestToLeftBound)
                  delta = rowSumDeviation/ (SC)(closestToRghtBound -  closestToLeftBound);
             else delta = aBigNumber; 
@@ -577,15 +577,15 @@ struct newConstraintKernel {
   } //SatsifyPConstraints()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::newSatisfyPConstraints( RCP<Matrix>& P) const {
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::optimalSatisfyPConstraintsForScalarPDEs( RCP<Matrix>& P) const {
 
     using Device = typename Matrix::local_matrix_type::device_type;
     LO nPDEs = 1;//A->GetFixedBlockSize();
 
     using local_mat_type = typename Matrix::local_matrix_type;
     // what is the difference between getGlobalMaxNumRowEntries and getNodeMaxNumRowEntries?
-    newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getGlobalMaxNumRowEntries(),P->getLocalMatrixDevice() );
-    //newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getNodeMaxNumRowEntries(),P->getLocalMatrixDevice() );
+    optimalSatisfyConstraintsForScalarPDEsKernel<local_mat_type> myKernel(nPDEs,P->getGlobalMaxNumRowEntries(),P->getLocalMatrixDevice() );
+    //optimalSatisfyConstraintsForScalarPDEsKernel<local_mat_type> myKernel(nPDEs,P->getNodeMaxNumRowEntries(),P->getLocalMatrixDevice() );
     Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getNodeNumElements() ),
                         myKernel );
 

@@ -97,7 +97,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTestMatrices_cp
   SOURCE_FILES iso2d.mat
   SOURCE_FILES fuego0.mm
   SOURCE_FILES fuego1.mm
-  SOURCE_FILES SaP_constrainTest_P.m
+  SOURCE_FILES SaP_constrainTest_P.mat
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/TestMatrices
 )
 

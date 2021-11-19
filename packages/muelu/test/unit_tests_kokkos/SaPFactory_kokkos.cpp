@@ -215,7 +215,7 @@ namespace MueLuTests {
     TEST_FLOATING_EQUALITY(STS::magnitude(norms[0]), STS::magnitude(as<Scalar>(6.0)), 100*TMT::eps());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, ConstrainRow, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, ConstrainRowOptimalScalarPDE, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -229,13 +229,13 @@ namespace MueLuTests {
 
     RCP<Matrix> P;
     Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
-    P =  Xpetra::IO<SC, LO, GO, NO>::Read("../unit_tests/TestMatrices/SaP_constrainTest_P.m", lib, comm);
+    P =  Xpetra::IO<SC, LO, GO, NO>::Read("../unit_tests/TestMatrices/SaP_constrainTest_P.mat", lib, comm);
 
     RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
-    sapFactory->newSatisfyPConstraints( P );
+    sapFactory->optimalSatisfyPConstraintsForScalarPDEs( P );
 
     // check that row sums are all one by checking the norm of the vector
-    // note: newSatisfyPConstraints preserves row sum of original P (one in this case),
+    // note: optimalSatisfyPConstraintsForScalarPDEs preserves row sum of original P (one in this case),
     //       but SatisfyPConstraints normalizes each row sum to one.
     RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(), 1);
     RCP<MultiVector> Bfact = MultiVectorFactory::Build(P->getRangeMap(),  1);
@@ -265,7 +265,7 @@ namespace MueLuTests {
     TEST_EQUALITY(upperViolation, false);
 
 
-  } //SaPFactory_ConstrainRow
+  } //SaPFactory_ConstrainRowOptimalScalarPDE
 
   // FIXME_KOKKOS: uncomment the test when we get all corresponding factories ported to kokkos
 #if 0
@@ -477,7 +477,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, Constructor, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, Build,       SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, EnforceConstraints, SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, ConstrainRow, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, ConstrainRowOptimalScalarPDE, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 

@@ -288,7 +288,7 @@ namespace MueLuTests {
 
   } //SaPFactory_EpetraVsTpetra
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, ConstrainRow, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory, ConstrainRowOptimalScalarPDE, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
 
@@ -302,10 +302,10 @@ namespace MueLuTests {
     P =  Xpetra::IO<SC, LO, GO, NO>::Read("TestMatrices/SaP_constrainTest_P.mat", lib, comm);
 
     RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
-    sapFactory->newSatisfyPConstraints( P );
+    sapFactory->optimalSatisfyPConstraintsForScalarPDEs( P );
 
     // check that row sums are all one by checking the norm of the vector
-    // note: newSatisfyPConstraints preserves row sum of original P (one in this case),
+    // note: optimalSatisfyPConstraintsForScalarPDEs preserves row sum of original P (one in this case),
     //       but SatisfyPConstraints normalizes each row sum to one.
     RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(), 1);
     RCP<MultiVector> Bfact = MultiVectorFactory::Build(P->getRangeMap(),  1);
@@ -335,12 +335,12 @@ namespace MueLuTests {
     TEST_EQUALITY(upperViolation, false);
 
 
-  } //SaPFactory_ConstrainRow
+  } //SaPFactory_ConstrainRowOptimalScalarPDE
 
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, Test0, SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, EpetraVsTpetra, SC, LO, GO, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, ConstrainRow, SC, LO, GO, Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory, ConstrainRowOptimalScalarPDE, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

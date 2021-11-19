@@ -146,7 +146,7 @@ template <class Scalar = DefaultScalar,
       the QR factorization.
       */
     void SatisfyPConstraints(RCP<Matrix> A, RCP<Matrix>& P) const;
-    void newSatisfyPConstraints(RCP<Matrix>& P) const;
+    void optimalSatisfyPConstraintsForScalarPDEs(RCP<Matrix>& P) const;
 
     bool constrainRow(Scalar *orig, LocalOrdinal nEntries, Scalar leftBound, Scalar rghtBound,Scalar rsumTarget, Scalar *fixedUnsorted, Scalar *scalarData) const;
 
