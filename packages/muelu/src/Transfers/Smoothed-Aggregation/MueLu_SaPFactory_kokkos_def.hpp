@@ -583,8 +583,9 @@ struct newConstraintKernel {
     LO nPDEs = 1;//A->GetFixedBlockSize();
 
     using local_mat_type = typename Matrix::local_matrix_type;
-    //newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getGlobalMaxNumRowEntries(),P->getLocalMatrixDevice() );
-    newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getNodeMaxNumRowEntries(),P->getLocalMatrixDevice() );
+    // what is the difference between getGlobalMaxNumRowEntries and getNodeMaxNumRowEntries?
+    newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getGlobalMaxNumRowEntries(),P->getLocalMatrixDevice() );
+    //newConstraintKernel<local_mat_type> myKernel(nPDEs,P->getNodeMaxNumRowEntries(),P->getLocalMatrixDevice() );
     Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getNodeNumElements() ),
                         myKernel );
 

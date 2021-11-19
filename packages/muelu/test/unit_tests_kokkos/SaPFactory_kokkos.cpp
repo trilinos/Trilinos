@@ -231,13 +231,12 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
     P =  Xpetra::IO<SC, LO, GO, NO>::Read("../unit_tests/TestMatrices/SaP_constrainTest_P.m", lib, comm);
 
-    std::cout<<"Running newSatisfyConstraints"<<std::endl;
     RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
     sapFactory->newSatisfyPConstraints( P );
 
-    //Xpetra::IO<SC, LO, GO, NO>::Write("SaP_constrainTest_P.m", *P);
-
     // check that row sums are all one by checking the norm of the vector
+    // note: newSatisfyPConstraints preserves row sum of original P (one in this case),
+    //       but SatisfyPConstraints normalizes each row sum to one.
     RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(), 1);
     RCP<MultiVector> Bfact = MultiVectorFactory::Build(P->getRangeMap(),  1);
     X->putScalar(one);
