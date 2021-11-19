@@ -83,11 +83,6 @@ set (TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH "Set by default for CUDA PR testi
 
 set (Trilinos_ENABLE_Stokhos OFF CACHE BOOL "Set by default for CUDA PR testing")
 
-# The compile times for two Panzer files went up to over 6 hours. This
-# turns off one feature that allows these in about 24 minutes. Please remove
-# when issue #7532 is resolved.
-set (Sacado_NEW_FAD_DESIGN_IS_DEFAULT OFF CACHE BOOL "Temporary fix for issue #7532" )
-
 # Disable some packages that can't be tested with this PR build
 set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL
   "Can't test Tacho with CUDA without RDC" FORCE)
@@ -143,9 +138,6 @@ set (Intrepid2_unit-test_Discretization_Basis_HierarchicalBases_Hierarchical_Bas
 set (Trilinos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
 set (Teuchos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
 set (Tpetra_INST_COMPLEX_DOUBLE ON CACHE BOOL "Testing for #9025")
-
-include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
-
 
 #Tests turned off to be able to move the cuda pr build to weaver
 set (_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
@@ -314,3 +306,5 @@ set (Stratimikos_test_amesos_thyra_driver_MPI_1_DISABLE ON CACHE BOOL "Temporary
 set (Stratimikos_Thyra_Belos_StatusTest_UnitTests_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (ThyraCore_MultiVector_RowStatScaledOp_UnitTests_MPI_2_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (TrilinosCouplings_Example_Maxwell_Tpetra_MueLu_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+
+include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")

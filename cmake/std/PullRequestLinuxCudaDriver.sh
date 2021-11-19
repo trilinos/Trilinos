@@ -15,7 +15,6 @@ set -x
 
 #TODO: review appropriate job size
 #cuda 10.1.105 will be built with rhel7G
-export TRILINOS_PR_DO_NOT_SET_PROXY=TRUE
 
 bsub -x -Is -n 20 -J ${JOB_NAME} -W ${BSUB_CTEST_TIME_LIMIT} ${WORKSPACE}/Trilinos/cmake/std/PullRequestLinuxDriver.sh
 
