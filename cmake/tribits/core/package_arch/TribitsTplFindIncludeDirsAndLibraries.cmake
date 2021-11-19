@@ -677,15 +677,17 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
     global_set(TPL_${TPL_NAME}_NOT_FOUND FALSE)
   endif()
 
-  set(buildDirCMakePkgsDir
-    "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_CMAKE_PKGS_DIR}")
+  set(buildDirExternalPkgsDir
+    "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}")
   set(tplConfigFile
-    "${buildDirCMakePkgsDir}/${TPL_NAME}/${TPL_NAME}Config.cmake")
+    "${buildDirExternalPkgsDir}/${TPL_NAME}/${TPL_NAME}Config.cmake")
   tribits_external_package_write_config_file(${TPL_NAME} "${tplConfigFile}")
   if (NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
     include("${tplConfigFile}")
   endif()
-  tribits_external_package_install_config_file(${TPL_NAME} "${tplConfigFile}")
+  # NOTE: The file <tplName>ConfigVersion.cmake will get created elsewhere as
+  # will the install targets for the files <tplName>Config and
+  # <tplName>ConfigVersion.cmake.
 
 endfunction()
 

@@ -1,35 +1,35 @@
-# TribitsExampleApp
+# TribitsExampleApp2
 
-The example project `TribitsExampleApp` is a raw CMake project that pulls in
-libraries from packages from `TribitsExampleProject`.  To build against all of
-the installed packages from an upstream `TribitsExampleProject`, configure,
+The example project `TribitsExampleApp2` is a raw CMake project that pulls in
+libraries from packages from `TribitsExampleProject2`.  To build against all of
+the installed packages from an upstream `TribitsExampleProject2`, configure,
 build, and run the tests with:
 
 ```
   cmake \
     -DCMAKE_PREFIX_PATH=<upstreamInstallDir> \
-    <base-dir>/TribitsExampleApp
+    <base-dir>/TribitsExampleApp2
 
   make
 
   ctest
 ```
 
-That will call `find_package(TribitsExProj)` and will set the compilers
-pulled in from the found `TribitsExProjConfig.cmake` file.
+That will call `find_package(TribitsExProj2)` and will set the compilers
+pulled in from the found `TribitsExProj2Config.cmake` file.
 
 
 ## Pulling in only a subset of packages
 
-To configure and build `TribitsExampleApp` against only a subset of the
-installed `TribitsExampleProject` packages, configure `TribitsExampleApp`
+To configure and build `TribitsExampleApp2` against only a subset of the
+installed `TribitsExampleProject2` packages, configure `TribitsExampleApp2`
 using, for example:
 
 ```
   cmake \
     -DCMAKE_PREFIX_PATH=<upstreamInstallDir> \
-    -DTribitsExApp_USE_COMPONENTS=SimpleCxx,WithSubpackages \
-    <base-dir>/TribitsExampleApp
+    -DTribitsExApp_USE_COMPONENTS=Package1,Package2 \
+    <base-dir>/TribitsExampleApp2
 ```
 
 Internally, that that will call:
@@ -44,27 +44,27 @@ create a proper CMake list internally before calling `find_package()`).
 
 ## Pulling in only a subset of packages by finding each package individually
 
-`TribitsExampleApp` is also set up to demonstrate finding the individual
+`TribitsExampleApp2` is also set up to demonstrate finding the individual
 packages using separate calls to `find_package(<Package>)` by configuring
 with, for example:
 
 ```
   cmake \
     -DCMAKE_PREFIX_PATH=<upstreamInstallDir> \
-    -DTribitsExApp_USE_COMPONENTS=SimpleCxx,WithSubpackages \
+    -DTribitsExApp_USE_COMPONENTS=Package1,Package2 \
     -DTribitsExApp_FIND_INDIVIDUAL_PACKAGES=ON \
-    <base-dir>/TribitsExampleApp
+    <base-dir>/TribitsExampleApp2
 ```  
 
 That essentially results in calling:
 
 ```
-  find_package(SimpleCxx REQUIRED)
-  find_package(WithSubpackages REQUIRED)
+  find_package(Package1 REQUIRED)
+  find_package(Package2 REQUIRED)
   ...
   target_link_libraries(app
-    PRIVATE SimpleCxx::all_libs
-    PRIVATE WithSubpackages::all_libs
+    PRIVATE Package1::all_libs
+    PRIVATE Package2::all_libs
     )
 ```
 
@@ -73,38 +73,38 @@ That essentially results in calling:
 
 ## Pulling in packages from the build tree
 
-`TribitsExampleApp` is additionally set up to demonstrate finding the
+`TribitsExampleApp2` is additionally set up to demonstrate finding the
 individual packages from the build directory (where `<upstreamBuildDir>` is
-the build directory for `TribitsExampleProject`) instead of the install tree
+the build directory for `TribitsExampleProject2`) instead of the install tree
 using separate calls to `find_package(<Package>)` by configuring with, for
 example:
 
 ```
   cmake \
     -DCMAKE_PREFIX_PATH=<upstreamBuildDir>/cmake_packages \
-    -DTribitsExApp_USE_COMPONENTS=SimpleCxx,WithSubpackages \
+    -DTribitsExApp_USE_COMPONENTS=Package1,Package2 \
     -DTribitsExApp_FIND_INDIVIDUAL_PACKAGES=ON \
-    <base-dir>/TribitsExampleApp
+    <base-dir>/TribitsExampleApp2
 ```  
 
 This is identical to the case to finding the individual packages under the
 install tree except here the packages and libraries are found under the build
 tree and the include directories point into the source tree.  (There is no
 need for an install directory in this case.)  This is to simulate more
-advanced use cases such as where `TribitsExampleApp` and
-`TribitsExampleProject` may be part of a larger super-build that works out of
+advanced use cases such as where `TribitsExampleApp2` and
+`TribitsExampleProject2` may be part of a larger super-build that works out of
 the build tree without needing to install.
 
-NOTE: There is no `TribitsExProjConfig.cmake` file generated in the build tree
-to find so it is not possible to call `find_package(TribitsExProjConfig)`
+NOTE: There is no `TribitsExProj2Config.cmake` file generated in the build tree
+to find so it is not possible to call `find_package(TribitsExProj2Config)`
 pointing into the build tree.
 
 
-## Tests demonstrating usage of TribitsExampleApp
+## Tests demonstrating usage of TribitsExampleApp2
 
 The TriBITS project contains automated tests that run the various use cases
 described above and check their result.  These tests are shown defined
-[here](https://github.com/TriBITSPub/TriBITS/blob/master/test/core/ExamplesUnitTests/TribitsExampleApp_Tests.cmake)
+[here](https://github.com/TriBITSPub/TriBITS/blob/master/test/core/ExamplesUnitTests/TribitsExampleApp2_Tests.cmake)
 and are run locally with CTest and are submitted to
 [CDash](https://github.com/TriBITSPub/TriBITS/wiki/TriBITS-CDash-Dashboard) as
 part of regular testing.

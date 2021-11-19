@@ -94,6 +94,8 @@ set(${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME ${PROJECT_NAME}PackageDepe
 
 set(${PROJECT_NAME}_PACKAGE_DEPS_FILES_DIR "cmake/dependencies")
 
+set(${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR "external_packages")
+
 set(${PROJECT_NAME}_BUILD_DIR_CMAKE_PKGS_DIR "cmake_packages")
 
 # Other stuff

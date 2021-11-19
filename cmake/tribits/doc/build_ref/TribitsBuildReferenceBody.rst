@@ -3743,6 +3743,13 @@ options from the source tree and the build tree are automatically injected
 into the build targets associated with the ``<downstream-target>`` object
 compile lines and link lines.
 
+Also note that package config files for all of the enabled external
+packages/TPLs will also be written into the build tree under
+``<upstreamBuildDir>/external_packages``.  These contain modern CMake targets
+that are pulled in by the downstream ``<Package>Config.cmake`` files under
+``<upstreamBuildDir>/external_packages``.  These external package/TPL config
+files are placed in a seprate directory to avoid being found by accident.
+
 
 Installation Testing
 ====================

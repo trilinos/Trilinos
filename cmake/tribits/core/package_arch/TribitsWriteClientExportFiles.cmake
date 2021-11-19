@@ -371,7 +371,9 @@ endfunction()
 #
 function(tribits_generate_package_config_file_for_build_tree  packageName)
 
-  set(BUILD_DIR_CMAKE_PKGS_DIR
+  set(buildDirExtPkgsDir
+     "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}")
+  set(buildDirCMakePkgsDir
      "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_CMAKE_PKGS_DIR}")
 
   if (PARSE_PACKAGE_CONFIG_FOR_BUILD_BASE_DIR
@@ -382,7 +384,8 @@ function(tribits_generate_package_config_file_for_build_tree  packageName)
     set(PACKAGE_CONFIG_CODE "")
 
     tribits_append_dependent_package_config_file_includes(${packageName}
-      CONFIG_FILE_BASE_DIR "${BUILD_DIR_CMAKE_PKGS_DIR}"
+      EXT_PKG_CONFIG_FILE_BASE_DIR "${buildDirExtPkgsDir}"
+      PKG_CONFIG_FILE_BASE_DIR "${buildDirCMakePkgsDir}"
       CONFIG_FILE_STR_INOUT PACKAGE_CONFIG_CODE )
 
     # Import build tree targets into applications.
@@ -469,7 +472,9 @@ function(tribits_generate_package_config_file_for_install_tree  packageName)
   set(PACKAGE_CONFIG_CODE "")
 
   tribits_append_dependent_package_config_file_includes(${packageName}
-    CONFIG_FILE_BASE_DIR "\${CMAKE_CURRENT_LIST_DIR}/.."
+    EXT_PKG_CONFIG_FILE_BASE_DIR
+      "\${CMAKE_CURRENT_LIST_DIR}/../../${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}"
+    PKG_CONFIG_FILE_BASE_DIR "\${CMAKE_CURRENT_LIST_DIR}/.."
     CONFIG_FILE_STR_INOUT PACKAGE_CONFIG_CODE )
 
   # Import install targets
@@ -499,14 +504,15 @@ endfunction()
 
 # @FUNCTION: tribits_append_dependent_package_config_file_includes()
 #
-# Append the includes for upstream internal packages and external packages
-# (TPLs) to a `<Package>Config.cmake` file string.
+# Append the includes for upstream external packages (TPLs) and internal
+# packages to a `<Package>Config.cmake` file string.
 #
 # Usage::
 #
 #   tribits_append_dependent_package_config_file_includes(
 #     <packageName>
-#     CONFIG_FILE_BASE_DIR <configFileBaseDir>
+#     EXT_PKG_CONFIG_FILE_BASE_DIR <extPkgconfigFileBaseDir>
+#     PKG_CONFIG_FILE_BASE_DIR <pkgConfigFileBaseDir>
 #     CONFIG_FILE_STR_INOUT <configFileStrInOut>
 #     )
 #
@@ -517,20 +523,22 @@ function(tribits_append_dependent_package_config_file_includes packageName)
   cmake_parse_arguments(
      PARSE  #prefix
      ""  #options
-     "CONFIG_FILE_BASE_DIR;CONFIG_FILE_STR_INOUT" #one_value_keywords
+     #one_value_keywords
+     "EXT_PKG_CONFIG_FILE_BASE_DIR;PKG_CONFIG_FILE_BASE_DIR;CONFIG_FILE_STR_INOUT"
      "" #multi_value_keywords
      ${ARGN}
      )
   tribits_check_for_unparsed_arguments()
 
-  set(configFileBaseDir "${PARSE_CONFIG_FILE_BASE_DIR}")
+  set(extPkgConfigFileBaseDir "${PARSE_EXT_PKG_CONFIG_FILE_BASE_DIR}")
+  set(pkgConfigFileBaseDir "${PARSE_PKG_CONFIG_FILE_BASE_DIR}")
   set(configFileStr "${${PARSE_CONFIG_FILE_STR_INOUT}}")
 
   # Include configurations of dependent packages
   string(APPEND configFileStr
     "# Include configuration of dependent packages\n")
   foreach(depPkg IN LISTS ${packageName}_FULL_ENABLED_DEP_PACKAGES)
-    set(cmakePkgDir "${configFileBaseDir}/${depPkg}")
+    set(cmakePkgDir "${pkgConfigFileBaseDir}/${depPkg}")
     string(APPEND configFileStr
       "include(\"${cmakePkgDir}/${depPkg}Config.cmake\")\n")
   endforeach()
@@ -540,14 +548,14 @@ function(tribits_append_dependent_package_config_file_includes packageName)
     "\n# Include configuration of dependent external packages/TPls\n")
   foreach(depTpl IN LISTS ${packageName}_LIB_REQUIRED_DEP_TPLS)
     if (TARGET ${depTpl}::all_libs)
-      set(cmakeTplDir "${configFileBaseDir}/${depTpl}")
+      set(cmakeTplDir "${extPkgConfigFileBaseDir}/${depTpl}")
       string(APPEND configFileStr
         "include(\"${cmakeTplDir}/${depTpl}Config.cmake\")\n")
     endif()
   endforeach()
   foreach(depTpl IN LISTS ${packageName}_LIB_OPTIONAL_DEP_TPLS)
     if (${packageName}_ENABLE_${depTpl} AND TARGET ${depTpl}::all_libs)
-      set(cmakeTplDir "${configFileBaseDir}/${depTpl}")
+      set(cmakeTplDir "${extPkgConfigFileBaseDir}/${depTpl}")
       string(APPEND configFileStr
         "include(\"${cmakeTplDir}/${depTpl}Config.cmake\")\n")
     endif()
@@ -645,7 +653,7 @@ function(tribits_write_package_client_export_files PACKAGE_NAME)
     message("\nTRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES: ${PACKAGE_NAME}")
   endif()
 
-  set(BUILD_DIR_CMAKE_PKGS_DIR
+  set(buildDirCMakePkgsDir
      "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_CMAKE_PKGS_DIR}")
 
   set(EXPORT_FILES_ARGS PACKAGE_NAME ${PACKAGE_NAME})
@@ -655,7 +663,7 @@ function(tribits_write_package_client_export_files PACKAGE_NAME)
       message("For package ${PACKAGE_NAME} creating ${PACKAGE_NAME}Config.cmake")
     endif()
     set(PACKAGE_CONFIG_FOR_BUILD_BASE_DIR
-      "${BUILD_DIR_CMAKE_PKGS_DIR}/${PACKAGE_NAME}" )
+      "${buildDirCMakePkgsDir}/${PACKAGE_NAME}" )
     set(PACKAGE_CONFIG_FOR_INSTALL_BASE_DIR
       "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles" )
     append_set(EXPORT_FILES_ARGS
