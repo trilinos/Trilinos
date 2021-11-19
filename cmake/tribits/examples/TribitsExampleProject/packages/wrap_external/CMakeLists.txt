@@ -6,8 +6,7 @@
 # configured and built piece of software.  The external software once built
 # provides libraries that need to be cast as TriBITS CMake libraries.  To
 # make this even more interesting, the external software has dependencies on
-# upstream TriBITS packages that it pulls in through a TriBITS export
-# makefile.
+# upstream TriBITS packages.
 #
 # An overview of the basic tasks required are:
 #
@@ -62,7 +61,7 @@ endif()
 # start from scratch.
 
 #
-# B) Get the arguments for the configure of exteranl_func
+# B) Get the arguments for the configure of external_func
 #
 
 string(TOUPPER "${CMAKE_BUILD_TYPE}" upperBuildType)

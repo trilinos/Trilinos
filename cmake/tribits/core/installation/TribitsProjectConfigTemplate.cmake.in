@@ -103,6 +103,7 @@ endif()
 # Initialize ${PROJECT_NAME}_FOUND with true, and set it to FALSE if any of
 # the required components wasn't found.
 set(${PROJECT_NAME}_FOUND TRUE)
+set(${PROJECT_NAME}_NOT_FOUND_MESSAGE "")
 foreach (comp IN ITEMS ${PDOLLAR}{COMPONENTS_LIST})
   set(
     INCLUDE_FILE
@@ -121,10 +122,10 @@ foreach (comp IN ITEMS ${PDOLLAR}{COMPONENTS_LIST})
    list(APPEND ${PROJECT_NAME}_TPL_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARY_DIRS})
    list(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
  else()
-   # Set ${PROJECT_NAME}_<component>_FOUND to FALSE.
    set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
-   # Set ${PROJECT_NAME}_FOUND to FALSE if component is not optional.
    if(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
+     string(APPEND ${PROJECT_NAME}_NOT_FOUND_MESSAGE
+       "ERROR: Could not find component '${PDOLLAR}{comp}'!\n")
      set(${PROJECT_NAME}_FOUND FALSE)
    endif()
  endif()

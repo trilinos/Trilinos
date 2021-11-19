@@ -87,32 +87,16 @@ function(tribits_filter_only_build_targets targetListInVar targetTypesList
     targetListOutVar
   )
 
-  #message("\ntribits_filter_only_build_targets:\n")
-  #print_var(targetListInVar)
-  #print_var(targetTypesList)
-  #print_var(targetListInVar)
-  #print_var(${targetListInVar})
-
   set(targetListOut "")
 
   foreach (target IN LISTS ${targetListInVar})
-    #message("")
-    #print_var(target)
     get_property(targetType TARGET ${target} PROPERTY TYPE)
-    set(matchedDesiredTargetType FALSE)
-    #print_var(targetType)
     foreach (desiredTargetType IN ITEMS ${targetTypesList})
-      #print_var(desiredTargetType)
       if (desiredTargetType STREQUAL targetType)
-        #message("-- " "${target} is a filtered-for build target!")
         list(APPEND targetListOut ${target})
-        set(matchedDesiredTargetType TRUE)
         break()
       endif()
     endforeach()
-    #if (NOT matchedDesiredTargetType)
-    #  message("-- " "${target} is **NOT** a filtered-for build target!")
-    #endif()
   endforeach()
 
   set(${targetListOutVar} ${targetListOut} PARENT_SCOPE)
