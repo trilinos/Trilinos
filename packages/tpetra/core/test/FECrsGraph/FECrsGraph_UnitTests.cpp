@@ -586,8 +586,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
 
   // Passing a domain map different from the uniqueMap should cause a rearrangement of
   // off-rank indices in the column map. Other than that, the graphs should still coincide.
-  success = compare_final_graph_structure_relaxed(out,g1,g3) && success;
-  TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
+  success = compare_final_graph_structure_relaxed(myout,g1,g3) && success;
+  TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 
   // We can check that g3 is exactly what we would get if g1's col map had been
   // built with a overlapMap locally fitted to it. We can recreate that scenario by
