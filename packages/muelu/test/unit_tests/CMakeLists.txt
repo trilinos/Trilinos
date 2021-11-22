@@ -46,6 +46,7 @@ APPEND_SET(SOURCES
   ParameterList/FactoryFactory.cpp
   ParameterList/ParameterListInterpreter.cpp
   PermutedTransferFactory.cpp
+  AlgebraicPermutationStrategy.cpp
   PgPFactory.cpp
   RAPFactory.cpp
   RAPShiftFactory.cpp
