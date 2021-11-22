@@ -98,7 +98,7 @@ private:
   bool zlib_{true};
   bool szip_{false};
 
-  std::string blockPrefix_{std::string("p")};
+  std::string blockPrefix_{"p"};
 
   vector3d offset_;
   double   tolerance_{0.0};
