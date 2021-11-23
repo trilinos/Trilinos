@@ -190,7 +190,7 @@ namespace MueLu {
               nsValues[j*numPDEs + i] = 1.0;
             }
           }
-          if ( (int) nullspaceDim > numPDEs ) {
+          if (( (int) nullspaceDim > numPDEs ) && ((int) numPDEs > 1)) {
             /* xy rotation */
             ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(numPDEs);
             int numBlocks = nsValues.size() / numPDEs;
@@ -200,7 +200,7 @@ namespace MueLu {
               nsValues[j*numPDEs + 1] =  (xvals[j]-cx);
             }
           }
-          if ( (int) nullspaceDim == numPDEs+3 ) {
+          if (( (int) nullspaceDim == numPDEs+3 )  && ((int) numPDEs > 2)) {
             /* xz rotation */
             ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(numPDEs+1);
             int numBlocks = nsValues.size() / numPDEs;
