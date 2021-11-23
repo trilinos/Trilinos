@@ -79,24 +79,26 @@ namespace MueLuTests {
     TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
+    GO nx = 2, ny = 3, nz = 4, mx = comm->getSize(), my = 1, mz = 1; ;
+    LO blkSize = 3;
     Teuchos::ParameterList matrixList;
-    matrixList.set("nx", 2);
-    matrixList.set("ny", 3);
-    matrixList.set("nz", 4);
-    matrixList.set("mx", comm->getSize() );
-    matrixList.set("my", 1);
-    matrixList.set("mz", 1);
+    matrixList.set("nx", nx);
+    matrixList.set("ny", ny);
+    matrixList.set("nz", nz);
+    matrixList.set("mx", mx);
+    matrixList.set("my", my);
+    matrixList.set("mz", mz);
     matrixList.set("matrixType","Elasticity3D");
     RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::BuildMatrix(matrixList,TestHelpers::Parameters::getLib());
-    Op->SetFixedBlockSize(3);
+    Op->SetFixedBlockSize(blkSize);
 
     fineLevel.Set("A",Op);
 
     Teuchos::ParameterList galeriList;
-    galeriList.set("nx", 2);
-    galeriList.set("ny", 3);
-    galeriList.set("nz", 4);
-    RCP<Matrix> fake = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(24); // need scalar PDE to produce proper coordinate array
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+    galeriList.set("nz", nz);
+    RCP<Matrix> fake = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(nx*ny*nz); // need scalar PDE to produce proper coordinate array
     RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,RealValuedMultiVector>("3D", fake->getRowMap(), galeriList);
     fineLevel.Set("Coordinates", coordinates);
 
@@ -109,10 +111,11 @@ namespace MueLuTests {
     nspace->Build(fineLevel);
     RCP<MultiVector> nullSpace = fineLevel.Get<RCP<MultiVector> >("Nullspace",nspace.get());
 
-    ArrayRCP<Scalar> xvals = coordinates->getDataNonConst(0); 
-    ArrayRCP<Scalar> yvals = coordinates->getDataNonConst(1); 
-    ArrayRCP<Scalar> zvals = coordinates->getDataNonConst(2); 
-    RCP<MultiVector> handCompNullSpace = MultiVectorFactory::Build(Op->getRowMap(), 6);
+    ArrayRCP<real_type> xvals = coordinates->getDataNonConst(0); 
+    ArrayRCP<real_type> yvals = coordinates->getDataNonConst(1); 
+    ArrayRCP<real_type> zvals = coordinates->getDataNonConst(2); 
+    size_t nullDim = 6;
+    RCP<MultiVector> handCompNullSpace = MultiVectorFactory::Build(Op->getRowMap(), nullDim);
     handCompNullSpace->putScalar(0.0);
     ArrayRCP<Scalar> nsValues;
     nsValues = handCompNullSpace->getDataNonConst(0); for (int j = 0; j < nsValues.size(); j +=3) nsValues[j] = 1.; 
