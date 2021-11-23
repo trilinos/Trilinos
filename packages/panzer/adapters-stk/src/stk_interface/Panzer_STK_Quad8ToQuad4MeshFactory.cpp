@@ -55,39 +55,39 @@ using Teuchos::rcp;
 
 namespace panzer_stk {
 
-  Quad8ToQuad4MeshFactory::Quad8ToQuad4MeshFactory(const std::string& quad8MeshFileName,
-                                                   const std::vector<std::string>* volume_fields_to_copy,
-                                                   const bool print_debug)
-    : print_debug_(print_debug)
-  {
-    panzer_stk::STK_ExodusReaderFactory factory;
-    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-    pl->set("File Name",quad8MeshFileName);
-    factory.setParameterList(pl);
-    quad8Mesh_ = factory.buildMesh(MPI_COMM_WORLD);
+Quad8ToQuad4MeshFactory::Quad8ToQuad4MeshFactory(const std::string& quad8MeshFileName,
+                                                 stk::ParallelMachine mpi_comm,
+                                                 const bool print_debug)
+  : print_debug_(print_debug)
+{
+  panzer_stk::STK_ExodusReaderFactory factory;
+  RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+  pl->set("File Name",quad8MeshFileName);
+  factory.setParameterList(pl);
+  quad8Mesh_ = factory.buildMesh(mpi_comm);
 
-    if (volume_fields_to_copy != nullptr)
-      volume_fields_to_copy_ = *volume_fields_to_copy;
+  edgeBlockName_ = "line_2_"+panzer_stk::STK_Interface::edgeBlockString;
+}
 
-    edgeBlockName_ = "line_2_"+panzer_stk::STK_Interface::edgeBlockString;
-  }
-
-  Quad8ToQuad4MeshFactory::Quad8ToQuad4MeshFactory(const Teuchos::RCP<panzer_stk::STK_Interface>& quad8Mesh,
-                                                   const std::vector<std::string>* volume_fields_to_copy,
-                                                   const bool print_debug)
-    : quad8Mesh_(quad8Mesh),
-      print_debug_(print_debug)
-  {
-    if (volume_fields_to_copy != nullptr)
-      volume_fields_to_copy_ = *volume_fields_to_copy;
-
-    edgeBlockName_ = "line_2_"+panzer_stk::STK_Interface::edgeBlockString;
-  }
+Quad8ToQuad4MeshFactory::Quad8ToQuad4MeshFactory(const Teuchos::RCP<panzer_stk::STK_Interface>& quad8Mesh,
+                                                 const bool print_debug)
+  : quad8Mesh_(quad8Mesh),
+    print_debug_(print_debug)
+{
+  edgeBlockName_ = "line_2_"+panzer_stk::STK_Interface::edgeBlockString;
+}
 
 //! Build the mesh object
 Teuchos::RCP<STK_Interface> Quad8ToQuad4MeshFactory::buildMesh(stk::ParallelMachine parallelMach) const
 {
    PANZER_FUNC_TIME_MONITOR("panzer::Quad8ToQuad4MeshFactory::buildMesh()");
+
+   // Make sure the Quad8 and Quad4 Comms match
+   {
+     int result = MPI_UNEQUAL;
+     // MPI_Comm_compare(parallelMach, quad8Mesh_->getBulkData()->parallel(), &result);
+     // TEUCHOS_ASSERT(result == MPI_IDENT);
+   }
 
    // build all meta data
    RCP<STK_Interface> mesh = this->buildUncommitedMesh(parallelMach);

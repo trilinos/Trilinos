@@ -61,11 +61,10 @@ class Quad8ToQuad4MeshFactory : public STK_MeshFactory {
 public:
 
   Quad8ToQuad4MeshFactory(const std::string& quad8MeshFileName,
-                          const std::vector<std::string>* volume_fields_to_copy = nullptr,
+                          stk::ParallelMachine mpi_comm = MPI_COMM_WORLD,
                           const bool print_debug = false);
 
   Quad8ToQuad4MeshFactory(const Teuchos::RCP<panzer_stk::STK_Interface>& quad8Mesh,
-                          const std::vector<std::string>* volume_fields_to_copy = nullptr,
                           const bool print_debug = false);
 
   Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
@@ -97,8 +96,6 @@ protected:
   /// If true, offset mesh GIDs to exercise 32-bit limits.
   bool offsetGIDs_;
   mutable stk::mesh::EntityId offset_;
-
-  std::vector<std::string> volume_fields_to_copy_;
 
   bool print_debug_;
 

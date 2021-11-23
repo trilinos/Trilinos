@@ -129,7 +129,7 @@ TEUCHOS_UNIT_TEST(tQuad8ToQuad4Factory, periodic_input)
     unsetenv("IOSS_PROPERTIES");
 
     const bool print_debug = false;
-    panzer_stk::Quad8ToQuad4MeshFactory factory(file_name,nullptr,print_debug);
+    panzer_stk::Quad8ToQuad4MeshFactory factory(file_name,MPI_COMM_WORLD,print_debug);
     mesh = factory.buildMesh(MPI_COMM_WORLD);
 
     // Write the mesh
