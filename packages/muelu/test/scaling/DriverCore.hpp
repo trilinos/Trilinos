@@ -164,6 +164,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
                          bool profileSetup,
                          bool useAMGX,
                          bool useML,
+                         bool setNullSpace,
                          int numRebuilds,
                          Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & H,
                          Teuchos::RCP<Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & Prec) {
@@ -211,7 +212,7 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalO
        Teuchos::ParameterList& userParamList = mueluList.sublist("user data");
        if(!coordinates.is_null())
          userParamList.set<RCP<CoordinateMultiVector> >("Coordinates", coordinates);
-       if(!nullspace.is_null())
+       if (!nullspace.is_null() && setNullSpace )
          userParamList.set<RCP<Xpetra::MultiVector<SC,LO,GO,NO>> >("Nullspace", nullspace);
        userParamList.set<Teuchos::Array<LO> >("Array<LO> lNodesPerDim", lNodesPerDim);
        H = MueLu::CreateXpetraPreconditioner(A, mueluList);
