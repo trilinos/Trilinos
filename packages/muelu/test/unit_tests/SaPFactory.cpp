@@ -297,6 +297,9 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
+    // Don't test for complex - matrix reader won't work
+    if (STS::isComplex) {success=true; return;}
+
     RCP<Matrix> P;
     Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
     P =  Xpetra::IO<SC, LO, GO, NO>::Read("TestMatrices/SaP_constrainTest_P.mat", lib, comm);
@@ -327,8 +330,10 @@ namespace MueLuTests {
       P->getLocalRowView((LO) i, indices, vals);
       size_t nnz = indices.size();
       for (size_t j = 0; j < nnz; j++)  { 
-        if (Teuchos::ScalarTraits<SC>::real(vals[j]) < zero) lowerViolation = true;
-        if (Teuchos::ScalarTraits<SC>::real(vals[j]) > one)  upperViolation = true;
+        if (Teuchos::ScalarTraits<SC>::real(vals[j]) < Teuchos::ScalarTraits<SC>::real(zero)) lowerViolation = true;
+        if (Teuchos::ScalarTraits<SC>::real(vals[j]) > Teuchos::ScalarTraits<SC>::real(one))  upperViolation = true;
+        //if (STS::magnitude(vals[j]) < STS::magnitude(zero)) lowerViolation = true;
+        //if (STS::magnitude(vals[j]) > STS::magnitude(one))  upperViolation = true;
       }
     }
     TEST_EQUALITY(lowerViolation, false);

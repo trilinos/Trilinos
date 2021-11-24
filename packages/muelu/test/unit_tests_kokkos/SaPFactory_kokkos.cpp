@@ -227,6 +227,9 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
+    // Don't test for complex - matrix reader won't work
+    if (STS::isComplex) {success=true; return;}
+
     RCP<Matrix> P;
     Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
     P =  Xpetra::IO<SC, LO, GO, NO>::Read("../unit_tests/TestMatrices/SaP_constrainTest_P.mat", lib, comm);

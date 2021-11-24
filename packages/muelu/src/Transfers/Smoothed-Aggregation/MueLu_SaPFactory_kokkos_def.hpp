@@ -434,12 +434,12 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
              ind = sortInds(i);
              LO j = i;
              
-             if (sortVals(sortInds(i)) < sortVals(sortInds(0))){
+             if ( Kokkos::ArithTraits<SC>::real(sortVals(sortInds(i))) < Kokkos::ArithTraits<SC>::real(sortVals(sortInds(0))) ){
                for ( ; j > 0; --j) sortInds(j) = sortInds(j - 1);
   
-               sortInds[0] = ind;
+               sortInds(0) = ind;
              } else {
-               for ( ; sortVals(ind) < sortVals(sortInds(j-1)); --j) sortInds(j) = sortInds(j-1);
+               for ( ; Kokkos::ArithTraits<SC>::real(sortVals(ind)) < Kokkos::ArithTraits<SC>::real(sortVals(sortInds(j-1))); --j) sortInds(j) = sortInds(j-1);
   
                sortInds(j) = ind;
              }
