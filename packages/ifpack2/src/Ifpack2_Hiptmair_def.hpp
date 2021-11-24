@@ -441,13 +441,18 @@ std::string Hiptmair<MatrixType>::description () const
      << "Computed: " << (isComputed () ? "true" : "false") << ", ";
 
   if (A_.is_null ()) {
-    os << "Matrix: null";
+    os << "Matrix: null, ";
   }
   else {
     os << "Matrix: not null"
        << ", Global matrix dimensions: ["
-       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "], ";
   }
+
+  os << "Smoother 1: ";
+  os << ifpack2_prec1_->description() << ", ";
+  os << "Smoother 2: ";
+  os << ifpack2_prec2_->description();
 
   os << "}";
   return os.str ();
@@ -490,6 +495,10 @@ describe (Teuchos::FancyOStream &out,
     } else {
       A_->describe (out, vl);
     }
+    out << "Smoother 1: ";
+    ifpack2_prec1_->describe(out, vl);
+    out << "Smoother 2: ";
+    ifpack2_prec2_->describe(out, vl);
   }
 }
 
