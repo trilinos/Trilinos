@@ -37,11 +37,9 @@
 # ************************************************************************
 # @HEADER
 
-if (TribitsTplFindIncludeDirsAndLibraries_INCLUDED)
-  return()
-else()
-  set(TribitsTplFindIncludeDirsAndLibraries_INCLUDED TRUE)
-endif()
+include_guard()
+
+include(TribitsExternalPackageWriteConfigFile)
 
 include(AdvancedSet)
 include(AppendSet)
@@ -54,7 +52,7 @@ include(CMakeParseArguments)
 include(SetNotFound)
 include(Split)
 
-#
+
 # @FUNCTION: tribits_tpl_allow_pre_find_package()
 #
 # Function that determines if a TriBITS find module file
@@ -146,7 +144,6 @@ function(tribits_tpl_allow_pre_find_package  TPL_NAME  ALLOW_PACKAGE_PREFIND_OUT
 endfunction()
 
 
-#
 # @FUNCTION: tribits_tpl_find_include_dirs_and_libraries()
 #
 # Function that sets up cache variables for users to specify where to find a
@@ -680,10 +677,21 @@ function(tribits_tpl_find_include_dirs_and_libraries TPL_NAME)
     global_set(TPL_${TPL_NAME}_NOT_FOUND FALSE)
   endif()
 
+  set(buildDirExternalPkgsDir
+    "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}")
+  set(tplConfigFile
+    "${buildDirExternalPkgsDir}/${TPL_NAME}/${TPL_NAME}Config.cmake")
+  tribits_external_package_write_config_file(${TPL_NAME} "${tplConfigFile}")
+  if (NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
+    include("${tplConfigFile}")
+  endif()
+  # NOTE: The file <tplName>ConfigVersion.cmake will get created elsewhere as
+  # will the install targets for the files <tplName>Config and
+  # <tplName>ConfigVersion.cmake.
+
 endfunction()
 
 
-#
 # @FUNCTION: tribits_tpl_tentatively_enable()
 #
 # Function that sets up for an optionally enabled TPL that is attempted to be
@@ -728,10 +736,8 @@ function(tribits_tpl_tentatively_enable  TPL_NAME)
 endfunction()
 
 
+# Set find error and print error message
 #
-# Utility macro
-#
-
 macro(tribits_tpl_find_include_dirs_and_libraries_handle_fail) 
   set(_${TPL_NAME}_ENABLE_SUCCESS FALSE)
   global_set(TPL_${TPL_NAME}_NOT_FOUND TRUE)
