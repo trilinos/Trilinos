@@ -12,7 +12,6 @@ Contents of this README file are:
 7) mailing lists
 8) how to cite ML
 9) copyright notice
-10) last update
 
 ------------------------------------------------------------------------------
 section 0: where you should look for ML documentation
@@ -20,11 +19,7 @@ section 0: where you should look for ML documentation
 
 You can find the latest ML User's Guide in the subdirectory
 
-   ml/docs/mlguide.pdf.
-
-Alternatively, you can download the ML User's Guide at the web address
-
-   http://software.sandia.gov/trilinos/packages/ml/
+   ml/doc/mlguide.pdf.
 
 This address also contains up-to-date doxygen documentation. 
 You can create a local Doxygen documentation as follows:
@@ -41,25 +36,6 @@ An history of ML changes is contained in the file ChangeLog.
 ------------------------------------------------------------------------------
 section 1: configuring and compiling ML
 ------------------------------------------------------------------------------
-
-We suggest configuring and compiling ML as part of an overall Trilinos
-configure/compile process. For example, to create the default Trilinos build
-that includes ML, you could do the following:
- 
-   $ cd Trilinos
-   $ mkdir LINUX_SERIAL
-   $ cd LINUX_SERIAL
-   $ ../configure
-   $ make
-   
-On most machines, an MPI-enabled Trilinos build can be created by simply
-typing
-
-   $ cd Trilinos
-   $ mkdir LINUX_MPI
-   $ cd LINUX_MPI
-   $ ../configure --with-mpi-compilers
-   $ make
 
 
 ------------------------------------------------------------------------------
@@ -79,21 +55,11 @@ file in ml/examples.
 section 3: directory organization
 ------------------------------------------------------------------------------
 
-aclocal.m4                  autoconf file
-autom4te.cache/             autoconf directory
-bootstrap                   autoconf/automake file
-config/                     autoconf m4 macros
-configure                   autoconf file
-configure.ac                autoconf file
-COPYRIGHT                   copyright information
-CVS/
 doc/                        ML documentation
 etc/                        various scripts and utilities for developers
 examples/                   ML examples
-Makefile.am                 automake file
-Makefile.in                 automake file
-Changelog                   an (incomplete) history of ML changes
-README                      this file
+ChangeLog-ML                an (incomplete) history of ML changes
+README-ML                   this file
 src/                        ML source files
 util/                       various utility programs, such as file converters
 
@@ -116,14 +82,6 @@ These files are meant primarily for ML developers.
 ------------------------------------------------------------------------------
 section 6: how to submit bugs
 ------------------------------------------------------------------------------
-
-Bugs and enhancements should be submitted through bugzilla at the web page
-
-   http://software.sandia.gov/bugzilla
-
-(select ML in the list of packages).
-You will need to create a bugzilla account. Otherwise, simply e-mail
-one of the developers.
 
 
 ------------------------------------------------------------------------------
@@ -182,12 +140,3 @@ Questions? Contact Jonathan Hu or Ray Tuminaro ({jhu|rstumin}@sandia.gov).
 
 Please submit ML bugs with at software.sandia.gov/buzgilla, or
 report bugs to {jhu|rstumin}@sandia.gov.
-	
-------------------------------------------------------------------------------
-section 10: last update
-------------------------------------------------------------------------------
-
-Current revision: $Revision$
-Branch:           $Branch$
-Last modified:    $Date$
-Modified by:      $Author$
