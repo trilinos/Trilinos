@@ -42,8 +42,10 @@
 // ***********************************************************************
 //
 // @HEADER
-#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_VerboseObject.hpp>
 
 #include <MueLu_config.hpp>
 
@@ -98,6 +100,7 @@ namespace MueLuTests {
     TEST_EQUALITY(stridingOffsetExpected == nStridedOffset, true);
     TEST_EQUALITY(stridedBlockSizeExpected == stridedblocksize, true);
     TEST_EQUALITY(indexBaseExpected == A->getColMap()->getIndexBase(), true);
+    amalgamationInfo->print(*Teuchos::VerboseObjectBase::getDefaultOStream(),MueLu::Extreme);
 
   } // Constructor
 

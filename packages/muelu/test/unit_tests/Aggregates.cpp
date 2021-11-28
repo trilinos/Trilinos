@@ -121,9 +121,6 @@ public:
       aggFact->SetParameter("aggregation: enable phase 3",  Teuchos::ParameterEntry(bPhase3));
       aggFact->SetParameter("aggregation: phase3 avoid singletons",  Teuchos::ParameterEntry(true));
       aggFact->SetParameter("aggregation: use interface aggregation",Teuchos::ParameterEntry(false));
-//      aggFact->SetParameter("OnePt aggregate map name", Teuchos::ParameterEntry(std::string("Graph")));
-//      aggFact->SetParameter("OnePt aggregate map factory", Teuchos::ParameterEntry(std::string("Graph")));
-//      aggFact->SetOnePtMapName("A", dropFact);
       level.Request("Aggregates", aggFact.get());
       level.Request("UnAmalgamationInfo", amalgFact.get());
 
@@ -900,6 +897,7 @@ public:
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),false);
   }
 
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, GreedyDirichlet, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
@@ -910,6 +908,7 @@ public:
 
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
 
+//    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(30);
     // Make a Matrix with multiple degrees of freedom per node
     GlobalOrdinal nx = 20, ny = 20;
 
@@ -978,7 +977,8 @@ public:
     Array< LO > unaggregated;
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
-    // Test to check that the dirichlet node is aggregated:
+    //     Test to check that the dirichlet node is aggregated:
+    std::cout << "1: test unaggregated size:  "<<  unaggregated.size()<< std::endl;
     for( int i = 0; i < unaggregated.size(); i++){
       TEST_EQUALITY( unaggregated[i] == 2, false);
     }
@@ -1011,7 +1011,7 @@ public:
     // Setup aggregation factory (use default factory for graph)
     aggFact = rcp(new UncoupledAggregationFactory());
     aggFact->SetFactory("Graph", dropFact);
-    aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(false));
 
     level.Request("Aggregates", aggFact.get());
     level.Request("UnAmalgamationInfo", amalgFact.get());
@@ -1021,6 +1021,7 @@ public:
     aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get());
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
+    std::cout << "2: test unaggregated size:  "<<  unaggregated.size()<< std::endl;
     for( int i = 0; i < unaggregated.size(); i++){
       TEST_EQUALITY( unaggregated[i] == 2, false);
     }

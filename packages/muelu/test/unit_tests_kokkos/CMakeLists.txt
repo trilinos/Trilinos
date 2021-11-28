@@ -17,6 +17,7 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
   Aggregates_kokkos.cpp
+  AmalgamationInfo_kokkos.cpp
   CoalesceDropFactory_kokkos.cpp
   CoarseMapFactory_kokkos.cpp
   IndexManager_kokkos.cpp

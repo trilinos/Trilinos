@@ -133,26 +133,18 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
-    // Default is Laplace1D with nx = 8748.
-    // It's a nice size for 1D and perfect aggregation. (6561 = 3^8)
-    //Nice size for 1D and perfect aggregation on small numbers of processors. (8748 = 4*3^7)
+    if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
+      out << "skipping test for linAlgebra==UseEpetra" << std::endl;
+      return;
+    }
+
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
     Teuchos::CommandLineProcessor clp(false);
     Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-    Xpetra::Parameters xpetraParameters(clp);                   // manage parameters o
 
     Level aLevel;
     Level corseLevel;
-
-    RCP<FactoryManager> factoryHandler = rcp(new FactoryManager());
-    factoryHandler->SetKokkosRefactor(false);
-    aLevel.SetFactoryManager(factoryHandler);
-    corseLevel.SetFactoryManager(factoryHandler);
-    corseLevel.SetPreviousLevel(rcpFromRef(aLevel));
-    aLevel.SetLevelID(0);
-    corseLevel.SetLevelID(1);
-
-    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-    RCP<const Map> map = MapFactory::Build(xpetraParameters.GetLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
+    RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), matrixParameters.GetNumGlobalElements(), 0, comm);
 
     TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(aLevel, corseLevel);
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(2); //can be an empty operator
@@ -173,19 +165,9 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
 
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
     Level aLevel;
     Level corseLevel;
-
-    RCP<FactoryManager> factoryHandler = rcp(new FactoryManager());
-    factoryHandler->SetKokkosRefactor(false);
-    aLevel.SetFactoryManager(factoryHandler);
-    corseLevel.SetFactoryManager(factoryHandler);
-    corseLevel.SetPreviousLevel(rcpFromRef(aLevel));
-    aLevel.SetLevelID(0);
-    corseLevel.SetLevelID(1);
-
-    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
     TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(aLevel, corseLevel);
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(2); //can be an empty operator
     corseLevel.Set("A", A);
@@ -193,6 +175,7 @@ namespace MueLuTests {
     corseLevel.Set("Importer", importer);
 
     RCP<RebalanceAcFactory> RebalancedAFact = rcp(new RebalanceAcFactory());
+    RebalancedAFact->SetDefaultVerbLevel(MueLu::Extreme);
     RebalancedAFact->Build(aLevel, corseLevel);
 
   }
@@ -339,6 +322,7 @@ namespace MueLuTests {
     // Add Factory
     RebalancedAFact->AddRebalanceFactory(rcp(new RebalanceTransferFactory()));
     RebalancedAFact->AddRebalanceFactory(rcp(new RebalanceTransferFactory()));
+    RebalancedAFact->SetDefaultVerbLevel(MueLu::Extreme);
 
     // Configure FactoryManager
     M->SetFactory("P", RebalancedPFact);
@@ -366,8 +350,8 @@ namespace MueLuTests {
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, Constructor, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, BuildWithImporter, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, BuildWithoutImporter, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, BuildWithImporter, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RebalanceAcFactory, BuildWithCompleteFactoryManager, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
