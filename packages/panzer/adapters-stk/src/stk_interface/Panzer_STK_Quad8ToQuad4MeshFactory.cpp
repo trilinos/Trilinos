@@ -85,8 +85,8 @@ Teuchos::RCP<STK_Interface> Quad8ToQuad4MeshFactory::buildMesh(stk::ParallelMach
    // Make sure the Quad8 and Quad4 Comms match
    {
      int result = MPI_UNEQUAL;
-     // MPI_Comm_compare(parallelMach, quad8Mesh_->getBulkData()->parallel(), &result);
-     // TEUCHOS_ASSERT(result == MPI_IDENT);
+     MPI_Comm_compare(parallelMach, quad8Mesh_->getBulkData()->parallel(), &result);
+     TEUCHOS_ASSERT(result != MPI_UNEQUAL);
    }
 
    // build all meta data
