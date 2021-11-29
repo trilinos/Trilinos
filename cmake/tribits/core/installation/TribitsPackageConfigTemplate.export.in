@@ -1,0 +1,110 @@
+##############################################################################
+#
+# Make variables for use by ${PROJECT_NAME}/${PACKAGE_NAME} clients. 
+#
+# ${DISCOURAGE_EDITING}
+#
+##############################################################################
+
+
+## ---------------------------------------------------------------------------
+## Compilers used by ${PROJECT_NAME}/${PACKAGE_NAME} build
+## ---------------------------------------------------------------------------
+
+${EXPORT_FILE_VAR_PREFIX}_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+
+${EXPORT_FILE_VAR_PREFIX}_C_COMPILER=${CMAKE_C_COMPILER}
+
+${EXPORT_FILE_VAR_PREFIX}_FORTRAN_COMPILER=${CMAKE_Fortran_COMPILER}
+${EXPORT_FILE_VAR_PREFIX}_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
+
+
+## ---------------------------------------------------------------------------
+## Compiler flags used by ${PROJECT_NAME}/${PACKAGE_NAME} build
+## ---------------------------------------------------------------------------
+
+## Set compiler flags, including those determined by build type
+${EXPORT_FILE_VAR_PREFIX}_CXX_FLAGS=${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}
+${EXPORT_FILE_VAR_PREFIX}_CXX_COMPILER_FLAGS=${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}
+
+${EXPORT_FILE_VAR_PREFIX}_C_FLAGS=${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}
+${EXPORT_FILE_VAR_PREFIX}_C_COMPILER_FLAGS=${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}
+
+${EXPORT_FILE_VAR_PREFIX}_FORTRAN_FLAGS=${CMAKE_FORTRAN_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}
+${EXPORT_FILE_VAR_PREFIX}_Fortran_COMPILER_FLAGS=${CMAKE_FORTRAN_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}
+
+## Extra link flags (e.g., specification of fortran libraries)
+${EXPORT_FILE_VAR_PREFIX}_EXTRA_LD_FLAGS=${${PROJECT_NAME}_EXTRA_LINK_FLAGS}
+
+## This is the command-line entry used for setting rpaths. In a build
+## with static libraries it will be empty. 
+${EXPORT_FILE_VAR_PREFIX}_SHARED_LIB_RPATH_COMMAND=${SHARED_LIB_RPATH_COMMAND}
+${EXPORT_FILE_VAR_PREFIX}_BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
+
+${EXPORT_FILE_VAR_PREFIX}_LINKER=${CMAKE_LINKER}
+${EXPORT_FILE_VAR_PREFIX}_AR=${CMAKE_AR}
+
+## ---------------------------------------------------------------------------
+## Set library specifications and paths 
+## ---------------------------------------------------------------------------
+
+## The project version number
+${EXPORT_FILE_VAR_PREFIX}_VERSION=${${PROJECT_NAME}_VERSION}
+
+## List of package include dirs
+${EXPORT_FILE_VAR_PREFIX}_INCLUDE_DIRS=${MAKEFILE_INCLUDE_DIRS}
+
+## List of package library paths
+${EXPORT_FILE_VAR_PREFIX}_LIBRARY_DIRS=${MAKEFILE_LIBRARY_DIRS}
+
+## List of package libraries
+${EXPORT_FILE_VAR_PREFIX}_LIBRARIES=${MAKEFILE_FULL_LIBRARY_SET}
+
+## Specification of directories for TPL headers
+${EXPORT_FILE_VAR_PREFIX}_TPL_INCLUDE_DIRS=${MAKEFILE_${PACKAGE_NAME}_TPL_INCLUDE_DIRS}
+
+## Specification of directories for TPL libraries
+${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARY_DIRS=${MAKEFILE_${PACKAGE_NAME}_TPL_LIBRARY_DIRS}
+
+## List of required TPLs
+${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARIES=${MAKEFILE_${PACKAGE_NAME}_TPL_LIBRARIES}
+
+## ---------------------------------------------------------------------------
+## MPI specific variables
+##   These variables are provided to make it easier to get the mpi libraries
+##   and includes on systems that do not use the mpi wrappers for compiling
+## ---------------------------------------------------------------------------
+
+${EXPORT_FILE_VAR_PREFIX}_MPI_LIBRARIES=${MAKEFILE_TPL_MPI_LIBRARIES}
+${EXPORT_FILE_VAR_PREFIX}_MPI_LIBRARY_DIRS=${MAKEFILE_TPL_MPI_LIBRARY_DIRS}
+${EXPORT_FILE_VAR_PREFIX}_MPI_INCLUDE_DIRS=${MAKEFILE_TPL_MPI_INCLUDE_DIRS}
+${EXPORT_FILE_VAR_PREFIX}_MPI_EXEC=${MPI_EXEC}
+${EXPORT_FILE_VAR_PREFIX}_MPI_EXEC_MAX_NUMPROCS=${MPI_EXEC_MAX_NUMPROCS}
+${EXPORT_FILE_VAR_PREFIX}_MPI_EXEC_NUMPROCS_FLAG=${MPI_EXEC_NUMPROCS_FLAG}
+
+## ---------------------------------------------------------------------------
+## Set useful general variables 
+## ---------------------------------------------------------------------------
+
+## The packages enabled for this project
+${EXPORT_FILE_VAR_PREFIX}_PACKAGE_LIST=${MAKEFILE_FULL_PACKAGE_SET}
+
+## The TPLs enabled for this project
+${EXPORT_FILE_VAR_PREFIX}_TPL_LIST=${MAKEFILE_ORDERED_FULL_TPL_SET}
+
+## ---------------------------------------------------------------------------
+## Deprecated variables
+##   These variables from the autotools version of Makefile.export.<package>
+##   have been deprecated. To help avoid confusion with projects that haven't
+##   migrated to the new version of the variable names when the don't compile.
+##   This will put an obvious statement in the link line that these Trilinos
+##   Makefile variables are no longer used. Without this there would be a link
+##   error with no obvious reason as to why other than the lack of Trilinos libs
+##   which would be confusing since the link line in the Makefile would have 
+##   stated to put them on the line.
+## ---------------------------------------------------------------------------
+
+${EXPORT_FILE_VAR_PREFIX_UPPER}_LIBS="The Trilinos variable ${EXPORT_FILE_VAR_PREFIX_UPPER}_LIBS has been deprecated. Please see the documentation on the Makefile.export capability for instructions on how to transition to the new system."
+${EXPORT_FILE_VAR_PREFIX_UPPER}_INCLUDES="The Trilinos variable ${EXPORT_FILE_VAR_PREFIX_UPPER}_INCLUDES has been deprecated. Please see the documentation on the Makefile.export capability for instructions on how to transition to the new system."
+
+

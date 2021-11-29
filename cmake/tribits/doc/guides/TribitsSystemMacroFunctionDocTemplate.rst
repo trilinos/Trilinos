@@ -35,6 +35,5 @@ understand the internals of TriBITS.
 @MACRO:    tribits_read_deps_files_create_deps_graph() +
 @MACRO:    tribits_save_off_dependency_vars() +
 @FUNCTION: tribits_set_dep_packages() +
-@FUNCTION: tribits_write_package_client_export_files_install_targets() +
 @MACRO:    tribits_write_xml_dependency_files() +
 @FUNCTION: tribits_write_xml_dependency_files_if_supported() +

@@ -1484,14 +1484,13 @@ compiles and links.  (This can actually be a feature in rare cases the
 libraries and header files don't actually get created until after the
 configure step is complete but before the build step.)
 
-**WARNING:** It is **not recommended** to specify the TPLs libraries as just a set
-of link options as, for example::
+**WARNING:** Do **not** try to hack the system and set, for example::
 
-  TPL_SomeTPL_LIBRARIES="-L/some/dir;-llib1;-llib2;..."
+  TPL_BLAS_LIBRARIES="-L/some/dir -llib1 -llib2 ..."
 
 This is not compatible with proper CMake usage and it not guaranteed to be
-supported for all use cases or all platforms.  (CMake really wants to have
-full library paths when linking.)
+supported for all use cases or all platforms!  You should instead always use
+the full library paths when setting ``TPL_<TPLNAME>_LIBRARIES``.
 
 When the variables ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
 ``TPL_<TPLNAME>_LIBRARIES`` are not specified, then most
@@ -1526,19 +1525,6 @@ Most ``FindTPL<TPLNAME>.cmake`` modules will define a default set of libraries
 to look for and therefore ``<TPLNAME>_LIBRARY_NAMES`` can typically be left
 off.
 
-Therefore, to find the same set of libraries for ``SimpleTPL`` shown
-above, one would specify::
-
-  -D SomeTPL_LIBRARY_DIRS="${LIB_BASE}/lib"
-
-and if the set of libraries to be found is different than the default, one can
-override that using::
-
-  -D SomeTPL_LIBRARY_NAMES="lib1;lib2"
-
-Therefore, this is in fact the preferred way to specify the libraries for a
-TPL.
-
 In order to allow a TPL that normally requires one or more libraries to ignore
 the libraries, one can set ``<TPLNAME>_LIBRARY_NAMES`` to empty, for example::
 
@@ -1549,7 +1535,7 @@ Optional package-specific support for a TPL can be turned off by setting::
   -D <TRIBITS_PACKAGE>_ENABLE_<TPLNAME>=OFF
 
 This gives the user full control over what TPLs are supported by which package
-independent of whether the TPL is enabled or not.
+independently.
 
 Support for an optional TPL can also be turned on implicitly by setting::
 
@@ -1560,14 +1546,14 @@ dependency on ``<TPLNAME>``.  That will result in setting
 ``TPL_ENABLE_<TPLNAME>=ON`` internally (but not set in the cache) if
 ``TPL_ENABLE_<TPLNAME>=OFF`` is not already set.
 
-If all the parts of a TPL are not found on an initial configure, the configure
+If all the parts of a TPL are not found on an initial configure the configure
 will error out with a helpful error message.  In that case, one can change the
 variables ``<TPLNAME>_INCLUDE_DIRS``, ``<TPLNAME>_LIBRARY_NAMES``, and/or
 ``<TPLNAME>_LIBRARY_DIRS`` in order to help fund the parts of the TPL.  One
-can do this over and over until the TPL is found. By reconfiguring, one avoids
+can do this over and over until the TPL is found. By reconfiguring, one avoid
 a complete configure from scratch which saves time.  Or, one can avoid the
 find operations by directly setting ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
-``TPL_<TPLNAME>_LIBRARIES`` as described above.
+``TPL_<TPLNAME>_LIBRARIES``.
 
 **WARNING:** The cmake cache variable ``TPL_<TPLNAME>_LIBRARY_DIRS`` does
 **not** control where libraries are found.  Instead, this variable is set
@@ -1635,7 +1621,7 @@ For example, the Intel Math Kernel Library (MKL) implementation for the BLAS
 is usually given in several libraries.  The exact set of libraries needed
 depends on the version of MKL, whether 32bit or 64bit libraries are needed,
 etc.  Figuring out the correct set and ordering of these libraries for a given
-platform may be non-trivial.  But once the set and the order of the libraries
+platform may not be trivial.  But once the set and the order of the libraries
 is known, then one can provide the correct list at configure time.
 
 For example, suppose one wants to use the threaded MKL libraries listed in the
@@ -2573,6 +2559,15 @@ This will generate the file ``<Project>Config.cmake`` for the project and the
 files ``<Package>Config.cmake`` for each enabled package in the build tree.
 In addition, this will install versions of these files into the install tree.
 
+To configure Makefile export files, configure with::
+
+  -D <Project>_ENABLE_EXPORT_MAKEFILES=ON
+
+which will generate the file ``Makefile.export.<Project>`` for the project and
+the files ``Makefile.export.<Package>`` for each enabled package in the build
+tree.  In addition, this will install versions of these files into the install
+tree.
+
 The list of export files generated can be reduced by specifying the exact list
 of packages the files are requested for with::
 
@@ -3273,8 +3268,6 @@ For more details, see the following subsections:
 * `Setting install RPATH`_
 * `Avoiding installing libraries and headers`_
 * `Installing the software`_
-* `Using the installed software in downstream CMake projects`_
-* `Using packages from the build tree in downstream CMake projects`_
 
 
 Setting the install prefix
@@ -3647,110 +3640,6 @@ This will ensure that every package that builds correctly will get installed.
 (The default 'install' target aborts on the first file install failure.)
 
 
-Using the installed software in downstream CMake projects
----------------------------------------------------------
-
-As described in `Generating export files`_, when ``-D
-<Project>_ENABLE_INSTALL_CMAKE_CONFIG_FILES=ON`` is set at configure time, a
-``<Project>Config.cmake`` file and a different ``<Package>Config.cmake`` file
-for each enabled package is installed into the install tree under ``-D
-CMAKE_INSTALL_PREFIX=<upstreamInstallDir>``.  A downstream CMake project can
-then pull in CMake targets for the installed libraries using
-``find_package()`` in the downstream project's ``CMakeLists.txt`` file.  All
-of the built and installed libraries can be pulled in and built against at the
-project level by configuring the downstream CMake project with::
-
-  -D CMAKE_PREFIX_PATH=<upstreamInstallDir>
-
-and having the downstream project's ``CMakeLists.txt`` file call, for
-example::
-
-  find_package(<Project> REQUIRED)
-  ...
-  target_link_libraries( <downstream-target>
-    PRIVATE <Project>::all_libs )
-
-This will put the needed include directories and other imported compiler
-options on the downstream compile lines as specified through the IMPORTED
-library targets and will put the needed libraries on the link line.
-
-To pull in libraries from only a subset of the installed packages ``<pkg0>
-<pkg1> ...``, use, for example::
-
-  find_package(<Project> REQUIRED COMPONENTS <pkg0> <pkg1> ...)
-  ...
-  target_link_libraries( <downstream-target>
-    PRIVATE <Project>::all_selected_libs )
-
-The target ``<Project>::all_selected_libs`` only contains the library targets
-for the selected packages (through their ``<Package>::all_libs`` targets) for
-the packages requested in the ``COMPONENTS <pkg0> <pkg1> ...`` argument.
-(NOTE, the target ``<Project>::all_libs`` is unaffected by the ``COMPONENTS``
-argument and always links to all of the enabled package's libraries.)
-
-Downstream projects can also pull in and use installed libraries by finding
-individual packages by calling ``find_package(<Package> REQUIRED)`` for each
-package ``<Package>`` and then linking against the defined IMPORTED CMake
-target ``<Package>::all_libs`` such as::
-
-  find_package(<Package1> REQUIRED)
-  find_package(<Package2> REQUIRED)
-  ...
-  target_link_libraries( <downstream-target>
-    PUBLIC <Package1>::all_libs
-    PRIVATE <Package2>::all_libs
-    )
-
-Finding and using libraries for packages at the package-level provides better
-fine-grained control over internal linking and provides greater flexibility in
-case these packages are not all installed in the same upstream CMake project
-in the future.
-
-To see an example of all of these use cases being demonstrated, see
-`TribitsExampleApp`_ and the `TriBITS TribitsExampleApp Tests`_.
-
-
-Using packages from the build tree in downstream CMake projects
-------------------------------------------------------------------
-
-Note that libraries from enabled and built packages can also be used from the
-``<Project>`` build tree without needing to install.  Being able to build
-against pre-built packages in the build tree can be very useful such as when
-the project is part of a CMake super-build where one does not want to install
-the intermediate packages.
-
-Let ``<upstreamBuildDir>`` be the build directory for ``<Project>`` that has
-already been configured and built (but not necessarily installed).  A
-downstream CMake project can pull in and link against any of the enabled
-libraries in the upstream ``<Project>`` configuring the downstream CMake
-project with::
-
-  -D CMAKE_PREFIX_PATH=<upstreamBuildDir>/cmake_packages
-
-and then finding the individual packages and linking to them in the downstream
-CMake project's ``CMakeLists.txt`` file as usual using, for example::
-
-  find_package(<Package1> REQUIRED)
-  find_package(<Package2> REQUIRED)
-  ...
-  target_link_libraries( <downstream-target>
-    PUBLIC <Package1>::all_libs
-    PRIVATE <Package2>::all_libs
-    )
-
-Note that in this case, the include directories and other imported compiler
-options from the source tree and the build tree are automatically injected
-into the build targets associated with the ``<downstream-target>`` object
-compile lines and link lines.
-
-Also note that package config files for all of the enabled external
-packages/TPLs will also be written into the build tree under
-``<upstreamBuildDir>/external_packages``.  These contain modern CMake targets
-that are pulled in by the downstream ``<Package>Config.cmake`` files under
-``<upstreamBuildDir>/external_packages``.  These external package/TPL config
-files are placed in a seprate directory to avoid being found by accident.
-
-
 Installation Testing
 ====================
 
@@ -3762,7 +3651,7 @@ build, and install just the libraries and header files using::
   $ cd BUILD_LIBS/
 
   $ cmake \
-    -DCMAKE_INSTALL_PREFIX=<install-dir> \
+    -DCMAKE_INSTLAL_PREFIX=<install-dir> \
     -D<Project>_ENABLE_ALL_PACKAGES=ON \
     -D<Project>_ENABLE_TESTS=OFF \
     [other options] \
@@ -4101,9 +3990,5 @@ original configure state.  Even with the all-at-once mode, if one kills the
 with an invalid configuration of the project.  In these cases, one may need to
 configure from scratch to get back to the original state before calling ``make
 dashboard``.
-
-.. _TribitsExampleApp: https://github.com/TriBITSPub/TriBITS/tree/master/tribits/examples/TribitsExampleApp
-
-.. _TriBITS TribitsExampleApp Tests: https://github.com/TriBITSPub/TriBITS/blob/master/test/core/ExamplesUnitTests/TribitsExampleApp_Tests.cmake
 
 ..  LocalWords:  templated instantiation Makefiles CMake

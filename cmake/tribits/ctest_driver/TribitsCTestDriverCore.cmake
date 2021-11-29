@@ -325,7 +325,7 @@ include(TribitsCTestDriverCoreHelpers)
 # * `Specifying where the results go to CDash (tribits_ctest_driver())`_
 # * `Determining what TriBITS repositories are included (tribits_ctest_driver())`_
 # * `All-at-once versus package-by-package mode (tribits_ctest_driver())`_
-# * `Multiple ctest -S invocations (tribits_ctest_driver())`_
+# * `Mutiple ctest -S invocations (tribits_ctest_driver())`_
 # * `Repository Updates (tribits_ctest_driver())`_
 # * `Other CTest Driver options (tribits_ctest_driver())`_
 # * `Return value (tribits_ctest_driver())`_

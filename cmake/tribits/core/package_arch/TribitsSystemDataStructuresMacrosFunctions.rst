@@ -318,7 +318,8 @@ a given package's capabilities:
     upstream packages and TPL sources.  This variable is used whenever
     building downstream code including downstream libraries or executables in
     the same package, or libraries or executables in downstream packages.  It
-    is also used to list out in ${PACKAGE_NAME}Config.cmake files.
+    is also used to list out in ${PACKAGE_NAME}Config.cmake and
+    Makefile.export.${PACKAGE_NAME} files.
 
     ToDo: Look to eliminate this variable and just add it to the package's
     library targets with target_include_directories().
@@ -331,8 +332,8 @@ a given package's capabilities:
     libraries for this packages and it's upstream packages and TPLs.  Adding
     these library directories to the CMake link line is unnecessary and would
     cause link-line too long errors on some systems.  Instead, this list of
-    library directories is used when creating ${PACKAGE_NAME}Config.cmake
-    files.
+    library directories is used when creating ${PACKAGE_NAME}Config.cmake and
+    Makefile.export.${PACKAGE_NAME} files.
   
   ``${PACKAGE_NAME}_LIBRARIES``
   
@@ -358,12 +359,13 @@ a given package's capabilities:
 
   ``${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES``
 
-    Lists out, in order, all of the enabled upstream packages that the given
-    package depends on and support that package is enabled in the given
+    Lists out, in order, all of the enabled upstream packages that the
+    given package depends on and support that package is enabled in the given
     package.  This is only computed if
-    ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES=ON.  NOTE: This list
-    does *not* include the package itself.  This list is created after all of
-    the enable/disable logic is applied.
+    ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES=ON.  This is needed to
+    generate the export makefile Makefile.export.${PACKAGE_NAME}.  NOTE: This
+    list does *not* include the package itself.  This list is created after
+    all of the enable/disable logic is applied.
  
   ``${PARENT_PACKAGE_NAME}_LIB_TARGETS``
  

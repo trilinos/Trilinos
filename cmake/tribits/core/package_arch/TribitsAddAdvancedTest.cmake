@@ -945,7 +945,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
 
   set(TEST_SCRIPT_STR "")
 
-  string(APPEND  TEST_SCRIPT_STR
+  append_string_var( TEST_SCRIPT_STR
     "\n"
     "#\n"
     "# This is a CMake script and must be run as \"cmake -P <SCRIPT_NAME>\"\n"
@@ -1187,7 +1187,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
       string(REPLACE ";" "," FILES_TO_COPY_COMMA_SEP
         "${FILES_TO_COPY_COMMA_SEP}" )
       # NOTE: Above, we have to replace ';' with ',' or the lower commands
-      # string(APPEND ) will replace ';' with ''.  This is *not* what we
+      # append_string_var() will replace ';' with ''.  This is *not* what we
       # want.  In DriveAdvancedTest.cmake, we will replace the ',' with ';'
       # again :-)  
 
@@ -1234,7 +1234,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
 
       # Write the vars for COPY_FILES_TO_TEST_DIR 
   
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_COPY_FILES_TO_TEST_DIR"
         " \"${FILES_TO_COPY_COMMA_SEP}\")\n"
@@ -1244,13 +1244,13 @@ function(tribits_add_advanced_test TEST_NAME_IN)
           "${TEST_CMND_STR}" )
       endif()
   
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_SOURCE_DIR"
         " \"${COPY_FILES_TO_TEST_DIR_SOURCE_DIR}\")\n"
         )
   
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_DEST_DIR"
         " \"${COPY_FILES_TO_TEST_DIR_DEST_DIR}\")\n"
@@ -1263,7 +1263,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
       tribits_join_exec_process_set_args( TEST_CMND_STR "${TEST_CMND_ARRAY}" )
       #print_var(TEST_CMND_STR)
   
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_CMND ${TEST_CMND_STR} )\n"
         )
@@ -1275,7 +1275,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
     endif()
 
     if (PARSE_MESSAGE)
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_MESSAGE \"${PARSE_MESSAGE}\" )\n"
         )
@@ -1285,25 +1285,25 @@ function(tribits_add_advanced_test TEST_NAME_IN)
       if ("${PARSE_WORKING_DIRECTORY}" STREQUAL "TEST_NAME")
         set(PARSE_WORKING_DIRECTORY ${TEST_NAME})
       endif()
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_WORKING_DIRECTORY \"${PARSE_WORKING_DIRECTORY}\" )\n"
          )
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_SKIP_CLEAN_WORKING_DIRECTORY ${PARSE_SKIP_CLEAN_WORKING_DIRECTORY} )\n"
         )
     endif()
 
     if (PARSE_OUTPUT_FILE)
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_OUTPUT_FILE \"${PARSE_OUTPUT_FILE}\" )\n"
         )
     endif()
 
     if (PARSE_NO_ECHO_OUTPUT)
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_NO_ECHO_OUTPUT \"${PARSE_NO_ECHO_OUTPUT}\" )\n"
         )
@@ -1312,58 +1312,58 @@ function(tribits_add_advanced_test TEST_NAME_IN)
     # Set up pass/fail
 
     if (PARSE_PASS_ANY)
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_PASS_ANY TRUE )\n"
         )
     elseif (PARSE_STANDARD_PASS_OUTPUT)
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_PASS_REGULAR_EXPRESSION \"End Result: TEST PASSED\" )\n"
         )
     elseif (PARSE_PASS_REGULAR_EXPRESSION)
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_PASS_REGULAR_EXPRESSION \"${PARSE_PASS_REGULAR_EXPRESSION}\" )\n"
         )
     elseif (PARSE_PASS_REGULAR_EXPRESSION_ALL)
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_PASS_REGULAR_EXPRESSION_ALL "
         )
       foreach(REGEX_STR ${PARSE_PASS_REGULAR_EXPRESSION_ALL})
-        string(APPEND  TEST_SCRIPT_STR
+        append_string_var( TEST_SCRIPT_STR
           "\"${REGEX_STR}\" "
           )
       endforeach()
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         ")\n"
         )
     endif()
 
     if (PARSE_FAIL_REGULAR_EXPRESSION)
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_FAIL_REGULAR_EXPRESSION \"${PARSE_FAIL_REGULAR_EXPRESSION}\" )\n"
         )
     endif()
 
     if (PARSE_ALWAYS_FAIL_ON_NONZERO_RETURN)
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_ALWAYS_FAIL_ON_NONZERO_RETURN TRUE )\n"
         )
     endif()
 
     if (PARSE_ALWAYS_FAIL_ON_ZERO_RETURN)
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_ALWAYS_FAIL_ON_ZERO_RETURN TRUE )\n"
         )
     endif()
 
     if (PARSE_WILL_FAIL)
-      string(APPEND  TEST_SCRIPT_STR
+      append_string_var( TEST_SCRIPT_STR
         "\n"
         "set( TEST_${TEST_CMND_IDX}_WILL_FAIL TRUE )\n"
         )
@@ -1451,7 +1451,7 @@ function(tribits_add_advanced_test TEST_NAME_IN)
     # F.2) Write the cmake -P script
     #
   
-    string(APPEND  TEST_SCRIPT_STR
+    append_string_var( TEST_SCRIPT_STR
       "\n"
       "set(PROJECT_NAME ${PROJECT_NAME})\n"
       "\n"

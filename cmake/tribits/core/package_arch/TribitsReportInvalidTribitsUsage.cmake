@@ -37,7 +37,11 @@
 # ************************************************************************
 # @HEADER
 
-include_guard()
+if (__TribitsReportInvalidTribitsUsage_INCLUDED__)
+  return()
+else()
+  set(__TribitsReportInvalidTribitsUsage_INCLUDED__ TRUE)
+endif()
 
 include(MessageWrapper)
 
