@@ -14,6 +14,10 @@
 #include "Thyra_MultiVectorStdOps_decl.hpp"
 #include "Thyra_VectorSpaceBase_decl.hpp"
 #include "Thyra_VectorStdOps_decl.hpp"
+
+#include "Tempus_NumericalUtils.hpp"
+
+
 namespace Tempus {
 
 template<class Scalar>
@@ -27,7 +31,7 @@ Stepper_ErrorNorm<Scalar>::Stepper_ErrorNorm(const Scalar relTol, const Scalar a
 
 template<class Scalar>
 Scalar Stepper_ErrorNorm<Scalar>::
-computeWRMSNorm(const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &x, 
+computeWRMSNorm(const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &x,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &xNext,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &err)
 {
@@ -44,7 +48,13 @@ computeWRMSNorm(const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &x,
   Thyra::abs(*x, u_.ptr());
   Thyra::abs(*xNext, uNext_.ptr());
   Thyra::pair_wise_max_update(relTol_, *u_, uNext_.ptr());
-  Thyra::add_scalar(abssTol_, uNext_.ptr());
+  if ( !approxZero(abssTol_) ) {
+    Thyra::add_scalar(abssTol_, uNext_.ptr());
+  } else {
+    Scalar absTol = Thyra::norm_2(*uNext_)*numericalTol<Scalar>();
+    if ( approxZero(absTol) ) absTol = numericalTol<Scalar>();
+    Thyra::add_scalar(absTol, uNext_.ptr());
+  }
 
   Thyra::assign(errorWeightVector_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
   Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *err, *uNext_, errorWeightVector_.ptr());
@@ -59,17 +69,23 @@ template<class Scalar>
 Scalar Stepper_ErrorNorm<Scalar>::
 errorNorm(const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &x)
 {
-  if (scratchVector_ == Teuchos::null) 
+  if (scratchVector_ == Teuchos::null)
     scratchVector_  = Thyra::createMember(x->space());
 
   Thyra::assign(scratchVector_.ptr(), *x); // | U |
   Thyra::abs(*x, scratchVector_.ptr());
   Thyra::Vt_S(scratchVector_.ptr(), relTol_);
-  Thyra::Vp_S(scratchVector_.ptr(), abssTol_);
+  if ( !approxZero(abssTol_) ) {
+    Thyra::Vp_S(scratchVector_.ptr(), abssTol_);
+  } else {
+    Scalar absTol = Thyra::norm_2(*scratchVector_)*numericalTol<Scalar>();
+    if ( approxZero(absTol) ) absTol = numericalTol<Scalar>();
+    Thyra::add_scalar(absTol, scratchVector_.ptr());
+  }
   Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *x, *scratchVector_, scratchVector_.ptr());
   Scalar err = Thyra::norm_inf(*scratchVector_);
   return err;
-  
+
 }
 
 
