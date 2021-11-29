@@ -39,6 +39,7 @@
 
 
 # Standard TriBITS Includes
+include(TribitsExternalPackageWriteConfigFile)
 include(TribitsTplFindIncludeDirsAndLibraries)
 include(TribitsGeneralMacros)
 
@@ -57,13 +58,13 @@ function(tribits_process_enabled_tpl  TPL_NAME)
   # Setup the processing string
   set(PROCESSING_MSG_STRING "Processing enabled TPL: ${TPL_NAME} (")
   if (TPL_${TPL_NAME}_ENABLING_PKG)
-    append_string_var(PROCESSING_MSG_STRING
+    string(APPEND PROCESSING_MSG_STRING
       "enabled by ${TPL_${TPL_NAME}_ENABLING_PKG}," )
   else()
-    append_string_var(PROCESSING_MSG_STRING
+    string(APPEND PROCESSING_MSG_STRING
       "enabled explicitly," )
   endif()
-    append_string_var(PROCESSING_MSG_STRING 
+    string(APPEND PROCESSING_MSG_STRING 
       " disable with -DTPL_ENABLE_${TPL_NAME}=OFF)" )
 
   # Print the processing header
@@ -103,7 +104,18 @@ function(tribits_process_enabled_tpl  TPL_NAME)
 
     # Process the FindTPL${TPL_NAME}.cmake module
     tribits_trace_file_processing(TPL  INCLUDE  "${CURRENT_TPL_PATH}")
+    set(TRIBITS_FINDING_RAW_${TPL_NAME}_PACKAGE_FIRST TRUE)
     include("${CURRENT_TPL_PATH}")
+    unset(TRIBITS_FINDING_RAW_${TPL_NAME}_PACKAGE_FIRST)
+    # NOTE: Above, setting TRIBITS_FINDING_RAW_${TPL_NAME}_PACKAGE_FIRST=TRUE
+    # triggers special logic in the TriBITS-created
+    # ${TPL_NAME}ConfigVersion.cmake file to set
+    # PACKAGE_VERSION_COMPATIBLE=FALSE and result in find_package(${TPL_NAME})
+    # that may be called inside of ${TPL_NAME}_FINDMOD to not find a
+    # TriBITS-generated ${TPL_NAME}Config.cmake file.  This allows
+    # find_package(${TPL_NAME}) to usae a proper non-TriBITS
+    # Find${TPL_NAME}.cmake module or find a non-TriBITS
+    # ${TPL_NAME}Config.cmake module.
 
     if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       print_var(TPL_${TPL_NAME}_NOT_FOUND)
@@ -151,6 +163,22 @@ function(tribits_process_enabled_tpl  TPL_NAME)
     assert_defined(TPL_${TPL_NAME}_LIBRARY_DIRS)
     # ToDo: Make TPL_${TPL_NAME}_LIBRARY_DIRS go away.  It is not needed for
     # anything.
+
+    # Generate the <tplName>ConfigVersion.cmake file if it has not been
+    # created yet and add install targets for <tplName>Config[Version].cmake
+    if (TARGET ${TPL_NAME}::all_libs)
+      set(buildDirExternalPkgsDir
+        "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}")
+      set(tplConfigFile
+        "${buildDirExternalPkgsDir}/${TPL_NAME}/${TPL_NAME}Config.cmake")
+      set(tplConfigVersionFile
+        "${buildDirExternalPkgsDir}/${TPL_NAME}/${TPL_NAME}ConfigVersion.cmake")
+      tribits_external_package_write_config_version_file(${TPL_NAME}
+        "${tplConfigVersionFile}")
+      tribits_external_package_install_config_file(${TPL_NAME} "${tplConfigFile}")
+      tribits_external_package_install_config_version_file(${TPL_NAME}
+        "${tplConfigVersionFile}")
+    endif()
 
   endif()
 

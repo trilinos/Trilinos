@@ -84,7 +84,7 @@ include(TribitsTplDeclareLibraries) # Deprecated
 #
 macro(tribits_assert_and_setup_project_and_static_system_vars)
 
-  append_string_var(IN_SOURCE_ERROR_COMMON_MSG
+  string(APPEND IN_SOURCE_ERROR_COMMON_MSG
     "\nYou must now run something like:\n"
     "  $ cd ${CMAKE_CURRENT_SOURCE_DIR}/\n"
     "  $ rm -r CMakeCache.txt CMakeFiles/"
@@ -291,7 +291,11 @@ macro(tribits_define_global_options_and_define_extra_repos)
   set(${PROJECT_NAME}_ENABLE_CXX11 ON)
 
   if ("${${PROJECT_NAME}_ENABLE_Fortran_DEFAULT}" STREQUAL "")
-    set(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT ON)
+    if (WIN32)
+      set(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
+    else()
+      set(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT ON)
+    endif()
   endif()
 
   option(${PROJECT_NAME}_ENABLE_Fortran
@@ -572,20 +576,6 @@ macro(tribits_define_global_options_and_define_extra_repos)
     "Install libraries and headers (default is ${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}).  NOTE: Shared libraries are always installed since they are needed by executables."
     )
 
-  if ("${${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT}" STREQUAL "")
-    if(WIN32 AND NOT CYGWIN)
-      set(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
-    else()
-      set(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT ON)
-    endif()
-  endif()
-
-  advanced_set(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES
-    ${${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT}
-    CACHE BOOL
-    "Determines if export makefiles will be created and installed."
-    )
-
   # Creating <Package>Config.cmake files is currently *very* expensive for large
   # TriBITS projects so we disable this by default for TriBITS.
   if ("${${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT}" STREQUAL "")
@@ -601,9 +591,7 @@ macro(tribits_define_global_options_and_define_extra_repos)
   if (NOT ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT)
     # We need to generate the dependency logic for export dependency files if
     # asked.
-    if (${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES OR
-      ${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
-      )
+    if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
       set(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
     else()
       set(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT OFF)
@@ -665,7 +653,9 @@ macro(tribits_define_global_options_and_define_extra_repos)
     )
   tribits_get_invalid_categories(${PROJECT_NAME}_TEST_CATEGORIES)
 
-  if ("${${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT}" STREQUAL "" )
+  if (NOT GIT_EXECUTABLE)
+    set(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT OFF)
+  elseif ("${${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT}" STREQUAL "" )
     set(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT OFF)
   endif()
   advanced_set(
@@ -1328,7 +1318,7 @@ function(tribits_generate_repo_version_file_string  PROJECT_REPO_VERSION_FILE_ST
   tribits_generate_single_repo_version_string(
      ${CMAKE_CURRENT_SOURCE_DIR}
      SINGLE_REPO_VERSION)
-  append_string_var(REPO_VERSION_FILE_STR
+  string(APPEND REPO_VERSION_FILE_STR
     "*** Base Git Repo: ${PROJECT_NAME}\n"
     "${SINGLE_REPO_VERSION}\n" )
 
@@ -1352,7 +1342,7 @@ function(tribits_generate_repo_version_file_string  PROJECT_REPO_VERSION_FILE_ST
     tribits_generate_single_repo_version_string(
        "${CMAKE_CURRENT_SOURCE_DIR}/${EXTRAREPO_DIR}"
        SINGLE_REPO_VERSION)
-    append_string_var(REPO_VERSION_FILE_STR
+    string(APPEND REPO_VERSION_FILE_STR
       "*** Git Repo: ${EXTRAREPO_DIR}\n"
       "${SINGLE_REPO_VERSION}\n" )
 
@@ -1403,6 +1393,7 @@ function(tribits_generate_repo_version_output_and_file_and_install)
   # A) Create the ${PROJECT_NAME}RepoVersion.txt file if requested
   #
 
+  print_var(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE)
   if (${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE)
 
     # A) Make sure that there is a .git dir in the project before generating
