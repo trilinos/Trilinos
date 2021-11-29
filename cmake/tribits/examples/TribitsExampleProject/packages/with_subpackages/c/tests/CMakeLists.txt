@@ -1,5 +1,5 @@
 if(WithSubpackagesB_ENABLE_InsertedPkg)
-  set(EXPECTED_EXTERNALPKG_DEPS "InsertedPkg no_deps ")
+  set(EXPECTED_EXTERNALPKG_DEPS "InsertedPkg headeronlytpl ")
 endif()
 
 tribits_add_test( c_util
@@ -8,7 +8,7 @@ tribits_add_test( c_util
   NAME test_of_c_util
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION
-    "Called c_util: A no_deps ${EXPECTED_EXTERNALPKG_DEPS}no_deps no_deps"
+    "Called c_util: A headeronlytpl ${EXPECTED_EXTERNALPKG_DEPS}headeronlytpl headeronlytpl"
   ADDED_TESTS_NAMES_OUT  c_util_TEST_NAME
   )
 
@@ -59,7 +59,7 @@ if (WithSubpackagesB_ENABLE_MixedLang AND
     TESTONLYLIBS  c_b_mixed_lang
     NUM_MPI_PROCS  1
     PASS_REGULAR_EXPRESSION
-      "B A no_deps no_deps B Mixed Language"
+      "B A headeronlytpl headeronlytpl B Mixed Language"
     ADDED_EXE_TARGET_NAME_OUT  test_of_c_b_mixed_lang_TARGET_NAME
     ADDED_TESTS_NAMES_OUT  test_of_c_b_mixed_lang_TEST_NAME
     )

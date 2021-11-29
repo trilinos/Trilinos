@@ -72,7 +72,6 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_ENABLE_CXX`_
 * `${PROJECT_NAME}_ENABLE_C`_
 * `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_
-* `${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`_
 * `${PROJECT_NAME}_ENABLE_Fortran`_
 * `${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`_
 * `${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE`_
@@ -354,23 +353,6 @@ These options are described below.
   default in release mode.  In addition, strong compiler warnings are enabled
   by default in development mode but are disabled by default in release mode.
   This variable also affects the behavior of `tribits_set_st_for_dev_mode()`_.
-  
-.. _${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES:
-
-**${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES**
-  
-  If ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` is ``ON``, then
-  ``Makefile.export.<PackageName>`` will get created at configure time in the
-  build tree and installed into the install tree.  See `TribitsBuildReference`_
-  for details.  The TriBITS default is ``ON`` but a project can decide to turn
-  this off by default by setting::
-  
-    set(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
-  
-  A project might want to disable the generation of export makefiles by default
-  if its main purpose is to provide executables.  There is no reason to provide
-  an export makefile if libraries and headers are not actually installed (see
-  `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_)
  
 .. _${PROJECT_NAME}_ENABLE_Fortran:
   
@@ -385,6 +367,10 @@ These options are described below.
     set(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
 
   This default can be set in `<projectDir>/ProjectName.cmake`_ or `<projectDir>/CMakeLists.txt`_.
+
+  On WIN32 sytems, the default for ``${PROJECT_NAME}_ENABLE_Fortran_DEFAULT``
+  is set to ``OFF`` since it can be difficult to get a Fortran compiler for
+  native Windows.
 
   Given that a native Fortran compiler is not supported by default on Windows
   and on most Mac OSX systems, projects that have optional Fortran code may
@@ -455,13 +441,12 @@ These options are described below.
 **${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES**
 
   If ``${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`` is ``ON``, then the
-  data-structures needed to generate ``Makefile.export.<PackageName>`` and
-  ``<PackageName>Config.cmake`` are created.  These data structures are also
-  needed in order to generate export makefiles on demand using the function
+  data-structures needed to generate ``<PackageName>Config.cmake`` files are
+  created.  These data structures are also needed in order to generate export
+  makefiles on demand using the function
   `tribits_write_flexible_package_client_export_files()`_.  The default in
   TriBITS is to turn this ``ON`` automatically by default if
-  ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` or
-  ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` are ``ON``.  Else, by
+  ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` is ``ON``.  Else, by
   default, TriBITS sets this to ``OFF``.  The only reason for the project to
   override the default is to set it to ``ON`` as with::
 
@@ -498,6 +483,12 @@ These options are described below.
     set(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT ON)
 
   in the `<projectDir>/ProjectName.cmake`_ file.
+
+  Note that if a ``git`` exectauble cannot be found at configure time, then
+  the default ``${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE_DEFAULT`` will be
+  overridden to ``OFF``.  But if the user sets
+  ``${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE=ON`` in the cache and ``git``
+  can't be found, then an configure-time error will occur.
   
 .. _${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS:
 
