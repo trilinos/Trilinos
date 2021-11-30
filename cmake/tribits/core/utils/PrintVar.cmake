@@ -37,8 +37,12 @@
 # ************************************************************************
 # @HEADER
 
-include_guard()
+if (PRINT_VAR_INCLUDED)
+  return()
+endif()
+set(PRINT_VAR_INCLUDED TRUE)
 
+#
 # @FUNCTION: print_var()
 #
 # Unconditionally print a variable giving its name then value.

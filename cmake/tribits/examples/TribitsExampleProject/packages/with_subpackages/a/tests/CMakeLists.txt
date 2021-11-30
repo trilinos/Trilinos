@@ -5,5 +5,5 @@ tribits_add_advanced_test( test_of_a
   TEST_0 EXEC a_test
     PASS_REGULAR_EXPRESSION_ALL 
       "A label is: A"
-      "A deps are: headeronlytpl"
+      "A deps are: no_deps"
   )

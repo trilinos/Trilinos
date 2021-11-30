@@ -46,7 +46,10 @@
 #
 ##############################################################################
 
-include_guard()
+#
+# Ensure CMAKE_CURRENT_LIST_DIR is usable.
+#
+${DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET}
 
 ## ---------------------------------------------------------------------------
 ## Compilers used by ${PROJECT_NAME} build
@@ -103,8 +106,7 @@ endif()
 # Initialize ${PROJECT_NAME}_FOUND with true, and set it to FALSE if any of
 # the required components wasn't found.
 set(${PROJECT_NAME}_FOUND TRUE)
-set(${PROJECT_NAME}_NOT_FOUND_MESSAGE "")
-foreach (comp IN ITEMS ${PDOLLAR}{COMPONENTS_LIST})
+foreach(comp ${PDOLLAR}{COMPONENTS_LIST})
   set(
     INCLUDE_FILE
     ${PDOLLAR}{CMAKE_CURRENT_LIST_DIR}/../${PDOLLAR}{comp}/${PDOLLAR}{comp}Config.cmake
@@ -122,10 +124,10 @@ foreach (comp IN ITEMS ${PDOLLAR}{COMPONENTS_LIST})
    list(APPEND ${PROJECT_NAME}_TPL_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARY_DIRS})
    list(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
  else()
+   # Set ${PROJECT_NAME}_<component>_FOUND to FALSE.
    set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
+   # Set ${PROJECT_NAME}_FOUND to FALSE if component is not optional.
    if(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
-     string(APPEND ${PROJECT_NAME}_NOT_FOUND_MESSAGE
-       "ERROR: Could not find component '${PDOLLAR}{comp}'!\n")
      set(${PROJECT_NAME}_FOUND FALSE)
    endif()
  endif()
@@ -196,30 +198,5 @@ set(${PROJECT_NAME}_Fortran_IMPLICIT_LINK_LIBRARIES "${CMAKE_Fortran_IMPLICIT_LI
 ## The packages enabled for this project
 set(${PROJECT_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
 
-## The selected packages for this project
-set(${PROJECT_NAME}_SELECTED_PACKAGE_LIST "${PDOLLAR}{COMPONENTS_LIST}")
-
 ## The TPLs enabled for this project
 set(${PROJECT_NAME}_TPL_LIST "${FULL_TPL_SET}")
-
-## ---------------------------------------------------------------------------
-## Modern CMake (IMPORTED) targets
-## ---------------------------------------------------------------------------
-
-# ${PROJECT_NAME}::all_libs  (Does *not* depend on COMPONENTS)
-set(${PROJECT_NAME}_ALL_PACKAGES_TARGETS)
-foreach (pkg IN ITEMS ${FULL_PACKAGE_SET})
-  list(APPEND ${PROJECT_NAME}_ALL_PACKAGES_TARGETS ${PDOLLAR}{pkg}::all_libs)
-endforeach()
-add_library(${PROJECT_NAME}::all_libs IMPORTED INTERFACE GLOBAL)
-target_link_libraries(${PROJECT_NAME}::all_libs
-  INTERFACE ${PDOLLAR}{${PROJECT_NAME}_ALL_PACKAGES_TARGETS} )
-
-# ${PROJECT_NAME}::all_selected_libs  (Depend on COMPONENTS)
-set(${PROJECT_NAME}_ALL_SELECTED_PACKAGES_TARGETS)
-foreach (pkg IN ITEMS ${PDOLLAR}{COMPONENTS_LIST})
-  list(APPEND ${PROJECT_NAME}_ALL_SELECTED_PACKAGES_TARGETS ${PDOLLAR}{pkg}::all_libs)
-endforeach()
-add_library(${PROJECT_NAME}::all_selected_libs IMPORTED INTERFACE GLOBAL)
-target_link_libraries(${PROJECT_NAME}::all_selected_libs
-  INTERFACE ${PDOLLAR}{${PROJECT_NAME}_ALL_SELECTED_PACKAGES_TARGETS} )

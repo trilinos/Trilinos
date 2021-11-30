@@ -5,8 +5,6 @@ SET(gtest_disable_pthreads ON CACHE BOOL "Disable uses of pthreads in gtest")
 
 # Configure googletest
 add_subdirectory(googletest)
-set_target_properties(sacado-gtest gtest_main PROPERTIES
-  TRIBITS_TESTONLY_LIB TRUE)
 
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/Fad)
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/utils)

@@ -142,10 +142,6 @@ endmacro()
 #
 #   tribits_subpackage_postprocess()
 #
-# NOTE: This creates the aliased target ``${PACKAGE_NAME}::all_libs`` for all
-# libraries in all subdirectories that don't have the TRIBITS_TESTONLY_LIB
-# target property set on them.
-#
 # NOTE: It is unfortunate that a Subpackages's CMakeLists.txt file must call
 # this macro but limitations of the CMake language make it necessary to do so.
 #

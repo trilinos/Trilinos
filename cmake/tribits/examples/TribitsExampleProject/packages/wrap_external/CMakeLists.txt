@@ -6,7 +6,8 @@
 # configured and built piece of software.  The external software once built
 # provides libraries that need to be cast as TriBITS CMake libraries.  To
 # make this even more interesting, the external software has dependencies on
-# upstream TriBITS packages.
+# upstream TriBITS packages that it pulls in through a TriBITS export
+# makefile.
 #
 # An overview of the basic tasks required are:
 #
@@ -61,29 +62,15 @@ endif()
 # start from scratch.
 
 #
-# B) Get the arguments for the configure of external_func
+# B) Write the export makefile that will be used by the external project
 #
 
-string(TOUPPER "${CMAKE_BUILD_TYPE}" upperBuildType)
-
-set(includeDirsList
-  -I ${WithSubpackagesA_SOURCE_DIR}
-  -I ${SimpleCxx_SOURCE_DIR}/src
-  -I ${SimpleCxx_BINARY_DIR}/src
+set(EXPORT_MAKKEFILE "${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.TribExProj")
+tribits_write_flexible_package_client_export_files(
+  PACKAGE_NAME ${PACKAGE_NAME}
+  EXPORT_FILE_VAR_PREFIX TribitsExProj
+  WRITE_EXPORT_MAKEFILE "${EXPORT_MAKKEFILE}"
   )
-if (${PACKAGE_NAME}_ENABLE_MixedLang)
-  list(PREPEND includeDirsList
-    -I ${MixedLang_SOURCE_DIR}/src
-    -I ${MixedLang_BINARY_DIR}/src
-    )
-endif()
-list(JOIN includeDirsList " " includeDirs)
-# NOTE: TriBITS export Makefile support used to handle the above stuff
-# automatically but that is what you give up when moving to modern CMake.
-
-#
-# C) Do configuration of the external project
-#
 
 set(EXTERNAL_FUNC_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external_func)
 set(EXTERNAL_FUNC_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/external_func)
@@ -91,14 +78,15 @@ set(EXTERNAL_FUNC_LIB_FILE ${EXTERNAL_FUNC_BINARY_DIR}/libexternal_func.a)
 
 file(MAKE_DIRECTORY ${EXTERNAL_FUNC_BINARY_DIR})
 
+#
+# C) Do configuration of the external project
+#
+
 execute_process(
   COMMAND ${PYTHON_EXECUTABLE} ${EXTERNAL_FUNC_SOURCE_DIR}/configure.py
-    "--cxx=${CMAKE_CXX_COMPILER}"
-    "--cxx-flags=${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${upperBuildType}}"
-    "--ar=${CMAKE_AR}"
-    "--include-dirs=${includeDirs}"
-    "--src-dir=${EXTERNAL_FUNC_SOURCE_DIR}"
-    "--build-dir=${EXTERNAL_FUNC_BINARY_DIR}"
+    --with-export-makefile=${EXPORT_MAKKEFILE}
+    --src-dir=${EXTERNAL_FUNC_SOURCE_DIR}
+    --build-dir=${EXTERNAL_FUNC_BINARY_DIR}
   )
 
 #
@@ -159,7 +147,7 @@ if (${PACKAGE_NAME}_ENABLE_TESTS)
 
   tribits_add_executable_and_test(run_external_func
     SOURCES run_external_func.cpp
-    PASS_REGULAR_EXPRESSION "external_func A headeronlytpl"
+    PASS_REGULAR_EXPRESSION "external_func A no_deps"
     NUM_MPI_PROCS 1
     )
 

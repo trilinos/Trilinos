@@ -499,9 +499,8 @@ function(tribits_add_executable EXE_NAME)
         " IMPORTEDLIBS is not allowed to be a TESTONLY lib!"
         "  Use TESTONLYLIBS instead!" )
     endif()
-    list(FIND ${PACKAGE_NAME}_LIBRARIES "${PACKAGE_NAME}::${PREFIXED_LIB}"
-      FOUND_PREFIXED_LIB_IN_PKG_LIBRARIES_IDX)
-    if (NOT FOUND_PREFIXED_LIB_IN_PKG_LIBRARIES_IDX EQUAL -1)
+    list(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
+    if (NOT FOUND_IDX EQUAL -1)
       message(FATAL_ERROR
         "ERROR: Lib '${IMPORTEDLIB}' in IMPORTEDLIBS is in"
         " this SE package and is *not* an external lib!"

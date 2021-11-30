@@ -37,10 +37,14 @@
 # ************************************************************************
 # @HEADER
 
-include_guard()
+if (MESSAGE_WRAPPER_INCLUDED)
+  return()
+endif()
+set(MESSAGE_WRAPPER_INCLUDED TRUE)
 
 include(GlobalSet)
 
+#
 # @FUNCTION: message_wrapper()
 #
 # Function that wraps the standard CMake/CTest ``message()`` function call in
