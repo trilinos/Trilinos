@@ -492,7 +492,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void 
+  void
   Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_const_um vals,
                     Kokkos::View<bool*, typename Node::device_type> nonzeros) {
@@ -500,7 +500,7 @@ namespace MueLu {
   }
 
   template <class Node>
-  void 
+  void
   Utilities_kokkos<double,int,int,Node>::
   FindNonZeros(const typename Xpetra::MultiVector<double,int,int,Node>::dual_view_type::t_dev_const_um vals,
                Kokkos::View<bool*, typename Node::device_type> nonzeros) {
@@ -553,7 +553,7 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void 
+  void
   Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   DetectDirichletColsAndDomains(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
                                 const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
@@ -699,6 +699,10 @@ namespace MueLu {
   {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
+
+    auto dirichletRowsHost = Kokkos::create_mirror_view(dirichletRows);
+    Kokkos::deep_copy(dirichletRowsHost, dirichletRows);
+
     for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
       size_t nnz = A.getNumEntriesInLocalRow(row);
       ArrayView<const LocalOrdinal> indices;
@@ -714,8 +718,10 @@ namespace MueLu {
         rowsum += vals[colID];
       }
       if (STS::real(rowsum) > STS::magnitude(diagval) * rowSumTol)
-        dirichletRows(row) = true;
+        dirichletRowsHost(row) = true;
     }
+
+    Kokkos::deep_copy(dirichletRows, dirichletRowsHost);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
