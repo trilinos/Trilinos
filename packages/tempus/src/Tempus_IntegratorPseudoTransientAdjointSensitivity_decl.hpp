@@ -82,18 +82,38 @@ public:
    * </ul>
    *
    * To support use-cases with explicitly computed adjoint operators, the
-   * constructor takes an additional model evaluator for computing the adjoint
-   * W/W_op.  It is assumed the operator returned by this model evaluator is
-   * the adjoint, and so will not be transposed.  It is also assumed this
-   * model evaluator accepts the same inArgs as the forward model, however it
-   * only requires supporting the adjoint W/W_op outArgs.
+   * constructor takes two additional model evaluators for computing the adjoint
+   * W/W_op.  It is assumed the operator returned by these model evaluators is
+   * the adjoint, and so will not be transposed.  It is also assumed these
+   * model evaluators accept the same inArgs as the forward model, however they
+   * only requires supporting the adjoint W/W_op outArgs.  The first adjoint
+   * model evaluator will only be used for computing the adjoint residual,
+   * whereas the second will produce the operator used in linear solves.  The
+   * passed RCP's may point to the same model evalutor object in cases where
+   * these operators are the same
+   */
+  IntegratorPseudoTransientAdjointSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList>                pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_residual_model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model);
+
+  /** \brief Constructor with model and "Stepper Type" and is fully initialized with default settings. */
+  IntegratorPseudoTransientAdjointSensitivity(
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_residual_model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model,
+    std::string stepperType);
+
+  /*! \brief Version of the constructor taking a single adjoint model evaluator.
    */
   IntegratorPseudoTransientAdjointSensitivity(
     Teuchos::RCP<Teuchos::ParameterList>                pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model);
 
-  /** \brief Constructor with model and "Stepper Type" and is fully initialized with default settings. */
+  /*! \brief Version of the constructor taking a single adjoint model evaluator.
+   */
   IntegratorPseudoTransientAdjointSensitivity(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model,
@@ -225,13 +245,15 @@ protected:
   Teuchos::RCP<AdjointSensitivityModelEvaluator<Scalar> >
   createSensitivityModel(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_residual_model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model,
     const Teuchos::RCP<Teuchos::ParameterList>& inputPL);
 
   void buildSolutionHistory();
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > adjoint_model_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > adjoint_residual_model_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > adjoint_solve_model_;
   Teuchos::RCP<AdjointSensitivityModelEvaluator<Scalar> > sens_model_;
   Teuchos::RCP<IntegratorBasicOld<Scalar> > state_integrator_;
   Teuchos::RCP<IntegratorBasicOld<Scalar> > sens_integrator_;
@@ -268,6 +290,24 @@ Teuchos::RCP<Tempus::IntegratorPseudoTransientAdjointSensitivity<Scalar> >
 integratorPseudoTransientAdjointSensitivity(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model,
+  std::string stepperType);
+
+/// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorPseudoTransientAdjointSensitivity<Scalar> >
+integratorPseudoTransientAdjointSensitivity(
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model);
+
+/// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorPseudoTransientAdjointSensitivity<Scalar> >
+integratorPseudoTransientAdjointSensitivity(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model,
   std::string stepperType);
 
 /// Nonmember constructor

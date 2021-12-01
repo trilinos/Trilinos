@@ -22,12 +22,15 @@ IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 IntegratorPseudoTransientAdjointSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                inputPL,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model)
 {
   model_ = model;
-  adjoint_model_ = adjoint_model;
+  adjoint_residual_model_ = adjoint_residual_model;
+  adjoint_solve_model_ = adjoint_solve_model;
   state_integrator_ = integratorBasic<Scalar>(inputPL, model_);
-  sens_model_ = createSensitivityModel(model_, adjoint_model_, inputPL);
+  sens_model_ = createSensitivityModel(model_, adjoint_residual_model_,
+                                       adjoint_solve_model_, inputPL);
   sens_integrator_ = integratorBasic<Scalar>(inputPL, sens_model_);
   stepMode_ = SensitivityStepMode::Forward;
 }
@@ -36,15 +39,40 @@ template<class Scalar>
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 IntegratorPseudoTransientAdjointSensitivity(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model,
   std::string stepperType)
 {
   model_ = model;
-  adjoint_model_ = adjoint_model;
+  adjoint_residual_model_ = adjoint_residual_model;
+  adjoint_solve_model_ = adjoint_solve_model;
   state_integrator_ = integratorBasic<Scalar>(model_, stepperType);
-  sens_model_ = createSensitivityModel(model_, adjoint_model_, Teuchos::null);
+  sens_model_ = createSensitivityModel(model_, adjoint_residual_model_,
+                                       adjoint_solve_model_, Teuchos::null);
   sens_integrator_ = integratorBasic<Scalar>(sens_model_, stepperType);
   stepMode_ = SensitivityStepMode::Forward;
+}
+
+template<class Scalar>
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+IntegratorPseudoTransientAdjointSensitivity(
+  Teuchos::RCP<Teuchos::ParameterList>                inputPL,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model) :
+  IntegratorPseudoTransientAdjointSensitivity(
+    inputPL, model, adjoint_model, adjoint_model)
+{
+}
+
+template<class Scalar>
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+IntegratorPseudoTransientAdjointSensitivity(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model,
+  std::string stepperType) :
+  IntegratorPseudoTransientAdjointSensitivity(
+    model, adjoint_model, adjoint_model, stepperType)
+{
 }
 
 template<class Scalar>
@@ -472,7 +500,8 @@ Teuchos::RCP<AdjointSensitivityModelEvaluator<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 createSensitivityModel(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model,
   const Teuchos::RCP<Teuchos::ParameterList>& inputPL)
 {
   using Teuchos::rcp;
@@ -483,7 +512,7 @@ createSensitivityModel(
   }
   const Scalar tfinal = state_integrator_->getTimeStepControl()->getFinalTime();
   return rcp(new AdjointSensitivityModelEvaluator<Scalar>(
-               model, adjoint_model, tfinal, true, pl));
+               model, adjoint_residual_model, adjoint_solve_model_, tfinal, true, pl));
 }
 
 template<class Scalar>
@@ -647,6 +676,34 @@ integratorPseudoTransientAdjointSensitivity(
 {
   Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> > integrator =
     Teuchos::rcp(new IntegratorPseudoTransientAdjointSensitivity<Scalar>(model, adjoint_model, stepperType));
+  return(integrator);
+}
+
+/// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> >
+integratorPseudoTransientAdjointSensitivity(
+  Teuchos::RCP<Teuchos::ParameterList>                     pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      adjoint_solve_model)
+{
+  Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorPseudoTransientAdjointSensitivity<Scalar>(pList, model, adjoint_residual_model, adjoint_solve_model));
+  return(integrator);
+}
+
+/// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> >
+integratorPseudoTransientAdjointSensitivity(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      adjoint_solve_model,
+  std::string stepperType)
+{
+  Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorPseudoTransientAdjointSensitivity<Scalar>(model, adjoint_residual_model, adjoint_solve_model, stepperType));
   return(integrator);
 }
 
