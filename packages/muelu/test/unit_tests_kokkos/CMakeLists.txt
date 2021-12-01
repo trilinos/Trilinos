@@ -29,6 +29,7 @@ APPEND_SET(SOURCES
   SemiCoarsenPFactory_kokkos.cpp
   StructuredAggregation_kokkos.cpp
   TentativePFactory_kokkos.cpp
+  UncoupledAggregationFactory_kokkos.cpp
   UseKokkos_kokkos.cpp
   Utilities_kokkos.cpp
 )

@@ -558,7 +558,7 @@ namespace MueLuTests {
     // Setup aggregation factory (use default factory for graph)
     aggFact = rcp(new UncoupledAggregationFactory_kokkos());
     aggFact->SetFactory("Graph", dropFact);
-    aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(false));
+    aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(true));
 
     level.Request("Aggregates", aggFact.get());
     level.Request("UnAmalgamationInfo", amalgFact.get());
