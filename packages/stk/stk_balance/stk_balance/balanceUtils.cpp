@@ -249,6 +249,16 @@ std::string BalanceSettings::get_output_filename() const
   return m_outputFilename;
 }
 
+void BalanceSettings::set_log_filename(const std::string& filename)
+{
+  m_logFilename = filename;
+}
+
+std::string BalanceSettings::get_log_filename() const
+{
+  return m_logFilename;
+}
+
 //////////////////////////////////////
 
 size_t GraphCreationSettings::getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const

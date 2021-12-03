@@ -231,6 +231,7 @@ public:
 
   double * getAddress() const { return m_doublePtr; }
 
+  KOKKOS_FUNCTION
   int getLength() const { return m_size; }
 
   inline double getValue() const {
@@ -254,10 +255,12 @@ public:
     throw std::runtime_error(error.str());
   }
 
+  KOKKOS_FUNCTION
   int get_index() { return m_index; }
 
   void set_index(int index) { m_index = index; }
 
+  KOKKOS_FUNCTION
   Type get_type() { return m_type; }
 
 private:
