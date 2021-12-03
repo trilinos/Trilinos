@@ -34,10 +34,10 @@ function bootstrap_modules() {
             exit -1
         fi
     else
-        source /projects/sems/modulefiles/utils/sems-modules-init.sh
-        module unload sems-git
-        module unload sems-python
-        module load sems-git/2.10.1
+        source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
+        module unload sems-archive-git
+        module unload sems-archive-python
+        module load sems-archive-git/2.10.1
 
 #        module load sems-python/3.5.2      # Currently not on cloud nodes
 #        #pip3 install --user configparser
@@ -180,6 +180,3 @@ message_std "PRDriver> " "cd $(pwd)"
 message_std "PRDriver> " "${test_cmd:?} --pullrequest-cdash-track='${PULLREQUEST_CDASH_TRACK:?}'"
 ${test_cmd} --pullrequest-cdash-track="${PULLREQUEST_CDASH_TRACK:?}"
 exit $?
-
-
-
