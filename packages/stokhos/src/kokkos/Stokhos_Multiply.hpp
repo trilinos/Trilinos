@@ -172,7 +172,7 @@ compute_work_range( const execution_space device,
 #endif
 
   enum { work_align = cache_line / sizeof(scalar_type) };
-  enum { work_shift = Kokkos::Impl::power_of_two< work_align >::value };
+  enum { work_shift = Kokkos::Impl::integral_power_of_two( work_align ) };
   enum { work_mask  = work_align - 1 };
 
   const size_type work_per_thread =
