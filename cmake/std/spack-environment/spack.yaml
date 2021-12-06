@@ -1,0 +1,8 @@
+spack:
+  specs:
+  - trilinos%gcc@10.1.0
+  config:
+    install_tree:
+      root: /ascldap/users/jfrye/trilinos-spack-test-install
+    install_missing_compilers: true
+  view: false
