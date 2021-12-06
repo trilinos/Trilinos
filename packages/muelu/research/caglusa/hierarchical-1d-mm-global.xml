@@ -24,5 +24,6 @@
   <Parameter name="exact solution" type="string" value="1d-mm-global/X_ex.mtx"/>
 
   <Parameter name="auxiliary operator" type="string" value="1d-mm-global/aux.mtx"/>
+  <!-- <Parameter name="auxiliary operator" type="string" value="near"/> -->
   <Parameter name="coordinates" type="string" value="1d-mm-global/coords.mtx"/>
 </ParameterList>

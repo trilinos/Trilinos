@@ -21,18 +21,23 @@
   <!-- end of default values -->
 
   <!-- ===========  AGGREGATION  =========== -->
-  <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/>
-  <Parameter        name="aggregation: drop scheme"             type="string"   value="classical"/>
+  <!-- <Parameter        name="aggregation: type"                    type="string"   value="uncoupled"/> -->
+  <!-- <Parameter        name="aggregation: drop scheme"             type="string"   value="classical"/> -->
   <!-- Uncomment the next line to enable dropping of weak connections, which can help AMG convergence
        for anisotropic problems.  The exact value is problem dependent. -->
   <!-- <Parameter        name="aggregation: drop tol"                type="double"   value="0.02"/> -->
+
+  <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+  <Parameter name="aggregation: drop scheme" type="string" value="distance laplacian"/>
+  <Parameter name="aggregation: distance laplacian algo" type="string" value="scaled cut"/>
+  <Parameter name="aggregation: drop tol" type="double" value="8.0"/>
 
   <!-- ===========  SMOOTHING  =========== -->
   <Parameter        name="coarse: type"                         type="string"	value="none"/>
   <Parameter	    name="smoother: pre or post"		type="string"	value="none"/>
 
   <!-- ===========  REPARTITIONING  =========== -->
-  <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
+  <Parameter        name="repartition: enable"                  type="bool"     value="false"/>
   <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/>
   <Parameter        name="repartition: start level"             type="int"      value="2"/>
   <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/>
