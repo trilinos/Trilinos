@@ -158,6 +158,8 @@ private:
   int num_adjoint_;
 
   mutable bool mass_matrix_is_computed_;
+  mutable bool jacobian_matrix_is_computed_;
+  mutable bool response_gradient_is_computed_;
   mutable Teuchos::RCP<Thyra::VectorBase<Scalar> > my_x_dot_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdx_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdot_;

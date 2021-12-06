@@ -36,6 +36,8 @@ AdjointSensitivityModelEvaluator(
   t_final_(t_final),
   is_pseudotransient_(is_pseudotransient),
   mass_matrix_is_computed_(false),
+  jacobian_matrix_is_computed_(false),
+  response_gradient_is_computed_(false),
   t_interp_(Teuchos::ScalarTraits<Scalar>::rmax())
 {
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -91,7 +93,7 @@ AdjointSensitivityModelEvaluator(
   MEB::OutArgs<Scalar> adj_mes_outArgs = adjoint_solve_model_->createOutArgs();
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(me_inArgs.Np(),1);
+  outArgs.set_Np_Ng(me_inArgs.Np(),2);
   outArgs.setSupports(MEB::OUT_ARG_f);
   if (adj_mes_outArgs.supports(MEB::OUT_ARG_W_op))
     outArgs.setSupports(MEB::OUT_ARG_W_op);
@@ -126,6 +128,11 @@ setForwardSolutionHistory(
     t_interp_ = Teuchos::ScalarTraits<Scalar>::rmax();
     forward_state_ = Teuchos::null;
   }
+
+  // Reset computation flags because we have done a new forward integration
+  mass_matrix_is_computed_ = false;
+  jacobian_matrix_is_computed_ = false;
+  response_gradient_is_computed_ = false;
 }
 
 template <typename Scalar>
@@ -167,8 +174,10 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 AdjointSensitivityModelEvaluator<Scalar>::
 get_g_space(int j) const
 {
-  TEUCHOS_ASSERT(j == 0);
-  return response_space_;
+  TEUCHOS_ASSERT(j == 0 || j == 1);
+  if (j == 0)
+    return response_space_;
+  return model_->get_g_space(g_index_);
 }
 
 template <typename Scalar>
@@ -338,6 +347,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   RCP<Thyra::VectorBase<Scalar> > adjoint_f = outArgs.get_f();
   RCP<Thyra::VectorBase<Scalar> > adjoint_g = outArgs.get_g(0);
+  RCP<Thyra::VectorBase<Scalar> > g = outArgs.get_g(1);
   RCP<const Thyra::MultiVectorBase<Scalar> > adjoint_x_mv;
   if (adjoint_f != Teuchos::null || adjoint_g != Teuchos::null) {
     RCP<const Thyra::VectorBase<Scalar> > adjoint_x =
@@ -360,30 +370,34 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     // dg/dx^T
     // Don't re-evaluate dg/dx for pseudotransient
-    if (!is_pseudotransient_ || my_dgdx_mv_ == Teuchos::null) {
-      if (my_dgdx_mv_ == Teuchos::null)
-        my_dgdx_mv_ =
-          Thyra::createMembers(model_->get_x_space(),
-                               model_->get_g_space(g_index_)->dim());
+    if (my_dgdx_mv_ == Teuchos::null)
+      my_dgdx_mv_ =
+        Thyra::createMembers(model_->get_x_space(),
+                             model_->get_g_space(g_index_)->dim());
+    if (!response_gradient_is_computed_) {
       me_outArgs.set_DgDx(g_index_,
                           MEB::Derivative<Scalar>(my_dgdx_mv_,
                                                   MEB::DERIV_MV_GRADIENT_FORM));
       model_->evalModel(me_inArgs, me_outArgs);
       me_outArgs.set_DgDx(g_index_, MEB::Derivative<Scalar>());
+      if (is_pseudotransient_)
+        response_gradient_is_computed_ = true;
     }
     Thyra::assign(adjoint_f_mv.ptr(), *my_dgdx_mv_);
 
     // Explicit form of the residual F(y) = -df/dx^T*y + dg/dx^T
     // Don't re-evaluate df/dx for pseudotransient
-    if (!is_pseudotransient_ || my_dfdx_ == Teuchos::null) {
-      if (my_dfdx_ == Teuchos::null)
-        my_dfdx_ = adjoint_residual_model_->create_W_op();
+    if (my_dfdx_ == Teuchos::null)
+      my_dfdx_ = adjoint_residual_model_->create_W_op();
+    if (!jacobian_matrix_is_computed_) {
       adj_me_outArgs.set_W_op(my_dfdx_);
       if (me_inArgs.supports(MEB::IN_ARG_alpha))
         me_inArgs.set_alpha(0.0);
       if (me_inArgs.supports(MEB::IN_ARG_beta))
         me_inArgs.set_beta(1.0);
       adjoint_residual_model_->evalModel(me_inArgs, adj_me_outArgs);
+      if (is_pseudotransient_)
+        jacobian_matrix_is_computed_ = true;
     }
     my_dfdx_->apply(Thyra::NOTRANS, *adjoint_x_mv, adjoint_f_mv.ptr(),
                     Scalar(-1.0), Scalar(1.0));
@@ -403,16 +417,15 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                          *adjoint_x_dot_mv);
         }
         else {
-          if (!is_pseudotransient_ || my_dfdxdot_ == Teuchos::null) {
-            if (my_dfdxdot_ == Teuchos::null)
-              my_dfdxdot_ = adjoint_residual_model_->create_W_op();
-            if (!mass_matrix_is_constant_ || !mass_matrix_is_computed_) {
-              adj_me_outArgs.set_W_op(my_dfdxdot_);
-              me_inArgs.set_alpha(1.0);
-              me_inArgs.set_beta(0.0);
-              adjoint_residual_model_->evalModel(me_inArgs, adj_me_outArgs);
+          if (my_dfdxdot_ == Teuchos::null)
+            my_dfdxdot_ = adjoint_residual_model_->create_W_op();
+          if (!mass_matrix_is_computed_) {
+            adj_me_outArgs.set_W_op(my_dfdxdot_);
+            me_inArgs.set_alpha(1.0);
+            me_inArgs.set_beta(0.0);
+            adjoint_residual_model_->evalModel(me_inArgs, adj_me_outArgs);
+            if (is_pseudotransient_ || mass_matrix_is_constant_)
               mass_matrix_is_computed_ = true;
-            }
           }
           my_dfdxdot_->apply(Thyra::NOTRANS, *adjoint_x_dot_mv,
                              adjoint_f_mv.ptr(), Scalar(1.0), Scalar(-1.0));
@@ -496,6 +509,12 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     model_->evalModel(me_inArgs, me_outArgs);
     my_dfdp_op_->apply(trans, *adjoint_x_mv, adjoint_g_mv.ptr(),
                        Scalar(-1.0), Scalar(1.0));
+  }
+
+  if (g != Teuchos::null) {
+    MEB::OutArgs<Scalar> me_outArgs = model_->createOutArgs();
+    me_outArgs.set_g(g_index_, g);
+    model_->evalModel(me_inArgs, me_outArgs);
   }
 }
 
