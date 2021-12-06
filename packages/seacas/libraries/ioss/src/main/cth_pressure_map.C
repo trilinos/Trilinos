@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -313,11 +313,10 @@ namespace {
     }
     std::cerr << "...or: " << prog << " command_file\n";
     std::cerr << "       version: " << version << "\n";
-    Ioss::NameList db_types;
-    Ioss::IOFactory::describe(&db_types);
+    Ioss::NameList db_types = Ioss::IOFactory::describe();
     std::cerr << "\nSupports database types:\n\t";
-    for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
-      std::cerr << *IF << "  ";
+    for (const auto &db : db_types) {
+      std::cerr << db << "  ";
     }
     std::cerr << "\n\n";
   }
@@ -360,7 +359,7 @@ namespace {
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
     //========================================================================
     Ioss::DatabaseIO *dbs       = nullptr;
-    Ioss::Region *    ss_region = nullptr;
+    Ioss::Region     *ss_region = nullptr;
     if (globals.add_sset) {
       // Open the file containing the data which will be the new sideset...
       dbs = Ioss::IOFactory::create(input_type, ss_file, Ioss::READ_RESTART,
@@ -437,7 +436,7 @@ namespace {
 
     // Now do the same for element blocks...
     {
-      const Ioss::ElementBlockContainer &         ebs = region.get_element_blocks();
+      const Ioss::ElementBlockContainer          &ebs = region.get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator I   = ebs.begin();
 
       while (I != ebs.end()) {
@@ -463,7 +462,7 @@ namespace {
 
     // Node Sets
     {
-      const Ioss::NodeSetContainer &         nss = region.get_nodesets();
+      const Ioss::NodeSetContainer          &nss = region.get_nodesets();
       Ioss::NodeSetContainer::const_iterator I   = nss.begin();
       while (I != nss.end()) {
         const std::string &name = (*I)->name();
@@ -486,7 +485,7 @@ namespace {
 
     // Comm Sets
     {
-      const Ioss::CommSetContainer &         css = region.get_commsets();
+      const Ioss::CommSetContainer          &css = region.get_commsets();
       Ioss::CommSetContainer::const_iterator I   = css.begin();
       while (I != css.end()) {
         const std::string &name = (*I)->name();
@@ -510,7 +509,7 @@ namespace {
 
     // Side Sets
     if (!globals.do_normals) {
-      const Ioss::SideSetContainer &         fss = region.get_sidesets();
+      const Ioss::SideSetContainer          &fss = region.get_sidesets();
       Ioss::SideSetContainer::const_iterator I   = fss.begin();
       while (I != fss.end()) {
         const std::string &name = (*I)->name();
@@ -525,7 +524,7 @@ namespace {
           transfer_field_data(*I, ofs, Ioss::Field::MESH);
           transfer_field_data(*I, ofs, Ioss::Field::ATTRIBUTE);
 
-          const Ioss::SideBlockContainer &         fbs = (*I)->get_side_blocks();
+          const Ioss::SideBlockContainer          &fbs = (*I)->get_side_blocks();
           Ioss::SideBlockContainer::const_iterator J   = fbs.begin();
           while (J != fbs.end()) {
 
@@ -601,7 +600,7 @@ namespace {
 
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::NodeBlockContainer &         nbs = region.get_node_blocks();
+    const Ioss::NodeBlockContainer          &nbs = region.get_node_blocks();
     Ioss::NodeBlockContainer::const_iterator i   = nbs.begin();
     while (i != nbs.end()) {
       const std::string &name = (*i)->name();
@@ -630,7 +629,7 @@ namespace {
 
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::ElementBlockContainer &         ebs            = region.get_element_blocks();
+    const Ioss::ElementBlockContainer          &ebs            = region.get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i              = ebs.begin();
     int                                         total_elements = 0;
     while (i != ebs.end()) {
@@ -662,7 +661,7 @@ namespace {
 
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::SideSetContainer &         fss         = region.get_sidesets();
+    const Ioss::SideSetContainer          &fss         = region.get_sidesets();
     Ioss::SideSetContainer::const_iterator i           = fss.begin();
     int                                    total_sides = 0;
     while (i != fss.end()) {
@@ -672,7 +671,7 @@ namespace {
       }
       auto surf = new Ioss::SideSet(output_region.get_database(), name);
 
-      const Ioss::SideBlockContainer &         fbs = (*i)->get_side_blocks();
+      const Ioss::SideBlockContainer          &fbs = (*i)->get_side_blocks();
       Ioss::SideBlockContainer::const_iterator j   = fbs.begin();
       while (j != fbs.end()) {
         const std::string &fbname = (*j)->name();
@@ -709,7 +708,7 @@ namespace {
 
   void transfer_nodesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::NodeSetContainer &         nss         = region.get_nodesets();
+    const Ioss::NodeSetContainer          &nss         = region.get_nodesets();
     Ioss::NodeSetContainer::const_iterator i           = nss.begin();
     int                                    total_nodes = 0;
     while (i != nss.end()) {
@@ -737,7 +736,7 @@ namespace {
 
   void transfer_commsets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::CommSetContainer &         css = region.get_commsets();
+    const Ioss::CommSetContainer          &css = region.get_commsets();
     Ioss::CommSetContainer::const_iterator i   = css.begin();
     while (i != css.end()) {
       const std::string &name = (*i)->name();
@@ -763,8 +762,7 @@ namespace {
                        Ioss::Field::RoleType role, const std::string &prefix)
   {
     // Check for transient fields...
-    Ioss::NameList fields;
-    ige->field_describe(role, &fields);
+    Ioss::NameList fields = ige->field_describe(role);
 
     // Iterate through results fields and transfer to output
     // database...  If a prefix is specified, only transfer fields
@@ -787,9 +785,9 @@ namespace {
   {
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.
-    Ioss::NameList                 state_fields;
+    Ioss::NameList state_fields = ige->field_describe(role);
+
     Ioss::NameList::const_iterator IF;
-    ige->field_describe(role, &state_fields);
 
     // Complication here is that if the 'role' is 'Ioss::Field::MESH',
     // then the 'ids' field must be transferred first...
@@ -866,8 +864,7 @@ namespace {
 
   void transfer_properties(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge)
   {
-    Ioss::NameList names;
-    ige->property_describe(&names);
+    Ioss::NameList names = ige->property_describe();
 
     // Iterate through properties and transfer to output database...
     Ioss::NameList::const_iterator I;
@@ -884,7 +881,7 @@ namespace {
     Ioss::SideSet *pressures = new Ioss::SideSet(output_region.get_database(), "cth_pressures");
     // Each element block in the sset file will be a surside in the mesh file...
     {
-      const Ioss::ElementBlockContainer &         ebs = ss_region.get_element_blocks();
+      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
       while (i != ebs.end()) {
         std::string name = (*i)->name();
@@ -911,7 +908,7 @@ namespace {
   {
     // Each element block in the sset file will be a surface in the mesh file...
     {
-      const Ioss::ElementBlockContainer &         ebs = ss_region.get_element_blocks();
+      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
       while (i != ebs.end()) {
         std::string name    = (*i)->name();
@@ -978,7 +975,7 @@ namespace {
     if (globals.convert_gage) {
       ss_region.begin_state(1);
 
-      const Ioss::ElementBlockContainer &         ebs = ss_region.get_element_blocks();
+      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
       while (i != ebs.end()) {
 
@@ -1004,20 +1001,19 @@ namespace {
     if (globals.offset_time > 0.0) {
       int ostep = output_region.add_state(0.0);
       output_region.begin_state(ostep);
-      const Ioss::ElementBlockContainer &         ebs = ss_region.get_element_blocks();
+      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
       while (i != ebs.end()) {
         const std::string &eb_name = (*i)->name();
         std::string        name    = "ss" + eb_name;
-        Ioss::SideBlock *  fb      = output_region.get_sideblock(name);
+        Ioss::SideBlock   *fb      = output_region.get_sideblock(name);
         if (fb == nullptr) {
           std::cerr << "INTERNAL ERROR: Could not find sideblock named '" << name << "'\n";
           std::exit(EXIT_FAILURE);
         }
 
-        Ioss::NameList                 state_fields;
+        Ioss::NameList                 state_fields = (*i)->field_describe(Ioss::Field::TRANSIENT);
         Ioss::NameList::const_iterator IF;
-        (*i)->field_describe(Ioss::Field::TRANSIENT, &state_fields);
 
         for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
           std::string field_name = *IF;
@@ -1056,20 +1052,19 @@ namespace {
 
       output_region.begin_state(ostep);
       ss_region.begin_state(istep);
-      const Ioss::ElementBlockContainer &         ebs = ss_region.get_element_blocks();
+      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
       while (i != ebs.end()) {
         const std::string &eb_name = (*i)->name();
         std::string        name    = "ss" + eb_name;
-        Ioss::SideBlock *  fb      = output_region.get_sideblock(name);
+        Ioss::SideBlock   *fb      = output_region.get_sideblock(name);
         if (fb == nullptr) {
           std::cerr << "INTERNAL ERROR: Could not find side block named '" << name << "'\n";
           std::exit(EXIT_FAILURE);
         }
 
-        Ioss::NameList                 state_fields;
+        Ioss::NameList                 state_fields = (*i)->field_describe(Ioss::Field::TRANSIENT);
         Ioss::NameList::const_iterator IF;
-        (*i)->field_describe(Ioss::Field::TRANSIENT, &state_fields);
 
         for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
           std::string field_name = *IF;
@@ -1142,21 +1137,20 @@ namespace {
       // an
       // "equilibrium" state in case the CTH analysis was not run out to an equilibrium
       // state. If ZERO was specified, then it simply zeros out the pressure field at the last step.
-      const Ioss::ElementBlockContainer &         ebs = ss_region.get_element_blocks();
+      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
       while (i != ebs.end()) {
         const std::string &eb_name = (*i)->name();
         std::string        name    = "ss" + eb_name;
-        Ioss::SideBlock *  fb      = output_region.get_sideblock(name);
+        Ioss::SideBlock   *fb      = output_region.get_sideblock(name);
         if (fb == nullptr) {
           std::ostringstream msg;
           msg << " INTERNAL_ERROR: Could not find sideblock '" << name << "'\n";
           throw std::runtime_error(msg.str());
         }
 
-        Ioss::NameList                 state_fields;
+        Ioss::NameList                 state_fields = (*i)->field_describe(Ioss::Field::TRANSIENT);
         Ioss::NameList::const_iterator IF;
-        (*i)->field_describe(Ioss::Field::TRANSIENT, &state_fields);
 
         for (IF = state_fields.begin(); IF != state_fields.end(); ++IF) {
           std::string field_name = *IF;
@@ -1210,7 +1204,7 @@ namespace {
   {
     // Each element block in the sset file will be a surface in the mesh file...
     {
-      const Ioss::ElementBlockContainer &         ebs = ss_region.get_element_blocks();
+      const Ioss::ElementBlockContainer          &ebs = ss_region.get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator i   = ebs.begin();
       while (i != ebs.end()) {
         std::string name    = (*i)->name();
@@ -1239,11 +1233,11 @@ namespace {
       Ioss::NodeBlock *nb        = (*output_region.get_node_blocks().begin());
       int              num_nodes = nb->entity_count();
       Ioss::Field      node_normal("node_normal", Ioss::Field::REAL, v3d, Ioss::Field::TRANSIENT,
-                              num_nodes);
+                                   num_nodes);
       nb->field_add(node_normal);
 
       // Iterate over the element blocks and calculate both node normals and face normals...
-      const Ioss::ElementBlockContainer &         ebs = output_region.get_element_blocks();
+      const Ioss::ElementBlockContainer          &ebs = output_region.get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator ib  = ebs.begin();
       while (ib != ebs.end()) {
         Ioss::ElementBlock *eb = *ib;

@@ -10,8 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define EX_TEST_GOLD_FILENAME "edge-face-gold.exo"
-#define EX_TEST_NO_DIFF_FILENAME "edge-face-no-diff.exo"
+#define EX_TEST_GOLD_FILENAME      "edge-face-gold.exo"
+#define EX_TEST_NO_DIFF_FILENAME   "edge-face-no-diff.exo"
 #define EX_TEST_EDGE_DIFF_FILENAME "edge-diff.exo"
 #define EX_TEST_FACE_DIFF_FILENAME "face-diff.exo"
 

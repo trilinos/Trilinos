@@ -70,10 +70,10 @@ static int ex_write_object_params(int exoid, const char *type, const char *dimen
                                   const char *status_dim_name, const char *id_array_dim_name,
                                   size_t count, int *dimension)
 {
-  int status;
 
   /* Can have nonzero model->num_elem_blk even if model->num_elem == 0 */
   if (count > 0) {
+    int status;
     if ((status = nc_def_dim(exoid, dimension_name, count, dimension)) != NC_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of %ss in file id %d", type,
@@ -140,8 +140,8 @@ static int ex_write_map_params(int exoid, const char *map_name, const char *map_
   }
 
   /* Can have nonzero model->num_XXXX_map even if model->num_XXXX == 0 */
-  int status;
   if ((map_count) > 0) {
+    int status;
     if ((status = nc_def_dim(exoid, map_dim_name, map_count, map_dimension)) != NC_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of %ss in file id %d",
@@ -178,7 +178,7 @@ static void invalidate_id_status(int exoid, const char *var_stat, const char *va
                                  int *ids)
 {
   if (count > 0) {
-    if (var_id != 0) {
+    if (var_id != NULL) {
       for (int i = 0; i < count; i++) {
         ids[i] = EX_INVALID_ID;
       }
@@ -187,7 +187,7 @@ static void invalidate_id_status(int exoid, const char *var_stat, const char *va
       (void)nc_put_var_int(exoid, id_var, ids);
     }
 
-    if (var_stat != 0) {
+    if (var_stat != NULL) {
       for (int i = 0; i < count; i++) {
         ids[i] = 0;
       }
@@ -524,7 +524,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
 
   /* Fill the id and status arrays with EX_INVALID_ID */
   {
-    int *  invalid_ids = NULL;
+    int   *invalid_ids = NULL;
     size_t maxset      = model->num_elem_blk;
     if (maxset < model->num_edge_blk) {
       maxset = model->num_edge_blk;

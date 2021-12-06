@@ -179,8 +179,8 @@ int main(int argc, char *argv[])
       int_byte_size = 8;
     }
 
-    const Omissions &               omissions  = interFace.block_omissions();
-    const Omissions &               inclusions = interFace.block_inclusions();
+    const Omissions                &omissions  = interFace.block_omissions();
+    const Omissions                &inclusions = interFace.block_inclusions();
     std::vector<Ioss::Region *>     part_mesh(interFace.inputFiles_.size());
     std::vector<Ioss::DatabaseIO *> dbi(interFace.inputFiles_.size());
     for (size_t p = 0; p < interFace.inputFiles_.size(); p++) {
@@ -520,7 +520,7 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
     int ostep = output_region.add_state(global_times[step]);
     output_region.begin_state(ostep);
     output_transient_state(output_region, part_mesh, global_times[step], local_node_map, interFace);
-    fmt::print("\rWrote step {:4}/{:4}, time {}", step + 1, nsteps, global_times[step]);
+    fmt::print("\rWrote step {:4}/{:4}, time {:8.4e}", step + 1, nsteps, global_times[step]);
     output_region.end_state(ostep);
     steps++;
   }
@@ -670,8 +670,8 @@ namespace {
         std::vector<INT> nodelist;
         nb->get_field_data("ids", nodelist);
         for (auto &node : nodelist) {
-          size_t  loc_node = part_mesh[p]->node_global_to_local(node, true) - 1;
-          ssize_t gpos     = local_node_map[node_offset + loc_node];
+          size_t loc_node = part_mesh[p]->node_global_to_local(node, true) - 1;
+          auto   gpos     = local_node_map[node_offset + loc_node];
           if (gpos >= 0) {
             node = gpos + 1;
           }
@@ -706,8 +706,7 @@ namespace {
 
         SMART_ASSERT(part_mesh[p]->get_property("node_count").get_int() == nb->entity_count());
 
-        Ioss::NameList fields;
-        nb->field_describe(Ioss::Field::TRANSIENT, &fields);
+        Ioss::NameList fields = nb->field_describe(Ioss::Field::TRANSIENT);
         for (const auto &field_name : fields) {
           if (valid_variable(field_name, 0, variable_list)) {
             Ioss::Field field = nb->get_field(field_name);
@@ -795,7 +794,7 @@ namespace {
       size_t node_count = nb->entity_count();
       size_t offset     = pm->get_property("node_offset").get_int();
       for (size_t i = 0; i < node_count; i++) {
-        ssize_t glob_pos = local_node_map[i + offset];
+        auto glob_pos = local_node_map[i + offset];
         if (glob_pos >= 0) {
           coord[glob_pos * spatial_dimension + 0] = coordinates[i * spatial_dimension + 0];
           coord[glob_pos * spatial_dimension + 1] = coordinates[i * spatial_dimension + 1];
@@ -860,7 +859,7 @@ namespace {
             // list
             size_t loc_node = node - 1;
             SMART_ASSERT(node_offset + loc_node < local_node_map.size());
-            ssize_t gpos = local_node_map[node_offset + loc_node];
+            auto gpos = local_node_map[node_offset + loc_node];
             if (gpos >= 0) {
               node = gpos + 1;
             }
@@ -899,8 +898,8 @@ namespace {
 
           // This needs to make sure that the nodelist comes back as local id (1..numnodes)
           for (auto &node : nodelist) {
-            size_t  loc_node = pm->node_global_to_local(node, true) - 1;
-            ssize_t gpos     = local_node_map[node_offset + loc_node];
+            size_t loc_node = pm->node_global_to_local(node, true) - 1;
+            auto   gpos     = local_node_map[node_offset + loc_node];
             if (gpos >= 0) {
               node = gpos + 1;
             }
@@ -955,8 +954,8 @@ namespace {
             // output region...
             for (size_t i = 0; i < elem_side_list.size();
                  i += 2) { // just get the elem part of the pair...
-              size_t  local_position = elem_side_list[i] - 1;
-              ssize_t gpos           = local_element_map[element_offset + local_position];
+              size_t local_position = elem_side_list[i] - 1;
+              auto   gpos           = local_element_map[element_offset + local_position];
               SMART_ASSERT(gpos >= 0)(gpos)(i); // Inactive elements should be filtered by Ioss
               elem_side_list[i] = gpos + 1;
             }
@@ -971,8 +970,7 @@ namespace {
   void output_globals(Ioss::Region &output_region, RegionVector &part_mesh)
   {
     for (const auto &pm : part_mesh) {
-      Ioss::NameList fields;
-      pm->field_describe(Ioss::Field::REDUCTION, &fields);
+      Ioss::NameList fields = pm->field_describe(Ioss::Field::REDUCTION);
       for (const auto &field : fields) {
         std::vector<double> data;
         pm->get_field_data(field, data);
@@ -991,8 +989,7 @@ namespace {
     SMART_ASSERT(onb != nullptr);
     size_t node_count = onb->entity_count();
 
-    Ioss::NameList fields;
-    onb->field_describe(Ioss::Field::TRANSIENT, &fields);
+    Ioss::NameList fields = onb->field_describe(Ioss::Field::TRANSIENT);
     for (const auto &field : fields) {
       size_t              comp_count = onb->get_field(field).raw_storage()->component_count();
       std::vector<double> data(node_count * comp_count);
@@ -1008,7 +1005,7 @@ namespace {
             size_t nc = nb->entity_count();
             SMART_ASSERT(loc_data.size() == nc * comp_count);
             for (size_t i = 0; i < nc; i++) {
-              ssize_t glob_pos = local_node_map[offset + i];
+              auto glob_pos = local_node_map[offset + i];
               if (glob_pos >= 0) {
                 for (size_t j = 0; j < comp_count; j++) {
                   data[glob_pos * comp_count + j] = loc_data[i * comp_count + j];
@@ -1043,8 +1040,7 @@ namespace {
         // defined as the same node order in the input nodeblock 'nb',
         // so we shouldn't have to do any reordering of the data at
         // this time--just read then write.
-        Ioss::NameList fields;
-        ons->field_describe(Ioss::Field::TRANSIENT, &fields);
+        Ioss::NameList      fields = ons->field_describe(Ioss::Field::TRANSIENT);
         std::vector<double> data;
         for (const auto &field : fields) {
           nb->get_field_data(field, data);
@@ -1067,8 +1063,7 @@ namespace {
             oeb  = output_region.get_element_block(name);
           }
           if (oeb != nullptr) {
-            Ioss::NameList fields;
-            ieb->field_describe(Ioss::Field::TRANSIENT, &fields);
+            Ioss::NameList fields = ieb->field_describe(Ioss::Field::TRANSIENT);
             for (const auto &field : fields) {
               if (oeb->field_exists(field)) {
                 transfer_field_data_internal(ieb, oeb, field);
@@ -1098,8 +1093,7 @@ namespace {
           }
           SMART_ASSERT(ons != nullptr)(name);
 
-          Ioss::NameList fields;
-          in->field_describe(Ioss::Field::TRANSIENT, &fields);
+          Ioss::NameList fields = in->field_describe(Ioss::Field::TRANSIENT);
           for (const auto &field : fields) {
             if (ons->field_exists(field)) {
               transfer_field_data_internal(in, ons, field);
@@ -1136,8 +1130,7 @@ namespace {
           for (auto &eb : ebs) {
             SMART_ASSERT((pm->name() + "_" + eb->name() == (*II)->name()) ||
                          (eb->name() == (*II)->name()));
-            Ioss::NameList fields;
-            eb->field_describe(Ioss::Field::TRANSIENT, &fields);
+            Ioss::NameList fields = eb->field_describe(Ioss::Field::TRANSIENT);
             for (const auto &field : fields) {
               if ((*II)->field_exists(field)) {
                 transfer_field_data_internal(eb, *II, field);
@@ -1207,8 +1200,7 @@ namespace {
   {
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.
-    Ioss::NameList state_fields;
-    ige->field_describe(role, &state_fields);
+    Ioss::NameList state_fields = ige->field_describe(role);
 
     // Complication here is that if the 'role' is 'Ioss::Field::MESH',
     // then the 'ids' field must be transferred first...
@@ -1258,8 +1250,7 @@ namespace {
       return;
     }
     for (const auto &pm : part_mesh) {
-      Ioss::NameList fields;
-      pm->field_describe(Ioss::Field::REDUCTION, &fields);
+      Ioss::NameList fields = pm->field_describe(Ioss::Field::REDUCTION);
       for (const auto &field_name : fields) {
         if (valid_variable(field_name, 0, variable_list)) {
           Ioss::Field field = pm->get_field(field_name);
@@ -1282,9 +1273,8 @@ namespace {
     for (size_t p = 0; p < part_count; p++) {
       if (!interFace.convert_nodes_to_nodesets(p + 1)) {
         Ioss::NodeBlock *nb = part_mesh[p]->get_node_blocks()[0];
-        Ioss::NameList   fields;
         SMART_ASSERT(nb != nullptr);
-        nb->field_describe(Ioss::Field::TRANSIENT, &fields);
+        Ioss::NameList fields = nb->field_describe(Ioss::Field::TRANSIENT);
         for (const auto &field_name : fields) {
           if (valid_variable(field_name, 0, variable_list)) {
             Ioss::Field field = nb->get_field(field_name);
@@ -1314,9 +1304,8 @@ namespace {
             oeb  = output_region.get_element_block(name);
           }
           if (oeb != nullptr) {
-            size_t         id = oeb->get_property("id").get_int();
-            Ioss::NameList fields;
-            ieb->field_describe(Ioss::Field::TRANSIENT, &fields);
+            size_t         id     = oeb->get_property("id").get_int();
+            Ioss::NameList fields = ieb->field_describe(Ioss::Field::TRANSIENT);
             for (const auto &field_name : fields) {
               if (valid_variable(field_name, id, variable_list)) {
                 Ioss::Field field = ieb->get_field(field_name);
@@ -1349,9 +1338,8 @@ namespace {
           }
           SMART_ASSERT(ons != nullptr)(name);
 
-          size_t         id = in->get_property("id").get_int();
-          Ioss::NameList fields;
-          in->field_describe(Ioss::Field::TRANSIENT, &fields);
+          size_t         id     = in->get_property("id").get_int();
+          Ioss::NameList fields = in->field_describe(Ioss::Field::TRANSIENT);
           for (const auto &field_name : fields) {
             if (valid_variable(field_name, id, variable_list)) {
               Ioss::Field field = in->get_field(field_name);
@@ -1391,8 +1379,7 @@ namespace {
           for (auto &eb : ebs) {
             SMART_ASSERT((pm->name() + "_" + eb->name() == (*II)->name()) ||
                          (eb->name() == (*II)->name()));
-            Ioss::NameList fields;
-            eb->field_describe(Ioss::Field::TRANSIENT, &fields);
+            Ioss::NameList fields = eb->field_describe(Ioss::Field::TRANSIENT);
             for (const auto &field_name : fields) {
               if (valid_variable(field_name, id, variable_list)) {
                 Ioss::Field field = eb->get_field(field_name);
@@ -1410,8 +1397,7 @@ namespace {
                        Ioss::Field::RoleType role, const std::string &prefix)
   {
     // Check for transient fields...
-    Ioss::NameList fields;
-    ige->field_describe(role, &fields);
+    Ioss::NameList fields = ige->field_describe(role);
 
     // Iterate through results fields and transfer to output
     // database...  If a prefix is specified, only transfer fields

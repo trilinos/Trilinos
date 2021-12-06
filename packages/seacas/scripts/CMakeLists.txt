@@ -88,6 +88,7 @@ IF (${PROJECT_NAME}_ENABLE_SEACASExodus)
       MESSAGE(STATUS "A Python-2 version of exodus.py and exomerge.py will be installed.")
    ELSE()
       SET( EXODUSPY "exodus3.py" )
+      ADD_TEST(NAME test_exodus3.py COMMAND ${CMAKE_INSTALL_PREFIX}/lib/tests/test_exodus3.py)
       SET( EXOMERGE "exomerge3.py")
       MESSAGE(STATUS "A Python-3 version of exodus.py and exomerge.py will be installed.")
    ENDIF()
@@ -103,8 +104,21 @@ IF (${PROJECT_NAME}_ENABLE_SEACASExodus)
 		${CMAKE_CURRENT_BINARY_DIR}/exodus3.py
 		@ONLY
 		)
+	CONFIGURE_FILE(
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exodus3.py
+		${CMAKE_CURRENT_BINARY_DIR}/tests/test_exodus3.py
+		@ONLY
+		)
+  CONFIGURE_FILE(
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-assembly.exo
+		${CMAKE_CURRENT_BINARY_DIR}/tests/test-assembly.exo
+		COPYONLY
+		)
+
       INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus2.py DESTINATION lib)
       INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/exodus3.py DESTINATION lib)
+      INSTALL(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/tests/test_exodus3.py DESTINATION lib/tests/)
+      INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-assembly.exo DESTINATION lib/tests/)
       INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/exomerge2.py DESTINATION lib)
       INSTALL(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/exomerge3.py DESTINATION lib)
 

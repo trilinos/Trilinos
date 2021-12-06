@@ -477,7 +477,7 @@ namespace tsl {
     /**
      * @copydoc equal_range(const Key& key, std::size_t precalculated_hash)
      */
-    std::pair<const_iterator, const_iterator> equal_range(const Key & key,
+    std::pair<const_iterator, const_iterator> equal_range(const Key  &key,
                                                           std::size_t precalculated_hash) const
     {
       return m_ht.equal_range(key, precalculated_hash);
@@ -524,7 +524,7 @@ namespace tsl {
      */
     template <class K, class KE = KeyEqual,
               typename std::enable_if<has_is_transparent<KE>::value>::type * = nullptr>
-    std::pair<const_iterator, const_iterator> equal_range(const K &   key,
+    std::pair<const_iterator, const_iterator> equal_range(const K    &key,
                                                           std::size_t precalculated_hash) const
     {
       return m_ht.equal_range(key, precalculated_hash);

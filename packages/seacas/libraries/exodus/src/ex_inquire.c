@@ -132,7 +132,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
   int    dimid, varid;
   size_t ldum = 0;
   size_t num_sets, idum;
-  int *  stat_vals;
+  int   *stat_vals;
   char   errmsg[MAX_ERR_LENGTH];
   int    status;
   int    num_var;
@@ -1022,7 +1022,7 @@ int num_block = ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
 */
 int64_t ex_inquire_int(int exoid, ex_inquiry req_info)
 {
-  char *  cdummy  = NULL; /* Needed just for function call, unused. */
+  char   *cdummy  = NULL; /* Needed just for function call, unused. */
   float   fdummy  = 0;    /* Needed just for function call, unused. */
   int64_t ret_val = 0;
   int     error;
@@ -1096,7 +1096,7 @@ int ex_inquire(int exoid, ex_inquiry req_info, void_int *ret_int, float *ret_flo
   }
   /* ret_int is a 32-bit int */
   int64_t tmp_int;
-  int *   return_int = ret_int;
+  int    *return_int = ret_int;
 
   EX_FUNC_ENTER();
   ierr        = ex_inquire_internal(exoid, req_info, &tmp_int, ret_float, ret_char);

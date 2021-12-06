@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
   float *glob_var_vals, *nodal_var_vals, *elem_var_vals, *nset_var_vals, *sset_var_vals;
   float  time_value;
   float  dist_fact[100];
-  char * var_names[7];
+  char  *var_names[7];
 
   ex_opts(EX_VERBOSE | EX_ABORT);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -590,7 +590,7 @@ void vbinq(void)
 void vdinit_(float *aspect, int *justif)
 {
   float asp;
-  int   just, temp, temp2, vstat, vconc;
+  int   temp, temp2, vstat, vconc;
   float xconc, yconc, x1, y1, x2, y2, x3, y3, x4, y4, temp_xcp, temp_ycp;
   float scaled_ndc_xmax, scaled_ndc_ymax;
   float rtemp = 0.0;
@@ -606,16 +606,10 @@ void vdinit_(float *aspect, int *justif)
   y4          = 0.0;
 
   asp  = *aspect;
-  just = *justif;
 
   if (asp < 0.) {
     vdicgi_errh(" SVDI Shell (VDINIT) Error Number 721 Severity 5: ");
     asp = 0.;
-  }
-
-  if (just < 0 || just > 9) {
-    vdicgi_errh(" SVDI Shell (VDINIT) Error Number 720 Severity 5: ");
-    just = 0;
   }
 
   /*  Initialize CGI         */

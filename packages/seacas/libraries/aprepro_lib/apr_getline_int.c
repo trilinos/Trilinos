@@ -29,7 +29,7 @@
 #define sleep(a) Sleep(a * 1000)
 #ifndef write
 #define write _write
-#define read _read
+#define read  _read
 #endif
 
 #else
@@ -146,16 +146,16 @@ static void ap_gl_char_cleanup(void) /* undo effects of ap_gl_char_init */
 
 #if defined(MSDOS) || defined(__windows__)
 
-#define K_UP 0x48
-#define K_DOWN 0x50
-#define K_LEFT 0x4B
-#define K_RIGHT 0x4D
+#define K_UP     0x48
+#define K_DOWN   0x50
+#define K_LEFT   0x4B
+#define K_RIGHT  0x4D
 #define K_DELETE 0x53
 #define K_INSERT 0x52
-#define K_HOME 0x47
-#define K_END 0x4F
-#define K_PGUP 0x49
-#define K_PGDN 0x51
+#define K_HOME   0x47
+#define K_END    0x4F
+#define K_PGUP   0x49
+#define K_PGDN   0x51
 
 int pc_keymap(int c)
 {
@@ -760,9 +760,9 @@ static char *hist_save(char *p)
 
 /* makes a copy of the string */
 {
-  char * s   = NULL;
+  char  *s   = NULL;
   size_t len = strlen(p);
-  char * nl  = strpbrk(p, "\n\r");
+  char  *nl  = strpbrk(p, "\n\r");
 
   if (nl) {
     if ((s = (char *)malloc(len)) != NULL) {

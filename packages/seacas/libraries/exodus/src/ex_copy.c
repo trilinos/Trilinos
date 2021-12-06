@@ -10,7 +10,7 @@
 #include "exodusII_int.h" // for ex__get_counter_list, etc
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   if ((funcall) != NC_NOERR) {                                                                     \
