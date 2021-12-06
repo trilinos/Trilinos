@@ -214,6 +214,8 @@ public:
   /// Get the current second time derivative of the adjoint solution, ydotdot
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getYDotDot() const;
 
+  /// Return response function g
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getG() const;
   /// Return adjoint sensitivity stored in gradient format
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;
 
@@ -258,6 +260,7 @@ protected:
   Teuchos::RCP<IntegratorBasicOld<Scalar> > state_integrator_;
   Teuchos::RCP<IntegratorBasicOld<Scalar> > sens_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > g_;
   Teuchos::RCP<DMVPV> dgdp_;
   SensitivityStepMode stepMode_;
 };

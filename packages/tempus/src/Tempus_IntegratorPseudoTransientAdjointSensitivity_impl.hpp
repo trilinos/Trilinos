@@ -135,7 +135,7 @@ advanceTime(const Scalar timeFinal)
   stepMode_ = SensitivityStepMode::Adjoint;
   bool sens_status = sens_integrator_->advanceTime(timeFinal);
 
-  // Compute final dg/dp which is computed by response 0 of the adjoint
+  // Compute final dg/dp, g which is computed by response 0, 1 of the adjoint
   // model evaluator
   MEB::InArgs<Scalar> inargs = sens_model_->getNominalValues();
   MEB::OutArgs<Scalar> outargs = sens_model_->createOutArgs();
@@ -150,7 +150,10 @@ advanceTime(const Scalar timeFinal)
     G = Thyra::createMember(sens_model_->get_g_space(0));
     dgdp_ = Teuchos::rcp_dynamic_cast<DMVPV>(G);
   }
+  if (g_ == Teuchos::null)
+    g_ = Thyra::createMember(sens_model_->get_g_space(1));
   outargs.set_g(0, G);
+  outargs.set_g(1, g_);
   sens_model_->evalModel(inargs, outargs);
 
   buildSolutionHistory();
@@ -409,6 +412,14 @@ getYDotDot() const
   RCP<const DMVPV> mvpv =
     rcp_dynamic_cast<const DMVPV>(sens_integrator_->getXDotDot());
   return mvpv->getMultiVector();
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getG() const
+{
+  return g_;
 }
 
 template<class Scalar>
