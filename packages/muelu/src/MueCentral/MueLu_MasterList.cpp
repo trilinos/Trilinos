@@ -138,7 +138,9 @@ namespace MueLu {
     if (name == "sa: enforce constraints") { ss << "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: max eigenvalue") { ss << "<Parameter name=\"sa: max eigenvalue\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: rowsumabs diagonal replacement tolerance") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement tolerance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: rowsumabs use automatic diagonal tolerance") { ss << "<Parameter name=\"sa: rowsumabs use automatic diagonal tolerance\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: rowsumabs diagonal replacement value") { ss << "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: rowsumabs replace single entry row with zero") { ss << "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "pcoarsen: element") { ss << "<Parameter name=\"pcoarsen: element\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "pcoarsen: schedule") { ss << "<Parameter name=\"pcoarsen: schedule\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "pcoarsen: hi basis") { ss << "<Parameter name=\"pcoarsen: hi basis\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
@@ -291,7 +293,9 @@ namespace MueLu {
   "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: max eigenvalue\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"sa: rowsumabs diagonal replacement tolerance\" type=\"double\" value=\"-1.0\"/>"
+  "<Parameter name=\"sa: rowsumabs use automatic diagonal tolerance\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"sa: rowsumabs replace single entry row with zero\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"interp: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"pcoarsen: element\" type=\"string\" value=\"\"/>"
@@ -791,7 +795,11 @@ namespace MueLu {
       
          ("not supported by ML","sa: rowsumabs diagonal replacement tolerance")
       
+         ("not supported by ML","sa: rowsumabs use automatic diagonal tolerance")
+      
          ("not supported by ML","sa: rowsumabs diagonal replacement value")
+      
+         ("not supported by ML","sa: rowsumabs replace single entry row with zero")
       
          ("interp: build coarse coordinates","interp: build coarse coordinates")
       

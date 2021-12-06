@@ -458,7 +458,7 @@ namespace MueLu {
     changedImplicitTranspose_ = MUELU_TEST_AND_SET_VAR(paramList, "transpose: use implicit", bool, this->implicitTranspose_);
 
     // Detect if we use fuse prolongation and update
-    MUELU_TEST_AND_SET_VAR(paramList, "fuse prolongation and update", bool, this->fuseProlongationAndUpdate_);
+    (void)MUELU_TEST_AND_SET_VAR(paramList, "fuse prolongation and update", bool, this->fuseProlongationAndUpdate_);
 
     if (paramList.isSublist("matvec params"))
       this->matvecParams_ = Teuchos::parameterList(paramList.sublist("matvec params"));
@@ -723,9 +723,6 @@ namespace MueLu {
      bool useMaxAbsDiagonalScaling = false;
      if (defaultList.isParameter("sa: use rowsumabs diagonal scaling"))
        useMaxAbsDiagonalScaling = defaultList.get<bool>("sa: use rowsumabs diagonal scaling");
-     double chebyReplaceTol = -Teuchos::ScalarTraits<double>::one();
-     if (defaultList.isParameter("sa: rowsumabs diagonal replacement tolerance"))
-       chebyReplaceTol = defaultList.get<double>("sa: rowsumabs diagonal replacement tolerance");
 
      // === Smoothing ===
      // FIXME: should custom smoother check default list too?
@@ -797,10 +794,6 @@ namespace MueLu {
 
          if (preSmootherType == "CHEBYSHEV" && useMaxAbsDiagonalScaling)
            preSmootherParams.set("chebyshev: use rowsumabs diagonal scaling",true);
-         if (preSmootherType == "CHEBYSHEV" && chebyReplaceTol != -Teuchos::ScalarTraits<double>::one())
-           preSmootherParams.set("chebyshev: rowsumabs diagonal replacement tolerance",chebyReplaceTol);
-         if (preSmootherType == "CHEBYSHEV" && defaultList.isParameter("sa: rowsumabs diagonal replacement value"))
-           preSmootherParams.set("chebyshev: rowsumabs diagonal replacement value", defaultList.get<double>("sa: rowsumabs diagonal replacement value"));
 
  #ifdef HAVE_MUELU_INTREPID2
        // Propagate P-coarsening for Topo smoothing
@@ -1933,6 +1926,7 @@ namespace MueLu {
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: use rowsumabs diagonal scaling", bool, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: rowsumabs diagonal replacement tolerance", double, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: rowsumabs diagonal replacement value", double, Pparams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: rowsumabs use automatic diagonal tolerance", bool, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: enforce constraints", bool, Pparams);
     MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, Pparams);
 
