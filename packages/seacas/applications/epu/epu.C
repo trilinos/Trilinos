@@ -4051,7 +4051,7 @@ namespace {
             size_t max_attr = edgeblocks[p][b].entity_count() * edgeblocks[p][b].attributeCount;
             std::vector<T> local_attr(max_attr);
 
-            int error = ex_get_attr(id, EX_EDGE_BLOCK, edgeblocks[p][b].id, local_attr.data());
+            error = ex_get_attr(id, EX_EDGE_BLOCK, edgeblocks[p][b].id, local_attr.data());
             if (error < 0) {
               exodus_error(__LINE__);
             }
@@ -4429,7 +4429,7 @@ namespace {
             size_t max_attr = faceblocks[p][b].entity_count() * faceblocks[p][b].attributeCount;
             std::vector<T> local_attr(max_attr);
 
-            int error = ex_get_attr(id, EX_FACE_BLOCK, faceblocks[p][b].id, local_attr.data());
+            error = ex_get_attr(id, EX_FACE_BLOCK, faceblocks[p][b].id, local_attr.data());
             if (error < 0) {
               exodus_error(__LINE__);
             }

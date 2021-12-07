@@ -16,10 +16,10 @@ namespace Iovs {
     properties             = nullptr;
   }
 
-  void CatalystLogging::setProperties(const Ioss::PropertyManager *properties)
+  void CatalystLogging::setProperties(const Ioss::PropertyManager *my_properties)
   {
     initializeDefaults();
-    this->properties = properties;
+    this->properties = my_properties;
     if (this->properties) {
       if (this->properties->exists(enabledProp)) {
         catalystLoggingEnabled = this->properties->get(enabledProp).get_int();

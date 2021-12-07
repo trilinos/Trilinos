@@ -2447,8 +2447,8 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Io
 int64_t ParallelDatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field,
                                                void *data, size_t data_size) const
 {
-  auto num_to_get = field.verify(data_size);
-  int  ierr       = 0;
+  int64_t num_to_get = field.verify(data_size);
+  int     ierr       = 0;
 
   int64_t id           = Ioex::get_id(fb, EX_SIDE_SET, &ids_);
   int64_t entity_count = fb->entity_count();
@@ -2623,7 +2623,7 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const 
                                                     element.data(), sides.data(), number_sides,
                                                     get_region());
 
-        size_t index = 0;
+        int64_t index = 0;
         if (int_byte_size_api() == 4) {
           int *element_side = static_cast<int *>(data);
           int *element32    = reinterpret_cast<int *>(element.data());

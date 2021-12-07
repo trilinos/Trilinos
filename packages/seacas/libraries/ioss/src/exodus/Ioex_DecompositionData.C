@@ -795,8 +795,8 @@ namespace Ioex {
     int ierr = 0;
     if (field.get_name() == "mesh_model_coordinates_x") {
       m_decomposition.show_progress("\tex_get_partial_coord X");
-      int ierr = ex_get_partial_coord_component(filePtr, decomp_node_offset() + 1,
-                                                decomp_node_count(), 1, tmp.data());
+      ierr = ex_get_partial_coord_component(filePtr, decomp_node_offset() + 1,
+					    decomp_node_count(), 1, tmp.data());
       if (ierr >= 0) {
         communicate_node_data(tmp.data(), ioss_data, 1);
       }
