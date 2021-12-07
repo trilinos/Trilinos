@@ -44,8 +44,8 @@ private:
 
   size_t num_dist_factors{0};
 
-  mutable INT *   nodes{nullptr};     // Array.
-  mutable INT *   nodeIndex{nullptr}; // An index array which orders the nodelist in sorted order.
+  mutable INT    *nodes{nullptr};     // Array.
+  mutable INT    *nodeIndex{nullptr}; // An index array which orders the nodelist in sorted order.
   mutable double *dist_factors{nullptr}; // Array.
 
   friend class ExoII_Read<INT>;

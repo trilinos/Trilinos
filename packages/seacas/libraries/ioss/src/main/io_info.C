@@ -96,7 +96,7 @@ namespace {
   void element_volume(Ioss::Region &region)
   {
     std::vector<double> coordinates;
-    Ioss::NodeBlock *   nb = region.get_node_blocks()[0];
+    Ioss::NodeBlock    *nb = region.get_node_blocks()[0];
     nb->get_field_data("mesh_model_coordinates", coordinates);
 
     const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
@@ -513,7 +513,7 @@ namespace {
                     bool nl_post)
   {
     std::vector<std::string> aliases;
-    if (region.get_aliases(ige->name(), aliases) > 0) {
+    if (region.get_aliases(ige->name(), ige->type(), aliases) > 0) {
       if (nl_pre) {
         fmt::print("\n");
       }

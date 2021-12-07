@@ -266,11 +266,11 @@ size_t Cell::processor_boundary_node_count() const
 }
 
 template void Cell::populate_node_communication_map(const std::vector<int> &node_map,
-                                                    std::vector<int> &      nodes,
-                                                    std::vector<int> &      procs) const;
+                                                    std::vector<int>       &nodes,
+                                                    std::vector<int>       &procs) const;
 template void Cell::populate_node_communication_map(const std::vector<int64_t> &node_map,
-                                                    std::vector<int64_t> &      nodes,
-                                                    std::vector<int64_t> &      procs) const;
+                                                    std::vector<int64_t>       &nodes,
+                                                    std::vector<int64_t>       &procs) const;
 
 template <typename INT>
 void Cell::populate_node_communication_map(const std::vector<INT> &node_map,

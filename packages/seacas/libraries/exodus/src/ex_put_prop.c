@@ -85,9 +85,9 @@ int ex_put_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const c
   int       int_type;
   size_t    start[1];
   size_t    prop_name_len, name_length;
-  char *    name;
+  char     *name;
   char      tmpstr[MAX_STR_LENGTH + 1];
-  char *    dim_name;
+  char     *dim_name;
   long long vals[1];
 
   char errmsg[MAX_ERR_LENGTH];

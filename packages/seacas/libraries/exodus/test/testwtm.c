@@ -68,10 +68,10 @@ int main(int argc, char **argv)
   float  x[100], y[100], z[100];
   float  attrib[1], dist_fact[1008];
   float  attrib2[1], dist_fact2[100];
-  char * coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
-  char * coord_names2[3], *qa_record2[2][4], *info2[3], *var_names2[3];
+  char  *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
+  char  *coord_names2[3], *qa_record2[2][4], *info2[3], *var_names2[3];
   char   tmpstr[80];
-  char * prop_names[2];
+  char  *prop_names[2];
   char   exofname[256];
 
   ex_opts(EX_VERBOSE | EX_ABORT);

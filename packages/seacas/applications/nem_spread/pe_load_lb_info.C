@@ -72,7 +72,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
 
   int   lb_exoid      = 0;
   INT   cmap_max_size = 0;
-  INT * comm_vec;
+  INT  *comm_vec;
   char  Title[MAX_LINE_LENGTH + 1];
   float version;
 

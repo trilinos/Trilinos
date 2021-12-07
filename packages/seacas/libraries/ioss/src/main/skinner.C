@@ -43,7 +43,7 @@ namespace {
   std::string                  codename;
   std::string                  version = "0.99";
 
-  void output_table(const Ioss::ElementBlockContainer &             ebs,
+  void output_table(const Ioss::ElementBlockContainer              &ebs,
                     std::map<std::string, std::vector<Ioss::Face>> &boundary_faces)
   {
     // Get maximum name and face_count length...
@@ -164,11 +164,11 @@ namespace {
     // Get vector of all boundary faces which will be output as the skin...
 
     std::map<std::string, std::vector<Ioss::Face>> boundary_faces;
-    const Ioss::ElementBlockContainer &            ebs = region.get_element_blocks();
+    const Ioss::ElementBlockContainer             &ebs = region.get_element_blocks();
     for (auto &eb : ebs) {
       const std::string &name     = eb->name();
-      auto &             boundary = boundary_faces[name];
-      auto &             faces    = face_generator.faces(name);
+      auto              &boundary = boundary_faces[name];
+      auto              &faces    = face_generator.faces(name);
       for (auto &face : faces) {
         if (face.elementCount_ == 1) {
           boundary.push_back(face);
@@ -200,7 +200,7 @@ namespace {
     // Map ids from total mesh down to skin mesh...
     // Also get coordinates...
     std::vector<double> coord_in;
-    Ioss::NodeBlock *   nb = region.get_node_blocks()[0];
+    Ioss::NodeBlock    *nb = region.get_node_blocks()[0];
     nb->get_field_data("mesh_model_coordinates", coord_in);
 
     std::vector<INT> ids;
@@ -230,7 +230,7 @@ namespace {
     std::string       file = interFace.output_filename();
     std::string       type = interFace.output_type();
     Ioss::DatabaseIO *dbo  = Ioss::IOFactory::create(type, file, Ioss::WRITE_RESTART,
-                                                    (MPI_Comm)MPI_COMM_WORLD, properties);
+                                                     (MPI_Comm)MPI_COMM_WORLD, properties);
     if (dbo == nullptr || !dbo->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
@@ -262,7 +262,7 @@ namespace {
     // Count faces per element block and create output element block...
     for (auto &eb : ebs) {
       const std::string &name      = eb->name();
-      auto &             boundary  = boundary_faces[name];
+      auto              &boundary  = boundary_faces[name];
       auto               face_topo = eb->topology()->face_type(0);
       std::string        topo      = "shell";
       if (face_topo == nullptr) {
@@ -294,8 +294,8 @@ namespace {
     INT  fid               = 0;
     for (auto &eb : ebs) {
       const std::string &name       = eb->name();
-      auto &             boundary   = boundary_faces[name];
-      auto *             block      = output_region.get_element_block(name);
+      auto              &boundary   = boundary_faces[name];
+      auto              *block      = output_region.get_element_block(name);
       size_t             node_count = block->topology()->number_corner_nodes();
 
       std::vector<INT> conn;

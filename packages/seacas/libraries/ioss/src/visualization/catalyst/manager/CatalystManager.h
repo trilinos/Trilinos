@@ -83,6 +83,9 @@ namespace Iovs {
     void WriteToLogFile(const CatalystPipelineInfo &cpi);
 
   private:
+
+    void initCatalystPythonSystemPaths();
+
     class CatalystPipelineState
     {
     public:

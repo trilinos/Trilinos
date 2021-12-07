@@ -213,7 +213,7 @@ Superlu<Matrix,Vector>::preOrdering_impl()
    *   permc_spec = MY_PERMC: the ordering already supplied in perm_c[]
    */
   int permc_spec = data_.options.ColPerm;
-  if ( permc_spec != SLU::MY_PERMC && this->root_ ){
+  if (!use_metis_ && permc_spec != SLU::MY_PERMC && this->root_ ){
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
 #endif
@@ -278,7 +278,9 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
 
       // free
       SLU::SUPERLU_FREE(new_col_ptr);
-      SLU::SUPERLU_FREE(new_row_ind);
+      if (new_nz > 0) {
+        SLU::SUPERLU_FREE(new_row_ind);
+      }
     }
 
     // reorder will convert both graph and perm/iperm to the internal METIS integer type
@@ -303,7 +305,6 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
     // Turn off Equil not to mess up METIS ordering?
     //data_.options.Equil = SLU::NO;
   }
-
   return(0);
 }
 

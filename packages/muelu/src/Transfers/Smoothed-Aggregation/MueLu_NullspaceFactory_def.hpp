@@ -54,6 +54,7 @@
 #include "MueLu_NullspaceFactory_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_MasterList.hpp"
 
 namespace MueLu {
 
@@ -61,10 +62,14 @@ namespace MueLu {
   RCP<const ParameterList> NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("nullspace: calculate rotations");
+#undef  SET_VALID_ENTRY
     validParamList->set< std::string >("Fine level nullspace", "Nullspace", "Variable name which is used to store null space multi vector on the finest level (default=\"Nullspace\"). For block matrices also \"Nullspace1\" to \"Nullspace9\" are accepted to describe the null space vectors for the (i,i) block (i=1..9).");
 
     validParamList->set< RCP<const FactoryBase> >("A",                          Teuchos::null, "Generating factory of the fine level matrix (only needed if default null space is generated)");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",                  Teuchos::null, "Generating factory of the fine level null space");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates",                Teuchos::null, "Generating factory of the coordinates");
 
     // TODO not very elegant.
     // 1/20/2016: we could add a sublist (e.g. "Nullspaces" which is excluded from parameter validation)
@@ -93,6 +98,13 @@ namespace MueLu {
     if (currentLevel.IsAvailable(nspName, NoFactory::get()) == false && currentLevel.GetLevelID() == 0)
       Input(currentLevel, "A");
 
+    if( currentLevel.GetLevelID() == 0 &&
+        currentLevel.IsAvailable("Coordinates", NoFactory::get()) &&     // we have coordinates (provided by user app)
+        pL.get<bool>("nullspace: calculate rotations") ) {               // and we want to calculate rotation modes
+      calculateRotations_ = true;
+      Input(currentLevel, "Coordinates");
+    }
+
     if (currentLevel.GetLevelID() != 0) {
       // validate nullspaceFact_
       // 1) The factory for "Nullspace" (or nspName) must not be Teuchos::null, since the default factory
@@ -114,6 +126,30 @@ namespace MueLu {
     const ParameterList & pL = GetParameterList();
     std::string nspName = pL.get<std::string>("Fine level nullspace");
 
+    // get coordinates and compute mean of coordinates. (or centroid).
+    
+    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
+    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
+    RCP<RealValuedMultiVector> Coords;
+    ArrayRCP<const coordinate_type> xvals, yvals, zvals;
+    Scalar cx, cy, cz;
+
+    cx = 0.; cy = 0.; cz = 0.;
+    if(calculateRotations_) {
+      Coords = Get< RCP<RealValuedMultiVector> >(currentLevel, "Coordinates");
+
+      xvals  = Coords->getData(0);
+      cx     = Coords->getVector(0)->meanValue();
+      if (Coords->getNumVectors() > 1) {
+        yvals = Coords->getData(1);
+        cy    = Coords->getVector(1)->meanValue();
+      }
+      if (Coords->getNumVectors() > 2) {
+        zvals = Coords->getData(2);
+        cz    = Coords->getVector(2)->meanValue();
+      }
+    }
+
     if (currentLevel.GetLevelID() == 0) {
 
       if (currentLevel.IsAvailable(nspName, NoFactory::get())) {
@@ -134,8 +170,16 @@ namespace MueLu {
           oldView = A->SwitchToView(oldView);
         }
 
-        GetOStream(Runtime1) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
-        nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
+        LO nullspaceDim = numPDEs;
+
+        if(calculateRotations_) {
+          if (Coords->getNumVectors() > 1)  nullspaceDim++;
+          if (Coords->getNumVectors() > 2)  nullspaceDim += 2;
+          GetOStream(Runtime1) << "Generating nullspace with rotations: dimension = " << nullspaceDim << std::endl;
+        }
+        else GetOStream(Runtime1) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
+
+        nullspace = MultiVectorFactory::Build(A->getDomainMap(), nullspaceDim);
 
         RCP<BlockedMultiVector> bnsp = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(nullspace);
         if(bnsp.is_null() == true) {
@@ -146,8 +190,47 @@ namespace MueLu {
               nsValues[j*numPDEs + i] = 1.0;
             }
           }
+          if (( (int) nullspaceDim > numPDEs ) && ((int) numPDEs > 1)) {
+            /* xy rotation */
+            ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(numPDEs);
+            int numBlocks = nsValues.size() / numPDEs;
+            TEUCHOS_TEST_FOR_EXCEPTION(numBlocks != (int) xvals.size(), Exceptions::RuntimeError, "MueLu::NullspaceFactory::Build(): number of coordinates does not match  ndofs/numPDEs.");
+            for (int j=0; j< numBlocks; ++j) {
+              nsValues[j*numPDEs + 0] = -(yvals[j]-cy);
+              nsValues[j*numPDEs + 1] =  (xvals[j]-cx);
+            }
+          }
+          if (( (int) nullspaceDim == numPDEs+3 )  && ((int) numPDEs > 2)) {
+            /* xz rotation */
+            ArrayRCP<Scalar> nsValues = nullspace->getDataNonConst(numPDEs+1);
+            int numBlocks = nsValues.size() / numPDEs;
+            for (int j=0; j< numBlocks; ++j) {
+              nsValues[j*numPDEs + 1] = -(zvals[j]-cz);
+              nsValues[j*numPDEs + 2] =  (yvals[j]-cy);
+            }
+            /* yz rotation */
+            nsValues = nullspace->getDataNonConst(numPDEs+2);
+            numBlocks = nsValues.size() / numPDEs;
+            for (int j=0; j< numBlocks; ++j) {
+              nsValues[j*numPDEs + 0] = -(zvals[j]-cz);
+              nsValues[j*numPDEs + 2] =  (xvals[j]-cx);
+            }
+          }
+           /*
+          // Scale columns to match what Galeri does. Not sure how important this is  as QR factorization
+          // when creating ptent should take care of scaling issues ... but leaving it just in case.
+           if ( (int) nullspaceDim > numPDEs ) {
+            Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms2(nullspaceDim);
+            nullspace->norm2(norms2);
+            Teuchos::Array<Scalar> norms2scalar(nullspaceDim);
+            for (int i = 0; i < nullspaceDim; i++)
+              norms2scalar[i] = norms2[0] / norms2[i];
+            nullspace->scale(norms2scalar);
+          }
+          */
+
         } else {
-          fillNullspaceVector(bnsp,numPDEs);
+          fillNullspaceVector(bnsp,numPDEs, xvals, yvals, zvals, nullspaceDim, cx, cy, cz);
         }
       } // end if "Nullspace" not available
     } else {
@@ -164,7 +247,7 @@ namespace MueLu {
   } // Build
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::fillNullspaceVector(const RCP<BlockedMultiVector>& nsp, LocalOrdinal numPDEs) const {
+  void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::fillNullspaceVector(const RCP<BlockedMultiVector>& nsp, LocalOrdinal numPDEs, ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xvals, ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yvals, ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zvals, LocalOrdinal nullspaceDim, Scalar cx, Scalar cy, Scalar cz) const {
     RCP< const BlockedMap> bmap = nsp->getBlockedMap();
 
     for(size_t r = 0; r < bmap->getNumMaps(); r++) {
@@ -178,9 +261,48 @@ namespace MueLu {
             nsValues[j*numPDEs + i] = 1.0;
           }
         }
+        if ( (int) nullspaceDim > numPDEs ) {
+           /* xy rotation */
+           ArrayRCP<Scalar> nsValues = part->getDataNonConst(numPDEs);
+           int numBlocks = nsValues.size() / numPDEs;
+           TEUCHOS_TEST_FOR_EXCEPTION(numBlocks != (int) xvals.size(), Exceptions::RuntimeError, "MueLu::NullspaceFactory::fillNullspaceVector(): number of coordinates does not match  ndofs/numPDEs.");
+           for (int j=0; j< numBlocks; ++j) {
+             nsValues[j*numPDEs + 0] = -(yvals[j]-cy);
+             nsValues[j*numPDEs + 1] =  (xvals[j]-cx);
+           }
+         }
+         if ( (int) nullspaceDim == numPDEs+3 ) {
+           /* xz rotation */
+           ArrayRCP<Scalar> nsValues = part->getDataNonConst(numPDEs+1);
+           int numBlocks = nsValues.size() / numPDEs;
+           for (int j=0; j< numBlocks; ++j) {
+             nsValues[j*numPDEs + 1] = -(zvals[j]-cz);
+             nsValues[j*numPDEs + 2] =  (yvals[j]-cy);
+           }
+           /* yz rotation */
+           nsValues = part->getDataNonConst(numPDEs+2);
+           numBlocks = nsValues.size() / numPDEs;
+           for (int j=0; j< numBlocks; ++j) {
+             nsValues[j*numPDEs + 0] = -(zvals[j]-cz);
+             nsValues[j*numPDEs + 2] =  (xvals[j]-cx);
+           }
+         }
+         /*
+          // Scale columns to match what Galeri does. Not sure that this is necessary as the qr factorizatoin
+          // of the tentative prolongator also takes care of scaling issues. I'm leaving the code here 
+          // just in case. 
+          if ( (int) nullspaceDim > numPDEs ) {
+            Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> norms2(nullspaceDim);
+            nullspace->norm2(norms2);
+            Teuchos::Array<Scalar> norms2scalar(nullspaceDim);
+            for (int i = 0; i < nullspaceDim; i++)
+              norms2scalar[i] = norms2[0] / norms2[i];
+            nullspace->scale(norms2scalar);
+          }
+          */
       } else {
         // call this routine recursively
-        fillNullspaceVector(bpart,numPDEs);
+        fillNullspaceVector(bpart,numPDEs,xvals, yvals, zvals, nullspaceDim, cx, cy, cz);
       }
     }
   }

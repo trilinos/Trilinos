@@ -96,7 +96,7 @@ namespace {
   void populate_proc_node(size_t count, size_t offset, size_t element_nodes,
                           const std::vector<int> &elem_to_proc, const std::vector<INT> &glob_conn,
                           std::vector<std::vector<int>> &proc_node,
-                          std::vector<size_t> &          on_proc_count)
+                          std::vector<size_t>           &on_proc_count)
   {
     // Determine which processor(s) each node is present on.
     // Also count number of nodes on each processor.
@@ -291,7 +291,7 @@ namespace {
     // Size of adjacency list is sum of nodes-per-element for each element.
     size_t sum   = 0;
     size_t count = 0;
-    auto & ebs   = region.get_element_blocks();
+    auto  &ebs   = region.get_element_blocks();
     for (const auto &eb : ebs) {
       size_t element_count = eb->entity_count();
       size_t element_nodes = eb->topology()->number_nodes();
@@ -495,7 +495,7 @@ namespace {
       map_name = map_name.substr(0, pos);
 
       Ioss::DatabaseIO *db    = region.get_database();
-      auto *            ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+      auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
       int               exoid = ex_db != nullptr ? ex_db->get_file_pointer() : 0;
 
       bool map_read  = false;
@@ -663,7 +663,7 @@ namespace {
     // and defines corresponding sidesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto & ss        = region.get_sidesets();
+    auto  &ss        = region.get_sidesets();
     size_t set_count = ss.size();
 
     for (size_t s = 0; s < set_count; s++) {
@@ -711,7 +711,7 @@ namespace {
     // and outputs the sidesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto & ss        = region.get_sidesets();
+    auto  &ss        = region.get_sidesets();
     size_t set_count = ss.size();
 
     for (size_t s = 0; s < set_count; s++) {
@@ -719,7 +719,7 @@ namespace {
         progress("\tSideset " + std::to_string(s + 1));
       }
       Ioss::SideSet *gss     = ss[s];
-      auto &         ss_name = gss->name();
+      auto          &ss_name = gss->name();
 
       std::vector<Ioss::SideSet *> proc_ss(proc_count);
       for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
@@ -765,9 +765,9 @@ namespace {
   }
 
   template <typename INT>
-  void output_communication_map(const Ioss::Region &         global_region,
+  void output_communication_map(const Ioss::Region          &global_region,
                                 std::vector<Ioss::Region *> &proc_region,
-                                const std::vector<int> &     node_to_proc,
+                                const std::vector<int>      &node_to_proc,
                                 const std::vector<INT> &node_to_proc_pointer, size_t proc_begin,
                                 size_t proc_size)
   {
@@ -812,10 +812,10 @@ namespace {
   }
 
   template <typename INT>
-  void define_communication_data(const Ioss::Region &         global_region,
+  void define_communication_data(const Ioss::Region          &global_region,
                                  std::vector<Ioss::Region *> &proc_region,
-                                 const std::vector<int> &     node_to_proc,
-                                 const std::vector<INT> &     node_to_proc_pointer)
+                                 const std::vector<int>      &node_to_proc,
+                                 const std::vector<INT>      &node_to_proc_pointer)
   {
     progress(__func__);
     // This routine categorizes the nodes on a processor as interior
@@ -906,12 +906,12 @@ namespace {
     // and defines corresponding nodesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto & ns        = region.get_nodesets();
+    auto  &ns        = region.get_nodesets();
     size_t set_count = ns.size();
 
     for (size_t s = 0; s < set_count; s++) {
       std::vector<INT> pns(proc_count);
-      Ioss::NodeSet *  gns = ns[s];
+      Ioss::NodeSet   *gns = ns[s];
 
       std::vector<INT> ns_nodes;
       gns->get_field_data("ids_raw", ns_nodes);
@@ -954,7 +954,7 @@ namespace {
     // and defines corresponding nodesets on each processor...
     size_t proc_count = proc_region.size();
 
-    auto & ns        = region.get_nodesets();
+    auto  &ns        = region.get_nodesets();
     size_t set_count = ns.size();
 
     for (size_t s = 0; s < set_count; s++) {
@@ -1091,7 +1091,7 @@ namespace {
     // map[p][b] = map for block b on processor p
     size_t proc_count = proc_region.size();
 
-    auto & ebs         = region.get_element_blocks();
+    auto  &ebs         = region.get_element_blocks();
     size_t block_count = ebs.size();
 
     size_t offset = 0;
@@ -1106,7 +1106,7 @@ namespace {
 
       std::vector<std::vector<INT>> map(proc_count);
       for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
-        auto & proc_ebs           = proc_region[p]->get_element_blocks();
+        auto  &proc_ebs           = proc_region[p]->get_element_blocks();
         size_t proc_element_count = proc_ebs[b]->entity_count();
         map[p].reserve(proc_element_count);
       }
@@ -1144,7 +1144,7 @@ namespace {
     std::vector<double> glob_coord_x;
     std::vector<double> glob_coord_y;
     std::vector<double> glob_coord_z;
-    Ioss::NodeBlock *   gnb = region.get_node_blocks()[0];
+    Ioss::NodeBlock    *gnb = region.get_node_blocks()[0];
 
     // Distribute nodal coordinates to each processor...
     // coordinates[p][i] = x,y,z coordinates on processor p
@@ -1161,7 +1161,7 @@ namespace {
     progress("\tReserve processor coordinate vectors");
 
     Ioss::DatabaseIO *db    = region.get_database();
-    auto *            ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
 
     size_t node_count = region.get_property("node_count").get_int();
 
@@ -1239,7 +1239,7 @@ namespace {
   {
     progress(__func__);
     std::vector<double> glob_coord;
-    Ioss::NodeBlock *   gnb = region.get_node_blocks()[0];
+    Ioss::NodeBlock    *gnb = region.get_node_blocks()[0];
 
     std::array<std::string, 3> field_name{"mesh_model_coordinates_x", "mesh_model_coordinates_y",
                                           "mesh_model_coordinates_z"};
@@ -1249,7 +1249,7 @@ namespace {
     std::vector<std::vector<double>> coordinates(processor_count);
 
     Ioss::DatabaseIO *db    = region.get_database();
-    auto *            ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
 
     size_t node_count = region.get_property("node_count").get_int();
 
@@ -1336,13 +1336,13 @@ namespace {
     // connectvity[p][b] = connectivity for block b on processor p
 
     progress(__func__);
-    auto & ebs         = region.get_element_blocks();
+    auto  &ebs         = region.get_element_blocks();
     size_t block_count = ebs.size();
 
     size_t processor_count = proc_region.size();
 
     Ioss::DatabaseIO *db    = region.get_database();
-    auto *            ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
 
     std::vector<INT> glob_conn;
     size_t           offset = 0;
@@ -1409,7 +1409,7 @@ namespace {
       }
 
       for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
-        auto &              proc_ebs = proc_region[p]->get_element_blocks();
+        auto               &proc_ebs = proc_region[p]->get_element_blocks();
         Ioss::ElementBlock *eb       = proc_ebs[b];
         eb->put_field_data("connectivity", connectivity[p]);
       }
@@ -1421,7 +1421,7 @@ namespace {
                                  std::vector<std::vector<INT>> &proc_elem_block_cnt)
   {
     progress(__func__);
-    auto & ebs         = region.get_element_blocks();
+    auto  &ebs         = region.get_element_blocks();
     size_t block_count = ebs.size();
     size_t begin       = 0;
     for (size_t i = 0; i < block_count; i++) {
@@ -1478,9 +1478,9 @@ namespace {
 
     size_t            sum_on_proc_count = 0;
     Ioss::DatabaseIO *db                = region.get_database();
-    auto *            ex_db             = dynamic_cast<Ioex::DatabaseIO *>(db);
+    auto             *ex_db             = dynamic_cast<Ioex::DatabaseIO *>(db);
 
-    auto & ebs         = region.get_element_blocks();
+    auto  &ebs         = region.get_element_blocks();
     size_t block_count = ebs.size();
     size_t offset      = 0;
 
@@ -1651,7 +1651,7 @@ namespace {
 
     // Create element blocks for each processor...
     for (size_t p = 0; p < interFace.processor_count(); p++) {
-      auto & ebs = region.get_element_blocks();
+      auto  &ebs = region.get_element_blocks();
       size_t bc  = ebs.size();
       for (size_t b = 0; b < bc; b++) {
         std::string type = ebs[b]->topology()->name();

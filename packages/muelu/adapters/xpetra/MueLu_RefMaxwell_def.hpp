@@ -1022,131 +1022,73 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setFineLevelSmoother() {
-    if (parameterList_.isType<std::string>("smoother: type") &&
-        parameterList_.get<std::string>("smoother: type") == "hiptmair" &&
-        SM_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra &&
-        A22_->getDomainMap()->lib() == Xpetra::UseTpetra &&
-        D0_Matrix_->getDomainMap()->lib() == Xpetra::UseTpetra) {
-#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
-      ParameterList hiptmairPreList, hiptmairPostList, smootherPreList, smootherPostList;
 
-      if (smootherList_.isSublist("smoother: pre params"))
-        smootherPreList = smootherList_.sublist("smoother: pre params");
-      else if (smootherList_.isSublist("smoother: params"))
-        smootherPreList = smootherList_.sublist("smoother: params");
-      hiptmairPreList.set("hiptmair: smoother type 1",
-                          smootherPreList.get<std::string>("hiptmair: smoother type 1", "CHEBYSHEV"));
-      hiptmairPreList.set("hiptmair: smoother type 2",
-                          smootherPreList.get<std::string>("hiptmair: smoother type 2", "CHEBYSHEV"));
-      if(smootherPreList.isSublist("hiptmair: smoother list 1"))
-        hiptmairPreList.set("hiptmair: smoother list 1", smootherPreList.sublist("hiptmair: smoother list 1"));
-      if(smootherPreList.isSublist("hiptmair: smoother list 2"))
-        hiptmairPreList.set("hiptmair: smoother list 2", smootherPreList.sublist("hiptmair: smoother list 2"));
-      hiptmairPreList.set("hiptmair: pre or post",
-                          smootherPreList.get<std::string>("hiptmair: pre or post", "pre"));
-      hiptmairPreList.set("hiptmair: zero starting solution",
-                          smootherPreList.get<bool>("hiptmair: zero starting solution", true));
+    Level level;
+    RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+    level.SetFactoryManager(factoryHandler);
+    level.SetLevelID(0);
+    level.setObjectLabel("RefMaxwell (1,1)");
+    level.Set("A",SM_Matrix_);
+    level.setlib(SM_Matrix_->getDomainMap()->lib());
+    // For Hiptmair
+    level.Set("NodeMatrix", A22_);
+    level.Set("D0", D0_Matrix_);
 
-      if (smootherList_.isSublist("smoother: post params"))
-        smootherPostList = smootherList_.sublist("smoother: post params");
-      else if (smootherList_.isSublist("smoother: params"))
-        smootherPostList = smootherList_.sublist("smoother: params");
-      hiptmairPostList.set("hiptmair: smoother type 1",
-                           smootherPostList.get<std::string>("hiptmair: smoother type 1", "CHEBYSHEV"));
-      hiptmairPostList.set("hiptmair: smoother type 2",
-                           smootherPostList.get<std::string>("hiptmair: smoother type 2", "CHEBYSHEV"));
-      if(smootherPostList.isSublist("hiptmair: smoother list 1"))
-        hiptmairPostList.set("hiptmair: smoother list 1", smootherPostList.sublist("hiptmair: smoother list 1"));
-      if(smootherPostList.isSublist("hiptmair: smoother list 2"))
-        hiptmairPostList.set("hiptmair: smoother list 2", smootherPostList.sublist("hiptmair: smoother list 2"));
-      hiptmairPostList.set("hiptmair: pre or post",
-                           smootherPostList.get<std::string>("hiptmair: pre or post", "post"));
-      hiptmairPostList.set("hiptmair: zero starting solution",
-                           smootherPostList.get<bool>("hiptmair: zero starting solution", false));
+    if (parameterList_.isType<std::string>("smoother: pre type") && parameterList_.isType<std::string>("smoother: post type")) {
+      std::string preSmootherType = parameterList_.get<std::string>("smoother: pre type");
+      std::string postSmootherType = parameterList_.get<std::string>("smoother: post type");
 
-      typedef Tpetra::RowMatrix<SC, LO, GO, NO> TROW;
-      RCP<const TROW > EdgeMatrix = Utilities::Op2NonConstTpetraRow(SM_Matrix_);
-      RCP<const TROW > NodeMatrix = Utilities::Op2NonConstTpetraRow(A22_);
-      RCP<const TROW > PMatrix = Utilities::Op2NonConstTpetraRow(D0_Matrix_);
+      ParameterList preSmootherList, postSmootherList;
+      if (parameterList_.isSublist("smoother: pre params"))
+        preSmootherList = parameterList_.sublist("smoother: pre params");
+      if (parameterList_.isSublist("smoother: post params"))
+        postSmootherList = parameterList_.sublist("smoother: post params");
 
-      hiptmairPreSmoother_  = rcp( new Ifpack2::Hiptmair<TROW>(EdgeMatrix,NodeMatrix,PMatrix) );
-      hiptmairPreSmoother_ -> setParameters(hiptmairPreList);
-      hiptmairPreSmoother_ -> initialize();
-      hiptmairPreSmoother_ -> compute();
-      hiptmairPostSmoother_ = rcp( new Ifpack2::Hiptmair<TROW>(EdgeMatrix,NodeMatrix,PMatrix) );
-      hiptmairPostSmoother_ -> setParameters(hiptmairPostList);
-      hiptmairPostSmoother_ -> initialize();
-      hiptmairPostSmoother_ -> compute();
-      useHiptmairSmoothing_ = true;
-#else
-      throw(Xpetra::Exceptions::RuntimeError("MueLu must be compiled with Ifpack2 for Hiptmair smoothing."));
-#endif  // defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
-    } else {
+      RCP<SmootherPrototype> preSmootherPrototype = rcp(new TrilinosSmoother(preSmootherType, preSmootherList));
+      RCP<SmootherPrototype> postSmootherPrototype = rcp(new TrilinosSmoother(postSmootherType, postSmootherList));
+      RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(preSmootherPrototype, postSmootherPrototype));
 
-      Level level;
-      RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-      level.SetFactoryManager(factoryHandler);
-      level.SetLevelID(0);
-      level.setObjectLabel("RefMaxwell (1,1)");
-      level.Set("A",SM_Matrix_);
-      level.setlib(SM_Matrix_->getDomainMap()->lib());
-
-      if (parameterList_.isType<std::string>("smoother: pre type") && parameterList_.isType<std::string>("smoother: post type")) {
-        std::string preSmootherType = parameterList_.get<std::string>("smoother: pre type");
-        std::string postSmootherType = parameterList_.get<std::string>("smoother: post type");
-
-        ParameterList preSmootherList, postSmootherList;
-        if (parameterList_.isSublist("smoother: pre params"))
-          preSmootherList = parameterList_.sublist("smoother: pre params");
-        if (parameterList_.isSublist("smoother: post params"))
-          postSmootherList = parameterList_.sublist("smoother: post params");
-
-        RCP<SmootherPrototype> preSmootherPrototype = rcp(new TrilinosSmoother(preSmootherType, preSmootherList));
-        RCP<SmootherPrototype> postSmootherPrototype = rcp(new TrilinosSmoother(postSmootherType, postSmootherList));
-        RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(preSmootherPrototype, postSmootherPrototype));
-
-        level.Request("PreSmoother",smootherFact.get());
-        level.Request("PostSmoother",smootherFact.get());
-        if (enable_reuse_) {
-          ParameterList smootherFactoryParams;
-          smootherFactoryParams.set("keep smoother data", true);
-          smootherFact->SetParameterList(smootherFactoryParams);
-          level.Request("PreSmoother data", smootherFact.get());
-          level.Request("PostSmoother data", smootherFact.get());
-          if (!PreSmootherData_.is_null())
-            level.Set("PreSmoother data", PreSmootherData_, smootherFact.get());
-          if (!PostSmootherData_.is_null())
-            level.Set("PostSmoother data", PostSmootherData_, smootherFact.get());
-        }
-        smootherFact->Build(level);
-        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",smootherFact.get());
-        PostSmoother_ = level.Get<RCP<SmootherBase> >("PostSmoother",smootherFact.get());
-        if (enable_reuse_) {
-          PreSmootherData_ = level.Get<RCP<SmootherPrototype> >("PreSmoother data",smootherFact.get());
-          PostSmootherData_ = level.Get<RCP<SmootherPrototype> >("PostSmoother data",smootherFact.get());
-        }
-      } else {
-        std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
-
-        RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
-        RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(smootherPrototype));
-        level.Request("PreSmoother",smootherFact.get());
-        if (enable_reuse_) {
-          ParameterList smootherFactoryParams;
-          smootherFactoryParams.set("keep smoother data", true);
-          smootherFact->SetParameterList(smootherFactoryParams);
-          level.Request("PreSmoother data", smootherFact.get());
-          if (!PreSmootherData_.is_null())
-            level.Set("PreSmoother data", PreSmootherData_, smootherFact.get());
-        }
-        smootherFact->Build(level);
-        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",smootherFact.get());
-        PostSmoother_ = PreSmoother_;
-        if (enable_reuse_)
-          PreSmootherData_ = level.Get<RCP<SmootherPrototype> >("PreSmoother data",smootherFact.get());
+      level.Request("PreSmoother",smootherFact.get());
+      level.Request("PostSmoother",smootherFact.get());
+      if (enable_reuse_) {
+        ParameterList smootherFactoryParams;
+        smootherFactoryParams.set("keep smoother data", true);
+        smootherFact->SetParameterList(smootherFactoryParams);
+        level.Request("PreSmoother data", smootherFact.get());
+        level.Request("PostSmoother data", smootherFact.get());
+        if (!PreSmootherData_.is_null())
+          level.Set("PreSmoother data", PreSmootherData_, smootherFact.get());
+        if (!PostSmootherData_.is_null())
+          level.Set("PostSmoother data", PostSmootherData_, smootherFact.get());
       }
-      useHiptmairSmoothing_ = false;
+      smootherFact->Build(level);
+      PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",smootherFact.get());
+      PostSmoother_ = level.Get<RCP<SmootherBase> >("PostSmoother",smootherFact.get());
+      if (enable_reuse_) {
+        PreSmootherData_ = level.Get<RCP<SmootherPrototype> >("PreSmoother data",smootherFact.get());
+        PostSmootherData_ = level.Get<RCP<SmootherPrototype> >("PostSmoother data",smootherFact.get());
+      }
+    } else {
+      std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
+
+      RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
+      RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(smootherPrototype));
+      level.Request("PreSmoother",smootherFact.get());
+      if (enable_reuse_) {
+        ParameterList smootherFactoryParams;
+        smootherFactoryParams.set("keep smoother data", true);
+        smootherFact->SetParameterList(smootherFactoryParams);
+        level.Request("PreSmoother data", smootherFact.get());
+        if (!PreSmootherData_.is_null())
+          level.Set("PreSmoother data", PreSmootherData_, smootherFact.get());
+      }
+      smootherFact->Build(level);
+      PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",smootherFact.get());
+      PostSmoother_ = PreSmoother_;
+      if (enable_reuse_)
+        PreSmootherData_ = level.Get<RCP<SmootherPrototype> >("PreSmoother data",smootherFact.get());
     }
+
   }
 
 
@@ -2455,15 +2397,7 @@ namespace MueLu {
 
       RCP<Teuchos::TimeMonitor> tmSm = getTimer("MueLu RefMaxwell: smoothing");
 
-#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
-      if (useHiptmairSmoothing_) {
-        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
-        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
-        hiptmairPreSmoother_->apply(tRHS, tX);
-      }
-      else
-#endif
-        PreSmoother_->Apply(X, RHS, use_as_preconditioner_);
+      PreSmoother_->Apply(X, RHS, use_as_preconditioner_);
     }
 
     // do solve for the 2x2 block system
@@ -2487,31 +2421,14 @@ namespace MueLu {
 
         RCP<Teuchos::TimeMonitor> tmSm = getTimer("MueLu RefMaxwell: smoothing");
 
-#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
-        if (useHiptmairSmoothing_) {
-          Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
-          Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
-          hiptmairPreSmoother_->apply(tRHS, tX);
-        }
-        else
-#endif
-          PreSmoother_->Apply(X, RHS, false);
+        PreSmoother_->Apply(X, RHS, false);
       }
       solve22(RHS,X);
       { // apply post-smoothing
 
         RCP<Teuchos::TimeMonitor> tmSm = getTimer("MueLu RefMaxwell: smoothing");
 
-#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
-        if (useHiptmairSmoothing_)
-          {
-            Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
-            Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
-            hiptmairPostSmoother_->apply(tRHS, tX);
-          }
-        else
-#endif
-          PostSmoother_->Apply(X, RHS, false);
+        PostSmoother_->Apply(X, RHS, false);
       }
       solveH(RHS,X);
     } else if(mode_=="none") {
@@ -2524,16 +2441,7 @@ namespace MueLu {
 
       RCP<Teuchos::TimeMonitor> tmSm = getTimer("MueLu RefMaxwell: smoothing");
 
-#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
-      if (useHiptmairSmoothing_)
-        {
-          Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Utilities::MV2NonConstTpetraMV(X);
-          Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tRHS = Utilities::MV2TpetraMV(RHS);
-          hiptmairPostSmoother_->apply(tRHS, tX);
-        }
-      else
-#endif
-        PostSmoother_->Apply(X, RHS, false);
+      PostSmoother_->Apply(X, RHS, false);
     }
 
   }
@@ -2687,19 +2595,6 @@ namespace MueLu {
 
     oss << std::endl;
 
-#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
-    if (useHiptmairSmoothing_) {
-      if (hiptmairPreSmoother_ != null && hiptmairPreSmoother_ == hiptmairPostSmoother_)
-        oss << "Smoother both : " << hiptmairPreSmoother_->description() << std::endl;
-      else {
-        oss << "Smoother pre  : "
-            << (hiptmairPreSmoother_ != null ?  hiptmairPreSmoother_->description() : "no smoother") << std::endl;
-        oss << "Smoother post : "
-            << (hiptmairPostSmoother_ != null ?  hiptmairPostSmoother_->description() : "no smoother") << std::endl;
-      }
-
-    } else
-#endif
     {
       if (PreSmoother_ != null && PreSmoother_ == PostSmoother_)
         oss << "Smoother both : " << PreSmoother_->description() << std::endl;

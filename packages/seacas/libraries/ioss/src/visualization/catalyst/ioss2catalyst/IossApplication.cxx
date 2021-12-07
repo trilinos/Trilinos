@@ -20,9 +20,8 @@
 #include <iomanip>
 #include <iostream>
 #include <mpi.h>
-#include <unistd.h>
-
 #include <random>
+#include <unistd.h>
 std::random_device myrd9;        // only used once to initialise (seed) engine
 std::mt19937       rng(myrd9()); // random-number engine used (Mersenne-Twister in this case)
 std::uniform_int_distribution<int> myuni9(0, 1000000000); // guaranteed unbiased
@@ -46,14 +45,12 @@ IossApplication::IossApplication(int argc, char **argv)
 
 void IossApplication::initialize()
 {
-  myRank                       = 0;
-  numRanks                     = 1;
-  printIOSSReport              = false;
-  copyDatabase                 = false;
-  writeCatalystMeshOneFile     = false;
-  writeCatalystMeshFilePerProc = false;
-  // fileName = "";
-  // inputIOSSRegion = nullptr;
+  myRank                         = 0;
+  numRanks                       = 1;
+  printIOSSReport                = false;
+  copyDatabase                   = false;
+  writeCatalystMeshOneFile       = false;
+  writeCatalystMeshFilePerProc   = false;
   usePhactoriInputScript         = false;
   usePhactoriInputJSON           = false;
   useParaViewExportedScript      = false;
@@ -67,9 +64,9 @@ void IossApplication::initialize()
   forceCGNSOutput                = false;
   forceExodusOutput              = false;
   useIOSSInputDBType             = false;
-  // iossInputDBType = "";
-  hasCommandLineArguments = false;
-  applicationExitCode     = EXIT_SUCCESS;
+  hasCommandLineArguments        = false;
+  applicationExitCode            = EXIT_SUCCESS;
+  additionalProperties           = nullptr;
   initMPIRankAndSize();
 }
 
@@ -773,6 +770,7 @@ void IossApplication::SetUpDefaultProperties(Ioss::PropertyManager *outputProper
   }
 
   outputProperties->add(Ioss::Property("CATALYST_BLOCK_PARSE_INPUT_DECK_NAME", applicationName));
+  addAdditionalProperties(outputProperties);
 }
 
 void IossApplication::callCatalystIOSSDatabaseOnRankOneGrid()
@@ -865,4 +863,23 @@ std::string IossApplication::getCatalystDatabaseType(int ndx)
     }
   }
   return retVal;
+}
+
+void IossApplication::setAdditionalProperties(Ioss::PropertyManager *additionalProperties)
+{
+  this->additionalProperties = additionalProperties;
+}
+
+Ioss::PropertyManager *IossApplication::getAdditionalProperties() { return additionalProperties; }
+
+void IossApplication::addAdditionalProperties(Ioss::PropertyManager *outputProperties)
+{
+  if (additionalProperties) {
+
+    Ioss::NameList nlist;
+    additionalProperties->describe(&nlist);
+    for (auto &name : nlist) {
+      outputProperties->add(additionalProperties->get(name));
+    }
+  }
 }
