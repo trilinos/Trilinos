@@ -36,7 +36,7 @@ namespace Sacado {
   namespace Exp {
 
 #ifndef SACADO_FAD_DERIV_LOOP
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && ( defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) )
 #define SACADO_FAD_DERIV_LOOP(I,SZ) for (int I=threadIdx.x; I<SZ; I+=blockDim.x)
 #else
 #define SACADO_FAD_DERIV_LOOP(I,SZ) for (int I=0; I<SZ; ++I)
@@ -44,7 +44,7 @@ namespace Sacado {
 #endif
 
 #ifndef SACADO_FAD_THREAD_SINGLE
-#if (defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
+#if (defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && ( defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) )
 #define SACADO_FAD_THREAD_SINGLE if (threadIdx.x == 0)
 #else
 #define SACADO_FAD_THREAD_SINGLE /* */
@@ -103,7 +103,7 @@ namespace Sacado {
       {
         const int xsz = x.size(), sz = dst.size();
 
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
         if ((xsz != sz) && (xsz != 0) && (sz != 0))
           throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
@@ -138,7 +138,7 @@ namespace Sacado {
       {
         const int xsz = x.size(), sz = dst.size();
 
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
         if ((xsz != sz) && (xsz != 0) && (sz != 0))
           throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
@@ -175,7 +175,7 @@ namespace Sacado {
         const value_type xval = x.val();
         const value_type v = dst.val();
 
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
         if ((xsz != sz) && (xsz != 0) && (sz != 0))
           throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
@@ -218,7 +218,7 @@ namespace Sacado {
         const value_type xval = x.val();
         const value_type v = dst.val();
 
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__ )
         if ((xsz != sz) && (xsz != 0) && (sz != 0))
           throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif

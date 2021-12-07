@@ -152,9 +152,23 @@ struct MultiplyKernel {
         Kokkos::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
       ( stride > 1 );
 #elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
-    const size_type stride = 32;
+    const size_type stride = team_policy_type::vector_length_max(); // 32
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
+      ( Kokkos::is_view_fad_contiguous<InputViewType1>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
+      is_dfad<typename InputViewType1::non_const_value_type>::value;
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+    const size_type stride = Kokkos::ViewScalarStride<InputViewType1>::stride;
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
+      ( Kokkos::is_view_fad_contiguous<InputViewType1>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
+      ( stride > 1 );
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+    const size_type stride = team_policy_type::vector_length_max(); // 64
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
       ( Kokkos::is_view_fad_contiguous<InputViewType1>::value ||
         Kokkos::is_dynrankview_fad_contiguous<InputViewType1>::value ) &&
       is_dfad<typename InputViewType1::non_const_value_type>::value;
@@ -222,6 +236,18 @@ struct ScalarAssignKernel {
       ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
         Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       is_dfad<typename ViewType::non_const_value_type>::value;
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
+      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( stride > 1 );
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
+      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      is_dfad<typename ViewType::non_const_value_type>::value;
 #else
     const bool use_team = false;
 #endif
@@ -259,7 +285,7 @@ struct ValueAssignKernel {
   // Multiply entries for row 'i' with a value
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type i) const {
-    local_scalar_type s = Sacado::partition_scalar<stride>(m_s());
+    local_scalar_type s = Sacado::partition_scalar<stride>(m_s());    
     m_v(i) = s;
   }
 
@@ -284,6 +310,18 @@ struct ValueAssignKernel {
 #elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
+      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      is_dfad<typename ViewType::non_const_value_type>::value;
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
+      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( stride > 1 );
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
       ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
         Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       is_dfad<typename ViewType::non_const_value_type>::value;
@@ -361,6 +399,18 @@ struct AssignRank2Rank1Kernel {
       ( Kokkos::is_view_fad_contiguous<InputViewType>::value ||
         Kokkos::is_dynrankview_fad_contiguous<InputViewType>::value ) &&
       is_dfad<typename InputViewType::non_const_value_type>::value;
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
+      ( Kokkos::is_view_fad_contiguous<InputViewType>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<InputViewType>::value ) &&
+      ( stride > 1 );
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
+      ( Kokkos::is_view_fad_contiguous<InputViewType>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<InputViewType>::value ) &&
+      is_dfad<typename InputViewType::non_const_value_type>::value;
 #else
     const bool use_team = false;
 #endif
@@ -422,6 +472,18 @@ struct AtomicAddKernel {
 #elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
     const bool use_team =
       std::is_same<execution_space, Kokkos::Cuda>::value &&
+      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      is_dfad<typename ViewType::non_const_value_type>::value;
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
+      ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+        Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( stride > 1 );
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
       ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
         Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
       is_dfad<typename ViewType::non_const_value_type>::value;
@@ -740,8 +802,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos::parallel_for(Kokkos::RangePolicy< Device>(0, fad_size), KOKKOS_LAMBDA(const int i) {
     a().fastAccessDx(i) = 7.89 + i;
   });
+  Kokkos::fence();
 
   ValueAssignKernel<ViewType, ScalarViewType>::apply( v, a );
+  Kokkos::fence();
 
   // Copy to host
   host_view_type hv = Kokkos::create_mirror_view(v);
@@ -1632,6 +1696,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
   const bool use_team =
     std::is_same<exec_space, Kokkos::Cuda>::value &&
+    ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+      Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+    is_dfad<typename ViewType::non_const_value_type>::value;
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+  const bool use_team =
+    std::is_same<exec_space, Kokkos::Experimental::HIP>::value &&
+    ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+      Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( stride > 1 );
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+  const bool use_team =
+    std::is_same<exec_space, Kokkos::Experimental::HIP>::value &&
     ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
       Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
     is_dfad<typename ViewType::non_const_value_type>::value;

@@ -26,39 +26,37 @@
 //
 // ***********************************************************************
 // @HEADER
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-#ifndef SACADO_DISABLE_KOKKOS_CUDA_HPP
-#define SACADO_DISABLE_KOKKOS_CUDA_HPP
+#include "Kokkos_Macros.hpp"
 
-//
-// Include this file in any translation unit to disable the use of Sacado
-// classes on Cuda.  Several Sacado classes (e.g., Sacado::Fad::GeneralFad)
-// are setup to work with Kokkos, but don't work with Cuda with some choices
-// of their template parameters.  However
-// if Cuda is enabled then __device__ is added to the KOKKOS_*_FUNCTION macros
-// which prevents these classes from compiling.  By including this file, the
-// __device__ annotation will be removed allowing these classes to be compiled
-// by NVCC for host code.
-//
+// Disable view specializations (changes atomic argument from ViewFadPtr to
+// Fad*)
+#define SACADO_DISABLE_FAD_VIEW_SPEC
 
-// Include definitions of KOKKOS_*_FUNCTION macros
-#include "Sacado_ConfigDefs.h"
+// DFad requires the View specialization, so don't test DFad
+#define SACADO_TEST_DFAD 0
+#include "Fad_KokkosAtomicTests.hpp"
 
-// Redefine KOKKOS_*_FUNCTION macros to not include __device__
-#if defined(HAVE_SACADO_KOKKOSCORE) &&  ( defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) )
-// TODO double check me
-#if 1
-#undef SACADO_FUNCTION
-#undef SACADO_INLINE_FUNCTION
-#undef SACADO_FORCEINLINE_FUNCTION
+// Instantiate tests for HIP device.
+using Kokkos::Experimental::HIP;
+VIEW_FAD_TESTS_D( HIP )
 
-#define SACADO_FUNCTION /* */
-#define SACADO_INLINE_FUNCTION inline
-#define SACADO_FORCEINLINE_FUNCTION  inline
-#endif
-#define SACADO_DISABLE_CUDA_IN_KOKKOS 1
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-#endif
+  // Initialize HIP
+  Kokkos::InitArguments init_args;
+  init_args.device_id = 0;
+  Kokkos::initialize( init_args );
+  Kokkos::print_configuration(std::cout);
 
+  int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-#endif // SACADO_NO_KOKKOS_HPP
+  // Finalize HIP
+  Kokkos::finalize();
+
+  return res;
+}
