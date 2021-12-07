@@ -242,6 +242,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: phase3 avoid singletons\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow empty prolongator columns\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: preserve Dirichlet points\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: dropping may create Dirichlet\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: allow user-specified singletons\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: use interface aggregation\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: export visualization data\" type=\"bool\" value=\"false\"/>"
@@ -692,6 +693,8 @@ namespace MueLu {
          ("aggregation: allow empty prolongator columns","aggregation: allow empty prolongator columns")
       
          ("aggregation: preserve Dirichlet points","aggregation: preserve Dirichlet points")
+      
+         ("aggregation: dropping may create Dirichlet","aggregation: dropping may create Dirichlet")
       
          ("aggregation: allow user-specified singletons","aggregation: allow user-specified singletons")
       
