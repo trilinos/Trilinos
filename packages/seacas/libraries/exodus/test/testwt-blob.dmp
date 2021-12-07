@@ -42,9 +42,7 @@ variables:
 	double vals_blob_var3blob300(time_step, num_values_blob300) ;
 
 // global attributes:
-		:floating_point_word_size = 8 ;
 		:file_size = 1 ;
-		:int64_status = 0 ;
 		:title = "This is a test" ;
 		:SOLID_MODEL = "STEP-X-43-1547836-Rev 0" ;
 data:

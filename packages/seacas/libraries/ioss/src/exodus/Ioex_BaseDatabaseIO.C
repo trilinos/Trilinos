@@ -837,7 +837,7 @@ namespace Ioex {
   }
 
   // common
-  void BaseDatabaseIO::compute_block_membership__(Ioss::SideBlock *         efblock,
+  void BaseDatabaseIO::compute_block_membership__(Ioss::SideBlock          *efblock,
                                                   std::vector<std::string> &block_membership) const
   {
     const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
@@ -978,8 +978,7 @@ namespace Ioex {
       size_t offset = 0;
       for (const auto &block : blocks) {
         // Get names of all transient and reduction fields...
-        Ioss::NameList results_fields;
-        block->field_describe(Ioss::Field::TRANSIENT, &results_fields);
+        Ioss::NameList results_fields = block->field_describe(Ioss::Field::TRANSIENT);
         block->field_describe(Ioss::Field::REDUCTION, &results_fields);
 
         for (const auto &fn : results_fields) {
@@ -1157,7 +1156,7 @@ namespace Ioex {
       auto &id_values = m_reductionValues[type];
       for (const auto &values : id_values) {
         int64_t id    = values.first;
-        auto &  vals  = values.second;
+        auto   &vals  = values.second;
         size_t  count = vals.size();
         if (count > 0) {
           int ierr = ex_put_reduction_vars(get_file_pointer(), step, type, id, count, vals.data());
@@ -1178,7 +1177,7 @@ namespace Ioex {
       auto &id_values = m_reductionValues[type];
       for (const auto &values : id_values) {
         int64_t id    = values.first;
-        auto &  vals  = values.second;
+        auto   &vals  = values.second;
         size_t  count = vals.size();
         if (count > 0) {
           int ierr = ex_get_reduction_vars(get_file_pointer(), step, type, id, count,
@@ -1385,42 +1384,40 @@ namespace Ioex {
 
       // Create a property on `entity` for each `attribute`
       for (const auto &att : attr) {
-        std::string storage = fmt::format("Real[{}]", att.value_count);
+        if (att.value_count == 0) {
+          // Just an attribute name.  Give it an empty value...
+          entity->property_add(Ioss::Property(att.name, "", Ioss::Property::ATTRIBUTE));
+          continue;
+        }
+        assert(att.values != nullptr);
+
         switch (att.type) {
-        case EX_INTEGER:
+        case EX_INTEGER: {
+          const auto *idata = static_cast<int *>(att.values);
           if (att.value_count == 1) {
-            entity->property_add(
-                Ioss::Property(att.name, *(int *)att.values, Ioss::Property::ATTRIBUTE));
+            entity->property_add(Ioss::Property(att.name, *idata, Ioss::Property::ATTRIBUTE));
           }
           else {
-            const int *      idata = static_cast<int *>(att.values);
             std::vector<int> tmp(att.value_count);
             std::copy(idata, idata + att.value_count, tmp.begin());
             entity->property_add(Ioss::Property(att.name, tmp, Ioss::Property::ATTRIBUTE));
           }
-          break;
-        case EX_DOUBLE:
+        } break;
+        case EX_DOUBLE: {
+          const auto *ddata = static_cast<double *>(att.values);
           if (att.value_count == 1) {
-            entity->property_add(
-                Ioss::Property(att.name, *(double *)att.values, Ioss::Property::ATTRIBUTE));
+            entity->property_add(Ioss::Property(att.name, *ddata, Ioss::Property::ATTRIBUTE));
           }
           else {
-            const double *      idata = static_cast<double *>(att.values);
             std::vector<double> tmp(att.value_count);
-            std::copy(idata, idata + att.value_count, tmp.begin());
+            std::copy(ddata, ddata + att.value_count, tmp.begin());
             entity->property_add(Ioss::Property(att.name, tmp, Ioss::Property::ATTRIBUTE));
           }
-          break;
-        case EX_CHAR:
-          if (att.value_count > 0) {
-            entity->property_add(
-                Ioss::Property(att.name, (char *)att.values, Ioss::Property::ATTRIBUTE));
-          }
-          else {
-            // Just an attribute name.  Give it an empty value...
-            entity->property_add(Ioss::Property(att.name, "", Ioss::Property::ATTRIBUTE));
-          }
-          break;
+        } break;
+        case EX_CHAR: {
+          const auto *cdata = static_cast<char *>(att.values);
+          entity->property_add(Ioss::Property(att.name, cdata, Ioss::Property::ATTRIBUTE));
+        } break;
         }
       }
     }
@@ -1438,7 +1435,7 @@ namespace Ioex {
   int64_t BaseDatabaseIO::internal_add_results_fields(ex_entity_type        type,
                                                       Ioss::GroupingEntity *entity,
                                                       int64_t position, int64_t block_count,
-                                                      Ioss::IntVector &      truth_table,
+                                                      Ioss::IntVector       &truth_table,
                                                       Ioex::VariableNameMap &variables)
   {
     int nvar = 0;
@@ -1844,8 +1841,7 @@ namespace Ioex {
         }
 
         // Get names of all transient and reduction fields...
-        Ioss::NameList results_fields;
-        block->field_describe(Ioss::Field::TRANSIENT, &results_fields);
+        Ioss::NameList results_fields = block->field_describe(Ioss::Field::TRANSIENT);
         block->field_describe(Ioss::Field::REDUCTION, &results_fields);
 
         for (const auto &fn : results_fields) {
@@ -2080,7 +2076,7 @@ namespace Ioex {
       size_t my_element_count = block->entity_count();
 
       // Get the attribute names. May not exist or may be blank...
-      char ** names = Ioss::Utils::get_name_array(attribute_count, maximumNameLength);
+      char  **names = Ioss::Utils::get_name_array(attribute_count, maximumNameLength);
       int64_t id    = block->get_property("id").get_int();
 
       // Some older applications do not want to used named
@@ -2600,8 +2596,7 @@ namespace {
         std::vector<std::string> names_str(attribute_count);
 
         // Get the attribute fields...
-        Ioss::NameList results_fields;
-        ge->field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
+        Ioss::NameList results_fields = ge->field_describe(Ioss::Field::ATTRIBUTE);
 
         for (const auto &field_name : results_fields) {
           const Ioss::Field &field = ge->get_fieldref(field_name);
@@ -2643,8 +2638,7 @@ namespace {
     std::vector<int> attributes(attribute_count + 1);
 
     // Get the attribute fields...
-    Ioss::NameList results_fields;
-    block->field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
+    Ioss::NameList results_fields = block->field_describe(Ioss::Field::ATTRIBUTE);
 
     bool all_attributes_indexed  = true;
     bool some_attributes_indexed = false;

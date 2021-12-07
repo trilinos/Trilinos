@@ -44,12 +44,15 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
+#include "TpetraCore_config.h"
 
 namespace Tpetra {
 namespace Details {
 
 namespace {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   const bool barrierBetween_default = false;
+#endif
   const bool useDistinctTags_default = true;
 }
 
@@ -59,9 +62,13 @@ namespace {
 /// not rely on these values in your code.
 enum EDistributorSendType {
   DISTRIBUTOR_ISEND, // Use MPI_Isend (Teuchos::isend)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   DISTRIBUTOR_RSEND, // Use MPI_Rsend (Teuchos::readySend)
-  DISTRIBUTOR_SEND,  // Use MPI_Send (Teuchos::send)
-  DISTRIBUTOR_SSEND  // Use MPI_Ssend (Teuchos::ssend)
+#endif
+  DISTRIBUTOR_SEND   // Use MPI_Send (Teuchos::send)
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  , DISTRIBUTOR_SSEND  // Use MPI_Ssend (Teuchos::ssend)
+#endif
 };
 
 /// \brief Convert an EDistributorSendType enum value to a string.
@@ -93,15 +100,22 @@ DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
 
 /// Instances of Distributor take the following parameters that
 /// control communication and debug output:
-/// - "Barrier between receives and sends" (<tt>bool</tt>):
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+/// - "Barrier between receives and sends" (<tt>bool</tt>): (DEPRECATED)
 ///   Whether to execute a barrier between receives and sends in
-///   do[Reverse]Posts().  A barrier is required for correctness
-///   when the "Send type" parameter is "Rsend".  Otherwise, a
-///   barrier is correct and may be useful for debugging, but not
+///   do[Reverse]Posts().  
+///   A barrier is required for correctness
+///   when the "Send type" parameter is "Rsend".  Otherwise,
+///   A barrier is correct and may be useful for debugging, but not
 ///   recommended, since it introduces useless synchronization.
+#endif
 /// - "Send type" (<tt>std::string</tt>): When using MPI, the
 ///   variant of MPI_Send to use in do[Reverse]Posts().  Valid
-///   values include "Isend", "Rsend", "Send", and "Ssend".  The
+///   values include "Isend",
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+///   "Rsend (DEPRECATED)", "Ssend (DEPRECATED)",
+#endif
+///    and "Send".  The
 ///   default is "Send".  (The receive type is always MPI_Irecv, a
 ///   nonblocking receive.  Since we post receives first before
 ///   sends, this prevents deadlock, even if MPI_Send blocks and
@@ -128,7 +142,9 @@ public:
 
   Teuchos::RCP<const Teuchos::Comm<int>> getComm() const { return comm_; }
   EDistributorSendType getSendType() const { return sendType_; }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   bool barrierBetweenRecvSend() const { return barrierBetweenRecvSend_; }
+#endif
   bool useDistinctTags() const { return useDistinctTags_; }
   size_t getNumReceives() const { return numReceives_; }
   size_t getNumSends() const { return numSendsToOtherProcs_; }
@@ -153,8 +169,8 @@ private:
   /// This method computes numReceives_, lengthsFrom_, procsFrom_,
   /// totalReceiveLength_, indicesFrom_, and startsFrom_.
   ///
-  /// \note This method currently ignores the sendType_ and
-  ///   barrierBetween_ parameters, and always uses ireceive() /
+  /// \note This method currently ignores the sendType_ 
+  ///   parameter, and always uses ireceive() /
   ///   send() for communication of the process IDs from which our
   ///   process is receiving and their corresponding receive packet
   ///   counts.
@@ -167,7 +183,9 @@ private:
   //! @name Parameters read in from the Teuchos::ParameterList
   //@{
   EDistributorSendType sendType_;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   bool barrierBetweenRecvSend_;
+#endif
 
   /// \brief Whether to use different tags for different code paths.
   ///

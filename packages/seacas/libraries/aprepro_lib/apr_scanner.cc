@@ -14,9 +14,9 @@
 /* %ok-for-header */
 
 #define FLEX_SCANNER
-#define YY_FLEX_MAJOR_VERSION 2
-#define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 37
+#define YY_FLEX_MAJOR_VERSION    2
+#define YY_FLEX_MINOR_VERSION    5
+#define YY_FLEX_SUBMINOR_VERSION 39
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -52,14 +52,6 @@
 
 #ifndef FLEXINT_H
 #define FLEXINT_H
-
-#if defined(_MSC_VER)
-#ifdef _WIN64
-#define ssize_t __int64
-#else
-#define ssize_t long
-#endif
-#endif
 
 /* C99 systems have <inttypes.h>. Non-C99 systems may or may not. */
 
@@ -187,7 +179,7 @@ typedef unsigned int       flex_uint32_t;
  * compatibility.
  */
 #define YY_START (((yy_start)-1) / 2)
-#define YYSTATE YY_START
+#define YYSTATE  YY_START
 
 /* Action number for EOF rule of a given start state. */
 #define YY_STATE_EOF(state) (YY_END_OF_BUFFER + state + 1)
@@ -226,10 +218,11 @@ extern yy_size_t yyleng;
 /* %endif */
 
 #define EOB_ACT_CONTINUE_SCAN 0
-#define EOB_ACT_END_OF_FILE 1
-#define EOB_ACT_LAST_MATCH 2
+#define EOB_ACT_END_OF_FILE   1
+#define EOB_ACT_LAST_MATCH    2
 
 #define YY_LESS_LINENO(n)
+#define YY_LINENO_REWIND_TO(ptr)
 
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n)                                                                                  \
@@ -297,7 +290,7 @@ struct yy_buffer_state
 
   int yy_buffer_status;
 
-#define YY_BUFFER_NEW 0
+#define YY_BUFFER_NEW    0
 #define YY_BUFFER_NORMAL 1
   /* When an EOF's been seen but there's still some text to process
    * then we mark the buffer as YY_EOF_PENDING, to indicate that we
@@ -382,6 +375,8 @@ typedef unsigned char YY_CHAR;
 
 #include <FlexLexer.h>
 
+/* %% [1.5] DFA */
+
 /* %if-c-only Standard (non-C++) definition */
 /* %endif */
 
@@ -398,7 +393,7 @@ typedef unsigned char YY_CHAR;
   (yy_c_buf_p) = yy_cp;
 
 /* %% [4.0] data tables for the DFA and the user's section 1 definitions go here */
-#define YY_NUM_RULES 102
+#define YY_NUM_RULES     102
 #define YY_END_OF_BUFFER 103
 /* This struct is not used in this scanner,
    but its presence is necessary. */
@@ -962,25 +957,25 @@ static yyconst flex_int16_t yy_chk[2581] = {
     702, 702, 702, 702, 702, 702, 702, 702, 702, 702, 702, 702};
 
 static yyconst flex_int16_t yy_rule_linenum[102] = {
-    0,   131, 132, 133, 134, 138, 139, 140, 141, 142, 144, 145, 147, 156, 157, 184, 219,
-    243, 249, 270, 277, 288, 293, 307, 312, 319, 343, 354, 356, 370, 383, 408, 414, 419,
-    424, 429, 439, 447, 455, 464, 492, 513, 514, 515, 516, 518, 523, 548, 550, 552, 590,
-    591, 594, 596, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614, 615, 616, 617,
-    618, 619, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 630, 631, 632, 633, 634,
-    635, 636, 637, 638, 639, 640, 646, 652, 664, 666, 668, 684, 685, 695, 698, 699,
+    0,   105, 106, 107, 108, 112, 113, 114, 115, 116, 118, 119, 121, 130, 131, 159, 195,
+    219, 225, 246, 253, 264, 269, 283, 288, 295, 318, 329, 331, 345, 358, 383, 389, 394,
+    399, 404, 414, 422, 430, 439, 467, 488, 489, 490, 491, 493, 498, 523, 525, 527, 566,
+    567, 570, 572, 580, 581, 582, 583, 584, 585, 586, 587, 588, 589, 590, 591, 592, 593,
+    594, 595, 596, 597, 598, 599, 600, 601, 602, 603, 604, 605, 606, 607, 608, 609, 610,
+    611, 612, 613, 614, 615, 616, 622, 628, 640, 642, 644, 660, 661, 671, 674, 675,
 
-    701};
+    677};
 
 /* The intent behind this definition is that it'll catch
  * any uses of REJECT which flex missed.
  */
-#define REJECT reject_used_but_not_detected
-#define yymore() yymore_used_but_not_detected
+#define REJECT      reject_used_but_not_detected
+#define yymore()    yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 /* -*- Mode: c++ -*- */
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -1019,11 +1014,12 @@ namespace SEAMS {
 int file_must_exist = 0; /* Global used by include/conditional include */
 
 /* Global variables used by the looping mechanism */
-int           loop_lvl = 0;
-std::fstream *tmp_file;
-const char *  temp_f;
+SEAMS::file_rec *outer_file = nullptr;
+int              loop_lvl   = 0;
+std::fstream    *tmp_file;
+const char      *temp_f;
 
-#if defined __NVCC__
+#if defined           __NVCC__
 #pragma diag_suppress code_is_unreachable
 #endif
 
@@ -1040,7 +1036,7 @@ bool   switch_skip_to_endcase      = false;
 double switch_condition            = 0.0; // Value specified in "switch(condition)"
 
 // For substitution history
-ssize_t     curr_index = 0;
+size_t      curr_index = 0;
 std::string history_string;
 size_t      hist_start = 0;
 
@@ -1053,16 +1049,16 @@ size_t      hist_start = 0;
  * versions. */
 /* enables the use of start condition stacks */
 
-#define INITIAL 0
-#define PARSING 1
-#define GET_FILENAME 2
-#define IF_SKIP 3
-#define GET_VAR 4
-#define VERBATIM 5
+#define INITIAL       0
+#define PARSING       1
+#define GET_FILENAME  2
+#define IF_SKIP       3
+#define GET_VAR       4
+#define VERBATIM      5
 #define IF_WHILE_SKIP 6
-#define GET_LOOP_VAR 7
-#define LOOP 8
-#define LOOP_SKIP 9
+#define GET_LOOP_VAR  7
+#define LOOP          8
+#define LOOP_SKIP     9
 #define END_CASE_SKIP 10
 
 #ifndef YY_NO_UNISTD_H
@@ -1213,10 +1209,8 @@ static int yy_flex_strlen(yyconst char *);
 YY_DECL
 {
   yy_state_type yy_current_state;
-  char *        yy_cp, *yy_bp;
+  char         *yy_cp, *yy_bp;
   int           yy_act;
-
-  /* %% [7.0] user's declarations go here */
 
   if (!(yy_init)) {
     (yy_init) = 1;
@@ -1250,1047 +1244,1057 @@ YY_DECL
     yy_load_buffer_state();
   }
 
-  while (1) /* loops until end-of-file is reached */
   {
-    /* %% [8.0] yymore()-related code goes here */
-    yy_cp = (yy_c_buf_p);
+    /* %% [7.0] user's declarations go here */
 
-    /* Support of yytext. */
-    *yy_cp = (yy_hold_char);
+    while (1) /* loops until end-of-file is reached */
+    {
+      /* %% [8.0] yymore()-related code goes here */
+      yy_cp = (yy_c_buf_p);
 
-    /* yy_bp points to the position in yy_ch_buf of the start of
-     * the current run.
-     */
-    yy_bp = yy_cp;
+      /* Support of yytext. */
+      *yy_cp = (yy_hold_char);
 
-    /* %% [9.0] code to set up and find next match goes here */
-    yy_current_state = (yy_start);
-  yy_match:
-    do {
-      YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
-      if (yy_accept[yy_current_state]) {
-        (yy_last_accepting_state) = yy_current_state;
-        (yy_last_accepting_cpos)  = yy_cp;
-      }
-      while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state) {
-        yy_current_state = (int)yy_def[yy_current_state];
-        if (yy_current_state >= 703)
-          yy_c = yy_meta[(unsigned int)yy_c];
-      }
-      yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int)yy_c];
-      ++yy_cp;
-    } while (yy_base[yy_current_state] != 2512);
+      /* yy_bp points to the position in yy_ch_buf of the start of
+       * the current run.
+       */
+      yy_bp = yy_cp;
 
-  yy_find_action:
-    /* %% [10.0] code to find the action number goes here */
-    yy_act = yy_accept[yy_current_state];
-    if (yy_act == 0) { /* have to back up */
-      yy_cp            = (yy_last_accepting_cpos);
-      yy_current_state = (yy_last_accepting_state);
-      yy_act           = yy_accept[yy_current_state];
-    }
-
-    YY_DO_BEFORE_ACTION;
-
-    /* %% [11.0] code for yylineno update goes here */
-
-  do_action: /* This label is used only to access EOF actions. */
-
-    /* %% [12.0] debug code goes here */
-    if (yy_flex_debug) {
-      if (yy_act == 0)
-        std::cerr << "--scanner backing up\n";
-      else if (yy_act < 102)
-        std::cerr << "--accepting rule at line " << yy_rule_linenum[yy_act] << "(\"" << yytext
-                  << "\")\n";
-      else if (yy_act == 102)
-        std::cerr << "--accepting default rule (\"" << yytext << "\")\n";
-      else if (yy_act == 103)
-        std::cerr << "--(end of buffer or a NUL)\n";
-      else
-        std::cerr << "--EOF (start condition " << YY_START << ")\n";
-    }
-
-    switch (yy_act) { /* beginning of action switch */
-                      /* %% [13.0] actions go here */
-    case 0:           /* must back up */
-      /* undo the effects of YY_DO_BEFORE_ACTION */
-      *yy_cp           = (yy_hold_char);
-      yy_cp            = (yy_last_accepting_cpos);
-      yy_current_state = (yy_last_accepting_state);
-      goto yy_find_action;
-
-    case 1:
-      YY_RULE_SETUP { BEGIN(INITIAL); }
-      YY_BREAK
-    case 2:
-    case 3:
-      YY_RULE_SETUP
-      {
-        if (echo)
-          ECHO;
-      }
-      YY_BREAK
-    case 4:
-      /* rule 4 can match eol */
-      YY_RULE_SETUP
-      {
-        if (echo)
-          ECHO;
-        aprepro.ap_file_list.top().lineno++;
-      }
-      YY_BREAK
-
-    case 5:
-      YY_RULE_SETUP { BEGIN(VERBATIM); }
-      YY_BREAK
-    case 6:
-    case 7:
-      YY_RULE_SETUP { echo = true; }
-      YY_BREAK
-    case 8:
-    case 9:
-      YY_RULE_SETUP { echo = false; }
-      YY_BREAK
-    case 10:
-      YY_RULE_SETUP { aprepro.stateImmutable = true; }
-      YY_BREAK
-    case 11:
-      YY_RULE_SETUP { aprepro.stateImmutable = aprepro.ap_options.immutable; }
-      YY_BREAK
-    case 12:
-      YY_RULE_SETUP
-      {
-        BEGIN(GET_LOOP_VAR);
-        if (aprepro.ap_options.debugging)
-          std::cerr << "DEBUG LOOP - Found loop begin test " << yytext << " in file "
-                    << aprepro.ap_file_list.top().name << "\n";
-      }
-      YY_BREAK
-
-    case 13:
-    /* rule 13 can match eol */
-    case 14:
-      /* rule 14 can match eol */
-      YY_RULE_SETUP
-      {
-        /* Loop control defined by integer */
-        char *pt = strchr(yytext, ')');
-        *pt      = '\0';
-        sscanf(yytext, "%lf", &yylval->val);
-
-        if (yylval->val <= 0) {
-          BEGIN(LOOP_SKIP);
+      /* %% [9.0] code to set up and find next match goes here */
+      yy_current_state = (yy_start);
+    yy_match:
+      do {
+        YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+        if (yy_accept[yy_current_state]) {
+          (yy_last_accepting_state) = yy_current_state;
+          (yy_last_accepting_cpos)  = yy_cp;
         }
-        else { /* Value defined and != 0. */
-          temp_f = get_temp_filename();
-          SEAMS::file_rec new_file(temp_f, 0, true, (int)yylval->val);
-          aprepro.ap_file_list.push(new_file);
+        while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state) {
+          yy_current_state = (int)yy_def[yy_current_state];
+          if (yy_current_state >= 703)
+            yy_c = yy_meta[(unsigned int)yy_c];
+        }
+        yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int)yy_c];
+        ++yy_cp;
+      } while (yy_base[yy_current_state] != 2512);
 
+    yy_find_action:
+      /* %% [10.0] code to find the action number goes here */
+      yy_act = yy_accept[yy_current_state];
+      if (yy_act == 0) { /* have to back up */
+        yy_cp            = (yy_last_accepting_cpos);
+        yy_current_state = (yy_last_accepting_state);
+        yy_act           = yy_accept[yy_current_state];
+      }
+
+      YY_DO_BEFORE_ACTION;
+
+      /* %% [11.0] code for yylineno update goes here */
+
+    do_action: /* This label is used only to access EOF actions. */
+
+      /* %% [12.0] debug code goes here */
+      if (yy_flex_debug) {
+        if (yy_act == 0)
+          std::cerr << "--scanner backing up\n";
+        else if (yy_act < 102)
+          std::cerr << "--accepting rule at line " << yy_rule_linenum[yy_act] << "(\"" << yytext
+                    << "\")\n";
+        else if (yy_act == 102)
+          std::cerr << "--accepting default rule (\"" << yytext << "\")\n";
+        else if (yy_act == 103)
+          std::cerr << "--(end of buffer or a NUL)\n";
+        else
+          std::cerr << "--EOF (start condition " << YY_START << ")\n";
+      }
+
+      switch (yy_act) { /* beginning of action switch */
+                        /* %% [13.0] actions go here */
+      case 0:           /* must back up */
+        /* undo the effects of YY_DO_BEFORE_ACTION */
+        *yy_cp           = (yy_hold_char);
+        yy_cp            = (yy_last_accepting_cpos);
+        yy_current_state = (yy_last_accepting_state);
+        goto yy_find_action;
+
+      case 1:
+        YY_RULE_SETUP { BEGIN(INITIAL); }
+        YY_BREAK
+      case 2:
+      case 3:
+        YY_RULE_SETUP
+        {
+          if (echo)
+            ECHO;
+        }
+        YY_BREAK
+      case 4:
+        /* rule 4 can match eol */
+        YY_RULE_SETUP
+        {
+          if (echo)
+            ECHO;
+          aprepro.ap_file_list.top().lineno++;
+        }
+        YY_BREAK
+
+      case 5:
+        YY_RULE_SETUP { BEGIN(VERBATIM); }
+        YY_BREAK
+      case 6:
+      case 7:
+        YY_RULE_SETUP { echo = true; }
+        YY_BREAK
+      case 8:
+      case 9:
+        YY_RULE_SETUP { echo = false; }
+        YY_BREAK
+      case 10:
+        YY_RULE_SETUP { aprepro.stateImmutable = true; }
+        YY_BREAK
+      case 11:
+        YY_RULE_SETUP { aprepro.stateImmutable = aprepro.ap_options.immutable; }
+        YY_BREAK
+      case 12:
+        YY_RULE_SETUP
+        {
+          BEGIN(GET_LOOP_VAR);
           if (aprepro.ap_options.debugging)
-            std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count << " in file "
+            std::cerr << "DEBUG LOOP - Found loop begin test " << yytext << " in file "
                       << aprepro.ap_file_list.top().name << " at line "
                       << aprepro.ap_file_list.top().lineno << "\n";
-
-          tmp_file = new std::fstream(temp_f, std::ios::out);
-          loop_lvl++;
-          BEGIN(LOOP);
         }
-        aprepro.ap_file_list.top().lineno++;
-        aprepro.isCollectingLoop = true;
-      }
-      YY_BREAK
-    case 15:
-      /* rule 15 can match eol */
-      YY_RULE_SETUP
-      {
-        /* Loop control defined by variable */
-        symrec *s;
-        char *  pt = strchr(yytext, ')');
-        *pt        = '\0';
-        if (!check_valid_var(yytext)) {
-          aprepro.warning("Invalid variable name syntax '" + std::string(yytext) + "'");
-          BEGIN(LOOP_SKIP);
-        }
-        else {
-          s = aprepro.getsym(yytext);
+        YY_BREAK
 
-          if (s == nullptr ||
-              (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
+      case 13:
+      /* rule 13 can match eol */
+      case 14:
+        /* rule 14 can match eol */
+        YY_RULE_SETUP
+        {
+          aprepro.ap_file_list.top().lineno++;
+          /* Loop control defined by integer */
+          char *pt = strchr(yytext, ')');
+          *pt      = '\0';
+          sscanf(yytext, "%lf", &yylval->val);
+
+          if (yylval->val <= 0) {
             BEGIN(LOOP_SKIP);
           }
           else { /* Value defined and != 0. */
             temp_f = get_temp_filename();
-            SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
-            aprepro.ap_file_list.push(new_file);
-
+            SEAMS::file_rec new_file(temp_f, 0, true, (int)yylval->val);
             if (aprepro.ap_options.debugging)
               std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
                         << " in file " << aprepro.ap_file_list.top().name << " at line "
-                        << aprepro.ap_file_list.top().lineno << "\n";
+                        << aprepro.ap_file_list.top().lineno - 1 << "\n";
+
+            outer_file = &aprepro.ap_file_list.top();
+            aprepro.ap_file_list.push(new_file);
 
             tmp_file = new std::fstream(temp_f, std::ios::out);
             loop_lvl++;
             BEGIN(LOOP);
           }
+          aprepro.isCollectingLoop = true;
         }
-        aprepro.ap_file_list.top().lineno++;
-        aprepro.isCollectingLoop = true;
-      }
-      YY_BREAK
-
-    case 16:
-      /* rule 16 can match eol */
-      YY_RULE_SETUP
-      {
-        aprepro.ap_file_list.top().lineno++;
-        if (loop_lvl > 0)
-          --loop_lvl;
-
-        if (loop_lvl == 0) {
-          BEGIN(INITIAL);
-          tmp_file->close();
-          delete tmp_file;
-
-          if (!aprepro.doLoopSubstitution)
-            yy_push_state(VERBATIM);
-
-          aprepro.isCollectingLoop = false;
-
-          yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
-          yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(yyin, YY_BUF_SIZE));
-          curr_index = 0;
-        }
-        else {
-          (*tmp_file) << yytext;
-        }
-      }
-      YY_BREAK
-    case 17:
-      /* rule 17 can match eol */
-      YY_RULE_SETUP
-      {
-        loop_lvl++; /* Nested Loop */
-        (*tmp_file) << yytext;
-        aprepro.ap_file_list.top().lineno++;
-      }
-      YY_BREAK
-    case 18:
-      /* rule 18 can match eol */
-      YY_RULE_SETUP
-      {
-        if (aprepro.ap_options.interactive || aprepro.string_interactive()) {
-          aprepro.warning("Aborting loop(s).", false);
-
-          // Leave the looping state and remove the loop file
-          BEGIN(INITIAL);
-          tmp_file->close();
-          delete tmp_file;
-
-          if (aprepro.ap_file_list.top().tmp_file) {
-            remove(aprepro.ap_file_list.top().name.c_str());
-            aprepro.ap_file_list.pop();
-          }
-
-          loop_lvl                 = 0;
-          aprepro.isCollectingLoop = false;
-        }
-      }
-      YY_BREAK
-    case 19:
-      /* rule 19 can match eol */
-      YY_RULE_SETUP
-      {
-        (*tmp_file) << yytext;
-        aprepro.ap_file_list.top().lineno++;
-      }
-      YY_BREAK
-
-    case 20:
-      /* rule 20 can match eol */
-      YY_RULE_SETUP
-      {
-        aprepro.ap_file_list.top().lineno++;
-        if (loop_lvl > 0)
-          --loop_lvl;
-
-        if (loop_lvl == 0) {
-          BEGIN(INITIAL);
-          aprepro.isCollectingLoop = false;
-        }
-      }
-      YY_BREAK
-    case 21:
-      /* rule 21 can match eol */
-      YY_RULE_SETUP
-      {
-        loop_lvl++; /* Nested Loop */
-        aprepro.ap_file_list.top().lineno++;
-      }
-      YY_BREAK
-    case 22:
-      /* rule 22 can match eol */
-      YY_RULE_SETUP
-      {
-        if (aprepro.ap_options.interactive || aprepro.string_interactive()) {
-          aprepro.warning("Aborting loops(s).", false);
-
-          // Leave the looping state
-          BEGIN(INITIAL);
-
-          loop_lvl                 = 0;
-          aprepro.isCollectingLoop = false;
-        }
-      }
-      YY_BREAK
-    case 23:
-      /* rule 23 can match eol */
-      YY_RULE_SETUP { aprepro.ap_file_list.top().lineno++; }
-      YY_BREAK
-
-    case 24:
-      /* rule 24 can match eol */
-      YY_RULE_SETUP
-      {
-        yyless(0);
-        curr_index = 0;
-        BEGIN(INITIAL);
-        switch_skip_to_endcase = false;
-      }
-      YY_BREAK
-    case 25:
-      /* rule 25 can match eol */
-      YY_RULE_SETUP
-      {
-        aprepro.ap_file_list.top().lineno++;
-        if (!switch_active) {
-          yyerror("default statement found outside switch statement.");
-        }
-
-        if (!switch_case_run) {
-          switch_case_run = true;
-          BEGIN(INITIAL);
-          switch_skip_to_endcase = false;
-          if (aprepro.ap_options.debugging)
-            fprintf(stderr, "DEBUG SWITCH: 'default' code executing at line %d\n",
-                    aprepro.ap_file_list.top().lineno);
-        }
-        else {
-          if (aprepro.ap_options.debugging)
-            fprintf(stderr,
-                    "DEBUG SWITCH: 'default' not executing since a previous case already ran at "
-                    "line %d\n",
-                    aprepro.ap_file_list.top().lineno);
-
-          /* Need to skip all code until end of case */
-          BEGIN(END_CASE_SKIP);
-        }
-      }
-      YY_BREAK
-    case 26:
-      /* rule 26 can match eol */
-      YY_RULE_SETUP
-      {
-        aprepro.ap_file_list.top().lineno++;
-        BEGIN(INITIAL);
-        switch_active          = false;
-        switch_skip_to_endcase = false;
-        suppress_nl            = false;
-        if (aprepro.ap_options.debugging)
-          fprintf(stderr, "DEBUG SWITCH: 'endswitch' at line %d\n",
-                  aprepro.ap_file_list.top().lineno);
-      }
-      YY_BREAK
-    case 27:
-      /* rule 27 can match eol */
-      YY_RULE_SETUP { aprepro.ap_file_list.top().lineno++; }
-      YY_BREAK
-    case 28:
-      /* rule 28 can match eol */
-      YY_RULE_SETUP
-      {
-        aprepro.ap_file_list.top().lineno++;
-        if (!switch_active) {
-          yyerror("endswitch statement found without matching switch.");
-        }
-        switch_active          = false;
-        switch_skip_to_endcase = false;
-      }
-      YY_BREAK
-
-    /* This restores the old behavior of ifdef and ifndef
-     * where they would eat up any leading whitespace on
-     * a line.
-     */
-    case 29:
-      YY_RULE_SETUP
-      {
-        // Used to avoid undefined variable warnings in old ifdef/ifndef construct
-        aprepro.inIfdefGetvar = true;
-        unput('(');
-        unput('f');
-        unput('e');
-        unput('d');
-        unput('f');
-        unput('i');
-        unput('_');
-        unput('{');
-      }
-      YY_BREAK
-    case 30:
-      YY_RULE_SETUP
-      {
-        // Used to avoid undefined variable warnings in old ifdef/ifndef construct
-        aprepro.inIfdefGetvar = true;
-        unput('(');
-        unput('f');
-        unput('e');
-        unput('d');
-        unput('n');
-        unput('f');
-        unput('i');
-        unput('_');
-        unput('{');
-      }
-      YY_BREAK
-
-    /* If an if was found while skipping, then eat
-     * that entire if block until endif
-     * found since there is no way that
-     * any of the code in that if block could be executed.
-     * Make sure to handle multiple levels of skipped ifs...
-     *
-     * NOTE: if_lvl was not incremented, so don't need to decrement when
-     *       endif found.
-     */
-    case 31:
-      /* rule 31 can match eol */
-      YY_RULE_SETUP
-      {
-        aprepro.ap_file_list.top().lineno++;
-        if (--if_skip_level == 0)
-          BEGIN(IF_SKIP);
-      }
-      YY_BREAK
-    case 32:
-      /* rule 32 can match eol */
-      YY_RULE_SETUP
-      {
-        aprepro.ap_file_list.top().lineno++;
-        if_skip_level++;
-      }
-      YY_BREAK
-    case 33:
-      /* rule 33 can match eol */
-      YY_RULE_SETUP
-      {
-        aprepro.ap_file_list.top().lineno++;
-        if_skip_level++;
-      }
-      YY_BREAK
-    case 34:
-      /* rule 34 can match eol */
-      YY_RULE_SETUP
-      {
-        aprepro.ap_file_list.top().lineno++;
-        if_skip_level++;
-      }
-      YY_BREAK
-    case 35:
-      /* rule 35 can match eol */
-      YY_RULE_SETUP { aprepro.ap_file_list.top().lineno++; }
-      YY_BREAK
-
-    /* IF an if, ifdef, or ifndef found while skipping, then
-     * skip the entire block up and including the endif.
-     * The (IF_WHILE_SKIP) start condition handles this skipping.
-     */
-    case 36:
-      YY_RULE_SETUP
-      {
-        if (aprepro.ap_options.debugging)
-          fprintf(stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
-                  aprepro.ap_file_list.top().lineno);
-        if_skip_level = 1;
-        BEGIN(IF_WHILE_SKIP);
-      }
-      YY_BREAK
-    case 37:
-      YY_RULE_SETUP
-      {
-        if (aprepro.ap_options.debugging)
-          fprintf(stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
-                  aprepro.ap_file_list.top().lineno);
-        if_skip_level = 1;
-        BEGIN(IF_WHILE_SKIP);
-      }
-      YY_BREAK
-    case 38:
-      YY_RULE_SETUP
-      {
-        if (aprepro.ap_options.debugging)
-          fprintf(stderr, "DEBUG IF: 'ifndef'  found while skipping at line %d\n",
-                  aprepro.ap_file_list.top().lineno);
-        if_skip_level = 1;
-        BEGIN(IF_WHILE_SKIP);
-      }
-      YY_BREAK
-
-    case 39:
-      /* rule 39 can match eol */
-      YY_RULE_SETUP
-      {
-        aprepro.ap_file_list.top().lineno++;
-        if (aprepro.ap_options.debugging)
-          fprintf(stderr, "DEBUG IF: 'else'   at level = %d at line %d\n", if_lvl,
-                  aprepro.ap_file_list.top().lineno);
-        if (YY_START == VERBATIM) {
-          if (echo)
-            ECHO;
-        }
-        else if (if_state[if_lvl] == IF_SKIP) {
-          if (!if_case_run[if_lvl]) {
-            BEGIN(INITIAL);
-            if_state[if_lvl]    = INITIAL;
-            if_case_run[if_lvl] = true;
+        YY_BREAK
+      case 15:
+        /* rule 15 can match eol */
+        YY_RULE_SETUP
+        {
+          aprepro.ap_file_list.top().lineno++;
+          /* Loop control defined by variable */
+          symrec *s;
+          char   *pt = strchr(yytext, ')');
+          *pt        = '\0';
+          if (!check_valid_var(yytext)) {
+            aprepro.warning("Invalid variable name syntax '" + std::string(yytext) + "'");
+            BEGIN(LOOP_SKIP);
           }
           else {
-            BEGIN(IF_SKIP);
-            if_state[if_lvl] = IF_SKIP;
+            s = aprepro.getsym(yytext);
+
+            if (s == nullptr ||
+                (s->type != token::SVAR && s->type != token::IMMSVAR && s->value.var == 0.)) {
+              BEGIN(LOOP_SKIP);
+            }
+            else { /* Value defined and != 0. */
+              if (aprepro.ap_options.debugging)
+                std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
+                          << " in file " << aprepro.ap_file_list.top().name << " at line "
+                          << aprepro.ap_file_list.top().lineno - 1 << "\n";
+
+              temp_f = get_temp_filename();
+              SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
+              outer_file = &aprepro.ap_file_list.top();
+              aprepro.ap_file_list.push(new_file);
+
+              tmp_file = new std::fstream(temp_f, std::ios::out);
+              loop_lvl++;
+              BEGIN(LOOP);
+            }
+          }
+          aprepro.isCollectingLoop = true;
+        }
+        YY_BREAK
+
+      case 16:
+        /* rule 16 can match eol */
+        YY_RULE_SETUP
+        {
+          outer_file->lineno++;
+          if (loop_lvl > 0)
+            --loop_lvl;
+
+          if (loop_lvl == 0) {
+            BEGIN(INITIAL);
+            tmp_file->close();
+            delete tmp_file;
+
+            if (!aprepro.doLoopSubstitution)
+              yy_push_state(VERBATIM);
+
+            aprepro.isCollectingLoop = false;
+
+            yyin = aprepro.open_file(aprepro.ap_file_list.top().name, "r");
+            yyFlexLexer::yypush_buffer_state(yyFlexLexer::yy_create_buffer(yyin, YY_BUF_SIZE));
+            curr_index = 0;
+          }
+          else {
+            (*tmp_file) << yytext;
           }
         }
-        else if (if_state[if_lvl] == INITIAL) {
-          BEGIN(IF_SKIP);
-          if_state[if_lvl] = IF_SKIP;
+        YY_BREAK
+      case 17:
+        /* rule 17 can match eol */
+        YY_RULE_SETUP
+        {
+          loop_lvl++; /* Nested Loop */
+          (*tmp_file) << yytext;
+          outer_file->lineno++;
         }
+        YY_BREAK
+      case 18:
+        /* rule 18 can match eol */
+        YY_RULE_SETUP
+        {
+          if (aprepro.ap_options.interactive || aprepro.string_interactive()) {
+            aprepro.warning("Aborting loop(s).", false);
 
-        /* If neither is true, this is a nested
-           if that should be skipped */
-      }
-      YY_BREAK
+            // Leave the looping state and remove the loop file
+            BEGIN(INITIAL);
+            tmp_file->close();
+            delete tmp_file;
 
-    case 40:
-      /* rule 40 can match eol */
-      YY_RULE_SETUP
-      {
-        /* If any previous 'block' of this if has executed, then
-         * just skip this block; otherwise see if condition is
-         * true and execute this block
-         */
-        if (aprepro.ap_options.debugging)
-          fprintf(stderr, "DEBUG IF: 'elseif'   at level = %d at line %d\n", if_lvl,
-                  aprepro.ap_file_list.top().lineno);
+            if (aprepro.ap_file_list.top().tmp_file) {
+              remove(aprepro.ap_file_list.top().name.c_str());
+              aprepro.ap_file_list.pop();
+            }
 
-        if (if_case_run[if_lvl]) { /* A previous else/elseif has run */
+            loop_lvl                 = 0;
+            aprepro.isCollectingLoop = false;
+          }
+        }
+        YY_BREAK
+      case 19:
+        /* rule 19 can match eol */
+        YY_RULE_SETUP
+        {
+          (*tmp_file) << yytext;
+          outer_file->lineno++;
+        }
+        YY_BREAK
+
+      case 20:
+        /* rule 20 can match eol */
+        YY_RULE_SETUP
+        {
           aprepro.ap_file_list.top().lineno++;
-          /* Already in IF_SKIP, so don't need to change state */
+          if (loop_lvl > 0)
+            --loop_lvl;
+
+          if (loop_lvl == 0) {
+            BEGIN(INITIAL);
+            aprepro.isCollectingLoop = false;
+          }
         }
-        else {
-          /* Need to check the elseif condition; push back and parse */
+        YY_BREAK
+      case 21:
+        /* rule 21 can match eol */
+        YY_RULE_SETUP
+        {
+          loop_lvl++; /* Nested Loop */
+          aprepro.ap_file_list.top().lineno++;
+        }
+        YY_BREAK
+      case 22:
+        /* rule 22 can match eol */
+        YY_RULE_SETUP
+        {
+          if (aprepro.ap_options.interactive || aprepro.string_interactive()) {
+            aprepro.warning("Aborting loops(s).", false);
+
+            // Leave the looping state
+            BEGIN(INITIAL);
+
+            loop_lvl                 = 0;
+            aprepro.isCollectingLoop = false;
+          }
+        }
+        YY_BREAK
+      case 23:
+        /* rule 23 can match eol */
+        YY_RULE_SETUP
+        { /* Do not increment line count */
+          ;
+        }
+        YY_BREAK
+
+      case 24:
+        /* rule 24 can match eol */
+        YY_RULE_SETUP
+        {
           yyless(0);
           curr_index = 0;
           BEGIN(INITIAL);
-          if_state[if_lvl] = INITIAL;
+          switch_skip_to_endcase = false;
         }
-      }
-      YY_BREAK
-    case 41:
-    case 42:
-    case 43:
-    case 44:
-      YY_RULE_SETUP { ; }
-      YY_BREAK
-    case 45:
-      /* rule 45 can match eol */
-      YY_RULE_SETUP { aprepro.ap_file_list.top().lineno++; }
-      YY_BREAK
-
-    case 46:
-      /* rule 46 can match eol */
-      YY_RULE_SETUP
-      {
-        aprepro.ap_file_list.top().lineno++;
-
-        if (YY_START == VERBATIM) {
-          if (echo)
-            ECHO;
-        }
-        else {
-          if (if_state[if_lvl] == IF_SKIP || if_state[if_lvl] == INITIAL) {
-            BEGIN(INITIAL);
-            suppress_nl = false;
-          }
-          /* If neither is true, this is a nested
-             if that should be skipped */
-          if (aprepro.ap_options.debugging)
-            printf("DEBUG IF: 'endif'  at level = %d at line %d\n", if_lvl,
-                   aprepro.ap_file_list.top().lineno);
-          if (--if_lvl < 0) {
-            if_lvl = 0;
-            yyerror("Improperly Nested ifdef/ifndef statements");
-          }
-          /* Ignore endif if not skipping */
-        }
-      }
-      YY_BREAK
-    case 47:
-      YY_RULE_SETUP
-      {
-        BEGIN(GET_FILENAME);
-        file_must_exist = true;
-      }
-      YY_BREAK
-    case 48:
-      YY_RULE_SETUP
-      {
-        BEGIN(GET_FILENAME);
-        file_must_exist = false;
-      }
-      YY_BREAK
-    case 49:
-      /* rule 49 can match eol */
-      YY_RULE_SETUP
-      {
-        BEGIN(INITIAL);
+        YY_BREAK
+      case 25:
+        /* rule 25 can match eol */
+        YY_RULE_SETUP
         {
-          symrec *s;
-          int     quoted = 0;
-          char *  pt     = strchr(yytext, ')');
-          *pt            = '\0';
-          /* Check to see if surrounded by double quote */
-          if ((pt = strchr(yytext, '"')) != nullptr) {
-            yytext++;
-            quoted = 1;
-          }
-          if ((pt = strrchr(yytext, '"')) != nullptr) {
-            *pt    = '\0';
-            quoted = 1;
+          if (!switch_active) {
+            yyerror("default statement found outside switch statement.");
           }
 
-          if (quoted == 0) {
-            /* See if this is an aprepro variable referring to a name */
-            s = aprepro.getsym(yytext);
-            if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
-              pt = yytext;
+          if (!switch_case_run) {
+            switch_case_run = true;
+            BEGIN(INITIAL);
+            switch_skip_to_endcase = false;
+            if (aprepro.ap_options.debugging)
+              fprintf(stderr, "DEBUG SWITCH: 'default' code executing at line %d\n",
+                      aprepro.ap_file_list.top().lineno);
+          }
+          else {
+            if (aprepro.ap_options.debugging)
+              fprintf(stderr,
+                      "DEBUG SWITCH: 'default' not executing since a previous case already ran at "
+                      "line %d\n",
+                      aprepro.ap_file_list.top().lineno);
+
+            /* Need to skip all code until end of case */
+            BEGIN(END_CASE_SKIP);
+          }
+        }
+        YY_BREAK
+      case 26:
+        /* rule 26 can match eol */
+        YY_RULE_SETUP
+        {
+          aprepro.ap_file_list.top().lineno++;
+          BEGIN(INITIAL);
+          switch_active          = false;
+          switch_skip_to_endcase = false;
+          suppress_nl            = false;
+          if (aprepro.ap_options.debugging)
+            fprintf(stderr, "DEBUG SWITCH: 'endswitch' at line %d\n",
+                    aprepro.ap_file_list.top().lineno);
+        }
+        YY_BREAK
+      case 27:
+        /* rule 27 can match eol */
+        YY_RULE_SETUP { aprepro.ap_file_list.top().lineno++; }
+        YY_BREAK
+      case 28:
+        /* rule 28 can match eol */
+        YY_RULE_SETUP
+        {
+          aprepro.ap_file_list.top().lineno++;
+          if (!switch_active) {
+            yyerror("endswitch statement found without matching switch.");
+          }
+          switch_active          = false;
+          switch_skip_to_endcase = false;
+        }
+        YY_BREAK
+
+      /* This restores the old behavior of ifdef and ifndef
+       * where they would eat up any leading whitespace on
+       * a line.
+       */
+      case 29:
+        YY_RULE_SETUP
+        {
+          // Used to avoid undefined variable warnings in old ifdef/ifndef construct
+          aprepro.inIfdefGetvar = true;
+          unput('(');
+          unput('f');
+          unput('e');
+          unput('d');
+          unput('f');
+          unput('i');
+          unput('_');
+          unput('{');
+        }
+        YY_BREAK
+      case 30:
+        YY_RULE_SETUP
+        {
+          // Used to avoid undefined variable warnings in old ifdef/ifndef construct
+          aprepro.inIfdefGetvar = true;
+          unput('(');
+          unput('f');
+          unput('e');
+          unput('d');
+          unput('n');
+          unput('f');
+          unput('i');
+          unput('_');
+          unput('{');
+        }
+        YY_BREAK
+
+      /* If an if was found while skipping, then eat
+       * that entire if block until endif
+       * found since there is no way that
+       * any of the code in that if block could be executed.
+       * Make sure to handle multiple levels of skipped ifs...
+       *
+       * NOTE: if_lvl was not incremented, so don't need to decrement when
+       *       endif found.
+       */
+      case 31:
+        /* rule 31 can match eol */
+        YY_RULE_SETUP
+        {
+          aprepro.ap_file_list.top().lineno++;
+          if (--if_skip_level == 0)
+            BEGIN(IF_SKIP);
+        }
+        YY_BREAK
+      case 32:
+        /* rule 32 can match eol */
+        YY_RULE_SETUP
+        {
+          aprepro.ap_file_list.top().lineno++;
+          if_skip_level++;
+        }
+        YY_BREAK
+      case 33:
+        /* rule 33 can match eol */
+        YY_RULE_SETUP
+        {
+          aprepro.ap_file_list.top().lineno++;
+          if_skip_level++;
+        }
+        YY_BREAK
+      case 34:
+        /* rule 34 can match eol */
+        YY_RULE_SETUP
+        {
+          aprepro.ap_file_list.top().lineno++;
+          if_skip_level++;
+        }
+        YY_BREAK
+      case 35:
+        /* rule 35 can match eol */
+        YY_RULE_SETUP { aprepro.ap_file_list.top().lineno++; }
+        YY_BREAK
+
+      /* IF an if, ifdef, or ifndef found while skipping, then
+       * skip the entire block up and including the endif.
+       * The (IF_WHILE_SKIP) start condition handles this skipping.
+       */
+      case 36:
+        YY_RULE_SETUP
+        {
+          if (aprepro.ap_options.debugging)
+            fprintf(stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
+                    aprepro.ap_file_list.top().lineno);
+          if_skip_level = 1;
+          BEGIN(IF_WHILE_SKIP);
+        }
+        YY_BREAK
+      case 37:
+        YY_RULE_SETUP
+        {
+          if (aprepro.ap_options.debugging)
+            fprintf(stderr, "DEBUG IF: 'ifdef'  found while skipping at line %d\n",
+                    aprepro.ap_file_list.top().lineno);
+          if_skip_level = 1;
+          BEGIN(IF_WHILE_SKIP);
+        }
+        YY_BREAK
+      case 38:
+        YY_RULE_SETUP
+        {
+          if (aprepro.ap_options.debugging)
+            fprintf(stderr, "DEBUG IF: 'ifndef'  found while skipping at line %d\n",
+                    aprepro.ap_file_list.top().lineno);
+          if_skip_level = 1;
+          BEGIN(IF_WHILE_SKIP);
+        }
+        YY_BREAK
+
+      case 39:
+        /* rule 39 can match eol */
+        YY_RULE_SETUP
+        {
+          aprepro.ap_file_list.top().lineno++;
+          if (aprepro.ap_options.debugging)
+            fprintf(stderr, "DEBUG IF: 'else'   at level = %d at line %d\n", if_lvl,
+                    aprepro.ap_file_list.top().lineno);
+          if (YY_START == VERBATIM) {
+            if (echo)
+              ECHO;
+          }
+          else if (if_state[if_lvl] == IF_SKIP) {
+            if (!if_case_run[if_lvl]) {
+              BEGIN(INITIAL);
+              if_state[if_lvl]    = INITIAL;
+              if_case_run[if_lvl] = true;
             }
             else {
-              pt = (char *)s->value.svar.c_str();
+              BEGIN(IF_SKIP);
+              if_state[if_lvl] = IF_SKIP;
             }
           }
-          else {
-            pt = yytext;
+          else if (if_state[if_lvl] == INITIAL) {
+            BEGIN(IF_SKIP);
+            if_state[if_lvl] = IF_SKIP;
           }
 
-          add_include_file(pt, file_must_exist);
+          /* If neither is true, this is a nested
+             if that should be skipped */
+        }
+        YY_BREAK
 
-          if (!aprepro.doIncludeSubstitution)
-            yy_push_state(VERBATIM);
+      case 40:
+        /* rule 40 can match eol */
+        YY_RULE_SETUP
+        {
+          /* If any previous 'block' of this if has executed, then
+           * just skip this block; otherwise see if condition is
+           * true and execute this block
+           */
+          if (aprepro.ap_options.debugging)
+            fprintf(stderr, "DEBUG IF: 'elseif'   at level = %d at line %d\n", if_lvl,
+                    aprepro.ap_file_list.top().lineno);
 
+          if (if_case_run[if_lvl]) { /* A previous else/elseif has run */
+            aprepro.ap_file_list.top().lineno++;
+            /* Already in IF_SKIP, so don't need to change state */
+          }
+          else {
+            /* Need to check the elseif condition; push back and parse */
+            yyless(0);
+            curr_index = 0;
+            BEGIN(INITIAL);
+            if_state[if_lvl] = INITIAL;
+          }
+        }
+        YY_BREAK
+      case 41:
+      case 42:
+      case 43:
+      case 44:
+        YY_RULE_SETUP { ; }
+        YY_BREAK
+      case 45:
+        /* rule 45 can match eol */
+        YY_RULE_SETUP { aprepro.ap_file_list.top().lineno++; }
+        YY_BREAK
+
+      case 46:
+        /* rule 46 can match eol */
+        YY_RULE_SETUP
+        {
+
+          if (YY_START == VERBATIM) {
+            if (echo)
+              ECHO;
+          }
+          else {
+            if (if_state[if_lvl] == IF_SKIP || if_state[if_lvl] == INITIAL) {
+              BEGIN(INITIAL);
+              suppress_nl = false;
+            }
+            /* If neither is true, this is a nested
+               if that should be skipped */
+            if (aprepro.ap_options.debugging)
+              printf("DEBUG IF: 'endif'  at level = %d at line %d\n", if_lvl,
+                     aprepro.ap_file_list.top().lineno);
+            if (--if_lvl < 0) {
+              if_lvl = 0;
+              yyerror("Improperly Nested ifdef/ifndef statements");
+            }
+            /* Ignore endif if not skipping */
+          }
           aprepro.ap_file_list.top().lineno++;
         }
-      }
-      YY_BREAK
-    case 50:
-    case 51:
-      YY_RULE_SETUP
-      {
-        sscanf(yytext, "%lf", &yylval->val);
-        return (token::NUM);
-      }
-      YY_BREAK
-    case 52:
-      YY_RULE_SETUP; // Empty rule
-      YY_BREAK
-    case 53:
-      YY_RULE_SETUP
-      {
-        symrec *s;
-        s = aprepro.getsym(yytext);
-        if (s == nullptr)
-          s = aprepro.putsym(yytext, SEAMS::Aprepro::SYMBOL_TYPE::UNDEFINED_VARIABLE, 0);
-        yylval->tptr = s;
-        return ((token::yytokentype)s->type);
-      }
-      YY_BREAK
-    case 54:
-      YY_RULE_SETUP
-      return (token::EQUAL);
-      YY_BREAK
-    case 55:
-      YY_RULE_SETUP
-      return (token::EQ_PLUS);
-      YY_BREAK
-    case 56:
-      YY_RULE_SETUP
-      return (token::EQ_MINUS);
-      YY_BREAK
-    case 57:
-      YY_RULE_SETUP
-      return (token::EQ_TIME);
-      YY_BREAK
-    case 58:
-      YY_RULE_SETUP
-      return (token::EQ_DIV);
-      YY_BREAK
-    case 59:
-      YY_RULE_SETUP
-      return (token::EQ_POW);
-      YY_BREAK
-    case 60:
-      YY_RULE_SETUP
-      return (token::EQ_POW);
-      YY_BREAK
-    case 61:
-      YY_RULE_SETUP
-      return (token::INC);
-      YY_BREAK
-    case 62:
-      YY_RULE_SETUP
-      return (token::DEC);
-      YY_BREAK
-    case 63:
-      YY_RULE_SETUP
-      return (token::PLU);
-      YY_BREAK
-    case 64:
-      YY_RULE_SETUP
-      return (token::SUB);
-      YY_BREAK
-    case 65:
-      YY_RULE_SETUP
-      return (token::TIM);
-      YY_BREAK
-    case 66:
-      YY_RULE_SETUP
-      return (token::TIM); /* ~ is same as multiply */
-      YY_BREAK
-    case 67:
-      YY_RULE_SETUP
-      return (token::CONCAT); /* String concatenation */
-      YY_BREAK
-    case 68:
-      YY_RULE_SETUP
-      return (token::DIV);
-      YY_BREAK
-    case 69:
-      YY_RULE_SETUP
-      return (token::MOD);
-      YY_BREAK
-    case 70:
-      YY_RULE_SETUP
-      return (token::POW);
-      YY_BREAK
-    case 71:
-      YY_RULE_SETUP
-      return (token::POW);
-      YY_BREAK
-    case 72:
-      /* rule 72 can match eol */
-      YY_RULE_SETUP
-      aprepro.ap_file_list.top().lineno++;
-      YY_BREAK
-    case 73:
-      YY_RULE_SETUP
-      return (token::LPAR);
-      YY_BREAK
-    case 74:
-      YY_RULE_SETUP
-      return (token::RPAR);
-      YY_BREAK
-    case 75:
-      YY_RULE_SETUP
-      return (token::COMMA);
-      YY_BREAK
-    case 76:
-      YY_RULE_SETUP
-      return (token::SEMI);
-      YY_BREAK
-    case 77:
-      YY_RULE_SETUP
-      return (token::COLON);
-      YY_BREAK
-    case 78:
-      YY_RULE_SETUP
-      return (token::QUEST);
-      YY_BREAK
-    case 79:
-      YY_RULE_SETUP
-      return (token::LT);
-      YY_BREAK
-    case 80:
-      YY_RULE_SETUP
-      return (token::GT);
-      YY_BREAK
-    case 81:
-      YY_RULE_SETUP
-      return (token::LE);
-      YY_BREAK
-    case 82:
-      YY_RULE_SETUP
-      return (token::GE);
-      YY_BREAK
-    case 83:
-      YY_RULE_SETUP
-      return (token::EQ);
-      YY_BREAK
-    case 84:
-      YY_RULE_SETUP
-      return (token::NE);
-      YY_BREAK
-    case 85:
-      YY_RULE_SETUP
-      return (token::LAND);
-      YY_BREAK
-    case 86:
-      YY_RULE_SETUP
-      return (token::LOR);
-      YY_BREAK
-    case 87:
-      YY_RULE_SETUP
-      return (token::NOT);
-      YY_BREAK
-    case 88:
-      YY_RULE_SETUP
-      return (token::LBRACK);
-      YY_BREAK
-    case 89:
-      YY_RULE_SETUP
-      return (token::RBRACK);
-      YY_BREAK
-    case 90:
-      /* rule 90 can match eol */
-      YY_RULE_SETUP
-      {
-        char *pt = strrchr(yytext, '"');
-        *pt      = '\0';
-        new_string(yytext + 1, &yylval->string);
-        return token::QSTRING;
-      }
-      YY_BREAK
-    case 91:
-      /* rule 91 can match eol */
-      YY_RULE_SETUP
-      {
-        char *pt = strrchr(yytext, '\'');
-        *pt      = '\0';
-        new_string(yytext + 1, &yylval->string);
-        return token::QSTRING;
-      }
-      YY_BREAK
-    case 92:
-      YY_RULE_SETUP
-      {
-        // Add to the history string
-        save_history_string();
-
-        if (switch_skip_to_endcase)
-          BEGIN(END_CASE_SKIP);
-        else
-          BEGIN(if_state[if_lvl]);
-        return (token::RBRACE);
-      }
-      YY_BREAK
-    case 93:
-      YY_RULE_SETUP
-      {
-        if (echo)
-          LexerOutput("{", 1);
-      }
-      YY_BREAK
-    case 94:
-      YY_RULE_SETUP
-      {
-        if (echo)
-          LexerOutput("}", 1);
-      }
-      YY_BREAK
-    case 95:
-      YY_RULE_SETUP
-      {
-        // Check if we need to save the substitution history first.
-        if (aprepro.ap_options.keep_history && (aprepro.ap_file_list.top().name != "_string_")) {
-          if (curr_index > (ssize_t)yyleng)
-            hist_start = curr_index - yyleng;
-          else
-            hist_start = 0;
+        YY_BREAK
+      case 47:
+        YY_RULE_SETUP
+        {
+          BEGIN(GET_FILENAME);
+          file_must_exist = true;
         }
+        YY_BREAK
+      case 48:
+        YY_RULE_SETUP
+        {
+          BEGIN(GET_FILENAME);
+          file_must_exist = false;
+        }
+        YY_BREAK
+      case 49:
+        /* rule 49 can match eol */
+        YY_RULE_SETUP
+        {
+          aprepro.ap_file_list.top().lineno++;
+          BEGIN(INITIAL);
+          {
+            symrec *s;
+            int     quoted = 0;
+            char   *pt     = strchr(yytext, ')');
+            *pt            = '\0';
+            /* Check to see if surrounded by double quote */
+            if ((pt = strchr(yytext, '"')) != nullptr) {
+              yytext++;
+              quoted = 1;
+            }
+            if ((pt = strrchr(yytext, '"')) != nullptr) {
+              *pt    = '\0';
+              quoted = 1;
+            }
 
-        BEGIN(PARSING);
+            if (quoted == 0) {
+              /* See if this is an aprepro variable referring to a name */
+              s = aprepro.getsym(yytext);
+              if (s == nullptr || (s->type != token::SVAR && s->type != token::IMMSVAR)) {
+                pt = yytext;
+              }
+              else {
+                pt = (char *)s->value.svar.c_str();
+              }
+            }
+            else {
+              pt = yytext;
+            }
 
-        return (token::LBRACE);
-      }
-      YY_BREAK
-    case 96:
-    case 97:
-      YY_RULE_SETUP
-      {
-        if (aprepro.ap_options.end_on_exit) {
+            add_include_file(pt, file_must_exist);
+
+            if (!aprepro.doIncludeSubstitution)
+              yy_push_state(VERBATIM);
+
+            aprepro.ap_file_list.top().lineno++;
+          }
+        }
+        YY_BREAK
+      case 50:
+      case 51:
+        YY_RULE_SETUP
+        {
+          sscanf(yytext, "%lf", &yylval->val);
+          return (token::NUM);
+        }
+        YY_BREAK
+      case 52:
+        YY_RULE_SETUP; // Empty rule
+        YY_BREAK
+      case 53:
+        YY_RULE_SETUP
+        {
+          symrec *s;
+          s = aprepro.getsym(yytext);
+          if (s == nullptr)
+            s = aprepro.putsym(yytext, SEAMS::Aprepro::SYMBOL_TYPE::UNDEFINED_VARIABLE, false);
+          yylval->tptr = s;
+          return ((token::yytokentype)s->type);
+        }
+        YY_BREAK
+      case 54:
+        YY_RULE_SETUP
+        return (token::EQUAL);
+        YY_BREAK
+      case 55:
+        YY_RULE_SETUP
+        return (token::EQ_PLUS);
+        YY_BREAK
+      case 56:
+        YY_RULE_SETUP
+        return (token::EQ_MINUS);
+        YY_BREAK
+      case 57:
+        YY_RULE_SETUP
+        return (token::EQ_TIME);
+        YY_BREAK
+      case 58:
+        YY_RULE_SETUP
+        return (token::EQ_DIV);
+        YY_BREAK
+      case 59:
+        YY_RULE_SETUP
+        return (token::EQ_POW);
+        YY_BREAK
+      case 60:
+        YY_RULE_SETUP
+        return (token::EQ_POW);
+        YY_BREAK
+      case 61:
+        YY_RULE_SETUP
+        return (token::INC);
+        YY_BREAK
+      case 62:
+        YY_RULE_SETUP
+        return (token::DEC);
+        YY_BREAK
+      case 63:
+        YY_RULE_SETUP
+        return (token::PLU);
+        YY_BREAK
+      case 64:
+        YY_RULE_SETUP
+        return (token::SUB);
+        YY_BREAK
+      case 65:
+        YY_RULE_SETUP
+        return (token::TIM);
+        YY_BREAK
+      case 66:
+        YY_RULE_SETUP
+        return (token::TIM); /* ~ is same as multiply */
+        YY_BREAK
+      case 67:
+        YY_RULE_SETUP
+        return (token::CONCAT); /* String concatenation */
+        YY_BREAK
+      case 68:
+        YY_RULE_SETUP
+        return (token::DIV);
+        YY_BREAK
+      case 69:
+        YY_RULE_SETUP
+        return (token::MOD);
+        YY_BREAK
+      case 70:
+        YY_RULE_SETUP
+        return (token::POW);
+        YY_BREAK
+      case 71:
+        YY_RULE_SETUP
+        return (token::POW);
+        YY_BREAK
+      case 72:
+        /* rule 72 can match eol */
+        YY_RULE_SETUP
+        aprepro.ap_file_list.top().lineno++;
+        YY_BREAK
+      case 73:
+        YY_RULE_SETUP
+        return (token::LPAR);
+        YY_BREAK
+      case 74:
+        YY_RULE_SETUP
+        return (token::RPAR);
+        YY_BREAK
+      case 75:
+        YY_RULE_SETUP
+        return (token::COMMA);
+        YY_BREAK
+      case 76:
+        YY_RULE_SETUP
+        return (token::SEMI);
+        YY_BREAK
+      case 77:
+        YY_RULE_SETUP
+        return (token::COLON);
+        YY_BREAK
+      case 78:
+        YY_RULE_SETUP
+        return (token::QUEST);
+        YY_BREAK
+      case 79:
+        YY_RULE_SETUP
+        return (token::LT);
+        YY_BREAK
+      case 80:
+        YY_RULE_SETUP
+        return (token::GT);
+        YY_BREAK
+      case 81:
+        YY_RULE_SETUP
+        return (token::LE);
+        YY_BREAK
+      case 82:
+        YY_RULE_SETUP
+        return (token::GE);
+        YY_BREAK
+      case 83:
+        YY_RULE_SETUP
+        return (token::EQ);
+        YY_BREAK
+      case 84:
+        YY_RULE_SETUP
+        return (token::NE);
+        YY_BREAK
+      case 85:
+        YY_RULE_SETUP
+        return (token::LAND);
+        YY_BREAK
+      case 86:
+        YY_RULE_SETUP
+        return (token::LOR);
+        YY_BREAK
+      case 87:
+        YY_RULE_SETUP
+        return (token::NOT);
+        YY_BREAK
+      case 88:
+        YY_RULE_SETUP
+        return (token::LBRACK);
+        YY_BREAK
+      case 89:
+        YY_RULE_SETUP
+        return (token::RBRACK);
+        YY_BREAK
+      case 90:
+        /* rule 90 can match eol */
+        YY_RULE_SETUP
+        {
+          char *pt = strrchr(yytext, '"');
+          *pt      = '\0';
+          new_string(yytext + 1, &yylval->string);
+          return token::QSTRING;
+        }
+        YY_BREAK
+      case 91:
+        /* rule 91 can match eol */
+        YY_RULE_SETUP
+        {
+          char *pt = strrchr(yytext, '\'');
+          *pt      = '\0';
+          new_string(yytext + 1, &yylval->string);
+          return token::QSTRING;
+        }
+        YY_BREAK
+      case 92:
+        YY_RULE_SETUP
+        {
+          // Add to the history string
+          save_history_string();
+
+          if (switch_skip_to_endcase)
+            BEGIN(END_CASE_SKIP);
+          else
+            BEGIN(if_state[if_lvl]);
+          return (token::RBRACE);
+        }
+        YY_BREAK
+      case 93:
+        YY_RULE_SETUP
+        {
+          if (echo)
+            LexerOutput("{", 1);
+        }
+        YY_BREAK
+      case 94:
+        YY_RULE_SETUP
+        {
+          if (echo)
+            LexerOutput("}", 1);
+        }
+        YY_BREAK
+      case 95:
+        YY_RULE_SETUP
+        {
+          // Check if we need to save the substitution history first.
+          if (aprepro.ap_options.keep_history && (aprepro.ap_file_list.top().name != "_string_")) {
+            if (curr_index > (size_t)yyleng)
+              hist_start = curr_index - yyleng;
+            else
+              hist_start = 0;
+          }
+
+          BEGIN(PARSING);
+
+          return (token::LBRACE);
+        }
+        YY_BREAK
+      case 96:
+      case 97:
+        YY_RULE_SETUP
+        {
+          if (aprepro.ap_options.end_on_exit) {
+            if (echo)
+              ECHO;
+            return ((token::yytokentype)-1);
+          }
+          else if (echo)
+            ECHO;
+        }
+        YY_BREAK
+      case 98:
+        YY_RULE_SETUP
+        {
           if (echo)
             ECHO;
-          return ((token::yytokentype)-1);
         }
-        else if (echo)
-          ECHO;
-      }
-      YY_BREAK
-    case 98:
-      YY_RULE_SETUP
-      {
-        if (echo)
-          ECHO;
-      }
-      YY_BREAK
-    case 99:
-    case 100:
-      YY_RULE_SETUP
-      {
-        if (echo && if_state[if_lvl] != IF_SKIP)
-          ECHO;
-      }
-      YY_BREAK
-    case 101:
-      /* rule 101 can match eol */
-      YY_RULE_SETUP
-      {
-        if (echo && !suppress_nl)
-          ECHO;
-        suppress_nl = false;
-        aprepro.ap_file_list.top().lineno++;
-      }
-      YY_BREAK
-    case 102:
-      YY_RULE_SETUP
-      ECHO;
-      YY_BREAK
-    case YY_STATE_EOF(INITIAL):
-    case YY_STATE_EOF(PARSING):
-    case YY_STATE_EOF(GET_FILENAME):
-    case YY_STATE_EOF(IF_SKIP):
-    case YY_STATE_EOF(GET_VAR):
-    case YY_STATE_EOF(VERBATIM):
-    case YY_STATE_EOF(IF_WHILE_SKIP):
-    case YY_STATE_EOF(GET_LOOP_VAR):
-    case YY_STATE_EOF(LOOP):
-    case YY_STATE_EOF(LOOP_SKIP):
-    case YY_STATE_EOF(END_CASE_SKIP): yyterminate();
+        YY_BREAK
+      case 99:
+      case 100:
+        YY_RULE_SETUP
+        {
+          if (echo && if_state[if_lvl] != IF_SKIP)
+            ECHO;
+        }
+        YY_BREAK
+      case 101:
+        /* rule 101 can match eol */
+        YY_RULE_SETUP
+        {
+          if (echo && !suppress_nl)
+            ECHO;
+          suppress_nl = false;
+          aprepro.ap_file_list.top().lineno++;
+        }
+        YY_BREAK
+      case 102:
+        YY_RULE_SETUP
+        ECHO;
+        YY_BREAK
+      case YY_STATE_EOF(INITIAL):
+      case YY_STATE_EOF(PARSING):
+      case YY_STATE_EOF(GET_FILENAME):
+      case YY_STATE_EOF(IF_SKIP):
+      case YY_STATE_EOF(GET_VAR):
+      case YY_STATE_EOF(VERBATIM):
+      case YY_STATE_EOF(IF_WHILE_SKIP):
+      case YY_STATE_EOF(GET_LOOP_VAR):
+      case YY_STATE_EOF(LOOP):
+      case YY_STATE_EOF(LOOP_SKIP):
+      case YY_STATE_EOF(END_CASE_SKIP): yyterminate();
 
-    case YY_END_OF_BUFFER: {
-      /* Amount of text matched not including the EOB char. */
-      int yy_amount_of_matched_text = (int)(yy_cp - (yytext_ptr)) - 1;
+      case YY_END_OF_BUFFER: {
+        /* Amount of text matched not including the EOB char. */
+        int yy_amount_of_matched_text = (int)(yy_cp - (yytext_ptr)) - 1;
 
-      /* Undo the effects of YY_DO_BEFORE_ACTION. */
-      *yy_cp = (yy_hold_char);
-      YY_RESTORE_YY_MORE_OFFSET
+        /* Undo the effects of YY_DO_BEFORE_ACTION. */
+        *yy_cp = (yy_hold_char);
+        YY_RESTORE_YY_MORE_OFFSET
 
-      if (YY_CURRENT_BUFFER_LVALUE->yy_buffer_status == YY_BUFFER_NEW) {
-        /* We're scanning a new file or input source.  It's
-         * possible that this happened because the user
-         * just pointed yyin at a new source and called
-         * yylex().  If so, then we have to assure
-         * consistency between YY_CURRENT_BUFFER and our
-         * globals.  Here is the right place to do so, because
-         * this is the first action (other than possibly a
-         * back-up) that will match for the new input source.
+        if (YY_CURRENT_BUFFER_LVALUE->yy_buffer_status == YY_BUFFER_NEW) {
+          /* We're scanning a new file or input source.  It's
+           * possible that this happened because the user
+           * just pointed yyin at a new source and called
+           * yylex().  If so, then we have to assure
+           * consistency between YY_CURRENT_BUFFER and our
+           * globals.  Here is the right place to do so, because
+           * this is the first action (other than possibly a
+           * back-up) that will match for the new input source.
+           */
+          (yy_n_chars)                               = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
+          YY_CURRENT_BUFFER_LVALUE->yy_input_file    = yyin;
+          YY_CURRENT_BUFFER_LVALUE->yy_buffer_status = YY_BUFFER_NORMAL;
+        }
+
+        /* Note that here we test for yy_c_buf_p "<=" to the position
+         * of the first EOB in the buffer, since yy_c_buf_p will
+         * already have been incremented past the NUL character
+         * (since all states make transitions on EOB to the
+         * end-of-buffer state).  Contrast this with the test
+         * in input().
          */
-        (yy_n_chars)                               = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
-        YY_CURRENT_BUFFER_LVALUE->yy_input_file    = yyin;
-        YY_CURRENT_BUFFER_LVALUE->yy_buffer_status = YY_BUFFER_NORMAL;
-      }
+        if ((yy_c_buf_p) <=
+            &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)]) { /* This was really a NUL. */
+          yy_state_type yy_next_state;
 
-      /* Note that here we test for yy_c_buf_p "<=" to the position
-       * of the first EOB in the buffer, since yy_c_buf_p will
-       * already have been incremented past the NUL character
-       * (since all states make transitions on EOB to the
-       * end-of-buffer state).  Contrast this with the test
-       * in input().
-       */
-      if ((yy_c_buf_p) <=
-          &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)]) { /* This was really a NUL. */
-        yy_state_type yy_next_state;
-
-        (yy_c_buf_p) = (yytext_ptr) + yy_amount_of_matched_text;
-
-        yy_current_state = yy_get_previous_state();
-
-        /* Okay, we're now positioned to make the NUL
-         * transition.  We couldn't have
-         * yy_get_previous_state() go ahead and do it
-         * for us because it doesn't know how to deal
-         * with the possibility of jamming (and we don't
-         * want to build jamming into it because then it
-         * will run more slowly).
-         */
-
-        yy_next_state = yy_try_NUL_trans(yy_current_state);
-
-        yy_bp = (yytext_ptr) + YY_MORE_ADJ;
-
-        if (yy_next_state) {
-          /* Consume the NUL. */
-          yy_cp            = ++(yy_c_buf_p);
-          yy_current_state = yy_next_state;
-          goto yy_match;
-        }
-
-        else {
-          /* %% [14.0] code to do back-up for compressed tables and set up yy_cp goes here */
-          yy_cp = (yy_c_buf_p);
-          goto yy_find_action;
-        }
-      }
-
-      else
-        switch (yy_get_next_buffer()) {
-        case EOB_ACT_END_OF_FILE: {
-          (yy_did_buffer_switch_on_eof) = 0;
-
-          if (yywrap()) {
-            /* Note: because we've taken care in
-             * yy_get_next_buffer() to have set up
-             * yytext, we can now set up
-             * yy_c_buf_p so that if some total
-             * hoser (like flex itself) wants to
-             * call the scanner after we return the
-             * YY_NULL, it'll still work - another
-             * YY_NULL will get returned.
-             */
-            (yy_c_buf_p) = (yytext_ptr) + YY_MORE_ADJ;
-
-            yy_act = YY_STATE_EOF(YY_START);
-            goto do_action;
-          }
-
-          else {
-            if (!(yy_did_buffer_switch_on_eof))
-              YY_NEW_FILE;
-          }
-          break;
-        }
-
-        case EOB_ACT_CONTINUE_SCAN:
           (yy_c_buf_p) = (yytext_ptr) + yy_amount_of_matched_text;
 
           yy_current_state = yy_get_previous_state();
 
-          yy_cp = (yy_c_buf_p);
+          /* Okay, we're now positioned to make the NUL
+           * transition.  We couldn't have
+           * yy_get_previous_state() go ahead and do it
+           * for us because it doesn't know how to deal
+           * with the possibility of jamming (and we don't
+           * want to build jamming into it because then it
+           * will run more slowly).
+           */
+
+          yy_next_state = yy_try_NUL_trans(yy_current_state);
+
           yy_bp = (yytext_ptr) + YY_MORE_ADJ;
-          goto yy_match;
 
-        case EOB_ACT_LAST_MATCH:
-          (yy_c_buf_p) = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)];
+          if (yy_next_state) {
+            /* Consume the NUL. */
+            yy_cp            = ++(yy_c_buf_p);
+            yy_current_state = yy_next_state;
+            goto yy_match;
+          }
 
-          yy_current_state = yy_get_previous_state();
-
-          yy_cp = (yy_c_buf_p);
-          yy_bp = (yytext_ptr) + YY_MORE_ADJ;
-          goto yy_find_action;
+          else {
+            /* %% [14.0] code to do back-up for compressed tables and set up yy_cp goes here */
+            yy_cp = (yy_c_buf_p);
+            goto yy_find_action;
+          }
         }
-      break;
-    }
 
-    default: YY_FATAL_ERROR("fatal flex scanner internal error--no action found");
-    } /* end of action switch */
-  }   /* end of scanning one token */
+        else
+          switch (yy_get_next_buffer()) {
+          case EOB_ACT_END_OF_FILE: {
+            (yy_did_buffer_switch_on_eof) = 0;
+
+            if (yywrap()) {
+              /* Note: because we've taken care in
+               * yy_get_next_buffer() to have set up
+               * yytext, we can now set up
+               * yy_c_buf_p so that if some total
+               * hoser (like flex itself) wants to
+               * call the scanner after we return the
+               * YY_NULL, it'll still work - another
+               * YY_NULL will get returned.
+               */
+              (yy_c_buf_p) = (yytext_ptr) + YY_MORE_ADJ;
+
+              yy_act = YY_STATE_EOF(YY_START);
+              goto do_action;
+            }
+
+            else {
+              if (!(yy_did_buffer_switch_on_eof))
+                YY_NEW_FILE;
+            }
+            break;
+          }
+
+          case EOB_ACT_CONTINUE_SCAN:
+            (yy_c_buf_p) = (yytext_ptr) + yy_amount_of_matched_text;
+
+            yy_current_state = yy_get_previous_state();
+
+            yy_cp = (yy_c_buf_p);
+            yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+            goto yy_match;
+
+          case EOB_ACT_LAST_MATCH:
+            (yy_c_buf_p) = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)];
+
+            yy_current_state = yy_get_previous_state();
+
+            yy_cp = (yy_c_buf_p);
+            yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+            goto yy_find_action;
+          }
+        break;
+      }
+
+      default: YY_FATAL_ERROR("fatal flex scanner internal error--no action found");
+      } /* end of action switch */
+    }   /* end of scanning one token */
+  }     /* end of user's declarations */
 } /* end of yylex */
 /* %ok-for-header */
 
@@ -2523,7 +2527,7 @@ yy_state_type yyFlexLexer::yy_get_previous_state()
 /* %endif */
 {
   yy_state_type yy_current_state;
-  char *        yy_cp;
+  char         *yy_cp;
 
   /* %% [15.0] code to get the start state into yy_current_state goes here */
   yy_current_state = (yy_start);
@@ -2591,7 +2595,7 @@ void yyFlexLexer::yyunput(int c, char *yy_bp)
   *yy_cp = (yy_hold_char);
 
   if (yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2) { /* need to shift things up to make room */
-                                                         /* +2 for EOB chars. */
+    /* +2 for EOB chars. */
     yy_size_t number_to_move = (yy_n_chars) + 2;
     char *dest   = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
     char *source = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
@@ -3160,13 +3164,14 @@ namespace SEAMS {
     aprepro.outputStream.push(out);
   }
 
-  Scanner::~Scanner() {
+  Scanner::~Scanner()
+  {
     while (aprepro.ap_file_list.size() > 1) {
       auto kk = aprepro.ap_file_list.top();
       if (kk.name != "STDIN") {
-	yyFlexLexer::yy_load_buffer_state();
-	delete yyin;
-	yyin = nullptr;
+        yyFlexLexer::yy_load_buffer_state();
+        delete yyin;
+        yyin = nullptr;
       }
       aprepro.ap_file_list.pop();
       yyFlexLexer::yypop_buffer_state();

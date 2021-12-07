@@ -15,18 +15,18 @@
 
 #include "exodusII.h"
 
-#define DEFAULT_FILE_NAME "mesh"
-#define DEFAULT_MAP_ORIGIN 1
-#define DEFAULT_NUM_DOMAINS 1
-#define DEFAULT_NUM_ELEMENTS 1000000
-#define DEFAULT_NUM_FIELDS 0
+#define DEFAULT_FILE_NAME     "mesh"
+#define DEFAULT_MAP_ORIGIN    1
+#define DEFAULT_NUM_DOMAINS   1
+#define DEFAULT_NUM_ELEMENTS  1000000
+#define DEFAULT_NUM_FIELDS    0
 #define DEFAULT_NUM_TIMESTEPS 1
 
-#define MAX_STRING_LEN 128
-#define NUM_BYTES_PER_INT 4
+#define MAX_STRING_LEN     128
+#define NUM_BYTES_PER_INT  4
 #define NUM_NODES_PER_ELEM 8
 
-#define EBLK_ID 100000
+#define EBLK_ID            100000
 #define EXODUSII_FILE_TYPE ".e"
 
 typedef double realtyp;

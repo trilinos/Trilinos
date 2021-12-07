@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     out->precision(ldbl::max_digits10);
     *out << "cout precision = " << ldbl::max_digits10 << "\n"; 
     *out << "||x|| = " << norm_x << "\n";
-    scalar_type norm_x_gold = 1695.64442027167615379;
+    scalar_type norm_x_gold = 1695.64442027183031314;
     scalar_type diff = std::abs(norm_x-norm_x_gold); 
     *out << "diff = " << diff << "\n"; 
     if (diff < 1.0e-15) {

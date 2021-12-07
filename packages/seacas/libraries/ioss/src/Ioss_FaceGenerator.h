@@ -124,7 +124,7 @@ namespace Ioss {
     template <typename INT> void generate_block_faces(INT /*dummy*/, bool local_ids);
     template <typename INT> void generate_model_faces(INT /*dummy*/, bool local_ids);
 
-    Ioss::Region &                          region_;
+    Ioss::Region                           &region_;
     std::map<std::string, FaceUnorderedSet> faces_;
     std::vector<size_t>                     hashIds_;
   };

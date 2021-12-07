@@ -31,15 +31,15 @@
 
 #include "exodusII.h"
 
-#define DEFAULT_NUM_FIELDS 0
-#define DEFAULT_FILE_NAME "mesh"
+#define DEFAULT_NUM_FIELDS     0
+#define DEFAULT_FILE_NAME      "mesh"
 #define DEFAULT_NUM_ITERATIONS 1
-#define EXODUS_FILE_TYPE "e"
-#define MBYTES (1024 * 1024)
-#define MAX_STRING_LEN 128
-#define NUM_NODES_PER_ELEM 8
-#define WRITE_FILE_TYPE "new"
-#define EBLK_ID 100000
+#define EXODUS_FILE_TYPE       "e"
+#define MBYTES                 (1024 * 1024)
+#define MAX_STRING_LEN         128
+#define NUM_NODES_PER_ELEM     8
+#define WRITE_FILE_TYPE        "new"
+#define EBLK_ID                100000
 
 /*
  *      Prototypes
@@ -707,7 +707,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
   int    IO_word_size  = sizeof(realtyp);
   int    j, t, npd, err, num_elem_blk, num_node_sets, num_side_sets;
   int    iter;
-  int *  elem_var_tab = NULL;
+  int   *elem_var_tab = NULL;
   size_t file_size;
 
   struct stat file_status;
@@ -806,7 +806,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
       }
 #else
       err = ex_put_block(exoid[npd], EX_ELEM_BLOCK, EBLK_ID, "hex", num_elems, NUM_NODES_PER_ELEM,
-                         0, 0, 0);
+                            0, 0, 0);
 #endif
       if (err) {
         printf("after ex_put_elem_block, error = %d\n", err);

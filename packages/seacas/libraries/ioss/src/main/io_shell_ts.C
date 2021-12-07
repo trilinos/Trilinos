@@ -90,7 +90,7 @@ namespace {
   void transform_field_data(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
                             Ioss::Field::RoleType role, const IOShell::Interface &interFace);
   void transfer_field_data_internal(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                                    const std::string &       field_name,
+                                    const std::string        &field_name,
                                     const IOShell::Interface &interFace);
 
   void file_copy(IOShell::Interface &interFace, int rank);
@@ -664,8 +664,8 @@ namespace {
 
   struct param
   {
-    Ioss::GroupingEntity *    entity;
-    Ioss::Region *            output_region;
+    Ioss::GroupingEntity     *entity;
+    Ioss::Region             *output_region;
     Ioss::Field::RoleType     role;
     const IOShell::Interface *interFace;
   };
@@ -825,7 +825,12 @@ namespace {
       for (const auto &ifb : fbs) {
         if (ifb->parent_block() != nullptr) {
           auto  fb_name = ifb->parent_block()->name();
-          auto *parent  = dynamic_cast<Ioss::EntityBlock *>(output_region.get_entity(fb_name));
+          auto *parent  = dynamic_cast<Ioss::EntityBlock *>(
+              output_region.get_entity(fb_name, Ioss::ELEMENTBLOCK));
+          if (parent == nullptr) {
+            parent = dynamic_cast<Ioss::EntityBlock *>(
+                output_region.get_entity(fb_name, Ioss::STRUCTUREDBLOCK));
+          }
 
           auto *ofb = surf->get_side_block(ifb->name());
           ofb->set_parent_block(parent);
@@ -922,8 +927,7 @@ namespace {
                        Ioss::Field::RoleType role, const std::string &prefix)
   {
     // Check for transient fields...
-    Ioss::NameList fields;
-    ige->field_describe(role, &fields);
+    Ioss::NameList fields = ige->field_describe(role);
 
     // Iterate through results fields and transfer to output
     // database...  If a prefix is specified, only transfer fields
@@ -942,8 +946,7 @@ namespace {
                         Ioss::Field::RoleType role)
   {
     // Check for transient fields...
-    Ioss::NameList fields;
-    ige->field_describe(role, &fields);
+    Ioss::NameList fields = ige->field_describe(role);
 
     // Iterate through results fields and transfer to output database...
     for (const auto &field_name : fields) {
@@ -972,8 +975,7 @@ namespace {
   {
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.
-    Ioss::NameList state_fields;
-    ige->field_describe(role, &state_fields);
+    Ioss::NameList state_fields = ige->field_describe(role);
     // Iterate through mesh description fields and transfer to
     // output database...
     for (const auto &field_name : state_fields) {
@@ -1186,8 +1188,7 @@ namespace {
   {
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.
-    Ioss::NameList state_fields;
-    ige->field_describe(role, &state_fields);
+    Ioss::NameList state_fields = ige->field_describe(role);
 
     // Complication here is that if the 'role' is 'Ioss::Field::MESH',
     // then the 'ids' field must be transferred first...
@@ -1218,7 +1219,7 @@ namespace {
   }
 
   void transfer_field_data_internal(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                                    const std::string &       field_name,
+                                    const std::string        &field_name,
                                     const IOShell::Interface &interFace)
   {
 
@@ -1462,8 +1463,7 @@ namespace {
 
   void transfer_properties(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge)
   {
-    Ioss::NameList properties;
-    ige->property_describe(&properties);
+    Ioss::NameList properties = ige->property_describe();
 
     // Iterate through properties and transfer to output database...
     for (const auto &property : properties) {

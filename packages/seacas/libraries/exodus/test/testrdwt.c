@@ -50,10 +50,10 @@ int main(int argc, char **argv)
 
   float version;
   int   exoid = ex_open("test.exo",     /* filename path */
-                      EX_READ,        /* access mode */
-                      &CPU_word_size, /* CPU float word size in bytes */
-                      &IO_word_size,  /* I/O float word size in bytes */
-                      &version);      /* returned version number */
+                        EX_READ,        /* access mode */
+                        &CPU_word_size, /* CPU float word size in bytes */
+                        &IO_word_size,  /* I/O float word size in bytes */
+                        &version);      /* returned version number */
   printf("after ex_open for test.exo\n");
   printf(" cpu word size: %d io word size: %d\n", CPU_word_size, IO_word_size);
 
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
     error = ex_put_set_param(exoid2, EX_NODE_SET, ids[i], num_nodes_in_set, num_df_in_set);
     printf("after ex_put_node_set_param, error = %d\n", error);
 
-    int *  node_list = (int *)calloc(num_nodes_in_set, sizeof(int));
+    int   *node_list = (int *)calloc(num_nodes_in_set, sizeof(int));
     float *dist_fact = (float *)calloc(num_nodes_in_set, sizeof(float));
 
     error = ex_get_set(exoid, EX_NODE_SET, ids[i], node_list, NULL);
@@ -278,10 +278,10 @@ int main(int argc, char **argv)
 
     /* Note: The # of elements is same as # of sides!  */
     int    num_elem_in_set = num_sides_in_set;
-    int *  elem_list       = (int *)calloc(num_elem_in_set, sizeof(int));
-    int *  side_list       = (int *)calloc(num_sides_in_set, sizeof(int));
-    int *  node_ctr_list   = (int *)calloc(num_elem_in_set, sizeof(int));
-    int *  node_list       = (int *)calloc(num_elem_in_set * 21, sizeof(int));
+    int   *elem_list       = (int *)calloc(num_elem_in_set, sizeof(int));
+    int   *side_list       = (int *)calloc(num_sides_in_set, sizeof(int));
+    int   *node_ctr_list   = (int *)calloc(num_elem_in_set, sizeof(int));
+    int   *node_list       = (int *)calloc(num_elem_in_set * 21, sizeof(int));
     float *dist_fact       = (float *)calloc(num_df_in_set, sizeof(float));
 
     error = ex_get_set(exoid, EX_SIDE_SET, ids[i], elem_list, side_list);

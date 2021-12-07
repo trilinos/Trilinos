@@ -152,7 +152,9 @@ template <class Scalar = DefaultScalar,
 
   private:
     //! Helper function to recursively fill BlockedMultiVector with default null space vectors
-    void fillNullspaceVector(const RCP<BlockedMultiVector>& nsp, LocalOrdinal numPDEs) const;
+    void fillNullspaceVector(const RCP<BlockedMultiVector>& nsp, LocalOrdinal numPDEs, ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> xvals, ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> yvals, ArrayRCP<const typename Teuchos::ScalarTraits<Scalar>::coordinateType> zvals, LocalOrdinal nullspaceDim, Scalar cx, Scalar cy, Scalar cz) const;
+
+    mutable bool calculateRotations_ = false;
 
   }; //class NullspaceFactory
 

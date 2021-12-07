@@ -183,11 +183,25 @@ void Excn::SystemInterface::enroll_options()
                   "Comma-separated list of sideset variables to be joined or ALL or NONE.",
                   nullptr);
 
+  options_.enroll("edblkvar", GetLongOption::MandatoryValue,
+                  "Comma-separated list of edgeblock variables to be joined or ALL or NONE.",
+                  nullptr);
+
+  options_.enroll("fablkvar", GetLongOption::MandatoryValue,
+                  "Comma-separated list of faceblock variables to be joined or ALL or NONE.",
+                  nullptr);
+
   options_.enroll("omit_nodesets", GetLongOption::NoValue,
                   "Don't transfer nodesets to output file.", nullptr);
 
   options_.enroll("omit_sidesets", GetLongOption::NoValue,
                   "Don't transfer sidesets to output file.", nullptr, nullptr, true);
+
+  options_.enroll("omit_edgeblocks", GetLongOption::NoValue,
+                  "Don't transfer edgeblocks to output file.", nullptr, nullptr, true);
+
+  options_.enroll("omit_faceblocks", GetLongOption::NoValue,
+                  "Don't transfer faceblocks to output file.", nullptr, nullptr, true);
 
   options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
                   "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
@@ -203,8 +217,10 @@ void Excn::SystemInterface::enroll_options()
                   "\t\t  8 = Check consistent nodal coordinates between processors.\n"
                   "\t\t 16 = Verbose Sideset information.\n"
                   "\t\t 32 = Verbose Nodeset information.\n"
-                  "\t\t 64 = put exodus library into verbose mode.\n"
-                  "\t\t128 = Check consistent global field values between processors.",
+                  "\t\t 64 = Verbose Edge block information.\n"
+                  "\t\t128 = Verbose Face block information.\n"
+                  "\t\t256 = put exodus library into verbose mode.\n"
+                  "\t\t512 = Check consistent global field values between processors.",
                   "0");
 
   options_.enroll(
@@ -305,6 +321,16 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     parse_variable_names(temp, &ssetVarNames_);
   }
 
+  {
+    const char *temp = options_.retrieve("edblkvar");
+    parse_variable_names(temp, &edblkVarNames_);
+  }
+
+  {
+    const char *temp = options_.retrieve("fablkvar");
+    parse_variable_names(temp, &fablkVarNames_);
+  }
+
   addProcessorIdField_      = options_.retrieve("add_processor_id") != nullptr;
   addProcessorIdMap_        = options_.retrieve("add_map_processor_id") != nullptr;
   addNodalCommunicationMap_ = options_.retrieve("add_nodal_communication_map") != nullptr;
@@ -351,6 +377,8 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   omitNodesets_      = options_.retrieve("omit_nodesets") != nullptr;
   omitSidesets_      = options_.retrieve("omit_sidesets") != nullptr;
+  omitEdgeBlocks_    = options_.retrieve("omit_edgeblocks") != nullptr;
+  omitFaceBlocks_    = options_.retrieve("omit_faceblocks") != nullptr;
   outputSharedNodes_ = options_.retrieve("output_shared_nodes") != nullptr;
 
   if (options_.retrieve("copyright") != nullptr) {
