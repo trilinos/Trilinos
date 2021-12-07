@@ -17,10 +17,10 @@
 #include <direct.h>
 #include <io.h>
 #define access _access
-#define R_OK 4 /* Test for read permission.  */
-#define W_OK 2 /* Test for write permission.  */
-#define X_OK 1 /* execute permission - unsupported in windows*/
-#define F_OK 0 /* Test for existence.  */
+#define R_OK   4 /* Test for read permission.  */
+#define W_OK   2 /* Test for write permission.  */
+#define X_OK   1 /* execute permission - unsupported in windows*/
+#define F_OK   0 /* Test for existence.  */
 #ifndef S_ISREG
 #define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
 #define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
@@ -35,7 +35,9 @@
 
 #include <cstdio>
 #include <sys/stat.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 namespace {
   bool internal_access(const std::string &name, int mode);

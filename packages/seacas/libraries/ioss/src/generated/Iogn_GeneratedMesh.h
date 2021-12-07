@@ -18,8 +18,6 @@
 #include <vector>  // for vector
 
 namespace Iogn {
-  using MapVector = std::vector<int64_t>;
-
   class GeneratedMesh
   {
   public:
@@ -273,12 +271,12 @@ namespace Iogn {
     /**
      * Return number of element blocks in the entire model.
      */
-    virtual int64_t block_count() const;
+    virtual int block_count() const;
 
     /**
      * Return number of nodesets in the entire model.
      */
-    virtual int64_t nodeset_count() const;
+    virtual int nodeset_count() const;
 
     /**
      * Return number of nodeset nodes on nodeset 'id'
@@ -298,7 +296,7 @@ namespace Iogn {
     /**
      * Return number of sidesets in the entire model.
      */
-    virtual int64_t sideset_count() const;
+    virtual int sideset_count() const;
 
     /**
      * Return number of sideset 'sides' on sideset 'id'
@@ -331,7 +329,7 @@ namespace Iogn {
      */
     int64_t shell_element_count_proc(ShellLocation /*loc*/) const;
 
-    int64_t timestep_count() const { return timestepCount; }
+    int timestep_count() const { return timestepCount; }
     /**
      * Return number of elements in the element block with id
      * 'block_number'. The 'block_number' ranges from '1' to
@@ -356,7 +354,7 @@ namespace Iogn {
     void            build_node_map(Ioss::Int64Vector &map, std::vector<int> &proc, int64_t slab,
                                    size_t slabOffset, size_t adjacentProc, size_t index);
     virtual int64_t communication_node_count_proc() const;
-    virtual void    node_communication_map(MapVector &map, std::vector<int> &proc);
+    virtual void    node_communication_map(Ioss::Int64Vector &map, std::vector<int> &proc);
     virtual void    owning_processor(int *owner, int64_t num_node);
 
     /**
@@ -364,7 +362,7 @@ namespace Iogn {
      * "map[local_position] = global_id" for the nodes on this
      * processor.
      */
-    virtual void node_map(MapVector &map) const;
+    virtual void node_map(Ioss::Int64Vector &map) const;
     virtual void node_map(Ioss::IntVector &map) const;
 
     /**
@@ -372,7 +370,7 @@ namespace Iogn {
      * "map[local_position] = global_id" for the elements on this
      * processor in block "block_number".
      */
-    virtual void element_map(int64_t block_number, MapVector &map) const;
+    virtual void element_map(int64_t block_number, Ioss::Int64Vector &map) const;
     virtual void element_map(int64_t block_number, Ioss::IntVector &map) const;
 
     /**
@@ -380,7 +378,7 @@ namespace Iogn {
      * "map[local_position] = global_id" for all elements on this
      * processor
      */
-    virtual void element_map(MapVector &map) const;
+    virtual void element_map(Ioss::Int64Vector &map) const;
     virtual void element_map(Ioss::IntVector &map) const;
 
     /**
@@ -390,7 +388,7 @@ namespace Iogn {
      * all elements on the current processor having a face on the
      * surface defined by ShellLocation.
      */
-    void element_surface_map(ShellLocation loc, MapVector &map) const;
+    void element_surface_map(ShellLocation loc, Ioss::Int64Vector &map) const;
 
     /**
      * Return the connectivity for the elements on this processor in
@@ -481,13 +479,13 @@ namespace Iogn {
     std::vector<ShellLocation>           nodesets;
     std::vector<ShellLocation>           sidesets;
     std::array<std::array<double, 3>, 3> rotmat;
-    size_t                               numX{0}, numY{0}, numZ{0};
-    size_t                               myNumZ{0}, myStartZ{0};
+    int64_t                              numX{0}, numY{0}, numZ{0};
+    int64_t                              myNumZ{0}, myStartZ{0};
 
-    size_t processorCount{0};
-    size_t myProcessor{0};
+    int processorCount{0};
+    int myProcessor{0};
 
-    size_t                             timestepCount{0};
+    int                                timestepCount{0};
     std::map<Ioss::EntityType, size_t> variableCount;
 
     double offX{0}, offY{0}, offZ{0}; /** Offsets in X, Y, and Z directions */

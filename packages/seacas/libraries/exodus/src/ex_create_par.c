@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -171,6 +171,11 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
 #if defined NC_NOATTCREORD
   /* Disable attribute creation order tracking if available... */
   nc_mode |= NC_NOATTCREORD;
+#endif
+
+#if defined NC_NODIMSCALE_ATTACH
+  /* Disable attaching dimscales to variables (netcdf-c issue #2128) if available */
+  nc_mode |= NC_NODIMSCALE_ATTACH;
 #endif
 
   if ((status = nc_create_par(path, nc_mode, comm, info, &exoid)) != NC_NOERR) {

@@ -35,21 +35,29 @@ namespace Excn {
       case Excn::ObjectType::SSET: return sidesetCount;
       case Excn::ObjectType::NODE: return nodeCount;
       case Excn::ObjectType::ELEM: return elementCount;
+      case Excn::ObjectType::EDGE: return edgeCount;
+      case Excn::ObjectType::FACE: return faceCount;
       case Excn::ObjectType::ASSM: return assemblyCount;
+      case Excn::ObjectType::EDBLK: return edgeBlockCount;
+      case Excn::ObjectType::FABLK: return faceBlockCount;
       default: return 0;
       }
     }
 
-    IntVector truthTable[3];
+    IntVector truthTable[5];
 
     std::string title{};
     int         dimensionality{0};
     int64_t     nodeCount{0};
     int64_t     elementCount{0};
+    int64_t     edgeCount{0};
+    int64_t     faceCount{0};
     int         blockCount{0};
     int         nodesetCount{0};
     int         sidesetCount{0};
     int         assemblyCount{0};
+    int         edgeBlockCount{0};
+    int         faceBlockCount{0};
     bool        needNodeMap{true};
     bool        needElementMap{true};
   };
@@ -168,6 +176,98 @@ namespace Excn {
     {
       fmt::print(stderr, "SideSet {}, Name: {}, {} sides, {} df\toffset = {}, order = {}\n", id,
                  name_, sideCount, dfCount, offset_, position_);
+    }
+  };
+
+  template <typename INT> class EdgeBlock
+  {
+  public:
+    EdgeBlock() { copy_string(elType, ""); }
+
+    EdgeBlock(const EdgeBlock &other)
+        : name_(other.name_), id(other.id), edgeCount(other.edgeCount),
+          nodesPerEdge(other.nodesPerEdge), attributeCount(other.attributeCount),
+          offset_(other.offset_), position_(other.position_)
+    {
+      copy_string(elType, other.elType);
+    }
+    ~EdgeBlock() = default;
+
+    char                     elType[MAX_STR_LENGTH + 1]{};
+    std::string              name_{""};
+    std::vector<std::string> attributeNames{};
+    int64_t                  id{0};
+    int64_t                  edgeCount{0};
+    int                      nodesPerEdge{0};
+    int                      attributeCount{0};
+    int64_t                  offset_{0};
+    int                      position_{0};
+
+    size_t entity_count() const { return edgeCount; }
+
+    void dump() const
+    {
+      fmt::print(stderr, "EdgeBlock {}, Name: {}, {} edges\n", id, name_, edgeCount);
+    }
+
+    EdgeBlock &operator=(const EdgeBlock &other)
+    {
+      copy_string(elType, other.elType);
+      name_          = other.name_;
+      id             = other.id;
+      edgeCount      = other.edgeCount;
+      nodesPerEdge   = other.nodesPerEdge;
+      attributeCount = other.attributeCount;
+      attributeNames = other.attributeNames;
+      offset_        = other.offset_;
+      position_      = other.position_;
+      return *this;
+    }
+  };
+
+  template <typename INT> class FaceBlock
+  {
+  public:
+    FaceBlock() { copy_string(elType, ""); }
+
+    FaceBlock(const FaceBlock &other)
+        : name_(other.name_), id(other.id), faceCount(other.faceCount),
+          nodesPerFace(other.nodesPerFace), attributeCount(other.attributeCount),
+          offset_(other.offset_), position_(other.position_)
+    {
+      copy_string(elType, other.elType);
+    }
+    ~FaceBlock() = default;
+
+    char                     elType[MAX_STR_LENGTH + 1]{};
+    std::string              name_{""};
+    std::vector<std::string> attributeNames{};
+    int64_t                  id{0};
+    int64_t                  faceCount{0};
+    int                      nodesPerFace{0};
+    int                      attributeCount{0};
+    int64_t                  offset_{0};
+    int                      position_{0};
+
+    size_t entity_count() const { return faceCount; }
+
+    void dump() const
+    {
+      fmt::print(stderr, "FaceBlock {}, Name: {}, {} faces\n", id, name_, faceCount);
+    }
+
+    FaceBlock &operator=(const FaceBlock &other)
+    {
+      copy_string(elType, other.elType);
+      name_          = other.name_;
+      id             = other.id;
+      faceCount      = other.faceCount;
+      nodesPerFace   = other.nodesPerFace;
+      attributeCount = other.attributeCount;
+      attributeNames = other.attributeNames;
+      offset_        = other.offset_;
+      position_      = other.position_;
+      return *this;
     }
   };
 

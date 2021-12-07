@@ -20,8 +20,8 @@
  * -- Each thread handles a portion of the nodes for each coordinate variable
  */
 
-#define NUM_THREADS 8
-#define NUM_NODES 64 /* should be multiple of NUM_THREADS */
+#define NUM_THREADS   8
+#define NUM_NODES     64 /* should be multiple of NUM_THREADS */
 #define NUM_NODAL_VAR 4
 
 typedef struct

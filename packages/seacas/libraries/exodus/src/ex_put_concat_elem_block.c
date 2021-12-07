@@ -355,7 +355,7 @@ int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const
      * attribute name.
      */
     size_t start[2], count[2];
-    char * text = "";
+    char  *text = "";
     count[0]    = 1;
     start[1]    = 0;
     count[1]    = strlen(text) + 1;

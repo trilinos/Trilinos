@@ -571,10 +571,10 @@ int main(int argc, char **argv)
 
     /* Note: The # of elements is same as # of sides!  */
     int    num_elem_in_set = num_sides_in_set;
-    int *  elem_list       = (int *)my_calloc(num_elem_in_set, sizeof(int));
-    int *  side_list       = (int *)my_calloc(num_sides_in_set, sizeof(int));
-    int *  node_ctr_list   = (int *)my_calloc(num_elem_in_set, sizeof(int));
-    int *  node_list       = (int *)my_calloc(num_elem_in_set * 21, sizeof(int));
+    int   *elem_list       = (int *)my_calloc(num_elem_in_set, sizeof(int));
+    int   *side_list       = (int *)my_calloc(num_sides_in_set, sizeof(int));
+    int   *node_ctr_list   = (int *)my_calloc(num_elem_in_set, sizeof(int));
+    int   *node_list       = (int *)my_calloc(num_elem_in_set * 21, sizeof(int));
     float *dist_fact       = (float *)my_calloc(num_df_in_set, sizeof(float));
 
     error = ex_get_set(exoid, EX_SIDE_SET, ids[i], elem_list, side_list);

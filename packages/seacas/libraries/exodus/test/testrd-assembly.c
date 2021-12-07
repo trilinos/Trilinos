@@ -33,7 +33,7 @@
 #include <string.h>
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
@@ -57,10 +57,10 @@ int main(int argc, char **argv)
   int   IO_word_size  = 0; /* use what is stored in file */
   float version;
   int   exoid = ex_open("test-assembly.exo", /* filename path */
-                      EX_READ,             /* access mode = READ */
-                      &CPU_word_size,      /* CPU word size */
-                      &IO_word_size,       /* IO word size */
-                      &version);           /* ExodusII library version */
+                        EX_READ,             /* access mode = READ */
+                        &CPU_word_size,      /* CPU word size */
+                        &IO_word_size,       /* IO word size */
+                        &version);           /* ExodusII library version */
 
   printf("\nafter ex_open\n");
   if (exoid < 0) {

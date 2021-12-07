@@ -79,7 +79,7 @@ namespace Iopg {
     std::string title() const { return databaseTitle; }
     int         maximum_symbol_length() const override { return 32; }
 
-    void compute_block_membership__(Ioss::SideBlock *         efblock,
+    void compute_block_membership__(Ioss::SideBlock          *efblock,
                                     std::vector<std::string> &block_membership) const override;
 
   private:

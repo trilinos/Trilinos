@@ -23,7 +23,7 @@
  */
 
 #define NUM_THREADS 8
-#define NUM_NODES 64
+#define NUM_NODES   64
 
 static int ulpsDistance(float a, float b)
 {

@@ -505,7 +505,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
     const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
     Ioss::Region *region = sset->get_database()->get_region();
-    const std::string universalAlias = region->get_alias("universal_sideset");
+    const std::string universalAlias = region->get_alias("universal_sideset", Ioss::SIDESET);
     if (sset->name() == universalAlias)
         return;
 

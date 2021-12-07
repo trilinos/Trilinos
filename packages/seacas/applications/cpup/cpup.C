@@ -323,8 +323,7 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
           auto &name      = pblock->name();
           auto  name_proc = Iocgns::Utils::decompose_name(name, true);
           if (name_proc.first == block->name()) {
-            Ioss::NameList fields;
-            pblock->field_describe(Ioss::Field::TRANSIENT, &fields);
+            Ioss::NameList fields = pblock->field_describe(Ioss::Field::TRANSIENT);
 
             for (const auto &field_name : fields) {
               if (is_field_valid(variable_list, field_name)) {
@@ -479,7 +478,7 @@ namespace {
       for (const auto &block : blocks) {
         Ioss::IJK_t offset    = block->get_ijk_offset();
         auto        name_proc = Iocgns::Utils::decompose_name(block->name(), true);
-        auto &      sb_bc     = block->m_boundaryConditions;
+        auto       &sb_bc     = block->m_boundaryConditions;
         for (const auto &bc : sb_bc) {
           auto &gbc = global_bc[std::make_pair(name_proc.first, bc.m_bcName)];
           if (gbc.m_bcName.empty()) {
@@ -511,8 +510,7 @@ namespace {
       std::vector<double> output(num_cell);
       std::vector<double> input;
 
-      Ioss::NameList fields;
-      block->field_describe(Ioss::Field::TRANSIENT, &fields);
+      Ioss::NameList fields = block->field_describe(Ioss::Field::TRANSIENT);
 
       // Not sure if this is the best ordering of loops, but it minimizes the
       // amount of data gathered at one time at the cost of multiple iterations
@@ -541,13 +539,12 @@ namespace {
     // Now do the fields on the embedded node block...
     for (const auto &block : blocks) {
       int64_t num_node = block->get_property("node_count").get_int();
-      auto &  onb      = block->get_node_block();
+      auto   &onb      = block->get_node_block();
 
       std::vector<double> output(num_node);
       std::vector<double> input;
 
-      Ioss::NameList fields;
-      onb.field_describe(Ioss::Field::TRANSIENT, &fields);
+      Ioss::NameList fields = onb.field_describe(Ioss::Field::TRANSIENT);
 
       // Not sure if this is the best ordering of loops, but it minimizes the
       // amount of data gathered at one time at the cost of multiple iterations
@@ -738,7 +735,7 @@ namespace {
     auto &blocks = output_region.get_structured_blocks();
     for (const auto &block : blocks) {
       // Get size of node_block...
-      auto &              onb       = block->get_node_block();
+      auto               &onb       = block->get_node_block();
       size_t              num_coord = onb.entity_count();
       std::vector<double> coord(num_coord);
       for (int dim = 0; dim < 3; dim++) {
