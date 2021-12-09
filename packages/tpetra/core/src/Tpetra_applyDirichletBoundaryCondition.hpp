@@ -473,7 +473,7 @@ applyDirichletBoundaryConditionToLocalMatrixRows
     ApplyDirichletBoundaryConditionToLocalMatrixRows<SC, LO, GO, NT>;
 
   // Only run on host if we can access the data
-  const bool runOnHost = Kokkos::Impl::SpaceAccessibility<Kokkos::Serial,memory_space>::accessible;
+  const bool runOnHost = Kokkos::SpaceAccessibility<Kokkos::Serial,memory_space>::accessible;
   if(runOnHost) {
     using local_row_indices_type = Kokkos::View<const LO*, Kokkos::AnonymousSpace>;
     const local_row_indices_type lclRowInds_a (lclRowInds);
