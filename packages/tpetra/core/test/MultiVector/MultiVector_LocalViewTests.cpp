@@ -346,26 +346,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, TemplatedGetLocalView, LO, GO, S
   {
     // Check that getLocalView<device_t> produces a view with the correct device type
     auto deviceView = x.template getLocalView<device_t>(Tpetra::Access::ReadWrite);
-    static_assert(std::is_same<typename decltype(deviceView)::device_type, device_t>::value,
-        "getLocalView<Vector::device_t> should produce a view with that device_type.");
+    bool correctType = std::is_same<typename decltype(deviceView)::device_type, device_t>::value;
+    TEST_ASSERT(correctType);
   }
-  // For UVM: check that x is now marked as modified on device, but not on host
-#ifdef KOKKOS_ENABLE_CUDA
-  if(std::is_same<Kokkos::CudaUVMSpace, typename device_t::memory_space>::value)
+  constexpr bool needsSyncPath = !std::is_same<Kokkos::HostSpace, typename device_t::memory_space>::value;
+  if(needsSyncPath)
   {
     TEST_ASSERT(x.need_sync_host());
     TEST_ASSERT(!x.need_sync_device());
   }
-#endif
   // Assuming device/host device types aren't the same, make sure getting the host view also works
-  if(!std::is_same<device_t, host_t>::value)
   {
+    auto hostView = x.template getLocalView<host_t>(Tpetra::Access::ReadWrite);
+    bool correctType = std::is_same<typename decltype(hostView)::device_type, host_t>::value;
+    TEST_ASSERT(correctType);
+    if(needsSyncPath)
     {
-      auto hostView = x.template getLocalView<host_t>(Tpetra::Access::ReadWrite);
-      static_assert(std::is_same<typename decltype(hostView)::device_type, host_t>::value,
-          "getLocalView<Vector::wrapped_dual_view_type::HostType> should produce a host view.");
-      TEST_ASSERT(x.need_sync_device());
       TEST_ASSERT(!x.need_sync_host());
+      TEST_ASSERT(x.need_sync_device());
     }
   }
 }
