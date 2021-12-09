@@ -403,7 +403,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
   if (zoltan1)
     readZoltanTestData(path, testData, distributeInput);
   else
-    readMatrixMarketFile(path, testData, distributeInput);
+    readMatrixMarketFile(path, testData);
 
 #ifdef HAVE_EPETRA_DATA_TYPES
   ecomm_ = Xpetra::toEpetra(c);
