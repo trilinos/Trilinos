@@ -342,7 +342,7 @@ namespace FROSch {
                                                                                                   this->LevelID_,
                                                                                                   interfacePartitionOfUnity->getDDInterfaceNonConst()));
 
-                PartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs());
+                if (this->ParameterList_->get("Remove Dirichlet Nodes",true)) PartitionOfUnity_->removeDirichletNodes(dirichletBoundaryDofs());
 
                 interface = interior;
 
@@ -357,7 +357,7 @@ namespace FROSch {
 
                 PartitionOfUnity_->computePartitionOfUnity(nodeList);
             } else {
-                interfacePartitionOfUnity->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
+                if (this->ParameterList_->get("Remove Dirichlet Nodes",true)) interfacePartitionOfUnity->removeDirichletNodes(dirichletBoundaryDofs(),nodeList);
                 interfacePartitionOfUnity->sortInterface(this->K_,nodeList);
 
                 // Construct Interface and Interior index sets
