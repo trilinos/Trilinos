@@ -254,7 +254,9 @@ public:
 
   template <typename StkDebugger>
   void make_field_sync_debugger() const {
-    m_stkFieldSyncDebugger = Teuchos::any(StkDebugger(this));
+    if (m_stkFieldSyncDebugger.empty()) {
+      m_stkFieldSyncDebugger = Teuchos::any(StkDebugger(this));
+    }
   }
 
   template <typename StkDebugger>

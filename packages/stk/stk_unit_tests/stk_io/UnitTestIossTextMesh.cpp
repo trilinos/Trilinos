@@ -29,7 +29,6 @@
 #include "gtest/gtest.h"
 
 #include "mpi.h"
-#include "stk_unit_test_utils/Iotm_DatabaseIO.hpp"
 #include "stk_unit_test_utils/TextMeshFixture.hpp"
 
 namespace
@@ -40,7 +39,6 @@ class IossTextMeshFixture : public stk::unit_test_util::TextMeshFixture
   IossTextMeshFixture(unsigned spatialDim) : stk::unit_test_util::TextMeshFixture(spatialDim)
   {
     Ioss::Init::Initializer io;
-    Iotm::IOFactory::factory();
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   }
 
@@ -160,6 +158,8 @@ TEST_F(TestIossTextMesh, canCreateFactory)
   std::string meshDesc = get_mesh_desc(textMeshDesc);
 
   create_factory(meshDesc);
+
+  delete m_database;
 }
 
 TEST_F(TestIossTextMesh, canCreateIossRegion_withoutCoordinates)
@@ -171,6 +171,8 @@ TEST_F(TestIossTextMesh, canCreateIossRegion_withoutCoordinates)
 
   create_factory(meshDesc);
   create_ioss_region();
+
+  delete m_region;
 }
 
 TEST_F(TestIossTextMesh, canCreateIossRegion_withCoordinates)
@@ -183,6 +185,8 @@ TEST_F(TestIossTextMesh, canCreateIossRegion_withCoordinates)
 
   create_factory(meshDesc);
   create_ioss_region();
+
+  delete m_region;
 }
 
 TEST_F(TestIossTextMesh, canFillSerialMesh_withCoordinates)
@@ -356,7 +360,7 @@ TEST_F(TestIossTextMesh, twoHexDisconnectedWithDefaultParts)
   verify_num_elements(2);
   verify_single_element(1u, stk::topology::HEX_8, stk::mesh::EntityIdVector{1, 2, 3, 4, 5, 6, 7, 8});
   verify_single_element(2u, stk::topology::HEX_8, stk::mesh::EntityIdVector{9, 10, 11, 12, 13, 14, 15, 16});
-  verify_part_membership({{"block_HEXAHEDRON_8", {1u, 2u}}});
+  verify_part_membership({{"block_HEX8", {1u, 2u}}});
 }
 
 TEST_F(TestIossTextMesh, threeTriShellsWithCoordinatesAndParts)
@@ -405,7 +409,7 @@ TEST_F(TestIossTextMesh, threeTriShellsWithDefaultParts)
   verify_single_element(1u, stk::topology::SHELL_TRI_3, stk::mesh::EntityIdVector{1, 2, 4});
   verify_single_element(2u, stk::topology::SHELL_TRI_3, stk::mesh::EntityIdVector{2, 5, 4});
   verify_single_element(3u, stk::topology::SHELL_TRI_3, stk::mesh::EntityIdVector{2, 3, 5});
-  verify_part_membership({{"block_SHELL_TRIANGLE_3", {1u, 2u, 3u}}});
+  verify_part_membership({{"block_trishell3", {1u, 2u, 3u}}});
 }
 
 TEST_F(TestIossTextMesh, partIds_oneDefaultPartOneElem)
@@ -415,7 +419,7 @@ TEST_F(TestIossTextMesh, partIds_oneDefaultPartOneElem)
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   fill_mesh(get_mesh_desc(meshDesc));
 
-  verify_part_ids({{"block_HEXAHEDRON_8", 1u}});
+  verify_part_ids({{"block_HEX8", 1u}});
 }
 
 TEST_F(TestIossTextMesh, partIds_oneDefaultPartTwoElems)
@@ -427,7 +431,7 @@ TEST_F(TestIossTextMesh, partIds_oneDefaultPartTwoElems)
       "0,2,HEX_8,9,10,11,12,13,14,15,16";
   fill_mesh(get_mesh_desc(meshDesc));
 
-  verify_part_ids({{"block_HEXAHEDRON_8", 1u}});
+  verify_part_ids({{"block_HEX8", 1u}});
 }
 
 TEST_F(TestIossTextMesh, partIds_twoDefaultParts)
@@ -440,7 +444,7 @@ TEST_F(TestIossTextMesh, partIds_twoDefaultParts)
       "0,3,SHELL_QUAD_4,17,18,19,20";
   fill_mesh(get_mesh_desc(meshDesc));
 
-  verify_part_ids({{"block_HEXAHEDRON_8", 1u}, {"block_SHELL_QUADRILATERAL_4", 2u}});
+  verify_part_ids({{"block_HEX8", 1u}, {"block_SHELL4", 2u}});
 }
 
 TEST_F(TestIossTextMesh, partIds_oneDefaultPartOneUserSpecifiedPart)
@@ -452,7 +456,7 @@ TEST_F(TestIossTextMesh, partIds_oneDefaultPartOneUserSpecifiedPart)
       "0,2,HEX_8,9,10,11,12,13,14,15,16,my_cool_part";
   fill_mesh(get_mesh_desc(meshDesc));
 
-  verify_part_ids({{"block_HEXAHEDRON_8", 1u}, {"my_cool_part", 2u}});
+  verify_part_ids({{"block_HEX8", 1u}, {"my_cool_part", 2u}});
 }
 
 TEST_F(TestIossTextMesh, partIds_samePartTwice)
@@ -510,7 +514,7 @@ TEST_F(TestIossTextMesh, partIds_respectExodusNamingConvention_withDefaultPartFi
       "0,2,HEX_8,9,10,11,12,13,14,15,16,block_101";
   fill_mesh(get_mesh_desc(meshDesc));
 
-  verify_part_ids({{"block_HEXAHEDRON_8", 1u}, {"block_101", 101u}});
+  verify_part_ids({{"block_HEX8", 1u}, {"block_101", 101u}});
 }
 
 TEST_F(TestIossTextMesh, partIds_respectExodusNamingConvention_withDefaultPartSecond)
@@ -522,7 +526,7 @@ TEST_F(TestIossTextMesh, partIds_respectExodusNamingConvention_withDefaultPartSe
       "0,2,HEX_8,9,10,11,12,13,14,15,16";
   fill_mesh(get_mesh_desc(meshDesc));
 
-  verify_part_ids({{"block_101", 101u}, {"block_HEXAHEDRON_8", 1u}});
+  verify_part_ids({{"block_101", 101u}, {"block_HEX8", 1u}});
 }
 
 TEST_F(TestIossTextMesh, partIds_respectExodusNamingConvention_withDefaultPartIdCollision)
@@ -534,7 +538,7 @@ TEST_F(TestIossTextMesh, partIds_respectExodusNamingConvention_withDefaultPartId
       "0,2,HEX_8,9,10,11,12,13,14,15,16,block_1";
   fill_mesh(get_mesh_desc(meshDesc));
 
-  verify_part_ids({{"block_HEXAHEDRON_8", 2u}, {"block_1", 1u}});
+  verify_part_ids({{"block_HEX8", 2u}, {"block_1", 1u}});
 }
 
 TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_onePart)
@@ -581,7 +585,7 @@ TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_samePartDifferentIds)
   std::string meshDesc =
       "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,partFour,4\n"
       "0,2,HEX_8,9,10,11,12,13,14,15,16,partFour,5";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_withDefaultPartIdCollision)
@@ -593,7 +597,7 @@ TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_withDefaultPartIdCollision)
       "0,2,HEX_8,9,10,11,12,13,14,15,16,partOne,1";
   fill_mesh(get_mesh_desc(meshDesc));
 
-  verify_part_ids({{"block_HEXAHEDRON_8", 2u}, {"partOne", 1u}});
+  verify_part_ids({{"block_HEX8", 2u}, {"partOne", 1u}});
 }
 
 TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_withDefaultPart)
@@ -605,7 +609,7 @@ TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_withDefaultPart)
       "0,2,HEX_8,9,10,11,12,13,14,15,16";
   fill_mesh(get_mesh_desc(meshDesc));
 
-  verify_part_ids({{"partThree", 3u}, {"block_HEXAHEDRON_8", 1u}});
+  verify_part_ids({{"partThree", 3u}, {"block_HEX8", 1u}});
 }
 
 TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_withExodusPart)
@@ -627,7 +631,7 @@ TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_collidesWithExodusPart)
   std::string meshDesc =
       "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,partThree,3\n"
       "0,2,HEX_8,9,10,11,12,13,14,15,16,block_3";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_collidesWithPreviousSpec)
@@ -637,7 +641,7 @@ TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_collidesWithPreviousSpec)
   std::string meshDesc =
       "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,partThreeA,3\n"
       "0,2,HEX_8,9,10,11,12,13,14,15,16,partThreeB,3";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_forExodusPart)
@@ -645,7 +649,7 @@ TEST_F(TestIossTextMesh, partIds_userSpecifiedPartId_forExodusPart)
   if (get_parallel_size() != 1) return;
 
   std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,block_2,3\n";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, partIds_shortPartNamesAreValid)
@@ -665,7 +669,7 @@ TEST_F(TestIossTextMesh, partIds_integerPartNamesAreInvalid)
   if (get_parallel_size() != 1) return;
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,9";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, twoHexesParallel)
@@ -804,27 +808,27 @@ TEST_F(TestIossTextMesh, singleHexWithCoordinatesAndLowerCase)
 TEST_F(TestIossTextMesh, tooFewNodes)
 {
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, tooFewNodesWithCoordinates)
 {
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7";
   std::vector<double> coordinates = {0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1};
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, tooFewCoordinates)
 {
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   std::vector<double> coordinates = {0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1};
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, tooManyNodes)
 {
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,9,10";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, tooManyNodesWithCoordinates)
@@ -832,14 +836,14 @@ TEST_F(TestIossTextMesh, tooManyNodesWithCoordinates)
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,9,10";
   std::vector<double> coordinates = {
       0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 2, 0, 0, 2, 1, 0};
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, tooManyCoordinates)
 {
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   std::vector<double> coordinates = {0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 52};
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, tooLittleData_empty)
@@ -851,45 +855,45 @@ TEST_F(TestIossTextMesh, tooLittleData_empty)
 TEST_F(TestIossTextMesh, tooLittleData_startsWithString)
 {
   std::string meshDesc = "hi";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, tooLittleData_noGlobalId)
 {
   std::string meshDesc = "0 ";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, tooLittleData_noTopology)
 {
   std::string meshDesc = "0,1,";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, tooLittleData_noNodes)
 {
   std::string meshDesc = "0,1,HEX_8";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, tooLittleDataWithCoordinates)
 {
   std::string meshDesc = "0,1,";
   std::vector<double> coordinates;
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, invalidTopology)
 {
   std::string meshDesc = "0,1,invalid,1";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, invalidTopologyWithCoordinates)
 {
   std::string meshDesc = "0,1,invalid,1";
   std::vector<double> coordinates = {0, 0, 0};
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, mixedSpatialDim)
@@ -897,7 +901,7 @@ TEST_F(TestIossTextMesh, mixedSpatialDim)
   std::string meshDesc =
       "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
       "0,2,QUAD_4_2D,5,6,7,8";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, mixedSpatialDimWithCoordinates)
@@ -906,20 +910,20 @@ TEST_F(TestIossTextMesh, mixedSpatialDimWithCoordinates)
       "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
       "0,2,QUAD_4_2D,5,6,7,8";
   std::vector<double> coordinates = {0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1};
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, spatialDimInconsistentWithMetaData)
 {
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,3,4";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, spatialDimInconsistentWithMetaDataWithCoordinates)
 {
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,3,4";
   std::vector<double> coordinates = {0, 0, 1, 0, 1, 1, 0, 1};
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, coordinates)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, endingWithNewlineIsOk)
@@ -931,7 +935,7 @@ TEST_F(TestIossTextMesh, endingWithNewlineIsOk)
 TEST_F(TestIossTextMesh, stringAfterPartNameIsError)
 {
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1,bogus\n";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc)), std::runtime_error);
 }
 
 TEST_F(TestIossTextMesh, particleHex)
@@ -1086,7 +1090,6 @@ TEST_F(TestIossTextMesh1d, oneDimensionNotSupported)
   if (get_parallel_size() != 1) return;
 
   std::string meshDesc = "0,1,LINE_2_1D,1,2";
-  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, 1u)), std::logic_error);
+  EXPECT_THROW(fill_mesh(get_mesh_desc(meshDesc, 1u)), std::runtime_error);
 }
-
 }  // namespace
