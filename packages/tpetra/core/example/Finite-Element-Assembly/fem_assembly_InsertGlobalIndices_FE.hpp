@@ -1,3 +1,4 @@
+&
 // @HEADER
 // ***********************************************************************
 //
@@ -476,7 +477,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
 
   // Because we're processing elements in parallel, we need storage for all of them
   int numOwnedElements = mesh.getNumOwnedElements();
-  int nperel = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly).extent(1);
+  int nperel = mesh.getOwnedElementToNode().extent(1);
 
   pair_type alln = pair_type(0,nperel);
   scalar_2d_array_type all_element_matrix("all_element_matrix",nperel*numOwnedElements);
