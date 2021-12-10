@@ -32,20 +32,6 @@
       <Parameter      name="relaxation: damping factor" type="double" value="0.7"/>
     </ParameterList>
 
-  <!-- ===========  REPARTITIONING  =========== -->
-    <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
-    <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/>
-    <Parameter        name="repartition: start level" type="int" value="3"/>
-    <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/>
-    <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
-    <Parameter        name="repartition: remap parts"             type="bool"     value="false"/>
-    <!-- start of default values for repartitioning (can be omitted) -->
-    <Parameter        name="repartition: remap parts"             type="bool"     value="true"/>
-    <Parameter        name="repartition: rebalance P and R"       type="bool"     value="false"/>
-    <ParameterList name="repartition: params">
-       <Parameter     name="algorithm"                            type="string"   value="multijagged"/>
-    </ParameterList>
-
     <ParameterList name="matrixmatrix: kernel params">
       <Parameter name="compute global constants: temporaries" type="bool" value="false"/>
       <Parameter name="compute global constants" type="bool" value="false"/>
