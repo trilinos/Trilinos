@@ -376,7 +376,6 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   auto domain_map = row_map;
   auto range_map  = row_map;
 
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
 
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
 
@@ -388,8 +387,8 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   Teuchos::Array<global_ordinal_type> global_ids_in_row(4);
 
   {
-    TimeMonitor timerElementLoopGraph
-      (*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)"));
+    TimeMonitor timerElementLoopGraph(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)"));
+    auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
 
     // for each element in the mesh...
     Tpetra::beginAssembly(*fe_graph);
@@ -472,13 +471,13 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     rcp (new fe_multivector_type(domain_map, fe_graph->getImporter(), 1));
 
   auto localMatrix  = fe_matrix->getLocalMatrixDevice();
-  auto localRHS     = rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
   auto localMap     = owned_plus_shared_map->getLocalMap();
   auto localColMap  = fe_matrix->getColMap()->getLocalMap();
 
   // Because we're processing elements in parallel, we need storage for all of them
   int numOwnedElements = mesh.getNumOwnedElements();
-  int nperel = owned_element_to_node_ids.extent(1);
+  int nperel = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly).extent(1);
+
   pair_type alln = pair_type(0,nperel);
   scalar_2d_array_type all_element_matrix("all_element_matrix",nperel*numOwnedElements);
   scalar_1d_array_type all_element_rhs("all_element_rhs",nperel*numOwnedElements);
@@ -487,10 +486,10 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   timerElementLoopMemory=Teuchos::null;
 
   {
-    TimeMonitor timerElementLoopMatrix
-      (*TimeMonitor::getNewTimer ("3.2) ElementLoop  (Matrix)"));
-
+    TimeMonitor timerElementLoopMatrix(*TimeMonitor::getNewTimer ("3.2) ElementLoop  (Matrix)"));
+    auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getDeviceView(Tpetra::Access::ReadOnly);
     // Loop over elements
+    auto localRHS     = rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
     Tpetra::beginAssembly(*fe_matrix,*rhs);
     Kokkos::parallel_for
       ("Assemble FE matrix and right-hand side",
@@ -512,7 +511,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
           element_lcids(element_node_idx) =
             localColMap.getLocalElement (owned_element_to_node_ids (element_gidx, element_node_idx));
         }
-
+        
         // For each node (row) on the current element:
         // - populate the values array
         // - add the values to the fe_matrix.
@@ -528,8 +527,10 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
           }
           Kokkos::atomic_add (&(localRHS(local_row_id,0)), element_rhs[element_node_idx]);
         }
+        
       });
   }
+
 
   // After the contributions are added, 'finalize' the matrix using fillComplete()
   {
@@ -537,11 +538,13 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     Tpetra::endAssembly(*fe_matrix);
   }
 
+
   {
     // Global assemble the RHS
     TimeMonitor timer(*TimeMonitor::getNewTimer("5) GlobalAssemble (RHS)"));
     Tpetra::endAssembly(*rhs);
   }
+
 
   Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
 
