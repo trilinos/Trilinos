@@ -325,14 +325,16 @@ CommGraphModel<Adapter>::CommGraphModel(
 
   // Identify nbor PIDs and number of entries sent per PID
   std::map<int,double> exportpidmap;
-  auto exportpids = imp->getExportPIDs();
-  size_t nexportpids = imp->getNumExportIDs();
-  for (size_t i = 0; i < nexportpids; i++) {
-    int k = exportpids[i];
-    if (exportpidmap.find(k) != exportpidmap.end())
-      exportpidmap[k] = exportpidmap[k] + 1.;
-    else
-      exportpidmap[k] = 1.;
+  if (!imp.is_null()) {
+    auto exportpids = imp->getExportPIDs();
+    size_t nexportpids = imp->getNumExportIDs();
+    for (size_t i = 0; i < nexportpids; i++) {
+      int k = exportpids[i];
+      if (exportpidmap.find(k) != exportpidmap.end())
+        exportpidmap[k] = exportpidmap[k] + 1.;
+      else
+        exportpidmap[k] = 1.;
+    }
   }
 
   // Set sizes
@@ -479,13 +481,17 @@ void CommGraphModel<Adapter>::migrateGraph()
     for(int i = startRank_; i < endRank_; i++) {
       offset_t adjStartRank_ = eOffsets_[i-startRank_];
       offset_t adjSize = eOffsets_[i-startRank_+1] - adjStartRank_;
-      requests[i-startRank_] = Teuchos::ireceive<int, gno_t>(*comm_, 
+      if (adjSize > 0) {
+        requests[i-startRank_] = Teuchos::ireceive<int, gno_t>(*comm_, 
 							arcp(&eGids_[adjStartRank_], 0, adjSize, false), 
 							i);
+      }
     } 
    
     // Send adjacency even though this rank will remain active
-    Teuchos::send<int, gno_t>(*comm_, old_nLocalEdges_, &old_eGids_[0], destRank_);
+    if (old_nLocalEdges_ > 0) {
+      Teuchos::send<int, gno_t>(*comm_, old_nLocalEdges_, &old_eGids_[0], destRank_);
+    }
     Teuchos::waitAll<int>(*comm_, Teuchos::arrayView(requests, myVertexShare)); 
 
     
@@ -517,13 +523,17 @@ void CommGraphModel<Adapter>::migrateGraph()
     for(int i = startRank_; i < endRank_; i++) {
       offset_t adjStartRank_ = eOffsets_[i-startRank_];
       offset_t adjSize = eOffsets_[i-startRank_+1] - adjStartRank_;
-      requests[i-startRank_] = Teuchos::ireceive<int, scalar_t>(*comm_, 
-							   arcp(&ewgts[adjStartRank_], 0, adjSize, false), // assumes one vertex per rank  
+      if (adjSize > 0) {
+        requests[i-startRank_] = Teuchos::ireceive<int, scalar_t>(*comm_, 
+							   arcp(&ewgts[adjStartRank_], 0, adjSize, false),
 							   i);
+      }
     } 
 
     old_eWeights_[0].getStridedList(wLen, wPtr, stride);
-    Teuchos::send<int, scalar_t>(*comm_, old_nLocalEdges_, wPtr, destRank_);
+    if (old_nLocalEdges_ > 0) {
+      Teuchos::send<int, scalar_t>(*comm_, old_nLocalEdges_, wPtr, destRank_);
+    }
     
     Teuchos::waitAll<int>(*comm_, Teuchos::arrayView(requests, myVertexShare));     
 
@@ -550,7 +560,9 @@ void CommGraphModel<Adapter>::migrateGraph()
     Teuchos::send<int, offset_t>(*comm_, 1, &eOffsets_[nLocalVertices_], destRank_);
     
     // Send adjacency list
-    Teuchos::send<int, gno_t>(*comm_, nLocalEdges_, &eGids_[0], destRank_);
+    if (nLocalEdges_ > 0) {
+      Teuchos::send<int, gno_t>(*comm_, nLocalEdges_, &eGids_[0], destRank_);
+    }
     
     // Send vertex weights list
     const scalar_t *wPtr;
@@ -561,7 +573,9 @@ void CommGraphModel<Adapter>::migrateGraph()
 
     // Send edge weights list
     eWeights_[0].getStridedList(wLen, wPtr, stride);
-    Teuchos::send<int, scalar_t>(*comm_, nLocalEdges_, wPtr, destRank_);
+    if (nLocalEdges_ > 0) {
+      Teuchos::send<int, scalar_t>(*comm_, nLocalEdges_, wPtr, destRank_);
+    }
     
     nLocalVertices_ = 0;
   }
