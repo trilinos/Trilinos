@@ -160,18 +160,19 @@ public:
     virtual void set_output_filename(const std::string& filename);
     virtual std::string get_output_filename() const;
 
+    virtual void set_log_filename(const std::string& filename);
+    virtual std::string get_log_filename() const;
+
     virtual void setShouldFixSpiders(bool fixSpiders) { }
     virtual void setEdgeWeightForSearch(double w) { }
     virtual void setVertexWeightMultiplierForVertexInSearch(double w) { }
     virtual void setToleranceForFaceSearch(double tol) { }
 
-protected:
-    const DefaultSettings defaults;
-
 private:
     std::string m_initialDecompMethod;
     std::string m_inputFilename;
     std::string m_outputFilename;
+    std::string m_logFilename;
     BlockWeightMultipliers m_vertexWeightBlockMultipliers;
 };
 
@@ -185,16 +186,16 @@ class GraphCreationSettings : public BalanceSettings
 {
 public:
     GraphCreationSettings()
-      : mToleranceForFaceSearch(defaults.faceSearchAbsTol),
-        mToleranceForParticleSearch(defaults.particleSearchTol),
-        edgeWeightForSearch(defaults.faceSearchEdgeWeight),
-        method(defaults.decompMethod),
-        vertexWeightMultiplierForVertexInSearch(defaults.faceSearchVertexMultiplier),
+      : mToleranceForFaceSearch(DefaultSettings::faceSearchAbsTol),
+        mToleranceForParticleSearch(DefaultSettings::particleSearchTol),
+        edgeWeightForSearch(DefaultSettings::faceSearchEdgeWeight),
+        method(DefaultSettings::decompMethod),
+        vertexWeightMultiplierForVertexInSearch(DefaultSettings::faceSearchVertexMultiplier),
         m_UseConstantToleranceForFaceSearch(true),
         m_shouldFixSpiders(false),
         m_spiderBeamConnectivityCountField(nullptr),
         m_spiderVolumeConnectivityCountField(nullptr),
-        m_includeSearchResultInGraph(defaults.useContactSearch),
+        m_includeSearchResultInGraph(DefaultSettings::useContactSearch),
         m_useNodeBalancer(false),
         m_nodeBalancerTargetLoadBalance(1.0),
         m_nodeBalancerMaxIterations(5)

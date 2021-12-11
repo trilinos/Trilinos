@@ -59,5 +59,24 @@ void CUDAPinnedAndMappedAlignedDeallocate(void* p)
 }
 #endif
 
+#ifdef KOKKOS_ENABLE_HIP
+void* HIPPinnedAndMappedAlignedAllocate(size_t size)
+{
+  void* ret;
+  hipError_t status = hipHostMalloc(&ret, size, hipHostMallocMapped);
+
+  ThrowRequireMsg(status == hipSuccess, "Error during hipPinnedAndMappedAlignedAllocate: " + std::string(hipGetErrorString(status)));
+  return ret;
+}
+
+void HIPPinnedAndMappedAlignedDeallocate(void* p)
+{
+  if (!Kokkos::is_initialized())
+    std::cerr << "Error during HIPPinnedAndMappedAlignedDeallocate::hipFreeHost: Kokkos not initialized"<< std::endl;
+
+  hipError_t status = hipHostFree(p);
+  ThrowRequireMsg(status == hipSuccess, "Error during HIPPinnedAndMappedAlignedDellocate: " + std::string(hipGetErrorString(status)));
+}
+#endif
 }
 }

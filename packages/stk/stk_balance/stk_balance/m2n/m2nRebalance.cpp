@@ -34,11 +34,75 @@
 #include "m2nRebalance.hpp"
 #include <stk_balance/m2n/InputMesh.hpp>
 #include <stk_balance/m2n/OutputMesh.hpp>
+#include <stk_balance/balanceUtils.hpp>
+#include "stk_balance/internal/LogUtils.hpp"
 #include <stk_io/StkMeshIoBroker.hpp>
+#include <stk_io/FillMesh.hpp>
+#include "stk_util/environment/Env.hpp"
+#include "stk_util/environment/EnvData.hpp"
+#include "stk_util/environment/OutputLog.hpp"
 
 namespace stk {
 namespace balance {
 namespace m2n {
+
+void set_output_streams(MPI_Comm comm, const stk::balance::M2NBalanceSettings & balanceSettings)
+{
+  if (stk::parallel_machine_rank(comm) == 0) {
+    const std::string & logName = balanceSettings.get_log_filename();
+    if (logName == "cout"  || logName == "cerr") {
+      stk::EnvData::instance().m_outputP0 = stk::get_log_ostream(logName);
+    }
+    else {
+      stk::bind_output_streams("log=\"" + logName + "\"");
+      stk::EnvData::instance().m_outputP0 = stk::get_log_ostream("log");
+    }
+  }
+  else {
+    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+  }
+
+  Ioss::Utils::set_output_stream(sierra::Env::outputP0());
+}
+
+void print_running_message(const stk::balance::M2NBalanceSettings & balanceSettings, MPI_Comm comm)
+{
+  if (stk::parallel_machine_rank(comm) == 0) {
+    std::ostream diag_stream(std::cout.rdbuf());
+    stk::register_ostream(diag_stream, "diag_stream");
+
+    const std::string & logName = balanceSettings.get_log_filename();
+    const bool usingLogFile = not (logName == "cout" || logName == "cerr");
+    if (usingLogFile) {
+      stk::bind_output_streams("diag_stream>log");
+      stk::bind_output_streams("diag_stream>+cout");
+    }
+    else {
+      stk::bind_output_streams("diag_stream>" + logName);
+    }
+
+    const int inputRanks = stk::parallel_machine_size(comm);
+    const int outputRanks = balanceSettings.get_num_output_processors();
+    diag_stream << "stk_balance_m2n converting from " << inputRanks << " to " << outputRanks << " MPI ranks" << std::endl;
+    if (usingLogFile) {
+      diag_stream << "        Log file:  " << logName << std::endl;
+    }
+
+    diag_stream << "     Input files:  " << balanceSettings.get_input_filename();
+    if (inputRanks > 1) {
+      diag_stream << "." << inputRanks << ".*";
+    }
+    diag_stream << std::endl;
+
+    diag_stream << "    Output files:  " << balanceSettings.get_input_filename();
+    if (outputRanks > 1) {
+      diag_stream << "." << outputRanks << ".*";
+    }
+    diag_stream << std::endl;
+
+    stk::unregister_ostream(diag_stream);
+  }
+}
 
 void m2nRebalance(stk::io::StkMeshIoBroker& ioBroker, const stk::balance::M2NBalanceSettings& balanceSettings)
 {
@@ -50,6 +114,19 @@ void m2nRebalance(stk::io::StkMeshIoBroker& ioBroker, const stk::balance::M2NBal
     stk::balance::m2n::OutputMesh outputMesh(inputMesh, targetSubdomains);
     outputMesh.transfer_and_write();
   }
+}
+
+void rebalance_m2n(stk::balance::M2NBalanceSettings &balanceSettings, MPI_Comm comm)
+{
+  print_running_message(balanceSettings, comm);
+  print_banner(sierra::Env::outputP0());
+
+  stk::mesh::MetaData meta;
+  stk::mesh::BulkData bulk(meta, comm);
+  stk::io::StkMeshIoBroker ioBroker;
+  stk::io::fill_mesh_preexisting(ioBroker, balanceSettings.get_input_filename(), bulk);
+
+  stk::balance::m2n::m2nRebalance(ioBroker, balanceSettings);
 }
 
 }}}

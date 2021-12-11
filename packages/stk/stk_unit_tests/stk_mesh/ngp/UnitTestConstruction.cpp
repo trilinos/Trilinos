@@ -50,7 +50,7 @@ void test_device_field_default_constructor()
   EXPECT_EQ(1, constructionFinished);
 }
 
-TEST(DefaultConstruct, DISABLED_deviceField)
+TEST(DefaultConstruct, deviceField)
 {
   test_device_field_default_constructor();
 }

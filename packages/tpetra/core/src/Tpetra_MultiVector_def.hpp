@@ -243,7 +243,7 @@ namespace { // (anonymous)
     // around this default execution space issue.
     //
     typedef typename Kokkos::Impl::if_c<
-      Kokkos::Impl::SpaceAccessibility<
+      Kokkos::SpaceAccessibility<
         typename ExecSpace::memory_space,
         Kokkos::HostSpace>::accessible,
       typename ExecSpace::device_type,
