@@ -205,11 +205,10 @@ namespace Adelus {
     typedef Kokkos::View<Kokkos::complex<double>**,
                          Kokkos::LayoutLeft,
 #ifdef KOKKOS_ENABLE_CUDA
-                         Kokkos::CudaSpace,
+                         Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace,
+                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
 #endif
-                        > AA_Internal_dev;
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
 
@@ -312,11 +311,10 @@ namespace Adelus {
     typedef Kokkos::View<double**,
                          Kokkos::LayoutLeft,
 #ifdef KOKKOS_ENABLE_CUDA
-                         Kokkos::CudaSpace,
+                         Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace,
+                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
 #endif
-                        > AA_Internal_dev;
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
 
@@ -419,11 +417,10 @@ namespace Adelus {
     typedef Kokkos::View<Kokkos::complex<float>**,
                          Kokkos::LayoutLeft,
 #ifdef KOKKOS_ENABLE_CUDA
-                         Kokkos::CudaSpace,
+                         Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace,
+                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
 #endif
-                        > AA_Internal_dev;
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
 
@@ -526,11 +523,10 @@ namespace Adelus {
     typedef Kokkos::View<float**,
                          Kokkos::LayoutLeft,
 #ifdef KOKKOS_ENABLE_CUDA
-                         Kokkos::CudaSpace,
+                         Kokkos::CudaSpace> AA_Internal_dev;
 #else
-                         Kokkos::Experimental::HIPSpace,
+                         Kokkos::Experimental::HIPSpace> AA_Internal_dev;
 #endif
-                        > AA_Internal_dev;
 
     AA_Internal_dev AA_i_dev( "AA_i_dev", my_rows_, my_cols_ + my_rhs_ + 6 );
 
