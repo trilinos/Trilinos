@@ -98,15 +98,52 @@ namespace MueLu {
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
                                      std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type(") + name + ")");
 
+          // Get a valid communicator and lib
+          RCP<const Teuchos::Comm<int> > comm;
+          if (!level->GetComm().is_null())
+            comm = level->GetComm();
+          else if (level->IsAvailable("A")) {
+            RCP<Matrix> mat;
+            level->Get("A", mat);
+            comm = mat->getMap()->getComm();
+          } else {
+            RCP<Level> level0 = H.GetLevel(0);
+            if (!level0->GetComm().is_null())
+              comm = level0->GetComm();
+            else {
+              RCP<Matrix> mat;
+              level0->Get("A", mat);
+              comm = mat->getMap()->getComm();
+            }
+          }
+          Xpetra::UnderlyingLib lib = level->lib();
+
           if (name == "A") {
-            level->Set(name, Teuchos::getValue<RCP<Matrix > > (levelListEntry->second),NoFactory::get());
+            RCP<Matrix> mat;
+            if (levelListEntry->second.isType<std::string>())
+              // We might also want to read maps here.
+              mat = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(Teuchos::getValue<std::string>(levelListEntry->second), lib, comm);
+            else
+              mat = Teuchos::getValue<RCP<Matrix > > (levelListEntry->second);
+            level->Set(name, mat, NoFactory::get());
             M->SetFactory(name, NoFactory::getRCP()); // TAW: not sure about this: be aware that this affects all levels
                                                       //      However, A is accessible through NoFactory anyway, so it should
                                                       //      be fine here.
           }
           else if(name == "P" || name == "R" || name == "K" || name == "M") {
+            RCP<Matrix> mat;
+            if (levelListEntry->second.isType<std::string>())
+              // We might also want to read maps here.
+              mat = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read(Teuchos::getValue<std::string>(levelListEntry->second), lib, comm);
+            else
+              mat = Teuchos::getValue<RCP<Matrix > > (levelListEntry->second);
+
+            RCP<const FactoryBase> fact = M->GetFactory(name);
+            level->AddKeepFlag(name,fact.get(),MueLu::UserData);
+            level->Set(name, mat, fact.get());
+
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-            level->Set(name, Teuchos::getValue<RCP<Matrix > >     (levelListEntry->second), NoFactory::get());
+            level->Set(name, mat, NoFactory::get());
           }
           else if (name == "Mdiag")
           {
@@ -115,15 +152,50 @@ namespace MueLu {
           }
           else if (name == "Nullspace")
           {
-            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-            level->Set(name, Teuchos::getValue<RCP<MultiVector > >(levelListEntry->second), NoFactory::get());
+            RCP<MultiVector> vec;
+            if (levelListEntry->second.isType<std::string>()) {
+              TEUCHOS_ASSERT(level->IsAvailable("A"));
+              RCP<Matrix> mat;
+              level->Get("A", mat);
+              auto map = mat->getMap();
+              vec = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(Teuchos::getValue<std::string>(levelListEntry->second), map);
+            } else
+              vec = Teuchos::getValue<RCP<MultiVector> > (levelListEntry->second);
+            level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
+            level->Set(name, vec, NoFactory::get());
             //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
                                                         // One should do this only in very special cases
           }
           else if(name == "Coordinates") //Scalar of Coordinates MV is always double
           {
+            RCP<realvaluedmultivector_type> vec;
+            if (levelListEntry->second.isType<std::string>()) {
+              TEUCHOS_ASSERT(level->IsAvailable("A"));
+              RCP<Matrix> mat;
+              level->Get("A", mat);
+              size_t blkSize = mat->GetFixedBlockSize();
+              RCP<const Map> nodeMap = mat->getRowMap();
+              if (blkSize > 1) {
+                // Create a nodal map, as coordinates have not been expanded to a DOF map yet.
+                RCP<const Map> dofMap       = mat->getRowMap();
+                GO             indexBase    = dofMap->getIndexBase();
+                size_t         numLocalDOFs = dofMap->getNodeNumElements();
+                TEUCHOS_TEST_FOR_EXCEPTION(numLocalDOFs % blkSize, Exceptions::RuntimeError,
+                                           "HierarchyUtils: block size (" << blkSize << ") is incompatible with the number of local dofs in a row map (" << numLocalDOFs);
+                ArrayView<const GO> GIDs = dofMap->getNodeElementList();
+
+                Array<GO> nodeGIDs(numLocalDOFs/blkSize);
+                for (size_t i = 0; i < numLocalDOFs; i += blkSize)
+                  nodeGIDs[i/blkSize] = (GIDs[i] - indexBase)/blkSize + indexBase;
+
+                Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+                nodeMap = MapFactory::Build(dofMap->lib(), INVALID, nodeGIDs(), indexBase, dofMap->getComm());
+              }
+              vec = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(Teuchos::getValue<std::string>(levelListEntry->second), nodeMap);
+            } else
+              vec = Teuchos::getValue<RCP<realvaluedmultivector_type > > (levelListEntry->second);
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-            level->Set(name, Teuchos::getValue<RCP<realvaluedmultivector_type> >(levelListEntry->second), NoFactory::get());
+            level->Set(name, vec, NoFactory::get());
             //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           }
           else if(name == "Node Comm")
@@ -214,7 +286,6 @@ namespace MueLu {
           } else if(name == "Coordinates") {//Scalar of Coordinates MV is always double
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<realvaluedmultivector_type> >(userListEntry->second), NoFactory::get());
-            level->print(std::cout, MueLu::VERB_EXTREME);
           }
           else if(name == "Node Comm") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
@@ -282,6 +353,7 @@ namespace MueLu {
               throw std::runtime_error("Invalid non-serializable data on list");
           }
         }
+        // level->print(std::cout, MueLu::Debug);
       }
     }
   }

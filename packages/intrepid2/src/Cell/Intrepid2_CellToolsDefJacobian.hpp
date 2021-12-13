@@ -805,8 +805,8 @@ namespace Intrepid2 {
     // resolve the -1 default argument for endCell into the true end cell index
     int endCellResolved = (endCell == -1) ? worksetCell.extent_int(0) : endCell;
     
-    using range_policy_type = Kokkos::Experimental::MDRangePolicy
-      < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+    using range_policy_type = Kokkos::MDRangePolicy
+      < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     range_policy_type policy( { 0, 0 },
                               { jacobian.extent(0), jacobian.extent(1) } );
     Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, gradients, startCell, endCellResolved) );

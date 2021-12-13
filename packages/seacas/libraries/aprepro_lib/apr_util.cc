@@ -4,34 +4,38 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include "apr_symrec.h"
 #include "aprepro.h"        // for symrec, Aprepro, etc
 #include "aprepro_parser.h" // for Parser, Parser::token, etc
-#include <cctype>           // for isalnum, isalpha, isupper, etc
-#include <cerrno>           // for errno, EDOM, ERANGE
-#include <cfenv>            // for fetestexcept, FE_DIVBYZERO, etc
-#include <cmath>            // for math_errhandling, etc
-#include <cstdio>           // for perror
-#include <cstdlib>          // for mkstemp
-#include <cstring>          // for strlen, etc
-#include <iostream>         // for operator<<, cerr, ostream
-#include <string>           // for allocator, operator+, etc
-#include <sys/stat.h>       // for stat, S_ISDIR
-#include <unistd.h>         // for close
-#include <vector>           // for vector
 
-#ifdef _WIN32
+#include <cctype>     // for isalnum, isalpha, isupper, etc
+#include <cerrno>     // for errno, EDOM, ERANGE
+#include <cfenv>      // for fetestexcept, FE_DIVBYZERO, etc
+#include <cmath>      // for math_errhandling, etc
+#include <cstdio>     // for perror
+#include <cstdlib>    // for mkstemp
+#include <cstring>    // for strlen, etc
+#include <iostream>   // for operator<<, cerr, ostream
+#include <string>     // for allocator, operator+, etc
+#include <sys/stat.h> // for stat, S_ISDIR
+#include <unistd.h>   // for close
+#include <vector>     // for vector
+
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
 #include <fcntl.h>
 #include <io.h>
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <windows.h>
+
+#if !defined(S_ISDIR)
+#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
+
+#endif
 #else
 #include <unistd.h> // for close
-#endif
-
-#if !defined(S_ISDIR) && defined(_WIN32)
-#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
 #endif
 
 namespace {
@@ -120,7 +124,8 @@ namespace SEAMS {
     int fd = mkstemps(tmp_name, 0);
     if (fd >= 0)
       close(fd);
-#elif defined(_WIN32)
+#elif defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||              \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
     copy_string(tmp_name, _mktemp(tmp_name), strlen(tmp_name) + 1);
 #else
     int fd = mkstemp(tmp_name);
@@ -173,7 +178,8 @@ namespace SEAMS {
 
   void math_error(const SEAMS::Aprepro &apr, const char *function)
   {
-#ifndef _WIN32
+#if !defined(WIN32) && !defined(__WIN32__) && !defined(_WIN32) && !defined(_MSC_VER) &&            \
+    !defined(__MINGW32__) && !defined(_WIN64) && !defined(__MINGW64__)
 #ifndef math_errhandling
 #define math_errhandling MATH_ERRNO
 #endif

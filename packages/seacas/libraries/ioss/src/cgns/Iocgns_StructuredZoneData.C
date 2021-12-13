@@ -117,7 +117,7 @@ namespace {
   }
 
   void zgc_subset_donor_ranges(const Iocgns::StructuredZoneData *don_zone,
-                               Ioss::ZoneConnectivity &          zgc)
+                               Ioss::ZoneConnectivity           &zgc)
   {
     // NOTE: Updates the range and donor_range in zgc
 

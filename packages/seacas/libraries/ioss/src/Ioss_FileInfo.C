@@ -13,20 +13,20 @@
 #include <string>
 #include <tokenize.h>
 
-#ifndef _WIN32
-#include <sys/unistd.h>
-#else
+#if defined(__IOSS_WINDOWS__)
 #include <direct.h>
 #include <io.h>
 #define access _access
-#define R_OK 4 /* Test for read permission.  */
-#define W_OK 2 /* Test for write permission.  */
-#define X_OK 1 /* execute permission - unsupported in windows*/
-#define F_OK 0 /* Test for existence.  */
+#define R_OK   4 /* Test for read permission.  */
+#define W_OK   2 /* Test for write permission.  */
+#define X_OK   1 /* execute permission - unsupported in windows*/
+#define F_OK   0 /* Test for existence.  */
 #ifndef S_ISREG
 #define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
 #define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
 #endif
+#else
+#include <sys/unistd.h>
 #endif
 
 #ifdef SEACAS_HAVE_MPI
@@ -35,7 +35,9 @@
 
 #include <cstdio>
 #include <sys/stat.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 
 namespace {
   bool internal_access(const std::string &name, int mode);
@@ -156,7 +158,7 @@ namespace Ioss {
   //: Returns TRUE if we are pointing to a symbolic link
   bool FileInfo::is_symlink() const
   {
-#ifndef _WIN32
+#if !defined(__IOSS_WINDOWS__)
     struct stat s
     {
     };
@@ -289,7 +291,7 @@ namespace Ioss {
 
   std::string FileInfo::realpath() const
   {
-#ifdef _WIN32
+#if defined(__IOSS_WINDOWS__)
     char *path = _fullpath(nullptr, filename_.c_str(), _MAX_PATH);
 #else
     char *path = ::realpath(filename_.c_str(), nullptr);
@@ -325,7 +327,7 @@ namespace Ioss {
 
       struct stat st;
       if (stat(path_root.c_str(), &st) != 0) {
-#ifdef _WIN32
+#if defined(__IOSS_WINDOWS__)
         if (mkdir(path_root.c_str()) != 0 && errno != EEXIST) {
 #else
         const int mode = 0777; // Users umask will be applied to this.

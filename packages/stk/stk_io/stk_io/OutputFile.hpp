@@ -161,23 +161,13 @@ public:
       internal_add_global(m_region, variableName, parameter_type.first, parameter_type.second);
     }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-    STK_DEPRECATED void add_global(const std::string &variableName, const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type);
-#endif
     void add_global_ref(const std::string &variableName, const stk::util::Parameter &value);
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-    STK_DEPRECATED void add_global_ref(const std::string &variableName, const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type);
-#endif
     void add_global(const std::string &variableName, Ioss::Field::BasicType dataType);
     void add_global(const std::string &variableName, const std::string &type, Ioss::Field::BasicType dataType);
     void add_global(const std::string &variableName, int component_count,     Ioss::Field::BasicType dataType);
 
     void write_global(const std::string &variableName,
                       const stk::util::Parameter &param);
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-    STK_DEPRECATED void write_global(const std::string &variableName,
-                      const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type);
-#endif
     void write_global(const std::string &variableName, double globalVarData);
     void write_global(const std::string &variableName, int globalVarData);
     void write_global(const std::string &variableName, std::vector<double>& globalVarData);

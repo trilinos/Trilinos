@@ -189,7 +189,7 @@ void run_point_experiment(
 	  KernelHandle kh;
 
 	  kh.create_gs_handle(/*KokkosSparse::GS_TEAM*/);
-	  Kokkos::Impl::Timer timer1;
+	  Kokkos::Timer timer1;
 	  KokkosKernels::Experimental::Example::pcgsolve(
 	        kh
 	      , crsmat
@@ -296,7 +296,7 @@ void run_block_experiment(
 
 
 	  kh.create_gs_handle();
-	  Kokkos::Impl::Timer timer1;
+	  Kokkos::Timer timer1;
 	  KokkosKernels::Experimental::Example::block_pcgsolve(
 	        kh
 	      , point_crsmat

@@ -127,7 +127,7 @@ Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildUncommitedMesh(stk::Paralle
 
    } else if(xProcs_==-1) {
       // default x only decomposition
-      xProcs_ = machSize_; 
+      xProcs_ = machSize_;
       yProcs_ = 1;
       zProcs_ = 1;
    }
@@ -138,7 +138,7 @@ Teuchos::RCP<STK_Interface> CubeHexMeshFactory::buildUncommitedMesh(stk::Paralle
 
    // build meta information: blocks and side set setups
    buildMetaData(parallelMach,*mesh);
- 
+
    mesh->addPeriodicBCs(periodicBCVec_);
 
    return mesh;
@@ -177,7 +177,7 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
    if(createFaceBlocks_) {
       mesh.buildLocalFaceIDs();
    }
-   
+
    mesh.beginModification();
 
    // now that edges are built, side and node sets can be added
@@ -189,7 +189,7 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
    if(createFaceBlocks_) {
       addFaceBlocks(mesh);
    }
-   
+
    mesh.endModification();
 
    // calls Stk_MeshFactory::rebalance
@@ -203,13 +203,13 @@ void CubeHexMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterL
 
    setMyParamList(paramList);
 
-   x0_ = paramList->get<double>("X0"); 
-   y0_ = paramList->get<double>("Y0"); 
-   z0_ = paramList->get<double>("Z0"); 
+   x0_ = paramList->get<double>("X0");
+   y0_ = paramList->get<double>("Y0");
+   z0_ = paramList->get<double>("Z0");
 
-   xf_ = paramList->get<double>("Xf"); 
-   yf_ = paramList->get<double>("Yf"); 
-   zf_ = paramList->get<double>("Zf"); 
+   xf_ = paramList->get<double>("Xf");
+   yf_ = paramList->get<double>("Yf");
+   zf_ = paramList->get<double>("Zf");
 
    xBlocks_ = paramList->get<int>("X Blocks");
    yBlocks_ = paramList->get<int>("Y Blocks");
@@ -301,6 +301,14 @@ void CubeHexMeshFactory::initializeWithDefaults()
 
    // set that parameter list
    setParameterList(validParams);
+
+   /* This is a hex mesh factory so all elements in all element blocks
+    * will be hex8.  This means that all the edges will be line2 and
+    * all the faces will be quad4.  The edge and face block names are
+    * hard coded to reflect this.
+    */
+   edgeBlockName_ = "line_2_"+panzer_stk::STK_Interface::edgeBlockString;
+   faceBlockName_ = "quad_4_"+panzer_stk::STK_Interface::faceBlockString;
 }
 
 void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK_Interface & mesh) const
@@ -308,6 +316,8 @@ void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, 
    typedef shards::Hexahedron<8> HexTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<HexTopo>();
    const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(2,0);
+   const CellTopologyData * edge_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
+   const CellTopologyData * face_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(2,0);
 
    // build meta data
    //mesh.setDimension(2);
@@ -320,11 +330,22 @@ void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, 
 
             // add element blocks
             mesh.addElementBlock("eblock"+ebPostfix.str(),ctd);
+
+            if(createEdgeBlocks_) {
+               mesh.addEdgeBlock("eblock"+ebPostfix.str(),
+                                 edgeBlockName_,
+                                 edge_ctd);
+            }
+            if(createFaceBlocks_) {
+               mesh.addFaceBlock("eblock"+ebPostfix.str(),
+                                 faceBlockName_,
+                                 face_ctd);
+            }
          }
       }
    }
 
-   // add sidesets 
+   // add sidesets
    mesh.addSideset("left",side_ctd);
    mesh.addSideset("right",side_ctd);
    mesh.addSideset("top",side_ctd);
@@ -352,28 +373,19 @@ void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, 
 
    // add nodesets
    mesh.addNodeset("origin");
-
-   if(createEdgeBlocks_) {
-      const CellTopologyData * edge_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
-      mesh.addEdgeBlock(panzer_stk::STK_Interface::edgeBlockString, edge_ctd);
-   }
-   if(createFaceBlocks_) {
-      const CellTopologyData * face_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(2,0);
-      mesh.addFaceBlock(panzer_stk::STK_Interface::faceBlockString, face_ctd);
-   }
 }
 
 void CubeHexMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
 {
    mesh.beginModification();
-      // build each block
-      for(int xBlock=0;xBlock<xBlocks_;xBlock++) {
-         for(int yBlock=0;yBlock<yBlocks_;yBlock++) {
-            for(int zBlock=0;zBlock<zBlocks_;zBlock++) {
-               buildBlock(parallelMach,xBlock,yBlock,zBlock,mesh);
-            }
+   // build each block
+   for(int xBlock=0;xBlock<xBlocks_;xBlock++) {
+      for(int yBlock=0;yBlock<yBlocks_;yBlock++) {
+         for(int zBlock=0;zBlock<zBlocks_;zBlock++) {
+            buildBlock(parallelMach,xBlock,yBlock,zBlock,mesh);
          }
       }
+   }
    mesh.endModification();
 }
 
@@ -398,7 +410,7 @@ void CubeHexMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,int 
    double deltaX = (xf_-x0_)/double(totalXElems);
    double deltaY = (yf_-y0_)/double(totalYElems);
    double deltaZ = (zf_-z0_)/double(totalZElems);
- 
+
    std::vector<double> coord(3,0.0);
 
    // build the nodes
@@ -425,14 +437,14 @@ void CubeHexMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,int 
             stk::mesh::EntityId gid = totalXElems*totalYElems*nz+totalXElems*ny+nx+1;
             std::vector<stk::mesh::EntityId> nodes(8);
             nodes[0] = nx+1+ny*(totalXElems+1) +nz*(totalYElems+1)*(totalXElems+1);
-            nodes[1] = nodes[0]+1;              
+            nodes[1] = nodes[0]+1;
             nodes[2] = nodes[1]+(totalXElems+1);
-            nodes[3] = nodes[2]-1;              
+            nodes[3] = nodes[2]-1;
             nodes[4] = nodes[0]+(totalYElems+1)*(totalXElems+1);
             nodes[5] = nodes[1]+(totalYElems+1)*(totalXElems+1);
             nodes[6] = nodes[2]+(totalYElems+1)*(totalXElems+1);
             nodes[7] = nodes[3]+(totalYElems+1)*(totalXElems+1);
-   
+
             RCP<ElementDescriptor> ed = rcp(new ElementDescriptor(gid,nodes));
             mesh.addElement(ed,block);
          }
@@ -560,7 +572,7 @@ void CubeHexMeshFactory::addSides(STK_Interface & mesh) const
       }
 
       if(ny==0) {
-         // on the bottom 
+         // on the bottom
          mesh.getBulkData()->declare_element_side(element, 0, parts);
       }
       if(ny+1==totalYElems) {
@@ -602,7 +614,7 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
    std::vector<stk::mesh::Part*> vertical;
    std::vector<stk::mesh::Part*> horizontal;
    std::vector<stk::mesh::Part*> transverse;
-  
+
    if(buildInterfaceSidesets_) {
      for(int bx=1;bx<xBlocks_;bx++) {
        std::stringstream ss;
@@ -672,7 +684,7 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
       if(ny % nYElems_==0) {
          stk::mesh::Entity side = mesh.findConnectivityById(element, side_rank, 0);
 
-         // on the bottom 
+         // on the bottom
          if(mesh.entityOwnerRank(side)==machRank_) {
 	   if(ny==0) {
 	     mesh.addEntityToSideset(side,bottom);
@@ -741,7 +753,7 @@ void CubeHexMeshFactory::addNodeSets(STK_Interface & mesh) const
    stk::mesh::Part * origin = mesh.getNodeset("origin");
 
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
-   if(machRank_==0) 
+   if(machRank_==0)
    {
       // add zero node to origin node set
       stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);
@@ -753,13 +765,15 @@ void CubeHexMeshFactory::addNodeSets(STK_Interface & mesh) const
 // Post-Condition: call endModification() after exit
 void CubeHexMeshFactory::addEdgeBlocks(STK_Interface & mesh) const
 {
-   stk::mesh::Part * edge_block = mesh.getEdgeBlock(panzer_stk::STK_Interface::edgeBlockString);
-
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
    Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
 
+   stk::mesh::Part * edge_block = mesh.getEdgeBlock(edgeBlockName_);
+
+   stk::mesh::Selector owned_block = metaData->locally_owned_part();
+
    std::vector<stk::mesh::Entity> edges;
-   bulkData->get_entities(mesh.getEdgeRank(),metaData->locally_owned_part(),edges);
+   bulkData->get_entities(mesh.getEdgeRank(), owned_block, edges);
    mesh.addEntitiesToEdgeBlock(edges, edge_block);
 }
 
@@ -767,13 +781,15 @@ void CubeHexMeshFactory::addEdgeBlocks(STK_Interface & mesh) const
 // Post-Condition: call endModification() after exit
 void CubeHexMeshFactory::addFaceBlocks(STK_Interface & mesh) const
 {
-   stk::mesh::Part * face_block = mesh.getFaceBlock(panzer_stk::STK_Interface::faceBlockString);
-
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
    Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
 
+   stk::mesh::Part * face_block = mesh.getFaceBlock(faceBlockName_);
+
+   stk::mesh::Selector owned_block = metaData->locally_owned_part();
+
    std::vector<stk::mesh::Entity> faces;
-   bulkData->get_entities(mesh.getFaceRank(),metaData->locally_owned_part(),faces);
+   bulkData->get_entities(mesh.getFaceRank(), owned_block, faces);
    mesh.addEntitiesToFaceBlock(faces, face_block);
 }
 

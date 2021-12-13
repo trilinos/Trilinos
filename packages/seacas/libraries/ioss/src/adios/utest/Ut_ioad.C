@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -201,10 +201,8 @@ void CompareFieldData(const T entity_block1, const T entity_block2, const std::s
 
 template <typename T> void CompareAllProperties(const T &obj1, const T &obj2)
 {
-  std::vector<std::string> block1_property_list;
-  obj1->property_describe(&block1_property_list);
-  std::vector<std::string> block2_property_list;
-  obj2->property_describe(&block2_property_list);
+  auto block1_property_list = obj1->property_describe();
+  auto block2_property_list = obj2->property_describe();
   for (auto property_name1 : block1_property_list) {
     if (std::find(ignored_properties.begin(), ignored_properties.end(), property_name1) !=
         std::end(ignored_properties)) {
@@ -236,10 +234,8 @@ void CompareContainers(const T &entity_blocks1, const T &entity_blocks2, Ioss::S
         std::find_if(entity_blocks2.begin(), entity_blocks2.end(),
                      [=](typename T::value_type e) { return e->name() == entity_block1->name(); });
     if (entity_block2 != entity_blocks2.end()) {
-      Ioss::NameList block1_field_names;
-      entity_block1->field_describe(&block1_field_names);
-      Ioss::NameList block2_field_names;
-      (*entity_block2)->field_describe(&block2_field_names);
+      auto block1_field_names = entity_block1->field_describe();
+      auto block2_field_names = (*entity_block2)->field_describe();
       // Sorts vectors before comparing them
       std::sort(block1_field_names.begin(), block1_field_names.end());
       std::sort(block2_field_names.begin(), block2_field_names.end());
@@ -340,8 +336,7 @@ void put_field_data(std::string field_name, int local_size, size_t component_cou
 
 template <typename Entity> void write_fields(Entity *e, Ioss::Field::RoleType role)
 {
-  std::vector<std::string> field_names;
-  e->field_describe(&field_names);
+  auto field_names = e->field_describe();
   for (auto field_name : field_names) {
     Ioss::Field field = e->get_field(field_name);
     if (field.get_role() != role) {

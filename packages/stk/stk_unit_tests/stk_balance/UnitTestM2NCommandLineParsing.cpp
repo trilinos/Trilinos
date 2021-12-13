@@ -91,6 +91,7 @@ TEST_F(M2NBalanceCommandLine, normalPostionalArguments)
   const stk::balance::M2NBalanceSettings & balanceSettings = get_balance_settings({"mesh.g", "16"});
 
   EXPECT_EQ(balanceSettings.get_input_filename(), "mesh.g");
+  EXPECT_EQ(balanceSettings.get_log_filename(), "stk_balance_m2n.log");
   EXPECT_EQ(balanceSettings.get_num_output_processors(), 16u);
   EXPECT_EQ(balanceSettings.get_use_nested_decomp(), false);
 }
@@ -100,7 +101,38 @@ TEST_F(M2NBalanceCommandLine, normalArguments)
   const stk::balance::M2NBalanceSettings & balanceSettings = get_balance_settings({"--infile=mesh.g", "--nprocs=32"});
 
   EXPECT_EQ(balanceSettings.get_input_filename(), "mesh.g");
+  EXPECT_EQ(balanceSettings.get_log_filename(), "stk_balance_m2n.log");
   EXPECT_EQ(balanceSettings.get_num_output_processors(), 32u);
+  EXPECT_EQ(balanceSettings.get_use_nested_decomp(), false);
+}
+
+TEST_F(M2NBalanceCommandLine, customLogFile)
+{
+  const stk::balance::M2NBalanceSettings & balanceSettings = get_balance_settings({"mesh.g", "16", "--logfile=custom.log"});
+
+  EXPECT_EQ(balanceSettings.get_input_filename(), "mesh.g");
+  EXPECT_EQ(balanceSettings.get_log_filename(), "custom.log");
+  EXPECT_EQ(balanceSettings.get_num_output_processors(), 16u);
+  EXPECT_EQ(balanceSettings.get_use_nested_decomp(), false);
+}
+
+TEST_F(M2NBalanceCommandLine, shortCustomLogFile)
+{
+  const stk::balance::M2NBalanceSettings & balanceSettings = get_balance_settings({"mesh.g", "16", "-l", "custom.log"});
+
+  EXPECT_EQ(balanceSettings.get_input_filename(), "mesh.g");
+  EXPECT_EQ(balanceSettings.get_log_filename(), "custom.log");
+  EXPECT_EQ(balanceSettings.get_num_output_processors(), 16u);
+  EXPECT_EQ(balanceSettings.get_use_nested_decomp(), false);
+}
+
+TEST_F(M2NBalanceCommandLine, coutLogFile)
+{
+  const stk::balance::M2NBalanceSettings & balanceSettings = get_balance_settings({"mesh.g", "16", "-l", "cout"});
+
+  EXPECT_EQ(balanceSettings.get_input_filename(), "mesh.g");
+  EXPECT_EQ(balanceSettings.get_log_filename(), "cout");
+  EXPECT_EQ(balanceSettings.get_num_output_processors(), 16u);
   EXPECT_EQ(balanceSettings.get_use_nested_decomp(), false);
 }
 

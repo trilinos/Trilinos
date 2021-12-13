@@ -231,6 +231,8 @@ public:
   void modify_on_device() const;
   void modify_on_host(const Selector& s) const;
   void modify_on_device(const Selector& s) const;
+  bool need_sync_to_host() const;
+  bool need_sync_to_device() const;
   void sync_to_host() const;
   void sync_to_device() const;
   void clear_sync_state() const;
@@ -252,7 +254,9 @@ public:
 
   template <typename StkDebugger>
   void make_field_sync_debugger() const {
-    m_stkFieldSyncDebugger = Teuchos::any(StkDebugger(this));
+    if (m_stkFieldSyncDebugger.empty()) {
+      m_stkFieldSyncDebugger = Teuchos::any(StkDebugger(this));
+    }
   }
 
   template <typename StkDebugger>
@@ -262,7 +266,23 @@ public:
 
   void rotate_multistate_data();
 
-private:
+ private:
+  stk::ngp::ExecSpace& get_execution_space() const {
+    return m_execSpace;
+  }
+
+  void set_execution_space(const stk::ngp::ExecSpace& executionSpace) const {
+    m_execSpace = executionSpace;
+  }
+
+  void set_execution_space(stk::ngp::ExecSpace&& executionSpace) const {
+    m_execSpace = std::move(executionSpace);
+  }
+
+  void reset_execution_space() const {
+    m_execSpace = Kokkos::DefaultExecutionSpace();
+  }
+
   template<class A>
     const A * declare_attribute_no_delete(const A * a) {
       return m_attribute.template insert_no_delete<A>(a);
@@ -344,7 +364,10 @@ protected:
       m_this_state(arg_this_state),
       m_ngpField(nullptr),
       m_numSyncsToHost(0),
-      m_numSyncsToDevice(0)
+      m_numSyncsToDevice(0),
+      m_modifiedOnHost(false),
+      m_modifiedOnDevice(false),
+      m_execSpace(Kokkos::DefaultExecutionSpace())
   {
     FieldBase * const pzero = nullptr ;
     const shards::ArrayDimTag * const dzero = nullptr ;
@@ -377,6 +400,9 @@ private:
   mutable NgpFieldBase       * m_ngpField;
   mutable size_t               m_numSyncsToHost;
   mutable size_t               m_numSyncsToDevice;
+  mutable bool                 m_modifiedOnHost;
+  mutable bool                 m_modifiedOnDevice;
+  mutable stk::ngp::ExecSpace  m_execSpace;
   mutable Teuchos::any m_stkFieldSyncDebugger;
 };
 

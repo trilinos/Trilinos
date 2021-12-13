@@ -46,7 +46,7 @@
 #define _KOKKOSKERNELS_PRINTUTILS_HPP
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Atomic.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 #include <ostream>
 
 namespace KokkosKernels{

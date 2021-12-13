@@ -56,7 +56,7 @@
 
 #include <assert.h>
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 //whether to print extra debug output at runtime to stdout
 //comment out next line to disable
@@ -846,7 +846,7 @@ class FastILUPrec
         //Symbolic Factorization Phase
         void initialize()
         {
-            Kokkos::Impl::Timer timer;
+            Kokkos::Timer timer;
             if ((level > 0) && (guessFlag !=0))
             {
                 initGuessPrec->initialize();
@@ -902,7 +902,7 @@ class FastILUPrec
         //
         void compute()
         {
-            Kokkos::Impl::Timer timer;
+            Kokkos::Timer timer;
             if ((level > 0) && (guessFlag !=0))
             {
                 initGuessPrec->compute();
@@ -937,7 +937,7 @@ class FastILUPrec
         //*not* support multiple right hand sizes.
         void apply(ScalarArray &x, ScalarArray &y)
         {
-            Kokkos::Impl::Timer timer;
+            Kokkos::Timer timer;
 
             //required to prevent contamination of the input.
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(nRows, xTemp, x);

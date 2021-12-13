@@ -13,7 +13,7 @@
 //#include "UniformRefinerPattern.hpp"
 #include <adapt/sierra_element/RefinementTopology.hpp>
 #include <adapt/sierra_element/StdMeshObjTopologies.hpp>
-
+#include <adapt/CompareCoordinates.hpp>
 #include <adapt/Percept_MOAB_SimplexTemplateRefiner.hpp>
 
 #define USE_FACE_BREAKER_T4_T4_8 1
@@ -114,7 +114,7 @@
         // uniform refinement
         tets.resize(8);
 
-        double * node_coords[4];
+        std::array<double *,4> node_coords;
         for (int inode=0; inode < 4; inode++)
           {
             node_coords[inode] = stk::mesh::field_data( *eMesh.get_coordinates_field() , tet_elem_nodes[inode] );
@@ -124,14 +124,15 @@
                              << node_coords[inode][2] << std::endl;
           }
 
+        const std::array<int,4> node_rank = get_rank_of_nodes_based_on_coordinates(node_coords);
         std::vector<moab::TetTupleInt> new_tets;
         bool choose_best_tets = true;
         moab::SimplexTemplateRefiner str(choose_best_tets);
         str.refine_3_simplex(new_tets, edge_marks, 1,
-                             node_coords[0], 0, eMesh.identifier(tet_elem_nodes[0]),
-                             node_coords[1], 0, eMesh.identifier(tet_elem_nodes[1]),
-                             node_coords[2], 0, eMesh.identifier(tet_elem_nodes[2]),
-                             node_coords[3], 0, eMesh.identifier(tet_elem_nodes[3]) );
+                             node_coords[0], 0, node_rank[0],
+                             node_coords[1], 0, node_rank[1],
+                             node_coords[2], 0, node_rank[2],
+                             node_coords[3], 0, node_rank[3] );
 
         if (0)
           {

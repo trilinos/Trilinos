@@ -80,8 +80,6 @@ namespace {
   using Tpetra::global_size_t;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createVector;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;

@@ -138,11 +138,22 @@ public:
 
    /** Add an edge block with a string name
      */
-   void addEdgeBlock(const std::string & name,const CellTopologyData * ctData);
+//   void addEdgeBlock(const std::string & name,const CellTopologyData * ctData);
+   void addEdgeBlock(const std::string & elemBlockName,
+                     const std::string & edgeBlockName,
+                     const stk::topology & topology);
+   void addEdgeBlock(const std::string & elemBlockName,
+                     const std::string & edgeBlockName,
+                     const CellTopologyData * ctData);
 
    /** Add a face block with a string name
      */
-   void addFaceBlock(const std::string & name,const CellTopologyData * ctData);
+   void addFaceBlock(const std::string & elemBlockName,
+                     const std::string & faceBlockName,
+                     const stk::topology & topology);
+   void addFaceBlock(const std::string & elemBlockName,
+                     const std::string & faceBlockName,
+                     const CellTopologyData * ctData);
 
    /** Add a side set with a string name
      */
@@ -1300,8 +1311,6 @@ protected:
    std::map<std::string, stk::mesh::Part*> faceBlocks_;     // Face blocks
 
    std::map<std::string, Teuchos::RCP<shards::CellTopology> > elementBlockCT_;
-   std::map<std::string, Teuchos::RCP<shards::CellTopology> > edgeBlockCT_;
-   std::map<std::string, Teuchos::RCP<shards::CellTopology> > faceBlockCT_;
 
    // for storing/accessing nodes
    stk::mesh::Part * nodesPart_;

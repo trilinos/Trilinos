@@ -886,11 +886,12 @@ namespace {
           double y2 = dim > 1 ? y[id[index]] : 0.0;
           double z2 = dim > 2 ? z[id[index]] : 0.0;
 
-          Error(fmt::format("Two elements in file 2 have the same midpoint (within tolerance).\n"
+          Warning(fmt::format("Two elements in file 2 have the same midpoint (within tolerance).\n"
                             "\tLocal element {:L} at ({}, {}, {}) and\n"
                             "\tLocal element {:L} at ({}, {}, {})\n"
                             "\tNo unique element mapping possible.\n",
                             id[i] + 1, x1, y1, z1, id[index] + 1, x2, y2, z2));
+	  return -1;
         }
 
         index = i;

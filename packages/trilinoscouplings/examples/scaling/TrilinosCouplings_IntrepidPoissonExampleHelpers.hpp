@@ -110,6 +110,11 @@ void setDiffusionRotationAndStrength(const std::vector<double>& diff_rotation_an
 /// \brief Gets the diffusion Tensor
 const std::vector<double> & getDiffusionMatrix();
 
+
+/// \brief Gets the 2D diffusion Tensor (for 2D problems)
+const std::vector<double> & getDiffusionMatrix2D();
+
+
 /// \brief Use the diffusion tensor rather than the off-diagonal values
 bool useDiffusionMatrix();
 

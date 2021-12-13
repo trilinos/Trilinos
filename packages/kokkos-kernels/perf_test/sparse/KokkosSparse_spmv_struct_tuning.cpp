@@ -506,7 +506,7 @@ int main(int argc, char **argv)
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(controls.getCusparseHandle(), CUSPARSE_OPERATION_NON_TRANSPOSE,
 							&alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
 							alg, &bufferSize));
-      CUDA_SAFE_CALL(cudaMalloc(&dBuffer, bufferSize));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaMalloc(&dBuffer, bufferSize));
 
       /* perform SpMV */
       Kokkos::Profiling::pushRegion("cuSparse spmv test");
@@ -538,7 +538,7 @@ int main(int argc, char **argv)
 	     ave_time/loop*1000, max_time*1000, min_time*1000);
       Kokkos::Profiling::popRegion();
 
-      CUDA_SAFE_CALL(cudaFree(dBuffer));
+      KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(dBuffer));
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
       KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));

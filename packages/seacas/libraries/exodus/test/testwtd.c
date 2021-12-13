@@ -52,8 +52,8 @@ int main(int argc, char **argv)
   double  time_value;
   double  x[100], y[100], z[100];
   double  attrib[1], dist_fact[100];
-  char *  coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
-  char *  prop_names[2];
+  char   *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
+  char   *prop_names[2];
 
   ex_opts(EX_VERBOSE | EX_ABORT);
 

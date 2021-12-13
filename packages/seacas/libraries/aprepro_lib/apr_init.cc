@@ -11,6 +11,7 @@
      Initialize variables and functions Aprepro
 ***/
 #include "apr_builtin.h"
+#include "apr_symrec.h"
 #include "apr_tokenize.h"
 #include "aprepro.h"      // for symrec, Aprepro, etc
 #include "init_structs.h" // for array_a_init, array_c_init, etc

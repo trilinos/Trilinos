@@ -45,6 +45,7 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_TestParameters.hpp"
 #include "KokkosSparse_spgemm.hpp"
+#include "KokkosKernels_Sorting.hpp"
 
 #define TRANSPOSEFIRST false
 #define TRANSPOSESECOND false
@@ -69,16 +70,7 @@ namespace KokkosKernels{
       size_t nentries2 = output_mat2.graph.entries.extent(0);
       size_t nvals2 = output_mat2.values.extent(0);
 
-      lno_nnz_view_t h_ent1 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries1);
-      scalar_view_t h_vals1 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals1);
-
-      KokkosKernels::Impl::kk_sort_graph<typename graph_t::row_map_type, typename graph_t::entries_type, typename crsMat_t::values_type,
-					 lno_nnz_view_t, scalar_view_t,
-					 typename device::execution_space>(output_mat1.graph.row_map, output_mat1.graph.entries, output_mat1.values,
-									   h_ent1, h_vals1);
-
-      lno_nnz_view_t h_ent2 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries2);
-      scalar_view_t h_vals2 (Kokkos::ViewAllocateWithoutInitializing("v1"), nvals2);
+      KokkosKernels::sort_crs_matrix(output_mat1);
 
       if (nrows1 != nrows2) {
 	std::cerr <<"row count is different" << std::endl;
@@ -93,10 +85,7 @@ namespace KokkosKernels{
 	return false;
       }
 
-      KokkosKernels::Impl::kk_sort_graph<typename graph_t::row_map_type, typename graph_t::entries_type, typename crsMat_t::values_type,
-					 lno_nnz_view_t, scalar_view_t,
-					 typename device::execution_space>(output_mat2.graph.row_map, output_mat2.graph.entries, output_mat2.values,
-									   h_ent2, h_vals2);
+      KokkosKernels::sort_crs_matrix(output_mat2);
 
       bool is_identical = true;
       is_identical = KokkosKernels::Impl::kk_is_identical_view
@@ -109,7 +98,7 @@ namespace KokkosKernels{
 
       is_identical = KokkosKernels::Impl::kk_is_identical_view
 	<lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
-	 typename device::execution_space>(h_ent1, h_ent2, 0);
+	 typename device::execution_space>(output_mat1.graph.entries, output_mat2.graph.entries, 0);
 
       if (!is_identical) {
 	std::cerr << "entries are different" << std::endl;
@@ -118,7 +107,7 @@ namespace KokkosKernels{
 
       is_identical = KokkosKernels::Impl::kk_is_identical_view
 	<scalar_view_t, scalar_view_t, typename scalar_view_t::value_type,
-	 typename device::execution_space>(h_vals1, h_vals2, 0.00001);
+	 typename device::execution_space>(output_mat1.values, output_mat2.values, 0.00001);
       if (!is_identical) {
 	std::cerr << "values are different" << std::endl;
       }
@@ -224,8 +213,8 @@ namespace KokkosKernels{
       	ExecSpace().fence();
 
       	size_type c_nnz_size = sequential_kh.get_spgemm_handle()->get_c_nnz();
-      	entriesC_ref = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-      	valuesC_ref = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+      	entriesC_ref = lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+      	valuesC_ref = scalar_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
 
       	spgemm_jacobi(&sequential_kh, m, n, k,
 		      crsMat.graph.row_map, crsMat.graph.entries, crsMat.values, TRANSPOSEFIRST,
@@ -260,7 +249,7 @@ namespace KokkosKernels{
 	entriesC = lno_nnz_view_t("entriesC (empty)", 0);
 	valuesC = scalar_view_t("valuesC (empty)", 0);
 
-	Kokkos::Impl::Timer timer1;
+	Kokkos::Timer timer1;
 	spgemm_symbolic(&kh, m, n, k,
 			crsMat.graph.row_map, crsMat.graph.entries, TRANSPOSEFIRST,
 			crsMat2.graph.row_map, crsMat2.graph.entries, TRANSPOSESECOND,
@@ -269,13 +258,13 @@ namespace KokkosKernels{
 	ExecSpace().fence();
 	double symbolic_time = timer1.seconds();
 
-	Kokkos::Impl::Timer timer2;
+	Kokkos::Timer timer2;
 	size_type c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
 	if (verbose)  
 	  std::cout << "C SIZE:" << c_nnz_size << std::endl;
 	if (c_nnz_size){
-	  entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-	  valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+	  entriesC = lno_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+	  valuesC = scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
 	}
 
 	spgemm_jacobi(&kh, m, n, k,
@@ -318,18 +307,7 @@ namespace KokkosKernels{
       typedef Kokkos::Device<exec_space, sbm_mem_space> mySlowExecSpace;
 
       typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, myFastDevice, void, size_type > fast_crstmat_t;
-      typedef typename fast_crstmat_t::index_type::non_const_type   fast_cols_view_t;
-      typedef typename fast_crstmat_t::values_type::non_const_type fast_values_view_t;
-      typedef typename fast_crstmat_t::row_map_type::const_type const_fast_row_map_view_t;
-      typedef typename fast_crstmat_t::index_type::const_type   const_fast_cols_view_t;
-      typedef typename fast_crstmat_t::values_type::const_type const_fast_values_view_t;
-
       typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, mySlowExecSpace, void, size_type > slow_crstmat_t;
-      typedef typename slow_crstmat_t::index_type::non_const_type   slow_cols_view_t;
-      typedef typename slow_crstmat_t::values_type::non_const_type slow_values_view_t;
-      typedef typename slow_crstmat_t::row_map_type::const_type const_slow_row_map_view_t;
-      typedef typename slow_crstmat_t::index_type::const_type   const_slow_cols_view_t;
-      typedef typename slow_crstmat_t::values_type::const_type const_slow_values_view_t;
 
       char *a_mat_file = params.a_mtx_bin_file;
       char *b_mat_file = params.b_mtx_bin_file;
@@ -505,37 +483,23 @@ namespace KokkosKernels{
       if (c_mat_file != NULL){
 	if (params.c_mem_space == 1){
 
-	  fast_cols_view_t sorted_adj("sorted adj", c_fast_crsmat.graph.entries.extent(0));
-	  fast_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.extent(0));
-
-	  KokkosKernels::Impl::kk_sort_graph
-	    <const_fast_row_map_view_t, const_fast_cols_view_t, const_fast_values_view_t, 
-	     fast_cols_view_t, fast_values_view_t, myExecSpace>(c_fast_crsmat.graph.row_map,
-								c_fast_crsmat.graph.entries,
-								c_fast_crsmat.values, sorted_adj, sorted_vals);
+          KokkosKernels::sort_crs_matrix(c_fast_crsmat);
 
 	  KokkosKernels::Impl::write_graph_bin((lno_t) (c_fast_crsmat.numRows()),
 					       (size_type) (c_fast_crsmat.graph.entries.extent(0)),
 					       c_fast_crsmat.graph.row_map.data(),
-					       sorted_adj.data(),
-					       sorted_vals.data(),
+					       c_fast_crsmat.graph.entries.data(),
+					       c_fast_crsmat.values.data(),
 					       c_mat_file);
 	}
 	else {
-	  slow_cols_view_t sorted_adj("sorted adj", c_fast_crsmat.graph.entries.extent(0));
-	  slow_values_view_t sorted_vals("sorted vals", c_fast_crsmat.graph.entries.extent(0));
-
-	  KokkosKernels::Impl::kk_sort_graph
-	    <const_slow_row_map_view_t, const_slow_cols_view_t, const_slow_values_view_t, 
-	     slow_cols_view_t, slow_values_view_t, myExecSpace>(c_slow_crsmat.graph.row_map,
-								c_slow_crsmat.graph.entries,
-								c_slow_crsmat.values, sorted_adj, sorted_vals);
+          KokkosKernels::sort_crs_matrix(c_slow_crsmat);
 
 	  KokkosKernels::Impl::write_graph_bin((lno_t) c_slow_crsmat.numRows(),
 					       (size_type) c_slow_crsmat.graph.entries.extent(0),
 					       c_slow_crsmat.graph.row_map.data(),
-					       sorted_adj.data(),
-					       sorted_vals.data(),
+					       c_slow_crsmat.graph.entries.data(),
+					       c_slow_crsmat.values.data(),
 					       c_mat_file);
 	}
       }

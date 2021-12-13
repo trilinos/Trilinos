@@ -1,7 +1,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Kokkos_Core.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 #if defined(KOKKOS_ENABLE_CUDA) 
 
@@ -141,7 +141,7 @@ namespace KokkosBatched {
       typedef typename DeviceSpaceType::memory_space DeviceMemorySpaceType;
 
       const int iter_begin = -3, iter_end = 50;
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       Kokkos::View<value_type***,Kokkos::LayoutLeft,HostSpaceType>
         amat("amat", N*VectorLength, BlkSize, BlkSize),

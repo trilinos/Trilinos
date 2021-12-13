@@ -41,8 +41,8 @@ int ex_get_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
   size_t lnum_entry_in_set;
   size_t lnum_dist_fact_in_set;
   char   errmsg[MAX_ERR_LENGTH];
-  char * numentryptr = NULL;
-  char * numdfptr    = NULL;
+  char  *numentryptr = NULL;
+  char  *numdfptr    = NULL;
 
   EX_FUNC_ENTER();
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {

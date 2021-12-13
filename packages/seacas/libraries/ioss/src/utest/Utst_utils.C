@@ -7,6 +7,7 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
+#include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
 #include <exception>
 #include <numeric>
@@ -54,7 +55,9 @@ TEST_CASE("number_width", "[number_width]")
     REQUIRE(9 == Ioss::Utils::number_width(1'000'000, true));
     REQUIRE(10 == Ioss::Utils::number_width(1'111'111'111));
     REQUIRE(13 == Ioss::Utils::number_width(1'111'111'111, true));
+#if !defined(__IOSS_WINDOWS__)
     REQUIRE(15 == Ioss::Utils::number_width(111'111'111'111, true));
+#endif
   }
 }
 

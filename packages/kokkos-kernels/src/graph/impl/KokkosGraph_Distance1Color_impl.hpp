@@ -44,7 +44,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Atomic.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <vector>
 #include "KokkosGraph_Distance1ColorHandle.hpp"
@@ -354,7 +354,7 @@ public:
     //if we use edge-filtering, we perform swaps.
     //We need to copy the adjacency array so that we dont harm the original one.
     if (this->_edge_filtering){
-      adj_copy = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("adj copy"), this->ne);
+      adj_copy = nnz_lno_temp_work_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "adj copy"), this->ne);
       Kokkos::deep_copy(adj_copy, this->adj);
     }
 
@@ -366,7 +366,7 @@ public:
 
     //the conflictlist
     nnz_lno_temp_work_view_t current_vertexList =
-        nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
+        nnz_lno_temp_work_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "vertexList"), this->nv);
     nnz_lno_t current_vertexListLength = this->nv;
     
     if(this->cp->get_use_vtx_list()){
@@ -389,7 +389,7 @@ public:
     // if a conflictlist is used
     if (this->_conflict_scheme!= COLORING_NOCONFLICT){
       // Vertices to recolor. Will swap with vertexList.
-      next_iteration_recolorList = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nv);
+      next_iteration_recolorList = nnz_lno_temp_work_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "recolorList"), this->nv);
       next_iteration_recolorListLength = single_dim_index_view_type("recolorListLength");
     }
 
@@ -400,7 +400,7 @@ public:
     double total_time_greedy_phase=0.0;
     double total_time_find_conflicts=0.0;
     double total_time_serial_conflict_resolution=0.0;
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
     timer.reset();
 
 
@@ -1910,7 +1910,7 @@ public:
 
     size_type maxColors = 0;
     nnz_lno_persistent_work_view_t score
-      = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("score"), this->nv);
+      = nnz_lno_persistent_work_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "score"), this->nv);
     functorScoreCalculation<size_type, MyExecSpace> scoreCalculation(score, this->xadj);
     
     Kokkos::parallel_reduce("Deterministic Coloring: compute initial scores", my_exec_space(0, this->nv),
@@ -2291,10 +2291,10 @@ public:
 
     bool tictoc = this->cp->get_tictoc();
 
-    Kokkos::Impl::Timer *timer = NULL;
+    Kokkos::Timer *timer = NULL;
 
     if (tictoc){
-      timer = new Kokkos::Impl::Timer();
+      timer = new Kokkos::Timer();
       std::cout << "\tRewriting EB params. num_initial_colors:" << numInitialColors
           << " prefix_sum_shrink_min:"  << ps_min
           << " ps_cutoff:" << pps_cutoff
@@ -2309,8 +2309,8 @@ public:
     size_type num_work_edges = numEdges;
 
     //allocate memory for vertex ban colors, and tentative bans
-    color_temp_work_view_type color_ban (Kokkos::ViewAllocateWithoutInitializing("color_ban"), this->nv);
-    color_temp_work_view_type tentative_color_ban(Kokkos::ViewAllocateWithoutInitializing("tentative_color_ban"), this->nv);//views are initialized with zero
+    color_temp_work_view_type color_ban (Kokkos::view_alloc(Kokkos::WithoutInitializing, "color_ban"), this->nv);
+    color_temp_work_view_type tentative_color_ban(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tentative_color_ban"), this->nv);//views are initialized with zero
     //allocate memory for vertex color set shifts.
     nnz_lno_temp_work_view_t color_set ("color_set", this->nv); //initialized with zero.
     //initialize colors, color bans
@@ -2320,13 +2320,13 @@ public:
 
     //worklist
     size_type_temp_work_view_t edge_conflict_indices
-    (Kokkos::ViewAllocateWithoutInitializing("edge_conflict_indices"), num_work_edges);
+    (Kokkos::view_alloc(Kokkos::WithoutInitializing, "edge_conflict_indices"), num_work_edges);
     //next iterations conflict list
     size_type_temp_work_view_t new_edge_conflict_indices
-    (Kokkos::ViewAllocateWithoutInitializing("new_edge_conflict_indices"), num_work_edges);
+    (Kokkos::view_alloc(Kokkos::WithoutInitializing, "new_edge_conflict_indices"), num_work_edges);
 
     char_temp_work_view_type edge_conflict_marker
-    (Kokkos::ViewAllocateWithoutInitializing("edge_conflict_marker"), num_work_edges);
+    (Kokkos::view_alloc(Kokkos::WithoutInitializing, "edge_conflict_marker"), num_work_edges);
 
 
     //initialize the worklist sequentiall, and markers as 1.

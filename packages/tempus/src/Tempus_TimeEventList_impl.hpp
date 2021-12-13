@@ -9,6 +9,8 @@
 #ifndef Tempus_TimeEventList_impl_hpp
 #define Tempus_TimeEventList_impl_hpp
 
+#include "Tempus_NumericalUtils.hpp"
+
 
 namespace Tempus {
 
@@ -51,7 +53,7 @@ void TimeEventList<Scalar>::setTimeScale()
   absTol_ = relTol_*timeScale_;
 
   // Check if timeScale is near zero.
-  if ((-absTol_ <= timeScale_ ) && (timeScale_ <= absTol_)) {
+  if ( approxZero(timeScale_, absTol_) ) {
     timeScale_ = 1.0;
     absTol_ = relTol_*timeScale_;
   }
@@ -116,7 +118,7 @@ template<class Scalar>
 bool TimeEventList<Scalar>::isTime(Scalar time) const
 {
   for (auto it = timeList_.begin(); it != timeList_.end(); ++it)
-    if (*it-absTol_ < time && time < *it+absTol_) return true;
+    if ( approxEqualAbsTol(time, *it, absTol_) ) return true;
 
   return false;
 }
@@ -146,7 +148,7 @@ Scalar TimeEventList<Scalar>::timeOfNextEvent(Scalar time) const
   const Scalar timeEvent = *it;
 
   // Check timeEvent is near time.  If so, return the next event.
-  if ( timeEvent-absTol_ < time && time < timeEvent+absTol_)
+  if ( approxEqualAbsTol(time, timeEvent, absTol_) )
     return *(it+1);
 
   return timeEvent;

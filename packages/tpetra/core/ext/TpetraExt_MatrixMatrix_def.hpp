@@ -82,6 +82,7 @@
 #include "TpetraExt_MatrixMatrix_OpenMP.hpp"
 #include "TpetraExt_MatrixMatrix_Cuda.hpp"
 #include "TpetraExt_MatrixMatrix_HIP.hpp"
+#include "TpetraExt_MatrixMatrix_SYCL.hpp"
 
 namespace Tpetra {
 
@@ -813,7 +814,7 @@ add (const Scalar& alpha,
                               col_inds_array, global_col_inds_array,
                               typename map_type::local_map_type>
         (localColinds, globalColinds, CcolMap->getLocalMap()));
-    KokkosKernels::Impl::sort_crs_matrix<exec_space, row_ptrs_array, col_inds_array, values_array>(rowptrs, localColinds, vals);
+    KokkosKernels::sort_crs_matrix<exec_space, row_ptrs_array, col_inds_array, values_array>(rowptrs, localColinds, vals);
     C.setAllValues(rowptrs, localColinds, vals);
     C.fillComplete(CDomainMap, CRangeMap, params);
     if(!doFillComplete)

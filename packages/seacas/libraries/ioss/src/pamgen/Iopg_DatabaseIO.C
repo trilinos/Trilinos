@@ -63,7 +63,7 @@ namespace {
 
   void separate_surface_element_sides(Ioss::IntVector &element, Ioss::IntVector &sides,
                                       Ioss::Region *region, Iopg::TopologyMap &topo_map,
-                                      Iopg::TopologyMap &    side_map,
+                                      Iopg::TopologyMap     &side_map,
                                       Ioss::SurfaceSplitType split_type);
 
   const char *Version() { return "Iopg_DatabaseIO.C 2010/09/22"; }
@@ -255,7 +255,7 @@ namespace Iopg {
     int node_count = 0;
     int elem_count = 0;
     int error      = im_ex_get_init(get_file_pointer(), dbtitle, &spatialDimension, &node_count,
-                               &elem_count, &elementBlockCount, &nodesetCount, &sidesetCount);
+                                    &elem_count, &elementBlockCount, &nodesetCount, &sidesetCount);
     if (error < 0)
       pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -537,7 +537,7 @@ namespace Iopg {
 
       get_region()->add(block);
       if (block_name != alias) {
-        get_region()->add_alias(block_name, alias);
+        get_region()->add_alias(block_name, alias, block->type());
       }
     }
     assert(elementCount == offset);
@@ -582,8 +582,10 @@ namespace Iopg {
         nodeset->property_add(Ioss::Property("guid", util().generate_guid(id)));
         get_region()->add(nodeset);
 
-        get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodelist", id));
-        get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodeset", id));
+        get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodelist", id),
+				Ioss::NODESET);
+        get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodeset", id),
+				Ioss::NODESET);
       }
     }
   }
@@ -699,8 +701,10 @@ namespace Iopg {
         side_set->property_add(Ioss::Property("id", id));
         side_set->property_add(Ioss::Property("guid", util().generate_guid(id)));
 
-        get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("surface", id));
-        get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("sideset", id));
+        get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("surface", id),
+				Ioss::SIDESET);
+        get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("sideset", id),
+				Ioss::SIDESET);
 
         //        split_type = SPLIT_BY_ELEMENT_BLOCK;
         //        split_type = SPLIT_BY_TOPOLOGIES;
@@ -756,8 +760,8 @@ namespace Iopg {
           const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
 
           for (int i = 0; i < elementBlockCount; i++) {
-            Ioss::ElementBlock *         block        = element_blocks[i];
-            const std::string &          name         = block->name();
+            Ioss::ElementBlock          *block        = element_blocks[i];
+            const std::string           &name         = block->name();
             const Ioss::ElementTopology *common_ftopo = block->topology()->boundary_type(0);
             if (common_ftopo != nullptr) {
               // All sides of this element block's topology have the same topology
@@ -1027,7 +1031,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Fi
       else if (field.get_name() == "owning_processor") {
         if (isParallel) {
           Ioss::CommSet *css   = get_region()->get_commset("commset_node");
-          int *          idata = static_cast<int *>(data);
+          int           *idata = static_cast<int *>(data);
           for (size_t i = 0; i < num_to_get; i++) {
             idata[i] = myProcessor;
           }
@@ -1255,8 +1259,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
       // by comparing the size of the sideset with the 'my_side_count' of
       // the side block.
 
-      if (field.get_name() == "side_ids") {
-      }
+      if (field.get_name() == "side_ids") {}
 
       else if (field.get_name() == "ids") {
         // In exodusII, the 'side set' is stored as a sideset.  A
@@ -1276,8 +1279,8 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
         // storage for element numbers and overwrite with the side
         // numbers.
         Ioss::IntVector sides;
-        int *           element = nullptr;
-        int *           ids     = static_cast<int *>(data);
+        int            *element = nullptr;
+        int            *ids     = static_cast<int *>(data);
         if (number_sides == static_cast<int>(entity_count)) {
           // Only 1 side block in this sideset
           sides.resize(entity_count);
@@ -1533,7 +1536,7 @@ const Ioss::Map &DatabaseIO::get_element_map() const
   return elemMap;
 }
 
-void DatabaseIO::compute_block_membership__(Ioss::SideBlock *         sideblock,
+void DatabaseIO::compute_block_membership__(Ioss::SideBlock          *sideblock,
                                             std::vector<std::string> &block_membership) const
 {
   Ioss::IntVector block_ids(elementBlockCount);
@@ -1674,7 +1677,7 @@ int DatabaseIO::get_side_distributions(const Ioss::SideBlock *fb, int id, int my
 namespace {
   void separate_surface_element_sides(Ioss::IntVector &element, Ioss::IntVector &sides,
                                       Ioss::Region *region, Iopg::TopologyMap &topo_map,
-                                      Iopg::TopologyMap &    side_map,
+                                      Iopg::TopologyMap     &side_map,
                                       Ioss::SurfaceSplitType split_type)
   {
     if (!element.empty()) {

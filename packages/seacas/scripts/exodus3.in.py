@@ -1,5 +1,5 @@
 """
-exodus.py v 1.20.9 (seacas-py3) is a python wrapper of some of the exodus library
+exodus.py v 1.20.10 (seacas-py3) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -70,10 +70,10 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.20.9 (seacas-py3)"
+EXODUS_PY_VERSION = "1.20.10 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.20.9 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.20.10 (seacas-py3), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -83,10 +83,11 @@ rights in this software.
 
 EXODUS_PY_CONTACTS = """
 Authors:
+  Greg Sjaardema   (gdsjaar@sandia.gov)
+  Mario LoPrinzi   (mvlopri@sandia.gov)
   Timothy Shelton  (trshelt@sandia.gov)
   Michael Veilleux (mgveill@sandia.gov)
   David Littlewood (djlittl@sandia.gov)
-  Greg Sjaardema   (gdsjaar@sandia.gov)
 """
 
 # show the banner on first use
@@ -104,9 +105,7 @@ def basename(file_name):
     Extract base name from file_name.
     `basename("test.e") -> "test"`
     """
-    fileParts = file_name.split(".")
-    base_name = ".".join(fileParts[:-1])
-    return base_name
+    return os.path.splitext(file_name)[0]
 
 
 def getExodusVersion():
@@ -2316,9 +2315,7 @@ class exodus:
 
     def get_assembly(self, object_id):
         """
-        reads the assembly parameters and assembly data for one assembly
-        \param   exoid                   exodus file id
-        \param  *assembly                ex_assembly structure
+        reads the assembly parameters and assembly data for one assembly 
         """
         assem = ex_assembly(id=object_id)
         self.__ex_get_assembly(assem)
@@ -2329,9 +2326,8 @@ class exodus:
 
     def get_assemblies(self, object_ids):
         """
-        reads the assembly parameters and assembly data for n assemblies
-        \param   exoid                   exodus file id
-        \param  *assembly                ex_assembly structure
+        reads the assembly parameters and assembly data for all assemblies 
+        with ids in object_ids
         """
         assemblies = [ex_assembly(id=object_id) for object_id in object_ids]
         assems = (ex_assembly * len(assemblies))(*assemblies)
@@ -2346,16 +2342,12 @@ class exodus:
     def put_assembly(self, assembly):
         """
         writes the assembly parameters and assembly data for one assembly
-        \param   exoid                   exodus file id
-        \param  *assembly                ex_assembly structure
         """
         self.__ex_put_assembly(assembly)
 
     def put_assemblies(self, assemblies):
         """
-        writes the assembly parameters and assembly data for n assemblies
-        \param   exoid                   exodus file id
-        \param  *assembly                ex_assembly structure
+        writes the assembly parameters and assembly data for multiple assemblies
         """
         self.__ex_put_assemblies(assemblies)
 
@@ -2378,8 +2370,6 @@ class exodus:
     def get_blob(self, object_id):
         """
         reads the blob parameters and blob data for one blob
-        \param   exoid                   exodus file id
-        \param  *blob                    ex_blob structure
         """
         assem = ex_blob(id=object_id)
         self.__ex_get_blob(assem)

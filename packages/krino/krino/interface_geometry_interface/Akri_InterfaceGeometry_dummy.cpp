@@ -1,0 +1,3 @@
+namespace krino {
+void InterfaceGeometryDummy() {}
+}

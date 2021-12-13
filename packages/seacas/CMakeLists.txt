@@ -29,30 +29,32 @@ IF (NOT CMAKE_CXX_STANDARD MATCHES "^${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOW
 ENDIF ()
 
 set(SEACASExodus_ENABLE_STATIC_DEFAULT "OFF")
-if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
-  if (BUILD_SHARED_LIBS)
-    set(SEACASExodus_ENABLE_STATIC_DEFAULT "ON")
-  endif()
-endif()
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  SEACASExodus_ENABLE_STATIC
-  EXODUS_STATIC
-  "Build static version of Exodus in addition to shared version."
-  ${SEACASExodus_ENABLE_STATIC_DEFAULT}
-  )
-
 set(SEACASExodus_ENABLE_SHARED_DEFAULT "OFF")
-if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
-  if (NOT BUILD_SHARED_LIBS)
-    set(SEACASExodus_ENABLE_SHARED_DEFAULT "ON")
+
+# On windows (and probably other systems), we only want a single
+# exodus library and not both static and shared.
+if (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+  if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
+    if (BUILD_SHARED_LIBS)
+      set(SEACASExodus_ENABLE_STATIC_DEFAULT "ON")
+    else()
+      set(SEACASExodus_ENABLE_SHARED_DEFAULT "ON")
+    endif()
   endif()
+
+  TRIBITS_ADD_OPTION_AND_DEFINE(
+    SEACASExodus_ENABLE_STATIC
+    EXODUS_STATIC
+    "Build static version of Exodus in addition to shared version."
+    ${SEACASExodus_ENABLE_STATIC_DEFAULT}
+    )
+  TRIBITS_ADD_OPTION_AND_DEFINE(
+    SEACASExodus_ENABLE_SHARED
+    EXODUS_SHARED
+    "Build shared version of Exodus in addition to static version."
+    ${SEACASExodus_ENABLE_SHARED_DEFAULT}
+    )
 endif()
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  SEACASExodus_ENABLE_SHARED
-  EXODUS_SHARED
-  "Build shared version of Exodus in addition to static version."
-  ${SEACASExodus_ENABLE_SHARED_DEFAULT}
-  )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   SEACASIoss_ENABLE_THREADSAFE

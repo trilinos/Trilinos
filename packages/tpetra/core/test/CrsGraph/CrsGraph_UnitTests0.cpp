@@ -45,8 +45,6 @@
 
 namespace { // (anonymous)
 
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
   using Tpetra::TestingUtilities::arcp_from_view;
   using Teuchos::arcp;
   using Teuchos::arcpClone;
@@ -237,7 +235,7 @@ namespace { // (anonymous)
     // send in a parameterlist, check the defaults
     RCP<ParameterList> params = parameterList();
     // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
-    GRPH graph (map, 3, StaticProfile);
+    GRPH graph (map, 3);
     for (GO i = map->getMinGlobalIndex(); i <= map->getMaxGlobalIndex(); ++i) {
       graph.insertGlobalIndices (i, tuple<GO> (i));
     }
@@ -252,7 +250,6 @@ namespace { // (anonymous)
     graph.fillComplete(params);
     TEST_EQUALITY_CONST(params->get<bool>("Optimize Storage"), true);
     TEST_EQUALITY(graph.getNodeNumEntries(), 0);
-    TEST_EQUALITY_CONST(graph.getProfileType(), StaticProfile);
     TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
 
     int lclSuccess = success ? 1 : 0;
@@ -358,9 +355,8 @@ namespace { // (anonymous)
     RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
       if ( (T & 1) != 1 ) continue;
-      ProfileType pftype = StaticProfile;
       params->set("Optimize Storage",((T & 2) == 2));
-      GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
+      GRAPH trigraph(rmap,cmap, ginds.size());   // only allocate as much room as necessary
       size_t numindices;
       {
 
@@ -380,12 +376,10 @@ namespace { // (anonymous)
         trigraph.insertGlobalIndices(myrowind,ginds(j,1));
       }
       TEST_EQUALITY( trigraph.getNumEntriesInLocalRow(0), trigraph.getNumAllocatedEntriesInLocalRow(0) ); // test that we only allocated as much room as necessary
-      // If StaticProfile, then attempt to insert one additional entry
+      // Attempt to insert one additional entry
       // in my row that is not already in the row, and verify that it
       // throws an exception.
-      if (pftype == StaticProfile) {
-        TEST_THROW( trigraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+2)), std::runtime_error );
-      }
+      TEST_THROW( trigraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+2)), std::runtime_error );
       trigraph.fillComplete(params);
       // check that inserting global entries throws (inserting local entries is still allowed)
       {
@@ -433,7 +427,7 @@ namespace { // (anonymous)
 
     // add too many entries to a static graph
     // let node i contribute to row i+1, where node the last node contributes to row 0
-    GRAPH diaggraph(map,1,StaticProfile);
+    GRAPH diaggraph(map,1);
     GO grow = myRank;
     Array<GO> colinds(1);
     colinds[0] = grow;
@@ -625,13 +619,12 @@ namespace { // (anonymous)
 
     for (int T=0; T<4; ++T) {
       if ( (T & 1) != 1 ) continue;
-      ProfileType pftype = StaticProfile;
       RCP<ParameterList> params = parameterList ();
       params->set("Optimize Storage",((T & 2) == 2));
 
       // create a diagonal graph, but where only my middle row has an entry
       ArrayRCP<size_t> toalloc = arcpClone<size_t>( tuple<size_t>(0,1,0) );
-      GRAPH ddgraph(map, toalloc (), pftype);
+      GRAPH ddgraph(map, toalloc ());
       ddgraph.insertGlobalIndices(mymiddle, tuple<GO>(mymiddle));
       {
         // before globalAssemble(), there should be one local entry on middle, none on the others
@@ -640,11 +633,9 @@ namespace { // (anonymous)
         ddgraph.getGlobalRowView(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(mymiddle) );
         ddgraph.getGlobalRowView(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
       }
-      if (pftype == StaticProfile) { // no room for more, on any row
-        TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,tuple<GO>(mymiddle+1)), std::runtime_error );
-        TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle+1)), std::runtime_error );
-        TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,tuple<GO>(mymiddle+1)), std::runtime_error );
-      }
+      TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,tuple<GO>(mymiddle+1)), std::runtime_error );
+      TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle+1)), std::runtime_error );
+      TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,tuple<GO>(mymiddle+1)), std::runtime_error );
       ddgraph.fillComplete(params);
       // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
       {
@@ -693,8 +684,7 @@ namespace { // (anonymous)
 
     Teuchos::OSTab tab1 (out);
 
-    const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
-    for (ProfileType pftype : profileTypes) {
+    {
       Teuchos::OSTab tab2 (out);
       for (bool optimizeStorage : {false, true}) {
         out << "Optimize Storage: " << (optimizeStorage ? "true" : "false")
@@ -713,7 +703,7 @@ namespace { // (anonymous)
           // contributed by a single off-node contribution, no
           // filtering.  let node i contribute to row i+1, where node
           // the last node contributes to row 0
-          GRAPH diaggraph (map, 1, pftype);
+          GRAPH diaggraph (map, 1);
           GO grow = myRank+1;
           if (as<int> (grow) == numProcs) {
             grow = 0;
@@ -735,11 +725,11 @@ namespace { // (anonymous)
             TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO> (myrowind) );
           }
 
-          if (pftype == StaticProfile) { // no room for more
+          { // no room for more
             out << "Attempt to insert global column index " << (myrowind+1) 
                 << " into global row " << myrowind 
                 << "; it should throw, because the graph"
-                << " is StaticProfile, has an upper bound of one entry "
+                << " has an upper bound of one entry "
                 << "per row, and already has a different column index " 
                 << grow << " in this row."
                 << endl;
@@ -780,7 +770,7 @@ namespace { // (anonymous)
           // contributions for column i of the graph: (i-1,i), (i,i),
           // (i+1,i). allocate only as much space as we need. some
           // hacking here to support this test when numProcs == 1 or 2
-          GRAPH ngraph(map,3,pftype);
+          GRAPH ngraph(map,3);
           Array<GO> grows(3);
           grows[0] = (numProcs+myRank-1) % numProcs;   // my left neighbor
           grows[1] = (numProcs+myRank  ) % numProcs;   // myself
@@ -795,8 +785,8 @@ namespace { // (anonymous)
           out << "Calling globalAssemble()" << endl;
           ngraph.globalAssemble();
           TEST_EQUALITY( ngraph.getNumEntriesInLocalRow(0),
-                        ( numProcs == 1 && pftype == StaticProfile ? 1 :
-                          ngraph.getNumAllocatedEntriesInLocalRow(0) ));
+                         (numProcs == 1 ? 1 
+                                        : ngraph.getNumAllocatedEntriesInLocalRow(0) ));
           out << "Calling fillComplete(params)" << endl;
           ngraph.fillComplete (params);
 
@@ -843,7 +833,7 @@ namespace { // (anonymous)
           STD_TESTS(ngraph);
         }
       } // optimizeStorage
-    } // pftype
+    }
 
     // All procs fail if any node fails
     int globalSuccess_int = -1;

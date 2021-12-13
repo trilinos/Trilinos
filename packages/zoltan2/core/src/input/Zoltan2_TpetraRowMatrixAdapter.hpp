@@ -480,7 +480,7 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
   }
 
   RCP<tcrsmatrix_t> M =
-    rcp(new tcrsmatrix_t(tmap, nnz(), Tpetra::StaticProfile));
+    rcp(new tcrsmatrix_t(tmap, nnz()));
 
   M->doImport(from, importer, Tpetra::INSERT);
   M->fillComplete();

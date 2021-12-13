@@ -66,8 +66,8 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
   void_int *elem_blk_ids       = NULL;
   void_int *connect            = NULL;
   void_int *ss_elem_ndx        = NULL;
-  int64_t * ss_elem_node_ndx   = NULL;
-  int64_t * ss_parm_ndx        = NULL;
+  int64_t  *ss_elem_node_ndx   = NULL;
+  int64_t  *ss_parm_ndx        = NULL;
   void_int *side_set_elem_list = NULL;
   void_int *side_set_side_list = NULL;
   size_t    elem_ctr, node_ctr, elem_num_pos;

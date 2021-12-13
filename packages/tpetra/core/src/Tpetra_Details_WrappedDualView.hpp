@@ -576,7 +576,7 @@ private:
     return originalDualView;
   }
 
-  const DualViewType getDualView() const {
+  DualViewType getDualView() const {
     return dualView;
   }
 

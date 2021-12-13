@@ -1137,7 +1137,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       n += A->getNodeMaxNumRowEntries();
 
       RCP<const map_type> rm = B->getRowMap();
-      RCP<Matrix_t> E = rcp (new Matrix_t(rm, n, Tpetra::StaticProfile));
+      RCP<Matrix_t> E = rcp (new Matrix_t(rm, n));
       auto one = Teuchos::ScalarTraits<MT>::one();
       Tpetra::MatrixMatrix::Add(*B, BT, one, *E, one);
 
@@ -2209,8 +2209,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO
 }*/
 
 
-#define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )                   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, operations_test,SC, LO, GO, NT) \
+// These are the tests associated to UNIT_TEST_GROUP_SC_LO_GO_NO that work for all backends.
+#define UNIT_TEST_GROUP_SC_LO_GO_NO_COMMON( SC, LO, GO, NT )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT) \
@@ -2221,6 +2221,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_col_maps, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_index_base, SC, LO, GO, NT)
+
+// FIXME_SYCL requires querying free device memory in KokkosKernels, see
+// https://github.com/kokkos/kokkos-kernels/issues/1062.
+// The SYCL specifications don't allow asking for that.
+#ifdef HAVE_TPETRA_SYCL
+  #define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )  \
+    UNIT_TEST_GROUP_SC_LO_GO_NO_COMMON( SC, LO, GO, NT )
+#else
+  #define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )                                 \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, operations_test,SC, LO, GO, NT) \
+    UNIT_TEST_GROUP_SC_LO_GO_NO_COMMON( SC, LO, GO, NT )
+#endif
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

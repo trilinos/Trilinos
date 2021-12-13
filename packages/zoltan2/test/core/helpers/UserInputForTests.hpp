@@ -1688,7 +1688,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     fromMap = rcp(new map_t(nvtxs, nvtxs, base, tcomm_));
 
     fromMatrix =
-      rcp(new tcrsMatrix_t(fromMap, rowSizes(), Tpetra::StaticProfile));
+      rcp(new tcrsMatrix_t(fromMap, rowSizes()));
 
     if (haveEdges){
 
@@ -1736,7 +1736,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     fromMap = rcp(new map_t(nvtxs, 0, base, tcomm_));
 
     fromMatrix =
-      rcp(new tcrsMatrix_t(fromMap, rowSizes(), Tpetra::StaticProfile));
+      rcp(new tcrsMatrix_t(fromMap, rowSizes()));
 
     fromMatrix->fillComplete();
   }

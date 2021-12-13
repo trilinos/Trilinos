@@ -1572,7 +1572,7 @@ each system</a>.
 These contributed configurations are used just like any other custom
 configuration as described in <a
 href="#custom-systems-and-configurations">Custom systems and
-configurations</a>..  For example, to load the contributed custom 'weaver'
+configurations</a>.  For example, to load the contributed custom 'weaver'
 configuration to do a CUDA optimized build, do:
 
 ```

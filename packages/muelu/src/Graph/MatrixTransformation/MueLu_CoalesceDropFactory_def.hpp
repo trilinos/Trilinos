@@ -129,10 +129,12 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: drop scheme");
     SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
     SET_VALID_ENTRY("aggregation: distance laplacian directional weights");
+    SET_VALID_ENTRY("aggregation: dropping may create Dirichlet");
 
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian","signed classical","block diagonal","block diagonal classical","block diagonal distance laplacian","block diagonal signed classical","block diagonal colored signed classical"), "aggregation: drop scheme")));
+      // "signed classical" is the Ruge-Stuben style (relative to max off-diagonal), "sign classical sa" is the signed version of the sa criterion (relative to the diagonal values)
+      validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("signed classical sa","classical", "distance laplacian","signed classical","block diagonal","block diagonal classical","block diagonal distance laplacian","block diagonal signed classical","block diagonal colored signed classical"), "aggregation: drop scheme")));
                                                                         
     }
     SET_VALID_ENTRY("aggregation: distance laplacian algo");
@@ -163,7 +165,9 @@ namespace MueLu {
       if (algo == "distance laplacian" || algo == "block diagonal distance laplacian") {
         Input(currentLevel, "Coordinates");    
       }
-      if (algo.find("block diagonal") != std::string::npos || algo.find("signed classical") != std::string::npos)  {
+      if(algo == "signed classical sa") 
+	;
+      else if (algo.find("block diagonal") != std::string::npos || algo.find("signed classical") != std::string::npos)  {
         Input(currentLevel, "BlockNumber");
       }
     }     
@@ -174,7 +178,7 @@ namespace MueLu {
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
     
     FactoryMonitor m(*this, "Build", currentLevel);
-    
+
     typedef Teuchos::ScalarTraits<SC> STS;
     typedef typename STS::magnitudeType real_type;
     typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
@@ -190,13 +194,15 @@ namespace MueLu {
 
     GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
     std::string algo = pL.get<std::string>("aggregation: drop scheme");
+    const bool filteringMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
     
     RCP<RealValuedMultiVector> Coords;
     RCP<Matrix> A;
 
     bool use_block_algorithm=false;
     LO interleaved_blocksize = as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
-    bool useSignedClassical = false;
+    bool useSignedClassicalRS = false;
+    bool useSignedClassicalSA = false;
     bool generateColoringGraph = false;
 
     // NOTE:  If we're doing blockDiagonal, we'll not want to do rowSum twice (we'll do it
@@ -210,8 +216,13 @@ namespace MueLu {
       Coords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
       A = realA;
     }
+    else if(algo == "signed classical sa") {
+      useSignedClassicalSA = true;
+      algo = "classical";
+      A = realA;
+    }
     else if(algo == "signed classical" || algo == "block diagonal colored signed classical" || algo == "block diagonal signed classical") {
-      useSignedClassical = true;
+      useSignedClassicalRS = true;
       //      if(realA->GetFixedBlockSize() > 1) {
         RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector> >(currentLevel, "BlockNumber");
         // Ghost the column block numbers if we need to
@@ -378,12 +389,14 @@ namespace MueLu {
       const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
 
 
-      // NOTE: We don't support signed classical with cut drop at present
-      TEUCHOS_TEST_FOR_EXCEPTION(useSignedClassical && classicalAlgo != defaultAlgo, Exceptions::RuntimeError, "\"aggregation: classical algo\" != default is not supported for scalled classical aggregation");
-
+      // NOTE: We don't support signed classical RS or SA with cut drop at present
+      TEUCHOS_TEST_FOR_EXCEPTION(useSignedClassicalRS && classicalAlgo != defaultAlgo, Exceptions::RuntimeError, "\"aggregation: classical algo\" != default is not supported for scalled classical aggregation");
+      TEUCHOS_TEST_FOR_EXCEPTION(useSignedClassicalSA && classicalAlgo != defaultAlgo, Exceptions::RuntimeError, "\"aggregation: classical algo\" != default is not supported for scalled classical sa aggregation");
 
       GO numDropped = 0, numTotal = 0;
       std::string graphType = "unamalgamated"; //for description purposes only
+
+      /************************** RS or SA-style Classical Dropping (and variants) **************************/
       if (algo == "classical") {
         if (predrop_ == null) {
           // ap: this is a hack: had to declare predrop_ as mutable
@@ -404,7 +417,7 @@ namespace MueLu {
         // At this points we either have
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
-        if (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !useSignedClassical && A->hasCrsGraph()) {
+        if (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !useSignedClassicalRS && !useSignedClassicalSA && A->hasCrsGraph()) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
           // Detect and record rows that correspond to Dirichlet boundary conditions
@@ -431,7 +444,8 @@ namespace MueLu {
 
         } else if ( (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) ||
                     (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !A->hasCrsGraph()) ||
-                    (A->GetFixedBlockSize() == 1 && useSignedClassical) ) {
+                    (A->GetFixedBlockSize() == 1 && useSignedClassicalRS) ||
+                    (A->GetFixedBlockSize() == 1 && useSignedClassicalSA) ) {	  
           // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
           //                                          graph's map information, e.g., whether index is local
           // OR a matrix without a CrsGraph
@@ -444,7 +458,8 @@ namespace MueLu {
           RCP<Vector> ghostedDiag;
           ArrayRCP<const SC> ghostedDiagVals;
           ArrayRCP<const MT> negMaxOffDiagonal;
-          if(useSignedClassical) {
+	  // RS style needs the max negative off-diagonal, SA style needs the diagonal
+          if(useSignedClassicalRS) {
             if(ghostedBlockNumber.is_null()) {
               negMaxOffDiagonal = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixMaxMinusOffDiagonal(*A);
               if (GetVerbLevel() & Statistics1)
@@ -489,12 +504,12 @@ namespace MueLu {
               //FIXME For now, hardwiring the dropping in here
               
               LO rownnz = 0;
-              if(useSignedClassical) {
-                // Signed classical
+              if(useSignedClassicalRS) {
+                // Signed classical RS style
                 for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
                   LO col = indices[colID];               
                   MT max_neg_aik = realThreshold * STS::real(negMaxOffDiagonal[row]);
-                  MT neg_aij    = - STS::real(vals[colID]);
+                  MT neg_aij     = - STS::real(vals[colID]);
                   /*                  if(row==1326) printf("A(%d,%d) = %6.4e, block = (%d,%d) neg_aij = %6.4e max_neg_aik = %6.4e\n",row,col,vals[colID],
                                        g_block_id.is_null() ? -1 :  g_block_id[row],
                                        g_block_id.is_null() ? -1 :  g_block_id[col],
@@ -502,6 +517,27 @@ namespace MueLu {
                   if ((!rowIsDirichlet && (g_block_id.is_null() || g_block_id[row] == g_block_id[col]) && neg_aij > max_neg_aik) || row == col) {
                     columns[realnnz++] = col;
                     rownnz++;
+                  } else
+                    numDropped++;
+                }
+                rows[row+1] = realnnz;
+              }
+              else if(useSignedClassicalSA) {
+		// Signed classical SA style
+                for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+                  LO col = indices[colID];             
+
+		  bool is_nonpositive =  STS::real(vals[colID]) <= 0;
+                  MT  aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
+                  MT aij     = is_nonpositive ? STS::magnitude(vals[colID]*vals[colID]) : (-STS::magnitude(vals[colID]*vals[colID])); // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
+                  /*
+		  if(row==1326) printf("A(%d,%d) = %6.4e, raw_aij = %6.4e aij = %6.4e aiiajj = %6.4e\n",row,col,vals[colID],
+                                       vals[colID],aij, aiiajj);
+		  */
+
+                  if ((!rowIsDirichlet && aij > aiiajj) || row == col) {
+		    columns[realnnz++] = col;
+		    rownnz++;
                   } else
                     numDropped++;
                 }
@@ -636,10 +672,12 @@ namespace MueLu {
           columns.resize(realnnz);
           numTotal = A->getNodeNumEntries();
 
-          // If the only element remaining after filtering is diagonal, mark node as boundary
-          for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
-            if (rows[row+1]- rows[row] <= 1)
-              boundaryNodes[row] = true;
+          if (filteringMayCreateDirichlet) {
+            // If the only element remaining after filtering is diagonal, mark node as boundary
+            for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
+              if (rows[row+1]- rows[row] <= 1)
+                boundaryNodes[row] = true;
+            }
           }
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));

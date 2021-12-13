@@ -300,6 +300,9 @@ namespace Adelus {
     int ptr1_idx, myfirstrow;
   
   #ifdef GET_TIMING
+  #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+    double t1, copyhostpinnedtime;
+  #endif
     double t2;
     double totalpermtime;
   #endif
@@ -316,10 +319,18 @@ namespace Adelus {
   #endif
     typedef typename ZDView::device_type::memory_space memory_space;
     typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space> ViewMatrixType;
-  
+
+  #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+    typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View2DHostPinnType;//CudaHostPinnedSpace
+  #endif
+
     if (my_rhs_ > 0) {
   
-      ViewMatrixType rhs_temp ( "rhs_temp", nrows_matrix, my_rhs_ );//allocate full-size RHS vectors 
+      ViewMatrixType rhs_temp ( "rhs_temp", nrows_matrix, my_rhs_ );//allocate full-size RHS vectors
+  #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+      View2DHostPinnType h_rhs_temp( "h_rhs_temp", nrows_matrix, my_rhs_ );
+  #endif
+
       Kokkos::deep_copy(rhs_temp, 0);//initialize with 0s
   
       ncols_proc1 = ncols_matrix/nprocs_row;
@@ -357,18 +368,35 @@ namespace Adelus {
   
         ptr1_idx++;
       }
+  #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+  #ifdef GET_TIMING
+      t1 = MPI_Wtime();
+  #endif
+      Kokkos::deep_copy(h_rhs_temp,rhs_temp);
+  #ifdef GET_TIMING
+      copyhostpinnedtime = (MPI_Wtime()-t1);
+  #endif
 
+      MPI_Allreduce( MPI_IN_PLACE, h_rhs_temp.data(), nrows_matrix*my_rhs_, ADELUS_MPI_DATA_TYPE, MPI_SUM, col_comm);
+  
+      Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)), 
+                         subview(h_rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
+  #else //CUDA-aware MPI
       MPI_Allreduce( MPI_IN_PLACE, rhs_temp.data(), nrows_matrix*my_rhs_, ADELUS_MPI_DATA_TYPE, MPI_SUM, col_comm);
   
       Kokkos::deep_copy( subview(ZV, Kokkos::ALL(), Kokkos::make_pair(0, my_rhs_)), 
                          subview(rhs_temp, Kokkos::make_pair(myfirstrow-1, myfirstrow-1+my_rows), Kokkos::ALL()) );
-  
+  #endif  
     }
   
   #ifdef GET_TIMING
     totalpermtime = MPI_Wtime() - t2;
   #endif
+
   #ifdef GET_TIMING
+  #if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+    showtime("Time to copy dev mem --> host pinned mem",&copyhostpinnedtime);   
+  #endif
     showtime("Total time in perm",&totalpermtime);
   #endif
   }

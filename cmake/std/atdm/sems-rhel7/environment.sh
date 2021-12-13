@@ -117,11 +117,11 @@ if [[ "${SEMS_MODULEFILES_ROOT}" == "" ]] ; then
 fi
 
 module purge
-module load sems-env
-module load sems-git/2.10.1
+module load sems-archive-env
+module load sems-archive-git/2.10.1
 
-module load sems-cmake/3.19.1
-module load sems-ninja_fortran/1.10.0
+module load sems-archive-cmake/3.19.1
+module load sems-archive-ninja_fortran/1.10.0
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "CUDA" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
@@ -149,35 +149,35 @@ else
 fi
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-10.0.0" ]] ; then
-  module load sems-clang/10.0.0
+  module load sems-archive-clang/10.0.0
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
   export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
   export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
 elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG-7.0.1" ]] ; then
-  module load sems-clang/7.0.1
+  module load sems-archive-clang/7.0.1
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
   export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
   export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
 elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG-3.9.0" ]] ; then
-  module load sems-clang/3.9.0
+  module load sems-archive-clang/3.9.0
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`
   export OMPI_FC=`which gfortran`
   export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
   export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
-  module load sems-gcc/7.2.0
+  module load sems-archive-gcc/7.2.0
   export OMPI_CXX=`which g++`
   export OMPI_CC=`which gcc`
   export OMPI_FC=`which gfortran`
   export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
   export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
-  module load sems-intel/17.0.1
+  module load sems-archive-intel/17.0.1
   module load atdm-env
   module load atdm-mkl/18.0.5
   export OMPI_CXX=`which icpc`
@@ -190,8 +190,8 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
     export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
   fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.5" ]] ; then
-  module load sems-gcc/7.2.0
-  module load sems-intel/18.0.5
+  module load sems-archive-gcc/7.2.0
+  module load sems-archive-intel/18.0.5
   module load atdm-env
   module load atdm-mkl/18.0.5
   export ATDM_CONFIG_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
@@ -205,8 +205,8 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.5" ]] ; then
     export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
   fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1" ]] ; then
-  module load sems-gcc/7.2.0
-  module load sems-cuda/10.1
+  module load sems-archive-gcc/7.2.0
+  module load sems-archive-cuda/10.1
   export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
   if [ ! -x "$OMPI_CXX" ]; then
       echo "No nvcc_wrapper found"
@@ -228,13 +228,13 @@ else
   return
 fi
 
-module load sems-openmpi/1.10.1
-module load sems-netcdf/4.7.3/parallel
-module load sems-hdf5/1.10.6/parallel
-module load sems-zlib/1.2.8/base
-module load sems-boost/1.59.0/base
-module unload sems-python/2.7.9
-module load sems-superlu/4.3/base
+module load sems-archive-openmpi/1.10.1
+module load sems-archive-netcdf/4.7.3/parallel
+module load sems-archive-hdf5/1.10.6/parallel
+module load sems-archive-zlib/1.2.8/base
+module load sems-archive-boost/1.59.0/base
+module unload sems-archive-python/2.7.9
+module load sems-archive-superlu/4.3/base
 
 if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] && \
   [[ "${ATDM_CONFIG_COMPLEX}" == "ON" ]] && \

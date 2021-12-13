@@ -1,3 +1,6 @@
+#ifndef TEST_SERIAL_HPP
+#define TEST_SERIAL_HPP
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
@@ -19,3 +22,5 @@ protected:
 
 #define TestCategory serial
 #define TestExecSpace Kokkos::Serial
+
+#endif // TEST_SERIAL_HPP

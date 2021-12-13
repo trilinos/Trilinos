@@ -103,8 +103,7 @@ namespace {
     const GO gblNumCols = static_cast<GO> (rowMap->getGlobalNumElements ());
 
     RCP<graph_type> G =
-      rcp (new graph_type (rowMap, numEntPerRow,
-                           Tpetra::StaticProfile));
+      rcp (new graph_type (rowMap, numEntPerRow));
 
     Teuchos::Array<GO> gblColInds (numEntPerRow);
     for (LO lclRow = 0; lclRow < NumRows; ++lclRow) {

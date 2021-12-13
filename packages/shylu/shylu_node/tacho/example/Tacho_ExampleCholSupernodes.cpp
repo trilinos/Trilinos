@@ -1,6 +1,6 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp"
@@ -68,7 +68,7 @@ int main (int argc, char *argv[]) {
     typedef CrsMatrixBase<value_type,host_space> CrsMatrixBaseTypeHost;
     typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,exec_space> DenseMatrixBaseType;
     
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
     double t = 0.0;
 
     std::cout << "CholSupernodes:: import input file = " << file << std::endl;

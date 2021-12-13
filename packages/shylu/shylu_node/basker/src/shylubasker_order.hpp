@@ -1,7 +1,7 @@
 #ifndef SHYLUBASKER_ORDER_HPP
 #define SHYLUBASKER_ORDER_HPP
 
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 //Basker Includes
 #include "shylubasker_types.hpp"
@@ -452,7 +452,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   void Basker<Int,Entry,Exe_Space>::order_incomplete()
   {
 
-    Kokkos::Impl::Timer timer_one;
+    Kokkos::Timer timer_one;
 
     if(Options.matching == BASKER_TRUE)
     {

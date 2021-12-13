@@ -45,10 +45,10 @@ void *init_file(void *varg)
   float  time_value;
   float  x[100], y[100], z[100];
   float  attrib[1], dist_fact[100];
-  char * coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
-  char * block_names[10], *nset_names[10], *sset_names[10];
-  char * prop_names[2], *attrib_names[2];
-  char * title = "This is a test";
+  char  *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
+  char  *block_names[10], *nset_names[10], *sset_names[10];
+  char  *prop_names[2], *attrib_names[2];
+  char  *title = "This is a test";
 
   struct ex_block blocks[10];
 
@@ -66,9 +66,9 @@ void *init_file(void *varg)
   int CPU_word_size = 0;                        /* sizeof(float) */
   int IO_word_size  = 4;                        /* (4 bytes) */
   int exoid         = ex_create(name,           /* filename path */
-                        EX_CLOBBER,     /* create mode */
-                        &CPU_word_size, /* CPU float word size in bytes */
-                        &IO_word_size); /* I/O float word size in bytes */
+                                EX_CLOBBER,     /* create mode */
+                                &CPU_word_size, /* CPU float word size in bytes */
+                                &IO_word_size); /* I/O float word size in bytes */
   printf("after ex_create for %s, exoid = %d\n", name, exoid);
   printf(" cpu word size: %d io word size: %d\n", CPU_word_size, IO_word_size);
 

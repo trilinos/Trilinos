@@ -134,7 +134,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
         FieldMetaData field_meta_data = {nullptr, 0};
 
         const FieldBase & field = *fields[i];
-        if(static_cast<unsigned>(field.entity_rank()) == rank)
+        if (field.entity_rank() == rank)
         {
             size_t num_bytes_per_entity = getNumBytesForField(field, rank, superset_parts);
             if(num_bytes_per_entity > 0)
@@ -159,7 +159,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
         for(size_t i = 0; i < fields.size(); ++i)
         {
             const FieldBase & field = *fields[i];
-            if(static_cast<unsigned>(field.entity_rank()) == rank)
+            if (field.entity_rank() == rank)
             {
                 const unsigned char* init_val = reinterpret_cast<const unsigned char*>(field.get_initial_value());
                 FieldMetaData& field_meta_data = const_cast<FieldMetaData&>(field.get_meta_data_for_field().back());
@@ -177,7 +177,7 @@ void DefaultFieldDataManager::allocate_bucket_field_data(const EntityRank rank,
 void DefaultFieldDataManager::allocate_new_field_meta_data(const EntityRank rank, const unsigned bucketId, const std::vector<FieldBase*>& allFields)
 {
     for (FieldBase* field : allFields) {
-        if (static_cast<unsigned>(field->entity_rank()) == rank) {
+        if (field->entity_rank() == rank) {
             if (bucketId >= field->get_meta_data_for_field().size()) {
                 FieldMetaData fieldMetaData = {nullptr, 0};
                 field->get_meta_data_for_field().push_back(fieldMetaData);
@@ -195,7 +195,7 @@ std::vector<size_t> DefaultFieldDataManager::get_old_bucket_field_offsets(const 
     size_t currentFieldOldOffset = 0;
     for (unsigned int i = 0; i < allFields.size(); ++i) {
         const bool isFieldValid = (allFields[i] != nullptr);
-        const bool isTargetRank = (static_cast<unsigned>(allFields[i]->entity_rank()) == rank);
+        const bool isTargetRank = (allFields[i]->entity_rank() == rank);
 
         if (isFieldValid && isTargetRank) {
             const bool isBucketInRange = (bucketId < allFields[i]->get_meta_data_for_field().size());
@@ -220,7 +220,7 @@ std::vector<size_t> DefaultFieldDataManager::get_new_bucket_field_offsets(const 
     size_t currentFieldNewOffset = 0;
     for (size_t i = 0; i < allFields.size(); ++i) {
         const FieldBase& field = *allFields[i];
-        if (static_cast<unsigned>(field.entity_rank()) == rank) {
+        if (field.entity_rank() == rank) {
             size_t numBytesPerEntity = getNumBytesForField(field, rank, supersetParts);
             size_t fieldDataSizeThisBucket = stk::adjust_up_to_alignment_boundary(numBytesPerEntity * capacity, alignment_increment_bytes);
 
@@ -246,7 +246,7 @@ void DefaultFieldDataManager::copy_field_data_from_old_to_new_bucket(const Entit
 {
     size_t fieldIndex = 0;
     for (const FieldBase* field : allFields) {
-        if (static_cast<unsigned>(field->entity_rank()) == rank) {
+        if (field->entity_rank() == rank) {
             size_t oldFieldAllocationSize = oldOffsetForField[fieldIndex + 1] - oldOffsetForField[fieldIndex];
             std::memcpy(newAllocationAllFields + newOffsetForField[fieldIndex],
                         oldAllocationAllFields + oldOffsetForField[fieldIndex], oldFieldAllocationSize);
@@ -264,7 +264,7 @@ void DefaultFieldDataManager::update_field_pointers_to_new_bucket(const EntityRa
     size_t currentFieldOffset = 0;
     for (size_t i = 0; i < allFields.size(); ++i) {
         const FieldBase& field = *allFields[i];
-        if (static_cast<unsigned>(field.entity_rank()) == rank) {
+        if (field.entity_rank() == rank) {
             FieldMetaData& fieldMetaData = const_cast<FieldMetaData&>(field.get_meta_data_for_field()[bucketId]);
             updateFieldPointer(fieldMetaData, capacity, currentFieldOffset, newAllocationAllFields, alignment_increment_bytes);
         }
@@ -273,7 +273,7 @@ void DefaultFieldDataManager::update_field_pointers_to_new_bucket(const EntityRa
 
 void DefaultFieldDataManager::initialize_new_field_values(FieldBase& currentField, const EntityRank rank, const unsigned bucketId, const size_t capacity)
 {
-    if (static_cast<unsigned>(currentField.entity_rank()) == rank) {
+    if (currentField.entity_rank() == rank) {
         const unsigned char* initVal = reinterpret_cast<const unsigned char*>(currentField.get_initial_value());
         FieldMetaData& fieldMetaData = const_cast<FieldMetaData&>(currentField.get_meta_data_for_field()[bucketId]);
         initializeField(fieldMetaData, initVal, capacity);
@@ -317,7 +317,7 @@ void DefaultFieldDataManager::deallocate_bucket_field_data(const EntityRank rank
         for(unsigned int i = 0; i < fields.size(); ++i)
         {
             if(fields[i] == nullptr ||
-               static_cast<unsigned>(fields[i]->entity_rank()) != rank ||
+               fields[i]->entity_rank() != rank ||
                fields[i]->get_meta_data_for_field().size() <= bucket_id)
                 continue;
             FieldMetaData& field_data = fields[i]->get_meta_data_for_field()[bucket_id];
@@ -346,7 +346,7 @@ void DefaultFieldDataManager::reorder_bucket_field_data(EntityRank rank, const s
 
     for(size_t i = 0; i < fields.size(); ++i)
     {
-        if(static_cast<unsigned>(fields[i]->entity_rank()) == rank)
+        if (fields[i]->entity_rank() == rank)
         {
             FieldMetaDataVector new_field_meta_data_vector(reorderedBucketIds.size());
             for(unsigned m = 0, e = reorderedBucketIds.size(); m < e; ++m)
@@ -388,7 +388,7 @@ void DefaultFieldDataManager::initialize_entity_field_data(EntityRank rank, unsi
     for(size_t i = 0; i < fields.size(); ++i)
     {
         const FieldBase & field = *fields[i];
-        if(static_cast<unsigned>(field.entity_rank()) == rank)
+        if (field.entity_rank() == rank)
         {
             const FieldMetaData& field_meta_data = fields[i]->get_meta_data_for_field()[bucket_id];
             const int num_bytes_per_entity = field_meta_data.m_bytes_per_entity;

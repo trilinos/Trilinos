@@ -30,8 +30,9 @@ namespace Test {
       A_(i,i) = A_(i,i)+10;
     }
   };
+
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
-  struct VanillaGEMM {
+  struct trmm_VanillaGEMM {
     bool A_t, B_t, A_c, B_c;
     int N,K;
     ViewTypeA A;
@@ -137,30 +138,26 @@ namespace Test {
     }
     Kokkos::deep_copy(A, host_A);
 
+    struct trmm_VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
     if (A_l){
       // B_expected = alpha * op(A) * B + beta * C = 1 * op(A) * B + 0 * C
-      struct VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
       vgemm.A_t = (trans[0]!='N') && (trans[0]!='n'); vgemm.B_t = false;
       vgemm.A_c = (trans[0]=='C') || (trans[0]=='c'); vgemm.B_c = false;
-      vgemm.N = N;    vgemm.K = K;
-      vgemm.A = A;    vgemm.B = B;
-      vgemm.C = B_expected; // out
-      vgemm.alpha = alpha;
-      vgemm.beta = beta;
-      Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
+      vgemm.A = A;     vgemm.B = B;
     }
     else {
       // B_expected = alpha * B * op(A) + beta * C = 1 * B * op(A) + 0 * C
-      struct VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
       vgemm.A_t = false; vgemm.B_t = (trans[0]!='N') && (trans[0]!='n');
       vgemm.A_c = false; vgemm.B_c = (trans[0]=='C') || (trans[0]=='c');
-      vgemm.N = N;     vgemm.K = K;
-      vgemm.A = B;    vgemm.B = A;
-      vgemm.C = B_expected; // out
-      vgemm.alpha = alpha;
-      vgemm.beta = beta;
-      Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
+      vgemm.A = B;     vgemm.B = A;
     }
+    vgemm.N = N;
+    vgemm.K = K;
+    vgemm.C = B_expected; // out
+    vgemm.alpha = alpha;
+    vgemm.beta = beta;
+    Kokkos::parallel_for("KokkosBlas::Test::trmm_VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
+    Kokkos::fence();
     Kokkos::deep_copy(host_B_expected, B_expected);
 
     KokkosBlas::trmm(side, uplo, trans, diag, alpha, A, B);

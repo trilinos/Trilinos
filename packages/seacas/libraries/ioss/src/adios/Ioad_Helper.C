@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -30,8 +30,7 @@ namespace Ioad {
 
   std::vector<std::string> properties_to_save(const Ioss::GroupingEntity *const entity_block)
   {
-    std::vector<std::string> property_list;
-    entity_block->property_describe(&property_list);
+    std::vector<std::string> property_list = entity_block->property_describe();
 
     for (auto ignore_property : Ignore_properties) {
       property_list.erase(std::remove(property_list.begin(), property_list.end(), ignore_property),
