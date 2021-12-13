@@ -21,7 +21,6 @@ APPEND_SET(SOURCES
   CoalesceDropFactory_kokkos.cpp
   CoarseMapFactory_kokkos.cpp
   IndexManager_kokkos.cpp
-  LWGraph_kokkos.cpp
   MueLu_TestHelpers_kokkos.cpp
   MueLu_UnitTests_kokkos.cpp
   NotayAggregationFactory.cpp

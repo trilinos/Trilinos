@@ -121,56 +121,9 @@ namespace MueLuTests {
 
   } // Build
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(UncoupledAggregationFactory, BuildOnePt, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-    #   include <MueLu_UseShortNames.hpp>
-
-      out << "version: " << MueLu::Version() << std::endl;
-      Teuchos::ParameterList galeriList;
-      GlobalOrdinal nx = 20, ny = 20;
-      galeriList.set("nx", nx);
-      galeriList.set("ny", ny);
-      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-      RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
-      map = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, 2); //expand map for 2 DOFs per node
-      RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
-      RCP<Matrix> A = Pr->BuildMatrix();
-      A->SetFixedBlockSize(2);
-
-      Level aLevel;
-      TestHelpers::TestFactory<SC, LO, GO, NO>::createSingleLevelHierarchy(aLevel);
-      aLevel.Request("A");
-      aLevel.Set("A",A);
-
-      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-      RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
-      dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
-
-      RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
-      aggFact->SetFactory("Graph", dropFact);
-      aggFact->SetParameter("OnePt aggregate map name", Teuchos::ParameterEntry(std::string("Cartesian2D")));
-      aggFact->SetParameter("OnePt aggregate map factory", Teuchos::ParameterEntry(std::string("Graph")));
-
-      aLevel.Request(*aggFact);
-      aLevel.Request("Cartesian2D", aggFact.get());
-
-      RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
-      coarseMapFact->SetFactory("Aggregates", aggFact);
-      aLevel.Request(*coarseMapFact);
-
-
-      aggFact->Build(aLevel);
-//      blockedCoarseMapFact->Build(aLevel);
-
-  } // Build
-
-
-
   # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, Constructor, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, Build, Scalar, LO, GO, Node) \
-//    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, BuildOnePt, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(UncoupledAggregationFactory, Build, Scalar, LO, GO, Node)
 
 # include <MueLu_ETI_4arg.hpp>
 

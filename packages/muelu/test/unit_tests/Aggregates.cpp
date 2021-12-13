@@ -971,18 +971,19 @@ public:
     level.Request(*aggFact);
     aggFact->Build(level);
     RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get());
-
     Array< LO > aggPtr;
     Array< LO > aggNodes;
     Array< LO > unaggregated;
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
     //     Test to check that the dirichlet node is aggregated:
-    std::cout << "1: test unaggregated size:  "<<  unaggregated.size()<< std::endl;
     for( int i = 0; i < unaggregated.size(); i++){
       TEST_EQUALITY( unaggregated[i] == 2, false);
     }
     // Repeat with greedy Dirichlet
+    Level levelGreedyAndNoPreserve;
+    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(levelGreedyAndNoPreserve);
+    levelGreedyAndNoPreserve.Set("A", A);
     amalgFact = rcp(new AmalgamationFactory());
     dropFact = rcp(new CoalesceDropFactory());
     dropFact->SetParameter("aggregation: greedy Dirichlet",Teuchos::ParameterEntry(true));
@@ -992,17 +993,22 @@ public:
     aggFact = rcp(new UncoupledAggregationFactory());
     aggFact->SetFactory("Graph", dropFact);
 
-    level.Request("Aggregates", aggFact.get());
-    level.Request("UnAmalgamationInfo", amalgFact.get());
+    levelGreedyAndNoPreserve.Request("Aggregates", aggFact.get());
+    levelGreedyAndNoPreserve.Request("UnAmalgamationInfo", amalgFact.get());
 
-    level.Request(*aggFact);
-    aggFact->Build(level);
-    aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get());
+    levelGreedyAndNoPreserve.Request(*aggFact);
+    aggFact->Build(levelGreedyAndNoPreserve);
+    aggregates = levelGreedyAndNoPreserve.Get<RCP<Aggregates> >("Aggregates",aggFact.get());
+    aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(false));
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
     TEST_EQUALITY(unaggregated[0],2);// check that the node with the Dof flagged as dirichlet is unaggregated
 
     // Repeat with greedy Dirichlet and preserve Dirichlet points
+    Level levelGreedyAndPreserve;
+    TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(levelGreedyAndPreserve);
+    levelGreedyAndPreserve.Set("A", A);
+
     amalgFact = rcp(new AmalgamationFactory());
     dropFact = rcp(new CoalesceDropFactory());
     dropFact->SetParameter("aggregation: greedy Dirichlet",Teuchos::ParameterEntry(true));
@@ -1013,15 +1019,14 @@ public:
     aggFact->SetFactory("Graph", dropFact);
     aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(true));
 
-    level.Request("Aggregates", aggFact.get());
-    level.Request("UnAmalgamationInfo", amalgFact.get());
+    levelGreedyAndPreserve.Request("Aggregates", aggFact.get());
+    levelGreedyAndPreserve.Request("UnAmalgamationInfo", amalgFact.get());
 
-    level.Request(*aggFact);
-    aggFact->Build(level);
-    aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get());
+    levelGreedyAndPreserve.Request(*aggFact);
+    aggFact->Build(levelGreedyAndPreserve);
+    aggregates = levelGreedyAndPreserve.Get<RCP<Aggregates> >("Aggregates",aggFact.get());
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
-    std::cout << "2: test unaggregated size:  "<<  unaggregated.size()<< std::endl;
     for( int i = 0; i < unaggregated.size(); i++){
       TEST_EQUALITY( unaggregated[i] == 2, false);
     }

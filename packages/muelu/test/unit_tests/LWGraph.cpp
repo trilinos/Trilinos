@@ -118,7 +118,7 @@ namespace MueLuTests {
     }
 
     auto columns = graphLWK->getEntries();
-    for(int i = 0; i < graph->GetNodeNumVertices(); ++i) {
+    for(size_t i = 0; i < graph->GetNodeNumVertices(); ++i) {
         TEST_EQUALITY(graph->getNeighborVertices(i).size() == columns.view(rows[i], rows[i+1]-rows[i]).size(),   true);
     }
 
