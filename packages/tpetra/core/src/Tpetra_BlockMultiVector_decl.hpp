@@ -459,7 +459,7 @@ public:
   template<class TargetMemorySpace>
   TPETRA_DEPRECATED
   void sync () {
-    mv_.view_.getOridinalDualView().template sync<typename TargetMemorySpace::memory_space> ();
+    mv_.view_.getOriginalDualView().template sync<typename TargetMemorySpace::memory_space> ();
   }
 
   /// \brief Update data to the host
