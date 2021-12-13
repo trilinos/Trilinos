@@ -51,7 +51,10 @@
 #include "KokkosGraph_Distance2Color.hpp"
 
 #include <Xpetra_Matrix.hpp>
-
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
+#include <Galeri_XpetraUtils.hpp>
+#include <Galeri_XpetraMaps.hpp>
 #include "MueLu_TestHelpers_kokkos.hpp"
 #include "MueLu_Version.hpp"
 
@@ -329,6 +332,125 @@ namespace MueLuTests {
     level.Release("Aggregates", aggFact.get());
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GreedyDirichletUncoupledAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    //TODO bmk: A lot of test code duplicated here from gimmeUncoupledAggregates
+    //because it can't take a custom parameter list, add that as parameter?
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+//    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(30);
+
+    // Make a Matrix with multiple degrees of freedom per node
+    GlobalOrdinal nx = 20, ny = 20;
+
+    // Describes the initial layout of matrix rows across processors.
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
+    RCP<const Map> map = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(TestHelpers_kokkos::Parameters::getLib(), "Cartesian2D", comm, galeriList);
+
+    map = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, 2); //expand map for 2 DOFs per node
+
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+    A->SetFixedBlockSize(2);
+
+    Teuchos::ArrayView<const LocalOrdinal> indices;
+    Teuchos::ArrayView<const Scalar>  values;
+
+    // Create a dirichlet boundary row.
+    LocalOrdinal localRowToZero = 5; // Corresponds to a Dof on local graph node 2
+
+    A->resumeFill();
+    A->getLocalRowView(localRowToZero, indices, values);
+    Array<Scalar> newvalues(values.size(),TST::zero());
+    for (int j = 0; j < indices.size(); j++)
+      //keep diagonal
+      if (indices[j] == localRowToZero) newvalues[j] = values[j];
+    A->replaceLocalValues(localRowToZero,indices,newvalues);
+
+    A->fillComplete();
+
+    ArrayRCP<const bool> drows = Utilities::DetectDirichletRows(*A);
+    TEST_EQUALITY(drows[localRowToZero], true);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+
+    RCP<AmalgamationInfo_kokkos> amalgInfo;
+    Level level;
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
+
+    RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+    // Setup aggregation factory (use default factory for graph)
+    RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetFactory("Graph", dropFact);
+    aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(false));
+
+    level.Request("Aggregates", aggFact.get());
+    level.Request("UnAmalgamationInfo", amalgFact.get());
+
+    level.Request(*aggFact);
+    aggFact->Build(level);
+    RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get());
+
+    LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+    auto vertexData = aggregates->GetVertex2AggIdNonConst();
+    LO numNodes = vertexData->getLocalLength();
+    Teuchos::ArrayRCP<const LO> vertex2AggId = vertexData->getData(0);
+    bool isUnaggregatedDetected = false;
+    for(LO i=0; i<numNodes; i++) {
+      LO aggregate = vertex2AggId[i];
+      if(aggregate == INVALID) {
+          isUnaggregatedDetected = true;
+      }
+    }
+    // check that the node with the Dof flagged as dirichlet is unaggregated
+    if(comm->getSize() > 1) {
+        TEST_EQUALITY(isUnaggregatedDetected, true);
+    }
+
+    TEST_INEQUALITY(aggregates, Teuchos::null);
+    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(), false);
+
+    // Repeat with preserve Dirichlet points
+    Level levelPreserveDirichlet;
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(levelPreserveDirichlet);
+    levelPreserveDirichlet.Set("A", A);
+    amalgFact = rcp(new AmalgamationFactory_kokkos());
+    dropFact = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+    // Setup aggregation factory (use default factory for graph)
+    aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetFactory("Graph", dropFact);
+    aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(true));
+
+    levelPreserveDirichlet.Request("Aggregates", aggFact.get());
+    levelPreserveDirichlet.Request("UnAmalgamationInfo", amalgFact.get());
+
+    levelPreserveDirichlet.Request(*aggFact);
+    aggFact->Build(levelPreserveDirichlet);
+    aggregates = levelPreserveDirichlet.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get());
+    vertexData = aggregates->GetVertex2AggIdNonConst();
+    numNodes = vertexData->getLocalLength();
+    vertex2AggId = vertexData->getData(0);
+    for(LO i=0; i<numNodes; i++) {
+      LO aggregate = vertex2AggId[i];
+      if(aggregate == INVALID) {
+          TEST_EQUALITY( i == 2, false);
+      }
+
+    }
+  }
+
 
 // A test that creates discontiguous aggregates to make sure the detection algorithm works well
 /// pretty much testing the test...
@@ -487,6 +609,7 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustUncoupledAggregation, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustDist2UncoupledAggregation, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustDist2DeterUncoupledAggregation, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, GreedyDirichletUncoupledAggregation, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, DiscontiguousAggregates, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase1, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase2, SC, LO, GO, NO) \
