@@ -86,7 +86,7 @@ size_t getImportList(
   typedef typename PartitioningSolution<SolutionAdapter>::part_t part_t;
   typedef typename PartitioningSolution<SolutionAdapter>::gno_t gno_t;
 
-  size_t numParts = solution.getActualGlobalNumberOfParts();
+  size_t numParts = solution.getTargetGlobalNumberOfParts();
   int numProcs = solution.getCommunicator()->getSize();
 
   if (numParts > size_t(numProcs)) {

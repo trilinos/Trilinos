@@ -357,7 +357,7 @@ int main(int narg, char** arg)
   }
 
   // Quotient algorithm should produce the same result for each local row
-  if(method == "quotient") {
+  if(method == "quotient" && checkLength > 0) {
     size_t result = size_t(checkParts[0]);    
     for (size_t i = 1; i < checkLength; i++) {
       if (size_t(checkParts[i]) != result)
