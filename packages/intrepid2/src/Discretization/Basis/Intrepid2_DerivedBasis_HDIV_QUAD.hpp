@@ -197,7 +197,6 @@ namespace Intrepid2
       Kokkos::deep_copy(dofCoeffs1,0.0);
       this->TensorBasis::getDofCoeffs(dofCoeffs2);
       //multiply by weight = -1.0
-      using ExecutionSpace = typename TensorBasis::ExecutionSpace;
       Kokkos::parallel_for( Kokkos::RangePolicy<ExecutionSpace>(0, dofCoeffs2.extent(0)),
           KOKKOS_LAMBDA (const int i){ dofCoeffs2(i) *= -1.0; });
     }
