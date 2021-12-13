@@ -16,48 +16,49 @@ public:
 
   ///////////////////////////////////////////////////////////
   // Construct the test:  
-  //   Read or generate a matrix (JBlock) with default range and domain maps
-  //   Construct identical matrix (JCyclic) with cyclic range and domain maps
 
-  ColorerTest(Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-              int narg, char**arg)
-  : symmetric(false)
+  ColorerTest(const Teuchos::RCP<const Teuchos::Comm<int> > &comm, int multiple)
   {
     int me = comm->getRank();
     int np = comm->getSize();
 
-    // Process command line arguments
-    bool distributeInput = true;
-    std::string filename = "";
-    size_t xdim = 10, ydim = 11, zdim = 12;
-
-    Teuchos::CommandLineProcessor cmdp(false, false);
-    cmdp.setOption("file", &filename, 
-                   "Name of the Matrix Market file to use");
-    cmdp.setOption("xdim", &xdim, 
-                   "Number of nodes in x-direction for generated matrix");
-    cmdp.setOption("ydim", &ydim, 
-                   "Number of nodes in y-direction for generated matrix");
-    cmdp.setOption("zdim", &zdim, 
-                   "Number of nodes in z-direction for generated matrix");
-    cmdp.setOption("distribute", "no-distribute", &distributeInput, 
-                   "Should Zoltan2 distribute the matrix as it is read?");
-    cmdp.setOption("symmetric", "non-symmetric", &symmetric,
-                   "Is the matrix symmetric?");
-    cmdp.parse(narg, arg);
-
-    // Get and store a matrix
-    if (filename != "") {
-      // Read from a file
-      UserInputForTests uinput(".", filename, comm, true, distributeInput);
-      JBlock = uinput.getUITpetraCrsMatrix();
+    // Create non-symmetrix matrix with non-contiguous row map -- only even GIDs
+    size_t myNrows = 4;
+    Teuchos::Array<gno_t> myRows(myNrows);
+    for (size_t i = 0; i < myNrows; i++) {
+      myRows[i] = multiple * (me * myNrows + i);  
     }
-    else {
-      // Generate a matrix
-      UserInputForTests uinput(xdim, ydim, zdim, string("Laplace3D"), comm,
-                               true, distributeInput);
-      JBlock = uinput.getUITpetraCrsMatrix();
+
+    Tpetra::global_size_t dummy =
+            Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+    Teuchos::RCP<const map_t> map = rcp(new map_t(dummy, myRows, 0, comm));
+
+    size_t nnz = 2;
+    JBlock = rcp(new matrix_t(map, nnz));
+    Teuchos::Array<gno_t> myCols(nnz);
+    Teuchos::Array<zscalar_t> myVals(nnz);
+
+    for (size_t i = 0; i < myNrows; i++) {
+      auto gid = map->getGlobalElement(i);
+      size_t cnt = 0;
+      myCols[cnt++] = gid;
+      if (gid+multiple <= map->getMaxAllGlobalIndex()) 
+        myCols[cnt++] = gid+multiple;
+      JBlock->insertGlobalValues(gid, myCols(0,cnt), myVals(0, cnt));
     }
+    JBlock->fillComplete();
+
+    // Fill JBlock with random numbers for a better test.
+    using IST = typename Kokkos::Details::ArithTraits<zscalar_t>::val_type;
+    using pool_type = 
+          Kokkos::Random_XorShift64_Pool<execution_space_t>;
+    pool_type rand_pool(static_cast<uint64_t>(me));
+
+    Kokkos::fill_random(JBlock->getLocalMatrixDevice().values, rand_pool, 
+                        static_cast<IST>(1.), static_cast<IST>(9999.));
+
+    Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
+    JBlock->describe(foo, Teuchos::VERB_EXTREME);
 
     // Build same matrix with cyclic domain and range maps
     // To make range and domain maps differ for square matrices,
@@ -68,22 +69,11 @@ public:
     Teuchos::Array<gno_t> indices(nIndices);
 
     Teuchos::RCP<const map_t> vMapCyclic = 
-                 getCyclicMap(JBlock->getGlobalNumCols(), indices, np-1, comm);
+                 getCyclicMap(JBlock->getGlobalNumCols(), indices, np-1, 
+                              multiple, comm);
     Teuchos::RCP<const map_t> wMapCyclic =
-                 getCyclicMap(JBlock->getGlobalNumRows(), indices, np-2, comm);
-
-    // Fill JBlock with random numbers for a better test.
-    JBlock->resumeFill();
-
-    using IST = typename Kokkos::Details::ArithTraits<zscalar_t>::val_type;
-    using pool_type = 
-          Kokkos::Random_XorShift64_Pool<execution_space_t>;
-    pool_type rand_pool(static_cast<uint64_t>(me));
-
-    Kokkos::fill_random(JBlock->getLocalMatrixDevice().values, rand_pool, 
-                        static_cast<IST>(1.), static_cast<IST>(9999.));
-    JBlock->fillComplete();
-
+                 getCyclicMap(JBlock->getGlobalNumRows(), indices, np-2, 
+                              multiple, comm);
 
     // Make JCyclic:  same matrix with different Domain and Range maps
     RCP<const graph_t> block_graph = JBlock->getCrsGraph();
@@ -92,7 +82,8 @@ public:
     cyclic_graph->fillComplete(vMapCyclic, wMapCyclic);
     JCyclic = rcp(new matrix_t(cyclic_graph));
     JCyclic->resumeFill();
-    TEUCHOS_ASSERT(block_graph->getNodeNumRows() == cyclic_graph->getNodeNumRows());
+    TEUCHOS_ASSERT(block_graph->getNodeNumRows() == 
+                   cyclic_graph->getNodeNumRows());
     {
       auto val_s = JBlock->getLocalMatrixHost().values;
       auto val_d = JCyclic->getLocalMatrixHost().values;
@@ -100,6 +91,7 @@ public:
       Kokkos::deep_copy(val_d, val_s);
     }
     JCyclic->fillComplete();
+    JCyclic->describe(foo, Teuchos::VERB_EXTREME);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -107,7 +99,7 @@ public:
 
     bool ok = true;
 
-    params.set("symmetric", symmetric);
+    params.set("symmetric", false);
 
     // test with default maps
     ok = buildAndCheckSeedMatrix(testname, params, true);
@@ -208,6 +200,7 @@ private:
     size_t nIndices, 
     Teuchos::Array<gno_t> &indices,
     int mapNumProc, 
+    int multiple,
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   {
     size_t cnt = 0;
@@ -217,7 +210,7 @@ private:
     if (mapNumProc <= 0) mapNumProc = 1;  // corner case: np is too small
 
     for (size_t i = 0; i < nIndices; i++) 
-      if (me == int(i % np)) indices[cnt++] = i;
+      if (me == int(i % np)) indices[cnt++] = multiple*i; 
 
     Tpetra::global_size_t dummy =
             Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
@@ -234,14 +227,12 @@ private:
 
 
 ///////////////////////////////////////////////////////////////////////////////
-int main(int narg, char **arg)
+int doTheTest(const Teuchos::RCP<const Teuchos::Comm<int> > &comm, int multiple)
 {
-  Tpetra::ScopeGuard scope(&narg, &arg);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   bool ok = true;
   int ierr = 0;
 
-  ColorerTest testColorer(comm, narg, arg);
+  ColorerTest testColorer(comm, multiple);
 
   // Set parameters and compute coloring
   {
@@ -277,35 +268,27 @@ int main(int narg, char **arg)
     ok = testColorer.run("Test Three", coloring_params);
     if (!ok) ierr++;
   }
+  return ierr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+int main(int narg, char **arg)
+{
+  Tpetra::ScopeGuard scope(&narg, &arg);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int ierr = 0;
+
+  ierr += doTheTest(comm, 1);  // Contiguous row map
+  ierr += doTheTest(comm, 2);  // Non-contiguous row map -- 
+                               // only even-numbered indices
+  ierr += doTheTest(comm, 5);  // Indices spaced wider than rows/proc
 
   int gerr;
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
-  if (comm->getRank() == 0) { 
+  if (comm->getRank() == 0) {
     if (gerr == 0)
       std::cout << "TEST PASSED" << std::endl;
     else
       std::cout << "TEST FAILED" << std::endl;
   }
-
-//Through cmake...
-//Test cases -- UserInputForTests can generate Galeri or read files:
-//-  tri-diagonal matrix -- can check the number of colors
-//-  galeri matrix
-//-  read from file:  symmetric matrix and non-symmetric matrix
-
-//Through code ...
-//Test with fitted and non-fitted maps 
-//Call regular and fitted versions of functions
-
-//Through code ...
-//Test both with and without Symmetrize -- 
-//test both to exercise both sets of callbacks in Zoltan
-// --matrixType = Jacobian/Hessian
-// --symmetric, --no-symmetric
-// --symmetrize, --no-symmetrize
-
-//Through cmake
-//Test both with and without distributeInput
-// --distribute, --no-distribute
-
 }
