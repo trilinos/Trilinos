@@ -252,9 +252,9 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
   // NOTE: This only generates a halo for elements where I own at least one node.  On the x/y hi sides,
   // the highers element does not own all the nodes on that proc.  Ergo, no halo in that direction
   std::vector<global_ordinal_type> my_ghost_elements;
-  for(global_ordinal_type j=myElementStart_[1]-1; j<myElementStop_[1]; j++) {
+  for(global_ordinal_type j=myElementStart_[1]-1; j<myElementStop_[1]+1; j++) {
     if(j<0 || j>=globalElements_[1]) continue; // Ignore stuff off the mesh
-    for(global_ordinal_type i=myElementStart_[0]-1; i<myElementStop_[0]; i++) {
+    for(global_ordinal_type i=myElementStart_[0]-1; i<myElementStop_[0]+1; i++) {
       if(i<0 || i>=globalElements_[0]) continue; // Ignore stuff off the mesh
 
       // Ignore proc interior
@@ -297,11 +297,14 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
     }
   }
 
-  auto _ghostNodeGlobalIDs = ghostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
-  Kokkos::resize(_ghostNodeGlobalIDs,my_ghost_nodes.size());
-  for(auto k=my_ghost_nodes.begin(); k!=my_ghost_nodes.end(); k++) {
-    size_t kk = std::distance(my_ghost_nodes.begin(),k);
+  ghostNodeGlobalIDs_ = global_ordinal_view_type(globalDualViewType("ghostNodeGlobalIDs_",my_ghost_nodes.size()));
+  {
+    auto _ghostNodeGlobalIDs = ghostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
+    Kokkos::resize(_ghostNodeGlobalIDs,my_ghost_nodes.size());
+    for(auto k=my_ghost_nodes.begin(); k!=my_ghost_nodes.end(); k++) {
+      size_t kk = std::distance(my_ghost_nodes.begin(),k);
     _ghostNodeGlobalIDs(kk) = *k;
+    }
   }
 
   initializeOwnedAndGhostNodeGlobalIDs();
@@ -354,13 +357,13 @@ void MeshDatabase::initializeOwnedAndGhostElementGlobalIDs(void)
 
 
 
-void MeshDatabase::print(std::ostream & oss)
+void MeshDatabase::print(std::ostream & outstream)
 {
-  std::ostringstream ss;
+  std::ostringstream ss,oss;
   ss<<"["<<MyRank_<<","<<myProcIJ_[0]<<","<<myProcIJ_[1]<<"]";
-  oss<<ss.str()<<" Global Elements = ["<<globalElements_[0]<<"x"<<globalElements_[1]<<"] Nodes ="<<globalNodes_[0]<<"x"<<globalNodes_[1]<<"]\n";
-  oss<<ss.str()<<" Stop/Start Elements   = ["<<myElementStart_[0]<<","<<myElementStop_[0]<<")x["<<myElementStart_[1]<<","<<myElementStop_[1]<<")\n";
-  oss<<ss.str()<<" Stop/Start Nodes      = ["<<myNodeStart_[0]<<","<<myNodeStop_[0]<<")x["<<myNodeStart_[1]<<","<<myNodeStop_[1]<<")\n";
+  oss<<ss.str()<<" Global Elements = ["<<globalElements_[0]<<"x"<<globalElements_[1]<<"] Nodes = ["<<globalNodes_[0]<<"x"<<globalNodes_[1]<<"]\n";
+  oss<<ss.str()<<" Start/Stop Elements   = ["<<myElementStart_[0]<<","<<myElementStop_[0]<<")x["<<myElementStart_[1]<<","<<myElementStop_[1]<<")\n";
+  oss<<ss.str()<<" Start/Stop Nodes      = ["<<myNodeStart_[0]<<","<<myNodeStop_[0]<<")x["<<myNodeStart_[1]<<","<<myNodeStop_[1]<<")\n";
 
   oss<<ss.str()<<" Owned Global Elements = ";
   {
@@ -434,7 +437,7 @@ void MeshDatabase::print(std::ostream & oss)
     }
   }
 
-  oss<<std::endl;
+  outstream<<oss.str()<<std::endl;
 }
 
 
