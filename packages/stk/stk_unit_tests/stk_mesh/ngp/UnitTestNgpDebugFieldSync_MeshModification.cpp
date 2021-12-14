@@ -60,6 +60,27 @@ namespace {
 
 class NgpDebugFieldSync_MeshModification : public NgpDebugFieldSyncFixture {};
 
+TEST_F(NgpDebugFieldSync_MeshModification, ChangeBucket_ProperlySyncToDevice_WithSimultaneousHostField_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
+  build_mesh({{"Part1", 2}, {"Part2", 1}});
+  stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
+  stk::mesh::HostField<double> hostField(get_bulk(), stkField);
+
+  testing::internal::CaptureStdout();
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  write_scalar_field_on_host_using_entity(stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+
+  read_scalar_field_on_device(stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
 TEST_F(NgpDebugFieldSync_MeshModification, ChangeBucket_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;

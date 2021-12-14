@@ -159,10 +159,15 @@ StkFieldSyncDebugger::get_last_mod_location_field() const
 
     meta.set_mesh_on_fields(&bulk);
     const FieldBase::RestrictionVector & fieldRestrictions = m_stkField->restrictions();
-    for (const FieldBase::Restriction & restriction : fieldRestrictions) {
-      const unsigned numComponents = restriction.num_scalars_per_entity();
-      std::vector<uint8_t> initLastModLocation(numComponents, LastModLocation::HOST_OR_DEVICE);
-      put_field_on_mesh(lastModLocationField, restriction.selector(), numComponents, initLastModLocation.data());
+    if (not fieldRestrictions.empty()) {
+      for (const FieldBase::Restriction & restriction : fieldRestrictions) {
+        const unsigned numComponents = restriction.num_scalars_per_entity();
+        std::vector<uint8_t> initLastModLocation(numComponents, LastModLocation::HOST_OR_DEVICE);
+        put_field_on_mesh(lastModLocationField, restriction.selector(), numComponents, initLastModLocation.data());
+      }
+    }
+    else {
+      bulk.reallocate_field_data(lastModLocationField);
     }
 
     m_lastModLocationField = lastModLocationField.field_state(state);

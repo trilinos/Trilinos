@@ -1260,6 +1260,27 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 }
 
 
+TEST_F(NgpDebugFieldSync_PartialAllocation, EmptyField_MeshModification_ProperlySyncToDevice_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  create_parts({"Part1", "Part2", "Part3"});
+  get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "doubleScalarField", 1);
+  build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
+  stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
+
+  testing::internal::CaptureStdout();
+  get_bulk().modification_begin();
+  get_bulk().modification_end();
+
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+
+  read_scalar_field_on_device(stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_MoveBucketOffField_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;

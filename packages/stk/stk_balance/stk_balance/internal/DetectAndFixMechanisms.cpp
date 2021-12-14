@@ -288,7 +288,7 @@ stk::mesh::EntityProcVec get_element_proc_movement(const stk::mesh::BulkData& bu
                     if(iter == otherElementsOnTheMove.end())
                     {
                         std::vector<int> procs;
-                        bulk.comm_procs(bulk.entity_key(otherElement), procs);
+                        bulk.comm_procs(otherElement, procs);
                         ThrowRequireWithSierraHelpMsg(procs.size()>0);
                         destProcForComp = procs[0];
                         break;
@@ -339,7 +339,7 @@ std::set<stk::mesh::EntityProc> get_element_proc_info(const stk::mesh::BulkData&
                 if(bulk.is_valid(otherElement) && !bulk.bucket(otherElement).owned())
                 {
                     std::vector<int> procs;
-                    bulk.comm_procs(bulk.entity_key(otherElement), procs);
+                    bulk.comm_procs(otherElement, procs);
                     for(size_t m=0;m<procs.size();++m)
                     {
                         entityProcs.insert(stk::mesh::EntityProc(element, procs[m]));

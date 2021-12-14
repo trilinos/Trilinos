@@ -57,7 +57,6 @@ enum NgpFieldSyncMode {
 
 template <typename DeviceViewType, typename DeviceUnsignedViewType, typename ExecSpaceType>
 void transpose_from_pinned_and_mapped_memory(ExecSpaceType & execSpace,
-                                             const FieldBase & stkField,
                                              FieldDataPointerDeviceViewType& ptrToPinnedAndMappedMemory,
                                              DeviceViewType & deviceView,
                                              DeviceUnsignedViewType & bucketSizes,
@@ -66,8 +65,7 @@ void transpose_from_pinned_and_mapped_memory(ExecSpaceType & execSpace,
   using ValueType = typename DeviceViewType::value_type;
   using TeamHandleType = typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type;
 
-  Selector selector = selectField(stkField);
-  size_t numBuckets = bucketSizes.extent(0);
+  size_t numBuckets = deviceView.extent(0);
 
   const auto& teamPolicy = Kokkos::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
   Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
@@ -106,7 +104,6 @@ void transpose_from_pinned_and_mapped_memory(ExecSpaceType & execSpace,
 
 template <typename DeviceViewType, typename DeviceUnsignedViewType, typename DeviceBoolViewType, typename ExecSpaceType>
 void transpose_new_and_modified_buckets_to_device(ExecSpaceType & execSpace,
-                                                  const FieldBase & stkField,
                                                   FieldDataPointerDeviceViewType& ptrToPinnedAndMappedMemory,
                                                   DeviceViewType & deviceView,
                                                   DeviceUnsignedViewType & bucketSizes,
@@ -116,8 +113,7 @@ void transpose_new_and_modified_buckets_to_device(ExecSpaceType & execSpace,
   using ValueType = typename DeviceViewType::value_type;
   using TeamHandleType = typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type;
 
-  Selector selector = selectField(stkField);
-  size_t numBuckets = bucketSizes.extent(0);
+  size_t numBuckets = deviceView.extent(0);
 
   const auto& teamPolicy = Kokkos::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
   Kokkos::parallel_for("transpose_from_pinned_and_mapped_memory", teamPolicy,
@@ -158,7 +154,6 @@ void transpose_new_and_modified_buckets_to_device(ExecSpaceType & execSpace,
 
 template <typename DeviceViewType, typename DeviceUnsignedViewType, typename ExecSpaceType>
 void transpose_to_pinned_and_mapped_memory(ExecSpaceType & execSpace,
-                                             const FieldBase & stkField,
                                              FieldDataPointerDeviceViewType& ptrToPinnedAndMappedMemory,
                                              DeviceViewType & deviceView,
                                              DeviceUnsignedViewType & bucketSizes,
@@ -167,8 +162,7 @@ void transpose_to_pinned_and_mapped_memory(ExecSpaceType & execSpace,
   using ValueType = typename DeviceViewType::value_type;
   using TeamHandleType = typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type;
 
-  Selector selector = selectField(stkField);
-  size_t numBuckets = bucketSizes.extent(0);
+  size_t numBuckets = deviceView.extent(0);
 
   const auto& teamPolicy = Kokkos::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
   Kokkos::parallel_for("transpose_to_zero_copy_pinned_memory", teamPolicy,

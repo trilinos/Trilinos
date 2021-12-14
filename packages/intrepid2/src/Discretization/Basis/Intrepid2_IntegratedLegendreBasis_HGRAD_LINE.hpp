@@ -54,6 +54,7 @@
 
 #include <Intrepid2_config.h>
 
+#include "Intrepid2_Basis.hpp"
 #include "Intrepid2_Polynomials.hpp"
 #include "Intrepid2_Utils.hpp"
 
@@ -239,13 +240,16 @@ namespace Intrepid2
   public:
     using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
     using HostBasis = IntegratedLegendreBasis_HGRAD_LINE<typename Kokkos::HostSpace::device_type,OutputScalar,PointScalar,defineVertexFunctions,useMinusOneToOneReferenceElement>;
-    
-    using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
-    
-    using OutputViewType = typename BasisBase::OutputViewType;
-    using PointViewType  = typename BasisBase::PointViewType ;
-    using ScalarViewType = typename BasisBase::ScalarViewType;
+
+    using typename BasisBase::OrdinalTypeArray1DHost;
+    using typename BasisBase::OrdinalTypeArray2DHost;
+
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType;
+    using typename BasisBase::ScalarViewType;
+
+    using typename BasisBase::ExecutionSpace;
+
   protected:
     int polyOrder_; // the maximum order of the polynomial
     bool defineVertexFunctions_; // if true, first and second basis functions are x and 1-x.  Otherwise, they are 1 and x.
@@ -396,9 +400,7 @@ namespace Intrepid2
       const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointScalar>();
       const int vectorSize = std::max(outputVectorSize,pointVectorSize);
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
-      
-      using ExecutionSpace = typename BasisBase::ExecutionSpace;
-      
+
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
       Kokkos::parallel_for( policy, functor, "Hierarchical_HGRAD_LINE_Functor");
     }

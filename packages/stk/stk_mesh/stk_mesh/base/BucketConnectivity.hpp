@@ -470,7 +470,7 @@ public:
 
   BucketConnectivity(EntityRank from_rank, BulkData *bulk_data)
     : m_from_rank(from_rank)
-    , m_direction( (m_from_rank > TargetRank) ? Lower : ((m_from_rank == TargetRank) ? Adjacent : Higher))
+    , m_direction( (m_from_rank < TargetRank) ? Higher : ((m_from_rank == TargetRank) ? Adjacent : Lower))
     , m_active(false)
     , m_needs_shrink_to_fit(false)
     , m_num_inactive(0)
