@@ -74,13 +74,14 @@ namespace PHX {
 
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) || defined(SACADO_VIEW_CUDA_HIERARCHICAL)
 
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   // Contiguous layout with FAD stride of 32 for cuda warp of 64 for
   // HIP warp.  IMPORTANT: The FadStride must be the same as the
   // vector_size in the Kokkos::TeamPolicy constructor. This value is
   // only used for SFad and SLFad, not for DFad.
-  using constexpr auto phx_stride = Kokkos::TeamPolicy<PHX::Device>::vector_length_max();
-  using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,phx_stride>;
+#if defined(KOKKOS_ENABLE_CUDA)
+  using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
+#elif defined(KOKKOS_ENABLE_HIP)
+  using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,64>;
 #else
   using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;
 #endif
