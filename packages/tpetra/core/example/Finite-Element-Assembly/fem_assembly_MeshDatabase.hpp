@@ -300,7 +300,6 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
   ghostNodeGlobalIDs_ = global_ordinal_view_type(globalDualViewType("ghostNodeGlobalIDs_",my_ghost_nodes.size()));
   {
     auto _ghostNodeGlobalIDs = ghostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
-    Kokkos::resize(_ghostNodeGlobalIDs,my_ghost_nodes.size());
     for(auto k=my_ghost_nodes.begin(); k!=my_ghost_nodes.end(); k++) {
       size_t kk = std::distance(my_ghost_nodes.begin(),k);
     _ghostNodeGlobalIDs(kk) = *k;
