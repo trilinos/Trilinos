@@ -253,6 +253,7 @@ int main( int argc, char* argv[] )
     gettimeofday( &begin, NULL );
     if(rank == 0) {//generate on rank 0
       Kokkos::fill_random(X0,rand_pool,Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,ScalarA >::max());
+      Kokkos::fence();//Note: need a fence here to make sure "fill_random" completes before broadcast
     }
     MPI_Bcast(reinterpret_cast<char *>(X0.data()), N*sizeof(ScalarA), MPI_CHAR, 0, MPI_COMM_WORLD);//broadcast X0 to other nodes
     Kokkos::deep_copy( h_X0, X0 );//copy from device to host
