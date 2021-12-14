@@ -92,7 +92,7 @@ namespace MueLu {
   {
     const int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
     const int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
-    bool includeRootInAgg = params.get<bool>("aggregation: phase2a include root");
+    bool matchMLbehavior = params.get<bool>("aggregation: match ML phase2a");
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
@@ -129,17 +129,18 @@ namespace MueLu {
                                 if(aggStat(rootCandidate) == READY &&
                                    colors(rootCandidate) == color) {
 
-                                  LO aggSize;
-                                  if (includeRootInAgg)
-                                    aggSize = 1;
-                                  else
-                                    aggSize = 0;
+                                  LO numNeighbors = 0;
+                                  LO aggSize = 0;
+                                  if (matchMLbehavior) {
+                                    aggSize += 1;
+                                    numNeighbors +=1;
+                                  }
 
                                   auto neighbors = graph.getNeighborVertices(rootCandidate);
 
                                   // Loop over neighbors to count how many nodes could join
                                   // the new aggregate
-                                  LO numNeighbors = 0;
+
                                   for(int j = 0; j < neighbors.length; ++j) {
                                     LO neigh = neighbors(j);
                                     if(neigh != rootCandidate) {
@@ -155,8 +156,7 @@ namespace MueLu {
                                   // If a sufficient number of nodes can join the new aggregate
                                   // then we actually create the aggregate.
                                   if(aggSize > minNodesPerAggregate &&
-                                     ((includeRootInAgg && aggSize-1 > factor*numNeighbors) ||
-                                      (!includeRootInAgg && aggSize > factor*numNeighbors))) {
+                                     (aggSize > factor*numNeighbors)) {
 
                                     // aggregates.SetIsRoot(rootCandidate);
                                     LO aggIndex = Kokkos::
@@ -164,7 +164,7 @@ namespace MueLu {
 
                                     LO numAggregated = 0;
 
-                                    if (includeRootInAgg) {
+                                    if (matchMLbehavior) {
                                       // Add the root.
                                       aggStat(rootCandidate)         = AGGREGATED;
                                       vertex2AggId(rootCandidate, 0) = aggIndex;

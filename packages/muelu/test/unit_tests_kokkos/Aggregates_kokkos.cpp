@@ -131,7 +131,7 @@ namespace MueLuTests {
     params.set<int> ("aggregation: max agg size", 3);
     params.set<bool>("aggregation: deterministic", false);
 
-    params.set<bool>("aggregation: phase2a include root", true);
+    params.set<bool>("aggregation: match ML phase2a", true);
     params.set<bool>("aggregation: error on nodes with no on-rank neighbors", false);
     params.set<bool>("aggregation: phase3 avoid singletons", false);
 

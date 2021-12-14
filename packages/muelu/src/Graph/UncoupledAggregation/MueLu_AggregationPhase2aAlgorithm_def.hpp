@@ -67,7 +67,7 @@ namespace MueLu {
 
     int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
     int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
-    bool includeRootInAgg = params.get<bool>("aggregation: phase2a include root");
+    bool matchMLbehavior = params.get<bool>("aggregation: match ML phase2a");
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
@@ -94,7 +94,7 @@ namespace MueLu {
 
       LO numNeighbors = 0;
       aggSize = 0;
-      if (includeRootInAgg) {
+      if (matchMLbehavior) {
         aggList[aggSize++] = rootCandidate;
         numNeighbors++;
       }
