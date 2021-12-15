@@ -45,165 +45,152 @@
 #ifndef KOKKOS_BLAS3_GEMM_DOTBASED_IMPL_HPP_
 #define KOKKOS_BLAS3_GEMM_DOTBASED_IMPL_HPP_
 
+#include "KokkosBlas_util.hpp"
+
 namespace KokkosBlas {
 namespace Impl {
 
-
-// DotBasedGEMM implements the optimization for C = beta*C + alpha*A^TB 
-// with A and B matrices both being tall and skinny. C matrix is assumably 
-// small, so, each entry of C is computed by performing the dot product of 
+// DotBasedGEMM implements the optimization for C = beta*C + alpha*A^TB
+// with A and B matrices both being tall and skinny. C matrix is assumably
+// small, so, each entry of C is computed by performing the dot product of
 // respective columns of A and B matrices. Note that the dot products are
 // performed on very long vectors, so, each dot product is distributed among
-// numDivPerDot teams.     
+// numDivPerDot teams.
 
-struct TagZero{};   // The init tag for beta=0 
-struct TagInit{};   // The init tag for beta!=0 and beta !=1 
-struct TagMult{};   // The multiplication tag for transposed A
-struct TagMultCT{};   // The multiplication tag for conjugate-transposed A 
-template<class ExecSpace, class AV, class BV, class CV>
-struct DotBasedGEMM{
-
+struct TagZero {};    // The init tag for beta=0
+struct TagInit {};    // The init tag for beta!=0 and beta !=1
+struct TagMult {};    // The multiplication tag for transposed A
+struct TagMultCT {};  // The multiplication tag for conjugate-transposed A
+template <class ExecSpace, class AV, class BV, class CV>
+struct DotBasedGEMM {
   const AV A;
   const BV B;
   CV C;
 
   using scalar_A = typename AV::non_const_value_type;
-  using size_A = typename AV::size_type;
+  using size_A   = typename AV::size_type;
   using scalar_C = typename CV::non_const_value_type;
-  using size_C = typename CV::size_type;
-  using AVT = Kokkos::Details::ArithTraits<scalar_A>;
-  using CVT = Kokkos::Details::ArithTraits<scalar_C>;
+  using size_C   = typename CV::size_type;
+  using AVT      = Kokkos::Details::ArithTraits<scalar_A>;
+  using CVT      = Kokkos::Details::ArithTraits<scalar_C>;
 
   const scalar_A alpha;
   const scalar_C beta;
 
-  const size_C numCrows;           
+  const size_C numCrows;
   const size_C numCcols;
 
-  size_C numDivPerDot;   // number of teams collectively performing a dot product
-  size_C numTeams;       // total number of teams
-  
-  const size_A dotSize;  // the length of the vectors in the dot products
-  size_A chunkSize;      // the local length of each team's share on the dot product  
-  
+  size_C numDivPerDot;  // number of teams collectively performing a dot product
+  size_C numTeams;      // total number of teams
 
-  DotBasedGEMM(const scalar_A& alpha_, const AV& A_, const BV& B_, const scalar_C& beta_, const CV& C_) :
-  A(A_), B(B_), C(C_), alpha(alpha_), beta(beta_),
-  numCrows(C.extent(0)), numCcols(C.extent(1)), dotSize(A.extent(0))
-  { }
+  const size_A dotSize;  // the length of the vectors in the dot products
+
+  DotBasedGEMM(const scalar_A& alpha_, const AV& A_, const BV& B_,
+               const scalar_C& beta_, const CV& C_)
+      : A(A_),
+        B(B_),
+        C(C_),
+        alpha(alpha_),
+        beta(beta_),
+        numCrows(C.extent(0)),
+        numCcols(C.extent(1)),
+        dotSize(A.extent(0)) {}
 
   void run(bool conjugateTranspose) {
-
-    // NOTE: these workPerTeam and approxNumTeams were used for TPL CUBLAS,
-    //       and may need to be retuned for other architectures
-    constexpr size_C workPerTeam = 4096;                   // Amount of work per team
-    const size_C ndots = numCrows * numCcols;              // Number of dot products
-    size_C appxNumTeams = (dotSize * ndots) / workPerTeam; // Estimation for appxNumTeams
-
-    // Adjust appxNumTeams in case it is too small or too large
-    if(appxNumTeams < 1)
-      appxNumTeams = 1;
-    if(appxNumTeams > 1024)
-      appxNumTeams = 1024;
-
-    // If there are more dot products than the number of teams,
-    // then set the number of teams to be number of dot products
-    // and each team will perform only one dot product.
-    // We don't want a team to perform more than one dot product.
-    if(ndots >= appxNumTeams) {
-      numTeams = ndots;
-      numDivPerDot = 1;
-    }
-    // If there are more teams than dot products, each dot product can
-    // potentially be performed by multiple teams. First, compute 
-    // numDivPerDot as an integer (take the floor, not ceiling), then,
-    // compute actual number of teams by using this factor.
-    else {
-      numDivPerDot = appxNumTeams / ndots;
-      numTeams = ndots * numDivPerDot;
-    }
-
-    // Determine the local length for the dot product
-    chunkSize = dotSize / numDivPerDot;
-    if(numDivPerDot > 1)
-      chunkSize++;
+    multipleReductionWorkDistribution<ExecSpace, size_C>(
+        dotSize, numCrows * numCcols, numDivPerDot);
+    const size_C ndots = numCrows * numCcols;  // Number of dot products
+    numTeams           = ndots * numDivPerDot;
 
     // Initialize C matrix if beta != 1
-    if(beta == CVT::zero()) {
-      Kokkos::MDRangePolicy<TagZero, ExecSpace, Kokkos::Rank<2>> policyInit({0,0}, {numCrows, numCcols});
-      Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policyInit, *this);
+    if (beta == CVT::zero()) {
+      Kokkos::MDRangePolicy<TagZero, ExecSpace, Kokkos::Rank<2>> policyInit(
+          {0, 0}, {numCrows, numCcols});
+      Kokkos::parallel_for("Initialize C for Dot Product Based GEMM",
+                           policyInit, *this);
+    } else if (beta != CVT::one()) {
+      Kokkos::MDRangePolicy<TagInit, ExecSpace, Kokkos::Rank<2>> policyInit(
+          {0, 0}, {numCrows, numCcols});
+      Kokkos::parallel_for("Initialize C for Dot Product Based GEMM",
+                           policyInit, *this);
     }
-    else if(beta != CVT::one()) {
-      Kokkos::MDRangePolicy<TagInit, ExecSpace, Kokkos::Rank<2>> policyInit({0,0}, {numCrows, numCcols});
-      Kokkos::parallel_for("Initialize C for Dot Product Based GEMM", policyInit, *this);
-    }
-    
+
     // Multiply alpha*A^TB and add it to beta*C
-    if(conjugateTranspose) {
-      Kokkos::TeamPolicy<TagMultCT, ExecSpace> policyMult(numTeams, Kokkos::AUTO);
+    if (conjugateTranspose) {
+      Kokkos::TeamPolicy<TagMultCT, ExecSpace> policyMult(numTeams,
+                                                          Kokkos::AUTO);
       Kokkos::parallel_for("Perform Dot Product Based GEMM", policyMult, *this);
-    }
-    else{
-      Kokkos::TeamPolicy<TagMult, ExecSpace> policyMult(numTeams, Kokkos::AUTO);
+    } else {
+      Kokkos::TeamPolicy<TagMult, ExecSpace> policyMult(numTeams,
+                                                        Kokkos::AUTO);
       Kokkos::parallel_for("Perform Dot Product Based GEMM", policyMult, *this);
     }
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (const TagZero&, const size_C &rowId, const size_C &colId ) const {
-    C(rowId, colId) = CVT::zero(); 
+  void operator()(const TagZero&, const size_C& rowId,
+                  const size_C& colId) const {
+    C(rowId, colId) = CVT::zero();
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (const TagInit&, const size_C &rowId, const size_C &colId ) const {
+  void operator()(const TagInit&, const size_C& rowId,
+                  const size_C& colId) const {
     C(rowId, colId) = beta * C(rowId, colId);
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (const TagMult&, const typename Kokkos::TeamPolicy<ExecSpace>::member_type& teamMember) const {
-
+  void operator()(const TagMult&,
+                  const typename Kokkos::TeamPolicy<ExecSpace>::member_type&
+                      teamMember) const {
     const size_C globalRank = teamMember.league_rank();
-    const size_C localRank = globalRank % numDivPerDot;
-    const size_C i = globalRank / numDivPerDot;
-    const size_C rowId = i / numCcols;
-    const size_C colId = i % numCcols;
-    
-    scalar_C result = CVT::zero();
-    const size_A baseInd = chunkSize*localRank; 
-    Kokkos::parallel_reduce( Kokkos::TeamThreadRange(teamMember, chunkSize), [&]( const size_A k, scalar_C &update ) {
-        if(baseInd + k < dotSize)
-          update += alpha * A(baseInd+k, rowId) * B(baseInd+k, colId);
-      }, result );
+    const size_C localRank  = globalRank % numDivPerDot;
+    const size_C i          = globalRank / numDivPerDot;
+    const size_C rowId      = i / numCcols;
+    const size_C colId      = i % numCcols;
 
-    Kokkos::single(Kokkos::PerTeam(teamMember), [&] () { 
-      Kokkos::atomic_add(&C(rowId, colId), result);
-      });
+    scalar_C result = CVT::zero();
+    size_A begin    = localRank * (dotSize / numDivPerDot);
+    size_A end      = (localRank + 1) * (dotSize / numDivPerDot);
+    if (localRank == numDivPerDot - 1) end = dotSize;
+    Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(teamMember, begin, end),
+        [&](const size_A k, scalar_C& update) {
+          update += alpha * A(k, rowId) * B(k, colId);
+        },
+        result);
+
+    Kokkos::single(Kokkos::PerTeam(teamMember),
+                   [&]() { Kokkos::atomic_add(&C(rowId, colId), result); });
   }
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (const TagMultCT&, const typename Kokkos::TeamPolicy<ExecSpace>::member_type& teamMember) const {
-
+  void operator()(const TagMultCT&,
+                  const typename Kokkos::TeamPolicy<ExecSpace>::member_type&
+                      teamMember) const {
     const size_C globalRank = teamMember.league_rank();
-    const size_C localRank = globalRank % numDivPerDot;
-    const size_C i = globalRank / numDivPerDot;
-    const size_C rowId = i / numCcols;
-    const size_C colId = i % numCcols;
-    
+    const size_C localRank  = globalRank % numDivPerDot;
+    const size_C i          = globalRank / numDivPerDot;
+    const size_C rowId      = i / numCcols;
+    const size_C colId      = i % numCcols;
+
     scalar_C result = CVT::zero();
-    const size_A baseInd = chunkSize*localRank; 
-    Kokkos::parallel_reduce( Kokkos::TeamThreadRange(teamMember, chunkSize), [&]( const size_A k, scalar_C &update ) {
-        if(baseInd + k < dotSize)
-          update += alpha * AVT::conj(A(baseInd+k, rowId)) * B(baseInd+k, colId);
-      }, result );
+    size_A begin    = localRank * (dotSize / numDivPerDot);
+    size_A end      = (localRank + 1) * (dotSize / numDivPerDot);
+    if (localRank == numDivPerDot - 1) end = dotSize;
+    Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(teamMember, begin, end),
+        [&](const size_A k, scalar_C& update) {
+          update += alpha * AVT::conj(A(k, rowId)) * B(k, colId);
+        },
+        result);
 
-    Kokkos::single(Kokkos::PerTeam(teamMember), [&] () { 
-      Kokkos::atomic_add(&C(rowId, colId), result);
-      });
+    Kokkos::single(Kokkos::PerTeam(teamMember),
+                   [&]() { Kokkos::atomic_add(&C(rowId, colId), result); });
   }
-
 };
 
-}
-}
+}  // namespace Impl
+}  // namespace KokkosBlas
 
 #endif
