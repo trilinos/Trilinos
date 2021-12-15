@@ -64,6 +64,23 @@ IntegratorBasic<Scalar>::IntegratorBasic(
 
 
 template<class Scalar>
+void IntegratorBasic<Scalar>::clone(Teuchos::RCP<IntegratorBasic<Scalar> > iB)
+{
+  this->setIntegratorType      (iB->getIntegratorType()      );
+  this->setIntegratorName      (iB->getIntegratorName()      );
+  this->setStepper             (iB->getStepper()             );
+  this->setSolutionHistory     (iB->getSolutionHistory()     );
+  this->setTimeStepControl     (iB->getTimeStepControl()     );
+  this->setIntegratorObserver  (iB->getIntegratorObserver()  );
+  this->setOutputScreenIndices (iB->getOutputScreenIndices() );
+  this->setOutputScreenInterval(iB->getOutputScreenInterval());
+  this->setIntegratorStatus    (iB->getIntegratorStatus()    );
+  integratorTimer_ = iB->getIntegratorTimer();
+  stepperTimer_    = iB->getStepperTimer();
+}
+
+
+template<class Scalar>
 void IntegratorBasic<Scalar>::setIntegratorType(std::string i)
 {
   TEUCHOS_TEST_FOR_EXCEPTION( i != "Integrator Basic", std::logic_error,

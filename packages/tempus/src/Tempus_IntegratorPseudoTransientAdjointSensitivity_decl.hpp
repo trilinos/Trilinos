@@ -10,7 +10,7 @@
 #define Tempus_IntegratorPseudoTransientAdjointSensitivity_decl_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_IntegratorBasicOld.hpp"
+#include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_AdjointSensitivityModelEvaluator.hpp"
 
 
@@ -216,8 +216,8 @@ protected:
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > adjoint_model_;
   Teuchos::RCP<AdjointSensitivityModelEvaluator<Scalar> > sens_model_;
-  Teuchos::RCP<IntegratorBasicOld<Scalar> > state_integrator_;
-  Teuchos::RCP<IntegratorBasicOld<Scalar> > sens_integrator_;
+  Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
+  Teuchos::RCP<IntegratorBasic<Scalar> > sens_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
   Teuchos::RCP<DMVPV> dgdp_;
 };

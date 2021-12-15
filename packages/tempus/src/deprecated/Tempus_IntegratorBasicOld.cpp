@@ -6,6 +6,10 @@
 // ****************************************************************************
 // @HEADER
 
+#ifdef __GNUC__
+#  warning "This file Tempus_IntegratorBasicOld.cpp is deprecated!  Use Tempus_IntegratorBasic.cpp instead!"
+#endif
+
 #include "Tempus_ExplicitTemplateInstantiation.hpp"
 
 #ifdef HAVE_TEMPUS_EXPLICIT_INSTANTIATION

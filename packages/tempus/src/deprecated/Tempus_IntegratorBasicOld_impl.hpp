@@ -6,6 +6,11 @@
 // ****************************************************************************
 // @HEADER
 
+#ifdef __GNUC__
+#  warning "This file Tempus_IntegratorBasicOld_impl.hpp is deprecated!  Use Tempus_IntegratorBasic_impl.hpp instead!"
+#endif
+
+
 #ifndef Tempus_IntegratorBasicOld_impl_hpp
 #define Tempus_IntegratorBasicOld_impl_hpp
 
