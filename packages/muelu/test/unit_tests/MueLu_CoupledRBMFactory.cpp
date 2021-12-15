@@ -93,17 +93,32 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MueLu_CoupledRBMFactory, Build, Scalar, LocalO
         coupledRBMFactory.Build(level);
         TEST_EQUALITY(true, level.IsAvailable("Nullspace", &coupledRBMFactory));
     }
+}
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MueLu_CoupledRBMFactory, BuildRBM, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+{
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    MueLu::CoupledRBMFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> coupledRBMFactory(20);
+    coupledRBMFactory.setLastAcousticDOF(10);
+
+    auto A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(100);
+    const auto map = A->getRangeMap();
 
     auto coords = MultiVectorFactory::Build(map, 100);
     decltype(coords) nullSpace;
 
     coupledRBMFactory.BuildRBM(A, coords, nullSpace);
+
     TEST_INEQUALITY(nullSpace, Teuchos::null);
 }
 
 #define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MueLu_CoupledRBMFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MueLu_CoupledRBMFactory, Build, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(MueLu_CoupledRBMFactory, BuildRBM, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
