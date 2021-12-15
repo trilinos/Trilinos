@@ -7,5 +7,5 @@ std::string WithSubpackages::getA() {
 }
 
 std::string WithSubpackages::depsA() {
-  return SimpleCxx::deps();
+  return "SimpleCxx "+SimpleCxx::deps();
 }

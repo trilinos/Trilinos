@@ -116,16 +116,22 @@ endmacro()
 function(addAppDepCompileDefines)
   addAppDepCompileDefine("SimpleCxx")
   addAppDepCompileDefine("MixedLang")
-  addAppDepCompileDefine("WithSubpackages")
+  addAppDepCompileDefine("WithSubpackagesA")
+  addAppDepCompileDefine("WithSubpackagesB")
+  addAppDepCompileDefine("WithSubpackagesC")
 endfunction()
 
 
 function(addAppDepCompileDefine componentName)
-  if (${componentName} IN_LIST TribitsExProj_SELECTED_PACKAGE_LIST)
+  if (TARGET ${componentName}::all_libs)
     string(TOUPPER "${componentName}" componentNameUpper)
     target_compile_definitions(app PRIVATE TRIBITSEXAPP_HAVE_${componentNameUpper})
   endif()
 endfunction()
+# NOTE: Above, we look to see if the 'all_libs' target for a package is
+# defined as a way to know if that package is enabled.  That will determine if
+# the package is enabled even if it is just implicitly enabled and therefore
+# is not listed in the list of COMPONENTS passed to find_package().
 
 
 # Return the extended dependency string from the app at runtime given the
@@ -140,9 +146,19 @@ function(getExpectedAppDepsStr expectedDepsStrOut)
   endif()
   set(simpleCxxDeps "${simpleCxxDeps}headeronlytpl")
 
+  set(withSubpackagesADeps "SimpleCxx ${simpleCxxDeps}")
+  set(withSubpackagesBDeps "A ${withSubpackagesADeps} SimpleCxx ${simpleCxxDeps}")
+  set(withSubpackagesCDeps "B ${withSubpackagesBDeps} A ${withSubpackagesADeps}")
+
   set(depsStr "")
-  appendExpectedAppDepsStr("WithSubpackages"
-    "WithSubpackages:B A ${simpleCxxDeps} ${simpleCxxDeps}"
+  appendExpectedAppDepsStr("WithSubpackagesC"
+    "WithSubpackagesC:${withSubpackagesCDeps}"
+    depsStr)
+  appendExpectedAppDepsStr("WithSubpackagesB"
+    "WithSubpackagesB:${withSubpackagesBDeps}"
+    depsStr)
+  appendExpectedAppDepsStr("WithSubpackagesA"
+    "WithSubpackagesA:${withSubpackagesADeps}"
     depsStr)
   appendExpectedAppDepsStr("MixedLang" "MixedLang:Mixed Language" depsStr)
   appendExpectedAppDepsStr("SimpleCxx" "SimpleCxx:${simpleCxxDeps}" depsStr)
@@ -155,7 +171,7 @@ endfunction()
 function(appendExpectedAppDepsStr componentName str depsStrOut)
   set(depsStr "${${depsStrOut}}")  # Should be value of var in parent scope!
   #message("-- depsStr (inner) = '${depsStr}'")
-  if (${componentName} IN_LIST TribitsExProj_SELECTED_PACKAGE_LIST)
+  if (TARGET ${componentName}::all_libs)
     if (depsStr)
       set(depsStr "${depsStr}[;] ${str}")
     else()
