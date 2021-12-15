@@ -51,32 +51,32 @@ typedef Sacado::ELRCacheFad::SLFad<double,10> ELRCacheFad_SLFadType;
 typedef Sacado::ELRCacheFad::SFad<double,5> ELRCacheFad_SFadType;
 Sacado::Random<double> rnd;
 
-FAD_KOKKOS_COMM_TESTS_SERIAL(Fad_DFadType, Fad_DFad)
-FAD_KOKKOS_COMM_TESTS_SERIAL(Fad_SLFadType, Fad_SLFad)
-FAD_KOKKOS_COMM_TESTS_SERIAL(Fad_SFadType, Fad_SFad)
 
-FAD_KOKKOS_COMM_TESTS_SERIAL(CacheFad_DFadType, CacheFad_DFad)
-FAD_KOKKOS_COMM_TESTS_SERIAL(CacheFad_SLFadType, CacheFad_SLFad)
-FAD_KOKKOS_COMM_TESTS_SERIAL(CacheFad_SFadType, CacheFad_SFad)
+FAD_KOKKOS_COMM_TESTS_HIP(Fad_SLFadType, Fad_SLFad)
+FAD_KOKKOS_COMM_TESTS_HIP(Fad_SFadType, Fad_SFad)
 
-FAD_KOKKOS_COMM_TESTS_SERIAL(ELRFad_DFadType, ELRFad_DFad)
-FAD_KOKKOS_COMM_TESTS_SERIAL(ELRFad_SLFadType, ELRFad_SLFad)
-FAD_KOKKOS_COMM_TESTS_SERIAL(ELRFad_SFadType, ELRFad_SFad)
+FAD_KOKKOS_COMM_TESTS_HIP(CacheFad_SLFadType, CacheFad_SLFad)
+FAD_KOKKOS_COMM_TESTS_HIP(CacheFad_SFadType, CacheFad_SFad)
 
-FAD_KOKKOS_COMM_TESTS_SERIAL(ELRCacheFad_DFadType, ELRCacheFad_DFad)
-FAD_KOKKOS_COMM_TESTS_SERIAL(ELRCacheFad_SLFadType, ELRCacheFad_SLFad)
-FAD_KOKKOS_COMM_TESTS_SERIAL(ELRCacheFad_SFadType, ELRCacheFad_SFad)
+FAD_KOKKOS_COMM_TESTS_HIP(ELRFad_SLFadType, ELRFad_SLFad)
+FAD_KOKKOS_COMM_TESTS_HIP(ELRFad_SFadType, ELRFad_SFad)
+
+FAD_KOKKOS_COMM_TESTS_HIP(ELRCacheFad_SLFadType, ELRCacheFad_SLFad)
+FAD_KOKKOS_COMM_TESTS_HIP(ELRCacheFad_SFadType, ELRCacheFad_SFad)
+
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  // Initialize serial
-  Kokkos::initialize(argc,argv);
+  // Initialize hip
+  Kokkos::InitArguments init_args;
+  init_args.device_id = 0;
+  Kokkos::initialize( init_args );
   Kokkos::print_configuration(std::cout);
 
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-  // Finalize serial
+  // Finalize hip
   Kokkos::finalize();
 
   return ret;

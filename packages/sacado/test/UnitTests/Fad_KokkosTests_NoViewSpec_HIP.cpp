@@ -26,39 +26,36 @@
 //
 // ***********************************************************************
 // @HEADER
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-#ifndef SACADO_DISABLE_KOKKOS_CUDA_HPP
-#define SACADO_DISABLE_KOKKOS_CUDA_HPP
+// Disable view specializations
+#define SACADO_DISABLE_FAD_VIEW_SPEC
 
-//
-// Include this file in any translation unit to disable the use of Sacado
-// classes on Cuda.  Several Sacado classes (e.g., Sacado::Fad::GeneralFad)
-// are setup to work with Kokkos, but don't work with Cuda with some choices
-// of their template parameters.  However
-// if Cuda is enabled then __device__ is added to the KOKKOS_*_FUNCTION macros
-// which prevents these classes from compiling.  By including this file, the
-// __device__ annotation will be removed allowing these classes to be compiled
-// by NVCC for host code.
-//
+#include "Kokkos_Macros.hpp"
 
-// Include definitions of KOKKOS_*_FUNCTION macros
-#include "Sacado_ConfigDefs.h"
+#define SACADO_TEST_DFAD 1
 
-// Redefine KOKKOS_*_FUNCTION macros to not include __device__
-#if defined(HAVE_SACADO_KOKKOSCORE) &&  ( defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) )
-// TODO double check me
-#if 1
-#undef SACADO_FUNCTION
-#undef SACADO_INLINE_FUNCTION
-#undef SACADO_FORCEINLINE_FUNCTION
+#include "Fad_KokkosTests.hpp"
 
-#define SACADO_FUNCTION /* */
-#define SACADO_INLINE_FUNCTION inline
-#define SACADO_FORCEINLINE_FUNCTION  inline
-#endif
-#define SACADO_DISABLE_CUDA_IN_KOKKOS 1
+// Instantiate tests for HIP device
+using Kokkos::Experimental::HIP;
+VIEW_FAD_TESTS_D( HIP )
 
-#endif
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
+  // Initialize HIP
+  Kokkos::InitArguments init_args;
+  init_args.device_id = 0;
+  Kokkos::initialize( init_args );
+  Kokkos::print_configuration(std::cout);
 
-#endif // SACADO_NO_KOKKOS_HPP
+  int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+
+  // Finalize HIP
+  Kokkos::finalize();
+
+  return res;
+}
