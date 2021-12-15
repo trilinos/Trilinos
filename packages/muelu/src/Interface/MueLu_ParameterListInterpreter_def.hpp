@@ -1123,7 +1123,7 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2a",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 2b",           bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase2a include root",      bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: match ML phase2a",          bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: phase2a agg factor",      double, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: error on nodes with no on-rank neighbors", bool, aggParams);

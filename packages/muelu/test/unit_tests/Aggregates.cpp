@@ -283,7 +283,7 @@ public:
       aggFact->SetParameter("aggregation: enable phase 2b",              Teuchos::ParameterEntry(true));
       aggFact->SetParameter("aggregation: enable phase 3",               Teuchos::ParameterEntry(true));
 
-      aggFact->SetParameter("aggregation: phase2a include root",         Teuchos::ParameterEntry(true));
+      aggFact->SetParameter("aggregation: match ML phase2a",             Teuchos::ParameterEntry(true));
 
       // Hybrid
       level.Set("aggregationRegionType", regionType);
