@@ -4,7 +4,13 @@
 #ifdef TRIBITSEXAPP_HAVE_MIXEDLANG
 #  include "MixedLang.hpp"
 #endif
-#ifdef TRIBITSEXAPP_HAVE_WITHSUBPACKAGES
+#ifdef TRIBITSEXAPP_HAVE_WITHSUBPACKAGESA
+#  include "A.hpp"
+#endif
+#ifdef TRIBITSEXAPP_HAVE_WITHSUBPACKAGESB
+#  include "B.hpp"
+#endif
+#ifdef TRIBITSEXAPP_HAVE_WITHSUBPACKAGESC
 #  include "wsp_c/C.hpp"
 #endif
 
@@ -27,11 +33,17 @@ void appendDepsStr(std::string &depsStr, const std::string &str)
 int main(int argc, char *argv[]) {
   // Get deps down the deps graph
   std::string depsStr;
-#ifdef TRIBITSEXAPP_HAVE_WITHSUBPACKAGES
-  appendDepsStr(depsStr, "WithSubpackages:"+WithSubpackages::depsC());
+#ifdef TRIBITSEXAPP_HAVE_WITHSUBPACKAGESC
+  appendDepsStr(depsStr, "WithSubpackagesC:"+WithSubpackages::depsC());
+#endif
+#ifdef TRIBITSEXAPP_HAVE_WITHSUBPACKAGESB
+  appendDepsStr(depsStr, "WithSubpackagesB:"+WithSubpackages::depsB());
+#endif
+#ifdef TRIBITSEXAPP_HAVE_WITHSUBPACKAGESA
+  appendDepsStr(depsStr, "WithSubpackagesA:"+WithSubpackages::depsA());
 #endif
 #ifdef TRIBITSEXAPP_HAVE_MIXEDLANG
-  appendDepsStr(depsStr, "MixedLang:"+tribits_mixed::mixedLang());
+  appendDepsStr(depsStr, "MixedLang:"+tribits_mixed::mixedLang()); // Just print something
 #endif
 #ifdef TRIBITSEXAPP_HAVE_SIMPLECXX
   appendDepsStr(depsStr, "SimpleCxx:"+SimpleCxx::deps());

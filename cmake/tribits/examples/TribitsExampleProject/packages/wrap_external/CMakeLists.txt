@@ -159,7 +159,7 @@ if (${PACKAGE_NAME}_ENABLE_TESTS)
 
   tribits_add_executable_and_test(run_external_func
     SOURCES run_external_func.cpp
-    PASS_REGULAR_EXPRESSION "external_func A headeronlytpl"
+    PASS_REGULAR_EXPRESSION "external_func A ${EXPECTED_SIMPLECXX_AND_DEPS}"
     NUM_MPI_PROCS 1
     )
 

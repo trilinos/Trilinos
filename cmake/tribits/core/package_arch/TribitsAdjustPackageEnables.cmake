@@ -57,6 +57,7 @@ include(MessageWrapper)
 include(DualScopeSet)
 include(CMakeParseArguments)
 
+
 #
 # Private helper macros
 #
@@ -314,7 +315,6 @@ macro(tribits_disable_parents_subpackages PARENT_PACKAGE_NAME)
 endmacro()
 
 
-#
 # Macro that enables all of the subpackages of a parent package.
 #
 macro(tribits_enable_parents_subpackages PARENT_PACKAGE_NAME)
@@ -698,6 +698,8 @@ macro(tribits_postprocess_package_with_subpackages_enables  PACKAGE_NAME)
         "Setting ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON"
         " because ${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME}=ON")
       set(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME} ON)
+      tribits_postprocess_package_with_subpackages_optional_subpackage_enables(
+        ${PACKAGE_NAME})
       tribits_postprocess_package_with_subpackages_test_example_enables(
         ${PACKAGE_NAME}  TESTS)
       tribits_postprocess_package_with_subpackages_test_example_enables(
@@ -706,6 +708,27 @@ macro(tribits_postprocess_package_with_subpackages_enables  PACKAGE_NAME)
       # some means before this because a subpackage is enabled.  But other
       # logic should ensure that the parent package is never disabled and a
       # subpackage is allowed to be enabled.
+    endif()
+  endforeach()
+endmacro()
+
+
+# Set <ParentPackage>_ENABLE_<SubPackage>=ON if not already enabled for all
+# subpackages of a parent package.
+#
+macro(tribits_postprocess_package_with_subpackages_optional_subpackage_enables
+    PACKAGE_NAME
+  )
+  #message("TRIBITS_POSTPROCESS_PACKAGE_WITH_SUBPACKAGES_TEST_EXAMPLE_ENABLES  '${PACKAGE_NAME}'")
+  foreach(TRIBITS_SUBPACKAGE ${${PACKAGE_NAME}_SUBPACKAGES})
+    set(SUBPACKAGE_FULLNAME ${PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
+    if (${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME}
+      AND "${${PACKAGE_NAME}_ENABLE_${SUBPACKAGE_FULLNAME}}" STREQUAL ""
+      )
+      message("-- "
+        "Setting ${PACKAGE_NAME}_ENABLE_${SUBPACKAGE_FULLNAME}=ON"
+        " because ${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME}=ON")
+      set(${PACKAGE_NAME}_ENABLE_${SUBPACKAGE_FULLNAME} ON)
     endif()
   endforeach()
 endmacro()
