@@ -613,7 +613,21 @@ private:
 #endif
   }
 
+
+  void throwIfViewsAreDifferentSizes() const {    
+    // Here we check *size* (the product of extents) rather than each extent individually.
+    // This is mostly designed to catch people resizing one view, but not the other.
+    if(dualView.d_view.size() != dualView.h_view.size()) {    
+        std::ostringstream msg;
+        msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
+            << "; host and device views are different sizes: "
+            << dualView.h_view.size() << " vs " <<dualView.h_view.size();
+        throw std::runtime_error(msg.str());
+    }
+  }
+
   void throwIfHostViewAlive() const {
+    throwIfViewsAreDifferentSizes();
     if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
       std::ostringstream msg;
       msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
@@ -625,6 +639,7 @@ private:
   }
 
   void throwIfDeviceViewAlive() const {
+    throwIfViewsAreDifferentSizes();
     if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
       std::ostringstream msg;
       msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
@@ -634,7 +649,7 @@ private:
       throw std::runtime_error(msg.str());
     }
   }
-
+ 
   bool iAmASubview() {
     return originalDualView.h_view != dualView.h_view;
   }
