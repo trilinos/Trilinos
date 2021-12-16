@@ -43,8 +43,8 @@ public:
     std::vector<int>                          outputScreenIndices,
     int                                       outputScreenInterval);
 
-  /// Clone
-  virtual void clone(Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic);
+  /// Copy (a shallow copy)
+  virtual void copy(Teuchos::RCP<IntegratorBasic<Scalar> > iB);
 
   /// Destructor
   virtual ~IntegratorBasic() {}

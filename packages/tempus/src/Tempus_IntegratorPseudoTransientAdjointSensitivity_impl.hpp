@@ -339,13 +339,15 @@ setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & inputPL)
   // IntegratorBasic is no longer a Teuchos::ParameterListAcceptor.
   // Since setting the ParameterList is essentially a complete reset,
   // we will rebuild from scratch and reuse the ModelEvaluator.
-  auto model = state_integrator_->getStepper()->getModel();
-  auto tmp_state_integrator = createIntegratorBasic(inputPL, model);
-  state_integrator_->clone(tmp_state_integrator);
+  auto model = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>> (
+    state_integrator_->getStepper()->getModel());
+  auto tmp_state_integrator = createIntegratorBasic<Scalar>(inputPL, model);
+  state_integrator_->copy(tmp_state_integrator);
 
-  model = sens_integrator_->getStepper()->getModel();
-  auto tmp_sens_integrator = createIntegratorBasic(inputPL, model);
-  sens_integrator_->clone(tmp_sens_integrator);
+  model = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>> (
+    sens_integrator_->getStepper()->getModel());
+  auto tmp_sens_integrator = createIntegratorBasic<Scalar>(inputPL, model);
+  sens_integrator_->copy(tmp_sens_integrator);
 }
 
 template<class Scalar>
@@ -356,15 +358,19 @@ unsetParameterList()
   // IntegratorBasic is no longer a Teuchos::ParameterListAcceptor.
   // We will treat unsetting the ParameterList as a reset to default
   // settings, and reuse the ModelEvaluator.
-  auto tmp_state_integrator = createIntegratorBasic();
+  auto tmp_state_integrator = createIntegratorBasic<Scalar>();
   auto model = state_integrator_->getStepper()->getModel();
   tmp_state_integrator->setModel(model);
-  state_integrator_->clone(tmp_state_integrator);
+  state_integrator_->copy(tmp_state_integrator);
 
-  auto tmp_sens_integrator = createIntegratorBasic();
+  auto tmp_sens_integrator = createIntegratorBasic<Scalar>();
   model = sens_integrator_->getStepper()->getModel();
   tmp_sens_integrator->setModel(model);
-  sens_integrator_->clone(tmp_sens_integrator);
+  sens_integrator_->copy(tmp_sens_integrator);
+
+  auto pl = Teuchos::rcp_const_cast<Teuchos::ParameterList> (
+    sens_integrator_->getValidParameters());
+  return pl;
 }
 
 template<class Scalar>
