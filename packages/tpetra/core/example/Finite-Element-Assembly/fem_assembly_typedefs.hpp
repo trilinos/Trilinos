@@ -55,6 +55,7 @@
 namespace TpetraExamples {
 
 using deviceType = Tpetra::Map<>::device_type;
+using hostType = typename Kokkos::DualView<int *,deviceType>::t_host::device_type;
 using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
 using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
 using execution_space = deviceType::execution_space;
