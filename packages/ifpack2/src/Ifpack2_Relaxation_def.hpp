@@ -327,6 +327,8 @@ Relaxation<MatrixType>::getValidParameters () const
     const int cluster_size = 1;
     pl->set("relaxation: mtgs cluster size", cluster_size);
 
+    pl->set("relaxation: mtgs coloring algorithm", "Default");
+
     const int long_row_threshold = 0;
     pl->set("relaxation: long row threshold", long_row_threshold);
 
@@ -373,6 +375,34 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   int long_row_threshold = 0;
   if(pl.isParameter ("relaxation: long row threshold")) //optional parameter
     long_row_threshold = pl.get<int> ("relaxation: long row threshold");
+  std::string color_algo_name = pl.get<std::string>("relaxation: mtgs coloring algorithm");
+  //convert to lowercase
+  for(char& c : color_algo_name)
+    c = tolower(c);
+  if(color_algo_name == "default")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_DEFAULT;
+  else if(color_algo_name == "serial")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_SERIAL;
+  else if(color_algo_name == "vb")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_VB;
+  else if(color_algo_name == "vbbit")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_VBBIT;
+  else if(color_algo_name == "vbcs")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_VBCS;
+  else if(color_algo_name == "vbd")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_VBD;
+  else if(color_algo_name == "vbdbit")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_VBDBIT;
+  else if(color_algo_name == "eb")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_EB;
+  else
+  {
+    std::ostringstream msg;
+    msg << "Ifpack2::Relaxation: 'relaxation: mtgs coloring algorithm' = '" << color_algo_name << "' is not valid.\n";
+    msg << "Choices (not case sensitive) are: Default, Serial, VB, VBBIT, VBCS, VBD, VBDBIT, EB.";
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument, msg.str());
+  }
 
   Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices = pl.get<Teuchos::ArrayRCP<local_ordinal_type> >("relaxation: local smoothing indices");
 
@@ -746,11 +776,11 @@ void Relaxation<MatrixType>::initialize ()
         if (PrecType_ == Details::GS2 || PrecType_ == Details::SGS2)
           mtKernelHandle_->create_gs_handle (KokkosSparse::GS_TWOSTAGE);
         else if(this->clusterSize_ == 1) {
-          mtKernelHandle_->create_gs_handle ();
+          mtKernelHandle_->create_gs_handle (KokkosSparse::GS_DEFAULT, this->mtColoringAlgorithm_);
           mtKernelHandle_->get_point_gs_handle()->set_long_row_threshold(longRowThreshold_);
         }
         else
-          mtKernelHandle_->create_gs_handle (KokkosSparse::CLUSTER_DEFAULT, this->clusterSize_);
+          mtKernelHandle_->create_gs_handle (KokkosSparse::CLUSTER_DEFAULT, this->clusterSize_, this->mtColoringAlgorithm_);
       }
       local_matrix_device_type kcsr = crsMat->getLocalMatrixDevice ();
       if (PrecType_ == Details::GS2 || PrecType_ == Details::SGS2) {
