@@ -651,8 +651,8 @@ namespace MueLuTests
       auto inversDiag = Utils_Kokkos::GetMatrixDiagonalInverse(*A);
       auto powerRes2 = Utils_Kokkos::PowerMethod(*A, inversDiag);
 
-      TEST_ASSERT(powerRes > 0);
-      TEST_ASSERT(powerRes2 > 0);
+      TEST_INEQUALITY(powerRes, Scalar(0.0));
+      TEST_INEQUALITY(powerRes2, Scalar(0.0));
     }
 
 #endif
