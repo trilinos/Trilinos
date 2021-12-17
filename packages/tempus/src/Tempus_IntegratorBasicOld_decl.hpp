@@ -69,9 +69,9 @@ public:
     virtual void endIntegrator();
     /// Return a copy of the Tempus ParameterList
     virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()
-      override { return tempusPL_; }
+      { return tempusPL_; }
     virtual void setTempusParameterList(
-      Teuchos::RCP<Teuchos::ParameterList> pl) override
+      Teuchos::RCP<Teuchos::ParameterList> pl)
     {
       if (tempusPL_==Teuchos::null) tempusPL_=Teuchos::parameterList("Tempus");
       if (pl != Teuchos::null) *tempusPL_ = *pl;
