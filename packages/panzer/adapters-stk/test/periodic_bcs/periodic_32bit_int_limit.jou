@@ -1,0 +1,42 @@
+reset
+reset aprepro
+
+#{x1 = -1.0}
+#{x2 = 1.0}
+#{y1 = -1.0}
+#{y2 = 1.0}
+#{z1 = -1.0}
+#{z2 = 1.0}
+#{unitscale = 1e-6}
+#{intnum = 2}
+
+create brick x {x2-x1} y {y2-y1} z {z2-z1}
+
+move vol 1 midpoint location x {(x1+x2)/2} y {(y1+y2)/2} z {(z1+z2)/2}
+
+curve 1,2 interval {intnum}
+curve 9 interval {intnum}
+
+mesh curve 1,2,9
+
+mesh vol 1
+
+block 1 add vol 1
+block 1 name 'air'
+
+block all element type hex
+
+sideset 1  add   surface 5
+sideset 1  name  'top'
+sideset 2  add   surface 3
+sideset 2  name  'bottom'
+sideset 3  add   surface 6
+sideset 3  name  'left'
+sideset 4  add   surface 4
+sideset 4  name  'right'
+
+volume all scale {unitscale}
+
+set exodus netcdf4 off
+set large exodus on
+export mesh "periodic_32bit_int_limit_UNSHIFTED.exo" overwrite
