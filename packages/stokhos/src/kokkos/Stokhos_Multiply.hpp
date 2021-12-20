@@ -52,6 +52,29 @@
 
 namespace Stokhos {
 
+template <size_t N>
+struct is_power_of_two {
+  enum type { value = (N > 0) && !(N & (N - 1)) };
+};
+
+template <size_t N, bool OK = is_power_of_two<N>::value>
+struct power_of_two;
+
+template <size_t N>
+struct power_of_two<N, true> {
+  enum type { value = 1 + power_of_two<(N >> 1), true>::value };
+};
+
+template <>
+struct power_of_two<2, true> {
+  enum type { value = 1 };
+};
+
+template <>
+struct power_of_two<1, true> {
+  enum type { value = 0 };
+};
+
 class DefaultMultiply {};
 
 template <unsigned> class IntegralRank {};
@@ -172,7 +195,7 @@ compute_work_range( const execution_space device,
 #endif
 
   enum { work_align = cache_line / sizeof(scalar_type) };
-  enum { work_shift = Kokkos::Impl::power_of_two< work_align >::value };
+  enum { work_shift = power_of_two< work_align >::value };
   enum { work_mask  = work_align - 1 };
 
   const size_type work_per_thread =
