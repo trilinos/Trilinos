@@ -8,7 +8,15 @@ fi
 
 function execute() {
   stdbuf -o0 -e0 echo "% $@" ;
-  eval "$@" ;
+  if [ $# -gt 0 ] ; then
+    if [ $1 == "module" ] ; then
+      module "${@:2}" ;
+    elif [ $1 == "source" ] ; then
+      source "${@:2}" ;
+    else
+      eval "$@" ;
+    fi
+  fi
   if [ $? -ne 0 ] ; then
     echo "'$@' failed.";
     exit 1;
@@ -47,12 +55,8 @@ function pull_and_build_yaml()
     
     cd_to_new_dir ${productName}_build
 
-    export CC=gcc
-    export CXX=g++
     execute cmake -DCMAKE_BUILD_TYPE=${build_type^^} -DYAML_CPP_BUILD_TESTS=false -DCMAKE_INSTALL_PREFIX=../${productName}_install ../yaml-cpp
     make_and_install $productName
-    unset CC
-    unset CXX
 }
 
 function pull_Trilinos()
@@ -70,7 +74,8 @@ function pull_Trilinos()
     else
       execute cd Trilinos
       execute git checkout develop
-      execute git reset --hard origin/develop
+      execute git clean -fd
+      execute git reset --hard
       execute git pull
       execute cd ..
     fi
@@ -94,20 +99,25 @@ function build_krino_Trilinos_package()
 
 function setup_environment()
 {
-    module purge
+    execute source /etc/profile.d/modules.sh
+    execute module purge
     
     # compiler environment
-    module load cde/dev/cmake/3.19.2
-    module load cde/dev/compiler/gcc/7.2.0
-    module load cde/dev/gcc/7.2.0/openmpi/4.0.5
+    export MODULEPATH=/projects/cde/modules:$MODULEPATH
+    execute module load cde/v2/cmake/3.19.2
+    execute module load cde/v2/compiler/gcc/7.2.0
+    execute module load cde/v2/gcc/7.2.0/openmpi/4.0.5
     
     #TPLs
-    module load cde/dev/gcc/7.2.0/netlib-lapack/3.8.0
-    module load cde/dev/gcc/7.2.0/hdf5/1.10.6
-    module load cde/dev/gcc/7.2.0/netcdf-c/4.7.3
-    module load cde/dev/gcc/7.2.0/parallel-netcdf/1.12.1
-    module load cde/dev/gcc/7.2.0/metis/5.1.0
-    module load cde/dev/gcc/7.2.0/parmetis/4.0.3
+    execute module load cde/v2/gcc/7.2.0/netlib-lapack/3.8.0
+    execute module load cde/v2/gcc/7.2.0/hdf5/1.10.6
+    execute module load cde/v2/gcc/7.2.0/netcdf-c/4.7.3
+    execute module load cde/v2/gcc/7.2.0/parallel-netcdf/1.12.1
+    execute module load cde/v2/gcc/7.2.0/metis/5.1.0
+    execute module load cde/v2/gcc/7.2.0/parmetis/4.0.3
+
+    execute module list
+    execute env
 }
 
 output_dir=$1
