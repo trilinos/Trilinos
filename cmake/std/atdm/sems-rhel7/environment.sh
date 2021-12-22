@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Set up env on a SEMS NFS mounted RHEL7 for ATMD builds of Trilinos
+# Set up env on a SEMS NFS mounted RHEL7 for ATDM builds of Trilinos
 #
 # This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
