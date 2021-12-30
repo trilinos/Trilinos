@@ -61,6 +61,7 @@
 #include "MueLu_CreateXpetraPreconditioner.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_SemiCoarsenPFactory.hpp"
+#include "MueLu_FineLevelInputDataFactory.hpp"
 
 namespace MueLuTests {
 
@@ -88,6 +89,9 @@ namespace MueLuTests {
 
     // Set up factories for test
 
+    FineLevelInputDataFactory inputData;
+    inputData.DisableMultipleCallCheck();
+
     RCP<LineDetectionFactory> LineDetectionFact = rcp(new LineDetectionFactory());
     LineDetectionFact->SetParameter("linedetection: orientation",
                                     Teuchos::ParameterEntry(std::string("vertical")));
@@ -102,6 +106,7 @@ namespace MueLuTests {
     SemiCoarsenPFact->SetFactory("LineDetection_Layers", LineDetectionFact);
     SemiCoarsenPFact->SetFactory("CoarseNumZLayers", LineDetectionFact);
     // seem to need two factories to avoid failing multipleCallCheck on some machines? 
+    inputData.DisableMultipleCallCheck();
     RCP<SemiCoarsenPFactory> SemiCoarsenPFact2 = rcp(new SemiCoarsenPFactory());
     SemiCoarsenPFact2->SetVerbLevel(MueLu::Extreme);
     SemiCoarsenPFact2->SetParameter("semicoarsen: coarsen rate", Teuchos::ParameterEntry(2));
@@ -119,6 +124,7 @@ namespace MueLuTests {
     SC one = Teuchos::ScalarTraits<SC> ::one();
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(Op->getRowMap(), blkSize);
 
+    inputData.DisableMultipleCallCheck();
     for (int i = 0; i < blkSize; i++) {
       RCP<const Map> domainMap = Op->getDomainMap();
       GO             indexBase = domainMap->getIndexBase();
@@ -131,6 +137,7 @@ namespace MueLuTests {
     }
 
 
+    inputData.DisableMultipleCallCheck();
     Level fineLevel1, coarseLevel1, fineLevel2, coarseLevel2;
     TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel1, coarseLevel1);
     TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel2, coarseLevel2);
@@ -138,18 +145,24 @@ namespace MueLuTests {
     coarseLevel1.SetFactoryManager(Teuchos::null);
     fineLevel1.Set("A",Op);
     fineLevel1.Set("Nullspace", nullSpace);
+    inputData.DisableMultipleCallCheck();
     coarseLevel1.Request("P", SemiCoarsenPFact.get());
+    inputData.DisableMultipleCallCheck();
     SemiCoarsenPFact->Build(fineLevel1, coarseLevel1);
 
+    inputData.DisableMultipleCallCheck();
 
 
     fineLevel2.Set("A",transposedOp);
     fineLevel2.Set("Nullspace", nullSpace);
     fineLevel2.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel2.SetFactoryManager(Teuchos::null);
+    inputData.DisableMultipleCallCheck();
     coarseLevel2.Request("P", SemiCoarsenPFact2.get());
     coarseLevel2.Request("RfromPfactory", SemiCoarsenPFact2.get());
+    inputData.DisableMultipleCallCheck();
     SemiCoarsenPFact2->Build(fineLevel2, coarseLevel2);
+    inputData.DisableMultipleCallCheck();
 
     RCP<Matrix> firstP  = coarseLevel1.Get< RCP<Matrix> >("P", &(*SemiCoarsenPFact));
     RCP<Matrix> secondR = coarseLevel2.Get< RCP<Matrix> >("RfromPfactory", &(*SemiCoarsenPFact2));
