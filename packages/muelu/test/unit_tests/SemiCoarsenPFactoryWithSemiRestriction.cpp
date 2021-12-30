@@ -91,7 +91,12 @@ namespace MueLuTests {
 
     FineLevelInputDataFactory inputData;
     inputData.DisableMultipleCallCheck();
+    MueLu::FactoryManager<SC,LO,GO,NO> M;
+//    SetDependencyTree(M, paramList);
 
+#ifdef HAVE_MUELU_DEBUG
+    M.ResetDebugData();
+#endif
     RCP<LineDetectionFactory> LineDetectionFact = rcp(new LineDetectionFactory());
     LineDetectionFact->SetParameter("linedetection: orientation",
                                     Teuchos::ParameterEntry(std::string("vertical")));
@@ -107,6 +112,9 @@ namespace MueLuTests {
     SemiCoarsenPFact->SetFactory("CoarseNumZLayers", LineDetectionFact);
     // seem to need two factories to avoid failing multipleCallCheck on some machines? 
     inputData.DisableMultipleCallCheck();
+#ifdef HAVE_MUELU_DEBUG
+    M.ResetDebugData();
+#endif
     RCP<SemiCoarsenPFactory> SemiCoarsenPFact2 = rcp(new SemiCoarsenPFactory());
     SemiCoarsenPFact2->SetVerbLevel(MueLu::Extreme);
     SemiCoarsenPFact2->SetParameter("semicoarsen: coarsen rate", Teuchos::ParameterEntry(2));
@@ -125,6 +133,9 @@ namespace MueLuTests {
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(Op->getRowMap(), blkSize);
 
     inputData.DisableMultipleCallCheck();
+#ifdef HAVE_MUELU_DEBUG
+    M.ResetDebugData();
+#endif
     for (int i = 0; i < blkSize; i++) {
       RCP<const Map> domainMap = Op->getDomainMap();
       GO             indexBase = domainMap->getIndexBase();
@@ -138,6 +149,9 @@ namespace MueLuTests {
 
 
     inputData.DisableMultipleCallCheck();
+#ifdef HAVE_MUELU_DEBUG
+    M.ResetDebugData();
+#endif
     Level fineLevel1, coarseLevel1, fineLevel2, coarseLevel2;
     TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel1, coarseLevel1);
     TestHelpers::TestFactory<Scalar, LO, GO, NO>::createTwoLevelHierarchy(fineLevel2, coarseLevel2);
@@ -146,11 +160,23 @@ namespace MueLuTests {
     fineLevel1.Set("A",Op);
     fineLevel1.Set("Nullspace", nullSpace);
     inputData.DisableMultipleCallCheck();
+#ifdef HAVE_MUELU_DEBUG
+    M.ResetDebugData();
+coarseLevel1.GetFactoryManager()->ResetDebugData();
+#endif
     coarseLevel1.Request("P", SemiCoarsenPFact.get());
     inputData.DisableMultipleCallCheck();
+#ifdef HAVE_MUELU_DEBUG
+    M.ResetDebugData();
+coarseLevel1.GetFactoryManager()->ResetDebugData();
+#endif
     SemiCoarsenPFact->Build(fineLevel1, coarseLevel1);
 
     inputData.DisableMultipleCallCheck();
+#ifdef HAVE_MUELU_DEBUG
+    M.ResetDebugData();
+coarseLevel1.GetFactoryManager()->ResetDebugData();
+#endif
 
 
     fineLevel2.Set("A",transposedOp);
@@ -158,11 +184,23 @@ namespace MueLuTests {
     fineLevel2.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel2.SetFactoryManager(Teuchos::null);
     inputData.DisableMultipleCallCheck();
+#ifdef HAVE_MUELU_DEBUG
+    M.ResetDebugData();
+coarseLevel1.GetFactoryManager()->ResetDebugData();
+#endif
     coarseLevel2.Request("P", SemiCoarsenPFact2.get());
     coarseLevel2.Request("RfromPfactory", SemiCoarsenPFact2.get());
     inputData.DisableMultipleCallCheck();
+#ifdef HAVE_MUELU_DEBUG
+    M.ResetDebugData();
+coarseLevel1.GetFactoryManager()->ResetDebugData();
+#endif
     SemiCoarsenPFact2->Build(fineLevel2, coarseLevel2);
     inputData.DisableMultipleCallCheck();
+#ifdef HAVE_MUELU_DEBUG
+    M.ResetDebugData();
+coarseLevel1.GetFactoryManager()->ResetDebugData();
+#endif
 
     RCP<Matrix> firstP  = coarseLevel1.Get< RCP<Matrix> >("P", &(*SemiCoarsenPFact));
     RCP<Matrix> secondR = coarseLevel2.Get< RCP<Matrix> >("RfromPfactory", &(*SemiCoarsenPFact2));
