@@ -65,7 +65,7 @@
 namespace MueLuTests {
 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SemiCoarsenPFactoryWithSemiRestriction, 3DElasticity, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SemiCoarsenPFactoryWithSemiRestriction, TestSemiRestrict, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -101,6 +101,14 @@ namespace MueLuTests {
     SemiCoarsenPFact->SetFactory("LineDetection_VertLineIds", LineDetectionFact);
     SemiCoarsenPFact->SetFactory("LineDetection_Layers", LineDetectionFact);
     SemiCoarsenPFact->SetFactory("CoarseNumZLayers", LineDetectionFact);
+    // seem to need two factories to avoid failing multipleCallCheck on some machines? 
+    RCP<SemiCoarsenPFactory> SemiCoarsenPFact2 = rcp(new SemiCoarsenPFactory());
+    SemiCoarsenPFact2->SetVerbLevel(MueLu::Extreme);
+    SemiCoarsenPFact2->SetParameter("semicoarsen: coarsen rate", Teuchos::ParameterEntry(2));
+    SemiCoarsenPFact2->SetParameter("semicoarsen: calculate nonsym restriction", Teuchos::ParameterEntry(true));
+    SemiCoarsenPFact2->SetFactory("LineDetection_VertLineIds", LineDetectionFact);
+    SemiCoarsenPFact2->SetFactory("LineDetection_Layers", LineDetectionFact);
+    SemiCoarsenPFact2->SetFactory("CoarseNumZLayers", LineDetectionFact);
 
     const RCP<const Map> map = MapFactory::Build(TestHelpers::Parameters::getLib(), nMatrixRows, 0, comm);
 //    RCP<Matrix> Op =  Xpetra::IO<SC, LO, GO, NO>::Read("TestMatrices/semiRtest2.mm", map);
@@ -139,12 +147,12 @@ namespace MueLuTests {
     fineLevel2.Set("Nullspace", nullSpace);
     fineLevel2.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel2.SetFactoryManager(Teuchos::null);
-    coarseLevel2.Request("P", SemiCoarsenPFact.get());
-    coarseLevel2.Request("RfromPfactory", SemiCoarsenPFact.get());
-    SemiCoarsenPFact->Build(fineLevel2, coarseLevel2);
+    coarseLevel2.Request("P", SemiCoarsenPFact2.get());
+    coarseLevel2.Request("RfromPfactory", SemiCoarsenPFact2.get());
+    SemiCoarsenPFact2->Build(fineLevel2, coarseLevel2);
 
     RCP<Matrix> firstP  = coarseLevel1.Get< RCP<Matrix> >("P", &(*SemiCoarsenPFact));
-    RCP<Matrix> secondR = coarseLevel2.Get< RCP<Matrix> >("RfromPfactory", &(*SemiCoarsenPFact));
+    RCP<Matrix> secondR = coarseLevel2.Get< RCP<Matrix> >("RfromPfactory", &(*SemiCoarsenPFact2));
     RCP<Matrix> transposedSecondR = Utilities::Transpose(*secondR);
 // Xpetra::IO<SC,LO,GO,NO>::Write("firstP.mm",*firstP);
 // Xpetra::IO<SC,LO,GO,NO>::Write("secondRtrans.mm",*transposedSecondR);
@@ -168,7 +176,7 @@ namespace MueLuTests {
   } // NullSpace test
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SemiCoarsenPFactoryWithSemiRestriction,3DElasticity,Scalar,LO,GO,Node) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SemiCoarsenPFactoryWithSemiRestriction,TestSemiRestrict,Scalar,LO,GO,Node) 
 #include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests
