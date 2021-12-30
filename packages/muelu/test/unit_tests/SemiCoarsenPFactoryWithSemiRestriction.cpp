@@ -84,7 +84,7 @@ namespace MueLuTests {
     //    ==> nMatrixRows/(nProcs*lineLength*blkSize) must be an integer
     //    ==> use vertical orientation
 //    GO lineLength = 7, blkSize = 1, nMatrixRows= 84;
-    GO lineLength = 7, blkSize = 2, nMatrixRows= 168;
+    int lineLength = 7, blkSize = 2, nMatrixRows= 168;
 
     // Set up factories for test
 
