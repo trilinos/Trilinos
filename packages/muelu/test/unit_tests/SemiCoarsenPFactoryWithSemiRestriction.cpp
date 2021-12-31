@@ -80,6 +80,9 @@ namespace MueLuTests {
 
     RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
+    // Don't test for complex - matrix reader won't work
+   if (TST::isComplex) {success=true; return;}
+
     // MAKE SURE lines are not split across processors !!
     //    ==> nMatrixRows/(nProcs*lineLength*blkSize) must be an integer
     //    ==> use vertical orientation
