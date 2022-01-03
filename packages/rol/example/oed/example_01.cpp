@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
       isampler = ROL::makePtr<ROL::UserInputGenerator<RealT>>("pointsGL.txt","weightsGL.txt",11,1,bman);
 
     // Setup factory
-    bool        homNoise = false;
+    bool        homNoise = true;
     std::string regType  = "Least Squares";
     std::string ocType   = parlist->sublist("OED").get("Optimality Type","A");
     ROL::OED::RegressionType type = ROL::OED::StringToRegressionType(regType);

@@ -153,7 +153,7 @@ void SemismoothNewtonProjection<Real>::solve_newton_system(Vector<Real>       &s
                                                            const Real          rho,
                                                            int                &iter,
                                                            int                &flag) const {
-  Ptr<Precond>  M = makePtr<Precond>();
+  Ptr<Precond>  M = makePtr<Precond>(mu);
   Ptr<Jacobian> J = makePtr<Jacobian>(con_,bnd_,makePtrFromRef(y),xdual_,xprim_,mu);
   krylov_->run(s,*J,r,*M,iter,flag);
 }
