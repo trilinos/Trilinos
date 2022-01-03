@@ -349,7 +349,7 @@ void back_solve6(ZDView& ZV)
 
         // Copy row2 -> rhs
         int blas_length = n_rhs_this*my_rows;
-#if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2))//Use memcpy for now, can use deep_copy in the future //deep_copy is slower than BLAS XCOPY
+#if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)) //Use memcpy for now, can use deep_copy in the future //deep_copy is slower than BLAS XCOPY
 #if defined(KOKKOS_ENABLE_CUDA)
         //Kokkos::deep_copy(subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols+n_rhs_this)), subview(h_row2, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)));
         cudaMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(h_row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), cudaMemcpyHostToDevice);
