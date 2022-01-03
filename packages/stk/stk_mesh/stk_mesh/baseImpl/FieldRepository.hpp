@@ -56,7 +56,10 @@ namespace impl {
 class FieldRepository {
 
   public:
-    FieldRepository() {}
+    FieldRepository(MetaData & meta)
+      : m_meta(meta)
+    {}
+
     ~FieldRepository();
 
     void add_field(FieldBase* new_field) {
@@ -72,16 +75,6 @@ class FieldRepository {
         const shards::ArrayDimTag * const * arg_dim_tags ,
         unsigned                            arg_num_states
         ) const;
-
-    FieldBase * declare_field(
-        const std::string                 & arg_name ,
-        stk::topology::rank_t               arg_entity_rank ,
-        const DataTraits                  & arg_traits ,
-        unsigned                            arg_rank ,
-        const shards::ArrayDimTag * const * arg_dim_tags ,
-        unsigned                            arg_num_states ,
-        MetaData                          * arg_meta_data
-        );
 
     void verify_and_clean_restrictions(const Part& superset, const Part& subset);
 
@@ -140,7 +133,10 @@ class FieldRepository {
       arg_field.insert_restriction( arg_method, arg_selector, arg_num_scalars_per_entity, arg_first_dimension, arg_init_value);
     }
 
+    MetaData & mesh_meta_data() { return m_meta; }
+
   private:
+    MetaData & m_meta;
     FieldVector m_fields;
 
     // Fields assocated with each topological rank  

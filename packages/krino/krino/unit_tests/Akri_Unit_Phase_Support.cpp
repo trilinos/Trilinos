@@ -11,6 +11,11 @@
 #include <Akri_Phase_Support.hpp>
 
 #include <Akri_Unit_Part_Decomposition_Fixture.hpp>
+#include <Ioss_Initializer.h>
+#include <Ioss_ConcreteVariableType.h>
+
+Ioss::StorageInitializer initialize_storage;
+Ioss::Initializer        initialize_topologies;
 
 namespace krino
 {
@@ -60,22 +65,22 @@ TEST_F(Part_Decomposition_Fixture, TwoSidedSideset_LS)
   performDecomposition({findPart("block_1")}, block_surface_info, false);
 
   //const stk::mesh::Part * surf_1_A_block_1 = findPart("surface_1_A_block_1"); // No support for aliases in stk yet
-  const stk::mesh::Part * surf_1_A_block_1 = findPart("surface_block_1_tri3_1_A");
+  const stk::mesh::Part * surf_1_A_block_1 = findPart("surface_1_A_block_1_A_tri3");
   ASSERT_TRUE( surf_1_A_block_1 != NULL );
   EXPECT_TRUE( findSuperset("surface_1_A", surf_1_A_block_1) != NULL );
 
   //const stk::mesh::Part * surf_1_B_block_1 = findPart("surface_1_B_block_1"); // No support for aliases in stk yet
-  const stk::mesh::Part * surf_1_B_block_1 = findPart("surface_block_1_tri3_1_B");
+  const stk::mesh::Part * surf_1_B_block_1 = findPart("surface_1_B_block_1_B_tri3");
   ASSERT_TRUE( surf_1_B_block_1 != NULL );
   EXPECT_TRUE( findSuperset("surface_1_B", surf_1_B_block_1) != NULL );
 
   //const stk::mesh::Part * surf_1_A_block_2 = findPart("surface_1_A_block_2"); // No support for aliases in stk yet
-  const stk::mesh::Part * surf_1_A_block_2 = findPart("surface_block_2_tri3_1_A");
+  const stk::mesh::Part * surf_1_A_block_2 = findPart("surface_1_A_block_2_tri3");
   ASSERT_TRUE( surf_1_A_block_2 != NULL );
   EXPECT_TRUE( findSuperset("surface_1_A", surf_1_A_block_2) != NULL );
 
   //const stk::mesh::Part * surf_1_B_block_2 = findPart("surface_1_B_block_2"); // No support for aliases in stk yet
-  const stk::mesh::Part * surf_1_B_block_2 = findPart("surface_block_2_tri3_1_B");
+  const stk::mesh::Part * surf_1_B_block_2 = findPart("surface_1_B_block_2_tri3");
   ASSERT_TRUE( surf_1_B_block_2 != NULL );
   EXPECT_TRUE( findSuperset("surface_1_B", surf_1_B_block_2) != NULL );
 }
@@ -91,7 +96,7 @@ TEST_F(Part_Decomposition_Fixture, TwoSidedSideset_Death)
   EXPECT_TRUE( findSuperset("surface_1", surf_1_block_1) != NULL );
 
   //const stk::mesh::Part * surf_1_dead_block_1 = findPart("surface_1_dead_block_1"); // No support for aliases in stk yet
-  const stk::mesh::Part * surf_1_dead_block_1 = findPart("surface_block_1_tri3_1_dead");
+  const stk::mesh::Part * surf_1_dead_block_1 = findPart("surface_1_dead_block_1_dead_tri3");
   ASSERT_TRUE( surf_1_dead_block_1 != NULL );
   EXPECT_TRUE( findSuperset("surface_1_dead", surf_1_dead_block_1) != NULL );
 
@@ -101,7 +106,7 @@ TEST_F(Part_Decomposition_Fixture, TwoSidedSideset_Death)
   EXPECT_TRUE( findSuperset("surface_1", surf_1_block_2) != NULL );
 
   //const stk::mesh::Part * surf_1_dead_block_2 = findPart("surface_1_dead_block_2"); // No support for aliases in stk yet
-  const stk::mesh::Part * surf_1_dead_block_2 = findPart("surface_block_2_tri3_1_dead");
+  const stk::mesh::Part * surf_1_dead_block_2 = findPart("surface_1_dead_block_2_tri3");
   ASSERT_TRUE( surf_1_dead_block_2 != NULL );
   EXPECT_TRUE( findSuperset("surface_1_dead", surf_1_dead_block_2) != NULL );
 }
@@ -199,11 +204,11 @@ TEST_F(Part_Decomposition_Fixture, get_blocks_touching_surface)
   EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), get_meta_data().get_part("block_1_A")));
   EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), get_meta_data().get_part("block_2")));
 
-  blocks = get_meta_data().get_blocks_touching_surface(get_meta_data().get_part("surface_block_1_tri3_1_A"));
+  blocks = get_meta_data().get_blocks_touching_surface(get_meta_data().get_part("surface_1_A_block_1_A_tri3"));
   EXPECT_EQ( 1u, blocks.size() );
   EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), get_meta_data().get_part("block_1_A")));
 
-  blocks = get_meta_data().get_blocks_touching_surface(get_meta_data().get_part("surface_block_2_tri3_1_A"));
+  blocks = get_meta_data().get_blocks_touching_surface(get_meta_data().get_part("surface_1_A_block_2_tri3"));
   EXPECT_EQ( 1u, blocks.size() );
   EXPECT_TRUE( blocks.end() != std::find(blocks.begin(), blocks.end(), get_meta_data().get_part("block_2")));
 

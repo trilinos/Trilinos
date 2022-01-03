@@ -287,9 +287,10 @@ private:
 
   void rebuild_child_part();
   void rebuild_parent_and_active_parts_using_nonconformal_and_child_parts();
-  void restore_subelement_edge_nodes();
   void restore_subelements();
-  const SubElementNode * build_subelement_edge_node(const stk::mesh::Entity node_entity);
+  const SubElementNode * build_subelement_edge_node(const stk::mesh::Entity node, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
+  const SubElementNode * find_or_build_subelement_edge_node_with_id(const stk::mesh::EntityId nodeId, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
+  const SubElementNode * find_or_build_subelement_edge_node(const stk::mesh::Entity node, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode);
 
   stk::mesh::MetaData& my_meta;
   AuxMetaData& my_aux_meta;

@@ -18,6 +18,106 @@
 #include <Akri_LevelSet.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
+#include <Ioss_ElementTopology.h>
+#include <stk_util/util/tokenize.hpp>
+
+namespace 
+{
+stk::mesh::Part * get_parent_sideset(const stk::mesh::Part & part)
+{
+  stk::mesh::Part * result = nullptr;
+  if(part.primary_entity_rank() == part.mesh_meta_data().side_rank())
+  {
+    for (auto superset : part.supersets())
+    {
+      if(stk::io::is_part_io_part(superset))
+      {
+        ThrowRequireMsg(result == nullptr, "krino::Akri_Phase_Support: Part has more than 1 parent IO part");
+        result = superset;
+      }
+    }
+  }
+  return result;
+}
+
+std::string generate_ioss_sideblock_name(const std::string & base_name, 
+  const std::string & block_or_topo_name, const std::string & topo_name)
+{
+  std::vector<std::string> tokens;
+  stk::util::tokenize(base_name, "_", tokens);
+  std::string result;
+  if(tokens.size() == 2 && tokens.back().find_first_not_of("0123456789") == std::string::npos)
+  {
+    //Canonically named part
+    result = tokens[0] + "_" + block_or_topo_name + "_" + topo_name + "_" + tokens[1];
+  }
+  else 
+  {
+    //Non-canonically named part
+    result = base_name + "_" + block_or_topo_name + "_" + topo_name;
+  }
+  return result;
+}
+
+std::string build_part_name(const krino::Phase_Support & ps, 
+  const stk::mesh::Part & part, const krino::PhaseTag & ls_phase_tag, 
+  const std::string & suffix)
+{
+  stk::mesh::Part * parent_part = get_parent_sideset(part);
+  if(parent_part == nullptr)
+  {
+    return part.name() + suffix;
+  }
+
+  std::string parent_part_name = parent_part->name();
+  std::string io_part_name = part.name();
+  std::set<stk::mesh::PartOrdinal> touching_block_ordinals;
+  ps.get_input_blocks_touching_surface(ps.get_input_block_surface_connectivity(), part.mesh_meta_data_ordinal(), touching_block_ordinals);
+  
+
+  ThrowRequireMsg(touching_block_ordinals.size() > 0, 
+      "krino::Akri_Phase_Support: Side block must be touching at least 1 block");
+  stk::topology block_topo = part.mesh_meta_data().get_part(*touching_block_ordinals.begin()).topology();
+  for(auto b : touching_block_ordinals)
+  {
+    ThrowRequireMsg(block_topo == part.mesh_meta_data().get_part(b).topology(), 
+      "krino::Akri_Phase_Support: Touching blocks do not all have same topology");
+  }
+  Ioss::ElementTopology *ioss_side_topo = Ioss::ElementTopology::factory(part.topology().name());
+  ThrowRequireMsg(ioss_side_topo != nullptr, 
+      "krino::Akri_Phase_Support: IOSS topology factory must return a topology type");
+  Ioss::ElementTopology *ioss_block_topo = Ioss::ElementTopology::factory(block_topo.name());
+  ThrowRequireMsg(ioss_block_topo != nullptr, 
+      "krino::Akri_Phase_Support: IOSS topology factory must return a topology type");
+
+  //Figure out if this side block was split by element block or topology. Ideally need a
+  //way to do this without string comparisons
+  std::string block_or_topo_name;
+  if(io_part_name.find("_"+ioss_block_topo->name()+"_") != std::string::npos)
+  {
+    //Split by topology
+    block_or_topo_name = ioss_block_topo->name();
+  }
+  else 
+  {
+    //Split by element block
+    ThrowRequireMsg(touching_block_ordinals.size() == 1, 
+      "krino::Akri_Phase_Support: Side blocks split by element block should touch exactly 1 block");
+    stk::mesh::Part & touching_block = part.mesh_meta_data().get_part(*touching_block_ordinals.begin());
+    auto conformal_block = ps.find_conformal_io_part(touching_block, ls_phase_tag);
+    if(conformal_block == &touching_block)
+    {
+      auto decomp_block = part.mesh_meta_data().get_part(touching_block.name() + suffix);
+      if(decomp_block != nullptr) conformal_block = decomp_block;
+    }
+    block_or_topo_name = conformal_block->name();
+  }
+
+  std::string base_name = parent_part_name + suffix;
+  //Here we can plug in the IOSS function from Greg once it is pushed
+  return generate_ioss_sideblock_name(base_name, block_or_topo_name, ioss_side_topo->name());
+}
+}
 
 namespace krino{
 
@@ -93,11 +193,13 @@ void
 Phase_Support::addPhasePart(stk::mesh::Part & io_part, PhasePartSet & phase_parts, const NamedPhase & ls_phase)
 {
   const std::string & phase_name = ls_phase.name();
-  std::string phase_part_name = io_part.name();
-  if(phase_name != "") // The alive phase for death problems just uses the io part as the conformal part
-  {
-    phase_part_name += "_" + phase_name;
-  }
+  const std::string nonconf_suffix = "_nonconformal";
+
+  // The alive phase for death problems just uses the io part as the conformal part
+  const std::string suffix = phase_name == "" ? "" : "_" + phase_name;
+
+  std::string phase_part_name = build_part_name(*this, io_part, ls_phase.tag(), suffix);
+  std::string nonconf_name = build_part_name(*this, io_part, PhaseTag(), nonconf_suffix);
 
   stk::mesh::Part & conformal_io_part = my_aux_meta.declare_io_part(phase_part_name, io_part.primary_entity_rank());
   ThrowAssert(phase_name != "" || conformal_io_part.mesh_meta_data_ordinal() == io_part.mesh_meta_data_ordinal());
@@ -108,7 +210,6 @@ Phase_Support::addPhasePart(stk::mesh::Part & io_part, PhasePartSet & phase_part
     topology_name = conformal_io_part.topology().name();
   }
 
-  const std::string nonconf_name = io_part.name() + "_nonconformal";
   if(krinolog.shouldPrint(LOG_PARTS))
   {
     krinolog << "Created conformal IO part " << conformal_io_part.name() << " with topology " << topology_name << stk::diag::dendl;
@@ -138,7 +239,8 @@ Phase_Support::create_nonconformal_parts(const PartSet & decomposed_ioparts)
   for(PartSet::const_iterator it = decomposed_ioparts.begin(); it != decomposed_ioparts.end(); ++it)
   {
     const stk::mesh::Part & iopart = my_aux_meta.get_part((*it)->name());
-    const std::string nonconformal_part_name = iopart.name() + nonconformal_part_suffix;
+
+    std::string nonconformal_part_name = build_part_name(*this, iopart, PhaseTag(), nonconformal_part_suffix);
 
     if(!my_aux_meta.has_part(nonconformal_part_name))
     {
@@ -162,9 +264,18 @@ Phase_Support::get_nonconformal_parts() const
 {
   stk::mesh::PartVector result;
   for(const auto & entry : part_is_nonconformal_map)
-  {
-    if(entry.second) result.push_back(const_cast<stk::mesh::Part *>(entry.first));
-  }
+    if(entry.second)
+      result.push_back(const_cast<stk::mesh::Part *>(entry.first));
+  return result;
+}
+
+stk::mesh::PartVector
+Phase_Support::get_nonconformal_parts_of_rank(const stk::mesh::EntityRank rank) const
+{
+  stk::mesh::PartVector result;
+  for(const auto & entry : part_is_nonconformal_map)
+    if(entry.second && entry.first->primary_entity_rank() == rank)
+      result.push_back(const_cast<stk::mesh::Part *>(entry.first));
   return result;
 }
 
@@ -237,7 +348,8 @@ Phase_Support::create_phase_parts(const PhaseVec& ls_phases, const PartSet& deco
   {
     for (auto && io_part : decomposed_ioparts)
     {
-      addPhasePart(*io_part, my_phase_parts, ls_phase);
+      if(get_parent_sideset(*io_part) == nullptr)
+        addPhasePart(*io_part, my_phase_parts, ls_phase);
     }
   }
 }
@@ -268,6 +380,7 @@ Phase_Support::subset_and_alias_surface_phase_parts(const PhaseVec& ls_phases,
           stk::mesh::Part * io_part_subset = *subset;
           ThrowRequire(NULL != io_part_subset);
 
+          addPhasePart(*io_part_subset, my_phase_parts, ls_phase_entry);
           stk::mesh::Part * conformal_iopart_subset = const_cast<stk::mesh::Part *>(find_conformal_io_part(*io_part_subset, ls_phase));
           ThrowRequire(NULL != conformal_iopart_subset);
 
@@ -430,34 +543,52 @@ Phase_Support::create_interface_phase_parts(
 }
 
 void
-Phase_Support::decompose_blocks(
-    const stk::mesh::PartVector& blocks_decomposed_by_ls,
-    const PhaseVec & ls_phases,
-    const Interface_Name_Generator & interface_name_gen)
+Phase_Support::decompose_blocks(std::vector<std::tuple<stk::mesh::PartVector, 
+  std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets)
 {
-  if(ls_phases.empty()) return;
-
   stk::topology topo;
-  for(auto && decompose_block : blocks_decomposed_by_ls)
+  for(auto && ls_set : ls_sets)
   {
-    topo = decompose_block->topology();
-    if(topo != stk::topology::TET_4 && topo != stk::topology::TET_10
-       && topo != stk::topology::TRI_3_2D && topo != stk::topology::TRI_6_2D)
+    stk::mesh::PartVector & blocks_to_decompose = std::get<0>(ls_set);
+    PhaseVec & ls_phases = std::get<2>(ls_set);
+    if(ls_phases.empty()) continue;
+    for(auto && decompose_block : blocks_to_decompose)
     {
-      stk::RuntimeDoomedAdHoc() << "Currently only Tetrahedron 4 or 10 (in 3D) and Triangle 3 or 6 (in 2D) element types are supported when using CDFEM.\n";
-      return;
+      topo = decompose_block->topology();
+      if(topo != stk::topology::TET_4 && topo != stk::topology::TET_10
+        && topo != stk::topology::TRI_3_2D && topo != stk::topology::TRI_6_2D)
+      {
+        stk::RuntimeDoomedAdHoc() << "Currently only Tetrahedron 4 or 10 (in 3D) and Triangle 3 or 6 (in 2D) element types are supported when using CDFEM.\n";
+        return;
+      }
     }
   }
 
-  PartSet decomposed_ioparts = get_blocks_and_touching_surfaces(my_meta, blocks_decomposed_by_ls, my_input_block_surface_connectivity);
+  std::vector<PartSet> part_set_vec(ls_sets.size());
+  for(unsigned i=0; i<ls_sets.size(); i++)
+  {
+    auto & ls_set = ls_sets[i];
+    stk::mesh::PartVector & blocks_to_decompose = std::get<0>(ls_set);
+    PhaseVec & ls_phases = std::get<2>(ls_set);
+    if(std::get<2>(ls_set).empty()) continue;
+    part_set_vec[i] = get_blocks_and_touching_surfaces(my_meta, blocks_to_decompose, my_input_block_surface_connectivity);
 
-  create_nonconformal_parts(decomposed_ioparts);
+    create_nonconformal_parts(part_set_vec[i]);
 
-  create_phase_parts(ls_phases, decomposed_ioparts);
+    create_phase_parts(ls_phases, part_set_vec[i]);
+  }
 
-  subset_and_alias_surface_phase_parts(ls_phases, decomposed_ioparts);
+  for(unsigned i=0; i<ls_sets.size(); i++)
+  {
+    auto & ls_set = ls_sets[i];
+    std::shared_ptr<Interface_Name_Generator> name_gen = std::get<1>(ls_set);
+    PhaseVec & ls_phases = std::get<2>(ls_set);
+    if(ls_phases.empty()) continue;
 
-  create_interface_phase_parts(ls_phases, decomposed_ioparts, interface_name_gen);
+    subset_and_alias_surface_phase_parts(ls_phases, part_set_vec[i]);
+
+    create_interface_phase_parts(ls_phases, part_set_vec[i], *name_gen);
+  }
 }
 
 //--------------------------------------------------------------------------------
@@ -565,6 +696,9 @@ Phase_Support::get_blocks_decomposed_by_levelset(const std::vector<unsigned> ls_
 void
 Phase_Support::setup_phases(const krino::PhaseVec & FEmodel_phases)
 {
+  std::vector<std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>>
+    ls_sets;
+  auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
   for (auto && map_it : my_mesh_block_phases)
   {
     stk::mesh::Part & FEmodel_block = my_meta.get_part(map_it.first);
@@ -575,11 +709,9 @@ Phase_Support::setup_phases(const krino::PhaseVec & FEmodel_phases)
     {
       block_phases.push_back(FEmodel_phases[block_phase_ordinal]);
     }
-
-    LS_Name_Generator interface_name_gen;
-    decompose_blocks({&FEmodel_block}, block_phases, interface_name_gen);
+    ls_sets.push_back(std::make_tuple(stk::mesh::PartVector{&FEmodel_block},interface_name_gen,block_phases));
   }
-
+  decompose_blocks(ls_sets);
   build_decomposed_block_surface_connectivity();
 }
 
@@ -623,7 +755,7 @@ Phase_Support::get_input_surfaces_touching_block(const Block_Surface_Connectivit
 //--------------------------------------------------------------------------------
 void
 Phase_Support::get_input_blocks_touching_surface(const Block_Surface_Connectivity & input_block_surface_connectivity,
-    const stk::mesh::PartOrdinal surfaceOrdinal, std::set<stk::mesh::PartOrdinal> & blockOrdinals)
+    const stk::mesh::PartOrdinal surfaceOrdinal, std::set<stk::mesh::PartOrdinal> & blockOrdinals) const
 {
   input_block_surface_connectivity.get_blocks_touching_surface(surfaceOrdinal, blockOrdinals);
 }

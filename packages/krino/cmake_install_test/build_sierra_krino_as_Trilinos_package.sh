@@ -2,7 +2,15 @@
 
 function execute() {
   stdbuf -o0 -e0 echo "% $@" ;
-  eval "$@" ;
+  if [ $# -gt 0 ] ; then
+    if [ $1 == "module" ] ; then
+      module "${@:2}" ;
+    elif [ $1 == "source" ] ; then
+      source "${@:2}" ;
+    else
+      eval "$@" ;
+    fi
+  fi
   if [ $? -ne 0 ] ; then
     echo "'$@' failed.";
     exit 1;
@@ -36,12 +44,8 @@ function build_yaml()
     execute tar -xzf ${sierra_proj}/TPLs_src/spack/spack_tpls/yaml-cpp/*.tar.gz
     cd_to_new_dir ${productName}_build
 
-    export CC=gcc
-    export CXX=g++
     execute cmake -DCMAKE_BUILD_TYPE=${build_type^^} -DYAML_CPP_BUILD_TESTS=false -DCMAKE_INSTALL_PREFIX=../${productName}_install ../yaml-cpp
     make_and_install $productName
-    unset CC
-    unset CXX
 }
 
 function setup_trilinos_with_krino()
@@ -59,7 +63,8 @@ function setup_trilinos_with_krino()
     else
       execute cd Trilinos
       execute git checkout develop
-      execute git reset --hard origin/develop
+      execute git clean -fd
+      execute git reset --hard
       execute git pull
       execute cd ..
     fi
@@ -89,11 +94,12 @@ function build_trilinos_with_krino()
 
 function setup_environment()
 {
-    source ${output_dir}/trilinos/Trilinos/cmake/std/sems/PullRequestGCC7.2.0TestingEnv.sh
+    execute source /etc/profile.d/modules.sh
+    execute source ${output_dir}/trilinos/Trilinos/cmake/std/sems/PullRequestGCC7.2.0TestingEnv.sh
 
     # fixup for python 2
-    module unload sems-python/3.5.2
-    module load sems-python/2.7.9 
+    execute module unload sems-python/3.5.2
+    execute module load sems-python/2.7.9 
 }
 
 function runTests()

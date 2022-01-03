@@ -224,54 +224,29 @@ TEST(IntegrationTest, PartChangeGenerated)
     }
 }
 
-//Test now segfaults instead of throws, but it passes (no throws) if the graph is kept around
-TEST(IntegrationTest, DISABLED_ShellPartChangeCylinder)
+TEST(IntegrationTest, ShellPartChangeCylinder)
 {
-    //demonstrates failing when reading a mesh with shells and changing parts, see ticket 13216
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    const std::string exodusFileName = "cyl_3block.g";
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 4) { GTEST_SKIP(); }
 
-    const int spatialDim = 3;
-    stk::mesh::MetaData stkMeshMetaData(spatialDim);
-    stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
-    if (stkMeshBulkData.parallel_size() != 4) return;
-    stk::mesh::Part& partToAdd = stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK);
-    stk::mesh::PartVector add_parts;
-    add_parts.push_back(&partToAdd);
+  const std::string exodusFileName = "cyl_3block.g";
 
+  const int spatialDim = 3;
+  stk::mesh::MetaData stkMeshMetaData(spatialDim);
+  stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+  stk::mesh::PartVector add_parts {&stkMeshMetaData.declare_part("urp_part", stk::topology::ELEM_RANK)};
 
-    stk::io::StkMeshIoBroker exodusFileReader(communicator);
-    exodusFileReader.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
-    exodusFileReader.set_bulk_data(stkMeshBulkData);
-    exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
-    exodusFileReader.create_input_mesh();
-    exodusFileReader.populate_bulk_data();
-    stk::mesh::EntityVector entities;
-    stk::mesh::Selector select_owned(stkMeshMetaData.locally_owned_part());
-    {
-        const stk::mesh::BucketVector &buckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, select_owned);
-        for(size_t i = 0; i < buckets.size(); ++i)
-        {
-            for (unsigned j = 0; j < buckets[i]->size(); j++) {
-                stk::mesh::Entity entity = (*buckets[i])[j];
-                entities.push_back(entity);
-            }
-        }
-    }
-    stkMeshBulkData.modification_begin();
-    for (size_t i = 0; i < entities.size(); ++i) {
-        stkMeshBulkData.change_entity_parts(entities[i], add_parts);
-    }
-#ifndef NDEBUG
-    stkMeshBulkData.modification_end(); //will throw/hang in DEBUG but we'd like it not to
-#else
-    if (stkMeshBulkData.parallel_rank() == 1 || stkMeshBulkData.parallel_rank() == 3) {
-        EXPECT_NO_THROW(stkMeshBulkData.modification_end());
-    }
-    else {
-        EXPECT_THROW(stkMeshBulkData.modification_end(), std::logic_error); //we'd like this not to throw in release either
-    }
-#endif
+  stk::io::StkMeshIoBroker exodusFileReader(communicator);
+  exodusFileReader.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RIB"));
+  exodusFileReader.set_bulk_data(stkMeshBulkData);
+  exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+  exodusFileReader.create_input_mesh();
+  exodusFileReader.populate_bulk_data();
+  stk::mesh::EntityVector entities;
+  stk::mesh::get_entities(stkMeshBulkData, stk::topology::ELEM_RANK, stkMeshMetaData.locally_owned_part(), entities);
+  stkMeshBulkData.modification_begin();
+  stkMeshBulkData.change_entity_parts(entities, add_parts);
+  EXPECT_NO_THROW(stkMeshBulkData.modification_end());
 }
 
 // now using graph to create faces during mesh read, split coincident test cases fail

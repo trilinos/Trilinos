@@ -92,6 +92,8 @@
 #include "stk_util/util/ReportHandler.hpp"           // for ThrowRequireMsg, etc
 #include "stk_util/environment/EnvData.hpp"
 #include "stk_util/util/string_case_compare.hpp"
+#include "stk_util/util/string_utils.hpp"
+
 namespace stk { namespace mesh { class Bucket; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -502,17 +504,23 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     if (field_type == "scalar" || num_components == 1) {
       if (!use_cartesian_for_scalar) {
-        stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double> >(entity_rank, name);
+        stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entity_rank, name);
         stk::mesh::put_field_on_mesh(field, part,
                                      (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
         field_ptr = &field;
       } else {
         stk::mesh::Field<double, stk::mesh::Cartesian> & field =
-          meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(entity_rank, name);
+          meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(entity_rank, name);
         stk::mesh::put_field_on_mesh(field, part, 1,
                                      (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian>>::data_type*) nullptr);
         field_ptr = &field;
       }
+    }
+    else if (stk::string_starts_with(sierra::make_lower(field_type), "real[")) {
+      stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entity_rank, name);
+      stk::mesh::put_field_on_mesh(field, part, num_components,
+                                   (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+      field_ptr = &field;
     }
     else if ((field_type == "vector_2d") || (field_type == "vector_3d")) {
       field_ptr = add_stk_field<stk::mesh::Cartesian>(meta, name, entity_rank, part, num_components);

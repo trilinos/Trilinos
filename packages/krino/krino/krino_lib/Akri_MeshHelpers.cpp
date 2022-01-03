@@ -58,7 +58,7 @@ void resize_container(CONTAINER & container, size_t size)
 void fill_procs_owning_or_sharing_or_ghosting_node(const stk::mesh::BulkData& bulkData, stk::mesh::Entity node, std::vector<int> & procsOwningSharingOrGhostingNode)
 {
     ThrowAssert(bulkData.parallel_owner_rank(node)==bulkData.parallel_rank());
-    bulkData.comm_procs(bulkData.entity_key(node), procsOwningSharingOrGhostingNode);
+    bulkData.comm_procs(node, procsOwningSharingOrGhostingNode);
     procsOwningSharingOrGhostingNode.push_back(bulkData.parallel_rank());
 }
 
