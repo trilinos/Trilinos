@@ -60,15 +60,20 @@ public:
     virtual void checkTimeStep();
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     /// Return a copy of the Tempus ParameterList DEPRECATED!
+    TEMPUS_DEPRECATED
     virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()
       override { return Teuchos::rcp_const_cast<Teuchos::ParameterList> (this->getValidParameters()); }
+
+    TEMPUS_DEPRECATED
     virtual void setTempusParameterList(
       Teuchos::RCP<Teuchos::ParameterList> pl) override
     {
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
         "  IntegratorBasic::setTempusParameterList() --  Deprecated!\n");
     }
+#endif
   //@}
 
   /// \name Accessor methods

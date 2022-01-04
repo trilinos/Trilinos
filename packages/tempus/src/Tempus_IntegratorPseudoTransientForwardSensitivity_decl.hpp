@@ -123,11 +123,15 @@ public:
   virtual void setStatus(const Status st) override;
   /// Get the Stepper
   virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override;
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Return a copy of the Tempus ParameterList
+  TEMPUS_DEPRECATED
   virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override
   { return state_integrator_->getTempusParameterList(); }
+  TEMPUS_DEPRECATED
   virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override
   { state_integrator_->setTempusParameterList(pl); }
+#endif
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
   /// Get the SolutionHistory
@@ -190,7 +194,7 @@ protected:
  *              sensitivity model evaluator, and the sensisitivity integrator
  * @param model Physics model
  *
- * @return 
+ * @return
  */
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
@@ -203,7 +207,7 @@ createIntegratorPseudoTransientForwardSensitivity(
  * @brief Default ctor
  *
  * Instantiates a default IntegratorBasic for both the state and the sensitivity
- * integrator. 
+ * integrator.
  *
  * @return IntegratorPseudoTransientForwardSensitivity
  */
