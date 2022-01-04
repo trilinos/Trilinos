@@ -20,10 +20,10 @@ namespace Tempus {
 
 template <class Scalar>
 IntegratorPseudoTransientForwardSensitivity<Scalar>::IntegratorPseudoTransientForwardSensitivity(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
-    const Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar>> &sens_model,
-    const Teuchos::RCP<IntegratorBasic<Scalar>> &fwd_integrator,
-    const Teuchos::RCP<IntegratorBasic<Scalar>> &sens_integrator,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+    const Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > &sens_model,
+    const Teuchos::RCP<IntegratorBasic<Scalar> > &fwd_integrator,
+    const Teuchos::RCP<IntegratorBasic<Scalar> > &sens_integrator,
     const bool reuse_solver,
     const bool force_W_update)
     : model_(model)
