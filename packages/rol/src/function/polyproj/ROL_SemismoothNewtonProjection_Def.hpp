@@ -90,13 +90,7 @@ SemismoothNewtonProjection<Real>::SemismoothNewtonProjection(const Vector<Real> 
   list.sublist("General").set("Inexact Hessian-Times-A-Vector",      false);
   krylov_ = KrylovFactory<Real>(list);
 
-  // Set tolerance
-  Real resl = ROL_INF<Real>(), resu = ROL_INF<Real>();
-  if (bnd_->isLowerActivated()) resl = residual(*res_,*bnd_->getLowerBound());
-  if (bnd_->isUpperActivated()) resu = residual(*res_,*bnd_->getUpperBound());
-  Real res0 = std::max(resl,resu);
-  if (res0 < atol_) res0 = static_cast<Real>(1);
-  ctol_ = std::min(atol_,rtol_*res0);
+  ctol_ = compute_tolerance();
 }
 
 template<typename Real>
@@ -107,7 +101,33 @@ SemismoothNewtonProjection<Real>::SemismoothNewtonProjection(const Vector<Real> 
                                                              const Vector<Real>               &mul,
                                                              const Vector<Real>               &res,
                                                              ParameterList                    &list)
-  : SemismoothNewtonProjection<Real>(xprim,xdual,bnd,con,mul,res) {
+  : PolyhedralProjection<Real>(xprim,xdual,bnd,con,mul,res),
+    DEFAULT_atol_      (std::sqrt(ROL_EPSILON<Real>()*std::sqrt(ROL_EPSILON<Real>()))),
+    DEFAULT_rtol_      (std::sqrt(ROL_EPSILON<Real>())),
+    DEFAULT_stol_      (std::sqrt(ROL_EPSILON<Real>())),
+    DEFAULT_decr_      (1e-4),
+    DEFAULT_factor_    (0.5),
+    DEFAULT_regscale_  (1e-4),
+    DEFAULT_errscale_  (1e-2),
+    DEFAULT_maxit_     (5000),
+    DEFAULT_lstype_    (0),
+    DEFAULT_verbosity_ (0),
+    DEFAULT_useproj_   (false),
+    atol_      (DEFAULT_atol_),
+    rtol_      (DEFAULT_rtol_),
+    stol_      (DEFAULT_stol_),
+    decr_      (DEFAULT_decr_),
+    factor_    (DEFAULT_factor_),
+    regscale_  (DEFAULT_regscale_),
+    errscale_  (DEFAULT_errscale_),
+    maxit_     (DEFAULT_maxit_),
+    lstype_    (DEFAULT_lstype_),
+    verbosity_ (DEFAULT_verbosity_),
+    useproj_   (DEFAULT_useproj_) {
+  dim_   = mul.dimension();
+  xnew_  = xprim.clone();
+  lnew_  = mul.clone();
+  dlam_  = mul.clone();
   ParameterList &ppl = list.sublist("General").sublist("Polyhedral Projection");
   atol_      = ppl.get("Absolute Tolerance",                                              DEFAULT_atol_);
   rtol_      = ppl.get("Relative Tolerance",                                              DEFAULT_rtol_);
@@ -125,6 +145,8 @@ SemismoothNewtonProjection<Real>::SemismoothNewtonProjection(const Vector<Real> 
   klist.sublist("General").sublist("Krylov") = ppl.sublist("Semismooth Newton").sublist("Krylov");
   klist.sublist("General").set("Inexact Hessian-Times-A-Vector", false);
   krylov_ = KrylovFactory<Real>(klist);
+
+  ctol_ = compute_tolerance();
 }
 
 template<typename Real>
@@ -266,6 +288,17 @@ void SemismoothNewtonProjection<Real>::project_ssn(Vector<Real> &x,
   }
   x.set(*xnew_);
   stream.flags(streamFlags);
+}
+
+template<typename Real>
+Real SemismoothNewtonProjection<Real>::compute_tolerance() const {
+  // Set tolerance
+  Real resl = ROL_INF<Real>(), resu = ROL_INF<Real>();
+  if (bnd_->isLowerActivated()) resl = residual(*res_,*bnd_->getLowerBound());
+  if (bnd_->isUpperActivated()) resu = residual(*res_,*bnd_->getUpperBound());
+  Real res0 = std::max(resl,resu);
+  if (res0 < atol_) res0 = static_cast<Real>(1);
+  return std::min(atol_,rtol_*res0);
 }
 
 } // namespace ROL

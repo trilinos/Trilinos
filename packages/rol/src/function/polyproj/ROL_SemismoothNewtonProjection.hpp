@@ -158,6 +158,8 @@ private:
                    Vector<Real> &dlam,
                    std::ostream &stream = std::cout) const;
 
+   Real compute_tolerance() const;
+
 }; // class SemismoothNewtonProjection
 
 } // namespace ROL
