@@ -68,7 +68,6 @@ TEUCHOS_UNIT_TEST(periodic_bcs, 32_bit_int_limit)
 
     vector<string> blocknames;
     mesh->getElementBlockNames(blocknames);
-    int spaceDim = mesh->getDimension();
 
     // ==========================================================
     // Define the connectivity manager
