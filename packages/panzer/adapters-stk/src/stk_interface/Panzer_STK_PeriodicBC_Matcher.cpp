@@ -188,7 +188,7 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
 
    stk::mesh::EntityRank rank;
    const STK_Interface::VectorFieldType * field = 0;
-   unsigned int offset = 0;
+   stk::mesh::EntityId offset = 0;
    if(type_ == "coord"){
      rank = mesh.getNodeRank();
      field = & mesh.getCoordinatesField();
@@ -270,7 +270,7 @@ getSideIdsAndCoords(const STK_Interface & mesh,
 
    std::vector<std::size_t> & local_side_ids = *sidePair.first;
    std::vector<Teuchos::Tuple<double,3> > & local_side_coords = *sidePair.second;
-   int nodeCount = local_side_ids.size();
+   std::size_t nodeCount = local_side_ids.size();
 
    // build local Tpetra objects
    auto computeInternally = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
@@ -294,7 +294,7 @@ getSideIdsAndCoords(const STK_Interface & mesh,
    // (these are "distributed" or "dist" objects)
    //////////////////////////////////////////////////////////////
 
-   int dist_nodeCount = idMap_->getGlobalNumElements();
+   std::size_t dist_nodeCount = idMap_->getGlobalNumElements();
 
    // build global Tpetra objects
    RCP<Map> distMap_ = rcp(new Map(dist_nodeCount,0,comm,Tpetra::LocallyReplicated));
