@@ -25,6 +25,16 @@ using Teuchos::rcp;
 
 TEUCHOS_UNIT_TEST(periodic_bcs, 32_bit_int_limit)
 {
+  // This test requires 64 bit integers for the GIDs of Tpetra
+  // objects. If the GIDs are not 64 bit then disable the test.
+  if ( not( (std::numeric_limits<panzer::GlobalOrdinal>::max() >= std::numeric_limits<long long int>::max()) || 
+            (std::numeric_limits<panzer::GlobalOrdinal>::max() >= std::numeric_limits<unsigned long long int>::max()) ) )
+    {
+      std::cout << "\nWARNING: Panzer_AdaptersSTK::periodic_32bit_int_limit test is disabled since Tpetra"
+                << " was not configured with a 64 bit GID type.\n\n";
+    return;
+  }
+
   // To run in parallel we need to set an ioss property to split
   // exodus file across mpi ranks.
   setenv("IOSS_PROPERTIES", "DECOMPOSITION_METHOD=rib", 1);
