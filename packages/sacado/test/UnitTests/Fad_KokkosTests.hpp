@@ -1243,6 +1243,46 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, ScalarValue, FadType, Layout, Device )
+{
+  typedef typename Sacado::ScalarType<FadType>::type ScalarType;
+  typedef Kokkos::View<FadType,Layout,Device> ViewType1;
+  typedef Kokkos::View<ScalarType,Layout,Device> ViewType2;
+  typedef typename ViewType1::size_type size_type;
+  typedef typename ViewType1::HostMirror host_view_type1;
+  typedef typename ViewType2::HostMirror host_view_type2;
+
+  const int fad_size = global_fad_size;
+
+  // Create and fill views
+  ViewType1 v1;
+#if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  v1 = ViewType1 ("view1");
+#else
+  v1 = ViewType1 ("view1", fad_size+1);
+#endif
+  host_view_type1 h_v1 = Kokkos::create_mirror_view(v1);
+  h_v1() = generate_fad<FadType>(1, 1, fad_size, 0, 0);
+  Kokkos::deep_copy(v1, h_v1);
+
+  // Launch kernel
+  ViewType2 v2 = ViewType2 ("view2");
+  Kokkos::parallel_for(Kokkos::RangePolicy<Device>(0,1),
+                       KOKKOS_LAMBDA(const size_type i)
+  {
+    v2() = Sacado::scalarValue(v1());
+  });
+
+  // Copy back
+  host_view_type2 h_v2 = Kokkos::create_mirror_view(v2);
+  Kokkos::deep_copy(h_v2, v2);
+
+  // Check
+  success = true;
+  TEUCHOS_TEST_EQUALITY(h_v1().val(), h_v2(), out, success);
+}
+
 #if defined(HAVE_SACADO_KOKKOSCONTAINERS) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
@@ -2326,6 +2366,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Roger, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AtomicAdd, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignDifferentStrides, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ScalarValue, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankDimensionScalar, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankAssignStatic0, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankAssignStatic1, F, L, D ) \
