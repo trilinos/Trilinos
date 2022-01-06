@@ -241,8 +241,8 @@ void testAdapter(
     }
   }
 
-  if (nEdgeWeights > 0){
-    printf("TODO:  STILL NEED TO TEST EDGE WEIGHTS!\n");
+  if (nEdgeWeights > 0 && rank == 0){
+    std::cout << "TODO:  STILL NEED TO TEST EDGE WEIGHTS!" << std::endl;
   }
 
   // Create a matrix or graph input adapter.
