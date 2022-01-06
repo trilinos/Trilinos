@@ -1140,6 +1140,15 @@
     </parameter>
 
     <parameter>
+      <name>semicoarsen: calculate nonsym restriction</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>whether or not to also calculate a restriction operator when semicoarsening (intended for non-symmetric systems).</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>true</visible>
+    </parameter>
+
+    <parameter>
       <name>semicoarsen: number of levels</name>
       <type>int</type>
       <default>3</default>

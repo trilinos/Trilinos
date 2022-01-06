@@ -283,6 +283,7 @@ namespace MueLu {
   "<Parameter name=\"toggle: mode\" type=\"string\" value=\"semicoarsen\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"semicoarsen: piecewise constant\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"semicoarsen: calculate nonsym restriction\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"semicoarsen: number of levels\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"linedetection: orientation\" type=\"string\" value=\"vertical\"/>"
   "<Parameter name=\"linedetection: num layers\" type=\"int\" value=\"-1\"/>"
@@ -775,6 +776,8 @@ namespace MueLu {
          ("semicoarsen: coarsen rate","semicoarsen: coarsen rate")
       
          ("semicoarsen: piecewise constant","semicoarsen: piecewise constant")
+      
+         ("semicoarsen: calculate nonsym restriction","semicoarsen: calculate nonsym restriction")
       
          ("semicoarsen: number of levels","semicoarsen: number of levels")
       
