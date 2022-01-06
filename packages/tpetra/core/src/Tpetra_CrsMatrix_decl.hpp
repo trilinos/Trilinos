@@ -1031,11 +1031,17 @@ namespace Tpetra {
     ///   insert the entries.  All of the column indices must be owned
     ///   by the column Map on the calling process.
     /// \param vals [in] Values to insert into the above columns.
+    /// \param CM [in] How values should be inserted. Valid options
+    ///   are: ADD (default) inserts values that are not yet in the
+    ///   matrix graph, and sums values that are already present. INSERT
+    ///   inserts values that are not yet in the matrix graph, and
+    ///   replaces values that are already present.
     ///
     /// For all k in 0, ..., <tt>cols.size()-1</tt>, insert the value
     /// <tt>values[k]</tt> into entry <tt>(globalRow, cols[k])</tt> of
     /// the matrix.  If that entry already exists, add the new value
-    /// to the old value.
+    /// to the old value, if <tt>CM=ADD</tt>, otherwise replace
+    /// the old value.
     ///
     /// In order to call this method, the matrix must be locally
     /// indexed, and it must have a column Map.
@@ -1060,7 +1066,8 @@ namespace Tpetra {
     void
     insertLocalValues (const LocalOrdinal localRow,
                        const Teuchos::ArrayView<const LocalOrdinal> &cols,
-                       const Teuchos::ArrayView<const Scalar> &vals);
+                       const Teuchos::ArrayView<const Scalar> &vals,
+                       const CombineMode CM=ADD);
 
     /// \brief Epetra compatibility version of insertLocalValues (see
     ///   above) that takes arguments as raw pointers, rather than
@@ -1076,11 +1083,17 @@ namespace Tpetra {
     /// \param vals [in] Values to insert.
     /// \param cols [in] Global indices of the columns into which
     ///   to insert the entries.
+    /// \param CM [in] How values should be inserted. Valid options
+    ///   are: ADD (default) inserts values that are not yet in the
+    ///   matrix graph, and sums values that are already present. INSERT
+    ///   inserts values that are not yet in the matrix graph, and
+    ///   replaces values that are already present.
     void
     insertLocalValues (const LocalOrdinal localRow,
                        const LocalOrdinal numEnt,
                        const Scalar vals[],
-                       const LocalOrdinal cols[]);
+                       const LocalOrdinal cols[],
+                       const CombineMode CM=ADD);
 
   protected:
     /// \brief Implementation detail of replaceGlobalValues.

@@ -1903,7 +1903,8 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   insertLocalValues (const LocalOrdinal lclRow,
                      const Teuchos::ArrayView<const LocalOrdinal>& indices,
-                     const Teuchos::ArrayView<const Scalar>& values)
+                     const Teuchos::ArrayView<const Scalar>& values,
+                     const CombineMode CM)
   {
     using std::endl;
     const char tfecfFuncName[] = "insertLocalValues: ";
@@ -1975,10 +1976,23 @@ namespace Tpetra {
     RowInfo rowInfo = graph.getRowInfo (lclRow);
 
     auto valsView = this->getValuesViewHostNonConst(rowInfo);
-    auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
-                 valsView[offset] += values[k]; };
-    std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
-    graph.insertLocalIndicesImpl(lclRow, indices, cb);
+    if (CM == ADD) {
+      auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
+        valsView[offset] += values[k]; };
+      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+      graph.insertLocalIndicesImpl(lclRow, indices, cb);
+    } else if (CM == INSERT) {
+      auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
+        valsView[offset] = values[k]; };
+      std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
+      graph.insertLocalIndicesImpl(lclRow, indices, cb);
+    } else {
+      std::ostringstream os;
+      os << "You attempted to use insertLocalValues with CombineMode " << combineModeToString(CM)
+         << "but this has not been implemented." << endl;
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::invalid_argument, os.str ());
+    }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1987,11 +2001,12 @@ namespace Tpetra {
   insertLocalValues (const LocalOrdinal localRow,
                      const LocalOrdinal numEnt,
                      const Scalar vals[],
-                     const LocalOrdinal cols[])
+                     const LocalOrdinal cols[],
+                     const CombineMode CM)
   {
     Teuchos::ArrayView<const LocalOrdinal> colsT (cols, numEnt);
     Teuchos::ArrayView<const Scalar> valsT (vals, numEnt);
-    this->insertLocalValues (localRow, colsT, valsT);
+    this->insertLocalValues (localRow, colsT, valsT, CM);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
