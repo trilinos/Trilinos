@@ -26,9 +26,9 @@ IntegratorPseudoTransientAdjointSensitivity(
 {
   model_ = model;
   adjoint_model_ = adjoint_model;
-  state_integrator_ = integratorBasic<Scalar>(inputPL, model_);
+  state_integrator_ = createIntegratorBasic<Scalar>(inputPL, model_);
   sens_model_ = createSensitivityModel(model_, adjoint_model_, inputPL);
-  sens_integrator_ = integratorBasic<Scalar>(inputPL, sens_model_);
+  sens_integrator_ = createIntegratorBasic<Scalar>(inputPL, sens_model_);
 }
 
 template<class Scalar>
@@ -40,9 +40,9 @@ IntegratorPseudoTransientAdjointSensitivity(
 {
   model_ = model;
   adjoint_model_ = adjoint_model;
-  state_integrator_ = integratorBasic<Scalar>(model_, stepperType);
+  state_integrator_ = createIntegratorBasic<Scalar>(model_, stepperType);
   sens_model_ = createSensitivityModel(model_, adjoint_model_, Teuchos::null);
-  sens_integrator_ = integratorBasic<Scalar>(sens_model_, stepperType);
+  sens_integrator_ = createIntegratorBasic<Scalar>(sens_model_, stepperType);
 }
 
 template<class Scalar>
@@ -69,8 +69,8 @@ template<class Scalar>
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 IntegratorPseudoTransientAdjointSensitivity()
 {
-  state_integrator_ = integratorBasic<Scalar>();
-  sens_integrator_ = integratorBasic<Scalar>();
+  state_integrator_ = createIntegratorBasic<Scalar>();
+  sens_integrator_ = createIntegratorBasic<Scalar>();
 }
 
 template<class Scalar>
@@ -336,8 +336,18 @@ void
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & inputPL)
 {
-  state_integrator_->setParameterList(inputPL);
-  sens_integrator_->setParameterList(inputPL);
+  // IntegratorBasic is no longer a Teuchos::ParameterListAcceptor.
+  // Since setting the ParameterList is essentially a complete reset,
+  // we will rebuild from scratch and reuse the ModelEvaluator.
+  auto model = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>> (
+    state_integrator_->getStepper()->getModel());
+  auto tmp_state_integrator = createIntegratorBasic<Scalar>(inputPL, model);
+  state_integrator_->copy(tmp_state_integrator);
+
+  model = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>> (
+    sens_integrator_->getStepper()->getModel());
+  auto tmp_sens_integrator = createIntegratorBasic<Scalar>(inputPL, model);
+  sens_integrator_->copy(tmp_sens_integrator);
 }
 
 template<class Scalar>
@@ -345,8 +355,22 @@ Teuchos::RCP<Teuchos::ParameterList>
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 unsetParameterList()
 {
-  state_integrator_->unsetParameterList();
-  return sens_integrator_->unsetParameterList();
+  // IntegratorBasic is no longer a Teuchos::ParameterListAcceptor.
+  // We will treat unsetting the ParameterList as a reset to default
+  // settings, and reuse the ModelEvaluator.
+  auto tmp_state_integrator = createIntegratorBasic<Scalar>();
+  auto model = state_integrator_->getStepper()->getModel();
+  tmp_state_integrator->setModel(model);
+  state_integrator_->copy(tmp_state_integrator);
+
+  auto tmp_sens_integrator = createIntegratorBasic<Scalar>();
+  model = sens_integrator_->getStepper()->getModel();
+  tmp_sens_integrator->setModel(model);
+  sens_integrator_->copy(tmp_sens_integrator);
+
+  auto pl = Teuchos::rcp_const_cast<Teuchos::ParameterList> (
+    sens_integrator_->getValidParameters());
+  return pl;
 }
 
 template<class Scalar>
@@ -371,7 +395,9 @@ Teuchos::RCP<Teuchos::ParameterList>
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 getNonconstParameterList()
 {
-  return state_integrator_->getNonconstParameterList();
+  auto pl = Teuchos::rcp_const_cast<Teuchos::ParameterList> (
+    state_integrator_->getValidParameters());
+  return pl;
 }
 
 template <class Scalar>
@@ -412,9 +438,8 @@ buildSolutionHistory()
 
   // Create combined solution histories, first for the states with zero
   // adjoint and then for the adjoint with frozen states
-  RCP<ParameterList> shPL =
-    Teuchos::sublist(state_integrator_->getIntegratorParameterList(),
-                     "Solution History", true);
+  auto shPL = Teuchos::rcp_const_cast<Teuchos::ParameterList> (
+    state_integrator_->getSolutionHistory()->getValidParameters());
   solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   RCP<const VectorSpaceBase<Scalar> > x_space =
