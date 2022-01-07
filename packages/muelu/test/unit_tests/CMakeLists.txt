@@ -50,6 +50,7 @@ APPEND_SET(SOURCES
   PgPFactory.cpp
   RAPFactory.cpp
   RAPShiftFactory.cpp
+  RebalanceAcFactory.cpp
   ReitzingerPFactory.cpp
   SaPFactory.cpp
   ScaledNullspaceFactory.cpp
@@ -60,6 +61,7 @@ APPEND_SET(SOURCES
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
   TransPFactory.cpp
+  UncoupledAggregationFactory.cpp
   UnsmooshFactory.cpp
   UserData/CreateXpetraPreconditioner.cpp
   Utilities.cpp
