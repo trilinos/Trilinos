@@ -42,8 +42,7 @@ userid = pwd.getpwuid(os.getuid())[0]
 agentList=[s.strip() for s in charlist.splitlines()]
 agentFound=0
 keyFound=0
-#print (agentList)
-#print (agentList[0])
+myagent = ""
 for agent in agentList:
   # See if this is your agent by checking ownership of root of lock directory
   # Check only the root, because if it's not yours, you can't see down into it.
@@ -64,9 +63,7 @@ for agent in agentList:
       keyList=[s.strip() for s in result.splitlines()]
 
       # Check whether this key's fingerprint matches the desired key's
-      #print ("my key's fingerprint=>"+keyFingerprint+"<")
       for key in keyList:
-        #print ("checking key=>"+key+"<")
         if keyFingerprint in key:
           keyFound=1
           print (envCmd + myagent)
