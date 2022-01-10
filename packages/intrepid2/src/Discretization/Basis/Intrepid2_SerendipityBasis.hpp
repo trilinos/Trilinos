@@ -238,6 +238,7 @@ public:
       approximated function space are admissible. When the order of the operator exceeds the
       degree of the basis, the output array is filled with the appropriate number of zeros.
   */
+  virtual
   void getValues( OutputViewType outputValues, const PointViewType  inputPoints,
                  const EOperator operatorType = OPERATOR_VALUE ) const override
   {
@@ -251,11 +252,9 @@ public:
    */
   virtual HostBasisPtr<OutputValueType, PointValueType>
   getHostBasis() const override {
-    using HostBasisBase = typename BasisBase::HostBasis;
-    using HostBasis  = SerendipityBasis<HostBasisBase>;
-    
+    using HostBasisBase = Basis<typename Kokkos::HostSpace::device_type, OutputValueType, PointValueType>;
+    using HostBasis = SerendipityBasis<HostBasisBase>;
     auto hostBasis = Teuchos::rcp(new HostBasis(fullBasis_->getHostBasis()));
-    
     return hostBasis;
   }
 }; // SerendipityBasis
