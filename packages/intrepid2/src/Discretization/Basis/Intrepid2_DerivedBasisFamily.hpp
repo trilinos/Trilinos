@@ -201,7 +201,8 @@ namespace Intrepid2
   }
 
   /** \brief  Factory method for isotropic HGRAD bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.
-        \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
       \param [in] pointType - type of lattice used for creating the DoF coordinates.
      */
   template<class BasisFamily>
@@ -224,7 +225,8 @@ namespace Intrepid2
   }
 
   /** \brief  Factory method for isotropic HVOL bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.
-        \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
       \param [in] pointType - type of lattice used for creating the DoF coordinates.
      */
   template<class BasisFamily>
@@ -269,13 +271,13 @@ namespace Intrepid2
   }
 
   /** \brief  Factory method for isotropic HGRAD Serendipity bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.  Note also that the family must use hierarchical bases.
-        \param [in] polyOrder - the polynomial order of the basis.
-      \param [in] pointType - type of lattice used for creating the DoF coordinates.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
      */
   template<class BasisFamily>
-  static typename BasisFamily::BasisPtr getSerendipityBasis_HGRAD(int polyOrder, int spaceDim, const EPointType pointType=POINTTYPE_DEFAULT)
+  static typename BasisFamily::BasisPtr getSerendipityBasis_HGRAD(int polyOrder, int spaceDim)
   {
-    auto fullBasis = getHypercubeBasis_HGRAD<BasisFamily>(polyOrder, spaceDim, pointType);
+    auto fullBasis = getHypercubeBasis_HGRAD<BasisFamily>(polyOrder, spaceDim);
 
     using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
     
@@ -284,13 +286,13 @@ namespace Intrepid2
   }
 
   /** \brief  Factory method for isotropic HGRAD Serendipity bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology.  Note also that the family must use hierarchical bases.
-        \param [in] polyOrder - the polynomial order of the basis.
-      \param [in] pointType - type of lattice used for creating the DoF coordinates.
+      \param [in] polyOrder - the polynomial order of the basis.
+      \param [in] spaceDim - the number of dimensions for the hypercube on which the basis is defined.
      */
   template<class BasisFamily>
-  static typename BasisFamily::BasisPtr getSerendipityBasis_HVOL(int polyOrder, int spaceDim, const EPointType pointType=POINTTYPE_DEFAULT)
+  static typename BasisFamily::BasisPtr getSerendipityBasis_HVOL(int polyOrder, int spaceDim)
   {
-    auto fullBasis = getHypercubeBasis_HVOL<BasisFamily>(polyOrder, spaceDim, pointType);
+    auto fullBasis = getHypercubeBasis_HVOL<BasisFamily>(polyOrder, spaceDim);
 
     using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
     
