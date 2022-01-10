@@ -219,5 +219,93 @@ namespace
       }
     }
   }
+
+  //! Compute (n choose k)
+  int choose(const int &n, const int &k)
+  {
+    int result = 1;
+    if (n - k < k)
+    {
+      return choose(n, n-k);
+    }
+    else
+    {
+      for (int i=1; i<=k; i++)
+      {
+        result *= (n - k + i);
+      }
+      for (int i=2; i<=k; i++)
+      {
+        result /= i;
+      }
+    }
+    return result;
+  }
+
+  TEUCHOS_UNIT_TEST( BasisCardinality, Serendipity )
+  {
+    std::vector<Intrepid2::EFunctionSpace> functionSpaces = {FUNCTION_SPACE_HGRAD,FUNCTION_SPACE_HVOL};
+
+    const int maxSpaceDim = 7;
+    const int maxDegreeForCardinalityTests = 7;
+    
+    // Serendipity requires a hierarchical basis
+    using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    
+    for (auto fs : functionSpaces)
+    {
+      if (fs == FUNCTION_SPACE_HGRAD)
+      {
+        out << "Testing HGRAD.\n";
+      }
+      else if (fs == FUNCTION_SPACE_HVOL)
+      {
+        out << "Testing HVOL.\n";
+      }
+      
+      const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+      for (int polyDegree = minDegree; polyDegree <= maxDegreeForCardinalityTests; polyDegree++)
+      {
+        out << "** polyDegree " << polyDegree << " **\n";
+        for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
+        {
+          out << "** spaceDim " << spaceDim << " **\n";
+          int expectedCardinality = 0; // we'll sum into this
+          int i_max = std::min(spaceDim,polyDegree/2);
+          
+          if (polyDegree == 0)
+          {
+            expectedCardinality = 1; // serendipity of constant basis is a constant basis
+          }
+          else
+          {
+            for (int i = 0; i <= i_max; i++)
+            {
+              int d_choose_i = choose(spaceDim, i);
+              int p_minus_i_choose_i = choose(polyDegree - i, i);
+              int two_to_the_d_minus_i = 1 << (spaceDim-i);
+              expectedCardinality += two_to_the_d_minus_i * d_choose_i * p_minus_i_choose_i;
+            }
+          }
+          int expectedExtrusionCount = spaceDim - 1;
+          if (fs == FUNCTION_SPACE_HGRAD)
+          {
+            auto fullBasis        = getHypercubeBasis_HGRAD<BasisFamily>(polyDegree, spaceDim);
+            auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(fullBasis));
+            
+            TEST_EQUALITY(expectedCardinality, serendipityBasis->getCardinality());
+          }
+          else if (fs == FUNCTION_SPACE_HVOL)
+          {
+            auto fullBasis        = getHypercubeBasis_HVOL<BasisFamily>(polyDegree, spaceDim);
+            auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(fullBasis));
+            
+            TEST_EQUALITY(expectedCardinality, serendipityBasis->getCardinality());
+          }
+        }
+      }
+    }
+  }
   
 } // namespace
