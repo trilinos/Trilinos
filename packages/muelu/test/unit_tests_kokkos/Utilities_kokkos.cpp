@@ -89,35 +89,22 @@ namespace MueLuTests
     out << "version: " << MueLu::Version() << std::endl;
 
     // Build the problem
-    RCP<Matrix> A = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(2001);
+    RCP<Matrix> A = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(100);
 
     // CM Test
     {
       auto ordering = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CuthillMcKee(*A);
-      ordering->describe(out, Teuchos::VERB_EXTREME);
+
       TEST_EQUALITY(ordering->getLocalLength(), A->getNodeNumRows());
       TEST_EQUALITY(ordering->getGlobalLength(), A->getGlobalNumRows());
-
-      auto orderingView = ordering->getHostLocalView(Xpetra::Access::ReadOnly);
-      for (LocalOrdinal index = 0; index < static_cast<LocalOrdinal>(ordering->getLocalLength()); index++)
-      {
-        TEST_EQUALITY(orderingView(index, 0), index);
-      }
     }
 
     // RCM Test
     {
       auto ordering = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReverseCuthillMcKee(*A);
-      ordering->describe(out, Teuchos::VERB_EXTREME);
+
       TEST_EQUALITY(ordering->getLocalLength(), A->getNodeNumRows());
       TEST_EQUALITY(ordering->getGlobalLength(), A->getGlobalNumRows());
-
-      auto orderingView = ordering->getHostLocalView(Xpetra::Access::ReadOnly);
-      const LocalOrdinal initialVal = ordering->getLocalLength() - 1;
-      for (LocalOrdinal index = initialVal; index >= 0; index--)
-      {
-        TEST_EQUALITY(orderingView(index, 0), initialVal - index);
-      }
     }
   }
 
