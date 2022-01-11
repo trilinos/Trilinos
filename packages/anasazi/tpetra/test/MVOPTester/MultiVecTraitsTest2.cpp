@@ -570,7 +570,7 @@ namespace {
       out << "]" << endl;
 
       for (size_t j = 0; j < static_cast<size_t> (ind.size ()); ++j) {
-        TEST_EQUALITY( B_view_norms[j], normsB1[ind[j]] );
+        TEST_FLOATING_EQUALITY( B_view_norms[j], normsB1[ind[j]], STS::eps() );
       }
 
       out << "Check that modifying B_view modifies the corresponding columns "
