@@ -478,7 +478,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
          
              /* flip sign of origSorted and reverse ordering so that the negative version is sorted */
          
-             // bad for GPU performance. Switch to bit shifting if brave.
+             //TODO: the following is bad for GPU performance. Switch to bit shifting if brave.
              if ((nnz%2) == 1) origSorted(rowIdx, (nnz/2)  ) =  -origSorted(rowIdx, (nnz/2)  );
              for (LO i=0; i < static_cast<LO>(nnz/2); i++) {
                temp=origSorted(rowIdx, i);
