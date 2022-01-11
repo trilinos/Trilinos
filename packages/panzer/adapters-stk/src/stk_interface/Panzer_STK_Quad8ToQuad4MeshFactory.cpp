@@ -58,7 +58,8 @@ namespace panzer_stk {
 Quad8ToQuad4MeshFactory::Quad8ToQuad4MeshFactory(const std::string& quad8MeshFileName,
                                                  stk::ParallelMachine mpi_comm,
                                                  const bool print_debug)
-  : print_debug_(print_debug)
+  : createEdgeBlocks_(false),
+    print_debug_(print_debug)
 {
   panzer_stk::STK_ExodusReaderFactory factory;
   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
@@ -72,6 +73,7 @@ Quad8ToQuad4MeshFactory::Quad8ToQuad4MeshFactory(const std::string& quad8MeshFil
 Quad8ToQuad4MeshFactory::Quad8ToQuad4MeshFactory(const Teuchos::RCP<panzer_stk::STK_Interface>& quad8Mesh,
                                                  const bool print_debug)
   : quad8Mesh_(quad8Mesh),
+    createEdgeBlocks_(false),
     print_debug_(print_debug)
 {
   edgeBlockName_ = "line_2_"+panzer_stk::STK_Interface::edgeBlockString;
