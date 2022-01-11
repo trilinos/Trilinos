@@ -46,10 +46,10 @@ IntegratorPseudoTransientAdjointSensitivity(
   model_ = model;
   adjoint_residual_model_ = adjoint_residual_model;
   adjoint_solve_model_ = adjoint_solve_model;
-  state_integrator_ = createIntegratorBasic<Scalar>(inputPL, model_);
+  state_integrator_ = createIntegratorBasic<Scalar>(model_, stepperType);
   sens_model_ = createSensitivityModel(model_, adjoint_residual_model_,
                                        adjoint_solve_model_, Teuchos::null);
-  sens_integrator_ = createIntegratorBasic<Scalar>(inputPL, sens_model_);
+  sens_integrator_ = createIntegratorBasic<Scalar>(sens_model_, stepperType);
   stepMode_ = SensitivityStepMode::Forward;
 }
 
