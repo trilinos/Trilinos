@@ -266,11 +266,11 @@ size_t Cell::processor_boundary_node_count() const
 }
 
 template void Cell::populate_node_communication_map(const std::vector<int> &node_map,
-                                                    std::vector<int> &      nodes,
-                                                    std::vector<int> &      procs) const;
+                                                    std::vector<int>       &nodes,
+                                                    std::vector<int>       &procs) const;
 template void Cell::populate_node_communication_map(const std::vector<int64_t> &node_map,
-                                                    std::vector<int64_t> &      nodes,
-                                                    std::vector<int64_t> &      procs) const;
+                                                    std::vector<int64_t>       &nodes,
+                                                    std::vector<int64_t>       &procs) const;
 
 template <typename INT>
 void Cell::populate_node_communication_map(const std::vector<INT> &node_map,
@@ -348,13 +348,13 @@ std::vector<int> Cell::categorize_nodes(enum Mode mode) const
     // all nodes on the left to '0'
     if (processor_boundary(Loc::L)) {
       const auto &min_I_face = m_unitCell->min_I_face;
-      for (auto node : min_I_face) {
+      for (auto &node : min_I_face) {
         nodes[node] -= 1;
       }
     }
     if (processor_boundary(Loc::B)) {
       const auto &min_J_face = m_unitCell->min_J_face;
-      for (auto node : min_J_face) {
+      for (auto &node : min_J_face) {
         nodes[node] -= 2;
       }
     }

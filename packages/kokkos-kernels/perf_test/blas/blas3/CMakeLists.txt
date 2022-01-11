@@ -6,3 +6,9 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
     SOURCES KokkosBlas3_perf_test.cpp
     TESTONLYLIBS kokkoskernelsperf_gtest
 )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+    KokkosBlas3_gemm_perf_test
+    SOURCES KokkosBlas3_gemm_standalone_perf_test.cpp
+)
+

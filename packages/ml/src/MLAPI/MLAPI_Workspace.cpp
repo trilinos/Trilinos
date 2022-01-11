@@ -16,6 +16,10 @@
 #ifdef _MSC_VER
 #include "winprocess.h"
 #endif
+#include <unistd.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
 
 namespace MLAPI {
 

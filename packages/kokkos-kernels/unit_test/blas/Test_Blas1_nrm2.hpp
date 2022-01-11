@@ -11,27 +11,17 @@ namespace Test {
     typedef typename ViewTypeA::value_type ScalarA;
     typedef Kokkos::Details::ArithTraits<ScalarA> AT;
 
-    typedef Kokkos::View<ScalarA*[2],
-       typename std::conditional<
-                std::is_same<typename ViewTypeA::array_layout,Kokkos::LayoutStride>::value,
-                Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeA;
+    ViewTypeA a("A", N);
 
-
-    BaseTypeA b_a("A",N);
-
-    ViewTypeA a = Kokkos::subview(b_a,Kokkos::ALL(),0);
-
-    typename BaseTypeA::HostMirror h_b_a = Kokkos::create_mirror_view(b_a);
-
-    typename ViewTypeA::HostMirror h_a = Kokkos::subview(h_b_a,Kokkos::ALL(),0);
+    typename ViewTypeA::HostMirror h_a = Kokkos::create_mirror_view(a);
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
     ScalarA randStart, randEnd;
     Test::getRandomBounds(1.0, randStart, randEnd);
-    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
+    Kokkos::fill_random(a, rand_pool, randStart, randEnd);
 
-    Kokkos::deep_copy(h_b_a,b_a);
+    Kokkos::deep_copy(h_a, a);
 
     typename ViewTypeA::const_type c_a = a;
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;

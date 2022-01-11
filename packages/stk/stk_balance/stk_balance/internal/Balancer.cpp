@@ -58,7 +58,8 @@ void verify_mesh_ids_are_not_too_large(const stk::mesh::BulkData& bulk)
 
 bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, unsigned numSubdomainsToCreate, const std::vector<stk::mesh::Selector>& selectors)
 {
-    internal::logMessage(stkMeshBulkData.parallel(), "Computing new decomposition");
+    internal::logMessage(stkMeshBulkData.parallel(), "Computing new decomposition using '" +
+                         balanceSettings.getDecompMethod() + "' method");
 
     if (sizeof(BalanceGlobalNumber) < sizeof(stk::mesh::EntityId)) {
       verify_mesh_ids_are_not_too_large(stkMeshBulkData);

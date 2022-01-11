@@ -4,5 +4,7 @@
   <Parameter name="coarse: max size"            type="int"      value="100"/>
   <Parameter name="repartition: enable"         type="int"      value="1"/>
   <Parameter name="aggregation: aux: enable"    type="bool"     value="true"/>
+  <!-- Set threshold to something weird, since aux: threshold should be used. -->
+  <Parameter name="aggregation: threshold"      type="double"   value="-1e15"/>
   <Parameter name="aggregation: aux: threshold" type="double"   value="1e-2"/>
 </ParameterList>

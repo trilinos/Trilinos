@@ -105,6 +105,13 @@ IF(KDD_INT_LONG OR KDD_INT_LONG_LONG OR KDD_INT_UNSIGNED)
    ENDIF()
 ENDIF()
 
+# Special logic to disable SEACAS subpackages depending on Fortran enabled or not
+
+if (SEACAS_SOURCE_DIR)
+  include("${SEACAS_SOURCE_DIR}/cmake/SeacasDisableSubpackagesDependingOnFortran.cmake")
+  seacas_disable_subpackages_depending_on_fortran()
+endif()
+
 # Enable Build Status package and enable reporting the reporting test
 
 set(bulidStats "${${PROJECT_NAME}_ENABLE_BUILD_STATS}")

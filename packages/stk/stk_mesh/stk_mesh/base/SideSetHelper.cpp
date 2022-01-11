@@ -275,7 +275,7 @@ bool SideSetHelper::element_side_can_be_distinguished_using_elem_elem_graph(cons
     const Selector& selector = *sideset.selector();
     bool selectorValue = selector(mesh.bucket(element)) && activeSelector(mesh.bucket(element));
 
-    const GraphEdgesForElement& graphEdges = eeGraph.get_edges_for_element(elemLocalId);
+    GraphEdgesForElement graphEdges = eeGraph.get_edges_for_element(elemLocalId);
     for(size_t i = 0; i < graphEdges.size(); ++i)
     {
       const GraphEdge& graphEdge =  eeGraph.get_graph().get_edge_for_element(elemLocalId, i);

@@ -18,9 +18,9 @@
 #include <SL_tokenize.h>
 #include <copyright.h>
 #include <fmt/format.h>
+#include <open_file_limit.h>
 
 namespace {
-  int  get_free_descriptor_count();
   bool str_equal(const std::string &s1, const std::string &s2)
   {
     return (s1.size() == s2.size()) &&
@@ -233,10 +233,11 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   processorCount_   = options_.get_option_value("processors", processorCount_);
   partialReadCount_ = options_.get_option_value("Partial_read_count", partialReadCount_);
-  maxFiles_         = options_.get_option_value("max-files", get_free_descriptor_count());
-  debugLevel_       = options_.get_option_value("debug", debugLevel_);
-  inputFormat_      = options_.get_option_value("in_type", inputFormat_);
-  decompMethod_     = options_.get_option_value("method", decompMethod_);
+  maxFiles_ =
+      options_.get_option_value("max-files", open_file_limit() - 1); // -1 for output exodus file.
+  debugLevel_   = options_.get_option_value("debug", debugLevel_);
+  inputFormat_  = options_.get_option_value("in_type", inputFormat_);
+  decompMethod_ = options_.get_option_value("method", decompMethod_);
 
   {
     if (decompMethod_ == "file") {
@@ -542,38 +543,4 @@ namespace {
     }
   }
 #endif
-#include <climits>
-#include <unistd.h>
-
-  int get_free_descriptor_count()
-  {
-// Returns maximum number of files that one process can have open
-// at one time. (POSIX)
-#ifndef _MSC_VER
-    int fdmax = sysconf(_SC_OPEN_MAX);
-    if (fdmax == -1) {
-      /* POSIX indication that there is no limit on open files... */
-      fdmax = INT_MAX;
-    }
-#else
-    int fdmax = _getmaxstdio();
-#endif
-    // File descriptors are assigned in order (0,1,2,3,...) on a per-process
-    // basis.
-
-    // Assume that we have stdin, stdout, stderr, and output exodus
-    // file (4 total).
-
-    return fdmax - 4;
-
-    // Could iterate from 0..fdmax and check for the first
-    // EBADF (bad file descriptor) error return from fcntl, but that takes
-    // too long and may cause other problems.  There is a isastream(filedes)
-    // call on Solaris that can be used for system-dependent code.
-    //
-    // Another possibility is to do an open and see which descriptor is
-    // returned -- take that as 1 more than the current count of open files.
-    //
-  }
-
 } // namespace

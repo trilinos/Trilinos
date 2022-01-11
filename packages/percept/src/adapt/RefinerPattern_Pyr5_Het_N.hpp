@@ -231,7 +231,7 @@ namespace percept {
 
       std::vector<stk::mesh::Entity> new_nodes;
       bool useAltNode = false;
-      if (new_sub_entity_nodes.size() > m_primaryEntityRank && new_sub_entity_nodes[m_primaryEntityRank].size() && !new_sub_entity_nodes[m_primaryEntityRank][0].size())
+      if (new_sub_entity_nodes.size() > static_cast<unsigned>(m_primaryEntityRank) && new_sub_entity_nodes[m_primaryEntityRank].size() && !new_sub_entity_nodes[m_primaryEntityRank][0].size())
         {
           //throw std::runtime_error("no centroid node available");
            // std::cout << " bad element: " << std::endl;
@@ -527,7 +527,7 @@ namespace percept {
 
       std::vector<stk::mesh::Entity> new_nodes;
       bool useAltNode = false;
-      if (new_sub_entity_nodes.size() > m_primaryEntityRank && new_sub_entity_nodes[m_primaryEntityRank].size() && !new_sub_entity_nodes[m_primaryEntityRank][0].size())
+      if (new_sub_entity_nodes.size() > static_cast<unsigned>(m_primaryEntityRank) && new_sub_entity_nodes[m_primaryEntityRank].size() && !new_sub_entity_nodes[m_primaryEntityRank][0].size())
         {
           //throw std::runtime_error("no centroid node availabled");
            // std::cout << " bad element: " << std::endl;

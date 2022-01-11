@@ -40,12 +40,18 @@ class TrilinosPRConfigurationInstallation(TrilinosPRConfigurationBase):
         print("")
 
         # Use GenConfig to write the configure script for cmake
-        gc = GenConfig(["-y", "--force",
-                        "--cmake-fragment",
-                        os.path.join(self.arg_workspace_dir,
-                                     self.config_script),
-                        self.arg_pr_genconfig_job_name],
-                       gen_config_ini_file=(Path(self.arg_pr_gen_config_file)))
+        genconfig_arglist = ["-y",
+                             "--force",
+                             "--cmake-fragment",
+                             os.path.join(self.arg_workspace_dir, self.config_script),
+                             self.arg_pr_genconfig_job_name
+                             ]
+        genconfig_inifile = Path(self.arg_pr_gen_config_file)
+
+        gc = GenConfig(genconfig_arglist, gen_config_ini_file=(genconfig_inifile) )
+        # TODO: The tuple around `genconfig_inifile` should not be needed b/c ("A") == "A"
+        #       since a tuple of size 1 is generally just the object. To actually get a single
+        #       entry tuple, you'd need to do this ``tuple("A")`` which would result in ``('A',)``
 
         if not self.args.dry_run:
             gc.write_cmake_fragment()
@@ -74,6 +80,7 @@ class TrilinosPRConfigurationInstallation(TrilinosPRConfigurationBase):
         print("--- ")
 
         if not self.args.dry_run:
+            raise NotImplementedError("This is just stub code -- do not execute")
             try:
                 subprocess.check_call(cmd, env=os.environ)
                 # Note: check_call will throw an exception if there's a problem.

@@ -101,10 +101,10 @@ void *array_alloc(const char *file, int lineno, int numdim, ...)
     size_t off;   /* offset from beginning of array     */
   } dim[3];       /* Info about each dimension          */
   size_t  total;  /* Total size of the array            */
-  void *  dfield; /* ptr to avoid lint complaints               */
-  char *  field;  /* The multi-dimensional array                */
-  char ** ptr;    /* Pointer offset                     */
-  char *  data;   /* Data offset                                */
+  void   *dfield; /* ptr to avoid lint complaints               */
+  char   *field;  /* The multi-dimensional array                */
+  char  **ptr;    /* Pointer offset                     */
+  char   *data;   /* Data offset                                */
   va_list va;     /* Current pointer in the argument list       */
 
   va_start(va, numdim);

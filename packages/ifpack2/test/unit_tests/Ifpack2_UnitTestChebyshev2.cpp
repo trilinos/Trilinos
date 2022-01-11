@@ -379,7 +379,7 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   RCP<const map_type> domainMap = rowMap;
 
   // Create the matrix, with static profile.
-  RCP<crs_matrix_type> A (new crs_matrix_type (rowMap, 3, Tpetra::StaticProfile));
+  RCP<crs_matrix_type> A (new crs_matrix_type (rowMap, 3));
 
   // Fill the matrix.
   Array<GO> cols (3);

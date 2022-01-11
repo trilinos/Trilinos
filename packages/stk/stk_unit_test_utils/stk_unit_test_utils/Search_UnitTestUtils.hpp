@@ -59,9 +59,8 @@ typedef std::vector< StkBoxWithId > StkBoxVector;
 
 typedef stk::search::Box<float> FloatBox;
 typedef std::vector<std::pair<Ident,Ident> > SearchResults;
-typedef std::pair<FloatBox,Ident> BoxWithId;
-typedef std::vector< BoxWithId > FloatBoxVector;
-
+typedef std::pair<FloatBox, Ident> FloatBoxWithId;
+typedef std::vector<FloatBoxWithId> FloatBoxVector;
 
 template<class VolumeType>
 VolumeType generateBoundingVolume(double x, double y, double z, double radius);

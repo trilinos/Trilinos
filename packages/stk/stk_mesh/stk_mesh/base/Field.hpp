@@ -39,6 +39,8 @@
 
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/FieldTraits.hpp>
+#include <stk_mesh/baseImpl/FieldRepository.hpp>
+#include <stk_util/util/string_case_compare.hpp>  // for equal_case
 
 //----------------------------------------------------------------------
 
@@ -186,6 +188,66 @@ public:
     out << "}";
 
     return out;
+  }
+
+  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo) const override
+  {
+    FieldBase * f[MaximumFieldStates] {nullptr};
+
+    static const char* reserved_state_suffix[6] = {
+      "_STKFS_OLD",
+      "_STKFS_N",
+      "_STKFS_NM1",
+      "_STKFS_NM2",
+      "_STKFS_NM3",
+      "_STKFS_NM4"
+    };
+
+    for (unsigned i = 0 ; i < 6 ; ++i) {
+      const int len_name   = name().size();
+      const int len_suffix = std::strlen(reserved_state_suffix[i]);
+      const int offset     = len_name - len_suffix ;
+      if ( 0 <= offset ) {
+        const char * const name_suffix = name().c_str() + offset;
+        ThrowErrorMsgIf(equal_case(name_suffix , reserved_state_suffix[i]),
+                        "For name = \"" << name_suffix << "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
+                        reserved_state_suffix[i] << "\"");
+      }
+    }
+
+    std::string fieldNames[MaximumFieldStates];
+
+    fieldNames[0] = name();
+
+    if (number_of_states() == 2) {
+      fieldNames[1] = name();
+      fieldNames[1].append(reserved_state_suffix[0]);
+    }
+    else {
+      for (unsigned i = 1; i < number_of_states(); ++i) {
+        fieldNames[i] = name();
+        fieldNames[i].append(reserved_state_suffix[i]);
+      }
+    }
+
+    for (unsigned i = 0; i < number_of_states(); ++i) {
+      f[i] = new Field(&fieldRepo.mesh_meta_data(),
+                       entity_rank(),
+                       fieldRepo.get_fields().size(),
+                       fieldNames[i],
+                       data_traits(),
+                       field_array_rank(),
+                       dimension_tags(),
+                       number_of_states(),
+                       static_cast<FieldState>(i));
+      fieldRepo.add_field(f[i]);
+    }
+
+    for (unsigned i = 0 ; i < number_of_states() ; ++i) {
+      f[i]->set_field_states(f);
+    }
+
+    return f[0];
   }
 
 private:

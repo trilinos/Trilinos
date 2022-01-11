@@ -67,39 +67,16 @@ bool is_same_graph(crsGraph_t output_mat1, crsGraph_t output_mat2){
   size_t nentries2 = output_mat2.entries.extent(0) ;
   //size_t nvals2 = output_mat2.values.extent(0);
 
-
-  lno_nnz_view_t h_ent1 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries1);
-  lno_nnz_view_t h_vals1 (Kokkos::ViewAllocateWithoutInitializing("v1"), nentries1);
-
-
-  KokkosKernels::Impl::kk_sort_graph<typename crsGraph_t::row_map_type,
-    typename crsGraph_t::entries_type,
-    lno_nnz_view_t,
-    lno_nnz_view_t,
-    lno_nnz_view_t,
-    typename device::execution_space
-    >(
-    output_mat1.row_map, output_mat1.entries,h_vals1,
-    h_ent1, h_vals1
-  );
-
-  lno_nnz_view_t h_ent2 (Kokkos::ViewAllocateWithoutInitializing("e1"), nentries2);
-  lno_nnz_view_t h_vals2 (Kokkos::ViewAllocateWithoutInitializing("v1"), nentries2);
+  KokkosKernels::sort_crs_graph<typename device::execution_space,
+    typename crsGraph_t::row_map_type, typename crsGraph_t::entries_type>
+      (output_mat1.graph.row_map, output_mat1.entries);
 
   if (nrows1 != nrows2) return false;
   if (nentries1 != nentries2) return false;
 
-  KokkosKernels::Impl::kk_sort_graph
-      <typename crsGraph_t::row_map_type,
-      typename crsGraph_t::entries_type,
-      lno_nnz_view_t,
-      lno_nnz_view_t,
-      lno_nnz_view_t,
-      typename device::execution_space
-      >(
-      output_mat2.row_map, output_mat2.entries, h_vals2,
-      h_ent2, h_vals2
-    );
+  KokkosKernels::sort_crs_graph<typename device::execution_space,
+    typename crsGraph_t::row_map_type, typename crsGraph_t::entries_type>
+      (output_mat2.graph.row_map, output_mat2.entries);
 
   bool is_identical = true;
   is_identical = KokkosKernels::Impl::kk_is_identical_view
@@ -109,7 +86,7 @@ bool is_same_graph(crsGraph_t output_mat1, crsGraph_t output_mat2){
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
-      typename device::execution_space>(h_ent1, h_ent2, 0 );
+      typename device::execution_space>(output_mat1.entries, output_mat2.entries, 0 );
   if (!is_identical) return false;
 
   if (!is_identical) {
@@ -301,7 +278,7 @@ void run_experiment(
 
 
 
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
 
     row_mapC = Kokkos::View <size_t *,ExecSpace>
               ("non_const_lnow_row",

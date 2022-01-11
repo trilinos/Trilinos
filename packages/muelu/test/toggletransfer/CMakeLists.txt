@@ -109,6 +109,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     COMM serial mpi
     )
 
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    TogglePFactory_driver
+    NAME "Driver_TogglePFactory_semi_sa_restrict_Tpetra"
+    ARGS "--matrixType=Laplace3D --nx=40 --ny=40 --nz=60 --mz=1 --xmlFile=parameters_semi_tentWithR.xml --linAlgebra=Tpetra"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
   IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
     MUELU_ADD_SERIAL_AND_MPI_TEST(
       TogglePFactory_driver
@@ -121,5 +129,5 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(ToggleDriver_cp
-  SOURCE_FILES parameters_sa_tent.xml parameters_semi_tent.xml parameters_semi_tent_line.xml parameters_tent_tent.xml parameters_semi_sa_easy.xml parameters_semi_tent_kokkos.xml
+  SOURCE_FILES parameters_sa_tent.xml parameters_semi_tent.xml parameters_semi_tent_line.xml parameters_tent_tent.xml parameters_semi_sa_easy.xml parameters_semi_tentWithR.xml parameters_semi_tent_kokkos.xml
   )

@@ -1653,7 +1653,7 @@ void KokkosSPGEMM
 	if (KOKKOSKERNELS_VERBOSE){
 		std::cout << "\tPool Size (MB):" << (num_chunks * chunksize * sizeof(nnz_lno_t)) / 1024. / 1024. << " num_chunks:" << num_chunks << " chunksize:" << chunksize << std::endl;
 	}
-	Kokkos::Impl::Timer timer1;
+	Kokkos::Timer timer1;
 	pool_memory_space m_space(num_chunks, chunksize, pool_init_val,  my_pool_type);
 	MyExecSpace().fence();
 
@@ -1730,7 +1730,7 @@ void KokkosSPGEMM
 	}
 	// we need to find the max nnz in a row.
 	{
-		Kokkos::Impl::Timer timer1_;
+		Kokkos::Timer timer1_;
 		size_type c_max_nnz = 0;
                 if(m > 0)
                 {
@@ -1964,7 +1964,7 @@ void KokkosSPGEMM
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tPool Size (MB):" << (num_chunks * chunksize * sizeof(nnz_lno_t)) / 1024. / 1024. << " num_chunks:" << num_chunks << " chunksize:" << chunksize << std::endl;
   }
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   pool_memory_space m_space(num_chunks, chunksize, pool_init_val,  my_pool_type);
   MyExecSpace().fence();
 
@@ -2216,7 +2216,7 @@ void KokkosSPGEMM
 #endif
   //if we need to find the max nnz in a row.
   {
-    Kokkos::Impl::Timer timer1_;
+    Kokkos::Timer timer1_;
     size_type c_max_nnz = 0;
     if(m > 0)
     {
@@ -2765,7 +2765,7 @@ struct KokkosSPGEMM
         int overall_num_unsuccess = 0;
 
         Kokkos::parallel_reduce( Kokkos::ThreadVectorRange(teamMember, vector_size),
-            [&] (const int threadid, int &overall_num_unsuccess_) {
+            [&] (const int /*threadid*/, int &overall_num_unsuccess_) {
           overall_num_unsuccess_ += num_unsuccess;
         }, overall_num_unsuccess);
 
@@ -2882,7 +2882,7 @@ struct KokkosSPGEMM
 
   }
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /*team_size*/) const {
     return shared_memory_size;
   }
 

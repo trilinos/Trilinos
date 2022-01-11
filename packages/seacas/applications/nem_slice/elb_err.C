@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,9 +39,9 @@ void error_add(int level, const std::string &message, const std::string &filenam
  *****************************************************************************/
 void error_report()
 {
-  int iflag = 0;
 
   if (error_lev >= 1) {
+    int    iflag     = 0;
     size_t error_cnt = error_info.size();
     for (size_t i = 0; i < error_cnt; i++) {
       if (error_info[i].level == 0 || error_info[i].level >= error_lev) {

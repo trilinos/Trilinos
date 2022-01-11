@@ -25,5 +25,5 @@ TRIBITS_ADD_LIBRARY(
   )
 
 if (WIN32)
-  target_link_libraries (teuchosparameterlist ws2_32)
+	target_link_libraries (teuchosparameterlist PUBLIC ws2_32)
 endif ()

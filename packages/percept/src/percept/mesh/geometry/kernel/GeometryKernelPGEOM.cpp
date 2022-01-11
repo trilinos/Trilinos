@@ -78,7 +78,7 @@ namespace percept {
   }
 
   bool get_beam_from_ids(const stk::mesh::BulkData *mesh,
-                         std::vector<int> edge_node_ids, stk::mesh::Entity &beam)
+                         const std::vector<int>& edge_node_ids, stk::mesh::Entity &beam)
   {
     std::vector<stk::mesh::Entity> edgeNodes(edge_node_ids.size());
 
@@ -116,7 +116,7 @@ namespace percept {
   } 
 
   bool get_shell_from_ids(const stk::mesh::BulkData *mesh,
-                          std::vector<int> face_node_ids, stk::mesh::Entity &shell) 
+                          const std::vector<int>& face_node_ids, stk::mesh::Entity &shell) 
   {
     std::vector<stk::mesh::Entity> faceNodes(face_node_ids.size());
 

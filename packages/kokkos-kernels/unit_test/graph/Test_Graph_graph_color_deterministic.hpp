@@ -162,7 +162,7 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
     size_t num_colors;
 
 
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
     int res = run_graphcolor_deter<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
     EXPECT_TRUE( (res == 0));
 
@@ -209,3 +209,5 @@ TEST_F( TestCategory, graph ## _ ## graph_color_deterministic ## _ ## SCALAR ## 
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
 #endif
+
+#undef EXECUTE_TEST

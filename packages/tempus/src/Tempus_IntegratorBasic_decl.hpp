@@ -43,6 +43,9 @@ public:
     std::vector<int>                          outputScreenIndices,
     int                                       outputScreenInterval);
 
+  /// Copy (a shallow copy)
+  virtual void copy(Teuchos::RCP<IntegratorBasic<Scalar> > iB);
+
   /// Destructor
   virtual ~IntegratorBasic() {}
 
@@ -60,15 +63,20 @@ public:
     virtual void checkTimeStep();
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     /// Return a copy of the Tempus ParameterList DEPRECATED!
+    TEMPUS_DEPRECATED
     virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()
       override { return Teuchos::rcp_const_cast<Teuchos::ParameterList> (this->getValidParameters()); }
+
+    TEMPUS_DEPRECATED
     virtual void setTempusParameterList(
       Teuchos::RCP<Teuchos::ParameterList> pl) override
     {
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
         "  IntegratorBasic::setTempusParameterList() --  Deprecated!\n");
     }
+#endif
   //@}
 
   /// \name Accessor methods
@@ -216,14 +224,16 @@ protected:
 /// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
-  Teuchos::RCP<Teuchos::ParameterList>                pList);
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  bool runInitialize=true);
 
 
 /// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  bool runInitialize=true);
 
 
 /// Nonmember constructor
@@ -242,7 +252,8 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic();
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
-  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models,
+  bool runInitialize=true);
 
 
 } // namespace Tempus

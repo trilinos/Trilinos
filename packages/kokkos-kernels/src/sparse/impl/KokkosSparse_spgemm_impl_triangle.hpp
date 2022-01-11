@@ -1291,10 +1291,10 @@ struct KokkosSPGEMM
 
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(const GPUTag&, const team_member_t & teamMember) const {
+  void operator()(const GPUTag&, const team_member_t & /*teamMember*/) const {
   }
 
-  size_t team_shmem_size (int team_size) const {
+  size_t team_shmem_size (int /*team_size*/) const {
     return shared_memory_size;
   }
 
@@ -1430,7 +1430,7 @@ void KokkosSPGEMM
         " chunksize:" << accumulator_chunksize << std::endl;
   }
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   pool_memory_space m_space(num_chunks, accumulator_chunksize, pool_init_val,  my_pool_type);
   MyExecSpace().fence();
   if (KOKKOSKERNELS_VERBOSE){
@@ -1591,7 +1591,7 @@ void
     KokkosSPGEMM_numeric_triangle(
       c_row_view_t rowmapC_,
       c_lno_nnz_view_t entriesC_,
-      c_scalar_nnz_view_t valuesC_){
+      c_scalar_nnz_view_t /*valuesC_*/){
   this->KokkosSPGEMM_numeric_triangle_ai(rowmapC_, entriesC_);
 
 }
@@ -1644,7 +1644,7 @@ void
   struct dummy{
 
     KOKKOS_INLINE_FUNCTION
-    void operator ()(const nnz_lno_t &row, const nnz_lno_t &col_set_ind, const nnz_lno_t & col_set, const nnz_lno_t &threadid) const{
+    void operator ()(const nnz_lno_t &/*row*/, const nnz_lno_t &/*col_set_ind*/, const nnz_lno_t & /*col_set*/, const nnz_lno_t &/*threadid*/) const{
     }
   } dummy;
   this->triangle_count_ai(
@@ -1681,10 +1681,10 @@ void KokkosSPGEMM
   size_type const *p_rowmapB_begins = row_mapB.data();
   size_type const *p_rowmapB_ends = row_mapB.data() + 1;
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   if (apply_compression){
     //compressed b
-    row_lno_temp_work_view_t new_row_mapB(Kokkos::ViewAllocateWithoutInitializing("new row map"), n+1);
+    row_lno_temp_work_view_t new_row_mapB(Kokkos::view_alloc(Kokkos::WithoutInitializing, "new row map"), n+1);
     nnz_lno_temp_work_view_t set_index_entries; //will be output of compress matrix.
     nnz_lno_temp_work_view_t set_entries; //will be output of compress matrix
 
@@ -1795,7 +1795,7 @@ void KokkosSPGEMM
   else if ( spgemm_algorithm == SPGEMM_KK_TRIANGLE_IA ){
 
     min_result_row_for_each_row = nnz_lno_persistent_work_view_t(
-          Kokkos::ViewAllocateWithoutInitializing("Min B Row for Each A Row"), this->a_row_cnt);
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "Min B Row for Each A Row"), this->a_row_cnt);
     maxNumRoughZeros = this->getMaxRoughRowNNZIntersection_p(
         a_row_cnt, entriesA.extent(0),
         p_rowmapA, p_entriesA,
@@ -1858,7 +1858,7 @@ void KokkosSPGEMM
 
   struct dummy{
     KOKKOS_INLINE_FUNCTION
-    void operator ()(const nnz_lno_t &row, const nnz_lno_t &col_set_ind, const nnz_lno_t & col_set, const nnz_lno_t &threadid) const{
+    void operator ()(const nnz_lno_t &/*row*/, const nnz_lno_t &/*col_set_ind*/, const nnz_lno_t & /*col_set*/, const nnz_lno_t &/*threadid*/) const{
     }
 
   } dummy;

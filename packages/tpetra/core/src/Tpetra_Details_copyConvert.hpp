@@ -235,7 +235,7 @@ namespace { // (anonymous)
            const bool canUseKokkosDeepCopy =
              CanUseKokkosDeepCopy<OutputViewType, InputViewType>::value,
            const bool outputExecSpaceCanAccessInputMemSpace =
-             Kokkos::Impl::SpaceAccessibility<
+             Kokkos::SpaceAccessibility<
                typename OutputViewType::memory_space,
                typename InputViewType::memory_space>::accessible>
   struct CopyConvertImpl {

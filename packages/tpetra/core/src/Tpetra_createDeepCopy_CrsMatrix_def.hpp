@@ -16,9 +16,14 @@ namespace Tpetra {
 
 namespace { // (anonymous)
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class SC, class LO, class GO, class NT>
+// This function is deprecated, but users don't call it directly; it is a 
+// helper from createDeepCopy.  createDeepCopy is also deprecated.
+// We silence TPETRA_DEPRECATED warnings here to prevent noise from
+// compilation of createDeepCopy.
+// TPETRA_DEPRECATED
 typename CrsMatrix<SC, LO, GO, NT>::local_matrix_type
-TPETRA_DEPRECATED
 localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
 {
   using Kokkos::view_alloc;
@@ -53,8 +58,8 @@ localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
 } // namespace // (anonymous)
 
 template<class SC, class LO, class GO, class NT>
-CrsMatrix<SC, LO, GO, NT>
 TPETRA_DEPRECATED
+CrsMatrix<SC, LO, GO, NT>
 createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
 {
   using crs_matrix_type = CrsMatrix<SC, LO, GO, NT>;
@@ -159,6 +164,7 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
     }
   }
 }
+#endif
 
 } // namespace Tpetra
 

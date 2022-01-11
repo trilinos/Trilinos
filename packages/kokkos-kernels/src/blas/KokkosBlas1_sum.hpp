@@ -73,7 +73,7 @@ sum (const XVector& x)
 
   typedef Kokkos::View<
     typename XVector::non_const_value_type,
-    Kokkos::LayoutLeft,
+    typename XVector_Internal::array_layout,
     Kokkos::HostSpace,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RVector_Internal;
 
@@ -122,22 +122,21 @@ sum (const RV& R, const XMV& X,
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 
+  using UnifiedXLayout = typename
+    KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout;
+  using UnifiedRVLayout = typename
+    KokkosKernels::Impl::GetUnifiedLayoutPreferring<RV, UnifiedXLayout>::array_layout;
+
   // Create unmanaged versions of the input Views.  RV and XMV may be
   // rank 1 or rank 2.
   typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      RV::rank == 0,
-      typename RV::non_const_value_type,
-      typename RV::non_const_value_type* >::type,
-    typename KokkosKernels::Impl::GetUnifiedLayout<RV>::array_layout,
+    typename RV::non_const_data_type,
+    UnifiedRVLayout,
     typename RV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV_Internal;
   typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      XMV::rank == 1,
-      typename XMV::const_value_type*,
-      typename XMV::const_value_type** >::type,
-    typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
+    typename XMV::const_data_type,
+    UnifiedXLayout,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV_Internal;
 

@@ -269,6 +269,7 @@ private:
     char equed;
     bool rowequ, colequ;        // flags what type of equilibration
                                 // has been performed
+    magnitude_type anorm, rcond; // condition number estimate
 
     int relax;
     int panel_size;

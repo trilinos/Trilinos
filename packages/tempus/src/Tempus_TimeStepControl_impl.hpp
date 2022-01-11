@@ -15,6 +15,10 @@
 #include "Tempus_TimeStepControlStrategyComposite.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 #include "Tempus_TimeStepControlStrategyIntegralController.hpp"
+#include "Tempus_TimeEventRange.hpp"
+#include "Tempus_TimeEventRangeIndex.hpp"
+#include "Tempus_TimeEventList.hpp"
+#include "Tempus_TimeEventListIndex.hpp"
 
 
 namespace Tempus {
@@ -25,7 +29,7 @@ TimeStepControl<Scalar>::TimeStepControl()
     initTime_           (0.0),
     finalTime_          (1.0e+99),
     minTimeStep_        (0.0),
-    initTimeStep_       (1.0),
+    initTimeStep_       (1.0e+99),
     maxTimeStep_        (1.0e+99),
     initIndex_          (0),
     finalIndex_         (1000000),
@@ -35,15 +39,11 @@ TimeStepControl<Scalar>::TimeStepControl()
     maxConsecFailures_  (5),
     numTimeSteps_       (-1),
     printDtChanges_     (true),
-    outputExactly_      (true),
-    //outputIndices_      (),
-    //outputTimes_        (),
-    outputIndexInterval_(1000000),
-    outputTimeInterval_ (1.0e+99),
-    outputAdjustedDt_(false),
-    dtAfterOutput_(0.0)
+    teAdjustedDt_       (false),
+    dtAfterTimeEvent_   (0.0)
 {
   setTimeStepControlStrategy();
+  setTimeEvents();
   this->initialize();
 }
 
@@ -68,6 +68,7 @@ TimeStepControl<Scalar>::TimeStepControl(
   std::vector<Scalar> outputTimes,
   int                 outputIndexInterval,
   Scalar              outputTimeInterval,
+  Teuchos::RCP<TimeEventComposite<Scalar> > timeEvent,
   Teuchos::RCP<TimeStepControlStrategy<Scalar>> stepControlStrategy)
   : isInitialized_      (false              ),
     initTime_           (initTime           ),
@@ -81,18 +82,41 @@ TimeStepControl<Scalar>::TimeStepControl(
     maxRelError_        (maxRelError        ),
     maxFailures_        (maxFailures        ),
     maxConsecFailures_  (maxConsecFailures  ),
-    numTimeSteps_       (numTimeSteps       ),
     printDtChanges_     (printDtChanges     ),
-    outputExactly_      (outputExactly      ),
-    outputIndices_      (outputIndices      ),
-    outputTimes_        (outputTimes        ),
-    outputIndexInterval_(outputIndexInterval),
-    outputTimeInterval_ (outputTimeInterval ),
-    outputAdjustedDt_   (false              ),
-    dtAfterOutput_      (0.0                ),
-    stepControlStrategy_(stepControlStrategy)
+    teAdjustedDt_       (false              ),
+    dtAfterTimeEvent_   (0.0                )
 {
-  setNumTimeSteps(getNumTimeSteps());
+  using Teuchos::rcp;
+
+  setTimeStepControlStrategy(stepControlStrategy);
+  setNumTimeSteps(numTimeSteps);
+
+  auto tec = rcp(new TimeEventComposite<Scalar>());
+  tec->setName("Time Step Control Events");
+  auto tes = timeEvent->getTimeEvents();
+  for(auto& e : tes) tec->add(e);
+
+  // Add a range of times.
+  auto teRange = rcp(new TimeEventRange<Scalar>(
+    initTime, finalTime, outputTimeInterval, "Output Time Interval", outputExactly));
+  tec->add(teRange);
+
+  // Add a list of times.
+  if (!outputTimes.empty())
+    tec->add(rcp(new TimeEventList<Scalar>(
+      outputTimes, "Output Time List", outputExactly)));
+
+  // Add a range of indices.
+  tec->add(rcp(new TimeEventRangeIndex<Scalar>(
+    initIndex, finalIndex, outputIndexInterval, "Output Index Interval")));
+
+  // Add a list of indices.
+  if (!outputTimes.empty())
+    tec->add(rcp(new TimeEventListIndex<Scalar>(
+      outputIndices, "Output Index List")));
+
+  setTimeEvents(tec);
+
   this->initialize();
 }
 
@@ -148,18 +172,18 @@ void TimeStepControl<Scalar>::initialize() const
     <<getMaxRelError()<<")\n");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
+    (stepControlStrategy_ == Teuchos::null), std::logic_error,
+    "Error - Strategy is unset!\n");
+
+  stepControlStrategy_->initialize();
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
     (getStepType() != "Constant" && getStepType() != "Variable"),
     std::out_of_range,
       "Error - 'Step Type' does not equal one of these:\n"
     << "  'Constant' - Integrator will take constant time step sizes.\n"
     << "  'Variable' - Integrator will allow changes to the time step size.\n"
     << "  stepType = " << getStepType() << "\n");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    (stepControlStrategy_ == Teuchos::null), std::logic_error,
-    "Error - Strategy is unset!\n");
-
-  stepControlStrategy_->initialize();
 
   isInitialized_ = true;   // Only place where this is set to true!
 }
@@ -212,18 +236,17 @@ void TimeStepControl<Scalar>::setNextTimeStep(
     const int iStep = workingState->getIndex();
     Scalar dt   = workingState->getTimeStep();
     Scalar time = workingState->getTime();
-    bool output = false;
 
     RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
 
-    // If last time step was adjusted for output, reinstate previous dt.
+    // If last time step was adjusted for time event, reinstate previous dt.
     if (getStepType() == "Variable") {
-      if (outputAdjustedDt_ == true) {
-        printDtChanges(iStep, dt, dtAfterOutput_, "Reset dt after output.");
-        dt = dtAfterOutput_;
+      if (teAdjustedDt_ == true) {
+        printDtChanges(iStep, dt, dtAfterTimeEvent_, "Reset dt after time event.");
+        dt = dtAfterTimeEvent_;
         time = lastTime + dt;
-        outputAdjustedDt_ = false;
-        dtAfterOutput_ = 0.0;
+        teAdjustedDt_ = false;
+        dtAfterTimeEvent_ = 0.0;
       }
 
       if (dt <= 0.0) {
@@ -247,7 +270,7 @@ void TimeStepControl<Scalar>::setNextTimeStep(
     stepControlStrategy_->setNextTimeStep(*this, solutionHistory,
                                           integratorStatus);
 
-    // Get the dt (probably have changed by stepControlStrategy_)
+    // Get the dt (It was probably changed by stepControlStrategy_.)
     dt = workingState->getTimeStep();
     time = workingState->getTime();
 
@@ -267,90 +290,86 @@ void TimeStepControl<Scalar>::setNextTimeStep(
     }
 
 
-    // Check if we need to output this step index
-    std::vector<int>::const_iterator it =
-      std::find(getOutputIndices().begin(), getOutputIndices().end(), iStep);
-    if (it != getOutputIndices().end()) output = true;
-
-    const int iInterval = getOutputIndexInterval();
-    if ( (iStep - getInitIndex()) % iInterval == 0) output = true;
-
-    // Check if we need to output in the next timestep based on
-    // outputTimes_ or "Output Time Interval".
-    Scalar reltol = 1.0e-6;
-    Scalar endTime = lastTime+dt+getMinTimeStep();
-    // getMinTimeStep() = dt for constant time step
-    // so we can't add it on here
-    if (getStepType() == "Constant") endTime = lastTime+dt;
-    bool checkOutput = false;
-    Scalar oTime = getInitTime();
-    for (size_t i=0; i < outputTimes_.size(); ++i) {
-      oTime = outputTimes_[i];
-      if (lastTime < oTime && oTime <= endTime) {
-        checkOutput = true;
-        break;
-      }
-    }
-    const Scalar tInterval = getOutputTimeInterval();
-    Scalar oTime2 =  ceil((lastTime-getInitTime())/tInterval)*tInterval
-                   + getInitTime();
-    if (lastTime < oTime2 && oTime2 <= endTime) {
-      if (checkOutput == true) {
-        if (oTime2 < oTime) oTime = oTime2;  // Use the first output time.
-      } else {
-        checkOutput = true;
-        oTime = oTime2;
+    // Check if this index is a TimeEvent and whether it is an output event.
+    bool outputDueToIndex = false;
+    std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > constrainingTEs;
+    if (timeEvent_->isIndex(iStep, constrainingTEs)) {
+      for(auto& e : constrainingTEs) {
+        if (e->getName() == "Output Index Interval" ||
+            e->getName() == "Output Index List"        )
+        { outputDueToIndex = true; }
       }
     }
 
-    if (checkOutput == true) {
-      const bool outputExactly = getOutputExactly();
-      if (getStepType() == "Variable" && outputExactly == true) {
-        // Adjust time step to hit output times.
-        if ( time > oTime ) {
-          output = true;
-          printDtChanges(iStep, dt, oTime - lastTime,
-            "Adjusting dt to hit the next output time.");
-          // Next output time is not near next time
-          // (>getMinTimeStep() away from it).
-          // Take time step to hit output time.
-          outputAdjustedDt_ = true;
-          dtAfterOutput_ = dt;
-          dt = oTime - lastTime;
-          time = lastTime + dt;
-        } else if (std::fabs((time-oTime)/(time)) < reltol) {
-          output = true;
-          printDtChanges(iStep, dt, oTime - lastTime,
-            "Adjusting dt for numerical roundoff to hit the next output time.");
-          // Next output time IS VERY near next time (<reltol away from it),
-          // e.g., adjust for numerical roundoff.
-          outputAdjustedDt_ = true;
-          dtAfterOutput_ = dt;
-          dt = oTime - lastTime;
-          time = lastTime + dt;
-        } else  if (std::fabs((time + getMinTimeStep() - oTime)/oTime) < reltol ) {
-          printDtChanges(iStep, dt, (oTime - lastTime)/2.0,
-            "The next output time is within the minimum dt of the next time. "
-            "Adjusting dt to take two steps.");
-          // Next output time IS near next time
-          // (<getMinTimeStep() away from it).
-          // Take two time steps to get to next output time.
-          dt = (oTime - lastTime)/2.0;
-          time = lastTime + dt;
+    // Check if during this time step is there a TimeEvent.
+    Scalar endTime = lastTime+dt;
+    // For "Variable", need to check t+dt+t_min in case we need to split
+    // the time step into two steps (e.g., time step lands within dt_min).
+    if (getStepType() == "Variable") endTime = lastTime+dt+getMinTimeStep();
+
+    bool teThisStep = timeEvent_->eventInRange(lastTime, endTime, constrainingTEs);
+
+    bool outputDueToTime = false;
+    Scalar tone = endTime;
+    bool landOnExactly = false;
+    if (teThisStep) {
+      for (auto& e : constrainingTEs) {
+        if (e->getName() == "Output Time Interval" ||
+            e->getName() == "Output Time List"        )
+        { outputDueToTime = true; }
+
+        if (e->getLandOnExactly() == true) {
+          landOnExactly = true;
+          tone = e->timeOfNextEvent(lastTime);
+          break;
         }
-      } else {
-        // Stepping over output time and want this time step for output,
-        // but do not want to change dt. Either because of 'Constant' time
-        // step or user specification, "Output Exactly On Output Times"=false.
-        output = true;
+      }
+    }
+
+    Scalar reltol = 1.0e-6;
+    if (teThisStep && getStepType() == "Variable") {
+      if (landOnExactly == true) {
+        // Adjust time step to hit TimeEvent.
+        if ( time > tone ) {
+          // Next TimeEvent is not near next time.  It is more than
+          // getMinTimeStep() away from it.
+          printDtChanges(iStep, dt, tone - lastTime,
+            "Adjusting dt to hit the next TimeEvent.");
+          teAdjustedDt_ = true;
+          dtAfterTimeEvent_ = dt;
+          dt = tone - lastTime;
+          time = lastTime + dt;
+        } else if (std::fabs(time-tone) < reltol*std::fabs(time)) {
+          // Next TimeEvent IS VERY near next time.  It is less than
+          // reltol away from it, e.g., adjust for numerical roundoff.
+          printDtChanges(iStep, dt, tone - lastTime,
+            "Adjusting dt for numerical roundoff to hit the next TimeEvent.");
+          teAdjustedDt_ = true;
+          dtAfterTimeEvent_ = dt;
+          dt = tone - lastTime;
+          time = lastTime + dt;
+        } else  if (std::fabs(time + getMinTimeStep() - tone)
+                    < reltol*std::fabs(tone)) {
+          // Next TimeEvent IS near next time.  It is less than
+          // getMinTimeStep() away from it.  Take two time steps
+          // to get to next TimeEvent.
+          printDtChanges(iStep, dt, (tone - lastTime)/2.0,
+            "The next TimeEvent is within the minimum dt of the next time. "
+            "Adjusting dt to take two steps.");
+          dt = (tone - lastTime)/2.0;
+          time = lastTime + dt;
+          // This time step is no longer an output step due the time constraint.
+          outputDueToTime = false;
+        }
       }
     }
 
     // Adjust time step to hit final time or correct for small
     // numerical differences.
     if (getStepType() == "Variable") {
-      if ((lastTime + dt > getFinalTime() ) ||
-          (std::fabs((lastTime+dt-getFinalTime())/(lastTime+dt)) < reltol)) {
+      if ( (lastTime+dt > getFinalTime()) ||
+           (std::fabs((lastTime+dt-getFinalTime()))
+            < reltol*std::fabs(lastTime+dt)) ) {
         printDtChanges(iStep, dt, getFinalTime() - lastTime,
           "Adjusting dt to hit final time.");
         dt = getFinalTime() - lastTime;
@@ -381,7 +400,7 @@ void TimeStepControl<Scalar>::setNextTimeStep(
 
     workingState->setTimeStep(dt);
     workingState->setTime(time);
-    workingState->setOutput(output);
+    workingState->setOutput(outputDueToIndex || outputDueToTime);
   }
   return;
 }
@@ -409,20 +428,90 @@ bool TimeStepControl<Scalar>::timeInRange(const Scalar time) const
 
 /// Test if index is within range: include initIndex and exclude finalIndex.
 template<class Scalar>
-bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
+bool TimeStepControl<Scalar>::indexInRange(const int iStep) const
+{
   bool iir = (getInitIndex() <= iStep && iStep < getFinalIndex());
   return iir;
 }
 
 
 template<class Scalar>
+std::string TimeStepControl<Scalar>::getStepType() const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (stepControlStrategy_ == Teuchos::null), std::logic_error,
+    "Error - getStepType() - Strategy is unset!\n");
+  return stepControlStrategy_->getStepType();
+}
+
+
+template<class Scalar>
+bool TimeStepControl<Scalar>::getOutputExactly() const
+{
+  auto event = timeEvent_->find("Output Time Interval");
+  if (event != Teuchos::null) return event->getLandOnExactly();
+
+  event = timeEvent_->find("Output Time List");
+  if (event != Teuchos::null) return event->getLandOnExactly();
+
+  return true;
+}
+
+
+template<class Scalar>
+std::vector<int> TimeStepControl<Scalar>::getOutputIndices() const
+{
+  std::vector<int> indices;
+  if ( timeEvent_->find("Output Index List") == Teuchos::null)
+    return indices;
+  auto teli = Teuchos::rcp_dynamic_cast<TimeEventListIndex<Scalar> >(
+    timeEvent_->find("Output Index List"));
+  return teli->getIndexList();
+}
+
+
+template<class Scalar>
+std::vector<Scalar> TimeStepControl<Scalar>::getOutputTimes() const
+{
+  std::vector<Scalar> times;
+  if ( timeEvent_->find("Output Time List") == Teuchos::null)
+    return times;
+  auto tel = Teuchos::rcp_dynamic_cast<TimeEventList<Scalar> >(
+    timeEvent_->find("Output Time List"));
+  return tel->getTimeList();
+}
+
+
+template<class Scalar>
+int TimeStepControl<Scalar>::getOutputIndexInterval() const
+{
+  if ( timeEvent_->find("Output Index Interval") == Teuchos::null)
+    return 1000000;
+  auto teri = Teuchos::rcp_dynamic_cast<TimeEventRangeIndex<Scalar> >(
+    timeEvent_->find("Output Index Interval"));
+  return teri->getIndexStride();
+}
+
+
+template<class Scalar>
+Scalar TimeStepControl<Scalar>::getOutputTimeInterval() const
+{
+  if ( timeEvent_->find("Output Time Interval") == Teuchos::null)
+    return 1.0e+99;
+  auto ter = Teuchos::rcp_dynamic_cast<TimeEventRange<Scalar> >(
+    timeEvent_->find("Output Time Interval"));
+  return ter->getTimeStride();
+}
+
+
+template<class Scalar>
 void TimeStepControl<Scalar>::setNumTimeSteps(int numTimeSteps)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION( getStepType() != "Constant", std::out_of_range,
-      "Error - Can only use setNumTimeSteps() when 'Step Type' == 'Constant'.\n");
+  TEUCHOS_TEST_FOR_EXCEPTION( (getStepType() != "Constant"), std::out_of_range,
+    "Error - Can only use setNumTimeSteps() when 'Step Type' == 'Constant'.\n");
 
-  if (numTimeSteps >= 0) {
-    numTimeSteps_ = numTimeSteps;
+  numTimeSteps_ = numTimeSteps;
+  if (numTimeSteps_ >= 0) {
     setFinalIndex(getInitIndex() + numTimeSteps_);
     Scalar initTimeStep;
     if (numTimeSteps_ == 0)
@@ -444,6 +533,95 @@ void TimeStepControl<Scalar>::setNumTimeSteps(int numTimeSteps)
 
     isInitialized_ = false;
   }
+}
+
+
+template<class Scalar>
+void TimeStepControl<Scalar>::setOutputExactly(bool b)
+{
+  auto event = timeEvent_->find("Output Time Interval");
+  if (event != Teuchos::null) {
+    auto ter = Teuchos::rcp_dynamic_cast<TimeEventRange<Scalar> >(event);
+    ter->setLandOnExactly(b);
+  }
+  event = timeEvent_->find("Output Time List");
+  if (event != Teuchos::null) {
+    auto tel = Teuchos::rcp_dynamic_cast<TimeEventList<Scalar> >(event);
+    tel->setLandOnExactly(b);
+  }
+}
+
+
+template<class Scalar>
+void TimeStepControl<Scalar>::setOutputIndices(std::vector<int> outputIndices)
+{
+  timeEvent_->add(Teuchos::rcp(new Tempus::TimeEventListIndex<Scalar>(
+    outputIndices, "Output Index List")));
+  isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void TimeStepControl<Scalar>::setOutputTimes(std::vector<Scalar> outputTimes)
+{
+  timeEvent_->add(Teuchos::rcp(new Tempus::TimeEventList<Scalar>(
+    outputTimes, "Output Time List", getOutputExactly())));
+  isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void TimeStepControl<Scalar>::setOutputIndexInterval(int i)
+{
+  timeEvent_->add(Teuchos::rcp(new TimeEventRangeIndex<Scalar>(
+    getInitIndex(), getFinalIndex(), i, "Output Index Interval")));
+  isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void TimeStepControl<Scalar>::setOutputTimeInterval(Scalar t)
+{
+  timeEvent_->add(Teuchos::rcp(new TimeEventRange<Scalar>(
+    getInitTime(), getFinalTime(), t, "Output Time Interval", getOutputExactly())));
+  isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void TimeStepControl<Scalar>::setTimeEvents(
+  Teuchos::RCP<TimeEventComposite<Scalar> > timeEvent)
+{
+  using Teuchos::rcp;
+
+  if ( timeEvent != Teuchos::null ) {
+    timeEvent_ = timeEvent;
+  } else {
+    auto tec = rcp(new TimeEventComposite<Scalar>());
+    tec->setName("Time Step Control Events");
+    tec->add(rcp(new TimeEventRangeIndex<Scalar>(
+      getInitIndex(), getFinalIndex(), 1000000, "Output Index Interval")));
+    tec->add(rcp(new TimeEventRange<Scalar>(
+      getInitTime(), getFinalTime(), 1.0e+99, "Output Time Interval", true)));
+    timeEvent_ = tec;
+  }
+  isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void TimeStepControl<Scalar>::setTimeStepControlStrategy(
+  Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs)
+{
+  using Teuchos::rcp;
+
+  if ( tscs != Teuchos::null ) {
+    stepControlStrategy_ = tscs;
+  } else {
+    stepControlStrategy_ =
+      rcp(new TimeStepControlStrategyConstant<Scalar>(getInitTimeStep()));
+  }
+  isInitialized_ = false;
 }
 
 
@@ -501,28 +679,13 @@ void TimeStepControl<Scalar>::describe(
            << "  outputTimes        = " << listTimes.str()          << std::endl
            << "  outputIndexInterval= " << getOutputIndexInterval() << std::endl
            << "  outputTimeInterval = " << getOutputTimeInterval()  << std::endl
-           << "  outputAdjustedDt   = " << outputAdjustedDt_        << std::endl
-           << "  dtAfterOutput      = " << dtAfterOutput_           <<std::endl;
+           << "  outputAdjustedDt   = " << teAdjustedDt_            << std::endl
+           << "  dtAfterOutput      = " << dtAfterTimeEvent_        << std::endl;
            stepControlStrategy_->describe(*l_out, verbLevel);
+           timeEvent_->describe(*l_out, verbLevel);
   }
   *l_out << std::string(this->description().length()+8, '-') <<std::endl;
 
-}
-
-
-template<class Scalar>
-void TimeStepControl<Scalar>::setTimeStepControlStrategy(
-  Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs)
-{
-  using Teuchos::rcp;
-
-  if ( tscs != Teuchos::null ) {
-    stepControlStrategy_ = tscs;
-  } else {
-    stepControlStrategy_ =
-      rcp(new TimeStepControlStrategyConstant<Scalar>(getInitTimeStep()));
-  }
-  isInitialized_ = false;
 }
 
 
@@ -551,34 +714,62 @@ TimeStepControl<Scalar>::getValidParameters() const
   pl->set<bool>  ("Print Time Step Changes", getPrintDtChanges(),
     "Print timestep size when it changes");
 
+  auto event = timeEvent_->find("Output Index Interval");
+  if (event != Teuchos::null) {
+    auto teri = Teuchos::rcp_dynamic_cast<TimeEventRangeIndex<Scalar> >(event);
+    pl->set<int>   ("Output Index Interval", teri->getIndexStride(), "Output Index Interval");
+  }
+
+  event = timeEvent_->find("Output Time Interval");
+  if (event != Teuchos::null) {
+    auto ter = Teuchos::rcp_dynamic_cast<TimeEventRange<Scalar> >(event);
+    pl->set<double>("Output Time Interval", ter->getTimeStride(), "Output time interval");
+  }
+
   pl->set<bool>("Output Exactly On Output Times", getOutputExactly(),
     "This determines if the timestep size will be adjusted to exactly land\n"
     "on the output times for 'Variable' timestepping (default=true).\n"
     "When set to 'false' or for 'Constant' time stepping, the timestep\n"
     "following the output time will be flagged for output.\n");
 
-  pl->set<int>   ("Output Index Interval", getOutputIndexInterval(), "Output index interval");
-  pl->set<double>("Output Time Interval", getOutputTimeInterval(), "Output time interval");
-
   {
-    std::vector<int> idx = getOutputIndices();
+    event = timeEvent_->find("Output Index List");
     std::ostringstream list;
-    if (!idx.empty()) {
-      for(std::size_t i = 0; i < idx.size()-1; ++i) list << idx[i] << ", ";
-      list << idx[idx.size()-1];
+    if (event != Teuchos::null) {
+      auto teli = Teuchos::rcp_dynamic_cast<TimeEventListIndex<Scalar> >(event);
+      std::vector<int> idx = teli->getIndexList();
+      if (!idx.empty()) {
+        for(std::size_t i = 0; i < idx.size()-1; ++i) list << idx[i] << ", ";
+        list << idx[idx.size()-1];
+      }
     }
     pl->set<std::string>("Output Index List", list.str(),
       "Comma deliminated list of output indices");
   }
+
   {
-    std::vector<Scalar> times = getOutputTimes();
+    event = timeEvent_->find("Output Time List");
     std::ostringstream list;
-    if (!times.empty()) {
-      for(std::size_t i = 0; i < times.size()-1; ++i) list << times[i] << ", ";
-      list << times[times.size()-1];
+    if (event != Teuchos::null) {
+      auto teli = Teuchos::rcp_dynamic_cast<TimeEventList<Scalar> >(event);
+      std::vector<Scalar> times = teli->getTimeList();
+      if (!times.empty()) {
+        for(std::size_t i = 0; i < times.size()-1; ++i) list << times[i] << ", ";
+        list << times[times.size()-1];
+      }
     }
     pl->set<std::string>("Output Time List", list.str(),
       "Comma deliminated list of output times");
+  }
+
+  { // Do not duplicate the above "Output" events in "Time Step Control Events".
+    auto tecTmp = Teuchos::rcp(new TimeEventComposite<Scalar>());
+    tecTmp->setTimeEvents(timeEvent_->getTimeEvents());
+    tecTmp->remove("Output Index Interval");
+    tecTmp->remove("Output Time Interval");
+    tecTmp->remove("Output Index List");
+    tecTmp->remove("Output Time List");
+    pl->set("Time Step Control Events", *tecTmp->getValidParameters());
   }
 
   pl->set<int>   ("Maximum Number of Stepper Failures", getMaxFailures(),
@@ -599,6 +790,7 @@ Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
   Teuchos::RCP<Teuchos::ParameterList> const& pList, bool runInitialize)
 {
   using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::ParameterList;
 
   auto tsc = Teuchos::rcp(new TimeStepControl<Scalar>());
@@ -620,10 +812,11 @@ Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
   tsc->setPrintDtChanges(   pList->get<bool>  ("Print Time Step Changes"));
   tsc->setNumTimeSteps(     pList->get<int>   ("Number of Time Steps"));
 
-  tsc->setOutputExactly(    pList->get<bool>  ("Output Exactly On Output Times"));
 
-  // Parse output indices
-  {
+  auto tec = rcp(new TimeEventComposite<Scalar>());
+  tec->setName("Time Step Control Events");
+
+  { // Parse output indices, "Output Index List".
     std::vector<int> outputIndices;
     outputIndices.clear();
     std::string str = pList->get<std::string>("Output Index List");
@@ -639,15 +832,27 @@ Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
       pos = str.find_first_of(delimiters, lastPos);
     }
 
-    // order output indices
-    std::sort(outputIndices.begin(),outputIndices.end());
-    tsc->setOutputIndices(outputIndices);
+    if (!outputIndices.empty()) {
+      // order output indices
+      std::sort(outputIndices.begin(),outputIndices.end());
+      outputIndices.erase(std::unique(outputIndices.begin(),
+                                      outputIndices.end()   ),
+                                      outputIndices.end()     );
+
+      tec->add(rcp(new Tempus::TimeEventListIndex<Scalar>(
+                   outputIndices, "Output Index List")));
+    }
   }
 
-  tsc->setOutputIndexInterval(pList->get<int>("Output Index Interval"));
+  // Parse output index internal
+  tec->add(rcp(new TimeEventRangeIndex<Scalar>(
+    tsc->getInitIndex(), tsc->getFinalIndex(),
+    pList->get<int>("Output Index Interval"),
+    "Output Index Interval")));
 
-  // Parse output times
-  {
+  auto outputExactly = pList->get<bool>("Output Exactly On Output Times",true);
+
+  { // Parse output times, "Output Time List".
     std::vector<Scalar> outputTimes;
     outputTimes.clear();
     std::string str = pList->get<std::string>("Output Time List");
@@ -666,16 +871,54 @@ Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
       pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
     }
 
-    // order output times
-    std::sort(outputTimes.begin(),outputTimes.end());
-    outputTimes.erase(std::unique(outputTimes.begin(),
-                                  outputTimes.end()   ),
-                                  outputTimes.end()     );
-    tsc->setOutputTimes(outputTimes);
+    if (!outputTimes.empty()) {
+      // order output times
+      std::sort(outputTimes.begin(),outputTimes.end());
+      outputTimes.erase(std::unique(outputTimes.begin(),
+                                    outputTimes.end()   ),
+                                    outputTimes.end()     );
+
+      tec->add(rcp(new Tempus::TimeEventList<Scalar>(
+                   outputTimes, "Output Time List", outputExactly)));
+    }
   }
 
-  tsc->setOutputTimeInterval(pList->get<double>("Output Time Interval"));
+  // Parse output time interval
+  tec->add(rcp(new TimeEventRange<Scalar>(
+    tsc->getInitTime(), tsc->getFinalTime(),
+    pList->get<double>("Output Time Interval"),
+    "Output Time Interval", outputExactly)));
 
+  if (pList->isSublist("Time Step Control Events")) {
+    RCP<ParameterList> tsctePL =
+      Teuchos::sublist(pList, "Time Step Control Events", true);
+
+    auto timeEventType = tsctePL->get<std::string>("Type", "Unknown");
+    if (timeEventType == "Range") {
+      tec->add(createTimeEventRange<Scalar>(tsctePL));
+    } else if (timeEventType == "Range Index") {
+      tec->add(createTimeEventRangeIndex<Scalar>(tsctePL));
+    } else if (timeEventType == "List") {
+      tec->add(createTimeEventList<Scalar>(tsctePL));
+    } else if (timeEventType == "List Index") {
+      tec->add(createTimeEventListIndex<Scalar>(tsctePL));
+    } else if (timeEventType == "Composite") {
+      auto tecTmp = createTimeEventComposite<Scalar>(tsctePL);
+      auto timeEvents = tecTmp->getTimeEvents();
+      for(auto& e : timeEvents) tec->add(e);
+    } else {
+      RCP<Teuchos::FancyOStream> out =
+        Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      out->setOutputToRootOnly(0);
+      Teuchos::OSTab ostab(out,1, "createTimeStepControl()");
+      *out << "Warning -- Unknown Time Event Type!\n"
+           << "'Type' = '" << timeEventType << "'\n"
+           << "Should call add() with this "
+           << "(app-specific?) Time Event.\n" << std::endl;
+    }
+  }
+
+  tsc->setTimeEvents(tec);
 
   if ( !pList->isParameter("Time Step Control Strategy") ) {
 

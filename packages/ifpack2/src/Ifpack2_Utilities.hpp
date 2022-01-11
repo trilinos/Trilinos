@@ -79,7 +79,7 @@ namespace Details {
     // make sure that we are using the correct diagonal column
     // indices, so it probably wouldn't help much.
     Teuchos::RCP<graph_type> diagonalGraph;
-    diagonalGraph = Teuchos::rcp(new crs_graph_type(graph.getRowMap(), maxDiagEntPerRow, Tpetra::StaticProfile));
+    diagonalGraph = Teuchos::rcp(new crs_graph_type(graph.getRowMap(), maxDiagEntPerRow));
     const map_type& meshRowMap = *(graph.getRowMap());
 
     Teuchos::Array<GO> diagGblColInds(maxDiagEntPerRow);

@@ -521,14 +521,14 @@ void
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, a_row_cnt);
 
-  Kokkos::Impl::Timer numeric_speed_timer_with_free;
+  Kokkos::Timer numeric_speed_timer_with_free;
 
   if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
     //allocate memory for begins and next to be used by the hashmap
     nnz_lno_temp_work_view_t beginsC
-    (Kokkos::ViewAllocateWithoutInitializing("C keys"), valuesC_.extent(0));
+    (Kokkos::view_alloc(Kokkos::WithoutInitializing, "C keys"), valuesC_.extent(0));
     nnz_lno_temp_work_view_t nextsC
-    (Kokkos::ViewAllocateWithoutInitializing("C nexts"), valuesC_.extent(0));
+    (Kokkos::view_alloc(Kokkos::WithoutInitializing, "C nexts"), valuesC_.extent(0));
     Kokkos::deep_copy(beginsC, -1);
 
     //create the functor.
@@ -557,7 +557,7 @@ void
         suggested_team_size,
         KOKKOSKERNELS_VERBOSE);
 
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
     MyExecSpace().fence();
 
     if (KOKKOSKERNELS_VERBOSE){
@@ -584,7 +584,7 @@ void
   }
   else {
 
-    Kokkos::Impl::Timer numeric_speed_timer;
+    Kokkos::Timer numeric_speed_timer;
     typedef KokkosKernels::Impl::UniformMemoryPool
         < MyTempMemorySpace, scalar_t> pool_memory_space;
 
@@ -593,7 +593,7 @@ void
         KokkosKernels::Impl::OneThread2OneChunk;
     int num_chunks = concurrency;
 
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
     pool_memory_space m_space
     (num_chunks, this->b_col_cnt + (this->b_col_cnt) / sizeof(scalar_t) + 1, 0,  my_pool_type);
     MyExecSpace().fence();

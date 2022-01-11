@@ -57,17 +57,17 @@
 
 // Support move semantics when possible.
 #if 201103L <= YY_CPLUSPLUS
-#define YY_MOVE std::move
-#define YY_MOVE_OR_COPY move
+#define YY_MOVE           std::move
+#define YY_MOVE_OR_COPY   move
 #define YY_MOVE_REF(Type) Type &&
-#define YY_RVREF(Type) Type &&
-#define YY_COPY(Type) Type
+#define YY_RVREF(Type)    Type &&
+#define YY_COPY(Type)     Type
 #else
 #define YY_MOVE
-#define YY_MOVE_OR_COPY copy
+#define YY_MOVE_OR_COPY   copy
 #define YY_MOVE_REF(Type) Type &
-#define YY_RVREF(Type) const Type &
-#define YY_COPY(Type) const Type &
+#define YY_RVREF(Type)    const Type &
+#define YY_COPY(Type)     const Type &
 #endif
 
 // Support noexcept when possible.
@@ -166,8 +166,8 @@ namespace SEAMS {
 
       double         val;    /* For returning numbers.               */
       struct symrec *tptr;   /* For returning symbol-table pointers  */
-      char *         string; /* For returning quoted strings         */
-      struct array * arrval; /* For returning arrays                 */
+      char          *string; /* For returning quoted strings         */
+      struct array  *arrval; /* For returning arrays                 */
 
 #line 184 "aprepro_parser.h"
     };

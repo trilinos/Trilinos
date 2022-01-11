@@ -473,7 +473,7 @@ SupportGraph<MatrixType>::findSupport ()
   // Create the CrsMatrix for the support graph
   Support_ = rcp (new crs_matrix_type (A_local_->getRowMap(),
                                        A_local_->getColMap(),
-                                       localnumnz, Tpetra::StaticProfile));
+                                       localnumnz));
 
   // Fill in the matrix with the stl vectors for each row
   for (size_t row = 0; row < num_verts; ++row) {

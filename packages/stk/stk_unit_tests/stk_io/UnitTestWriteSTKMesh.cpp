@@ -225,50 +225,6 @@ TEST(StkIo, write_stk_mesh_to_file)
 }
 //EndDocTest1
 
-void print_memory(size_t &current, size_t &hwm)
-{
-    static int counter = 1;
-    std::cerr << "Current(" << counter << ") : " << current << "\thwm: " << hwm << std::endl;
-    ++counter;
-}
-
-TEST(StkIo, check_memory)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-    size_t current_usage = 0, hwm_usage = 0;
-    current_usage = stk::get_memory_usage_now();
-    print_memory(current_usage, hwm_usage);
-
-    if(stk::parallel_machine_size(comm) == 1)
-    {
-        stk::mesh::MetaData meta;
-        stk::mesh::BulkData bulkData(meta, comm);
-        std::string filename = stk::unit_test_util::get_mesh_spec("--dim");
-
-        size_t current_usage2 = 0, hwm_usage2 = 0;
-        {
-            size_t current_usage1 = 0, hwm_usage1 = 0;
-            current_usage1 = stk::get_memory_usage_now();
-            print_memory(current_usage1, hwm_usage1);
-
-            stk::io::StkMeshIoBroker exodusFileReader(comm);
-            exodusFileReader.set_bulk_data(bulkData);
-            exodusFileReader.add_mesh_database(filename, stk::io::READ_MESH);
-            exodusFileReader.create_input_mesh();
-            exodusFileReader.populate_bulk_data();
-
-            current_usage2 = stk::get_memory_usage_now();
-            print_memory(current_usage2, hwm_usage2);
-        }
-
-        size_t current_usage3 = 0, hwm_usage3 = 0;
-        current_usage3 = stk::get_memory_usage_now();
-        print_memory(current_usage3, hwm_usage3);
-        size_t padDueToMemNoise = 8192;
-        EXPECT_LE(current_usage2, (current_usage3+padDueToMemNoise));
-    }
-}
-
 class StkIoResultsOutput : public stk::unit_test_util::MeshFixture
 {
 protected:

@@ -130,9 +130,7 @@ int main(int argc,char * argv[])
    RCP<TP_Crs> crsMat = Tpetra::MatrixMarket::Reader<TP_Crs>::readSparseFile("../data/nsjac.mm", Tpetra::getDefaultComm());
 
    RCP<TP_Crs> zeroCrsMat = rcp(new TP_Crs(*crsMat, Teuchos::Copy));
-   zeroCrsMat->resumeFill();
    zeroCrsMat->setAllToScalar(0.0);
-   zeroCrsMat->fillComplete();
 
    RCP<TP_Op> Mat = crsMat;
    RCP<TP_Op> zeroMat = zeroCrsMat;

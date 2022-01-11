@@ -123,29 +123,29 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses_g4_p2)
 
   // g = T(Zmax) - 2.0
   // x=1.0
-  g->sync_host();
-  auto g_host = g->getLocalViewHost();
+  auto g_host = g->getLocalViewHost(Tpetra::Access::ReadOnly);
   out << "g4 = " << g_host(0,0) << std::endl;
   auto tol = std::numeric_limits<Scalar>::epsilon()*100.0;
   TEST_FLOATING_EQUALITY(g_host(0,0),-1.0,tol);
 
   // DgDx: Right end node is 1, the rest of the vector is zero.
   out << "Dg4Dx:\n";
-  DgDx->sync_host();
   DgDx->describe(out,Teuchos::VERB_EXTREME);
-  auto DgDx_host = DgDx->getLocalViewHost();
-  if (comm->getRank() == (comm->getSize()-1)) {
-    TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0)-1,0),1.0,tol);
+  {
+    auto DgDx_host = DgDx->getLocalViewHost(Tpetra::Access::ReadOnly);
+    if (comm->getRank() == (comm->getSize() - 1)) {
+      TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0) - 1, 0), 1.0, tol);
+    }
   }
+
   Teuchos::Array<NOX::TMultiVector::mag_type> norms(1);
   DgDx->norm2(norms);
   TEST_FLOATING_EQUALITY(norms[0],1.0,tol);
 
   // DfDp
   out << "DfDp2:\n";
-  DfDp->sync_host();
   DfDp->describe(out,Teuchos::VERB_EXTREME);
-  auto DfDp_host = DfDp->getLocalViewHost();
+  auto DfDp_host = DfDp->getLocalViewHost(Tpetra::Access::ReadOnly);
   auto rank = comm->getRank();
   auto size = comm->getSize();
   for (size_t i=0; i < DfDp_host.extent(0); ++i) {
@@ -162,15 +162,13 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses_g4_p2)
   }
 
   out << "Dg4Dp2:\n";
-  Dg4Dp2->sync_host();
   Dg4Dp2->describe(out,Teuchos::VERB_EXTREME);
-  auto Dg4Dp2_host = Dg4Dp2->getLocalViewHost();
+  auto Dg4Dp2_host = Dg4Dp2->getLocalViewHost(Tpetra::Access::ReadOnly);
   TEST_FLOATING_EQUALITY(Dg4Dp2_host(0,0),0.0,tol);
 
   out << "Dg4Dp4:\n";
-  Dg4Dp4->sync_host();
   Dg4Dp4->describe(out,Teuchos::VERB_EXTREME);
-  auto Dg4Dp4_host = Dg4Dp4->getLocalViewHost();
+  auto Dg4Dp4_host = Dg4Dp4->getLocalViewHost(Tpetra::Access::ReadOnly);
   TEST_FLOATING_EQUALITY(Dg4Dp4_host(0,0),0.0,tol);
 }
 
@@ -223,32 +221,33 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses_g6_p4)
 
   // g = 2.0 * T(Zmax) - T(zMin)
   // x=1.0
-  g->sync_host();
-  auto g_host = g->getLocalViewHost();
+  auto g_host = g->getLocalViewHost(Tpetra::Access::ReadOnly);
   out << "g6 = " << g_host(0,0) << std::endl;
   auto tol = std::numeric_limits<Scalar>::epsilon()*100.0;
   TEST_FLOATING_EQUALITY(g_host(0,0),1.0,tol);
 
   // DgDx: Left end node is 2, right end node is -1, the rest of the vector is zero.
   out << "Dg6Dx:\n";
-  DgDx->sync_host();
   DgDx->describe(out,Teuchos::VERB_EXTREME);
-  auto DgDx_host = DgDx->getLocalViewHost();
-  if (comm->getRank() == 0) {
-    TEST_FLOATING_EQUALITY(DgDx_host(0,0),2.0,tol);
+
+  {
+    auto DgDx_host = DgDx->getLocalViewHost(Tpetra::Access::ReadOnly);
+    if (comm->getRank() == 0) {
+      TEST_FLOATING_EQUALITY(DgDx_host(0, 0), 2.0, tol);
+    }
+    else if (comm->getRank() == (comm->getSize() - 1)) {
+      TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0) - 1, 0), -1.0, tol);
+    }
   }
-  else if (comm->getRank() == (comm->getSize()-1)) {
-    TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0)-1,0),-1.0,tol);
-  }
+
   Teuchos::Array<NOX::TMultiVector::mag_type> norms(1);
   DgDx->norm2(norms);
   TEST_FLOATING_EQUALITY(norms[0],std::sqrt(5.0),tol);
 
   // DfDp4
   out << "DfDp4:\n";
-  DfDp4->sync_host();
   DfDp4->describe(out,Teuchos::VERB_EXTREME);
-  auto DfDp4_host = DfDp4->getLocalViewHost();
+  auto DfDp4_host = DfDp4->getLocalViewHost(Tpetra::Access::ReadOnly);
   auto rank = comm->getRank();
   for (size_t i=0; i < DfDp4_host.extent(0); ++i) {
     if ((rank == 0) && (i == 0)) { // left end
@@ -261,14 +260,12 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses_g6_p4)
   }
 
   out << "Dg6Dp2:\n";
-  Dg6Dp2->sync_host();
   Dg6Dp2->describe(out,Teuchos::VERB_EXTREME);
-  auto Dg6Dp2_host = Dg6Dp2->getLocalViewHost();
+  auto Dg6Dp2_host = Dg6Dp2->getLocalViewHost(Tpetra::Access::ReadOnly);
   TEST_FLOATING_EQUALITY(Dg6Dp2_host(0,0),0.0,tol);
 
   out << "Dg6Dp4:\n";
-  Dg6Dp4->sync_host();
   Dg6Dp4->describe(out,Teuchos::VERB_EXTREME);
-  auto Dg6Dp4_host = Dg6Dp4->getLocalViewHost();
+  auto Dg6Dp4_host = Dg6Dp4->getLocalViewHost(Tpetra::Access::ReadOnly);
   TEST_FLOATING_EQUALITY(Dg6Dp4_host(0,0),0.0,tol);
 }

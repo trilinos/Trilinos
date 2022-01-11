@@ -7,6 +7,9 @@
 #ifndef IOSS_Iocgns_ParallelDatabaseIO_h
 #define IOSS_Iocgns_ParallelDatabaseIO_h
 
+#include <cgnsconfig.h>
+#if CG_BUILD_PARALLEL
+
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
 #include <Ioss_DatabaseIO.h> // for DatabaseIO
@@ -228,4 +231,5 @@ namespace Iocgns {
         m_elemGlobalImplicitMap; // Position of this element in the global-implicit ordering
   };
 } // namespace Iocgns
+#endif
 #endif

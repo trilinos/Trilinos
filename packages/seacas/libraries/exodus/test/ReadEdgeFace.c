@@ -54,8 +54,8 @@ int obj_sizeinq[] = {EX_INQ_EDGE,
                      -1,
                      -1};
 
-#define OBJECT_IS_BLOCK(i) (((i) >= 0) && ((i) < 3))
-#define OBJECT_IS_SET(i) (((i) > 2) && ((i) < 8))
+#define OBJECT_IS_BLOCK(i) (((i) < 3))
+#define OBJECT_IS_SET(i)   (((i) > 2) && ((i) < 8))
 
 int cReadEdgeFace(int argc, char **argv)
 {
@@ -105,8 +105,8 @@ int cReadEdgeFace(int argc, char **argv)
   int num_timesteps = ex_inquire_int(exoid, EX_INQ_TIME);
 
   /* *** NEW API *** */
-  for (int i = 0; i < sizeof(obj_types) / sizeof(obj_types[0]); ++i) {
-    int *truth_tab      = 0;
+  for (size_t i = 0; i < sizeof(obj_types) / sizeof(obj_types[0]); ++i) {
+    int *truth_tab      = NULL;
     int  have_var_names = 0;
 
     EXCHECK(ex_inquire(exoid, obj_sizes[i], &nids, 0, 0),
@@ -119,7 +119,7 @@ int cReadEdgeFace(int argc, char **argv)
 
     fprintf(stdout, "=== %ss: %d\n", obj_typenames[i], nids);
 
-    int *  ids       = (int *)malloc(nids * sizeof(int));
+    int   *ids       = (int *)malloc(nids * sizeof(int));
     char **obj_names = (char **)malloc(nids * sizeof(char *));
     for (int obj = 0; obj < nids; ++obj) {
       obj_names[obj] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
@@ -158,7 +158,7 @@ int cReadEdgeFace(int argc, char **argv)
     }
 
     if (!have_var_names) {
-      var_names = 0;
+      var_names = NULL;
     }
 
     for (int obj = 0; obj < nids; ++obj) {
@@ -194,9 +194,9 @@ int cReadEdgeFace(int argc, char **argv)
         }
         fprintf(stdout, "\n   ");
         num_entries = itmp[0];
-        nconn       = itmp[1] ? (int *)malloc(itmp[1] * num_entries * sizeof(int)) : 0;
-        econn       = itmp[2] ? (int *)malloc(itmp[2] * num_entries * sizeof(int)) : 0;
-        fconn       = itmp[3] ? (int *)malloc(itmp[3] * num_entries * sizeof(int)) : 0;
+        nconn       = itmp[1] ? (int *)malloc(itmp[1] * num_entries * sizeof(int)) : NULL;
+        econn       = itmp[2] ? (int *)malloc(itmp[2] * num_entries * sizeof(int)) : NULL;
+        fconn       = itmp[3] ? (int *)malloc(itmp[3] * num_entries * sizeof(int)) : NULL;
         EXCHECK(ex_get_conn(exoid, obj_types[i], ids[obj], nconn, econn, fconn),
                 "Could not read connectivity.\n");
         for (ele = 0; ele < num_entries; ++ele) {
@@ -222,7 +222,7 @@ int cReadEdgeFace(int argc, char **argv)
         free(fconn);
 
         if (num_attrs) {
-          char ** attr_names;
+          char  **attr_names;
           double *attr;
           attr       = (double *)malloc(num_entries * num_attrs * sizeof(double));
           attr_names = (char **)malloc(num_attrs * sizeof(char *));
@@ -263,7 +263,7 @@ int cReadEdgeFace(int argc, char **argv)
         int *set_entry = (int *)malloc(num_entries * sizeof(int));
         int *set_extra = (obj_types[i] != EX_NODE_SET && obj_types[i] != EX_ELEM_SET)
                              ? (int *)malloc(num_entries * sizeof(int))
-                             : 0;
+                             : NULL;
         EXCHECK(ex_get_set(exoid, obj_types[i], ids[obj], set_entry, set_extra),
                 "Could not read set.\n");
         fprintf(stdout, "Entries: %3d Distribution factors: %3d\n", num_entries, num_df);
@@ -280,7 +280,7 @@ int cReadEdgeFace(int argc, char **argv)
         free(set_entry);
         free(set_extra);
 
-        double *set_df = num_df ? (double *)malloc(num_df * sizeof(double)) : 0;
+        double *set_df = num_df ? (double *)malloc(num_df * sizeof(double)) : NULL;
         if (set_df) {
           EXCHECK(ex_get_set_dist_fact(exoid, obj_types[i], ids[obj], set_df),
                   "Could not read set distribution factors.\n");

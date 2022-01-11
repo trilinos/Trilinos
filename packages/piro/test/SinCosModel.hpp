@@ -128,18 +128,19 @@
 
 using LO = Tpetra::Map<>::local_ordinal_type;
 using GO = Tpetra::Map<>::global_ordinal_type;
+using Scalar = double; 
 typedef Tpetra::Map<LO,GO>  Tpetra_Map;
-typedef Tpetra::Vector<double,LO,GO>  Tpetra_Vector;
-typedef Tpetra::MultiVector<double,LO,GO>  Tpetra_MultiVector;
-typedef Tpetra::Operator<double,LO,GO>  Tpetra_Operator;
+typedef Tpetra::Vector<Scalar,LO,GO>  Tpetra_Vector;
+typedef Tpetra::MultiVector<Scalar,LO,GO>  Tpetra_MultiVector;
+typedef Tpetra::Operator<Scalar,LO,GO>  Tpetra_Operator;
 typedef Tpetra::CrsGraph<LO,GO>  Tpetra_CrsGraph;
-typedef Tpetra::CrsMatrix<double,LO,GO>  Tpetra_CrsMatrix;
-typedef Thyra::TpetraOperatorVectorExtraction<double, LO, GO> ConverterT;
+typedef Tpetra::CrsMatrix<Scalar,LO,GO>  Tpetra_CrsMatrix;
+typedef Thyra::TpetraOperatorVectorExtraction<Scalar, LO, GO> ConverterT;
 
 
 
 class SinCosModel
-    : public Thyra::StateFuncModelEvaluatorBase<double>,
+    : public Thyra::StateFuncModelEvaluatorBase<Scalar>,
       public Teuchos::ParameterListAcceptorDefaultBase
 
 {
@@ -149,25 +150,25 @@ class SinCosModel
   SinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   // Exact solution
-  Thyra::ModelEvaluatorBase::InArgs<double> getExactSolution(double t) const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getExactSolution(double t) const;
 
   // Exact sensitivity solution
-  Thyra::ModelEvaluatorBase::InArgs<double> getExactSensSolution(int j, double t) const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getExactSensSolution(int j, double t) const;
 
   /** \name Public functions overridden from ModelEvaluator. */
   //@{
 
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_x_space() const;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_f_space() const;
-  Thyra::ModelEvaluatorBase::InArgs<double> getNominalValues() const;
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > create_W() const;
-  Teuchos::RCP<Thyra::LinearOpBase<double> > create_W_op() const;
-  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > get_W_factory() const;
-  Thyra::ModelEvaluatorBase::InArgs<double> createInArgs() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
 
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_p_space(int l) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
   Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_g_space(int j) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
 
   //@}
 
@@ -183,16 +184,16 @@ private:
 
   /** \name Private functions overridden from ModelEvaluatorDefaultBase. */
   //@{
-  Thyra::ModelEvaluatorBase::OutArgs<double> createOutArgsImpl() const;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs_bar,
-    const Thyra::ModelEvaluatorBase::OutArgs<double> &outArgs_bar
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs_bar,
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs_bar
     ) const;
   //@}
 
   void calculateCoeffFromIC_();
 
-private:
+protected:
   int dim_;         ///< Number of state unknowns (2)
   int Np_;          ///< Number of parameter vectors (1)
   int np_;          ///< Number of parameters in this vector (2)
@@ -202,14 +203,14 @@ private:
   bool acceptModelParams_; ///< Changes inArgs to require parameters
   bool useDfDpAsTangent_; ///< Treat DfDp OutArg as tangent (df/dx*dx/dp+df/dp)
   mutable bool isInitialized_;
-  mutable Thyra::ModelEvaluatorBase::InArgs<double>  inArgs_;
-  mutable Thyra::ModelEvaluatorBase::OutArgs<double> outArgs_;
-  mutable Thyra::ModelEvaluatorBase::InArgs<double>  nominalValues_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > x_space_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > f_space_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > p_space_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > g_space_;
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > DxDp_space_;
+  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
+  mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
+  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  nominalValues_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > DxDp_space_;
 
   // Parameters for the model:  x_0(t) = a + b*sin(f*t+phi)
   //                            x_1(t) = b*f*cos(f*t+phi)
@@ -231,6 +232,40 @@ private:
 //  Teuchos::RCP<SinCosModel> model = rcp(new SinCosModel(pList_));
 //  return(model);
 //}
+
+//! Adjoint for SinCosModel
+/*!
+ * This model evaluator modifies evalModel() to compute the adjoint operator
+ * instead of the forward operator.
+ */
+class SinCosModelAdjoint
+  : public SinCosModel
+{
+  public:
+
+  // Constructor
+  SinCosModelAdjoint(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null) : SinCosModel(pList) {}
+
+  /** \name Public functions overridden from ModelEvaluator. */
+  //@{
+
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+
+  //@}
+
+private:
+
+  /** \name Private functions overridden from ModelEvaluatorDefaultBase. */
+  //@{
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+  void evalModelImpl(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs_bar,
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs_bar
+    ) const;
+  //@}
+};
 
 
 #endif // SINCOSMODEL

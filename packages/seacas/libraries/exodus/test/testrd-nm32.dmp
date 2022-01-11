@@ -437,8 +437,6 @@ node set  2, property( 2): 'FACE'=     5
 node set  1, property( 3): 'VELOCITY'=  1000
 node set  2, property( 3): 'VELOCITY'=  2000
 
-after ex_inquire, error =   0
-
 after ex_inquire: EX_INQ_NS_NODE_LEN = 8, error =   0
 
 after ex_inquire: EX_INQ_NS_DF_LEN = 8, error =   0
@@ -726,8 +724,6 @@ side set  2, property( 2): 'COLOR'=   101
 side set  3, property( 2): 'COLOR'=     0
 side set  4, property( 2): 'COLOR'=     0
 side set  5, property( 2): 'COLOR'=     0
-
-after ex_inquire: EX_INQ_SIDE_SETS = 5,  error = 0
 
 after ex_inquire: EX_INQ_SS_ELEM_LEN = 29,  error = 0
 

@@ -70,6 +70,10 @@ protected:
     centroid = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::ELEM_RANK, "centroid");
     stk::mesh::put_field_on_mesh(*centroid, get_meta().universal_part(), 3,
                                  (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian3d> >::data_type*) nullptr);
+
+    hostCentroid = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::ELEM_RANK, "hostCentroid");
+    stk::mesh::put_field_on_mesh(*hostCentroid, get_meta().universal_part(), 3,
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian3d> >::data_type*) nullptr);
   }
 
   void declare_centroid_partial_mesh(unsigned numBlocks)
@@ -108,8 +112,18 @@ protected:
     }
   }
 
+  void compare_and_verify_average_centroids(int elemsPerDim, const stk::mesh::Selector& selector)
+  {
+    std::vector<double> centroidAverage = stk::performance_tests::get_centroid_average_from_host(get_bulk(), *centroid, selector);
+    std::vector<double> hostCentroidAverage = stk::performance_tests::get_centroid_average_from_host(get_bulk(), *hostCentroid, selector);
+    for(size_t dim = 0; dim < 3; dim++) {
+      EXPECT_DOUBLE_EQ(centroidAverage[dim], hostCentroidAverage[dim]);
+    }
+  }
+
   stk::performance_tests::Timer timer;
   stk::mesh::Field<double, stk::mesh::Cartesian3d> *centroid;
+  stk::mesh::Field<double, stk::mesh::Cartesian3d> *hostCentroid;
 };
 
 TEST_F(NgpFieldAccess, Centroid)
@@ -127,6 +141,29 @@ TEST_F(NgpFieldAccess, Centroid)
     stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(get_bulk(), *centroid);
   }
   verify_averaged_centroids_are_center_of_mesh(ELEMS_PER_DIM, get_meta().universal_part());
+  timer.update_timing();
+  timer.print_timing(NUM_RUNS);
+}
+
+TEST_F(NgpFieldAccess, HostCentroid)
+{
+  if (get_parallel_size() != 1) return;
+
+  const int NUM_RUNS = 1000;
+  const int ELEMS_PER_DIM = 120;
+
+  declare_centroid_field();
+  setup_mesh(stk::unit_test_util::get_mesh_spec(ELEMS_PER_DIM), stk::mesh::BulkData::NO_AUTO_AURA);
+
+  for (int run=0; run<NUM_RUNS; run++) {
+    stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(get_bulk(), *centroid);
+  }
+
+  timer.start_timing();
+  for (int run=0; run<NUM_RUNS; run++) {
+    stk::performance_tests::calculate_centroid_using_host_coord_fields(get_bulk(), *hostCentroid);
+  }
+  compare_and_verify_average_centroids(ELEMS_PER_DIM, get_meta().universal_part());
   timer.update_timing();
   timer.print_timing(NUM_RUNS);
 }

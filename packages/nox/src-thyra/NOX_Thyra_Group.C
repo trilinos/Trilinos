@@ -244,7 +244,7 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   if (nonnull(source.weight_vec_))
     weight_vec_ = source.weight_vec_;
 
-  if (nonnull(source.right_weight_vec_) && (type == NOX::DeepCopy))
+  if (nonnull(source.right_weight_vec_))
     scaled_x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*source.scaled_x_vec_, type));
 
   in_args_ = model_->createInArgs();

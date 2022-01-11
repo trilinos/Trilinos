@@ -72,25 +72,16 @@ IntegrationRule(const panzer::CellData& cell_data, const std::string & in_cv_typ
 {
   // Cubature orders are only used for indexing so we make them large enough not to interfere with other rules.
   // TODO: This requirement (on arbitrary cubature order) will be dropped with the new Workset design (using descriptors to find integration rules)
-  // TODO: These isSide conditions shouldn't be required... I'm missing something...
   if(in_cv_type == "volume"){
-    if(cell_data.isSide()){
-      IntegrationDescriptor::setup(75, IntegrationDescriptor::CV_VOLUME,cell_data.side());
-    } else {
-      IntegrationDescriptor::setup(75, IntegrationDescriptor::CV_VOLUME);
-    }
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(cell_data.isSide(),
+                                "IntegrationRule::IntegrationRule : Control Volume 'volume' type requested, but CellData is setup for sides.");
+    IntegrationDescriptor::setup(75, IntegrationDescriptor::CV_VOLUME);
   } else if(in_cv_type == "side"){
-    if(cell_data.isSide()){
-      IntegrationDescriptor::setup(85, IntegrationDescriptor::CV_SIDE,cell_data.side());
-    } else {
-      IntegrationDescriptor::setup(85, IntegrationDescriptor::CV_SIDE);
-    }
+    IntegrationDescriptor::setup(85, IntegrationDescriptor::CV_SIDE);
   } else if(in_cv_type == "boundary"){
-    if(cell_data.isSide()){
-      IntegrationDescriptor::setup(95, IntegrationDescriptor::CV_BOUNDARY, cell_data.side());
-    } else {
-      IntegrationDescriptor::setup(95, IntegrationDescriptor::CV_BOUNDARY);
-    }
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(not cell_data.isSide(),
+                                "IntegrationRule::IntegrationRule : Control Volume 'boundary' type requested, but CellData is not setup for sides.");
+    IntegrationDescriptor::setup(95, IntegrationDescriptor::CV_BOUNDARY, cell_data.side());
   } else {
     TEUCHOS_ASSERT(false);
   }

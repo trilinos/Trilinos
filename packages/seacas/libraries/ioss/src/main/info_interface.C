@@ -81,7 +81,7 @@ void Info::Interface::enroll_options()
 
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
                   "Method used to split sidesets into homogeneous blocks\n"
-                  "\t\tOptions are: TOPOLOGY, BLOCK, NOSPLIT",
+                  "\t\tOptions are: TOPOLOGY, BLOCK, NO_SPLIT",
                   "TOPOLOGY", nullptr, true);
 
 #if defined(SEACAS_HAVE_MPI)
@@ -210,7 +210,8 @@ bool Info::Interface::parse_options(int argc, char **argv)
       else if (std::strcmp(temp, "BLOCK") == 0) {
         surfaceSplitScheme_ = 2;
       }
-      else if (std::strcmp(temp, "NO_SPLIT") == 0) {
+      else if (std::strcmp(temp, "NO_SPLIT") == 0 || std::strcmp(temp, "NOSPLIT") == 0) {
+        // Backward compatibility using "NOSPLIT" after bug fix...
         surfaceSplitScheme_ = 3;
       }
     }

@@ -213,7 +213,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
       // create static-profile matrix, fill-complete without inserting (and therefore, without allocating)
-      MAT matrix(map,1,Tpetra::StaticProfile);
+      MAT matrix(map,1);
       matrix.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
@@ -222,7 +222,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
       // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph(map,1,Tpetra::StaticProfile);
+      GRPH graph(map,1);
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
@@ -265,9 +265,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
       if ( (T & 1) != 1 ) continue;
-      Tpetra::ProfileType pftype = Tpetra::StaticProfile;
       params->set("Optimize Storage",((T & 2) == 2));
-      MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
+      MAT matrix(rmap,cmap, ginds.size());   // only allocate as much room as necessary
       RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
 
       typename MAT::nonconst_global_inds_host_view_type GCopy("gids",4);
@@ -303,9 +302,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // checks if an index exists the graph and only inserts if it doesn't. Thus, the
       // following test needs to be modified to insert another *unique* index and not a
       // repeat.
-      if (pftype == Tpetra::StaticProfile) {
-        TEST_THROW( matrix.insertGlobalValues(myrowind, tuple(myrowind+5), tuple(ST::one())), std::runtime_error );
-      }
+      TEST_THROW( matrix.insertGlobalValues(myrowind, tuple(myrowind+5), tuple(ST::one())), std::runtime_error );
       matrix.fillComplete(params);
       // check for throws and no-throws/values
       TEST_THROW( matrix.getGlobalRowView(myrowind,CGView,CSView), std::runtime_error );

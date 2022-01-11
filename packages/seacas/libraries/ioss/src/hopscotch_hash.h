@@ -683,8 +683,8 @@ namespace tsl {
       hopscotch_hash(hopscotch_hash &&other) noexcept(
           std::is_nothrow_move_constructible<Hash>::value &&std::is_nothrow_move_constructible<
               KeyEqual>::value &&std::is_nothrow_move_constructible<GrowthPolicy>::value
-              &&                 std::is_nothrow_move_constructible<buckets_container_type>::value
-                  &&             std::is_nothrow_move_constructible<overflow_container_type>::value)
+                               &&std::is_nothrow_move_constructible<buckets_container_type>::value
+                               &&std::is_nothrow_move_constructible<overflow_container_type>::value)
           : Hash(std::move(static_cast<Hash &>(other))),
             KeyEqual(std::move(static_cast<KeyEqual &>(other))),
             GrowthPolicy(std::move(static_cast<GrowthPolicy &>(other))),

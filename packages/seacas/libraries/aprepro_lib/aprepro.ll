@@ -43,6 +43,7 @@ typedef SEAMS::Parser::token_type token_type;
 int file_must_exist = 0; /* Global used by include/conditional include */
 
 /* Global variables used by the looping mechanism */
+ SEAMS::file_rec *outer_file = nullptr;
 int loop_lvl = 0;
 std::fstream *tmp_file;
 const char  *temp_f;
@@ -121,13 +122,14 @@ integer {D}+({E})?
     BEGIN(GET_LOOP_VAR);
     if (aprepro.ap_options.debugging)
       std::cerr << "DEBUG LOOP - Found loop begin test " << yytext << " in file "
-                << aprepro.ap_file_list.top().name << "\n";
+                << aprepro.ap_file_list.top().name << " at line " << aprepro.ap_file_list.top().lineno << "\n";
   }
 }
 
 <GET_LOOP_VAR>{
   {number}")".*"\n" |
             {integer}")}".*"\n" {
+    aprepro.ap_file_list.top().lineno++;
     /* Loop control defined by integer */
     char *pt = strchr(yytext, ')');
     *pt = '\0';
@@ -139,22 +141,23 @@ integer {D}+({E})?
     else {/* Value defined and != 0. */
       temp_f = get_temp_filename();
       SEAMS::file_rec new_file(temp_f, 0, true, (int)yylval->val);
-      aprepro.ap_file_list.push(new_file);
-
       if (aprepro.ap_options.debugging)
         std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
                   << " in file " << aprepro.ap_file_list.top().name
-                  << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+                  << " at line " << aprepro.ap_file_list.top().lineno-1 << "\n";
+
+      outer_file = &aprepro.ap_file_list.top();
+      aprepro.ap_file_list.push(new_file);
 
       tmp_file = new std::fstream(temp_f, std::ios::out);
       loop_lvl++;
       BEGIN(LOOP);
     }
-    aprepro.ap_file_list.top().lineno++;
     aprepro.isCollectingLoop = true;
   }
 
   .+")}".*"\n"  {
+    aprepro.ap_file_list.top().lineno++;
     /* Loop control defined by variable */
     symrec *s;
     char *pt = strchr(yytext, ')');
@@ -169,28 +172,28 @@ integer {D}+({E})?
         BEGIN(LOOP_SKIP);
       }
       else { /* Value defined and != 0. */
-        temp_f = get_temp_filename();
-        SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
-        aprepro.ap_file_list.push(new_file);
-
         if (aprepro.ap_options.debugging)
           std::cerr << "DEBUG LOOP VAR = " << aprepro.ap_file_list.top().loop_count
                     << " in file " << aprepro.ap_file_list.top().name
-                    << " at line " << aprepro.ap_file_list.top().lineno << "\n";
+                    << " at line " << aprepro.ap_file_list.top().lineno-1 << "\n";
+
+        temp_f = get_temp_filename();
+        SEAMS::file_rec new_file(temp_f, 0, true, (int)s->value.var);
+	outer_file = &aprepro.ap_file_list.top();
+        aprepro.ap_file_list.push(new_file);
 
         tmp_file = new std::fstream(temp_f, std::ios::out);
         loop_lvl++;
         BEGIN(LOOP);
       }
     }
-    aprepro.ap_file_list.top().lineno++;
     aprepro.isCollectingLoop = true;
   }
 }
 
 <LOOP>{
   {WS}"{"[Ee]"nd"[Ll]"oop".*"\n" {
-    aprepro.ap_file_list.top().lineno++;
+    outer_file->lineno++;
     if(loop_lvl > 0)
       --loop_lvl;
 
@@ -216,7 +219,7 @@ integer {D}+({E})?
   {WS}"{"[Ll]"oop"{WS}"(".*"\n"  {
     loop_lvl++; /* Nested Loop */
     (*tmp_file) << yytext;
-    aprepro.ap_file_list.top().lineno++;
+    outer_file->lineno++;
   }
 
   {WS}"{"[Aa]"bort"[Ll]"oop".*"\n" {
@@ -242,7 +245,7 @@ integer {D}+({E})?
 
   .*"\n" {
     (*tmp_file) << yytext;
-    aprepro.ap_file_list.top().lineno++;
+    outer_file->lineno++;
   }
 }
 
@@ -277,8 +280,8 @@ integer {D}+({E})?
     }
   }
 
-  .*"\n" {
-    aprepro.ap_file_list.top().lineno++;
+  .*"\n" { /* Do not increment line count */ 
+    ;
   }
 }
 
@@ -290,7 +293,6 @@ integer {D}+({E})?
 }
 
 <INITIAL,END_CASE_SKIP>{WS}"{"{WS}"default"{WS}"}".*"\n"     {
- aprepro.ap_file_list.top().lineno++;
  if (!switch_active) {
     yyerror("default statement found outside switch statement.");
   }
@@ -494,7 +496,6 @@ integer {D}+({E})?
 }
 
 {WS}"{"[Ee]"nd"[Ii]"f}".*"\n"     {
-    aprepro.ap_file_list.top().lineno++;
 
     if(YY_START == VERBATIM) {
       if(echo) ECHO;
@@ -516,6 +517,7 @@ integer {D}+({E})?
       }
       /* Ignore endif if not skipping */
     }
+    aprepro.ap_file_list.top().lineno++;
   }
 
 <INITIAL>{WS}"{"[Ii]"nclude"{WS}"("           { BEGIN(GET_FILENAME);
@@ -523,6 +525,7 @@ integer {D}+({E})?
 <INITIAL>{WS}"{"[Cc]"include"{WS}"("          { BEGIN(GET_FILENAME);
                              file_must_exist = false; }
 <GET_FILENAME>.+")"{WS}"}"{NL}* {
+  aprepro.ap_file_list.top().lineno++;
   BEGIN(INITIAL);
   {
     symrec *s;

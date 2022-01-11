@@ -6,11 +6,7 @@
 // ****************************************************************************
 // @HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
-
-#include "Tempus_UnitTest_Utils.hpp"
-
-#include "../TestModels/SinCosModel.hpp"
+#include "Tempus_UnitTest_RK_Utils.hpp"
 
 
 namespace Tempus_Unit_Test {

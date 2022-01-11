@@ -363,8 +363,13 @@ class BlockedVector
 
     virtual void randomize(bool bUseXpetraImplementation = false);
 
+    virtual void randomize(const Scalar& minVal, const Scalar& maxVal, bool bUseXpetraImplementation = false);
+
     //! Set vector values to random numbers. XPetra implementation
     virtual void Xpetra_randomize();
+
+    //! Set vector values to random numbers. XPetra implementation
+    virtual void Xpetra_randomize(const Scalar& minVal, const Scalar& maxVal);
 
     //@}
 

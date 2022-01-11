@@ -133,9 +133,7 @@ public:
     // Set all values in A to one: This is needed because binary readers 
     // do not currently support numeric values
     const scalar_t ONE = Teuchos::ScalarTraits<scalar_t>::one();
-    A_baseline->resumeFill();
     A_baseline->setAllToScalar(ONE);
-    A_baseline->fillComplete(A_baseline->getDomainMap(), A_baseline->getRangeMap());
 
     nRow = A_baseline->getRowMap()->getMaxAllGlobalIndex() 
          + 1;  // Since Trilinos' reader converts one-based to zero-based

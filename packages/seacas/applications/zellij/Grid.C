@@ -6,7 +6,6 @@
 
 #include <cstdlib>
 #include <numeric>
-#include <unistd.h>
 
 #include "Cell.h"
 #include "Decompose.h"
@@ -26,6 +25,8 @@
 #include <fmt/chrono.h>
 #include <fmt/color.h>
 #include <fmt/ostream.h>
+#include <open_file_limit.h>
+#include <time_stamp.h>
 #include <tokenize.h>
 
 //! \file
@@ -69,39 +70,7 @@ namespace std {
 
 namespace {
   std::string tsFormat = "[{:%H:%M:%S}]";
-  std::string time_stamp(const std::string &format)
-  {
-    if (format == "") {
-      return std::string("");
-    }
-
-    time_t      calendar_time = std::time(nullptr);
-    struct tm * local_time    = std::localtime(&calendar_time);
-    std::string time_string   = fmt::format(format, *local_time);
-    return time_string;
-  }
-
-  int get_free_descriptor_count()
-  {
-// Returns maximum number of files that one process can have open
-// at one time. (POSIX)
-#if defined(_WIN32)
-    int fdmax = _getmaxstdio();
-#else
-    int fdmax = sysconf(_SC_OPEN_MAX);
-    if (fdmax == -1) {
-      // POSIX indication that there is no limit on open files...
-      fdmax = INT_MAX;
-    }
-#endif
-    // File descriptors are assigned in order (0,1,2,3,...) on a per-process
-    // basis.
-
-    // Assume that we have stdin, stdout, stderr files (3 total).
-    return fdmax - 3;
-  }
-
-  int axis_index(const std::string &axis_str)
+  int         axis_index(const std::string &axis_str)
   {
     char axis = axis_str[0];
     if (axis == 'x' || axis == 'i') {
@@ -200,7 +169,7 @@ bool Grid::initialize(size_t i, size_t j, const std::string &key)
 
 void Grid::add_unit_cell(const std::string &key, const std::string &unit_filename, bool ints32bit)
 {
-  static size_t open_files = get_free_descriptor_count();
+  static size_t open_files = open_file_limit();
   if (!minimize_open_files(Minimize::UNIT) && unit_cells().size() >= open_files) {
     // Just hit the limit...  Close all previous unit_cell files and set the minimize_open_files
     // behavior to UNIT.
@@ -567,7 +536,7 @@ void Grid::output_nodal_coordinates(const Cell &cell)
 {
   int rank = cell.rank(Loc::C);
 
-  auto *              nb = cell.region()->get_node_blocks()[0];
+  auto               *nb = cell.region()->get_node_blocks()[0];
   std::vector<double> coord_x;
   std::vector<double> coord_y;
   std::vector<double> coord_z;
@@ -641,7 +610,7 @@ template <typename INT> void Grid::output_generated_surfaces(Cell &cell, INT /*d
       auto &oblocks = osurf->get_side_blocks();
       SMART_ASSERT(oblocks.size() == 1)(oblocks.size());
 
-      auto &           boundary = cell.unit()->boundary_blocks[face];
+      auto            &boundary = cell.unit()->boundary_blocks[face];
       auto             count    = boundary.size();
       std::vector<INT> elements;
       std::vector<INT> faces;
@@ -739,7 +708,7 @@ void Grid::output_block_connectivity(Cell &cell, const std::vector<INT> &node_ma
   if (rank >= m_startRank && rank < m_startRank + m_rankCount) {
     int exoid = output_region(rank)->get_database()->get_file_pointer();
 
-    auto &           blocks = cell.region()->get_element_blocks();
+    auto            &blocks = cell.region()->get_element_blocks();
     std::vector<INT> connect;
     for (const auto *block : blocks) {
       block->get_field_data("connectivity_raw", connect);
@@ -914,9 +883,9 @@ void Grid::handle_file_count()
     return;
   }
 
-  size_t open_files = get_free_descriptor_count();
+  size_t open_files = open_file_limit();
   if (util().parallel_rank() == 0) {
-    fmt::print("\n Maximum Open File Count = {}\n", get_free_descriptor_count());
+    fmt::print("\n Maximum Open File Count = {}\n", open_file_limit());
   }
 
   auto unit_cell_size = unit_cells().size();
@@ -1060,7 +1029,7 @@ namespace {
       std::string block_name        = "nodeblock_1";
       int         spatial_dimension = 3;
       auto        block = new Ioss::NodeBlock(grid.output_region(i)->get_database(), block_name,
-                                       local_node_count[i], spatial_dimension);
+                                              local_node_count[i], spatial_dimension);
       block->property_add(Ioss::Property("id", 1));
       grid.output_region(i)->add(block);
       grid.output_region(i)->property_add(
@@ -1178,7 +1147,7 @@ namespace {
 
     for (size_t j = 0; j < grid.JJ(); j++) {
       for (size_t i = 0; i < grid.II(); i++) {
-        auto &             cell = grid.get_cell(i, j);
+        auto              &cell = grid.get_cell(i, j);
         auto               rank = cell.rank(Loc::C);
         std::array<int, 6> boundary_rank{
             cell.rank(Loc::L), cell.rank(Loc::R), cell.rank(Loc::B), cell.rank(Loc::T), -1, -1};
@@ -1204,8 +1173,8 @@ namespace {
           auto *surface = new Ioss::SideSet(grid.output_region(rank)->get_database(),
                                             grid.generated_surface_names[i]);
           auto *block   = new Ioss::SideBlock(grid.output_region(rank)->get_database(),
-                                            grid.generated_surface_names[i], "quad4", "hex8",
-                                            surface_face_count[rank][i]);
+                                              grid.generated_surface_names[i], "quad4", "hex8",
+                                              surface_face_count[rank][i]);
           surface->property_update("global_entity_count", global_surface_face_count[i]);
           block->property_update("global_entity_count", global_surface_face_count[i]);
           block->property_update("distribution_factor_count", 0);

@@ -253,16 +253,17 @@ struct Axpby_Functor<typename XV::non_const_value_type, XV,
 #if KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY <= 2
 
     if (scalar_x == 0 && scalar_y == 0) {
-      m_y(i) = ATS::zero ();
+      m_y(i) = static_cast<typename YV::non_const_value_type>(ATS::zero());
     }
     if (scalar_x == 0 && scalar_y == 2) {
-      m_y(i) = m_b*m_y(i);
+      m_y(i) = static_cast<typename YV::non_const_value_type>(m_b * m_y(i));
     }
     if (scalar_x == 2 && scalar_y == 0) {
-      m_y(i) = m_a*m_x(i);
+      m_y(i) = static_cast<typename YV::non_const_value_type>(m_a * m_x(i));
     }
     if (scalar_x == 2 && scalar_y == 2) {
-      m_y(i) = m_a*m_x(i) + m_b*m_y(i);
+      m_y(i) = static_cast<typename YV::non_const_value_type>(m_a * m_x(i) +
+                                                              m_b * m_y(i));
     }
 
 #else // KOKKOSBLAS_OPTIMIZATION_LEVEL_AXPBY > 2

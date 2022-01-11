@@ -38,7 +38,7 @@
         <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
         <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
         <ParameterList name="Time Step Control Strategy">
-           <Parameter name="Strategy Type" type="string" value="Constant Time Step"/>
+           <Parameter name="Strategy Type" type="string" value="Constant"/>
            <Parameter name="Time Step" type="double" value="1.0"/>
         </ParameterList>
       </ParameterList>

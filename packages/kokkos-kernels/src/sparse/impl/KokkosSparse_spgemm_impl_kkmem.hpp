@@ -1443,7 +1443,7 @@ void
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   pool_memory_space m_space(num_chunks, chunksize, -1,  my_pool_type);
   MyExecSpace().fence();
 
@@ -1605,7 +1605,7 @@ void
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   pool_memory_space m_space(num_chunks, chunksize, -1,  my_pool_type);
   MyExecSpace().fence();
 

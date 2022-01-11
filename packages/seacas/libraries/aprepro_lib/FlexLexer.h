@@ -177,13 +177,13 @@ protected:
   // on use of certain flex features (like REJECT or yymore()).
 
   yy_state_type yy_last_accepting_state;
-  char *        yy_last_accepting_cpos;
+  char         *yy_last_accepting_cpos;
 
   yy_state_type *yy_state_buf;
   yy_state_type *yy_state_ptr;
 
   char *yy_full_match;
-  int * yy_full_state;
+  int  *yy_full_state;
   int   yy_full_lp;
 
   int yy_lp;

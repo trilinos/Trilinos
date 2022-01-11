@@ -35,10 +35,8 @@ void set_field_on_device_and_copy_back(stk::mesh::BulkData &bulk,
 {
   stk::mesh::NgpField<double>& ngpQuadField = stk::mesh::get_updated_ngp_field<double>(quadField);
   EXPECT_EQ(quadField.mesh_meta_data_ordinal(), ngpQuadField.get_ordinal());
-
   stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   EXPECT_EQ(bulk.mesh_meta_data().spatial_dimension(), ngpMesh.get_spatial_dimension());
-
   stk::mesh::for_each_entity_run(ngpMesh, rank, quadPart,
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
                                  {
@@ -127,7 +125,7 @@ void test_field_on_subset_of_mesh(const stk::mesh::BulkData& bulk, const FieldTy
                                                                                            team.league_rank());
                          unsigned numElems = bucket.size();
 
-                         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElems), [&] (const int& i)
+                         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElems), [&field, &bucket, ngpMesh, &partThatHasField, &partThatDoesntHaveField] (const int& i)
                          {
                            stk::mesh::Entity elem = bucket[i];
                            stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
@@ -172,10 +170,8 @@ TEST_F(NgpHowTo, loopOverAllMeshNodes)
   stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
-
   double fieldVal = 13.0;
   set_field_on_device_and_copy_back(get_bulk(), stk::topology::NODE_RANK, get_meta().universal_part(), field, fieldVal);
-
   for(const stk::mesh::Bucket *bucket : get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().universal_part()))
     for(stk::mesh::Entity node : *bucket)
       EXPECT_EQ(fieldVal, *stk::mesh::field_data(field, node));
@@ -380,7 +376,7 @@ void run_connected_face_test(const stk::mesh::BulkData& bulk)
 TEST_F(NgpHowTo, loopOverElemFaces)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
-    return;
+    GTEST_SKIP();
   }
   auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
   double init = 0.0;
@@ -388,6 +384,79 @@ TEST_F(NgpHowTo, loopOverElemFaces)
   setup_mesh("generated:1x1x1|sideset:xXyYzZ", stk::mesh::BulkData::NO_AUTO_AURA);
 
   run_connected_face_test(get_bulk());
+}
+
+void add_constraint_on_nodes_1_thru_4(stk::mesh::BulkData& bulk,
+                                      stk::mesh::EntityId constraintId)
+{
+  bulk.modification_begin();
+  stk::mesh::Entity constraintEntity = bulk.declare_constraint(constraintId);
+  for(stk::mesh::EntityId nodeId = 1; nodeId <= 4; ++nodeId) {
+    stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeId);
+    stk::mesh::ConnectivityOrdinal ord = static_cast<stk::mesh::ConnectivityOrdinal>(nodeId-1);
+    bulk.declare_relation(constraintEntity, node, ord);
+  }
+  bulk.modification_end();
+}
+
+void run_constraint_node_test(const stk::mesh::BulkData& bulk,
+                              stk::mesh::EntityId constraintId)
+{
+  stk::mesh::Entity constraint = bulk.get_entity(stk::topology::CONSTRAINT_RANK, constraintId);
+  ASSERT_TRUE(bulk.is_valid(constraint));
+  stk::mesh::Entity node0 = bulk.begin_nodes(constraint)[0];
+  stk::mesh::Entity node1 = bulk.begin_nodes(constraint)[1];
+  stk::mesh::Entity node2 = bulk.begin_nodes(constraint)[2];
+  stk::mesh::Entity node3 = bulk.begin_nodes(constraint)[3];
+  ASSERT_TRUE(bulk.is_valid(node0));
+  ASSERT_TRUE(bulk.is_valid(node1));
+  ASSERT_TRUE(bulk.is_valid(node2));
+  ASSERT_TRUE(bulk.is_valid(node3));
+
+  const unsigned expectedNumNodes = bulk.num_nodes(constraint);
+
+  const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+  Kokkos::parallel_for(1,
+    KOKKOS_LAMBDA(const unsigned& i) {
+      stk::mesh::FastMeshIndex constraintMeshIndex = ngpMesh.fast_mesh_index(constraint);
+
+      stk::mesh::NgpMesh::ConnectedEntities ngpNodes = ngpMesh.get_connected_entities(stk::topology::CONSTRAINT_RANK, constraintMeshIndex, stk::topology::NODE_RANK);
+      NGP_EXPECT_EQ(expectedNumNodes, ngpNodes.size());
+      NGP_EXPECT_EQ(node0, ngpNodes[0]);
+      NGP_EXPECT_EQ(node1, ngpNodes[1]);
+      NGP_EXPECT_EQ(node2, ngpNodes[2]);
+      NGP_EXPECT_EQ(node3, ngpNodes[3]);
+
+      stk::mesh::NgpMesh::ConnectedOrdinals ngpOrdinals = ngpMesh.get_connected_ordinals(stk::topology::CONSTRAINT_RANK, constraintMeshIndex, stk::topology::NODE_RANK);
+      NGP_EXPECT_EQ(4u, ngpOrdinals.size());
+      NGP_EXPECT_EQ(0, ngpOrdinals[0]);
+      NGP_EXPECT_EQ(1, ngpOrdinals[1]);
+      NGP_EXPECT_EQ(2, ngpOrdinals[2]);
+      NGP_EXPECT_EQ(3, ngpOrdinals[3]);
+    }
+  );
+}
+
+class NgpHowToConstraint : public stk::unit_test_util::MeshFixture 
+{
+public:
+  NgpHowToConstraint() : MeshFixture(3, {"node", "edge", "face", "elem", "constraint"})
+  {}
+};
+
+TEST_F(NgpHowToConstraint, checkNodalConnectivity)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) {
+    GTEST_SKIP();
+  }
+  auto &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField");
+  double init = 0.0;
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  setup_mesh("generated:1x1x1", stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::EntityId constraintId = 1;
+  add_constraint_on_nodes_1_thru_4(get_bulk(), constraintId);
+
+  run_constraint_node_test(get_bulk(), constraintId);
 }
 
 void run_connected_face_ordinal_test(const stk::mesh::BulkData& bulk)
@@ -549,7 +618,11 @@ void run_another_connected_face_test(const stk::mesh::BulkData& bulk)
   EXPECT_EQ(4u, elems.size());
 
   unsigned numResults = 2;
-  IntDualViewType result = ngp_unit_test_utils::create_dualview<IntDualViewType>("result",numResults);
+  auto resultDevice = Kokkos::View<int*, stk::ngp::ExecSpace>("device", numResults);
+  auto resultHost = Kokkos::create_mirror_view(resultDevice);
+  Kokkos::deep_copy(resultHost, 0);
+  Kokkos::deep_copy(resultDevice, 0);
+ 
   enum {ELEM_FACE_CHECK = 0, FACE_NODE_CHECK = 1};
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
@@ -563,7 +636,7 @@ void run_another_connected_face_test(const stk::mesh::BulkData& bulk)
                          const stk::mesh::NgpMesh::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK,
                                                                                            team.league_rank());
                          unsigned numElems = bucket.size();
-                         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElems), [&] (const int& i)
+                         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElems), [&resultDevice, &bucket, ngpMesh, &elemTopo] (const int& i)
                          {
                            stk::mesh::Entity elem = bucket[i];
                            stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
@@ -571,7 +644,7 @@ void run_another_connected_face_test(const stk::mesh::BulkData& bulk)
                            stk::topology bucketTopo = bucket.topology();
                            NGP_ThrowRequire(elemTopo == bucketTopo);
                            int numFaces = faces.size();
-                           stk::mesh::atomic_add(&result.d_view(ELEM_FACE_CHECK), numFaces);
+                           stk::mesh::atomic_add(&resultDevice(ELEM_FACE_CHECK), numFaces);
 
                            if (numFaces == 1)
                            {
@@ -582,16 +655,15 @@ void run_another_connected_face_test(const stk::mesh::BulkData& bulk)
                              stk::topology faceTopo = elemTopo.face_topology(faceOrdinal);
 
                              NGP_ThrowRequire(faceNodes.size() == faceTopo.num_nodes());
-                             stk::mesh::atomic_add(&result.d_view(FACE_NODE_CHECK), 1);
+                             stk::mesh::atomic_add(&resultDevice(FACE_NODE_CHECK), 1);
                            }
+
                          });
                        });
 
-  result.modify<IntDualViewType::execution_space>();
-  result.sync<IntDualViewType::host_mirror_space>();
-
-  EXPECT_EQ(2, result.h_view(ELEM_FACE_CHECK)); //expected 2 elements that had faces
-  EXPECT_EQ(2, result.h_view(FACE_NODE_CHECK)); //expected 2 faces that had nodes
+  Kokkos::deep_copy(resultHost, resultDevice);
+  EXPECT_EQ(2, resultHost(ELEM_FACE_CHECK)); //expected 2 elements that had faces
+  EXPECT_EQ(2, resultHost(FACE_NODE_CHECK)); //expected 2 faces that had nodes
 }
 
 TEST_F(NgpHowTo, anotherElemFacesTest)
@@ -603,7 +675,6 @@ TEST_F(NgpHowTo, anotherElemFacesTest)
   double init = 0.0;
   stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
   setup_mesh("generated:1x1x4|sideset:zZ", stk::mesh::BulkData::NO_AUTO_AURA);
-
   run_another_connected_face_test(get_bulk());
 }
 
@@ -794,6 +865,7 @@ TEST_F(NgpHowTo, setAllScalarFieldValues)
   double initialValue = 0.0;
   stk::mesh::Field<double> &stkField = create_field_with_num_states_and_init<double>(get_meta(), "myField", numStates, initialValue);
   setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+  stkField.sync_to_device();
 
   stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
   stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
@@ -818,6 +890,7 @@ TEST_F(NgpHowTo, setAllVectorFieldValues)
                                                                         fieldDimension,
                                                                         initialValue);
   setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+  stkField.sync_to_device();
 
   stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(stkField);
   const stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
@@ -831,6 +904,55 @@ TEST_F(NgpHowTo, setAllVectorFieldValues)
   EXPECT_NEAR(expectedSum, sum, 1e-14);
 }
 
+struct CheckInitialFieldSizeAndValues {
+  CheckInitialFieldSizeAndValues(const stk::mesh::NgpField<double>& _ngpField, double _tolerance)
+      : ngpField(_ngpField), tolerance(_tolerance)
+  {
+  }
+
+  KOKKOS_FUNCTION
+  void operator()(const stk::mesh::FastMeshIndex& meshIdx) const
+  {
+    NGP_EXPECT_NEAR(1.0, ngpField(meshIdx, 0), tolerance);
+    NGP_EXPECT_NEAR(2.0, ngpField(meshIdx, 1), tolerance);
+    NGP_EXPECT_NEAR(3.0, ngpField(meshIdx, 2), tolerance);
+
+    stk::mesh::EntityFieldData<double> vals = ngpField(meshIdx);
+    NGP_EXPECT_EQ(vals.size(), ngpField.get_num_components_per_entity(meshIdx));
+    NGP_EXPECT_NEAR(1.0, vals[0], tolerance);
+    NGP_EXPECT_NEAR(2.0, vals[1], tolerance);
+    NGP_EXPECT_NEAR(3.0, vals[2], tolerance);
+    vals[0] += 2.0;
+    vals[1] += 3.0;
+    vals[2] += 4.0;
+  }
+
+ private:
+  stk::mesh::NgpField<double> ngpField;
+  double tolerance;
+};
+
+struct CheckUpdatedFieldSizeAndValues {
+  CheckUpdatedFieldSizeAndValues(const stk::mesh::NgpField<double>& _ngpField, double _tolerance)
+      : ngpField(_ngpField), tolerance(_tolerance)
+  {
+  }
+
+  KOKKOS_FUNCTION
+  void operator()(const stk::mesh::FastMeshIndex& meshIdx) const
+  {
+    const stk::mesh::EntityFieldData<double> vals = ngpField(meshIdx);
+
+    NGP_EXPECT_NEAR(3.0, vals[0], tolerance);
+    NGP_EXPECT_NEAR(5.0, vals[1], tolerance);
+    NGP_EXPECT_NEAR(7.0, vals[2], tolerance);
+  }
+
+ private:
+  stk::mesh::NgpField<double> ngpField;
+  double tolerance;
+};
+
 void test_vector_field_size_and_values(stk::mesh::BulkData& bulk,
                               const stk::mesh::FieldBase& stkField)
 {
@@ -839,39 +961,12 @@ void test_vector_field_size_and_values(stk::mesh::BulkData& bulk,
 
   const double tol = 1.e-12;
   const stk::mesh::Part& block1 = *bulk.mesh_meta_data().get_part("block_1");
-  stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), block1,
-               KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& meshIdx)
-               {
-                  NGP_EXPECT_NEAR(1.0, ngpField(meshIdx, 0), tol);
-                  NGP_EXPECT_NEAR(2.0, ngpField(meshIdx, 1), tol);
-                  NGP_EXPECT_NEAR(3.0, ngpField(meshIdx, 2), tol);
+  CheckInitialFieldSizeAndValues checkInitialFieldSizeAndValues(ngpField, tol);
+  stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), block1, checkInitialFieldSizeAndValues);
 
-                  stk::mesh::EntityFieldData<double> vals = ngpField(meshIdx);
-                  NGP_EXPECT_EQ(vals.size(), ngpField.get_num_components_per_entity(meshIdx));
-                  NGP_EXPECT_NEAR(1.0, vals[0], tol);
-                  NGP_EXPECT_NEAR(2.0, vals[1], tol);
-                  NGP_EXPECT_NEAR(3.0, vals[2], tol);
-
-                  vals[0] += 2.0;
-                  vals[1] += 3.0;
-                  vals[2] += 4.0;
-               });
-
-  stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), block1,
-               KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& meshIdx)
-               {
-                  const stk::mesh::EntityFieldData<double> vals = ngpField(meshIdx);
-
-                  const double& vals0 = vals[0];
-                  const double& vals1 = vals[1];
-                  const double& vals2 = vals[2];
-
-                  NGP_EXPECT_NEAR(3.0, vals0, tol);
-                  NGP_EXPECT_NEAR(5.0, vals1, tol);
-                  NGP_EXPECT_NEAR(7.0, vals2, tol);
-               });
+  CheckUpdatedFieldSizeAndValues checkUpdatedFieldSizeAndValues(ngpField, tol);
+  stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), block1, checkUpdatedFieldSizeAndValues);
 }
-
 NGP_TEST_F(NgpHowTo, accessVectorFieldValues)
 {
   int numStates = 1;
@@ -894,7 +989,7 @@ protected:
   NgpReduceHowTo()
   {
     elemField = &create_field(get_meta());
-    setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+    setup_mesh("generated:1x2x4", stk::mesh::BulkData::AUTO_AURA);
     stk::mesh::EntityVector elems;
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);
     for(stk::mesh::Entity elem : elems)
@@ -928,10 +1023,41 @@ TEST_F(NgpReduceHowTo, getMaxFieldValue)
 
   stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
   stk::mesh::NgpField<int> & ngpElemField = stk::mesh::get_updated_ngp_field<int>(*elemField);
-  const int highestElemID = 4;
+  const int highestElemID = 8;
   int expectedMaxVal = highestElemID;
   int actualMaxVal = stk::mesh::get_field_max(ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part());
   EXPECT_EQ(expectedMaxVal, actualMaxVal);
+}
+
+TEST_F(NgpReduceHowTo, getMaxFieldValueComponent)
+{
+  if (get_bulk().parallel_size() > 1) return;
+
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  auto * coordField = get_meta().coordinate_field();
+  auto & ngpCoordField = stk::mesh::get_updated_ngp_field<double>(*coordField);
+
+  const double expectedMaxCoord = 4.0;
+  const double expectedMaxXCoord = 1.0;
+  const double expectedMaxYCoord = 2.0;
+  double maxVal;
+  double maxXVal;
+  double maxYVal;
+  Kokkos::Max<double> maxValReduction(maxVal);
+  Kokkos::Max<double> maxValXReduction(maxXVal);
+  Kokkos::Max<double> maxValYReduction(maxYVal);
+  stk::mesh::get_field_reduction
+      (ngpMesh, ngpCoordField, get_bulk().mesh_meta_data().universal_part(), maxValReduction);
+  const int xComponent = 0;
+  const int yComponent = 1;
+  stk::mesh::get_field_reduction
+      (ngpMesh, ngpCoordField, get_bulk().mesh_meta_data().universal_part(), maxValXReduction, xComponent);
+  stk::mesh::get_field_reduction
+      (ngpMesh, ngpCoordField, get_bulk().mesh_meta_data().universal_part(), maxValYReduction, yComponent);
+
+  EXPECT_EQ(expectedMaxCoord, maxVal);
+  EXPECT_EQ(expectedMaxXCoord, maxXVal);
+  EXPECT_EQ(expectedMaxYCoord, maxYVal);
 }
 
 TEST_F(NgpReduceHowTo, getSumFieldValue)
@@ -982,30 +1108,10 @@ TEST_F(NgpReduceHowTo, minMaxLocReduction)
   int expectedMin = 1;
   stk::mesh::EntityId expectedMinLoc = 1;
   int expectedMax = get_num_elems();
-  stk::mesh::EntityId expectedMaxLoc = 4;
+  stk::mesh::EntityId expectedMaxLoc = 8;
   Kokkos::MinMaxLocScalar<int,stk::mesh::EntityId> minMaxLocVal;
   Kokkos::MinMaxLoc<int,stk::mesh::EntityId> minMaxLoc (minMaxLocVal);
   stk::mesh::get_field_reduction (ngpMesh, ngpElemField, get_bulk().mesh_meta_data().universal_part(), minMaxLoc);
-  EXPECT_EQ(expectedMin, minMaxLocVal.min_val);
-  EXPECT_EQ(expectedMinLoc, minMaxLocVal.min_loc);
-  EXPECT_EQ(expectedMax, minMaxLocVal.max_val);
-  EXPECT_EQ(expectedMaxLoc, minMaxLocVal.max_loc);
-}
-TEST_F(NgpReduceHowTo, minMaxLocReductionThroughAccessor)
-{
-  if (get_bulk().parallel_size() > 1) return;
-
-  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-  stk::mesh::NgpField<int> & ngpElemField = stk::mesh::get_updated_ngp_field<int>(*elemField);
-  int expectedMin = 1;
-  stk::mesh::EntityId expectedMinLoc = 1;
-  int expectedMax = get_num_elems();
-  stk::mesh::EntityId expectedMaxLoc = 4;
-  Kokkos::MinMaxLocScalar<int,stk::mesh::EntityId> minMaxLocVal;
-  Kokkos::MinMaxLoc<int,stk::mesh::EntityId> minMaxLoc (minMaxLocVal);
-  stk::mesh::FieldAccessFunctor<stk::mesh::NgpMesh, stk::mesh::NgpField<int>,
-                                decltype(minMaxLoc), stk::mesh::identity<int>>accessor(ngpElemField, minMaxLoc);
-  stk::mesh::get_field_reduction(ngpMesh, get_bulk().mesh_meta_data().universal_part(), accessor);
   EXPECT_EQ(expectedMin, minMaxLocVal.min_val);
   EXPECT_EQ(expectedMinLoc, minMaxLocVal.min_loc);
   EXPECT_EQ(expectedMax, minMaxLocVal.max_val);
@@ -1078,6 +1184,10 @@ NGP_TEST_F(NgpHowTo, ReuseNgpField)
   stk::mesh::Field<double>                &doubleStkField = create_field_with_num_states_and_init(get_meta(), "field10", numStates, (double)0);
 
   setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+  auto fields = get_meta().get_fields();
+  for(auto field : fields) {
+    field->sync_to_device();
+  }
 
   {
     fill_field_on_device(get_bulk(), shortStkField, (short)42);
@@ -1135,24 +1245,25 @@ void run_part_membership_test(const stk::mesh::BulkData& bulk, stk::mesh::PartOr
                                                                                            team.league_rank());
                          unsigned numElems = bucket.size();
 
-                         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElems), [&] (const int& i)
-                         {
-                           stk::mesh::Entity elem = bucket[i];
-                           stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
-                           stk::mesh::NgpMesh::ConnectedNodes nodes = ngpMesh.get_nodes(stk::topology::ELEM_RANK, elemIndex);
+                         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElems),
+                             [&ngpMesh, &bucket, &partOrdinal](const int& i) {
+                               stk::mesh::Entity elem = bucket[i];
+                               stk::mesh::FastMeshIndex elemIndex = ngpMesh.fast_mesh_index(elem);
+                               stk::mesh::NgpMesh::ConnectedNodes nodes =
+                                   ngpMesh.get_nodes(stk::topology::ELEM_RANK, elemIndex);
 
-                           for(unsigned nodeIndex = 0; nodeIndex < nodes.size(); nodeIndex++) {
-                             stk::mesh::Entity node = nodes[nodeIndex];
-                             stk::mesh::FastMeshIndex meshIndex = ngpMesh.fast_mesh_index(node);
-                             const stk::mesh::NgpMesh::BucketType& nodeBucket = ngpMesh.get_bucket(stk::topology::NODE_RANK,
-                                                                                                   meshIndex.bucket_id);
-                             if(ngpMesh.identifier(node) == 1 || ngpMesh.identifier(node) == 2) {
-                               NGP_ThrowRequire(nodeBucket.member(partOrdinal) == true);
-                             } else {
-                               NGP_ThrowRequire(nodeBucket.member(partOrdinal) == false);
-                             }
-                           }
-                         });
+                               for (unsigned nodeIndex = 0; nodeIndex < nodes.size(); nodeIndex++) {
+                                 stk::mesh::Entity node = nodes[nodeIndex];
+                                 stk::mesh::FastMeshIndex meshIndex = ngpMesh.fast_mesh_index(node);
+                                 const stk::mesh::NgpMesh::BucketType& nodeBucket =
+                                     ngpMesh.get_bucket(stk::topology::NODE_RANK, meshIndex.bucket_id);
+                                 if (ngpMesh.identifier(node) == 1 || ngpMesh.identifier(node) == 2) {
+                                   NGP_ThrowRequire(nodeBucket.member(partOrdinal) == true);
+                                 } else {
+                                   NGP_ThrowRequire(nodeBucket.member(partOrdinal) == false);
+                                 }
+                               }
+                             });
                        });
 }
 
@@ -1208,6 +1319,7 @@ TEST(NgpMesh, meshIndices)
   stk::mesh::put_field_on_mesh(field, meta.universal_part(), &init);
 
   stk::io::fill_mesh("generated:1x1x1", bulk);
+  field.sync_to_device();
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   stk::mesh::NgpField<int> & ngpField = stk::mesh::get_updated_ngp_field<int>(field);
   int fieldVal = 5;

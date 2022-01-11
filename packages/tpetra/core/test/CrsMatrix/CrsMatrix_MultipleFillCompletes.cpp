@@ -93,7 +93,7 @@ namespace {
       if (myRank == 0) {
         cerr << "  Create a matrix with room for 2 entries in each row" << endl;
       }
-      MAT matrix (map, 2, Tpetra::StaticProfile); // room for two on each row
+      MAT matrix (map, 2); // room for two on each row
 
       if (myRank == 0) {
         cerr << "  Test insertGlobalValues does not throw "

@@ -232,7 +232,7 @@ namespace MueLu {
       bool validate = paramList.get("ML validate parameter list", true); /* true = default in ML */
       if (validate) {
 
-#if defined(HAVE_MUELU_ML)
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
         // Validate parameter list using ML validator
         int depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
         TEUCHOS_TEST_FOR_EXCEPTION(! ML_Epetra::ValidateMLPParameters(paramList, depth), Exceptions::RuntimeError,
@@ -691,6 +691,43 @@ namespace MueLu {
         MUELU_COPY_PARAM(paramList, "smoother: MLS alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
       } else {
         MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
+      }
+
+
+      smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
+      smooProto->SetFactory("A", AFact);
+
+    } else if (type == "Hiptmair") {
+      ifpackType = "HIPTMAIR";
+      std::string subSmootherType = "Chebyshev";
+      if (paramList.isParameter("subsmoother: type"))
+        subSmootherType = paramList.get<std::string>("subsmoother: type");
+      std::string subSmootherIfpackType;
+      if (subSmootherType == "Chebyshev")
+        subSmootherIfpackType = "CHEBYSHEV";
+      else if (subSmootherType == "Jacobi" || subSmootherType == "Gauss-Seidel" || subSmootherType == "symmetric Gauss-Seidel") {
+        if (subSmootherType == "symmetric Gauss-Seidel") subSmootherType = "Symmetric Gauss-Seidel"; // FIXME
+        subSmootherIfpackType = "RELAXATION";
+      } else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown smoother type. '" << subSmootherType << "' not supported by MueLu.");
+
+      smootherParamList.set("hiptmair: smoother type 1", subSmootherIfpackType);
+      smootherParamList.set("hiptmair: smoother type 2", subSmootherIfpackType);
+
+      auto smoother1ParamList = smootherParamList.sublist("hiptmair: smoother list 1");
+      auto smoother2ParamList = smootherParamList.sublist("hiptmair: smoother list 2");
+
+      if (subSmootherType == "Chebyshev") {
+        MUELU_COPY_PARAM(paramList, "subsmoother: edge sweeps", int, 2, smoother1ParamList, "chebyshev: degree");
+        MUELU_COPY_PARAM(paramList, "subsmoother: node sweeps", int, 2, smoother2ParamList, "chebyshev: degree");
+
+        MUELU_COPY_PARAM(paramList, "subsmoother: Chebyshev", double, 20, smoother1ParamList, "chebyshev: ratio eigenvalue");
+        MUELU_COPY_PARAM(paramList, "subsmoother: Chebyshev", double, 20, smoother2ParamList, "chebyshev: ratio eigenvalue");
+      } else {
+        MUELU_COPY_PARAM(paramList, "subsmoother: edge sweeps", int, 2, smoother1ParamList, "relaxation: sweeps");
+        MUELU_COPY_PARAM(paramList, "subsmoother: node sweeps", int, 2, smoother2ParamList, "relaxation: sweeps");
+
+        MUELU_COPY_PARAM(paramList, "subsmoother: SGS damping factor", double, 0.8, smoother2ParamList, "relaxation: damping factor");
       }
 
 

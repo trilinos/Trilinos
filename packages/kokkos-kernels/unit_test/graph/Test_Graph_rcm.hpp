@@ -98,8 +98,8 @@ void generate7pt(rowmap_t& rowmapView, entries_t& entriesView, int gridX, int gr
   Kokkos::View<size_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> rowmapHost(rowmap.data(), numVertices + 1);
   Kokkos::View<lno_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> entriesHost(entries.data(), numEdges);
   //Allocate owning views on device with the correct size.
-  rowmapView = rowmap_t(Kokkos::ViewAllocateWithoutInitializing("Rowmap"), numVertices + 1);
-  entriesView = entries_t(Kokkos::ViewAllocateWithoutInitializing("Colinds"), numEdges);
+  rowmapView = rowmap_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Rowmap"), numVertices + 1);
+  entriesView = entries_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Colinds"), numEdges);
   //Copy the graph from host to device
   Kokkos::deep_copy(rowmapView, rowmapHost);
   Kokkos::deep_copy(entriesView, entriesHost);
@@ -145,7 +145,7 @@ void test_rcm(lno_t gridX, lno_t gridY, lno_t gridZ)
   auto rowmapHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowmap);
   auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), entries);
   auto rcmHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rcm);
-  decltype(rcmHost) rcmPermHost(Kokkos::ViewAllocateWithoutInitializing("RCMPerm"), numVerts);
+  decltype(rcmHost) rcmPermHost(Kokkos::view_alloc(Kokkos::WithoutInitializing, "RCMPerm"), numVerts);
   for(lno_t i = 0; i < numVerts; i++)
     rcmPermHost(rcmHost(i)) = i;
   //make sure each row index shows up exactly once
@@ -161,7 +161,7 @@ void test_rcm(lno_t gridX, lno_t gridY, lno_t gridZ)
     for(lno_t i = 0; i < numVerts; i++)
       ASSERT_EQ(counts[i], 1);
   }
-  Kokkos::View<lno_t*, Kokkos::HostSpace> identityOrder(Kokkos::ViewAllocateWithoutInitializing("Identity"), numVerts);
+  Kokkos::View<lno_t*, Kokkos::HostSpace> identityOrder(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Identity"), numVerts);
   for(lno_t i = 0; i < numVerts; i++)
     identityOrder(i) = i;
   size_t origBW = maxBandwidth(rowmapHost, entriesHost, identityOrder, identityOrder);
@@ -195,3 +195,5 @@ TEST_F( TestCategory, graph ## _ ## rcm ## _ ## SCALAR ## _ ## ORDINAL ## _ ## O
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
 #endif
+
+#undef EXECUTE_TEST

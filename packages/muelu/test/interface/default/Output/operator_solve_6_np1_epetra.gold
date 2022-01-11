@@ -6,28 +6,6 @@ smoother ->
  relaxation: sweeps = 1   [unused]
  relaxation: damping factor = 1   [unused]
 Level 1
-Prolongator smoothing (MueLu::SaPFactory)
-Matrix filtering (MueLu::FilteredAFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
-lightweight wrap = 1
-Filtered matrix is not being constructed as no filtering is being done
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
-BuildAggregates (Phase - (Dirichlet))
-BuildAggregates (Phase 1 (main))
-BuildAggregates (Phase 2a (secondary))
-BuildAggregates (Phase 2b (expansion))
-BuildAggregates (Phase 3 (cleanup))
-Nullspace factory (MueLu::NullspaceFactory)
-Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
-matrixmatrix: kernel params -> 
- [empty list]
-matrixmatrix: kernel params -> 
- [empty list]
 Transpose P (MueLu::TransPFactory)
 matrixmatrix: kernel params -> 
  [empty list]

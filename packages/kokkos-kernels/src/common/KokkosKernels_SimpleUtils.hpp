@@ -46,7 +46,7 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Atomic.hpp"
 #include "Kokkos_ArithTraits.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 #include <type_traits>
 
 

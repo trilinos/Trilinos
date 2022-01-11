@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,9 +35,9 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
   int    connid        = 0;
   int    npeid;
   char   errmsg[MAX_ERR_LENGTH];
-  char * entity_type1     = NULL;
-  char * entity_type2     = NULL;
-  int *  blocks_to_define = NULL;
+  char  *entity_type1     = NULL;
+  char  *entity_type2     = NULL;
+  int   *blocks_to_define = NULL;
   const char *dnumblk     = NULL;
   const char *vblkids     = NULL;
   const char *vblksta     = NULL;
@@ -274,27 +274,27 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
     case EX_EDGE_BLOCK:
       dneblk  = DIM_NUM_ED_IN_EBLK(blk_id_ndx);
       dnnpe   = DIM_NUM_NOD_PER_ED(blk_id_ndx);
-      dnepe   = 0;
-      dnfpe   = 0;
+      dnepe   = NULL;
+      dnfpe   = NULL;
       dnape   = DIM_NUM_ATT_IN_EBLK(blk_id_ndx);
       vblkatt = VAR_EATTRIB(blk_id_ndx);
       vattnam = VAR_NAME_EATTRIB(blk_id_ndx);
       vnodcon = VAR_EBCONN(blk_id_ndx);
-      vedgcon = 0;
-      vfaccon = 0;
+      vedgcon = NULL;
+      vfaccon = NULL;
       break;
     case EX_FACE_BLOCK:
       dneblk  = DIM_NUM_FA_IN_FBLK(blk_id_ndx);
       dnnpe   = DIM_NUM_NOD_PER_FA(blk_id_ndx);
-      dnepe   = 0;
-      dnfpe   = 0;
+      dnepe   = NULL;
+      dnfpe   = NULL;
       dnape   = DIM_NUM_ATT_IN_FBLK(blk_id_ndx);
       vblkatt = VAR_FATTRIB(blk_id_ndx);
       vattnam = VAR_NAME_FATTRIB(blk_id_ndx);
       vnodcon = VAR_FBCONN(blk_id_ndx);
       vnpecnt = VAR_FBEPEC(blk_id_ndx);
-      vedgcon = 0;
-      vfaccon = 0;
+      vedgcon = NULL;
+      vfaccon = NULL;
       break;
     case EX_ELEM_BLOCK:
       dneblk  = DIM_NUM_EL_IN_BLK(blk_id_ndx);
@@ -384,21 +384,6 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
         goto error_ret; /* exit define mode and return */
       }
       ex__compress_variable(exoid, varid, 2);
-
-#if defined(PARALLEL_AWARE_EXODUS)
-      /*
-       * There is currently a bug in netcdf-4.5.1-devel and earlier
-       * for partial parallel output of strided arrays in collective
-       * mode for netcdf-4-based output.  If the number of attributes >
-       * 1 and in parallel mode, set the mode to independent.
-       */
-      if (blocks[i].num_attribute > 1) {
-        struct ex__file_item *file = ex__find_file_item(exoid);
-        if (file->is_parallel && file->is_hdf5) {
-          nc_var_par_access(exoid, varid, NC_INDEPENDENT);
-        }
-      }
-#endif
 
       /* inquire previously defined dimensions  */
       if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
@@ -598,7 +583,7 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
          write anything; avoids corruption in some cases.
       */
       size_t count[2];
-      char * text = "";
+      char  *text = "";
       size_t j;
 
       count[0] = 1;

@@ -36,15 +36,18 @@ typedef typename std::array<REAL,DIM>::iterator iterator;
   typedef REAL Real;
   static const Vec<REAL,DIM> ZERO;
 
-
   Vec(const Vec<REAL,DIM>& rhs) { vec = rhs.vec; }
   Vec(Vec<REAL,DIM>&&) = default;
 
-  explicit Vec(const double * rhs) { assert(rhs); for (unsigned i=0; i<DIM; ++i) vec[i] = rhs[i]; }
-  Vec(const double * rhs, const unsigned len) { assert(len == 0 || rhs); assert(DIM >= len); for (unsigned i=0; i<len; ++i) vec[i] = rhs[i]; for (unsigned i=len; i<DIM; ++i) vec[i] = 0; }
-  Vec(const double x, const double y, const double z) { static_assert(DIM==3, "Invalid dimension"); vec[0] = x; vec[1] = y; vec[2] = z; }
-  Vec(const double x, const double y) { static_assert(DIM==2, "Invalid dimension"); vec[0] = x; vec[1] = y; }
-  explicit Vec(const double x) { static_assert(DIM==1, "Invalid dimension"); vec[0] = x; }
+  template<typename REALARG>
+  Vec(const REALARG * rhs) { assert(rhs); for (unsigned i=0; i<DIM; ++i) vec[i] = rhs[i]; }
+
+  template<typename REALARG>
+  Vec(const REALARG * rhs, const unsigned len) { assert(len == 0 || rhs); assert(DIM >= len); for (unsigned i=0; i<len; ++i) vec[i] = rhs[i]; for (unsigned i=len; i<DIM; ++i) vec[i] = 0; }
+
+  Vec(const REAL x, const REAL y, const REAL z) { static_assert(DIM==3, "Invalid dimension"); vec[0] = x; vec[1] = y; vec[2] = z; }
+  Vec(const REAL x, const REAL y) { static_assert(DIM==2, "Invalid dimension"); vec[0] = x; vec[1] = y; }
+  explicit Vec(const REAL x) { static_assert(DIM==1, "Invalid dimension"); vec[0] = x; }
   constexpr Vec() : vec{} {}
   Vec(MemberInit) {/* MemberInit::NONE */}
 

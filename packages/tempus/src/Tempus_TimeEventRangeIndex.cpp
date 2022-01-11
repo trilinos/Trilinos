@@ -16,6 +16,10 @@ namespace Tempus {
 
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(TimeEventRangeIndex)
 
+  // Nonmember constructor
+  template Teuchos::RCP<TimeEventRangeIndex<double> >
+  createTimeEventRangeIndex(Teuchos::RCP<Teuchos::ParameterList> pl);
+
 } // namespace Tempus
 
 #endif

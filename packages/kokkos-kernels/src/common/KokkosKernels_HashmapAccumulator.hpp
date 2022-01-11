@@ -259,9 +259,9 @@ struct HashmapAccumulator
       key_type key,
       value_type value,
       value_type *values2,
-      size_type *used_size_,
-      size_type *used_hash_size,
-      size_type *used_hashes)
+      size_type * /*used_size_*/,
+      size_type * /*used_hash_size*/,
+      size_type * /*used_hashes*/)
   {
     size_type hash, i;
 
@@ -495,8 +495,8 @@ struct HashmapAccumulator
       keys[my_write_index] = key;
       values[my_write_index] = value;
 
-      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
-      //this is an issue on VOLTA because warps do not go in SIMD fashion anymore.
+      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || defined(KOKKOS_ARCH_AMPERE)
+      //this is an issue on VOLTA and up because warps do not go in SIMD fashion anymore.
       //while some thread might insert my_write_index into linked list, another
       //thread in the warp might be reading keys in above loop.
       //before inserting the new value in liked list -- which is done with atomic exchange below,
@@ -572,8 +572,8 @@ struct HashmapAccumulator
       keys[my_write_index] = key;
       values[my_write_index] = value;
 
-      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
-      //this is an issue on VOLTA because warps do not go in SIMD fashion anymore.
+      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || defined(KOKKOS_ARCH_AMPERE)
+      //this is an issue on VOLTA and up because warps do not go in SIMD fashion anymore.
       //while some thread might insert my_write_index into linked list, another
       //thread in the warp might be reading keys in above loop.
       //before inserting the new value in liked list -- which is done with atomic exchange below,
@@ -659,8 +659,8 @@ struct HashmapAccumulator
 
       keys[my_write_index] = key;
 
-      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
-      //this is an issue on VOLTA because warps do not go in SIMD fashion anymore.
+      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || defined(KOKKOS_ARCH_AMPERE)
+      //this is an issue on VOLTA and up because warps do not go in SIMD fashion anymore.
       //while some thread might insert my_write_index into linked list, another
       //thread in the warp might be reading keys in above loop.
       //before inserting the new value in liked list -- which is done with atomic exchange below,
@@ -714,8 +714,8 @@ struct HashmapAccumulator
       keys[my_write_index] = key;
       values[my_write_index] = value;
 
-      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
-      //this is an issue on VOLTA because warps do not go in SIMD fashion anymore.
+      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || defined(KOKKOS_ARCH_AMPERE)
+      //this is an issue on VOLTA and up because warps do not go in SIMD fashion anymore.
       //while some thread might insert my_write_index into linked list, another
       //thread in the warp might be reading keys in above loop.
       //before inserting the new value in liked list -- which is done with atomic exchange below,
@@ -771,8 +771,8 @@ struct HashmapAccumulator
       keys[my_write_index] = key;
       values[my_write_index] = value;
 
-      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
-      //this is an issue on VOLTA because warps do not go in SIMD fashion anymore.
+      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || defined(KOKKOS_ARCH_AMPERE)
+      //this is an issue on VOLTA and up because warps do not go in SIMD fashion anymore.
       //while some thread might insert my_write_index into linked list, another
       //thread in the warp might be reading keys in above loop.
       //before inserting the new value in liked list -- which is done with atomic exchange below,
@@ -822,8 +822,8 @@ struct HashmapAccumulator
 
       keys[my_write_index] = key;
 
-      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_VOLTA70) || defined(KOKKOS_ARCH_VOLTA72)
-      //this is an issue on VOLTA because warps do not go in SIMD fashion anymore.
+      #if defined(KOKKOS_ARCH_VOLTA) || defined(KOKKOS_ARCH_TURING75) || defined(KOKKOS_ARCH_AMPERE)
+      //this is an issue on VOLTA and up because warps do not go in SIMD fashion anymore.
       //while some thread might insert my_write_index into linked list, another
       //thread in the warp might be reading keys in above loop.
       //before inserting the new value in liked list -- which is done with atomic exchange below,

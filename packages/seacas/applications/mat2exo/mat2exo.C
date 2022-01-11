@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,7 +35,6 @@
 #include "matio_pubconf.h" // for MATIO_VERSION
 #include <SL_tokenize.h>   // for tokenize
 #include <cstddef>         // for size_t
-#include <cstdio>          // for sprintf, printf, fprintf, etc
 #include <cstring>         // for strtok, memcpy, strlen, etc
 #include <exodusII.h>      // for ex_put_variable_param, etc
 #include <numeric>         // for accumulate
@@ -53,8 +52,8 @@ mat_t *mat_file = nullptr; /* file for binary .mat input */
 /**********************************************************************/
 static const char *qainfo[] = {
     "mat2exo",
-    "2019/05/18",
-    "4.05",
+    "2021/09/27",
+    "4.06",
 };
 
 /**********************************************************************/
@@ -347,7 +346,7 @@ int main(int argc, char *argv[])
   ex_close(exo_file);
   Mat_Close(mat_file);
 
-  fprintf(stderr, "done.\n");
+  fmt::printf("done.\n");
 
   add_to_log("mat2exo", 0);
   return (0);
@@ -463,7 +462,7 @@ int matArrNCol(const std::string &name)
 
 void get_put_names(int exo_file, ex_entity_type entity, int num_vars, const std::string &name)
 {
-  auto names = matGetStr(name.c_str());
+  auto names = matGetStr(name);
   SMART_ASSERT(names.size() == (size_t)num_vars);
   std::vector<const char *> str2(num_vars);
   for (int i = 0; i < num_vars; i++) {
