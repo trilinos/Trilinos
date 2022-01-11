@@ -182,6 +182,7 @@ public:
   {
     auto basisValues = fullBasis_->allocateBasisValues(points,operatorType);
     basisValues.setOrdinalFilter(this->ordinalMap_);
+    return basisValues;
   }
   
   // since the getValues() below only overrides the FEM variant, we specify that
@@ -256,6 +257,15 @@ public:
     using HostBasis = SerendipityBasis<HostBasisBase>;
     auto hostBasis = Teuchos::rcp(new HostBasis(fullBasis_->getHostBasis()));
     return hostBasis;
+  }
+  
+  /** \brief Returns the ordinal map from the Serendipity basis ordinal to the ordinal in the underlying full basis.
+   
+      \return Ordinal map from the Serendipity basis ordinal to the ordinal in the underlying full basis.  (Indices to the container are Serendipity basis ordinals; values are full basis ordinals.)
+   */
+  OrdinalTypeArray1D ordinalMap() const
+  {
+    return ordinalMap_;
   }
 }; // SerendipityBasis
 
