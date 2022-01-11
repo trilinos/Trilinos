@@ -337,7 +337,7 @@ namespace
     });
     
     // each column in the following matrix will represent the corresponding member of basis 2 in terms of members of basis 1
-    ViewType<Scalar,DeviceType> basis1Coefficients = getView<Scalar, DeviceType>("basis 1 vs basis 2", basisCardinality, basisCardinality);
+    ViewType<Scalar,DeviceType> basis1Coefficients = getView<Scalar, DeviceType>("basis 1 coefficients", basisCardinality, basisCardinality);
     Kokkos::deep_copy(basis1Coefficients, basis1_vs_basis2);
     solveSystemUsingHostLapack(basis1_vs_basis1, basis1Coefficients);
     
@@ -373,7 +373,12 @@ namespace
     const bool basis1IsDG = (basis1InteriorCardinality == basisCardinality);
     const bool basis2IsDG = (basis2InteriorCardinality == basisCardinality);
     const bool neitherBasisIsDG = !basis1IsDG && !basis2IsDG;
-    if (neitherBasisIsDG)
+    
+    // Hypercube bases can be defined on a strictly tensorial topology, as opposed to the shards topology.  These have different subcell numbering; and the
+    // block below relies on the subcell numbering being the same between the two.  To do the equivalent thing with differing topologies, we would need a
+    // mapping from one cell topology to the other.  We have something like this in TensorTopologyMap, so it might not be too hard to add this…
+    const bool basesAgreeOnCellTopo = (basis1.getBaseCellTopology() == basis2.getBaseCellTopology()) && (basis1.getNumTensorialExtrusions() == basis2.getNumTensorialExtrusions());
+    if (neitherBasisIsDG && basesAgreeOnCellTopo)
     {
       auto basis1CoefficientsHost = getHostCopy(basis1Coefficients);
       // if neither basis is DG, then we can expect them to have matching counts on basis members
