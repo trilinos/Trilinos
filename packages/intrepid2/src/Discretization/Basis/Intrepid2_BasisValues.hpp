@@ -230,7 +230,6 @@ namespace Intrepid2
     Scalar operator()(const int &fieldOrdinal, const int &pointOrdinal) const
     {
       const int &tensorFieldOrdinal = (ordinalFilter_.extent(0) > 0) ? ordinalFilter_(fieldOrdinal) : fieldOrdinal;
-      
       if (numTensorDataFamilies_ == 1)
       {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -255,7 +254,7 @@ namespace Intrepid2
 #ifdef HAVE_INTREPID2_DEBUG
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE( familyForField == -1, std::invalid_argument, "fieldOrdinal appears to be out of range");
 #endif
-        return tensorDataFamilies_[familyForField](fieldOrdinal-fieldAdjustment,pointOrdinal);
+        return tensorDataFamilies_[familyForField](tensorFieldOrdinal-fieldAdjustment,pointOrdinal);
       }
     }
     
@@ -266,7 +265,8 @@ namespace Intrepid2
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(! vectorData_.isValid(), std::invalid_argument, "VectorData object not initialized!");
 #endif
-      return vectorData_(fieldOrdinal, pointOrdinal, dim);
+      const int &tensorFieldOrdinal = (ordinalFilter_.extent(0) > 0) ? ordinalFilter_(fieldOrdinal) : fieldOrdinal;
+      return vectorData_(tensorFieldOrdinal, pointOrdinal, dim);
     }
     
     //! operator() for (C,F,P,D) data, which arises in CVFEM; at present unimplemented, and only declared here to allow a generic setJacobian() method in CellTools to compile.
