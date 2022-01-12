@@ -337,6 +337,7 @@ getStepper() const
   return state_integrator_->getStepper();
 }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 IntegratorAdjointSensitivity<Scalar>::
@@ -354,6 +355,7 @@ setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl)
   adjoint_integrator_->setTempusParameterList(pl);
 }
 
+#endif
 template<class Scalar>
 Teuchos::RCP<const SolutionHistory<Scalar> >
 IntegratorAdjointSensitivity<Scalar>::

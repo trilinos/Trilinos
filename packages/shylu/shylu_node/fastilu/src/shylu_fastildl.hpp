@@ -55,7 +55,7 @@
 
 #include <assert.h>
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include "shylu_fastilu.hpp"
 
@@ -169,7 +169,7 @@ class FastILDLPrec
 
         void initialize()
         {
-            Kokkos::Impl::Timer timer;
+            Kokkos::Timer timer;
             //Here we have to allocate memory for L, U.
             if((level > 0) && (guessFlag != 0))
             {
@@ -737,7 +737,7 @@ class FastILDLPrec
             {
                 initGuessPrec->compute();
             }
-            Kokkos::Impl::Timer timer;
+            Kokkos::Timer timer;
             numericILU();
             FastILDLFunctor<Ordinal, Scalar, ExecSpace> icFunctor(nRows, aRowMap, aColIdx, aRowIdx, aVal,
                     lRowMap, lColIdx, lVal, diagElems, omega);
@@ -762,7 +762,7 @@ class FastILDLPrec
         void apply(ScalarArray &x, ScalarArray &y)
         {
 
-            Kokkos::Impl::Timer timer;
+            Kokkos::Timer timer;
             ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor(nRows, xTemp, x);
             ExecSpace().fence();
             Kokkos::parallel_for(nRows, parCopyFunctor);

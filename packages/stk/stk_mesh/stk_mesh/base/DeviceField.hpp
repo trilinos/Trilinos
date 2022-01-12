@@ -34,6 +34,8 @@
 #ifndef STK_MESH_DEVICE_FIELD_HPP
 #define STK_MESH_DEVICE_FIELD_HPP
 
+#include <cmath>
+
 #include "stk_util/stk_config.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_DualView.hpp"
@@ -55,14 +57,24 @@ namespace mesh {
 
 constexpr unsigned INVALID_ORDINAL = 9999999;
 
+namespace impl {
+  constexpr double OVERALLOCATION_FACTOR = 1.1;
+
+  inline long allocation_size(const double size_requested)
+  {
+    return std::lround(size_requested*OVERALLOCATION_FACTOR);
+  }
+}
+
 template<typename T, template <typename> class NgpDebugger>
 class DeviceField : public NgpFieldBase
 {
 private:
   using FieldDataDeviceUnmanagedViewType = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using StkDebugger = typename NgpDebugger<T>::StkFieldSyncDebuggerType;
+  using ExecSpace = stk::ngp::ExecSpace;
 
-public:
+ public:
   using value_type = T;
 
   KOKKOS_FUNCTION
@@ -98,9 +110,6 @@ public:
   {
     ThrowRequireMsg(isFromGetUpdatedNgpField, "NgpField must be obtained from get_updated_ngp_field()");
     initialize();
-    update_field();
-
-    fieldSyncDebugger.initialize_debug_views(this);
   }
 
   void initialize()
@@ -122,50 +131,16 @@ public:
     }
   }
 
-  void update_field() override
+  void update_field(const ExecSpace& newExecSpace) override
   {
-    ThrowRequireMsg(hostBulk->synchronized_count() >= synchronizedCount, "Invalid sync state detected for NgpField: " << hostField->name());
-    if (hostBulk->synchronized_count() == synchronizedCount) { return; }
+    set_execution_space(newExecSpace);
+    update_field();
+  }
 
-    ProfilingBlock prof("update_field for " + hostField->name());
-    Selector selector = selectField(*hostField);
-    auto hostFieldEntityRank = hostField->entity_rank();
-    const BucketVector& buckets = hostBulk->get_buckets(hostFieldEntityRank, selector);
-    const BucketVector& allBuckets = hostBulk->buckets(hostFieldEntityRank);
-    numBucketsForField = buckets.size();
-    maxNumScalarsPerEntity = hostField->max_size(rank);
-
-    if (!buckets.empty()) {
-      bucketCapacity = buckets[0]->capacity();
-    }
-
-    construct_field_buckets_pointer_view(buckets);
-    construct_all_fields_buckets_num_components_per_entity_view(allBuckets);
-    construct_field_buckets_num_components_per_entity_view(buckets);
-    construct_bucket_sizes_view(buckets);
-    construct_new_index_view(allBuckets);
-
-    if (numBucketsForField != deviceData.extent(0)) {
-      construct_view(buckets, "deviceData_"+hostField->name(), maxNumScalarsPerEntity);
-    } else {
-      move_unmodified_buckets(buckets, maxNumScalarsPerEntity);
-    }
-
-    copy_new_and_modified_buckets_from_host(buckets, maxNumScalarsPerEntity);
-
-    fieldSyncDebugger.update_field(this);
-
-    for(auto * bucket : allBuckets) {
-      bucket->set_ngp_field_bucket_id(get_ordinal(), INVALID_BUCKET_ID);
-    }
-    for(auto * bucket : buckets) {
-      bucket->set_ngp_field_bucket_id(get_ordinal(), bucket->bucket_id());
-    }
-
-    hostField->increment_num_syncs_to_device();
-    synchronizedCount = hostBulk->synchronized_count();
-    hostSelectedBucketOffset = newHostSelectedBucketOffset;
-    deviceSelectedBucketOffset = newDeviceSelectedBucketOffset;
+  void update_field(ExecSpace&& newExecSpace) override
+  {
+    set_execution_space(std::forward<ExecSpace>(newExecSpace));
+    update_field();
   }
 
   size_t num_syncs_to_host() const override { return hostField->num_syncs_to_host(); }
@@ -229,40 +204,42 @@ public:
   void sync_to_host() override
   {
     reset_execution_space();
-    internal_sync_to_host();
-    Kokkos::fence();
-    reset_execution_space();
+    if (internal_sync_to_host()) {
+      Kokkos::fence();
+      reset_execution_space();
+    }
   }
 
-  void sync_to_host(const stk::ngp::ExecSpace& newExecSpace) override
+  void sync_to_host(const ExecSpace& newExecSpace) override
   {
     set_execution_space(newExecSpace);
     internal_sync_to_host();
   }
 
-  void sync_to_host(stk::ngp::ExecSpace&& newExecSpace) override
+  void sync_to_host(ExecSpace&& newExecSpace) override
   {
-    set_execution_space(std::forward<stk::ngp::ExecSpace>(newExecSpace));
+    set_execution_space(std::forward<ExecSpace>(newExecSpace));
     internal_sync_to_host();
   }
 
   void sync_to_device() override
   {
     reset_execution_space();
-    internal_sync_to_device();
-    Kokkos::fence();
-    reset_execution_space();
+    if (internal_sync_to_device()) {
+      Kokkos::fence();
+      reset_execution_space();
+    }
   }
 
-  void sync_to_device(const stk::ngp::ExecSpace& newExecSpace) override
+  void sync_to_device(const ExecSpace& newExecSpace) override
   {
     set_execution_space(newExecSpace);
     internal_sync_to_device();
   }
 
-  void sync_to_device(stk::ngp::ExecSpace&& newExecSpace) override
+  void sync_to_device(ExecSpace&& newExecSpace) override
   {
-    set_execution_space(std::forward<stk::ngp::ExecSpace>(newExecSpace));
+    set_execution_space(std::forward<ExecSpace>(newExecSpace));
     internal_sync_to_device();
   }
 
@@ -390,23 +367,9 @@ public:
     return hostField->need_sync_to_device();
   }
 
-  stk::ngp::ExecSpace& get_execution_space() const override {
-    return hostField->get_execution_space();
-  }
+  void debug_initialize_debug_views() override { fieldSyncDebugger.initialize_debug_views(this); }
 
-  void set_execution_space(const stk::ngp::ExecSpace& executionSpace) override {
-    hostField->set_execution_space(executionSpace);
-  }
-
-  void set_execution_space(stk::ngp::ExecSpace&& executionSpace) override {
-    hostField->set_execution_space(std::forward<stk::ngp::ExecSpace>(executionSpace));
-  }
-
-  void reset_execution_space() override {
-    hostField->reset_execution_space();
-  }
-
-protected:
+ protected:
 
   void debug_modification_begin() override
   {
@@ -427,21 +390,71 @@ protected:
   }
 
 private:
+ ExecSpace& get_execution_space() const { return hostField->get_execution_space(); }
 
-  void set_modify_on_host()
-  {
-    hostField->modify_on_host();
-  }
+ void set_execution_space(const ExecSpace& executionSpace) { hostField->set_execution_space(executionSpace); }
 
-  void set_modify_on_device()
-  {
-    hostField->modify_on_device();
-  }
+ void set_execution_space(ExecSpace&& executionSpace)
+ {
+   hostField->set_execution_space(std::forward<ExecSpace>(executionSpace));
+ }
 
-  void clear_sync_state_flags()
-  {
-    hostField->clear_sync_state();
-  }
+ void reset_execution_space() { hostField->reset_execution_space(); }
+
+ void set_modify_on_host() { hostField->modify_on_host(); }
+
+ void set_modify_on_device() { hostField->modify_on_device(); }
+
+ void clear_sync_state_flags() { hostField->clear_sync_state(); }
+
+ void update_field()
+ {
+   ThrowRequireMsg(hostBulk->synchronized_count() >= synchronizedCount,
+       "Invalid sync state detected for NgpField: " << hostField->name());
+   if (hostBulk->synchronized_count() == synchronizedCount) {
+     return;
+   }
+
+   ProfilingBlock prof("update_field for " + hostField->name());
+   Selector selector = selectField(*hostField);
+   auto hostFieldEntityRank = hostField->entity_rank();
+   const BucketVector& buckets = hostBulk->get_buckets(hostFieldEntityRank, selector);
+   const BucketVector& allBuckets = hostBulk->buckets(hostFieldEntityRank);
+   numBucketsForField = buckets.size();
+   maxNumScalarsPerEntity = hostField->max_size(rank);
+
+   if (!buckets.empty()) {
+     bucketCapacity = buckets[0]->capacity();
+   }
+
+   construct_field_buckets_pointer_view(buckets);
+   construct_all_fields_buckets_num_components_per_entity_view(allBuckets);
+   construct_field_buckets_num_components_per_entity_view(buckets);
+   construct_bucket_sizes_view(buckets);
+   construct_new_index_view(allBuckets);
+
+   if (numBucketsForField != deviceData.extent(0)) {
+     construct_view(buckets, "deviceData_" + hostField->name(), maxNumScalarsPerEntity);
+   } else {
+     move_unmodified_buckets(buckets, maxNumScalarsPerEntity);
+   }
+
+   copy_new_and_modified_buckets_from_host(buckets, maxNumScalarsPerEntity);
+
+   fieldSyncDebugger.update_field(this);
+
+   for (auto* bucket : allBuckets) {
+     bucket->set_ngp_field_bucket_id(get_ordinal(), INVALID_BUCKET_ID);
+   }
+   for (auto* bucket : buckets) {
+     bucket->set_ngp_field_bucket_id(get_ordinal(), bucket->bucket_id());
+   }
+
+   hostField->increment_num_syncs_to_device();
+   synchronizedCount = hostBulk->synchronized_count();
+   hostSelectedBucketOffset = newHostSelectedBucketOffset;
+   deviceSelectedBucketOffset = newDeviceSelectedBucketOffset;
+ }
 
   void construct_view(const BucketVector& buckets, const std::string& name, unsigned numPerEntity)
   {
@@ -478,8 +491,8 @@ private:
   void construct_bool_bucket_views(const BucketVector & buckets, const std::string& suffix,
                                    typename BoolViewType::HostMirror& hostView, BoolViewType& deviceView)
   {
-    if (deviceView.extent(0) != buckets.size()) {
-      deviceView = BoolViewType(Kokkos::ViewAllocateWithoutInitializing(hostField->name() + suffix), buckets.size());
+    if (buckets.size() > deviceView.extent(0)) {
+      deviceView = BoolViewType(Kokkos::ViewAllocateWithoutInitializing(hostField->name() + suffix), impl::allocation_size(buckets.size()));
       hostView = Kokkos::create_mirror_view(deviceView);
     }
   }
@@ -487,8 +500,8 @@ private:
   void construct_unsigned_bucket_views(const BucketVector & buckets, const std::string& suffix,
                                        typename UnsignedViewType::HostMirror& hostView, UnsignedViewType& deviceView)
   {
-    if (deviceView.extent(0) != buckets.size()) {
-      deviceView = UnsignedViewType(Kokkos::ViewAllocateWithoutInitializing(hostField->name() + suffix), buckets.size());
+    if (buckets.size() > deviceView.extent(0)) {
+      deviceView = UnsignedViewType(Kokkos::ViewAllocateWithoutInitializing(hostField->name() + suffix), impl::allocation_size(buckets.size()));
       hostView = Kokkos::create_mirror_view(deviceView);
     }
   }
@@ -517,8 +530,10 @@ private:
 
   void construct_field_buckets_pointer_view(const BucketVector& buckets)
   {
-    hostBucketPtrData = FieldDataPointerHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostBucketPtrDataView"), buckets.size());
-    deviceBucketPtrData = FieldDataPointerDeviceViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketPtrDataView"), buckets.size());
+    if (buckets.size() > hostBucketPtrData.extent(0)) {
+      hostBucketPtrData = FieldDataPointerHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostBucketPtrDataView"), impl::allocation_size(buckets.size()));
+      deviceBucketPtrData = FieldDataPointerDeviceViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketPtrDataView"), impl::allocation_size(buckets.size()));
+    }
 
     set_field_buckets_pointer_view(buckets);
   }
@@ -545,6 +560,10 @@ private:
       cudaError_t status = cudaHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
 
       ThrowRequireMsg(status == cudaSuccess, "Something went wrong during cudaHostGetDevicePointer: " + std::string(cudaGetErrorString(status)));
+#elif defined(KOKKOS_ENABLE_HIP) 
+      hipError_t status = hipHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
+
+      ThrowRequireMsg(status == hipSuccess, "Something went wrong during hipHostGetDevicePointer: " + std::string(hipGetErrorString(status)));
 #endif
 
       hostBucketPtrData(i) = reinterpret_cast<uintptr_t>(deviceBucketPtr);
@@ -649,38 +668,41 @@ private:
 
     Kokkos::deep_copy(get_execution_space(), deviceFieldBucketsMarkedModified, hostFieldBucketsMarkedModified);
 
-    impl::transpose_new_and_modified_buckets_to_device(get_execution_space(), *hostField, deviceBucketPtrData, deviceData,
+    impl::transpose_new_and_modified_buckets_to_device(get_execution_space(), deviceBucketPtrData, deviceData,
                                                        deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity, deviceFieldBucketsMarkedModified);
   }
 
   void copy_device_to_host()
   {
     if (hostField) {
-      impl::transpose_to_pinned_and_mapped_memory(get_execution_space(), *hostField, deviceBucketPtrData, deviceData, deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity);
+      impl::transpose_to_pinned_and_mapped_memory(get_execution_space(), deviceBucketPtrData, deviceData, deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity);
       clear_device_sync_state();
       hostField->increment_num_syncs_to_host();
     }
   }
 
-  void internal_sync_to_host()
+  bool internal_sync_to_host()
   {
     if (need_sync_to_host()) {
       ProfilingBlock prof("copy_to_host for " + hostField->name());
       copy_device_to_host();
       fieldSyncDebugger.sync_to_host(this);
+      return true;
     }
+
+    return false;
   }
 
   void copy_host_to_device()
   {
     if (hostField) {
-      impl::transpose_from_pinned_and_mapped_memory(get_execution_space(), *hostField, deviceBucketPtrData, deviceData, deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity);
+      impl::transpose_from_pinned_and_mapped_memory(get_execution_space(), deviceBucketPtrData, deviceData, deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity);
       clear_host_sync_state();
       hostField->increment_num_syncs_to_device();
     }
   }
 
-  void internal_sync_to_device()
+  bool internal_sync_to_device()
   {
     if (need_sync_to_device()) {
       ProfilingBlock prof("copy_to_device for " + hostField->name());
@@ -689,7 +711,11 @@ private:
       }
       copy_host_to_device();
       fieldSyncDebugger.sync_to_device(this);
+
+      return true;
     }
+
+    return false;
   }
 
   template <typename ViewType>

@@ -761,14 +761,14 @@ char *ex__name_of_map(ex_entity_type map_type, int map_index)
 */
 int ex__id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
 {
-  char *   id_table   = NULL;
-  char *   id_dim     = NULL;
-  char *   stat_table = NULL;
+  char    *id_table   = NULL;
+  char    *id_dim     = NULL;
+  char    *stat_table = NULL;
   int      varid, dimid;
   size_t   dim_len;
   int64_t  i;
   int64_t *id_vals   = NULL;
-  int *    stat_vals = NULL;
+  int     *stat_vals = NULL;
 
   static bool           sequential = false;
   struct ex__obj_stats *tmp_stats;

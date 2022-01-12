@@ -55,10 +55,20 @@
 #if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) && \
     defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 
-#include "slu_ddefs.h"
-#include "slu_sdefs.h"
-#include "slu_zdefs.h"
-#include "slu_cdefs.h"
+namespace SLU {
+ namespace D {
+  #include "slu_ddefs.h"
+ }
+ namespace S {
+  #include "slu_sdefs.h"
+ }
+ namespace C {
+  #include "slu_cdefs.h"
+ }
+ namespace Z {
+  #include "slu_zdefs.h"
+ }
+}
 // auxiliary functions from perf_test (e.g., pivoting, printing)
 #include "KokkosSparse_sptrsv_aux.hpp"
 
@@ -73,6 +83,10 @@ using namespace KokkosKernels::Experimental;
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
 using namespace KokkosSparse::PerfTest::Experimental;
+using namespace SLU::D;
+using namespace SLU::S;
+using namespace SLU::C;
+using namespace SLU::Z;
 
 enum {CUSPARSE, SUPERNODAL_NAIVE, SUPERNODAL_ETREE, SUPERNODAL_DAG, SUPERNODAL_SPMV, SUPERNODAL_SPMV_DAG};
 
@@ -220,21 +234,39 @@ void factor_superlu (bool symm_mode, bool metis,
   printf( "  + calling SuperLU dgstrf with panel_size=%d, relax_size=%d..\n",panel_size,relax_size );
   printf( "   * Dimension %dx%d; # nonzeros %d\n", A.nrow, A.ncol, Astore->nnz);
 
+  #ifdef HAVE_KOKKOSKERNELS_SUPERLU5_API
   GlobalLU_t Glu;
+  #endif
   int lwork = 0;
   if (std::is_same<scalar_type, double>::value == true) {
     dgstrf (&options, &AC, relax_size, panel_size, etree,
-            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+            NULL, lwork, *perm_c, *perm_r, &L, &U,
+            #ifdef HAVE_KOKKOSKERNELS_SUPERLU5_API
+            &Glu,
+            #endif
+            &stat, &info);
   } else if (std::is_same<scalar_type, float>::value == true) {
     sgstrf (&options, &AC, relax_size, panel_size, etree,
-            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+            NULL, lwork, *perm_c, *perm_r, &L, &U,
+            #ifdef HAVE_KOKKOSKERNELS_SUPERLU5_API
+            &Glu,
+            #endif
+            &stat, &info);
   } else if (std::is_same<scalar_type, std::complex<float>>::value == true ||
              std::is_same<scalar_type, Kokkos::complex<float>>::value == true) {
     cgstrf (&options, &AC, relax_size, panel_size, etree,
-            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+            NULL, lwork, *perm_c, *perm_r, &L, &U,
+            #ifdef HAVE_KOKKOSKERNELS_SUPERLU5_API
+            &Glu,
+            #endif
+            &stat, &info);
   } else {
     zgstrf (&options, &AC, relax_size, panel_size, etree,
-            NULL, lwork, *perm_c, *perm_r, &L, &U, &Glu, &stat, &info);
+            NULL, lwork, *perm_c, *perm_r, &L, &U,
+            #ifdef HAVE_KOKKOSKERNELS_SUPERLU5_API
+            &Glu,
+            #endif
+            &stat, &info);
   }
   if (info != 0) printf( " SuperLU failed with info=%d\n",info );
   StatFree(&stat);
@@ -280,8 +312,8 @@ void free_superlu (SuperMatrix &L, SuperMatrix &U,
 /* ========================================================================================= */
 template<typename scalar_type>
 int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filename, bool symm_mode, bool metis, bool merge,
-                      bool invert_diag, bool invert_offdiag, bool u_in_csr, int panel_size, int relax_size, int block_size,
-                      int loop) {
+                      bool invert_diag, bool invert_offdiag, bool u_in_csr, bool trmm_on_device,
+                      int panel_size, int relax_size, int block_size, int loop) {
 
   using ordinal_type = int;
   using size_type    = int;
@@ -422,6 +454,11 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
           // set permutation
           khL.set_sptrsv_perm (perm_r);
           khU.set_sptrsv_perm (perm_c);
+
+          // specify whether to run trmm on device
+          std::cout << " TRMM on device     : " << trmm_on_device << std::endl;
+          khL.set_sptrsv_trmm_on_device (trmm_on_device);
+          khU.set_sptrsv_trmm_on_device (trmm_on_device);
 
           // block size to switch to device call
           if (block_size >= 0) {
@@ -635,11 +672,16 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string &filenam
 
 void print_help_sptrsv() {
   printf("Options:\n");
-  printf("  --test [OPTION] : Use different kernel implementations\n");
-  printf("                    Options:\n");
-  printf("                    superlu-naive, superlu-etree, superlu-dag\n\n");
-  printf("  -f [file]       : Read in Matrix Market formatted text file 'file'.\n");
-  printf("  --loop [LOOP]   : How many spmv to run to aggregate average time. \n");
+  printf("  --test [OPTION]         : Use different kernel implementations\n");
+  printf("                            Options:\n");
+  printf("                            superlu-naive, superlu-etree, superlu-dag\n\n");
+  printf("  -f [file]               : Read in Matrix Market formatted text file 'file'.\n");
+  printf("  --loop [LOOP]           : How many spmv to run to aggregate average time. \n");
+  printf("  --u-in-csc              : To store U-factor in CSC, needed for invert.\n");
+  printf("  --invert-diag           : To invert diagonal blocks.\n");
+  printf("  --invert-offdiag        : To apply inverse to off-diagonal blocks.\n");
+  printf("  --block-size [SIZE]     : To specify the threshold to switch device and bached kernel.\n");
+  printf("  --scalar-type [s,d,c,z] :\n");
 }
 
 
@@ -660,6 +702,8 @@ int main(int argc, char **argv) {
   bool invert_offdiag = false;
   // store U in CSR, or CSC
   bool u_in_csr = true;
+  // specify whether to run KokkosKernels::trmm on device
+  bool trmm_on_device = false;
   // block size to switch to device call (default is 100)
   int block_size  = -1;
   // parameters for SuperLU (only affects factorization)
@@ -734,6 +778,10 @@ int main(int argc, char **argv) {
       u_in_csr = false;
       continue;
     }
+    if((strcmp(argv[i],"--trmm-on-device")==0)) {
+      trmm_on_device = true;
+      continue;
+    }
     if((strcmp(argv[i],"--panel-size")==0)) {
       panel_size = atoi(argv[++i]);
       continue;
@@ -767,8 +815,8 @@ int main(int argc, char **argv) {
     #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
     scalarTypeString = "(scalar_t = Kokkos::complex<double>)";
     total_errors = test_sptrsv_perf<Kokkos::complex<double>> (tests, verbose, filename, symm_mode, metis, merge,
-                                                              invert_diag, invert_offdiag, u_in_csr, panel_size,
-                                                              relax_size, block_size, loop);
+                                                              invert_diag, invert_offdiag, u_in_csr, trmm_on_device,
+                                                              panel_size, relax_size, block_size, loop);
     #else
     std::cout << std::endl << " KOKKOSKERNELS_INST_COMPLEX_DOUBLE  is not enabled ** " << std::endl << std::endl;
     #endif
@@ -776,8 +824,8 @@ int main(int argc, char **argv) {
     #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
     scalarTypeString = "(scalar_t = Kokkos::complex<float>)";
     total_errors = test_sptrsv_perf<Kokkos::complex<float>> (tests, verbose, filename, symm_mode, metis, merge,
-                                                             invert_diag, invert_offdiag, u_in_csr, panel_size,
-                                                             relax_size, block_size, loop);
+                                                             invert_diag, invert_offdiag, u_in_csr, trmm_on_device,
+                                                             panel_size, relax_size, block_size, loop);
     #else
     std::cout << std::endl << " KOKKOSKERNELS_INST_COMPLEX_FLOAT  is not enabled ** " << std::endl << std::endl;
     #endif
@@ -785,8 +833,8 @@ int main(int argc, char **argv) {
     #if defined(KOKKOSKERNELS_INST_DOUBLE)
       scalarTypeString = "(scalar_t = double)";
       total_errors = test_sptrsv_perf<double> (tests, verbose, filename, symm_mode, metis, merge,
-                                               invert_diag, invert_offdiag, u_in_csr, panel_size,
-                                               relax_size, block_size, loop);
+                                               invert_diag, invert_offdiag, u_in_csr, trmm_on_device,
+                                               panel_size, relax_size, block_size, loop);
     #else
     std::cout << std::endl << " KOKKOSKERNELS_INST_DOUBLE  is not enabled ** " << std::endl << std::endl;
     #endif
@@ -794,8 +842,8 @@ int main(int argc, char **argv) {
     #if defined(KOKKOSKERNELS_INST_FLOAT)
     scalarTypeString = "(scalar_t = float)";
     total_errors = test_sptrsv_perf<float> (tests, verbose, filename, symm_mode, metis, merge,
-                                            invert_diag, invert_offdiag, u_in_csr, panel_size,
-                                            relax_size, block_size, loop);
+                                            invert_diag, invert_offdiag, u_in_csr, trmm_on_device,
+                                            panel_size, relax_size, block_size, loop);
     #else
     std::cout << std::endl << " KOKKOSKERNELS_INST_FLOAT  is not enabled ** " << std::endl << std::endl;
     #endif
@@ -811,19 +859,23 @@ int main(int argc, char **argv) {
   return 0;
 }
 #else // defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
-int main(int argc, char **argv) {
-  std::cout << std::endl << " ** SUPERLU NOT ENABLED **" << std::endl << std::endl;
-  exit(0);
-  return 0;
+int main() {
+  std::cout << std::endl;
+  #if !defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+  std::cout << " ** SUPERLU NOT ENABLED **" << std::endl;
+  #endif
+  #if !defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+  std::cout << " ** SUPERNODAL SPTRSV NOT ENABLED **" << std::endl;
+  #endif
+  std::cout << std::endl;
+
+  return 1;
 }
 #endif
 
 #else // defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA ) && (!defined(KOKKOS_ENABLE_CUDA) || ( 8000 <= CUDA_VERSION ))
 
-int main(int argc, char **argv) {
-#if !defined(KOKKOSKERNELS_INST_DOUBLE)
-  std::cout << " Only supported with double precision" << std::endl;
-#endif
+int main() {
 #if !defined( KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA )
   std::cout << " KOKKOS_ENABLE_CXX11_DISPATCH_LAMBDA **not** defined" << std::endl;
 #endif
@@ -834,6 +886,6 @@ int main(int argc, char **argv) {
   #endif
   std::cout << " CUDA_VERSION = " << CUDA_VERSION << std::endl;
 #endif
-  return 0;
+  return 1;
 }
 #endif

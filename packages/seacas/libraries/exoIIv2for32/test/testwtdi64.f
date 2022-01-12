@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -21,6 +21,7 @@ c database write routines.
       integer*8 i, j, k, m, connect(10)
       integer*8 node_list(100), elem_list(100), side_list(100)
       integer*8 ebids(10),ids(10), num_nodes_per_set(10)
+      integer*8 nsids(10), ssids(10)
       integer*8 num_elem_per_set(10), num_df_per_set(10)
       integer*8 df_ind(10), node_ind(10), elem_ind(10)
 
@@ -570,14 +571,16 @@ c     write (iout, '("after expcns, error = ", i4)' ) ierr
 c     write node set properties
 
       prop_names(1) = "FACE"
-      call expp(exoid, EXNSET, 20, prop_names(1), 4, ierr)
+      nsids(1) = 20
+      nsids(2) = 21
+      call expp(exoid, EXNSET, nsids(1), prop_names(1), 4, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
 
-      call expp(exoid, EXNSET, 21, prop_names(1), 5, ierr)
+      call expp(exoid, EXNSET, nsids(2), prop_names(1), 5, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -927,14 +930,16 @@ c    2             ierr)
 c     write (iout, '("after expcss, error = ", i4)' ) ierr
 
       prop_names(1) = "COLOR"
-      call expp(exoid, EXSSET, 30, prop_names(1), 100, ierr)
+      ssids(1) = 30
+      ssids(2) = 31
+      call expp(exoid, EXSSET, ssids(1), prop_names(1), 100, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
 
-      call expp(exoid, EXSSET, 31, prop_names(1), 101, ierr)
+      call expp(exoid, EXSSET, ssids(2), prop_names(1), 101, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)

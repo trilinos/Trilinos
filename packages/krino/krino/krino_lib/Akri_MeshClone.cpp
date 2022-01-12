@@ -239,8 +239,7 @@ MeshClone::clone_meta_data_parts_and_fields(const stk::mesh::MetaData & in_meta,
   {
     if (in_field->state() == stk::mesh::StateNone)
     {
-      stk::topology::rank_t entity_rank = static_cast<stk::topology::rank_t>(in_field->entity_rank());
-      stk::mesh::FieldBase * out_field = out_meta.declare_field_base(in_field->name(), entity_rank, in_field->data_traits(), in_field->field_array_rank(), in_field->dimension_tags(), in_field->number_of_states());
+      stk::mesh::FieldBase * out_field = in_field->clone(out_meta.get_field_repository());
 
       for ( auto&& in_restriction : in_field->restrictions() )
       {
@@ -287,8 +286,8 @@ MeshClone::delete_extraneous_entities(const stk::mesh::BulkData & in_mesh, stk::
 
       if (!delete_entity)
       {
-        in_mesh.comm_procs(in_mesh.entity_key(in_entity), in_mesh_comm_procs);
-        out_mesh.comm_procs(out_mesh.entity_key(out_entity), out_mesh_comm_procs);
+        in_mesh.comm_procs(in_entity, in_mesh_comm_procs);
+        out_mesh.comm_procs(out_entity, out_mesh_comm_procs);
         delete_entity = in_mesh_comm_procs != out_mesh_comm_procs;
       }
 

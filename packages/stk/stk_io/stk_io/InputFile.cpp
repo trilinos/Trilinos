@@ -191,9 +191,17 @@ namespace stk {
                         "There is no input mesh database associated with this StkMeshIoBroker. Please call open_mesh_database() first.");
         // The Ioss::Region takes control of the m_input_database pointer, so we need to make sure the
         // RCP doesn't retain ownership...
-        m_region = Teuchos::rcp(new Ioss::Region(m_database.release().get(), "input_model"));
+        Ioss::Region *region = nullptr;
+        try {
+          region = new Ioss::Region(m_database.get(), "input_model");
+        } catch (...) {
+          m_database.reset();
+          throw;
+        }
+        m_region = Teuchos::rcp(region);
+        m_database.release();
 
-	ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+        ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
 			"Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
 			"Only 'Unstructured' mesh is currently supported.");
       }

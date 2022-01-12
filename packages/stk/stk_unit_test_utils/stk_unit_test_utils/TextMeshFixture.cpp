@@ -17,7 +17,26 @@ namespace stk
 {
 namespace unit_test_util
 {
-TextMeshFixture::TextMeshFixture(unsigned spatialDim) : stk::unit_test_util::MeshFixture(spatialDim) {}
+TextMeshFixture::TextMeshFixture(unsigned spatialDim)
+    : stk::unit_test_util::MeshFixture(spatialDim)
+{
+  m_topologyMapping.initialize_topology_map();
+}
+
+std::string TextMeshFixture::get_topology_name(const std::string& textMeshTopologyName)
+{
+  return m_topologyMapping.topology(textMeshTopologyName).name();
+}
+
+void TextMeshFixture::setup_text_mesh(const std::string& meshDesc)
+{
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+}
+
+void TextMeshFixture::setup_text_mesh(const std::string& meshDesc, const std::vector<double>& coordinates)
+{
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+}
 
 void TextMeshFixture::verify_shared_nodes(const stk::mesh::EntityIdVector& nodeIds, int sharingProc)
 {
@@ -38,8 +57,9 @@ void TextMeshFixture::verify_num_elements(size_t goldCount)
 }
 
 void TextMeshFixture::verify_single_element(
-    stk::mesh::EntityId elemId, stk::topology topology, const stk::mesh::EntityIdVector& nodeIds)
+    stk::mesh::EntityId elemId, const std::string& textMeshTopologyName, const stk::mesh::EntityIdVector& nodeIds)
 {
+  stk::topology topology = m_topologyMapping.topology(textMeshTopologyName);
   stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
   EXPECT_TRUE(get_bulk().is_valid(element));
   EXPECT_EQ(topology, get_bulk().bucket(element).topology());

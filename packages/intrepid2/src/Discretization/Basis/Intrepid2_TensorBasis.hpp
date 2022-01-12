@@ -1621,13 +1621,15 @@ struct OperatorTensorDecomposition
     using BasisBase   = BasisBaseClass;
     using TensorBasis = Basis_TensorBasis<BasisBase>;
   public:
-    using OutputViewType = typename BasisBase::OutputViewType;
-    using PointViewType  = typename BasisBase::PointViewType;
-    using ScalarViewType = typename BasisBase::ScalarViewType;
-    
-    using OutputValueType = typename BasisBase::OutputValueType;
-    using PointValueType  = typename BasisBase::PointValueType;
-    
+    using typename BasisBase::OutputViewType;
+    using typename BasisBase::PointViewType;
+    using typename BasisBase::ScalarViewType;
+
+    using typename BasisBase::OutputValueType;
+    using typename BasisBase::PointValueType;
+
+    using typename BasisBase::ExecutionSpace;
+
     using BasisPtr  = Teuchos::RCP<BasisBase>;
   protected:
     BasisPtr basis1_;
@@ -1857,9 +1859,7 @@ struct OperatorTensorDecomposition
       const int outputVectorSize = getVectorSizeForHierarchicalParallelism<OutputValueType>();
       const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointValueType>();
       const int vectorSize = std::max(outputVectorSize,pointVectorSize);
-      
-      using ExecutionSpace = typename BasisBase::ExecutionSpace;
-      
+
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(basisCardinality1,Kokkos::AUTO(),vectorSize);
       
       using FunctorType = TensorBasis3_Functor<ExecutionSpace, OutputValueType, OutputViewType>;

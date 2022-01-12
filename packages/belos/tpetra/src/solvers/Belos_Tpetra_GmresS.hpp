@@ -167,15 +167,15 @@ private:
 
     vec_type MP (B.getMap ());
     MV Q (B.getMap (), s+1);
-    vec_type P = * (Q.getVectorNonConst (0));
+    vec_type P0 = * (Q.getVectorNonConst (0));
 
     mag_type r_norm = STM::zero ();    
     if (input.precoSide == "left") {
-      M.apply (R, P);
-      r_norm = P.norm2 (); // residual norm
+      M.apply (R, P0);
+      r_norm = P0.norm2 (); // residual norm
     }
     else {
-      Tpetra::deep_copy (P, R);
+      Tpetra::deep_copy (P0, R);
       r_norm = output.absResid;
     }
     mag_type metric = this->getConvergenceMetric (r_norm, b0_norm, input);
@@ -206,7 +206,7 @@ private:
     }
 
     // initialize starting vector
-    P.scale (one / b_norm);
+    P0.scale (one / b_norm);
     y[0] = SC {b_norm};
 
     if (outPtr != nullptr) {
@@ -304,10 +304,10 @@ private:
     }
 
     // Compute explicit unpreconditioned residual
-    P = * (Q.getVectorNonConst (0));
-    A.apply (X, P);
-    P.update (one, B, -one);
-    r_norm = P.norm2 (); // residual norm
+    P0 = * (Q.getVectorNonConst (0));
+    A.apply (X, P0);
+    P0.update (one, B, -one);
+    r_norm = P0.norm2 (); // residual norm
 
     output.numIters += s;
     output.numRests++;
@@ -316,7 +316,7 @@ private:
     metric = this->getConvergenceMetric (r_norm, b0_norm, input);
     output.converged = (metric <= input.tol);
 
-    Tpetra::deep_copy (B, P); // return residual norm as B
+    Tpetra::deep_copy (B, P0); // return residual norm as B
 
     if (outPtr != nullptr) {
       *outPtr << "At end of GMRES(s) cycle:" << endl;

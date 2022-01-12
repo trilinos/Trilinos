@@ -83,7 +83,7 @@ public:
    * \param result_nnz_size: size of the output matrix.
    */
 
-  void set_a_b_pos(nnz_lno_view_t a_pos_in, const nnz_lno_view_t b_pos_in)
+  void set_a_b_pos(const nnz_lno_view_t& a_pos_in, const nnz_lno_view_t& b_pos_in)
   {
     a_pos = a_pos_in;
     b_pos = b_pos_in;

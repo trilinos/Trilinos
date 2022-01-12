@@ -252,7 +252,7 @@ int main(int narg, char **arg)
     coloring_params.set("MatrixType", matrixType);
     coloring_params.set("symmetrize", symmetrize);
 
-    testColorer.run("Test One", coloring_params);
+    ok = testColorer.run("Test One", coloring_params);
     if (!ok) ierr++;
   }
 
@@ -264,7 +264,7 @@ int main(int narg, char **arg)
     coloring_params.set("MatrixType", matrixType);
     coloring_params.set("symmetrize", symmetrize);
 
-    testColorer.run("Test Two", coloring_params);
+    ok = testColorer.run("Test Two", coloring_params);
     if (!ok) ierr++;
   }
 
@@ -274,12 +274,18 @@ int main(int narg, char **arg)
 
     coloring_params.set("MatrixType", matrixType);
 
-    testColorer.run("Test Three", coloring_params);
+    ok = testColorer.run("Test Three", coloring_params);
     if (!ok) ierr++;
   }
 
-  if (ierr == 0)
-    std::cout << "TEST PASSED" << std::endl;
+  int gerr;
+  Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+  if (comm->getRank() == 0) { 
+    if (gerr == 0)
+      std::cout << "TEST PASSED" << std::endl;
+    else
+      std::cout << "TEST FAILED" << std::endl;
+  }
 
 //Through cmake...
 //Test cases -- UserInputForTests can generate Galeri or read files:

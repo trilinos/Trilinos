@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -15,8 +15,7 @@
 #include <numeric>
 #include <sstream>
 #include <string>
-#include <sys/types.h> // for ssize_t
-#include <vector>      // for vector, vector<>::iterator, etc
+#include <vector> // for vector, vector<>::iterator, etc
 
 namespace {
   template <typename INT> bool is_one2one(INT *ids, size_t num_to_get, size_t offset)
@@ -68,7 +67,7 @@ bool Ioss::Map::is_sequential(bool check_all) const
   }
 
   IOSS_FUNC_ENTER(m_);
-  auto & new_map  = const_cast<Ioss::MapContainer &>(m_map);
+  auto  &new_map  = const_cast<Ioss::MapContainer &>(m_map);
   size_t map_size = m_map.size();
   for (int64_t i = 1; i < (int64_t)map_size; i++) {
     if (m_map[i] != i + m_offset) {
@@ -341,14 +340,14 @@ void Ioss::Map::map_implicit_data(void *data, const Ioss::Field &field, size_t c
   }
 }
 
-template size_t Ioss::Map::map_field_to_db_scalar_order(double *             variables,
+template size_t Ioss::Map::map_field_to_db_scalar_order(double              *variables,
                                                         std::vector<double> &db_var,
                                                         size_t begin_offset, size_t count,
                                                         size_t stride, size_t offset);
 template size_t Ioss::Map::map_field_to_db_scalar_order(int *variables, std::vector<double> &db_var,
                                                         size_t begin_offset, size_t count,
                                                         size_t stride, size_t offset);
-template size_t Ioss::Map::map_field_to_db_scalar_order(int64_t *            variables,
+template size_t Ioss::Map::map_field_to_db_scalar_order(int64_t             *variables,
                                                         std::vector<double> &db_var,
                                                         size_t begin_offset, size_t count,
                                                         size_t stride, size_t offset);
@@ -364,9 +363,9 @@ size_t Ioss::Map::map_field_to_db_scalar_order(T *variables, std::vector<double>
     size_t k = offset;
     for (size_t j = begin_offset; j < count * stride; j += stride) {
       // Map to storage location.
-      ssize_t where = m_reorder[k++] - offset;
+      int64_t where = m_reorder[k++] - offset;
       if (where >= 0) {
-        SMART_ASSERT(where < (ssize_t)count)(where)(count);
+        SMART_ASSERT(where < (int64_t)count)(where)(count);
         db_var[where] = variables[j];
         num_out++;
       }

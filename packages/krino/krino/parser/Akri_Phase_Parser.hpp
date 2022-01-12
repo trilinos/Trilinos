@@ -11,11 +11,11 @@
 
 #include <string>
 
-namespace YAML { class Node; }
+namespace krino { namespace Parser { class Node; } }
 
 namespace krino {
 namespace Phase_Parser {
- void parse(const YAML::Node & fem_node, const std::string & fem_model_name);
+  void parse(const Parser::Node & fem_node, const std::string & fem_model_name);
 }
 }
 

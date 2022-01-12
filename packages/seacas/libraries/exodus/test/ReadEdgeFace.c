@@ -55,7 +55,7 @@ int obj_sizeinq[] = {EX_INQ_EDGE,
                      -1};
 
 #define OBJECT_IS_BLOCK(i) (((i) < 3))
-#define OBJECT_IS_SET(i) (((i) > 2) && ((i) < 8))
+#define OBJECT_IS_SET(i)   (((i) > 2) && ((i) < 8))
 
 int cReadEdgeFace(int argc, char **argv)
 {
@@ -119,7 +119,7 @@ int cReadEdgeFace(int argc, char **argv)
 
     fprintf(stdout, "=== %ss: %d\n", obj_typenames[i], nids);
 
-    int *  ids       = (int *)malloc(nids * sizeof(int));
+    int   *ids       = (int *)malloc(nids * sizeof(int));
     char **obj_names = (char **)malloc(nids * sizeof(char *));
     for (int obj = 0; obj < nids; ++obj) {
       obj_names[obj] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
@@ -222,7 +222,7 @@ int cReadEdgeFace(int argc, char **argv)
         free(fconn);
 
         if (num_attrs) {
-          char ** attr_names;
+          char  **attr_names;
           double *attr;
           attr       = (double *)malloc(num_entries * num_attrs * sizeof(double));
           attr_names = (char **)malloc(num_attrs * sizeof(char *));

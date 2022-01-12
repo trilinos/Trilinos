@@ -176,7 +176,7 @@ namespace MueLu {
     const RCP<const Map> domainMap_, importMap_;
     const Map& domainMapRef_;
     //! Name of this graph.
-    const std::string & objectLabel_;
+    const std::string objectLabel_;
     //! Boolean array marking Dirichlet rows.
     ArrayRCP<const bool> dirichletBoundaries_;
 

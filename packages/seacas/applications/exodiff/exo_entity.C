@@ -120,7 +120,7 @@ std::string Exo_Entity::Load_Results(int time_step, int var_index)
     if (numEntity != 0u) {
       int err = 0;
       err     = ex_get_var(fileId, time_step, exodus_type(), var_index + 1, id_, numEntity,
-                       results_[var_index]);
+                           results_[var_index]);
 
       if (err < 0) {
         Error(fmt::format("Exo_Entity::Load_Results(): Call to exodus routine"

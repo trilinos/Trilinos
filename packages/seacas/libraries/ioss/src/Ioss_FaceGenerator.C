@@ -443,7 +443,7 @@ namespace Ioss {
     auto endh = std::chrono::steady_clock::now();
 #endif
 
-    auto & my_faces = faces_["ALL"];
+    auto  &my_faces = faces_["ALL"];
     size_t numel    = region_.get_property("element_count").get_int();
 
     size_t reserve = 3.2 * numel;

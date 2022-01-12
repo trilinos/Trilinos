@@ -89,11 +89,6 @@ struct DeviceBucket {
   KOKKOS_FUNCTION
   stk::topology topology() const { return bucketTopology; }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-  STK_DEPRECATED KOKKOS_FUNCTION
-  unsigned get_num_nodes_per_entity() const { return bucketTopology.num_nodes(); }
-#endif
-
   KOKKOS_INLINE_FUNCTION
   ConnectedEntities get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const;
 

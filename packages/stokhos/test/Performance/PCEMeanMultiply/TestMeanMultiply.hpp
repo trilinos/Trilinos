@@ -56,7 +56,7 @@
 #include "Stokhos_Sparse3Tensor.hpp"
 
 // Utilities
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 template< typename IntType >
 inline
@@ -238,7 +238,7 @@ test_mean_multiply(const OrdinalType order,
     }
 
     execution_space().fence();
-    Kokkos::Impl::Timer clock ;
+    Kokkos::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       for (ordinal_type col=0; col<pce_size; ++col) {
         // scalar_vector_type xc =
@@ -272,7 +272,7 @@ test_mean_multiply(const OrdinalType order,
     }
 
     execution_space().fence();
-    Kokkos::Impl::Timer clock ;
+    Kokkos::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, xl , value_type(0.0) ,yl);
     }
@@ -299,7 +299,7 @@ test_mean_multiply(const OrdinalType order,
     }
 
     execution_space().fence();
-    Kokkos::Impl::Timer clock ;
+    Kokkos::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv(  "N" , value_type(1.0) , scalar_matrix, xr , value_type(0.0) ,yr);
     }
@@ -326,7 +326,7 @@ test_mean_multiply(const OrdinalType order,
     }
 
     execution_space().fence();
-    Kokkos::Impl::Timer clock ;
+    Kokkos::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv(  "N" , value_type(1.0) , pce_matrix, x_pce , value_type(0.0) ,y_pce);
     }
@@ -353,7 +353,7 @@ test_mean_multiply(const OrdinalType order,
     }
 
     execution_space().fence();
-    Kokkos::Impl::Timer clock ;
+    Kokkos::Timer clock ;
     for (ordinal_type iter = 0; iter < iterCount; ++iter) {
       KokkosSparse::spmv(  "N" , value_type(1.0) , pce_matrix, x_multi_pce , value_type(0.0) ,y_multi_pce);
     }

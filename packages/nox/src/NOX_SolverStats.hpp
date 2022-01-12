@@ -68,12 +68,14 @@ namespace NOX {
 
       void logLinearSolve(const bool converged,
                           const int numIterations,
-                          const double /* achievedTolerance */,
-                          const double /* initialResidualNorm */,
+                          const double achievedTolerance,
+                          const double initialResidualNorm,
                           const double finalResidualNorm)
       {
         lastLinearSolve_Converged = converged;
         lastLinearSolve_NumIterations = numIterations;
+        lastLinearSolve_AchievedTolerance = achievedTolerance;
+        lastLinearSolve_InitialResidualNorm = initialResidualNorm;
         lastLinearSolve_FinalResidualNorm = finalResidualNorm;
         ++lastNonlinearSolve_NumLinearSolves;
         lastNonlinearSolve_NumLinearIterations += numIterations;

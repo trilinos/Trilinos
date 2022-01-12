@@ -57,7 +57,10 @@ namespace mesh {
 template<typename T, template <typename> class NgpDebugger>
 class HostField : public NgpFieldBase
 {
-public:
+ private:
+  using ExecSpace = stk::ngp::ExecSpace;
+
+ public:
   using value_type = T;
   using StkDebugger = typename NgpDebugger<T>::StkFieldSyncDebuggerType;
 
@@ -76,8 +79,6 @@ public:
       synchronizedCount(0)
   {
     field->template make_field_sync_debugger<StkDebugger>();
-    update_field();
-    reset_execution_space();
   }
 
   HostField(const HostField<T, NgpDebugger>&) = default;
@@ -85,10 +86,16 @@ public:
   HostField<T, NgpDebugger>& operator=(const HostField<T, NgpDebugger>&) = default;
   HostField<T, NgpDebugger>& operator=(HostField<T, NgpDebugger>&&) = default;
 
-  void update_field() override
+  void update_field(const ExecSpace& newExecSpace) override
   {
-    field->increment_num_syncs_to_device();
-    synchronizedCount = hostBulk->synchronized_count();
+    set_execution_space(newExecSpace);
+    update_field();
+  }
+
+  void update_field(ExecSpace&& newExecSpace) override
+  {
+    set_execution_space(std::forward<ExecSpace>(newExecSpace));
+    update_field();
   }
 
   void set_field_states(HostField<T, NgpDebugger>* fields[]) {}
@@ -196,7 +203,7 @@ public:
     Kokkos::fence();
   }
 
-  void sync_to_host(const stk::ngp::ExecSpace& execSpace) override
+  void sync_to_host(const ExecSpace& execSpace) override
   {
     if (need_sync_to_host()) {
       copy_device_to_host();
@@ -204,7 +211,7 @@ public:
     }
   }
 
-  void sync_to_host(stk::ngp::ExecSpace&& execSpace) override
+  void sync_to_host(ExecSpace&& execSpace) override
   {
     if (need_sync_to_host()) {
       copy_device_to_host();
@@ -218,7 +225,7 @@ public:
     Kokkos::fence();
   }
 
-  void sync_to_device(const stk::ngp::ExecSpace& execSpace) override
+  void sync_to_device(const ExecSpace& execSpace) override
   {
     if (need_sync_to_device()) {
       if (hostBulk->synchronized_count() != synchronizedCount) {
@@ -229,7 +236,7 @@ public:
     }
   }
 
-  void sync_to_device(stk::ngp::ExecSpace&& execSpace) override
+  void sync_to_device(ExecSpace&& execSpace) override
   {
     if (need_sync_to_device()) {
       if (hostBulk->synchronized_count() != synchronizedCount) {
@@ -240,7 +247,7 @@ public:
     }
   }
 
-  size_t synchronized_count() const override { return field->mesh_meta_data().mesh_bulk_data().synchronized_count(); }
+  size_t synchronized_count() const override { return synchronizedCount; }
 
   FieldState state() const { return field->state(); }
 
@@ -254,6 +261,7 @@ public:
 
   unsigned get_ordinal() const { return field->mesh_meta_data_ordinal(); }
 
+  void debug_initialize_debug_views() override {}
   void debug_modification_begin() override {}
   void debug_modification_end(size_t) override {}
   void debug_detect_device_field_modification() override {}
@@ -266,22 +274,23 @@ public:
   void notify_sync_debugger_clear_host_sync_state() override {}
   void notify_sync_debugger_clear_device_sync_state() override {}
 
-  stk::ngp::ExecSpace& get_execution_space() const override {
-    return field->get_execution_space();
+ private:
+  ExecSpace& get_execution_space() const { return field->get_execution_space(); }
+
+  void set_execution_space(const ExecSpace& executionSpace) { field->set_execution_space(executionSpace); }
+
+  void set_execution_space(ExecSpace&& executionSpace)
+  {
+    field->set_execution_space(std::forward<ExecSpace>(executionSpace));
   }
 
-  void set_execution_space(const stk::ngp::ExecSpace& executionSpace) override {
-    field->set_execution_space(executionSpace);
-  }
+  void reset_execution_space() { field->reset_execution_space(); }
 
-  void set_execution_space(stk::ngp::ExecSpace&& executionSpace) override {
-    field->set_execution_space(std::forward<stk::ngp::ExecSpace>(executionSpace));
+  void update_field()
+  {
+    field->increment_num_syncs_to_device();
+    synchronizedCount = hostBulk->synchronized_count();
   }
-
-  void reset_execution_space() override {
-    field->reset_execution_space();
-  }
-private:
 
   void set_modify_on_device() {
     field->modify_on_device();

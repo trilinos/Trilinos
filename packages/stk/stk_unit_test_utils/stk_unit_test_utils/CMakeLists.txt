@@ -13,6 +13,7 @@ SET(HEADERS_NEED_IO
   ReadWriteSidesetTester.hpp
   StkMeshFromGeneratedMesh.hpp
   TextMeshFixture.hpp
+  TextMeshStkTopologyMapping.hpp
   TextMeshToFile.hpp
   TextMeshUtils.hpp
   TextMesh.hpp
@@ -27,7 +28,6 @@ SET(SOURCES_NEED_IO
   ReadWriteSidesetTester.cpp
   TextMeshFixture.cpp
   TextMeshToFile.cpp
-  TextMeshUtils.cpp
   TextMesh.cpp
   ioUtils.cpp
   meshCreationHelpers.cpp

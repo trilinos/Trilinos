@@ -248,10 +248,10 @@ std::string getCuSparseErrorString(cusparseStatus_t status) {
 #endif
 
 /* ========================================================================================= */
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) 
 template <typename crsmat_t, typename host_crsmat_t>
 bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_majorU, crsmat_t &U,
                     int *perm_r, int *perm_c, double tol, int loop) {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) 
   using values_view_t = typename crsmat_t::values_type::non_const_type;
   using scalar_t      = typename values_view_t::value_type;
   using size_type     = typename crsmat_t::size_type;
@@ -660,11 +660,15 @@ bool check_cusparse(host_crsmat_t &Mtx, bool col_majorL, crsmat_t &L, bool col_m
     std::cout << "  LOOP_MIN_TIME:  " << min_time << std::endl << std::endl;
   }
   return success;
+}
 #else
+template <typename crsmat_t, typename host_crsmat_t>
+bool check_cusparse(host_crsmat_t & /*Mtx*/, bool /*col_majorL*/, crsmat_t & /*L*/, bool /*col_majorU*/, crsmat_t & /*U*/,
+                    int * /*perm_r*/, int * /*perm_c*/, double /*tol*/, int /*loop*/) {
   printf( " KOKKOSKERNELS_ENABLE_TPL_CUSPARSE **not** enabled\n" );
   return false;
-#endif
 }
+#endif
 
 } // namespace Experiment
 } // namespace PerfTest

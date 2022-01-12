@@ -129,6 +129,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: drop scheme");
     SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
     SET_VALID_ENTRY("aggregation: distance laplacian directional weights");
+    SET_VALID_ENTRY("aggregation: dropping may create Dirichlet");
 
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
@@ -193,6 +194,7 @@ namespace MueLu {
 
     GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
     std::string algo = pL.get<std::string>("aggregation: drop scheme");
+    const bool filteringMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
     
     RCP<RealValuedMultiVector> Coords;
     RCP<Matrix> A;
@@ -670,10 +672,12 @@ namespace MueLu {
           columns.resize(realnnz);
           numTotal = A->getNodeNumEntries();
 
-          // If the only element remaining after filtering is diagonal, mark node as boundary
-          for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
-            if (rows[row+1]- rows[row] <= 1)
-              boundaryNodes[row] = true;
+          if (filteringMayCreateDirichlet) {
+            // If the only element remaining after filtering is diagonal, mark node as boundary
+            for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
+              if (rows[row+1]- rows[row] <= 1)
+                boundaryNodes[row] = true;
+            }
           }
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));

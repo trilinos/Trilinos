@@ -52,6 +52,7 @@
 #define TESTING_AMESOS2_WITH_TPETRA_REMOVE_UVM
 #if defined(TESTING_AMESOS2_WITH_TPETRA_REMOVE_UVM)
 #include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosKernels_Sorting.hpp"
 #endif
 
 namespace Amesos2 {
@@ -608,7 +609,7 @@ namespace Amesos2 {
     // sort
     if( ordering == SORTED_INDICES ) {
       using execution_space = typename KV_GS::execution_space;
-      KokkosKernels::Impl::sort_crs_matrix <execution_space, KV_GS, KV_GO, KV_S>
+      KokkosKernels::sort_crs_matrix <execution_space, KV_GS, KV_GO, KV_S>
         (rowptr, colind, nzval);
     }
     #endif

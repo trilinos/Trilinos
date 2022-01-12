@@ -68,11 +68,11 @@ int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
                        const int *var_tab)
 {
   int    numelblkdim, numelvardim, timedim, dims[2], varid;
-  char * sta_type   = NULL;
-  char * tab_type   = NULL;
+  char  *sta_type   = NULL;
+  char  *tab_type   = NULL;
   size_t num_entity = 0;
   size_t num_var_db = 0;
-  int *  stat_vals  = NULL;
+  int   *stat_vals  = NULL;
   int    i, j, k;
   int    status;
   char   errmsg[MAX_ERR_LENGTH];

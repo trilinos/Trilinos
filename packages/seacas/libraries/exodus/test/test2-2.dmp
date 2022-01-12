@@ -134,7 +134,6 @@ variables:
 		:floating_point_word_size = 4 ;
 		:file_size = 1 ;
 		:maximum_name_length = 32 ;
-		:int64_status = 0 ;
 		:title = "This is test 2" ;
 data:
 

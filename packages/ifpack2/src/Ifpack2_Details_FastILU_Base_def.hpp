@@ -46,7 +46,7 @@
 #define __IFPACK2_FASTILU_BASE_DEF_HPP__ 
 
 #include <Ifpack2_Details_CrsArrays.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <stdexcept>
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -164,7 +164,7 @@ initialize()
   {
     throw std::runtime_error(std::string("Called ") + getName() + "::initialize() but matrix was null (call setMatrix() with a non-null matrix first)");
   }
-  Kokkos::Impl::Timer copyTimer;
+  Kokkos::Timer copyTimer;
   CrsArrayReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
   crsCopyTime_ = copyTimer.seconds();
   initLocalPrec();  //note: initLocalPrec updates initTime
@@ -196,7 +196,7 @@ compute()
 
 
   //get copy of values array from matrix
-  Kokkos::Impl::Timer copyTimer;
+  Kokkos::Timer copyTimer;
   CrsArrayReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
   crsCopyTime_ += copyTimer.seconds(); //add to the time spent getting rowptrs/colinds
   computeLocalPrec(); //this updates computeTime_

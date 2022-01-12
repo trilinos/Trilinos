@@ -6,8 +6,8 @@ C    See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
       QAINFO(1) = 'GJoin2  '
-      QAINFO(2) = '2021/07/02                      '
-      QAINFO(3) = ' 1.37                           '
+      QAINFO(2) = '2021/10/27                      '
+      QAINFO(3) = ' 1.38                           '
 
 C - Added EXPXYZ - By material matching
 C - Fixes in expxyz, matxyz, comand, irennp
@@ -74,3 +74,4 @@ c - fixing sideset df copy if no sideset df
 c - call mdfree()
 c - add basic support for named entities.
 c - don't mclong if adding zero bytes
+c - remove warning about expxyz material matching routine

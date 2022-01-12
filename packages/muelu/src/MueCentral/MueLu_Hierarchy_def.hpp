@@ -920,8 +920,11 @@ namespace MueLu {
     typedef Teuchos::ScalarTraits<typename STS::magnitudeType> STM;
     MagnitudeType prevNorm = STM::one();
     rate_ = 1.0;
-    if (IsCalculationOfResidualRequired(startLevel, conv))
-      ComputeResidualAndPrintHistory(*A, X, B, Teuchos::ScalarTraits<LO>::zero(), startLevel, conv, prevNorm);
+    if (IsCalculationOfResidualRequired(startLevel, conv)) {
+      ConvergenceStatus convergenceStatus = ComputeResidualAndPrintHistory(*A, X, B, Teuchos::ScalarTraits<LO>::zero(), startLevel, conv, prevNorm);
+      if (convergenceStatus == MueLu::ConvergenceStatus::Converged)
+        return convergenceStatus;
+    }
 
     SC one = STS::one(), zero = STS::zero();
     for (LO iteration = 1; iteration <= nIts; iteration++) {
@@ -1114,8 +1117,11 @@ namespace MueLu {
       zeroGuess = false;
 
 
-      if (IsCalculationOfResidualRequired(startLevel, conv))
-        ComputeResidualAndPrintHistory(*A, X, B, iteration, startLevel, conv, prevNorm);
+      if (IsCalculationOfResidualRequired(startLevel, conv)) {
+        ConvergenceStatus convergenceStatus = ComputeResidualAndPrintHistory(*A, X, B, iteration, startLevel, conv, prevNorm);
+        if (convergenceStatus == MueLu::ConvergenceStatus::Converged)
+          return convergenceStatus;
+      }
     }
     return (tol > 0 ? ConvergenceStatus::Unconverged : ConvergenceStatus::Undefined);
   }

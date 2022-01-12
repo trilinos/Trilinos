@@ -771,8 +771,8 @@ template<class AMatrix,
          int dobeta,
          bool conjugate>
 static void
-spmv_struct_beta_transpose (const int stencil_type,
-                            const Kokkos::View<typename AMatrix::non_const_ordinal_type*, Kokkos::HostSpace>& structure,
+spmv_struct_beta_transpose (const int /*stencil_type*/,
+                            const Kokkos::View<typename AMatrix::non_const_ordinal_type*, Kokkos::HostSpace>& /*structure*/,
                             typename YVector::const_value_type& alpha,
                             const AMatrix& A,
                             const XVector& x,

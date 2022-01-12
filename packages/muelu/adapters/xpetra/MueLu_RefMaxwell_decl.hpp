@@ -87,12 +87,6 @@
 #include "Xpetra_VectorFactory_fwd.hpp"
 #include "Xpetra_CrsMatrixWrap_fwd.hpp"
 
-#if defined(HAVE_MUELU_IFPACK2) && (!defined(HAVE_MUELU_EPETRA))
-#define MUELU_REFMAXWELL_CAN_USE_HIPTMAIR
-#include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Hiptmair.hpp"
-#endif
-
 // Stratimikos
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
 #include <Thyra_LinearOpWithSolveBase.hpp>
@@ -407,10 +401,6 @@ namespace MueLu {
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
     Teuchos::RCP<SmootherBase> PreSmoother_, PostSmoother_;
     Teuchos::RCP<SmootherPrototype> PreSmootherData_, PostSmootherData_;
-#if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
-    Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > hiptmairPreSmoother_, hiptmairPostSmoother_;
-#endif
-    bool useHiptmairSmoothing_;
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
     RCP<Thyra::PreconditionerBase<Scalar> > thyraPrecH_, thyraPrec22_;
 #endif

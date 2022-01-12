@@ -82,12 +82,12 @@ typedef zscalar_t z2TestScalar;
 
 typedef Tpetra::CrsMatrix<z2TestScalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::CrsGraph<z2TestLO, z2TestGO> SparseGraph;
-typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> Vector;
-typedef Vector::node_type Node;
+typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> VectorT;
+typedef VectorT::node_type Node;
 
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 typedef Zoltan2::XpetraCrsGraphAdapter<SparseGraph> SparseGraphAdapter;
-typedef Zoltan2::XpetraMultiVectorAdapter<Vector> MultiVectorAdapter;
+typedef Zoltan2::XpetraMultiVectorAdapter<VectorT> MultiVectorAdapter;
 
 
 // Integer vector
@@ -209,7 +209,7 @@ int main(int narg, char** arg)
          << "NumLocalRows (rank 0) = " << origMatrix->getNodeNumRows() << std::endl;
 
   ////// Create a vector to use with the matrix.
-  RCP<Vector> origVector, origProd;
+  RCP<VectorT> origVector, origProd;
   origProd   = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
   origVector = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
@@ -393,12 +393,12 @@ int main(int narg, char** arg)
   }
 
   if (me == 0) std::cout << "Redistributing vectors..." << std::endl;
-  Vector *redistribVector;
+  VectorT *redistribVector;
   MultiVectorAdapter adapterVector(origVector); //, weights, weightStrides);
   adapterVector.applyPartitioningSolution(*origVector, redistribVector,
                                           problem.getSolution());
 
-  RCP<Vector> redistribProd;
+  RCP<VectorT> redistribProd;
   redistribProd = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                        redistribMatrix->getRangeMap());
 

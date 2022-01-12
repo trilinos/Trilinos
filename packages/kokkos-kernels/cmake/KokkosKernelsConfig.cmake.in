@@ -9,12 +9,13 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(Kokkos HINTS @Kokkos_DIR@)
 
-SET(Kokkos_ENABLE_OPENMP  @Kokkos_ENABLE_OPENMP@)
-SET(Kokkos_ENABLE_CUDA    @Kokkos_ENABLE_CUDA@)
-SET(Kokkos_ENABLE_HIP     @Kokkos_ENABLE_HIP@)
-SET(Kokkos_ENABLE_SYCL    @Kokkos_ENABLE_SYCL@)
-SET(Kokkos_ENABLE_PTHREAD @Kokkos_ENABLE_PTHREAD@) 
-SET(Kokkos_ENABLE_SERIAL  @Kokkos_ENABLE_SERIAL@)
+SET(Kokkos_ENABLE_OPENMP       @Kokkos_ENABLE_OPENMP@)
+SET(Kokkos_ENABLE_OPENMPTARGET @Kokkos_ENABLE_OPENMPTARGET@)
+SET(Kokkos_ENABLE_CUDA         @Kokkos_ENABLE_CUDA@)
+SET(Kokkos_ENABLE_HIP          @Kokkos_ENABLE_HIP@)
+SET(Kokkos_ENABLE_SYCL         @Kokkos_ENABLE_SYCL@)
+SET(Kokkos_ENABLE_PTHREAD      @Kokkos_ENABLE_PTHREAD@) 
+SET(Kokkos_ENABLE_SERIAL       @Kokkos_ENABLE_SERIAL@)
 
 INCLUDE("${KokkosKernels_CMAKE_DIR}/KokkosKernelsTargets.cmake")
 

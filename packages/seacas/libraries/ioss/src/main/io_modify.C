@@ -167,7 +167,7 @@ namespace {
       for (const auto &name : names) {
         if (std::regex_match(name, reg)) {
           const auto *entity = region.get_entity(name, entity_type);
-          const T *   ge     = dynamic_cast<const T *>(entity);
+          const T    *ge     = dynamic_cast<const T *>(entity);
           if (ge != nullptr) {
             info_entity(ge, show_property);
             matched = true;
@@ -195,7 +195,7 @@ namespace {
       for (const auto &name : names) {
         if (glob::glob_match(name, glob)) {
           const auto *entity = region.get_entity(name, entity_type);
-          const T *   ge     = dynamic_cast<const T *>(entity);
+          const T    *ge     = dynamic_cast<const T *>(entity);
           if (ge != nullptr) {
             info_entity(ge, show_property);
             matched = true;

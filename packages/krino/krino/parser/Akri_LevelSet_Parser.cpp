@@ -16,7 +16,7 @@
 #include <Akri_Phase_Support.hpp>
 #include <Akri_RegionInterface.hpp>
 #include <Akri_Vec.hpp>
-#include <Akri_YAML_Parser.hpp>
+#include <Akri_Parser.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/environment/RuntimeDoomed.hpp>
@@ -45,15 +45,15 @@ register_blocks_for_level_set(RegionInterface & reg, LevelSet & ls)
 }
 
 void
-LevelSet_Parser::parse(const YAML::Node & region_node, RegionInterface & region)
+LevelSet_Parser::parse(const Parser::Node & region_node, RegionInterface & region)
 {
-  const YAML::Node ls_nodes = YAML_Parser::get_sequence_if_present(region_node, "level_set_interfaces");
+  const Parser::Node ls_nodes = region_node.get_sequence_if_present("level_set_interfaces");
   if ( ls_nodes )
   {
     for ( auto && ls_node : ls_nodes )
     {
       std::string ls_name;
-      YAML_Parser::get_if_present(ls_node, "name", ls_name);
+      ls_node.get_if_present("name", ls_name);
       if (ls_name.empty())
       {
         stk::RuntimeDoomedAdHoc() << "Blank or missing levelset name.\n";
@@ -61,13 +61,13 @@ LevelSet_Parser::parse(const YAML::Node & region_node, RegionInterface & region)
       LevelSet & ls = LevelSet::build(region.get_stk_mesh_meta_data(), ls_name, region.getRegionTimer());
 
       std::string distance_name;
-      if (krino::YAML_Parser::get_if_present(ls_node, "distance_variable", distance_name))
+      if (ls_node.get_if_present("distance_variable", distance_name))
       {
         ls.set_distance_name(distance_name);
       }
 
       std::vector<double> extension_velocity;
-      if (krino::YAML_Parser::get_if_present(ls_node, "extension_velocity", extension_velocity))
+      if (ls_node.get_if_present("extension_velocity", extension_velocity))
       {
         if (extension_velocity.size() != ls.spatial_dimension)
         {
@@ -77,7 +77,7 @@ LevelSet_Parser::parse(const YAML::Node & region_node, RegionInterface & region)
       }
 
       double narrow_band_multiplier = 0.0;
-      if (YAML_Parser::get_if_present(ls_node, "narrow_band_element_size_multiplier", narrow_band_multiplier))
+      if (ls_node.get_if_present("narrow_band_element_size_multiplier", narrow_band_multiplier))
       {
         if( narrow_band_multiplier < 0. )
         {
@@ -93,7 +93,7 @@ LevelSet_Parser::parse(const YAML::Node & region_node, RegionInterface & region)
       }
 
       std::string redistance_method_name;
-      if (YAML_Parser::get_if_present(ls_node, "redistance_method", redistance_method_name))
+      if (ls_node.get_if_present("redistance_method", redistance_method_name))
       {
         std::transform(redistance_method_name.begin(), redistance_method_name.end(), redistance_method_name.begin(), ::toupper);
         Redistance_Method redistance_method = CLOSEST_POINT;
@@ -108,25 +108,25 @@ LevelSet_Parser::parse(const YAML::Node & region_node, RegionInterface & region)
       }
 
       bool perform_initial_redistance;
-      if (YAML_Parser::get_if_present(ls_node, "perform_initial_redistance", perform_initial_redistance))
+      if (ls_node.get_if_present("perform_initial_redistance", perform_initial_redistance))
       {
         ls.perform_initial_redistance(perform_initial_redistance);
       }
 
       double initial_offset_distance = 0.0;
-      if (YAML_Parser::get_if_present(ls_node, "initial_offset_distance", initial_offset_distance))
+      if (ls_node.get_if_present("initial_offset_distance", initial_offset_distance))
       {
         ls.set_ic_offset(initial_offset_distance);
       }
 
       double initial_scale_factor = 1.0;
-      if (YAML_Parser::get_if_present(ls_node, "initial_scale_factor", initial_scale_factor))
+      if (ls_node.get_if_present("initial_scale_factor", initial_scale_factor))
       {
         ls.set_ic_scale(initial_scale_factor);
       }
 
       double narrow_band_size = 0.0;
-      if (YAML_Parser::get_if_present(ls_node, "narrow_band_size", narrow_band_size))
+      if (ls_node.get_if_present("narrow_band_size", narrow_band_size))
       {
         if( narrow_band_size < 0. )
         {
@@ -135,7 +135,7 @@ LevelSet_Parser::parse(const YAML::Node & region_node, RegionInterface & region)
         ls.narrow_band_size(narrow_band_size);
       }
 
-      const YAML::Node comp_dist_surfs = YAML_Parser::get_sequence_if_present(ls_node, "compute_surface_distance");
+      const Parser::Node comp_dist_surfs = ls_node.get_sequence_if_present("compute_surface_distance");
       if ( comp_dist_surfs )
       {
         std::vector<std::string> compute_distance_surfaces;

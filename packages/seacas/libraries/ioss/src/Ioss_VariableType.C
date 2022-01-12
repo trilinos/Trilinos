@@ -82,6 +82,17 @@ namespace Ioss {
     return count;
   }
 
+  /** \brief Get the names of variable types known to IOSS.
+   *
+   *  \returns The list of known variable type names.
+   */
+  Ioss::NameList VariableType::describe()
+  {
+    Ioss::NameList names;
+    describe(&names);
+    return names;
+  }
+
   bool VariableType::add_field_type_mapping(const std::string &raw_field,
                                             const std::string &raw_type)
   {
@@ -96,7 +107,7 @@ namespace Ioss {
     return registry().customFieldTypes.insert(std::make_pair(field, type)).second;
   }
 
-  bool VariableType::create_named_suffix_field_type(const std::string &             type_name,
+  bool VariableType::create_named_suffix_field_type(const std::string              &type_name,
                                                     const std::vector<std::string> &suffices)
   {
     size_t count = suffices.size();
@@ -217,10 +228,8 @@ namespace Ioss {
     if (static_cast<int>(suffices.size()) == suffix_count()) {
       for (int i = 0; i < suffix_count(); i++) {
         if (suffices[i] != label(i + 1)) {
-          if (!Ioss::Utils::str_equal(suffices[i].m_data, label(i + 1))) {
-            result = false;
-            break;
-          }
+          result = false;
+          break;
         }
       }
     }

@@ -48,7 +48,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Atomic.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <Kokkos_Bitset.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include "KokkosGraph_Distance1Color.hpp"
@@ -681,7 +681,7 @@ namespace KokkosSparse{
           nnz_lno_t color = t.league_rank();
           nnz_lno_t colorBegin = color_xadj(color);
           nnz_lno_t colorLen = color_xadj(color + 1) - colorBegin;
-          KokkosKernels::Impl::TeamBitonicSort(color_adj.data() + colorBegin, colorLen, t, comp);
+          KokkosKernels::TeamBitonicSort(color_adj.data() + colorBegin, colorLen, t, comp);
           t.team_barrier();
           //Now that the color set is sorted, count how many long rows there were
           nnz_lno_t numLongRows;
@@ -800,7 +800,7 @@ namespace KokkosSparse{
         size_type nnz = adj.extent(0);
 
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 #endif
         typename HandleType::GraphColoringHandleType::color_view_t colors;
         color_t numColors;
@@ -876,8 +876,8 @@ namespace KokkosSparse{
         if(longRowThreshold > 0)
         {
           //Count long rows per color set, and sort color sets so that long rows come after regular rows
-          nnz_lno_persistent_work_view_t long_rows_per_color(Kokkos::ViewAllocateWithoutInitializing("long_rows_per_color"), numColors);
-          nnz_lno_persistent_work_view_t max_row_length_per_color(Kokkos::ViewAllocateWithoutInitializing("max_row_length_per_color"), numColors);
+          nnz_lno_persistent_work_view_t long_rows_per_color(Kokkos::view_alloc(Kokkos::WithoutInitializing, "long_rows_per_color"), numColors);
+          nnz_lno_persistent_work_view_t max_row_length_per_color(Kokkos::view_alloc(Kokkos::WithoutInitializing, "max_row_length_per_color"), numColors);
           nnz_lno_t mostLongRowsInColor = 0;
           SortIntoLongRowsFunctor sortIntoLongRowsFunctor(xadj, longRowThreshold,
               color_xadj, color_adj, long_rows_per_color, max_row_length_per_color);
@@ -895,13 +895,13 @@ namespace KokkosSparse{
           auto host_max_row_length_per_color = Kokkos::create_mirror_view(max_row_length_per_color);
           Kokkos::deep_copy(host_max_row_length_per_color, max_row_length_per_color);
           gsHandle->set_max_row_length_per_color(host_max_row_length_per_color);
-          scalar_persistent_work_view_t long_row_x(Kokkos::ViewAllocateWithoutInitializing("long_row_x"), mostLongRowsInColor);
+          scalar_persistent_work_view_t long_row_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "long_row_x"), mostLongRowsInColor);
           gsHandle->set_long_row_x(long_row_x);
         }
         else
         {
           //Just sort rows by ID.
-          KokkosKernels::Impl::sort_crs_graph<MyExecSpace, decltype(color_xadj), decltype(color_adj)>(color_xadj, color_adj);
+          KokkosKernels::sort_crs_graph<MyExecSpace, decltype(color_xadj), decltype(color_adj)>(color_xadj, color_adj);
         }
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
         MyExecSpace().fence();
@@ -1263,7 +1263,7 @@ namespace KokkosSparse{
         }
         //else
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 #endif
         {
 
@@ -1279,7 +1279,7 @@ namespace KokkosSparse{
           nnz_lno_persistent_work_view_t old_to_new_map = gsHandle->get_old_to_new_map();
 
           nnz_lno_persistent_work_view_t color_adj = gsHandle->get_color_adj();
-          scalar_persistent_work_view_t permuted_adj_vals (Kokkos::ViewAllocateWithoutInitializing("newvals_"), nnz );
+          scalar_persistent_work_view_t permuted_adj_vals (Kokkos::view_alloc(Kokkos::WithoutInitializing, "newvals_"), nnz );
 
 
           int suggested_vector_size = this->handle->get_suggested_vector_size(num_rows, nnz);
@@ -1337,7 +1337,7 @@ namespace KokkosSparse{
           }
           gsHandle->set_new_adj_val(permuted_adj_vals);
 
-          scalar_persistent_work_view_t permuted_inverse_diagonal (Kokkos::ViewAllocateWithoutInitializing("permuted_inverse_diagonal"), num_rows * block_size );
+          scalar_persistent_work_view_t permuted_inverse_diagonal (Kokkos::view_alloc(Kokkos::WithoutInitializing, "permuted_inverse_diagonal"), num_rows * block_size );
           if (!have_diagonal_given) {
             Get_Matrix_Diagonals gmd(newxadj_, newadj_, permuted_adj_vals, permuted_inverse_diagonal,
                                      this->num_rows,

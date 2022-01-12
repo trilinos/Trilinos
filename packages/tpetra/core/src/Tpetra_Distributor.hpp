@@ -102,15 +102,22 @@ namespace Tpetra {
   ///
   /// Instances of Distributor take the following parameters that
   /// control communication and debug output:
-  /// - "Barrier between receives and sends" (<tt>bool</tt>):
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  /// - "Barrier between receives and sends" (<tt>bool</tt>): (DEPRECATED)
   ///   Whether to execute a barrier between receives and sends in
-  ///   do[Reverse]Posts().  A barrier is required for correctness
-  ///   when the "Send type" parameter is "Rsend".  Otherwise, a
-  ///   barrier is correct and may be useful for debugging, but not
+  ///   do[Reverse]Posts().  
+  ///   A barrier is required for correctness
+  ///   when the "Send type" parameter is "Rsend".  Otherwise, 
+  ///   A barrier is correct and may be useful for debugging, but not
   ///   recommended, since it introduces useless synchronization.
+#endif
   /// - "Send type" (<tt>std::string</tt>): When using MPI, the
   ///   variant of MPI_Send to use in do[Reverse]Posts().  Valid
-  ///   values include "Isend", "Rsend", "Send", and "Ssend".  The
+  ///   values include "Isend", 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  ///   "Rsend" (DEPRECATED), "Ssend" (DEPRECATED), 
+#endif
+  ///   and "Send".  The
   ///   default is "Send".  (The receive type is always MPI_Irecv, a
   ///   nonblocking receive.  Since we post receives first before
   ///   sends, this prevents deadlock, even if MPI_Send blocks and

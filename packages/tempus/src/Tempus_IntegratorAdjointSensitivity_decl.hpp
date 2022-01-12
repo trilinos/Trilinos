@@ -52,12 +52,12 @@ class IntegratorAdjointSensitivity :
 {
 public:
 
-  /** \brief Full Constructor with model, and will be fully initialized. 
+  /** \brief Full Constructor with model, and will be fully initialized.
    *
    * \param[in] model                 The forward physics ModelEvaluator
    * \param[in] state_integrator      Forward state Integrator for the forward problem
-   * \param[in] adjoint_model         ModelEvaluator for the adjoint physics/problem 
-   * \param[in] adjoint_aux_model     ModelEvaluator for the auxiliary adjoint physics/problem 
+   * \param[in] adjoint_model         ModelEvaluator for the adjoint physics/problem
+   * \param[in] adjoint_aux_model     ModelEvaluator for the auxiliary adjoint physics/problem
    * \param[in] adjoint_integrator    Time integrator for the adjoint problem
    * \param[in] solution_history      The forward state solution history
    * \param[in] p_index               Sensitivity parameter index
@@ -145,9 +145,13 @@ public:
   virtual void setStatus(const Status st) override;
   /// Get the Stepper
   virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override;
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Return a copy of the Tempus ParameterList
+  TEMPUS_DEPRECATED
   virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override;
+  TEMPUS_DEPRECATED
   virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override;
+#endif
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
   /// Get the SolutionHistory

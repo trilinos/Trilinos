@@ -26,6 +26,12 @@ namespace Excn {
   template <typename INT> class SideSet;
 } // namespace Excn
 namespace Excn {
+  template <typename INT> class EdgeBlock;
+} // namespace Excn
+namespace Excn {
+  template <typename INT> class FaceBlock;
+} // namespace Excn
+namespace Excn {
 } // namespace Excn
 namespace Excn {
 } // namespace Excn
@@ -93,25 +99,33 @@ namespace Excn {
     }
 
     int write_meta_data(const Mesh &mesh, const std::vector<Block> &blocks,
-                        const std::vector<NodeSet<INT>> &nodesets,
-                        const std::vector<SideSet<INT>> &sidesets,
-                        const CommunicationMetaData &    comm);
+                        const std::vector<NodeSet<INT>>   &nodesets,
+                        const std::vector<SideSet<INT>>   &sidesets,
+                        const std::vector<EdgeBlock<INT>> &edgeblocks,
+                        const std::vector<FaceBlock<INT>> &faceblocks,
+                        const CommunicationMetaData       &comm);
 
     bool check_meta_data(const Mesh &mesh, const std::vector<Block> &blocks,
-                         const std::vector<NodeSet<INT>> &nodesets,
-                         const std::vector<SideSet<INT>> &sidesets,
-                         const CommunicationMetaData &    comm);
+                         const std::vector<NodeSet<INT>>   &nodesets,
+                         const std::vector<SideSet<INT>>   &sidesets,
+                         const std::vector<EdgeBlock<INT>> &edgeblocks,
+                         const std::vector<FaceBlock<INT>> &faceblocks,
+                         const CommunicationMetaData       &comm);
 
   private:
     int put_metadata(const Mesh &mesh, const CommunicationMetaData &comm);
     int put_metadata(const std::vector<Block> &blocks);
     int put_metadata(const std::vector<NodeSet<INT>> &nodesets);
     int put_metadata(const std::vector<SideSet<INT>> &sidesets);
+    int put_metadata(const std::vector<EdgeBlock<INT>> &edgeblocks);
+    int put_metadata(const std::vector<FaceBlock<INT>> &faceblocks);
 
     int put_non_define_data(const Mesh &mesh, const CommunicationMetaData &comm);
     int put_non_define_data(const std::vector<Block> &blocks);
     int put_non_define_data(const std::vector<NodeSet<INT>> &nodesets);
     int put_non_define_data(const std::vector<SideSet<INT>> &sidesets);
+    int put_non_define_data(const std::vector<EdgeBlock<INT>> &edgeblocks);
+    int put_non_define_data(const std::vector<FaceBlock<INT>> &faceblocks);
 
     int exodusFilePtr;
     int nodeMapVarID[3];

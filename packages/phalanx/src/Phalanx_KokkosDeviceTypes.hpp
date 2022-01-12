@@ -17,6 +17,8 @@ namespace PHX {
 
 #if defined(PHX_KOKKOS_DEVICE_TYPE_CUDA)
   using Device = Kokkos::Cuda;
+#elif defined(PHX_KOKKOS_DEVICE_TYPE_HIP)
+  using Device = Kokkos::Experimental::HIP;
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_OPENMP)
   using Device = Kokkos::OpenMP;
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_THREAD)
@@ -72,12 +74,14 @@ namespace PHX {
 
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) || defined(SACADO_VIEW_CUDA_HIERARCHICAL)
 
+  // Contiguous layout with FAD stride of 32 for cuda warp of 64 for
+  // HIP warp.  IMPORTANT: The FadStride must be the same as the
+  // vector_size in the Kokkos::TeamPolicy constructor. This value is
+  // only used for SFad and SLFad, not for DFad.
 #if defined(KOKKOS_ENABLE_CUDA)
-  // Contiguous layout with FAD stride of 32.  IMPORTANT: The
-  // FadStride must be the same as the vector_size in the
-  // Kokkos::TeamPolicy constructor. This value is only used for SFad
-  // and SLFad, not for DFad.
   using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
+#elif defined(KOKKOS_ENABLE_HIP)
+  using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,64>;
 #else
   using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;
 #endif
@@ -101,5 +105,13 @@ namespace PHX {
   template<typename DataType>
   using UnmanagedView = Kokkos::View<DataType,typename PHX::DevLayout<DataType>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 }
+
+// Hack for HIP compiler bug. Partial template specialization of class
+// device functions incorrectly requires the __device__ flag.
+#ifdef KOKKOS_ENABLE_HIP
+#define PHALANX_HIP_HACK_KOKKOS_FUNCTION KOKKOS_FUNCTION
+#else
+#define PHALANX_HIP_HACK_KOKKOS_FUNCTION
+#endif
 
 #endif

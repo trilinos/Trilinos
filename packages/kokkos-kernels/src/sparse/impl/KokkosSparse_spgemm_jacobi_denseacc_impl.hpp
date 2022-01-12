@@ -229,7 +229,7 @@ namespace KokkosSparse{
       }
 
       // Initialize the timer
-      Kokkos::Impl::Timer jacobi_speed_timer;
+      Kokkos::Timer jacobi_speed_timer;
 
       // Get suggested vector size, teamsize and row chunk size
       nnz_lno_t brows = row_mapB.extent(0) - 1;
@@ -242,7 +242,7 @@ namespace KokkosSparse{
       KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
       int num_chunks = concurrency;
       typedef KokkosKernels::Impl::UniformMemoryPool<MyTempMemorySpace, scalar_t> pool_memory_space;
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       pool_memory_space m_space(num_chunks, this->b_col_cnt + (this->b_col_cnt) / sizeof(scalar_t) + 1, 0,  my_pool_type);
       MyExecSpace().fence();
 
