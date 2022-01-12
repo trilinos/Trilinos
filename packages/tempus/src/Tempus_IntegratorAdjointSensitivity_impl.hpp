@@ -451,7 +451,9 @@ void IntegratorAdjointSensitivity<Scalar>::
 setObserver(Teuchos::RCP<IntegratorObserver<Scalar> > obs)
 {
   state_integrator_->setObserver(obs);
-  adjoint_integrator_->setObserver(obs);
+  // ETP 1/12/22 Disabling passing of the observer to the adjoint
+  // integrator to work around issues in Piro
+  //adjoint_integrator_->setObserver(obs);
 }
 
 template<class Scalar>
