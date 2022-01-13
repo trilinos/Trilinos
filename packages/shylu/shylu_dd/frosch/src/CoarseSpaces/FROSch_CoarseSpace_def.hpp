@@ -220,7 +220,7 @@ namespace FROSch {
 
             auto repeatedLocalMap = repeatedMap->getLocalMap();
             auto rowLocalMap = rowMap->getLocalMap();
-            auto AssembledBasisView = AssembledBasis_->getDeviceLocalView();
+            auto AssembledBasisView = AssembledBasis_->getDeviceLocalView(Access::ReadOnly);
 
             // count number of nonzeros per row
             UN numLocalRows = rowMap->getNodeNumElements();
