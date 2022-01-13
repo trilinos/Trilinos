@@ -256,6 +256,9 @@ public:
                   const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
+  //! What mode the current time integration step is in
+  SensitivityStepMode getStepMode() const;
+
 protected:
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> model_;
   Teuchos::RCP<IntegratorBasic<Scalar>> integrator_;
