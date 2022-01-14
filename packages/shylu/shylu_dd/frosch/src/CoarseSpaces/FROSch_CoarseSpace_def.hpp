@@ -244,7 +244,7 @@ namespace FROSch {
 
             // cout nnz
             UN nnz = 0; //Rowptr[numLocalRows];
-            Kokkos::parallel_reduce("FROSch_CoarseSpace::fillGlobalBasisMatrix:nnz", numLocalRows,
+            Kokkos::parallel_reduce("FROSch_CoarseSpace::fillGlobalBasisMatrix:nnz", 1+numLocalRows,
               KOKKOS_LAMBDA(const int &i, UN &lsum) { lsum += Rowptr[i]; },
               nnz);
 
