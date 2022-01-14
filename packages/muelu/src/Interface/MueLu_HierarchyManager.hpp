@@ -344,9 +344,9 @@ namespace MueLu {
       for (int i = 0; i < data.size(); ++i) {
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
-	  if(!L.is_null()  && data[i] < levelManagers_.size())
-	    L->AddKeepFlag(name, &*levelManagers_[data[i]]->GetFactory(name));
-        }
+      	  if(!L.is_null()  && data[i] < levelManagers_.size())
+      	    L->AddKeepFlag(name, &*levelManagers_[data[i]]->GetFactory(name));
+          }
       }
     }
 
@@ -354,8 +354,8 @@ namespace MueLu {
       for (int i = 0; i < data.size(); ++i) {
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
-	  if(!L.is_null()  && data[i]+1 < levelManagers_.size())
-	    L->AddKeepFlag(name, &*levelManagers_[data[i]+1]->GetFactory(name));
+      	  if(!L.is_null()  && data[i]+1 < levelManagers_.size())
+      	    L->AddKeepFlag(name, &*levelManagers_[data[i]+1]->GetFactory(name));
         }
       }
     }
@@ -379,13 +379,13 @@ namespace MueLu {
               Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
             }
           }
-	  else if (L->IsAvailable(name)) {
-	    // Try nofactory
+      	  else if (L->IsAvailable(name)) {
+      	    // Try nofactory
             RCP<T> M = L->template Get< RCP<T> >(name);
             if (!M.is_null()) {
               Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(fileName,* M);
             }
-	  }
+	        }
 
         }
       }
@@ -395,7 +395,7 @@ namespace MueLu {
     void WriteDataAggregates(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
       for (int i = 0; i < data.size(); ++i) {
         const std::string fileName = name + "_" + Teuchos::toString(data[i]) + ".m";
-        
+
         if (data[i] < H.GetNumLevels()) {
           RCP<Level> L = H.GetLevel(data[i]);
 
@@ -403,7 +403,7 @@ namespace MueLu {
           RCP<Aggregates> agg;
           if(data[i]+1 < H.GetNumLevels() && L->IsAvailable(name,&*levelManagers_[data[i]+1]->GetFactory(name))) {
             // Try generating factory
-            agg = L->template Get< RCP<Aggregates> >(name,&*levelManagers_[data[i]+1]->GetFactory(name));  
+            agg = L->template Get< RCP<Aggregates> >(name,&*levelManagers_[data[i]+1]->GetFactory(name));
           }
           else if (L->IsAvailable(name)) {
             agg = L->template Get<RCP<Aggregates> >("Aggregates");
