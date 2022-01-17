@@ -2236,6 +2236,35 @@ std::string Relaxation<MatrixType>::description () const
   os  << ", " << "sweeps: " << NumSweeps_ << ", "
       << "damping factor: " << DampingFactor_ << ", ";
 
+  if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
+    os << "\"relaxation: mtgs cluster size\": " << clusterSize_ << ", ";
+    os << "\"relaxation: long row threshold\": " << longRowThreshold_ << ", ";
+    os << "\"relaxation: symmetric matrix structure\": " << (is_matrix_structurally_symmetric_ ? "true" : "false") << ", ";
+    os << "\"relaxation: relaxation: mtgs coloring algorithm\": ";
+    switch(mtColoringAlgorithm_)
+    {
+      case KokkosGraph::COLORING_DEFAULT:
+        os << "DEFAULT"; break;
+      case KokkosGraph::COLORING_SERIAL:
+        os << "SERIAL"; break;
+      case KokkosGraph::COLORING_VB:
+        os << "VB"; break;
+      case KokkosGraph::COLORING_VBBIT:
+        os << "VBBIT"; break;
+      case KokkosGraph::COLORING_VBCS:
+        os << "VBCS"; break;
+      case KokkosGraph::COLORING_VBD:
+        os << "VBD"; break;
+      case KokkosGraph::COLORING_VBDBIT:
+        os << "VBDBIT"; break;
+      case KokkosGraph::COLORING_EB:
+        os << "EB"; break;
+      default:
+        os << "*Invalid*";
+    }
+    os << ", ";
+  }
+
   if (PrecType_ == Ifpack2::Details::GS2 ||
       PrecType_ == Ifpack2::Details::SGS2) {
     os << "outer sweeps: " << NumOuterSweeps_ << ", "
@@ -2333,6 +2362,34 @@ describe (Teuchos::FancyOStream &out,
           << "\"relaxation: backward mode\": " << DoBackwardGS_ << endl
           << "\"relaxation: use l1\": " << DoL1Method_ << endl
           << "\"relaxation: l1 eta\": " << L1Eta_ << endl;
+      if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
+        out << "\"relaxation: mtgs cluster size\": " << clusterSize_ << endl;
+        out << "\"relaxation: long row threshold\": " << longRowThreshold_ << endl;
+        out << "\"relaxation: symmetric matrix structure\": " << (is_matrix_structurally_symmetric_ ? "true" : "false") << endl;
+        out << "\"relaxation: relaxation: mtgs coloring algorithm\": ";
+        switch(mtColoringAlgorithm_)
+        {
+          case KokkosGraph::COLORING_DEFAULT:
+            out << "DEFAULT"; break;
+          case KokkosGraph::COLORING_SERIAL:
+            out << "SERIAL"; break;
+          case KokkosGraph::COLORING_VB:
+            out << "VB"; break;
+          case KokkosGraph::COLORING_VBBIT:
+            out << "VBBIT"; break;
+          case KokkosGraph::COLORING_VBCS:
+            out << "VBCS"; break;
+          case KokkosGraph::COLORING_VBD:
+            out << "VBD"; break;
+          case KokkosGraph::COLORING_VBDBIT:
+            out << "VBDBIT"; break;
+          case KokkosGraph::COLORING_EB:
+            out << "EB"; break;
+          default:
+            out << "*Invalid*";
+        }
+        out << endl;
+      }
       if (PrecType_ == Ifpack2::Details::GS2 || PrecType_ == Ifpack2::Details::SGS2) {
         out << "\"relaxation: inner damping factor\": " << InnerDampingFactor_ << endl;
         out << "\"relaxation: outer sweeps\" : " << NumOuterSweeps_ << endl;
