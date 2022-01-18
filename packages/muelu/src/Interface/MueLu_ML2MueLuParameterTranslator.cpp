@@ -199,8 +199,8 @@ namespace MueLu {
       } else
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListTranslator: unknown smoother type. '" << subSmootherType << "' not supported by MueLu.");
 
-      mueluss << "<Parameter name=\"hiptmair: smoother 1\" type=\"string\" value=\"" << subSmootherIfpackType << "\"/>" << std::endl;
-      mueluss << "<Parameter name=\"hiptmair: smoother 2\" type=\"string\" value=\"" << subSmootherIfpackType << "\"/>" << std::endl;
+      mueluss << "<Parameter name=\"hiptmair: smoother type 1\" type=\"string\" value=\"" << subSmootherIfpackType << "\"/>" << std::endl;
+      mueluss << "<Parameter name=\"hiptmair: smoother type 2\" type=\"string\" value=\"" << subSmootherIfpackType << "\"/>" << std::endl;
 
       mueluss << "<ParameterList name=\"hiptmair: smoother list 1\">" << std::endl;
       if (subSmootherType == "Chebyshev") {
@@ -213,6 +213,7 @@ namespace MueLu {
         }
       } else {
         if (paramList.isParameter("subsmoother: edge sweeps")) {
+          mueluss << "<Parameter name=\"relaxation: type\" type=\"string\" value=\"" << subSmootherType << "\"/>" << std::endl;
           mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>("subsmoother: edge sweeps") << "\"/>" << std::endl;
           adaptingParamList.remove("subsmoother: edge sweeps", false);
         }
@@ -234,6 +235,7 @@ namespace MueLu {
         }
       } else {
         if (paramList.isParameter("subsmoother: node sweeps")) {
+          mueluss << "<Parameter name=\"relaxation: type\" type=\"string\" value=\"" << subSmootherType << "\"/>" << std::endl;
           mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>("subsmoother: node sweeps") << "\"/>" << std::endl;
           adaptingParamList.remove("subsmoother: node sweeps", false);
         }
@@ -276,8 +278,8 @@ namespace MueLu {
     // TODO alternative with standard parameterlist from ML user guide?
 
     if (defaultVals != "") {
-      TEUCHOS_TEST_FOR_EXCEPTION(defaultVals!="SA" && defaultVals!="NSSA" && defaultVals!="refmaxwell", Exceptions::RuntimeError,
-                                   "MueLu::MLParameterListInterpreter: only \"SA\", \"NSSA\", and \"refmaxwell\" allowed as options for ML default parameters.");
+      TEUCHOS_TEST_FOR_EXCEPTION(defaultVals!="SA" && defaultVals!="NSSA" && defaultVals!="refmaxwell" && defaultVals!="Maxwell", Exceptions::RuntimeError,
+                                   "MueLu::MLParameterListInterpreter: only \"SA\", \"NSSA\", \"refmaxwell\" and \"Maxwell\" allowed as options for ML default parameters.");
       Teuchos::ParameterList ML_defaultlist;
       if (defaultVals == "refmaxwell")
         ML_Epetra::SetDefaultsRefMaxwell(ML_defaultlist);
