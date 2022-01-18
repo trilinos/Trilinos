@@ -101,7 +101,44 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::ParameterList& list) {
-    
+
+    if (list.isType<std::string>("parameterlist: syntax") && list.get<std::string>("parameterlist: syntax") == "ml") {
+      list.remove("parameterlist: syntax");
+      Teuchos::ParameterList newList;
+
+      // interpret ML list
+      newList.sublist("maxwell1: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list,"Maxwell"));
+
+      newList.sublist("maxwell1: 22list").set("tentative: constant column sums", false);
+      newList.sublist("maxwell1: 22list").set("tentative: calculate qr", false);
+
+      newList.sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
+      newList.sublist("maxwell1: 11list").set("aggregation: type", "uncoupled");
+
+      newList.sublist("maxwell1: 22list").set("multigrid algorithm", "unsmoothed");
+      newList.sublist("maxwell1: 22list").set("aggregation: type", "uncoupled");
+
+      if (newList.sublist("maxwell1: 22list").isType<std::string>("verbosity"))
+        newList.set("verbosity", newList.sublist("maxwell1: 22list").get<std::string>("verbosity"));
+
+      // Move coarse solver and smoother stuff to 11list
+      std::vector<std::string> convert = {"coarse:", "smoother:", "smoother: pre", "smoother: post"};
+      for (auto it = convert.begin(); it != convert.end(); ++it) {
+        if (newList.sublist("maxwell1: 22list").isType<std::string>(*it + " type")) {
+          newList.sublist("maxwell1: 11list").set(*it+" type", newList.sublist("maxwell1: 22list").get<std::string>(*it+" type"));
+          newList.sublist("maxwell1: 22list").remove(*it+" type");
+        }
+        if (newList.sublist("maxwell1: 22list").isSublist(*it+" params")) {
+          newList.sublist("maxwell1: 11list").set(*it+" params", newList.sublist("maxwell1: 22list").sublist(*it+" params"));
+          newList.sublist("maxwell1: 22list").remove(*it+" params");
+        }
+      }
+
+      newList.sublist("maxwell1: 22list").set("smoother: type", "none");
+      newList.sublist("maxwell1: 22list").set("coarse: type", "none");
+
+      list = newList;
+    }
     std::string  mode_string   = list.get("maxwell1: mode",                  MasterList::getDefault<std::string>("maxwell1: mode"));
     applyBCsTo22_              = list.get("maxwell1: apply BCs to 22",       true);
 
@@ -140,7 +177,7 @@ namespace MueLu {
     precList22_.set("verbosity",precList22_.get("verbosity",verbosity));
     
 
-    // For the (1,1) hierarchy we'll use Hiptmair (STANDARD) or Chevyshev (EDGE_ONLY / REFMAXWELL) if
+    // For the (1,1) hierarchy we'll use Hiptmair (STANDARD) or Chebyshev (EDGE_ONLY / REFMAXWELL) if
     // the user doesn't specify things
     if(list.isSublist("maxwell1: 11list"))
       precList11_     =  list.sublist("maxwell1: 11list");   
