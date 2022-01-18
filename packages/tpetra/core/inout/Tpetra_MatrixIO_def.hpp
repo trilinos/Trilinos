@@ -203,7 +203,7 @@ readHBMatrix (const std::string &filename,
   else {
     domMap = createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numCols,comm);
   }
-  A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap, myNNZ (), Tpetra::StaticProfile));
+  A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap, myNNZ ()));
   // free this locally, A will keep it allocated as long as it is needed by A (up until allocation of nonzeros)
   {
     // Classic idiom for freeing an std::vector; resize doesn't

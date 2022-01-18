@@ -117,7 +117,7 @@ int main (int argc, char *argv[])
          [           1 2]
          this matrix has an eigenvalue lambda=3, with eigenvector v = [1 ... 1]
       */
-      A = rcp (new MAT(map, 3, Tpetra::StaticProfile));
+      A = rcp (new MAT(map, 3));
       if (myImageID == 0) {
         Array<Scalar> vals(tuple<Scalar>(static_cast<Scalar>(2)*ST::one(), ST::one()));
         Array<GO> cols(tuple<GO>(myImageID, myImageID+1));

@@ -33,7 +33,7 @@ public:
 
   // Block description access functions:
   const std::vector<INT> &Connectivity() const { return conn; }  // 1-offset connectivity
-  const INT *             Connectivity(size_t elmt_index) const; // 1-offset connectivity
+  const INT              *Connectivity(size_t elmt_index) const; // 1-offset connectivity
 
   // Misc:
   int Check_State() const;

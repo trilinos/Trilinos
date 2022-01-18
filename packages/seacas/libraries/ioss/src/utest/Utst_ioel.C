@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -53,8 +53,7 @@ int test_all_elements()
 {
   int err_count = 0;
 
-  Ioss::NameList elements;
-  Ioss::ElementTopology::describe(&elements);
+  Ioss::NameList elements = Ioss::ElementTopology::describe();
 
   for (const auto &element : elements) {
     fmt::print(stderr, "Testing element: {:<25}", element);

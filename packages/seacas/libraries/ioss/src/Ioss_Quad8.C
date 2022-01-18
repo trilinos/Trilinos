@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -56,8 +56,6 @@ Ioss::Quad8::Quad8() : Ioss::ElementTopology(Ioss::Quad8::name, "Quadrilateral_8
   Ioss::ElementTopology::alias(Ioss::Quad8::name, "quadface8");
 }
 
-Ioss::Quad8::~Quad8() = default;
-
 int Ioss::Quad8::parametric_dimension() const { return 2; }
 int Ioss::Quad8::spatial_dimension() const { return 2; }
 int Ioss::Quad8::order() const { return 2; }
@@ -107,6 +105,7 @@ Ioss::ElementTopology *Ioss::Quad8::face_type(int /* face_number */) const
 
 Ioss::ElementTopology *Ioss::Quad8::edge_type(int edge_number) const
 {
+  (void)edge_number;
   assert(edge_number >= 0 && edge_number <= number_edges());
   return Ioss::ElementTopology::factory("edge3");
 }

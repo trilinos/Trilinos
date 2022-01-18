@@ -459,7 +459,7 @@ namespace Tacho {
       printf("======================\n");
     }
     if (_m < _small_problem_thres) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
       _A = value_type_matrix_host("A", _m, _m);
@@ -565,7 +565,7 @@ namespace Tacho {
       printf("======================\n");
     }
     if (_m < _small_problem_thres) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
       _A = value_type_matrix_host("A", _m, _m);
@@ -650,7 +650,7 @@ namespace Tacho {
     }
 
     if (_m < _small_problem_thres) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
       Kokkos::deep_copy(x, b);
@@ -713,7 +713,7 @@ namespace Tacho {
     }
 
     if (_m < _small_problem_thres) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
       Kokkos::deep_copy(x, b);

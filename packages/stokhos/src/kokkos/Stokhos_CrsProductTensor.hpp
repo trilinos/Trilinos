@@ -817,7 +817,7 @@ public:
                       const size_type thread_rank ) const
   {
     enum { work_align = 64 / sizeof(VectorValue) };
-    enum { work_shift = Kokkos::Impl::power_of_two< work_align >::value };
+    enum { work_shift = Stokhos::power_of_two< work_align >::value };
     enum { work_mask  = work_align - 1 };
 
     const size_type work_per_thread =

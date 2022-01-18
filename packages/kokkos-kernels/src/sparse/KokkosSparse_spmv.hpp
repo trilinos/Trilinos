@@ -232,6 +232,7 @@ struct SPMV2D1D {
 };
 
 
+#if defined (KOKKOSKERNELS_INST_LAYOUTSTRIDE) || !defined(KOKKOSKERNELS_ETI_ONLY)
 template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutStride>{
   static bool spmv2d1d (const char mode[],
@@ -241,15 +242,25 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutSt
         const BetaType& beta,
         const YVector& y)
   {
-#if defined (KOKKOSKERNELS_INST_LAYOUTSTRIDE) || !defined(KOKKOSKERNELS_ETI_ONLY)
     spmv (mode, alpha, A, x, beta, y);
     return true;
-#else
-    return false;
-#endif
   }
+#else
+template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutStride>{
+  static bool spmv2d1d (const char /*mode*/[],
+	const AlphaType& /*alpha*/,
+	const AMatrix& /*A*/,
+        const XVector& /*x*/,
+        const BetaType& /*beta*/,
+        const YVector& /*y*/)
+  {
+    return false;
+  }
+#endif
 };
 
+#if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
 template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutLeft>{
   static bool spmv2d1d (const char mode[],
@@ -259,16 +270,26 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutLe
         const BetaType& beta,
         const YVector& y)
   {
-#if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
     spmv (mode, alpha, A, x, beta, y);
     return true;
-#else
-    return false;
-#endif
   }
+#else
+template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutLeft>{
+  static bool spmv2d1d (const char /*mode*/[],
+        const AlphaType& /*alpha*/,
+        const AMatrix& /*A*/,
+        const XVector& /*x*/,
+        const BetaType& /*beta*/,
+        const YVector& /*y*/)
+  {
+    return false;
+  }
+#endif
 };
 
 
+#if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
 template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutRight>{
   static bool spmv2d1d (const char mode[],
@@ -278,18 +299,27 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutRi
         const BetaType& beta,
         const YVector& y)
   {
-#if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
     spmv (mode, alpha, A, x, beta, y);
     return true;
-#else
-    return false;
-#endif
   }
+#else
+template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutRight>{
+  static bool spmv2d1d (const char /*mode*/[],
+        const AlphaType& /*alpha*/,
+        const AMatrix& /*A*/,
+        const XVector& /*x*/,
+        const BetaType& /*beta*/,
+        const YVector& /*y*/)
+  {
+    return false;
+  }
+#endif
 };
 
 template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 void
-spmv (KokkosKernels::Experimental::Controls controls,
+spmv (KokkosKernels::Experimental::Controls /*controls*/,
       const char mode[],
       const AlphaType& alpha,
       const AMatrix& A,
@@ -344,13 +374,11 @@ spmv (KokkosKernels::Experimental::Controls controls,
   // Call single-vector version if appropriate
   if (x.extent(1) == 1) {
     typedef Kokkos::View<typename XVector::const_value_type*,
-      typename Kokkos::Impl::if_c<std::is_same<typename YVector::array_layout, Kokkos::LayoutLeft>::value,
-                                  Kokkos::LayoutLeft, Kokkos::LayoutStride>::type,
+      typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
       typename XVector::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector_SubInternal;
     typedef Kokkos::View<typename YVector::non_const_value_type*,
-      typename Kokkos::Impl::if_c<std::is_same<typename YVector::array_layout,Kokkos::LayoutLeft>::value,
-                                  Kokkos::LayoutLeft,Kokkos::LayoutStride>::type,
+      typename KokkosKernels::Impl::GetUnifiedLayout<YVector>::array_layout,
       typename YVector::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector_SubInternal;
 
@@ -557,6 +585,7 @@ void spmv(const char mode[],
     };
 
 
+#if defined (KOKKOSKERNELS_INST_LAYOUTSTRIDE) || !defined(KOKKOSKERNELS_ETI_ONLY)
     template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
     struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutStride>{
       static bool spmv2d1d_struct (const char mode[],
@@ -567,15 +596,26 @@ void spmv(const char mode[],
                                    const XVector& x,
                                    const BetaType& beta,
                                    const YVector& y){
-#if defined (KOKKOSKERNELS_INST_LAYOUTSTRIDE) || !defined(KOKKOSKERNELS_ETI_ONLY)
         spmv_struct (mode, stencil_type, structure, alpha, A, x, beta, y, RANK_ONE());
         return true;
-#else
-        return false;
-#endif
       }
+#else
+    template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+    struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutStride>{
+      static bool spmv2d1d_struct (const char /*mode*/[],
+                                   const int /*stencil_type*/,
+                                   const Kokkos::View<typename AMatrix::non_const_ordinal_type*, Kokkos::HostSpace>& /*structure*/,
+                                   const AlphaType& /*alpha*/,
+                                   const AMatrix& /*A*/,
+                                   const XVector& /*x*/,
+                                   const BetaType& /*beta*/,
+                                   const YVector& /*y*/){
+        return false;
+      }
+#endif
     };
 
+#if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
     template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
     struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutLeft>{
       static bool spmv2d1d_struct (const char mode[],
@@ -586,16 +626,27 @@ void spmv(const char mode[],
                                    const XVector& x,
                                    const BetaType& beta,
                                    const YVector& y){
-#if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
         spmv_struct (mode, stencil_type, structure, alpha, A, x, beta, y, RANK_ONE());
         return true;
-#else
-        return false;
-#endif
       }
+#else
+    template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+    struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutLeft>{
+      static bool spmv2d1d_struct (const char /*mode*/[],
+                                   const int /*stencil_type*/,
+                                   const Kokkos::View<typename AMatrix::non_const_ordinal_type*, Kokkos::HostSpace>& /*structure*/,
+                                   const AlphaType& /*alpha*/,
+                                   const AMatrix& /*A*/,
+                                   const XVector& /*x*/,
+                                   const BetaType& /*beta*/,
+                                   const YVector& /*y*/){
+        return false;
+      }
+#endif
     };
 
 
+#if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
     template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
     struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutRight>{
       static bool spmv2d1d_struct (const char mode[],
@@ -606,13 +657,23 @@ void spmv(const char mode[],
                                    const XVector& x,
                                    const BetaType& beta,
                                    const YVector& y){
-#if defined (KOKKOSKERNELS_INST_LAYOUTLEFT) || !defined(KOKKOSKERNELS_ETI_ONLY)
         spmv_struct (mode, stencil_type, structure, alpha, A, x, beta, y, RANK_ONE());
         return true;
-#else
-        return false;
-#endif
       }
+#else
+    template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+    struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutRight>{
+      static bool spmv2d1d_struct (const char /*mode*/[],
+                                   const int /*stencil_type*/,
+                                   const Kokkos::View<typename AMatrix::non_const_ordinal_type*, Kokkos::HostSpace>& /*structure*/,
+                                   const AlphaType& /*alpha*/,
+                                   const AMatrix& /*A*/,
+                                   const XVector& /*x*/,
+                                   const BetaType& /*beta*/,
+				   const YVector& /*y*/){
+        return false;
+      }
+#endif
     };
 
     template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
@@ -672,13 +733,11 @@ void spmv(const char mode[],
       // Call single-vector version if appropriate
       if (x.extent(1) == 1) {
         typedef Kokkos::View<typename XVector::const_value_type*,
-                             typename Kokkos::Impl::if_c<std::is_same<typename YVector::array_layout, Kokkos::LayoutLeft>::value,
-                                                         Kokkos::LayoutLeft, Kokkos::LayoutStride>::type,
+                             typename YVector::array_layout,
                              typename XVector::device_type,
                              Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > XVector_SubInternal;
         typedef Kokkos::View<typename YVector::non_const_value_type*,
-                             typename Kokkos::Impl::if_c<std::is_same<typename YVector::array_layout,Kokkos::LayoutLeft>::value,
-                                                         Kokkos::LayoutLeft,Kokkos::LayoutStride>::type,
+                             typename YVector::array_layout,
                              typename YVector::device_type,
                              Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVector_SubInternal;
 

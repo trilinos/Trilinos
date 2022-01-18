@@ -48,7 +48,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Atomic.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <Kokkos_Bitset.hpp>
 #include <Kokkos_Sort.hpp>
 #include <Kokkos_MemoryTraits.hpp>
@@ -550,7 +550,7 @@ namespace KokkosSparse{
         using raw_colinds_t = Kokkos::View<const nnz_lno_t*, MyTempMemorySpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
         auto gsHandle = get_gs_handle();
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 #endif
         //sym_xadj/sym_adj is only used here for clustering.
         //Create them as non-const, unmanaged views to avoid
@@ -676,7 +676,7 @@ namespace KokkosSparse{
         std::cout << "CREATE_REVERSE_MAP:" << timer.seconds() << std::endl;
         timer.reset();
 #endif
-        nnz_lno_persistent_work_host_view_t color_xadj_host(Kokkos::ViewAllocateWithoutInitializing("Color xadj"), color_xadj.extent(0));
+        nnz_lno_persistent_work_host_view_t color_xadj_host(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Color xadj"), color_xadj.extent(0));
         Kokkos::deep_copy(color_xadj_host, color_xadj);
         gsHandle->set_color_xadj(color_xadj_host);
         gsHandle->set_color_adj(color_adj);
@@ -764,14 +764,14 @@ namespace KokkosSparse{
         }
         //Timer for whole numeric
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 #endif
         size_type nnz = this->entries.extent(0);
 
         int suggested_vector_size = this->handle->get_suggested_vector_size(num_rows, nnz);
         int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
 
-        scalar_persistent_work_view_t inverse_diagonal(Kokkos::ViewAllocateWithoutInitializing("Aii^-1"), num_rows);
+        scalar_persistent_work_view_t inverse_diagonal(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Aii^-1"), num_rows);
         nnz_lno_t rows_per_team = this->handle->get_team_work_size(suggested_team_size, MyExecSpace::concurrency(), num_rows);
 
         if(have_diagonal_given) {
@@ -811,7 +811,7 @@ namespace KokkosSparse{
           nnz_scalar_t omega = Kokkos::Details::ArithTraits<nnz_scalar_t>::one(),
           bool apply_forward = true,
           bool apply_backward = true,
-          bool update_y_vector = true)
+          bool /*update_y_vector*/ = true)
       {
         auto gsHandle = get_gs_handle();
 

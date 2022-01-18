@@ -80,6 +80,30 @@ TEST( UnitTestStringUtils, makeVectorOfStrings_linebreaks)
   EXPECT_EQ(expected, vecStrs);
 }
 
+TEST(StringStartsWith, empty) {
+  EXPECT_TRUE(stk::string_starts_with("", ""));
+  EXPECT_TRUE(stk::string_starts_with("test", ""));
+}
+
+TEST(StringStartsWith, notFound) {
+  EXPECT_FALSE(stk::string_starts_with("test", "x"));
+  EXPECT_FALSE(stk::string_starts_with("test", "testx"));
+  EXPECT_FALSE(stk::string_starts_with("test", "TEST"));
+  EXPECT_FALSE(stk::string_starts_with("test", " test"));
+  EXPECT_FALSE(stk::string_starts_with(" test", "test"));
+}
+
+TEST(StringStartsWith, found) {
+  EXPECT_TRUE(stk::string_starts_with("test", "test"));
+  EXPECT_TRUE(stk::string_starts_with("testx", "test"));
+  EXPECT_TRUE(stk::string_starts_with("Test", "Test"));
+  EXPECT_TRUE(stk::string_starts_with(" test", " test"));
+  EXPECT_TRUE(stk::string_starts_with(" testx", " test"));
+  EXPECT_TRUE(stk::string_starts_with(" ", " "));
+  EXPECT_TRUE(stk::string_starts_with("   ", " "));
+  EXPECT_TRUE(stk::string_starts_with("\ntest", "\n"));
+}
+
 TEST(LtrimString, empty)
 {
   EXPECT_EQ(stk::ltrim_string(""), "");

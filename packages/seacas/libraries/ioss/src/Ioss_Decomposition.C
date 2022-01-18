@@ -98,7 +98,7 @@ namespace {
 
 #if !defined(NO_PARMETIS_SUPPORT)
   int get_common_node_count(const std::vector<Ioss::BlockDecompositionData> &el_blocks,
-                            Ioss::ParallelUtils &                            pu)
+                            Ioss::ParallelUtils                             &pu)
   {
     // Determine number of nodes that elements must share to be
     // considered connected.  A 8-node hex-only mesh would have 4
@@ -148,7 +148,10 @@ namespace Ioss {
   {
     static const std::vector<std::string> valid_methods
     {
-      "LINEAR", "MAP", "VARIABLE"
+      "EXTERNAL"
+#ifdef SEACAS_HAVE_MPI
+          ,
+          "LINEAR", "MAP", "VARIABLE"
 #if !defined(NO_ZOLTAN_SUPPORT)
           ,
           "BLOCK", "CYCLIC", "RANDOM", "RCB", "RIB", "HSFC"
@@ -156,6 +159,7 @@ namespace Ioss {
 #if !defined(NO_PARMETIS_SUPPORT)
           ,
           "KWAY", "KWAY_GEOM", "GEOM_KWAY", "METIS_SFC"
+#endif
 #endif
     };
     return valid_methods;
@@ -905,7 +909,7 @@ namespace Ioss {
       idx_t *dual_xadj      = nullptr;
       idx_t *dual_adjacency = nullptr;
       int    rc = ParMETIS_V3_Mesh2Dual(element_dist, pointer, adjacency, &num_flag, &common_nodes,
-                                     &dual_xadj, &dual_adjacency, &m_comm);
+                                        &dual_xadj, &dual_adjacency, &m_comm);
 
       if (rc != METIS_OK) {
         std::ostringstream errmsg;
@@ -999,10 +1003,10 @@ namespace Ioss {
     ZOLTAN_ID_PTR import_local_ids  = nullptr;
     ZOLTAN_ID_PTR export_global_ids = nullptr;
     ZOLTAN_ID_PTR export_local_ids  = nullptr;
-    int *         import_procs      = nullptr;
-    int *         import_to_part    = nullptr;
-    int *         export_procs      = nullptr;
-    int *         export_to_part    = nullptr;
+    int          *import_procs      = nullptr;
+    int          *import_to_part    = nullptr;
+    int          *export_procs      = nullptr;
+    int          *export_to_part    = nullptr;
 
     num_local = 1;
 

@@ -147,6 +147,47 @@ public:
 };
 #endif
 
+#ifdef KOKKOS_ENABLE_HIP
+namespace impl {
+  void* HIPPinnedAndMappedAlignedAllocate(size_t size);
+  void HIPPinnedAndMappedAlignedDeallocate(void* p);
+}
+
+template <typename T, size_t Alignment>
+class HIPPinnedAndMappedAlignedAllocator
+  : public std::allocator<T>, public BaseAlignedAllocator<T, Alignment>
+{
+public:
+  using ValueType = typename BaseAlignedAllocator<T, Alignment>::ValueType;
+  using Pointer = typename BaseAlignedAllocator<T, Alignment>::Pointer;
+  using SizeType = typename BaseAlignedAllocator<T, Alignment>::SizeType;
+
+  template <class U>
+  struct rebind { typedef HIPPinnedAndMappedAlignedAllocator<U, Alignment> other; };
+
+  HIPPinnedAndMappedAlignedAllocator() {}
+
+  HIPPinnedAndMappedAlignedAllocator(const HIPPinnedAndMappedAlignedAllocator&) {}
+
+  template <typename U>
+  HIPPinnedAndMappedAlignedAllocator (const HIPPinnedAndMappedAlignedAllocator<U, Alignment>&) {}
+
+  ~HIPPinnedAndMappedAlignedAllocator() {}
+
+  inline Pointer allocate(SizeType num, const void* = 0)
+  {
+    size_t size = num * sizeof(ValueType);
+
+    return reinterpret_cast<T*>(impl::HIPPinnedAndMappedAlignedAllocate(size));
+  }
+
+  inline void deallocate(Pointer p, SizeType)
+  {
+    impl::HIPPinnedAndMappedAlignedDeallocate(p);
+  }
+};
+#endif
+
 template <class T1, size_t A1, class T2, size_t A2> inline
 bool operator == (const BaseAlignedAllocator<T1,A1> &, const BaseAlignedAllocator<T2,A2> &) {
   return true;
@@ -160,6 +201,9 @@ bool operator != (const BaseAlignedAllocator<T1,A1> &, const BaseAlignedAllocato
 #ifdef KOKKOS_ENABLE_CUDA
 template <typename ValueType, size_t Alignment>
 using AlignedAllocator = CUDAPinnedAndMappedAlignedAllocator<ValueType, Alignment>;
+#elif defined(KOKKOS_ENABLE_HIP)
+template <typename ValueType, size_t Alignment>
+using AlignedAllocator = HIPPinnedAndMappedAlignedAllocator<ValueType, Alignment>;
 #else
 template <typename ValueType, size_t Alignment>
 using AlignedAllocator = HostAlignedAllocator<ValueType, Alignment>;

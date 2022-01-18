@@ -553,7 +553,7 @@ extract ()
       }
       //now that row sizes are known, can allocate the diagonal matrix
       RCP<InverseMap> tempMap(new InverseMap(blockPointSize, 0, this->localComm_));
-      diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts, Tpetra::StaticProfile));
+      diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts));
       Inverses_[i] = rcp(new InverseType(diagBlocks_[i]));
       //insert the actual entries, one row at a time
       for(LO blockRow = 0; blockRow < blockSize; blockRow++)
@@ -617,7 +617,7 @@ extract ()
         rowEntryCounts[j] = this->getInputRowView(this->blockRows_[blockStart + j]).size();
       }
       RCP<InverseMap> tempMap(new InverseMap(blockSize, 0, this->localComm_));
-      diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts, Tpetra::StaticProfile));
+      diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts));
       Inverses_[i] = rcp(new InverseType(diagBlocks_[i]));
       for(LO blockRow = 0; blockRow < blockSize; blockRow++)
       {

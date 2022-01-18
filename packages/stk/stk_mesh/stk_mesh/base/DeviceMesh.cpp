@@ -47,18 +47,30 @@ void DeviceBucket::initialize_bucket_attributes(const stk::mesh::Bucket &bucket)
 
 void DeviceBucket::allocate(const stk::mesh::Bucket &bucket)
 {
-  unsigned numNodesPerEntity = bucket.topology().num_nodes();
+  nodeOffsets = OrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "NodeOffsets"), bucket.size()+1);
+  hostNodeOffsets = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeOffsets, Kokkos::WithoutInitializing);
+
+  unsigned maxNodesPerEntity = bucketTopology.num_nodes();
+  unsigned totalNumNodes = bucketTopology.num_nodes()*bucketCapacity;
+  if (bucket.topology() == stk::topology::INVALID_TOPOLOGY) {
+    maxNodesPerEntity = 0;
+    totalNumNodes = 0;
+    for(unsigned i=0; i<bucket.size(); ++i) {
+      totalNumNodes += bucket.num_nodes(i);
+      maxNodesPerEntity = std::max(maxNodesPerEntity, bucket.num_nodes(i));
+    }
+  }
+
   const stk::mesh::PartVector& parts = bucket.supersets();
 
   entities = EntityViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "BucketEntities"), bucketCapacity);
   hostEntities = Kokkos::create_mirror_view(Kokkos::HostSpace(), entities, Kokkos::WithoutInitializing);
 
-  nodeConnectivity = BucketConnectivityType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "BucketConnectivity"),
-                                            bucketCapacity, numNodesPerEntity);
+  nodeConnectivity = BucketConnectivityType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "BucketConnectivity"), totalNumNodes);
   hostNodeConnectivity = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeConnectivity, Kokkos::WithoutInitializing);
 
   nodeOrdinals = OrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "NodeOrdinals"),
-                                 static_cast<size_t>(numNodesPerEntity));
+                                 static_cast<size_t>(maxNodesPerEntity));
   hostNodeOrdinals = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeOrdinals, Kokkos::WithoutInitializing);
 
   partOrdinals = PartOrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "PartOrdinals"), parts.size());
@@ -67,8 +79,15 @@ void DeviceBucket::allocate(const stk::mesh::Bucket &bucket)
 
 void DeviceBucket::initialize_from_host(const stk::mesh::Bucket &bucket)
 {
-  unsigned numNodesPerEntity = bucket.topology().num_nodes();
-  for (unsigned i = 0; i < numNodesPerEntity; ++i) {
+  unsigned maxNodesPerEntity = bucket.topology().num_nodes();
+  if (bucket.topology() == stk::topology::INVALID_TOPOLOGY) {
+    maxNodesPerEntity = 0;
+    for(unsigned i=0; i<bucket.size(); ++i) {
+      maxNodesPerEntity = std::max(maxNodesPerEntity, bucket.num_nodes(i));
+    }
+  }
+
+  for (unsigned i = 0; i < maxNodesPerEntity; ++i) {
     hostNodeOrdinals(i) = static_cast<stk::mesh::ConnectivityOrdinal>(i);
   }
   Kokkos::deep_copy(nodeOrdinals, hostNodeOrdinals);
@@ -85,17 +104,55 @@ void DeviceBucket::initialize_from_host(const stk::mesh::Bucket &bucket)
 void DeviceBucket::update_from_host(const stk::mesh::Bucket &bucket)
 {
   bucketSize = bucket.size();
-  unsigned nodesPerElem = bucket.topology().num_nodes();
+
+  if (bucketSize+1 != hostNodeOffsets.size()) {
+    nodeOffsets = OrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "NodeOffsets"), bucketSize+1);
+    hostNodeOffsets = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeOffsets, Kokkos::WithoutInitializing);
+  }
+
+  unsigned totalNumNodes = bucket.topology().num_nodes()*bucketCapacity;
+  unsigned maxNodesPerEntity = bucket.topology().num_nodes();
+  if (bucket.topology() == stk::topology::INVALID_TOPOLOGY) {
+    totalNumNodes = 0;
+    maxNodesPerEntity = 0;
+    for(unsigned i=0; i<bucket.size(); ++i) {
+      totalNumNodes += bucket.num_nodes(i);
+      maxNodesPerEntity = std::max(maxNodesPerEntity, bucket.num_nodes(i));
+    }
+  }
+
+  if (totalNumNodes != hostNodeConnectivity.size()) {
+    nodeConnectivity = BucketConnectivityType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "BucketConnectivity"), totalNumNodes);
+    hostNodeConnectivity = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeConnectivity, Kokkos::WithoutInitializing);
+  }
+
+  if (maxNodesPerEntity != hostNodeOrdinals.size()) {
+    nodeOrdinals = OrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "NodeOrdinals"),
+                                   static_cast<size_t>(maxNodesPerEntity));
+    hostNodeOrdinals = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeOrdinals, Kokkos::WithoutInitializing);
+    for (unsigned i = 0; i < maxNodesPerEntity; ++i) {
+      hostNodeOrdinals(i) = static_cast<stk::mesh::ConnectivityOrdinal>(i);
+    }
+    Kokkos::deep_copy(nodeOrdinals, hostNodeOrdinals);
+  }
+
+  unsigned nodeOffset = 0;
   for (unsigned iEntity = 0; iEntity < bucket.size(); ++iEntity) {
     stk::mesh::Entity entity = bucket[iEntity];
     hostEntities(iEntity) = entity;
+    const unsigned nodesPerEntity = bucket.num_nodes(iEntity);
     const stk::mesh::Entity * elemNodes = bucket.begin_nodes(iEntity);
-    for (unsigned iNode = 0; iNode < nodesPerElem; ++iNode) {
-      hostNodeConnectivity(iEntity, iNode) = elemNodes[iNode];
+    for (unsigned iNode = 0; iNode < nodesPerEntity; ++iNode) {
+      hostNodeConnectivity(nodeOffset + iNode) = elemNodes[iNode];
     }
+    hostNodeOffsets(iEntity) = nodeOffset;
+    nodeOffset += nodesPerEntity;
   }
+  hostNodeOffsets(bucket.size()) = nodeOffset;
+
   Kokkos::deep_copy(entities, hostEntities);
   Kokkos::deep_copy(nodeConnectivity, hostNodeConnectivity);
+  Kokkos::deep_copy(nodeOffsets, hostNodeOffsets);
 }
 
 void DeviceMesh::update_mesh()
@@ -273,13 +330,13 @@ void DeviceMesh::fill_sparse_connectivities(const stk::mesh::BulkData& bulk_in)
       for(stk::mesh::EntityRank connectedRank=stk::topology::EDGE_RANK; connectedRank<endRank; connectedRank++)
       {
         const bool hasPermutation = stkBucket.has_permutation(connectedRank);
-        const stk::mesh::Entity* connectedEntities = stkBucket.begin(0, connectedRank);
-        const stk::mesh::ConnectivityOrdinal* connectedOrdinals = stkBucket.begin_ordinals(0, connectedRank);
-        const stk::mesh::Permutation* permutations = hasPermutation ? stkBucket.begin_permutations(0, connectedRank) : nullptr;
         for(unsigned iEntity=0; iEntity<stkBucket.size(); ++iEntity)
         {
           myOffset = bucketEntityOffset + iEntity;
           unsigned numConnected = stkBucket.num_connectivity(iEntity, connectedRank);
+          const stk::mesh::Entity* connectedEntities = stkBucket.begin(iEntity, connectedRank);
+          const stk::mesh::ConnectivityOrdinal* connectedOrdinals = stkBucket.begin_ordinals(iEntity, connectedRank);
+          const stk::mesh::Permutation* permutations = hasPermutation ? stkBucket.begin_permutations(iEntity, connectedRank) : nullptr;
 
           int entriesOffset = entriesOffsets[connectedRank];
           hostEntityConnectivityOffset[rank][connectedRank](myOffset) = entriesOffset;
@@ -292,9 +349,6 @@ void DeviceMesh::fill_sparse_connectivities(const stk::mesh::BulkData& bulk_in)
             }
           }
           entriesOffsets[connectedRank] = entriesOffset + numConnected;
-          connectedEntities += numConnected;
-          connectedOrdinals += numConnected;
-          if (hasPermutation) permutations += numConnected;
         }
       }
     }

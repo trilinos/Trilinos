@@ -146,7 +146,7 @@ int main (int argc, char *argv[]) {
 #if defined( __INTEL_MKL__ )
       flush.run();
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       double t_solve = 0, t_solve_niter = 0;
 
       typedef Tacho::Pardiso Pardiso;
@@ -270,7 +270,7 @@ int main (int argc, char *argv[]) {
 #if defined( TACHO_HAVE_SUITESPARSE )
       flush.run();
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       double t_analyze = 0, t_factor = 0, t_solve = 0, t_solve_niter = 0;
 
       cholmod_sparse *AA ;
@@ -419,7 +419,7 @@ int main (int argc, char *argv[]) {
     if (test_tacho) {
       flush.run();
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       double t_solve = 0, t_solve_niter = 0;
 
       ///

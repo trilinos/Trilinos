@@ -24,6 +24,7 @@ namespace Excn {
     {
       SMART_ASSERT(otype == Excn::ObjectType::EBLK || otype == Excn::ObjectType::NSET ||
                    otype == Excn::ObjectType::SSET || otype == Excn::ObjectType::NODE ||
+                   otype == Excn::ObjectType::EDBLK || otype == Excn::ObjectType::FABLK ||
                    otype == Excn::ObjectType::GLOBAL);
     }
 
@@ -45,6 +46,8 @@ namespace Excn {
       case Excn::ObjectType::GLOBAL: return "global";
       case Excn::ObjectType::NODE: return "nodal";
       case Excn::ObjectType::SSET: return "sideset";
+      case Excn::ObjectType::EDBLK: return "edgeblock";
+      case Excn::ObjectType::FABLK: return "faceblock";
       default: return "UNKNOWN";
       }
     }
@@ -57,6 +60,8 @@ namespace Excn {
       case Excn::ObjectType::SSET: return EX_SIDE_SET;
       case Excn::ObjectType::NODE: return EX_NODAL;
       case Excn::ObjectType::GLOBAL: return EX_GLOBAL;
+      case Excn::ObjectType::EDBLK: return EX_EDGE_BLOCK;
+      case Excn::ObjectType::FABLK: return EX_FACE_BLOCK;
       default: return EX_INVALID;
       }
     }

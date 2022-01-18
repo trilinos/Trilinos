@@ -42,22 +42,22 @@ int ex_put_concat_sets(int exoid, ex_entity_type set_type, const struct ex_set_s
   const void_int *num_dist_per_set    = set_specs->num_dist_per_set;
   const void_int *sets_entry_index    = set_specs->sets_entry_index;
   const void_int *sets_dist_index     = set_specs->sets_dist_index;
-  const void *    sets_dist_fact      = set_specs->sets_dist_fact;
+  const void     *sets_dist_fact      = set_specs->sets_dist_fact;
   size_t          num_df, num_entry;
   int             i, cur_num_sets, num_sets;
   int             dimid, varid, set_id_ndx, dims[1];
-  int *           set_stat = NULL;
+  int            *set_stat = NULL;
   int             set_int_type, int_size;
 
-  const float * flt_dist_fact = NULL;
+  const float  *flt_dist_fact = NULL;
   const double *dbl_dist_fact = NULL;
   char          errmsg[MAX_ERR_LENGTH];
-  char *        idsptr   = NULL;
-  char *        statptr  = NULL;
-  char *        numdfptr = NULL;
-  char *        factptr  = NULL;
-  char *        elemptr  = NULL;
-  char *        extraptr = NULL;
+  char         *idsptr   = NULL;
+  char         *statptr  = NULL;
+  char         *numdfptr = NULL;
+  char         *factptr  = NULL;
+  char         *elemptr  = NULL;
+  char         *extraptr = NULL;
   ex_inquiry    ex_inq_val;
 
   EX_FUNC_ENTER();

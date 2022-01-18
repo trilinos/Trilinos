@@ -168,7 +168,7 @@ void deep_copy(
   const View<DT,DP...> & view ,
   const typename View<DT,DP...>::array_type::value_type & value
   , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  Kokkos::is_execution_space< ExecSpace >::value &&
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
                  )>::type * = 0 );
@@ -180,7 +180,7 @@ void deep_copy(
   const View<DT,DP...> & view ,
   const typename View<DT,DP...>::value_type & value
   , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  Kokkos::is_execution_space< ExecSpace >::value &&
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
                  )>::type * = 0 );
@@ -357,7 +357,7 @@ void deep_copy(
   const View<DT,DP...> & view ,
   const typename View<DT,DP...>::array_type::value_type & value
   , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  Kokkos::is_execution_space< ExecSpace >::value &&
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
   )>::type * )
@@ -378,7 +378,7 @@ void deep_copy(
   const View<DT,DP...> & view ,
   const typename View<DT,DP...>::value_type & value
   , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  Kokkos::is_execution_space< ExecSpace >::value &&
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
   )>::type * )

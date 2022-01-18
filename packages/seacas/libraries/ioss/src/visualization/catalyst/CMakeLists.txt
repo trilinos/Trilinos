@@ -41,11 +41,16 @@ INCLUDE_DIRECTORIES("manager")
 INCLUDE_DIRECTORIES("parser")
 INCLUDE_DIRECTORIES("../../")
 
+ADD_SUBDIRECTORY(manager)
 ADD_SUBDIRECTORY(parser)
 ADD_LIBRARY(${PVCSA_LIBRARY_NAME} SHARED manager/CatalystManager.cxx
                                          manager/CatalystMeshWriter.cxx
                                          exodus/CatalystExodusMesh.cxx
                                          cgns/CatalystCGNSMesh.cxx)
+
+TARGET_INCLUDE_DIRECTORIES(${PVCSA_LIBRARY_NAME}
+    PUBLIC
+        ${CMAKE_CURRENT_BINARY_DIR}/manager)
 
 TARGET_LINK_LIBRARIES(${PVCSA_LIBRARY_NAME}
     INTERFACE

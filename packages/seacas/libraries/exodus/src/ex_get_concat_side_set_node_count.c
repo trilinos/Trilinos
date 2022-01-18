@@ -33,11 +33,11 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
   ex_entity_id side_set_id;
   int          num_side_sets, num_elem_blks, ndim;
   int64_t      tot_num_elem = 0, tot_num_ss_elem = 0, num_df = 0, side, elem;
-  void_int *   elem_blk_ids       = NULL;
-  void_int *   side_set_ids       = NULL;
-  void_int *   ss_elem_ndx        = NULL;
-  void_int *   side_set_elem_list = NULL;
-  void_int *   side_set_side_list = NULL;
+  void_int    *elem_blk_ids       = NULL;
+  void_int    *side_set_ids       = NULL;
+  void_int    *ss_elem_ndx        = NULL;
+  void_int    *side_set_elem_list = NULL;
+  void_int    *side_set_side_list = NULL;
   size_t       elem_ctr;
   int          int_size, ids_size;
   int          status;

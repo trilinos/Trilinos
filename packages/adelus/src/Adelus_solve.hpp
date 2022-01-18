@@ -149,9 +149,9 @@ void back_solve6(ZDView& ZV)
   double t1,t2;
   double allocviewtime,eliminaterhstime,bcastrowtime,updrhstime,xchgrhstime;
   double totalsolvetime;
-//#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-//  double copyhostpinnedtime;
-//#endif
+#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+  double copyhostpinnedtime;
+#endif
 #endif
 
   MPI_Request msgrequest;
@@ -181,9 +181,9 @@ void back_solve6(ZDView& ZV)
 
 #ifdef GET_TIMING
   allocviewtime=eliminaterhstime=bcastrowtime=updrhstime=xchgrhstime=0.0;
-//#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-//  copyhostpinnedtime=0.0;
-//#endif
+#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+  copyhostpinnedtime=0.0;
+#endif
 
   t1 = MPI_Wtime();
 #endif
@@ -251,15 +251,15 @@ void back_solve6(ZDView& ZV)
 #endif
         }
 
-//#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-//#ifdef GET_TIMING
-//        t1 = MPI_Wtime();
-//#endif
-//        Kokkos::deep_copy(h_row1,row1);
-//#ifdef GET_TIMING
-//        copyhostpinnedtime += (MPI_Wtime()-t1);
-//#endif
-//#endif
+#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#ifdef GET_TIMING
+        t1 = MPI_Wtime();
+#endif
+        Kokkos::deep_copy(h_row1,row1);
+#ifdef GET_TIMING
+        copyhostpinnedtime += (MPI_Wtime()-t1);
+#endif
+#endif
 
 #ifdef GET_TIMING
         t1 = MPI_Wtime();
@@ -268,11 +268,11 @@ void back_solve6(ZDView& ZV)
         type[0]  = SOCOLTYPE+j;
 
         //MPI_Bcast((char *) row1, bytes[0], MPI_CHAR, mesh_row(root), col_comm);
-//#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-//        MPI_Bcast(reinterpret_cast<char *>(h_row1.data()), bytes[0], MPI_CHAR, mesh_row(root), col_comm);
-//#else //CUDA-aware MPI -- Note: Looks like MPI_Bcast is still working well with device (cuda) pointers (and faster than using cuda host pinned memory)
+#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+        MPI_Bcast(reinterpret_cast<char *>(h_row1.data()), bytes[0], MPI_CHAR, mesh_row(root), col_comm);
+#else //CUDA-aware MPI
         MPI_Bcast(reinterpret_cast<char *>(row1.data()), bytes[0], MPI_CHAR, mesh_row(root), col_comm);		
-//#endif
+#endif
         // added this barrier for CPLANT operation
 
         MPI_Barrier(col_comm);
@@ -280,15 +280,15 @@ void back_solve6(ZDView& ZV)
         bcastrowtime += (MPI_Wtime()-t1);
 #endif
 
-//#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-//#ifdef GET_TIMING
-//        t1 = MPI_Wtime();
-//#endif
-//        Kokkos::deep_copy(row1,h_row1);
-//#ifdef GET_TIMING
-//        copyhostpinnedtime += (MPI_Wtime()-t1);
-//#endif
-//#endif
+#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+#ifdef GET_TIMING
+        t1 = MPI_Wtime();
+#endif
+        Kokkos::deep_copy(row1,h_row1);
+#ifdef GET_TIMING
+        copyhostpinnedtime += (MPI_Wtime()-t1);
+#endif
+#endif
 
 #ifdef GET_TIMING
         t1 = MPI_Wtime();
@@ -376,9 +376,9 @@ void back_solve6(ZDView& ZV)
   showtime("Time to eliminate rhs",&eliminaterhstime);
   showtime("Time to bcast temp row",&bcastrowtime);
   showtime("Time to update rhs",&updrhstime);
-//#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
-//  showtime("Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);   
-//#endif
+#if defined(CUDA_HOST_PINNED_MPI) && defined(KOKKOS_ENABLE_CUDA)
+  showtime("Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);   
+#endif
   showtime("Time to xchg rhs",&xchgrhstime);
   showtime("Total time in solve",&totalsolvetime);
 #endif

@@ -35,10 +35,10 @@ function bootstrap_modules() {
         fi
     else
         execute_command_checked "module load apps/anaconda3.7"
-        source /projects/sems/modulefiles/utils/sems-modules-init.sh
-        execute_command_checked "module unload sems-git"
-        execute_command_checked "module unload sems-python"
-        execute_command_checked "module load sems-git/2.10.1"
+        source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
+        execute_command_checked "module unload sems-archive-git"
+        execute_command_checked "module unload sems-archive-python"
+        execute_command_checked "module load sems-archive-git/2.10.1"
 
         envvar_set_or_create     PYTHON_EXE $(which python3)
     fi
@@ -197,6 +197,3 @@ execute_command_checked "${test_cmd:?} --pullrequest-cdash-track='${PULLREQUEST_
 
 #${test_cmd} --pullrequest-cdash-track="${PULLREQUEST_CDASH_TRACK:?}"
 #exit $?
-
-
-

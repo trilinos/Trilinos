@@ -16,22 +16,22 @@
 #include <Akri_Region.hpp>
 #include <Akri_RegionInterface.hpp>
 #include <Akri_ResultsOutput_Parser.hpp>
-#include <Akri_YAML_Parser.hpp>
+#include "Akri_Parser.hpp"
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
 
 namespace krino {
 
 void
-Region_Parser::parse(const YAML::Node & simulation_node, Simulation & simulation)
+Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulation)
 {
-  const YAML::Node region_nodes = YAML_Parser::get_sequence_if_present(simulation_node, "regions");
+  const Parser::Node region_nodes = simulation_node.get_sequence_if_present("regions");
   if ( !region_nodes ) return;
 
   for ( auto && region_node : region_nodes )
   {
     std::string region_name;
-    YAML_Parser::get_if_present(region_node, "name", region_name);
+    region_node.get_if_present("name", region_name);
     if (region_name.empty())
     {
       stk::RuntimeDoomedAdHoc() << "Blank or missing region name.\n";
@@ -39,16 +39,16 @@ Region_Parser::parse(const YAML::Node & simulation_node, Simulation & simulation
     Region * region = new Region(simulation, region_name );
 
     int initial_refinement_levels = 0;
-    if (YAML_Parser::get_if_present(region_node, "initial_uniform_refinement_levels", initial_refinement_levels))
+    if (region_node.get_if_present("initial_uniform_refinement_levels", initial_refinement_levels))
     {
       region->set_initial_refinement_levels(initial_refinement_levels);
     }
 
     bool use_32bit_ids = false;
-    YAML_Parser::get_if_present(region_node, "use_32bit_ids", use_32bit_ids);
+    region_node.get_if_present("use_32bit_ids", use_32bit_ids);
 
     bool force_64bit_ids = !use_32bit_ids;
-    YAML_Parser::get_if_present(region_node, "force_64bit_ids", force_64bit_ids);
+    region_node.get_if_present("force_64bit_ids", force_64bit_ids);
 
     if (use_32bit_ids && force_64bit_ids)
     {
@@ -56,7 +56,7 @@ Region_Parser::parse(const YAML::Node & simulation_node, Simulation & simulation
     }
 
     std::string fem_model_name;
-    YAML_Parser::get_if_present(region_node, "finite_element_model", fem_model_name);
+    region_node.get_if_present("finite_element_model", fem_model_name);
     if (fem_model_name.empty())
     {
       stk::RuntimeDoomedAdHoc() << "Blank or missing finite element model for region " << region_name << "\n";

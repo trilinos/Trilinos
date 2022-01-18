@@ -54,11 +54,11 @@ class STK_Interface;
   * local IDs are ordered by going up the y axis and
   * across the X-axis (in that order). For a mesh with
   * two X blocks and one Y-block, with each block composed
-  * of 3x2 elements the numbering looks like: 
+  * of 3x2 elements the numbering looks like:
   \verbatim
    8  9 10 11
    4  5  6  7
-   0  1  2  3 
+   0  1  2  3
   \endverbatim
   */
 class SquareQuadMeshFactory : public STK_MeshFactory {
@@ -84,7 +84,7 @@ public:
    //! what is the 2D tuple describe this processor distribution
    Teuchos::Tuple<std::size_t,2> procRankToProcTuple(std::size_t procRank) const;
 
-protected: 
+protected:
    void initializeWithDefaults();
 
    void buildMetaData(stk::ParallelMachine parallelMach,STK_Interface & mesh) const;
@@ -111,9 +111,11 @@ protected:
 
    bool createEdgeBlocks_;
 
-  /// If true, offset mesh GIDs to exercise 32-bit limits.
-  bool offsetGIDs_;
-  mutable stk::mesh::EntityId offset_;
+   /// If true, offset mesh GIDs to exercise 32-bit limits.
+   bool offsetGIDs_;
+   mutable stk::mesh::EntityId offset_;
+
+   std::string edgeBlockName_;
 };
 
 }

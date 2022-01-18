@@ -201,11 +201,10 @@ namespace Tpetra {
       }
       // Construct the result matrix C.
       if (constructorSublist.is_null ()) {
-        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow (),
-                                      StaticProfile));
+        C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow ()));
       } else {
         C = rcp (new crs_matrix_type (C_rowMap, C_maxNumEntriesPerRow (),
-                                      StaticProfile, constructorSublist));
+                                      constructorSublist));
       }
       // Since A and B have the same row Maps, we could add them
       // together all at once and merge values before we call

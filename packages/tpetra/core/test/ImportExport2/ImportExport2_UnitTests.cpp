@@ -101,7 +101,6 @@ namespace {
   using Tpetra::INSERT;
   using Tpetra::Map;
   using Tpetra::REPLACE;
-  using Tpetra::StaticProfile;
 
   using std::cerr;
   using std::cout;
@@ -114,7 +113,9 @@ namespace {
   bool testMpi = true;
   double errorTolSlack = 1e+1;
   std::string distributorSendType ("Send");
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   bool barrierBetween = true;
+#endif
   bool verbose = false;
 
   TEUCHOS_STATIC_SETUP()
@@ -134,10 +135,12 @@ namespace {
     clp.setOption ("distributor-send-type", &distributorSendType,
                    "In MPI tests, the type of send operation that the Tpetra::"
                    "Distributor will use.  Valid values include \"Isend\", "
-                   "\"Rsend\", \"Send\", and \"Ssend\".");
+                   "and \"Send\".");
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     clp.setOption ("barrier-between", "no-barrier-between", &barrierBetween,
                    "In MPI tests, whether Tpetra::Distributor will execute a "
                    "barrier between posting receives and posting sends.");
+#endif
     clp.setOption ("verbose", "quiet", &verbose, "Whether to print verbose "
                    "output.");
   }
@@ -160,7 +163,9 @@ namespace {
     if (plist.is_null ()) {
       plist = parameterList ("Tpetra::Distributor");
       plist->set ("Send type", distributorSendType);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       plist->set ("Barrier between receives and sends", barrierBetween);
+#endif
 
       if (verbose && getDefaultComm()->getRank() == 0) {
         cout << "ParameterList for Distributor: " << *plist << endl;
@@ -255,10 +260,10 @@ namespace {
         out << "Creating source and target CrsGraphs" << endl;
       }
       RCP<CrsGraph<LO, GO> > src_graph =
-        rcp (new CrsGraph<LO, GO> (src_map, 1, StaticProfile,
+        rcp (new CrsGraph<LO, GO> (src_map, 1,
                                    getCrsGraphParameterList ()));
       RCP<CrsGraph<LO, GO> > tgt_graph =
-        rcp (new CrsGraph<LO, GO> (tgt_map, 1, StaticProfile,
+        rcp (new CrsGraph<LO, GO> (tgt_map, 1,
                                    getCrsGraphParameterList ()));
 
       // Create a simple diagonal source graph.
@@ -327,10 +332,10 @@ namespace {
           createContigMap<LO, GO> (INVALID, tgt_num_local, comm);
 
         RCP<CrsGraph<LO, GO> > src_graph =
-          rcp (new CrsGraph<LO, GO> (src_map, 24, StaticProfile,
+          rcp (new CrsGraph<LO, GO> (src_map, 24,
                                      getCrsGraphParameterList ()));
         RCP<CrsGraph<LO, GO> > tgt_graph =
-          rcp (new CrsGraph<LO, GO> (tgt_map, 24, StaticProfile,
+          rcp (new CrsGraph<LO, GO> (tgt_map, 24,
                                      getCrsGraphParameterList ()));
 
         // This time make src_graph be a full lower-triangular graph.
@@ -447,10 +452,10 @@ namespace {
 
       // Create CrsMatrix objects.
       RCP<CrsMatrix<Scalar, LO, GO> > src_mat =
-        rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 1, StaticProfile,
+        rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 1,
                                             crsMatPlist));
       RCP<CrsMatrix<Scalar, LO, GO> > tgt_mat =
-        rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 1, StaticProfile,
+        rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 1,
                                             crsMatPlist));
 
       // Create a simple diagonal source graph.
@@ -497,7 +502,6 @@ namespace {
       // constructor.  The returned matrix should also be diagonal and
       // should equal tgt_mat.
       Teuchos::ParameterList dummy;
-      typedef CrsMatrix<Scalar, LO, GO> crs_type;
       RCP<crs_type> A_tgt2 =
         Tpetra::importAndFillCompleteCrsMatrix<crs_type> (src_mat, importer,
                                                           Teuchos::null,
@@ -605,9 +609,9 @@ namespace {
           createContigMap<LO, GO> (INVALID, tgt_num_local, comm);
 
         RCP<CrsMatrix<Scalar, LO, GO> > src_mat =
-          rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 24, StaticProfile, crsMatPlist));
+          rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 24, crsMatPlist));
         RCP<CrsMatrix<Scalar, LO, GO> > tgt_mat =
-          rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 24, StaticProfile, crsMatPlist));
+          rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 24, crsMatPlist));
 
         // This time make src_mat a full lower-triangular matrix.  Each
         // row of column-indices will have length 'globalrow', and

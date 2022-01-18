@@ -504,7 +504,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, Lo
   RCP<const map_type> domainMap = rowMap;
   RCP<const map_type> rangeMap = rowMap;
   RCP<crs_matrix_type> A =
-    rcp (new crs_matrix_type (rowMap, 6, Tpetra::StaticProfile));
+    rcp (new crs_matrix_type (rowMap, 6));
 
   {
     const size_t lclNumRows = rowMap->getNodeNumElements ();

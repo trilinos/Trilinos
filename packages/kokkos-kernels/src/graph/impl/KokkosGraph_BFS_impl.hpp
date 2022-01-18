@@ -68,8 +68,8 @@ struct SerialRCM
 
   SerialRCM(const rowmap_t& rowmap_, const entries_t& entries_) :
     numVerts(rowmap_.extent(0) - 1),
-    rowmap(Kokkos::ViewAllocateWithoutInitializing("HostRowmap"), rowmap_.extent(0)),
-    entries(Kokkos::ViewAllocateWithoutInitializing("HostEntries"), entries_.extent(0))
+    rowmap(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostRowmap"), rowmap_.extent(0)),
+    entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostEntries"), entries_.extent(0))
   {
     Kokkos::deep_copy(rowmap, rowmap_);
     Kokkos::deep_copy(entries, entries_);
@@ -97,8 +97,8 @@ struct SerialRCM
   lno_view_t rcm()
   {
     lno_t start = findPseudoPeripheral();
-    host_lno_view_t q(Kokkos::ViewAllocateWithoutInitializing("Queue"), numVerts);
-    host_lno_view_t label(Kokkos::ViewAllocateWithoutInitializing("Permutation"), numVerts);
+    host_lno_view_t q(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Queue"), numVerts);
+    host_lno_view_t label(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Permutation"), numVerts);
     for(lno_t i = 0; i < numVerts; i++)
       label(i) = -1;
     lno_t qhead = 0;
@@ -147,7 +147,7 @@ struct SerialRCM
         q(qtail++) = outerQueue;
       }
     }
-    lno_view_t labelOut(Kokkos::ViewAllocateWithoutInitializing("RCM Permutation"), numVerts);
+    lno_view_t labelOut(Kokkos::view_alloc(Kokkos::WithoutInitializing, "RCM Permutation"), numVerts);
     //reverse the labels
     for(lno_t i = 0; i < numVerts; i++)
       label(i) = numVerts - label(i) - 1;

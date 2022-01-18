@@ -4,6 +4,8 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include <cgnsconfig.h>
+#if CG_BUILD_PARALLEL
 #include <cgns/Iocgns_Defines.h>
 
 #include <Ioss_CodeTypes.h>
@@ -508,23 +510,23 @@ namespace Iocgns {
       int nconn = 0;
       CGCHECK2(cg_nconns(filePtr, base, zone, &nconn));
       for (int i = 0; i < nconn; i++) {
-        char                      connectname[CGNS_MAX_NAME_LENGTH + 1];
-        CG_GridLocation_t         location;
-        CG_GridConnectivityType_t connect_type;
-        CG_PointSetType_t         ptset_type;
-        cgsize_t                  npnts = 0;
-        char                      donorname[CGNS_MAX_NAME_LENGTH + 1];
-        CG_ZoneType_t             donor_zonetype;
-        CG_PointSetType_t         donor_ptset_type;
-        CG_DataType_t             donor_datatype;
-        cgsize_t                  ndata_donor;
+        char connectname[CGNS_MAX_NAME_LENGTH + 1];
+        CGNS_ENUMT(GridLocation_t) location;
+        CGNS_ENUMT(GridConnectivityType_t) connect_type;
+        CGNS_ENUMT(PointSetType_t) ptset_type;
+        cgsize_t npnts = 0;
+        char     donorname[CGNS_MAX_NAME_LENGTH + 1];
+        CGNS_ENUMT(ZoneType_t) donor_zonetype;
+        CGNS_ENUMT(PointSetType_t) donor_ptset_type;
+        CGNS_ENUMT(DataType_t) donor_datatype;
+        cgsize_t ndata_donor;
 
         CGCHECK2(cg_conn_info(filePtr, base, zone, i + 1, connectname, &location, &connect_type,
                               &ptset_type, &npnts, donorname, &donor_zonetype, &donor_ptset_type,
                               &donor_datatype, &ndata_donor));
 
-        if (connect_type != CG_Abutting1to1 || ptset_type != CG_PointList ||
-            donor_ptset_type != CG_PointListDonor) {
+        if (connect_type != CGNS_ENUMV(Abutting1to1) || ptset_type != CGNS_ENUMV(PointList) ||
+            donor_ptset_type != CGNS_ENUMV(PointListDonor)) {
           std::ostringstream errmsg;
           fmt::print(errmsg,
                      "ERROR: CGNS: Zone {} adjacency data is not correct type. Require "
@@ -638,12 +640,12 @@ namespace Iocgns {
 
       size_t last_blk_location = 0;
       for (int is = 1; is <= num_sections; is++) {
-        char             section_name[CGNS_MAX_NAME_LENGTH + 1];
-        CG_ElementType_t e_type;
-        cgsize_t         el_start    = 0;
-        cgsize_t         el_end      = 0;
-        int              num_bndry   = 0;
-        int              parent_flag = 0;
+        char section_name[CGNS_MAX_NAME_LENGTH + 1];
+        CGNS_ENUMT(ElementType_t) e_type;
+        cgsize_t el_start    = 0;
+        cgsize_t el_end      = 0;
+        int      num_bndry   = 0;
+        int      parent_flag = 0;
 
         // Get the type of elements in this section...
         CGCHECK2(cg_section_read(filePtr, base, zone, is, section_name, &e_type, &el_start, &el_end,
@@ -751,8 +753,8 @@ namespace Iocgns {
       offset += block.file_count();
       size_t b_end = b_start + block.file_count();
 
-      ssize_t overlap      = std::min(b_end, p_end) - std::max(b_start, p_start);
-      overlap              = std::max(overlap, (ssize_t)0);
+      int64_t overlap      = std::min(b_end, p_end) - std::max(b_start, p_start);
+      overlap              = std::max(overlap, (int64_t)0);
       block.fileCount      = overlap;
       size_t element_nodes = block.nodesPerEntity;
       int    zone          = block.zone_;
@@ -776,7 +778,7 @@ namespace Iocgns {
       size_t el          = 0;
       INT    zone_offset = block.zoneNodeOffset;
 
-      for (ssize_t elem = 0; elem < overlap; elem++) {
+      for (size_t elem = 0; elem < static_cast<size_t>(overlap); elem++) {
         decomposition.m_pointer.push_back(decomposition.m_adjacency.size());
         for (size_t k = 0; k < element_nodes; k++) {
           INT node = connectivity[el++] - 1 + zone_offset; // 0-based node
@@ -858,7 +860,7 @@ namespace Iocgns {
           // Now, iterate the face connectivity vector and see if
           // there is a match in `m_boundaryFaces`
           size_t offset           = 0;
-          auto & boundary         = m_boundaryFaces[sset.zone()];
+          auto  &boundary         = m_boundaryFaces[sset.zone()];
           int    num_corner_nodes = topology->number_corner_nodes();
           SMART_ASSERT(num_corner_nodes == 3 || num_corner_nodes == 4)(num_corner_nodes);
 
@@ -1037,7 +1039,8 @@ namespace Iocgns {
     for (int zone = 1; zone <= num_zones; zone++) {
       end += m_zones[zone].m_nodeCount;
 
-      int solution_index = Utils::find_solution_index(filePtr, base, zone, step, CG_Vertex);
+      int solution_index =
+          Utils::find_solution_index(filePtr, base, zone, step, CGNS_ENUMV(Vertex));
 
       cgsize_t start  = std::max(node_offset, beg);
       cgsize_t finish = std::min(end, node_offset + node_count);
@@ -1047,7 +1050,7 @@ namespace Iocgns {
       start  = (count == 0) ? 0 : start - beg + 1;
       finish = (count == 0) ? 0 : finish - beg;
 
-      double * data         = (count > 0) ? &tmp[offset] : nullptr;
+      double  *data         = (count > 0) ? &tmp[offset] : nullptr;
       cgsize_t range_min[1] = {start};
       cgsize_t range_max[1] = {finish};
 
@@ -1292,7 +1295,7 @@ namespace Iocgns {
     }
   }
 
-  void DecompositionDataBase::get_node_entity_proc_data(void *                    entity_proc,
+  void DecompositionDataBase::get_node_entity_proc_data(void                     *entity_proc,
                                                         const Ioss::MapContainer &node_map,
                                                         bool                      do_map) const
   {
@@ -1359,7 +1362,7 @@ namespace Iocgns {
 
   void DecompositionDataBase::get_sideset_element_side(int                               filePtr,
                                                        const Ioss::SetDecompositionData &sset,
-                                                       void *                            data) const
+                                                       void                             *data) const
   {
     if (int_size() == sizeof(int)) {
       const DecompositionData<int> *this32 = dynamic_cast<const DecompositionData<int> *>(this);
@@ -1374,3 +1377,10 @@ namespace Iocgns {
     }
   }
 } // namespace Iocgns
+#else
+/*
+ * Prevent warning in some versions of ranlib(1) because the object
+ * file has no symbols.
+ */
+const char ioss_cgns_decomposition_data_unused_symbol_dummy = '\0';
+#endif

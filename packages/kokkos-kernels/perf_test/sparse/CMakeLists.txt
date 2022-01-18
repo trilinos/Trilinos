@@ -38,9 +38,17 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosSparse_spmv_struct_tuning.cpp
   )
 
+
+set(utilities_list)
+
+IF(KokkosKernels_ENABLE_TESTS_AND_PERFSUITE)
+LIST(APPEND utilities_list ../PerfTestUtilities.cpp)
+ENDIF()
+
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_spmv
-  SOURCES KokkosSparse_spmv.cpp
+  SOURCES KokkosSparse_spmv.cpp KokkosSparse_spmv_test.cpp spmv/OpenMPSmartStatic_SPMV.cpp
+  ${utilities_list}
   )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
@@ -65,10 +73,14 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosSparse_sptrsv_cholmod.cpp 
   )
 
+IF(NOT ${KOKKOS_HAS_TRILINOS})
+# Disable this perf test with Trilinos builds to workaround
+# -Werror issues error: declaration of xyz with C language linkage
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_sptrsv_superlu
   SOURCES KokkosSparse_sptrsv_superlu.cpp 
   )
+ENDIF()
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_sptrsv_supernode
@@ -78,6 +90,7 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_gs
   SOURCES KokkosSparse_gs.cpp
+  TESTONLYLIBS kokkoskernelsperf_gtest
   )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(

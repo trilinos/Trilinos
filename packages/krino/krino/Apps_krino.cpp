@@ -6,7 +6,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include <Akri_YAML_Parser.hpp>
+#include <Akri_Parser.hpp>
 #include <Akri_Startup.hpp>
 #include <Akri_Simulation.hpp>
 #include <stk_util/environment/Trace.hpp>
@@ -22,7 +22,7 @@ int main( int argc, char ** argv )
   bool is_parsing = true;
 
   try {
-    krino::YAML_Parser::parse();
+    krino::Parser::parse();
 
     is_parsing = false;
     krino::Simulation & simulation = krino::Simulation::get();

@@ -1,6 +1,6 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp"

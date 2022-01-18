@@ -35,15 +35,10 @@
 #ifndef PARAMETERLIST_HPP
 #define PARAMETERLIST_HPP
 
-#include "stk_util/stk_config.h"  // for STK_HAVE_BOOST
+#include "stk_util/stk_config.h"
 
-#ifdef STK_HAVE_BOOST
-#include "boost/any.hpp"          // for any, any_cast
-#define STK_ANY_NAMESPACE boost
-#else
 #include "Teuchos_any.hpp"
 #define STK_ANY_NAMESPACE Teuchos
-#endif
 
 #include <cstdint>                // for int64_t
 #include <iostream>               // for operator<<, basic_ostream, ostream, cerr

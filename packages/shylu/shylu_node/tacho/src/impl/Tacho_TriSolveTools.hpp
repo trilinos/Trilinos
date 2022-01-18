@@ -255,7 +255,7 @@ namespace Tacho {
       stat.n_device_problems = 0;
       stat.n_team_problems = 0;
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
 
@@ -760,7 +760,7 @@ namespace Tacho {
       stat.n_device_problems = 0;
       stat.n_team_problems = 0;
       
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       timer.reset();
 
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -866,7 +866,7 @@ namespace Tacho {
       TACHO_TEST_FOR_EXCEPTION(nrhs > _max_nrhs, std::logic_error,
                                "nrhs is bigger than max nrhs");
       
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       stat.n_kernel_launching = 0;
 

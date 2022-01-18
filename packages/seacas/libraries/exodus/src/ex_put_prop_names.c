@@ -100,7 +100,7 @@ int ex_put_prop_names(int exoid, ex_entity_type obj_type, int num_props, char **
   int       oldfill, temp;
   int       i, propid, dimid, dims[1];
   size_t    name_length, prop_name_len;
-  char *    name;
+  char     *name;
   long long vals[1];
   size_t    max_name_len = 0;
   int       int_type     = NC_INT;

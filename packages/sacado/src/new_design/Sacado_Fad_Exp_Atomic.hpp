@@ -122,12 +122,8 @@ namespace Sacado {
 	  return_type return_val;
 	  // This is a way to (hopefully) avoid dead lock in a warp
 	  int done                 = 0;
-#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
-	  unsigned int mask        = KOKKOS_IMPL_CUDA_ACTIVEMASK;
-	  unsigned int active      = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask, 1);
-#else
-	  unsigned int active = KOKKOS_IMPL_CUDA_BALLOT(1);
-#endif
+	  unsigned int mask        =  __activemask() ;
+	  unsigned int active      = __ballot_sync(mask, 1);
 	  unsigned int done_active = 0;
 	  while (active != done_active) {
 	    if (!done) {
@@ -140,34 +136,53 @@ namespace Sacado {
 		done = 1;
 	      }
 	    }
-#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
-	    done_active = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask, done);
-#else
-	    done_active = KOKKOS_IMPL_CUDA_BALLOT(done);
-#endif
+	    done_active = __ballot_sync(mask, done);
 	  }
 	  return return_val;
 	}
-#elif defined(__HIP_DEVICE_COMPILE__)
-        // FIXME_HIP
-        Kokkos::abort("atomic_oper_fetch not implemented for large types.");
-        return_type return_val;
-        int done                 = 0;
-        unsigned int active      = __ballot(1);
-        unsigned int done_active = 0;
-        while (active != done_active) {
-          if (!done) {
-            // if (Kokkos::Impl::lock_address_hip_space((void*)dest_val))
-            {
-              return_val = op.apply(*dest, val);
-            *dest      = return_val;
-            // Kokkos::Impl::unlock_address_hip_space((void*)dest_val);
-            done = 1;
-            }
-          }
-          done_active = __ballot(done);
-        }
-        return return_val;
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP_GPU)
+	// It is not allowed to define SACADO_VIEW_CUDA_HIERARCHICAL or
+	// SACADO_VIEW_CUDA_HIERARCHICAL_DFAD and use Sacado inside a team-based
+	// kernel without Sacado hierarchical parallelism.  So use the
+	// team-based version only if blockDim.x > 1 (i.e., a team policy)
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+	const bool use_team = (blockDim.x > 1);
+#else
+	const bool use_team = false;
+#endif
+	if (use_team) {
+	  int go = 1;
+	  while (go) {
+	    if (threadIdx.x == 0)
+	      go = !Kokkos::Impl::lock_address_hip_space((void*)dest_val);
+	    go = Kokkos::Experimental::shfl(go, 0, blockDim.x);
+	  }
+	  Kokkos::memory_fence();
+	  return_type return_val = op.apply(*dest, val);
+	  *dest                  = return_val;
+	  Kokkos::memory_fence();
+	  if (threadIdx.x == 0)
+	    Kokkos::Impl::unlock_address_hip_space((void*)dest_val);
+	  return return_val;
+	}
+	else {
+	  return_type return_val;
+	  int done                 = 0;
+	  unsigned int active      = __ballot(1);
+	  unsigned int done_active = 0;
+	  while (active != done_active) {
+	    if (!done) {
+	      if (Kokkos::Impl::lock_address_hip_space((void*)dest_val)) {
+		return_val = op.apply(*dest, val);
+		*dest      = return_val;
+		Kokkos::Impl::unlock_address_hip_space((void*)dest_val);
+		done = 1;
+	      }
+	    }
+	    done_active = __ballot(done);
+	  }
+	  return return_val;
+	}
 #endif
       }
 
@@ -218,12 +233,8 @@ namespace Sacado {
 	  return_type return_val;
 	  // This is a way to (hopefully) avoid dead lock in a warp
 	  int done                 = 0;
-#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
-	  unsigned int mask        = KOKKOS_IMPL_CUDA_ACTIVEMASK;
-	  unsigned int active      = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask, 1);
-#else
-	  unsigned int active = KOKKOS_IMPL_CUDA_BALLOT(1);
-#endif
+	  unsigned int mask        =  __activemask() ;
+	  unsigned int active      = __ballot_sync(mask, 1);
 	  unsigned int done_active = 0;
 	  while (active != done_active) {
 	    if (!done) {
@@ -236,34 +247,53 @@ namespace Sacado {
 		done = 1;
 	      }
 	    }
-#ifdef KOKKOS_IMPL_CUDA_SYNCWARP_NEEDS_MASK
-	    done_active = KOKKOS_IMPL_CUDA_BALLOT_MASK(mask, done);
-#else
-	    done_active = KOKKOS_IMPL_CUDA_BALLOT(done);
-#endif
+	    done_active = __ballot_sync(mask, done);
 	  }
 	  return return_val;
 	}
-#elif defined(__HIP_DEVICE_COMPILE__)
-        // FIXME_HIP
-        Kokkos::abort("atomic_oper_fetch not implemented for large types.");
-        return_type return_val;
-        int done                 = 0;
-        unsigned int active      = __ballot(1);
-        unsigned int done_active = 0;
-        while (active != done_active) {
-          if (!done) {
-            // if (Kokkos::Impl::lock_address_hip_space((void*)dest_val))
-            {
-              return_val = *dest;
-              *dest      = op.apply(return_val, val);
-            // Kokkos::Impl::unlock_address_hip_space((void*)dest_val);
-            done = 1;
-            }
-          }
-          done_active = __ballot(done);
-        }
-        return return_val;
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP_GPU)
+	// It is not allowed to define SACADO_VIEW_CUDA_HIERARCHICAL or
+	// SACADO_VIEW_CUDA_HIERARCHICAL_DFAD and use Sacado inside a team-based
+	// kernel without Sacado hierarchical parallelism.  So use the
+	// team-based version only if blockDim.x > 1 (i.e., a team policy)
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+	const bool use_team = (blockDim.x > 1);
+#else
+	const bool use_team = false;
+#endif
+	if (use_team) {
+	  int go = 1;
+	  while (go) {
+	    if (threadIdx.x == 0)
+	      go = !Kokkos::Impl::lock_address_hip_space((void*)dest_val);
+	    go = Kokkos::Experimental::shfl(go, 0, blockDim.x);
+	  }
+	  Kokkos::memory_fence();
+	  return_type return_val = *dest;
+	  *dest                  = op.apply(return_val, val);
+	  Kokkos::memory_fence();
+	  if (threadIdx.x == 0)
+	    Kokkos::Impl::unlock_address_hip_space((void*)dest_val);
+	  return return_val;
+	}
+	else {
+	  return_type return_val;
+	  int done                 = 0;
+	  unsigned int active      = __ballot(1);
+	  unsigned int done_active = 0;
+	  while (active != done_active) {
+	    if (!done) {
+	      if (Kokkos::Impl::lock_address_hip_space((void*)dest_val)) {
+		return_val = *dest;
+		*dest      = op.apply(return_val, val);
+		Kokkos::Impl::unlock_address_hip_space((void*)dest_val);
+		done = 1;
+	      }
+	    }
+	    done_active = __ballot(done);
+	  }
+	  return return_val;
+	}
 #endif
       }
 

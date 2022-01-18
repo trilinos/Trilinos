@@ -20,11 +20,6 @@
 
 #include "fortranc.h"
 
-#if defined(interix)
-#include <time.h>
-void excpus_(FTNREAL *cpusec)
-#endif /* interix */
-
 #if defined(aix) || defined(__VACPP__) || defined(hpux) || defined(sgi) || defined(__osf__) ||     \
     defined(__linux__) || defined(__APPLE__) || defined(__CYGWIN__)
 
@@ -35,14 +30,18 @@ void excpus_(FTNREAL *cpusec)
 #include <sys/resource.h>
 #include <sys/time.h>
 #endif
+#endif
+
+#if defined(interix)
+#include <time.h>
+void excpus_(FTNREAL *cpusec)
+#endif /* interix */
 
 #if defined ADDC_
     void excpus_(FTNREAL *cpusec)
 #else
-    void excpus(FTNREAL *cpusec)
+void excpus(FTNREAL *cpusec)
 #endif
-#endif
-
 {
 #if defined(interix)
   *cpusec = ((FTNREAL)clock()) / CLOCKS_PER_SEC;

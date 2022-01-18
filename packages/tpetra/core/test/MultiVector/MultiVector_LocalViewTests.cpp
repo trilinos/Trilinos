@@ -322,6 +322,52 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceHostView, LO, GO, Scalar ,
   TEST_ASSERT(gerr == 0);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, TemplatedGetLocalView, LO, GO, Scalar , Node )
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int np = comm->getSize();
+
+  using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
+  using map_t = Tpetra::Map<LO,GO,Node>;
+  using WDV = typename vector_t::wrapped_dual_view_type;
+  using device_t = typename WDV::DeviceType;
+  using host_t = typename WDV::HostType;
+
+  const size_t nGlobalEntries = 8 * np;
+  Teuchos::Array<GO> myEntries(nGlobalEntries); 
+
+  // Default one-to-one linear block map in Trilinos
+  Teuchos::RCP<const map_t> defaultMap = 
+           rcp(new map_t(nGlobalEntries, 0, comm));
+
+  // Create vector
+  vector_t x(defaultMap);
+
+  {
+    // Check that getLocalView<device_t> produces a view with the correct device type
+    auto deviceView = x.template getLocalView<device_t>(Tpetra::Access::ReadWrite);
+    bool correctType = std::is_same<typename decltype(deviceView)::device_type, device_t>::value;
+    TEST_ASSERT(correctType);
+  }
+  constexpr bool needsSyncPath = !std::is_same<Kokkos::HostSpace, typename device_t::memory_space>::value;
+  if(needsSyncPath)
+  {
+    TEST_ASSERT(x.need_sync_host());
+    TEST_ASSERT(!x.need_sync_device());
+  }
+  // Assuming device/host device types aren't the same, make sure getting the host view also works
+  {
+    auto hostView = x.template getLocalView<host_t>(Tpetra::Access::ReadWrite);
+    bool correctType = std::is_same<typename decltype(hostView)::device_type, host_t>::value;
+    TEST_ASSERT(correctType);
+    if(needsSyncPath)
+    {
+      TEST_ASSERT(!x.need_sync_host());
+      TEST_ASSERT(x.need_sync_device());
+    }
+  }
+}
+
 //
 // INSTANTIATIONS
 //
@@ -331,7 +377,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceHostView, LO, GO, Scalar ,
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, HostView, LO, GO, SCALAR, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeviceView, LO, GO, SCALAR, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, HostDeviceView, LO, GO, SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeviceHostView, LO, GO, SCALAR, NODE ) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeviceHostView, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, TemplatedGetLocalView, LO, GO, SCALAR, NODE ) 
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

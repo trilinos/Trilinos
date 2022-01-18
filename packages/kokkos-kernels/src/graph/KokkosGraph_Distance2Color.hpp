@@ -84,7 +84,7 @@ void graph_color_distance2(
   using InternalEntries = Kokkos::View<
     const lno_t*, Kokkos::LayoutLeft,
     typename InEntries::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   size_type nnz = row_entries.extent(0);
   InternalRowmap rowmap_internal(row_map.data(), row_map.extent(0));
   InternalEntries rowentries_internal(row_entries.data(), nnz);
@@ -145,7 +145,7 @@ void bipartite_color_rows(
     typename InEntries::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using TRowmap = Kokkos::View<size_type*, Kokkos::LayoutLeft, typename InRowmap::device_type>;
   using TEntries = Kokkos::View<lno_t*, Kokkos::LayoutLeft, typename InEntries::device_type>;
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   size_type nnz = row_entries.extent(0);
   TRowmap col_map;
   TEntries col_entries;
@@ -222,11 +222,11 @@ void bipartite_color_columns(
     typename InEntries::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using TRowmap = Kokkos::View<size_type*, Kokkos::LayoutLeft, typename InRowmap::device_type>;
   using TEntries = Kokkos::View<lno_t*, Kokkos::LayoutLeft, typename InEntries::device_type>;
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   size_type nnz = row_entries.extent(0);
   //Compute the transpose
   TRowmap col_map("Col map", num_columns + 1);
-  TEntries col_entries(Kokkos::ViewAllocateWithoutInitializing("Col entries"), nnz);
+  TEntries col_entries(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Col entries"), nnz);
   KokkosKernels::Impl::transpose_graph
     <InRowmap, InEntries, TRowmap, TEntries, TRowmap, execution_space>
     (num_rows, num_columns, row_map, row_entries, col_map, col_entries);

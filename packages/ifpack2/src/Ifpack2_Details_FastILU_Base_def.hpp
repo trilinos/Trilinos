@@ -46,7 +46,7 @@
 #define __IFPACK2_FASTILU_BASE_DEF_HPP__ 
 
 #include <Ifpack2_Details_CrsArrays.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <stdexcept>
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -119,7 +119,7 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
   int nvecs = X.getNumVectors();
   if(nvecs == 1)
   {
-    auto x2d = X.template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
+    auto x2d = X.template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
     auto y2d = Y.template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
     auto x1d = Kokkos::subview(x2d, Kokkos::ALL(), 0);
     auto y1d = Kokkos::subview(y2d, Kokkos::ALL(), 0);
@@ -132,10 +132,10 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
     {
       auto Xcol = X.getVector(i);
       auto Ycol = Y.getVector(i);
-      auto xColView2d = Xcol->template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
+      auto xColView2d = Xcol->template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
       auto yColView2d = Ycol->template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
-      ScalarArray xColView1d = Kokkos::subview(xColView2d, Kokkos::ALL(), 0);
-      ScalarArray yColView1d = Kokkos::subview(yColView2d, Kokkos::ALL(), 0);
+      auto xColView1d = Kokkos::subview(xColView2d, Kokkos::ALL(), 0);
+      auto yColView1d = Kokkos::subview(yColView2d, Kokkos::ALL(), 0);
       applyLocalPrec(xColView1d, yColView1d);
     }
   }
@@ -164,7 +164,7 @@ initialize()
   {
     throw std::runtime_error(std::string("Called ") + getName() + "::initialize() but matrix was null (call setMatrix() with a non-null matrix first)");
   }
-  Kokkos::Impl::Timer copyTimer;
+  Kokkos::Timer copyTimer;
   CrsArrayReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
   crsCopyTime_ = copyTimer.seconds();
   initLocalPrec();  //note: initLocalPrec updates initTime
@@ -196,7 +196,7 @@ compute()
 
 
   //get copy of values array from matrix
-  Kokkos::Impl::Timer copyTimer;
+  Kokkos::Timer copyTimer;
   CrsArrayReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
   crsCopyTime_ += copyTimer.seconds(); //add to the time spent getting rowptrs/colinds
   computeLocalPrec(); //this updates computeTime_

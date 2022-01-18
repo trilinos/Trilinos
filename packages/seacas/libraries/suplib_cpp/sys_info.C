@@ -9,7 +9,9 @@
 #if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
     defined(__MINGW32__) || defined(_WIN64)
 #define WIN32_LEAN_AND_MEAN
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <Windows.h>
 #undef IN
 #undef OUT

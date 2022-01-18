@@ -167,14 +167,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Chebyshev, Test0, Scalar, LocalOrdinal,
   prec.setParameters(params);
   prec.compute();
 
-  TEST_FLOATING_EQUALITY(prec.getLambdaMaxForApply(),expectedLambdaMax,2e-2);
+  TEST_FLOATING_EQUALITY(prec.getLambdaMaxForApply(),expectedLambdaMax,4.5e-2);
 
   params.set("eigen-analysis: type", "cg");
   params.set("chebyshev: eigenvalue max iterations",10);
   prec.setParameters(params);
   prec.compute();
 
-  TEST_FLOATING_EQUALITY(prec.getLambdaMaxForApply(),expectedLambdaMax,2e-2);
+  TEST_FLOATING_EQUALITY(prec.getLambdaMaxForApply(),expectedLambdaMax,4.5e-2);
 }
 
 #define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \

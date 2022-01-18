@@ -14,7 +14,7 @@
 
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #endif 
 
 #ifdef BASKER_DEBUG
@@ -137,7 +137,7 @@ namespace BaskerNS
     }
 
     #ifdef BASKER_TIMER
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
     #endif
 
     #ifdef BASKER_DEBUG_NFACTOR_COL2
@@ -261,9 +261,9 @@ namespace BaskerNS
       double time_extend = 0.0;
       double time_faccol = 0.0;
       double time_facoff = 0.0;
-      Kokkos::Impl::Timer timer_extend;
-      Kokkos::Impl::Timer timer_faccol;
-      Kokkos::Impl::Timer timer_facoff;
+      Kokkos::Timer timer_extend;
+      Kokkos::Timer timer_faccol;
+      Kokkos::Timer timer_facoff;
       #endif
       for(Int k = 0; k < ncol && info == BASKER_SUCCESS; ++k)
       {

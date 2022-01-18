@@ -31,7 +31,7 @@ class Grid
 public:
   //! Create an empty grid of size `extent_i` x `extent_j`.  The output mesh will
   //! be written to the exodus database in the Ioss::Region `region`
-  Grid(SystemInterface &interFace);
+  explicit Grid(SystemInterface &interFace);
 
   void set_extent(size_t extent_i, size_t extent_j, size_t /* unused */);
 

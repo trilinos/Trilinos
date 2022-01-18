@@ -49,47 +49,49 @@
 #include <KokkosKernels_config.h> //for all the ETI #cmakedefine macros
 
 #if defined(KOKKOSKERNELS_INST_ORDINAL_INT)
-  typedef int default_lno_t;
+  using default_lno_t = int;
 #elif defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T)
-  typedef int64_t default_lno_t;
+  using default_lno_t = int64_t;
 #else
-  #error "Expect INT and/or INT64_T to be enabled as ORDINAL (lno_t) types"
+  using default_lno_t = int;
 #endif
   //Prefer int as the default offset type, because cuSPARSE doesn't support size_t for rowptrs.
 #if defined(KOKKOSKERNELS_INST_OFFSET_INT)
-  typedef int default_size_type;
+  using default_size_type = int;
 #elif defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)
-  typedef size_t default_size_type;
+  using default_size_type = size_t;
 #else
-  #error "Expect SIZE_T and/or INT to be enabled as OFFSET (size_type) types"
+  using default_size_type = int;
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTLEFT)
-  typedef Kokkos::LayoutLeft default_layout;
+  using default_layout = Kokkos::LayoutLeft;
 #elif defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
-  typedef Kokkos::LayoutRight default_layout;
+  using default_layout = Kokkos::LayoutRight;
 #else
-  #error "Expect LAYOUTLEFT and/or LAYOUTRIGHT to be enabled as layout types"
+  using default_layout = Kokkos::LayoutLeft;
 #endif
 
 #if defined(KOKKOSKERNELS_INST_DOUBLE)
-  typedef double default_scalar;
+  using default_scalar = double;
 #elif defined(KOKKOSKERNELS_INST_FLOAT)
-  typedef float default_scalar;
+  using default_scalar = float;
 #else
-  #error "Expect at least one real-valued scalar type (double or float) to be enabled"
+  using default_scalar = double;
 #endif
 
 #if defined(KOKKOS_ENABLE_CUDA)
-  typedef Kokkos::Cuda default_device;
+  using default_device = Kokkos::Cuda;
 #elif defined(KOKKOS_ENABLE_HIP)
-  typedef Kokkos::Experimental::HIP default_device;
+  using default_device = Kokkos::Experimental::HIP;
+#elif defined(KOKKOS_ENABLE_OPENMPTARGET)
+  using default_device = Kokkos::Experimental::OpenMPTarget;
 #elif defined(KOKKOS_ENABLE_OPENMP)
-  typedef Kokkos::OpenMP default_device;
+  using default_device = Kokkos::OpenMP;
 #elif defined(KOKKOS_ENABLE_PTHREAD) || defined(KOKKOS_ENABLE_THREADS)
-  typedef Kokkos::Threads default_device;
+  using default_device = Kokkos::Threads;
 #else
-  typedef Kokkos::Serial default_device;
+  using default_device = Kokkos::Serial;
 #endif
 
 #endif // KOKKOSKERNELS_DEFAULT_TYPES_H

@@ -45,17 +45,17 @@ public:
   static void get_input_surfaces_touching_block(const Block_Surface_Connectivity & input_block_surface_info,
       const stk::mesh::PartOrdinal block_ordinal, std::set<stk::mesh::PartOrdinal> & surface_ordinals);
   void get_input_blocks_touching_surface(const Block_Surface_Connectivity & input_block_surface_info,
-      const stk::mesh::PartOrdinal surfaceOrdinal, std::set<stk::mesh::PartOrdinal> & blockOrdinals);
+      const stk::mesh::PartOrdinal surfaceOrdinal, std::set<stk::mesh::PartOrdinal> & blockOrdinals) const;
 
   void check_phase_parts() const;
 
   bool phases_defined() const { return !my_phase_parts.empty(); }
 
-  void decompose_blocks(const stk::mesh::PartVector& blocks_decomposed_by_ls,
-      const PhaseVec & ls_phases, const Interface_Name_Generator & interface_name_gen);
+  void decompose_blocks(std::vector<std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets);
   std::vector<stk::mesh::Part*> get_blocks_decomposed_by_levelset(const std::vector<unsigned> ls_phases) const;
   void setup_phases(const krino::PhaseVec & FEmodel_phases);
   void set_input_block_surface_connectivity(const Block_Surface_Connectivity & input_block_surface_info) { my_input_block_surface_connectivity = input_block_surface_info; }
+  const Block_Surface_Connectivity & get_input_block_surface_connectivity() const {return my_input_block_surface_connectivity;}
   void build_decomposed_block_surface_connectivity();
 
   bool is_nonconformal(const stk::mesh::Part * io_part) const;
@@ -80,6 +80,7 @@ public:
   static void set_one_levelset_per_phase(const bool val) { oneLevelSetPerPhase = val; }
 
   stk::mesh::PartVector get_nonconformal_parts() const;
+  stk::mesh::PartVector get_nonconformal_parts_of_rank(const stk::mesh::EntityRank rank) const;
   stk::mesh::PartVector get_conformal_parts() const;
 
   void determine_block_phases(const std::set<std::string> & FEmodel_block_names, const PhaseVec & FEmodel_phases);

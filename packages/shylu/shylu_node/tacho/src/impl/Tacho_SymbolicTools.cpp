@@ -664,7 +664,7 @@ namespace Tacho {
 
   void SymbolicTools::
   symbolicFactorize(const ordinal_type verbose) {
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
     double t_symfact = 0, t_supernode = 0, t_extra = 0, m_used =0, m_peak = 0;
     
     auto track_alloc = [&](const double in) {
@@ -839,7 +839,7 @@ namespace Tacho {
   void SymbolicTools::
   evaporateSymbolicFactors(const ordinal_type_array &aw,
                            const ordinal_type verbose) {
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
     double t_evaporate = 0, m_used =0, m_peak = 0;
     
     auto track_alloc = [&](const double in) {

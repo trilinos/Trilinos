@@ -38,6 +38,7 @@ FILE(GLOB SOURCES *.cpp
                   command_line/*.cpp
                   diag/*.cpp
                   environment/*.cpp
+                  ngp/*.cpp
                   parallel/*.cpp
                   registry/*.cpp
                   util/*.cpp)

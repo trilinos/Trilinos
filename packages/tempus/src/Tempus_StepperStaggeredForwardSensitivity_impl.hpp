@@ -25,6 +25,7 @@ namespace Tempus {
 template<class Scalar>
 StepperStaggeredForwardSensitivity<Scalar>::
 StepperStaggeredForwardSensitivity()
+  : stepMode_(SensitivityStepMode::Forward)
 {
   this->setStepperName(        "StaggeredForwardSensitivity");
   this->setStepperType(        "StaggeredForwardSensitivity");
@@ -38,6 +39,7 @@ StepperStaggeredForwardSensitivity(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
   const Teuchos::RCP<Teuchos::ParameterList>& pList,
   const Teuchos::RCP<Teuchos::ParameterList>& sens_pList)
+  : stepMode_(SensitivityStepMode::Forward)
 {
   // Set all the input parameters and call initialize
   this->setStepperName(        "StaggeredForwardSensitivity");
@@ -197,6 +199,7 @@ takeStep(
     XDotDot = rcp_dynamic_cast<DMVPV>(prod_state->getXDotDot(),true);
 
   // Take step for state equations
+  stepMode_ = SensitivityStepMode::Forward;
   stateSolutionHistory_->initWorkingState();
   RCP<SolutionState<Scalar> > state = stateSolutionHistory_->getWorkingState();
   state->getMetaData()->copy(prod_state->getMetaData());
@@ -223,6 +226,7 @@ takeStep(
     fsa_model_->setSolver(stateStepper_->getSolver(), force_W_update_);
 
   // Take step in sensitivity equations
+  stepMode_ = SensitivityStepMode::Sensitivity;
   sensSolutionHistory_->initWorkingState();
   RCP<SolutionState<Scalar> > sens_state =
     sensSolutionHistory_->getWorkingState();

@@ -85,26 +85,24 @@ mult (typename YMV::const_value_type& gamma,
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 
+  using YUnifiedLayout = typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout;
+  using AUnifiedLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<AV, YUnifiedLayout>::array_layout;
+  using XUnifiedLayout = typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XMV, YUnifiedLayout>::array_layout;
+
   // Create unmanaged versions of the input Views.
   typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      YMV::rank == 1,
-      typename YMV::non_const_value_type*,
-      typename YMV::non_const_value_type** >::type,
-    typename KokkosKernels::Impl::GetUnifiedLayout<YMV>::array_layout,
+    typename YMV::non_const_data_type,
+    YUnifiedLayout,
     typename YMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YMV_Internal;
   typedef Kokkos::View<
     typename AV::const_value_type*,
-    typename KokkosKernels::Impl::GetUnifiedLayout<AV>::array_layout,
+    AUnifiedLayout,
     typename AV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > AV_Internal;
   typedef Kokkos::View<
-    typename Kokkos::Impl::if_c<
-      XMV::rank == 1,
-      typename XMV::const_value_type*,
-      typename XMV::const_value_type** >::type,
-    typename KokkosKernels::Impl::GetUnifiedLayout<XMV>::array_layout,
+    typename XMV::const_data_type,
+    XUnifiedLayout,
     typename XMV::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XMV_Internal;
 

@@ -288,9 +288,8 @@ namespace { // (anonymous)
       // the dense vector b.  This is a constexpr so we can easily
       // construct arrays with it.
       constexpr LO numRows = 13;
-      // Number of columns in the sparse matrix A, and number of entries
-      // in the dense vector b.
-      //const LO numCols = numRows;
+      // Number of columns in the sparse matrix A
+      const LO numCols = numRows;
 
       // When defining the matrix sparsity pattern, make sure that some
       // rows not in the above element sparsity pattern just happen to
@@ -449,7 +448,7 @@ namespace { // (anonymous)
         Kokkos::deep_copy (A_ind, A_ind_host);
       }
       sparse_graph_type A_graph (A_ind, A_ptr);
-      sparse_matrix_type A ("A", A_graph);
+      sparse_matrix_type A ("A", A_graph, numCols);
       Kokkos::deep_copy (A.values, Kokkos::ArithTraits<SC>::zero ());
 
       out << "The sparse matrix, as copied to device:" << endl;

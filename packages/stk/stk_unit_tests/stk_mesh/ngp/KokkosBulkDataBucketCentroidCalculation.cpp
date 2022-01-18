@@ -75,7 +75,7 @@ struct GpuGatherBucketScratchData
   {
     const stk::mesh::NgpMesh::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
     const unsigned numElements = bucket.size();
-    const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
+    const unsigned nodesPerElem = bucket.topology().num_nodes();
     const unsigned dim = elementCentroids.extent(1);
     double temp[3] = {0.0, 0.0, 0.0};
     for(unsigned elementIndex=0; elementIndex<numElements; ++elementIndex) {
@@ -102,7 +102,7 @@ struct GpuGatherBucketScratchData
   {
     const stk::mesh::NgpMesh::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
     const int numElements = bucket.size();
-    const int nodesPerElem = bucket.get_num_nodes_per_entity();
+    const int nodesPerElem = bucket.topology().num_nodes();
     double tempx = 0.0, tempy = 0.0, tempz = 0.0;
     for(int elementIndex=0; elementIndex<numElements; ++elementIndex) {
       const int elemFieldIndex = get_index(bucket[elementIndex]);
@@ -128,7 +128,7 @@ struct GpuGatherBucketScratchData
     const int elementBucketIndex = team.league_rank();
     const stk::mesh::NgpMesh::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
     const unsigned numElements = bucket.size();
-    const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
+    const unsigned nodesPerElem = bucket.topology().num_nodes();
     const unsigned dim = elementCentroids.extent(1);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& elementIndex) {
       double temp[3] = {0.0, 0.0, 0.0};
@@ -162,7 +162,7 @@ struct GpuGatherBucketScratchData
     const int elementBucketIndex = team.league_rank();
     const stk::mesh::NgpMesh::BucketType& bucket = ngpMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
     const unsigned numElements = bucket.size();
-    const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
+    const unsigned nodesPerElem = bucket.topology().num_nodes();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& elementIndex) {
       double tempx = 0, tempy = 0, tempz = 0;
       const unsigned elemFieldIndex = get_index(bucket[elementIndex]);

@@ -1197,6 +1197,14 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
 #define FAD_KOKKOS_COMM_TESTS_CUDA(FadType, FAD)
 #endif
 
+#ifdef KOKKOS_ENABLE_HIP
+#define FAD_KOKKOS_COMM_TESTS_HIP(FadType, FAD)                          \
+  using Kokkos::Experimental::HIP;					\
+  FAD_KOKKOS_COMM_TESTS_DEV(FadType, FAD, HIP)
+#else
+#define FAD_KOKKOS_COMM_TESTS_HIP(FadType, FAD)
+#endif
+
 #ifdef KOKKOS_ENABLE_SERIAL
 #define FAD_KOKKOS_COMM_TESTS_SERIAL(FadType, FAD)                      \
   using Kokkos::Serial;                                                 \

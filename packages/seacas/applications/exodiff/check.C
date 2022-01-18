@@ -122,7 +122,7 @@ namespace {
     file1.Load_Nodal_Coordinates();
     file2.Load_Nodal_Coordinates();
 
-    const auto *  x1 = file1.X_Coords();
+    const auto   *x1 = file1.X_Coords();
     const double *y1 = x1;
     const double *z1 = x1;
     if (file1.Dimension() > 1) {
@@ -132,7 +132,7 @@ namespace {
       z1 = file1.Z_Coords();
     }
 
-    const auto *  x2 = file2.X_Coords();
+    const auto   *x2 = file2.X_Coords();
     const double *y2 = x2;
     const double *z2 = x2;
     if (file2.Dimension() > 1) {
@@ -637,4 +637,4 @@ template bool Check_Global(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file
 template void Check_Compatible_Meshes(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
                                       bool check_only, const std::vector<int64_t> &node_map,
                                       const std::vector<int64_t> &elmt_map,
-                                      const int64_t *             node_id_map);
+                                      const int64_t              *node_id_map);

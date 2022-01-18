@@ -124,19 +124,21 @@ gemv (const char trans[],
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
 
+  using ALayout = typename AViewType::array_layout;
+
   // Minimize the number of Impl::GEMV instantiations, by
   // standardizing on particular View specializations for its template
   // parameters.
   typedef Kokkos::View<typename AViewType::const_value_type**,
-    typename AViewType::array_layout,
+    ALayout,
     typename AViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > AVT;
   typedef Kokkos::View<typename XViewType::const_value_type*,
-    typename KokkosKernels::Impl::GetUnifiedLayout<XViewType>::array_layout,
+    typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<XViewType, ALayout>::array_layout,
     typename XViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > XVT;
   typedef Kokkos::View<typename YViewType::non_const_value_type*,
-    typename KokkosKernels::Impl::GetUnifiedLayout<YViewType>::array_layout,
+    typename KokkosKernels::Impl::GetUnifiedLayoutPreferring<YViewType, ALayout>::array_layout,
     typename YViewType::device_type,
     Kokkos::MemoryTraits<Kokkos::Unmanaged> > YVT;
 

@@ -68,6 +68,7 @@ namespace {
   TEST_CASE("Ioex::constructor", "[Ioex::constructor]")
   {
     Ioex::DatabaseIO *db_io = create_input_db_io(input_filename);
+    db_io->set_surface_split_type(Ioss::SPLIT_BY_ELEMENT_BLOCK);
 
     Ioss::Region region(db_io);
 

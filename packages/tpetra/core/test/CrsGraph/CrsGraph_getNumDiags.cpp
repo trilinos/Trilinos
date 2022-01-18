@@ -90,7 +90,7 @@ namespace { // (anonymous)
       const GO actualLocalNumDiags = lclNumRows;
       const GO actualGlobalNumDiags = gblNumRows;
 
-      crs_graph_type graph (rowMap, 1, Tpetra::StaticProfile);
+      crs_graph_type graph (rowMap, 1);
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
         const GO gblCol = gblRow;
@@ -131,7 +131,7 @@ namespace { // (anonymous)
       const GO actualGlobalNumDiags = gblNumRows;
 
       RCP<const map_type> colMap = rowMap;
-      crs_graph_type graph (rowMap, colMap, 1, Tpetra::StaticProfile);
+      crs_graph_type graph (rowMap, colMap, 1);
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
         const LO lclCol = lclRow;
         graph.insertLocalIndices (lclRow, 1, &lclCol);
@@ -187,7 +187,7 @@ namespace { // (anonymous)
                                     gblColInds.size (), indexBase, comm));
       }
 
-      crs_graph_type graph (rowMap, colMap, 1, Tpetra::StaticProfile);
+      crs_graph_type graph (rowMap, colMap, 1);
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
         // Not actually a diagonal entry, since the global indices differ.
         const LO lclCol = lclRow;

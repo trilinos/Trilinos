@@ -347,7 +347,7 @@ class TrilinosPRConfigurationBase(object):
         """
         Returns the configuration script name
 
-        This arbitrary name will be used for all runs until  an override is established
+        This arbitrary name will be used for all runs until an override is established
 
         Returns:
             String containing the job-specific configuration script to load.

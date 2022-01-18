@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,11 +30,13 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef stk_expreval_variable_hpp
 #define stk_expreval_variable_hpp
 
+#include "stk_util/util/string_case_compare.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 #include <iostream>
 #include <string>
 #include <limits>
@@ -47,8 +49,6 @@
 #include <sstream>
 #include <memory>
 
-#include <stk_util/util/string_case_compare.hpp>
-#include <stk_util/util/ReportHandler.hpp>
 
 namespace stk {
 namespace expreval {
@@ -61,8 +61,8 @@ public:
   enum Type        {DOUBLE, INTEGER};
   enum Use         {DEPENDENT, INDEPENDENT};
   enum ArrayOffset {ZERO_BASED_INDEX, ONE_BASED_INDEX};
-  
-  Variable(const std::string& name)
+
+  Variable(const std::string & name)
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
       m_size(1),
@@ -73,7 +73,7 @@ public:
   {
   }
 
-  explicit Variable(Type type, const std::string& name)
+  explicit Variable(Type type, const std::string & name)
     : m_type(type),
       m_use(INDEPENDENT),
       m_size(1),
@@ -92,7 +92,7 @@ public:
     }
   }
 
-  explicit Variable(double &address, const std::string& name, unsigned definedLength=std::numeric_limits<int>::max())
+  explicit Variable(double & address, const std::string & name, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
       m_size(definedLength),
@@ -103,7 +103,7 @@ public:
   {
   }
 
-  explicit Variable(int &address, const std::string& name, unsigned definedLength=std::numeric_limits<int>::max())
+  explicit Variable(int & address, const std::string & name, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(INTEGER),
       m_use(INDEPENDENT),
       m_size(definedLength),
@@ -114,29 +114,37 @@ public:
   {
   }
 
-  Variable &operator=(const double &value) {
-    if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
+  Variable &operator=(const double & value) {
+    if (m_size != 1 && m_size != std::numeric_limits<int>::max()) {
       std::stringstream error;
       error << "In analytic expression evaluator, invalid use of equal on multi-component array variable '"<<m_name<<"'.  ";
       throw std::runtime_error(error.str());
     }
-    if (m_type == INTEGER)
+
+    if (m_type == INTEGER) {
       *m_intPtr = static_cast<int>(value);
-    else if (m_type == DOUBLE)
+    }
+    else if (m_type == DOUBLE) {
       *m_doublePtr = value;
+    }
+
     return *this;
   }
 
-  Variable &operator=(const int &value) {
-    if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
+  Variable &operator=(const int & value) {
+    if (m_size != 1 && m_size != std::numeric_limits<int>::max()) {
       std::stringstream error;
       error << "In analytic expression evaluator, invalid use of equal on multi-component variable '"<<m_name<<"'.  ";
       throw std::runtime_error(error.str());
     }
-    if (m_type == INTEGER)
+
+    if (m_type == INTEGER) {
       *m_intPtr = value;
-    else if (m_type == DOUBLE)
+    }
+    else if (m_type == DOUBLE) {
       *m_doublePtr = static_cast<double>(value);
+    }
+
     return *this;
   }
 
@@ -146,15 +154,11 @@ private:
 
 public:
 
-  void setDependent() {
-    m_use = DEPENDENT;
-  }
-  
-  bool isDependent() const {
-    return m_use == DEPENDENT;
-  }
+  void setDependent() { m_use = DEPENDENT; }
 
-  inline double& getArrayValue(int index, ArrayOffset offsetType) const {
+  bool isDependent() const { return m_use == DEPENDENT; }
+
+  inline double & getArrayValue(int index, ArrayOffset offsetType) const {
     if (m_type != DOUBLE) {
       std::stringstream error;
       error << "In analytic expression evaluator, only double arrays allowed for variable '"<<m_name<<"'.  ";
@@ -167,70 +171,71 @@ public:
       throw std::runtime_error(error.str());
     }
 
-    if(offsetType == ZERO_BASED_INDEX) {
-      if(index < 0 || (index+1) > m_size) {
+    if (offsetType == ZERO_BASED_INDEX) {
+      if (index < 0 || (index+1) > m_size) {
         std::stringstream error;
         error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
         error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 0 to '"<<m_size-1<<"'.  ";
         throw std::runtime_error(error.str());
       }
       return m_doublePtr[index];
-    } else if (offsetType == ONE_BASED_INDEX) {
-      if(index < 1 || (index) > m_size) {
+    }
+    else if (offsetType == ONE_BASED_INDEX) {
+      if (index < 1 || (index) > m_size) {
         std::stringstream error;
         error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
         error << "Attempting to access invalid component '"<<index<<"' in analytic function.  Valid components are 1 to '"<<m_size<<"'.  ";
         throw std::runtime_error(error.str());
       }
       return m_doublePtr[index-1];
-    } else {
+    }
+    else {
       std::stringstream error;
       error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
       error << "Invalid internal state of expression evaluator";
       throw std::runtime_error(error.str());
     }
-  } 
+  }
 
-  inline Variable &bind(double &value_ref, int definedLength=std::numeric_limits<int>::max()) {
+  inline Variable & bind(double & value_ref, int definedLength=std::numeric_limits<int>::max()) {
     m_type = DOUBLE;
     m_doublePtr = &value_ref;
     m_size = definedLength;
     return *this;
   }
 
-  inline Variable &bind(int &value_ref, int definedLength=std::numeric_limits<int>::max()) {
+  inline Variable & bind(int & value_ref, int definedLength=std::numeric_limits<int>::max()) {
     m_type = INTEGER;
     m_intPtr = &value_ref;
     m_size = definedLength;
     return *this;
   }
 
-  inline Variable &unbind() {
+  inline Variable & unbind() {
     switch (m_type) {
-    case DOUBLE:
+    case DOUBLE: {
       m_doublePtr = &m_doubleValue;
       m_size = 1;
       m_doubleValue = 0.0;
       break;
-    case INTEGER:
+    }
+    case INTEGER: {
       m_intPtr = &m_intValue;
       m_size = 1;
       m_intValue = 0;
       break;
     }
+    }
     return *this;
   }
 
-  double* getAddress() const {
-    return m_doublePtr;
-  }
-  int getLength() const {
-    return m_size;
-  }
+  double * getAddress() const { return m_doublePtr; }
+
+  KOKKOS_FUNCTION
+  int getLength() const { return m_size; }
 
   inline double getValue() const {
-
-    if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
+    if (m_size != 1 && m_size != std::numeric_limits<int>::max()) {
       std::stringstream error;
       error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
       error << "Invalid direct access of array variable, must access by index";
@@ -250,182 +255,33 @@ public:
     throw std::runtime_error(error.str());
   }
 
+  KOKKOS_FUNCTION
   int get_index() { return m_index; }
 
   void set_index(int index) { m_index = index; }
 
+  KOKKOS_FUNCTION
   Type get_type() { return m_type; }
 
 private:
-  Type	        m_type;
-  Use           m_use;
-  int           m_size;  
+  Type m_type;
+  Use m_use;
+  int m_size;
+
   union {
-    double *	m_doublePtr;
-    int *	m_intPtr;
+    double * m_doublePtr;
+    int * m_intPtr;
   };
+
   union {
-    double	m_doubleValue;
-    int	        m_intValue;
+    double m_doubleValue;
+    int m_intValue;
   };
-  const std::string  m_name;
+
+  const std::string m_name;
   int m_index;
 };
 
-class DeviceVariable
-{
-  
-public:
-
-  KOKKOS_INLINE_FUNCTION
-  DeviceVariable()
-    : m_type(Variable::Type::DOUBLE),
-      m_size(1),
-      m_stride(1),
-      m_doublePtr(&m_doubleValue),
-      m_doubleValue(0.0)
-  { 
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  DeviceVariable(const Variable::Type variableType, int variableSize, int variableStride=1) 
-    : m_type(variableType),
-      m_size(variableSize),
-      m_stride(variableStride)
-  {
-    switch (variableType) {
-    case Variable::Type::DOUBLE:
-      m_doublePtr = &m_doubleValue;
-      m_doubleValue = 0.0;
-      break;
-    case Variable::Type::INTEGER:
-      m_intPtr = &m_intValue;
-      m_intValue = 0;
-      break;
-    }
-  }
-
-  KOKKOS_DEFAULTED_FUNCTION
-  DeviceVariable(const DeviceVariable& deviceVariable) = default;
-
-  KOKKOS_DEFAULTED_FUNCTION
-  ~DeviceVariable() = default;
-
-  KOKKOS_INLINE_FUNCTION
-  DeviceVariable& operator=(const DeviceVariable& deviceVariable)
-  {
-    m_type = deviceVariable.m_type;
-    m_size = deviceVariable.m_size;
-    m_stride = deviceVariable.m_stride;
-
-    switch (m_type) {
-    case Variable::Type::DOUBLE:
-      m_doublePtr = &m_doubleValue;
-      m_doubleValue = deviceVariable.m_doubleValue;
-      break;
-    case Variable::Type::INTEGER:
-      m_intPtr = &m_intValue;
-      m_intValue = deviceVariable.m_intValue;
-      break;
-    }
-    return *this;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  double& getArrayValue(int index, Variable::ArrayOffset arrayOffsetType) const {
-
-    NGP_ThrowRequireMsg(m_type == Variable::DOUBLE, "Only double arrays are allowed.");
-
-    NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Unbound array variable.");
-
-    if (arrayOffsetType == Variable::ArrayOffset::ZERO_BASED_INDEX) {
-
-      NGP_ThrowRequireMsg(index >= 0, "Provided variable array index is less than 0.");
-      NGP_ThrowRequireMsg(index < m_size, "Provided variable array index exceeds array upper bound.");
-
-      return m_doublePtr[index*m_stride];
-    } 
-    else if (arrayOffsetType == Variable::ArrayOffset::ONE_BASED_INDEX) {
-
-      NGP_ThrowRequireMsg(index >= 1, "Provided variable array index is less than 1.");
-      NGP_ThrowRequireMsg(index <= m_size, "Provided variable array index exceeds array upper bound.");
-
-      return m_doublePtr[(index-1)*m_stride];
-    } 
-    else {
-      NGP_ThrowErrorMsg("Invalid ArrayOffsetType.")
-      return m_doublePtr[0];
-    }
-  } 
-
-  KOKKOS_INLINE_FUNCTION
-  double getValue() const {
-    NGP_ThrowRequireMsg(m_size == 1, "getValue Cannot access vector variable as a scalar.");
-
-    switch (m_type) {
-    case Variable::DOUBLE:
-      NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Unbound double variable.");
-      return *m_doublePtr;
-    case Variable::INTEGER:
-      NGP_ThrowRequireMsg(m_intPtr != nullptr, "Unbound integer variable.");
-      return *m_intPtr;
-    }
-
-    NGP_ThrowErrorMsg("Invalid variable type.");
-    return *m_doublePtr;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void bind(double& value_ref, int definedLength, int strideLength) {
-    m_type = Variable::DOUBLE;
-    m_doublePtr = &value_ref;
-    m_size = definedLength;
-    m_stride = strideLength;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void bind(int& value_ref, int definedLength, int strideLength) {
-    m_type = Variable::INTEGER;
-    m_intPtr = &value_ref;
-    m_size = definedLength;
-    m_stride = strideLength;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  DeviceVariable& operator=(const double& value) {
-    NGP_ThrowRequireMsg(m_size == 1, "double = Cannot access vector variable as a scalar.");
-
-    if (m_type == Variable::INTEGER)
-      *m_intPtr = static_cast<int>(value);
-    else if (m_type == Variable::DOUBLE)
-      *m_doublePtr = value;
-    return *this;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  DeviceVariable& operator=(const int& value) {
-    NGP_ThrowRequireMsg(m_size == 1, "int = Cannot access vector variable as a scalar.");
-
-    if (m_type == Variable::INTEGER)
-      *m_intPtr = value;
-    else if (m_type == Variable::DOUBLE)
-      *m_doublePtr = static_cast<double>(value);
-    return *this;
-  }
-
-private:
-  Variable::Type m_type;                 
-  int            m_size;
-  int            m_stride;                 
-  union {
-    double *	m_doublePtr;		
-    int *	m_intPtr;		
-  };
-  union {
-    double	m_doubleValue;
-    int	        m_intValue;
-  };
-};
 
 class VariableMap : public std::map<std::string, std::shared_ptr<Variable>, LessCase>
 {
@@ -460,15 +316,14 @@ private:
 public:
   static Resolver &getDefaultResolver();
 
-  VariableMap(Resolver &resolver = getDefaultResolver())
+  VariableMap(Resolver & resolver = getDefaultResolver())
     : std::map<std::string, std::shared_ptr<Variable>, LessCase>(),
       m_resolver(resolver)
   {}
 
-  virtual ~VariableMap() {
-  }
+  virtual ~VariableMap() {}
 
-  Variable* operator[](const std::string &s) {
+  Variable* operator[](const std::string & s) {
     std::pair<iterator,bool> i = insert(std::pair<const std::string, std::shared_ptr<Variable>>(s, std::shared_ptr<Variable>(nullptr)));
     if (i.second) {
       (*i.first).second = std::make_shared<Variable>(s);
@@ -476,12 +331,10 @@ public:
     return (*i.first).second.get();
   }
 
-  Resolver &getResolver() {
-    return m_resolver;
-  }
+  Resolver & getResolver() { return m_resolver; }
 
 private:
-  Resolver &		m_resolver;
+  Resolver & m_resolver;
 };
 
 } // namespace expreval

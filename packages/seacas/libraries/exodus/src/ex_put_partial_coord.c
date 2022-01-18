@@ -140,7 +140,7 @@ int ex_put_partial_coord(int exoid, int64_t start_node_num, int64_t num_nodes, c
   /* write out the coordinates  */
   for (i = 0; i < num_dim; i++) {
     const void *coor  = NULL;
-    char *      which = NULL;
+    char       *which = NULL;
 
     start[0] = start_node_num;
     count[0] = num_nodes;
