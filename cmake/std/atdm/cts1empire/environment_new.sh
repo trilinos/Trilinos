@@ -55,8 +55,8 @@ fi
 export OMPI_CXX=`which icpc`
 export OMPI_CC=`which icc`
 export OMPI_FC=`which ifort`
-export ATDM_CONFIG_LAPACK_LIBS="-mkl"
-export ATDM_CONFIG_BLAS_LIBS="-mkl"
+export ATDM_CONFIG_LAPACK_LIBS="-mkl -L${MKL_LIB}"
+export ATDM_CONFIG_BLAS_LIBS="-mkl -L${MKL_LIB}"
 
 export BOOST_ROOT=${sparc_tpl_base}/boost-1.72.0/00000000/${sparc_tpl_ext}
 export HDF5_ROOT=${sparc_tpl_base}/hdf5-1.10.5/00000000/${sparc_tpl_mpi_ext}
