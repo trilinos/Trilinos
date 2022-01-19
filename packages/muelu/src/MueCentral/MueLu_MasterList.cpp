@@ -275,6 +275,7 @@ namespace MueLu {
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"nullspace: calculate rotations\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"nullspace: suppress dimension check\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"restriction: scale nullspace\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"use kokkos refactor\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"synchronize factory timers\" type=\"bool\" value=\"false\"/>"
@@ -760,6 +761,8 @@ namespace MueLu {
          ("transpose: use implicit","transpose: use implicit")
       
          ("nullspace: calculate rotations","nullspace: calculate rotations")
+      
+         ("nullspace: suppress dimension check","nullspace: suppress dimension check")
       
          ("restriction: scale nullspace","restriction: scale nullspace")
       
