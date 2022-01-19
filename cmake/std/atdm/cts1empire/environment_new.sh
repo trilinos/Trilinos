@@ -35,8 +35,15 @@ fi
 sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.2_OPENMPI-4.0.1" ]; then
-    module load intel/18.0.2.199
-    module load mkl/18.0.5.274 # Needed to address defect in MKL (#5316, #3992, #3914)
+    module load intel/21.3.0
+    module load mkl/21.3.0
+    module load openmpi-intel/4.0
+
+    sparc_tpl_ext=cts1-bdw_intel-19.0.5
+    sparc_tpl_mpi_ext=cts1-bdw_intel-19.0.5_openmpi-4.0.1
+
+    export PATH=/usr/tce/packages/gcc/gcc-6.1.0/bin:${PATH}
+    export LD_LIBRARY_PATH=/usr/tce/packages/gcc/gcc-6.1.0/lib64:${LD_LIBRARY_PATH}
     module load openmpi-intel/4.0
 
     sparc_tpl_ext=cts1-bdw_intel-19.0.5
