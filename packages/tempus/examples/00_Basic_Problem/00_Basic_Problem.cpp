@@ -164,7 +164,7 @@ using namespace std;
  *  to the next timestep and increment the timestep index.
  *  @code
  *    // Test if solution is passing.
- *    if ( isnan(x_n[0]) || isnan(x_n[1]) ) {
+ *    if ( std::isnan(x_n[0]) || std::isnan(x_n[1]) ) {
  *      passing = false;
  *    } else {
  *      // Promote to next step (n -> n+1).
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
       x_np1[1] = x_n[1] + dt*xDot_n[1];
 
       // Test if solution is passing.
-      if ( isnan(x_n[0]) || isnan(x_n[1]) ) {
+      if ( std::isnan(x_n[0]) || std::isnan(x_n[1]) ) {
         passing = false;
       } else {
         // Promote to next step (n -> n+1).
