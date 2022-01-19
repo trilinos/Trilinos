@@ -228,7 +228,8 @@ typedef Traits::Residual ResidualType;
 typedef Traits::Jacobian JacobianType;
 
 UNIT_TEST_GROUP(ResidualType)
-UNIT_TEST_GROUP(JacobianType)
+// Commented out to avoid ICE in Intel 2021.3.0
+//UNIT_TEST_GROUP(JacobianType)
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
 typedef Traits::Hessian HessianType;
