@@ -196,9 +196,23 @@ struct SCAL<ViewType, CoefficientType, LayoutType, IndexType, 1> {
   run (const CoefficientType& alpha, const ViewType& x)
   {
     const IndexType numRows = static_cast<IndexType> (x.extent (0));
-    // BLAS _SCAL doesn't check whether alpha is 0.
-    for (IndexType i = 0; i < numRows; ++i) {
-      x(i) = alpha * x(i);
+
+    auto x_ptr(x.data()); 
+    if (x.span_is_contiguous()) {
+      /// layout is same with unit strides
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+      for (IndexType i = 0; i < numRows; ++i) 
+        x_ptr[i] = alpha * x_ptr[i];
+    } else {
+      /// general case
+      const IndexType xs(x.stride(0));
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+      for (IndexType i = 0; i < numRows; ++i) 
+        x_ptr[i*xs] = alpha * x_ptr[i*xs];
     }
   }
 };
@@ -217,34 +231,32 @@ struct SCAL<ViewType, CoefficientType, LayoutType, IndexType, 2> {
     const IndexType numRows = static_cast<IndexType> (A.extent (0));
     const IndexType numCols = static_cast<IndexType> (A.extent (1));
 
-    // BLAS _SCAL doesn't check whether alpha is 0.
-    for (IndexType i = 0; i < numRows; ++i) {
-      for (IndexType j = 0; j < numCols; ++j) {
-        A(i,j) = alpha * A(i,j);
+    const auto  A_ptr(A.data()); 
+    if (A.span_is_contiguous()) {
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+      for (IndexType ij = 0; ij < (numRows*numCols); ++ij) 
+        A_ptr[ij] = alpha * A_ptr[ij];
+    } else {
+      const IndexType as0(A.stride(0)), as1(A.stride(1));
+      if (as0 > as1) {  /// strides are compile-time information
+        /// row major 
+        for (IndexType i = 0; i < numRows; ++i) 
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+          for (IndexType j = 0; j < numCols; ++j) 
+            A_ptr[i*as0+j*as1] = alpha * A_ptr[i*as0+j*as1];
+      } else {
+        /// col major
+        for (IndexType j = 0; j < numCols; ++j) 
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+          for (IndexType i = 0; i < numRows; ++i) 
+            A_ptr[i*as0+j*as1] = alpha * A_ptr[i*as0+j*as1];
       }
-    }
-  }
-};
-
-/// \brief Implementation of Tpetra::SCAL function, for
-///   ViewType rank 2 (i.e., a matrix), and LayoutType = LayoutRight.
-///
-/// For LayoutRight (or LayoutLeft) input, we can flatten indexing
-/// from 2-D to 1-D.
-template<class ViewType,
-         class CoefficientType,
-         class IndexType>
-struct SCAL<ViewType, CoefficientType, Kokkos::LayoutRight, IndexType, 2> {
-  /// \brief A := alpha*A (rank-2 A, i.e., a matrix)
-  static KOKKOS_INLINE_FUNCTION void
-  run (const CoefficientType& alpha, const ViewType& A)
-  {
-    const IndexType N = A.size ();
-    typedef typename std::decay<decltype (A(0,0)) >::type scalar_type;
-    scalar_type* const A_raw = A.data ();
-
-    for (IndexType i = 0; i < N; ++i) {
-      A_raw[i] = alpha * A_raw[i];
     }
   }
 };
@@ -275,8 +287,22 @@ struct FILL<ViewType, InputType, LayoutType, IndexType, 1> {
   run (const ViewType& x, const InputType& val)
   {
     const IndexType numRows = static_cast<IndexType> (x.extent (0));
-    for (IndexType i = 0; i < numRows; ++i) {
-      x(i) = val;
+    auto x_ptr(x.data());
+    const IndexType xs(x.stride(0));
+    if (xs == 1) {
+      /// contiguous vector
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+      for (IndexType i = 0; i < numRows; ++i) 
+        x_ptr[i] = val;
+    } else {
+      /// general case
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+      for (IndexType i = 0; i < numRows; ++i) 
+        x_ptr[i*xs] = val;      
     }
   }
 };
@@ -340,8 +366,24 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, Ind
 
     const IndexType numRows = static_cast<IndexType> (y.extent (0));
     if (alpha != ArithTraits<CoefficientType>::zero ()) {
-      for (IndexType i = 0; i < numRows; ++i) {
-        y(i) += alpha * x(i);
+      const auto  x_ptr(x.data()); 
+      auto        y_ptr(y.data()); 
+
+      if (x.span_is_contiguous() && y.span_is_contiguous()) {
+        /// layout is same with unit strides
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+        for (IndexType i = 0; i < numRows; ++i) 
+          y_ptr[i] += alpha * x_ptr[i];
+      } else {
+        /// general case
+        const IndexType xs(x.stride(0)), ys(y.stride(0));
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+        for (IndexType i = 0; i < numRows; ++i) 
+          y_ptr[i*ys] += alpha * x_ptr[i*xs];
       }
     }
   }
@@ -363,81 +405,41 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, Ind
        const ViewType2& Y)
   {
     using Kokkos::Details::ArithTraits;
-    static_assert (ViewType1::rank == ViewType2::rank,
+    static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AXPY: X and Y must have the same rank.");
     const IndexType numRows = static_cast<IndexType> (Y.extent (0));
     const IndexType numCols = static_cast<IndexType> (Y.extent (1));
 
     if (alpha != ArithTraits<CoefficientType>::zero ()) {
-      for (IndexType i = 0; i < numRows; ++i) {
-        for (IndexType j = 0; j < numCols; ++j) {
-          Y(i,j) += alpha * X(i,j);
+      const auto  X_ptr(X.data()); const IndexType xs0(X.stride(0));
+      auto        Y_ptr(Y.data()); const IndexType ys0(Y.stride(0));
+
+      if (X.span_is_contiguous() && Y.span_is_contiguous() && xs0 == ys0) { 
+        /// layout is same
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+        for (IndexType ij = 0; ij < (numRows*numCols); ++ij) 
+          Y_ptr[ij] += alpha * X_ptr[ij];
+      } else {
+        const IndexType xs1(X.stride(1)), ys1(Y.stride(1));
+        if (xs0 > xs1) {  /// strides are compile-time information
+          /// row major 
+          for (IndexType i = 0; i < numRows; ++i) 
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+            for (IndexType j = 0; j < numCols; ++j) 
+              Y_ptr[i*ys0+j*ys1] += alpha * X_ptr[i*xs0+j*xs1];
+        } else {
+          /// col major
+          for (IndexType j = 0; j < numCols; ++j) 
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+            for (IndexType i = 0; i < numRows; ++i) 
+              Y_ptr[i*ys0+j*ys1] += alpha * X_ptr[i*xs0+j*xs1];
         }
-      }
-    }
-  }
-};
-
-/// \brief Implementation of Tpetra::AXPY function, for
-///   ViewType1 and ViewType2 rank 2 (i.e., matrices), when both
-///   ViewType1 and ViewType2 have LayoutRight.
-template<class CoefficientType,
-         class ViewType1,
-         class ViewType2,
-         class IndexType>
-struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::LayoutRight, IndexType, 2> {
-  /// \brief Y := Y + alpha*X (rank-2 X and Y, i.e., matrices)
-  static KOKKOS_INLINE_FUNCTION void
-  run (const CoefficientType& alpha,
-       const ViewType1& X,
-       const ViewType2& Y)
-  {
-    using Kokkos::Details::ArithTraits;
-    static_assert (static_cast<int> (ViewType1::rank) ==
-                   static_cast<int> (ViewType2::rank),
-                   "AXPY: X and Y must have the same rank.");
-    typedef typename std::decay<decltype (X(0,0)) >::type SX;
-    typedef typename std::decay<decltype (Y(0,0)) >::type SY;
-
-    const IndexType N = static_cast<IndexType> (Y.size ());
-    const SX* const X_raw = X.data ();
-    SY* const Y_raw = Y.data ();
-
-    if (alpha != ArithTraits<CoefficientType>::zero ()) {
-      for (IndexType i = 0; i < N; ++i) {
-        Y_raw[i] += alpha * X_raw[i];
-      }
-    }
-  }
-};
-
-/// \brief Implementation of Tpetra::AXPY function, for
-///   ViewType1 and ViewType2 rank 2 (i.e., matrices), when both
-///   ViewType1 and ViewType2 have LayoutLeft.
-template<class CoefficientType,
-         class ViewType1,
-         class ViewType2,
-         class IndexType>
-struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutLeft, Kokkos::LayoutLeft, IndexType, 2> {
-  /// \brief Y := Y + alpha*X (rank-2 X and Y, i.e., matrices)
-  static KOKKOS_INLINE_FUNCTION void
-  run (const CoefficientType& alpha,
-       const ViewType1& X,
-       const ViewType2& Y)
-  {
-    using Kokkos::Details::ArithTraits;
-    static_assert (ViewType1::rank == ViewType2::rank,
-                   "AXPY: X and Y must have the same rank.");
-    typedef typename std::decay<decltype (X(0,0)) >::type SX;
-    typedef typename std::decay<decltype (Y(0,0)) >::type SY;
-
-    const IndexType N = static_cast<IndexType> (Y.size ());
-    const SX* const X_raw = X.data ();
-    SY* const Y_raw = Y.data ();
-
-    if (alpha != ArithTraits<CoefficientType>::zero ()) {
-      for (IndexType i = 0; i < N; ++i) {
-        Y_raw[i] += alpha * X_raw[i];
       }
     }
   }
@@ -471,8 +473,24 @@ struct COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 1> {
   run (const ViewType1& x, const ViewType2& y)
   {
     const IndexType numRows = static_cast<IndexType> (x.extent (0));
-    for (IndexType i = 0; i < numRows; ++i) {
-      y(i) = x(i);
+    const auto  x_ptr(x.data()); 
+    auto        y_ptr(y.data()); 
+
+    if (x.span_is_contiguous() && y.span_is_contiguous()) {
+      /// layout is same with unit strides
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+      for (IndexType i = 0; i < numRows; ++i) 
+        y_ptr[i] = x_ptr[i];
+    } else {
+      /// general case
+      const IndexType xs(x.stride(0)), ys(y.stride(0));
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+      for (IndexType i = 0; i < numRows; ++i) 
+        y_ptr[i*ys] = x_ptr[i*xs];
     }
   }
 };
@@ -491,66 +509,40 @@ struct COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 2> {
   {
     const IndexType numRows = static_cast<IndexType> (Y.extent (0));
     const IndexType numCols = static_cast<IndexType> (Y.extent (1));
+    
+    const auto  X_ptr(X.data()); const IndexType xs0(X.stride(0)); 
+    auto        Y_ptr(Y.data()); const IndexType ys0(Y.stride(0));
 
-    // BLAS _SCAL doesn't check whether alpha is 0.
-    for (IndexType i = 0; i < numRows; ++i) {
-      for (IndexType j = 0; j < numCols; ++j) {
-        Y(i,j) = X(i,j);
+    if (X.span_is_contiguous() && Y.span_is_contiguous() && xs0 == ys0) { 
+      /// layout is same
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+      for (IndexType ij = 0; ij < (numRows*numCols); ++ij) 
+        Y_ptr[ij] = X_ptr[ij];
+    } else {
+      /// general case
+      const IndexType xs1(X.stride(1)), ys1(Y.stride(1));
+      if (xs0 > xs1) {  /// strides are compile-time information
+        /// row major 
+        for (IndexType i = 0; i < numRows; ++i) 
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+          for (IndexType j = 0; j < numCols; ++j) 
+            Y_ptr[i*ys0+j*ys1] = X_ptr[i*xs0+j*xs1];
+      } else {
+        /// col major
+        for (IndexType j = 0; j < numCols; ++j) 
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+          for (IndexType i = 0; i < numRows; ++i) 
+            Y_ptr[i*ys0+j*ys1] = X_ptr[i*xs0+j*xs1];
       }
     }
   }
 };
-
-/// \brief Implementation of Tpetra::COPY function, for
-///   ViewType1 and ViewType2 rank 2 (i.e., matrices), where both have
-///   LayoutRight (row-major order, with contiguous storage).
-template<class ViewType1,
-         class ViewType2,
-         class IndexType>
-struct COPY<ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::LayoutRight, IndexType, 2> {
-  /// \brief Y := X (rank-2 X and Y, i.e., matrices)
-  static KOKKOS_INLINE_FUNCTION void
-  run (const ViewType1& X, const ViewType2& Y)
-  {
-    typedef typename std::decay<decltype (X(0,0)) >::type SX;
-    typedef typename std::decay<decltype (Y(0,0)) >::type SY;
-
-    const IndexType N = static_cast<IndexType> (Y.size ());
-    const SX* const X_raw = X.data ();
-    SY* const Y_raw = Y.data ();
-
-    // BLAS _SCAL doesn't check whether alpha is 0.
-    for (IndexType i = 0; i < N; ++i) {
-      Y_raw[i] = X_raw[i];
-    }
-  }
-};
-
-/// \brief Implementation of Tpetra::COPY function, for
-///   ViewType1 and ViewType2 rank 2 (i.e., matrices), where both have
-///   LayoutLeft (row-major order, with contiguous storage).
-template<class ViewType1,
-         class ViewType2,
-         class IndexType>
-struct COPY<ViewType1, ViewType2, Kokkos::LayoutLeft, Kokkos::LayoutLeft, IndexType, 2> {
-  /// \brief Y := X (rank-2 X and Y, i.e., matrices)
-  static KOKKOS_INLINE_FUNCTION void
-  run (const ViewType1& X, const ViewType2& Y)
-  {
-    typedef typename std::decay<decltype (X(0,0)) >::type SX;
-    typedef typename std::decay<decltype (Y(0,0)) >::type SY;
-
-    const IndexType N = static_cast<IndexType> (Y.size ());
-    const SX* const X_raw = X.data ();
-    SY* const Y_raw = Y.data ();
-
-    // BLAS _SCAL doesn't check whether alpha is 0.
-    for (IndexType i = 0; i < N; ++i) {
-      Y_raw[i] = X_raw[i];
-    }
-  }
-};
-
 
 template<class VecType1,
          class BlkType,
@@ -570,83 +562,47 @@ struct GEMV {
     static_assert (VecType1::rank == 1, "GEMV: VecType1 must have rank 1.");
     static_assert (BlkType::rank == 2, "GEMV: BlkType must have rank 2.");
     static_assert (VecType2::rank == 1, "GEMV: VecType2 must have rank 1.");
-    typedef typename std::decay<decltype (y(0)) >::type y_elt_type;
+
+    using A_value_type = typename std::decay<decltype (A(0,0)) >::type;
+    using x_value_type = typename std::decay<decltype (x(0)) >::type;
+    using y_value_type = typename std::decay<decltype (y(0)) >::type;
 
     const IndexType numRows = static_cast<IndexType> (A.extent (0));
     const IndexType numCols = static_cast<IndexType> (A.extent (1));
+    
+    const A_value_type *__restrict__ A_ptr(A.data()); const IndexType as0(A.stride(0)), as1(A.stride(1)); 
+    const x_value_type *__restrict__ x_ptr(x.data()); const IndexType xs0(x.stride(0)); 
+    y_value_type *__restrict__ y_ptr(y.data()); const IndexType ys0(y.stride(0));
 
-    for (IndexType i = 0; i < numRows; ++i) {
-      y_elt_type y_i = y(i);
-      for (IndexType j = 0; j < numCols; ++j) {
-        y_i += alpha * A(i,j) * x(j);
+    if (A.span_is_contiguous() && xs0 == 1 && ys0 == 1) {
+      /// unit stride vectors and A is contiguous
+      if (as0 == 1) { /// col major
+        for (IndexType j=0;j<numCols;++j) {
+          const x_value_type x_at_j = alpha*x_ptr[j];
+          const A_value_type *__restrict__ A_at_j = A_ptr + j*as1;
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+          for (IndexType i=0;i<numRows;++i) 
+            y_ptr[i] += A_at_j[i] * x_at_j;
+        }
+      } else {
+        for (IndexType i=0;i<numRows;++i) {
+          y_value_type y_at_i(0);
+          const auto A_at_i = A_ptr + i*as0;
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#pragma ivdep
+#endif
+          for (IndexType j=0;j<numCols;++j) 
+            y_at_i += A_at_i[j] * x[j];
+          y_ptr[i] += alpha*y_at_i;
+        }          
       }
-      y(i) = y_i;
-    }
-  }
-};
-
-template<class VecType1,
-         class BlkType,
-         class VecType2,
-         class CoeffType,
-         class IndexType>
-struct GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType,
-            Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight>
-{
-  static KOKKOS_INLINE_FUNCTION void
-  run (const CoeffType& alpha,
-       const BlkType& A,
-       const VecType1& x,
-       const VecType2& y)
-  {
-    static_assert (VecType1::rank == 1, "GEMV: VecType1 must have rank 1.");
-    static_assert (BlkType::rank == 2, "GEMV: BlkType must have rank 2.");
-    static_assert (VecType2::rank == 1, "GEMV: VecType2 must have rank 1.");
-    typedef typename std::decay<decltype (y(0)) >::type y_elt_type;
-    typedef typename std::decay<decltype (A(0,0)) >::type A_elt_type;
-
-    const IndexType numRows = static_cast<IndexType> (A.extent (0));
-    const IndexType numCols = static_cast<IndexType> (A.extent (1));
-    const A_elt_type* const A_raw = A.data ();
-
-    for (IndexType i = 0; i < numRows; ++i) {
-      y_elt_type y_i = y(i);
-      const A_elt_type* const A_i = A_raw + i*numCols;
-      for (IndexType j = 0; j < numCols; ++j) {
-        y_i += alpha * A_i[j] * x(j);
-      }
-      y(i) = y_i;
-    }
-  }
-};
-
-template<class VecType1,
-         class BlkType,
-         class VecType2,
-         class CoeffType,
-         class IndexType>
-struct GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType,
-            Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft>
-{
-  static KOKKOS_INLINE_FUNCTION void
-  run (const CoeffType& alpha,
-       const BlkType& A,
-       const VecType1& x,
-       const VecType2& y)
-  {
-    static_assert (VecType1::rank == 1, "GEMV: VecType1 must have rank 1.");
-    static_assert (BlkType::rank == 2, "GEMV: BlkType must have rank 2.");
-    static_assert (VecType2::rank == 1, "GEMV: VecType2 must have rank 1.");
-    typedef typename std::decay<decltype (A(0,0)) >::type A_elt_type;
-
-    const A_elt_type* const A_raw = A.data ();
-    const IndexType numRows = static_cast<IndexType> (A.extent (0));
-    const IndexType numCols = static_cast<IndexType> (A.extent (1));
-    for (IndexType j = 0; j < numCols; ++j) {
-      const A_elt_type* const A_j = A_raw + j*numRows;
-      for (IndexType i = 0; i < numRows; ++i) {
-        y(i) += alpha * A_j[i] * x(i);
-      }
+    } else {
+      /// general case
+      for (IndexType i = 0; i < numRows; ++i) 
+        for (IndexType j = 0; j < numCols; ++j) 
+          y(i) += alpha * A(i,j) * x(j);
     }
   }
 };

@@ -127,6 +127,11 @@ namespace Tpetra {
 /// }
 /// \endcode
 ///
+
+namespace Impl {
+  using BlockCrsMatrixLittleBlockArrayLayout = Kokkos::LayoutLeft;
+};
+
 template<class Scalar,
          class LO,
          class GO,
@@ -185,7 +190,7 @@ public:
 
   //! The type used to access nonconst matrix blocks.
   typedef Kokkos::View<impl_scalar_type**,
-                       Kokkos::LayoutLeft,
+                       Impl::BlockCrsMatrixLittleBlockArrayLayout,
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_block_type;
@@ -193,7 +198,7 @@ public:
 
   //! The type used to access const matrix blocks.
   typedef Kokkos::View<const impl_scalar_type**,
-                       Kokkos::LayoutLeft,
+                       Impl::BlockCrsMatrixLittleBlockArrayLayout,
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           const_little_block_type;
