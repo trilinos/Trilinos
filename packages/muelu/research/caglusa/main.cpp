@@ -135,6 +135,24 @@ namespace Tpetra {
         TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*transferMatrices_[i]->getRangeMap()));
       }
 
+      RCP<Teuchos::ParameterList> distParams = rcp(new Teuchos::ParameterList());
+      distParams->set("Send type", "Isend");
+      {
+        RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > nearFieldImporter = nearField_->getGraph()->getImporter();
+        nearFieldImporter->getDistributor().setParameterList(distParams);
+        auto revDistor = nearFieldImporter->getDistributor().getReverse(false);
+        if (!revDistor.is_null())
+          revDistor->setParameterList(distParams);
+      }
+
+      {
+        RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > kernelApproximationsImporter = kernelApproximations_->getGraph()->getImporter();
+        kernelApproximationsImporter->getDistributor().setParameterList(distParams);
+        auto revDistor = kernelApproximationsImporter->getDistributor().getReverse(false);
+        if (!revDistor.is_null())
+          revDistor->setParameterList(distParams);
+      }
+
       allocateMemory(1);
     }
 
@@ -159,12 +177,27 @@ namespace Tpetra {
                Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
                Scalar beta  = Teuchos::ScalarTraits<Scalar>::zero()) const {
       const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
       bool flip = true;
 
       allocateMemory(X.getNumVectors());
 
-      // near field
-      nearField_->apply(X, Y, mode, alpha, beta);
+      RCP<vec_type> X_colmap, Y_colmap;
+      RCP<vec_type> coefficients_colmap, coefficients2_colmap;
+
+      // near field - part 1
+      RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > nearFieldImporter = nearField_->getGraph()->getImporter();
+      {
+        if (mode == Teuchos::NO_TRANS) {
+          X_colmap = nearField_->getColumnMapMultiVector(X, true);
+          X_colmap->beginImport(X, *nearFieldImporter, INSERT);
+        } else if (mode == Teuchos::TRANS) {
+          Y_colmap = nearField_->getColumnMapMultiVector(Y, true);
+          nearField_->localApply(X, *Y_colmap, mode, alpha, zero);
+          Y.scale (beta);
+          Y.beginExport(*Y_colmap, *nearFieldImporter, ADD_ASSIGN);
+        }
+      }
 
       // upward pass
       {
@@ -182,12 +215,60 @@ namespace Tpetra {
           }
       }
 
-      // far field interactions
+      // far field interactions - part 1
       {
-        if (flip)
-          kernelApproximations_->apply(*coefficients_, *coefficients2_, mode, alpha);
-        else
-          kernelApproximations_->apply(*coefficients2_, *coefficients_, mode, alpha);
+        RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > kernelApproximationsImporter = kernelApproximations_->getGraph()->getImporter();
+        if (flip) {
+          if (mode == Teuchos::NO_TRANS) {
+            coefficients_colmap = kernelApproximations_->getColumnMapMultiVector(*coefficients_, true);
+            coefficients_colmap->beginImport(*coefficients_, *kernelApproximationsImporter, INSERT);
+          } else if (mode == Teuchos::TRANS) {
+            coefficients2_colmap = kernelApproximations_->getColumnMapMultiVector(*coefficients2_, true);
+            kernelApproximations_->localApply(*coefficients_, *coefficients2_colmap, mode, alpha);
+            coefficients2_->putScalar(zero);
+            coefficients2_->beginExport(*coefficients2_colmap, *kernelApproximationsImporter, ADD_ASSIGN);
+          }
+        } else {
+          if (mode == Teuchos::NO_TRANS) {
+            coefficients2_colmap = kernelApproximations_->getColumnMapMultiVector(*coefficients2_, true);
+            coefficients2_colmap->beginImport(*coefficients2_, *kernelApproximationsImporter, INSERT);
+          } else if (mode == Teuchos::TRANS) {
+            coefficients_colmap = kernelApproximations_->getColumnMapMultiVector(*coefficients_, true);
+            kernelApproximations_->localApply(*coefficients2_, *coefficients_colmap, mode, alpha);
+            coefficients_->putScalar(zero);
+            coefficients_->beginExport(*coefficients_colmap, *kernelApproximationsImporter, ADD_ASSIGN);
+          }
+        }
+      }
+
+      // near field - part 2
+      {
+        if (mode == Teuchos::NO_TRANS) {
+          X_colmap->endImport(X, *nearFieldImporter, INSERT);
+          nearField_->localApply(*X_colmap, Y, mode, alpha, beta);
+        } else if (mode == Teuchos::TRANS) {
+          Y.endExport(*Y_colmap, *nearFieldImporter, ADD_ASSIGN);
+        }
+      }
+
+      // far field interactions - part 2
+      {
+        RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > kernelApproximationsImporter = kernelApproximations_->getGraph()->getImporter();
+        if (flip) {
+          if (mode == Teuchos::NO_TRANS) {
+            coefficients_colmap->endImport(*coefficients_, *kernelApproximationsImporter, INSERT);
+            kernelApproximations_->localApply(*coefficients_colmap, *coefficients2_, mode, alpha);
+          } else if (mode == Teuchos::TRANS) {
+            coefficients2_->endExport(*coefficients2_colmap, *kernelApproximationsImporter, ADD_ASSIGN);
+          }
+        } else {
+          if (mode == Teuchos::NO_TRANS) {
+            coefficients2_colmap->endImport(*coefficients2_, *kernelApproximationsImporter, INSERT);
+            kernelApproximations_->localApply(*coefficients2_colmap, *coefficients_, mode, alpha);
+          } else if (mode == Teuchos::TRANS) {
+            coefficients_->endExport(*coefficients_colmap, *kernelApproximationsImporter, ADD_ASSIGN);
+          }
+        }
       }
 
       // downward pass
