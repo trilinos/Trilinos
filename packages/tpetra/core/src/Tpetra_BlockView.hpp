@@ -524,8 +524,6 @@ struct GEMV<VecType1,BlkType,VecType2,CoeffType,IndexType,true,Kokkos::LayoutLef
     const x_value_type *__restrict__ x_ptr(x.data()); 
     y_value_type *__restrict__ y_ptr(y.data()); 
 
-    const IndexType nc(numRows/4), nr(numRows%4); 
-
 #pragma unroll
     for (IndexType j=0;j<numCols;++j) {
       const x_value_type x_at_j = alpha*x_ptr[j];
