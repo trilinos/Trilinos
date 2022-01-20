@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.17.1)
 
-project(TribitsSimpleExApp
+project(TribitsOldSimpleExApp
   DESCRIPTION
-    "Example raw CMake project using packages installed from TribitsExampleProject"
+    "Example raw CMake project using packages installed from new or old TribitsExampleProject"
   VERSION 0.0.0
   LANGUAGES NONE  # Defined below after reading in compilers
   )
@@ -27,9 +27,26 @@ if (CMAKE_Fortran_COMPILER)
   enable_language(Fortran)
 endif()
 
+# Build a utility and link to libraries from SimpleCxx package
+add_executable(util util.cpp)
+if (${PROJECT_NAME}_USE_DEPRECATED_TARGETS)
+  target_link_libraries(util PRIVATE pws_b)
+  # NOTE: Above will generate a DEPRECATION warning for newer TriBITS
+  # versions!
+else()
+  target_link_libraries(util PRIVATE ${WithSubpackagesB_LIBRARIES})
+  # NOTE: Above is the correct way to link against libraries from an
+  # individual package for old and new TriBITS!
+endif()
+target_include_directories(util
+  PRIVATE ${SimpleCxx_INCLUDE_DIRS} ${SimpleCxx_TPL_INCLUDE_DIRS})
+
 # Build the APP and link to libraries from TribitsExProj packages
 add_executable(app app.cpp)
-target_link_libraries(app PRIVATE TribitsExProj::all_selected_libs)
+target_link_libraries(app
+  PRIVATE ${TribitsExProj_LIBRARIES})
+target_include_directories(app
+  PRIVATE ${TribitsExProj_INCLUDE_DIRS} ${TribitsExProj_TPL_INCLUDE_DIRS})
 
 # Set up tests
 
@@ -41,7 +58,10 @@ else()
   set(simpleCxxDeps "headeronlytpl")
 endif()
 
-add_test(app_test app)
+add_test(util_test util)
+set_tests_properties(util_test PROPERTIES
+  PASS_REGULAR_EXPRESSION "Util Deps: B A SimpleCxx ${simpleCxxDeps} SimpleCxx ${simpleCxxDeps}"
+  )
 
 add_test(app_test app)
 set_tests_properties(app_test PROPERTIES

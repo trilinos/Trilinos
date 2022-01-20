@@ -728,6 +728,8 @@ macro(tribits_package_create_all_libs_interface_library)
       endif()
     endforeach()
     #print_var(packageLibsInAllLibsList)
+    global_set(${PACKAGE_NAME}_EXPORTED_PACKAGE_LIBS_NAMES
+      ${packageLibsInAllLibsList})
 
     # Create the ${PACKAGE_NAME}_all_libs INTERFACE interface target
     add_library(${PACKAGE_NAME}_all_libs INTERFACE)

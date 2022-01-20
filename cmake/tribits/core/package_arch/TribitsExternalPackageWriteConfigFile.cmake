@@ -295,7 +295,7 @@ function(tribits_external_package_process_libraries_list  tplName)
     elseif (libEntryType STREQUAL "LIB_DIR_LINK_OPTION")
       list(APPEND libLinkFlagsList "${libentry}")
     elseif (libEntryType STREQUAL "GENERAL_LINK_OPTION")
-      message_wrapper("NOTE: Moving the general link argument '${libentry}' in TPL_${tplName}_LIBRARIES forward on the link line which may change the link and break the link!")
+      message_wrapper("-- NOTE: Moving the general link argument '${libentry}' in TPL_${tplName}_LIBRARIES forward on the link line which may change the link and break the link!")
       list(APPEND libLinkFlagsList "${libentry}")
     else()
       tribits_external_package_process_libraries_list_library_entry(
