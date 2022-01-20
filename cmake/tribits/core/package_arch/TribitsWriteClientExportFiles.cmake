@@ -413,12 +413,18 @@ function(tribits_generate_package_config_file_for_build_tree  packageName)
       # Replace " by \".
       string(REGEX REPLACE "\"" "\\\\\"" CMAKE_CXX_FLAGS_ESCAPED ${CMAKE_CXX_FLAGS})
     endif()
+
+    # Used in configured file below
+    set(EXPORTED_PACKAGE_LIBS_NAMES ${${packageName}_EXPORTED_PACKAGE_LIBS_NAMES})
+    set(PDOLLAR "$")
+
     set(tribitsConfigFilesDir
       "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}")
     configure_file(
       "${tribitsConfigFilesDir}/TribitsPackageConfigTemplate.cmake.in"
       "${PARSE_PACKAGE_CONFIG_FOR_BUILD_BASE_DIR}/${packageName}Config.cmake"
       )
+
   endif()
 
 endfunction()
@@ -491,6 +497,10 @@ function(tribits_generate_package_config_file_for_install_tree  packageName)
   endif()
 
   tribits_set_compiler_vars_for_config_file(INSTALL_DIR)
+
+  # Used in configure file below
+  set(EXPORTED_PACKAGE_LIBS_NAMES ${${packageName}_EXPORTED_PACKAGE_LIBS_NAMES})
+  set(PDOLLAR "$")
 
   if (PARSE_PACKAGE_CONFIG_FOR_INSTALL_BASE_DIR)
     configure_file(
@@ -874,6 +884,8 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
 
     # Custom code in configuration file.
     set(PROJECT_CONFIG_CODE "")
+
+    set(PDOLLAR "$")  # Hack used in configure file below
 
     configure_file(
       "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.cmake.in"

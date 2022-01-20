@@ -136,3 +136,29 @@ set(${EXPORT_FILE_VAR_PREFIX}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
 set(${EXPORT_FILE_VAR_PREFIX}_TPL_LIST "${ORDERED_FULL_TPL_SET}")
 
 ${PACKAGE_CONFIG_CODE}
+
+## ----------------------------------------------------------------------------
+## Create deprecated non-namespaced library targets for backwards compatibility
+## ----------------------------------------------------------------------------
+
+set(${EXPORT_FILE_VAR_PREFIX}_EXPORTED_PACKAGE_LIBS_NAMES "${EXPORTED_PACKAGE_LIBS_NAMES}")
+
+foreach(libname IN LISTS ${EXPORT_FILE_VAR_PREFIX}_EXPORTED_PACKAGE_LIBS_NAMES)
+  if (NOT TARGET ${PDOLLAR}{libname})
+    add_library(${PDOLLAR}{libname} INTERFACE IMPORTED)
+    target_link_libraries(${PDOLLAR}{libname}
+       INTERFACE ${PACKAGE_NAME}::${PDOLLAR}{libname})
+    set(deprecationMessage
+      "WARNING: The non-namespaced target '${PDOLLAR}{libname}' is deprecated!"
+      "  If always using newer versions of the project '${PROJECT_NAME}', then use the"
+      " new namespaced target '${PACKAGE_NAME}::${PDOLLAR}{libname}', or better yet,"
+      " '${PACKAGE_NAME}::all_libs' to be less sensitive to changes in the definition"
+      " of targets in the package '${PACKAGE_NAME}'.  Or, to maintain compatibility with"
+      " older or newer versions the project '${PROJECT_NAME}', instead link against the"
+      " libraries specified by the variable '${PACKAGE_NAME}_LIBRARIES'."
+      )
+    string(REPLACE ";" "" deprecationMessage "${PDOLLAR}{deprecationMessage}")
+    set_target_properties(${PDOLLAR}{libname}
+      PROPERTIES DEPRECATION "${PDOLLAR}{deprecationMessage}" )
+  endif()
+endforeach()
