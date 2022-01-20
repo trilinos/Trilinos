@@ -160,6 +160,19 @@ namespace Ifpack2 {
                                  typename ViewType::execution_space::scratch_memory_space,
                                  MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
 
+    /// 
+    /// tpetra little block index
+    ///
+    template<typename LayoutType> struct TpetraLittleBlock;
+    template<> struct TpetraLittleBlock<Kokkos::LayoutLeft> {
+      template<typename T> KOKKOS_INLINE_FUNCTION
+      T getFlatIndex(const T i, const T j, const T blksize) { return i+j*blksize; }
+    };
+    template<> struct TpetraLittleBlock<Kokkos::LayoutRight> {
+      template<typename T> KOKKOS_INLINE_FUNCTION
+      T getFlatIndex(const T i, const T j, const T blksize) { return i*blksize+j; }
+    };
+
     ///
     /// block tridiag scalar type
     ///
@@ -2061,7 +2074,10 @@ namespace Ifpack2 {
             ++j;
             for (local_ordinal_type ii=0;ii<blocksize;++ii) {
               for (local_ordinal_type jj=0;jj<blocksize;++jj) {
-                const auto idx = ii*blocksize + jj;
+                //const auto idx = ii*blocksize + jj;
+                const auto idx = 
+                  TpetraLittleBlock<Tpetra::Impl::BlockCrsMatrixLittleBlockArrayLayout>
+                  ::getFlatIndex(ii, jj, blocksize);
                 auto& v = internal_vector_values(pi, ii, jj, 0);
                 for (local_ordinal_type vi=0;vi<npacks;++vi)
                   v[vi] = static_cast<btdm_scalar_type>(block[vi][idx]);
@@ -2114,8 +2130,12 @@ namespace Ifpack2 {
                 Kokkos::parallel_for
                   (Kokkos::TeamThreadRange(member,blocksize),
                    [&](const local_ordinal_type &ii) {
-                    for (local_ordinal_type jj=0;jj<blocksize;++jj)
-                      scalar_values(pi, ii, jj, v) = static_cast<btdm_scalar_type>(block[ii*blocksize + jj]);
+                    for (local_ordinal_type jj=0;jj<blocksize;++jj) {
+                      const auto idx = 
+                        TpetraLittleBlock<Tpetra::Impl::BlockCrsMatrixLittleBlockArrayLayout>
+                        ::getFlatIndex(ii, jj, blocksize);
+                      scalar_values(pi, ii, jj, v) = static_cast<btdm_scalar_type>(block[idx]);
+                    }
                   });
               }
             }
