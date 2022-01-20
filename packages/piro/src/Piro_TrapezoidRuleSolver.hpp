@@ -152,6 +152,8 @@ class TrapezoidRuleSolver
   Teuchos::RCP<Thyra::AdaptiveSolutionManager> getSolutionManager() const;
   /** \brief .*/
   void disableCalcInitAccel() { calc_init_accel_ = false; }; 
+  /** \brief .*/
+  void enableCalcInitAccel() { calc_init_accel_ = true; }; 
   //@}
 
 
