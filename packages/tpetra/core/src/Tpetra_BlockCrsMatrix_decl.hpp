@@ -130,7 +130,7 @@ namespace Tpetra {
 
 namespace Impl {
   using BlockCrsMatrixLittleBlockArrayLayout = Kokkos::LayoutLeft;
-};
+}
 
 template<class Scalar,
          class LO,
