@@ -166,11 +166,11 @@ namespace Ifpack2 {
     template<typename LayoutType> struct TpetraLittleBlock;
     template<> struct TpetraLittleBlock<Kokkos::LayoutLeft> {
       template<typename T> KOKKOS_INLINE_FUNCTION
-      T getFlatIndex(const T i, const T j, const T blksize) { return i+j*blksize; }
+      static T getFlatIndex(const T i, const T j, const T blksize) { return i+j*blksize; }
     };
     template<> struct TpetraLittleBlock<Kokkos::LayoutRight> {
       template<typename T> KOKKOS_INLINE_FUNCTION
-      T getFlatIndex(const T i, const T j, const T blksize) { return i*blksize+j; }
+      static T getFlatIndex(const T i, const T j, const T blksize) { return i*blksize+j; }
     };
 
     ///
