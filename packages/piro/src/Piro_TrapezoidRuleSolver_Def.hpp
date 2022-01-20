@@ -269,8 +269,6 @@ Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
   assign(v.ptr(), *model->getNominalValues().get_x_dot());
   Teuchos::RCP<Thyra::VectorBase<Scalar> > a = soln->col(2);
   assign(a.ptr(), *model->get_x_dotdot());
-  Scalar a_nrm = norm_2(*a);
-  std::cout << "IKT a_norm passed into Piro::TrapezoidalRul = " << a_nrm << "\n"; 
 
 // Note that Thyra doesn't have x_dotdot - go get it from the transient decorator around the Albany model
 //  Teuchos::RCP<Thyra::VectorBase<Scalar> > a = model->get_x_dotdot()->clone_v();
@@ -294,7 +292,6 @@ Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
 
    //calculate intial acceleration using small time step (1.0e-3*delta_t)
    // AGS: Check this for inital velocity
-  std::cout << "IKT calc_init_accel_ = " << calc_init_accel_ << "\n"; 
   if (calc_init_accel_ == true) {
     Scalar pert= 1.0e6 * 4.0 / (delta_t * delta_t);
     assign(x_pred_a.ptr(), *x);
@@ -308,7 +305,6 @@ Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
     V_StVpStV(a.ptr(), pert, *gx_out,  -pert, *x_pred_a);
     nrm = norm_2(*a);
     *out << "Calculated a_init = " << nrm << std::endl;
-    std::cout << "IKT a_norm after initial acceleration solve = " << nrm << "\n"; 
    }
 
    // Start integration loop
@@ -385,7 +381,6 @@ Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
      // Should be equivalent to: v->Update(tdt, *x, -tdt, *x_pred_v, 0.0);
      
      nrm = norm_2(*a);
-     std::cout << "IKT a_norm after time-integration finished in Piro::TrapezoidalRule = " << nrm << "\n"; 
 
      // Observe completed time step
      if (observer != Teuchos::null) observer->observeSolution(*soln, t);
