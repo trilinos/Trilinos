@@ -53,6 +53,7 @@
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_ScaledObjective.hpp"
 #include "ROL_ScalarLinearConstraint.hpp"
+#include "ROL_LinearCombinationObjective.hpp"
 
 #include "ROL_OED_BilinearConstraint.hpp"
 #include "ROL_OED_ProbabilityConstraint.hpp"
@@ -69,6 +70,8 @@
 #include "ROL_OED_Itrace_HetObjective.hpp"
 #include "ROL_OED_Factors.hpp"
 #include "ROL_OED_Radamacher.hpp"
+#include "ROL_OED_L1Penalty.hpp"
+#include "ROL_OED_DoubleWellPenalty.hpp"
 
 namespace ROL {
 namespace OED {
@@ -82,8 +85,8 @@ private:
   const Ptr<Vector<Real>>          obs_;
 
   // Parsed from parameter list
-  bool useBudget_, useStorage_, useScale_;
-  Real objScale_, conScale_;
+  bool useBudget_, useStorage_, useScale_, useL1_, useDWP_;
+  Real objScale_, conScale_, L1penParam_, DWPparam_;
 
   Ptr<Vector<Real>> p_, w_;
   Ptr<Vector<Real>> ones_, zeros_;

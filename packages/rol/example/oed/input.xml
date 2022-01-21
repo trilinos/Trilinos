@@ -1,24 +1,29 @@
 <ParameterList name="Inputs">
   <ParameterList name="Problem">
-    <Parameter name="X Lower Bound"     type="double" value="-1.0" />
-    <Parameter name="X Upper Bound"     type="double" value="1.0"  />
-    <Parameter name="Number of Samples" type="int"    value="100"  />
-    <Parameter name="Polynomial Degree" type="int"    value="5"    />
-    <Parameter name="Noise Decay Rate"  type="double" value="5.0"  />
+    <Parameter name="X Lower Bound"         type="double" value="-1.0"  />
+    <Parameter name="X Upper Bound"         type="double" value="1.0"   />
+    <Parameter name="Number of Samples"     type="int"    value="100"   />
+    <Parameter name="Polynomial Degree"     type="int"    value="5"     />
+    <Parameter name="Noise Decay Rate"      type="double" value="5.0"   />
+    <Parameter name="Use Budget Constraint" type="bool"   value="false" />
+    <Parameter name="Budget"                type="double" value="5.0"   />
   </ParameterList>
 
   <ParameterList name="OED">
-    <Parameter name="Optimality Type" type="string" value="A"     />
-    <!--
     <Parameter name="Optimality Type" type="string" value="D"     />
+    <!--
+    <Parameter name="Optimality Type" type="string" value="A"     />
     <Parameter name="Optimality Type" type="string" value="C"     />
     <Parameter name="Optimality Type" type="string" value="I"     />
     -->
-    <Parameter name="Use Storage"            type="bool"   value="true"  />
-    <Parameter name="Use Budget"             type="bool"   value="false" />
-    <Parameter name="Use Scaling"            type="bool"   value="true"  />
-    <Parameter name="Objective Scaling"      type="double" value="-1.0"  />
-    <Parameter name="Constraint Scaling"     type="double" value="-1.0"  />
+    <Parameter name="Use Storage"                   type="bool"   value="true"  />
+    <Parameter name="Use Scaling"                   type="bool"   value="true"  />
+    <Parameter name="Objective Scaling"             type="double" value="-1.0"  />
+    <Parameter name="Constraint Scaling"            type="double" value="-1.0"  />
+    <Parameter name="Use L1 Penalty"                type="bool"   value="false" />
+    <Parameter name="L1 Penalty Parameter"          type="double" value="1e-1"  />
+    <Parameter name="Use Double-Well Penalty"       type="bool"   value="false" />
+    <Parameter name="Double-Well Penalty Parameter" type="double" value="1e-1"  />
     <ParameterList name="A-Optimality">
       <Parameter name="Randomized Trace Estimation" type="bool" value="false" />
       <Parameter name="Number of Samples"           type="int"  value="100"   />

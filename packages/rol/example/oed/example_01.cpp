@@ -160,6 +160,12 @@ int main(int argc, char *argv[]) {
       M = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,homNoise,noise);
     ROL::Ptr<ROL::OED::Factory<RealT>>
      factory = ROL::makePtr<ROL::OED::Factory<RealT>>(model,sampler,theta,M,*parlist);
+    if (parlist->sublist("Problem").get("Use Budget Constraint",false)) {
+      ROL::Ptr<ROL::Vector<RealT>> cost = factory->getDesign()->clone();
+      cost->setScalar(static_cast<RealT>(1));
+      RealT budget = parlist->sublist("Problem").get("Budget",5.0);
+      factory->setBudgetConstraint(cost,budget);
+    }
     //if (ocType == "A" || ocType == "I")
     //  parlist->sublist("General").sublist("Polyhedral Projection").set("Type","Brents");
     //else
@@ -169,6 +175,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Problem<RealT>> problem = factory->get(*parlist,sampler);
     problem->setProjectionAlgorithm(*parlist);
     problem->finalize(false,true,*outStream);
+    problem->check(true,*outStream);
 
     // Setup ROL solver
     std::clock_t timer = std::clock();

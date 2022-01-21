@@ -49,16 +49,21 @@ namespace OED {
 
 template<typename Real>
 Factory<Real>::Factory(const Ptr<Objective<Real>>           &model,
-        const Ptr<SampleGenerator<Real>>     &sampler,
-        const Ptr<Vector<Real>>              &theta,
-        const Ptr<OED::MomentOperator<Real>> &cov,
-              ParameterList                  &list)
-  : sampler_(sampler), theta_(theta), useBudget_(false), cov0_(cov) {
+                       const Ptr<SampleGenerator<Real>>     &sampler,
+                       const Ptr<Vector<Real>>              &theta,
+                       const Ptr<OED::MomentOperator<Real>> &cov,
+                             ParameterList                  &list)
+  : sampler_(sampler), theta_(theta), useBudget_(false), useL1_(false),
+    useDWP_(false), L1penParam_(1), DWPparam_(1), cov0_(cov) {
   const Real zero(0), one(1);
   useStorage_ = list.sublist("OED").get("Use Storage",true);
   useScale_   = list.sublist("OED").get("Use Scaling",true);
   objScale_   = list.sublist("OED").get("Objective Scaling",-1.0);
   conScale_   = list.sublist("OED").get("Constraint Scaling",-1.0);
+  useL1_      = list.sublist("OED").get("Use L1 Penalty",false);
+  useDWP_     = list.sublist("OED").get("Use Double-Well Penalty",false);
+  L1penParam_ = list.sublist("OED").get("L1 Penalty Parameter",1.0);
+  DWPparam_   = list.sublist("OED").get("Double-Well Penalty Parameter",1.0);
 
   factors_ = makePtr<Factors<Real>>(model,theta_,sampler_);
   cov0_->setFactors(factors_);
@@ -86,17 +91,22 @@ Factory<Real>::Factory(const Ptr<Objective<Real>>           &model,
 
 template<typename Real>
 Factory<Real>::Factory(const Ptr<Constraint<Real>>          &model,
-        const Ptr<SampleGenerator<Real>>     &sampler,
-        const Ptr<Vector<Real>>              &theta,
-        const Ptr<Vector<Real>>              &obs,
-        const Ptr<OED::MomentOperator<Real>> &cov,
-              ParameterList                  &list)
-  : sampler_(sampler), theta_(theta), obs_(obs), useBudget_(false), cov0_(cov) {
+                       const Ptr<SampleGenerator<Real>>     &sampler,
+                       const Ptr<Vector<Real>>              &theta,
+                       const Ptr<Vector<Real>>              &obs,
+                       const Ptr<OED::MomentOperator<Real>> &cov,
+                             ParameterList                  &list)
+  : sampler_(sampler), theta_(theta), obs_(obs), useBudget_(false), useL1_(false),
+    useDWP_(false), L1penParam_(1), DWPparam_(1), cov0_(cov) {
   const Real zero(0), one(1);
   useStorage_ = list.sublist("OED").get("Use Storage",true);
   useScale_   = list.sublist("OED").get("Use Scaling",true);
   objScale_   = list.sublist("OED").get("Objective Scaling",-1.0);
   conScale_   = list.sublist("OED").get("Constraint Scaling",-1.0);
+  useL1_      = list.sublist("OED").get("Use L1 Penalty",false);
+  useDWP_     = list.sublist("OED").get("Use Double-Well Penalty",false);
+  L1penParam_ = list.sublist("OED").get("L1 Penalty Parameter",1.0);
+  DWPparam_   = list.sublist("OED").get("Double-Well Penalty Parameter",1.0);
 
   factors_ = makePtr<Factors<Real>>(model,theta_,obs_,sampler_);
   cov0_->setFactors(factors_);
@@ -127,6 +137,7 @@ void Factory<Real>::setBudgetConstraint(const Ptr<Vector<Real>> &cost, Real budg
   cost_ = cost;
   budget_ = budget;
   useBudget_ = true;
+  vec_->setScalar(budget/static_cast<Real>(cost->dimension()));
 }
 
 template<typename Real>
@@ -134,9 +145,28 @@ Ptr<Problem<Real>> Factory<Real>::get(const Ptr<Vector<Real>> &c) {
   buildEqualityConstraint();
   buildInequalityConstraint();
 
+  Ptr<Problem<Real>> problem;
   if (isHom_) buildHomObjective(c);
   else        buildHetObjective(c);
-  Ptr<Problem<Real>> problem = makePtr<Problem<Real>>(obj_,vec_);
+  if (useL1_ || useDWP_) {
+    std::vector<Ptr<Objective<Real>>> ovec;
+    std::vector<Real> wvec;
+    ovec.push_back(obj_);
+    wvec.push_back(static_cast<Real>(1));
+    if (useL1_) {
+      ovec.push_back(makePtr<L1Penalty<Real>>());
+      wvec.push_back(L1penParam_);
+    }
+    if (useDWP_) {
+      ovec.push_back(makePtr<DoubleWellPenalty<Real>>());
+      wvec.push_back(DWPparam_);
+    }
+    Ptr<Objective<Real>> penObj = makePtr<LinearCombinationObjective<Real>>(wvec,ovec);
+    problem = makePtr<Problem<Real>>(penObj,vec_);
+  }
+  else {
+    problem = makePtr<Problem<Real>>(obj_,vec_);
+  }
   problem->addBoundConstraint(bnd_);
   if (useBudget_) problem->addLinearConstraint("Budget",icon_,imul_,ibnd_);
   else            problem->addLinearConstraint("Probability",econ_,emul_);
@@ -152,8 +182,26 @@ Ptr<Problem<Real>> Factory<Real>::get(ParameterList &list,
 
   if (isHom_) buildHomObjective(list,sampler,predFun);
   else        buildHetObjective(list,sampler,predFun);
-  Ptr<StochasticProblem<Real>>
-  problem = makePtr<StochasticProblem<Real>>(obj_,vec_);
+  Ptr<StochasticProblem<Real>> problem;
+  if (useL1_ || useDWP_) {
+    std::vector<Ptr<Objective<Real>>> ovec;
+    std::vector<Real> wvec;
+    ovec.push_back(obj_);
+    wvec.push_back(static_cast<Real>(1));
+    if (useL1_) {
+      ovec.push_back(makePtr<L1Penalty<Real>>());
+      wvec.push_back(L1penParam_);
+    }
+    if (useDWP_) {
+      ovec.push_back(makePtr<DoubleWellPenalty<Real>>());
+      wvec.push_back(DWPparam_);
+    }
+    Ptr<Objective<Real>> penObj = makePtr<LinearCombinationObjective<Real>>(wvec,ovec);
+    problem = makePtr<StochasticProblem<Real>>(penObj,vec_);
+  }
+  else {
+    problem = makePtr<StochasticProblem<Real>>(obj_,vec_);
+  }
   problem->addBoundConstraint(bnd_);
   if (useBudget_) problem->addLinearConstraint("Budget",icon_,imul_,ibnd_);
   else            problem->addLinearConstraint("Probability",econ_,emul_);
