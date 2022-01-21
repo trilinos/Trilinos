@@ -568,7 +568,7 @@ struct GEMV<VecType1,BlkType,VecType2,CoeffType,IndexType,true,Kokkos::LayoutRig
       const auto A_at_i = A_ptr + i*as0;
 #pragma unroll
       for (IndexType j=0;j<numCols;++j) 
-        y_at_i += A_at_i[j] * x[j];
+        y_at_i += A_at_i[j] * x_ptr[j];
       y_ptr[i] += alpha*y_at_i;
     }          
   }
