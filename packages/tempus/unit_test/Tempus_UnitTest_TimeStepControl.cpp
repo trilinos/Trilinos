@@ -535,7 +535,6 @@ TEUCHOS_UNIT_TEST(TimeStepControl, getValidParameters)
     std::ostringstream unusedParameters;
     pl->unused(unusedParameters);
     TEST_COMPARE ( unusedParameters.str(), ==,
-      "WARNING: Parameter \"Time Step Control Events\"    [unused] is unused\n"
       "WARNING: Parameter \"Time Step Control Strategy\"    [unused] is unused\n");
   }
 

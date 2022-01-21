@@ -769,7 +769,8 @@ TimeStepControl<Scalar>::getValidParameters() const
     tecTmp->remove("Output Time Interval");
     tecTmp->remove("Output Index List");
     tecTmp->remove("Output Time List");
-    pl->set("Time Step Control Events", *tecTmp->getValidParameters());
+    if (tecTmp->getSize() > 0)
+      pl->set("Time Step Control Events", *tecTmp->getValidParameters());
   }
 
   pl->set<int>   ("Maximum Number of Stepper Failures", getMaxFailures(),
@@ -794,9 +795,17 @@ Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
   using Teuchos::ParameterList;
 
   auto tsc = Teuchos::rcp(new TimeStepControl<Scalar>());
-  if (pList == Teuchos::null) return tsc;
+  if (pList == Teuchos::null || pList->numParams() == 0) return tsc;
 
-  pList->validateParametersAndSetDefaults(*tsc->getValidParameters(), 0);
+  auto tscValidPL = Teuchos::rcp_const_cast<ParameterList>(tsc->getValidParameters());
+  // Handle optional "Time Step Control Events" sublist.
+  if (pList->isSublist("Time Step Control Events")) {
+    RCP<ParameterList> tsctePL =
+      Teuchos::sublist(pList, "Time Step Control Events", true);
+    tscValidPL->set("Time Step Control Events", *tsctePL);
+  }
+
+  pList->validateParametersAndSetDefaults(*tscValidPL, 0);
 
   tsc->setInitTime(         pList->get<double>("Initial Time"));
   tsc->setFinalTime(        pList->get<double>("Final Time"));
