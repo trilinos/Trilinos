@@ -71,6 +71,9 @@
 namespace Intrepid2
 {
   template<ordinal_type spaceDim>
+  ordinal_type getDkEnumeration(Kokkos::Array<int,spaceDim> &entries);
+
+  template<ordinal_type spaceDim>
   KOKKOS_INLINE_FUNCTION
   void getDkEnumerationInverse(Kokkos::Array<int,spaceDim> &entries, const ordinal_type dkEnum, const ordinal_type operatorOrder);
   
@@ -106,13 +109,52 @@ namespace Intrepid2
           entries[0] = xMult;
           entries[1] = yMult;
           entries[2] = zMult;
+          return;
         }
       }
     }
   }
   
   template<ordinal_type spaceDim>
-  ordinal_type getDkEnumeration(Kokkos::Array<int,spaceDim> &entries);
+  KOKKOS_INLINE_FUNCTION
+  void getDkEnumerationInverse(Kokkos::Array<int,spaceDim> &entries, const ordinal_type dkEnum, const ordinal_type operatorOrder)
+  {
+    // for operator order k, the recursive formula defining getDkEnumeration is:
+    // getDkEnumeration(k0,k1,…,k_{n-1}) = getDkCardinality(k - k0) + getDkEnumeration(k1,…,k_{n-1})
+    // The entries are in reverse lexicographic order.  We search for k0, by incrementing k0 until getDkEnumeration(k0,0,…,0) <= dkEnum
+    // Then we recursively call getDkEnumerationInverse<spaceDim-1>({k1,…,k_{n-1}}, dkEnum - getDkEnumeration(k0,0,…,0))
+    
+    for (int k0=0; k0<=operatorOrder; k0++)
+    {
+      entries[0] = k0;
+      const ordinal_type dkEnumFor_k0 = getDkEnumeration<spaceDim>(entries);
+      
+      if      (dkEnumFor_k0 < dkEnum) continue; // next k0
+      else if (dkEnumFor_k0 == dkEnum) return;  // entries has (k0,0,…,0), and this has dkEnum as its enumeration value
+      else
+      {
+        // k0 is right; determine the rest of the entries
+        
+        // ensure that we don't try to allocate an empty array…
+        constexpr ordinal_type sizeForSubArray = (spaceDim > 2) ? spaceDim - 1 : 1;
+        Kokkos::Array<int,sizeForSubArray> subEntries;
+        
+        for (int i=1; i<spaceDim; i++)
+        {
+          entries[i] = 0;
+        }
+        
+        getDkEnumerationInverse<spaceDim-1>(subEntries, dkEnum - dkEnumFor_k0, operatorOrder - k0);
+        
+        for (int i=1; i<spaceDim; i++)
+        {
+          entries[i] = subEntries[i-1];
+        }
+        return;
+      }
+    }
+    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "entries corresponding to dkEnum not found");
+  }
   
   template<>
   inline ordinal_type getDkEnumeration<1>(Kokkos::Array<int,1> &entries)
@@ -120,16 +162,32 @@ namespace Intrepid2
     return getDkEnumeration<1>(entries[0]);
   }
   
-  template<>
-  inline ordinal_type getDkEnumeration<2>(Kokkos::Array<int,2> &entries)
+  template<ordinal_type spaceDim>
+  inline ordinal_type getDkEnumeration(Kokkos::Array<int,spaceDim> &entries)
   {
-    return getDkEnumeration<2>(entries[0],entries[1]);
-  }
-  
-  template<>
-  inline ordinal_type getDkEnumeration<3>(Kokkos::Array<int,3> &entries)
-  {
-    return getDkEnumeration<3>(entries[0],entries[1],entries[2]);
+    ordinal_type k_minus_k0 = 0; // sum of all the entries but the first
+    
+    // recursive formula in general is: getDkEnumeration(k0,k1,…,k_{n-1}) = getDkCardinality(k - k0) + getDkEnumeration(k1,…,k_{n-1})
+    // ensure that we don't try to allocate an empty array…
+    constexpr ordinal_type sizeForSubArray = (spaceDim > 2) ? spaceDim - 1 : 1;
+    Kokkos::Array<int,sizeForSubArray> remainingEntries;
+    for (int i=1; i<spaceDim; i++)
+    {
+      k_minus_k0 += entries[i];
+      remainingEntries[i-1] = entries[i];
+    }
+    
+    if (k_minus_k0 == 0)
+    {
+      return 0;
+    }
+    else
+    {
+      EOperator opFor_k_minus_k0_minus_1 = (k_minus_k0 > 1) ? EOperator(OPERATOR_D1 + k_minus_k0 - 2) : EOperator(OPERATOR_VALUE);
+      const ordinal_type dkCardinality = getDkCardinality(opFor_k_minus_k0_minus_1, spaceDim);
+      const ordinal_type dkEnum = dkCardinality + getDkEnumeration<sizeForSubArray>(remainingEntries);
+      return dkEnum;
+    }
   }
   
   template<ordinal_type spaceDim1, ordinal_type spaceDim2>
@@ -883,40 +941,66 @@ struct OperatorTensorDecomposition
       ordinal_type spaceDim1 = basis1_->getBaseCellTopology().getDimension();
       ordinal_type spaceDim2 = basis2_->getBaseCellTopology().getDimension();
       
-      // for now, we only support total spaceDim <= 3.  It would not be too hard to extend to support higher dimensions,
-      // but the support needs to be built out in e.g. shards::CellTopology for this, as well as our DkEnumeration, etc.
+      // We support total spaceDim <= 7.
       switch (spaceDim1)
       {
         case 1:
           switch (spaceDim2)
         {
-          case 1:
-            return getDkTensorIndex<1, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
-          case 2:
-            return getDkTensorIndex<1, 2>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 1: return getDkTensorIndex<1, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 2: return getDkTensorIndex<1, 2>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 3: return getDkTensorIndex<1, 3>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 4: return getDkTensorIndex<1, 4>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 5: return getDkTensorIndex<1, 5>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 6: return getDkTensorIndex<1, 6>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
           default:
             INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
         }
         case 2:
           switch (spaceDim2)
         {
-          case 1:
-            return getDkTensorIndex<2, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 1: return getDkTensorIndex<2, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 2: return getDkTensorIndex<2, 2>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 3: return getDkTensorIndex<2, 3>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 4: return getDkTensorIndex<2, 4>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 5: return getDkTensorIndex<2, 5>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
           default:
             INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
         }
-          //        case 3:
-          //          switch (spaceDim2)
-          //        {
-          //          case 1:
-          //            return getDkTensorIndex<3, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
-          //          case 2:
-          //            return getDkTensorIndex<3, 2>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
-          //          case 3:
-          //            return getDkTensorIndex<3, 3>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
-          //          default:
-          //            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
-          //        }
+        case 3:
+          switch (spaceDim2)
+        {
+          case 1: return getDkTensorIndex<3, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 2: return getDkTensorIndex<3, 2>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 3: return getDkTensorIndex<3, 3>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 4: return getDkTensorIndex<3, 4>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
+        }
+        case 4:
+          switch (spaceDim2)
+        {
+          case 1: return getDkTensorIndex<4, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 2: return getDkTensorIndex<4, 2>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 3: return getDkTensorIndex<4, 3>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
+        }
+        case 5:
+          switch (spaceDim2)
+        {
+          case 1: return getDkTensorIndex<5, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 2: return getDkTensorIndex<5, 2>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
+        }
+        case 6:
+          switch (spaceDim2)
+        {
+          case 1: return getDkTensorIndex<6, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
+        }
         default:
           INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
       }
