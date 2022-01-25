@@ -354,6 +354,9 @@ namespace panzer
        */
       bool use_shared_memory;
 
+    /// Temporary for non-shared calculations
+    PHX::View<ScalarT*> tmp_;
+
   }; // end of class Integrator_DivBasisTimesScalar
 
 } // end of namespace panzer

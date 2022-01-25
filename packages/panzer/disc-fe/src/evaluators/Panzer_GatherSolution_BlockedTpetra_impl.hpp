@@ -537,8 +537,6 @@ evaluateFields(typename TRAITS::EvalData workset)
   if(disableSensitivities_)
     seedValue = 0.0;
 
-  const int numFieldBlocks = globalIndexer_->getNumFieldBlocks();
-
   // Loop over fields to gather
   int currentWorksetLIDSubBlock = -1;
   for (std::size_t fieldIndex = 0; fieldIndex < gatherFields_.size(); fieldIndex++) {
