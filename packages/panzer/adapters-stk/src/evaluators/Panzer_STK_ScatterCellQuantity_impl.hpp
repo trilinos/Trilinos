@@ -120,7 +120,7 @@ evaluateFields(
 
       // write to double field
       for(unsigned i=0; i<field.extent(0);i++)
-         value(i,0) = Sacado::ScalarValue<ScalarT>::eval(field(i));
+         value(i,0) = Sacado::scalarValue(field(i));
 
       mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,value.get_view());
    }

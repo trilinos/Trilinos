@@ -142,7 +142,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->extent(0)));
 
@@ -211,8 +210,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   auto integral_v = integral.get_static_view();
   auto integral_h = Kokkos::create_mirror_view(integral_v);
   Kokkos::deep_copy(integral_h, integral_v);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(0)),2.0,1e-15);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(1)),2.0*std::sqrt(2.0),1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(0)),2.0,1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(1)),2.0*std::sqrt(2.0),1e-15);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
@@ -283,7 +282,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->extent(0)));
 
@@ -363,8 +361,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   auto integral_v = integral.get_static_view();
   auto integral_h = Kokkos::create_mirror_view(integral_v);
   Kokkos::deep_copy(integral_h, integral_v);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(0)),4.0,1e-15);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(1)),8.0*std::sqrt(2),1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(0)),4.0,1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(1)),8.0*std::sqrt(2),1e-15);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
@@ -436,7 +434,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell> > integralPtr;
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<panzer::Cell>(quadRule->dl_scalar->extent(0)));
 
@@ -503,8 +500,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   auto integral_v = integral.get_static_view();
   auto integral_h = Kokkos::create_mirror_view(integral_v);
   Kokkos::deep_copy(integral_h, integral_v);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(0)),2.0,1e-15);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(1)),8.0,1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(0)),2.0,1e-15);
+  TEST_FLOATING_EQUALITY(Sacado::scalarValue(integral_h(1)),8.0,1e-15);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

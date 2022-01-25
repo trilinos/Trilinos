@@ -119,7 +119,8 @@ evaluateFields(
   std::size_t l_num_ip = num_ip, l_num_dim = num_dim;
   Kokkos::parallel_for("NeumannResidual", workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
       for (std::size_t ip = 0; ip < l_num_ip; ++ip) {
-	normal_dot_flux_v(cell,ip) = ScalarT(0.0);
+	// normal_dot_flux_v(cell,ip) = ScalarT(0.0);
+	normal_dot_flux_v(cell,ip) = 0.0;
 	for (std::size_t dim = 0; dim < l_num_dim; ++dim) {
 	  normal_dot_flux_v(cell,ip) += normal_v(cell,ip,dim) * flux_v(cell,ip,dim); 
 	}
@@ -142,7 +143,7 @@ evaluateFields(
     Intrepid2::FunctionSpaceTools<PHX::exec_space>::
       integrate<ScalarT>(residual.get_view(),
                          normal_dot_flux.get_view(), 
-			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
+  			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar.get_view());
 
   Kokkos::fence();
 

@@ -107,7 +107,6 @@ std::vector<double> hess_func(double x, double y,double dx, double dy)
 TEUCHOS_UNIT_TEST(hessian_test_k,correctness)
 {
   typedef HessianType ScalarT;
-  typedef Sacado::ScalarValue<ScalarT> Value;
  
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -135,16 +134,16 @@ TEUCHOS_UNIT_TEST(hessian_test_k,correctness)
     result(i) = std::sin(x(i)*y(i))+0.25*std::cos(y(i));
 
   for(int i=0;i<5;i++) {
-    double x_val  = Value::eval(x(i));
-    double y_val  = Value::eval(y(i));
-    double dx_val = Value::eval(dx(i));
-    double dy_val = Value::eval(dy(i));
+    double x_val  = Sacado::scalarValue(x(i));
+    double y_val  = Sacado::scalarValue(y(i));
+    double dx_val = Sacado::scalarValue(dx(i));
+    double dy_val = Sacado::scalarValue(dy(i));
     double f = func(x_val,y_val);
     std::vector<double> hess = hess_func(x_val,y_val,dx_val,dy_val);
 
     ScalarT r = result(i);
 
-    TEST_EQUALITY(Value::eval(r),f);
+    TEST_EQUALITY(Sacado::scalarValue(r),f);
     TEST_EQUALITY(r.fastAccessDx(0).fastAccessDx(0),hess[0]);
     TEST_EQUALITY(r.fastAccessDx(0).fastAccessDx(1),hess[1]);
 
