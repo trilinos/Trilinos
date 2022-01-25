@@ -247,12 +247,14 @@ namespace Intrepid2 {
   Basis_HDIV_QUAD_In_FEM( const ordinal_type order,
                            const EPointType   pointType ) {
 
-    INTREPID2_TEST_FOR_EXCEPTION( !(pointType == POINTTYPE_EQUISPACED ||
-                                    pointType == POINTTYPE_WARPBLEND), std::invalid_argument,
+    //Default is equispaced
+    auto pointT = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
+    INTREPID2_TEST_FOR_EXCEPTION( !(pointT == POINTTYPE_EQUISPACED ||
+                                    pointT == POINTTYPE_WARPBLEND), std::invalid_argument,
                                   ">>> ERROR (Basis_HDIV_QUAD_In_FEM): pointType must be either equispaced or warpblend.");
 
     // this should be in host
-    Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> lineBasis( order, pointType );
+    Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> lineBasis( order, pointT );
     Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> bubbleBasis( order - 1, POINTTYPE_GAUSS );
 
     const ordinal_type
@@ -271,7 +273,7 @@ namespace Intrepid2 {
     this->basisType_         = BASIS_FEM_LAGRANGIAN;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
     this->functionSpace_     = FUNCTION_SPACE_HDIV;
-    pointType_ = pointType;
+    pointType_ = pointT;
 
     // initialize tags
     {
