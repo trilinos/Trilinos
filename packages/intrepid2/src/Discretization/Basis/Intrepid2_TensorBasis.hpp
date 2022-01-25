@@ -1168,6 +1168,8 @@ struct OperatorTensorDecomposition
       
       ordinal_type numBasisComponents = tensorComponents_.size();
       
+      INTREPID2_TEST_FOR_EXCEPTION(numBasisComponents != points.numTensorComponents(), std::invalid_argument, "points and basis must match in the number of tensorial components.");
+      
       OperatorTensorDecomposition opDecomposition = getOperatorDecomposition(operatorType);
       
       // TODO: figure out whether the opDecomposition is really right for e.g. OPERATOR_D3 for GRAD_HEX.  We fail right now with an exception in VectorData; we assert that numVectorComponents <= Parameters::MaxTensorComponents.  If the assert is correct, maybe we should be using families instead of vector components here?  It looks to me like the VectorData assumption is that each component corresponds to one or more space dimensions.  It may also be that the data structures need revision to support the OPERATOR_Dn use case for n > 1.  (It _looks_ like what we have works for n = 1.)
