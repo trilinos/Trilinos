@@ -506,7 +506,6 @@ unit(Vector<T, N> const & u);
 /// \return v, beta
 ///
 template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
 std::pair<Vector<T, N>, T>
 house(Vector<T, N> const & x);
 

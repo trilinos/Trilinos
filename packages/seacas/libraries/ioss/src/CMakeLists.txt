@@ -119,6 +119,7 @@ ENDIF()
 
 ADD_SUBDIRECTORY(visualization)
 ADD_SUBDIRECTORY(generated)
+ADD_SUBDIRECTORY(text_mesh)
 ADD_SUBDIRECTORY(gen_struc)
 ADD_SUBDIRECTORY(heartbeat)
 ADD_SUBDIRECTORY(transform)

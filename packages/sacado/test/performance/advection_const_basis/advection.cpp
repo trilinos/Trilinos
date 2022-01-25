@@ -31,7 +31,7 @@
 #include "advection.hpp"
 #include "common.hpp"
 
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 template<typename FluxView, typename WgbView, typename SrcView,
          typename WbsView, typename ResidualView>
@@ -241,7 +241,7 @@ double time_fad_flat(int ncells, int num_basis, int num_points, int ndim,
 
   // Time execution
   Kokkos::fence();
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   for (int i=0; i<ntrial; ++i)
     run_fad_flat(flux, wgb, src, wbs, residual);
   Kokkos::fence();
@@ -275,7 +275,7 @@ double time_fad_scratch(int ncells, int num_basis, int num_points, int ndim,
 
   // Time execution
   Kokkos::fence();
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   for (int i=0; i<ntrial; ++i)
     run_fad_scratch(flux, wgb, src, wbs, residual);
   Kokkos::fence();
@@ -309,7 +309,7 @@ double time_analytic_flat(int ncells, int num_basis, int num_points, int ndim,
 
   // Time execution
   Kokkos::fence();
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   for (int i=0; i<ntrial; ++i)
     run_analytic_flat<N>(flux, wgb, src, wbs, residual);
   Kokkos::fence();
@@ -346,7 +346,7 @@ double time_analytic_const(int ncells, int num_basis, int num_points, int ndim,
 
   // Time execution
   Kokkos::fence();
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   for (int i=0; i<ntrial; ++i)
     run_analytic_flat<N>(flux_const, wgb, src, wbs, residual);
   Kokkos::fence();
@@ -383,7 +383,7 @@ double time_analytic_team(int ncells, int num_basis, int num_points, int ndim,
 
   // Time execution
   Kokkos::fence();
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   for (int i=0; i<ntrial; ++i)
     run_analytic_team<N>(flux_const, wgb, src, wbs, residual);
   Kokkos::fence();

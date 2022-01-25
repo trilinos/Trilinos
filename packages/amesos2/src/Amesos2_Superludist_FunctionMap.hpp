@@ -532,14 +532,14 @@ namespace Amesos2 {
     }
   
     static void gsequ_loc(SLUD::SuperMatrix* A, double* r, double* c, 
-			  double* rowcnd, double* colcnd, double* amax, int* info, 
+			  double* rowcnd, double* colcnd, double* amax, SLUD::int_t* info, 
 			  SLUD::gridinfo_t* grid)
     {
       SLUD::Z::pzgsequ(A, r, c, rowcnd, colcnd, amax, info, grid);
     }
 
     static void gsequ(SLUD::SuperMatrix* A, double* r, double* c, 
-		      double* rowcnd, double* colcnd, double* amax, int* info)
+		      double* rowcnd, double* colcnd, double* amax, SLUD::int_t* info)
     {
       SLUD::Z::zgsequ_dist(A, r, c, rowcnd, colcnd, amax, info);
     }

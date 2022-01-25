@@ -45,6 +45,7 @@
 #include <iostream>
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosKernels_Utils.hpp"
+#include "KokkosKernels_Sorting.hpp"
 
 #include <string.h>
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -223,13 +224,8 @@ int main (int argc, char* argv[]){
 	(numrows, orm, oentries, new_rowmap, new_entries);
       values_view_t new_values("new_values",new_entries.extent(0));
 
-      cols_view_t out_adj ("out_adj", new_entries.extent(0));
-      values_view_t out_vals("out_vals", new_entries.extent(0));
-
-      KokkosKernels::Impl::kk_sort_graph<row_map_view_t, cols_view_t,values_view_t, cols_view_t,values_view_t,MyExecSpace>
-	(new_rowmap, new_entries, new_values, out_adj, out_vals);
-      new_entries = out_adj;
-      new_values = out_vals;
+      KokkosKernels::sort_crs_matrix<MyExecSpace, row_map_view_t, cols_view_t, values_view_t>
+        (new_rowmap, new_entries, new_values);
 
       graph_t symmetric_graph(new_entries, new_rowmap);
       crstmat_t symmetric_marix("transpose", numrows, new_values, symmetric_graph);
@@ -260,17 +256,15 @@ int main (int argc, char* argv[]){
 										 new_rowmap, new_entries, new_values);
 
       std::cout << 1 << std::endl;
-      cols_view_t out_adj ("out_adj", new_entries.extent(0));
-      values_view_t out_vals("out_vals", new_entries.extent(0));
       std::cout << 2 << std::endl;
-      KokkosKernels::Impl::kk_sort_graph<row_map_view_t, cols_view_t,values_view_t, cols_view_t,values_view_t,MyExecSpace>
-	(new_rowmap, new_entries, new_values, out_adj, out_vals);
-      new_entries = out_adj;
-      new_values = out_vals;
+
+      KokkosKernels::sort_crs_matrix<MyExecSpace, row_map_view_t, cols_view_t, values_view_t>
+        (new_rowmap, new_entries, new_values);
+
       std::cout << 3 << std::endl;
       MyExecSpace().fence();
-      KokkosKernels::Impl::kk_print_1Dview(out_adj);
-      KokkosKernels::Impl::kk_print_1Dview(out_vals);
+      KokkosKernels::Impl::kk_print_1Dview(new_entries);
+      KokkosKernels::Impl::kk_print_1Dview(new_values);
 
       graph_t transpose_graph(new_entries, new_rowmap);
       crstmat_t transpose_matrix("transpose", a_crsmat.numRows(), new_values, transpose_graph);

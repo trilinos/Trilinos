@@ -152,7 +152,7 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
     m_owns_part( NULL ),
     m_shares_part( NULL ),
     m_aura_part(NULL),
-    m_field_repo(),
+    m_field_repo(*this),
     m_coord_field(NULL),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
@@ -179,7 +179,7 @@ MetaData::MetaData()
     m_owns_part( NULL ),
     m_shares_part( NULL ),
     m_aura_part(NULL),
-    m_field_repo(),
+    m_field_repo(*this),
     m_coord_field(NULL),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
@@ -1095,12 +1095,9 @@ get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<
             first_found_part = &part;
         }
         else {
-          if ( top != stk::topology::INVALID_TOPOLOGY && top != topology) {
-              std::ostringstream os;
-              os << "topology defined as both " << topology.name() << " and as " << top.name()
-                 << "; a given mesh entity must have only one topology.";
-              throw std::runtime_error(os.str());
-          }
+          ThrowRequireMsg(top == stk::topology::INVALID_TOPOLOGY || top == topology,
+              "topology defined as both " << topology.name() << " and as " << top.name()
+                  << "; a given mesh entity must have only one topology.");
         }
       }
     }

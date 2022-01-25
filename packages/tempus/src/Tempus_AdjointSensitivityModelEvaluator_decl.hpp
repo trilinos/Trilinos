@@ -78,7 +78,8 @@ public:
    */
   AdjointSensitivityModelEvaluator(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & adjoint_model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & adjoint_residual_model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & adjoint_solve_model,
     const Scalar& t_init,
     const Scalar& t_final,
     const bool is_pseudotransient,
@@ -88,9 +89,13 @@ public:
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const
   { return model_; }
 
-  //! Get the underlying adjoint model
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getAdjointModel() const
-  { return adjoint_model_; }
+  //! Get the underlying adjoint residual model
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getAdjointResidualModel() const
+  { return adjoint_residual_model_; }
+
+  //! Get the underlying adjoint solve model
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getAdjointSolveModel() const
+  { return adjoint_solve_model_; }
 
   //! Set the final time from the forward evaluation
   void setFinalTime(const Scalar t_final);
@@ -141,7 +146,8 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > adjoint_model_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > adjoint_residual_model_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > adjoint_solve_model_;
 
   Teuchos::RCP<const DMVPVS> adjoint_space_;
   Teuchos::RCP<const DMVPVS> residual_space_;
@@ -157,6 +163,8 @@ private:
   int num_adjoint_;
 
   mutable bool mass_matrix_is_computed_;
+  mutable bool jacobian_matrix_is_computed_;
+  mutable bool response_gradient_is_computed_;
   mutable Teuchos::RCP<Thyra::VectorBase<Scalar> > my_x_dot_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdx_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdot_;

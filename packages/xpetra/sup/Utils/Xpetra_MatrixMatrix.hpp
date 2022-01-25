@@ -266,7 +266,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           allocPerRow[i] = Aprime->getNumEntriesInLocalRow(i) + Bprime->getNumEntriesInLocalRow(i);
         }
         //Construct C
-        RCP<tcrs_matrix_type> C = rcp(new tcrs_matrix_type(Aprime->getRowMap(), allocPerRow(), Tpetra::StaticProfile));
+        RCP<tcrs_matrix_type> C = rcp(new tcrs_matrix_type(Aprime->getRowMap(), allocPerRow()));
         //Compute the sum in C (already took care of transposes)
         Tpetra::MatrixMatrix::Add<SC,LO,GO,NO>(
             *Aprime, false, alpha,

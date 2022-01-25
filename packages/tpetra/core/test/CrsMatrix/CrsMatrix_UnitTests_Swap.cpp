@@ -410,7 +410,7 @@ class crsMatrix_Swap_Tester
             }
         }
 
-        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row (), Tpetra::StaticProfile));
+        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row ()));
 
         for(auto& r: gbl_rows)
         {

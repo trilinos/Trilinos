@@ -1,0 +1,49 @@
+#!/bin/bash
+
+trilinos_src_dir=${TRILINOS_DIR:-${PWD}/../Trilinos}
+build_dir=${BUILD_DIR:-${PWD}}
+build_type=${CMAKE_BUILD_TYPE:-release}
+trilinos_install_dir=${TRILINOS_INSTALL_DIR:-${PWD}/../trilinos_install}
+
+yaml_install_dir=${YAML_INSTALL_DIR:-${build_dir}/../../yaml/yaml_install}
+
+enable_yaml=OFF
+if [ -d ${yaml_install_dir} ]; then
+  enable_yaml=ON
+fi
+
+printf "\nTRILINOS_DIR=${trilinos_src_dir}\n";
+printf "BUILD_DIR=${build_dir}\n";
+printf "CMAKE_BUILD_TYPE=${build_type}\n";
+printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
+printf "YAML_INSTALL_DIR=${yaml_install_dir}\n";
+printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk'\n\n";
+printf "ENABLE_YAML=${enable_yaml}\n";
+
+if [ ! -d ${trilinos_src_dir}/packages/krino ] && [ ! -L ${trilinos_src_dir}/packages/krino ]; then
+  echo "Trilinos dir (${trilinos_src_dir}) doesn't have packages/krino directory. If using a Sierra project, make a soft-link to Sierra's krino directory.";
+  exit 1;
+fi
+
+mkdir -p $trilinos_install_dir
+mkdir -p $build_dir
+
+cd ${build_dir}
+
+# Cleanup old cache before we configure
+rm -rf CMakeFiles CMakeCache.txt
+
+cmake \
+-C ${trilinos_src_dir}/cmake/std/PullRequestLinuxGCC7.2.0TestingSettings.cmake \
+-DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
+-DCMAKE_BUILD_TYPE=${build_type^^} \
+-DBUILD_SHARED_LIBS=OFF \
+-DTPL_ENABLE_MPI=ON \
+-DTrilinos_ENABLE_Krino:BOOL=ON \
+-DKrino_ENABLE_TESTS:BOOL=ON \
+-DTPL_ENABLE_yaml-cpp=${enable_yaml} \
+-Dyaml-cpp_INCLUDE_DIRS=${yaml_install_dir}/include \
+-Dyaml-cpp_LIBRARY_DIRS=${yaml_install_dir}/lib \
+-DSTK_ENABLE_SEACASAprepro_lib:BOOL=${enable_yaml} \
+${trilinos_src_dir}/
+

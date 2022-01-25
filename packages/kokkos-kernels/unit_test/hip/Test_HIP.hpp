@@ -1,3 +1,6 @@
+#ifndef TEST_HIP_HPP
+#define TEST_HIP_HPP
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
@@ -19,3 +22,5 @@ protected:
 
 #define TestCategory hip
 #define TestExecSpace Kokkos::Experimental::HIP
+
+#endif // TEST_HIP_HPP

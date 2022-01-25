@@ -88,8 +88,7 @@ createCrsMatrix (RCP<const map_type> rowAndColMap,
   //TM mon (*TM::getNewCounter ("CrsMatrix constructor"));
 
   return rcp (new crs_matrix_type (rowAndColMap, rowAndColMap,
-                                   maxNumEntPerRow,
-                                   Tpetra::StaticProfile));
+                                   maxNumEntPerRow));
 }
 
 RCP<crs_graph_type>
@@ -99,8 +98,7 @@ createCrsGraph (RCP<const map_type> rowAndColMap,
   //TM mon (*TM::getNewCounter ("CrsGraph constructor"));
 
   return rcp (new crs_graph_type (rowAndColMap, rowAndColMap,
-                                  maxNumEntPerRow,
-                                  Tpetra::StaticProfile));
+                                  maxNumEntPerRow));
 }
 
 void

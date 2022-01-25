@@ -243,7 +243,7 @@ namespace { // (anonymous)
     // around this default execution space issue.
     //
     typedef typename Kokkos::Impl::if_c<
-      Kokkos::Impl::SpaceAccessibility<
+      Kokkos::SpaceAccessibility<
         typename ExecSpace::memory_space,
         Kokkos::HostSpace>::accessible,
       typename ExecSpace::device_type,
@@ -322,7 +322,9 @@ namespace { // (anonymous)
   {
     // FIXME (mfh 15 Mar 2019) DualView doesn't have a stride
     // method yet, but its Views do.
-    size_t strides[WrappedOrNotDualViewType::t_dev::Rank];
+    // NOTE: dv.stride() returns a vector of length one
+    // more than its rank
+    size_t strides[WrappedOrNotDualViewType::t_dev::Rank+1];
     dv.stride(strides);
     const size_t LDA = strides[1];
     const size_t numRows = dv.extent (0);
@@ -2738,22 +2740,6 @@ namespace Tpetra {
     // first created with the Map with more processes, then that Map
     // was replaced with a Map with fewer processes, and finally the
     // original Map was restored on this call to replaceMap.
-
-#ifdef HAVE_TEUCHOS_DEBUG
-    // mfh 28 Mar 2013: We can't check for compatibility across the
-    // whole communicator, unless we know that the current and new
-    // Maps are nonnull on _all_ participating processes.
-    // TEUCHOS_TEST_FOR_EXCEPTION(
-    //   origNumProcs == newNumProcs && ! this->getMap ()->isCompatible (*map),
-    //   std::invalid_argument, "Tpetra::MultiVector::project: "
-    //   "If the input Map's communicator is compatible (has the same number of "
-    //   "processes as) the current Map's communicator, then the two Maps must be "
-    //   "compatible.  The replaceMap() method is not for data redistribution; "
-    //   "use Import or Export for that purpose.");
-
-    // TODO (mfh 28 Mar 2013) Add compatibility checks for projections
-    // of the Map, in case the process counts don't match.
-#endif // HAVE_TEUCHOS_DEBUG
 
     if (this->getMap ().is_null ()) { // current Map is null
       // If this->getMap() is null, that means that this MultiVector

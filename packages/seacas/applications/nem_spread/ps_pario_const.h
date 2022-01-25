@@ -25,7 +25,7 @@ struct Parallel_IO
 {
   int Dsk_List_Cnt;
 
-  int * Dsk_List;
+  int  *Dsk_List;
   int **RDsk_List;
 
   int Num_Dsk_Ctrlrs;  /* The number of disk controllers.     */

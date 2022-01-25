@@ -511,7 +511,7 @@ namespace Tacho {
   ::factorize_small_host(const value_type_array &ax) {
     double t_copy(0), t_factor(0);
     {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
       _A = value_type_matrix_host("A", _m, _m);
@@ -605,7 +605,7 @@ namespace Tacho {
   ::solve_small_host(const value_type_matrix &x,
                      const value_type_matrix &b,
                      const value_type_matrix &t) {
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
     double t_copy(0), t_solve(0);
     {
       timer.reset();

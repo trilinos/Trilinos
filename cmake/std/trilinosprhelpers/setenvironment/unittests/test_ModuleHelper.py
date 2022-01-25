@@ -178,28 +178,28 @@ class moduleHelperTest(TestCase):
 
     @patch('subprocess.Popen', side_effect=mock_popen_status_ok)
     def test_module_load_status_ok(self, arg_popen):
-        r = ModuleHelper.module("load", "sems-gcc/4.8.4")
+        r = ModuleHelper.module("load", "sems-archive-gcc/4.8.4")
         print("result = {}".format(r))
         self.assertEqual(0, r)
 
 
     @patch('subprocess.Popen', side_effect=mock_popen_status_error_rc1)
     def test_module_load_status_error(self, arg_popen):
-        r = ModuleHelper.module("load", "sems-gcc/4.8.4")
+        r = ModuleHelper.module("load", "sems-archive-gcc/4.8.4")
         print("result = {}".format(r))
         self.assertEqual(1, r)
 
 
     @patch('subprocess.Popen', side_effect=mock_popen_status_error_rc0)
     def test_module_load_status_error(self, arg_popen):
-        r = ModuleHelper.module("load", "sems-gcc/4.8.4")
+        r = ModuleHelper.module("load", "sems-archive-gcc/4.8.4")
         print("result = {}".format(r))
         self.assertEqual(1, r)
 
 
     @patch('subprocess.Popen', side_effect=mock_popen_status_ok)
     def test_module_swap_status_ok(self, arg_popen):
-        r = ModuleHelper.module("swap", "sems-gcc/4.8.4", "sems-gcc/7.3.0")
+        r = ModuleHelper.module("swap", "sems-archive-gcc/4.8.4", "sems-archive-gcc/7.3.0")
         print("result = {}".format(r))
         self.assertEqual(0, r)
 
@@ -207,7 +207,7 @@ class moduleHelperTest(TestCase):
     #@patch('subprocess.Popen', side_effect=mock_popen_status_ok)
     def test_module_unload_status_ok(self):
         with patch('subprocess.Popen', side_effect=mock_popen_status_ok):
-            r = ModuleHelper.module("unload", "sems-gcc/4.8.4")
+            r = ModuleHelper.module("unload", "sems-archive-gcc/4.8.4")
         print("result = {}".format(r))
         self.assertEqual(0, r)
 
@@ -218,21 +218,21 @@ class moduleHelperTest(TestCase):
         This tests that module works when the parameter is a list of arguments.
         """
         with patch('subprocess.Popen', side_effect=mock_popen_status_ok):
-            r = ModuleHelper.module( [ "unload", "sems-gcc/4.8.4" ] )
+            r = ModuleHelper.module( [ "unload", "sems-archive-gcc/4.8.4" ] )
         print("result = {}".format(r))
         self.assertEqual(0, r)
 
 
     def test_module_load_success_by_mlstatus(self):
         with patch('subprocess.Popen', side_effect=mock_popen_status_mlstatus_success):
-            r = ModuleHelper.module("load", "sems-gcc/4.8.4")
+            r = ModuleHelper.module("load", "sems-archive-gcc/4.8.4")
         print("result = {}".format(r))
         self.assertEqual(0, r)
 
 
     def test_module_load_error_by_mlstatus(self):
         with patch('subprocess.Popen', side_effect=mock_popen_status_mlstatus_error):
-            r = ModuleHelper.module("load", "sems-gcc/4.8.4")
+            r = ModuleHelper.module("load", "sems-archive-gcc/4.8.4")
         print("result = {}".format(r))
         self.assertEqual(1, r)
 
@@ -240,7 +240,7 @@ class moduleHelperTest(TestCase):
     def test_module_load_error_no_modulecmd(self):
         with patch('distutils.spawn.find_executable', side_effect=Exception("mock side-effect error")):
             with patch('subprocess.Popen', side_effect=mock_popen_status_mlstatus_error):
-                r = ModuleHelper.module("load", "sems-gcc/4.8.4")
+                r = ModuleHelper.module("load", "sems-archive-gcc/4.8.4")
         print("result = {}".format(r))
         self.assertEqual(1, r)
 
@@ -266,6 +266,3 @@ class moduleHelperTest(TestCase):
         with patch('subprocess.Popen', side_effect=mock_popen_status_error_return_nonetype):
             with self.assertRaises(TypeError):
                 ModuleHelper.module("load", "gcc/4.8.4")
-
-
-

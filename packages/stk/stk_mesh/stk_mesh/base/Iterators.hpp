@@ -63,7 +63,8 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typenam
   typedef typename std::iterator_traits<LowLevelItrType>::pointer pointer;
 
   // Construct an iterator from a starting point specified by high_itr and low_itr
-  TwoLevelIterator(HighLevelItrType high_itr, LowLevelItrType low_itr, HighLevelItrType high_end_itr) :
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after December 2021
+STK_DEPRECATED  TwoLevelIterator(HighLevelItrType high_itr, LowLevelItrType low_itr, HighLevelItrType high_end_itr) :
     m_high_itr(high_itr),
     m_low_itr(low_itr),
     m_high_end_itr(high_end_itr)
@@ -74,11 +75,12 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typenam
   }
 
   // Construct the "end" iterator
-  TwoLevelIterator(HighLevelItrType high_end_itr) :
+STK_DEPRECATED  TwoLevelIterator(HighLevelItrType high_end_itr) :
     m_high_itr(high_end_itr),
     m_low_itr(),
     m_high_end_itr(high_end_itr)
   {}
+#endif
 
   TwoLevelIterator() :
     m_high_itr(),
@@ -193,7 +195,8 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
  public:
   typedef SelectedBucketIterator<BucketIteratorType> self;
 
-  SelectedBucketIterator(const Selector& selector, BucketIteratorType bucket_itr, BucketIteratorType bucket_end_itr) :
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after December 2021
+STK_DEPRECATED  SelectedBucketIterator(const Selector& selector, BucketIteratorType bucket_itr, BucketIteratorType bucket_end_itr) :
     m_bucket_itr(bucket_itr),
     m_bucket_end_itr(bucket_end_itr),
     m_selector(selector)
@@ -204,11 +207,12 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
   }
 
   // Construct the "end" iterator
-  SelectedBucketIterator(BucketIteratorType bucket_end_itr) :
+STK_DEPRECATED  SelectedBucketIterator(BucketIteratorType bucket_end_itr) :
     m_bucket_itr(bucket_end_itr),
     m_bucket_end_itr(bucket_end_itr),
     m_selector()
   {}
+#endif
 
   SelectedBucketIterator() :
     m_bucket_itr(),
@@ -290,33 +294,34 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
   Selector           m_selector;
 };
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after December 2021
 // Iterator for iterating over all entities within each bucket of a vector of buckets
-typedef TwoLevelIterator<BucketVector::const_iterator, BucketIterator> BucketVectorEntityIterator;
-typedef std::pair<BucketVectorEntityIterator, BucketVectorEntityIterator>      BucketVectorEntityIteratorRange;
+STK_DEPRECATED typedef TwoLevelIterator<BucketVector::const_iterator, BucketIterator> BucketVectorEntityIterator;
+STK_DEPRECATED typedef std::pair<BucketVectorEntityIterator, BucketVectorEntityIterator>      BucketVectorEntityIteratorRange;
 
 // Iterator for iterating over selected buckets within a vector of buckets
-typedef SelectedBucketIterator<BucketVector::const_iterator>                      SelectedBucketVectorIterator;
-typedef std::pair<SelectedBucketVectorIterator, SelectedBucketVectorIterator>             SelectedBucketVectorIteratorRange;
+STK_DEPRECATED typedef SelectedBucketIterator<BucketVector::const_iterator>                      SelectedBucketVectorIterator;
+STK_DEPRECATED typedef std::pair<SelectedBucketVectorIterator, SelectedBucketVectorIterator>             SelectedBucketVectorIteratorRange;
 
 // Iterator for iterating over all entities within each *selected* bucket of a vector of buckets
-typedef TwoLevelIterator<SelectedBucketVectorIterator, BucketIterator>                 SelectedBucketVectorEntityIterator;
-typedef std::pair<SelectedBucketVectorEntityIterator, SelectedBucketVectorEntityIterator> SelectedBucketVectorEntityIteratorRange;
+STK_DEPRECATED typedef TwoLevelIterator<SelectedBucketVectorIterator, BucketIterator>                 SelectedBucketVectorEntityIterator;
+STK_DEPRECATED typedef std::pair<SelectedBucketVectorEntityIterator, SelectedBucketVectorEntityIterator> SelectedBucketVectorEntityIteratorRange;
 
 // Iterator for iterating over all buckets in a vector of vectors of buckets
-typedef TwoLevelIterator<std::vector<BucketVector >::const_iterator, BucketVector::const_iterator> AllBucketsIterator;
-typedef std::pair<AllBucketsIterator, AllBucketsIterator>                                                          AllBucketsRange;
+STK_DEPRECATED typedef TwoLevelIterator<std::vector<BucketVector >::const_iterator, BucketVector::const_iterator> AllBucketsIterator;
+STK_DEPRECATED typedef std::pair<AllBucketsIterator, AllBucketsIterator>                                                          AllBucketsRange;
 
 // Iterator for iterating over all *selected* buckets in a bucket range
-typedef SelectedBucketIterator<AllBucketsIterator>                         AllSelectedBucketsIterator;
-typedef std::pair<AllSelectedBucketsIterator, AllSelectedBucketsIterator>  AllSelectedBucketsRange;
+STK_DEPRECATED typedef SelectedBucketIterator<AllBucketsIterator>                         AllSelectedBucketsIterator;
+STK_DEPRECATED typedef std::pair<AllSelectedBucketsIterator, AllSelectedBucketsIterator>  AllSelectedBucketsRange;
 
 // Iterator for iterating over all entities within each bucket of a bucket range
-typedef TwoLevelIterator<AllBucketsIterator, BucketIterator>            BucketRangeEntityIterator;
-typedef std::pair<BucketRangeEntityIterator, BucketRangeEntityIterator> BucketRangeEntityIteratorRange;
+STK_DEPRECATED typedef TwoLevelIterator<AllBucketsIterator, BucketIterator>            BucketRangeEntityIterator;
+STK_DEPRECATED typedef std::pair<BucketRangeEntityIterator, BucketRangeEntityIterator> BucketRangeEntityIteratorRange;
 
 // Iterator for iterating over all *selected* entities withing a bucket range
-typedef TwoLevelIterator<AllSelectedBucketsIterator, BucketIterator>                     SelectedBucketRangeEntityIterator;
-typedef std::pair<SelectedBucketRangeEntityIterator, SelectedBucketRangeEntityIterator>  SelectedBucketRangeEntityIteratorRange;
+STK_DEPRECATED typedef TwoLevelIterator<AllSelectedBucketsIterator, BucketIterator>                     SelectedBucketRangeEntityIterator;
+STK_DEPRECATED typedef std::pair<SelectedBucketRangeEntityIterator, SelectedBucketRangeEntityIterator>  SelectedBucketRangeEntityIteratorRange;
 
 //
 // API - Convert collections into ranges. For internal use only. Clients should use
@@ -324,7 +329,8 @@ typedef std::pair<SelectedBucketRangeEntityIterator, SelectedBucketRangeEntityIt
 //
 
 // Get a range allowing you iterate over selected buckets in a vector
-SelectedBucketVectorIteratorRange get_selected_bucket_range(const BucketVector& buckets, const Selector& selector);
+STK_DEPRECATED SelectedBucketVectorIteratorRange get_selected_bucket_range(const BucketVector& buckets, const Selector& selector);
+#endif
 
 } //namespace mesh
 } //namespace stk

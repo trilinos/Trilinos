@@ -182,7 +182,7 @@ struct ExplicitGraphCoarsening
         });
     }
 
-    size_t team_shmem_size(int teamSize) const
+    size_t team_shmem_size(int /*teamSize*/) const
     {
       return tableSize() * sizeof(int);
     }
@@ -268,7 +268,7 @@ struct ExplicitGraphCoarsening
     }
     numFineVerts--;
     clusterOffsets = ordinal_view_t("Cluster offsets", numCoarseVerts + 1);
-    clusterVerts = ordinal_view_t(Kokkos::ViewAllocateWithoutInitializing("Cluster verts"), numFineVerts);
+    clusterVerts = ordinal_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Cluster verts"), numFineVerts);
     Kokkos::parallel_for(range_pol(0, numFineVerts), ClusterSizeFunctor(clusterOffsets, labels));
     KokkosKernels::Impl::exclusive_parallel_prefix_sum<ordinal_view_t, exec_space>(numCoarseVerts + 1, clusterOffsets);
     {
@@ -286,8 +286,8 @@ struct ExplicitGraphCoarsening
       Kokkos::parallel_for(team_pol(numCoarseVerts, teamSize, vectorSize).set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam)), buildEdgeMask);
       numClusterEdges = crossClusterEdgeMask.count();
     }
-    coarseRowmap = coarse_rowmap_t(Kokkos::ViewAllocateWithoutInitializing("Cluster graph rowmap"), numCoarseVerts + 1);
-    coarseEntries = coarse_entries_t(Kokkos::ViewAllocateWithoutInitializing("Cluster graph colinds"), numClusterEdges);
+    coarseRowmap = coarse_rowmap_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Cluster graph rowmap"), numCoarseVerts + 1);
+    coarseEntries = coarse_entries_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Cluster graph colinds"), numClusterEdges);
     Kokkos::parallel_scan(range_pol(0, numFineVerts), FillClusterEntriesFunctor
         (fineRowmap, fineEntries, coarseRowmap, coarseEntries, clusterOffsets, clusterVerts, labels, crossClusterEdgeMask));
   }

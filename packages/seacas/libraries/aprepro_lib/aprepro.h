@@ -59,7 +59,7 @@ namespace SEAMS {
   struct file_rec
   {
     std::string name{"STDIN"};
-    int         lineno{0};
+    int         lineno{1};
     int         loop_count{0};
     bool        tmp_file{false};
 

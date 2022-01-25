@@ -13,4 +13,3 @@ ELSEIF ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Cray")
 ELSE()
   SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -r8 -i8")
 ENDIF()
-

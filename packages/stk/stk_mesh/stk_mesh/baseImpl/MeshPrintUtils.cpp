@@ -95,7 +95,7 @@ void print_field_data_for_entity(const BulkData& mesh, const MeshIndex& meshInde
     size_t b_ord = meshIndex.bucket_ordinal;
     const FieldVector& all_fields = mesh.mesh_meta_data().get_fields();
     for(FieldBase* field : all_fields) { 
-        if(static_cast<unsigned>(field->entity_rank()) != bucket->entity_rank()) continue;
+        if(field->entity_rank() != bucket->entity_rank()) continue;
         FieldMetaData field_meta_data = field->get_meta_data_for_field()[bucket->bucket_id()];
         unsigned data_size = field_meta_data.m_bytes_per_entity;
         if (data_size > 0) { // entity has this field?

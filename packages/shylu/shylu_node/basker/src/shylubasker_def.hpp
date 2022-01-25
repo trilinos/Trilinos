@@ -20,7 +20,7 @@
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #else
 #include <omp.h>
 #endif
@@ -2202,11 +2202,7 @@ namespace BaskerNS
     //Next test if Kokkos has that many threads!
     //This is a common mistake in mpi-based apps
     #ifdef KOKKOS_ENABLE_OPENMP
-    #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    int check_value = Kokkos::OpenMP::max_hardware_threads();
-    #else
     int check_value = Kokkos::OpenMP::impl_max_hardware_threads();
-    #endif
     if(nthreads > check_value)
     {
       BASKER_ASSERT(0==1, "Basker SetThreads Assert: Number of thread not available");

@@ -454,7 +454,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
                                                                M1_Matrix,nullspace,coords,params) );
     }
     else if (precType=="MueLu-Maxwell1" || precType=="MueLu-Reitzinger") {
-      preconditioner = rcp( new MueLu::Maxwell1<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,nullspace,coords,params) );
+      preconditioner = rcp( new MueLu::Maxwell1<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Kn_Matrix,nullspace,coords,params) );
 
     }
 

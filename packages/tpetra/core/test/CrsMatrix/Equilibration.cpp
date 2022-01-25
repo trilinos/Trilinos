@@ -978,7 +978,7 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
   out << "Create CrsGraph" << endl;
   const size_t maxNumEntPerRow = 3;
   RCP<crs_graph_type> G =
-    rcp (new crs_graph_type (rowMap, maxNumEntPerRow, Tpetra::StaticProfile));
+    rcp (new crs_graph_type (rowMap, maxNumEntPerRow));
   std::vector<GO> globalIndices (maxNumEntPerRow);
 
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -1333,7 +1333,7 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
   out << "Create CrsGraph" << endl;
   const size_t maxNumEntPerRow = 1;
   RCP<crs_graph_type> G =
-    rcp (new crs_graph_type (rowMap, maxNumEntPerRow, Tpetra::StaticProfile));
+    rcp (new crs_graph_type (rowMap, maxNumEntPerRow));
   std::vector<GO> globalIndices (maxNumEntPerRow);
 
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -1571,7 +1571,7 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
   out << "Create CrsGraph" << endl;
   const size_t maxNumEntPerRow = 1;
   RCP<crs_graph_type> G =
-    rcp (new crs_graph_type (rowMap, maxNumEntPerRow, Tpetra::StaticProfile));
+    rcp (new crs_graph_type (rowMap, maxNumEntPerRow));
 
   // Process 1 gets an implicit zero diagonal entry.
   std::vector<GO> globalIndices (maxNumEntPerRow);
@@ -1809,7 +1809,7 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
   out << "Create CrsGraph" << endl;
   const size_t maxNumEntPerRow = 1;
   RCP<crs_graph_type> G =
-    rcp (new crs_graph_type (rowMap, maxNumEntPerRow, Tpetra::StaticProfile));
+    rcp (new crs_graph_type (rowMap, maxNumEntPerRow));
   std::vector<GO> globalIndices (maxNumEntPerRow);
 
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {

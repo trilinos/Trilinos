@@ -220,7 +220,7 @@ namespace FROSch {
 
             auto repeatedLocalMap = repeatedMap->getLocalMap();
             auto rowLocalMap = rowMap->getLocalMap();
-            auto AssembledBasisView = AssembledBasis_->getDeviceLocalView();
+            auto AssembledBasisView = AssembledBasis_->getDeviceLocalView(Access::ReadOnly);
 
             // count number of nonzeros per row
             UN numLocalRows = rowMap->getNodeNumElements();
@@ -242,12 +242,17 @@ namespace FROSch {
                 });
             Kokkos::fence();
 
+            // cout nnz
+            UN nnz = 0; //Rowptr[numLocalRows];
+            Kokkos::parallel_reduce("FROSch_CoarseSpace::fillGlobalBasisMatrix:nnz", 1+numLocalRows,
+              KOKKOS_LAMBDA(const int &i, UN &lsum) { lsum += Rowptr[i]; },
+              nnz);
+
             // make it into offsets
             KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
               (1+numLocalRows, Rowptr);
 
             // fill into the local matrix
-            UN nnz = Rowptr[numLocalRows];
             indices_type Indices ("Indices", nnz);
             values_type  Values  ("Values",  nnz);
             auto AssembledBasisLocalMap = AssembledBasisMap_->getLocalMap();

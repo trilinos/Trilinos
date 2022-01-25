@@ -46,8 +46,6 @@
 
 namespace { // (anonymous)
   using Tpetra::TestingUtilities::getDefaultComm;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
   using Teuchos::arcp;
   using Teuchos::arcpClone;
   using Teuchos::Array;
@@ -131,7 +129,7 @@ namespace { // (anonymous)
     {
       // create static-profile graph, fill-complete without inserting
       // (and therefore, without allocating)
-      GRAPH graph(map,1,StaticProfile);
+      GRAPH graph(map,1);
       graph.fillComplete();
     }
 
@@ -342,7 +340,7 @@ namespace { // (anonymous)
       RCP<const map_type> cmap =
         rcp (new map_type (INVALID, numLocal, 0, comm));
       // must allocate enough for all submitted indices.
-      RCP<GRAPH> G = rcp(new GRAPH(rmap,cmap,2,StaticProfile) );
+      RCP<GRAPH> G = rcp(new GRAPH(rmap,cmap,2) );
       TEST_EQUALITY_CONST( G->hasColMap(), true );
       const GO myrowind = rmap->getGlobalElement(0);
 
@@ -389,7 +387,7 @@ namespace { // (anonymous)
     // create Map
     RCP<const map_type> map = rcp (new map_type (INVALID, 3, 0, comm));
     {
-      GRAPH graph(map,1,StaticProfile);
+      GRAPH graph(map,1);
       // test labeling
       const std::string lbl("graphA");
       std::string desc1 = graph.description();
@@ -400,7 +398,7 @@ namespace { // (anonymous)
       TEST_EQUALITY( graph.getObjectLabel(), lbl );
     }
     {
-      GRAPH graph(map,1,StaticProfile);
+      GRAPH graph(map,1);
       // test describing at different verbosity levels
       if (myRank==0) out << "Describing with verbosity VERB_DEFAULT..." << endl;
       graph.describe(out);
@@ -546,7 +544,7 @@ namespace { // (anonymous)
       colind[0] = Teuchos::as<LO>(0);
       colind[1] = Teuchos::as<LO>(1);
 
-      RCP<GRAPH> G = rcp(new GRAPH(rmap,rmap,0,StaticProfile) );
+      RCP<GRAPH> G = rcp(new GRAPH(rmap,rmap,0) );
       TEST_NOTHROW( G->setAllIndices(rowptr,colind) );
       TEST_EQUALITY_CONST( G->hasColMap(), true );
 
@@ -571,7 +569,7 @@ namespace { // (anonymous)
 
     const size_t num_local = 1;
     RCP<const map_type> row_map = rcp(new map_type(Invalid, num_local, 0, comm));
-    RCP<graph_type> G = rcp(new graph_type(row_map, 1, StaticProfile));
+    RCP<graph_type> G = rcp(new graph_type(row_map, 1));
     auto row = row_map->getGlobalElement(0);
     G->insertGlobalIndices(row, tuple<GO>(row, row, row, row));
     G->insertGlobalIndices(row, tuple<GO>(row, row, row, row));
@@ -609,7 +607,7 @@ namespace { // (anonymous)
       colind[0] = Teuchos::as<LO>(0);
       colind[1] = Teuchos::as<LO>(1);
 
-      RCP<GRAPH> G = rcp(new GRAPH(rmap,cmap,0,StaticProfile) );
+      RCP<GRAPH> G = rcp(new GRAPH(rmap,cmap,0) );
       TEST_NOTHROW( G->setAllIndices(rowptr,colind) );
       TEST_EQUALITY_CONST( G->hasColMap(), true );
 

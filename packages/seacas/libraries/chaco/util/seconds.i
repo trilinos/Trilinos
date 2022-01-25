@@ -87,8 +87,6 @@
 
      typedef long uid_t;
 
-      typedef int ssize_t;
-
      typedef unsigned short __site_t;
 
      typedef unsigned short __cnode_t;

@@ -36,7 +36,7 @@ void testTachoSolver(int nSolvers,
                      const int posDef = 1,
                      const int numRuns = 1)
 {
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   const double tol = 1e-10;//  tol *= 10; // original tolerance may be too tight
 
   ///

@@ -804,11 +804,27 @@ void test_fill(const Scalar alpha,const Scalar initial1)
     testFieldValidation(Fixture,alpha,alpha,Scalar());
 }
 
+template<class Scalar>
+void test_fill_many(const Scalar alpha,const Scalar initial1)
+{
+    BLASFixture<Scalar> Fixture (initial1,initial1,initial1);
+
+    stk::mesh::field_fill(alpha,{Fixture.fieldBase1, Fixture.fieldBase2, Fixture.fieldBase3});
+    testFieldValidation(Fixture,alpha,alpha,alpha);
+}
+
 TEST(FieldBLAS,fill_double)
 {
     const double alpha = 4.27;
     const double initial1 = -3.73;
     test_fill(alpha,initial1);
+}
+
+TEST(FieldBLAS,fill_many_double)
+{
+    const double alpha = 4.27;
+    const double initial1 = -3.73;
+    test_fill_many(alpha,initial1);
 }
 
 TEST(FieldBLAS,fill_float)
@@ -818,6 +834,13 @@ TEST(FieldBLAS,fill_float)
     test_fill(alpha,initial1);
 }
 
+TEST(FieldBLAS,fill_float_many)
+{
+    const float alpha = 4.2;
+    const float initial1 = -3.7;
+    test_fill_many(alpha,initial1);
+}
+
 TEST(FieldBLAS,fill_complex)
 {
     const std::complex<double> alpha = std::complex<double>(4.11,-7.63);
@@ -825,11 +848,25 @@ TEST(FieldBLAS,fill_complex)
     test_fill(alpha,initial1);
 }
 
+TEST(FieldBLAS,fill_complex_many)
+{
+    const std::complex<double> alpha = std::complex<double>(4.11,-7.63);
+    const std::complex<double> initial1 = std::complex<double>(-7.21,-1.23);
+    test_fill_many(alpha,initial1);
+}
+
 TEST(FieldBLAS,fill_int)
 {
     const int alpha = 4;
     const int initial1 = -3;
     test_fill(alpha,initial1);
+}
+
+TEST(FieldBLAS,fill_int_many)
+{
+    const int alpha = 4;
+    const int initial1 = -3;
+    test_fill_many(alpha,initial1);
 }
 
 template<class Scalar>

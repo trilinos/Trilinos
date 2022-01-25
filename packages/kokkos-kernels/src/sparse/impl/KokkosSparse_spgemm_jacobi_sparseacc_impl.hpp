@@ -1421,7 +1421,7 @@ namespace KokkosSparse{
 	my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
       }
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       pool_memory_space m_space(num_chunks, chunksize, -1,  my_pool_type);
       MyExecSpace().fence();
 

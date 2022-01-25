@@ -49,7 +49,7 @@
 #include "Stokhos_Sparse3TensorUtilities.hpp"
 #include "EpetraExt_BlockUtility.h"
 
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -173,7 +173,7 @@ run_test(const int p, const int d, const int nGrid, const int nIter,
   sg_y->init(0.0);
 
   // Apply operator
-  Kokkos::Impl::Timer clock;
+  Kokkos::Timer clock;
   for (int iter=0; iter<nIter; ++iter)
     sg_A->Apply( *(sg_x->getBlockVector()), *(sg_y->getBlockVector()) );
 

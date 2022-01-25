@@ -101,6 +101,7 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
   stk::parse_command_line(argc, argv, m_quickExample, m_longExamples, m_commandLineParser, m_comm);
 
   set_filenames(settings);
+  set_logfile(settings);
   set_app_type_defaults(settings);
   set_contact_search(settings);
   set_contact_search_tolerance(settings);
@@ -121,21 +122,23 @@ void Parser::add_options_to_parser()
                                          "output directory for decomposition"};
   stk::CommandLineOption deprecatedOutputDirectory{m_optionNames.deprecatedOutputDirectory, "",
                                          "DEPRECATED: output directory for decomposition"};
+  stk::CommandLineOption logfile{m_optionNames.logfile, "l",
+                                 "Output log file path, one of: 'cout', 'cerr', or a file path."};
 
   std::ostringstream smStream;
   smStream << "Use settings suitable for solving Solid Mechanics problems. "
            << "This flag implies:" << std::endl
-           << "    " << stk::dash_it(m_optionNames.faceSearchRelTol) << "=" << m_defaults.faceSearchRelTol << std::endl
-           << "    Face search graph vertex weight multiplier = " << m_defaults.smFaceSearchVertexMultiplier << std::endl
-           << "    Face search graph edge weight = " << m_defaults.smFaceSearchEdgeWeight;
+           << "    " << stk::dash_it(m_optionNames.faceSearchRelTol) << "=" << DefaultSettings::faceSearchRelTol << std::endl
+           << "    Face search graph vertex weight multiplier = " << DefaultSettings::smFaceSearchVertexMultiplier << std::endl
+           << "    Face search graph edge weight = " << DefaultSettings::smFaceSearchEdgeWeight;
   stk::CommandLineOption smDefaults{m_optionNames.smDefaults, "", smStream.str()};
 
   std::ostringstream sdStream;
   sdStream << "Use settings suitable for solving Structural Dynamics problems. "
            << "This flag implies:" << std::endl
-           << "    " << stk::dash_it(m_optionNames.faceSearchAbsTol) << "=" << m_defaults.faceSearchAbsTol << std::endl
-           << "    Face search graph vertex weight multiplier = " << m_defaults.faceSearchVertexMultiplier << std::endl
-           << "    Face search graph edge weight = " << m_defaults.faceSearchEdgeWeight << std::endl
+           << "    " << stk::dash_it(m_optionNames.faceSearchAbsTol) << "=" << DefaultSettings::faceSearchAbsTol << std::endl
+           << "    Face search graph vertex weight multiplier = " << DefaultSettings::faceSearchVertexMultiplier << std::endl
+           << "    Face search graph edge weight = " << DefaultSettings::faceSearchEdgeWeight << std::endl
            << "    Handle spider elements";
   stk::CommandLineOption sdDefaults{m_optionNames.sdDefaults, "", sdStream.str()};
 
@@ -162,13 +165,14 @@ void Parser::add_options_to_parser()
   m_commandLineParser.add_required_positional<std::string>(infile);
   m_commandLineParser.add_optional_positional<std::string>(outputDirectory, ".");
   m_commandLineParser.add_optional_positional<std::string>(deprecatedOutputDirectory, "");
+  m_commandLineParser.add_optional<std::string>(logfile, DefaultSettings::logFile);
   m_commandLineParser.add_flag(smDefaults);
   m_commandLineParser.add_flag(sdDefaults);
-  m_commandLineParser.add_optional_implicit(faceSearchAbsTol, m_defaults.faceSearchAbsTol);
-  m_commandLineParser.add_optional_implicit(faceSearchRelTol, m_defaults.faceSearchRelTol);
-  m_commandLineParser.add_optional(contactSearch, m_defaults.contactSearch);
-  m_commandLineParser.add_optional(decompMethod, m_defaults.decompMethod);
-  m_commandLineParser.add_optional(vertexWeightBlockMultiplier, m_defaults.vertexWeightBlockMultiplier);
+  m_commandLineParser.add_optional_implicit(faceSearchAbsTol, DefaultSettings::faceSearchAbsTol);
+  m_commandLineParser.add_optional_implicit(faceSearchRelTol, DefaultSettings::faceSearchRelTol);
+  m_commandLineParser.add_optional(contactSearch, DefaultSettings::contactSearch);
+  m_commandLineParser.add_optional(decompMethod, DefaultSettings::decompMethod);
+  m_commandLineParser.add_optional(vertexWeightBlockMultiplier, DefaultSettings::vertexWeightBlockMultiplier);
 }
 
 void Parser::setup_messages(const char** argv)
@@ -199,6 +203,12 @@ void Parser::set_filenames(BalanceSettings& settings) const
   settings.set_output_filename(outputFilename);
 }
 
+void Parser::set_logfile(BalanceSettings& settings) const
+{
+  ThrowRequire(m_commandLineParser.is_option_provided(m_optionNames.logfile));
+  settings.set_log_filename(m_commandLineParser.get_option_value<std::string>(m_optionNames.logfile));
+}
+
 void Parser::set_app_type_defaults(BalanceSettings& settings) const
 {
   bool useSM = m_commandLineParser.is_option_provided(m_optionNames.smDefaults);
@@ -207,12 +217,11 @@ void Parser::set_app_type_defaults(BalanceSettings& settings) const
   ThrowRequireMsg( !(useSM && useSD), "Can't set default settings for multiple apps at the same time");
 
   if (useSM) {
-    settings.setEdgeWeightForSearch(m_defaults.smFaceSearchEdgeWeight);
-    settings.setVertexWeightMultiplierForVertexInSearch(m_defaults.smFaceSearchVertexMultiplier);
+    settings.setEdgeWeightForSearch(DefaultSettings::smFaceSearchEdgeWeight);
+    settings.setVertexWeightMultiplierForVertexInSearch(DefaultSettings::smFaceSearchVertexMultiplier);
     settings.setToleranceFunctionForFaceSearch(
-        std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(
-          m_defaults.faceSearchRelTol
-          ));
+        std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(DefaultSettings::faceSearchRelTol)
+    );
   }
 
   if (useSD) {
@@ -247,7 +256,9 @@ void Parser::set_contact_search_tolerance(BalanceSettings& settings) const
   if (useRelTol) {
     settings.setToleranceFunctionForFaceSearch(
         std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(
-          m_commandLineParser.get_option_value<double>(m_optionNames.faceSearchRelTol)));
+          m_commandLineParser.get_option_value<double>(m_optionNames.faceSearchRelTol)
+        )
+    );
   }
 }
 

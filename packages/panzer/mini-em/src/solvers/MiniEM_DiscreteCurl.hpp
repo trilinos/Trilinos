@@ -176,7 +176,7 @@ void addDiscreteCurlToRequestHandler(
     edge_basis->getValues(Kokkos::subview(curlAtDofCoordsNonOriented, 0, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoords, 0, Kokkos::ALL(), Kokkos::ALL()), Intrepid2::OPERATOR_CURL);
 
     // create the global curl matrix
-    RCP<matrix> curl_matrix = rcp(new matrix(rowmap,colmap,basisCoeffsLI.extent(1),Tpetra::StaticProfile));
+    RCP<matrix> curl_matrix = rcp(new matrix(rowmap,colmap,basisCoeffsLI.extent(1)));
 
     // loop over element blocks
     std::vector<std::string> elementBlockIds;

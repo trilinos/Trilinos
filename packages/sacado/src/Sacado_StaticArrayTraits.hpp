@@ -80,7 +80,7 @@ namespace Sacado {
     SACADO_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
       if (sz > 0)
-#ifdef __CUDACC__
+#if defined(__CUDACC__ ) || defined(__HIPCC__ )
         for (int i=0; i<sz; ++i)
           dest[i] = T(0.);
 #else

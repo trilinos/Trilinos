@@ -162,7 +162,7 @@ int ex_put_coord(int exoid, const void *x_coor, const void *y_coor, const void *
   /* write out the coordinates  */
   for (i = 0; i < num_dim; i++) {
     const void *coor  = NULL;
-    char *      which = NULL;
+    char       *which = NULL;
 
     if (i == 0) {
       coor    = x_coor;

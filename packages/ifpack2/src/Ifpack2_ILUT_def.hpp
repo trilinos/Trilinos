@@ -716,7 +716,7 @@ void ILUT<MatrixType>::compute ()
     }
 
     L_ = rcp (new crs_matrix_type (A_local_->getRowMap(), A_local_->getColMap(),
-                                   nnzPerRow(), Tpetra::StaticProfile));
+                                   nnzPerRow()));
 
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
       L_->insertLocalValues (row_i, L_tmp_idx[row_i](), L_tmpv[row_i]());
@@ -729,7 +729,7 @@ void ILUT<MatrixType>::compute ()
     }
 
     U_ = rcp (new crs_matrix_type (A_local_->getRowMap(), A_local_->getColMap(),
-                                   nnzPerRow(), Tpetra::StaticProfile));
+                                   nnzPerRow()));
 
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
       U_->insertLocalValues (row_i, U_tmp_idx[row_i](), U_tmpv[row_i]());

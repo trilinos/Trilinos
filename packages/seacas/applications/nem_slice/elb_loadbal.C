@@ -34,7 +34,7 @@
 #include "fix_column_partitions.h"
 
 #ifndef M_PI
-#define M_PI 3.14159265358979323846264338327
+#define M_PI   3.14159265358979323846264338327
 #define M_PI_2 (M_PI / 2.0)
 #endif
 
@@ -135,8 +135,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   int glob_method = 0;
   int start_proc  = 0;
 
-  INT *            tmp_start = nullptr, *tmp_adj = nullptr;
-  int *            tmp_vwgts = nullptr;
+  INT             *tmp_start = nullptr, *tmp_adj = nullptr;
+  int             *tmp_vwgts = nullptr;
   size_t           tmp_nv;
   std::vector<int> nprocg, nelemg, nadjg;
   size_t           max_vtx;
@@ -147,19 +147,19 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   int              tmpdim[3];
   int              tmp_arch;
   int              tmp_lev;
-  int *            tmp_v2p = nullptr;
+  int             *tmp_v2p = nullptr;
 
-  float *            x_ptr = nullptr, *y_ptr = nullptr, *z_ptr = nullptr;
-  float *            x_node_ptr = nullptr, *y_node_ptr = nullptr, *z_node_ptr = nullptr;
+  float             *x_ptr = nullptr, *y_ptr = nullptr, *z_ptr = nullptr;
+  float             *x_node_ptr = nullptr, *y_node_ptr = nullptr, *z_node_ptr = nullptr;
   std::vector<float> x_elem_ptr, y_elem_ptr, z_elem_ptr;
-  float *            tmp_x = nullptr, *tmp_y = nullptr, *tmp_z = nullptr;
-  float *            tmp_ewgts = nullptr;
+  float             *tmp_x = nullptr, *tmp_y = nullptr, *tmp_z = nullptr;
+  float             *tmp_ewgts = nullptr;
 
   long    seed = 1;
   double *goal = nullptr;
   double  time1;
   double  time2;
-  FILE *  fp = nullptr;
+  FILE   *fp = nullptr;
 
   /*-----------------------------Execution Begins------------------------------*/
 
@@ -726,9 +726,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         fmt::print("===================Call Chaco===========================\n");
         time1 = get_time();
         flag  = INTER_FACE(tmp_nv, (int *)tmp_start, (int *)tmp_adj, tmp_vwgts, tmp_ewgts, tmp_x,
-                          tmp_y, tmp_z, const_cast<char *>(assignfile), (char *)nullptr, tmp_v2p,
-                          arch, num_level, tmpdim, goal, glob_method, refine, solve->rqi_flag,
-                          solve->vmax, lb->num_sects, solve->tolerance, seed);
+                           tmp_y, tmp_z, const_cast<char *>(assignfile), (char *)nullptr, tmp_v2p,
+                           arch, num_level, tmpdim, goal, glob_method, refine, solve->rqi_flag,
+                           solve->vmax, lb->num_sects, solve->tolerance, seed);
         time2 = get_time();
         fmt::print("========================================================\n");
         fmt::print("Time in Chaco: {}s\n", time2 - time1);
@@ -1067,8 +1067,8 @@ namespace {
 
         rows[0] = 1;
         for (size_t ecnt = 1; ecnt < mesh->num_elems; ecnt++) {
-          ssize_t distance = graph->start[ecnt] - graph->start[ecnt - 1] + 1;
-          rows[ecnt]       = rows[ecnt - 1] + distance;
+          auto distance = graph->start[ecnt] - graph->start[ecnt - 1] + 1;
+          rows[ecnt]    = rows[ecnt - 1] + distance;
         }
         rows[nrow]              = graph->nadj + mesh->num_elems + 1;
         size_t           nedges = rows[nrow] - 1;
@@ -1985,8 +1985,9 @@ namespace {
      */
     time1 = get_time();
     for (INT pcnt = 1; pcnt < machine->num_procs; pcnt++) {
-      int              save_fv1 = 0;
-      ssize_t          size  = lb->e_cmap_procs[pcnt].size(); /* Define shortcuts size and procs */
+      int     save_fv1 = 0;
+      int64_t size =
+          static_cast<int64_t>(lb->e_cmap_procs[pcnt].size()); /* Define shortcuts size and procs */
       std::vector<INT> procs = lb->e_cmap_procs[pcnt];
 
       INT fv1 = -1;
@@ -2004,7 +2005,7 @@ namespace {
          * If not found, value is -1; else search for !pcnt2 from
          * that point forward.
          */
-        ssize_t i = save_fv1;
+        int64_t i = save_fv1;
         while (i < size && procs[i] < pcnt2) {
           i++;
         }
@@ -2258,10 +2259,10 @@ namespace {
   /*****************************************************************************/
   int ZPINCH_assign(Machine_Description *machine, /* Machine MESH = nwedge * nslice  */
                     int                  ndot, /* Length of x, y, z, and part (== # of elements) */
-                    const float *        x,    /* x-coordinates */
-                    const float *        y,    /* y-coordinates */
-                    const float *        z,    /* z-coordinates */
-                    int *                part  /* Output:  partition assignments for each element */
+                    const float         *x,    /* x-coordinates */
+                    const float         *y,    /* y-coordinates */
+                    const float         *z,    /* z-coordinates */
+                    int                 *part  /* Output:  partition assignments for each element */
   )
   {
     /* Routine to generate a partition of a cylinder.
@@ -2394,10 +2395,10 @@ namespace {
   /*****************************************************************************/
   void BRICK_slices(int                  nslices_d, /* # of subdomains in this dimension */
                     int                  ndot,      /* # of dots */
-                    const float *        d,       /* Array of ndot coordinates in this dimension */
-                    float *              dmin,    /* Output:  Smallest value in d[] */
-                    float *              dmax,    /* Output:  Largest value in d[] */
-                    double *             delta,   /* Output:  dmax - dmin */
+                    const float         *d,       /* Array of ndot coordinates in this dimension */
+                    float               *dmin,    /* Output:  Smallest value in d[] */
+                    float               *dmax,    /* Output:  Largest value in d[] */
+                    double              *delta,   /* Output:  dmax - dmin */
                     std::vector<double> &slices_d /* Output:  maximum d for each slice in dimension
                                          using uniform partition of dmax - dmin */
   )
@@ -2467,10 +2468,10 @@ namespace {
   /*****************************************************************************/
   int BRICK_assign(Machine_Description *machine, /* Machine MESH = nx * ny * nz */
                    int                  ndot, /* Length of x, y, z, and part (== # of elements) */
-                   const float *        x,    /* x-coordinates */
-                   const float *        y,    /* y-coordinates */
-                   const float *        z,    /* z-coordinates */
-                   int *                part  /* Output:  partition assignments for each element */
+                   const float         *x,    /* x-coordinates */
+                   const float         *y,    /* y-coordinates */
+                   const float         *z,    /* z-coordinates */
+                   int                 *part  /* Output:  partition assignments for each element */
   )
   {
     /* Routine to generate a partition of an axis-aligned hexahedral domain.
@@ -2553,7 +2554,7 @@ namespace {
   struct
   {
     size_t ndot; /* Length of x, y, z, and part (== # of elements) */
-    int *  vwgt; /* vertex weights */
+    int   *vwgt; /* vertex weights */
     float *x;    /* x-coordinates */
     float *y;    /* y-coordinates */
     float *z;    /* z-coordinates */
@@ -2631,14 +2632,14 @@ namespace {
   int ZOLTAN_assign(const char *method,    /* Zoltan LB_METHOD to use. */
                     int         totalproc, /* # of processors for which to partition */
                     size_t      ndot,      /* Length of x, y, z, and part (== # of elements) */
-                    int *       vwgt,      /* vertex weights */
-                    float *     x,         /* x-coordinates */
-                    float *     y,         /* y-coordinates */
-                    float *     z,         /* z-coordinates */
+                    int        *vwgt,      /* vertex weights */
+                    float      *x,         /* x-coordinates */
+                    float      *y,         /* y-coordinates */
+                    float      *z,         /* z-coordinates */
                     int         ignore_z,  /* flag indicating whether to use z-coords*/
-                    int *       part,      /* Output:  partition assignments for each element */
+                    int        *part,      /* Output:  partition assignments for each element */
                     int         argc,      /* Fields needed by MPI_Init */
-                    char *      argv[]     /* Fields needed by MPI_Init */
+                    char       *argv[]     /* Fields needed by MPI_Init */
   )
   {
     /* Function to allow Zoltan to compute decomposition using RCB.
@@ -2739,14 +2740,14 @@ namespace {
     ZOLTAN_ID_PTR dummy1;
     ZOLTAN_ID_PTR dummy2; /* Empty output from Zoltan_LB_Partition */
     int           dummy0;
-    int *         dummy3;
-    int *         dummy4; /* Empty output from Zoltan_LB_Partition */
+    int          *dummy3;
+    int          *dummy4; /* Empty output from Zoltan_LB_Partition */
     int           zngid_ent;
     int           znlid_ent; /* Useful output from Zoltan_LB_Partition */
     int           znobj;
     ZOLTAN_ID_PTR zgids;
     ZOLTAN_ID_PTR zlids;           /* Useful output from Zoltan_LB_Partition */
-    int *         zprocs, *zparts; /* Useful output from Zoltan_LB_Partition */
+    int          *zprocs, *zparts; /* Useful output from Zoltan_LB_Partition */
     int           changes;
     ierr = Zoltan_LB_Partition(zz, &changes, &zngid_ent, &znlid_ent, &dummy0, &dummy1, &dummy2,
                                &dummy3, &dummy4, &znobj, &zgids, &zlids, &zprocs, &zparts);
@@ -2781,9 +2782,9 @@ namespace {
 
   /*****************************************************************************/
   void BALANCE_STATS(Machine_Description *machine, /* Machine MESH = nwedge * nslice  */
-                     const int *          wgt,  /* element weights; can be nullptr if no weights  */
+                     const int           *wgt,  /* element weights; can be nullptr if no weights  */
                      size_t               ndot, /* Length of x, y, z, and part (== # of elements) */
-                     int *                part  /* Partition assignments for each element */
+                     int                 *part  /* Partition assignments for each element */
   )
   {
     /* Routine to print some info about the ZPINCH, BRICK or ZOLTAN_RCB

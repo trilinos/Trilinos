@@ -22,10 +22,17 @@
    than just BLAS and LAPACK functions.  */
 #cmakedefine HAVE_KOKKOSKERNELS_MKL
 
+
+#cmakedefine KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
+
 /* Define this macro if experimental features of Kokkoskernels are enabled */
 #cmakedefine HAVE_KOKKOSKERNELS_EXPERIMENTAL
 
-/* Define this macro to disallow instantiations of kernels which are not covered by ETI */
+/* Define this macro if we have SuperLU API version 5 */
+#cmakedefine HAVE_KOKKOSKERNELS_SUPERLU5_API
+
+/* Define this macro to disallow instantiations of kernels which are not covered
+ * by ETI */
 #cmakedefine KOKKOSKERNELS_ETI_ONLY
 /* Define this macro to only test ETI types */
 #cmakedefine KOKKOSKERNELS_TEST_ETI_ONLY
@@ -41,6 +48,9 @@
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_SYCL
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_SYCLSPACE
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_SYCLSHAREDSPACE
+/* Whether to build kernels for execution space Kokkos::Experimental::HIP */
+#cmakedefine KOKKOSKERNELS_INST_EXECSPACE_OPENMPTARGET
+#cmakedefine KOKKOSKERNELS_INST_MEMSPACE_OPENMPTARGETSPACE
 /* Whether to build kernels for execution space Kokkos::OpenMP */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_OPENMP
 /* Whether to build kernels for execution space Kokkos::Threads */
@@ -98,6 +108,7 @@
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_MAGMA
 /* SuperLU */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_SUPERLU
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_SuperLU  // For Trilinos
 /* CHOLMOD */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 /* CBLAS */
@@ -117,6 +128,13 @@
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 #define KOKKOSKERNELS_ENABLE_TPL_BLAS
 #endif
+#endif
+
+#if !defined(KOKKOS_ENABLE_CUDA) \
+  && !defined(KOKKOS_ENABLE_HIP) \
+  && !defined(KOKKOS_ENABLE_SYCL) \
+  && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#define KOKKOSKERNELS_ENABLE_HOST_ONLY
 #endif
 
 

@@ -39,11 +39,13 @@ namespace stk { namespace mesh { class Bucket; } }
 namespace stk {
 namespace mesh {
 
-SelectedBucketVectorIteratorRange get_selected_bucket_range(const BucketVector& buckets, const Selector& selector)
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after December 2021
+STK_DEPRECATED SelectedBucketVectorIteratorRange get_selected_bucket_range(const BucketVector& buckets, const Selector& selector)
 {
   return std::make_pair(SelectedBucketVectorIterator(selector, buckets.begin(), buckets.end()),
                         SelectedBucketVectorIterator(buckets.end()));
 }
+#endif
 
 } //namespace mesh
 } //namespace stk

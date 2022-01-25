@@ -47,7 +47,7 @@ int ex_put_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
   int    dist_id;
   size_t start[1], count[1];
   char   errmsg[MAX_ERR_LENGTH];
-  char * factptr = NULL;
+  char  *factptr = NULL;
 
   EX_FUNC_ENTER();
 

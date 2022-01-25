@@ -52,7 +52,7 @@
 // Kokkos libraries' headers:
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 // Utilities
 #include <Teuchos_CommHelpers.hpp>
@@ -204,7 +204,7 @@ Perf fenl_assembly(
 
   //------------------------------------
 
-  Kokkos::Impl::Timer wall_clock ;
+  Kokkos::Timer wall_clock ;
 
   Perf perf_stats = Perf() ;
 

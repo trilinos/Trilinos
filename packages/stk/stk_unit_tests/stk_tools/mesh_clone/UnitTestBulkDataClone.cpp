@@ -321,7 +321,7 @@ protected:
         expect_equal_entity_counts(oldBulk, universalPart, newBulk);
 
         const stk::mesh::MetaData &oldMeta = oldBulk.mesh_meta_data();
-        ASSERT_EQ(5u, oldMeta.entity_rank_count());
+        ASSERT_EQ(5u, static_cast<unsigned>(oldMeta.entity_rank_count()));
         stk::mesh::Selector localOrSharedSelector = oldMeta.locally_owned_part() | oldMeta.globally_shared_part();
         stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(oldMeta.entity_rank_count());
         stk::mesh::EntityVector oldEntities;
@@ -364,7 +364,7 @@ protected:
         expect_equal_entity_counts(oldBulk, copySelector, newBulk);
 
         const stk::mesh::MetaData &oldMeta = oldBulk.mesh_meta_data();
-        ASSERT_EQ(5u, oldMeta.entity_rank_count());
+        ASSERT_EQ(5u, static_cast<unsigned>(oldMeta.entity_rank_count()));
         stk::mesh::Selector localOrSharedSelector = copySelector & (oldMeta.locally_owned_part() | oldMeta.globally_shared_part());
         stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(oldMeta.entity_rank_count());
         stk::mesh::EntityVector oldEntities;

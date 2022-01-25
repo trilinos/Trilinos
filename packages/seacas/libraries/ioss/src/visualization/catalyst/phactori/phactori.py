@@ -3702,9 +3702,21 @@ def ParseOneFilterTypeFromViewMapOperation(ioOperationBlock, inTypeString, inOpe
 def ConstructClipPlaneOperationFromParsedOperationBlockC(ioPipeAndViewsState, ioOperationBlock):
   return
 
+def ConstructPipelineOperationFromParsedOperationBlockC_ForTest(ioOperationBlock, inputParaviewFilter):
+  if PhactoriDbg(100):
+    myDebugPrint3("ConstructPipelineOperationFromParsedOperationBlockC_ForTest entered\n", 100)
+  particularOperation = ioOperationBlock.mOperationSpecifics
+  if ioOperationBlock.mType == 'group':
+    myDebugPrint3("not doing group yet")
+    raise Exception("not doing group yet")
+  else:
+    inputSource = inputParaviewFilter
+    newParaViewFilter = particularOperation.CreateParaViewFilter2(inputSource, None)
+  ioOperationBlock.mParaViewFilter = newParaViewFilter
+  if PhactoriDbg(100):
+    myDebugPrint3("ConstructPipelineOperationFromParsedOperationBlockC_ForTest returning\n", 100)
 
 def ConstructPipelineOperationFromParsedOperationBlockC(ioPipeAndViewsState, ioOperationBlock):
-
   if PhactoriDbg(100):
     myDebugPrint3("ConstructPipelineOperationFromParsedOperationBlockC entered\n", 100)
   if PhactoriDbg():
@@ -4107,6 +4119,9 @@ def FindReferredBlockC(referringBlock, referringKey, referredBlockset):
 
 def UpdatePipelineWithCurrentTimeArgument(inParaViewFilter):
   global gPipeAndViewsState
+  if gPipeAndViewsState == None:
+    inParaViewFilter.UpdatePipeline()
+    return
   thisTime = gPipeAndViewsState.CurrentDatadescription.GetTime()
   inParaViewFilter.UpdatePipeline(thisTime)
 
@@ -9033,7 +9048,6 @@ class PhactoriPlot1Base:
     self.mSharedPvRenderView2.BottomAxisUseCustomRange = 0
 
     if self.m_PlotType == "PhactoriPlotOverTimeBlock":
-      self.mPvDataRepresentation2.AttributeType = "Point Data"
       self.mPvDataRepresentation2.AttributeType = "Row Data"
       self.mSharedPvRenderView2.LeftAxisTitle = self.m_YAxisVariableInfo.GetXYPlotAxisTitle()
       self.mSharedPvRenderView2.BottomAxisTitle = "Time"

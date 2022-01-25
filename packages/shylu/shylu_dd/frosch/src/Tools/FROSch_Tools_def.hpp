@@ -433,6 +433,7 @@ namespace FROSch {
                                              bool useCreateOneToOneMap,
                                              RCP<Tpetra::Details::TieBreak<LO,GO> > tieBreak)
     {
+        using Xpetra::Vector;
         FROSCH_DETAILTIMER_START(buildUniqueMapTime,"BuildUniqueMap");
         if (useCreateOneToOneMap && map->lib()==UseTpetra) {
             // Obtain the underlying Tpetra Map
@@ -1446,6 +1447,7 @@ namespace FROSch {
     RCP<MultiVector<SC,LO,GO,NO> > ModifiedGramSchmidt(RCP<const MultiVector<SC,LO,GO,NO> > multiVector,
                                                        ArrayView<unsigned> zero)
     {
+        using Xpetra::Vector;
         FROSCH_DETAILTIMER_START(modifiedGramSchmidtTime,"ModifiedGramSchmidt");
         /*
          n = size(V,1);

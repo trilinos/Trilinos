@@ -107,6 +107,17 @@ if [ "$sems_cmake_and_version_load" = "" ] || [ "$sems_cmake_and_version_load" =
 fi
 #echo "sems_cmake_and_version_load = $sems_cmake_and_version_load"
 
+# Load sems-archive-modules-init.sh if not already loaded
+grep_modulepath=$(echo $MODULEPATH | grep /projects/sems/modulefiles/projects)
+if [[ "${grep_modulepath}" == "" ]] ; then
+  #echo "sems-archive-modules-init.sh not already called so calling!"
+  source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
+else
+  #echo "sems-archive-modules-init.sh already called!"
+  : # No-op
+fi
+
+
 #
 # B) Purge the current set of modules
 #
@@ -117,7 +128,7 @@ module purge
 # C) Load the modules (in the correct order)
 #
 
-module load sems-env
+module load sems-archive-env
 module load $sems_python_and_version_default
 module load $sems_cmake_and_version_load
 module load $sems_ninja_and_version_default
@@ -128,9 +139,9 @@ module load $sems_git_and_version_default
 # Please see https://github.com/trilinos/Trilinos/issues/2142
 # for updates regarding the right solution.
 if [[ $sems_compiler_and_version_load = "sems-intel/17.0.1" ]]; then
-  module load sems-gcc/4.9.3
+  module load sems-archive-gcc/4.9.3
 elif [[ $sems_compiler_and_version_load = "sems-intel/"* ]]; then
-  module load sems-gcc/4.8.4
+  module load sems-archive-gcc/4.8.4
 fi
 
 module load $sems_compiler_and_version_load

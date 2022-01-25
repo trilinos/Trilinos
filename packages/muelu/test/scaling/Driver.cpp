@@ -230,10 +230,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string rangeMapFile;                           clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
   std::string matrixFile;                             clp.setOption("matrix",                &matrixFile,        "matrix data file");
   std::string rhsFile;                                clp.setOption("rhs",                   &rhsFile,           "rhs data file");
+  std::string solFile;                                clp.setOption("sol",                   &solFile,           "write the solution to this file");
   std::string coordFile;                              clp.setOption("coords",                &coordFile,         "coordinates data file");
   std::string coordMapFile;                           clp.setOption("coordsmap",             &coordMapFile,      "coordinates map data file");
   std::string nullFile;                               clp.setOption("nullspace",             &nullFile,          "nullspace data file");
   std::string materialFile;                           clp.setOption("material",              &materialFile,      "material data file");
+  bool        setNullSpace      = true;               clp.setOption("driver-nullspace","muelu-computed-nullspace", &setNullSpace, "driver sets nullspace");
   int         numRebuilds       = 0;                  clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
   int         numResolves       = 0;                  clp.setOption("resolve",               &numResolves,       "#times to redo solve");
   int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
@@ -307,8 +309,18 @@ MueLu::MueLu_AMGX_initialize_plugins();
       if (paramList.isParameter(name))
         realParams.setEntry(name, paramList.getEntry(name));
     }
-  }
 
+    // Galeri updates (only works with Run1)
+    if(paramList.sublist("Run1").isSublist("Galeri")) {
+      ParameterList& moreParams = paramList.sublist("Run1").sublist("Galeri");
+      for (ParameterList::ConstIterator it = moreParams.begin(); it != moreParams.end(); it++) {
+        const std::string& name = moreParams.name(it);
+        if (moreParams.isParameter(name))
+          realParams.setEntry(name, moreParams.getEntry(name));
+      }
+    }
+  }
+  
 #ifdef HAVE_MPI
   // Generate the node-level communicator, if we want one
   Teuchos::RCP<const Teuchos::Comm<int> > nodeComm;
@@ -465,7 +477,7 @@ MueLu::MueLu_AMGX_initialize_plugins();
         comm->barrier();
         // Build the preconditioner numRebuilds+1 times
         MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
-        PreconditionerSetup(A,coordinates,nullspace,material,mueluList,profileSetup,useAMGX,useML,numRebuilds,H,Prec);
+        PreconditionerSetup(A,coordinates,nullspace,material,mueluList,profileSetup,useAMGX,useML,setNullSpace,numRebuilds,H,Prec);
 
         comm->barrier();
         tm = Teuchos::null;
@@ -562,6 +574,10 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
 
   }//end reruns
+
+  if (solFile != "")
+    Xpetra::IO<SC,LO,GO,Node>::Write(solFile, *X);
+
 
 #ifdef HAVE_MUELU_AMGX
 // Finalize AMGX

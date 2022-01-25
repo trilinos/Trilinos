@@ -607,7 +607,7 @@ namespace BaskerNS
             BBT.col_ptr(i+1) = nnz2;
           }
 
-          Kokkos::Impl::Timer timer_metis;
+          Kokkos::Timer timer_metis;
           #if 1
           // allocate inv-permutation vectors
           INT_1DARRAY metis_iperm;

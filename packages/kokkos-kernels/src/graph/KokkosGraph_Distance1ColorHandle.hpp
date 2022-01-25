@@ -517,8 +517,8 @@ private:
         Kokkos::deep_copy (hlower, lower_total_count);
 
         new_num_edge = hlower();
-        nnz_lno_persistent_work_view_t half_src (Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
-        nnz_lno_persistent_work_view_t half_dst (Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
+        nnz_lno_persistent_work_view_t half_src (Kokkos::view_alloc(Kokkos::WithoutInitializing, "HALF SRC"),new_num_edge);
+        nnz_lno_persistent_work_view_t half_dst (Kokkos::view_alloc(Kokkos::WithoutInitializing, "HALF DST"),new_num_edge);
         Kokkos::parallel_for("KokkosGraph::FillLowerTriangleTeam",
             team_policy_t(nv / teamSizeMax + 1 , teamSizeMax, vector_size),
             FillLowerTriangleTeam
@@ -539,8 +539,8 @@ private:
 
         KokkosKernels::Impl::inclusive_parallel_prefix_sum<size_type_temp_work_view_t, ExecutionSpace>
         (nv+1, lower_count);
-        nnz_lno_persistent_work_view_t half_src (Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
-        nnz_lno_persistent_work_view_t half_dst (Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);
+        nnz_lno_persistent_work_view_t half_src (Kokkos::view_alloc(Kokkos::WithoutInitializing, "HALF SRC"),new_num_edge);
+        nnz_lno_persistent_work_view_t half_dst (Kokkos::view_alloc(Kokkos::WithoutInitializing, "HALF DST"),new_num_edge);
 
         Kokkos::parallel_for("KokkosGraph::FillLowerTriangleTeam",my_exec_space(0,nv), FillLowerTriangle
             <row_index_view_type, nonzero_view_type,

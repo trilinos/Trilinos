@@ -528,7 +528,7 @@ void BulkData::require_entity_owner( const Entity entity ,
 
 void BulkData::require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const
 {
-  const EntityRank rank_count = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
+  const EntityRank rank_count = m_mesh_meta_data.entity_rank_count();
   const bool ok_id   = EntityKey::is_valid_id(ent_id);
   const bool ok_rank = ent_rank < rank_count && !(ent_rank == stk::topology::FACE_RANK && mesh_meta_data().spatial_dimension() == 2);
 
@@ -1614,8 +1614,9 @@ bool BulkData::is_communicated_with_proc(Entity entity, int proc) const
 
   return false;
 }
-
-void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after January 2022
+  STK_DEPRECATED_MSG("BulkData::comm_procs(EntityKey, ...) has been deprecated. Use BulkData::comm_procs(Entity,...) instead.") 
+  void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
 {
   ThrowAssertMsg(is_valid(get_entity(key)),
                   "BulkData::comm_procs ERROR, input key "<<key<<" not a valid entity. Contact sierra-help@sandia.gov");
@@ -1631,6 +1632,7 @@ void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
 #endif
   impl::fill_sorted_procs(internal_entity_comm_map(key), procs);
 }
+#endif // STK_HIDE_DEPRECATED_CODE
 
 void BulkData::comm_procs(Entity entity, std::vector<int> & procs ) const
 {
@@ -6173,7 +6175,7 @@ void BulkData::remove_boundary_faces_from_part(stk::mesh::ElemElemGraph &graph, 
             for (stk::mesh::Entity side : sidesToRemoveFromPart)
             {
                 const stk::mesh::EntityKey entityKey = this->entity_key(side);
-                this->comm_procs(entityKey, commProcs);
+                this->comm_procs(side, commProcs);
                 for (int otherProc : commProcs)
                 {
                     comm.send_buffer(otherProc).pack<stk::mesh::EntityId>(entityKey.id());

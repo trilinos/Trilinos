@@ -268,21 +268,6 @@ int ex__put_homogenous_block_params(int exoid, size_t block_count, const struct 
       }
       ex__compress_variable(exoid, varid, 2);
 
-#if defined(PARALLEL_AWARE_EXODUS)
-      /*
-       * There is currently a bug in netcdf-4.5.1-devel and earlier
-       * for partial parallel output of strided arrays in collective
-       * mode for netcdf-4-based output.  If the number of attributes >
-       * 1 and in parallel mode, set the mode to independent.
-       */
-      if (blocks[i].num_attribute > 1) {
-        struct ex__file_item *file = ex__find_file_item(exoid);
-        if (file->is_parallel && file->is_hdf5) {
-          nc_var_par_access(exoid, varid, NC_INDEPENDENT);
-        }
-      }
-#endif
-
       /* Attribute names... */
       dims[0] = numattrdim;
       dims[1] = strdim;
@@ -382,7 +367,7 @@ int ex__put_homogenous_block_params(int exoid, size_t block_count, const struct 
       */
       size_t count[2];
       size_t start[2];
-      char * text = "";
+      char  *text = "";
 
       count[0] = 1;
       start[1] = 0;

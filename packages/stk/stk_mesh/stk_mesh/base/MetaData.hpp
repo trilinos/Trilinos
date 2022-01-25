@@ -465,33 +465,6 @@ public:
   /** \brief  Query if late fields are allowed */
   bool are_late_fields_enabled() const { return m_are_late_fields_enabled; }
 
-  /** \} */
-  //------------------------------------
-
-  /** \name  Field declaration with weak type information;
-   *         direct use in application code is strongly discouraged.
-   *  \{
-   */
-
-  /** \brief  Declare a field via runtime type information */
-  FieldBase * declare_field_base(
-    const std::string & arg_name,
-    stk::topology::rank_t arg_entity_rank,
-    const DataTraits  & arg_traits ,
-    unsigned            arg_rank ,
-    const shards::ArrayDimTag * const * arg_dim_tags ,
-    unsigned arg_num_states )
-  {
-    require_not_committed();
-
-    return m_field_repo.declare_field(
-                  arg_name, arg_entity_rank, arg_traits, arg_rank, arg_dim_tags,
-                  arg_num_states, this
-                 );
-  }
-
-
-
   /** \brief  Declare a field restriction via runtime type information.
    */
   void declare_field_restriction( FieldBase      & arg_field ,
@@ -575,6 +548,8 @@ public:
   {
     return m_surfaceToBlock.size();
   }
+
+  stk::mesh::impl::FieldRepository & get_field_repository();
 
 protected:
 
@@ -823,17 +798,9 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
 
   f[0] = dynamic_cast<field_type*>(rawField);
 
-
-  /*
-  //
-  //  NKC, this error would check that a field is not registred with the same name, but a differnt template type.
-  //  Seems like would never want to do this.  But percept does.  Maybe in all cases a lurking error....
-  //
-  if(rawField != nullptr) {
-    ThrowRequireMsg(f[0] == rawField, "Internal STK Error: Reregistration of field: '"<<name<<"' "
-                    <<"with a different template type.  ");
+  if (rawField != nullptr) {
+    ThrowRequireMsg(f[0] == rawField, "Re-registration of field '" << name << "' with a different template type is not allowed.");
   }
-  */
 
   if ( NULL != f[0] ) {
     for ( unsigned i = 1 ; i < number_of_states ; ++i ) {
@@ -1054,6 +1021,13 @@ field_type & put_field_on_mesh(field_type &field ,
   MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
+}
+
+inline
+stk::mesh::impl::FieldRepository &
+MetaData::get_field_repository()
+{
+  return m_field_repo;
 }
 
 template<class T>

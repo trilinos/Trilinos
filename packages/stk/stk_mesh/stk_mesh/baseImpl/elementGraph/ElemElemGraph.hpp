@@ -154,7 +154,7 @@ public:
 
     const stk::mesh::BulkData& get_mesh() const;
 
-    const GraphEdgesForElement& get_edges_for_element(impl::LocalId elem) const
+    GraphEdgesForElement get_edges_for_element(impl::LocalId elem) const
     {
         return m_graph.get_edges_for_element(elem);
     }
@@ -237,7 +237,6 @@ protected:
 
     void add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &meshIndex, impl::LocalId local_elem_id, std::vector<stk::mesh::GraphEdge> &graphEdges,
                                         std::vector<stk::mesh::GraphEdge> &coincidentGraphEdges,
-                                        stk::mesh::EntityVector& scratchEntityVector,
                                         stk::mesh::EntityVector& side_nodes,
                                         impl::SerialElementDataVector& connectedElementDataVector,
                                         bool only_consider_upper_symmetry = true) const;
@@ -245,12 +244,10 @@ protected:
     void fill_elements_attached_to_local_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
                                                stk::mesh::EntityId elementId,
                                                stk::topology elementTopology,
-                                               stk::mesh::EntityVector& scratchNodeVector,
                                                impl::SerialElementDataVector& connectedElementDataVector) const;
     void get_elements_attached_to_remote_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
                                                                           stk::mesh::EntityId elementId,
                                                                           stk::topology elementTopology,
-                                                                          stk::mesh::EntityVector& scratchEntityVector,
                                                                           impl::ParallelElementDataVector& connectedElementDataVector) const;
 
     impl::LocalId get_new_local_element_id_from_pool();
@@ -273,8 +270,8 @@ protected:
                                                std::vector<impl::ShellConnectivityData>& shellConnectivityList,
                                                std::vector<impl::ElementSidePair> &deletedShells);
 
-    void communicate_shell_connectivity(std::vector<impl::ShellConnectivityData>& shellConnectivityList,
-                                        const std::vector<impl::ElementSidePair> &deletedShells);
+    bool communicate_if_shell_connectivity(std::vector<impl::ShellConnectivityData>& shellConnectivityList,
+                                            const std::vector<impl::ElementSidePair> &deletedShells);
 
     void delete_local_connections_and_collect_remote(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete,
                                                      std::vector<impl::DeletedElementData>& local_elem_and_remote_connected_elem);
@@ -300,16 +297,19 @@ protected:
 
     bool is_valid_graph_edge(const GraphEdge &graphEdge) const;
 
-    void delete_graph_edge(const GraphEdge &graphEdge);
-
     stk::mesh::BulkData &m_bulk_data;
     Graph m_graph;
+    std::vector<GraphEdge> m_edgesToAdd;
+    std::vector<GraphEdge> m_edgesToDelete;
+    std::vector<GraphEdge> m_newGraphEdges;
+    std::vector<GraphEdge> m_coincidentGraphEdges;
     ParallelInfoForGraphEdges m_parallelInfoForGraphEdges;
     unsigned m_modCycleWhenGraphModified;
     std::vector<impl::LocalId> m_deleted_element_local_id_pool;
     std::vector<stk::topology> m_element_topologies;
     bool m_any_shell_elements_exist;
     std::vector<int> m_deleted_elem_pool;
+    mutable stk::mesh::EntityVector m_scratchEntityVector;
     impl::SparseGraph m_coincidentGraph;
     impl::ElementLocalIdMapper m_idMapper;
     SideConnector m_sideConnector;
@@ -320,11 +320,6 @@ private:
                                                  stk::mesh::Entity element,
                                                  const stk::mesh::PartVector& skin_parts,
                                                  std::vector<stk::mesh::sharing_info> &shared_modified);
-
-    void add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id,
-                         stk::mesh::EntityVector& scratchEntityVector,
-                         stk::mesh::EntityVector& side_nodes,
-                         impl::SerialElementDataVector& connectedElementDataVector);
 
     template <typename GraphType>
     void add_new_local_edges_to_graph(GraphType &graph, const std::vector<stk::mesh::GraphEdge> &newGraphEdges);

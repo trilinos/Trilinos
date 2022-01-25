@@ -56,7 +56,7 @@
 #include <Kokkos_Pair.hpp>
 #include <Kokkos_UnorderedMap.hpp>
 
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include <BoxElemFixture.hpp>
 #include <HexElement.hpp>
@@ -249,7 +249,7 @@ public:
       //--------------------------------
       // Guess at capacity required for the map:
 
-      Kokkos::Impl::Timer wall_clock ;
+      Kokkos::Timer wall_clock ;
 
       wall_clock.reset();
       phase = FILL_NODE_SET ;

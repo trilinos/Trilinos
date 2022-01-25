@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,21 +30,14 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef stk_expreval_constants_hpp
 #define stk_expreval_constants_hpp
 
 #include <string>
-#include <limits>
-#include <algorithm>
-#include <vector>
 #include <map>
-#include <set>
-#include <stdexcept>
-#include <cctype>
 #include <Kokkos_Core.hpp>
-
 #include <stk_util/util/string_case_compare.hpp>
 
 namespace stk {
@@ -70,7 +63,7 @@ constexpr double degree_to_radian() { return s_deg_to_rad; }
 KOKKOS_INLINE_FUNCTION
 constexpr double radian_to_degree() { return s_rad_to_deg; }
 
-ConstantMap &getConstantMap();
+ConstantMap & getConstantMap();
 
 } // namespace expreval
 } // namespace stk

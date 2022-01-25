@@ -106,7 +106,7 @@ public:
       std::sort(m_scratchSpace, m_scratchSpace+subTopo.num_nodes());
 
       if(are_equal(m_scratchSpace, nodes)) {
-        elementTopo.sub_topology_nodes(elemNodes, subRank, i, nodes.begin());
+        elementTopo.sub_topology_nodes(elemNodes, subRank, i, nodes.data());
         return true;
       }
     }

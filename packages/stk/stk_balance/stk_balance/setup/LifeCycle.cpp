@@ -35,10 +35,12 @@
 
 #include "stk_util/environment/Env.hpp"
 #include "stk_util/environment/EnvData.hpp"
+#include "stk_util/environment/OutputLog.hpp"
 
 #include "stk_balance/mesh/BalanceMesh.hpp"
 #include "stk_balance/io/BalanceIO.hpp"
 #include "stk_balance/internal/Balancer.hpp"
+#include "stk_balance/internal/LogUtils.hpp"
 
 namespace stk {
 namespace balance {
@@ -52,11 +54,8 @@ LifeCycle::LifeCycle(MPI_Comm c, int argc, const char** argv)
     m_validator(m_comm),
     m_parser(m_comm)
 {
-  set_output_streams();
-}
+  initialize_environment(m_comm, argv);
 
-void LifeCycle::run()
-{
   try {
     parse();
   }
@@ -65,6 +64,18 @@ void LifeCycle::run()
     m_exitCode = 1;
     return;
   }
+
+  set_output_streams();
+}
+
+void LifeCycle::run()
+{
+  if (m_exitCode != 0) {
+    return;
+  }
+
+  print_running_message();
+  print_banner(sierra::Env::outputP0());
 
   if (serial_no_op()) {
     print_no_op_message();
@@ -98,7 +109,6 @@ bool LifeCycle::serial_no_op() const
 
 void LifeCycle::balance()
 {
-  print_running_message();
   stk::balance::BalanceIO io(m_comm, m_settings);
   const stk::balance::Balancer balancer(m_settings);
 
@@ -109,16 +119,27 @@ void LifeCycle::balance()
 
 void LifeCycle::set_output_streams()
 {
-  if (!m_isProc0) {
+  if (m_isProc0) {
+    const std::string & logName = m_settings.get_log_filename();
+    if (logName == "cout"  || logName == "cerr") {
+      stk::EnvData::instance().m_outputP0 = stk::get_log_ostream(logName);
+    }
+    else {
+      stk::bind_output_streams("log=\"" + logName + "\"");
+      stk::EnvData::instance().m_outputP0 = stk::get_log_ostream("log");
+    }
+  }
+  else {
     stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
   }
+
   Ioss::Utils::set_output_stream(sierra::Env::outputP0());
 }
 
 void LifeCycle::print_parse_error(const char* what) const
 {
   if (m_isProc0) {
-    std::cerr << what << m_parser.get_quick_error() << std::endl;
+    std::cerr << what << std::endl;
   }
 }
 
@@ -139,9 +160,30 @@ void LifeCycle::print_no_op_message() const
 
 void LifeCycle::print_running_message() const
 {
-  sierra::Env::outputP0() << "Running stk_balance" << std::endl;
-  sierra::Env::outputP0() << "  Input file:  " << m_settings.get_input_filename() << std::endl;
-  sierra::Env::outputP0() << "  Output file: " << m_settings.get_output_filename() << std::endl;
+  if (m_isProc0) {
+    std::ostream diag_stream(std::cout.rdbuf());
+    stk::register_ostream(diag_stream, "diag_stream");
+
+    const std::string & logName = m_settings.get_log_filename();
+    const bool usingLogFile = not (logName == "cout" || logName == "cerr");
+    if (usingLogFile) {
+      stk::bind_output_streams("diag_stream>log");
+      stk::bind_output_streams("diag_stream>+cout");
+    }
+    else {
+      stk::bind_output_streams("diag_stream>" + logName);
+    }
+
+    const int numRanks = stk::parallel_machine_size(m_comm);
+    diag_stream << "Running stk_balance on " << numRanks << " MPI ranks" << std::endl;
+    if (usingLogFile) {
+      diag_stream << "        Log file: " << logName << std::endl;
+    }
+    diag_stream << "      Input file: " << m_settings.get_input_filename() << std::endl;
+    diag_stream << "    Output files: " << m_settings.get_output_filename() << "." << numRanks << ".*" << std::endl;
+
+    stk::unregister_ostream(diag_stream);
+  }
 }
 
 } }

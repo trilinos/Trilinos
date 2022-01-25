@@ -26,6 +26,7 @@ APPEND_SET(SOURCES
   Aggregates.cpp
   AggregateQualityEstimateFactory.cpp
   AmalgamationFactory.cpp
+  AmalgamationInfo.cpp
   BlackBoxPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
@@ -37,17 +38,21 @@ APPEND_SET(SOURCES
   Hierarchy.cpp
   IndexManager.cpp
   Level.cpp
+  LWGraph.cpp
   MapTransferFactory.cpp
   Memory.cpp
   MueLu_UnitTests.cpp
   MueLu_TestHelpers.cpp
   MultiVectorTransferFactory.cpp
+  NullspaceFactory.cpp
+  SemiCoarsenPFactoryWithSemiRestriction.cpp
   ParameterList/FactoryFactory.cpp
   ParameterList/ParameterListInterpreter.cpp
   PermutedTransferFactory.cpp
   PgPFactory.cpp
   RAPFactory.cpp
   RAPShiftFactory.cpp
+  RebalanceAcFactory.cpp
   ReitzingerPFactory.cpp
   SaPFactory.cpp
   ScaledNullspaceFactory.cpp
@@ -58,6 +63,7 @@ APPEND_SET(SOURCES
   TentativePFactory.cpp
   ThresholdAFilterFactory.cpp
   TransPFactory.cpp
+  UncoupledAggregationFactory.cpp
   UnsmooshFactory.cpp
   UserData/CreateXpetraPreconditioner.cpp
   Utilities.cpp
@@ -97,6 +103,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTestMatrices_cp
   SOURCE_FILES iso2d.mat
   SOURCE_FILES fuego0.mm
   SOURCE_FILES fuego1.mm
+  SOURCE_FILES semiRblkTestver.mm
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/TestMatrices
 )
 

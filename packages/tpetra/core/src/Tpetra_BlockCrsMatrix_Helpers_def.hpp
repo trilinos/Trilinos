@@ -329,7 +329,7 @@ namespace Tpetra {
       // We can use static profile because the point graph should have at least as many entries per
       // row as the mesh graph.
       RCP<crs_graph_type> meshCrsGraph = rcp(new crs_graph_type(meshRowMap, meshColMap,
-                                                 pointMatrix.getGlobalMaxNumRowEntries(), Tpetra::StaticProfile));
+                                                 pointMatrix.getGlobalMaxNumRowEntries()));
       // Fill the graph by walking through the matrix.  For each mesh row, we query the collection of point
       // rows associated with it. The point column ids are converted to mesh column ids and put into an array.
       // As each point row collection is finished, the mesh column ids are sorted, made unique, and inserted

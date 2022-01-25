@@ -75,17 +75,17 @@ void edge_face_block_test_helper(Teuchos::FancyOStream &out,
                                  uint32_t expected_edge_block_count,
                                  uint32_t expected_face_block_count)
 {
-   CubeHexMeshFactory factory; 
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    Teuchos::RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus(exodus_filename.c_str());
 
    {
-   Ioss::DatabaseIO *db_io = Ioss::IOFactory::create("exodus", 
-                                                     exodus_filename.c_str(), 
+   Ioss::DatabaseIO *db_io = Ioss::IOFactory::create("exodus",
+                                                     exodus_filename.c_str(),
                                                      Ioss::READ_MODEL);
    TEST_ASSERT(db_io);
 
@@ -96,6 +96,17 @@ void edge_face_block_test_helper(Teuchos::FancyOStream &out,
    TEST_ASSERT(all_edge_blocks.size() == expected_edge_block_count);
    auto all_face_blocks = region.get_face_blocks();
    TEST_ASSERT(all_face_blocks.size() == expected_face_block_count);
+
+   if (expected_edge_block_count == 1) {
+      std::vector<stk::mesh::Entity> edges;
+      mesh->getMyEdges(edges);
+      TEST_ASSERT(all_edge_blocks[0]->entity_count() == (int64_t)edges.size());
+   }
+   if (expected_face_block_count == 1) {
+      std::vector<stk::mesh::Entity> faces;
+      mesh->getMyFaces(faces);
+      TEST_ASSERT(all_face_blocks[0]->entity_count() == (int64_t)faces.size());
+   }
    }
 }
 
@@ -104,13 +115,13 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, defaults)
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
 
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeHex.exo");
 
@@ -142,8 +153,8 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, periodic_input)
    Teuchos::ParameterList & pbcs = pl->sublist("Periodic BCs");
    pbcs.set<int>("Count",1);
    pbcs.set("Periodic Condition 1","yz-coord left;right");
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -164,12 +175,12 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, element_counts)
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
    pl->set("Z Elements",5);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_oddelmt.exo");
 
@@ -200,12 +211,12 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, disable_subcells)
    pl->set("Y Elements",4);
    pl->set("Z Elements",5);
    pl->set("Build Subcells",false);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_disable_subcells.exo");
 
@@ -239,7 +250,13 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, default_edge_face_blocks)
    pl->set("Y Elements",ye);
    pl->set("Z Elements",ze);
 
-   edge_face_block_test_helper(out, success, pl, "CubeHex_default_edge_face_blocks.exo", 0, 0);
+   std::size_t expected_edge_block_count = 0;
+   std::size_t expected_face_block_count = 0;
+
+   edge_face_block_test_helper(out, success, pl,
+                               "CubeHex_default_edge_face_blocks.exo",
+                               expected_edge_block_count,
+                               expected_face_block_count);
 }
 
 TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, create_edge_blocks_pl)
@@ -260,7 +277,13 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, create_edge_blocks_pl)
    pl->set("Z Elements",ze);
    pl->set("Create Edge Blocks",true);
 
-   edge_face_block_test_helper(out, success, pl, "CubeHex_create_edge_blocks_pl.exo", 1, 0);
+   std::size_t expected_edge_block_count = 1;
+   std::size_t expected_face_block_count = 0;
+
+   edge_face_block_test_helper(out, success, pl,
+                               "CubeHex_create_edge_blocks_pl.exo",
+                               expected_edge_block_count,
+                               expected_face_block_count);
 }
 
 TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, create_face_blocks_pl)
@@ -281,7 +304,13 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, create_face_blocks_pl)
    pl->set("Z Elements",ze);
    pl->set("Create Face Blocks",true);
 
-   edge_face_block_test_helper(out, success, pl, "CubeHex_create_face_blocks_pl.exo", 0, 1);
+   std::size_t expected_edge_block_count = 0;
+   std::size_t expected_face_block_count = 1;
+
+   edge_face_block_test_helper(out, success, pl,
+                               "CubeHex_create_face_blocks_pl.exo",
+                               expected_edge_block_count,
+                               expected_face_block_count);
 }
 
 
@@ -304,7 +333,41 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, create_edge_face_blocks_pl)
    pl->set("Create Edge Blocks",true);
    pl->set("Create Face Blocks",true);
 
-   edge_face_block_test_helper(out, success, pl, "CubeHex_create_edge_face_blocks_pl.exo", 1, 1);
+   std::size_t expected_edge_block_count = 1;
+   std::size_t expected_face_block_count = 1;
+
+   edge_face_block_test_helper(out, success, pl,
+                               "CubeHex_create_edge_face_blocks_pl.exo",
+                               expected_edge_block_count,
+                               expected_face_block_count);
+}
+
+TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, multiblock_create_edge_face_blocks_pl)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcpFromRef;
+
+   int xe = 2, ye = 2, ze = 2;
+   int bx = 2, by = 1, bz = 1;
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Blocks",bx);
+   pl->set("Y Blocks",by);
+   pl->set("Z Blocks",bz);
+   pl->set("X Elements",xe);
+   pl->set("Y Elements",ye);
+   pl->set("Z Elements",ze);
+   pl->set("Create Edge Blocks",true);
+   pl->set("Create Face Blocks",true);
+
+   std::size_t expected_edge_block_count = 1;
+   std::size_t expected_face_block_count = 1;
+
+   edge_face_block_test_helper(out, success, pl,
+                               "CubeHex_multiblock_create_edge_face_blocks_pl.exo",
+                               expected_edge_block_count,
+                               expected_face_block_count);
 }
 
 TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
@@ -327,12 +390,12 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
    pl->set("Z Elements",ze);
 
    xe *= bx; ye *= by; ze *= bz;
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_allblock.exo");
 
@@ -352,7 +415,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
    TEST_EQUALITY(nodesets.size(),1);
 
    std::vector<stk::mesh::Entity> nodes;
-   mesh->getMyNodes("origin","eblock-0_0_0",nodes); 
+   mesh->getMyNodes("origin","eblock-0_0_0",nodes);
    if(rank==0) {
       std::vector<std::size_t> localNodeIds;
       std::vector<stk::mesh::Entity> elements;
@@ -383,12 +446,12 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, two_block)
    pl->set("X Elements",5);
    pl->set("Y Elements",10);
    pl->set("Z Elements",5);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_2block.exo");
 
@@ -409,7 +472,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, sub_two_block)
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
-   int size; MPI_Comm_size(MPI_COMM_WORLD, &size); 
+   int size; MPI_Comm_size(MPI_COMM_WORLD, &size);
 
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Blocks",2);
@@ -421,19 +484,19 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, sub_two_block)
    pl->set("X Elements",5);
    pl->set("Y Elements",10);
    pl->set("Z Elements",5);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh;
    if(size!=8) {
       TEST_THROW(factory.buildMesh(MPI_COMM_WORLD),std::logic_error);
-      return; 
+      return;
    }
    else {
       mesh = factory.buildMesh(MPI_COMM_WORLD);
    }
    TEST_ASSERT(mesh!=Teuchos::null);
- 
+
    if(mesh->isWritable())
       mesh->writeToExodus("CubeHex_sub_2block.exo");
 

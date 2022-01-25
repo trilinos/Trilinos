@@ -6,28 +6,26 @@
 
 module purge
 
-source /projects/sems/modulefiles/utils/sems-modules-init.sh
+source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
 
-module load sems-gcc/8.3.0
-module load sems-openmpi/1.10.1
-module load sems-boost/1.66.0/base
-module load sems-zlib/1.2.8/base
-module load sems-hdf5/1.10.6/parallel
-module load sems-netcdf/4.7.3/parallel
-module load sems-parmetis/4.0.3/parallel
-module load sems-scotch/6.0.3/nopthread_64bit_parallel
-module load sems-superlu/4.3/base
+module load sems-archive-gcc/8.3.0
+module load sems-archive-openmpi/1.10.1
+module load sems-archive-boost/1.66.0/base
+module load sems-archive-zlib/1.2.8/base
+module load sems-archive-hdf5/1.10.6/parallel
+module load sems-archive-netcdf/4.7.3/parallel
+module load sems-archive-parmetis/4.0.3/parallel
+module load sems-archive-scotch/6.0.3/nopthread_64bit_parallel
+module load sems-archive-superlu/4.3/base
 
-module load sems-cmake/3.17.1
-module load sems-ninja_fortran/1.10.0
+module load sems-archive-cmake/3.17.1
+module load sems-archive-ninja_fortran/1.10.0
 
-module load sems-git/2.10.1
+module load sems-archive-git/2.10.1
 
-module unload sems-python
-module load sems-python/3.5.2
+module unload sems-archive-python
+module load sems-archive-python/3.5.2
 
 
 # add the OpenMP environment variable we need
 export OMP_NUM_THREADS=2
-
-

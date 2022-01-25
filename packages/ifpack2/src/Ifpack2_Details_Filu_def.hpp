@@ -47,7 +47,7 @@
 
 #include "Ifpack2_Details_Filu_decl.hpp"
 #include "Ifpack2_Details_CrsArrays.hpp"
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <shylu_fastilu.hpp>
 
 namespace Ifpack2

@@ -196,9 +196,9 @@ fi
 # modules change them!
 
 # Use updated Ninja and CMake
-module load sems-env
-module load sems-cmake/3.19.1
-module load sems-ninja_fortran/1.8.2
+module load sems-archive-env
+module load sems-archive-cmake/3.19.1
+module load sems-archive-ninja_fortran/1.8.2
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 

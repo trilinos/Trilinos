@@ -27,14 +27,14 @@ bool get_node_from_id(const stk::mesh::BulkData *mesh, int node_id,
                       stk::mesh::Entity &node);
   
 bool get_beam_from_ids(const stk::mesh::BulkData *mesh,
-                       std::vector<int> edge_node_ids, stk::mesh::Entity &edge);
+                       const std::vector<int>& edge_node_ids, stk::mesh::Entity &edge);
 
 bool get_shell_from_ids(const stk::mesh::BulkData *mesh,
-                        std::vector<int> face_node_ids, stk::mesh::Entity &quad);
+                        const std::vector<int>& face_node_ids, stk::mesh::Entity &quad);
 
 // UNUSED FUNCTION WILL PROBABLY DISCARD
 bool get_shell_from_ids_LIBERAL(const stk::mesh::BulkData *mesh,
-                                std::vector<int> face_node_ids, stk::mesh::Entity &shell);
+                                const std::vector<int>& face_node_ids, stk::mesh::Entity &shell);
 
 bool get_hex_from_id(const stk::mesh::BulkData *mesh, int hex_id,
                      stk::mesh::Entity &hex);

@@ -342,7 +342,7 @@ unsigned FieldBase::max_size( EntityRank ent_rank) const
 {
   unsigned max = 0 ; 
 
-  if(static_cast<unsigned>(entity_rank()) == ent_rank)
+  if (entity_rank() == ent_rank)
   {   
       const FieldRestrictionVector & rMap = restrictions();
       const FieldRestrictionVector::const_iterator ie = rMap.end() ;
@@ -367,6 +367,12 @@ void FieldBase::rotate_multistate_data()
     for (unsigned s = 1; s < numStates; ++s) {
       FieldBase* sField = field_state(static_cast<FieldState>(s));
       m_field_meta_data.swap(sField->m_field_meta_data);
+
+      std::swap(m_numSyncsToDevice, sField->m_numSyncsToDevice);
+      std::swap(m_numSyncsToHost, sField->m_numSyncsToHost);
+
+      std::swap(m_modifiedOnHost, sField->m_modifiedOnHost);
+      std::swap(m_modifiedOnDevice, sField->m_modifiedOnDevice);
     }
   }
 }
@@ -374,33 +380,43 @@ void FieldBase::rotate_multistate_data()
 void
 FieldBase::modify_on_host() const
 { 
-  if (m_ngpField != nullptr) {
-    m_ngpField->modify_on_host();
-  }
+  ThrowRequireMsg(m_modifiedOnDevice == false,
+                  "Modify on host called for Field: " << name() << " but it has an uncleared modified_on_device");
+
+  m_modifiedOnHost = true;
 }
 
 void
 FieldBase::modify_on_device() const
 { 
-  if (m_ngpField != nullptr) {
-    m_ngpField->modify_on_device();
-  }
+  ThrowRequireMsg(m_modifiedOnHost == false,
+                  "Modify on device called for Field: " << name() << " but it has an uncleared modified_on_host");
+
+  m_modifiedOnDevice = true;
 }
 
 void
 FieldBase::modify_on_host(const Selector& s) const
 { 
-  if (m_ngpField != nullptr) {
-    m_ngpField->modify_on_host(s);
-  }
+  modify_on_host();
 }
 
 void
 FieldBase::modify_on_device(const Selector& s) const
 { 
-  if (m_ngpField != nullptr) {
-    m_ngpField->modify_on_device(s);
-  }
+  modify_on_device();
+}
+
+bool
+FieldBase::need_sync_to_device() const
+{
+  return m_modifiedOnHost;
+}
+
+bool
+FieldBase::need_sync_to_host() const
+{
+  return m_modifiedOnDevice;
 }
 
 void
@@ -408,6 +424,8 @@ FieldBase::sync_to_host() const
 { 
   if (m_ngpField != nullptr) {
     m_ngpField->sync_to_host();
+  } else {
+    clear_device_sync_state();
   }
 }
 
@@ -416,31 +434,37 @@ FieldBase::sync_to_device() const
 {
   if (m_ngpField != nullptr) {
     m_ngpField->sync_to_device();
+  } else {
+    clear_host_sync_state();
   }
 }
 
 void
 FieldBase::clear_sync_state() const
 {
-  if (m_ngpField != nullptr) {
-    m_ngpField->clear_sync_state();
+  if(m_ngpField != nullptr) {
+    m_ngpField->notify_sync_debugger_clear_sync_state();
   }
+  m_modifiedOnHost = false;
+  m_modifiedOnDevice = false;
 }
 
 void
 FieldBase::clear_host_sync_state() const
 {
-  if (m_ngpField != nullptr) {
-    m_ngpField->clear_host_sync_state();
+  if(m_ngpField != nullptr) {
+    m_ngpField->notify_sync_debugger_clear_host_sync_state();
   }
+  m_modifiedOnHost = false;
 }
 
 void
 FieldBase::clear_device_sync_state() const
 {
-  if (m_ngpField != nullptr) {
-    m_ngpField->clear_device_sync_state();
+  if(m_ngpField != nullptr) {
+    m_ngpField->notify_sync_debugger_clear_device_sync_state();
   }
+  m_modifiedOnDevice = false;
 }
 
 void

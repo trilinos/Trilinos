@@ -13,11 +13,11 @@
 #include <string.h>
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
-    error = (funcall);                                                                             \
+    int error = (funcall);                                                                         \
     printf("after %s, error = %d\n", TOSTRING(funcall), error);                                    \
     if (error != EX_NOERR && error != EX_WARN) {                                                   \
       fprintf(stderr, "Error calling %s\n", TOSTRING(funcall));                                    \
@@ -28,33 +28,19 @@
 
 int main(int argc, char **argv)
 {
-  int   exoid;
-  int   num_blob;
-  int   num_red_vars;
-  int   num_vars;
-  int   error;
-  int   i;
-  int   CPU_word_size;
-  int   IO_word_size;
-  int   idum;
-  char *blob_names[10];
-
-  float version;
-
-  char *var_names[10];
-  char *cdum = NULL;
-
-  CPU_word_size = 0; /* sizeof(float) */
-  IO_word_size  = 0; /* use what is stored in file */
 
   ex_opts(EX_VERBOSE | EX_ABORT);
 
+  int   CPU_word_size = 0; /* sizeof(float) */
+  int   IO_word_size  = 0; /* use what is stored in file */
+  float version;
+
   /* open EXODUS II files */
-  exoid = ex_open("test-blob.exo", /* filename path */
-                  EX_READ,         /* access mode = READ */
-                  &CPU_word_size,  /* CPU word size */
-                  &IO_word_size,   /* IO word size */
-                  &version);       /* ExodusII library version */
+  int exoid = ex_open("test-blob.exo", /* filename path */
+                      EX_READ,         /* access mode = READ */
+                      &CPU_word_size,  /* CPU word size */
+                      &IO_word_size,   /* IO word size */
+                      &version);       /* ExodusII library version */
 
   printf("\nafter ex_open\n");
   if (exoid < 0) {
@@ -64,6 +50,8 @@ int main(int argc, char **argv)
   printf("test-assembly.exo is an EXODUSII file; version %4.2f\n", version);
   /*   printf ("         CPU word size %1d\n",CPU_word_size);  */
   printf("         I/O word size %1d\n", IO_word_size);
+  int   idum;
+  char *cdum = NULL;
   ex_inquire(exoid, EX_INQ_API_VERS, &idum, &version, cdum);
   printf("EXODUSII API; version %4.2f\n", version);
 
@@ -71,6 +59,7 @@ int main(int argc, char **argv)
   printf("EXODUSII Library API; version %4.2f (%d)\n", version, idum);
 
   /* read database parameters */
+  int num_blob;
   {
     ex_init_params par;
     EXCHECK(ex_get_init_ext(exoid, &par));
@@ -101,12 +90,13 @@ int main(int argc, char **argv)
     int blob_ids[10];
     ex_get_ids(exoid, EX_BLOB, blob_ids);
 
-    for (i = 0; i < num_blob; i++) {
+    char *blob_names[10];
+    for (int i = 0; i < num_blob; i++) {
       blob_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
 
     ex_blob blobs[10];
-    for (i = 0; i < num_blob; i++) {
+    for (int i = 0; i < num_blob; i++) {
       blobs[i].id   = blob_ids[i];
       blobs[i].name = blob_names[i];
       /* Clear out name to make sure still getting same name */
@@ -119,14 +109,14 @@ int main(int argc, char **argv)
     }
 
     ex_blob blb[10];
-    for (i = 0; i < num_blob; i++) {
+    for (int i = 0; i < num_blob; i++) {
       blb[i].name = NULL;
       blb[i].name = blob_names[i];
       /* Clear out name to make sure still getting same name */
       blb[i].name[0] = '\0';
     }
     EXCHECK(ex_get_blobs(exoid, blb));
-    for (i = 0; i < num_blob; i++) {
+    for (int i = 0; i < num_blob; i++) {
       printf("Blob named '%s' has id %" PRId64 ". It contains %" PRId64 " entries.\n", blb[i].name,
              blb[i].id, blb[i].num_entry);
     }
@@ -134,7 +124,7 @@ int main(int argc, char **argv)
     /* Read attributes... */
     ex_attribute attr[10];
 
-    for (i = 0; i < num_blob; i++) {
+    for (int i = 0; i < num_blob; i++) {
       memset(attr, 0, sizeof(ex_attribute) * 10);
       int att_count = ex_get_attribute_count(exoid, EX_BLOB, blb[i].id);
       printf("Blob named '%s' with id %" PRId64 ". It contains %d attributes:\n", blb[i].name,
@@ -180,32 +170,36 @@ int main(int argc, char **argv)
       }
     }
 
+    int num_vars;
+    int num_red_vars;
     EXCHECK(ex_get_reduction_variable_param(exoid, EX_BLOB, &num_red_vars));
     EXCHECK(ex_get_variable_param(exoid, EX_BLOB, &num_vars));
 
     if (num_red_vars > 0) {
-      for (i = 0; i < num_red_vars; i++) {
+      char *var_names[10];
+      for (int i = 0; i < num_red_vars; i++) {
         var_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
       }
 
       EXCHECK(ex_get_reduction_variable_names(exoid, EX_BLOB, num_red_vars, var_names));
 
       printf("There are %2d blob reduction variables; their names are :\n", num_red_vars);
-      for (i = 0; i < num_red_vars; i++) {
+      for (int i = 0; i < num_red_vars; i++) {
         printf(" '%s'\n", var_names[i]);
         free(var_names[i]);
       }
     }
 
     if (num_vars > 0) {
-      for (i = 0; i < num_vars; i++) {
+      char *var_names[10];
+      for (int i = 0; i < num_vars; i++) {
         var_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
       }
 
       EXCHECK(ex_get_variable_names(exoid, EX_BLOB, num_vars, var_names));
 
       printf("There are %2d blob variables; their names are :\n", num_vars);
-      for (i = 0; i < num_vars; i++) {
+      for (int i = 0; i < num_vars; i++) {
         printf(" '%s'\n", var_names[i]);
         free(var_names[i]);
       }
@@ -224,7 +218,7 @@ int main(int argc, char **argv)
 
     float *vals       = (float *)calloc(max_count, CPU_word_size);
     float *var_values = (num_red_vars > 0) ? (float *)calloc(num_red_vars, sizeof(float)) : NULL;
-    for (i = 0; i < num_time_steps; i++) {
+    for (int i = 0; i < num_time_steps; i++) {
       float time_value;
       EXCHECK(ex_get_time(exoid, i + 1, &time_value));
       printf("Time at step %d is %f.\n", i + 1, time_value);
@@ -245,9 +239,9 @@ int main(int argc, char **argv)
     }
     free(var_values);
     free(vals);
-  }
-  for (i = 0; i < num_blob; i++) {
-    free(blob_names[i]);
+    for (int i = 0; i < num_blob; i++) {
+      free(blob_names[i]);
+    }
   }
 
   EXCHECK(ex_close(exoid));

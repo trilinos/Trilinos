@@ -8,7 +8,7 @@
  
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #else
 #include <omp.h>
 #endif
@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
   cout << "--------------Done Setting Threads----------" << endl;
   mybasker.Symbolic(m,n,nnz,col_ptr,row_idx,vals);
   cout << "--------------Done SFactor------------------" << endl;
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   mybasker.Factor_Inc(0);
   cout << "--------------Done NFactor-----------------" << endl;
   cout << "First Factor Time: " << timer.seconds() << endl;

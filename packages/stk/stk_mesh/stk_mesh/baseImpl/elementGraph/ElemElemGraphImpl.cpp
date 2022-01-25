@@ -37,7 +37,6 @@ bool fill_topologies(stk::mesh::ElemElemGraph& eeGraph,
                      std::vector<stk::topology>& element_topologies)
 {
   const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
-  stk::mesh::Graph& graph = eeGraph.get_graph();
 
   bool areAnyElementsShells = false;
   const stk::mesh::BucketVector & elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
@@ -45,11 +44,9 @@ bool fill_topologies(stk::mesh::ElemElemGraph& eeGraph,
     areAnyElementsShells |= bucket->topology().is_shell();
 
     stk::topology elemTopology = bucket->topology();
-    unsigned numSides = elemTopology.num_sides();
     for(stk::mesh::Entity element : *bucket) {
       impl::LocalId elemLocalId = localMapper.entity_to_local(element);
       element_topologies[elemLocalId] = elemTopology;
-      graph.reserve_edges(elemLocalId, numSides);
     }
   }
   return areAnyElementsShells;

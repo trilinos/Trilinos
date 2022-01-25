@@ -281,8 +281,8 @@ namespace Ioss {
 
     static std::string decode_filename(const std::string &filename, int processor,
                                        int num_processors);
-    static size_t      get_number(const std::string &suffix);
-    static int64_t     extract_id(const std::string &name_id);
+    static int         get_number(const std::string &suffix);
+    static int         extract_id(const std::string &name_id);
     static std::string encode_entity_name(const std::string &entity_type, int64_t id);
 
     /** \brief create a string that describes the list of input `ids` collapsing ranges if possible.
@@ -294,8 +294,8 @@ namespace Ioss {
      * string `1..3, 5..8`
      */
     static std::string format_id_list(const std::vector<size_t> &ids,
-                                      const std::string &        rng_sep = " to ",
-                                      const std::string &        seq_sep = ", ");
+                                      const std::string         &rng_sep = " to ",
+                                      const std::string         &seq_sep = ", ");
 
     /** \brief Convert a string to lower case, and convert spaces to `_`.
      *
@@ -412,7 +412,7 @@ namespace Ioss {
     static std::string local_filename(const std::string &relative_filename, const std::string &type,
                                       const std::string &working_directory);
 
-    static void get_fields(int64_t entity_count, char **names, size_t num_names,
+    static void get_fields(int64_t entity_count, char **names, int num_names,
                            Ioss::Field::RoleType fld_role, const DatabaseIO *db, int *local_truth,
                            std::vector<Ioss::Field> &fields);
 

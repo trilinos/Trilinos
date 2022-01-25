@@ -110,7 +110,7 @@ namespace Tacho {
     void
     factorizeCholesky(const value_type_array &ax,
                       const ordinal_type verbose) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       {
         timer.reset();
         {
@@ -155,7 +155,7 @@ namespace Tacho {
     factorizeCholesky(const value_type_array &ax,
                       const ordinal_type panelsize,
                       const ordinal_type verbose) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       {
         timer.reset();
         {
@@ -204,7 +204,7 @@ namespace Tacho {
                   const value_type_matrix &b,   // right hand side
                   const value_type_matrix &t,   // temporary workspace (store permuted vectors)
                   const ordinal_type verbose) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       _info.x = t;
 
@@ -256,7 +256,7 @@ namespace Tacho {
                                  "Serial interface works on host device only");
       }
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       {
         timer.reset();
         {
@@ -322,7 +322,7 @@ namespace Tacho {
                                  "x, b and t have the same data pointer");
       }
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       _info.x = t;
 

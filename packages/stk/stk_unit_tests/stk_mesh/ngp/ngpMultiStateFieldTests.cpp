@@ -130,20 +130,57 @@ class NgpMultiStateFieldTest : public stk::mesh::fixtures::TestHexFixture
   stk::mesh::Field<double>& get_field_new() { return *m_fieldNew; }
   stk::mesh::Field<double>& get_field_old() { return *m_fieldOld; }
 
+  template <typename ValueType>
+  struct CheckValueUsingNgpField {
+    CheckValueUsingNgpField(const stk::mesh::NgpField<ValueType>& _ngpField, ValueType _expectedValue)
+        : ngpField(_ngpField), expectedValue(_expectedValue)
+    {
+    }
+
+    KOKKOS_FUNCTION
+    void operator()(const stk::mesh::FastMeshIndex& entity) const
+    {
+      unsigned numComponents = ngpField.get_num_components_per_entity(entity);
+      for (unsigned component = 0; component < numComponents; ++component) {
+        NGP_EXPECT_EQ(expectedValue, ngpField(entity, component));
+      }
+    }
+
+   private:
+    stk::mesh::NgpField<ValueType> ngpField;
+    ValueType expectedValue;
+  };
+
   template<typename T>
   void check_field_data_value_on_device(const stk::mesh::NgpMesh& ngpMesh,
                                         const stk::mesh::NgpField<T>& ngpField,
                                         T expectedValue)
   {
     stk::mesh::Selector owned = ngpMesh.get_bulk_on_host().mesh_meta_data().locally_owned_part();
-    stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), owned,
-                     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-                       unsigned numComponents = ngpField.get_num_components_per_entity(entity);
-                       for (unsigned component=0; component<numComponents; ++component) {
-                         NGP_EXPECT_EQ(expectedValue, ngpField(entity, component));
-                       }
-                     });
+    CheckValueUsingNgpField<T> checkValueUsingNgpField(ngpField, expectedValue);
+    stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), owned, checkValueUsingNgpField);
   }
+
+  template <typename ValueType>
+  struct CheckValueUsingClass {
+    CheckValueUsingClass(const ClassWithNgpField* _deviceClassPointer, ValueType _expectedValue)
+        : deviceClassPointer(_deviceClassPointer), expectedValue(_expectedValue)
+    {
+    }
+
+    KOKKOS_FUNCTION
+    void operator()(const stk::mesh::FastMeshIndex& entity) const
+    {
+      unsigned numComponents = deviceClassPointer->num_components_per_entity(entity);
+      for (unsigned component = 0; component < numComponents; ++component) {
+        NGP_EXPECT_EQ(expectedValue, deviceClassPointer->access_field_data(entity, component));
+      }
+    }
+
+   private:
+    const ClassWithNgpField* deviceClassPointer;
+    ValueType expectedValue;
+  };
 
   template<typename T>
   void check_field_data_value_on_device(const stk::mesh::NgpMesh& ngpMesh,
@@ -152,13 +189,8 @@ class NgpMultiStateFieldTest : public stk::mesh::fixtures::TestHexFixture
                                         T expectedValue)
   {
     stk::mesh::Selector owned = ngpMesh.get_bulk_on_host().mesh_meta_data().locally_owned_part();
-    stk::mesh::for_each_entity_run(ngpMesh, rank, owned,
-                     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-                       unsigned numComponents = deviceClassPointer->num_components_per_entity(entity);
-                       for (unsigned component=0; component<numComponents; ++component) {
-                         NGP_EXPECT_EQ(expectedValue, deviceClassPointer->access_field_data(entity, component));
-                       }
-                     });
+    CheckValueUsingClass<T> checkValueUsingClass(deviceClassPointer, expectedValue);
+    stk::mesh::for_each_entity_run(ngpMesh, rank, owned, checkValueUsingClass);
   }
 
   void perform_field_state_rotation()
@@ -228,4 +260,68 @@ NGP_TEST_F(NgpMultiStateFieldTest, persistentDeviceField_hasCorrectDataAfterStat
   check_field_data_value_on_device(ngpMesh, stk::topology::NODE_RANK, persistentDeviceClass, valueOld);
 
   delete_class_on_device(persistentDeviceClass);
+}
+
+NGP_TEST_F(NgpMultiStateFieldTest, persistentSyncToDeviceCountAfterStateRotation)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
+  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(get_field_old());
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_device(), ngpFieldOld.num_syncs_to_device());
+
+  ngpFieldNew.modify_on_host();
+  ngpFieldNew.sync_to_device();
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_device(), ngpFieldOld.num_syncs_to_device()+1);
+
+  perform_field_state_rotation();
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_device()+1, ngpFieldOld.num_syncs_to_device());
+}
+
+NGP_TEST_F(NgpMultiStateFieldTest, persistentSyncToHostCountAfterStateRotation)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
+  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(get_field_old());
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_device(), ngpFieldOld.num_syncs_to_device());
+
+  ngpFieldOld.modify_on_device();
+  ngpFieldOld.sync_to_host();
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_host()+1, ngpFieldOld.num_syncs_to_host());
+
+  perform_field_state_rotation();
+
+  EXPECT_EQ(ngpFieldNew.num_syncs_to_host(), ngpFieldOld.num_syncs_to_host()+1);
+}
+
+NGP_TEST_F(NgpMultiStateFieldTest, persistentModifyOnHostAfterStateRotation)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
+  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(get_field_old());
+  ngpFieldNew.clear_sync_state();
+  ngpFieldOld.clear_sync_state();
+
+  ngpFieldNew.modify_on_host();
+
+  EXPECT_TRUE(ngpFieldNew.need_sync_to_device());
+  EXPECT_FALSE(ngpFieldOld.need_sync_to_device());
+
+  get_bulk().update_field_data_states();
+
+  EXPECT_FALSE(ngpFieldNew.need_sync_to_device());
+  EXPECT_TRUE(ngpFieldOld.need_sync_to_device());
 }

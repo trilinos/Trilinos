@@ -77,7 +77,9 @@ set (TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH "Set by default for CUDA PR testi
 # The compile times for two Panzer files went up to over 6 hours. This
 # turns off one feature that allows these in about 24 minutes. Please remove
 # when issue #7532 is resolved.
-set (Sacado_NEW_FAD_DESIGN_IS_DEFAULT OFF CACHE BOOL "Temporary fix for issue #7532" )
+# Compile time issues addressed by #8377. Commenting out the override of 
+# Sacado_NEW_FAD_DESIGN_IS_DEFAULT to return to default settings.
+#set (Sacado_NEW_FAD_DESIGN_IS_DEFAULT OFF CACHE BOOL "Temporary fix for issue #7532" )
 
 # Disable some packages that can't be tested with this PR build
 set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL
@@ -146,7 +148,6 @@ set (Domi_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Kokkos_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (KokkosKernels_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (ROL_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
-set (Sacado_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (SEACAS_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (ShyLU_DD_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (STK_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
