@@ -5,8 +5,7 @@
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef shell_SystemInterface_h
-#define shell_SystemInterface_h
+#pragma once
 
 #include "Ioss_GetLongOpt.h"
 
@@ -99,4 +98,3 @@ namespace IOShell {
     char fieldSuffixSeparator{'_'};
   };
 } // namespace IOShell
-#endif

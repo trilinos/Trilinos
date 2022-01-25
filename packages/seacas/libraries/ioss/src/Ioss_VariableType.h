@@ -4,8 +4,7 @@
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_VariableType_h
-#define IOSS_Ioss_VariableType_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
@@ -97,4 +96,3 @@ inline std::string Ioss::VariableType::name() const { return name_; }
 inline int Ioss::VariableType::component_count() const { return componentCount; }
 
 inline int Ioss::VariableType::suffix_count() const { return componentCount; }
-#endif

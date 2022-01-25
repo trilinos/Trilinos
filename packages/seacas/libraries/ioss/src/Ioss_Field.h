@@ -4,8 +4,7 @@
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_Field_h
-#define IOSS_Ioss_Field_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>
 #include <cstddef> // for size_t
@@ -169,4 +168,3 @@ namespace Ioss {
     bool                     equal_(const Ioss::Field &rhs, bool quiet) const;
   };
 } // namespace Ioss
-#endif

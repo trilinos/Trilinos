@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iogn_DashSurfaceMesh_h
-#define IOSS_Iogn_DashSurfaceMesh_h
+#pragma once
 
 #include <Ioss_Beam2.h>
 #include <Ioss_Hex8.h>
@@ -252,5 +251,3 @@ namespace Iogn {
     std::vector<int64_t> mElementOffsetForBlock;
   };
 } // namespace Iogn
-
-#endif

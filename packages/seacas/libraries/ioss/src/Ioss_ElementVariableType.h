@@ -4,8 +4,7 @@
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_ElementVariableType_h
-#define IOSS_Ioss_ElementVariableType_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_VariableType.h>
@@ -32,4 +31,3 @@ namespace Ioss {
   {
   }
 } // namespace Ioss
-#endif
