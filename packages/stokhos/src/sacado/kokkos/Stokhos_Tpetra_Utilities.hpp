@@ -243,7 +243,7 @@ namespace Stokhos {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO,N> MatrixType;
     typedef Tpetra::Map<LO,GO,N> Map;
 
-    typedef typename MatrixType::local_matrix_type KokkosMatrixType;
+    typedef typename MatrixType::local_matrix_device_type KokkosMatrixType;
 
     typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
     typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;
@@ -251,7 +251,7 @@ namespace Stokhos {
     RCP< const Map > rmap = A.getRowMap();
     RCP< const Map > cmap = A.getColMap();
 
-    KokkosMatrixType kokkos_matrix = A.getLocalMatrix();
+    KokkosMatrixType kokkos_matrix = A.getLocalMatrixDevice();
     KokkosGraphType kokkos_graph = kokkos_matrix.graph;
     KokkosMatrixValuesType matrix_values = kokkos_matrix.values;
     const size_t ncols = kokkos_matrix.numCols();
