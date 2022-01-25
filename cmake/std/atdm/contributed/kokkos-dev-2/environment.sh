@@ -196,7 +196,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.5" ]] ; then
   export ATDM_CONFIG_BLAS_LIBS="-mkl"
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5" ]] ; then
   module load sems-archive-gcc/7.2.0
-  module load sems-archive-intel/18.0.5
+  module load sems-archive-intel/19.0.5
   module load atdm-env
   module load atdm-mkl/18.0.5
   export ATDM_CONFIG_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
