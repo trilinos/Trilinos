@@ -938,8 +938,8 @@ struct OperatorTensorDecomposition
     ordinal_type getTensorDkEnumeration(ordinal_type dkEnum1, ordinal_type operatorOrder1,
                                         ordinal_type dkEnum2, ordinal_type operatorOrder2) const
     {
-      ordinal_type spaceDim1 = basis1_->getBaseCellTopology().getDimension();
-      ordinal_type spaceDim2 = basis2_->getBaseCellTopology().getDimension();
+      ordinal_type spaceDim1 = basis1_->getBaseCellTopology().getDimension() + basis1_->getNumTensorialExtrusions();
+      ordinal_type spaceDim2 = basis2_->getBaseCellTopology().getDimension() + basis2_->getNumTensorialExtrusions();;
       
       // We support total spaceDim <= 7.
       switch (spaceDim1)

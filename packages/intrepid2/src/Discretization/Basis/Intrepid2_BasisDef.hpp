@@ -242,23 +242,9 @@ namespace Intrepid2 {
                                 const ordinal_type zMult) {
     switch(spaceDim) {
 
-      case 1:
-        return 0;
-#ifndef __NVCC__ //prevent nvcc warning
-        break;
-#endif
-
-      case 2:
-        return yMult;
-#ifndef __NVCC__ //prevent nvcc warning
-        break;
-#endif
-
-      case 3:
-        return zMult + (yMult+zMult)*(yMult+zMult+1)/2;
-#ifndef __NVCC__ //prevent nvcc warning
-        break;
-#endif
+      case 1: return 0;
+      case 2: return yMult;
+      case 3: return zMult + (yMult+zMult)*(yMult+zMult+1)/2;
 
       default: {
         INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 4) ),
@@ -878,7 +864,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateOutputView()");
     
     const int numFields = this->getCardinality();
-    const int spaceDim  = basisCellTopology_.getDimension();
+    const int spaceDim  = basisCellTopology_.getDimension() + this->getNumTensorialExtrusions();
     
     using OutputViewAllocatable = Kokkos::DynRankView<outputValueType,DeviceType>;
     
