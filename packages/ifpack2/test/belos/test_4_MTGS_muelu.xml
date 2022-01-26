@@ -1,5 +1,6 @@
 <ParameterList name="test_params">
-  <Parameter name="mm_file" type="string" value="mueluMatrix.mtx"/>
+  <Parameter name="mm_file"     type="string" value="mueluMatrix.mtx"/>
+  <Parameter name="rhs_mm_file" type="string" value="mueluMatrix_rhs.mtx"/>
 
   <Parameter name="solver_type" type="string" value="Block Gmres"/>
   <ParameterList name="Belos">
