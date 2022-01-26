@@ -23,12 +23,12 @@ namespace Tempus {
 
 template <class Scalar>
 IntegratorAdjointSensitivity<Scalar>::IntegratorAdjointSensitivity(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
-    const Teuchos::RCP<IntegratorBasic<Scalar>> &state_integrator,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &adjoint_model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+    const Teuchos::RCP<IntegratorBasic<Scalar> > &state_integrator,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjoint_model,
     const Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > &adjoint_aux_model,
-    const Teuchos::RCP<IntegratorBasic<Scalar>> &adjoint_integrator,
-    const Teuchos::RCP<SolutionHistory<Scalar>> &solutionHistory,
+    const Teuchos::RCP<IntegratorBasic<Scalar> > &adjoint_integrator,
+    const Teuchos::RCP<SolutionHistory<Scalar> > &solutionHistory,
     const int p_index,
     const int g_index,
     const bool g_depends_on_p,

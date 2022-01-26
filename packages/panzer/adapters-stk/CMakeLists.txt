@@ -16,6 +16,14 @@ ELSE()
    GLOBAL_SET(PANZER_HAVE_PERCEPT OFF)
 ENDIF()
 
+# Optional UMR dependency
+##########################
+IF(${PACKAGE_NAME}_ENABLE_UMR)
+   GLOBAL_SET(PANZER_HAVE_UMR ON)
+ELSE()
+   GLOBAL_SET(PANZER_HAVE_UMR OFF)
+ENDIF()
+
 # Optional Teko dependency
 ##########################
 IF(${PACKAGE_NAME}_ENABLE_Teko)

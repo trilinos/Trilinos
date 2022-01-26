@@ -111,11 +111,11 @@ public:
    * transpose.
    */
   IntegratorAdjointSensitivity(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
-      const Teuchos::RCP<IntegratorBasic<Scalar>> &state_integrator,
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &adjoint_model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<IntegratorBasic<Scalar> > &state_integrator,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjoint_model,
       const Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > &adjoint_aux_model,
-      const Teuchos::RCP<IntegratorBasic<Scalar>> &ajoint_integrator,
+      const Teuchos::RCP<IntegratorBasic<Scalar> > &ajoint_integrator,
       const Teuchos::RCP<SolutionHistory<Scalar> > &solution_history,
       const int p_index,
       const int g_index,
