@@ -124,7 +124,7 @@ module load sems-archive-env
 module use /home/projects/x86-64/modulefiles/local
 module load sems-archive-git/2.10.1
 
-module load sems-archive-cmake/3.12.2
+module load sems-archive-cmake/3.17.1
 module load sems-archive-ninja_fortran/1.8.2
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "CUDA" ]] ; then
