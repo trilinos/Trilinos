@@ -129,7 +129,12 @@ namespace Tpetra {
 ///
 
 namespace Impl {
+  /// give an option to use layoutleft
+#if defined(TPETRA_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT)
   using BlockCrsMatrixLittleBlockArrayLayout = Kokkos::LayoutLeft;
+#else
+  using BlockCrsMatrixLittleBlockArrayLayout = Kokkos::LayoutRight;
+#endif
 }
 
 template<class Scalar,

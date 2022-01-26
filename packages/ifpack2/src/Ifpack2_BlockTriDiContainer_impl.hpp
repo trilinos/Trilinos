@@ -160,6 +160,19 @@ namespace Ifpack2 {
                                  typename ViewType::execution_space::scratch_memory_space,
                                  MemoryTraits<typename ViewType::memory_traits, Kokkos::Unmanaged> >;
 
+    /// 
+    /// tpetra little block index
+    ///
+    template<typename LayoutType> struct TpetraLittleBlock;
+    template<> struct TpetraLittleBlock<Kokkos::LayoutLeft> {
+      template<typename T> KOKKOS_INLINE_FUNCTION
+      static T getFlatIndex(const T i, const T j, const T blksize) { return i+j*blksize; }
+    };
+    template<> struct TpetraLittleBlock<Kokkos::LayoutRight> {
+      template<typename T> KOKKOS_INLINE_FUNCTION
+      static T getFlatIndex(const T i, const T j, const T blksize) { return i*blksize+j; }
+    };
+
     ///
     /// block tridiag scalar type
     ///
@@ -2040,6 +2053,7 @@ namespace Ifpack2 {
       void
       extract(local_ordinal_type partidx,
               local_ordinal_type npacks) const {
+        using tlb = TpetraLittleBlock<Tpetra::Impl::BlockCrsMatrixLittleBlockArrayLayout>;
         const size_type kps = pack_td_ptr(partidx);
         local_ordinal_type kfs[vector_length] = {};
         local_ordinal_type ri0[vector_length] = {};
@@ -2061,7 +2075,8 @@ namespace Ifpack2 {
             ++j;
             for (local_ordinal_type ii=0;ii<blocksize;++ii) {
               for (local_ordinal_type jj=0;jj<blocksize;++jj) {
-                const auto idx = ii*blocksize + jj;
+                //const auto idx = ii*blocksize + jj;
+                const auto idx = tlb::getFlatIndex(ii, jj, blocksize);
                 auto& v = internal_vector_values(pi, ii, jj, 0);
                 for (local_ordinal_type vi=0;vi<npacks;++vi)
                   v[vi] = static_cast<btdm_scalar_type>(block[vi][idx]);
@@ -2086,6 +2101,7 @@ namespace Ifpack2 {
               const local_ordinal_type &partidxbeg,
               const local_ordinal_type &npacks,
               const local_ordinal_type &vbeg) const {
+        using tlb = TpetraLittleBlock<Tpetra::Impl::BlockCrsMatrixLittleBlockArrayLayout>;
         local_ordinal_type kfs_vals[internal_vector_length] = {};
         local_ordinal_type ri0_vals[internal_vector_length] = {};
         local_ordinal_type nrows_vals[internal_vector_length] = {};
@@ -2114,8 +2130,8 @@ namespace Ifpack2 {
                 Kokkos::parallel_for
                   (Kokkos::TeamThreadRange(member,blocksize),
                    [&](const local_ordinal_type &ii) {
-                    for (local_ordinal_type jj=0;jj<blocksize;++jj)
-                      scalar_values(pi, ii, jj, v) = static_cast<btdm_scalar_type>(block[ii*blocksize + jj]);
+                    for (local_ordinal_type jj=0;jj<blocksize;++jj) 
+                      scalar_values(pi, ii, jj, v) = static_cast<btdm_scalar_type>(block[tlb::getFlatIndex(ii,jj,blocksize)]);
                   });
               }
             }
@@ -3136,9 +3152,9 @@ namespace Ifpack2 {
                  const impl_scalar_type * const KOKKOS_RESTRICT AA,
                  const impl_scalar_type * const KOKKOS_RESTRICT xx,
                  /* */ impl_scalar_type * KOKKOS_RESTRICT yy) const {
+        using tlb = TpetraLittleBlock<Tpetra::Impl::BlockCrsMatrixLittleBlockArrayLayout>;
         for (local_ordinal_type k0=0;k0<blocksize;++k0) {
           impl_scalar_type val = 0;
-          const local_ordinal_type offset = k0*blocksize;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #   pragma ivdep
 #endif
@@ -3146,7 +3162,7 @@ namespace Ifpack2 {
 #   pragma unroll
 #endif
           for (local_ordinal_type k1=0;k1<blocksize;++k1)
-            val += AA[offset+k1]*xx[k1];
+            val += AA[tlb::getFlatIndex(k0,k1,blocksize)]*xx[k1];
           yy[k0] -= val;
         }
       }
