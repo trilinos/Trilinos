@@ -59,36 +59,52 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 
+#ifdef PANZER_HAVE_UMR
+#include <Ioumr_DatabaseIO.hpp>
+#endif
+
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
 namespace panzer_stk {
 
 int getMeshDimension(const std::string & meshStr,
                      stk::ParallelMachine parallelMach,
-                     const bool isExodus)
+                     const std::string & typeStr)
 {
   stk::io::StkMeshIoBroker meshData(parallelMach);
   meshData.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", false));
-  if (isExodus)
-    meshData.add_mesh_database(meshStr, "exodusII", stk::io::READ_MESH);
-  else
-    meshData.add_mesh_database(meshStr, "pamgen", stk::io::READ_MESH);
+  meshData.add_mesh_database(meshStr, fileTypeToIOSSType(typeStr), stk::io::READ_MESH);
   meshData.create_input_mesh();
   return Teuchos::as<int>(meshData.meta_data_rcp()->spatial_dimension());
 }
 
+std::string fileTypeToIOSSType(const std::string & fileType)
+{
+  std::string IOSSType;
+  if      (fileType=="Exodus")
+    IOSSType = "exodusii";
+#ifdef PANZER_HAVE_UMR
+  else if (fileType=="Exodus Refinement")
+    IOSSType = "Refinement";
+#endif
+  else if (fileType=="Pamgen")
+    IOSSType = "pamgen";
+  
+  return IOSSType;
+}
+
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
-  : fileName_(""), restartIndex_(0), isExodus_(true), userMeshScaling_(false), keepPerceptData_(false),
-    keepPerceptParentElements_(false), rebalancing_("default"), meshScaleFactor_(0.0), levelsOfRefinement_(0),
-    createEdgeBlocks_(false), createFaceBlocks_(false)
+  : fileName_(""), fileType_(""), restartIndex_(0), userMeshScaling_(false), keepPerceptData_(false),
+    keepPerceptParentElements_(false), rebalancing_("default"),
+meshScaleFactor_(0.0), levelsOfRefinement_(0),
+    createEdgeBlocks_(false), createFaceBlocks_(false), geometryName_("")
 { }
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,
-                                                 const int restartIndex,
-                                                 const bool isExodus)
-  : fileName_(fileName), restartIndex_(restartIndex), isExodus_(isExodus), userMeshScaling_(false),
+                                                 const int restartIndex)
+  : fileName_(fileName), fileType_("Exodus"), restartIndex_(restartIndex), userMeshScaling_(false),
     keepPerceptData_(false), keepPerceptParentElements_(false), rebalancing_("default"),
-    meshScaleFactor_(0.0), levelsOfRefinement_(0), createEdgeBlocks_(false), createFaceBlocks_(false)
+    meshScaleFactor_(0.0), levelsOfRefinement_(0), createEdgeBlocks_(false), createFaceBlocks_(false), geometryName_("")
 { }
 
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMachine parallelMach) const
@@ -104,8 +120,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
    // the two step construction
 
    // this calls commit on meta data
-   const bool buildRefinementSupport = levelsOfRefinement_ > 0 ? true : false;
-   mesh->initialize(parallelMach,false,buildRefinementSupport);
+   mesh->initialize(parallelMach,false,doPerceptRefinement());
 
    completeMeshConstruction(*mesh,parallelMach);
 
@@ -132,10 +147,15 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    entity_rank_names.push_back("FAMILY_TREE");
    meshData->set_rank_name_vector(entity_rank_names);
 
-   if (isExodus_)
-     meshData->add_mesh_database(fileName_, "exodusII", stk::io::READ_MESH);
-   else
-     meshData->add_mesh_database(fileName_, "pamgen", stk::io::READ_MESH);
+#ifdef PANZER_HAVE_UMR
+   // this line registers Ioumr with Ioss
+   Ioumr::IOFactory::factory();
+
+   meshData->property_add(Ioss::Property("GEOMETRY_FILE", geometryName_));
+   meshData->property_add(Ioss::Property("NUMBER_REFINEMENTS", levelsOfRefinement_));
+#endif
+
+   meshData->add_mesh_database(fileName_, fileTypeToIOSSType(fileType_), stk::io::READ_MESH);
 
    meshData->create_input_mesh();
    RCP<stk::mesh::MetaData> metaData = meshData->meta_data_rcp();
@@ -181,8 +201,7 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
 
 
    if(not mesh.isInitialized()) {
-     const bool buildRefinementSupport = levelsOfRefinement_ > 0 ? true : false;
-     mesh.initialize(parallelMach,true,buildRefinementSupport);
+     mesh.initialize(parallelMach,true,doPerceptRefinement());
    }
 
    // grab mesh data pointer to build the bulk data
@@ -199,9 +218,10 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    // build mesh bulk data
    meshData->populate_bulk_data();
 
-   const bool deleteParentElements = !keepPerceptParentElements_;
-   if (levelsOfRefinement_ > 0)
+   if (doPerceptRefinement()) {
+     const bool deleteParentElements = !keepPerceptParentElements_;
      mesh.refineMesh(levelsOfRefinement_,deleteParentElements);
+   }
 
    // The following section of code is applicable if mesh scaling is
    // turned on from the input file.
@@ -329,18 +349,20 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
      // default to false to prevent massive exodiff test failures
      paramList->set<bool>("Create Face Blocks", false);
 
+   if(!paramList->isParameter("Geometry File Name"))
+     paramList->set("Geometry File Name", "");
+
    paramList->validateParameters(*getValidParameters(),0);
 
    setMyParamList(paramList);
 
    fileName_ = paramList->get<std::string>("File Name");
 
+   geometryName_ = paramList->get<std::string>("Geometry File Name");
+
    restartIndex_ = paramList->get<int>("Restart Index");
 
-   {
-     const auto fileType = paramList->get<std::string>("File Type");
-     isExodus_ = fileType == "Exodus";
-   }
+   fileType_ = paramList->get<std::string>("File Type");
 
    // get any mesh scale factor
    if (paramList->isParameter("Scale Factor"))
@@ -373,14 +395,20 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
       validParams = Teuchos::rcp(new Teuchos::ParameterList);
       validParams->set<std::string>("File Name","<file name not set>","Name of exodus file to be read",
                                     Teuchos::rcp(new Teuchos::FileNameValidator));
+      validParams->set<std::string>("Geometry File Name","<file name not set>","Name of geometry file for refinement", 
+                                    Teuchos::rcp(new Teuchos::FileNameValidator));
 
       validParams->set<int>("Restart Index",-1,"Index of solution to read in",
 			    Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_INT,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));
 
       Teuchos::setStringToIntegralParameter<int>("File Type",
                                                  "Exodus",
-                                                 "Choose input file type - either \"Exodus\" or \"Pamgen\"",
-                                                 Teuchos::tuple<std::string>("Exodus","Pamgen"),
+                                                 "Choose input file type - either \"Exodus\", \"Exodus Refinement\" or \"Pamgen\"",
+                                                 Teuchos::tuple<std::string>("Exodus","Pamgen"
+#ifdef PANZER_HAVE_UMR
+                                                                             ,"Exodus Refinement"
+#endif
+                                                                             ),
                                                  validParams.get()
                                                  );
 
@@ -389,7 +417,7 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
 
       Teuchos::ParameterList & bcs = validParams->sublist("Periodic BCs");
       bcs.set<int>("Count",0); // no default periodic boundary conditions
-
+      
       validParams->set("Levels of Uniform Refinement",0,"Number of levels of inline uniform mesh refinement");
 
       validParams->set("Keep Percept Data",false,"Keep the Percept mesh after uniform refinement is applied");
@@ -708,6 +736,11 @@ void STK_ExodusReaderFactory::buildMetaData(stk::ParallelMachine /* parallelMach
          }
       }
    }
+}
+
+bool STK_ExodusReaderFactory::doPerceptRefinement() const
+{
+  return (fileType_!="Exodus Refinement") && (levelsOfRefinement_ > 0);
 }
 
 std::string STK_ExodusReaderFactory::mkBlockName(std::string base, std::string topo_name) const
