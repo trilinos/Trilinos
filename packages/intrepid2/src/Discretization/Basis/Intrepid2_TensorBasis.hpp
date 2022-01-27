@@ -127,6 +127,10 @@ namespace Intrepid2
     for (int k0=0; k0<=operatorOrder; k0++)
     {
       entries[0] = k0;
+      for (int d=1; d<spaceDim; d++)
+      {
+        entries[d] = 0;
+      }
       const ordinal_type dkEnumFor_k0 = getDkEnumeration<spaceDim>(entries);
       
       if      (dkEnumFor_k0 < dkEnum) continue; // next k0
