@@ -292,19 +292,19 @@ Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
 
    //calculate intial acceleration using small time step (1.0e-3*delta_t)
    // AGS: Check this for inital velocity
-   {
-     Scalar pert= 1.0e6 * 4.0 / (delta_t * delta_t);
-     assign(x_pred_a.ptr(), *x);
-     assign(x_pred_v.ptr(), *x);
+  if (calc_init_accel_ == true) {
+    Scalar pert= 1.0e6 * 4.0 / (delta_t * delta_t);
+    assign(x_pred_a.ptr(), *x);
+    assign(x_pred_v.ptr(), *x);
 
-     Vp_StV(x_pred_v.ptr(), sqrt(pert), *v);
-     model->injectData(x_pred_a, x_pred_a, pert, x_pred_v, sqrt(pert), t);
+    Vp_StV(x_pred_v.ptr(), sqrt(pert), *v);
+    model->injectData(x_pred_a, x_pred_a, pert, x_pred_v, sqrt(pert), t);
 
-     noxSolver->evalModel(nox_inargs, nox_outargs);
+    noxSolver->evalModel(nox_inargs, nox_outargs);
 
-     V_StVpStV(a.ptr(), pert, *gx_out,  -pert, *x_pred_a);
-     nrm = norm_2(*a);
-     *out << "Calculated a_init = " << nrm << std::endl;
+    V_StVpStV(a.ptr(), pert, *gx_out,  -pert, *x_pred_a);
+    nrm = norm_2(*a);
+    *out << "Calculated a_init = " << nrm << std::endl;
    }
 
    // Start integration loop
@@ -342,6 +342,7 @@ Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
        x = soln->col(0);
        v = soln->col(1);
        a = soln->col(2);
+       nrm = norm_2(*a);
 
        x_pred_a = Thyra::createMember<Scalar>(model->get_f_space());
        x_pred_v = Thyra::createMember<Scalar>(model->get_f_space());
@@ -378,6 +379,8 @@ Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
      Vp_StV(v.ptr(), hdt, *a);
      Vp_StV(v.ptr(), hdt, *a_old);
      // Should be equivalent to: v->Update(tdt, *x, -tdt, *x_pred_v, 0.0);
+     
+     nrm = norm_2(*a);
 
      // Observe completed time step
      if (observer != Teuchos::null) observer->observeSolution(*soln, t);

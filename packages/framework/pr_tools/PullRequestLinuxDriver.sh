@@ -171,7 +171,7 @@ test_cmd_options=(
     --pullrequest-number=${PULLREQUESTNUM:?}
     --jenkins-job-number=${BUILD_NUMBER:?}
     --req-mem-per-core=3.0
-    --max-cores-allowed=29
+    --max-cores-allowed=${TRILINOS_MAX_CORES:=29}
     --num-concurrent-tests=4
     --test-mode=${mode}
     --workspace-dir=${WORKSPACE:?}
