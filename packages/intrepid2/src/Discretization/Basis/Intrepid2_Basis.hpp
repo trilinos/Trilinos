@@ -378,9 +378,6 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
       const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV) || operatorIsDk;
       INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateBasisValues");
       
-//      // this default implementation employs a trivial tensor-product structure; make sure that points also have a trivial tensor product structure:
-//      INTREPID2_TEST_FOR_EXCEPTION(points.numTensorComponents() != 1, std::invalid_argument, "default implementation of allocateBasisValues() only supports a trivial tensor product structure (one tensor component)");
-      
       const int numPoints = points.extent_int(0);
       
       using Scalar = OutputValueType;
@@ -834,6 +831,15 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
                                     ">>> ERROR (Basis::getSubCellRefBasis): this method is not supported or should be overridden accordingly by derived classes.");
     }
 
+    /** \brief Returns the spatial dimension of the domain of the basis; this is equal to getBaseCellTopology().getDimension() + getNumTensorialExtrusions().
+    
+       \return The spatial dimension of the domain.
+    */
+    ordinal_type getDomainDimension() const
+    {
+      return this->getBaseCellTopology().getDimension() + this->getNumTensorialExtrusions();
+    }
+    
     /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
     
        \return Pointer to the new Basis object.
