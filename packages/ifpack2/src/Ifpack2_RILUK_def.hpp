@@ -503,6 +503,8 @@ void RILUK<MatrixType>::initialize ()
     // we just copy the input matrix if it's not a CrsMatrix.
 
     if (this->isKokkosKernelsSpiluk_) {
+      Teuchos::Time timer2("RILUK::initialize::create_spiluk_handle");
+      Teuchos::TimeMonitor timeMon_kkhandle(timer2);
       this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
       KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
                                            A_local_->getNodeNumRows(),
@@ -511,42 +513,69 @@ void RILUK<MatrixType>::initialize ()
     }
 
     {
-      RCP<const crs_matrix_type> A_local_crs =
-        rcp_dynamic_cast<const crs_matrix_type> (A_local_);
-      if (A_local_crs.is_null ()) {
+      A_local_crs_ = rcp_dynamic_cast<const crs_matrix_type> (A_local_);
+      if (A_local_crs_.is_null ()) {
+        Teuchos::Time timer2("RILUK::initialize::copy_into_crs");
+        Teuchos::TimeMonitor timeMon_copy2Crs(timer2);
         local_ordinal_type numRows = A_local_->getNodeNumRows();
         Array<size_t> entriesPerRow(numRows);
+        RCP<crs_matrix_type> A_local_crs_nc; //FIXME
+        {
+        Teuchos::Time timer3("RILUK::initialize::allocateLocalCrsMatrix");
+        Teuchos::TimeMonitor timeMon_copy3(timer3);
         for(local_ordinal_type i = 0; i < numRows; i++) {
           entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
         }
-        RCP<crs_matrix_type> A_local_crs_nc =
+        //RCP<crs_matrix_type> A_local_crs_nc =
+        A_local_crs_nc =
           rcp (new crs_matrix_type (A_local_->getRowMap (),
                                     A_local_->getColMap (),
                                     entriesPerRow()));
-        // copy entries into A_local_crs
+        } //timer scope
+        // copy entries into A_local_crs_
         nonconst_local_inds_host_view_type indices("indices",A_local_->getNodeMaxNumRowEntries());
         nonconst_values_host_view_type values("values",A_local_->getNodeMaxNumRowEntries());
+        {
+        Teuchos::Time timer3("RILUK::initialize::copyEntriesIntoLocalCrsMatrix");
+        Teuchos::TimeMonitor timeMon_copy3(timer3);
         for(local_ordinal_type i = 0; i < numRows; i++) {
           size_t numEntries = 0;
           A_local_->getLocalRowCopy(i, indices, values, numEntries);
           A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()), indices.data());
         }
+        } //timer scope
+        {
+        Teuchos::Time timer3("RILUK::initialize::fillCompleteLocalCrsMatrix");
+        Teuchos::TimeMonitor timeMon_copy3(timer3);
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
-        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+        }
+        A_local_crs_ = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
-      Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (A_local_crs->getCrsGraph (),
+      {
+        Teuchos::Time timer3("RILUK::initialize::IlukGraphCtor");
+        Teuchos::TimeMonitor timeMon_(timer3);
+        Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (A_local_crs_->getCrsGraph (),
                                                                            LevelOfFill_, 0, Overalloc_));
+      }
     }
 
+    {
+    Teuchos::Time timer2("RILUK::initialize::IlukGraphInit");
+    Teuchos::TimeMonitor timeMon_(timer2);
     if (this->isKokkosKernelsSpiluk_) Graph_->initialize (KernelHandle_);
     else Graph_->initialize ();
+    }
 
+    {
+    Teuchos::Time timer2("RILUK::initialize::allocateAndSetLUFactors");
+    Teuchos::TimeMonitor timeMon_(timer2);
     allocate_L_and_U ();
     checkOrderingConsistency (*A_local_);
     L_solver_->setMatrix (L_);
     L_solver_->initialize ();
     U_solver_->setMatrix (U_);
     U_solver_->initialize ();
+    }
 
     // Do not call initAllValues. compute() always calls initAllValues to
     // fill L and U with possibly new numbers. initialize() is concerned
@@ -903,9 +932,9 @@ void RILUK<MatrixType>::compute ()
   }
   else {
     {//Make sure values in A is picked up even in case of pattern reuse
-      RCP<const crs_matrix_type> A_local_crs =
-        rcp_dynamic_cast<const crs_matrix_type> (A_local_);
-      if (A_local_crs.is_null ()) {
+      if (A_local_crs_.is_null ()) {
+        Teuchos::Time timer2("RILUK::compute::copyIntoLocalCrs");
+        Teuchos::TimeMonitor timeMon2(timer2);
         local_ordinal_type numRows = A_local_->getNodeNumRows();
         Array<size_t> entriesPerRow(numRows);
         for(local_ordinal_type i = 0; i < numRows; i++) {
@@ -915,7 +944,7 @@ void RILUK<MatrixType>::compute ()
           rcp (new crs_matrix_type (A_local_->getRowMap (),
                                     A_local_->getColMap (),
                                     entriesPerRow()));
-        // copy entries into A_local_crs
+        // copy entries into A_local_crs_
         nonconst_local_inds_host_view_type indices("indices",A_local_->getNodeMaxNumRowEntries());
         nonconst_values_host_view_type values("values",A_local_->getNodeMaxNumRowEntries());
         for(local_ordinal_type i = 0; i < numRows; i++) {
@@ -924,17 +953,19 @@ void RILUK<MatrixType>::compute ()
           A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
         }
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
-        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
+        A_local_crs_ = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
-      A_local_rowmap_  = A_local_crs->getLocalMatrixDevice().graph.row_map;
-      A_local_entries_ = A_local_crs->getLocalMatrixDevice().graph.entries;
-      A_local_values_  = A_local_crs->getLocalValuesView();
+      A_local_rowmap_  = A_local_crs_->getLocalMatrixDevice().graph.row_map;
+      A_local_entries_ = A_local_crs_->getLocalMatrixDevice().graph.entries;
+      A_local_values_  = A_local_crs_->getLocalValuesView();
     }
 
     L_->resumeFill ();
     U_->resumeFill ();
 
     if (L_->isStaticGraph () || L_->isLocallyIndexed ()) {
+      Teuchos::Time timer2("RILUK::compute::zeroOutLandU");
+      Teuchos::TimeMonitor timeMon2(timer2);
       L_->setAllToScalar (STS::zero ()); // Zero out L and U matrices
       U_->setAllToScalar (STS::zero ());
     }
@@ -952,18 +983,30 @@ void RILUK<MatrixType>::compute ()
       auto U_entries = lclU.graph.entries;
       auto U_values  = U_->getLocalValuesView();
 
+      {
+      Teuchos::Time timer2("RILUK::compute::spiluk_numeric");
+      Teuchos::TimeMonitor timeMon2(timer2);
       KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_, 
                                                   A_local_rowmap_, A_local_entries_, A_local_values_, 
                                                   L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
+      }
     }
     
+    {
+    Teuchos::Time timer2("RILUK::compute::fillCompleteLandU");
+    Teuchos::TimeMonitor timeMon2(timer2);
     L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
     U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
+    }
     
+    {
+    Teuchos::Time timer2("RILUK::compute::setMatricesAndCompute");
+    Teuchos::TimeMonitor timeMon2(timer2);
     L_solver_->setMatrix (L_);
     L_solver_->compute ();
     U_solver_->setMatrix (U_);
     U_solver_->compute ();
+    }
   }
 
   isComputed_ = true;
@@ -1029,7 +1072,11 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     if (alpha == one && beta == zero) {
       if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.      
         // Start by solving L Y = X for Y.
+        {
+        Teuchos::Time timer2("RILUK::apply::Lsolve");
+        Teuchos::TimeMonitor timeMon2(timer2);
         L_solver_->apply (X, Y, mode);
+        }
 
         if (!this->isKokkosKernelsSpiluk_) {
           // Solve D Y = Y.  The operation lets us do this in place in Y, so we can
@@ -1037,11 +1084,19 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           Y.elementWiseMultiply (one, *D_, Y, zero);
         }
 
+        {
+        Teuchos::Time timer2("RILUK::apply::Usolve");
+        Teuchos::TimeMonitor timeMon2(timer2);
         U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
+        }
       }
       else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).      
         // Start by solving U^P Y = X for Y.
+        {
+        Teuchos::Time timer2("RILUK::apply::Usolve (transpose)");
+        Teuchos::TimeMonitor timeMon2(timer2);
         U_solver_->apply (X, Y, mode);
+        }
 
         if (!this->isKokkosKernelsSpiluk_) {
           // Solve D^P Y = Y.
@@ -1052,7 +1107,11 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           Y.elementWiseMultiply (one, *D_, Y, zero);
 	    }
 
+        {
+        Teuchos::Time timer2("RILUK::apply::Lsolve (transpose)");
+        Teuchos::TimeMonitor timeMon2(timer2);
         L_solver_->apply (Y, Y, mode); // Solve L^P Y = Y.
+        }
       }
     }
     else { // alpha != 1 or beta != 0

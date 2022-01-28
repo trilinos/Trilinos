@@ -978,12 +978,20 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 
     // compute the overlapping matrix if necessary
     if (IsOverlapping_) {
+      Teuchos::Time timer2("AdditiveSchwarz::computeOverlapMatrix");
+      Teuchos::TimeMonitor timeMon(timer2);
       OverlappingMatrix_ = rcp (new OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_));
     }
 
+    {
+    Teuchos::Time timer2("AdditiveSchwarz::Setup");
+    Teuchos::TimeMonitor timeMon(timer2);
     setup (); // This does a lot of the initialization work.
+    }
 
     if (! Inverse_.is_null ()) {
+      Teuchos::Time timer2("AdditiveSchwarz::symbolic");
+      Teuchos::TimeMonitor timeMon(timer2);
       Inverse_->symbolic (); // Initialize subdomain solver.
     }
 

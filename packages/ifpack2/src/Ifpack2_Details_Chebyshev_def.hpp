@@ -59,6 +59,7 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Tpetra_Details_residual.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_Time.hpp"
 #include "Ifpack2_Details_LapackSupportsScalar.hpp"
 #include <cmath>
 #include <iostream>
@@ -1437,6 +1438,9 @@ powerMethodWithInitGuess (const op_type& A,
   if (debug_) {
     *out_ << " powerMethodWithInitGuess:" << endl;
   }
+
+  Teuchos::RCP<Teuchos::Time> timer_powerMethod = Teuchos::TimeMonitor::getNewTimer("Ifpack2::powerMethodWithInitialGuess");
+  Teuchos::TimeMonitor timeMonPowerMethod(*timer_powerMethod);
 
   const ST zero = static_cast<ST> (0.0);
   const ST one = static_cast<ST> (1.0);

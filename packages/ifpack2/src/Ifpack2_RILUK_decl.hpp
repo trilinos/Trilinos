@@ -596,9 +596,9 @@ protected:
                                                    global_ordinal_type,
                                                    node_type>, kk_handle_type> > Graph_;
   /// \brief The matrix whos numbers are used to to compute ILU(k). The graph
-  /// may be computed using a crs_matrix_type that initialize() constructs
-  /// temporarily.
+  /// may be computed using A_local_crs_ that initialize() constructs.
   Teuchos::RCP<const row_matrix_type> A_local_;
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
   lno_row_view_t A_local_rowmap_; 
   lno_nonzero_view_t A_local_entries_; 
   scalar_nonzero_view_t A_local_values_;
