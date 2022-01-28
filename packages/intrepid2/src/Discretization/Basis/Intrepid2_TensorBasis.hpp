@@ -702,8 +702,8 @@ struct OperatorTensorDecomposition
       this->basisType_         = basis1_->getBasisType();
       this->basisCoordinates_  = COORDINATES_CARTESIAN;
       
-      ordinal_type spaceDim1 = basis1_->getBaseCellTopology().getDimension() + basis1_->getNumTensorialExtrusions();
-      ordinal_type spaceDim2 = basis2_->getBaseCellTopology().getDimension() + basis2_->getNumTensorialExtrusions();
+      ordinal_type spaceDim1 = basis1_->getDomainDimension();
+      ordinal_type spaceDim2 = basis2_->getDomainDimension();
       
       INTREPID2_TEST_FOR_EXCEPTION(spaceDim2 != 1, std::invalid_argument, "TensorBasis only supports 1D bases in basis2_ position");
       
@@ -942,8 +942,8 @@ struct OperatorTensorDecomposition
     ordinal_type getTensorDkEnumeration(ordinal_type dkEnum1, ordinal_type operatorOrder1,
                                         ordinal_type dkEnum2, ordinal_type operatorOrder2) const
     {
-      ordinal_type spaceDim1 = basis1_->getBaseCellTopology().getDimension() + basis1_->getNumTensorialExtrusions();
-      ordinal_type spaceDim2 = basis2_->getBaseCellTopology().getDimension() + basis2_->getNumTensorialExtrusions();;
+      ordinal_type spaceDim1 = basis1_->getDomainDimension();
+      ordinal_type spaceDim2 = basis2_->getDomainDimension();
       
       // We support total spaceDim <= 7.
       switch (spaceDim1)
@@ -1016,9 +1016,9 @@ struct OperatorTensorDecomposition
     */
     virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const
     {
-      const int spaceDim  = this->getBaseCellTopology().getDimension() + this->getNumTensorialExtrusions();
-      const int spaceDim1 = basis1_->getBaseCellTopology().getDimension() + basis1_->getNumTensorialExtrusions();
-      const int spaceDim2 = basis2_->getBaseCellTopology().getDimension() + basis2_->getNumTensorialExtrusions();
+      const int spaceDim  = this->getDomainDimension();
+      const int spaceDim1 = basis1_->getDomainDimension();
+      const int spaceDim2 = basis2_->getDomainDimension();
       
       const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
       const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
@@ -1170,16 +1170,38 @@ struct OperatorTensorDecomposition
       const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV) || operatorIsDk;
       INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateBasisValues");
       
-      ordinal_type numBasisComponents = tensorComponents_.size();
+      // check that points's spatial dimension matches the basis
+      const int spaceDim = this->getDomainDimension();
+      INTREPID2_TEST_FOR_EXCEPTION(spaceDim != points.extent_int(1), std::invalid_argument, "points must be shape (P,D), with D equal to the dimension of the basis domain");
       
-      INTREPID2_TEST_FOR_EXCEPTION(numBasisComponents != points.numTensorComponents(), std::invalid_argument, "points and basis must match in the number of tensorial components.");
+      // check that points has enough tensor components
+      ordinal_type numBasisComponents = tensorComponents_.size();
+      INTREPID2_TEST_FOR_EXCEPTION(numBasisComponents > points.numTensorComponents(), std::invalid_argument, "points must have at least as many tensorial components as basis.");
       
       OperatorTensorDecomposition opDecomposition = getOperatorDecomposition(operatorType);
-      
-      // TODO: figure out whether the opDecomposition is really right for e.g. OPERATOR_D3 for GRAD_HEX.  We fail right now with an exception in VectorData; we assert that numVectorComponents <= Parameters::MaxTensorComponents.  If the assert is correct, maybe we should be using families instead of vector components here?  It looks to me like the VectorData assumption is that each component corresponds to one or more space dimensions.  It may also be that the data structures need revision to support the OPERATOR_Dn use case for n > 1.  (It _looks_ like what we have works for n = 1.)
-      
+            
       ordinal_type numVectorComponents = opDecomposition.numVectorComponents();
       const bool useVectorData = numVectorComponents > 1;
+      
+      std::vector<ordinal_type> componentPointCounts(numBasisComponents);
+      ordinal_type pointComponentNumber = 0;
+      for (ordinal_type r=0; r<numBasisComponents; r++)
+      {
+        const ordinal_type compSpaceDim = tensorComponents_[r]->getDomainDimension();
+        ordinal_type dimsSoFar = 0;
+        ordinal_type numPointsForBasisComponent = 1;
+        while (dimsSoFar < compSpaceDim)
+        {
+          INTREPID2_TEST_FOR_EXCEPTION(pointComponentNumber >= points.numTensorComponents(), std::invalid_argument, "Error in processing points container; perhaps it is mis-sized?");
+          const int numComponentPoints = points.componentPointCount(pointComponentNumber);
+          const int numComponentDims = points.getTensorComponent(pointComponentNumber).extent_int(1);
+          numPointsForBasisComponent *= numComponentPoints;
+          dimsSoFar += numComponentDims;
+          INTREPID2_TEST_FOR_EXCEPTION(dimsSoFar > points.numTensorComponents(), std::invalid_argument, "Error in processing points container; perhaps it is mis-sized?");
+          pointComponentNumber++;
+        }
+        componentPointCounts[r] = numPointsForBasisComponent;
+      }
       
       if (useVectorData)
       {
@@ -1194,7 +1216,7 @@ struct OperatorTensorDecomposition
             std::vector< Data<OutputValueType,DeviceType> > componentData;
             for (ordinal_type r=0; r<numBasisComponents; r++)
             {
-              const int numComponentPoints = points.componentPointCount(r);
+              const int numComponentPoints = componentPointCounts[r];
               const EOperator op = opDecomposition.op(vectorComponentOrdinal, r);
               auto componentView = tensorComponents_[r]->allocateOutputView(numComponentPoints, op);
               componentData.push_back(Data<OutputValueType,DeviceType>(componentView));
@@ -1213,7 +1235,7 @@ struct OperatorTensorDecomposition
         const ordinal_type vectorComponentOrdinal = 0;
         for (ordinal_type r=0; r<numBasisComponents; r++)
         {
-          const int numComponentPoints = points.componentPointCount(r);
+          const int numComponentPoints = componentPointCounts[r];
           const EOperator op = opDecomposition.op(vectorComponentOrdinal, r);
           auto componentView = tensorComponents_[r]->allocateOutputView(numComponentPoints, op);
           
@@ -1265,8 +1287,8 @@ struct OperatorTensorDecomposition
       // are things we can do in this regard, which may become important for matrix-free computations wherein
       // basis values don't get stored but are computed dynamically.
       
-      int spaceDim1 = basis1_->getBaseCellTopology().getDimension() + basis1_->getNumTensorialExtrusions();
-      int spaceDim2 = basis2_->getBaseCellTopology().getDimension() + basis2_->getNumTensorialExtrusions();
+      int spaceDim1 = basis1_->getDomainDimension();
+      int spaceDim2 = basis2_->getDomainDimension();
       
       int totalSpaceDim   = inputPoints.extent_int(1);
       
@@ -2052,8 +2074,8 @@ struct OperatorTensorDecomposition
     {
       // TODO: rework this to use superclass's getComponentPoints.
       
-      int spaceDim1 = basis1_->getBaseCellTopology().getDimension() + basis1_->getNumTensorialExtrusions();
-      int spaceDim2 = basis2_->getBaseCellTopology().getDimension() + basis2_->getNumTensorialExtrusions();
+      int spaceDim1 = basis1_->getDomainDimension();
+      int spaceDim2 = basis2_->getDomainDimension();
       
       int totalSpaceDim12 = inputPoints12.extent_int(1);
       
