@@ -122,33 +122,35 @@ namespace Intrepid2
     // for operator order k, the recursive formula defining getDkEnumeration is:
     // getDkEnumeration(k0,k1,…,k_{n-1}) = getDkCardinality(k - k0) + getDkEnumeration(k1,…,k_{n-1})
     // The entries are in reverse lexicographic order.  We search for k0, by incrementing k0 until getDkEnumeration(k0,0,…,0) <= dkEnum
-    // Then we recursively call getDkEnumerationInverse<spaceDim-1>({k1,…,k_{n-1}}, dkEnum - getDkEnumeration(k0,0,…,0))
+    // Then we recursively call getDkEnumerationInverse<spaceDim-1>({k1,…,k_{n-1}}, dkEnum - getDkEnumeration(k0,0,…,0) - 1)
     
     for (int k0=0; k0<=operatorOrder; k0++)
     {
       entries[0] = k0;
-      for (int d=1; d<spaceDim; d++)
+      for (int d=1; d<spaceDim-1; d++)
       {
         entries[d] = 0;
       }
+      // sum of entries must be equal to operatorOrder
+      if (spaceDim > 1) entries[spaceDim-1] = operatorOrder - k0;
+      else if (k0 != operatorOrder) continue; // if spaceDim == 1, then the only way the sum of the entries is operatorOrder is if k0 == operatorOrder
       const ordinal_type dkEnumFor_k0 = getDkEnumeration<spaceDim>(entries);
       
-      if      (dkEnumFor_k0 < dkEnum) continue; // next k0
+      if      (dkEnumFor_k0 > dkEnum) continue; // next k0
       else if (dkEnumFor_k0 == dkEnum) return;  // entries has (k0,0,…,0), and this has dkEnum as its enumeration value
       else
       {
-        // k0 is right; determine the rest of the entries
+        // (k0,0,…,0) is prior to the dkEnum entry, which means that the dkEnum entry starts with k0-1.
+        entries[0] = k0 - 1;
         
+        // We determine the rest of the entries through a recursive call to getDkEnumerationInverse<spaceDim - 1>().
+
         // ensure that we don't try to allocate an empty array…
         constexpr ordinal_type sizeForSubArray = (spaceDim > 2) ? spaceDim - 1 : 1;
         Kokkos::Array<int,sizeForSubArray> subEntries;
         
-        for (int i=1; i<spaceDim; i++)
-        {
-          entries[i] = 0;
-        }
-        
-        getDkEnumerationInverse<spaceDim-1>(subEntries, dkEnum - dkEnumFor_k0, operatorOrder - k0);
+        // the -1 in sub-entry enumeration value accounts for the fact that the entry is the one *after* (k0,0,…,0)
+        getDkEnumerationInverse<spaceDim-1>(subEntries, dkEnum - dkEnumFor_k0 - 1, operatorOrder - entries[0]);
         
         for (int i=1; i<spaceDim; i++)
         {
@@ -1426,7 +1428,8 @@ struct OperatorTensorDecomposition
       for (ordinal_type vectorComponentOrdinal=0; vectorComponentOrdinal<numVectorComponents; vectorComponentOrdinal++)
       {
         const double weight = operatorDecomposition.weight(vectorComponentOrdinal);
-        for (ordinal_type basisOrdinal=0; basisOrdinal<numBasisComponents; basisOrdinal++)
+        ordinal_type pointComponentOrdinal = 0;
+        for (ordinal_type basisOrdinal=0; basisOrdinal<numBasisComponents; basisOrdinal++, pointComponentOrdinal++)
         {
           const EOperator op = operatorDecomposition.op(vectorComponentOrdinal, basisOrdinal);
           // by convention, op == OPERATOR_MAX signals a zero component; skip
@@ -1435,14 +1438,59 @@ struct OperatorTensorDecomposition
             const int vectorFamily = 0; // TensorBasis always has just a single family; multiple families arise in DirectSumBasis
             auto tensorData = useVectorData ? outputValues.vectorData().getComponent(vectorFamily,vectorComponentOrdinal) : outputValues.tensorData();
             INTREPID2_TEST_FOR_EXCEPTION( ! tensorData.getTensorComponent(basisOrdinal).isValid(), std::invalid_argument, "Invalid output component encountered");
-            
-            PointViewType  pointView      = inputPoints.getTensorComponent(basisOrdinal);
-            
-            // Data stores things in fixed-rank Kokkos::View, but Basis requires DynRankView.  We allocate a temporary DynRankView, then copy back to Data.
+                        
             const Data<OutputValueType,DeviceType> & outputData = tensorData.getTensorComponent(basisOrdinal);
             
             auto basisValueView = outputData.getUnderlyingView();
-            tensorComponents_[basisOrdinal]->getValues(basisValueView, pointView, op);
+            PointViewType  pointView = inputPoints.getTensorComponent(pointComponentOrdinal);
+            const ordinal_type basisDomainDimension = tensorComponents_[basisOrdinal]->getDomainDimension();
+            if (pointView.extent_int(1) == basisDomainDimension)
+            {
+              tensorComponents_[basisOrdinal]->getValues(basisValueView, pointView, op);
+            }
+            else
+            {
+              // we need to wrap the basisValueView in a BasisValues container, and to wrap the point components in a TensorPoints container.
+              
+              // combine point components to build up to basisDomainDimension
+              ordinal_type dimsSoFar = 0;
+              std::vector< ScalarView<PointValueType,DeviceType> > basisPointComponents;
+              while (dimsSoFar < basisDomainDimension)
+              {
+                INTREPID2_TEST_FOR_EXCEPTION(pointComponentOrdinal >= inputPoints.numTensorComponents(), std::invalid_argument, "Error in processing points container; perhaps it is mis-sized?");
+                const auto & pointComponent = inputPoints.getTensorComponent(pointComponentOrdinal);
+                const ordinal_type numComponentPoints = pointComponent.extent_int(0);
+                const ordinal_type numComponentDims   = pointComponent.extent_int(1);
+                dimsSoFar += numComponentDims;
+                INTREPID2_TEST_FOR_EXCEPTION(dimsSoFar > inputPoints.numTensorComponents(), std::invalid_argument, "Error in processing points container; perhaps it is mis-sized?");
+                basisPointComponents.push_back(pointComponent);
+                if (dimsSoFar < basisDomainDimension)
+                {
+                  // we will pass through this loop again, so we should increment the point component ordinal
+                  pointComponentOrdinal++;
+                }
+              }
+              
+              TensorPoints<PointValueType, DeviceType> basisPoints(basisPointComponents);
+              
+              Data<OutputValueType,DeviceType> basisData(basisValueView);
+
+              bool useVectorData = (basisValueView.rank() == 3);
+
+              BasisValues<OutputValueType,DeviceType> basisValues;
+              if (useVectorData)
+              {
+                VectorData<OutputValueType,DeviceType> vectorData(basisData);
+                basisValues = BasisValues<OutputValueType,DeviceType>(vectorData);
+              }
+              else
+              {
+                TensorData<OutputValueType,DeviceType> tensorData(basisData);
+                basisValues = BasisValues<OutputValueType,DeviceType>(tensorData);
+              }
+              
+              tensorComponents_[basisOrdinal]->getValues(basisValues, basisPoints, op);
+            }
             
             // if weight is non-trivial (not 1.0), then we need to multiply one of the component views by weight.
             // we do that for the first basisOrdinal's values
