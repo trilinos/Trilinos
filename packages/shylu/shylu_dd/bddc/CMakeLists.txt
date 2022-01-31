@@ -1,6 +1,6 @@
 TRIBITS_SUBPACKAGE(BDDC)
 
-# BDDC package is deprecated in February 2022; to be removed by next reelease
+# BDDC package is deprecated in February 2022; to be removed by next release
 MESSAGE(WARNING "***** WARNING:  Package BDDC is deprecated in February 2022; it will be removed by next release *****")
 
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
