@@ -227,6 +227,15 @@ describe(
   integrator_->describe(*l_out, verbLevel);
 }
 
+template <class Scalar>
+SensitivityStepMode
+IntegratorForwardSensitivity<Scalar>::
+getStepMode() const
+{
+  if (use_combined_method_)
+    return SensitivityStepMode::Combined;
+  return sens_stepper_->getStepMode(); // Staggered case
+}
 
 /// Nonmember constructor
 template<class Scalar>

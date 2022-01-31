@@ -82,7 +82,7 @@ namespace Tacho {
   ///
   template<typename SpT>
   void printExecSpaceConfiguration(std::string name, const bool detail = false) {
-    if (!Kokkos::Impl::is_space<SpT>::value) {
+    if (!Kokkos::is_space<SpT>::value) {
       std::string msg("SpT is not Kokkos execution space");
       fprintf(stderr, ">> Error in file %s, line %d\n",__FILE__,__LINE__);
       fprintf(stderr, "   %s\n", msg.c_str());

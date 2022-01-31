@@ -704,11 +704,11 @@ stk::mesh::Part* get_part_from_alias(const Ioss::Region &region, const stk::mesh
 stk::mesh::Part* get_part_for_grouping_entity(const Ioss::Region &region, const stk::mesh::MetaData &meta, const Ioss::GroupingEntity *entity)
 {
     const std::string &name = entity->name();
-    stk::mesh::Part* part = meta.get_part(name);
     auto type = entity->type();
+    stk::mesh::Part* part = meta.get_part(name);
 
     if(nullptr == part) {
-      part = get_part_from_alias(region, meta, name, type);
+        part = get_part_from_alias(region, meta, name, type);
     }
     return part;
 }

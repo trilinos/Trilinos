@@ -38,6 +38,7 @@
 #pragma warning disable 1478
 #endif // __INTEL_COMPILER
 
+#undef OMPI_SKIP_MPICXX
 #include <boost/graph/use_mpi.hpp>
 #include <boost/graph/distributed/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>

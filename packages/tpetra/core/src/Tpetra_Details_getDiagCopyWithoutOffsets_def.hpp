@@ -77,7 +77,6 @@ public:
 
   typedef typename vec_type::impl_scalar_type IST;
   // The output Vector determines the execution space.
-  typedef typename vec_type::device_type device_type;
 
 private:
   typedef typename vec_type::dual_view_type::t_host::execution_space host_execution_space;

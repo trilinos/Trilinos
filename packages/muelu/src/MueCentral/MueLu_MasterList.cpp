@@ -236,7 +236,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: enable phase 2a\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 3\" type=\"bool\" value=\"true\"/>"
-  "<Parameter name=\"aggregation: phase2a include root\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"aggregation: match ML phase2a\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: phase2a agg factor\" type=\"double\" value=\"0.5\"/>"
   "<Parameter name=\"aggregation: error on nodes with no on-rank neighbors\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: phase3 avoid singletons\" type=\"bool\" value=\"false\"/>"
@@ -275,6 +275,7 @@ namespace MueLu {
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"nullspace: calculate rotations\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"nullspace: suppress dimension check\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"restriction: scale nullspace\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"use kokkos refactor\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"synchronize factory timers\" type=\"bool\" value=\"false\"/>"
@@ -283,6 +284,7 @@ namespace MueLu {
   "<Parameter name=\"toggle: mode\" type=\"string\" value=\"semicoarsen\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"semicoarsen: piecewise constant\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"semicoarsen: calculate nonsym restriction\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"semicoarsen: number of levels\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"linedetection: orientation\" type=\"string\" value=\"vertical\"/>"
   "<Parameter name=\"linedetection: num layers\" type=\"int\" value=\"-1\"/>"
@@ -682,7 +684,7 @@ namespace MueLu {
       
          ("aggregation: enable phase 3","aggregation: enable phase 3")
       
-         ("aggregation: phase2a include root","aggregation: phase2a include root")
+         ("aggregation: match ML phase2a","aggregation: match ML phase2a")
       
          ("aggregation: phase2a agg factor","aggregation: phase2a agg factor")
       
@@ -760,6 +762,8 @@ namespace MueLu {
       
          ("nullspace: calculate rotations","nullspace: calculate rotations")
       
+         ("nullspace: suppress dimension check","nullspace: suppress dimension check")
+      
          ("restriction: scale nullspace","restriction: scale nullspace")
       
          ("use kokkos refactor","use kokkos refactor")
@@ -775,6 +779,8 @@ namespace MueLu {
          ("semicoarsen: coarsen rate","semicoarsen: coarsen rate")
       
          ("semicoarsen: piecewise constant","semicoarsen: piecewise constant")
+      
+         ("semicoarsen: calculate nonsym restriction","semicoarsen: calculate nonsym restriction")
       
          ("semicoarsen: number of levels","semicoarsen: number of levels")
       

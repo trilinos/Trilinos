@@ -234,7 +234,7 @@ namespace { // (anonymous)
     CopyOffsetsFunctor (const OutputViewType& dst, const InputViewType& src) :
       dst_ (dst), src_ (src)
     {
-      static_assert (Kokkos::Impl::SpaceAccessibility<
+      static_assert (Kokkos::SpaceAccessibility<
                        typename OutputViewType::memory_space,
                        typename InputViewType::memory_space>::accessible,
                      "CopyOffsetsFunctor (implements copyOffsets): Output "
@@ -285,7 +285,7 @@ namespace { // (anonymous)
       dst_ (dst),
       src_ (src)
     {
-      static_assert (Kokkos::Impl::SpaceAccessibility<
+      static_assert (Kokkos::SpaceAccessibility<
                        typename OutputViewType::memory_space,
                        typename InputViewType::memory_space>::accessible,
                      "CopyOffsetsFunctor (implements copyOffsets): Output "
@@ -342,7 +342,7 @@ namespace { // (anonymous)
              std::is_same<typename OutputViewType::non_const_value_type,
                           typename InputViewType::non_const_value_type>::value,
            const bool outputExecSpaceCanAccessInputMemSpace =
-             Kokkos::Impl::SpaceAccessibility<
+             Kokkos::SpaceAccessibility<
                typename OutputViewType::memory_space,
                typename InputViewType::memory_space>::accessible>
   struct CopyOffsetsImpl {
@@ -413,7 +413,7 @@ namespace { // (anonymous)
                      "must be false.  That is, either the input and output "
                      "must have different array layouts, or their value types "
                      "must differ.");
-      static_assert (Kokkos::Impl::SpaceAccessibility<
+      static_assert (Kokkos::SpaceAccessibility<
                        typename OutputViewType::memory_space,
                        typename InputViewType::memory_space>::accessible,
                      "CopyOffsetsImpl (implements copyOffsets): In order to "

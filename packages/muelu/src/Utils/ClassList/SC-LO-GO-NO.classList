@@ -115,6 +115,7 @@ TopRAPFactory
 TopSmootherFactory
 TpetraOperator
 TransPFactory
+RfromP_Or_TransP
 TrilinosSmoother
 UnsmooshFactory
 UserPFactory

@@ -76,6 +76,11 @@ namespace Tpetra {
   // We really need this forward declaration here for friend to work
   template<typename SC, typename LO, typename GO, typename NO>
   class MultiVector;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  // Need this friend only until deprecated code is removed
+  template<typename SC, typename LO, typename GO, typename NO>
+  class BlockMultiVector;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
 /// \brief Namespace for Tpetra implementation details.
@@ -146,8 +151,8 @@ public:
 
   // This is an expert-only constructor
   // For WrappedDualView to manage synchronizations correctly,
-  // it must have an DualView which is not a subview to due the 
-  // sync's on.  This is what origDualV is for.  In this case, 
+  // it must have an DualView which is not a subview to due the
+  // sync's on.  This is what origDualV is for.  In this case,
   // dualV is a subview of origDualV.
   WrappedDualView(DualViewType dualV,DualViewType origDualV)
     : originalDualView(origDualV),
@@ -201,7 +206,7 @@ public:
   size_t extent(const int i) const {
     return dualView.h_view.extent(i);
   }
-  
+
   void stride(size_t * stride_) const {
     dualView.stride(stride_);
   }
@@ -210,7 +215,7 @@ public:
   size_t origExtent(const int i) const {
     return originalDualView.h_view.extent(i);
   }
-  
+
   const char * label() const {
     return dualView.d_view.label();
   }
@@ -219,7 +224,7 @@ public:
   typename t_host::const_type
   getHostView(Access::ReadOnlyStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
-  ) const 
+  ) const
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadOnly");
     if(needsSyncPath()) {
@@ -232,7 +237,7 @@ public:
   t_host
   getHostView(Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
-  ) 
+  )
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadWrite");
     static_assert(dualViewHasNonConstData,
@@ -249,7 +254,7 @@ public:
   t_host
   getHostView(Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
-  ) 
+  )
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewOverwriteAll");
     static_assert(dualViewHasNonConstData,
@@ -259,7 +264,7 @@ public:
     }
     if(needsSyncPath()) {
       throwIfDeviceViewAlive();
-      if (deviceMemoryIsHostAccessible) Kokkos::fence();      
+      if (deviceMemoryIsHostAccessible) Kokkos::fence();
       dualView.clear_sync_state();
       dualView.modify_host();
     }
@@ -269,7 +274,7 @@ public:
   typename t_dev::const_type
   getDeviceView(Access::ReadOnlyStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
-  ) const 
+  ) const
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadOnly");
     if(needsSyncPath()) {
@@ -282,7 +287,7 @@ public:
   t_dev
   getDeviceView(Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
-  ) 
+  )
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadWrite");
     static_assert(dualViewHasNonConstData,
@@ -298,7 +303,7 @@ public:
   t_dev
   getDeviceView(Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
-  ) 
+  )
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewOverwriteAll");
     static_assert(dualViewHasNonConstData,
@@ -317,13 +322,10 @@ public:
 
   template<class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type::const_type
-  getView (Access::ReadOnlyStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {    
-    bool returnDevice = true;
-    {
-      auto tmp = dualView.template view<TargetDeviceType>();
-      if (tmp == this->dualView.view_host()) returnDevice = false;
-    }
-
+  getView (Access::ReadOnlyStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
+    using ReturnViewType = typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type::const_type;
+    using ReturnDeviceType = typename ReturnViewType::device_type;
+    constexpr bool returnDevice = std::is_same<ReturnDeviceType, DeviceType>::value;
     if(returnDevice) {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadOnly");
       if(needsSyncPath()) {
@@ -338,19 +340,17 @@ public:
 	impl::sync_host(originalDualView);
       }
     }
-    
+
     return dualView.template view<TargetDeviceType>();
-  } 
+  }
 
 
   template<class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type
-  getView (Access::ReadWriteStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {    
-    bool returnDevice = true;
-    {
-      auto tmp = dualView.template view<TargetDeviceType>();
-      if (tmp == this->dualView.view_host()) returnDevice = false;
-    }
+  getView (Access::ReadWriteStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
+    using ReturnViewType = typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type;
+    using ReturnDeviceType = typename ReturnViewType::device_type;
+    constexpr bool returnDevice = std::is_same<ReturnDeviceType, DeviceType>::value;
 
     if(returnDevice) {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadWrite");
@@ -369,26 +369,25 @@ public:
       if(needsSyncPath()) {
 	throwIfDeviceViewAlive();
 	impl::sync_host(originalDualView);
-	originalDualView.modify_host();      
+	originalDualView.modify_host();
       }
     }
-    
+
     return dualView.template view<TargetDeviceType>();
-  } 
+  }
 
 
   template<class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type
-  getView (Access::OverwriteAllStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {    
+  getView (Access::OverwriteAllStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {
+    using ReturnViewType = typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type;
+    using ReturnDeviceType = typename ReturnViewType::device_type;
+
     if (iAmASubview())
       return getView<TargetDeviceType>(Access::ReadWrite);
 
-    bool returnDevice = true;
-    {
-      auto tmp = dualView.template view<TargetDeviceType>();
-      if (tmp == this->dualView.view_host()) returnDevice = false;
-    }
-    
+    constexpr bool returnDevice = std::is_same<ReturnDeviceType, DeviceType>::value;
+
     if(returnDevice) {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>OverwriteAll");
       static_assert(dualViewHasNonConstData,
@@ -399,25 +398,25 @@ public:
 	dualView.modify_host();
       }
     }
-    else { 
+    else {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>OverwriteAll");
       static_assert(dualViewHasNonConstData,
                     "OverwriteAll views are not available for DualView with const data");
       if(needsSyncPath()) {
 	throwIfDeviceViewAlive();
 	dualView.clear_sync_state();
-	dualView.modify_device();     
+	dualView.modify_device();
       }
     }
-    
+
     return dualView.template view<TargetDeviceType>();
-  } 
+  }
 
 
   typename t_host::const_type
   getHostSubview(int offset, int numEntries, Access::ReadOnlyStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
-  ) const 
+  ) const
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewReadOnly");
     if(needsSyncPath()) {
@@ -430,7 +429,7 @@ public:
   t_host
   getHostSubview(int offset, int numEntries, Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
-  ) 
+  )
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewReadWrite");
     static_assert(dualViewHasNonConstData,
@@ -446,7 +445,7 @@ public:
   t_host
   getHostSubview(int offset, int numEntries, Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
-  ) 
+  )
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewOverwriteAll");
     static_assert(dualViewHasNonConstData,
@@ -470,7 +469,7 @@ public:
   t_dev
   getDeviceSubview(int offset, int numEntries, Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
-  ) 
+  )
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadWrite");
     static_assert(dualViewHasNonConstData,
@@ -486,7 +485,7 @@ public:
   t_dev
   getDeviceSubview(int offset, int numEntries, Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
-  ) 
+  )
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewOverwriteAll");
     static_assert(dualViewHasNonConstData,
@@ -543,7 +542,7 @@ public:
   bool need_sync_device() const {
     return originalDualView.need_sync_device();
   }
-    
+
   int host_view_use_count() const {
     return originalDualView.h_view.use_count();
   }
@@ -553,14 +552,19 @@ public:
   }
 
 
-  // MultiVector really needs to get at the raw DualViews, 
+  // MultiVector really needs to get at the raw DualViews,
   // but we'd very much prefer that users not.
   template<typename SC, typename LO, typename GO, typename NO>
   friend class ::Tpetra::MultiVector;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  // Need this friend only until deprecated code is removed
+  template<typename SC, typename LO, typename GO, typename NO>
+  friend class ::Tpetra::BlockMultiVector;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 private:
   // A Kokkos implementation of WrappedDualView will have to make these
-  // functions publically accessable, but in the Tpetra version, we'd 
+  // functions publically accessable, but in the Tpetra version, we'd
   // really rather not.
   DualViewType getOriginalDualView() const {
     return originalDualView;
@@ -596,22 +600,22 @@ private:
   }
 
   bool needsSyncPath() const {
-    // needsSyncPath tells us whether we need the "sync path" where we (potentially) fence, 
+    // needsSyncPath tells us whether we need the "sync path" where we (potentially) fence,
     // check use counts and take care of sync/modify for the underlying DualView
     //
-    // The logic is this:  
+    // The logic is this:
     // 1) For non-CUDA archtectures where there the host/device pointers are aliased
     // we don't need the "sync path."
-    // 2) For CUDA, we always need the "sync path" if we're using the CudaUVMSpace (we need to make sure 
+    // 2) For CUDA, we always need the "sync path" if we're using the CudaUVMSpace (we need to make sure
     // to fence before reading memory on host) OR if the host/device pointers are aliased.
     //
-    // Avoiding the "sync path" speeds up calculations on architectures where we can 
+    // Avoiding the "sync path" speeds up calculations on architectures where we can
     // avoid it (e.g. SerialNode) by not not touching the modify flags.
     //
-    // Note for the future: Memory spaces that can be addressed on both host and device 
-    // that don't otherwise have an intrinsic fencing mechanism will need to trigger the 
+    // Note for the future: Memory spaces that can be addressed on both host and device
+    // that don't otherwise have an intrinsic fencing mechanism will need to trigger the
     // "sync path"
-    
+
 #ifdef KOKKOS_ENABLE_CUDA
     return std::is_same<typename t_dev::memory_space,Kokkos::CudaUVMSpace>::value || !memoryIsAliased();
 #else
@@ -619,10 +623,24 @@ private:
 #endif
   }
 
+
+  void throwIfViewsAreDifferentSizes() const {    
+    // Here we check *size* (the product of extents) rather than each extent individually.
+    // This is mostly designed to catch people resizing one view, but not the other.
+    if(dualView.d_view.size() != dualView.h_view.size()) {    
+        std::ostringstream msg;
+        msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
+            << "; host and device views are different sizes: "
+            << dualView.h_view.size() << " vs " <<dualView.h_view.size();
+        throw std::runtime_error(msg.str());
+    }
+  }
+
   void throwIfHostViewAlive() const {
+    throwIfViewsAreDifferentSizes();
     if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
       std::ostringstream msg;
-      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() 
+      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
           << "; host use_count = " << dualView.h_view.use_count()
           << "; device use_count = " << dualView.d_view.use_count() << "): "
           << "Cannot access data on device while a host view is alive";
@@ -630,7 +648,8 @@ private:
     }
   }
 
-  void throwIfDeviceViewAlive() const {  
+  void throwIfDeviceViewAlive() const {
+    throwIfViewsAreDifferentSizes();
     if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
       std::ostringstream msg;
       msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
@@ -640,7 +659,7 @@ private:
       throw std::runtime_error(msg.str());
     }
   }
-
+ 
   bool iAmASubview() {
     return originalDualView.h_view != dualView.h_view;
   }

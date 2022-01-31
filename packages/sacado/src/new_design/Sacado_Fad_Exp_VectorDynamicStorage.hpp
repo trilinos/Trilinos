@@ -143,7 +143,7 @@ namespace Sacado {
           if (sz_ != x.sz_) {
             sz_ = x.sz_;
             if (x.sz_ > len_) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
               if (!owns_mem)
                 throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
@@ -180,7 +180,7 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       void resize(int sz) {
         if (sz > len_) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
           if (!owns_mem)
               throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
@@ -200,7 +200,7 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       void resizeAndZero(int sz) {
         if (sz > len_) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
           if (!owns_mem)
               throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif
@@ -222,7 +222,7 @@ namespace Sacado {
       SACADO_INLINE_FUNCTION
       void expand(int sz) {
         if (sz > len_) {
-#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
+#if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
           if (!owns_mem)
               throw "Can\'t resize beyond original size when memory isn't owned!";
 #endif

@@ -822,6 +822,26 @@ void move_data_between_fields_on_host(const stk::mesh::BulkData & bulk,
   ngpDest.modify_on_host();
 }
 
+struct CheckFieldValues {
+  CheckFieldValues(stk::mesh::NgpField<int>& _ngpField, unsigned _numScalarsPerEntity, int _expectedFieldValue)
+      : ngpField(_ngpField), numScalarsPerEntity(_numScalarsPerEntity), expectedFieldValue(_expectedFieldValue)
+  {
+  }
+
+  KOKKOS_FUNCTION
+  void operator()(const stk::mesh::FastMeshIndex& entity) const
+  {
+    for (unsigned component = 0; component < numScalarsPerEntity; component++) {
+      NGP_ThrowRequire(ngpField(entity, component) == expectedFieldValue);
+    }
+  }
+
+ private:
+  stk::mesh::NgpField<int> ngpField;
+  unsigned numScalarsPerEntity;
+  int expectedFieldValue;
+};
+
 void test_field_values_on_device_without_initial_sync(stk::mesh::BulkData& bulk,
                                                       const stk::mesh::Field<int>& stkField,
                                                       const stk::mesh::Part& part,
@@ -833,12 +853,9 @@ void test_field_values_on_device_without_initial_sync(stk::mesh::BulkData& bulk,
   const stk::mesh::BucketVector& buckets = bulk.get_buckets(stkField.entity_rank(), selection);
   const unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(stkField, *buckets[0]);
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selection,
-                                 KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-                                   for (unsigned component=0; component<numScalarsPerEntity; component++) {
-                                     NGP_ThrowRequire(ngpField(entity, component) == expectedFieldValue);
-                                   }
-                                 });
+
+  CheckFieldValues checkFieldValues(ngpField, numScalarsPerEntity, expectedFieldValue);
+  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selection, checkFieldValues);
 }
 
 void test_field_values_on_device(stk::mesh::BulkData& bulk,
@@ -1170,6 +1187,30 @@ void fill_gold_num_scalars_per_entity(const stk::mesh::BulkData & bulk, const st
   }
 }
 
+struct CheckNumScalarsPerEntity {
+  CheckNumScalarsPerEntity(stk::mesh::NgpMesh& _ngpMesh,
+      stk::mesh::NgpField<int>& _ngpVariableLengthField,
+      NumScalarsPerEntity _goldNumScalarsPerEntity)
+      : ngpMesh(_ngpMesh),
+        ngpVariableLengthField(_ngpVariableLengthField),
+        goldNumScalarsPerEntity(_goldNumScalarsPerEntity)
+  {
+  }
+
+  KOKKOS_FUNCTION
+  void operator()(const stk::mesh::FastMeshIndex& index) const
+  {
+    const stk::mesh::Entity element = ngpMesh.get_entity(stk::topology::ELEM_RANK, index);
+    const unsigned goldIndex = ngpMesh.identifier(element) - 1;
+    NGP_EXPECT_EQ(ngpVariableLengthField.get_num_components_per_entity(index), goldNumScalarsPerEntity[goldIndex]);
+  }
+
+ private:
+  stk::mesh::NgpMesh ngpMesh;
+  stk::mesh::NgpField<int> ngpVariableLengthField;
+  NumScalarsPerEntity goldNumScalarsPerEntity;
+};
+
 void test_num_scalars_per_entity(stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & variableLengthField)
 {
   const unsigned numElements = 2;
@@ -1178,16 +1219,12 @@ void test_num_scalars_per_entity(stk::mesh::BulkData & bulk, const stk::mesh::Fi
   NumScalarsPerEntity goldNumScalarsPerEntity;
   fill_gold_num_scalars_per_entity(bulk, variableLengthField, numElements, goldNumScalarsPerEntity);
 
-  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   stk::mesh::NgpField<int> ngpVariableLengthField = stk::mesh::get_updated_ngp_field<int>(variableLengthField);
 
-  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part(),
-                                 KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex & index) {
-                                   const stk::mesh::Entity element = ngpMesh.get_entity(stk::topology::ELEM_RANK, index);
-                                   const unsigned goldIndex = ngpMesh.identifier(element) - 1;
-                                   NGP_EXPECT_EQ(ngpVariableLengthField.get_num_components_per_entity(index),
-                                                 goldNumScalarsPerEntity[goldIndex]);
-                                 });
+  CheckNumScalarsPerEntity checkNumScalarsPerEntity(ngpMesh, ngpVariableLengthField, goldNumScalarsPerEntity);
+  stk::mesh::for_each_entity_run(
+      ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part(), checkNumScalarsPerEntity);
 }
 
 TEST_F(NgpFieldFixture, NumScalarsPerEntityOnDevice)

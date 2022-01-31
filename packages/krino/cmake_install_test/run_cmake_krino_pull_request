@@ -37,13 +37,13 @@ cmake \
 -C ${trilinos_src_dir}/cmake/std/PullRequestLinuxGCC7.2.0TestingSettings.cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
 -DCMAKE_BUILD_TYPE=${build_type^^} \
--DTrilinos_ENABLE_TESTS:BOOL=ON \
+-DBUILD_SHARED_LIBS=OFF \
+-DTPL_ENABLE_MPI=ON \
 -DTrilinos_ENABLE_Krino:BOOL=ON \
+-DKrino_ENABLE_TESTS:BOOL=ON \
 -DTPL_ENABLE_yaml-cpp=${enable_yaml} \
 -Dyaml-cpp_INCLUDE_DIRS=${yaml_install_dir}/include \
 -Dyaml-cpp_LIBRARY_DIRS=${yaml_install_dir}/lib \
--DTPL_ENABLE_MPI=ON \
--DBUILD_SHARED_LIBS=OFF \
 -DSTK_ENABLE_SEACASAprepro_lib:BOOL=${enable_yaml} \
 ${trilinos_src_dir}/
 

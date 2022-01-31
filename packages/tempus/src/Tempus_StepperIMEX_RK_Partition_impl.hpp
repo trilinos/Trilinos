@@ -640,7 +640,6 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
        (this->wrapperModel_);
 
     bool pass = true;
-    Thyra::SolveStatus<Scalar> sStatus;
     Thyra::assign(workingState->getX().ptr(), *(currentState->getX()));
     RCP<Thyra::VectorBase<Scalar> > stageY =
       wrapperModelPairIMEX->getExplicitOnlyVector(workingState->getX());
@@ -699,31 +698,22 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
           Teuchos::rcp(new StepperIMEX_RKPartTimeDerivative<Scalar>(
             alpha, xTilde_.getConst()));
 
-        // Setup InArgs and OutArgs
-        typedef Thyra::ModelEvaluatorBase MEB;
-        //MEB::InArgs<Scalar>  inArgs  = wrapperModelPairIMEX->getInArgs();
-        //MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX->getOutArgs();
-        wrapperModelPairIMEX->setUseImplicitModel(true);
-        MEB::InArgs<Scalar>  inArgs  = wrapperModelPairIMEX->createInArgs();
-        MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX->createOutArgs();
-        inArgs.set_x(stageX);
-        if (wrapperModelPairIMEX->getParameterIndex() >= 0)
-          inArgs.set_p(wrapperModelPairIMEX->getParameterIndex(), stageY);
-        if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(stageGx_[i]);
-        if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (ts);
-        if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
-        if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
-        if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (beta);
-        if (inArgs.supports(MEB::IN_ARG_stage_number))
-          inArgs.set_stage_number(i);
-
-        wrapperModelPairIMEX->setForSolve(timeDer, inArgs, outArgs);
+        auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+          timeDer, dt, alpha, beta, SOLVE_FOR_X, i));
 
         this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
           StepperRKAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
+        wrapperModelPairIMEX->setUseImplicitModel(true);
         this->solver_->setModel(wrapperModelPairIMEX);
-        sStatus = this->solveImplicitODE(stageX);
+
+        Thyra::SolveStatus<Scalar> sStatus;
+        if (wrapperModelPairIMEX->getParameterIndex() >= 0)
+          sStatus = this->solveImplicitODE(stageX, stageGx_[i], ts, p,
+                     stageY, wrapperModelPairIMEX->getParameterIndex());
+        else
+          sStatus = this->solveImplicitODE(stageX, stageGx_[i], ts, p);
+
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
         wrapperModelPairIMEX->setUseImplicitModel(false);

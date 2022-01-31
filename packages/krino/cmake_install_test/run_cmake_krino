@@ -36,16 +36,15 @@ rm -rf CMakeFiles CMakeCache.txt
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
 -DCMAKE_BUILD_TYPE=${build_type^^} \
--DTrilinos_ENABLE_TESTS:BOOL=ON \
 -DBUILD_SHARED_LIBS=OFF \
--DTrilinos_ENABLE_Krino:BOOL=ON \
 -DTPL_ENABLE_MPI:BOOL=ON \
+-DTrilinos_ENABLE_Krino:BOOL=ON \
+-DKrino_ENABLE_TESTS:BOOL=ON \
 -DTPL_ENABLE_yaml-cpp=${enable_yaml} \
 -Dyaml-cpp_INCLUDE_DIRS=${yaml_install_dir}/include \
 -Dyaml-cpp_LIBRARY_DIRS=${yaml_install_dir}/lib \
 -DSTK_ENABLE_SEACASAprepro_lib:BOOL=${enable_yaml} \
 -DTPL_ENABLE_Netcdf:BOOL=ON \
--DTPL_Netcdf_Enables_Pnetcdf:BOOL=ON \
 -DTPL_ENABLE_HDF5:BOOL=ON \
 ${trilinos_src_dir}/
 

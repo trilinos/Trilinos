@@ -17,6 +17,7 @@
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_mesh/base/SideSetUtil.hpp>
 #include <stk_io/IossBridge.hpp>
+#include <stk_util/environment/LogWithTimeAndMemory.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp> // Needed for all_reduce_max
 #include <stk_util/parallel/CommSparse.hpp>
 
@@ -182,7 +183,6 @@ CDMesh::handle_possible_failed_time_step( stk::mesh::BulkData & mesh, const int 
     {
       the_new_mesh = std::make_shared<CDMesh>(mesh, std::shared_ptr<CDMesh>());
       the_new_mesh->generate_nonconformal_elements();
-      the_new_mesh->restore_subelement_edge_nodes();
       the_new_mesh->restore_subelements();
     }
   }
@@ -205,7 +205,6 @@ void CDMesh::build_and_stash_old_mesh(const int stepCount)
       old_mesh->rebuild_child_part();
       old_mesh->rebuild_parent_and_active_parts_using_nonconformal_and_child_parts();
       old_mesh->generate_nonconformal_elements();
-      old_mesh->restore_subelement_edge_nodes();
       old_mesh->restore_subelements();
     }
 
@@ -308,6 +307,8 @@ static void apply_snapping_to_children_of_snapped_nodes(const CDFEM_Support & cd
 void CDMesh::snap_and_update_fields_and_captured_domains(const InterfaceGeometry & interfaceGeometry,
     NodeToCapturedDomainsMap & nodesToCapturedDomains) const
 {
+  stk::diag::TimeBlock timer__(my_timer_snap);
+
   const FieldSet snapFields = get_snap_fields(my_cdfem_support);
 
   FieldRef cdfemSnapField = my_cdfem_support.get_cdfem_snap_displacements_field();
@@ -337,6 +338,8 @@ CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
 { /* %TRACE[ON]% */ Trace trace__("krino::Mesh::decompose_mesh()"); /* %TRACE% */
   stk::diag::TimeBlock root_timer__(CDFEM_Support::get(mesh.mesh_meta_data()).get_timer_cdfem());
 
+  stk::log_with_time_and_memory(mesh.parallel(), "Begin Mesh Decomposition.");
+
   CDFEM_Support & cdfemSupport = CDFEM_Support::get(mesh.mesh_meta_data());
 
   if (!the_new_mesh)
@@ -344,7 +347,6 @@ CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
     // FIXME: This can cause problems for shells.
     attach_sides_to_elements(mesh);
   }
-
 
   krinolog << "Decomposing mesh for region into phase conformal elements." << stk::diag::dendl;
   NodeToCapturedDomainsMap nodesToCapturedDomains;
@@ -402,6 +404,8 @@ CDMesh::decompose_mesh(stk::mesh::BulkData & mesh,
   {
     the_new_mesh->print_conformal_volumes_and_surface_areas();
   }
+
+  stk::log_with_time_and_memory(mesh.parallel(), "End Mesh Decomposition.");
 
   const int status = mesh_modified ? (COORDINATES_MAY_BE_MODIFIED | MESH_MODIFIED) : COORDINATES_MAY_BE_MODIFIED;
   return status;
@@ -585,9 +589,10 @@ CDMesh::mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const
 void
 CDMesh::nonconformal_adaptivity(stk::mesh::BulkData & mesh, const InterfaceGeometry & interfaceGeometry)
 {/* %TRACE[SPEC]% */ Tracespec trace__("CDMesh::nonconformal_adaptivity(stk::mesh::BulkData & mesh)"); /* %TRACE% */
-
   const auto & cdfem_support = CDFEM_Support::get(mesh.mesh_meta_data());
   stk::diag::TimeBlock timer__(cdfem_support.get_timer_adapt());
+
+  stk::log_with_time_and_memory(mesh.parallel(), "Begin Nonconformal Adaptivity.");
 
   const std::string & marker_name = cdfem_support.get_nonconformal_adapt_marker_name();
   auto & h_adapt = cdfem_support.get_nonconformal_hadapt();
@@ -599,6 +604,8 @@ CDMesh::nonconformal_adaptivity(stk::mesh::BulkData & mesh, const InterfaceGeome
       };
 
   perform_multilevel_adaptivity(mesh, marker_name, marker_function, h_adapt, cdfem_do_not_refine_or_unrefine_selector(cdfem_support));
+
+  stk::log_with_time_and_memory(mesh.parallel(), "End Nonconformal Adaptivity.");
 }
 
 void
@@ -606,7 +613,6 @@ CDMesh::rebuild_after_rebalance()
 {
   clear();
   generate_nonconformal_elements();
-  restore_subelement_edge_nodes();
   restore_subelements();
 }
 
@@ -645,7 +651,6 @@ CDMesh::rebuild_from_restart_mesh(stk::mesh::BulkData & mesh)
   the_new_mesh->rebuild_child_part();
   the_new_mesh->rebuild_parent_and_active_parts_using_nonconformal_and_child_parts();
   the_new_mesh->generate_nonconformal_elements();
-  the_new_mesh->restore_subelement_edge_nodes();
   the_new_mesh->restore_subelements();
 
   // rebuild conformal side parts
@@ -656,6 +661,28 @@ CDMesh::rebuild_from_restart_mesh(stk::mesh::BulkData & mesh)
   delete_extraneous_inactive_sides(mesh, the_new_mesh->get_parent_part(), the_new_mesh->get_active_part());
 }
 
+static bool is_child_elem(const stk::mesh::BulkData & mesh, const stk::mesh::Part & childEdgeNodePart, stk::mesh::Entity elem)
+{
+  for (auto elemNode : StkMeshEntities{mesh.begin_nodes(elem), mesh.end_nodes(elem)})
+    if(mesh.bucket(elemNode).member(childEdgeNodePart))
+      return true;
+  return false;
+}
+
+static void batch_change_entity_parts(stk::mesh::BulkData & mesh, 
+    const stk::mesh::EntityVector & entitiesWithWrongParts,
+    const stk::mesh::ConstPartVector & addParts,
+    const stk::mesh::ConstPartVector & removeParts)
+{
+  if (stk::is_true_on_any_proc(mesh.parallel(), !entitiesWithWrongParts.empty()))
+  {
+    mesh.modification_begin();
+    for (auto && entityWithWrongParts : entitiesWithWrongParts)
+      mesh.change_entity_parts(entityWithWrongParts, addParts, removeParts);
+    mesh.modification_end();
+  }
+}
+
 void
 CDMesh::rebuild_child_part()
 {
@@ -664,34 +691,18 @@ CDMesh::rebuild_child_part()
 
   // Need to iterate all locally owned elements to find child elements,
   // which are identified by detecting that they use child edge nodes
-  stk::mesh::EntityVector local_elements;
-  stk::mesh::Selector sel = get_active_part() & get_locally_owned_part();
-  stk::mesh::get_selected_entities(sel, mesh.buckets(stk::topology::ELEMENT_RANK),
-      local_elements);
 
-  auto conformal_selector = stk::mesh::selectUnion(my_phase_support.get_conformal_parts());
-  const auto & child_edge_node_part = get_child_edge_node_part();
-  mesh.modification_begin();
-  for(auto && elem : local_elements)
-  {
-    auto elem_nodes = mesh.begin_nodes(elem);
-    auto num_nodes = mesh.num_nodes(elem);
-    bool is_child_elem = false;
-    for(unsigned i=0; i < num_nodes; ++i)
-    {
-      if(mesh.bucket(elem_nodes[i]).member(child_edge_node_part))
-      {
-        is_child_elem = true;
-        break;
-      }
-    }
+  const auto & childEdgeNodePart = get_child_edge_node_part();
+  const stk::mesh::Selector activeLocallyOwnedNotChild = get_active_part() & get_locally_owned_part() & !child_part;
+  
+  stk::mesh::EntityVector entitiesWithWrongParts;
+  
+  for(const auto & bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, activeLocallyOwnedNotChild))
+    for(const auto & elem : *bucketPtr)
+      if(is_child_elem(mesh, childEdgeNodePart, elem))
+        entitiesWithWrongParts.push_back(elem);
 
-    if(is_child_elem)
-    {
-      mesh.change_entity_parts(elem, stk::mesh::ConstPartVector{&child_part}, stk::mesh::ConstPartVector{});
-    }
-  }
-  mesh.modification_end();
+  batch_change_entity_parts(mesh, entitiesWithWrongParts, stk::mesh::ConstPartVector{&child_part}, stk::mesh::ConstPartVector{});
 }
 
 void
@@ -700,139 +711,73 @@ CDMesh::rebuild_parent_and_active_parts_using_nonconformal_and_child_parts()
   auto & parent_part = get_parent_part();
   auto & mesh = stk_bulk();
 
-  stk::mesh::EntityVector entities;
-  stk::mesh::Selector sel = get_active_part() & get_locally_owned_part() &
-      stk::mesh::selectUnion(my_phase_support.get_nonconformal_parts());
-  stk::mesh::get_selected_entities(sel, mesh.buckets(stk::topology::ELEMENT_RANK),
-      entities);
+  stk::mesh::EntityVector entitiesWithWrongParts;
 
-  mesh.modification_begin();
-  for(auto && elem : entities)
+  // Find parents of child elements are active or do not have parent part
+  stk::mesh::Selector locallyOwnedChild = get_locally_owned_part() & get_child_part();
+  for(const auto & bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, locallyOwnedChild))
   {
-    mesh.change_entity_parts(elem, stk::mesh::ConstPartVector{&parent_part}, stk::mesh::ConstPartVector{&get_active_part()});
+    for(const auto & elem : *bucketPtr)
+    {
+      auto parentElem = get_parent_element(elem);
+      const stk::mesh::Bucket & parentElemBucket = mesh.bucket(parentElem);
+      if (parentElemBucket.member(get_active_part()) || !parentElemBucket.member(parent_part))
+        entitiesWithWrongParts.push_back(parentElem);
+    }
   }
+  stk::util::sort_and_unique(entitiesWithWrongParts);
+  
+  batch_change_entity_parts(mesh, entitiesWithWrongParts, stk::mesh::ConstPartVector{&parent_part}, stk::mesh::ConstPartVector{&get_active_part()});
 
   // Also remove active part from nonconformal sides
-  entities.clear();
-  auto side_rank = mesh.mesh_meta_data().side_rank();
-  stk::mesh::get_selected_entities(sel, mesh.buckets(side_rank), entities);
-  for(auto && side : entities)
-  {
-    mesh.change_entity_parts(side, stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{&get_active_part()});
-  }
-
-  // Also need to mark parents in undecomposed blocks that have children due to hanging
-  // nodes
-  entities.clear();
-  stk::mesh::Selector undecomposed_child_sel = get_active_part() & get_locally_owned_part() &
-      !my_phase_support.get_all_decomposed_blocks_selector() &
-      get_child_part();
-  stk::mesh::get_selected_entities(undecomposed_child_sel, mesh.buckets(stk::topology::ELEMENT_RANK),
-      entities);
-  for(auto && elem : entities)
-  {
-    auto parent_elem = get_parent_element(elem);
-    ThrowRequire(mesh.is_valid(parent_elem));
-    mesh.change_entity_parts(parent_elem, stk::mesh::ConstPartVector{&parent_part}, stk::mesh::ConstPartVector{&get_active_part()});
-  }
-  mesh.modification_end();
+  entitiesWithWrongParts.clear();
+  auto sideRank = mesh.mesh_meta_data().side_rank();
+  const stk::mesh::Selector activeLocallyOwnedNonConformal = get_active_part() & get_locally_owned_part() &
+      stk::mesh::selectUnion(my_phase_support.get_nonconformal_parts_of_rank(sideRank));
+  for(const auto & bucketPtr : mesh.get_buckets(sideRank, activeLocallyOwnedNonConformal))
+    for (auto && side : *bucketPtr)
+      entitiesWithWrongParts.push_back(side);
+      
+  batch_change_entity_parts(mesh, entitiesWithWrongParts, stk::mesh::ConstPartVector{}, stk::mesh::ConstPartVector{&get_active_part()});
 }
 
 const SubElementNode *
-CDMesh::build_subelement_edge_node(const stk::mesh::Entity node_entity)
+CDMesh::find_or_build_subelement_edge_node_with_id(const stk::mesh::EntityId nodeId, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode )
 {
-  const auto & mesh = stk_bulk();
-
-  // This is super inefficient but lets just get it working for now.
-  ThrowRequire(mesh.is_valid(node_entity));
-  auto id = mesh.identifier(node_entity);
-  auto find_existing = std::find_if(nodes.begin(), nodes.end(),
-      [id](const std::unique_ptr<SubElementNode> & compare)
-        { return compare->entityId() == id; });
-  if(find_existing != nodes.end())
-    return find_existing->get();
-
-  auto parent_ids = get_edge_node_parent_ids(mesh, get_parent_node_ids_field(), node_entity);
-
-  auto search0 = std::find_if(nodes.begin(), nodes.end(),
-      [parent_ids](const std::unique_ptr<SubElementNode> & compare)
-          { return compare->entityId() == parent_ids[0]; });
-  const SubElementNode * immediate_parent0 = (search0 == nodes.end()) ?
-      build_subelement_edge_node(mesh.get_entity(stk::topology::NODE_RANK, parent_ids[0])) :
-      search0->get();
-
-  auto search1 = std::find_if(nodes.begin(), nodes.end(),
-      [parent_ids](const std::unique_ptr<SubElementNode> & compare)
-          { return compare->entityId() == parent_ids[1]; });
-  const SubElementNode * immediate_parent1 = (search1 == nodes.end()) ?
-      build_subelement_edge_node(mesh.get_entity(stk::topology::NODE_RANK, parent_ids[1])) :
-      search1->get();
-
-  // For LS per phase the immediate parents are not necessarily actual parent element nodes,
-  // we need to go all the way up the parentage tree to find the original parent nodes so we can
-  // get the parent Mesh_Element.
-  std::set<stk::mesh::Entity> parent_elem_nodes_set;
-  get_parent_nodes_from_child(
-      mesh, node_entity, get_parent_node_ids_field(), parent_elem_nodes_set);
-  std::vector<stk::mesh::Entity> parent_elem_nodes(
-      parent_elem_nodes_set.begin(), parent_elem_nodes_set.end());
-  std::vector<stk::mesh::Entity> parent_elems;
-  stk::mesh::get_entities_through_relations(stk_bulk(), parent_elem_nodes, stk::topology::ELEMENT_RANK, parent_elems);
-
-  stk::mesh::Entity owner_entity;
-  const stk::mesh::Selector locally_owned_parent_selector = get_locally_owned_part() & get_parent_part();
-  for(auto && e : parent_elems)
-  {
-    if(locally_owned_parent_selector(mesh.bucket(e)))
-    {
-      owner_entity = e;
-      break;
-    }
-  }
-  if(!mesh.is_valid(owner_entity))
-  {
-    std::ostringstream err_msg;
-    err_msg << "Failed to find locally owned element connected to nodes"
-            << immediate_parent0->entityId() << " and " << immediate_parent1->entityId()
-            << " when restoring CDFEM data structures after restart.\n";
-    err_msg << "Possible parent elems:\n";
-    for(auto && e : parent_elems)
-    {
-      err_msg << "    " << debug_entity(mesh, e) << "\n";
-    }
-    throw std::runtime_error(err_msg.str());
-  }
-
-  auto owner_id = mesh.identifier(owner_entity);
-  const Mesh_Element * owner = find_mesh_element(owner_id);
-  ThrowRequireMsg(owner, "Could not find Mesh_Element for owner element " << owner_id << " " << debug_entity(mesh, owner_entity));
-  const double position = compute_child_position(
-      mesh, node_entity, immediate_parent0->entity(), immediate_parent1->entity());
-  std::unique_ptr<SubElementEdgeNode> newNode = std::make_unique<SubElementEdgeNode>(owner, position, immediate_parent0, immediate_parent1);
-  SubElementNode * edgeNode = add_managed_node(std::move(newNode));
-  edgeNode->set_entity(stk_bulk(), node_entity);
-  return edgeNode;
+  const auto & iter = idToSubElementNode.find(nodeId);
+  if (iter != idToSubElementNode.end())
+    return iter->second;
+  return build_subelement_edge_node(stk_bulk().get_entity(stk::topology::NODE_RANK, nodeId), ownerMeshElem, idToSubElementNode);
 }
 
-void
-CDMesh::restore_subelement_edge_nodes()
+const SubElementNode *
+CDMesh::find_or_build_subelement_edge_node(const stk::mesh::Entity node, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode )
 {
-  stk::mesh::Selector selector = get_child_edge_node_part() &
-      (get_locally_owned_part() | get_globally_shared_part());
+  const auto & iter = idToSubElementNode.find(stk_bulk().identifier(node));
+  if (iter != idToSubElementNode.end())
+    return iter->second;
+  return build_subelement_edge_node(node, ownerMeshElem, idToSubElementNode);
+}
+
+const SubElementNode *
+CDMesh::build_subelement_edge_node(const stk::mesh::Entity node, const Mesh_Element & ownerMeshElem, std::map<stk::mesh::EntityId, const SubElementNode*> & idToSubElementNode )
+{
   const auto & mesh = stk_bulk();
-  const auto & buckets = mesh.get_buckets(stk::topology::NODE_RANK, selector);
-  const auto parent_id_field = get_parent_node_ids_field();
 
-  std::vector< const stk::mesh::FieldBase *> fields(1, &parent_id_field.field());
-  stk::mesh::communicate_field_data(mesh, fields);
+  auto parentIds = get_edge_node_parent_ids(mesh, get_parent_node_ids_field(), node);
 
-  for(const auto & b_ptr : buckets)
-  {
-    for(unsigned i=0; i < b_ptr->size(); ++i)
-    {
-      build_subelement_edge_node((*b_ptr)[i]);
-    }
-  }
+  const SubElementNode * immediateParent0 = find_or_build_subelement_edge_node_with_id(parentIds[0], ownerMeshElem, idToSubElementNode);
+  const SubElementNode * immediateParent1 = find_or_build_subelement_edge_node_with_id(parentIds[1], ownerMeshElem, idToSubElementNode);
+
+  const double position = compute_child_position(mesh, node, immediateParent0->entity(), immediateParent1->entity());
+
+  std::unique_ptr<SubElementEdgeNode> newNode = std::make_unique<SubElementEdgeNode>(&ownerMeshElem, position, immediateParent0, immediateParent1);
+  SubElementNode * edgeNode = add_managed_node(std::move(newNode));
+  edgeNode->set_entity(stk_bulk(), node);
+
+  idToSubElementNode[mesh.identifier(node)] = edgeNode;
+
+  return edgeNode;
 }
 
 void
@@ -840,6 +785,11 @@ CDMesh::restore_subelements()
 {
   stk::mesh::Selector selector = get_locally_owned_part() & get_child_part();
   const auto & mesh = stk_bulk();
+
+  std::map<stk::mesh::EntityId, const SubElementNode*> idToSubElementNode;
+  for (auto && node : nodes)
+    idToSubElementNode[node->entityId()] = node.get();
+
   const auto & buckets = mesh.get_buckets(stk::topology::ELEMENT_RANK, selector);
   NodeVec subelem_nodes;
   for(const auto & b_ptr : buckets)
@@ -852,8 +802,8 @@ CDMesh::restore_subelements()
       const stk::mesh::Entity parent = get_parent_element(elem);
       ThrowRequire(mesh.is_valid(parent) && parent != elem);
 
-      auto parent_mesh_elem = find_mesh_element(mesh.identifier(parent));
-      ThrowRequire(parent_mesh_elem);
+      auto parentMeshElem = find_mesh_element(mesh.identifier(parent));
+      ThrowRequire(parentMeshElem);
 
       subelem_nodes.clear();
       // TODO: May need to create subelement edge nodes somehow
@@ -861,29 +811,25 @@ CDMesh::restore_subelements()
       ThrowAssert(mesh.num_nodes(elem) == num_nodes);
       for(unsigned i=0; i < num_nodes; ++i)
       {
-        auto node_id = mesh.identifier(elem_nodes[i]);
-        auto find_node = std::find_if(nodes.begin(), nodes.end(),
-            [node_id](const std::unique_ptr<SubElementNode> & compare)
-                { return compare->entityId() == node_id; });
-        ThrowRequire(find_node != nodes.end());
-        subelem_nodes.push_back(find_node->get());
+        const SubElementNode * node = find_or_build_subelement_edge_node(elem_nodes[i], *parentMeshElem, idToSubElementNode);
+        subelem_nodes.push_back(node);
       }
 
       std::unique_ptr<SubElement> subelem;
       switch(topo)
       {
       case stk::topology::TRIANGLE_3_2D:
-        subelem = std::make_unique<SubElement_Tri_3>(subelem_nodes, std::vector<int>{-1, -1, -1}, parent_mesh_elem);
+        subelem = std::make_unique<SubElement_Tri_3>(subelem_nodes, std::vector<int>{-1, -1, -1}, parentMeshElem);
         break;
       case stk::topology::TETRAHEDRON_4:
-        subelem = std::make_unique<SubElement_Tet_4>(subelem_nodes, std::vector<int>{-1, -1, -1, -1}, parent_mesh_elem);
+        subelem = std::make_unique<SubElement_Tet_4>(subelem_nodes, std::vector<int>{-1, -1, -1, -1}, parentMeshElem);
         break;
       default:
         ThrowRuntimeError("At present only Tri3 and Tet4 topologies are supported for restart of CDFEM problems.");
       }
       ThrowAssert(subelem);
       subelem->set_entity(stk_bulk(), elem);
-      const_cast<Mesh_Element *>(parent_mesh_elem)->add_subelement(std::move(subelem));
+      const_cast<Mesh_Element *>(parentMeshElem)->add_subelement(std::move(subelem));
     }
   }
 }

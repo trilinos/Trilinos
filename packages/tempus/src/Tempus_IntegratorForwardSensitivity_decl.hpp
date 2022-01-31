@@ -51,7 +51,7 @@ class IntegratorForwardSensitivity
 {
 public:
 
-  /** \brief Full Constructor with model, and will be fully initialized. 
+  /** \brief Full Constructor with model, and will be fully initialized.
    *
    * \param[in] model               The forward physics ModelEvaluator
    * \param[in] integrator          Forward state Integrator
@@ -123,11 +123,15 @@ public:
   /// Perform tasks after end of integrator.
   virtual void endIntegrator()
     { integrator_->endIntegrator(); }
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Return a copy of the Tempus ParameterList
+  TEMPUS_DEPRECATED
   virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override
     { return integrator_->getTempusParameterList(); }
+  TEMPUS_DEPRECATED
   virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override
     { integrator_->setTempusParameterList(pl); }
+#endif
   //@}
 
   /// \name Accessor methods
@@ -208,11 +212,11 @@ public:
    * @brief Get the current solution, x, only. If looking for the solution
    * vector and the sensitivities, use `SolutionState->getX()` which will return a
    * Block MultiVector with the first block containing the current solution, x,
-   * and the remaining blocks are the forward sensitivities \f$dx/dp\f$. 
+   * and the remaining blocks are the forward sensitivities \f$dx/dp\f$.
    *
    * Use `getDxDp` to get the forward sensitivities \f$dx/dp\f$ only.
    *
-   * @return The current solution, x, without the sensitivities. 
+   * @return The current solution, x, without the sensitivities.
    * */
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const;
 
@@ -222,7 +226,7 @@ public:
    * @brief Get current the time derivative of the solution, xdot, only.  This
    * is the first block only and not the full Block MultiVector.
    *
-   * @return Get current the time derivative of the solution, xdot. 
+   * @return Get current the time derivative of the solution, xdot.
    * */
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDot() const;
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDp() const;
@@ -232,7 +236,7 @@ public:
    *
    * Use `getDXDotDp` to get the forward sensitivities.
    *
-   * @return Get current the second time derivative of the solution, xdotdot. 
+   * @return Get current the second time derivative of the solution, xdotdot.
    * */
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const;
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDotDp() const;
@@ -251,6 +255,9 @@ public:
     void describe(Teuchos::FancyOStream        & out,
                   const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
+
+  //! What mode the current time integration step is in
+  SensitivityStepMode getStepMode() const;
 
 protected:
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> model_;

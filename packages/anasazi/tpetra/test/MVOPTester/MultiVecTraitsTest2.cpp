@@ -135,7 +135,7 @@ namespace {
       out << "Expected 1-norm of X_" << j << ": " << X_norms[j] << endl;
       out << "Actual 1-norm of X_" << j << ": " << norms[j] << endl;
       TEST_ASSERT( X_norms[j] != STN::zero () );
-      TEST_ASSERT( norms[j] == X_norms[j] );
+      TEST_FLOATING_EQUALITY( norms[j], X_norms[j], STS::eps() );
     }
 
     out << "Create MultiVector Y" << endl;
@@ -147,7 +147,7 @@ namespace {
     // Test that the norms of the columns of Y have their expected values.
     Y.norm1 (norms);
     for (size_t j = 0; j < numCols; ++j) {
-      TEST_ASSERT( norms[j] == X_norms[j] );
+      TEST_FLOATING_EQUALITY( norms[j], X_norms[j], STS::eps() );
     }
 
     out << "Call SetBlock(X, [1, 2], Y)" << endl;
@@ -163,19 +163,19 @@ namespace {
     // Test that the norms of the columns of X have not changed.
     X.norm1 (norms);
     for (size_t j = 0; j < numCols; ++j) {
-      TEST_ASSERT( norms[j] == X_norms[j] );
+      TEST_FLOATING_EQUALITY( norms[j], X_norms[j], STS::eps() );
     }
 
     out << "Test the norms of the columns of Y" << endl;
 
     // Test that the norm of the first column of Y has not changed.
     Y.norm1 (norms);
-    TEST_ASSERT( norms[0] == X_norms[0] );
+    TEST_FLOATING_EQUALITY( norms[0], X_norms[0], STS::eps() );
 
     // Test that the norms of the remaining columns of Y have their
     // expected values.
-    TEST_ASSERT( norms[1] == X_norms[0] );
-    TEST_ASSERT( norms[2] == X_norms[1] );
+    TEST_FLOATING_EQUALITY( norms[1], X_norms[0], STS::eps() );
+    TEST_FLOATING_EQUALITY( norms[2], X_norms[1], STS::eps() );
 
     out << "Test the values in the columns of Y" << endl;
 
@@ -193,9 +193,9 @@ namespace {
     // Test that overwriting X doesn't affect the new values of Y.
     X.putScalar (STS::zero ());
     Y.norm1 (norms);
-    TEST_ASSERT( norms[0] == X_norms[0] );
-    TEST_ASSERT( norms[1] == X_norms[0] );
-    TEST_ASSERT( norms[2] == X_norms[1] );
+    TEST_FLOATING_EQUALITY( norms[0], X_norms[0], STS::eps() );
+    TEST_FLOATING_EQUALITY( norms[1], X_norms[0], STS::eps() );
+    TEST_FLOATING_EQUALITY( norms[2], X_norms[1], STS::eps() );
   }
 
   //
@@ -257,7 +257,7 @@ namespace {
       out << "Expected 1-norm of X_" << j << ": " << X_norms[j] << endl;
       out << "Actual 1-norm of X_" << j << ": " << norms[j] << endl;
       TEST_ASSERT( X_norms[j] != STN::zero () );
-      TEST_ASSERT( norms[j] == X_norms[j] );
+      TEST_FLOATING_EQUALITY( norms[j], X_norms[j], STS::eps() );
     }
 
     out << "Create MultiVector Y" << endl;
@@ -269,7 +269,7 @@ namespace {
     // Test that the norms of the columns of Y have their expected values.
     Y.norm1 (norms);
     for (size_t j = 0; j < numCols; ++j) {
-      TEST_ASSERT( norms[j] == X_norms[j] );
+      TEST_FLOATING_EQUALITY( norms[j], X_norms[j], STS::eps() );
     }
 
     out << "Call SetBlock(X, Range1D(1, 2), Y)" << endl;
@@ -284,19 +284,19 @@ namespace {
     // Test that the norms of the columns of X have not changed.
     X.norm1 (norms);
     for (size_t j = 0; j < numCols; ++j) {
-      TEST_ASSERT( norms[j] == X_norms[j] );
+      TEST_FLOATING_EQUALITY( norms[j], X_norms[j], STS::eps() );
     }
 
     out << "Test the norms of the columns of Y" << endl;
 
     // Test that the norm of the first column of Y has not changed.
     Y.norm1 (norms);
-    TEST_ASSERT( norms[0] == X_norms[0] );
+    TEST_FLOATING_EQUALITY( norms[0], X_norms[0], STS::eps() );
 
     // Test that the norms of the remaining columns of Y have their
     // expected values.
-    TEST_ASSERT( norms[1] == X_norms[0] );
-    TEST_ASSERT( norms[2] == X_norms[1] );
+    TEST_FLOATING_EQUALITY( norms[1], X_norms[0], STS::eps() );
+    TEST_FLOATING_EQUALITY( norms[2], X_norms[1], STS::eps() );
 
     // Test that after calling SetBlock, Y(:,1:2) == X(:,0:1) (where
     // 0:1 means [0, 1] (inclusive range) and 1:2 means [1, 2]).
@@ -333,9 +333,9 @@ namespace {
     // Test that overwriting X doesn't affect the new values of Y.
     X.putScalar (STS::zero ());
     Y.norm1 (norms);
-    TEST_ASSERT( norms[0] == X_norms[0] );
-    TEST_ASSERT( norms[1] == X_norms[0] );
-    TEST_ASSERT( norms[2] == X_norms[1] );
+    TEST_FLOATING_EQUALITY( norms[0], X_norms[0], STS::eps() );
+    TEST_FLOATING_EQUALITY( norms[1], X_norms[0], STS::eps() );
+    TEST_FLOATING_EQUALITY( norms[2], X_norms[1], STS::eps() );
   }
 
   //
@@ -393,7 +393,7 @@ namespace {
       out << "Expected 1-norm of X_" << j << ": " << X_norms[j] << endl;
       out << "Actual 1-norm of X_" << j << ": " << norms[j] << endl;
       TEST_ASSERT( X_norms[j] != STN::zero () );
-      TEST_ASSERT( norms[j] == X_norms[j] );
+      TEST_FLOATING_EQUALITY( norms[j], X_norms[j], STS::eps() );
     }
 
     // Create a MultiVector Y, and make it a deep copy of X.
@@ -403,7 +403,7 @@ namespace {
     // Test that the norms of the columns of Y have their expected values.
     Y.norm1 (norms);
     for (size_t j = 0; j < numCols; ++j) {
-      TEST_ASSERT( norms[j] == X_norms[j] );
+      TEST_FLOATING_EQUALITY( norms[j], X_norms[j], STS::eps() );
     }
 
     // Y(:, [2,1]) := X(:, [0,1])
@@ -415,17 +415,17 @@ namespace {
     // Test that the norms of the columns of X have not changed.
     X.norm1 (norms);
     for (size_t j = 0; j < numCols; ++j) {
-      TEST_ASSERT( norms[j] == X_norms[j] );
+      TEST_FLOATING_EQUALITY( norms[j], X_norms[j], STS::eps() );
     }
 
     // Test that the norm of the first column of Y has not changed.
     Y.norm1 (norms);
-    TEST_ASSERT( norms[0] == X_norms[0] );
+    TEST_FLOATING_EQUALITY( norms[0], X_norms[0], STS::eps() );
 
     // Test that the norms of the remaining columns of Y have their
     // expected values.
-    TEST_ASSERT( norms[1] == X_norms[1] );
-    TEST_ASSERT( norms[2] == X_norms[0] );
+    TEST_FLOATING_EQUALITY( norms[1], X_norms[1], STS::eps() );
+    TEST_FLOATING_EQUALITY( norms[2], X_norms[0], STS::eps() );
   }
 
   //
@@ -485,7 +485,7 @@ namespace {
       out << "Expected 1-norm of X_" << j << ": " << X_norms[j] << endl;
       out << "Actual 1-norm of X_" << j << ": " << norms[j] << endl;
       TEST_ASSERT( X_norms[j] != STN::zero () );
-      TEST_ASSERT( norms[j] == X_norms[j] );
+      TEST_FLOATING_EQUALITY( norms[j], X_norms[j], STS::eps() );
     }
 
     out << "Create (non-copy) clones of X: B and C" << endl;
@@ -570,7 +570,7 @@ namespace {
       out << "]" << endl;
 
       for (size_t j = 0; j < static_cast<size_t> (ind.size ()); ++j) {
-        TEST_EQUALITY( B_view_norms[j], normsB1[ind[j]] );
+        TEST_FLOATING_EQUALITY( B_view_norms[j], normsB1[ind[j]], STS::eps() );
       }
 
       out << "Check that modifying B_view modifies the corresponding columns "
@@ -613,14 +613,14 @@ namespace {
       Array<norm_type> B_norms (numVecsB);
       B->norm2 (B_norms);
       for (size_t j = 0; j < numVecsB; ++j) {
-        TEST_EQUALITY( B_norms[j], normsB1[j] );
+        TEST_FLOATING_EQUALITY( B_norms[j], normsB1[j], STS::eps() );
       }
 
       out << "Make sure that \\|B_view_1\\| still equals \\|B(:,2)\\|" << endl;
       const norm_type B_view_1_norm2_new = B_view_1->norm2 ();
-      TEST_EQUALITY( normsB1[2], B_view_1_norm2_new );
+      TEST_FLOATING_EQUALITY( normsB1[2], B_view_1_norm2_new, STS::eps() );
       const norm_type B_2_norm2_new = B_2->norm2 ();
-      TEST_EQUALITY( normsB1[2], B_2_norm2_new );
+      TEST_FLOATING_EQUALITY( normsB1[2], B_2_norm2_new, STS::eps() );
       // In theory, it's possible for these two numbers to be equal,
       // since B_2_norm2 comes from a random assignment of B.
       // However, it should be unlikely.
@@ -628,7 +628,7 @@ namespace {
       // Make sure that no fishy stuff (e.g., copy instead of view) is
       // going on with getVector().
       B_2 = B->getVector (2);
-      TEST_EQUALITY( normsB1[2], B_2->norm2 () );
+      TEST_FLOATING_EQUALITY( normsB1[2], B_2->norm2 (), STS::eps() );
 
       // TODO: Make sure that changing B_copy doesn't change B.
     }
@@ -667,16 +667,16 @@ namespace {
 
     out << "Check that C was not changed by SetBlock" << endl;
     for (size_t j = 0; j < numVecsC; ++j) {
-      TEST_ASSERT( normsC1[j] == normsC2[j] );
+      TEST_FLOATING_EQUALITY( normsC1[j], normsC2[j], STS::eps() );
     }
     out << "Check that only the vectors of B that _should_ have changed did"
         << endl;
     for (size_t j = 0; j < numVecsB; ++j) {
       if (j % static_cast<size_t> (2) == 0) { // should be a vector from C
-        TEST_ASSERT( normsB2[j] == normsC1[j/2] );
+        TEST_FLOATING_EQUALITY( normsB2[j], normsC1[j/2], STS::eps() );
       }
       else { // should be an original vector
-        TEST_ASSERT( normsB1[j] == normsB2[j] );
+        TEST_FLOATING_EQUALITY( normsB1[j], normsB2[j], STS::eps() );
       }
     }
 
@@ -684,7 +684,7 @@ namespace {
     MVT::MvInit (*C, STS::zero ());
     MVT::MvNorm (*B, normsB1);
     for (size_t j = 0; j < numVecsB; ++j) {
-      TEST_ASSERT( normsB1[j] == normsB2[j] );
+      TEST_FLOATING_EQUALITY( normsB1[j], normsB2[j], STS::eps() );
     }
   }
 

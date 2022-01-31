@@ -2493,7 +2493,7 @@
     int PerceptMesh::get_ioss_aliases(const std::string &my_name, std::vector<std::string> &aliases)
     {
       auto *ge = m_iossMeshData->get_input_io_region()->get_entity(my_name);
-      return ge != nullptr ? m_iossMeshData->get_input_io_region()->get_aliases(my_name, ge->type(), aliases): 0;
+      return ge != nullptr ? m_iossMeshData->get_input_io_region()->get_aliases(my_name, ge->type(), aliases) : 0;
     }
 
     bool PerceptMesh::checkForPartNameWithAliases(stk::mesh::Part& part, const std::string& bname)

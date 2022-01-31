@@ -1147,6 +1147,7 @@ public:
                       nonconst_global_inds_host_view_type &gblColInds,
                       size_t& numColInds) const override;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     void
     getGlobalRowCopy (global_ordinal_type gblRow,
                       const Teuchos::ArrayView<global_ordinal_type>& gblColInds,
@@ -1164,6 +1165,7 @@ public:
                      nonconst_local_inds_host_view_type &gblColInds,
                      size_t& numColInds) const override;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     void
     getLocalRowCopy (local_ordinal_type lclRow,
                      const Teuchos::ArrayView<local_ordinal_type>& lclColInds,
@@ -1181,6 +1183,7 @@ public:
     ///
     /// \pre <tt>! isLocallyIndexed()</tt>
     /// \post <tt>gblColInds.size() == getNumEntriesInGlobalRow(gblRow)</tt>
+    TPETRA_DEPRECATED
     void
     getGlobalRowView (const global_ordinal_type gblRow,
                       Teuchos::ArrayView<const global_ordinal_type>& gblColInds) const override;
@@ -1217,6 +1220,7 @@ public:
     ///
     /// \pre <tt>! isGloballyIndexed()</tt>
     /// \post <tt>lclColInds.size() == getNumEntriesInLocalRow(lclRow)</tt>
+    TPETRA_DEPRECATED
     void
     getLocalRowView (const local_ordinal_type lclRow,
                      Teuchos::ArrayView<const local_ordinal_type>& lclColInds) const override;
@@ -1434,6 +1438,7 @@ public:
     void
     getLocalDiagOffsets (Teuchos::ArrayRCP<size_t>& offsets) const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Get an upper bound on the number of entries that can be
     ///   stored in each row.
     ///
@@ -1456,11 +1461,12 @@ public:
     /// it only tells us whether boundForAllLocalRows has a meaningful
     /// value on output.  We don't necessarily check whether all
     /// entries of boundPerLocalRow are the same.
-    //TPETRA_DEPRECATED
+    TPETRA_DEPRECATED
     void
     getNumEntriesPerLocalRowUpperBound (Teuchos::ArrayRCP<const size_t>& boundPerLocalRow,
                                         size_t& boundForAllLocalRows,
                                         bool& boundSameForAllLocalRows) const;
+#endif
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
@@ -2180,7 +2186,11 @@ public:
     /// \brief Get a const,  locally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
-    //  Replaced by getLocalIndsViewHost
+    ///  Replaced by getLocalIndsViewHost
+    /// 
+    ///  Deprecated but protected; 
+    ///  not emitting warnings prevents Tpetra from emitting deprecation warnings
+    ///  TPETRA_DEPRECATED
     Teuchos::ArrayView<const local_ordinal_type>
     getLocalView (const RowInfo& rowinfo) const;
 #endif
@@ -2191,7 +2201,11 @@ public:
     /// \brief Get a const, nonowned, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
-    //  Replaced by getGlobalIndsViewHost
+    /// Replaced by getGlobalIndsViewHost
+    /// 
+    /// Deprecated but protected; 
+    /// not emitting warnings prevents Tpetra from emitting deprecation warnings
+    /// TPETRA_DEPRECATED
     Teuchos::ArrayView<const global_ordinal_type>
     getGlobalView (const RowInfo& rowinfo) const;
 #endif
@@ -2206,7 +2220,7 @@ public:
     /// This is only a valid representation of the local graph if the
     /// (global) graph is fill complete.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    // TPETRA_DEPRECATED
+    TPETRA_DEPRECATED
     local_graph_device_type getLocalGraph () const;
 #endif
     local_graph_device_type getLocalGraphDevice () const;
@@ -2304,13 +2318,13 @@ public:
       rowPtrsPacked_dev_ = dview;
       rowPtrsPacked_host_ = 
            Kokkos::create_mirror_view_and_copy(
-                          typename row_ptrs_device_view_type::host_mirror_space(),
-                          dview);
+                       typename row_ptrs_device_view_type::host_mirror_space(),
+                       dview);
     }
     
+    //TODO:  Make private -- matrix shouldn't access directly the guts of graph
   
-    /// \brief Local ordinals of colum indices for all rows
-    /// UVM REMOVAL:   Device view takes place of k_lclInds1D_
+    /// \brief Local ordinals of column indices for all rows
     /// Valid when isLocallyIndexed is true
     /// If OptimizedStorage, storage is PACKED after fillComplete
     /// If not OptimizedStorate, storage is UNPACKED after fillComplete; 
@@ -2321,12 +2335,11 @@ public:
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is locally indexed
-
-    // TODO: Make private -- matrix shouldn't access directly
+    ///
+    /// UVM Removal Note:   Device view takes place of k_lclInds1D_
     local_inds_wdv_type lclIndsUnpacked_wdv;
 
-    /// \brief Local ordinals of colum indices for all rows
-    /// UVM REMOVAL:   Device view takes place of lclGraph_.entries
+    /// \brief Local ordinals of column indices for all rows
     /// Valid when isLocallyIndexed is true
     /// Built during fillComplete or non-fillComplete constructors
     /// Storage is PACKED after fillComplete
@@ -2337,15 +2350,21 @@ public:
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is locally indexed
+    /// 
+    /// UVM Removal Note:   Device view takes place of lclGraph_.entries
     mutable local_inds_wdv_type lclIndsPacked_wdv;
 
+    //TODO:  Make private -- matrix shouldn't access directly the guts of graph
+
     /// \brief Global ordinals of column indices for all rows
-    /// UVM REMOVAL:   Device view takes place of k_gblInds1D_
+    /// \brief Global ordinals of column indices for all rows
     ///
     /// This is allocated only if
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is globally indexed
+    /// 
+    /// UVM Removal Note:   Device view takes place of k_gblInds1D_
 
     // TODO: Make private -- matrix shouldn't access directly
     global_inds_wdv_type gblInds_wdv;
@@ -2425,9 +2444,6 @@ public:
 
     //! \name Graph data structures (packed and unpacked storage).
     //@{
-
-    //! Type of the k_gblInds1D_ array of global column indices.
-    typedef Kokkos::View<global_ordinal_type*, device_type> t_GlobalOrdinal_1D;
 
     /// \brief Row offsets for "1-D" storage.
     ///

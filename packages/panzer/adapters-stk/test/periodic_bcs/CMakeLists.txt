@@ -25,3 +25,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   COMM serial mpi
 #   NUM_MPI_PROCS 1
 #   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  periodic_32bit_int_limit
+  SOURCES periodic_32bit_int_limit.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(periodic_32bit_int_limit_files
+  SOURCE_FILES periodic_32bit_int_limit.jou periodic_32bit_int_limit.exo README.txt
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/"
+  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/"
+  EXEDEPS periodic_32bit_int_limit
+  )

@@ -229,6 +229,16 @@ struct AtomicKernel {
       std::is_same<execution_space, Kokkos::Cuda>::value &&
       Kokkos::is_view_fad_contiguous<ViewType>::value &&
       is_dfad<typename ViewType::non_const_value_type>::value;
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
+      Kokkos::is_view_fad_contiguous<ViewType>::value &&
+      ( stride > 1 );
+#elif defined (KOKKOS_ENABLE_HIP) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+    const bool use_team =
+      std::is_same<execution_space, Kokkos::Experimental::HIP>::value &&
+      Kokkos::is_view_fad_contiguous<ViewType>::value &&
+      is_dfad<typename ViewType::non_const_value_type>::value;
 #else
     const bool use_team = false;
 #endif
