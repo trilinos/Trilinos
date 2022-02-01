@@ -384,7 +384,8 @@ namespace {
 
     int64_t num_cell = sb->get_property("cell_count").get_int();
     int64_t num_node = sb->get_property("node_count").get_int();
-    fmt::print("{:14L} cells, {:14L} nodes\n", num_cell, num_node);
+    fmt::print("{:14} cells, {:14} nodes\n", fmt::group_digits(num_cell),
+               fmt::group_digits(num_node));
     if (show_property) {
       Ioss::Utils::info_property(sb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }
@@ -436,8 +437,8 @@ namespace {
 
     std::string type       = eb->topology()->name();
     int64_t     num_attrib = eb->get_property("attribute_count").get_int();
-    fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14L} elements, {:3d} attributes.\n", name(eb),
-               id(eb), type, num_elem, num_attrib);
+    fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14} elements, {:3d} attributes.\n", name(eb),
+               id(eb), type, fmt::group_digits(num_elem), num_attrib);
     if (show_property) {
       Ioss::Utils::info_property(eb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }
@@ -459,8 +460,8 @@ namespace {
       int64_t count      = fb->entity_count();
       int64_t num_attrib = fb->get_property("attribute_count").get_int();
       int64_t num_dist   = fb->get_property("distribution_factor_count").get_int();
-      fmt::print("\t{}, {:8L} sides, {:3d} attributes, {:8L} distribution factors.\n", name(fb),
-                 count, num_attrib, num_dist);
+      fmt::print("\t{}, {:8} sides, {:3d} attributes, {:8} distribution factors.\n", name(fb),
+                 fmt::group_digits(count), num_attrib, fmt::group_digits(num_dist));
     }
     if (show_property) {
       Ioss::Utils::info_property(ss, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
@@ -472,8 +473,8 @@ namespace {
     int64_t count      = ns->entity_count();
     int64_t num_attrib = ns->get_property("attribute_count").get_int();
     int64_t num_dist   = ns->get_property("distribution_factor_count").get_int();
-    fmt::print("\n{} id: {:6d}, {:8L} nodes, {:3d} attributes, {:8L} distribution factors.\n",
-               name(ns), id(ns), count, num_attrib, num_dist);
+    fmt::print("\n{} id: {:6d}, {:8} nodes, {:3d} attributes, {:8} distribution factors.\n",
+               name(ns), id(ns), fmt::group_digits(count), num_attrib, fmt::group_digits(num_dist));
     if (show_property) {
       Ioss::Utils::info_property(ns, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }
@@ -483,7 +484,8 @@ namespace {
   {
     int64_t num_nodes  = nb->entity_count();
     int64_t num_attrib = nb->get_property("attribute_count").get_int();
-    fmt::print("\n{} {:14L} nodes, {:3d} attributes.\n", name(nb), num_nodes, num_attrib);
+    fmt::print("\n{} {:14} nodes, {:3d} attributes.\n", name(nb), fmt::group_digits(num_nodes),
+               num_attrib);
     if (show_property) {
       Ioss::Utils::info_property(nb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }

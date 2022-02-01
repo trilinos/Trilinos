@@ -386,16 +386,17 @@ namespace Iogn {
                  "\tX = {} * (0..{}) + {}\tRange: {} <= X <= {}\n"
                  "\tY = {} * (0..{}) + {}\tRange: {} <= Y <= {}\n"
                  "\tZ = {} * (0..{}) + {}\tRange: {} <= Z <= {}\n\n"
-                 "\tNode Count (total)    = {:12L}\n"
-                 "\tElement Count (total) = {:12L}\n"
-                 "\tBlock Count           = {:12L}\n"
-                 "\tNodeSet Count         = {:12L}\n"
-                 "\tSideSet Count         = {:12L}\n"
-                 "\tTimestep Count        = {:12L}\n\n",
+                 "\tNode Count (total)    = {:12}\n"
+                 "\tElement Count (total) = {:12}\n"
+                 "\tBlock Count           = {:12}\n"
+                 "\tNodeSet Count         = {:12}\n"
+                 "\tSideSet Count         = {:12}\n"
+                 "\tTimestep Count        = {:12}\n\n",
                  numX, numY, numZ, sclX, numX, offX, offX, offX + numX * sclX, sclY, numY, offY,
-                 offY, offY + numY * sclY, sclZ, numZ, offZ, offZ, offZ + numZ * sclZ, node_count(),
-                 element_count(), block_count(), nodeset_count(), sideset_count(),
-                 timestep_count());
+                 offY, offY + numY * sclY, sclZ, numZ, offZ, offZ, offZ + numZ * sclZ,
+                 fmt::group_digits(node_count()), fmt::group_digits(element_count()),
+                 fmt::group_digits(block_count()), fmt::group_digits(nodeset_count()),
+                 fmt::group_digits(sideset_count()), fmt::group_digits(timestep_count()));
 
       if (doRotation) {
         fmt::print(Ioss::OUTPUT(), "\tRotation Matrix: \n\t");

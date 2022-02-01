@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -138,9 +138,10 @@ int main(int argc, char *argv[])
     double end = Ioss::Utils::timer();
 
     fmt::print(stderr,
-               "\nTotal Execution Time = {:.2f} seconds, Maximum memory = {:L} MiBytes.\n******* "
+               "\nTotal Execution Time = {:.2f} seconds, Maximum memory = {} MiBytes.\n******* "
                "END *******\n\n",
-               end - begin, (get_hwm_memory_info() + 1024 * 1024 - 1) / (1024 * 1024));
+               end - begin,
+               fmt::group_digits((get_hwm_memory_info() + 1024 * 1024 - 1) / (1024 * 1024)));
 
     add_to_log(argv[0], end - begin);
 
@@ -398,18 +399,17 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
     double percentage_done     = (time_step_out * 100.0) / output_steps;
     double estimated_remaining = avg_time_per_step * (output_steps - time_step_out);
     if (debug_level & 1) {
-      fmt::print(
-          stderr,
-          "{} \tWrote step {:6L}, time {:8.4e}\t[{:5.1f}%, Elapsed={}, \tETA={}, \tTPS={}]\n",
-          time_stamp(tsFormat), time_step, time_val, percentage_done, format_time(elapsed),
-          format_time(estimated_remaining), format_time(time_per_step));
+      fmt::print(stderr,
+                 "{} \tWrote step {:6}, time {:8.4e}\t[{:5.1f}%, Elapsed={}, \tETA={}, \tTPS={}]\n",
+                 time_stamp(tsFormat), fmt::group_digits(time_step), time_val, percentage_done,
+                 format_time(elapsed), format_time(estimated_remaining),
+                 format_time(time_per_step));
     }
     else {
-      fmt::print(
-          stderr,
-          "\tWrote step {:6L}, time {:8.4e}\t[{:5.1f}%, Elapsed={}, ETA={}, TPS={}]       \r",
-          time_step, time_val, percentage_done, format_time(elapsed),
-          format_time(estimated_remaining), format_time(time_per_step));
+      fmt::print(stderr,
+                 "\tWrote step {:6}, time {:8.4e}\t[{:5.1f}%, Elapsed={}, ETA={}, TPS={}]       \r",
+                 fmt::group_digits(time_step), time_val, percentage_done, format_time(elapsed),
+                 format_time(estimated_remaining), format_time(time_per_step));
     }
   }
   output_region.end_mode(Ioss::STATE_TRANSIENT);
@@ -651,7 +651,8 @@ namespace {
 
       int64_t num_cell = sb->get_property("cell_count").get_int();
       int64_t num_node = sb->get_property("node_count").get_int();
-      fmt::print(stderr, "  {:14L} cells, {:14L} nodes ", num_cell, num_node);
+      fmt::print(stderr, "  {:14} cells, {:14} nodes ", fmt::group_digits(num_cell),
+                 fmt::group_digits(num_node));
 
       if (!sb->m_zoneConnectivity.empty()) {
         fmt::print(stderr, "\n\tConnectivity with other blocks:\n");

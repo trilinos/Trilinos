@@ -156,19 +156,19 @@ int main(int argc, char *argv[])
     parallel.memory_stats(min, max, avg);
     parallel.hwm_memory_stats(hwmin, hwmax, hwavg);
     if (rank == 0) {
-      fmt::print(stderr, "\n\tCurrent Memory: {:L}M  {:L}M  {:L}M\n", min / MiB, max / MiB,
-                 avg / MiB);
-      fmt::print(stderr, "\tHigh Water Memory: {:L}M  {:L}M  {:L}M\n", hwmin / MiB, hwmax / MiB,
-                 hwavg / MiB);
+      fmt::print(stderr, "\n\tCurrent Memory: {}M  {}M  {}M\n", fmt::group_digits(min / MiB),
+                 fmt::group_digits(max / MiB), fmt::group_digits(avg / MiB));
+      fmt::print(stderr, "\tHigh Water Memory: {}M  {}M  {}M\n", fmt::group_digits(hwmin / MiB),
+                 fmt::group_digits(hwmax / MiB), fmt::group_digits(hwavg / MiB));
     }
 #else
     int64_t mem = Ioss::Utils::get_memory_info();
     int64_t hwm = Ioss::Utils::get_hwm_memory_info();
     if (rank == 0) {
       fmt::print(stderr,
-                 "\n\tCurrent Memory:    {:L}M\n"
-                 "\tHigh Water Memory: {:L}M\n",
-                 mem / MiB, hwm / MiB);
+                 "\n\tCurrent Memory:    {}M\n"
+                 "\tHigh Water Memory: {}M\n",
+                 fmt::group_digits(mem / MiB), fmt::group_digits(hwm / MiB));
     }
 #endif
   }
@@ -368,11 +368,12 @@ namespace {
 
           if (rank == 0 && !interFace.quiet) {
             if (step_min == step_max) {
-              fmt::print(stderr, "\tWriting step {:L} to {}\n", step_min + 1, filename);
+              fmt::print(stderr, "\tWriting step {} to {}\n", fmt::group_digits(step_min + 1),
+                         filename);
             }
             else {
-              fmt::print(stderr, "\tWriting steps {:L}..{:L} to {}\n", step_min + 1, step_max + 1,
-                         filename);
+              fmt::print(stderr, "\tWriting steps {}..{} to {}\n", fmt::group_digits(step_min + 1),
+                         fmt::group_digits(step_max + 1), filename);
             }
           }
 

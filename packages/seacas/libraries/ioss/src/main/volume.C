@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -189,10 +189,10 @@ void hex_volume_internal(Ioss::ElementBlock *block, const std::vector<double> &c
 
   if (nelem > 0) {
     fmt::print(Ioss::OUTPUT(),
-               "\n{:12}\tMin volume = {:12}  Max volume = {:12}  Elements = {:12L}  Time/Elem = "
+               "\n{:12}\tMin volume = {:12}  Max volume = {:12}  Elements = {:12}  Time/Elem = "
                "{:5.3f} micro-sec.\n",
                block->name(), *std::min_element(volume.begin(), volume.end()),
-               *std::max_element(volume.begin(), volume.end()), nelem,
+               *std::max_element(volume.begin(), volume.end()), fmt::group_digits(nelem),
                1'000'000 * double(t2 - t1) / nelem);
   }
 }

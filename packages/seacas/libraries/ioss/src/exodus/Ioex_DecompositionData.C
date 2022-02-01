@@ -145,9 +145,9 @@ namespace Ioex {
 
 #if IOSS_DEBUG_OUTPUT
     fmt::print(Ioss::DEBUG(), "Processor {} has {} elements; offset = {}\n", m_processor,
-               decomp_elem_count(), decomp_elem_offset());
+               fmt::group_digits(decomp_elem_count()), fmt::group_digits(decomp_elem_offset()));
     fmt::print(Ioss::DEBUG(), "Processor {} has {} nodes; offset = {}\n", m_processor,
-               decomp_node_count(), decomp_node_offset());
+               fmt::group_digits(decomp_node_count()), fmt::group_digits(decomp_node_offset()));
 #endif
 
     if (m_decomposition.needs_centroids()) {
@@ -402,7 +402,7 @@ namespace Ioex {
         size_t           blk_start = std::max(b_start, p_start) - b_start + 1;
 #if IOSS_DEBUG_OUTPUT
         fmt::print(Ioss::DEBUG(), "Processor {} has {} elements on element block {}\n", m_processor,
-                   overlap, id);
+                   fmt::group_digits(overlap), id);
 #endif
         ex_get_partial_conn(filePtr, EX_ELEM_BLOCK, id, blk_start, overlap, connectivity.data(),
                             nullptr, nullptr);
@@ -496,7 +496,8 @@ namespace Ioex {
         if (m_processor == root) {
 #if IOSS_DEBUG_OUTPUT
           fmt::print(Ioss::DEBUG(), "{} {} reading {} entities from offset {}\n", set_type_name,
-                     sets[i].id, to_read, set_entities_read[i] + 1);
+                     sets[i].id, fmt::group_digits(to_read),
+                     fmt::group_digits(set_entities_read[i] + 1));
 #endif
           // Read the entitylists on root processor.
           ex_get_partial_set(filePtr, set_type, sets[i].id, set_entities_read[i] + 1, to_read,

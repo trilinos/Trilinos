@@ -404,7 +404,8 @@ void Grid::internal_process()
     }
   }
   if (util().parallel_rank() == 0) {
-    fmt::print("                {:L} Nodes; {:L} Elements.\n", node_count, element_count);
+    fmt::print("                {} Nodes; {} Elements.\n", fmt::group_digits(node_count),
+               fmt::group_digits(element_count));
   }
 }
 
@@ -1296,8 +1297,9 @@ namespace {
     int64_t nodes    = region->get_property("node_count").get_int();
     int64_t elements = region->get_property("element_count").get_int();
 
-    fmt::print(strm, " Database: {}\tNodes = {:L} \tElements = {:L}\n",
-               region->get_database()->get_filename(), nodes, elements);
+    fmt::print(strm, " Database: {}\tNodes = {} \tElements = {}\n",
+               region->get_database()->get_filename(), fmt::group_digits(nodes),
+               fmt::group_digits(elements));
   }
 
 } // namespace

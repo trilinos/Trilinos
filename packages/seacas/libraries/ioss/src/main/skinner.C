@@ -65,8 +65,8 @@ namespace {
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
     for (auto &eb : ebs) {
       const std::string &name = eb->name();
-      fmt::print("\t|{2:^{0}}|{3:{1}L}  |\n", max_name, max_face - 2, name,
-                 boundary_faces[name].size());
+      fmt::print("\t|{2:^{0}}|{3:{1}}  |\n", max_name, max_face - 2, name,
+                 fmt::group_digits(boundary_faces[name].size()));
     }
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
   }
@@ -74,12 +74,12 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-  int my_rank = 0;
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
   ON_BLOCK_EXIT(MPI_Finalize);
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
+  Ioss::ParallelUtils pu{};
+  int                 my_rank = pu.parallel_rank();
 
   codename = Ioss::FileInfo(argv[0]).basename();
 

@@ -359,7 +359,7 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   node_count    = global_node_map.size();
   size_t merged = local_node_map.size() - global_node_map.size();
   if (merged > 0) {
-    fmt::print("*** {:L} Nodes were merged/omitted.\n", merged);
+    fmt::print("*** {} Nodes were merged/omitted.\n", fmt::group_digits(merged));
   }
 
 // Verify nodemap...

@@ -741,7 +741,7 @@ int Excn::Internals::put_metadata(const std::vector<Block> &blocks)
                              blocks[iblk].elType);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
-      errmsg = fmt::format("Error: failed to store element type name %s in file id {}",
+      errmsg = fmt::format("Error: failed to store element type name {} in file id {}",
                            blocks[iblk].elType, exodusFilePtr);
       ex_err_fn(exodusFilePtr, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
@@ -1121,7 +1121,7 @@ namespace {
     status = nc_inq_varid(exoid, var_type, &var_id);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
-      errmsg = fmt::format("Error: failed to locate %s in file id {}", var_type, exoid);
+      errmsg = fmt::format("Error: failed to locate {} in file id {}", var_type, exoid);
       ex_err_fn(exoid, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
@@ -1129,7 +1129,7 @@ namespace {
     status = nc_put_var_int(exoid, var_id, array.data());
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
-      errmsg = fmt::format("Error: failed to write %s array in file id {}", var_type, exoid);
+      errmsg = fmt::format("Error: failed to write {} array in file id {}", var_type, exoid);
       ex_err_fn(exoid, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
@@ -1144,7 +1144,7 @@ namespace {
     int status = nc_inq_varid(exoid, var_type, &var_id);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
-      errmsg = fmt::format("Error: failed to locate %s in file id {}", var_type, exoid);
+      errmsg = fmt::format("Error: failed to locate {} in file id {}", var_type, exoid);
       ex_err_fn(exoid, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }
@@ -1170,7 +1170,7 @@ namespace {
 
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
-      errmsg = fmt::format("Error: failed to write %s array in file id {}", var_type, exoid);
+      errmsg = fmt::format("Error: failed to write {} array in file id {}", var_type, exoid);
       ex_err_fn(exoid, __func__, errmsg.c_str(), status);
       return (EX_FATAL);
     }

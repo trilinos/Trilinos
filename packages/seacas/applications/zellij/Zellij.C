@@ -233,12 +233,14 @@ namespace {
     grid.handle_file_count();
 
     if (my_rank == 0) {
-      fmt::print("\n Lattice:\tUnit Cells: {:L},\tGrid Size:  {:L} x {:L} x {:L}\n",
-                 grid.unit_cells().size(), II, JJ, KK);
+      fmt::print("\n Lattice:\tUnit Cells: {},\tGrid Size:  {} x {} x {}\n",
+                 fmt::group_digits(grid.unit_cells().size()), fmt::group_digits(II),
+                 fmt::group_digits(JJ), fmt::group_digits(KK));
     }
     if (interFace.ranks() > 1) {
-      fmt::print("         \t[{}] Ranks: {:L}, Outputting {:L} ranks starting at rank {:L}.\n",
-                 my_rank, interFace.ranks(), interFace.rank_count(), interFace.start_rank());
+      fmt::print("         \t[{}] Ranks: {}, Outputting {} ranks starting at rank {}.\n", my_rank,
+                 fmt::group_digits(interFace.ranks()), fmt::group_digits(interFace.rank_count()),
+                 fmt::group_digits(interFace.start_rank()));
     }
 
     // Now process the lattice portion of the lattice file...

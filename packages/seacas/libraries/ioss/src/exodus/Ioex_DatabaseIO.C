@@ -760,10 +760,10 @@ namespace Ioex {
             // 0... Need better warnings which won't overload in the
             // worst case...
             fmt::print(Ioss::WARNING(),
-                       "Skipping step {:L} at time {} in database file\n\t{}.\n"
+                       "Skipping step {} at time {} in database file\n\t{}.\n"
                        "\tThe data for that step is possibly corrupt since the last time written "
                        "successfully was {}.\n",
-                       i + 1, tsteps[i], get_filename(), last_time);
+                       fmt::group_digits(i + 1), tsteps[i], get_filename(), last_time);
           }
         }
       }
@@ -4737,8 +4737,8 @@ void DatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::F
 
     if (ierr < 0) {
       std::ostringstream extra_info;
-      fmt::print(extra_info, "Outputting field {} at step {:L} on {} {}.", field.get_name(), step,
-                 ge->type_string(), ge->name());
+      fmt::print(extra_info, "Outputting field {} at step {} on {} {}.", field.get_name(),
+                 fmt::group_digits(step), ge->type_string(), ge->name());
       Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__, extra_info.str());
     }
     return;
@@ -4800,8 +4800,8 @@ void DatabaseIO::write_entity_transient_field(ex_entity_type type, const Ioss::F
 
       if (ierr < 0) {
         std::ostringstream extra_info;
-        fmt::print(extra_info, "Outputting component {} of field {} at step {:L} on {} {}.", i,
-                   field_name, step, ge->type_string(), ge->name());
+        fmt::print(extra_info, "Outputting component {} of field {} at step {} on {} {}.", i,
+                   field_name, fmt::group_digits(step), ge->type_string(), ge->name());
         Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__, extra_info.str());
       }
     }

@@ -144,12 +144,13 @@ namespace Iotm {
         int_byte_size_api() == 4) {
       std::ostringstream errmsg;
       fmt::print(errmsg,
-                 "ERROR: The node count is {:L} and the element count is {:L}.\n"
-                 "       This exceeds the capacity of the 32-bit integers ({:L})\n"
+                 "ERROR: The node count is {} and the element count is {}.\n"
+                 "       This exceeds the capacity of the 32-bit integers ({})\n"
                  "       which are being requested by the client.\n"
                  "       The mesh requires 64-bit integers which can be requested by setting the "
                  "`INTEGER_SIZE_API=8` property.",
-                 glob_node_count, glob_elem_count, two_billion);
+                 fmt::group_digits(glob_node_count), fmt::group_digits(glob_elem_count),
+                 fmt::group_digits(two_billion));
       IOSS_ERROR(errmsg);
     }
 
@@ -157,12 +158,16 @@ namespace Iotm {
     nodeCount         = m_textMesh->node_count_proc();
     elementCount      = m_textMesh->element_count_proc();
     elementBlockCount = m_textMesh->block_count();
+    nodesetCount      = m_textMesh->nodeset_count();
+    sidesetCount      = m_textMesh->sideset_count();
 
     get_step_times__();
 
     add_transient_fields(this_region);
     get_nodeblocks();
     get_elemblocks();
+    get_nodesets();
+    get_sidesets();
     get_commsets();
 
     this_region->property_add(

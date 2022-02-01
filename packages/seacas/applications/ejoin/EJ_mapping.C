@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -162,8 +162,7 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
         if (cur_pos == global_node_map.end() || *cur_pos != global_node) {
           auto iter = std::lower_bound(global_node_map.begin(), global_node_map.end(), global_node);
           if (iter == global_node_map.end()) {
-            INT n = global_node;
-            fmt::print("{:L}\n", n);
+            fmt::print("{}\n", fmt::group_digits(global_node));
             SMART_ASSERT(iter != global_node_map.end());
           }
           cur_pos = iter;

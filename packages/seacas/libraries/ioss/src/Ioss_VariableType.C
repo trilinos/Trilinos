@@ -309,9 +309,9 @@ namespace Ioss {
     if (ncomp >= 100'000) {
       std::ostringstream errmsg;
       fmt::print(errmsg,
-                 "ERROR: Variable '{}' has {:L} components which is larger than the current maximum"
+                 "ERROR: Variable '{}' has {} components which is larger than the current maximum"
                  " of 100,000. Please contact developer.\n",
-                 name, ncomp);
+                 name, fmt::group_digits(ncomp));
       IOSS_ERROR(errmsg);
     }
 
