@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -239,8 +239,8 @@ namespace Ioss {
     return result;
   }
 
-  std::string VariableType::label_name(const std::string &base, int which,
-                                       const char suffix_sep) const
+  std::string VariableType::label_name(const std::string &base, int which, const char suffix_sep,
+                                       bool suffices_uppercase) const
   {
     std::string my_name = base;
     std::string suffix  = label(which, suffix_sep);
@@ -248,7 +248,12 @@ namespace Ioss {
       if (suffix_sep != 0) {
         my_name += suffix_sep;
       }
-      my_name += suffix;
+      if (suffices_uppercase) {
+        my_name += Ioss::Utils::uppercase(suffix);
+      }
+      else {
+        my_name += suffix;
+      }
     }
     return my_name;
   }
@@ -290,7 +295,7 @@ namespace Ioss {
 
     char *countstr = std::strtok(nullptr, "[]");
     assert(countstr != nullptr);
-    int count = std::atoi(countstr);
+    int count = std::strtol(countstr, nullptr, 10);
     if (count <= 0) {
       delete[] typecopy;
       return false;
