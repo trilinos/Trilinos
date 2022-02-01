@@ -180,7 +180,7 @@ createTimeStepControlStrategyConstant(
   std::string name = "Constant")
 {
   auto tscs = Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>());
-  if (pList == Teuchos::null) return tscs;
+  if (pList == Teuchos::null || pList->numParams() == 0) return tscs;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     pList->get<std::string>("Strategy Type", "Constant") != "Constant",
