@@ -54,7 +54,7 @@ namespace Iohb {
   private:
     IOFactory();
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              MPI_Comm                     communicator,
+                              Ioss_MPI_Comm                communicator,
                               const Ioss::PropertyManager &props) const override;
   };
 
@@ -62,7 +62,7 @@ namespace Iohb {
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
     DatabaseIO(const DatabaseIO &from) = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
 

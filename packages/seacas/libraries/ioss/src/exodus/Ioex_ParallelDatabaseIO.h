@@ -63,7 +63,7 @@ namespace Ioex {
   {
   public:
     ParallelDatabaseIO(Ioss::Region *region, const std::string &filename,
-                       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                       Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                        const Ioss::PropertyManager &properties);
     ParallelDatabaseIO(const ParallelDatabaseIO &from) = delete;
     ParallelDatabaseIO &operator=(const ParallelDatabaseIO &from) = delete;

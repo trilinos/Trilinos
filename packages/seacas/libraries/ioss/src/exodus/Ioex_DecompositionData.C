@@ -110,17 +110,18 @@ namespace {
 
 namespace Ioex {
   template DecompositionData<int>::DecompositionData(const Ioss::PropertyManager &props,
-                                                     MPI_Comm                     communicator);
+                                                     Ioss_MPI_Comm                communicator);
   template DecompositionData<int64_t>::DecompositionData(const Ioss::PropertyManager &props,
-                                                         MPI_Comm                     communicator);
+                                                         Ioss_MPI_Comm                communicator);
 
   template <typename INT>
   DecompositionData<INT>::DecompositionData(const Ioss::PropertyManager &props,
-                                            MPI_Comm                     communicator)
+                                            Ioss_MPI_Comm                communicator)
       : DecompositionDataBase(communicator), m_decomposition(props, communicator)
   {
-    MPI_Comm_rank(comm_, &m_processor);
-    MPI_Comm_size(comm_, &m_processorCount);
+    Ioss::ParallelUtils pu(comm_);
+    m_processor      = pu.parallel_rank();
+    m_processorCount = pu.parallel_size();
   }
 
   template <typename INT> void DecompositionData<INT>::decompose_model(int filePtr)
@@ -512,7 +513,8 @@ namespace Ioex {
           // * Broadcast data to other processors
           // * Each processor extracts the entities it manages.
           m_decomposition.show_progress("\tBroadcast entitylist begin");
-          MPI_Bcast(entitylist.data(), entitylist.size(), Ioss::mpi_type(INT(0)), root, comm_);
+	  Ioss::ParallelUtils pu(comm_);
+          pu.broadcast(entitylist, root);
           m_decomposition.show_progress("\tBroadcast entitylist end");
 
           // Each processor now has same list of entities in entitysets (i_beg ... i)
@@ -648,7 +650,9 @@ namespace Ioex {
     }
 
     // Tell other processors
-    MPI_Bcast(df_valcon.data(), df_valcon.size(), MPI_DOUBLE, root, comm_);
+    Ioss::ParallelUtils pu(comm_);
+    pu.broadcast(df_valcon, root);
+
     for (size_t i = 0; i < set_count; i++) {
       node_sets[i].distributionFactorCount    = node_sets[i].ioss_count();
       node_sets[i].distributionFactorValue    = df_valcon[2 * i + 0];
@@ -727,7 +731,8 @@ namespace Ioex {
 
     // Tell other processors
     m_decomposition.show_progress("\tBroadcast df_valcon begin");
-    MPI_Bcast(df_valcon.data(), df_valcon.size(), MPI_DOUBLE, root, comm_);
+    Ioss::ParallelUtils pu(comm_);
+    pu.broadcast(df_valcon, root);
     m_decomposition.show_progress("\tBroadcast df_valcon end");
     for (size_t i = 0; i < set_count; i++) {
       side_sets[i].distributionFactorValue         = df_valcon[3 * i + 0];
@@ -764,7 +769,8 @@ namespace Ioex {
 
       // Broadcast this data to all other processors...
       m_decomposition.show_progress("\tBroadcast nodes_per_face begin");
-      MPI_Bcast(nodes_per_face.data(), nodes_per_face.size(), MPI_INT, root, comm_);
+      Ioss::ParallelUtils pu(comm_);
+      pu.broadcast(nodes_per_face, root);
       m_decomposition.show_progress("\tBroadcast nodes_per_face end");
 
       // Each processor now has a list of the number of nodes per

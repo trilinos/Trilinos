@@ -244,8 +244,9 @@ int main(int argc, char *argv[])
   // INPUT ...
   // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
   //========================================================================
-  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(interFace.inputFormat_, interFace.inputFile_,
-                                                  Ioss::READ_RESTART, (MPI_Comm)MPI_COMM_WORLD);
+  Ioss::DatabaseIO *dbi =
+      Ioss::IOFactory::create(interFace.inputFormat_, interFace.inputFile_, Ioss::READ_RESTART,
+                              Ioss::ParallelUtils::comm_world());
   if (dbi == nullptr || !dbi->ok(true)) {
     std::exit(EXIT_FAILURE);
   }
@@ -1628,8 +1629,8 @@ namespace {
     bool close_files = interFace.processor_count() + 1 > interFace.max_files();
     for (size_t i = 0; i < interFace.processor_count(); i++) {
       std::string outfile   = Ioss::Utils::decode_filename(nemfile, i, interFace.processor_count());
-      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodus", outfile, Ioss::WRITE_RESTART,
-                                                      (MPI_Comm)MPI_COMM_WORLD, properties);
+      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
+          "exodus", outfile, Ioss::WRITE_RESTART, Ioss::ParallelUtils::comm_world(), properties);
       if (ints64) {
         dbo->set_int_byte_size_api(Ioss::USE_INT64_API);
       }

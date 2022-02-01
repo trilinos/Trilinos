@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
     std::vector<Ioss::DatabaseIO *> dbi(interFace.inputFiles_.size());
     for (size_t p = 0; p < interFace.inputFiles_.size(); p++) {
       dbi[p] = Ioss::IOFactory::create("exodusII", interFace.inputFiles_[p], Ioss::READ_RESTART,
-                                       (MPI_Comm)MPI_COMM_WORLD);
+                                       Ioss::ParallelUtils::comm_world());
       if (dbi[p] == nullptr || !dbi[p]->ok(true)) {
         std::exit(EXIT_FAILURE);
       }
@@ -295,9 +295,9 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   }
 
   properties.add(Ioss::Property("FLUSH_INTERVAL", 0));
-
-  Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
-      "exodusII", interFace.outputName_, Ioss::WRITE_RESTART, (MPI_Comm)MPI_COMM_WORLD, properties);
+  Ioss::DatabaseIO *dbo =
+      Ioss::IOFactory::create("exodusII", interFace.outputName_, Ioss::WRITE_RESTART,
+                              Ioss::ParallelUtils::comm_world(), properties);
   if (dbo == nullptr || !dbo->ok(true)) {
     std::exit(EXIT_FAILURE);
   }

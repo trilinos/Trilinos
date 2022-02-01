@@ -36,15 +36,14 @@ namespace {
   {
     Ioss::Init::Initializer init_db;
 
-    Ioss::DatabaseUsage   db_usage     = Ioss::READ_MODEL;
-    MPI_Comm              communicator = MPI_COMM_WORLD;
+    Ioss::DatabaseUsage   db_usage = Ioss::READ_MODEL;
     Ioss::PropertyManager properties;
 
     properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
     properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
 
-    Ioex::DatabaseIO *db_io =
-        new Ioex::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
+    Ioex::DatabaseIO *db_io = new Ioex::DatabaseIO(nullptr, filename, db_usage,
+                                                   Ioss::ParallelUtils::comm_world(), properties);
     return db_io;
   }
 
@@ -52,16 +51,14 @@ namespace {
   Ioex::DatabaseIO *create_output_db_io(const std::string &filename)
   {
     Ioss::Init::Initializer init_db;
-
-    Ioss::DatabaseUsage   db_usage     = Ioss::WRITE_RESULTS;
-    MPI_Comm              communicator = MPI_COMM_WORLD;
+    Ioss::DatabaseUsage   db_usage = Ioss::WRITE_RESULTS;
     Ioss::PropertyManager properties;
 
     properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
     properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
 
-    Ioex::DatabaseIO *db_io =
-        new Ioex::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
+    Ioex::DatabaseIO *db_io = new Ioex::DatabaseIO(nullptr, filename, db_usage,
+                                                   Ioss::ParallelUtils::comm_world(), properties);
     return db_io;
   }
 

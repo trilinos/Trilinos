@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -165,11 +165,11 @@ namespace Ioss {
     return valid_methods;
   }
 
-  template Decomposition<int>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm);
-  template Decomposition<int64_t>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm);
+  template Decomposition<int>::Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm);
+  template Decomposition<int64_t>::Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm);
 
   template <typename INT>
-  Decomposition<INT>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm)
+  Decomposition<INT>::Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm)
       : m_comm(comm), m_pu(comm), m_processor(m_pu.parallel_rank()),
         m_processorCount(m_pu.parallel_size())
   {

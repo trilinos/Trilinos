@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -100,7 +100,7 @@ namespace Iogn {
   IOFactory::IOFactory() : Ioss::IOFactory("generated") {}
 
   Ioss::DatabaseIO *IOFactory::make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                                       MPI_Comm                     communicator,
+                                       Ioss_MPI_Comm                communicator,
                                        const Ioss::PropertyManager &props) const
   {
     return new DatabaseIO(nullptr, filename, db_usage, communicator, props);
@@ -108,7 +108,7 @@ namespace Iogn {
 
   // ========================================================================
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
-                         Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                         Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
       : Ioss::DatabaseIO(region, filename, db_usage, communicator, props)
   {

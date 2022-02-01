@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -815,13 +815,11 @@ namespace {
     } // End of processor 0 only processing...
 
     // Send the list of unique zgc instances to all processors so they can all output.
-    MPI_Bcast(&count, 1, MPI_INT, 0, region.get_database()->util().communicator());
+    region.get_database()->util().broadcast(count);
     snd_zgc_name.resize(count * BYTE_PER_NAME);
     snd_zgc_data.resize(count * INT_PER_ZGC);
-    MPI_Bcast(snd_zgc_name.data(), (int)snd_zgc_name.size(), MPI_BYTE, 0,
-              region.get_database()->util().communicator());
-    MPI_Bcast(snd_zgc_data.data(), (int)snd_zgc_data.size(), MPI_INT, 0,
-              region.get_database()->util().communicator());
+    region.get_database()->util().broadcast(snd_zgc_name);
+    region.get_database()->util().broadcast(snd_zgc_data);
 
     // Now clean out existing ZGC lists for all blocks and add on the consolidated instances.
     // Also create a vector for mapping from zone to sb name.
@@ -1030,11 +1028,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     // platform_information() contained different node info ("ser9"
     // and "ser43") on certain ranks which caused an HDF5 failure way
     // downstream -- basically at file close.
-    char tmp[2048];
-    Ioss::Utils::copy_string(tmp, version, 2048);
-    MPI_Bcast(tmp, (int)version.size() + 1, MPI_BYTE, 0,
-              region.get_database()->util().communicator());
-    version = std::string{tmp};
+    region.get_database()->util().broadcast(version);
   }
 #endif
 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -64,14 +64,13 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-  int rank     = 0;
-  int num_proc = 1;
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
   ON_BLOCK_EXIT(MPI_Finalize);
 #endif
+  Ioss::ParallelUtils pu{};
+  int                 rank     = pu.parallel_rank();
+  int                 num_proc = pu.parallel_size();
 
 #ifdef SEACAS_HAVE_KOKKOS
   Kokkos::ScopeGuard kokkos(argc, argv);
@@ -133,10 +132,7 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-#ifdef SEACAS_HAVE_MPI
-  Ioss::ParallelUtils parallel(MPI_COMM_WORLD);
-  parallel.barrier();
-#endif
+  pu.barrier();
   double end = Ioss::Utils::timer();
 
   if (rank == 0 && !interFace.quiet) {
@@ -153,8 +149,8 @@ int main(int argc, char *argv[])
 #ifdef SEACAS_HAVE_MPI
     int64_t min, max, avg;
     int64_t hwmin, hwmax, hwavg;
-    parallel.memory_stats(min, max, avg);
-    parallel.hwm_memory_stats(hwmin, hwmax, hwavg);
+    pu.memory_stats(min, max, avg);
+    pu.hwm_memory_stats(hwmin, hwmax, hwavg);
     if (rank == 0) {
       fmt::print(stderr, "\n\tCurrent Memory: {}M  {}M  {}M\n", fmt::group_digits(min / MiB),
                  fmt::group_digits(max / MiB), fmt::group_digits(avg / MiB));
@@ -189,8 +185,9 @@ namespace {
       //========================================================================
       // INPUT Database...
       //========================================================================
-      Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(
-          interFace.inFiletype, inpfile, Ioss::READ_MODEL, (MPI_Comm)MPI_COMM_WORLD, properties);
+      Ioss::DatabaseIO *dbi =
+          Ioss::IOFactory::create(interFace.inFiletype, inpfile, Ioss::READ_MODEL,
+                                  Ioss::ParallelUtils::comm_world(), properties);
       if (dbi == nullptr || !dbi->ok(true)) {
         std::exit(EXIT_FAILURE);
       }
@@ -291,12 +288,14 @@ namespace {
 
       if (interFace.split_times == 0 || interFace.delete_timesteps || ts_count == 0 || append ||
           interFace.inputFile.size() > 1) {
-        Ioss::DatabaseIO *dbo =
-            Ioss::IOFactory::create(interFace.outFiletype, interFace.outputFile,
-                                    Ioss::WRITE_RESTART, (MPI_Comm)MPI_COMM_WORLD, properties);
+        Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
+            interFace.outFiletype, interFace.outputFile, Ioss::WRITE_RESTART,
+            Ioss::ParallelUtils::comm_world(), properties);
         if (dbo == nullptr || !dbo->ok(true)) {
           std::exit(EXIT_FAILURE);
         }
+
+        dbo->set_field_separator(interFace.fieldSuffixSeparator);
 
         // NOTE: 'output_region' owns 'dbo' pointer at this time
         Ioss::Region output_region(dbo, "region_2");
@@ -379,10 +378,12 @@ namespace {
 
           Ioss::DatabaseIO *dbo =
               Ioss::IOFactory::create(interFace.outFiletype, filename, Ioss::WRITE_RESTART,
-                                      (MPI_Comm)MPI_COMM_WORLD, properties);
+                                      Ioss::ParallelUtils::comm_world(), properties);
           if (dbo == nullptr || !dbo->ok(true)) {
             std::exit(EXIT_FAILURE);
           }
+
+          dbo->set_field_separator(interFace.fieldSuffixSeparator);
 
           // NOTE: 'output_region' owns 'dbo' pointer at this time
           Ioss::Region output_region(dbo, "region_2");
@@ -413,8 +414,9 @@ namespace {
       //========================================================================
       // INPUT Database #1...
       //========================================================================
-      Ioss::DatabaseIO *dbi1 = Ioss::IOFactory::create(
-          interFace.inFiletype, inpfile, Ioss::READ_MODEL, (MPI_Comm)MPI_COMM_WORLD, properties);
+      Ioss::DatabaseIO *dbi1 =
+          Ioss::IOFactory::create(interFace.inFiletype, inpfile, Ioss::READ_MODEL,
+                                  Ioss::ParallelUtils::comm_world(), properties);
       if (dbi1 == nullptr || !dbi1->ok(true)) {
         std::exit(EXIT_FAILURE);
       }
@@ -476,7 +478,7 @@ namespace {
       //========================================================================
       Ioss::DatabaseIO *dbi2 =
           Ioss::IOFactory::create(interFace.outFiletype, interFace.outputFile, Ioss::READ_MODEL,
-                                  (MPI_Comm)MPI_COMM_WORLD, properties);
+                                  Ioss::ParallelUtils::comm_world(), properties);
       if (dbi2 == nullptr || !dbi2->ok(true)) {
         std::exit(EXIT_FAILURE);
       }

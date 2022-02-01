@@ -23,13 +23,23 @@ namespace Ioss {
   {
   public:
     ParallelUtils() = default;
-    explicit ParallelUtils(MPI_Comm the_communicator);
+    explicit ParallelUtils(Ioss_MPI_Comm the_communicator);
     ~ParallelUtils() = default;
 
     // Assignment operator
     // Copy constructor
 
     enum MinMax { DO_MAX, DO_MIN, DO_SUM };
+
+#if defined(SEACAS_HAVE_MPI)
+    static const Ioss_MPI_Comm comm_world() { return (Ioss_MPI_Comm)MPI_COMM_WORLD; }
+    static const Ioss_MPI_Comm comm_self() { return (Ioss_MPI_Comm)MPI_COMM_SELF; }
+    static const Ioss_MPI_Comm comm_null() { return (Ioss_MPI_Comm)MPI_COMM_NULL; }
+#else
+    static constexpr Ioss_MPI_Comm comm_world() { return (Ioss_MPI_Comm)0; }
+    static constexpr Ioss_MPI_Comm comm_self() { return (Ioss_MPI_Comm)0; }
+    static constexpr Ioss_MPI_Comm comm_null() { return (Ioss_MPI_Comm)0; }
+#endif
 
     /*!
      * See if any external properties specified via the
@@ -67,7 +77,7 @@ namespace Ioss {
 
     std::string decode_filename(const std::string &filename, bool is_parallel) const;
 
-    MPI_Comm communicator() const { return communicator_; }
+    Ioss_MPI_Comm communicator() const { return communicator_; }
     int      parallel_size() const;
     int      parallel_rank() const;
 
@@ -116,10 +126,15 @@ namespace Ioss {
     int gather(int vals_count, int size_per_val, std::vector<T> &my_values,
                std::vector<T> &result) const;
 
+    template <typename T> void broadcast(T &value, int root = 0) const;
+    template <typename T> void broadcast(std::vector<T> &value, int root = 0) const;
+
     void progress(const std::string &output) const;
 
   private:
-    MPI_Comm communicator_{MPI_COMM_WORLD};
+    Ioss_MPI_Comm communicator_{comm_world()};
+    mutable int   parallelSize_{-1};
+    mutable int   parallelRank_{-1};
   };
 
 #ifdef SEACAS_HAVE_MPI
@@ -137,7 +152,7 @@ namespace Ioss {
   int MY_Alltoallv64(const std::vector<T> &sendbuf, const std::vector<int64_t> &sendcounts,
                      const std::vector<int64_t> &senddisp, std::vector<T> &recvbuf,
                      const std::vector<int64_t> &recvcounts, const std::vector<int64_t> &recvdisp,
-                     MPI_Comm comm)
+                     Ioss_MPI_Comm comm)
   {
     int processor_count = 0;
     int my_processor    = 0;
@@ -196,7 +211,7 @@ namespace Ioss {
   int MY_Alltoallv(const std::vector<T> &sendbuf, const std::vector<int64_t> &sendcnts,
                    const std::vector<int64_t> &senddisp, std::vector<T> &recvbuf,
                    const std::vector<int64_t> &recvcnts, const std::vector<int64_t> &recvdisp,
-                   MPI_Comm comm)
+                   Ioss_MPI_Comm comm)
   {
 // Wrapper to handle case where send/recv counts and displacements are 64-bit integers.
 // Two cases:
@@ -235,7 +250,7 @@ namespace Ioss {
   int MY_Alltoallv(const std::vector<T> &sendbuf, const std::vector<int> &sendcnts,
                    const std::vector<int> &senddisp, std::vector<T> &recvbuf,
                    const std::vector<int> &recvcnts, const std::vector<int> &recvdisp,
-                   MPI_Comm comm)
+                   Ioss_MPI_Comm comm)
   {
     return MPI_Alltoallv((void *)sendbuf.data(), const_cast<int *>(sendcnts.data()),
                          const_cast<int *>(senddisp.data()), mpi_type(T(0)), recvbuf.data(),

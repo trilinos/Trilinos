@@ -5,7 +5,7 @@
 //    strange cases
 //
 //
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -318,7 +318,7 @@ namespace {
 
 namespace Ioex {
   ParallelDatabaseIO::ParallelDatabaseIO(Ioss::Region *region, const std::string &filename,
-                                         Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                                         Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                                          const Ioss::PropertyManager &props)
       : Ioex::BaseDatabaseIO(region, filename, db_usage, communicator, props)
   {
@@ -537,7 +537,7 @@ namespace Ioex {
         Ioss::FileInfo file(get_filename());
         int_is_ok = file.exists() && file.is_writable() ? 1 : 0;
       }
-      MPI_Bcast(&int_is_ok, 1, MPI_INT, 0, util().communicator());
+      util().broadcast(int_is_ok);
 
       if (int_is_ok == 1) {
         // Note that at this point, we cannot totally guarantee that

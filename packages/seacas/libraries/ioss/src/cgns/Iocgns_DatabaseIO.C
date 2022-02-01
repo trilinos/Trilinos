@@ -522,7 +522,7 @@ namespace {
 namespace Iocgns {
 
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
-                         Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                         Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
       : Ioss::DatabaseIO(region, filename, db_usage, communicator, props)
   {
@@ -611,7 +611,7 @@ namespace Iocgns {
       }
 
 #if CG_BUILD_PARALLEL
-      cgp_mpi_comm(MPI_COMM_SELF);
+      cgp_mpi_comm(Ioss::ParallelUtils::comm_self());
       int ierr = cgp_open(decoded_filename().c_str(), mode, &m_cgnsFilePtr);
       cgp_mpi_comm(util().communicator());
 #else
@@ -946,11 +946,10 @@ namespace Iocgns {
       }
       SMART_ASSERT(id % OUT_INT_PER_ZONE == 0);
     }
-    MPI_Bcast(&tot_zones, 1, MPI_INT, 0, util().communicator());
+    util().broadcast(tot_zones);
     zone_data.resize(tot_zones * OUT_INT_PER_ZONE);
     all_names.resize(tot_zones * (CGNS_MAX_NAME_LENGTH + 1));
-    MPI_Bcast(all_names.data(), tot_zones * (CGNS_MAX_NAME_LENGTH + 1), MPI_CHAR, 0,
-              util().communicator());
+    util().broadcast(all_names);
     MPI_Scatter(all_data.data(), tot_zones * OUT_INT_PER_ZONE, MPI_INT, zone_data.data(),
                 tot_zones * OUT_INT_PER_ZONE, MPI_INT, 0, util().communicator());
 
@@ -1041,10 +1040,9 @@ namespace Iocgns {
           in_bc += CGNS_MAX_NAME_LENGTH + 1;
         }
       }
-      MPI_Bcast(&tot_names, 1, MPI_INT, 0, util().communicator());
+      util().broadcast(tot_names);
       bc_names.resize(tot_names * (CGNS_MAX_NAME_LENGTH + 1));
-      MPI_Bcast(bc_names.data(), tot_names * (CGNS_MAX_NAME_LENGTH + 1), MPI_CHAR, 0,
-                util().communicator());
+      util().broadcast(bc_names);
 
       std::vector<std::string> bc;
       int                      off_name = 0;

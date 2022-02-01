@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -112,10 +112,7 @@ int main(int argc, char *argv[])
     fmt::print(stderr, "\n{}\n\nskinner terminated due to exception\n", e.what());
     exit(EXIT_FAILURE);
   }
-#ifdef SEACAS_HAVE_MPI
-  Ioss::ParallelUtils parallel(MPI_COMM_WORLD);
-  parallel.barrier();
-#endif
+  pu.barrier();
   double end = Ioss::Utils::timer();
 
   if (my_rank == 0) {
@@ -140,7 +137,7 @@ namespace {
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
     //========================================================================
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
-                                                    (MPI_Comm)MPI_COMM_WORLD, properties);
+                                                    Ioss::ParallelUtils::comm_world(), properties);
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
@@ -230,7 +227,7 @@ namespace {
     std::string       file = interFace.output_filename();
     std::string       type = interFace.output_type();
     Ioss::DatabaseIO *dbo  = Ioss::IOFactory::create(type, file, Ioss::WRITE_RESTART,
-                                                     (MPI_Comm)MPI_COMM_WORLD, properties);
+                                                     Ioss::ParallelUtils::comm_world(), properties);
     if (dbo == nullptr || !dbo->ok(true)) {
       std::exit(EXIT_FAILURE);
     }

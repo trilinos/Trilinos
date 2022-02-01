@@ -10,7 +10,7 @@
 
 namespace Ioad {
 
-  AdiosWrapper::AdiosWrapper(MPI_Comm comm, const std::string &filename, bool is_input,
+  AdiosWrapper::AdiosWrapper(Ioss_MPI_Comm comm, const std::string &filename, bool is_input,
                              unsigned long rank, const Ioss::PropertyManager &properties)
       : adios2::ADIOS(comm), adios2::IO(IOInit(properties, is_input)), adios2::Engine(EngineInit(
                                                                            filename, is_input)),

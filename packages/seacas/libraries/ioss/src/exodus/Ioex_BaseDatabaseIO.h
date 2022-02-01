@@ -72,7 +72,7 @@ namespace Ioex {
   {
   public:
     BaseDatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-                   MPI_Comm communicator, const Ioss::PropertyManager &props);
+                   Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
     BaseDatabaseIO(const BaseDatabaseIO &from) = delete;
     BaseDatabaseIO &operator=(const BaseDatabaseIO &from) = delete;
 

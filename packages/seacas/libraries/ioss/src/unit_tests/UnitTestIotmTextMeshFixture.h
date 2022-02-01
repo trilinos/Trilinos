@@ -124,8 +124,7 @@ class TextMeshFixture : public ::testing::Test
     create_ioss_region();
   }
 
-  MPI_Comm get_comm() const { return communicator;}
-  void set_comm(MPI_Comm comm) {communicator = comm;}
+      Ioss_MPI_Comm get_comm() const { return Ioss::ParallelUtils::comm_world(); }
 
   std::string get_mesh_desc(const std::string& textMeshDesc)
   {

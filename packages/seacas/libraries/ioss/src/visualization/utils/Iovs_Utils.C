@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -532,11 +532,11 @@ namespace Iovs {
     PAR_UNUSED(dbinfo);
 #ifdef SEACAS_HAVE_MPI
     int size = s.size();
-    MPI_Bcast(&size, 1, MPI_INT, 0, dbinfo.parallelUtils->communicator());
+    dbinfo.parallelUtils->broadcast(size);
     if (dbinfo.parallelUtils->parallel_rank() != 0) {
       s.resize(size);
     }
-    MPI_Bcast(const_cast<char *>(s.data()), size, MPI_CHAR, 0, dbinfo.parallelUtils->communicator());
+    dbinfo.parallelUtils->broadcast(s);
 #endif
   }
 
@@ -547,7 +547,7 @@ namespace Iovs {
 #ifdef SEACAS_HAVE_MPI
 
     int code = statusCode;
-    MPI_Bcast(&code, 1, MPI_INT, 0, dbinfo.parallelUtils->communicator());
+    dbinfo.parallelUtils->broadcast(code);
     statusCode = code;
 #endif
   }
