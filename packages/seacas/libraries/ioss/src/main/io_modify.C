@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,7 +6,9 @@
 
 #include "modify_interface.h"
 
+#include <array>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
@@ -73,9 +75,11 @@
 #endif
 // ========================================================================
 
+using real = double;
+
 namespace {
   std::string codename;
-  std::string version = "1.00 (2021-03-04)";
+  std::string version = "2.00 (2021-12-17)";
 
   std::vector<Ioss::GroupingEntity *> attributes_modified;
 
@@ -129,7 +133,16 @@ namespace {
   bool           handle_assembly(const std::vector<std::string> &tokens, Ioss::Region &region,
                                  bool allow_modify);
   bool           handle_attribute(const std::vector<std::string> &tokens, Ioss::Region &region);
+  bool           handle_geometry(const std::vector<std::string> &tokens, Ioss::Region &region);
   void           update_assembly_info(Ioss::Region &region, const Modify::Interface &interFace);
+
+  void offset_filtered_coordinates(Ioss::Region &region, real offset[3],
+                                   const std::vector<int> &filter);
+  void scale_filtered_coordinates(Ioss::Region &region, real scale[3],
+                                  const std::vector<int> &filter);
+  void rotate_filtered_coordinates(Ioss::Region &region, real rotation_matrix[3][3],
+                                   const std::vector<int> &filter);
+  void update_rotation_matrix(real rotation_matrix[3][3], const std::string &axis, double angle);
 
   void set_db_properties(const Modify::Interface &interFace, Ioss::DatabaseIO *dbi);
 
@@ -360,6 +373,9 @@ int main(int argc, char *argv[])
     else if (Ioss::Utils::substr_equal(tokens[0], "attribute")) {
       changed |= handle_attribute(tokens, region);
     }
+    else if (Ioss::Utils::substr_equal(tokens[0], "geometry")) {
+      changed |= handle_geometry(tokens, region);
+    }
     else {
       fmt::print(stderr, fg(fmt::color::yellow), "\tWARNING: Unrecognized command: {}\n",
                  tokens[0]);
@@ -370,7 +386,8 @@ int main(int argc, char *argv[])
     update_assembly_info(region, interFace);
   }
   else {
-    fmt::print(fg(fmt::color::cyan), "\n\t*** Database unchanged. No update required.\n");
+    fmt::print(fg(fmt::color::cyan),
+               "\n\t*** Database assembly structure unchanged. No update required.\n");
   }
   fmt::print("\n{} execution successful.\n", codename);
   return EXIT_SUCCESS;
@@ -591,6 +608,17 @@ namespace {
       fmt::print("\tATTRIBUTE {{ent_type}} GLOB {{glob}}\n"
                  "\t\tList attributes for all entities in the specified entity type whose name "
                  "matches the glob.\n");
+    }
+    if (all || Ioss::Utils::substr_equal(topic, "geometry")) {
+      fmt::print("\n\tGEOMETRY ROTATE {{X|Y|Z}} {{angle}}\n");
+      fmt::print("\tGEOMETRY SCALE  {{x}} {{y}} {{z}}\n");
+      fmt::print("\tGEOMETRY OFFSET {{x}} {{y}} {{z}}\n");
+      fmt::print(
+          "\tGEOMETRY ROTATE {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{angle}}\n");
+      fmt::print(
+          "\tGEOMETRY SCALE  {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{x}} {{y}} {{z}}\n");
+      fmt::print(
+          "\tGEOMETRY OFFSET {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{x}} {{y}} {{z}}\n");
     }
     if (all || Ioss::Utils::substr_equal(topic, "regex")) {
       fmt::print("\n\tRegular Expression help (used in ASSEMBLY MATCHES and LIST MATCHES and "
@@ -989,6 +1017,205 @@ namespace {
     return false;
   }
 
+  void build_block_list(Ioss::Region &region, const Ioss::GroupingEntity *ge,
+                        std::vector<const Ioss::ElementBlock *> &blocks)
+  {
+    if (ge) {
+      if (ge->type() == Ioss::ELEMENTBLOCK) {
+        auto *eb = dynamic_cast<const Ioss::ElementBlock *>(ge);
+        if (eb != nullptr) {
+          blocks.push_back(eb);
+        }
+        return;
+      }
+      else if (ge->type() == Ioss::ASSEMBLY) {
+        auto       *as      = dynamic_cast<const Ioss::Assembly *>(ge);
+        const auto &members = as->get_members();
+        for (const auto *member : members) {
+          build_block_list(region, member, blocks);
+        }
+        return;
+      }
+    }
+  }
+
+  std::vector<int> get_filtered_node_list(Ioss::Region                            &region,
+                                          std::vector<const Ioss::ElementBlock *> &blocks)
+  {
+    auto node_count = region.get_property("node_count").get_int();
+    if (blocks.empty() ||
+        blocks.size() == (size_t)region.get_property("element_block_count").get_int()) {
+      return std::vector<int>(node_count, 1);
+    }
+    else {
+      std::vector<int> node_filter(node_count);
+      // Iterate all element blocks in 'blocks', get connectivity_raw
+      // and set `node_filter` to 1 for nodes in connectivity list.
+      if (region.get_database()->int_byte_size_api() == 4) {
+        std::vector<int> connect;
+        for (const auto *block : blocks) {
+          block->get_field_data("connectivity_raw", connect);
+          for (auto node : connect) {
+            node_filter[node - 1] = 1;
+          }
+        }
+      }
+      else {
+        std::vector<int64_t> connect;
+        for (const auto *block : blocks) {
+          block->get_field_data("connectivity_raw", connect);
+          for (auto node : connect) {
+            node_filter[node - 1] = 1;
+          }
+        }
+      }
+      return node_filter;
+    }
+  }
+
+  bool handle_geometry(const std::vector<std::string> &tokens, Ioss::Region &region)
+  {
+    //     0        1        2         3         4       5...
+    // GEOMETRY   ROTATE {{X|Y|Z}} {{angle}} ...
+    // GEOMETRY   SCALE  {{X|Y|Z}} {{scale}} ...
+    // GEOMETRY   OFFSET {{X|Y|Z}} {{offset}} ...
+    // GEOMETRY   ROTATE {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{angle}}  ...
+    // GEOMETRY   SCALE  {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{scale}}  ...
+    // GEOMETRY   OFFSET {{ELEMENTBLOCKS|BLOCKS|ASSEMBLY}} {{names}} {{X|Y|Z}} {{offset}} ...
+
+    if (tokens.size() < 4) {
+      fmt::print(stderr, fg(fmt::color::red),
+                 "ERROR: GEOMETRY Command does not have enough tokens to be valid.\n"
+                 "\t\t{}\n",
+                 fmt::join(tokens, " "));
+      handle_help("geometry");
+      return false;
+    }
+
+    // See if applying just selected (and connected) blocks.
+    size_t                                  idx = 2;
+    std::vector<const Ioss::ElementBlock *> blocks;
+    if (Ioss::Utils::substr_equal(tokens[idx], "elementblocks") ||
+        Ioss::Utils::substr_equal(tokens[idx], "blocks") ||
+        Ioss::Utils::substr_equal(tokens[idx], "assembly")) {
+      // Parse list of block|assembly names...
+      idx++;
+      while (!(Ioss::Utils::str_equal(tokens[idx], "x") ||
+               Ioss::Utils::str_equal(tokens[idx], "y") ||
+               Ioss::Utils::str_equal(tokens[idx], "x"))) {
+        auto  name = tokens[idx++];
+        auto *ge   = region.get_entity(name, Ioss::ELEMENTBLOCK);
+        if (ge == nullptr) {
+          ge = region.get_entity(name, Ioss::ASSEMBLY);
+        }
+        build_block_list(region, ge, blocks);
+      }
+
+      // Now filter out any duplicates that might be in the list...
+      Ioss::Utils::uniquify(blocks);
+    }
+
+    // If blocks is non-empty, then we are applying geometry modification to a subset of the model.
+    // In that case, we need to get all blocks that are connected to the user-specified blocks...
+    if (!blocks.empty()) {
+      std::vector<const Ioss::ElementBlock *> tmp(blocks);
+      for (const auto *block : blocks) {
+        const auto &connected = block->get_block_adjacencies();
+        for (const auto &connect : connected) {
+          auto *eb = region.get_element_block(connect);
+          tmp.push_back(eb);
+        }
+      }
+      Ioss::Utils::uniquify(tmp);
+      blocks = tmp;
+    }
+
+    if (blocks.empty() ||
+        blocks.size() == (size_t)region.get_property("element_block_count").get_int()) {
+      fmt::print(fg(fmt::color::cyan),
+                 "\n\t*** {} transformation will be applied to ALL element blocks.\n", tokens[1]);
+    }
+    else {
+      fmt::print(fg(fmt::color::cyan),
+                 "\n\t*** {} transformation will be applied to element blocks:\n\t", tokens[1]);
+      for (const auto *block : blocks) {
+        fmt::print(fg(fmt::color::cyan), "{}, ", block->name());
+      }
+      fmt::print("\n");
+    }
+
+    // Now, filter the nodes to determine which nodes are connected to elements in the block list.
+    auto node_filter = get_filtered_node_list(region, blocks);
+
+    if (Ioss::Utils::substr_equal(tokens[1], "rotate")) {
+      real rotation_matrix[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+
+      // Get rotation axis...
+      do {
+        std::string axis  = tokens[idx++];
+        double      angle = std::stod(tokens[idx++]);
+        update_rotation_matrix(rotation_matrix, axis, angle);
+      } while (idx < tokens.size());
+
+      // Do the rotation...
+      rotate_filtered_coordinates(region, rotation_matrix, node_filter);
+      fmt::print(fg(fmt::color::cyan), "\t*** Database coordinates rotated.\n");
+      return false;
+    }
+
+    if (Ioss::Utils::substr_equal(tokens[1], "scale")) {
+      real scale[3] = {1.0, 1.0, 1.0};
+
+      // Get scale axis and scale factor...
+      do {
+        std::string axis   = tokens[idx++];
+        double      factor = std::stod(tokens[idx++]);
+        if (Ioss::Utils::substr_equal(axis, "x")) {
+          scale[0] = factor;
+        }
+        else if (Ioss::Utils::substr_equal(axis, "y")) {
+          scale[1] = factor;
+        }
+        else if (Ioss::Utils::substr_equal(axis, "z")) {
+          scale[2] = factor;
+        }
+      } while (idx < tokens.size());
+
+      // Do the transformation...
+      scale_filtered_coordinates(region, scale, node_filter);
+      fmt::print(fg(fmt::color::cyan), "\t*** Database coordinates scaled.\n");
+      return false;
+    }
+
+    if (Ioss::Utils::substr_equal(tokens[1], "offset")) {
+      real offset[3] = {1.0, 1.0, 1.0};
+
+      // Get offset axis and offset factor...
+      do {
+        std::string axis   = tokens[idx++];
+        double      factor = std::stod(tokens[idx++]);
+        if (Ioss::Utils::substr_equal(axis, "x")) {
+          offset[0] = factor;
+        }
+        else if (Ioss::Utils::substr_equal(axis, "y")) {
+          offset[1] = factor;
+        }
+        else if (Ioss::Utils::substr_equal(axis, "z")) {
+          offset[2] = factor;
+        }
+      } while (idx < tokens.size());
+
+      // Do the transformation...
+      offset_filtered_coordinates(region, offset, node_filter);
+      fmt::print(fg(fmt::color::cyan), "\t*** Database coordinates offset.\n");
+      return false;
+    }
+
+    fmt::print(stderr, fg(fmt::color::red), "ERROR: Unrecognized geometry command.\n");
+    handle_help("geometry");
+    return false;
+  }
+
   bool handle_assembly(const std::vector<std::string> &tokens, Ioss::Region &region,
                        bool allow_modify)
   {
@@ -1326,4 +1553,148 @@ namespace {
     }
   }
 
+  void rotate_filtered_coordinates(Ioss::Region &region, real rotation_matrix[3][3],
+                                   const std::vector<int> &filter)
+  {
+    // `filter` is of size number of nodes.  Value = 1 the rotate; value = 0 leave as is.
+    Ioss::NodeBlock    *nb = region.get_node_block("nodeblock_1");
+    std::vector<double> coord;
+
+    // Get original coordinates...
+    nb->get_field_data("mesh_model_coordinates", coord);
+    size_t node_count = nb->entity_count();
+
+    // Do the rotation...
+    for (size_t i = 0; i < node_count; i++) {
+      real x = coord[3 * i + 0];
+      real y = coord[3 * i + 1];
+      real z = coord[3 * i + 2];
+
+      real xn = x * rotation_matrix[0][0] + y * rotation_matrix[1][0] + z * rotation_matrix[2][0];
+      real yn = x * rotation_matrix[0][1] + y * rotation_matrix[1][1] + z * rotation_matrix[2][1];
+      real zn = x * rotation_matrix[0][2] + y * rotation_matrix[1][2] + z * rotation_matrix[2][2];
+
+      coord[3 * i + 0] = filter[i] * xn + (1 - filter[i]) * coord[3 * i + 0];
+      coord[3 * i + 1] = filter[i] * yn + (1 - filter[i]) * coord[3 * i + 1];
+      coord[3 * i + 2] = filter[i] * zn + (1 - filter[i]) * coord[3 * i + 2];
+    }
+
+    // Output updated coordinates...
+    nb->put_field_data("mesh_model_coordinates", coord);
+  }
+
+  void offset_filtered_coordinates(Ioss::Region &region, real offset[3],
+                                   const std::vector<int> &filter)
+  {
+    // `filter` is of size number of nodes.  Value = 1 transform; value = 0 leave as is.
+    Ioss::NodeBlock    *nb = region.get_node_block("nodeblock_1");
+    std::vector<double> coord;
+
+    // Get original coordinates...
+    nb->get_field_data("mesh_model_coordinates", coord);
+    size_t node_count = nb->entity_count();
+
+    // Do the transformation...
+    for (size_t i = 0; i < node_count; i++) {
+      real x = coord[3 * i + 0];
+      real y = coord[3 * i + 1];
+      real z = coord[3 * i + 2];
+
+      real xn = x + offset[0];
+      real yn = y + offset[1];
+      real zn = z + offset[2];
+
+      coord[3 * i + 0] = filter[i] * xn + (1 - filter[i]) * coord[3 * i + 0];
+      coord[3 * i + 1] = filter[i] * yn + (1 - filter[i]) * coord[3 * i + 1];
+      coord[3 * i + 2] = filter[i] * zn + (1 - filter[i]) * coord[3 * i + 2];
+    }
+
+    // Output updated coordinates...
+    nb->put_field_data("mesh_model_coordinates", coord);
+  }
+
+  void scale_filtered_coordinates(Ioss::Region &region, real scale[3],
+                                  const std::vector<int> &filter)
+  {
+    // `filter` is of size number of nodes.  Value = 1 transform; value = 0 leave as is.
+    Ioss::NodeBlock    *nb = region.get_node_block("nodeblock_1");
+    std::vector<double> coord;
+
+    // Get original coordinates...
+    nb->get_field_data("mesh_model_coordinates", coord);
+    size_t node_count = nb->entity_count();
+
+    // Do the transformation...
+    for (size_t i = 0; i < node_count; i++) {
+      real x = coord[3 * i + 0];
+      real y = coord[3 * i + 1];
+      real z = coord[3 * i + 2];
+
+      real xn = x * scale[0];
+      real yn = y * scale[1];
+      real zn = z * scale[2];
+
+      coord[3 * i + 0] = filter[i] * xn + (1 - filter[i]) * coord[3 * i + 0];
+      coord[3 * i + 1] = filter[i] * yn + (1 - filter[i]) * coord[3 * i + 1];
+      coord[3 * i + 2] = filter[i] * zn + (1 - filter[i]) * coord[3 * i + 2];
+    }
+
+    // Output updated coordinates...
+    nb->put_field_data("mesh_model_coordinates", coord);
+  }
+
+  void update_rotation_matrix(real rotation_matrix[3][3], const std::string &axis, double angle)
+  {
+    int n1 = 0;
+    int n2 = 0;
+    int n3 = 0;
+
+    if (Ioss::Utils::substr_equal(axis, "x")) {
+      n1 = 1;
+      n2 = 2;
+      n3 = 0;
+    }
+    else if (Ioss::Utils::substr_equal(axis, "y")) {
+      n1 = 2;
+      n2 = 0;
+      n3 = 1;
+    }
+    else if (Ioss::Utils::substr_equal(axis, "z")) {
+      n1 = 0;
+      n2 = 1;
+      n3 = 2;
+    }
+
+    static real degang  = std::atan2(0.0L, -1.0L) / 180.0;
+    real        ang_rad = angle * degang;
+
+    auto cosang = std::cos(ang_rad);
+    auto sinang = std::sin(ang_rad);
+
+    real by[3][3];
+    real res[3][3];
+
+    by[n1][n1] = cosang;
+    by[n2][n1] = -sinang;
+    by[n1][n3] = 0.0;
+    by[n1][n2] = sinang;
+    by[n2][n2] = cosang;
+    by[n2][n3] = 0.0;
+    by[n3][n1] = 0.0;
+    by[n3][n2] = 0.0;
+    by[n3][n3] = 1.0;
+
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        res[i][j] = rotation_matrix[i][0] * by[0][j] + rotation_matrix[i][1] * by[1][j] +
+                    rotation_matrix[i][2] * by[2][j];
+      }
+    }
+
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        rotation_matrix[i][j] = res[i][j];
+      }
+    }
+  }
 } // nameSpace
