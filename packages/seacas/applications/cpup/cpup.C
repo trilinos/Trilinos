@@ -279,14 +279,14 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
   }
 
   // Copy the sidesets and assemblies from the proc-0 input file to the output file...
-  auto &part  = part_mesh[0];
-  auto &ssets = part->get_sidesets();
+  auto       &part  = part_mesh[0];
+  const auto &ssets = part->get_sidesets();
   for (const auto &sset : ssets) {
     auto oss = new Ioss::SideSet(*sset);
     output_region.add(oss);
   }
 
-  auto &assems = part->get_assemblies();
+  const auto &assems = part->get_assemblies();
   for (const auto &assem : assems) {
     auto oass = new Ioss::Assembly(*assem);
     output_region.add(oass);
@@ -318,9 +318,9 @@ template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT /*dummy*
       auto &onb = block->get_node_block();
 
       // Find all corresponding blocks on the input part meshes...
-      for (const auto &part : part_mesh) {
-        auto &blocks = part->get_structured_blocks();
-        for (const auto &pblock : blocks) {
+      for (const auto &prt : part_mesh) {
+        auto &pblocks = prt->get_structured_blocks();
+        for (const auto &pblock : pblocks) {
           auto &name      = pblock->name();
           auto  name_proc = Iocgns::Utils::decompose_name(name, true);
           if (name_proc.first == block->name()) {
@@ -504,7 +504,7 @@ namespace {
       part->begin_state(istep);
     }
 
-    auto &blocks = output_region.get_structured_blocks();
+    const auto &blocks = output_region.get_structured_blocks();
     for (const auto &block : blocks) {
       int64_t             num_cell = block->get_property("cell_count").get_int();
       std::vector<double> output(num_cell);
@@ -519,8 +519,8 @@ namespace {
 
         // Find all corresponding blocks on the input part meshes...
         for (const auto &part : part_mesh) {
-          auto &blocks = part->get_structured_blocks();
-          for (const auto &pblock : blocks) {
+          const auto &pblocks = part->get_structured_blocks();
+          for (const auto &pblock : pblocks) {
             auto &name      = pblock->name();
             auto  name_proc = Iocgns::Utils::decompose_name(name, true);
             if (name_proc.first == block->name()) {
@@ -553,8 +553,8 @@ namespace {
 
         // Find all corresponding blocks on the input part meshes...
         for (const auto &part : part_mesh) {
-          auto &blocks = part->get_structured_blocks();
-          for (const auto &pblock : blocks) {
+          auto &pblocks = part->get_structured_blocks();
+          for (const auto &pblock : pblocks) {
             auto &name      = pblock->name();
             auto  name_proc = Iocgns::Utils::decompose_name(name, true);
             if (name_proc.first == block->name()) {
@@ -733,7 +733,7 @@ namespace {
     std::array<std::string, 3> fields{"mesh_model_coordinates_x", "mesh_model_coordinates_y",
                                       "mesh_model_coordinates_z"};
 
-    auto &blocks = output_region.get_structured_blocks();
+    const auto &blocks = output_region.get_structured_blocks();
     for (const auto &block : blocks) {
       // Get size of node_block...
       auto               &onb       = block->get_node_block();
@@ -743,8 +743,8 @@ namespace {
 
         // Find all corresponding blocks on the input part meshes...
         for (const auto &part : part_mesh) {
-          auto &blocks = part->get_structured_blocks();
-          for (const auto &pblock : blocks) {
+          auto &pblocks = part->get_structured_blocks();
+          for (const auto &pblock : pblocks) {
             auto &name      = pblock->name();
             auto  name_proc = Iocgns::Utils::decompose_name(name, true);
             if (name_proc.first == block->name()) {
@@ -774,7 +774,7 @@ namespace {
     assert(zgc_i.m_transform == zgc_j.m_transform);
     if (zgc_i.m_ownerRangeBeg[0] == 0 && zgc_i.m_ownerRangeBeg[1] == 0 &&
         zgc_i.m_ownerRangeBeg[2] == 0) {
-      // This is a newly-created zgc that hasn't been uninoed with anything yet.
+      // This is a newly-created zgc that hasn't been unioned with anything yet.
       zgc_i.m_ownerRangeBeg = zgc_j.m_ownerRangeBeg;
       zgc_i.m_ownerRangeEnd = zgc_j.m_ownerRangeEnd;
       zgc_i.m_donorRangeBeg = zgc_j.m_donorRangeBeg;

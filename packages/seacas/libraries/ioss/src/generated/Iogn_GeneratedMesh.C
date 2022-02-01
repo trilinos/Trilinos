@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -24,6 +24,29 @@
 #include <tokenize.h> // for tokenize
 #include <vector>     // for vector
 
+namespace {
+  void output_help(std::ostream &output)
+  {
+    fmt::print(output, "\nValid Options for GeneratedMesh parameter string:\n"
+                       "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
+                       "\toffset:xoff, yoff, zoff\n"
+                       "\tscale: xscl, yscl, zscl\n"
+                       "\tzdecomp:n1,n2,n3,...,n#proc\n"
+                       "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
+                       "\trotate: axis,angle,axis,angle,...\n"
+                       "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
+                       "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
+                       "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
+                       "\ttets (split each hex into 6 tets)\n"
+                       "\tpyramids (split each hex into 6 pyramids)\n"
+                       "\tvariables:type,count,...  "
+                       "type=global|element|node|nodal|nodeset|nset|sideset|sset|surface\n"
+                       "\ttimes:count (number of timesteps to generate)\n"
+                       "\tshow -- show mesh parameters\n"
+                       "\thelp -- show this list\n\n");
+  }
+} // namespace
+
 namespace Iogn {
   GeneratedMesh::GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z, int proc_count,
                                int my_proc)
@@ -42,6 +65,11 @@ namespace Iogn {
     auto params = Ioss::tokenize(parameters, "/");
 
     auto groups = Ioss::tokenize(params.back(), "|+");
+
+    if (groups[0] == "help") {
+      output_help(Ioss::OUTPUT());
+      groups[0] = "1x1x1";
+    }
 
     // First 'group' is the interval specification -- IxJxK
     auto tokens = Ioss::tokenize(groups[0], "x");
@@ -345,24 +373,7 @@ namespace Iogn {
       }
 
       else if (option[0] == "help") {
-        fmt::print(Ioss::OUTPUT(),
-                   "\nValid Options for GeneratedMesh parameter string:\n"
-                   "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
-                   "\toffset:xoff, yoff, zoff\n"
-                   "\tscale: xscl, yscl, zscl\n"
-                   "\tzdecomp:n1,n2,n3,...,n#proc\n"
-                   "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
-                   "\trotate: axis,angle,axis,angle,...\n"
-                   "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
-                   "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
-                   "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
-                   "\ttets (split each hex into 6 tets)\n"
-                   "\tpyramids (split each hex into 6 pyramids)\n"
-                   "\tvariables:type,count,...  "
-                   "type=global|element|node|nodal|nodeset|sideset|surface\n"
-                   "\ttimes:count (number of timesteps to generate)\n"
-                   "\tshow -- show mesh parameters\n"
-                   "\thelp -- show this list\n\n");
+        output_help(Ioss::OUTPUT());
       }
 
       else if (option[0] == "show") {
@@ -1668,10 +1679,10 @@ namespace Iogn {
     else if (type == "nodal" || type == "node") {
       variableCount[Ioss::NODEBLOCK] = count;
     }
-    else if (type == "nodeset") {
+    else if (type == "nodeset" || type == "nset") {
       variableCount[Ioss::NODESET] = count;
     }
-    else if (type == "surface" || type == "sideset") {
+    else if (type == "surface" || type == "sideset" || type == "sset") {
       variableCount[Ioss::SIDEBLOCK] = count;
     }
     else {
@@ -1679,7 +1690,7 @@ namespace Iogn {
       fmt::print(errmsg,
                  "ERROR: (Iogn::GeneratedMesh::set_variable_count)\n"
                  "       Unrecognized variable type '{}'. Valid types are:\n"
-                 "       global, element, node, nodal, nodeset, surface, sideset.\n",
+                 "       global, element, node, nodal, nodeset, nset, surface, sideset, sset.\n",
                  type);
       IOSS_ERROR(errmsg);
     }

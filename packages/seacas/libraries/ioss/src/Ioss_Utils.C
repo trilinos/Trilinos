@@ -919,25 +919,25 @@ bool Ioss::Utils::block_is_omitted(Ioss::GroupingEntity *block)
 }
 
 void Ioss::Utils::calculate_sideblock_membership(IntVector             &face_is_member,
-                                                 const Ioss::SideBlock *ef_blk,
+                                                 const Ioss::SideBlock *sd_blk,
                                                  size_t int_byte_size, const void *element,
                                                  const void *sides, int64_t number_sides,
                                                  const Ioss::Region *region)
 {
-  assert(ef_blk != nullptr);
+  assert(sd_blk != nullptr);
 
   face_is_member.reserve(number_sides);
 
   const ElementTopology *unknown = Ioss::ElementTopology::factory("unknown");
 
   // Topology of faces in this face block...
-  const ElementTopology *ftopo = ef_blk->topology();
+  const ElementTopology *ftopo = sd_blk->topology();
 
   // Topology of parent element for faces in this face block
-  const ElementTopology *parent_topo = ef_blk->parent_element_topology();
+  const ElementTopology *parent_topo = sd_blk->parent_element_topology();
 
   // If split by element block then parent_block will be non-nullptr
-  const ElementBlock *parent_block = ef_blk->parent_element_block();
+  const ElementBlock *parent_block = sd_blk->parent_element_block();
 
   // The element block containing the face we are working on...
   Ioss::ElementBlock *block = nullptr;

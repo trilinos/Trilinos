@@ -256,6 +256,18 @@ namespace Ioss {
     void communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const
     {
       show_progress(__func__);
+      if (m_method == "LINEAR") {
+        assert(m_importPreLocalElemIndex == 0);
+        assert(exportElementMap.size() == 0);
+        assert(importElementMap.size() == 0);
+        // For "LINEAR" decomposition method, the `file_data` is the
+        // same as `ioss_data` Transfer all local data from file_data
+        // to ioss_data...
+        auto size = localElementMap.size() * comp_count;
+        std::copy(file_data, file_data + size, ioss_data);
+        return;
+      }
+
       // Transfer the file-decomposition based data in 'file_data' to
       // the ioss-decomposition based data in 'ioss_data'
       std::vector<T> export_data(exportElementMap.size() * comp_count);
@@ -405,6 +417,18 @@ namespace Ioss {
                                 size_t comp_count) const
     {
       show_progress(__func__);
+      if (m_method == "LINEAR") {
+        assert(block.localIossOffset == 0);
+        assert(block.exportMap.size() == 0);
+        assert(block.importMap.size() == 0);
+        // For "LINEAR" decomposition method, the `file_data` is the
+        // same as `ioss_data` Transfer all local data from file_data
+        // to ioss_data...
+        auto size = block.localMap.size() * comp_count;
+        std::copy(file_data, file_data + size, ioss_data);
+        return;
+      }
+
       std::vector<U> exports;
       exports.reserve(comp_count * block.exportMap.size());
       std::vector<U> imports(comp_count * block.importMap.size());

@@ -1,8 +1,9 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
+#include <algorithm>
 #include <cctype>
 #include <cfloat>
 #include <cmath>
@@ -293,6 +294,14 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
       properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
     }
   }
+
+  // Get maximum length of names used on any of the input files...
+  int max_name_length = 32;
+  for (const auto *mesh : part_mesh) {
+    int max_name_used = mesh->get_database()->maximum_symbol_length();
+    max_name_length   = std::max(max_name_length, max_name_used);
+  }
+  properties.add(Ioss::Property("MAXIMUM_NAME_LENGTH", max_name_length));
 
   properties.add(Ioss::Property("FLUSH_INTERVAL", 0));
   Ioss::DatabaseIO *dbo =

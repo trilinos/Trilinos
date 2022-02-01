@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -319,8 +319,7 @@ namespace {
       Ioss::Utils::info_property(eb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
 
       if (interFace.adjacencies()) {
-        std::vector<std::string> blocks;
-        eb->get_block_adjacencies(blocks);
+        std::vector<std::string> blocks = eb->get_block_adjacencies();
         fmt::print("\n\tAdjacent to  {} element block(s):\t", blocks.size());
         for (const auto &block : blocks) {
           fmt::print("{}  ", block);

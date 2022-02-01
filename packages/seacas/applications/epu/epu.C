@@ -4278,13 +4278,13 @@ namespace {
                        bid, p + start_part);
             exodus_error(__LINE__);
           }
-          size_t                  pos                     = 0;
-          size_t                  goffset                 = glob_faceblocks[b].offset_;
-          size_t                  face_count              = faceblocks[p][b].entity_count();
-          size_t                  boffset                 = faceblocks[p][b].offset_;
-          size_t                  npe                     = faceblocks[p][b].nodesPerFace;
-          const std::vector<INT> &proc_loc_face_to_global = local_face_to_global[p];
-          const std::vector<INT> &proc_loc_node_to_global = local_node_to_global[p];
+          size_t      pos                     = 0;
+          size_t      goffset                 = glob_faceblocks[b].offset_;
+          size_t      face_count              = faceblocks[p][b].entity_count();
+          size_t      boffset                 = faceblocks[p][b].offset_;
+          size_t      npe                     = faceblocks[p][b].nodesPerFace;
+          const auto &proc_loc_face_to_global = local_face_to_global[p];
+          const auto &proc_loc_node_to_global = local_node_to_global[p];
 
           for (size_t e = 0; e < face_count; e++) {
             global_block_pos = proc_loc_face_to_global[(e + boffset)] - goffset;

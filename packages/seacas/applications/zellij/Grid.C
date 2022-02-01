@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -649,20 +649,20 @@ template <typename INT> void Grid::output_surfaces(Cell &cell, INT /*dummy*/)
   int exoid = output_region(rank)->get_database()->get_file_pointer();
 
   // Get the surfaces on this cell...
-  auto &surfaces = cell.region()->get_sidesets();
+  const auto &surfaces = cell.region()->get_sidesets();
   for (const auto *surface : surfaces) {
 
     // Find corresponding surface on output mesh...
     auto *osurf = output_region(rank)->get_sideset(surface->name());
     SMART_ASSERT(osurf != nullptr);
-    auto &oblocks = osurf->get_side_blocks();
+    const auto &oblocks = osurf->get_side_blocks();
 
     std::vector<INT> elements;
     std::vector<INT> faces;
     elements.reserve(oblocks[0]->entity_count());
     faces.reserve(oblocks[0]->entity_count());
 
-    auto &blocks = surface->get_side_blocks();
+    const auto &blocks = surface->get_side_blocks();
     for (const auto *block : blocks) {
       // Get the element/face pairs for the SideBlock in this surface...
       std::vector<INT> element_side;
@@ -710,7 +710,7 @@ void Grid::output_block_connectivity(Cell &cell, const std::vector<INT> &node_ma
   if (rank >= m_startRank && rank < m_startRank + m_rankCount) {
     int exoid = output_region(rank)->get_database()->get_file_pointer();
 
-    auto            &blocks = cell.region()->get_element_blocks();
+    const auto      &blocks = cell.region()->get_element_blocks();
     std::vector<INT> connect;
     for (const auto *block : blocks) {
       block->get_field_data("connectivity_raw", connect);
@@ -831,7 +831,7 @@ template <typename INT> void Grid::output_element_map(Cell &cell, INT /*dummy*/)
   if (rank >= m_startRank && rank < m_startRank + m_rankCount) {
     int exoid = output_region(rank)->get_database()->get_file_pointer();
 
-    auto output_blocks = output_region(rank)->get_element_blocks();
+    const auto &output_blocks = output_region(rank)->get_element_blocks();
 
     // This is the element block offset for the "single output file"
     // for the block being output For example, if the total mesh has
@@ -1094,7 +1094,7 @@ namespace {
           auto &surf                      = surface->name();
           cell.m_localSurfaceOffset[surf] = local_surface_offset[rank][surf];
 
-          auto &blocks = surface->get_side_blocks();
+          const auto &blocks = surface->get_side_blocks();
           for (const auto *blk : blocks) {
             surface_face_count[rank][surf] += blk->entity_count();
             global_surface_face_count[surf] += blk->entity_count();

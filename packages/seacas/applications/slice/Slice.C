@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -9,6 +9,7 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_CopyDatabase.h>
+#include <Ioss_DatabaseIO.h>
 #include <Ioss_FileInfo.h>
 #include <Ioss_MeshCopyOptions.h>
 #include <Ioss_Region.h>
@@ -16,7 +17,6 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
 #include <cassert>
-#include <exodus/Ioex_DatabaseIO.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <init/Ionit_Initializer.h>
@@ -499,8 +499,7 @@ namespace {
       map_name = map_name.substr(0, pos);
 
       Ioss::DatabaseIO *db    = region.get_database();
-      auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
-      int               exoid = ex_db != nullptr ? ex_db->get_file_pointer() : 0;
+      int               exoid = db->get_file_pointer();
 
       bool map_read  = false;
       int  map_count = ex_inquire_int(exoid, EX_INQ_ELEM_MAP);
@@ -1166,13 +1165,12 @@ namespace {
     }
     progress("\tReserve processor coordinate vectors");
 
-    Ioss::DatabaseIO *db    = region.get_database();
-    auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    Ioss::DatabaseIO *db = region.get_database();
 
     size_t node_count = region.get_property("node_count").get_int();
 
-    if (ex_db != nullptr && node_count > partial_count) {
-      int exoid = ex_db->get_file_pointer();
+    if (node_count > partial_count) {
+      int exoid = db->get_file_pointer();
 
       glob_coord_x.resize(partial_count);
       glob_coord_y.resize(partial_count);
@@ -1254,8 +1252,7 @@ namespace {
     size_t                           processor_count = proc_region.size();
     std::vector<std::vector<double>> coordinates(processor_count);
 
-    Ioss::DatabaseIO *db    = region.get_database();
-    auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    Ioss::DatabaseIO *db = region.get_database();
 
     size_t node_count = region.get_property("node_count").get_int();
 
@@ -1270,8 +1267,8 @@ namespace {
         coordinates[p].resize(0);
       }
 
-      if (ex_db != nullptr && node_count > partial_count) {
-        int exoid = ex_db->get_file_pointer();
+      if (node_count > partial_count) {
+        int exoid = db->get_file_pointer();
 
         glob_coord.resize(partial_count);
         for (size_t beg = 1; beg <= node_count; beg += partial_count) {
@@ -1347,8 +1344,7 @@ namespace {
 
     size_t processor_count = proc_region.size();
 
-    Ioss::DatabaseIO *db    = region.get_database();
-    auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    Ioss::DatabaseIO *db = region.get_database();
 
     std::vector<INT> glob_conn;
     size_t           offset = 0;
@@ -1367,8 +1363,8 @@ namespace {
       }
 
       // Do a 'partial_count' elements at a time...
-      if (ex_db != nullptr && element_count >= partial_count) {
-        int exoid = ex_db->get_file_pointer();
+      if (element_count >= partial_count) {
+        int exoid = db->get_file_pointer();
 
         glob_conn.resize(partial_count * element_nodes);
         for (size_t beg = 1; beg <= element_count; beg += partial_count) {
@@ -1486,7 +1482,6 @@ namespace {
 
     size_t            sum_on_proc_count = 0;
     Ioss::DatabaseIO *db                = region.get_database();
-    auto             *ex_db             = dynamic_cast<Ioex::DatabaseIO *>(db);
 
     auto  &ebs         = region.get_element_blocks();
     size_t block_count = ebs.size();
@@ -1500,8 +1495,8 @@ namespace {
       size_t           block_id      = ebs[b]->get_property("id").get_int();
 
       // Do a 'partial_count' elements at a time...
-      if (ex_db != nullptr && element_count >= partial_count) {
-        int exoid = ex_db->get_file_pointer();
+      if (element_count >= partial_count) {
+        int exoid = db->get_file_pointer();
 
         glob_conn.resize(partial_count * element_nodes);
         for (size_t beg = 1; beg <= element_count; beg += partial_count) {
