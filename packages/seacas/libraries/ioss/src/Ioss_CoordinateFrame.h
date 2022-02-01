@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_CoordinateFrame_h
-#define IOSS_Ioss_CoordinateFrame_h
+#pragma once
 
 #include <cstdint> // for int64_t
 #include <vector>  // for vector
@@ -36,4 +35,3 @@ namespace Ioss {
     char                tag_;
   };
 } // namespace Ioss
-#endif

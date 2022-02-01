@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioad_Helper_h
-#define IOSS_Ioad_Helper_h
+#pragma once
 
 #include <map>
 #include <set>
@@ -21,12 +20,13 @@ namespace Ioad {
       typename std::enable_if<std::is_base_of<Ioss::GroupingEntity, T>::value, bool>::type;
 
   template <typename T>
-  using IossHas3ParametersConstructor =
-      decltype(DerivedFromIossGroupingEntity<T>{}, T(nullptr, std::string{}, int64_t{}));
+  using IossHas3ParametersConstructor = decltype(DerivedFromIossGroupingEntity<T>{},
+                                                 T(nullptr, std::string{}, int64_t{}));
 
   template <typename T>
-  using IossHas4ParametersConstructor = decltype(
-      DerivedFromIossGroupingEntity<T>{}, T(nullptr, std::string{}, std::string{}, int64_t{}));
+  using IossHas4ParametersConstructor = decltype(DerivedFromIossGroupingEntity<T>{},
+                                                 T(nullptr, std::string{}, std::string{},
+                                                   int64_t{}));
 
   // Takes an extra unused parameter "entity_type" to match the API of the function
   // "NewEntity" used for objects that are not EntitySets which require that parameter.
@@ -67,5 +67,3 @@ namespace Ioad {
                                const std::string &field_name);
 
 } // namespace Ioad
-
-#endif

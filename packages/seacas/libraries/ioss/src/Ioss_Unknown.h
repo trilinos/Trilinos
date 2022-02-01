@@ -1,12 +1,11 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 // -*- Mode: c++ -*-
-#ifndef IOSS_Ioss_Unknown_h
-#define IOSS_Ioss_Unknown_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>       // for IntVector
 #include <Ioss_ElementTopology.h> // for ElementTopology
@@ -53,4 +52,3 @@ namespace Ioss {
     Unknown(const Unknown &) = delete;
   };
 } // namespace Ioss
-#endif
