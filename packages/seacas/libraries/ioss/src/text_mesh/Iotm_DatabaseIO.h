@@ -95,6 +95,8 @@ namespace Iotm {
     void get_step_times__() override;
     void get_nodeblocks();
     void get_elemblocks();
+    void get_nodesets();
+    void get_sidesets();
     void get_commsets();
 
     const Ioss::Map &get_node_map() const;
@@ -193,5 +195,9 @@ namespace Iotm {
     int    spatialDimension{3};
 
     int elementBlockCount{0};
+    int nodesetCount{0};
+    int sidesetCount{0};
+
+    bool m_useVariableDf{true};
   };
 } // namespace Iotm
