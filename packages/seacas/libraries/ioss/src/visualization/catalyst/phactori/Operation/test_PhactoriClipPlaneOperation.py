@@ -32,52 +32,34 @@
 
 from phactori import *
 import unittest
-from Operation.PhactoriPointSourceFromJsonList import *
-from paraview.simple import *
+#from vtk import *
+import vtk
+from Operation.PhactoriClipPlaneOperation import *
+import paraview.simple
 
-class Test_PhactoriPointSourceFromJsonList(unittest.TestCase):
+class TestPhactoriClipPlaneOperation(unittest.TestCase):
 
-  def test_ValidateJsonPointList(self):
-    theSource = PhactoriPointSourceFromJsonList()
-    theSource.JsonList = [
-      [0.0, 0.0, 0.0],
-      [1.0, 2.0, 3.0],
-      [-1.0, -2.0, -3.0],
-      [5.75, -32.125, 17.625]
-    ]
-    self.assertTrue(theSource.ValidateJsonPointList())
+  def test_ClipPlaneTest1(self):
+    testWavelet = Wavelet()
+    testWavelet.UpdatePipeline()
+    newOperationBlock = PhactoriOperationBlock()
+    newOperationBlock.mName = "testoperation"
+    operationParams = {
+      "plane normal": [-0.1, -0.7, -0.2],
+      "relative point on plane":[0.1, -0.2, 0.3]
+    }
+    ParseOneFilterTypeFromViewMapOperation(newOperationBlock,
+              'clip',
+              PhactoriClipPlaneOperation,
+              operationParams)
+    ConstructPipelineOperationFromParsedOperationBlockC_ForTest(newOperationBlock, testWavelet)
+    newOperationBlock.GetPvFilter().UpdatePipeline()
+    pointData = newOperationBlock.GetPvFilter().PointData
+    rtdataArry = pointData.GetArray("RTData")
+    rtdataArry = pointData.GetArray("RTData")
+    numPoints = rtdataArry.GetNumberOfTuples()
+    self.assertEqual(numPoints, 4571)
 
-    theSource.JsonList = [
-      [0.0, 0.0, 0.0],
-      [1.0, 2.0, 3.0],
-      [-1.0, -2.0],
-      [5.75, -32.125, 17.625]
-    ]
-    with self.assertRaises(Exception):
-      theSource.ValidateJsonPointList()
-  
-    theSource.JsonList = []
-    with self.assertRaises(Exception):
-      theSource.ValidateJsonPointList()
-  
-
-  def test_CreateVtkPolyDataFromJsonList(self):
-    theSource = PhactoriPointSourceFromJsonList()
-    theSource.JsonList = [
-      [0.0, 0.0, 0.0],
-      [1.0, 2.0, 3.0],
-      [-1.0, -2.0, -3.0],
-      [5.75, -32.125, 17.625]
-    ]
-    theSource.CreateVtkPolyDataFromJsonList()
-
-    vtkPts = theSource.myVtkPolyData.GetPoints()
-    self.assertEqual(4, vtkPts.GetNumberOfPoints())
-    pt0 = vtkPts.GetPoint(0)
-    self.assertEqual(pt0, tuple(theSource.JsonList[0]))
-    pt3 = vtkPts.GetPoint(3)
-    self.assertEqual(pt3, tuple(theSource.JsonList[3]))
-    
 if __name__ == '__main__':
     cc = Cone()
     rr = Show()
