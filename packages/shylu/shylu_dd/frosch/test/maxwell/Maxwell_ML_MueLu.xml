@@ -1,0 +1,69 @@
+<ParameterList name="MueLu">
+  <Parameter name="parameterlist: syntax" type="string" value="ml"/>
+  <Parameter name="ML output" type="int" value="9"/>
+
+  <Parameter name="refmaxwell: mode" type="string" value="additive"/>
+  <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
+
+  <Parameter name="smoother: type" type="string" value="symmetric Gauss-Seidel"/>
+  <Parameter name="smoother: sweeps" type="int" value="1"/>
+  <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="false"/>
+  <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
+
+  <ParameterList name="refmaxwell: 11list">
+    <Parameter name="ML output" type="int" value="10"/>
+
+    <Parameter name="coarse: max size" type="int" value="128"/>
+    <Parameter name="PDE equations" type="int" value="3"/>
+
+    <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
+    <Parameter name="aggregation: threshold" type="double" value="0.02"/>
+
+    <ParameterList name="edge matrix free: coarse">
+      <Parameter name="ML output" type="int" value="10"/>
+      <Parameter name="ML label" type="string" value="coarse (1,1) block"/>
+
+      <Parameter name="coarse: max size" type="int" value="128"/>
+      <Parameter name="PDE equations" type="int" value="3"/>
+
+      <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
+      <Parameter name="aggregation: threshold" type="double" value="0.02"/>
+
+      <Parameter name="smoother: type" type="string" value="symmetric Gauss-Seidel"/>
+      <Parameter name="smoother: sweeps" type="int" value="1"/>
+      <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/>
+      <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
+
+      <Parameter name="repartition: enable" type="int" value="1"/>
+      <Parameter name="repartition: partitioner" type="string" value="Zoltan"/>
+      <Parameter name="repartition: start level" type="int" value="1"/>
+      <Parameter name="repartition: min per proc" type="int" value="800"/>
+      <Parameter name="repartition: max min ratio" type="double" value="1.1"/>
+      <Parameter name="repartition: Zoltan dimensions" type="int" value="3"/>
+
+    </ParameterList>
+
+  </ParameterList>
+
+  <ParameterList name="refmaxwell: 22list">
+    <Parameter name="ML output" type="int" value="10"/>
+    <Parameter name="ML label" type="string" value="(2,2) block"/>
+
+    <Parameter name="coarse: max size" type="int" value="128"/>
+
+    <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
+    <Parameter name="aggregation: threshold" type="double" value="0.02"/>
+
+    <Parameter name="smoother: type" type="string" value="symmetric Gauss-Seidel"/>
+    <Parameter name="smoother: sweeps" type="int" value="1"/>
+    <Parameter name="smoother: Gauss-Seidel efficient symmetric" type="bool" value="true"/>
+    <Parameter name="smoother: use l1 Gauss-Seidel" type="bool" value="true"/>
+
+    <Parameter name="repartition: enable" type="int" value="1"/>
+    <Parameter name="repartition: partitioner" type="string" value="Zoltan"/>
+    <Parameter name="repartition: start level" type="int" value="1"/>
+    <Parameter name="repartition: min per proc" type="int" value="800"/>
+    <Parameter name="repartition: max min ratio" type="double" value="1.1"/>
+    <Parameter name="repartition: Zoltan dimensions" type="int" value="1"/>
+  </ParameterList>
+</ParameterList>

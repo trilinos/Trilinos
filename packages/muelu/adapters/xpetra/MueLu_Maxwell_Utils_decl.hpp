@@ -65,11 +65,14 @@
 
 // Stratimikos
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #endif
 
 
 namespace MueLu {
+
+  inline Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
   /*!
     @brief Utility functions for Maxwell

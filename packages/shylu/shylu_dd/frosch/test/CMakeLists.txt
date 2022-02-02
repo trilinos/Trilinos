@@ -4,6 +4,7 @@ ADD_SUBDIRECTORIES(
     InterfaceSets
     LocalPartitionOfUnityBasis
     SolverFactory
+    maxwell
 )
 
 IF(ShyLU_DDFROSch_ENABLE_Belos AND Kokkos_ENABLE_SERIAL AND ShyLU_DDFROSch_ENABLE_Stratimikos AND ShyLU_DDFROSch_ENABLE_Thyra)

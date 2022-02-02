@@ -70,7 +70,7 @@
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
 // Stratimikos includes
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+// #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Teuchos_AbstractFactoryStd.hpp"
 // Ifpack2 includes
@@ -272,7 +272,6 @@ namespace MueLu {
       // Build Thyra linear algebra objects
       RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(A)->getCrsMatrix());
       
-      Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
       typedef Thyra::PreconditionerFactoryBase<Scalar>                                     Base;
       typedef Thyra::MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> ImplMueLu;
       linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, ImplMueLu>(), "MueLu");
@@ -282,8 +281,9 @@ namespace MueLu {
       linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif
       
+      // std::cout << "HERE2 " << &MueLu::linearSolverBuilder << *linearSolverBuilder.getValidParameters();
       linearSolverBuilder.setParameterList(params);
-      
+
       // Build a new "solver factory" according to the previously specified parameter list.
       // RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
       
