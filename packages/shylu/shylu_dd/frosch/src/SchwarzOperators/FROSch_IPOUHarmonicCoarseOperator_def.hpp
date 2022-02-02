@@ -233,7 +233,6 @@ namespace FROSch {
             FROSCH_ASSERT(!repeatedNodesMapVec[i].is_null(),"repeatedNodesMapVec[i].is_null()");
             FROSCH_ASSERT(!repeatedDofMapsVec[i].is_null(),"repeatedDofMapsVec[i].is_null()");
             FROSCH_ASSERT(!nullSpaceBasisVec[i].is_null(),"nullSpaceBasisVec[i].is_null()");
-            FROSCH_ASSERT(!dirichletBoundaryDofsVec[i].is_null(),"dirichletBoundaryDofsVec[i].is_null()");
 
             this->GammaDofs_.resize(this->GammaDofs_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST2");
             this->IDofs_.resize(this->IDofs_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST3");
