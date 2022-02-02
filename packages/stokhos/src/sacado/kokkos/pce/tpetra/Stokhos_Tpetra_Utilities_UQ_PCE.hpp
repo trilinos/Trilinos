@@ -243,8 +243,15 @@ namespace Stokhos {
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
     typedef typename FlatVector::dual_view_type flat_view_type;
 
+    // Have to do a nasty const-cast because getLocalViewDevice(ReadWrite) is a
+    // non-const method, yet getLocalViewDevice(ReadOnly) returns a const-view
+    // (i.e., with a constant scalar type), and there is no way to make a
+    // MultiVector out of it!
+    typedef Tpetra::MultiVector<Sacado::UQ::PCE<Storage>, LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Device> > mv_type;
+    mv_type& vec_nc = const_cast<mv_type&>(vec);
+
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals (vec.getLocalViewDevice(Tpetra::Access::ReadWrite), vec.getLocalViewHost(Tpetra::Access::ReadWrite));
+    flat_view_type flat_vals (vec_nc.getLocalViewDevice(Tpetra::Access::ReadWrite), vec_nc.getLocalViewHost(Tpetra::Access::ReadWrite));
     if (vec.need_sync_device ()) {
       flat_vals.modify_host ();
     }
