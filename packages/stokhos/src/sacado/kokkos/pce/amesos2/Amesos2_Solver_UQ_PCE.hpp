@@ -61,10 +61,10 @@ namespace Amesos2 {
       return Kokkos::cijk(A->getLocalValuesView());
     }
     else if (X != Teuchos::null) {
-      return Kokkos::cijk(X->template getLocalViewDevice(Tpetra::Access::ReadOnly));
+      return Kokkos::cijk(X->getLocalViewDevice(Tpetra::Access::ReadOnly));
     }
     else if (B != Teuchos::null) {
-      return Kokkos::cijk(B->template getLocalViewDevice(Tpetra::Access::ReadOnly));
+      return Kokkos::cijk(B->getLocalViewDevice(Tpetra::Access::ReadOnly));
     }
     return typename Sacado::UQ::PCE<S>::cijk_type();
   }

@@ -539,8 +539,8 @@ namespace Stokhos {
     {
       typedef typename scalar_mv_type::device_type device_type;
 
-      auto xv = X.template getLocalViewDevice(Tpetra::Access::ReadOnly);
-      auto yv = Y.template getLocalViewDevice(Tpetra::Access::ReadWrite);
+      auto xv = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto yv = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
       const size_t pce_size = Kokkos::dimension_scalar(xv);
       if (X_s == Teuchos::null ||
           X_s->getNumVectors() != X.getNumVectors()*pce_size)
@@ -550,8 +550,8 @@ namespace Stokhos {
           Y_s->getNumVectors() != Y.getNumVectors()*pce_size)
         Y_s = Teuchos::rcp(new scalar_mv_type(Y.getMap(),
                                               Y.getNumVectors()*pce_size));
-      auto xv_s = X_s->template getLocalViewDevice(Tpetra::Access::ReadWrite);
-      auto yv_s = Y_s->template getLocalViewDevice(Tpetra::Access::ReadWrite);
+      auto xv_s = X_s->getLocalViewDevice(Tpetra::Access::ReadWrite);
+      auto yv_s = Y_s->getLocalViewDevice(Tpetra::Access::ReadWrite);
       base_scalar_type alpha_s = alpha.fastAccessCoeff(0);
       base_scalar_type beta_s = beta.fastAccessCoeff(0);
 
