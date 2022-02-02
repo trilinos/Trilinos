@@ -218,16 +218,37 @@ namespace FROSch {
                                                                   ConstXMultiVectorPtrVecPtr nodeListVec)
     {
         FROSCH_DETAILTIMER_START_LEVELID(buildCoarseSpaceTime,"IPOUHarmonicCoarseOperator::buildCoarseSpace");
+
+        this->NumberOfBlocks_ = repeatedNodesMapVec.size();
+
+        FROSCH_ASSERT(dofsPerNodeVec.size()==this->NumberOfBlocks_,"dofsPerNodeVec.size()!=this->NumberOfBlocks_");
+        FROSCH_ASSERT(repeatedDofMapsVec.size()==this->NumberOfBlocks_,"repeatedDofMapsVec.size()!=this->NumberOfBlocks_");
+        FROSCH_ASSERT(nullSpaceBasisVec.size()==this->NumberOfBlocks_,"nullSpaceBasisVec.size()!=this->NumberOfBlocks_");
+        FROSCH_ASSERT(dirichletBoundaryDofsVec.size()==this->NumberOfBlocks_,"dirichletBoundaryDofsVec.size()!=this->NumberOfBlocks_");
+        FROSCH_ASSERT(nodeListVec.size()==this->NumberOfBlocks_,"nodeListVec.size()!=this->NumberOfBlocks_");
+
         // Das könnte man noch ändern
         // TODO: DAS SOLLTE ALLES IN EINE FUNKTION IN HARMONICCOARSEOPERATOR
-        for (UN i=0; i<repeatedNodesMapVec.size(); i++) {
-            this->GammaDofs_.resize(this->GammaDofs_.size()+1);
-            this->IDofs_.resize(this->IDofs_.size()+1);
-            this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
-            this->DofsMaps_.resize(this->DofsMaps_.size()+1);
-            this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
-            this->NumberOfBlocks_++;
-            resetCoarseSpaceBlock(this->NumberOfBlocks_-1,dimension,dofsPerNodeVec[i],repeatedNodesMapVec[i],repeatedDofMapsVec[i],nullSpaceBasisVec[i],dirichletBoundaryDofsVec[i],nodeListVec[i]);
+        for (UN i=0; i<this->NumberOfBlocks_; i++) {
+            FROSCH_ASSERT(!repeatedNodesMapVec[i].is_null(),"repeatedNodesMapVec[i].is_null()");
+            FROSCH_ASSERT(!repeatedDofMapsVec[i].is_null(),"repeatedDofMapsVec[i].is_null()");
+            FROSCH_ASSERT(!nullSpaceBasisVec[i].is_null(),"nullSpaceBasisVec[i].is_null()");
+            FROSCH_ASSERT(!dirichletBoundaryDofsVec[i].is_null(),"dirichletBoundaryDofsVec[i].is_null()");
+
+            this->GammaDofs_.resize(this->GammaDofs_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST2");
+            this->IDofs_.resize(this->IDofs_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST3");
+            this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST4");
+            this->DofsMaps_.resize(this->DofsMaps_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST5");
+            this->DofsPerNode_.resize(this->DofsPerNode_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST6");
+
+            resetCoarseSpaceBlock(i,
+                                  dimension,
+                                  dofsPerNodeVec[i],
+                                  repeatedNodesMapVec[i],
+                                  repeatedDofMapsVec[i],
+                                  nullSpaceBasisVec[i],
+                                  dirichletBoundaryDofsVec[i],
+                                  nodeListVec[i]);
         }
         return 0;
     }
