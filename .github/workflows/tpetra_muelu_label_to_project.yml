@@ -22,5 +22,5 @@ jobs:
       uses: srggrs/assign-one-project-github-action@1.3.0    
       if: contains(github.event.label.name, 'Tpetra')
       with:
-        project: 'https://github.com/trilinos/Trilinos/projects/3'
+        project: 'https://github.com/trilinos/Trilinos/projects/2'
         column_name: 'Backlog'
