@@ -4,8 +4,7 @@
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_DatabaseIO_h
-#define IOSS_Ioss_DatabaseIO_h
+#pragma once
 
 #include <Ioss_BoundingBox.h>
 #include <Ioss_CodeTypes.h>
@@ -832,4 +831,3 @@ namespace Ioss {
         m_stateStart; // Used for optional output step timing.
   };
 } // namespace Ioss
-#endif

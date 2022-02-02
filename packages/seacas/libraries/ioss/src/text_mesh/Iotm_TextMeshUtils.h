@@ -1,5 +1,4 @@
-#ifndef IOTM_TEXTMESHUTILS_HPP_
-#define IOTM_TEXTMESHUTILS_HPP_
+#pragma once
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
@@ -605,5 +604,3 @@ namespace Iotm {
 
   } // namespace text_mesh
 } // namespace Iotm
-
-#endif /* IOTM_TEXTMESHUTILS_HPP_ */
