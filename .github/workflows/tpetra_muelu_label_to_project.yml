@@ -1,4 +1,4 @@
-name: Auto assign MueLu or Tpetra labelled or titled issues to MueLu or Tpetra Projects
+name: Auto assign MueLu or Tpetra labeled or titled issues to MueLu or Tpetra Projects
 
 on:
   issues:
