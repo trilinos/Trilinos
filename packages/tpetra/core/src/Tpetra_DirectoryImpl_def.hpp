@@ -1111,7 +1111,7 @@ namespace Tpetra {
       //    global_size_t >= size_t >= int
       //    global_size_t >= size_t >= LO
       // Therefore, we can safely store all of these in a global_size_t
-      Array<global_size_t> exports (packetSize * numSends);
+      Kokkos::View<global_size_t*, Kokkos::HostSpace> exports("exports", packetSize * numSends);
       {
         // Packet format:
         // - If computing LIDs: (GID, PID, LID)
@@ -1124,7 +1124,7 @@ namespace Tpetra {
         // sendGIDs[k] in exports[2*k], exports[2*k+1].  If sending
         // triples, we pack the (GID, PID, LID) pair for gid =
         // sendGIDs[k] in exports[3*k, 3*k+1, 3*k+2].
-        size_type exportsIndex = 0;
+        size_t exportsIndex = 0;
 
         if (useHashTables_) {
           if (verbose) {
@@ -1180,7 +1180,7 @@ namespace Tpetra {
         }
 
         TEUCHOS_TEST_FOR_EXCEPTION
-          (exportsIndex > exports.size (), std::logic_error,
+          (exportsIndex > exports.size(), std::logic_error,
            funcPrefix << "On Process " << comm->getRank () << ", "
            "exportsIndex = " << exportsIndex << " > exports.size() = "
            << exports.size () << "." << errSuffix);
@@ -1216,7 +1216,7 @@ namespace Tpetra {
           "Please report this bug to the Tpetra developers.");
       }
 
-      Array<global_size_t> imports (packetSize * distor.getTotalReceiveLength ());
+      Kokkos::View<global_size_t*, Kokkos::HostSpace> imports("imports", packetSize * distor.getTotalReceiveLength());
       // FIXME (mfh 20 Mar 2014) One could overlap the sort2() below
       // with communication, by splitting this call into doPosts and
       // doWaits.  The code is still correct in this form, however.
@@ -1228,7 +1228,7 @@ namespace Tpetra {
         os << "}" << endl;
         cerr << os.str ();
       }
-      distor.doPostsAndWaits (exports ().getConst (), packetSize, imports ());
+      distor.doPostsAndWaits(exports, packetSize, imports);
       if (verbose) {
         std::ostringstream os;
         os << *procPrefix << "doPostsAndWaits result: ";
