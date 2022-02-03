@@ -33,6 +33,8 @@ IntegratorPseudoTransientAdjointSensitivity(
                                        adjoint_solve_model_, inputPL);
   sens_integrator_ = createIntegratorBasic<Scalar>(inputPL, sens_model_);
   stepMode_ = SensitivityStepMode::Forward;
+  do_forward_integration_ = true;
+  do_adjoint_integration_ = true;
 }
 
 template<class Scalar>
@@ -51,6 +53,8 @@ IntegratorPseudoTransientAdjointSensitivity(
                                        adjoint_solve_model_, Teuchos::null);
   sens_integrator_ = createIntegratorBasic<Scalar>(sens_model_, stepperType);
   stepMode_ = SensitivityStepMode::Forward;
+  do_forward_integration_ = true;
+  do_adjoint_integration_ = true;
 }
 
 template<class Scalar>
@@ -123,46 +127,52 @@ advanceTime(const Scalar timeFinal)
   using Thyra::VectorBase;
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  // Run state integrator and get solution
-  stepMode_ = SensitivityStepMode::Forward;
-  bool state_status = state_integrator_->advanceTime(timeFinal);
-
-  // For at least some time-stepping methods, the time of the last time step
-  // may not be timeFinal (e.g., it may be greater by at most delta_t).
-  // But since the adjoint model requires timeFinal in its formulation, reset
-  // it to the achieved final time.
-  sens_model_->setFinalTime(state_integrator_->getTime());
-
-  // Set solution in sensitivity ME
-  sens_model_->setForwardSolutionHistory(
-    state_integrator_->getSolutionHistory());
-
-  // Run sensitivity integrator
-  stepMode_ = SensitivityStepMode::Adjoint;
-  bool sens_status = sens_integrator_->advanceTime(timeFinal);
-
-  // Compute final dg/dp, g which is computed by response 0, 1 of the adjoint
-  // model evaluator
-  MEB::InArgs<Scalar> inargs = sens_model_->getNominalValues();
-  MEB::OutArgs<Scalar> outargs = sens_model_->createOutArgs();
-  inargs.set_t(sens_integrator_->getTime());
-  inargs.set_x(sens_integrator_->getX());
-  if (inargs.supports(MEB::IN_ARG_x_dot))
-    inargs.set_x_dot(sens_integrator_->getXDot());
-  if (inargs.supports(MEB::IN_ARG_x_dot_dot))
-    inargs.set_x_dot_dot(sens_integrator_->getXDotDot());
-  RCP<VectorBase<Scalar> > G = dgdp_;
-  if (G == Teuchos::null) {
-    G = Thyra::createMember(sens_model_->get_g_space(0));
-    dgdp_ = Teuchos::rcp_dynamic_cast<DMVPV>(G);
+  bool state_status = true;
+  if (do_forward_integration_) {
+    // Run state integrator and get solution
+    stepMode_ = SensitivityStepMode::Forward;
+    state_status = state_integrator_->advanceTime(timeFinal);
   }
-  if (g_ == Teuchos::null)
-    g_ = Thyra::createMember(sens_model_->get_g_space(1));
-  outargs.set_g(0, G);
-  outargs.set_g(1, g_);
-  sens_model_->evalModel(inargs, outargs);
 
-  buildSolutionHistory();
+  bool sens_status = true;
+  if (do_adjoint_integration_) {
+    // For at least some time-stepping methods, the time of the last time step
+    // may not be timeFinal (e.g., it may be greater by at most delta_t).
+    // But since the adjoint model requires timeFinal in its formulation, reset
+    // it to the achieved final time.
+    sens_model_->setFinalTime(state_integrator_->getTime());
+
+    // Set solution in sensitivity ME
+    sens_model_->setForwardSolutionHistory(
+      state_integrator_->getSolutionHistory());
+
+    // Run sensitivity integrator
+    stepMode_ = SensitivityStepMode::Adjoint;
+    sens_status = sens_integrator_->advanceTime(timeFinal);
+
+    // Compute final dg/dp, g which is computed by response 0, 1 of the adjoint
+    // model evaluator
+    MEB::InArgs<Scalar> inargs = sens_model_->getNominalValues();
+    MEB::OutArgs<Scalar> outargs = sens_model_->createOutArgs();
+    inargs.set_t(sens_integrator_->getTime());
+    inargs.set_x(sens_integrator_->getX());
+    if (inargs.supports(MEB::IN_ARG_x_dot))
+      inargs.set_x_dot(sens_integrator_->getXDot());
+    if (inargs.supports(MEB::IN_ARG_x_dot_dot))
+      inargs.set_x_dot_dot(sens_integrator_->getXDotDot());
+    RCP<VectorBase<Scalar> > G = dgdp_;
+    if (G == Teuchos::null) {
+      G = Thyra::createMember(sens_model_->get_g_space(0));
+      dgdp_ = Teuchos::rcp_dynamic_cast<DMVPV>(G);
+    }
+    if (g_ == Teuchos::null)
+      g_ = Thyra::createMember(sens_model_->get_g_space(1));
+    outargs.set_g(0, G);
+    outargs.set_g(1, g_);
+    sens_model_->evalModel(inargs, outargs);
+
+    buildSolutionHistory();
+  }
 
   return state_status && sens_status;
 }
