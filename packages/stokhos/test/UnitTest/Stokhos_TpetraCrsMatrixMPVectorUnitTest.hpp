@@ -1019,7 +1019,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
 
-  typedef typename Storage::value_type BaseScalar;
+  //typedef typename Storage::value_type BaseScalar;
   typedef Sacado::MP::Vector<Storage> Scalar;
 
   using DualViewType = Kokkos::DualView<Scalar*, typename Node::device_type>;

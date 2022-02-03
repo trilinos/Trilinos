@@ -70,10 +70,10 @@ namespace Amesos2 {
       return Kokkos::dimension_scalar(A->getLocalValuesView());
     }
     else if (X != Teuchos::null) {
-      return Kokkos::dimension_scalar(X->template getLocalView<D>());
+      return Kokkos::dimension_scalar(X->getLocalViewDevice(Tpetra::Access::ReadOnly));
     }
     else if (B != Teuchos::null) {
-      return Kokkos::dimension_scalar(B->template getLocalView<D>());
+      return Kokkos::dimension_scalar(B->getLocalViewDevice(Tpetra::Access::ReadOnly));
     }
     return 0;
   }
