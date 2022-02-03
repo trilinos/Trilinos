@@ -795,13 +795,13 @@ namespace Iotm {
 
         // If splitting by element block, need to set the
         // element block member on this side block.
-        text_mesh::SplitType splitType = m_textMesh->get_sideset_split_type(name);
-        if (splitType == text_mesh::SplitType::ELEMENT_BLOCK) {
+        auto split_type = m_textMesh->get_sideset_split_type(name);
+        if (split_type == text_mesh::SplitType::ELEMENT_BLOCK) {
           Ioss::ElementBlock *block = get_region()->get_element_block(info.touchingBlock);
           sideblock->set_parent_element_block(block);
         }
 
-        if (splitType != text_mesh::SplitType::NO_SPLIT) {
+        if (split_type != text_mesh::SplitType::NO_SPLIT) {
           std::string storage = "Real[";
           storage += std::to_string(info.numNodesPerSide);
           storage += "]";

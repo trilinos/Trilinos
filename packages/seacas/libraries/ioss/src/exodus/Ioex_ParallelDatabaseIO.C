@@ -2905,8 +2905,6 @@ int64_t ParallelDatabaseIO::read_transient_field(ex_entity_type               ty
                                                  const Ioss::Field           &field,
                                                  const Ioss::GroupingEntity *ge, void *data) const
 {
-  const Ioss::VariableType *var_type = field.raw_storage();
-
   // Read into a double variable since that is all ExodusII can store...
   size_t              num_entity = ge->entity_count();
   std::vector<double> temp(num_entity);
@@ -2983,7 +2981,6 @@ int64_t ParallelDatabaseIO::read_ss_transient_field(const Ioss::Field &field, in
                                                     Ioss::IntVector &is_valid_side) const
 {
   size_t                    num_valid_sides = 0;
-  const Ioss::VariableType *var_type        = field.raw_storage();
   size_t                    my_side_count   = is_valid_side.size();
   std::vector<double>       temp(my_side_count);
 
@@ -4083,7 +4080,6 @@ void ParallelDatabaseIO::write_nodal_transient_field(ex_entity_type /* type */,
   // exodus fields.  These fields were already defined in
   // "write_results_metadata".
 
-  const Ioss::VariableType *var_type = field.transformed_storage();
   std::vector<double>       temp(count);
 
   int step = get_current_state();
@@ -4169,7 +4165,6 @@ void ParallelDatabaseIO::write_entity_transient_field(ex_entity_type type, const
                                                       void *variables) const
 {
   static Ioss::Map non_element_map; // Used as an empty map for ge->type() != element block.
-  const Ioss::VariableType *var_type = field.transformed_storage();
   std::vector<double>       temp(count);
 
   int step = get_current_state();
