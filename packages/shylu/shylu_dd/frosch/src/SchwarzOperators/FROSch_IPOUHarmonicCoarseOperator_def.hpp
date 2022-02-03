@@ -234,11 +234,11 @@ namespace FROSch {
             FROSCH_ASSERT(!repeatedDofMapsVec[i].is_null(),"repeatedDofMapsVec[i].is_null()");
             FROSCH_ASSERT(!nullSpaceBasisVec[i].is_null(),"nullSpaceBasisVec[i].is_null()");
 
-            this->GammaDofs_.resize(this->GammaDofs_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST2");
-            this->IDofs_.resize(this->IDofs_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST3");
-            this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST4");
-            this->DofsMaps_.resize(this->DofsMaps_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST5");
-            this->DofsPerNode_.resize(this->DofsPerNode_.size()+1); FROSCH_TEST_OUTPUT(this->MpiComm_,this->Verbose_,"TEST6");
+            this->GammaDofs_.resize(this->GammaDofs_.size()+1);
+            this->IDofs_.resize(this->IDofs_.size()+1);
+            this->InterfaceCoarseSpaces_.resize(this->InterfaceCoarseSpaces_.size()+1);
+            this->DofsMaps_.resize(this->DofsMaps_.size()+1);
+            this->DofsPerNode_.resize(this->DofsPerNode_.size()+1);
 
             resetCoarseSpaceBlock(i,
                                   dimension,
