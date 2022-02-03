@@ -690,10 +690,10 @@ namespace Tpetra {
       // required, and the latter is generally the case, but we should
       // still check for this.
       const int packetSize = 3; // We're sending triples, so packet size is 3.
-      Array<GO> exportEntries (packetSize * numMyEntries); // data to send out
+      Kokkos::View<GO*, Kokkos::HostSpace> exportEntries("exportEntries", packetSize * numMyEntries);
       {
-        size_type exportIndex = 0;
-        for (size_type i = 0; i < static_cast<size_type> (numMyEntries); ++i) {
+        size_t exportIndex = 0;
+        for (size_t i = 0; i < numMyEntries; ++i) {
           exportEntries[exportIndex++] = myGlobalEntries[i];
           exportEntries[exportIndex++] = as<GO> (myRank);
           exportEntries[exportIndex++] = as<GO> (i);
@@ -702,10 +702,10 @@ namespace Tpetra {
       // Buffer of data to receive.  The Distributor figured out for
       // us how many packets we're receiving, when we called its
       // createFromSends() method to set up the distribution plan.
-      Array<GO> importElements (packetSize * distor.getTotalReceiveLength ());
+      Kokkos::View<GO*, Kokkos::HostSpace> importElements("importElements", packetSize * distor.getTotalReceiveLength());
 
       // Distribute the triples of (GID, process ID, LID).
-      distor.doPostsAndWaits (exportEntries ().getConst (), packetSize, importElements ());
+      distor.doPostsAndWaits(exportEntries, packetSize, importElements);
 
       // Unpack the redistributed data.  Both implementations of
       // Directory storage map from an LID in the Directory Map (which
@@ -894,8 +894,8 @@ namespace Tpetra {
           // ownedPidLidPairs[curLID].size() > 1.  In that case, we
           // will use the TieBreak object to pick exactly one pair.
           Array<std::vector<std::pair<int, LO> > > ownedPidLidPairs (dir_numMyEntries);
-          size_type importIndex = 0;
-          for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
+          size_t importIndex = 0;
+          for (size_t i = 0; i < numReceives; ++i) {
             const GO  GID = importElements[importIndex++];
             const int PID = importElements[importIndex++];
             const LO  LID = importElements[importIndex++];
