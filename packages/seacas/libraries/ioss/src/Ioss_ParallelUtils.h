@@ -36,9 +36,9 @@ namespace Ioss {
     enum MinMax { DO_MAX, DO_MIN, DO_SUM };
 
 #if defined(SEACAS_HAVE_MPI)
-    static const Ioss_MPI_Comm comm_world() { return (Ioss_MPI_Comm)MPI_COMM_WORLD; }
-    static const Ioss_MPI_Comm comm_self() { return (Ioss_MPI_Comm)MPI_COMM_SELF; }
-    static const Ioss_MPI_Comm comm_null() { return (Ioss_MPI_Comm)MPI_COMM_NULL; }
+    static Ioss_MPI_Comm comm_world() { return (Ioss_MPI_Comm)MPI_COMM_WORLD; }
+    static Ioss_MPI_Comm comm_self() { return (Ioss_MPI_Comm)MPI_COMM_SELF; }
+    static Ioss_MPI_Comm comm_null() { return (Ioss_MPI_Comm)MPI_COMM_NULL; }
 #else
     static constexpr Ioss_MPI_Comm comm_world() { return (Ioss_MPI_Comm)0; }
     static constexpr Ioss_MPI_Comm comm_self() { return (Ioss_MPI_Comm)0; }
