@@ -75,8 +75,6 @@ namespace Tpetra {
                const Teuchos::RCP<Teuchos::FancyOStream>& /* out */,
                const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : plan_(comm)
-    , lastRoundBytesSend_ (0)
-    , lastRoundBytesRecv_ (0)
   {
     this->setParameterList(plist);
   }
@@ -104,8 +102,6 @@ namespace Tpetra {
     , actor_(distributor.actor_)
     , verbose_ (distributor.verbose_)
     , reverseDistributor_ (distributor.reverseDistributor_)
-    , lastRoundBytesSend_ (distributor.lastRoundBytesSend_)
-    , lastRoundBytesRecv_ (distributor.lastRoundBytesRecv_)
   {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
@@ -126,8 +122,6 @@ namespace Tpetra {
     std::swap (actor_, rhs.actor_);
     std::swap (verbose_, rhs.verbose_);
     std::swap (reverseDistributor_, rhs.reverseDistributor_);
-    std::swap (lastRoundBytesSend_, rhs.lastRoundBytesSend_);
-    std::swap (lastRoundBytesRecv_, rhs.lastRoundBytesRecv_);
 
     // Swap parameter lists.  If they are the same object, make a deep
     // copy first, so that modifying one won't modify the other one.
@@ -305,13 +299,6 @@ namespace Tpetra {
 
     // requests_: Allocated on demand.
     // reverseDistributor_: See note below
-
-    // mfh 31 Mar 2016: These are statistics, kept on calls to
-    // doPostsAndWaits or doReversePostsAndWaits.  They weren't here
-    // when I started, and I didn't add them, so I don't know if they
-    // are accurate.
-    reverseDistributor_->lastRoundBytesSend_ = 0;
-    reverseDistributor_->lastRoundBytesRecv_ = 0;
 
     // I am my reverse Distributor's reverse Distributor.
     // Thus, it would be legit to do the following:

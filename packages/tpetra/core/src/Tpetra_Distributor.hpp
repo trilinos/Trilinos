@@ -716,14 +716,6 @@ namespace Tpetra {
                     const ImpView &imports,
                     const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
-    /// \brief Information on the last call to do/doReverse
-    ///
-    /// Returns the amount of data sent & recv'd on this processor in bytes
-    void getLastDoStatistics(size_t & bytes_sent,  size_t & bytes_recvd) const{
-      bytes_sent  = lastRoundBytesSend_;
-      bytes_recvd = lastRoundBytesRecv_;
-    }
-
     //@}
     //! @name Implementation of Teuchos::Describable
     //@{
@@ -789,12 +781,6 @@ namespace Tpetra {
     /// This is created on demand in getReverse() and cached for
     /// later reuse.  This is why it is declared "mutable".
     mutable Teuchos::RCP<Distributor> reverseDistributor_;
-
-    /// \brief The number of bytes sent by this proc in the last call to do/doReverse
-    size_t lastRoundBytesSend_;
-
-    /// \brief The number of bytes received by this proc in the last call to do/doReverse
-    size_t lastRoundBytesRecv_;
 
     /// \brief Compute send (GID,PID) pairs from receive (GID,PID) pairs.
     ///
@@ -866,9 +852,6 @@ namespace Tpetra {
              numPackets,
              arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false));
     doWaits ();
-
-    lastRoundBytesSend_ = exports.size () * sizeof (Packet);
-    lastRoundBytesRecv_ = imports.size () * sizeof (Packet);
   }
 
   template <class Packet>
@@ -905,9 +888,6 @@ namespace Tpetra {
              arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false),
              numImportPacketsPerLID);
     doWaits ();
-
-    lastRoundBytesSend_ = exports.size () * sizeof (Packet);
-    lastRoundBytesRecv_ = imports.size () * sizeof (Packet);
   }
 
 
@@ -965,9 +945,6 @@ namespace Tpetra {
                     numPackets,
                     arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false));
     doReverseWaits ();
-
-    lastRoundBytesSend_ = exports.size() * sizeof(Packet);
-    lastRoundBytesRecv_ = imports.size() * sizeof(Packet);
   }
 
   template <class Packet>
@@ -1000,9 +977,6 @@ namespace Tpetra {
                     arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false),
                     numImportPacketsPerLID);
     doReverseWaits ();
-
-    lastRoundBytesSend_ = exports.size() * sizeof(Packet);
-    lastRoundBytesRecv_ = imports.size() * sizeof(Packet);
   }
 
   template <class Packet>
