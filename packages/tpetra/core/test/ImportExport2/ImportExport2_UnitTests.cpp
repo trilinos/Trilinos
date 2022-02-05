@@ -2220,7 +2220,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   typedef Tpetra::Map<LO, GO> map_type;
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
-  using packet_type = typename Tpetra::CrsMatrix<Scalar, LO, GO>::packet_type;
   using GST = Tpetra::global_size_t;
   using IST = typename CrsMatrixType::impl_scalar_type;
   using buffer_device_type = typename CrsMatrixType::buffer_device_type;
@@ -2326,13 +2325,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       std::cerr << os.str ();
     }
     exports.sync_host ();
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Getting Teuchos::ArrayView" << std::endl;
-      std::cerr << os.str ();
-    }
-    Teuchos::ArrayView<char> exports_av =
-      Tpetra::Details::getArrayViewFromDualView (exports);
     if (debug) {
       Comm->barrier ();
     }
@@ -2343,7 +2335,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       os << *prefix << "Calling 3-arg doPostsAndWaits" << std::endl;
       std::cerr << os.str ();
     }
-    distor.doPostsAndWaits<size_t>(numExportPackets().getConst(), 1,numImportPackets());
+    Kokkos::View<const size_t*, Kokkos::HostSpace> numExportPacketsView(numExportPackets.data(), numExportPackets.size());
+    Kokkos::View<size_t*, Kokkos::HostSpace> numImportPacketsView(numImportPackets.data(), numImportPackets.size());
+    distor.doPostsAndWaits(numExportPacketsView, 1, numImportPacketsView);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done with 3-arg doPostsAndWaits" << std::endl;
@@ -2360,7 +2354,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       os << *prefix << "Calling 4-arg doPostsAndWaits" << std::endl;
       std::cerr << os.str ();
     }
-    distor.doPostsAndWaits<packet_type>(exports_av,numExportPackets(),imports(),numImportPackets());
+    Kokkos::View<char*, Kokkos::HostSpace> importsView(imports.data(), imports.size());
+    distor.doPostsAndWaits(exports.view_host(),numExportPackets(),importsView,numImportPackets());
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done with 4-arg doPostsAndWaits" << std::endl;
