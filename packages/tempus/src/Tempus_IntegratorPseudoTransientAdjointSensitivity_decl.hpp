@@ -244,6 +244,14 @@ public:
   //! What mode the current time integration step is in
   SensitivityStepMode getStepMode() const;
 
+  //! Set/get whether to do the forward integration
+  void setDoForwardIntegration(const bool f) { do_forward_integration_ = f; }
+  bool getDoForwardIntegration() const { return do_forward_integration_; }
+
+  //! Set/get whether to do the adjoint integration
+  void setDoAdjointIntegration(const bool f) { do_adjoint_integration_ = f; }
+  bool getDoAdjointIntegration() const { return do_adjoint_integration_; }
+
 protected:
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
@@ -267,6 +275,8 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> > g_;
   Teuchos::RCP<DMVPV> dgdp_;
   SensitivityStepMode stepMode_;
+  bool do_forward_integration_;
+  bool do_adjoint_integration_;
 };
 
 /// Nonmember constructor
