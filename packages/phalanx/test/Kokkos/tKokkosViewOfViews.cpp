@@ -21,7 +21,7 @@ TEUCHOS_UNIT_TEST(ViewOfViews,from_separate_views) {
   Kokkos::deep_copy(a,2.0);
   Kokkos::deep_copy(b,3.0);
 
-  // Requirement 1: The inner view must be unmanaged to prevent double deleteion!
+  // Requirement 1: The inner view must be unmanaged to prevent double deletion!
   using InnerView = Kokkos::View<double***,mem_t,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using OuterView = Kokkos::View<InnerView*,mem_t>;
 
@@ -62,50 +62,3 @@ TEUCHOS_UNIT_TEST(ViewOfViews,from_separate_views) {
 //   new (&v_host(i)) InnerView(a);
 // for (size_t i=0; i < v_host.extent(0); ++i)
 //   v_host(i).~InnerView();
-
-// *************************************
-// This test demonstrates how to create a view of views via direct
-// allocations (not separate views) for double and FAD types.
-// *************************************
-TEUCHOS_UNIT_TEST(ViewOfViews,no_separate_views) {
-
-  const int num_cells = 10;
-  const int num_pts = 8;
-  const int num_equations = 32;
-
-  // The inner view must be managed to handle proper deleteion! This
-  // is different from when the ViewOfViews is created from separate
-  // already allocated views.
-  using InnerView = Kokkos::View<double***,mem_t>;
-  using OuterView = Kokkos::View<InnerView*,mem_t>;
-
-  // Requirement 1: The host view must exist for the life of the device view!
-  OuterView::HostMirror v_host("outer host",3);
-  {
-    v_host(0) = Kokkos::View<double***,mem_t>("a",num_cells,num_pts,num_equations);
-    v_host(1) = Kokkos::View<double***,mem_t>("b",num_cells,num_pts,num_equations);
-    v_host(2) = Kokkos::View<double***,mem_t>("c",num_cells,num_pts,num_equations);
-
-    // Requirement 2: Need to deep_copy the host view to device to
-    // initialize the inner views correctly.
-    OuterView v_dev("outer device",3);
-    Kokkos::deep_copy(v_dev,v_host);
-
-    Kokkos::deep_copy(v_host(0),2.0);
-    Kokkos::deep_copy(v_host(1),3.0);
-
-    auto policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{num_cells,num_pts,num_equations});
-    Kokkos::parallel_for("view of view test",policy,KOKKOS_LAMBDA (const int cell,const int pt, const int eq) {
-      v_dev(2)(cell,pt,eq) = v_dev(0)(cell,pt,eq) + v_dev(1)(cell,pt,eq);
-    });
-
-    auto c_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),v_host(2));
-
-    const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
-    for (int cell=0; cell < num_cells; ++cell)
-      for (int pt=0; pt < num_pts; ++pt)
-        for (int eq=0; eq < num_equations; ++eq) {
-          TEST_FLOATING_EQUALITY(c_host(cell,pt,eq),5.0,tol);
-        }
-  }
-}
