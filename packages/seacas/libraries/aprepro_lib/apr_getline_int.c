@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1991, 1992, 1993, 2020, 2021 by Chris Thewalt (thewalt@ce.berkeley.edu)
+ * Copyright (C) 1991, 1992, 1993, 2020, 2021, 2022 by Chris Thewalt (thewalt@ce.berkeley.edu)
  *
  * Permission to use, copy, modify, and distribute this software
  * for any purpose and without fee is hereby granted, provided
@@ -266,7 +266,7 @@ static void ap_gl_init(void)
   if (ap_gl_init_done < 0) { /* -1 only on startup */
     const char *cp = (const char *)getenv("COLUMNS");
     if (cp != NULL) {
-      int w = atoi(cp);
+      int w = strtol(cp, NULL, 10);
       if (w > 20)
         ap_gl_setwidth(w);
     }

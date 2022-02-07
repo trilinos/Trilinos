@@ -2,7 +2,7 @@
 // Name        : testnas2exo.cpp
 // Author      : Ramon J. Moral (STRA LLC), John Niederhaus (Coordinator, SNL)
 // Version     :
-// Copyright   : (c) Sandia National Labs 2020, 2021
+// Copyright   : (c) Sandia National Labs 2020, 2021, 2022
 // Description : Testing nas2exo Library, C++ 14
 //============================================================================
 
@@ -16,7 +16,7 @@ namespace NasModules {
   {
     // TODO Auto-generated constructor stub
     if (!doesFileExist(this->inFileName)) {
-      std::string msg = "This file does not exist: " + ifname;
+      std::string msg = "This file does not exist: " + this->inFileName;
       throw std::invalid_argument(msg);
     }
 

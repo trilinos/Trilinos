@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -179,7 +179,6 @@ int main(int argc, char **argv)
     char *env;                        /* Contents of environmental variable.  */
     int   hint;                       /* ROMIO hint index.                    */
     char  hint_value[MAX_STRING_LEN]; /* ROMIO hint value.                    */
-    int   rank;                       /* MPI process rank.                    */
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     /*      The "value" of the hint is obtained from the environment of
@@ -270,22 +269,22 @@ int parse_input(int argc, char *argv[], bool *exodus, bool *close_files, char *f
   while (++arg < argc) {
     if (strcmp("-c", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_nodal_fields = atoi(argv[arg]);
+        *num_nodal_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-nv", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_nodal_fields = atoi(argv[arg]);
+        *num_nodal_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-gv", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_global_fields = atoi(argv[arg]);
+        *num_global_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-ev", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_element_fields = atoi(argv[arg]);
+        *num_element_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-f", argv[arg]) == 0) {
@@ -295,17 +294,17 @@ int parse_input(int argc, char *argv[], bool *exodus, bool *close_files, char *f
     }
     else if (strcmp("-M", argv[arg]) == 0) {
       if (++arg < argc) {
-        *files_per_domain = atoi(argv[arg]);
+        *files_per_domain = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-i", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_iterations = atoi(argv[arg]);
+        *num_iterations = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-w", argv[arg]) == 0) {
       if (++arg < argc) {
-        *sleep_time = atoi(argv[arg]);
+        *sleep_time = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-x", argv[arg]) == 0) {

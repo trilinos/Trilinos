@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -29,7 +29,7 @@ static void ex__get_entity_count(int exoid, ex_init_params *info)
   int ndims;
   nc_inq(exoid, &ndims, NULL, NULL, NULL);
   for (int dimid = 0; dimid < ndims; dimid++) {
-    char   dim_nm[NC_MAX_NAME];
+    char   dim_nm[NC_MAX_NAME + 1];
     size_t dim_sz;
     nc_inq_dim(exoid, dimid, dim_nm, &dim_sz);
     /* For assemblies, we check for a dim starting with "num_entity_assembly" */

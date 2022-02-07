@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -606,14 +606,14 @@ bool SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("TimeStepOffset");
     if (temp != nullptr) {
       errno            = 0;
-      time_step_offset = atoi(temp);
+      time_step_offset = strtol(temp, NULL, 10);
       SMART_ASSERT(errno == 0);
     }
     else {
       const char *temp2 = options_.retrieve("T");
       if (temp2 != nullptr) {
         errno            = 0;
-        time_step_offset = atoi(temp2);
+        time_step_offset = strtol(temp2, NULL, 10);
         SMART_ASSERT(errno == 0);
       }
     }
@@ -807,7 +807,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("max_warnings");
     if (temp != nullptr) {
       errno        = 0;
-      max_warnings = atoi(temp);
+      max_warnings = strtol(temp, NULL, 10);
       SMART_ASSERT(errno == 0);
     }
   }

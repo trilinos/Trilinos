@@ -1,4 +1,4 @@
-Checks: '-*,readability-identifier-naming,misc-assert-side-effect,readability-container-size-empty'
+Checks: '-*,misc-assert-side-effect,readability-container-size-empty'
 CheckOptions:
   - key: readability-identifier-naming.TypedefCase
     value: CamelCase
@@ -6,8 +6,6 @@ CheckOptions:
     value: CamelCase
   - key: readability-identifier-naming.ClassCase
     value: CamelCase
-  - key: readability-identifier-naming.VariableCase
-    value: camelBack
   - key: readability-identifier-naming.ParameterCase
     value: lower_case
   - key: readability-identifier-naming.FunctionCase

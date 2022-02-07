@@ -56,7 +56,7 @@ namespace Ioex {
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
     DatabaseIO(const DatabaseIO &from) = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO() override                        = default;
@@ -105,7 +105,7 @@ namespace Ioex {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
+    int64_t get_field_internal(const Ioss::SideSet *ss, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -134,7 +134,7 @@ namespace Ioex {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
+    int64_t put_field_internal(const Ioss::SideSet *ss, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
@@ -215,17 +215,17 @@ namespace Ioex {
     int64_t handle_face_ids(const Ioss::FaceBlock *eb, void *ids, size_t num_to_get) const;
     int64_t handle_edge_ids(const Ioss::EdgeBlock *eb, void *ids, size_t num_to_get) const;
 
-    int64_t get_side_connectivity(const Ioss::SideBlock *fb, int64_t id, int64_t my_side_count,
+    int64_t get_side_connectivity(const Ioss::SideBlock *sd_blk, int64_t id, int64_t my_side_count,
                                   void *fconnect, bool map_ids) const;
     template <typename INT>
-    int64_t get_side_connectivity_internal(const Ioss::SideBlock *fb, int64_t id,
+    int64_t get_side_connectivity_internal(const Ioss::SideBlock *sd_blk, int64_t id,
                                            int64_t side_count, INT *fconnect, bool map_ids) const;
-    int64_t get_side_distributions(const Ioss::SideBlock *fb, int64_t id, int64_t my_side_count,
+    int64_t get_side_distributions(const Ioss::SideBlock *sd_blk, int64_t id, int64_t my_side_count,
                                    double *dist_fact, size_t data_size) const;
 
-    int64_t get_side_field(const Ioss::SideBlock *ef_blk, const Ioss::Field &field, void *data,
+    int64_t get_side_field(const Ioss::SideBlock *sd_blk, const Ioss::Field &field, void *data,
                            size_t data_size) const;
-    int64_t put_side_field(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
+    int64_t put_side_field(const Ioss::SideBlock *sd_blk, const Ioss::Field &field, void *data,
                            size_t data_size) const;
 
     mutable bool isSerialParallel{
