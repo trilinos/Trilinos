@@ -72,6 +72,8 @@ view_copy(const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src);
 
 template<class Space, class T, class ... P>
 struct MirrorType;
+template<class Space, class T, class ... P>
+struct MirrorViewType;
 
 } // namespace Impl
 
@@ -147,6 +149,19 @@ typename std::enable_if<
   typename Impl::MirrorType<Space,T,P ...>::view_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Space&, const Kokkos::View<T,P...> & src);
+
+template <class Space, class T, class... P>
+typename Impl::MirrorViewType<Space, T, P...>::view_type
+create_mirror_view_and_copy(
+    const Space&, const Kokkos::View<T, P...>& src,
+    std::string const& name = "",
+    typename std::enable_if<
+        ( std::is_same<typename ViewTraits<T, P...>::specialize,
+              Kokkos::Impl::ViewSpecializeSacadoFad>::value ||
+          std::is_same< typename ViewTraits<T,P...>::specialize ,
+              Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+        !Impl::MirrorViewType<Space, T, P...>::is_same_memspace>::type* =
+        nullptr);
 
 } // namespace Kokkos
 

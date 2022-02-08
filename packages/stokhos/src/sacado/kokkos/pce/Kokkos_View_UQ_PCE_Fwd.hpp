@@ -61,6 +61,8 @@ namespace Kokkos {
   namespace Impl {
     template<class Space, class T, class ... P>
     struct MirrorType;
+    template<class Space, class T, class ... P>
+    struct MirrorViewType;
   }
 
 }
@@ -138,6 +140,17 @@ typename std::enable_if<
   typename Impl::MirrorType<Space,T,P ...>::view_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Space&, const Kokkos::View<T,P...> & src);
+
+template <class Space, class T, class... P>
+typename Impl::MirrorViewType<Space, T, P...>::view_type
+create_mirror_view_and_copy(
+    const Space&, const Kokkos::View<T, P...>& src,
+    std::string const& name = "",
+    typename std::enable_if<
+        std::is_same<typename ViewTraits<T, P...>::specialize,
+            Kokkos::Experimental::Impl::ViewPCEContiguous>::value &&
+        !Impl::MirrorViewType<Space, T, P...>::is_same_memspace>::type* =
+        nullptr);
 
 // Overload of deep_copy for UQ::PCE views intializing to a constant scalar
 template< class DT, class ... DP >
