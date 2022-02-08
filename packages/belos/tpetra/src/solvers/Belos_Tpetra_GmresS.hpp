@@ -227,7 +227,7 @@ private:
 		   P_prev, STS::one ());
       }
     }
-    const int rank = this->normalizeBelosOrthoManager (Q, G);
+    const int rank = this->normalizeBelosOrthoManager (outPtr, Q, G, output.numIters);
     if (outPtr != nullptr) {
       *outPtr << "Rank of s-step basis: " << rank << endl;
     }

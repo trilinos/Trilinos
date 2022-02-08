@@ -93,8 +93,10 @@ public:
   bool needToScale = true;
   bool needToReortho = false;
   bool delayedNorm = true;
+  bool delayedRenorm = false;
   int maxOrthoSteps = 0;
   std::string orthoType {"ICGS"};
+  std::string tsqrType  {"none"};
   std::string precoSide {"none"};
   bool computeRitzValues = true;
   bool computeRitzValuesOnFly = false;
@@ -195,6 +197,7 @@ operator<< (std::ostream& out,
   if (si.resCycle > 0) {
     out << " Restart cycle: " << si.resCycle << endl;
     out << " Orthogonalization: " << si.orthoType << endl;
+    out << " TSQR: " << si.tsqrType << endl;
   }
   out << " Step size: " << si.stepSize << endl
       << " Preconditioner: " << si.precoSide << endl;
