@@ -241,7 +241,7 @@ namespace Stokhos {
     typedef typename Storage::value_type BaseScalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename FlatVector::dual_view_type flat_view_type;
+    typedef typename FlatVector::dual_view_type::t_dev flat_view_type;
 
     // Have to do a nasty const-cast because getLocalViewDevice(ReadWrite) is a
     // non-const method, yet getLocalViewDevice(ReadOnly) returns a const-view
@@ -251,13 +251,7 @@ namespace Stokhos {
     mv_type& vec_nc = const_cast<mv_type&>(vec);
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals (vec_nc.getLocalViewDevice(Tpetra::Access::ReadWrite), vec_nc.getLocalViewHost(Tpetra::Access::ReadWrite));
-    if (vec.need_sync_device ()) {
-      flat_vals.modify_host ();
-    }
-    else if (vec.need_sync_host ()) {
-      flat_vals.modify_device ();
-    }
+    flat_view_type flat_vals = vec_nc.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
@@ -284,16 +278,10 @@ namespace Stokhos {
     typedef typename Storage::value_type BaseScalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename FlatVector::dual_view_type flat_view_type;
+    typedef typename FlatVector::dual_view_type::t_dev flat_view_type;
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals (vec.getLocalViewDevice(Tpetra::Access::ReadWrite), vec.getLocalViewHost(Tpetra::Access::ReadWrite));
-    if (vec.need_sync_device ()) {
-      flat_vals.modify_host ();
-    }
-    else if (vec.need_sync_host ()) {
-      flat_vals.modify_device ();
-    }
+    flat_view_type flat_vals = vec.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
