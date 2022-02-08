@@ -206,7 +206,7 @@ namespace panzer
     } // end loop over the field multipliers
 
     if (Sacado::IsADType<ScalarT>::value) {
-      const auto fadSize = Kokkos::dimension_scalar(field_.get_view());
+      const auto fadSize = Kokkos::dimension_scalar(field_.get_static_view());
       tmp_ = PHX::View<ScalarT*>("panzer::Integrator::BasisTimesVector::tmp_",field_.extent(0),fadSize);
     } else {
       tmp_ = PHX::View<ScalarT*>("panzer::Integrator::BasisTimesVector::tmp_",field_.extent(0));
