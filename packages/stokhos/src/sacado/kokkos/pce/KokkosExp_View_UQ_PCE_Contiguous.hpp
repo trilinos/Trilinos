@@ -336,6 +336,27 @@ create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
     view_alloc(src.label(), wi, src.impl_map().cijk()), layout);
 }
 
+template <class Space, class T, class... P>
+typename Impl::MirrorViewType<Space, T, P...>::view_type
+create_mirror_view_and_copy(
+    const Space&, const Kokkos::View<T, P...>& src,
+    std::string const& name,
+    typename std::enable_if<
+        std::is_same<typename ViewTraits<T, P...>::specialize,
+            Kokkos::Experimental::Impl::ViewPCEContiguous>::value &&
+        !Impl::MirrorViewType<Space, T, P...>::is_same_memspace>::type*)
+{
+  using src_type    = View<T,P...>;
+  using Mirror      = typename Impl::MirrorViewType<Space, T, P...>::view_type;
+  std::string label = name.empty() ? src.label() : name;
+  typename src_type::array_layout layout = src.layout();
+  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+  auto mirror       = typename Mirror::non_const_type{
+      view_alloc(WithoutInitializing, label, src.impl_map().cijk()), layout};
+  deep_copy(mirror, src);
+  return mirror;
+}
+
 // Overload of deep_copy for UQ::PCE views intializing to a constant scalar
 template< class DT, class ... DP >
 void deep_copy(
