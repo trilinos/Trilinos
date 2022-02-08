@@ -271,18 +271,23 @@ namespace MueLu {
       
       // Build Thyra linear algebra objects
       RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(A)->getCrsMatrix());
-      
-      typedef Thyra::PreconditionerFactoryBase<Scalar>                                     Base;
-      typedef Thyra::MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> ImplMueLu;
-      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, ImplMueLu>(), "MueLu");
+
+      if(!MueLu::linearSolverBuilder.isRegisteredPreconditioningStrategyFactory("MueLu")) {      
+        typedef Thyra::PreconditionerFactoryBase<Scalar>                                     Base;
+        typedef Thyra::MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> ImplMueLu;
+        MueLu::linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, ImplMueLu>(), "MueLu");
+      }
 #ifdef HAVE_MUELU_IFPACK2
       // Register Ifpack2 as a Stratimikos preconditioner strategy.
-      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
-      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+      if(!MueLu::linearSolverBuilder.isRegisteredPreconditioningStrategyFactory("Ifpack2")) {     
+        typedef Thyra::PreconditionerFactoryBase<Scalar>                                     Base; 
+        typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
+        MueLu::linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+      }
 #endif
-      
-      // std::cout << "HERE2 " << &MueLu::linearSolverBuilder << *linearSolverBuilder.getValidParameters();
+
       linearSolverBuilder.setParameterList(params);
+      
 
       // Build a new "solver factory" according to the previously specified parameter list.
       // RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);

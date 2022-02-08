@@ -196,6 +196,9 @@ public:
   void setDefaultPreconditioningStrategyFactoryName(
     const std::string &precStrategyName);
 
+  /** \brief Returns true if the preconditioning strategy factory is registered */
+  bool isRegisteredPreconditioningStrategyFactory(const std::string &precStrategyName);
+
   /** \brief Setup the command-line processor to read in the needed data to
    * extra the parameters from.
    *
@@ -253,6 +256,9 @@ public:
     const Thyra::LinearOpWithSolveFactoryBase<double> &lowsFactory,
     const std::string &outputXmlFileName  = "" 
     ) const;
+
+
+     
   
   /** \brief Get the name of the linear solver strategy that will be created
    * on the next call to <tt>this->createLinearSolverStrategy()</tt>.

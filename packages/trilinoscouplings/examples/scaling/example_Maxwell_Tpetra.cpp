@@ -148,6 +148,7 @@
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
+#include <MueLu_Utilities.hpp>
 #include <MueLu_Exceptions.hpp>
 
 
@@ -164,6 +165,10 @@
 #ifdef HAVE_TRILINOSCOUPLINGS_IFPACK2
 #include <Thyra_Ifpack2PreconditionerFactory.hpp>
 #endif
+#ifdef HAVE_TRILINOSCOUPLINGS_SHYLU_DD
+#include <Stratimikos_FROSch_def.hpp>
+#endif
+
 #endif
 
 //#include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
@@ -2557,6 +2562,10 @@ RCP<Xpetra_Operator> BuildPreconditioner_MueLu(char ProblemType[],
 
   RCP<Xpetra_MultiVector> xcoords = toXpetra(coords);
 
+#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
+  // Enable FROSch as an optional sub-solver
+  Stratimikos::enableFROSch<LO,GO,NO>(MueLu::linearSolverBuilder);
+#endif
 
   // construct preconditioner
   RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
@@ -2672,17 +2681,19 @@ void TestPreconditioner_Stratimikos(char ProblemType[],
   bt->initialize(thyTpMap, thyDomMap, b);
 
   /* Stratimikos setup */
-  Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-  Stratimikos::enableMueLuRefMaxwell<LO,GO,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+  Stratimikos::enableMueLuRefMaxwell<LO,GO,Node>(MueLu::linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+#ifdef HAVE_TRILINOSCOUPLINGS_SHYLU_DD
+  Stratimikos::enableFROSch<LO,GO,NO>(MueLu::linearSolverBuilder);
+#endif
 #ifdef HAVE_TRILINOSCOUPLINGS_IFPACK2
   // Register Ifpack2 as a Stratimikos preconditioner strategy.
   typedef Thyra::PreconditionerFactoryBase<double>                                   Base;
   typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double,LO,GO,Node> > Impl;
-  linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+  MueLu::linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif
 
-  linearSolverBuilder.setParameterList(rcp(&SList,false));
-  RCP<Thyra::LinearOpWithSolveFactoryBase<SC> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
+  MueLu::linearSolverBuilder.setParameterList(rcp(&SList,false));
+  RCP<Thyra::LinearOpWithSolveFactoryBase<SC> > lowsFactory = createLinearSolveStrategy(MueLu::linearSolverBuilder);
   RCP<Thyra::LinearOpWithSolveBase<SC> > lows = Thyra::linearOpWithSolve<SC>(*lowsFactory,At);
 
   /* Solve */

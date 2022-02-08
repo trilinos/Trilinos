@@ -72,8 +72,6 @@
 
 namespace MueLu {
 
-  inline Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-
   /*!
     @brief Utility functions for Maxwell
     

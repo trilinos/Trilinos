@@ -84,6 +84,9 @@
 /* Define if Stratimikos is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
 
+/* Define if ShyLU_DD is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_SHYLU_DD
+
 /* Special logic for avatar */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_AVATART
 #cmakedefine HAVE_TRILINOSCOUPLINGS_AVATAR

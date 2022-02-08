@@ -381,6 +381,7 @@ DefaultLinearSolverBuilder::createLinearSolveStrategy(
   justInTimeInitialize();
 
   // Get the name of the linear solve strategy
+  //#define THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDER_DUMP  /*CMS*/
 #ifdef THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDER_DUMP
   std::cout << "\nEntering DefaultLinearSolverBuilder"
             << "::createLinearSolveStrategy(...) ...\n";
@@ -462,9 +463,16 @@ DefaultLinearSolverBuilder::createPreconditioningStrategy(
 }
 
 
+bool DefaultLinearSolverBuilder::isRegisteredPreconditioningStrategyFactory(const std::string &precStrategyName) {
+  for(auto it = validPfNames_.begin(); it != validPfNames_.end(); it++) {
+    if(precStrategyName == *it) 
+      return true;
+  }
+  return false;   
+}
+
+
 // private
-
-
 void DefaultLinearSolverBuilder::initializeDefaults()
 {
 

@@ -108,6 +108,15 @@ class Epetra_Vector;
 
 #include <MueLu_UtilitiesBase.hpp>
 
+// Stratimikos
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Thyra_LinearOpWithSolveBase.hpp>
+namespace MueLu {
+  extern Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+}
+#endif
+
 
 namespace MueLu {
 
