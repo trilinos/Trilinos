@@ -42,10 +42,6 @@
 #include "Sacado_cmath.hpp"
 #include <ostream>      // for std::ostream
 
-#ifdef __CUDACC__
-#include <math_functions.h>
-#endif
-
 /*
 namespace Sacado {
   namespace MP {
