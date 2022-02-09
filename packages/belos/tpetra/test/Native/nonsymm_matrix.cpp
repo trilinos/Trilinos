@@ -21,10 +21,12 @@ struct CommandLineOptions {
   int maxAllowedNumIters {30};
   int maxNumIters {100};
   int restartLength {30};
+  double tol {-1.0};
   std::string orthoType {"ICGS"};
   int stepSize {1};
   bool useCholQR {false};
   bool useCholQR2 {false};
+  bool useSVQR2 {false};
   bool computeRitzValues {true};
   bool zeroInitialGuess {true};
   bool verbose {true};
@@ -54,6 +56,8 @@ TEUCHOS_STATIC_SETUP()
                  "Maximum number of iterations per restart cycle.  "
                  "This corresponds to the standard Belos parameter "
                  "\"Num Blocks\".");
+  clp.setOption ("convergenceTol", &commandLineOptions.tol,
+                 "Convergence tolerance");
   clp.setOption ("ortho", &commandLineOptions.orthoType,
                  "Name of the orthogonalization procedure");
   clp.setOption ("stepSize", &commandLineOptions.stepSize,
@@ -62,6 +66,8 @@ TEUCHOS_STATIC_SETUP()
                  "Whether to use CholQR");
   clp.setOption ("useCholQR2", "noCholQR2", &commandLineOptions.useCholQR2,
                  "Whether to use CholQR2");
+  clp.setOption ("useSVQR2", "noSVQR2", &commandLineOptions.useSVQR2,
+                 "Whether to use SVQR2");
   clp.setOption ("computeRitzValues", "noRitzValues", &commandLineOptions.computeRitzValues,
                  "Whether to compute Ritz values");
   clp.setOption ("zeroInitialGuess", "nonzeroInitialGuess",
@@ -236,10 +242,14 @@ testSolver (Teuchos::FancyOStream& out,
   params->set ("Maximum Iterations", commandLineOptions.maxNumIters);
   params->set ("Num Blocks", commandLineOptions.restartLength);
   params->set ("Orthogonalization", commandLineOptions.orthoType);
+  if (commandLineOptions.tol > ZERO) {
+    params->set ("Convergence Tolerance",  commandLineOptions.tol );
+  }
   if (solverName == "TPETRA GMRES S-STEP") {
     params->set ("Step Size", commandLineOptions.stepSize);
     params->set ("CholeskyQR",  commandLineOptions.useCholQR);
     params->set ("CholeskyQR2", commandLineOptions.useCholQR2);
+    params->set ("SVQR2", commandLineOptions.useSVQR2);
   }
   if (solverName == "TPETRA GMRES S-STEP" || solverName == "TPETRA GMRES SINGLE REDUCE" || solverName == "TPETRA GMRES PIPELINE") {
     params->set ("Compute Ritz Values", commandLineOptions.computeRitzValues);

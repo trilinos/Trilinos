@@ -1431,6 +1431,9 @@ private:
                   *outPtr << " > break at step = " << iiter+1 << " (" << step << ") with metric = " << metric
                           << " and tol = " << input.tol << endl;
                 }
+                if (delayedNorm || lowSynch_) {
+                  iter = Iter;
+                }
                 step = iiter+1;
                 converged = true;
                 break;
@@ -1446,6 +1449,9 @@ private:
             #endif
             if (STM::isnaninf (metric)) {
               // metric is nan
+              if (delayedNorm || lowSynch_) {
+                iter = Iter;
+              }
               break;
             }
           }
@@ -1463,6 +1469,9 @@ private:
             Step = step;
             Rank = Step+1; // full-rank..
             delayedNorm = false;
+            if (outPtr != nullptr) {
+              *outPtr << endl << " running clean up steps " << endl;
+            }
           } else {
             // done check
             doneCheck = true;
