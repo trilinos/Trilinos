@@ -295,7 +295,7 @@ public:
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const
      {
-       for(int i=0;i<static_cast<int>(local_lids.extent(1));i++) 
+       for(int i=0;i<static_cast<int>(global_lids.extent(1));i++) 
          local_lids(cell,i) = global_lids(cellIds(cell),i);
      }
      

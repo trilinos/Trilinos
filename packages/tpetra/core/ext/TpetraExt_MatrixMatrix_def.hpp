@@ -1069,53 +1069,53 @@ void Add(
 namespace MMdetails{
 
 /*********************************************************************************************************/
-// Prints MMM-style statistics on communication done with an Import or Export object
-template <class TransferType>
-void printMultiplicationStatistics(Teuchos::RCP<TransferType > Transfer, const std::string &label) {
-  if (Transfer.is_null())
-    return;
-
-  const Distributor & Distor                   = Transfer->getDistributor();
-  Teuchos::RCP<const Teuchos::Comm<int> > Comm = Transfer->getSourceMap()->getComm();
-
-  size_t rows_send   = Transfer->getNumExportIDs();
-  size_t rows_recv   = Transfer->getNumRemoteIDs();
-
-  size_t round1_send = Transfer->getNumExportIDs() * sizeof(size_t);
-  size_t round1_recv = Transfer->getNumRemoteIDs() * sizeof(size_t);
-  size_t num_send_neighbors = Distor.getNumSends();
-  size_t num_recv_neighbors = Distor.getNumReceives();
-  size_t round2_send, round2_recv;
-  Distor.getLastDoStatistics(round2_send,round2_recv);
-
-  int myPID    = Comm->getRank();
-  int NumProcs = Comm->getSize();
-
-  // Processor by processor statistics
-  //    printf("[%d] %s Statistics: neigh[s/r]=%d/%d rows[s/r]=%d/%d r1bytes[s/r]=%d/%d r2bytes[s/r]=%d/%d\n",
-  //    myPID, label.c_str(),num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv);
-
-  // Global statistics
-  size_t lstats[8] = {num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv};
-  size_t gstats_min[8], gstats_max[8];
-
-  double lstats_avg[8], gstats_avg[8];
-  for(int i=0; i<8; i++)
-    lstats_avg[i] = ((double)lstats[i])/NumProcs;
-
-  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_MIN,8,lstats,gstats_min);
-  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_MAX,8,lstats,gstats_max);
-  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_SUM,8,lstats_avg,gstats_avg);
-
-  if(!myPID) {
-    printf("%s Send Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
-           (int)gstats_min[0],gstats_avg[0],(int)gstats_max[0], (int)gstats_min[2],gstats_avg[2],(int)gstats_max[2],
-           (int)gstats_min[4],gstats_avg[4],(int)gstats_max[4], (int)gstats_min[6],gstats_avg[6],(int)gstats_max[6]);
-    printf("%s Recv Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
-           (int)gstats_min[1],gstats_avg[1],(int)gstats_max[1], (int)gstats_min[3],gstats_avg[3],(int)gstats_max[3],
-           (int)gstats_min[5],gstats_avg[5],(int)gstats_max[5], (int)gstats_min[7],gstats_avg[7],(int)gstats_max[7]);
-  }
-}
+//// Prints MMM-style statistics on communication done with an Import or Export object
+//template <class TransferType>
+//void printMultiplicationStatistics(Teuchos::RCP<TransferType > Transfer, const std::string &label) {
+//  if (Transfer.is_null())
+//    return;
+//
+//  const Distributor & Distor                   = Transfer->getDistributor();
+//  Teuchos::RCP<const Teuchos::Comm<int> > Comm = Transfer->getSourceMap()->getComm();
+//
+//  size_t rows_send   = Transfer->getNumExportIDs();
+//  size_t rows_recv   = Transfer->getNumRemoteIDs();
+//
+//  size_t round1_send = Transfer->getNumExportIDs() * sizeof(size_t);
+//  size_t round1_recv = Transfer->getNumRemoteIDs() * sizeof(size_t);
+//  size_t num_send_neighbors = Distor.getNumSends();
+//  size_t num_recv_neighbors = Distor.getNumReceives();
+//  size_t round2_send, round2_recv;
+//  Distor.getLastDoStatistics(round2_send,round2_recv);
+//
+//  int myPID    = Comm->getRank();
+//  int NumProcs = Comm->getSize();
+//
+//  // Processor by processor statistics
+//  //    printf("[%d] %s Statistics: neigh[s/r]=%d/%d rows[s/r]=%d/%d r1bytes[s/r]=%d/%d r2bytes[s/r]=%d/%d\n",
+//  //    myPID, label.c_str(),num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv);
+//
+//  // Global statistics
+//  size_t lstats[8] = {num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv};
+//  size_t gstats_min[8], gstats_max[8];
+//
+//  double lstats_avg[8], gstats_avg[8];
+//  for(int i=0; i<8; i++)
+//    lstats_avg[i] = ((double)lstats[i])/NumProcs;
+//
+//  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_MIN,8,lstats,gstats_min);
+//  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_MAX,8,lstats,gstats_max);
+//  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_SUM,8,lstats_avg,gstats_avg);
+//
+//  if(!myPID) {
+//    printf("%s Send Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
+//           (int)gstats_min[0],gstats_avg[0],(int)gstats_max[0], (int)gstats_min[2],gstats_avg[2],(int)gstats_max[2],
+//           (int)gstats_min[4],gstats_avg[4],(int)gstats_max[4], (int)gstats_min[6],gstats_avg[6],(int)gstats_max[6]);
+//    printf("%s Recv Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
+//           (int)gstats_min[1],gstats_avg[1],(int)gstats_max[1], (int)gstats_min[3],gstats_avg[3],(int)gstats_max[3],
+//           (int)gstats_min[5],gstats_avg[5],(int)gstats_max[5], (int)gstats_min[7],gstats_avg[7],(int)gstats_max[7]);
+//  }
+//}
 
 // Kernel method for computing the local portion of C = A*B
 template<class Scalar,

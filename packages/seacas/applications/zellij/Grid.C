@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -254,8 +254,9 @@ void Grid::create_output_regions(SystemInterface &interFace)
       properties.add(Ioss::Property("processor_count", parallel_size()));
       properties.add(Ioss::Property("my_processor", i));
     }
-    Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
-        "exodus", interFace.outputName_, Ioss::WRITE_RESTART, (MPI_Comm)MPI_COMM_SELF, properties);
+    Ioss::DatabaseIO *dbo =
+        Ioss::IOFactory::create("exodus", interFace.outputName_, Ioss::WRITE_RESTART,
+                                Ioss::ParallelUtils::comm_self(), properties);
     if (dbo == nullptr || !dbo->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
@@ -404,7 +405,8 @@ void Grid::internal_process()
     }
   }
   if (util().parallel_rank() == 0) {
-    fmt::print("                {:L} Nodes; {:L} Elements.\n", node_count, element_count);
+    fmt::print("                {} Nodes; {} Elements.\n", fmt::group_digits(node_count),
+               fmt::group_digits(element_count));
   }
 }
 
@@ -647,20 +649,20 @@ template <typename INT> void Grid::output_surfaces(Cell &cell, INT /*dummy*/)
   int exoid = output_region(rank)->get_database()->get_file_pointer();
 
   // Get the surfaces on this cell...
-  auto &surfaces = cell.region()->get_sidesets();
+  const auto &surfaces = cell.region()->get_sidesets();
   for (const auto *surface : surfaces) {
 
     // Find corresponding surface on output mesh...
     auto *osurf = output_region(rank)->get_sideset(surface->name());
     SMART_ASSERT(osurf != nullptr);
-    auto &oblocks = osurf->get_side_blocks();
+    const auto &oblocks = osurf->get_side_blocks();
 
     std::vector<INT> elements;
     std::vector<INT> faces;
     elements.reserve(oblocks[0]->entity_count());
     faces.reserve(oblocks[0]->entity_count());
 
-    auto &blocks = surface->get_side_blocks();
+    const auto &blocks = surface->get_side_blocks();
     for (const auto *block : blocks) {
       // Get the element/face pairs for the SideBlock in this surface...
       std::vector<INT> element_side;
@@ -708,7 +710,7 @@ void Grid::output_block_connectivity(Cell &cell, const std::vector<INT> &node_ma
   if (rank >= m_startRank && rank < m_startRank + m_rankCount) {
     int exoid = output_region(rank)->get_database()->get_file_pointer();
 
-    auto            &blocks = cell.region()->get_element_blocks();
+    const auto      &blocks = cell.region()->get_element_blocks();
     std::vector<INT> connect;
     for (const auto *block : blocks) {
       block->get_field_data("connectivity_raw", connect);
@@ -829,7 +831,7 @@ template <typename INT> void Grid::output_element_map(Cell &cell, INT /*dummy*/)
   if (rank >= m_startRank && rank < m_startRank + m_rankCount) {
     int exoid = output_region(rank)->get_database()->get_file_pointer();
 
-    auto output_blocks = output_region(rank)->get_element_blocks();
+    const auto &output_blocks = output_region(rank)->get_element_blocks();
 
     // This is the element block offset for the "single output file"
     // for the block being output For example, if the total mesh has
@@ -1092,7 +1094,7 @@ namespace {
           auto &surf                      = surface->name();
           cell.m_localSurfaceOffset[surf] = local_surface_offset[rank][surf];
 
-          auto &blocks = surface->get_side_blocks();
+          const auto &blocks = surface->get_side_blocks();
           for (const auto *blk : blocks) {
             surface_face_count[rank][surf] += blk->entity_count();
             global_surface_face_count[surf] += blk->entity_count();
@@ -1267,8 +1269,8 @@ namespace {
   {
     // Check that 'filename' does not contain a starting/ending double quote...
     filename.erase(remove(filename.begin(), filename.end(), '\"'), filename.end());
-    Ioss::DatabaseIO *dbi =
-        Ioss::IOFactory::create("exodus", filename, Ioss::READ_RESTART, (MPI_Comm)MPI_COMM_SELF);
+    Ioss::DatabaseIO *dbi = Ioss::IOFactory::create("exodus", filename, Ioss::READ_RESTART,
+                                                    Ioss::ParallelUtils::comm_self());
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
@@ -1296,8 +1298,9 @@ namespace {
     int64_t nodes    = region->get_property("node_count").get_int();
     int64_t elements = region->get_property("element_count").get_int();
 
-    fmt::print(strm, " Database: {}\tNodes = {:L} \tElements = {:L}\n",
-               region->get_database()->get_filename(), nodes, elements);
+    fmt::print(strm, " Database: {}\tNodes = {} \tElements = {}\n",
+               region->get_database()->get_filename(), fmt::group_digits(nodes),
+               fmt::group_digits(elements));
   }
 
 } // namespace

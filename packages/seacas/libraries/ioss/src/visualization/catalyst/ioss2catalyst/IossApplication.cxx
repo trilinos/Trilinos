@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -116,8 +116,9 @@ void IossApplication::initializeMPI(int argc, char **argv) { MPI_Init(&argc, &ar
 
 void IossApplication::initMPIRankAndSize()
 {
-  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-  MPI_Comm_size(MPI_COMM_WORLD, &numRanks);
+  Ioss::ParallelUtils pu{};
+  myRank   = pu.parallel_rank();
+  numRanks = pu.parallel_size();
 }
 
 void IossApplication::finalizeMPI() { MPI_Finalize(); }
@@ -554,7 +555,8 @@ bool IossApplication::decomposedMeshExists(int ndx)
       fstream.close();
     }
   }
-  MPI_Bcast(&status, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  Ioss::ParallelUtils pu{};
+  pu.broadcast(status);
   return status == 1;
 }
 
@@ -581,7 +583,7 @@ void IossApplication::openInputIOSSDatabase(int ndx)
 
   Ioss::DatabaseIO *dbi =
       Ioss::IOFactory::create(getIOSSDatabaseType(ndx), getFileName(ndx), Ioss::READ_RESTART,
-                              (MPI_Comm)MPI_COMM_WORLD, inputProperties);
+                              Ioss::ParallelUtils::comm_world(), inputProperties);
   if (dbi == nullptr || !dbi->ok(true)) {
     printErrorMessage("Unable to open input file(s) " + getFileName(ndx));
     exitApplicationFailure();
@@ -617,8 +619,9 @@ void IossApplication::copyInputIOSSDatabaseOnRank()
   std::string           fn = copyOutputDatabaseName + "." + getFileSuffix(0);
   Ioss::PropertyManager outputProperties;
   outputProperties.add(Ioss::Property("COMPOSE_RESULTS", "NO"));
-  Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(getIOSSDatabaseType(0), fn, Ioss::WRITE_RESULTS,
-                                                  (MPI_Comm)MPI_COMM_WORLD, outputProperties);
+  Ioss::DatabaseIO *dbo =
+      Ioss::IOFactory::create(getIOSSDatabaseType(0), fn, Ioss::WRITE_RESULTS,
+                              Ioss::ParallelUtils::comm_world(), outputProperties);
   if (dbo == nullptr || !dbo->ok(true)) {
     printErrorMessage("Unable to open output file(s) " + fn);
     exitApplicationFailure();
@@ -678,7 +681,7 @@ void IossApplication::callCatalystIOSSDatabaseOnRankMultiGrid()
     outputProps.push_back(newProps);
     Ioss::DatabaseIO *newDbo =
         Ioss::IOFactory::create(getCatalystDatabaseType(ii), mytmpnm, Ioss::WRITE_RESULTS,
-                                (MPI_Comm)MPI_COMM_WORLD, *newProps);
+                                Ioss::ParallelUtils::comm_world(), *newProps);
     outputDbs.push_back(newDbo);
   }
   // create an output Ioss::Region instance for each grid
@@ -781,7 +784,7 @@ void IossApplication::callCatalystIOSSDatabaseOnRankOneGrid()
 
   Ioss::DatabaseIO *dbo =
       Ioss::IOFactory::create(getCatalystDatabaseType(0), "catalyst", Ioss::WRITE_RESULTS,
-                              (MPI_Comm)MPI_COMM_WORLD, outputProperties);
+                              Ioss::ParallelUtils::comm_world(), outputProperties);
   if (dbo == nullptr || !dbo->ok(true)) {
     printErrorMessage("Unable to open catalyst database");
     exitApplicationFailure();

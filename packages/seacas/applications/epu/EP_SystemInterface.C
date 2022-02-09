@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -98,12 +98,6 @@ void Excn::SystemInterface::enroll_options()
       "Reopen the output file right after closing it to verify that the file is valid.\n"
       "\t\tThis tries to detect file corruption immediately instead of later. Mainly useful in "
       "large subcycle runs.",
-      nullptr);
-
-  options_.enroll(
-      "add_nodal_communication_map", GetLongOption::NoValue,
-      "In subcycle mode, add the `nodal communication map` data to the output files.\n"
-      "\t\tThe resulting files can then be used as input to a subsequent analysis (N to M)",
       nullptr, nullptr, true);
 
   options_.enroll("map", GetLongOption::NoValue,
@@ -151,14 +145,20 @@ void Excn::SystemInterface::enroll_options()
                   "\t\tEnter LAST for last step",
                   "1:", nullptr, true);
 
+  options_.enroll(
+      "add_nodal_communication_map", GetLongOption::NoValue,
+      "In subcycle mode, add the `nodal communication map` data to the output files.\n"
+      "\t\tThe resulting files can then be used as input to a subsequent analysis (N to M)",
+      nullptr);
+
   options_.enroll("add_processor_id", GetLongOption::NoValue,
-                  "Add 'processor_id' element variable to the output file which shows the\n"
+                  "Add element variable named 'processor_id' to the output file which shows the\n"
                   "\t\tprocessor that an element was on in the decomposed mesh.\n"
                   "\t\tCan be used by SLICE or auto-decomp to reproduce decomposition.",
                   nullptr);
 
   options_.enroll("add_map_processor_id", GetLongOption::NoValue,
-                  "Add 'processor_id' element map to the output file which shows the\n"
+                  "Add element map named 'processor_id' to the output file which shows the\n"
                   "\t\tprocessor that an element was on in the decomposed mesh.\n"
                   "\t\tCan be used by SLICE or auto-decomp to reproduce decomposition.",
                   nullptr, nullptr, true);
@@ -189,25 +189,19 @@ void Excn::SystemInterface::enroll_options()
 
   options_.enroll("fablkvar", GetLongOption::MandatoryValue,
                   "Comma-separated list of faceblock variables to be joined or ALL or NONE.",
-                  nullptr);
+                  nullptr, nullptr, true);
 
   options_.enroll("omit_nodesets", GetLongOption::NoValue,
                   "Don't transfer nodesets to output file.", nullptr);
 
   options_.enroll("omit_sidesets", GetLongOption::NoValue,
-                  "Don't transfer sidesets to output file.", nullptr, nullptr, true);
+                  "Don't transfer sidesets to output file.", nullptr);
 
   options_.enroll("omit_edgeblocks", GetLongOption::NoValue,
-                  "Don't transfer edgeblocks to output file.", nullptr, nullptr, true);
+                  "Don't transfer edgeblocks to output file.", nullptr);
 
   options_.enroll("omit_faceblocks", GetLongOption::NoValue,
                   "Don't transfer faceblocks to output file.", nullptr, nullptr, true);
-
-  options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
-                  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
-                  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
-                  "\t\tThe default behavior assumes that the values are equal.",
-                  nullptr);
 
   options_.enroll("debug", GetLongOption::MandatoryValue,
                   "debug level (values are or'd)\n"
@@ -222,6 +216,12 @@ void Excn::SystemInterface::enroll_options()
                   "\t\t256 = put exodus library into verbose mode.\n"
                   "\t\t512 = Check consistent global field values between processors.",
                   "0");
+
+  options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
+                  "[Rare, special case] The nodal results data on all shared nodes (nodes on processor boundaries)\n"
+                  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
+                  "\t\tThe default behavior assumes that the values are equal.",
+                  nullptr);
 
   options_.enroll(
       "output_shared_nodes", GetLongOption::NoValue,
