@@ -476,7 +476,7 @@ create_mirror(const Kokkos::View<T,P...> & src)
   return dst_type(std::string(src.label()).append("_mirror"), layout);
 }
 
-template<class Space, class T, class ... P>
+template<class Space, class T, class ... P, typename Enabled>
 typename std::enable_if<
   std::is_same< typename ViewTraits<T,P...>::specialize ,
     Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
@@ -572,6 +572,24 @@ create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
   return typename Impl::MirrorType<Space,T,P ...>::view_type(
     Kokkos::view_alloc(src.label(), wi), layout);
+}
+
+template <class Space, class T, class... P>
+typename Impl::MirrorViewType<Space, T, P...>::view_type
+create_mirror_view_and_copy(
+    const Space&, const Kokkos::View<T, P...>& src,
+    std::string const& name,
+    typename std::enable_if<
+        ( std::is_same<typename ViewTraits<T, P...>::specialize,
+              Kokkos::Impl::ViewSpecializeSacadoFad>::value ||
+          std::is_same< typename ViewTraits<T,P...>::specialize ,
+              Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
+        Impl::MirrorViewType<Space, T, P...>::is_same_memspace>::type*)
+{
+  (void)name;
+  fence(
+      "Kokkos::create_mirror_view_and_copy: fence before returning src view");  // same behavior as deep_copy(src, src)
+  return src;
 }
 
 template <class Space, class T, class... P>
