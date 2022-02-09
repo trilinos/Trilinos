@@ -17,7 +17,7 @@ jobs:
       if: contains(github.event.label.name, 'MueLu') || contains(github.event.issue.title, 'MueLu')
       with:
         project: 'https://github.com/trilinos/Trilinos/projects/5'
-        column_name: 'Feature request'
+        column_name: 'Backlog'
     - name: Add to Tpetra Project
       uses: srggrs/assign-one-project-github-action@1.3.0    
       if: contains(github.event.label.name, 'Tpetra') || contains(github.event.issue.title, 'Tpetra')
