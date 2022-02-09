@@ -61,8 +61,10 @@ public:
   using LO = int;
   using STS = Teuchos::ScalarTraits<SC>;
   using mag_type = typename STS::magnitudeType;
+  using STM = Teuchos::ScalarTraits<mag_type>;
   using dense_matrix_type = Teuchos::SerialDenseMatrix<LO, SC>;
   using dense_vector_type = Teuchos::SerialDenseVector<LO, SC>;
+  using real_vector_type = Teuchos::SerialDenseVector<LO, mag_type>;
   using blas_type = Teuchos::BLAS<LO, SC>;
   using lapack_type = Teuchos::LAPACK<LO, SC>;
 
@@ -85,20 +87,21 @@ public:
 
     int info = 0;
     if (useSVQR) {
-      dense_vector_type S (ncols);
+      real_vector_type S (ncols);
       dense_matrix_type VT (ncols, ncols);
-      SC *Sdata = S.values();
+      mag_type *Sdata = S.values();
       SC *VTdata = VT.values();
 
       // figure out workspace size
-      SC temp;
+      SC work;
+      mag_type rwork;
       int ione = 1;
       int ldvt = int (VT.stride());
-      lapack.GESVD('N', 'A', ncols, ncols, Rdata, ldr, Sdata, &temp, 1, 
-                   VTdata, ldvt, &temp, -ione, &temp, &info);
-      int lwork = int (temp);
-      lapack.GEQRF(ncols, ncols, Rdata, ldr, &temp, &temp, -ione, &info);
-      lwork = (lwork > int (temp) ? lwork : int (temp));
+      lapack.GESVD('N', 'A', ncols, ncols, Rdata, ldr, Sdata, &work, 1, 
+                   VTdata, ldvt, &work, -ione, &rwork, &info);
+      int lwork = Teuchos::as<int> (STS::real (work));
+      lapack.GEQRF(ncols, ncols, Rdata, ldr, &work, &work, -ione, &info);
+      lwork = (lwork > Teuchos::as<int> (STS::real (work)) ? lwork : Teuchos::as<int> (STS::real (work)));
 
       // diagonal scaling
       dense_vector_type D (ncols);
@@ -116,8 +119,8 @@ public:
       // compute SVD
       dense_vector_type W (lwork);
       SC *Wdata = W.values();
-      lapack.GESVD('N', 'A', ncols, ncols, Rdata, ldr, Sdata, &temp, 1,
-                   VTdata, ldvt, Wdata, lwork, &temp, &info);
+      lapack.GESVD('N', 'A', ncols, ncols, Rdata, ldr, Sdata, &work, 1,
+                   VTdata, ldvt, Wdata, lwork, &rwork, &info);
       TEUCHOS_TEST_FOR_EXCEPTION
         (info != 0, std::runtime_error, " GmresSstep::GESVD returned info = " << info << " with ncols = " << ncols);
 
@@ -125,7 +128,7 @@ public:
       bool replace_small_s = true;
       if (replace_small_s) {
         const mag_type eps = STS::eps ();
-        const SC tol = S(0) * eps;
+        const mag_type tol = S(0) * eps;
         for (int j=0; j<ncols; j++) {
           if (S(j) < tol) {
             S(j) = tol;
@@ -151,7 +154,7 @@ public:
           Rdata[i + j*ldr] = zero;
         }
         // make sure positive diagonals
-        if (Rdata[i + i*ldr] < zero) {
+        if (STS::real (Rdata[i + i*ldr]) < STM::zero ()) {
           for (int j=i; j<ncols; j++) {
             Rdata[i + j*ldr] = -Rdata[i + j*ldr];
           }
