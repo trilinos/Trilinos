@@ -102,7 +102,8 @@ typename std::enable_if<
   typename Kokkos::View<T,P...>::HostMirror>::type
 create_mirror(const Kokkos::View<T,P...> & src);
 
-template<class Space, class T, class ... P>
+template<class Space, class T, class ... P,
+         typename Enable = std::enable_if_t<Kokkos::is_space<Space>::value>>
 typename std::enable_if<
   std::is_same< typename ViewTraits<T,P...>::specialize ,
     Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value,
@@ -142,6 +143,17 @@ typename std::enable_if<
   Kokkos::Impl::WithoutInitializing_t wi,
    const Space&,
   const Kokkos::View<T,P...> & src);
+
+template <class Space, class T, class... P>
+typename Impl::MirrorViewType<Space, T, P...>::view_type
+create_mirror_view_and_copy(
+    const Space&, const Kokkos::View<T, P...>& src,
+    std::string const& name = "",
+    typename std::enable_if<
+        std::is_same<typename ViewTraits<T, P...>::specialize,
+            Kokkos::Experimental::Impl::ViewMPVectorContiguous>::value &&
+        Impl::MirrorViewType<Space, T, P...>::is_same_memspace>::type* =
+        nullptr);
 
 template <class Space, class T, class... P>
 typename Impl::MirrorViewType<Space, T, P...>::view_type
