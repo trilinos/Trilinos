@@ -1376,19 +1376,19 @@ void mult_A_B(
   //
   // Our goal, of course, is to navigate the data in A and B once, without
   // performing searches for column-indices, etc.
-  ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP;
-  ArrayRCP<const LocalOrdinal> Acolind_RCP, Bcolind_RCP, Icolind_RCP;
-  ArrayRCP<const Scalar> Avals_RCP, Bvals_RCP, Ivals_RCP;
-  ArrayView<const size_t> Arowptr, Browptr, Irowptr;
-  ArrayView<const LocalOrdinal> Acolind, Bcolind, Icolind;
-  ArrayView<const Scalar> Avals, Bvals, Ivals;
-  Aview.origMatrix->getAllValues(Arowptr_RCP,Acolind_RCP,Avals_RCP);
-  Bview.origMatrix->getAllValues(Browptr_RCP,Bcolind_RCP,Bvals_RCP);
-  Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
-  Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
+  auto Arowptr = Aview.origMatrix->getLocalRowPtrsHost();
+  auto Acolind = Aview.origMatrix->getLocalIndicesHost();
+  auto Avals   = Aview.origMatrix->getLocalValuesHost(Tpetra::Access::ReadOnly);
+  auto Browptr = Bview.origMatrix->getLocalRowPtrsHost();
+  auto Bcolind = Bview.origMatrix->getLocalIndicesHost();
+  auto Bvals   = Bview.origMatrix->getLocalValuesHost(Tpetra::Access::ReadOnly);
+  decltype(Browptr) Irowptr;
+  decltype(Bcolind) Icolind;
+  decltype(Bvals) Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Bview.importMatrix->getAllValues(Irowptr_RCP,Icolind_RCP,Ivals_RCP);
-    Irowptr = Irowptr_RCP();  Icolind = Icolind_RCP();  Ivals = Ivals_RCP();
+    Irowptr = Bview.importMatrix->getLocalRowPtrsHost();
+    Icolind = Bview.importMatrix->getLocalIndicesHost();
+    Ivals   = Bview.importMatrix->getLocalValuesHost(Tpetra::Access::ReadOnly);
   }
 
   bool C_filled = C.isFillComplete();
@@ -1432,7 +1432,8 @@ void mult_A_B(
             C_row_i_length++;
 
           } else {
-            C_row_i[c_index[col]] += Aval*Bvals[j];
+            // static cast from impl_scalar_type to Scalar needed for complex
+            C_row_i[c_index[col]] += Aval * static_cast<Scalar>(Bvals[j]);
           }
         }
     }
@@ -1474,7 +1475,8 @@ void mult_A_B(
 
             } else {
               // This has to be a +=  so insertGlobalValue goes out
-              C_row_i[c_index[col]] += Aval*Ivals[j];
+              // static cast from impl_scalar_type to Scalar needed for complex
+              C_row_i[c_index[col]] += Aval * static_cast<Scalar>(Ivals[j]);
             }
         }
     }

@@ -2425,10 +2425,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     }
 
     // Do the comparison
-    Teuchos::ArrayRCP<const size_t>  Browptr;
-    Teuchos::ArrayRCP<const LO>      Bcolind;
-    Teuchos::ArrayRCP<const Scalar>  Bvals;
-    B->getAllValues (Browptr, Bcolind, Bvals);
+    auto Browptr = B->getLocalRowPtrsHost();
+    auto Bcolind = B->getLocalIndicesHost();
+    auto Bvals = B->getLocalValuesHost(Tpetra::Access::ReadOnly);
 
     // Check the rowptrs
     if(Browptr.size()!= rowptr.size()) test_err++;
@@ -2503,10 +2502,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
   build_test_matrix_wideband<CrsMatrixType>(Comm,A);
 
   // Get the matrix pointers / map
-  ArrayRCP<const size_t> rowptr;
-  ArrayRCP<const LO> colind;
-  ArrayRCP<const Scalar> values;
-  A->getAllValues(rowptr,colind,values);
+  // Conversion to Teuchos::ArrayRCP (via persistingView) is needed
+  // only to satisfy the interface of lowCommunicationMakeColMapAndReindex.
+  // Ideally, that function would take Kokkos::Views (and perhaps someday
+  // it will), in which case we can remove the persistingView call.
+  auto rowptr = Kokkos::Compat::persistingView(A->getLocalRowPtrsHost());
+  auto colind = Kokkos::Compat::persistingView(A->getLocalIndicesHost());
+  
   Acolmap = A->getColMap();
   Adomainmap = A->getDomainMap();
 
