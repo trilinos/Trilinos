@@ -64,6 +64,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, localValues, LO, GO, Scalar, Node)
         Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
   auto comm = Tpetra::getDefaultComm();
+  auto me = comm->getRank();
+  auto np = comm->getSize();
 
   const size_t nRows = 10;
   Teuchos::RCP<const map_t> map = rcp(new map_t(dummy, nRows, 0, comm));
@@ -148,6 +150,115 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, localValues, LO, GO, Scalar, Node)
       },
       checkDeviceValuesErrors);
     TEST_EQUALITY(checkDeviceValuesErrors, 0);
+  }
+
+  // modify the views on device; check them on host
+  {
+    {
+      auto view = mat.getLocalValuesDevice(Tpetra::Access::ReadWrite);
+      Kokkos::parallel_for(
+        "modifyValuesOnDevice", 
+        dev_range_policy(0, mat.getNodeNumEntries()),
+        KOKKOS_LAMBDA (const LO i) { view[i] *= 2; }
+        );
+    }
+
+    {
+      int checkDeviceModifiedValuesOnHostErrors = 0;
+      auto offs = mat.getLocalRowPtrsHost();
+      auto inds = mat.getLocalIndicesHost();
+      auto view = mat.getLocalValuesHost(Tpetra::Access::ReadOnly);
+      Kokkos::parallel_reduce(
+        "checkDeviceModifiedValuesOnHost", 
+        host_range_policy(0, nRows),
+        [&] (const LO i, int &lerr) {
+          GO gid = map->getGlobalElement(i);
+          for (size_t j = offs[i]; j < offs[i+1]; j++) {
+            if (view[j] != impl_scalar_t(2 * gid)) lerr++;
+          } 
+        },
+        checkDeviceModifiedValuesOnHostErrors);
+      TEST_EQUALITY(checkDeviceModifiedValuesOnHostErrors, 0);
+    }
+  }
+
+  // modify the views on host; check them on device
+  {
+    {
+      auto view = mat.getLocalValuesHost(Tpetra::Access::ReadWrite);
+      Kokkos::parallel_for(
+        "modifyValuesOnHost", 
+        host_range_policy(0, mat.getNodeNumEntries()),
+        [&] (const LO i) { view[i] *= 2; }
+        );
+    }
+    {
+      int checkHostModifiedValuesOnDeviceErrors = 0;
+      auto offs = mat.getLocalRowPtrsDevice();
+      auto inds = mat.getLocalIndicesDevice();
+      auto view = mat.getLocalValuesDevice(Tpetra::Access::ReadOnly);
+      auto lclMap = mat.getRowMap()->getLocalMap();
+      Kokkos::parallel_reduce(
+        "checkHostModifiedValuesOnDevice", 
+        dev_range_policy(0, nRows),
+        KOKKOS_LAMBDA (const LO i, int &lerr) {
+          GO gid = lclMap.getGlobalElement(i);
+          for (size_t j = offs[i]; j < offs[i+1]; j++) {
+            if (view[j] != impl_scalar_t(4 * gid)) lerr++;
+          } 
+        },
+        checkHostModifiedValuesOnDeviceErrors);
+      TEST_EQUALITY(checkHostModifiedValuesOnDeviceErrors, 0);
+    }
+  }
+
+  // overwrite the views on device; check them on host
+  {
+    {
+      auto view = mat.getLocalValuesDevice(Tpetra::Access::OverwriteAll);
+      Kokkos::parallel_for(
+        "overwriteValuesOnDevice", 
+        dev_range_policy(0, mat.getNodeNumEntries()),
+        KOKKOS_LAMBDA (const LO i) { view[i] = me; }
+        );
+    }
+
+    {
+      int checkDeviceOverwrittenValuesOnHostErrors = 0;
+      auto view = mat.getLocalValuesHost(Tpetra::Access::ReadOnly);
+      Kokkos::parallel_reduce(
+        "checkDeviceOverwrittenValuesOnHost", 
+        host_range_policy(0, mat.getNodeNumEntries()),
+        [&] (const LO i, int &lerr) {
+          if (view[i] != impl_scalar_t(me)) lerr++;
+        },
+        checkDeviceOverwrittenValuesOnHostErrors);
+      TEST_EQUALITY(checkDeviceOverwrittenValuesOnHostErrors, 0);
+    }
+  }
+
+  // overwrite the views on host; check them on device
+  {
+    {
+      auto view = mat.getLocalValuesHost(Tpetra::Access::OverwriteAll);
+      Kokkos::parallel_for(
+        "overwriteValuesOnHost", 
+        host_range_policy(0, mat.getNodeNumEntries()),
+        [&] (const LO i) { view[i] = np; }
+        );
+    }
+    {
+      int checkHostOverwrittenValuesOnDeviceErrors = 0;
+      auto view = mat.getLocalValuesDevice(Tpetra::Access::ReadOnly);
+      Kokkos::parallel_reduce(
+        "checkHostOverwrittenValuesOnDevice", 
+        dev_range_policy(0, mat.getNodeNumEntries()),
+        KOKKOS_LAMBDA (const LO i, int &lerr) {
+          if (view[i] != impl_scalar_t(np)) lerr++;
+        },
+        checkHostOverwrittenValuesOnDeviceErrors);
+      TEST_EQUALITY(checkHostOverwrittenValuesOnDeviceErrors, 0);
+    }
   }
 }
 
