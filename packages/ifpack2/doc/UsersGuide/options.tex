@@ -108,6 +108,16 @@ The following parameters are used in the point relaxation methods:
      is used with blocks of size $k$ (see \cite{Saad1999}).
      In the \texttt{apply()} there is significantly less
      error due to parallel updates of the LHS vector.}
+\ccc{relaxation: mtgs coloring algorithm}
+    {string}
+    {``Default''}
+    {Only has an effect if {\tt "relaxation: type"} is {\tt "MT Gauss-Seidel"}
+     or {\tt "MT Symmetric Gauss-Seidel"}. Selects which graph coloring algorithm
+     from Kokkos Kernels will be used to find sets of independent rows. ``Default''
+     selects the algorithm based on the Node type. ``Serial'' is sequential and greedy.
+     ``VB'', ``VBBIT'' and ``VBCS'' are parallel vertex-based (out of these, ``VBBIT'' is recommended).
+     ``EB'' is parallel edge-based (faster than ``VBBIT'' on GPUs for irregular graphs).
+     ``VBD'' and ``VBDBIT'' are parallel and deterministic.}
 \ccc{relaxation: local smoothing indices}
     {Teuchos::ArrayRCP<local\_ordinal>}
     {empty}
