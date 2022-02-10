@@ -3446,21 +3446,21 @@ public:
 #endif
 
     //! Get the Kokkos local values on host, read only
-    typename local_matrix_device_type::values_type::const_type
+    typename local_matrix_host_type::values_type::const_type
     getLocalValuesHost (Access::ReadOnlyStruct s) const
     {
       return valuesPacked_wdv.getHostView(s);
     }
 
     //! Get the Kokkos local values on host, read write
-    typename local_matrix_device_type::values_type
+    typename local_matrix_host_type::values_type
     getLocalValuesHost (Access::ReadWriteStruct s)
     {
       return valuesPacked_wdv.getHostView(s);
     }
 
     //! Get the Kokkos local values on host, overwrite all
-    typename local_matrix_device_type::values_type
+    typename local_matrix_host_type::values_type
     getLocalValuesHost (Access::OverwriteAllStruct s)
     {
       return valuesPacked_wdv.getHostView(s);
