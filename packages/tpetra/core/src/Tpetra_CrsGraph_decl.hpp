@@ -1504,6 +1504,10 @@ public:
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
     row_ptrs_host_view_type getLocalRowPtrsHost () const;
 
+    /// \brief Get a device view of the packed row offsets.
+    ///
+    row_ptrs_device_view_type getLocalRowPtrsDevice () const;
+
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get an Teuchos::ArrayRCP of the packed column-indices.
     /*!  The returned buffer exists in host-memory.
@@ -1514,6 +1518,9 @@ public:
 
     /// \brief Get a host view of the packed column indicies
     local_inds_host_view_type getLocalIndicesHost () const;
+
+    /// \brief Get a device view of the packed column indicies
+    local_inds_device_view_type getLocalIndicesDevice () const;
 
     /// \brief Replace the graph's current column Map with the given Map.
     ///

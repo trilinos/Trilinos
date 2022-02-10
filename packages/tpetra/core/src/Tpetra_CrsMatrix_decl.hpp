@@ -1935,9 +1935,17 @@ namespace Tpetra {
     row_ptrs_host_view_type getLocalRowPtrsHost () const
     { return getCrsGraph()->getLocalRowPtrsHost(); }
 
+    /// \brief Get a device view of the CRS packed row pointers
+    row_ptrs_device_view_type getLocalRowPtrsDevice () const
+    { return getCrsGraph()->getLocalRowPtrsDevice(); }
+
     /// \brief Get a host view of the CRS packed column indicies
     local_inds_host_view_type getLocalIndicesHost () const
     { return getCrsGraph()->getLocalIndicesHost(); }
+
+    /// \brief Get a device_view of the CRS packed column indicies
+    local_inds_device_view_type getLocalIndicesDevice () const
+    { return getCrsGraph()->getLocalIndicesDevice(); }
 
 
 #ifdef TPETRA_DEPRECATED_CODE

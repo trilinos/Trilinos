@@ -2410,6 +2410,14 @@ namespace Tpetra {
     return rowPtrsPacked_host_;
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::row_ptrs_device_view_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalRowPtrsDevice () const
+  {
+    return rowPtrsPacked_dev_;
+  }
+
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   TPETRA_DEPRECATED
@@ -2435,6 +2443,14 @@ namespace Tpetra {
   getLocalIndicesHost () const
   {
     return lclIndsPacked_wdv.getHostView(Access::ReadOnly);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_inds_device_view_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalIndicesDevice () const
+  {
+    return lclIndsPacked_wdv.getDeviceView(Access::ReadOnly);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
