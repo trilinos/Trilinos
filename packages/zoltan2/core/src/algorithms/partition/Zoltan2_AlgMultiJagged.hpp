@@ -6768,15 +6768,15 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
     // migrate owners
     {
+//KDD
       // Note owners we kept on Serial
-      ArrayView<int> sent_owners(
-        owner_of_coordinate.data(), this->num_local_coords);
-      ArrayRCP<int> received_owners(num_incoming_gnos);
-      distributor.doPostsAndWaits<int>(sent_owners, 1, received_owners());
-      this->owner_of_coordinate = Kokkos::View<int *, Kokkos::HostSpace>
-        ("owner_of_coordinate", num_incoming_gnos);
-      memcpy(this->owner_of_coordinate.data(),
-        received_owners.getRawPtr(), num_incoming_gnos * sizeof(int));
+      Kokkos::View<int *, Kokkos::HostSpace> received_owners(
+              Kokkos::ViewAllocateWithoutInitializing("owner_of_coordinate"),
+              num_incoming_gnos);
+
+      distributor.doPostsAndWaits(owner_of_coordinate, 1, received_owners);
+
+      this->owner_of_coordinate = received_owners;
     }
 
     // if num procs is less than num parts,
@@ -7626,22 +7626,25 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       this->mj_env->timerStart(MACRO_TIMERS,
         mj_timer_base_string + "Final DistributorPlanComm");
 
-      // MPI buffers should be Kokkos::HostSpace, not Kokkos::CudaUVMSpace
-
       // migrate gnos to actual owners.
-      auto src_host_current_mj_gnos =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->current_mj_gnos);
-      Kokkos::deep_copy(src_host_current_mj_gnos, this->current_mj_gnos);
-      ArrayRCP<mj_gno_t> received_gnos(incoming);
-      ArrayView<mj_gno_t> sent_gnos(src_host_current_mj_gnos.data(),
-        this->num_local_coords);
-      distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
+      // MPI buffers should be Kokkos::HostSpace, not Kokkos::CudaUVMSpace
+      // Note, with UVM space, create_mirror_view does NOT create a non-UVM
+      // view; need the explicit Host creation and deep_copy.
+//KDD
+      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> sent_gnos(
+              Kokkos::ViewAllocateWithoutInitializing("sent_gnos"),
+              this->current_mj_gnos.extent(0));
+      Kokkos::deep_copy(sent_gnos, this->current_mj_gnos);
+           
       this->current_mj_gnos = Kokkos::View<mj_gno_t*, device_t>(
         Kokkos::ViewAllocateWithoutInitializing("current_mj_gnos"), incoming);
-      auto host_current_mj_gnos = Kokkos::create_mirror_view(
-        this->current_mj_gnos);
-      memcpy(host_current_mj_gnos.data(),
-        received_gnos.getRawPtr(), incoming * sizeof(mj_gno_t));
+
+      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> host_current_mj_gnos(
+        Kokkos::ViewAllocateWithoutInitializing("host_current_mj_gnos"),
+        incoming);
+
+      distributor.doPostsAndWaits(sent_gnos, 1, host_current_mj_gnos);
+
       Kokkos::deep_copy(this->current_mj_gnos, host_current_mj_gnos);
 
       // migrate part ids to actual owners.
@@ -8887,14 +8890,22 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
 
   // migrate the owners of the coordinates
   {
-    std::vector<int> owner_of_coordinate(num_local_coords_, myRank);
-    ArrayView<int> sent_owners(&(owner_of_coordinate[0]), num_local_coords_);
-    ArrayRCP<int> received_owners(num_incoming_gnos);
-    distributor.doPostsAndWaits<int>(sent_owners, 1, received_owners());
+//KDD
+    Kokkos::View<int*, Kokkos::HostSpace> sent_owners(
+                 Kokkos::ViewAllocateWithoutInitializing("sent_owners"),
+                 num_local_coords_);
+    Kokkos::deep_copy(sent_owners, myRank);
+                             
+    Kokkos::View<int*, Kokkos::HostSpace> received_owners(
+                 Kokkos::ViewAllocateWithoutInitializing("received_owners"),
+                 num_incoming_gnos);
+
+    distributor.doPostsAndWaits(sent_owners, 1, received_owners);
+
     result_actual_owner_rank_ = new int[num_incoming_gnos];
     memcpy(
 	    result_actual_owner_rank_,
-	    received_owners.getRawPtr(),
+	    received_owners.data(),
 	    num_incoming_gnos * sizeof(int));
   }
 
