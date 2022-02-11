@@ -6731,29 +6731,44 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     this->mj_coordinates = dst_coordinates;
 
     // migrate weights.
+//KDD
     Kokkos::View<mj_scalar_t**, device_t> dst_weights(
      "mj_weights", num_incoming_gnos, this->num_weights_per_coord);
-    auto host_dst_weights = Kokkos::create_mirror_view(dst_weights);
-    auto host_src_weights = Kokkos::create_mirror_view(
-      Kokkos::HostSpace(), this->mj_weights);
+    auto host_dst_weights = Kokkos::create_mirror_view(Kokkos::HostSpace(),
+                                                       dst_weights);
+
+    Kokkos::View<mj_scalar_t**, Kokkos::HostSpace> host_src_weights(
+      Kokkos::ViewAllocateWithoutInitializing("host_weights"),
+      this->mj_weights.extent(0), this->mj_weights.extent(1));
     Kokkos::deep_copy(host_src_weights, this->mj_weights);
+
+    // contiguous buffers to gather potentially strided data
+    Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sent_weight(
+      Kokkos::ViewAllocateWithoutInitializing("send_weight_buffer"),
+      this->num_local_coords);
+
+    Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_weight(
+      Kokkos::ViewAllocateWithoutInitializing("received_weight_buffer"),
+      num_incoming_gnos); 
+
     for(int i = 0; i < this->num_weights_per_coord; ++i) {
+
       auto sub_host_src_weights
         = Kokkos::subview(host_src_weights, Kokkos::ALL, i);
+
       auto sub_host_dst_weights
         = Kokkos::subview(host_dst_weights, Kokkos::ALL, i);
-      ArrayRCP<mj_scalar_t> sent_weight(this->num_local_coords);
 
-      // TODO: Layout Right means these are not contiguous
+
+      // Layout Right means the weights are not contiguous
       // However we don't have any systems setup with more than 1 weight so
       // really I have not tested any of this code with num weights > 1.
       // I think this is the right thing to do.
       for(mj_lno_t n = 0; n < this->num_local_coords; ++n) {
         sent_weight[n] = sub_host_src_weights(n);
       }
-      ArrayRCP<mj_scalar_t> received_weight(num_incoming_gnos);
-      distributor.doPostsAndWaits<mj_scalar_t>(
-        sent_weight(), 1, received_weight());
+
+      distributor.doPostsAndWaits(sent_weight, 1, received_weight);
 
       // Again we copy by index due to layout
       for(mj_lno_t n = 0; n < num_incoming_gnos; ++n) {
@@ -6780,23 +6795,21 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     // we need the part assigment arrays as well, since
     // there will be multiple parts in processor.
     if(num_procs < num_parts) {
-      auto src_host_assigned_part_ids =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->assigned_part_ids);
-      Kokkos::deep_copy(src_host_assigned_part_ids, assigned_part_ids);
-      ArrayView<mj_part_t> sent_partids(
-        src_host_assigned_part_ids.data(), this->num_local_coords);
-      ArrayRCP<mj_part_t> received_partids(num_incoming_gnos);
-      distributor.doPostsAndWaits<mj_part_t>(
-        sent_partids, 1, received_partids());
+//KDD
+      Kokkos::View<mj_part_t*, Kokkos::HostSpace> sent_partids(
+        Kokkos::ViewAllocateWithoutInitializing("host_parts"),
+        this->assigned_part_ids.extent(0));
+      Kokkos::deep_copy(sent_partids, assigned_part_ids);
+
+      Kokkos::View<mj_part_t*, Kokkos::HostSpace> received_partids(
+        Kokkos::ViewAllocateWithoutInitializing("received_partids"),
+        num_incoming_gnos);
+
+      distributor.doPostsAndWaits(sent_partids, 1, received_partids);
+
       this->assigned_part_ids = Kokkos::View<mj_part_t *, device_t>
         ("assigned_part_ids", num_incoming_gnos);
-      auto host_assigned_part_ids = Kokkos::create_mirror_view(
-        this->assigned_part_ids);
-      memcpy(
-        host_assigned_part_ids.data(),
-        received_partids.getRawPtr(),
-        num_incoming_gnos * sizeof(mj_part_t));
-      Kokkos::deep_copy(this->assigned_part_ids, host_assigned_part_ids);
+      Kokkos::deep_copy(this->assigned_part_ids, received_partids);
     }
     else {
       this->assigned_part_ids = Kokkos::View<mj_part_t *, device_t>
@@ -8860,20 +8873,35 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
   result_mj_coordinates_ = dst_coordinates;
 
   // migrate weights.
+//KDD
+
   Kokkos::View<mj_scalar_t**, device_t> dst_weights(
     Kokkos::ViewAllocateWithoutInitializing("mj_weights"),
     num_incoming_gnos, this->num_weights_per_coord);
   auto host_dst_weights = Kokkos::create_mirror_view(dst_weights);
-  auto host_src_weights = Kokkos::create_mirror_view(this->mj_weights);
+
+  Kokkos::View<mj_scalar_t**, Kokkos::HostSpace> host_src_weights(
+    Kokkos::ViewAllocateWithoutInitializing("host_weights"),
+    this->mj_weights.extent(0), this->mj_weights.extent(1));
   Kokkos::deep_copy(host_src_weights, this->mj_weights);
+
+  // contiguous buffers to gather potentially strided data
+  Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sent_weight(
+    Kokkos::ViewAllocateWithoutInitializing("send_weight_buffer"),
+    this->num_local_coords);
+
+  Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_weight(
+    Kokkos::ViewAllocateWithoutInitializing("received_weight_buffer"),
+    num_incoming_gnos); 
+
   for(int i = 0; i < this->num_weights_per_coord; ++i) {
+
     auto sub_host_src_weights
       = Kokkos::subview(host_src_weights, Kokkos::ALL, i);
     auto sub_host_dst_weights
       = Kokkos::subview(host_dst_weights, Kokkos::ALL, i);
-    ArrayRCP<mj_scalar_t> sent_weight(this->num_local_coords);
 
-    // Layout Right means these are not contiguous
+    // Layout Right means these weights are not contiguous
     // However we don't have any systems setup with more than 1 weight so
     // really I have not tested any of this code with num weights > 1.
     // I think this is the right thing to do. Note that there are other
@@ -8882,10 +8910,8 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
     for(mj_lno_t n = 0; n < this->num_local_coords; ++n) {
       sent_weight[n] = sub_host_src_weights(n);
     }
-    ArrayRCP<mj_scalar_t> received_weight(num_incoming_gnos);
 
-    distributor.doPostsAndWaits<mj_scalar_t>(
-      sent_weight(), 1, received_weight());
+    distributor.doPostsAndWaits(sent_weight, 1, received_weight);
 
     // Again we copy by index due to layout
     for(mj_lno_t n = 0; n < num_incoming_gnos; ++n) {
