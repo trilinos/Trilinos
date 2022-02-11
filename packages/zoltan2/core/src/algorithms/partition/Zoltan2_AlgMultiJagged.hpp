@@ -6736,10 +6736,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     auto host_dst_weights = Kokkos::create_mirror_view(Kokkos::HostSpace(),
                                                        dst_weights);
 
-    Kokkos::View<mj_scalar_t**, Kokkos::HostSpace> host_src_weights(
-      Kokkos::ViewAllocateWithoutInitializing("host_weights"),
-      this->mj_weights.extent(0), this->mj_weights.extent(1));
-    Kokkos::deep_copy(host_src_weights, this->mj_weights);
+    auto host_src_weights = Kokkos::create_mirror_view_and_copy(
+                                    Kokkos::HostSpace(), this->mj_weights);
 
     // contiguous buffers to gather potentially strided data
     Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sent_weight(
@@ -8872,10 +8870,8 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
     num_incoming_gnos, this->num_weights_per_coord);
   auto host_dst_weights = Kokkos::create_mirror_view(dst_weights);
 
-  Kokkos::View<mj_scalar_t**, Kokkos::HostSpace> host_src_weights(
-    Kokkos::ViewAllocateWithoutInitializing("host_weights"),
-    this->mj_weights.extent(0), this->mj_weights.extent(1));
-  Kokkos::deep_copy(host_src_weights, this->mj_weights);
+  auto host_src_weights = Kokkos::create_mirror_view_and_copy(
+                                  Kokkos::HostSpace(), this->mj_weights);
 
   // contiguous buffers to gather potentially strided data
   Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sent_weight(
