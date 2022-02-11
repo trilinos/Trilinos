@@ -1923,7 +1923,7 @@ namespace Tpetra {
                   const Teuchos::ArrayRCP<LocalOrdinal>& ind,
                   const Teuchos::ArrayRCP<Scalar>& val);
 
-#ifdef TPETRA_DEPRECATED_CODE
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     TPETRA_DEPRECATED
     void
     getAllValues (Teuchos::ArrayRCP<const size_t>& rowPointers,
@@ -1948,7 +1948,7 @@ namespace Tpetra {
     { return getCrsGraph()->getLocalIndicesDevice(); }
 
 
-#ifdef TPETRA_DEPRECATED_CODE
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// Gets just the values array.  This *will* be a shallow copy
     /// of the array (at least on the host memory space.  This
     /// is not a const function, since the user can change these
