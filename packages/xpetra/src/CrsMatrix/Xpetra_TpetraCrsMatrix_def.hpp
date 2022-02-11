@@ -230,11 +230,26 @@ namespace Xpetra {
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
-    { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); mtx_->getAllValues(rowptr,colind,values); }
+    { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); 
+      // TODO: Change getAllValues interface to return Kokkos views,
+      // TODO: or add getLocalRowPtrsHost, getLocalIndicesHost, etc., interfaces
+      // TODO: and use them in MueLu
+      rowptr = Kokkos::Compat::persistingView(mtx_->getLocalRowPtrsHost());
+      colind = Kokkos::Compat::persistingView(mtx_->getLocalIndicesHost());
+      values = Teuchos::arcp_reinterpret_cast<const Scalar>(
+                 Kokkos::Compat::persistingView(mtx_->getLocalValuesHost(
+                                                   Tpetra::Access::ReadOnly)));
+    }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getAllValues(ArrayRCP<Scalar>& values)
-    { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); mtx_->getAllValues(values); }
+    { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); 
+      // TODO: Change getAllValues interface to return Kokkos view,
+      // TODO: or add getLocalValuesDevice() interfaces
+     values = Teuchos::arcp_reinterpret_cast<Scalar>(
+                Kokkos::Compat::persistingView(mtx_->getLocalValuesDevice(
+                                                  Tpetra::Access::ReadWrite)));
+    }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     bool TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::haveGlobalConstants() const

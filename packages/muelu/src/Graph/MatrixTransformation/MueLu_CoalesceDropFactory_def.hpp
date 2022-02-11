@@ -1969,12 +1969,12 @@ namespace MueLu {
      auto sym = rcp(new Tpetra::CrsGraphTransposer<LocalOrdinal,GlobalOrdinal,Node>(tpGraph));
      auto tpGraphSym = sym->symmetrize();
 
-     auto rowsSym = tpGraphSym->getNodeRowPtrs();
+     auto rowsSym = tpGraphSym->getLocalRowPtrsHost();
      ArrayRCP<LO> rows_graphSym;
      rows_graphSym.resize(rowsSym.size());
      for (LO row = 0; row < rowsSym.size(); row++)
        rows_graphSym[row] = rowsSym[row];
-     outputGraph =  rcp(new LWGraph(rows_graphSym, tpGraphSym->getNodePackedIndices(), inputGraph->GetDomainMap(), Xpetra::toXpetra(tpGraphSym->getColMap()), "block-diagonalized graph of A"));
+     outputGraph =  rcp(new LWGraph(rows_graphSym, tpGraphSym->getLocalIndicesHost(), inputGraph->GetDomainMap(), Xpetra::toXpetra(tpGraphSym->getColMap()), "block-diagonalized graph of A"));
      outputGraph->SetBoundaryNodeMap(inputGraph->GetBoundaryNodeMap());
 #endif
    }

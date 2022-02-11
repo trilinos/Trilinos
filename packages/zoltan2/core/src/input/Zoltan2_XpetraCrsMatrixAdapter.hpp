@@ -179,12 +179,10 @@ public:
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const
+  void getCRSView(ArrayRCP<const offset_t> &offsets,
+                  ArrayRCP<const gno_t> &colIds) const
   {
-
-    ArrayRCP< const lno_t > localColumnIds;
-    ArrayRCP<const scalar_t> values;
-    matrix_->getAllValues(offsets,localColumnIds,values);
+    offsets = Kokkos::Compat::persistingView(matrix_->getLocalRowPtrsHost());
     colIds = columnIds_;
   }
 
@@ -192,8 +190,9 @@ public:
                   ArrayRCP<const gno_t> &colIds,
                   ArrayRCP<const scalar_t> &values) const
   {
-    ArrayRCP< const lno_t > localColumnIds;
-    matrix_->getAllValues(offsets,localColumnIds,values);
+    offsets = Kokkos::Compat::persistingView(matrix_->getLocalRowPtrsHost());
+    values = Kokkos::Compat::persistingView(matrix->getLocalValuesHost(
+                                                    Tpetra::Access::ReadOnly));
     colIds = columnIds_;
   }
 
@@ -267,10 +266,8 @@ template <typename User, typename UserCoord>
   size_t nnz = matrix_->getNodeNumEntries();
 
   // Get ArrayRCP pointers to the structures in the underlying matrix
-  ArrayRCP< const offset_t > offset;
-  ArrayRCP< const lno_t > localColumnIds;
-  ArrayRCP< const scalar_t > values;
-  matrix_->getAllValues(offset,localColumnIds,values);
+  auto offset = matrix_->getLocalRowPtrsHost();
+  auto localColumnIds = matrix_->getLocalIndicesHost();
   columnIds_.resize(nnz, 0);
 
   for(offset_t i = 0; i < offset[nrows]; i++) {

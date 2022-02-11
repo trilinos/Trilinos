@@ -87,12 +87,14 @@ void remove_diags_and_scale(const MatrixType& L, const MatrixType& U,
   typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename Kokkos::TeamPolicy<execution_space>::member_type member_type;
 
-  auto L_rowmap  = L.getLocalMatrixDevice().graph.row_map;
-  auto L_entries = L.getLocalMatrixDevice().graph.entries;
-  auto L_values  = L.getLocalValuesView();
-  auto U_rowmap  = U.getLocalMatrixDevice().graph.row_map;
-  auto U_entries = U.getLocalMatrixDevice().graph.entries;
-  auto U_values  = U.getLocalValuesView();
+  auto lclL = L.getLocalMatrixDevice();
+  auto L_rowmap  = lclL.graph.row_map;
+  auto L_entries = lclL.graph.entries;
+  auto L_values  = lclL.values;
+  auto lclU = U.getLocalMatrixDevice();
+  auto U_rowmap  = lclU.graph.row_map;
+  auto U_entries = lclU.graph.entries;
+  auto U_values  = lclU.values;
 
   rowmap_type  Ln_rowmap ("Ln_rowmap",  L_rowmap.extent(0));
   entries_type Ln_entries("Ln_entries", L_entries.extent(0) - (L_rowmap.extent(0) - 1));
