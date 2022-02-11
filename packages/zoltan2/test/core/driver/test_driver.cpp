@@ -100,7 +100,7 @@ void xmlToModelPList(const Teuchos::XMLObject &xml,
   // This method composes a plist for the problem
   Teuchos::XMLParameterListReader reader;
   plist = reader.toParameterList(xml);
-  
+
   //  Get list of valid Zoltan2 Parameters
   // Zoltan 2 parameters appear in the input file
   // Right now we have default values stored in
@@ -109,7 +109,7 @@ void xmlToModelPList(const Teuchos::XMLObject &xml,
   // input file
   Teuchos::ParameterList zoltan2Parameters;
   Zoltan2::createAllParameters(zoltan2Parameters);
-  
+
   if (plist.isSublist("Zoltan2Parameters")) {
     // Apply user specified zoltan2Parameters
     ParameterList &sub = plist.sublist("Zoltan2Parameters");
@@ -130,7 +130,7 @@ bool getParameterLists(const string &inputFileName,
     std::cout << "Input file source: " << inputFileName << std::endl;
   }
   XMLObject xmlInput;
-  
+
   // Try to get xmlObject from inputfile
   try
   {
@@ -288,16 +288,16 @@ bool run(const UserInputForTests &uinput,
   // 2. construct a Zoltan2 problem
   ////////////////////////////////////////////////////////////
   // If we are here we have an input adapter, no need to check for one.
-  string adapter_name = adapterPlist.get<string>("input adapter"); 
+  string adapter_name = adapterPlist.get<string>("input adapter");
   // get Zoltan2 Parameters
-  ParameterList zoltan2_parameters = 
+  ParameterList zoltan2_parameters =
    const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
   if(rank == 0) {
     std::cout << std::endl;
   }
 
   comparison_source->timers["problem construction time"]->start();
-  std::string problem_kind = problem_parameters.get<std::string>("kind"); 
+  std::string problem_kind = problem_parameters.get<std::string>("kind");
   if (rank == 0) {
     std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
   }
@@ -328,7 +328,7 @@ bool run(const UserInputForTests &uinput,
   if (rank == 0) {
     std::cout << problem_kind + " problem solved." << std::endl;
   }
- 
+
 #undef KDDKDD
 #ifdef KDDKDD
   if(problem_kind == "partitioning") {
@@ -338,7 +338,7 @@ bool run(const UserInputForTests &uinput,
       i < adapterFactory->getMainAdapter()->getLocalNumIDs(); i++) {
       std::cout << rank << " LID " << i
                 << " GID " << kddIDs[i]
-                << " PART " 
+                << " PART "
                 << getPartListView(problemFactory)[i]
                 << std::endl;
     }
@@ -363,7 +363,7 @@ bool run(const UserInputForTests &uinput,
       xscrsGraphAdapter->getEdgeWeightsView(weights, stride, edim);
       for (lno_t i=0; i < localNumObj; i++)
         for (offset_t j=offsets[i]; j < offsets[i+1]; j++)
-          std::cout << edim << " " << vertexIds[i] << " " 
+          std::cout << edim << " " << vertexIds[i] << " "
                     << adjIds[j] << " " << weights[stride*j] << std::endl;
     }
   }
@@ -373,7 +373,7 @@ bool run(const UserInputForTests &uinput,
   // 4. Print problem metrics
   ////////////////////////////////////////////////////////////
   bool bSuccess = true;
-  if(problem_parameters.isSublist("Metrics") || bHasComparisons) { 
+  if(problem_parameters.isSublist("Metrics") || bHasComparisons) {
     RCP<EvaluateFactory> evaluateFactory = rcp(new EvaluateFactory(
                                         problem_kind,
                                         adapterFactory,
@@ -405,7 +405,7 @@ bool run(const UserInputForTests &uinput,
     }
 
 //#define BDD
-#ifdef BDD 
+#ifdef BDD
     if (problem_kind == "ordering") {
       std::cout << "\nLet's examine the solution..." << std::endl;
       LocalOrderingSolution<zlno_t> * localOrderingSolution =
@@ -420,21 +420,21 @@ bool run(const UserInputForTests &uinput,
               std::cout << " " << x;
             std::cout << "}" << std::endl;
           }
-       
+
           if (localOrderingSolution->haveInverse()) {
             std::cout << "inverse permutation: {";
             for (auto &x : localOrderingSolution->getPermutationRCPConst(true))
               std::cout << " " << x;
             std::cout << "}" << std::endl;
           }
-        
+
           if (localOrderingSolution->haveSeparatorRange()) {
             std::cout << "separator range: {";
             for (auto &x : localOrderingSolution->getSeparatorRangeRCPConst())
               std::cout << " " << x;
             std::cout << "}" << std::endl;
           }
-         
+
           if (localOrderingSolution->haveSeparatorTree()) {
             std::cout << "separator tree: {";
             for (auto &x : localOrderingSolution->getSeparatorTreeRCPConst())
@@ -458,7 +458,7 @@ bool run(const UserInputForTests &uinput,
   return bSuccess;
 }
 
-bool mainExecute(int narg, char *arg[], RCP<const Comm<int> > &comm) 
+bool mainExecute(int narg, char *arg[], RCP<const Comm<int> > &comm)
 {
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment and timer
@@ -469,7 +469,7 @@ bool mainExecute(int narg, char *arg[], RCP<const Comm<int> > &comm)
   // (1) Get and read the input file
   // the input file defines tests to be run
   ////////////////////////////////////////////////////////////
-  string inputFileName(""); 
+  string inputFileName("");
   if(narg > 1)
     inputFileName = arg[1]; // user has provided an input file
   else{
@@ -490,7 +490,7 @@ bool mainExecute(int narg, char *arg[], RCP<const Comm<int> > &comm)
   if( !getParameterLists(inputFileName, problems, comparisons, comm) ) {
     return false;
   }
-  
+
   ////////////////////////////////////////////////////////////
   // (3) Get Input Data Parameters
   ////////////////////////////////////////////////////////////
@@ -503,15 +503,15 @@ bool mainExecute(int narg, char *arg[], RCP<const Comm<int> > &comm)
       std::cout << "InputParameters not defined. Testing FAILED." << std::endl;
     return false;
   }
-  
+
   // get the user input for all tests
-  UserInputForTests uinput(inputParameters,comm);
+  // UserInputForTests uinput(inputParameters,comm);
 
   problems.pop();
   comm->barrier();
 
   bool bPass = true;
-  if(uinput.hasInput())
+  if(true)
   {
     ////////////////////////////////////////////////////////////
     // (4) Perform all tests
@@ -519,13 +519,17 @@ bool mainExecute(int narg, char *arg[], RCP<const Comm<int> > &comm)
 //     pamgen debugging
 //    MyUtils::writeMesh(uinput,comm);
 //    MyUtils::getConnectivityGraph(uinput, comm);
-        
+
     RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
     while (!problems.empty()) {
+      UserInputForTests uinput(inputParameters,comm);
+
+      if(uinput.hasInput()) {
       if (!run(uinput, problems.front(), !comparisons.empty(),
                comparison_manager, comm)) {
         std::cout << "Problem run returned false" << std::endl;
         bPass = false;
+      }
       }
       problems.pop();
     }
@@ -567,23 +571,23 @@ int main(int narg, char *arg[])
     result = mainExecute(narg, arg, comm) ? 0 : 1; // code 0 is ok,
                                                     // 1 is a failed test
   }
-  catch(std::logic_error &e) { 
-    // logic_error exceptions can be thrown by EvaluatePartition or 
-    // MetricAnalyzer if any problem is detected in the formatting of the 
+  catch(std::logic_error &e) {
+    // logic_error exceptions can be thrown by EvaluatePartition or
+    // MetricAnalyzer if any problem is detected in the formatting of the
     // input xml
     if (rank == 0) {
-      std::cout << "Test driver for rank " << rank 
+      std::cout << "Test driver for rank " << rank
                 << " caught the following exception: " << e.what() << std::endl;
     }
     result = 1; // fail for any exception
   }
-  catch(std::runtime_error &e) { 
-    std::cout << "Test driver for rank " << rank 
+  catch(std::runtime_error &e) {
+    std::cout << "Test driver for rank " << rank
               << " caught the following exception: " << e.what() << std::endl;
     result = 1; // fail for any exception
   }
-  catch(std::exception &e) { 
-    std::cout << "Test driver for rank " << rank 
+  catch(std::exception &e) {
+    std::cout << "Test driver for rank " << rank
               << " caught the following exception: " << e.what() << std::endl;
     result = 1; // fail for any exception
   }
@@ -592,18 +596,18 @@ int main(int narg, char *arg[])
   comm->barrier();
   int resultReduced;
 
-  // for a passed test all of these values should return 0 - 
+  // for a passed test all of these values should return 0 -
   // if any result is 1 this will reduce to 1 and the test will fail
-  reduceAll<int,int>(*comm, Teuchos::EReductionType::REDUCE_MAX, 1, 
-                     &result, &resultReduced); 
+  reduceAll<int,int>(*comm, Teuchos::EReductionType::REDUCE_MAX, 1,
+                     &result, &resultReduced);
 
-  // provide a final message which guarantees that the test will fail 
+  // provide a final message which guarantees that the test will fail
   // if any of the processes failed
   if (rank == 0) {
-    std::cout << "Test Driver with " << comm->getSize() 
+    std::cout << "Test Driver with " << comm->getSize()
               << " processes has reduced result code " << resultReduced
-              << " and is exiting in the " 
-              << ((resultReduced == 0 ) ? "PASSED" : "FAILED") << " state." 
+              << " and is exiting in the "
+              << ((resultReduced == 0 ) ? "PASSED" : "FAILED") << " state."
               << std::endl;
   }
 

@@ -103,7 +103,7 @@ enum MatrixEntityType {
 */
 
 template <typename User, typename UserCoord=User>
-  class MatrixAdapter : public BaseAdapter<User> {
+  class MatrixAdapter : public WrapperForCoords<User, UserCoord> {
 private:
   enum MatrixEntityType primaryEntityType_;
   VectorAdapter<UserCoord> *coordinateInput_;
@@ -338,7 +338,7 @@ public:
    *  \param coordData is a pointer to a VectorAdapter with the user's
    *         coordinate data.
    */
-  void setCoordinateInput(VectorAdapter<UserCoord> *coordData)
+  void setCoordinateInput(VectorAdapter<UserCoord> *coordData) override
   {
     coordinateInput_ = coordData;
     haveCoordinateInput_ = true;
@@ -352,7 +352,7 @@ public:
   /*! \brief Obtain the coordinate data registered by the user.
    *  \return pointer a VectorAdapter with the user's coordinate data.
    */
-  VectorAdapter<UserCoord> *getCoordinateInput() const
+  VectorAdapter<UserCoord> *getCoordinateInput() const override
   {
     return coordinateInput_;
   }

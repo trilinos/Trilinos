@@ -121,7 +121,7 @@ enum EntityTopologyType {
 */
 
 template <typename User>
-class MeshAdapter : public BaseAdapter<User> {
+class MeshAdapter : public AdapterWithCoords<User> {
 public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -488,9 +488,9 @@ public:
     getCoordinatesViewOf(getPrimaryEntityType(), coords, stride, coordDim);
   }
 
-  inline void getCoordinatesKokkosView(
+  void getCoordinatesKokkosView(
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-    Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> & elements) const
+    Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> & elements) const override
   {
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
     Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type>
