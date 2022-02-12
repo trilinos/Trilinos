@@ -1473,19 +1473,17 @@ struct OperatorTensorDecomposition
               
               TensorPoints<PointValueType, DeviceType> basisPoints(basisPointComponents);
               
-              Data<OutputValueType,DeviceType> basisData(basisValueView);
-
               bool useVectorData = (basisValueView.rank() == 3);
 
               BasisValues<OutputValueType,DeviceType> basisValues;
               if (useVectorData)
               {
-                VectorData<OutputValueType,DeviceType> vectorData(basisData);
+                VectorData<OutputValueType,DeviceType> vectorData(outputData);
                 basisValues = BasisValues<OutputValueType,DeviceType>(vectorData);
               }
               else
               {
-                TensorData<OutputValueType,DeviceType> tensorData(basisData);
+                TensorData<OutputValueType,DeviceType> tensorData(outputData);
                 basisValues = BasisValues<OutputValueType,DeviceType>(tensorData);
               }
               
