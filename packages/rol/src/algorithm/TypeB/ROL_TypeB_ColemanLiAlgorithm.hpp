@@ -96,9 +96,7 @@ private:
   // ALGORITHM SPECIFIC PARAMETERS
   Real mu0_;       ///< Sufficient decrease parameter (default: 1e-2)
   Real spexp_;     ///< Relative tolerance exponent for subproblem solve (default: 1, range: [1,2])
-  Real alphaMax_;  ///< Maximum value of relaxation parameter (default: 0.5)
-  Real interpfPS_; ///< Backtracking rate for projected search (default: 0.5)
-  int pslim_;      ///< Maximum number of projected search steps (default: 20)
+  Real alphaMax_;  ///< Maximum value of relaxation parameter (default: 0.999)
 
   mutable int nhess_;  ///< Number of Hessian applications
   unsigned verbosity_; ///< Output level (default: 0)
@@ -145,20 +143,6 @@ private:
   Real dgpstep(Vector<Real> &s, const Vector<Real> &w,
          const Vector<Real> &x, const Real alpha,
          std::ostream &outStream = std::cout) const;
-
-  // Perform projected search to determine beta such that
-  // q(P(x + beta*s)-x) <= mu0*g'(P(x + beta*s)-x) for mu0 in (0,1)
-  //   x     -- The anchor vector x, upon return x = P(x + beta*s): Primal optimization space vector
-  //   s     -- The direction vector s, upon return s = P(x + beta*s) - x: Primal optimization space vector
-  //   g     -- The free components of the gradient vector g (unchanged): Primal optimization space vector
-  //   model -- Contains objective and bound constraint information
-  //   pwa   -- Primal working array
-  //   dwa   -- Dual working array
-  Real dprsrch(Vector<Real> &x, Vector<Real> &s, Real &q,
-               const Vector<Real> &g, TrustRegionModel_U<Real> &model,
-               BoundConstraint<Real> &bnd,
-               Vector<Real> &pwa, Vector<Real> &dwa,
-               std::ostream &outStream = std::cout);
 
   // Compute sigma such that ||x+sigma*p||_inv(M) = del.  This is called
   // if dtrpcg detects negative curvature or if the step violates

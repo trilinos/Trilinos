@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
     std::string filename = "input.xml";
     auto parlist = ROL::getParametersFromXmlFile( filename );
-    parlist->sublist("General").set("Output Level",iprint+1);
+    parlist->sublist("General").set("Output Level",iprint);
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",true);
 #if USE_HESSVEC
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);

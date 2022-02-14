@@ -79,10 +79,8 @@ ColemanLiAlgorithm<Real>::ColemanLiAlgorithm(ParameterList &list,
   mu0_       = lmlist.get("Sufficient Decrease Parameter",                             1e-2);
   spexp_     = lmlist.get("Relative Tolerance Exponent",                               1.0);
   spexp_     = std::max(static_cast<Real>(1),std::min(spexp_,static_cast<Real>(2)));
-  alphaMax_  = lmlist.sublist("Projected Search").get("Relaxation Safeguard",          0.5);
+  alphaMax_  = lmlist.get("Relaxation Safeguard",                                      0.999);
   alphaMax_  = (alphaMax_ >= static_cast<Real>(1) ? static_cast<Real>(0.5) : alphaMax_);
-  interpfPS_ = lmlist.sublist("Projected Search").get("Backtracking Rate",             0.5);
-  pslim_     = lmlist.sublist("Projected Search").get("Maximum Number of Steps",       20);
   // Output Parameters
   verbosity_   = list.sublist("General").get("Output Level",0);
   writeHeader_ = verbosity_ > 2;
@@ -149,17 +147,17 @@ void ColemanLiAlgorithm<Real>::run(Vector<Real>          &x,
                                    Objective<Real>       &obj,
                                    BoundConstraint<Real> &bnd,
                                    std::ostream          &outStream ) {
-  const Real zero(0), half(0.5);
+  const Real zero(0), one(1), half(0.5);
   Real tol0 = std::sqrt(ROL_EPSILON<Real>());
   Real tol(0), stol(0), snorm(0);
-  Real ftrial(0), pRed(0), rho(1), q(0);
+  Real ftrial(0), pRed(0), rho(1), alpha(1);
   // Initialize trust-region data
   initialize(x,g,obj,bnd,outStream);
   Ptr<Vector<Real>> pwa1 = x.clone(), pwa2 = x.clone(), pwa3 = x.clone();
   Ptr<Vector<Real>> pwa4 = x.clone(), pwa5 = x.clone();
   Ptr<Vector<Real>> dwa1 = g.clone(), dwa2 = g.clone(), dwa3 = g.clone();
   // Initialize nonmonotone data
-  Real rhoNM(0), sigmac(0), sigmar(0);
+  Real rhoNM(0), sigmac(0), sigmar(0), sBs(0), gs(0);
   Real fr(state_->value), fc(state_->value), fmin(state_->value);
   TRUtils::ETRFlag TRflagNM;
   int L(0);
@@ -190,14 +188,19 @@ void ColemanLiAlgorithm<Real>::run(Vector<Real>          &x,
       outStream << std::endl;
     }
 
-    // Projected search
-    // TODO: Need to modify predicted reduction
-    //       predk = -model + 1/2 (x-xk)' C (x-xk)
-    // s^+ = Proj(x + t s) - x
-    snorm = dprsrch(x,*state_->stepVec,q,*state_->gradientVec,*model_,bnd,*pwa1,*dwa1,outStream);
-    state_->snorm = snorm;
-    applyC(*pwa1,*state_->stepVec,*state_->iterateVec,*state_->gradientVec,bnd,*pwa2);
-    pRed  = -q + half * state_->stepVec->dot(*pwa1);
+    // Relax CG step so that it is interior
+    snorm = dgpstep(*pwa1,*state_->stepVec,x,one,outStream);
+    alpha = std::max(alphaMax_, one-snorm);
+    pwa1->scale(alpha);
+    state_->stepVec->set(*pwa1);
+    state_->snorm = alpha * snorm;
+    x.plus(*state_->stepVec);
+
+    // Compute predicted reduction
+    model_->hessVec(*dwa1,*pwa1,x,tol); nhess_++;
+    gs   = state_->gradientVec->apply(*state_->stepVec);
+    sBs  = dwa1->apply(*state_->stepVec);
+    pRed = - half * sBs - gs;
 
     // Compute trial objective value
     obj.update(x,UpdateType::Trial);
@@ -270,59 +273,6 @@ Real ColemanLiAlgorithm<Real>::dgpstep(Vector<Real> &s, const Vector<Real> &w,
   proj_->project(s,outStream); state_->nproj++;
   s.axpy(static_cast<Real>(-1),x);
   return s.norm();
-}
-
-template<typename Real>
-Real ColemanLiAlgorithm<Real>::dprsrch(Vector<Real> &x, Vector<Real> &s,
-                                       Real &q, const Vector<Real> &g,
-                                       TrustRegionModel_U<Real> &model,
-                                       BoundConstraint<Real> &bnd,
-                                       Vector<Real> &pwa, Vector<Real> &dwa,
-                                       std::ostream &outStream) {
-  const Real half(0.5);
-  Real tol = std::sqrt(ROL_EPSILON<Real>());
-  Real alpha(1), beta(1), snorm(0), gs(0), sBs(0);
-  int nsteps = 0;
-  Ptr<Vector<Real>> stmp = x.clone(), pwa1 = x.clone();
-  // Reduce beta until sufficient decrease is satisfied
-  bool search = true;
-  while (search) {
-    nsteps++;
-    snorm = dgpstep(pwa,s,x,beta,outStream);
-    applyHessian(dwa,pwa,x,g.dual(),model,bnd,tol,*pwa1,*stmp); nhess_++;
-    //model.hessVec(dwa,pwa,x,tol); nhess_++;
-    gs  = g.apply(pwa);
-    sBs = dwa.apply(pwa);
-    q   = half * sBs + gs;
-    if (q <= mu0_*gs || nsteps > pslim_) {
-      search = false;
-    }
-    else {
-      beta *= interpfPS_;
-    }
-  }
-  stmp->set(x); stmp->plus(s);
-  if (!bnd.isInterior(*stmp)) {
-    if (sBs <= ROL_EPSILON<Real>())
-      alpha = alphaMax_;
-    else
-      alpha = std::min(alphaMax_, -gs / (half * sBs));
-    q = half * alpha * alpha * sBs + alpha * gs;
-    snorm *= alpha;
-    pwa.scale(alpha);
-  }
-  s.set(pwa);
-  x.plus(s);
-  if (verbosity_ > 1) {
-    outStream << std::endl;
-    outStream << "  Projected search"                     << std::endl;
-    outStream << "    Step length (beta):               " << beta   << std::endl;
-    outStream << "    Step length (beta*s):             " << snorm  << std::endl;
-    outStream << "    Relaxation parameter (alpha):     " << alpha  << std::endl;
-    outStream << "    Model decrease (pRed):            " << -q     << std::endl;
-    outStream << "    Number of steps:                  " << nsteps << std::endl;
-  }
-  return snorm;
 }
 
 template<typename Real>
