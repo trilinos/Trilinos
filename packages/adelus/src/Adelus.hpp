@@ -49,6 +49,7 @@
 #include <Kokkos_View.hpp>
 #include <Adelus_defines.h>
 #include <Adelus_xlu_solve.hpp>
+#include <Adelus_x_factor.hpp>
 #include <Adelus_distribute.hpp>
 #include <mpi.h>
 
@@ -131,6 +132,45 @@ namespace Adelus {
              num_procsr,
              num_rhs,
              secs);
+
+  }
+
+  /// Adelus Factor
+  /// Factors the dense matrix for later solve
+
+  /// \param AA (InOut)       -- Kokkos View that has the matrix and rhs packed (Note: matrix and rhs are overwritten)
+  /// \param my_rows_ (In)    -- number of rows of the matrix on this processor
+  /// \param my_cols_ (In)    -- number of columns of the matrix on this processor
+  /// \param matrix_size (In) -- order of the dense matrix
+  /// \param num_procsr (In)  -- number of processors for a row
+  /// \param pivot (In)       -- Kokkos View that has the pivot vector
+  /// \param secs (Out)       -- factor and solve time in seconds
+
+  template<class ZDView, class IDView>
+  inline
+  void Factor( ZDView AA,
+               int my_rows_,
+               int my_cols_,
+               int* matrix_size,
+               int* num_procsr,
+               IDView pivot,
+               double* secs ) {
+    int rank;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+#ifdef PRINT_STATUS
+    printf("Factor (Kokkos View interface) in rank %d -- my_rows %u , my_cols %u , matrix_size %u, num_procs_per_row %u\n", rank, my_rows_, my_cols_, *matrix_size, *num_procsr);
+#endif
+
+    lu_(AA,
+        matrix_size,
+        num_procsr,
+        pivot,
+        secs);
+
+    // Permute the lower triangular matrix
+    // dpermute_(AA, pivot);
 
   }
 
