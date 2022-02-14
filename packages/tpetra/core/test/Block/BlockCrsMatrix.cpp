@@ -1278,7 +1278,7 @@ namespace {
     out << "Creating mesh graph" << endl;
     graph_type graph (meshRowMapPtr, 2);
 
-    if (meshRowMapPtr->getNodeNumElements () > 0) {
+    if (meshRowMapPtr->getLocalNumElements () > 0) {
       const GO myMinGblRow = meshRowMapPtr->getMinGlobalIndex ();
       const GO myMaxGblRow = meshRowMapPtr->getMaxGlobalIndex ();
       for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
@@ -1403,7 +1403,7 @@ namespace {
     out << "Creating mesh graph" << endl;
     graph_type graph (meshRowMapPtr, 2);
 
-    if (meshRowMapPtr->getNodeNumElements () > 0) {
+    if (meshRowMapPtr->getLocalNumElements () > 0) {
       const GO myMinGblRow = meshRowMapPtr->getMinGlobalIndex ();
       const GO myMaxGblRow = meshRowMapPtr->getMaxGlobalIndex ();
       for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
@@ -1585,7 +1585,7 @@ namespace {
     out << "Create graph with overlapping mesh row Map" << endl;
     // Make a graph.  It happens to have two entries per row.
     graph_type overlapGraph (overlapMeshRowMapPtr, 2);
-    if (overlapMeshRowMapPtr->getNodeNumElements () > 0) {
+    if (overlapMeshRowMapPtr->getLocalNumElements () > 0) {
       const GO myMinGblRow = overlapMeshRowMapPtr->getMinGlobalIndex ();
       const GO myMaxGblRow = overlapMeshRowMapPtr->getMaxGlobalIndex ();
       for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
@@ -1599,7 +1599,7 @@ namespace {
     overlapGraph.fillComplete (meshDomainMapPtr, meshRangeMapPtr);
 
     {
-      const LO lclNumRowsOverlap = static_cast<LO> (overlapMeshRowMapPtr->getNodeNumElements ());
+      const LO lclNumRowsOverlap = static_cast<LO> (overlapMeshRowMapPtr->getLocalNumElements ());
       for (LO lclRow = 0; lclRow < lclNumRowsOverlap; ++lclRow) {
         const LO numEnt = static_cast<LO> (overlapGraph.getNumEntriesInLocalRow (lclRow));
         TEST_EQUALITY( numEnt, static_cast<LO> (2) );
@@ -1636,7 +1636,7 @@ namespace {
     // Export can only add entries to each row, not remove them.
     {
       const LO lclNumRowsNonoverlap =
-        static_cast<LO> (meshRowMapPtr->getNodeNumElements ());
+        static_cast<LO> (meshRowMapPtr->getLocalNumElements ());
       for (LO lclRow = 0; lclRow < lclNumRowsNonoverlap; ++lclRow) {
         const LO numEnt = static_cast<LO> (graph->getNumEntriesInLocalRow (lclRow));
         TEST_ASSERT( numEnt >= static_cast<LO> (2) );

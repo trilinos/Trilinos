@@ -1051,7 +1051,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       auto rowMap = A->getRowMap();
       Tpetra::Vector<MT, LO, GO, NT> diags(rowMap);
       A->getLocalDiagCopy(diags);
-      size_t diagLength = rowMap->getNodeNumElements();
+      size_t diagLength = rowMap->getLocalNumElements();
       Teuchos::Array<MT> diagonal(diagLength);
       diags.get1dCopy(diagonal());
 
@@ -1847,7 +1847,7 @@ bool verifySum(const CrsMat& A, const CrsMat& B, const CrsMat& C)
   typedef typename CrsMat::nonconst_values_host_view_type vals_type;
 
   auto rowMap = A.getRowMap();
-  LO numLocalRows = rowMap->getNodeNumElements();
+  LO numLocalRows = rowMap->getLocalNumElements();
   GO Amax = A.getGlobalMaxNumRowEntries();
   GO Bmax = B.getGlobalMaxNumRowEntries();
   GO Cmax = C.getGlobalMaxNumRowEntries();
@@ -1937,7 +1937,7 @@ RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getTestMatrix(
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
-  const LO maxNnzPerRow = colMap->getNodeNumElements();
+  const LO maxNnzPerRow = colMap->getLocalNumElements();
   auto mat = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NT>(rowRangeMap, colMap, maxNnzPerRow));
   //get consistent results between runs on a given machine
   srand(seed);
@@ -1950,7 +1950,7 @@ RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getTestMatrix(
     for(int j = 0; j < n; j++)
     {
       vals[j] = 10.0 * rand() / RAND_MAX;
-      inds[j] = rand() % colMap->getNodeNumElements();
+      inds[j] = rand() % colMap->getLocalNumElements();
     }
     mat->insertLocalValues(i, inds(), vals());
   }
@@ -1976,8 +1976,8 @@ RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getUnsortedTestMatrix(
   using kk_scalar_t =  typename KCRS::values_type::non_const_value_type;
   //Get consistent results between runs on a given machine
   srand(seed);
-  lno_t numLocalRows = rowRangeMap->getNodeNumElements();
-  lno_t numLocalCols = colMap->getNodeNumElements();
+  lno_t numLocalRows = rowRangeMap->getLocalNumElements();
+  lno_t numLocalCols = colMap->getLocalNumElements();
   Array<int> entriesPerRow(numLocalRows, 0);
   for(LO i = 0; i < numLocalRows; i++)
     entriesPerRow[i] = rand() % numLocalCols;

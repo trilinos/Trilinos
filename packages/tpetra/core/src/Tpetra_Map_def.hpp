@@ -1347,7 +1347,7 @@ namespace Tpetra {
     return local_map_type (glMap_, lgMap_, getIndexBase (),
                            getMinGlobalIndex (), getMaxGlobalIndex (),
                            firstContiguousGID_, lastContiguousGID_,
-                           getNodeNumElements (), isContiguous ());
+                           getLocalNumElements (), isContiguous ());
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1409,7 +1409,7 @@ namespace Tpetra {
 
     // Do both Maps have the same number of indices on each process?
     const int locallyCompat =
-      (getNodeNumElements () == map.getNodeNumElements ()) ? 1 : 0;
+      (getLocalNumElements () == map.getLocalNumElements ()) ? 1 : 0;
 
     int globallyCompat = 0;
     reduceAll<int, int> (*comm_, REDUCE_MIN, locallyCompat, outArg (globallyCompat));
@@ -1438,7 +1438,7 @@ namespace Tpetra {
       // equality on all processes, since Map is immutable.
       return true;
     }
-    else if (getNodeNumElements () != map.getNodeNumElements ()) {
+    else if (getLocalNumElements () != map.getLocalNumElements ()) {
       return false;
     }
     else if (getMinGlobalIndex () != map.getMinGlobalIndex () ||
@@ -1484,10 +1484,10 @@ namespace Tpetra {
       else if (this->lgMap_.data () == map.lgMap_.data ()) {
         // Pointers to LID->GID "map" (actually just an array) are the
         // same, and the number of GIDs are the same.
-        return this->getNodeNumElements () == map.getNodeNumElements ();
+        return this->getLocalNumElements () == map.getLocalNumElements ();
       }
       else { // we actually have to compare the GIDs
-        if (this->getNodeNumElements () != map.getNodeNumElements ()) {
+        if (this->getLocalNumElements () != map.getLocalNumElements ()) {
           return false; // We already checked above, but check just in case
         }
         else {
@@ -1515,8 +1515,8 @@ namespace Tpetra {
     auto lmap1 = map.getLocalMap();
     auto lmap2 = this->getLocalMap();
 
-    auto numLocalElements1 = lmap1.getNodeNumElements();
-    auto numLocalElements2 = lmap2.getNodeNumElements();
+    auto numLocalElements1 = lmap1.getLocalNumElements();
+    auto numLocalElements2 = lmap2.getLocalNumElements();
 
     if (numLocalElements1 > numLocalElements2) {
       // There are more indices in the first map on this process than in second map.
@@ -1689,7 +1689,7 @@ namespace Tpetra {
            "noncontiguous Map.  Please report this bug to the Tpetra "
            "developers.");
       }
-      const LO numElts = static_cast<LO> (getNodeNumElements ());
+      const LO numElts = static_cast<LO> (getLocalNumElements ());
 
       using Kokkos::view_alloc;
       using Kokkos::WithoutInitializing;
@@ -1799,7 +1799,7 @@ namespace Tpetra {
     out << "Process " << myRank << " of " << numProcs << ":" << endl;
     Teuchos::OSTab tab1 (out);
 
-    const LO numEnt = static_cast<LO> (this->getNodeNumElements ());
+    const LO numEnt = static_cast<LO> (this->getLocalNumElements ());
     out << "My number of entries: " << numEnt << endl
         << "My minimum global index: " << this->getMinGlobalIndex () << endl
         << "My maximum global index: " << this->getMaxGlobalIndex () << endl;
@@ -1988,14 +1988,14 @@ namespace Tpetra {
       using size_type =
         typename std::decay<decltype (lgMap.extent (0)) >::type;
       const size_type lclNumInds =
-        static_cast<size_type> (this->getNodeNumElements ());
+        static_cast<size_type> (this->getLocalNumElements ());
       using Teuchos::TypeNameTraits;
       TEUCHOS_TEST_FOR_EXCEPTION
         (lgMap.extent (0) != lclNumInds, std::logic_error,
          "Tpetra::Map::replaceCommWithSubset: Result of getMyGlobalIndices() "
          "has length " << lgMap.extent (0) << " (of type " <<
-         TypeNameTraits<size_type>::name () << ") != this->getNodeNumElements()"
-         " = " << this->getNodeNumElements () << ".  The latter, upon being "
+         TypeNameTraits<size_type>::name () << ") != this->getLocalNumElements()"
+         " = " << this->getLocalNumElements () << ".  The latter, upon being "
          "cast to size_type = " << TypeNameTraits<size_type>::name () << ", "
          "becomes " << lclNumInds << ".  Please report this bug to the Tpetra "
          "developers.");
@@ -2552,7 +2552,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
       cerr << os.str ();
     }
     Tpetra::Directory<LO, GO, NT> directory;
-    const size_t numMyElems = M->getNodeNumElements ();
+    const size_t numMyElems = M->getLocalNumElements ();
     ArrayView<const GO> myElems = M->getNodeElementList ();
     Array<int> owner_procs_vec (numMyElems);
 
@@ -2648,7 +2648,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
     os << *prefix << "Done initializing Directory" << endl;
     cerr << os.str ();
   }
-  size_t numMyElems = M->getNodeNumElements ();
+  size_t numMyElems = M->getLocalNumElements ();
   ArrayView<const GO> myElems = M->getNodeElementList ();
   Array<int> owner_procs_vec (numMyElems);
   if (verbose) {

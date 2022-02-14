@@ -622,7 +622,7 @@ namespace Tpetra {
       // Create list of GIDs to go into target Map.  We need to copy
       // the GIDs into this list anyway, so once we have them, we can
       // sort the "remotes" in place.
-      const LO numLclSrcIDs = static_cast<LO> (sourceMap.getNodeNumElements ());
+      const LO numLclSrcIDs = static_cast<LO> (sourceMap.getLocalNumElements ());
       const LO numLclTgtIDs = numLclSrcIDs + numTargetMapRemoteOrPermuteGlobalIndices;
       if (verbose) {
         std::ostringstream os;
@@ -680,7 +680,7 @@ namespace Tpetra {
       }
       // The _actual_ number of remotes.
       const LO numRemotes = numTargetMapRemoteOrPermuteGlobalIndices - result.numPermutes;
-      result.numSameIDs = static_cast<LO> (sourceMap.getNodeNumElements ());
+      result.numSameIDs = static_cast<LO> (sourceMap.getLocalNumElements ());
 
       if (verbose) {
         std::ostringstream os;
@@ -1702,7 +1702,7 @@ namespace Tpetra {
     ArrayView<const GO> tgtGIDs = tgtMap->getNodeElementList ();
 
     // All elements in srcMap will be in the "new" target map, so...
-    size_t numSameIDsNew    = srcMap->getNodeNumElements ();
+    size_t numSameIDsNew    = srcMap->getLocalNumElements ();
     size_t numRemoteIDsNew  = this->getNumRemoteIDs ();
     Array<LO> permuteToLIDsNew, permuteFromLIDsNew; // empty on purpose
 
@@ -1792,11 +1792,11 @@ namespace Tpetra {
       if (remoteTarget.is_null ()) {
         lclSuccess = -1;
       }
-      else if (NumRemotes != remoteTarget->getNodeNumElements ()) {
+      else if (NumRemotes != remoteTarget->getLocalNumElements ()) {
         lclSuccess = 0;
         lclErr << *procPrefix << "getNumRemoteIDs() = " << NumRemotes
-               << " != remoteTarget->getNodeNumElements() = "
-               << remoteTarget->getNodeNumElements () << "." << endl;
+               << " != remoteTarget->getLocalNumElements() = "
+               << remoteTarget->getLocalNumElements () << "." << endl;
       }
 
       if (comm.is_null ()) {

@@ -82,7 +82,7 @@ namespace {
     reduceAll<int, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
-    TEST_EQUALITY(map.getNodeNumElements(), numLocal);
+    TEST_EQUALITY(map.getLocalNumElements(), numLocal);
     TEST_EQUALITY(map.getIndexBase(), indexBase);
     TEST_EQUALITY(map.getMinGlobalIndex(), myMinGID);
     TEST_EQUALITY(map.getMaxGlobalIndex(), myMaxGID );
@@ -133,7 +133,7 @@ namespace {
     reduceAll<int, GO>(*comm, Teuchos::REDUCE_MAX, myMaxGID, outArg(maxAllGIDs));
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
-    TEST_EQUALITY(map.getNodeNumElements(), numLocal);
+    TEST_EQUALITY(map.getLocalNumElements(), numLocal);
     TEST_EQUALITY(map.getIndexBase(), indexBase);
     TEST_EQUALITY(map.getMinGlobalIndex(), myMinGID);
     TEST_EQUALITY(map.getMaxGlobalIndex(), myMaxGID );

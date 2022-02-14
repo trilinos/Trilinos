@@ -93,7 +93,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
   {
     expected.putScalar(0.);
     auto expectedData = Kokkos::subview(expected.getLocalViewHost(Tpetra::Access::ReadWrite), Kokkos::ALL(), 0);
-    for (size_t i = 0; i < map->getNodeNumElements(); i++) {
+    for (size_t i = 0; i < map->getLocalNumElements(); i++) {
 
       GO gid = map->getGlobalElement(i);
       bool denseRow = (gid % (divisor+1) == 1);
@@ -152,7 +152,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
   // Initialize domain vector for SpMV
   {
     auto xData = x.getLocalViewHost(Tpetra::Access::OverwriteAll);
-    for (size_t i = 0; i < map->getNodeNumElements(); i++) 
+    for (size_t i = 0; i < map->getLocalNumElements(); i++) 
       xData(i, 0) = map->getGlobalElement(i);
   }
 
@@ -164,7 +164,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
     auto expectedData = expected.getLocalViewHost(Tpetra::Access::ReadOnly);
     auto yData = y.getLocalViewHost(Tpetra::Access::ReadOnly);
 
-    for (size_t i = 0; i < map->getNodeNumElements(); i++) {
+    for (size_t i = 0; i < map->getLocalNumElements(); i++) {
       if (yData(i, 0) != expectedData(i, 0)) {
         std::cout << me << " of " << np << ": y[" << map->getGlobalElement(i)
                   << "] " << yData(i, 0) << " != " << expectedData(i, 0)

@@ -156,7 +156,7 @@ namespace { // (anonymous)
     }
     const int myRank = map.getComm ()->getRank ();
     out << "Proc " << myRank << ": [";
-    const LO lclNumInds = static_cast<LO> (map.getNodeNumElements ());
+    const LO lclNumInds = static_cast<LO> (map.getLocalNumElements ());
     if (lclNumInds != 0) {
       for (LO lclInd = 0; lclInd < lclNumInds; ++lclInd) {
         const GO gblInd = map.getGlobalElement (lclInd);
@@ -196,7 +196,7 @@ namespace { // (anonymous)
     const int myRank = rowMap.getComm ()->getRank ();
     out << "Proc " << myRank << ": {";
 
-    const LO lclNumRows = static_cast<LO> (rowMap.getNodeNumElements ());
+    const LO lclNumRows = static_cast<LO> (rowMap.getLocalNumElements ());
     if (lclNumRows != 0) {
       if (A.isLocallyIndexed ()) {
         Teuchos::Array<GO> gblColInds;

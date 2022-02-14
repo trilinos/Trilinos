@@ -136,7 +136,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug6069_2, SC, LO, GO, NT)
   fos->setOutputToRootOnly (-1);
   map->describe (*fos, Teuchos::VERB_EXTREME);
 
-  const size_t numMyElements = map->getNodeNumElements ();
+  const size_t numMyElements = map->getLocalNumElements ();
   switch (myRank) {
   case 0:
     assert(numMyElements==2);

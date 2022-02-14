@@ -609,7 +609,7 @@ namespace Tpetra {
       directoryMap_ = rcp (new map_type (numGlobalEntries, minAllGID, comm,
                                          GloballyDistributed));
       // The number of Directory elements that my process owns.
-      const size_t dir_numMyEntries = directoryMap_->getNodeNumElements ();
+      const size_t dir_numMyEntries = directoryMap_->getLocalNumElements ();
 
       // Fix for Bug 5822: If the input Map is "sparse," that is if
       // the difference between the global min and global max GID is
@@ -635,13 +635,13 @@ namespace Tpetra {
       // switch to a hash table - based implementation.
       const size_t inverseSparsityThreshold = 10;
       useHashTables_ =
-        (dir_numMyEntries >= inverseSparsityThreshold * map.getNodeNumElements());
+        (dir_numMyEntries >= inverseSparsityThreshold * map.getLocalNumElements());
 
       // Get list of process IDs that own the directory entries for the
       // Map GIDs.  These will be the targets of the sends that the
       // Distributor will do.
       const int myRank = comm->getRank ();
-      const size_t numMyEntries = map.getNodeNumElements ();
+      const size_t numMyEntries = map.getLocalNumElements ();
       Array<int> sendImageIDs (numMyEntries);
       ArrayView<const GO> myGlobalEntries = map.getNodeElementList ();
       // An ID not present in this lookup indicates that it lies outside

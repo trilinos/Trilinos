@@ -319,11 +319,11 @@ namespace { // (anonymous)
 
     if(myRank<numProc-1)//I shouldn't have any elements.
     {
-      TEST_EQUALITY(new_map->getNodeNumElements(),0);
+      TEST_EQUALITY(new_map->getLocalNumElements(),0);
     }
     else//I should have all of them.
     {
-      TEST_EQUALITY(new_map->getNodeNumElements(),NUM_GLOBAL_ELEMENTS);
+      TEST_EQUALITY(new_map->getLocalNumElements(),NUM_GLOBAL_ELEMENTS);
     }
   }
 

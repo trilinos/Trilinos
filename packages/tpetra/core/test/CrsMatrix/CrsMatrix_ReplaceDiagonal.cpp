@@ -183,7 +183,7 @@ namespace { // (anonymous)
         /* Test that no other matrix values were changed
          */
         
-        for (size_t i = 0; i < matrix->getRowMap()->getNodeNumElements(); i++) {
+        for (size_t i = 0; i < matrix->getRowMap()->getLocalNumElements(); i++) {
           typename crs_matrix_type::local_inds_host_view_type lcols;
           typename crs_matrix_type::values_host_view_type lvals;
           matrix->getLocalRowView(static_cast<LO>(i), lcols, lvals);
@@ -372,7 +372,7 @@ namespace { // (anonymous)
          */
         
 	using impl_scalar_type = typename crs_matrix_type::impl_scalar_type;
-        for (size_t i = 0; i < matrix->getRowMap()->getNodeNumElements(); i++) {
+        for (size_t i = 0; i < matrix->getRowMap()->getLocalNumElements(); i++) {
           typename crs_matrix_type::local_inds_host_view_type lcols;
           typename crs_matrix_type::values_host_view_type lvals;
           matrix->getLocalRowView(static_cast<LO>(i), lcols, lvals);

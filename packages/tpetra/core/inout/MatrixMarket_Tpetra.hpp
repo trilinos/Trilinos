@@ -438,12 +438,12 @@ namespace Tpetra {
          ArrayView<const GO> myRows = pRowMap->getNodeElementList();
          const size_type myNumRows = myRows.size();
          TEUCHOS_TEST_FOR_EXCEPTION(static_cast<size_t>(myNumRows) !=
-                            pRowMap->getNodeNumElements(),
+                            pRowMap->getLocalNumElements(),
                             std::logic_error,
                             "pRowMap->getNodeElementList().size() = "
                             << myNumRows
-                            << " != pRowMap->getNodeNumElements() = "
-                            << pRowMap->getNodeNumElements() << ".  "
+                            << " != pRowMap->getLocalNumElements() = "
+                            << pRowMap->getLocalNumElements() << ".  "
                             "Please report this bug to the Tpetra developers.");
          TEUCHOS_TEST_FOR_EXCEPTION(myRank == 0 && numEntriesPerRow.size() < myNumRows,
                             std::logic_error,
@@ -1554,7 +1554,7 @@ namespace Tpetra {
           }
         }
 
-        Teuchos::Array<size_t> numEntriesPerRow (proc0Map->getNodeNumElements ());
+        Teuchos::Array<size_t> numEntriesPerRow (proc0Map->getLocalNumElements ());
         for (const auto& ent : numEntriesPerRow_map) {
           const local_ordinal_type lclRow = proc0Map->getLocalElement (ent.first);
           numEntriesPerRow[lclRow] = ent.second;
@@ -7547,7 +7547,7 @@ namespace Tpetra {
           err->pushTab ();
         }
 
-        const size_t myNumRows = map.getNodeNumElements ();
+        const size_t myNumRows = map.getLocalNumElements ();
         // Use a different tag for the "size" messages than for the
         // "data" messages, in order to help us debug any mix-ups.
         const int sizeTag = 1337;
@@ -8336,7 +8336,7 @@ namespace Tpetra {
         }
 
         // Create map that replicates the range map on pid 0 and is empty for all other pids
-        size_t numLocalRangeEntries = rangeMap->getNodeNumElements();
+        size_t numLocalRangeEntries = rangeMap->getLocalNumElements();
 
         // Create contiguous source map
         RCP<const map_type> allGidsMap = rcp(new map_type(TGOT::invalid(), numLocalRangeEntries,

@@ -582,7 +582,13 @@ namespace Tpetra {
     /// \note This function should be thread safe and thread scalable,
     ///   assuming that you refer to the Map by value or reference,
     ///   not by Teuchos::RCP.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeNumElements () const {
+      return numLocalElements_;
+    }
+#endif
+    size_t getLocalNumElements () const {
       return numLocalElements_;
     }
 
@@ -607,7 +613,7 @@ namespace Tpetra {
     /// \brief The maximum local index on the calling process.
     ///
     /// If this process owns no elements, that is, if
-    /// <tt>getNodeNumElements() == 0</tt>, then this method returns
+    /// <tt>getLocalNumElements() == 0</tt>, then this method returns
     /// the same value as
     /// <tt>Teuchos::OrdinalTraits<local_ordinal_type>::invalid()</tt>.
     ///
@@ -615,10 +621,10 @@ namespace Tpetra {
     ///   assuming that you refer to the Map by value or reference,
     ///   not by Teuchos::RCP.
     local_ordinal_type getMaxLocalIndex () const {
-      if (this->getNodeNumElements () == 0) {
+      if (this->getLocalNumElements () == 0) {
         return Tpetra::Details::OrdinalTraits<local_ordinal_type>::invalid ();
       } else { // Local indices are always zero-based.
-        return static_cast<local_ordinal_type> (this->getNodeNumElements () - 1);
+        return static_cast<local_ordinal_type> (this->getLocalNumElements () - 1);
       }
     }
 

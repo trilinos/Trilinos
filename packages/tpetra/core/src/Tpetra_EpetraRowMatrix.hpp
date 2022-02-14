@@ -82,7 +82,7 @@ tpetraToEpetraMapTmpl (const TpetraMapType& tpetraMap)
   typedef EpetraGlobalOrdinalType EGO;
 
   const TGO gblNumInds = static_cast<TGO> (tpetraMap.getGlobalNumElements ());
-  const LO lclNumInds = static_cast<LO> (tpetraMap.getNodeNumElements ());
+  const LO lclNumInds = static_cast<LO> (tpetraMap.getLocalNumElements ());
   ArrayView<const TGO> global_index_list = tpetraMap.getNodeElementList ();
 
   std::vector<EGO> global_index_list_epetra;

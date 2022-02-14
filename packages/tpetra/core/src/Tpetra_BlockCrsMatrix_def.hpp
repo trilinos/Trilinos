@@ -979,7 +979,7 @@ public:
     using Kokkos::parallel_for;
     const char prefix[] = "Tpetra::BlockCrsMatrix::getLocalDiagCopy (2-arg): ";
 
-    const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
+    const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getLocalNumElements ());
     const LO blockSize = this->getBlockSize ();
     TEUCHOS_TEST_FOR_EXCEPTION
       (static_cast<LO> (diag.extent (0)) < lclNumMeshRows ||

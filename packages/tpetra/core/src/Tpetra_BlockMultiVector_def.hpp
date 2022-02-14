@@ -275,7 +275,7 @@ makePointMap (const map_type& meshMap, const LO blockSize)
   const GST gblNumMeshMapInds =
     static_cast<GST> (meshMap.getGlobalNumElements ());
   const size_t lclNumMeshMapIndices =
-    static_cast<size_t> (meshMap.getNodeNumElements ());
+    static_cast<size_t> (meshMap.getLocalNumElements ());
   const GST gblNumPointMapInds =
     gblNumMeshMapInds * static_cast<GST> (blockSize);
   const size_t lclNumPointMapInds =
@@ -821,7 +821,7 @@ blockWiseMultiply (const Scalar& alpha,
 {
   using Kokkos::ALL;
   typedef typename device_type::execution_space execution_space;
-  const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
+  const LO lclNumMeshRows = meshMap_.getLocalNumElements ();
 
   if (alpha == STS::zero ()) {
     this->putScalar (STS::zero ());

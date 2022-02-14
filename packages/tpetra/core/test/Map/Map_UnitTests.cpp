@@ -188,8 +188,8 @@ namespace {
         Teuchos::OSTab tab1 (out);
         out << "m1.getGlobalNumElements() = " << m1.getGlobalNumElements () << endl
             << "m2.getGlobalNumElements() = " << m2.getGlobalNumElements () << endl
-            << "m1.getNodeNumElements() = " << m1.getNodeNumElements () << endl
-            << "m2.getNodeNumElements() = " << m2.getNodeNumElements () << endl;
+            << "m1.getLocalNumElements() = " << m1.getLocalNumElements () << endl
+            << "m2.getLocalNumElements() = " << m2.getLocalNumElements () << endl;
         TEST_IS_COMPATIBLE( m1, m2, false);
       }
       if (numImages > 2) {
@@ -279,7 +279,7 @@ namespace {
     TEST_EQUALITY_CONST(map.isContiguous(), true);
     TEST_EQUALITY_CONST(map.isDistributed(), numImages > 1);
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobalEntries);
-    TEST_EQUALITY_CONST(map.getNodeNumElements(), 2);
+    TEST_EQUALITY_CONST(map.getLocalNumElements(), 2);
     TEST_EQUALITY_CONST(map.getIndexBase(), indexBase);
     TEST_EQUALITY_CONST(map.getMinLocalIndex(), localIndexBase);
     TEST_EQUALITY_CONST(map.getMaxLocalIndex(), 1);
@@ -340,7 +340,7 @@ namespace {
     }
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
-    TEST_EQUALITY(map.getNodeNumElements(), numLocal);
+    TEST_EQUALITY(map.getLocalNumElements(), numLocal);
     TEST_EQUALITY(map.getIndexBase(), indexBase);
     TEST_EQUALITY_CONST(map.getMinLocalIndex(), 0);
     TEST_EQUALITY(map.getMaxLocalIndex(), numLocal-1);
@@ -385,7 +385,7 @@ namespace {
     Map map (numGlobal, GIDs (), indexBase, comm);
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
-    TEST_EQUALITY(map.getNodeNumElements(), numLocal);
+    TEST_EQUALITY(map.getLocalNumElements(), numLocal);
     TEST_EQUALITY(map.getIndexBase(), indexBase);
     TEST_EQUALITY_CONST(map.getMinLocalIndex(), 0);
     TEST_EQUALITY(map.getMaxLocalIndex(), numLocal-1);

@@ -258,7 +258,7 @@ namespace Tpetra {
         // order of rows right) at a time, and overlapping writing
         // to the file (resp. reading from it) with receiving (resp.
         // sending) the next chunk.
-        const int myEltCount = as<int> (oneToOneMap->getNodeNumElements ());
+        const int myEltCount = as<int> (oneToOneMap->getLocalNumElements ());
         Array<int> recvCounts (numProcs);
         const int rootProc = 0;
         gather<int> (&myEltCount, 1, recvCounts.getRawPtr (), 1, rootProc, comm);

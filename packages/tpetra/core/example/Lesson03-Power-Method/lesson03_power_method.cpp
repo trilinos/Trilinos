@@ -241,7 +241,7 @@ main (int argc, char *argv[])
     RCP<const map_type> map =
       rcp (new map_type (numGblIndices, indexBase, comm));
 
-    const size_t numMyElements = map->getNodeNumElements ();
+    const size_t numMyElements = map->getLocalNumElements ();
 
     // If you like, you may get the list of global indices that the
     // calling process owns.  This is unnecessary if you don't mind

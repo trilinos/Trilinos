@@ -1088,7 +1088,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalMatrixDevice () const
   {
-    auto numCols = staticGraph_->getColMap()->getNodeNumElements();
+    auto numCols = staticGraph_->getColMap()->getLocalNumElements();
     return local_matrix_device_type("Tpetra::CrsMatrix::lclMatrixDevice",
                               numCols,
                               valuesPacked_wdv.getDeviceView(Access::ReadWrite),
@@ -1100,7 +1100,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalMatrixHost () const
   {
-    auto numCols = staticGraph_->getColMap()->getNodeNumElements();
+    auto numCols = staticGraph_->getColMap()->getLocalNumElements();
     return local_matrix_host_type("Tpetra::CrsMatrix::lclMatrixHost", numCols,
                                 valuesPacked_wdv.getHostView(Access::ReadWrite),
                                 staticGraph_->getLocalGraphHost());
@@ -5487,32 +5487,32 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       const bool transpose = (mode != Teuchos::NO_TRANS);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! transpose && X.getLocalLength () !=
-         getColMap ()->getNodeNumElements (), std::runtime_error,
+         getColMap ()->getLocalNumElements (), std::runtime_error,
          "NO_TRANS case: X has the wrong number of local rows.  "
          "X.getLocalLength() = " << X.getLocalLength () << " != "
-         "getColMap()->getNodeNumElements() = " <<
-         getColMap ()->getNodeNumElements () << ".");
+         "getColMap()->getLocalNumElements() = " <<
+         getColMap ()->getLocalNumElements () << ".");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! transpose && Y.getLocalLength () !=
-         getRowMap ()->getNodeNumElements (), std::runtime_error,
+         getRowMap ()->getLocalNumElements (), std::runtime_error,
          "NO_TRANS case: Y has the wrong number of local rows.  "
          "Y.getLocalLength() = " << Y.getLocalLength () << " != "
-         "getRowMap()->getNodeNumElements() = " <<
-         getRowMap ()->getNodeNumElements () << ".");
+         "getRowMap()->getLocalNumElements() = " <<
+         getRowMap ()->getLocalNumElements () << ".");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (transpose && X.getLocalLength () !=
-         getRowMap ()->getNodeNumElements (), std::runtime_error,
+         getRowMap ()->getLocalNumElements (), std::runtime_error,
          "TRANS or CONJ_TRANS case: X has the wrong number of local "
          "rows.  X.getLocalLength() = " << X.getLocalLength ()
-         << " != getRowMap()->getNodeNumElements() = "
-         << getRowMap ()->getNodeNumElements () << ".");
+         << " != getRowMap()->getLocalNumElements() = "
+         << getRowMap ()->getLocalNumElements () << ".");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (transpose && Y.getLocalLength () !=
-         getColMap ()->getNodeNumElements (), std::runtime_error,
+         getColMap ()->getLocalNumElements (), std::runtime_error,
          "TRANS or CONJ_TRANS case: X has the wrong number of local "
          "rows.  Y.getLocalLength() = " << Y.getLocalLength ()
-         << " != getColMap()->getNodeNumElements() = "
-         << getColMap ()->getNodeNumElements () << ".");
+         << " != getColMap()->getLocalNumElements() = "
+         << getColMap ()->getLocalNumElements () << ".");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! isFillComplete (), std::runtime_error, "The matrix is not "
          "fill complete.  You must call fillComplete() (possibly with "
@@ -8001,7 +8001,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // actually computing the sum.  A reasonable upper bound is the
     // sum of the two entry counts in each row.  
     if (A_rowMap->isSameAs (*B_rowMap)) {
-      const LO localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
+      const LO localNumRows = static_cast<LO> (A_rowMap->getLocalNumElements ());
       Array<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
 
       // Get the number of entries in each row of A.
@@ -8056,7 +8056,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     vals_type val;
 
     if (alpha != ZERO) {
-      const LO A_localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
+      const LO A_localNumRows = static_cast<LO> (A_rowMap->getLocalNumElements ());
       for (LO localRow = 0; localRow < A_localNumRows; ++localRow) {
         size_t A_numEntries = A.getNumEntriesInLocalRow (localRow);
         const GO globalRow = A_rowMap->getGlobalElement (localRow);
@@ -8080,7 +8080,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
 
     if (beta != ZERO) {
-      const LO B_localNumRows = static_cast<LO> (B_rowMap->getNodeNumElements ());
+      const LO B_localNumRows = static_cast<LO> (B_rowMap->getLocalNumElements ());
       for (LO localRow = 0; localRow < B_localNumRows; ++localRow) {
         size_t B_numEntries = B.getNumEntriesInLocalRow (localRow);
         const GO globalRow = B_rowMap->getGlobalElement (localRow);
@@ -8468,13 +8468,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       SourceDomain_pids.putScalar(MyPID);
 
       SourceCol_pids.doImport (SourceDomain_pids, *MyImporter, INSERT);
-      SourcePids.resize (getColMap ()->getNodeNumElements ());
+      SourcePids.resize (getColMap ()->getLocalNumElements ());
       SourceCol_pids.get1dCopy (SourcePids ());
     }
     else if (MyImporter.is_null ()) {
       // Matrix has no off-process entries
-      SourcePids.resize (getColMap ()->getNodeNumElements ());
-      SourcePids.assign (getColMap ()->getNodeNumElements (), MyPID);
+      SourcePids.resize (getColMap ()->getLocalNumElements ());
+      SourcePids.assign (getColMap ()->getLocalNumElements (), MyPID);
     }
     else if ( ! MyImporter.is_null () &&
               ! domainTransfer.is_null () ) {
@@ -8512,7 +8512,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           "Please report this bug to a Tpetra developer.");
       }
       SourceCol_pids.doImport (SourceDomain_pids, *MyImporter, INSERT);
-      SourcePids.resize (getColMap ()->getNodeNumElements ());
+      SourcePids.resize (getColMap ()->getLocalNumElements ());
       SourceCol_pids.get1dCopy (SourcePids ());
     }
     else if ( ! MyImporter.is_null () &&
@@ -8545,7 +8545,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
 
       SourceCol_pids.doImport (SourceRow_pids, *MyImporter, INSERT);
-      SourcePids.resize (getColMap ()->getNodeNumElements ());
+      SourcePids.resize (getColMap ()->getLocalNumElements ());
       SourceCol_pids.get1dCopy (SourcePids ());
     }
     else {
@@ -8914,7 +8914,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          << mynnz << std::endl;
       std::cerr << os.str ();
     }
-    size_t N = BaseRowMap->getNodeNumElements ();
+    size_t N = BaseRowMap->getLocalNumElements ();
 
     // Allocations
     ArrayRCP<size_t> CSR_rowptr(N+1);
@@ -9155,7 +9155,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         Teuchos::ArrayView<const int>  TEPID2  =  rowTransfer.getExportPIDs(); // row matrix
         Teuchos::ArrayView<const LO>   TELID2  =  rowTransfer.getExportLIDs();
 
-        const int numCols = getGraph()->getColMap()->getNodeNumElements(); // may be dup
+        const int numCols = getGraph()->getColMap()->getLocalNumElements(); // may be dup
         // from EpetraExt_MMHelpers.cpp: build_type2_exports
         std::vector<bool> IsOwned(numCols,true);
         std::vector<int>  SentTo(numCols,-1);

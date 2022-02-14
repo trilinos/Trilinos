@@ -136,20 +136,20 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
       // overflow on any process.  It's OK to do the all-reduce,
       // because this is a test, not performance-oriented code.
       const int lclSuccess =
-        (oneToOneMap->getNodeNumElements () <= static_cast<size_t> (INT_MAX)) ?
+        (oneToOneMap->getLocalNumElements () <= static_cast<size_t> (INT_MAX)) ?
         1 : 0;
       int gblSuccess = 1;
       using Teuchos::outArg;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
       TEUCHOS_TEST_FOR_EXCEPTION
         (gblSuccess != 1, std::runtime_error, "On some process, "
-         "oneToOneMap->getNodeNumElements() = "
-         << oneToOneMap->getNodeNumElements () << " > INT_MAX = " << INT_MAX
+         "oneToOneMap->getLocalNumElements() = "
+         << oneToOneMap->getLocalNumElements () << " > INT_MAX = " << INT_MAX
          << ".  This means that the code below that uses MPI_Gather to collect "
          "indices onto Process 0 will be incorrect.");
     }
 
-    const int myEltCount = static_cast<int> (oneToOneMap->getNodeNumElements ());
+    const int myEltCount = static_cast<int> (oneToOneMap->getLocalNumElements ());
     Array<int> recvCounts (numProcs);
     const int rootProc = 0;
     gather<int, int> (&myEltCount, 1, recvCounts.getRawPtr (), 1, rootProc, *comm);

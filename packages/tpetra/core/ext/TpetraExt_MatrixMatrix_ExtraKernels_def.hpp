@@ -161,7 +161,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
+  size_t n = Ccolmap->getLocalNumElements();
   size_t Cest_nnz_per_row = 2*C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
 
   // Get my node / thread info (right from openmp or parameter list)
@@ -372,7 +372,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
+  size_t n = Ccolmap->getLocalNumElements();
 
   // Get my node / thread info (right from openmp or parameter list)
   size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
@@ -538,7 +538,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
+  size_t n = Ccolmap->getLocalNumElements();
   size_t Cest_nnz_per_row = 2*C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
 
   // Get my node / thread info (right from openmp)
@@ -781,7 +781,7 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
+  size_t n = Ccolmap->getLocalNumElements();
 
   // Get my node / thread info (right from openmp or parameter list)
   size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
@@ -1072,7 +1072,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         // Sizes
         RCP<const map_type> Accolmap = Ac.getColMap();
         size_t m = Rview.origMatrix->getNodeNumRows();
-        size_t n = Accolmap->getNodeNumElements();
+        size_t n = Accolmap->getLocalNumElements();
 
         // Get raw Kokkos matrices, and the raw CSR views
         const KCRS & Rmat = Rview.origMatrix->getLocalMatrixDevice();
@@ -1336,7 +1336,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
         // Sizes
         RCP<const map_type> Accolmap = Ac.getColMap();
         size_t m = Rview.origMatrix->getNodeNumRows();
-        size_t n = Accolmap->getNodeNumElements();
+        size_t n = Accolmap->getLocalNumElements();
 
         // Get raw Kokkos matrices, and the raw CSR views
         const KCRS & Rmat = Rview.origMatrix->getLocalMatrixDevice();

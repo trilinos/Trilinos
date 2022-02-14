@@ -150,7 +150,7 @@ localDeepCopyLocallyIndexedRowMatrix
   Kokkos::deep_copy (val, val_h);
 
   local_graph_device_type lclGraph (ind, ptr);
-  const size_t numCols = A.getColMap ()->getNodeNumElements ();
+  const size_t numCols = A.getColMap ()->getLocalNumElements ();
   return local_matrix_device_type (label, numCols, val, lclGraph);
 }
 

@@ -239,7 +239,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 
     auto LengthsFrom                = Distor.getLengthsFrom();
     auto MyColMap                   = SourceMatrix.getColMap();
-    const size_t numCols            = MyColMap->getNodeNumElements ();
+    const size_t numCols            = MyColMap->getLocalNumElements ();
     RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > target = MyImporter->getTargetMap();
 
     // Get the owning pids in a special way,
@@ -737,7 +737,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   // Scan all column indices and sort into two groups:
   // Local:  those whose GID matches a GID of the domain map on this processor and
   // Remote: All others.
-  const size_t numDomainElements = domainMap.getNodeNumElements ();
+  const size_t numDomainElements = domainMap.getLocalNumElements ();
   Teuchos::Array<bool> LocalGIDs;
   if (numDomainElements > 0) {
     LocalGIDs.resize (numDomainElements, false); // Assume domain GIDs are not local

@@ -51,7 +51,7 @@ localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
   Kokkos::deep_copy (val, A_lcl.values);
 
   local_graph_device_type lclGraph (ind, ptr);
-  const size_t numCols = A.getColMap ()->getNodeNumElements ();
+  const size_t numCols = A.getColMap ()->getLocalNumElements ();
   return local_matrix_type (A.getObjectLabel (), numCols, val, lclGraph);
 }
 

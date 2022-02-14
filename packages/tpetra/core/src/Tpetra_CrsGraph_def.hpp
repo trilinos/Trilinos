@@ -386,7 +386,7 @@ namespace Tpetra {
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
-      static_cast<size_t> (0) : rowMap->getNodeNumElements ();
+      static_cast<size_t> (0) : rowMap->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       static_cast<size_t> (numEntPerRow.size ()) != lclNumRows,
       std::invalid_argument, "numEntPerRow has length " << numEntPerRow.size ()
@@ -452,7 +452,7 @@ namespace Tpetra {
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
-      static_cast<size_t> (0) : rowMap->getNodeNumElements ();
+      static_cast<size_t> (0) : rowMap->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       static_cast<size_t> (numEntPerRow.extent (0)) != lclNumRows,
       std::invalid_argument, "numEntPerRow has length " <<
@@ -506,7 +506,7 @@ namespace Tpetra {
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
-      static_cast<size_t> (0) : rowMap->getNodeNumElements ();
+      static_cast<size_t> (0) : rowMap->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       static_cast<size_t> (numEntPerRow.extent (0)) != lclNumRows,
       std::invalid_argument, "numEntPerRow has length " <<
@@ -559,7 +559,7 @@ namespace Tpetra {
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
-      static_cast<size_t> (0) : rowMap->getNodeNumElements ();
+      static_cast<size_t> (0) : rowMap->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       static_cast<size_t> (numEntPerRow.size ()) != lclNumRows,
       std::invalid_argument, "numEntPerRow has length " << numEntPerRow.size ()
@@ -613,7 +613,7 @@ namespace Tpetra {
   {
     staticAssertions();
 
-    int numRows = rowMap->getNodeNumElements();
+    int numRows = rowMap->getLocalNumElements();
     size_t numNonZeros = originalGraph.rowPtrsPacked_host_(numRows);
     auto rowsToUse = Kokkos::pair<size_t, size_t>(0, numRows+1);
 
@@ -725,15 +725,15 @@ namespace Tpetra {
       colMap.is_null (), std::runtime_error,
       ": The input column Map must be nonnull.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      k_local_graph_.numRows () != rowMap->getNodeNumElements (),
+      k_local_graph_.numRows () != rowMap->getLocalNumElements (),
       std::runtime_error,
       ": The input row Map and the input local graph need to have the same "
-      "number of rows.  The row Map claims " << rowMap->getNodeNumElements ()
+      "number of rows.  The row Map claims " << rowMap->getLocalNumElements ()
       << " row(s), but the local graph claims " << k_local_graph_.numRows ()
       << " row(s).");
 
     // NOTE (mfh 17 Mar 2014) getNodeNumRows() returns
-    // rowMap_->getNodeNumElements(), but it doesn't have to.
+    // rowMap_->getLocalNumElements(), but it doesn't have to.
     // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     //   k_local_graph_.numRows () != getNodeNumRows (), std::runtime_error,
     //   ": The input row Map and the input local graph need to have the same "
@@ -903,7 +903,7 @@ namespace Tpetra {
   {
     return this->rowMap_.is_null () ?
       static_cast<size_t> (0) :
-      this->rowMap_->getNodeNumElements ();
+      this->rowMap_->getLocalNumElements ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -919,7 +919,7 @@ namespace Tpetra {
       "column Map was given to the constructor, or that fillComplete() has "
       "been called.");
     return colMap_.is_null () ? static_cast<size_t> (0) :
-      colMap_->getNodeNumElements ();
+      colMap_->getLocalNumElements ();
   }
 
 
@@ -5949,7 +5949,7 @@ namespace Tpetra {
     // packCrsGraphNew requires k_rowPtrsPacked_ to be set
     else if (! getColMap ().is_null () &&
         (rowPtrsPacked_dev_.extent (0) != 0 ||
-         getRowMap ()->getNodeNumElements () == 0)) {
+         getRowMap ()->getLocalNumElements () == 0)) {
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "packCrsGraphNew path" << endl;
@@ -5987,7 +5987,7 @@ namespace Tpetra {
   {
     auto col_map = this->getColMap();
     // packCrsGraph requires k_rowPtrsPacked to be set
-    if( !col_map.is_null() && (rowPtrsPacked_dev_.extent(0) != 0  ||  getRowMap()->getNodeNumElements() ==0)) {
+    if( !col_map.is_null() && (rowPtrsPacked_dev_.extent(0) != 0  ||  getRowMap()->getLocalNumElements() ==0)) {
       using Tpetra::Details::packCrsGraph;
       packCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(*this, exports, numPacketsPerLID,
                                                     exportLIDs, constantNumPackets);
@@ -7339,13 +7339,13 @@ namespace Tpetra {
       SourceDomain_pids.putScalar(MyPID);
 
       SourceCol_pids.doImport(SourceDomain_pids, *MyImporter, INSERT);
-      SourcePids.resize(getColMap()->getNodeNumElements());
+      SourcePids.resize(getColMap()->getLocalNumElements());
       SourceCol_pids.get1dCopy(SourcePids());
     }
     else if (MyImporter.is_null() && bSameDomainMap) {
       // Graph has no off-process entries
-      SourcePids.resize(getColMap()->getNodeNumElements());
-      SourcePids.assign(getColMap()->getNodeNumElements(), MyPID);
+      SourcePids.resize(getColMap()->getLocalNumElements());
+      SourcePids.assign(getColMap()->getLocalNumElements(), MyPID);
     }
     else if ( ! MyImporter.is_null() &&
               ! domainTransfer.is_null() ) {
@@ -7382,7 +7382,7 @@ namespace Tpetra {
           prefix << "Should never get here!  Please report this bug to a Tpetra developer.");
       }
       SourceCol_pids.doImport(SourceDomain_pids, *MyImporter, INSERT);
-      SourcePids.resize(getColMap()->getNodeNumElements());
+      SourcePids.resize(getColMap()->getLocalNumElements());
       SourceCol_pids.get1dCopy(SourcePids());
     }
     else if (BaseDomainMap->isSameAs(*BaseRowMap) &&
@@ -7411,7 +7411,7 @@ namespace Tpetra {
           prefix << "Should never get here!  Please report this bug to a Tpetra developer.");
       }
       SourceCol_pids.doImport(SourceRow_pids, *MyImporter, INSERT);
-      SourcePids.resize(getColMap()->getNodeNumElements());
+      SourcePids.resize(getColMap()->getLocalNumElements());
       SourceCol_pids.get1dCopy(SourcePids());
     }
     else {
@@ -7563,7 +7563,7 @@ namespace Tpetra {
                                            numImportPacketsPerLID,
                                            constantNumPackets, INSERT,
                                            NumSameIDs, PermuteToLIDs, PermuteFromLIDs);
-    size_t N = BaseRowMap->getNodeNumElements();
+    size_t N = BaseRowMap->getLocalNumElements();
 
     // Allocations
     ArrayRCP<size_t> CSR_rowptr(N+1);

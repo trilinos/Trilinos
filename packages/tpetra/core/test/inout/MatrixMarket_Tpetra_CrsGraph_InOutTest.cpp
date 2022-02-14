@@ -152,7 +152,7 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
     // MPI_Gatherv.  Counts and offsets are all int, because
     // that's what MPI uses.  Teuchos::as will at least prevent
     // bad casts to int in a dbg build.
-    const int myEltCount = as<int> (oneToOneMap->getNodeNumElements ());
+    const int myEltCount = as<int> (oneToOneMap->getLocalNumElements ());
     Array<int> recvCounts (numProcs);
     const int rootProc = 0;
     gather<int, int> (&myEltCount, 1, recvCounts.getRawPtr (), 1, rootProc, *comm);

@@ -107,7 +107,7 @@ main (int argc, char* argv[])
 
   // Get update list and number of local equations from newly created map.
 
-  const size_t numMyElements = map->getNodeNumElements();
+  const size_t numMyElements = map->getLocalNumElements();
 
   Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
 

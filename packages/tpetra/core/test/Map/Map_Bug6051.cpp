@@ -141,7 +141,7 @@ namespace {
     out << "Checking results" << endl;
 
     ArrayView<const GO> my_owned = new_map->getNodeElementList ();
-    const LO my_num_owned = static_cast<LO> (new_map->getNodeNumElements ());
+    const LO my_num_owned = static_cast<LO> (new_map->getLocalNumElements ());
     Array<int> nodeIDlist (num_loc_elems);
     Tpetra::LookupStatus stat =
       new_map->getRemoteIndexList (gidList (), nodeIDlist ());

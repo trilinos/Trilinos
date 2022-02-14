@@ -131,7 +131,7 @@ namespace Tpetra {
     if (numProcs==1 && !alwaysUseParallelAlgorithm) {
       writeMatrixStrip(A,os,params);
     } else {
-      size_t numRows = rowMap->getNodeNumElements();
+      size_t numRows = rowMap->getLocalNumElements();
 
       //Create source map
       RCP<const map_type> allMeshGidsMap = rcp(new map_type(TOT::invalid(), numRows, A.getIndexBase(), comm));
@@ -520,8 +520,8 @@ namespace Tpetra {
     // Get the last few things
 
     const crs_graph_type & blockGraph = blockMatrix.getCrsGraph();
-    LO point_rows = (LO) pointRowMap->getNodeNumElements();
-    LO block_rows = (LO) blockRowMap->getNodeNumElements();
+    LO point_rows = (LO) pointRowMap->getLocalNumElements();
+    LO block_rows = (LO) blockRowMap->getLocalNumElements();
     auto blockValues = blockMatrix.getValuesDevice();
     auto blockLocalGraph = blockGraph.getLocalGraphDevice();
     row_map_type_const blockRowptr = blockLocalGraph.row_map;
