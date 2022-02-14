@@ -139,7 +139,6 @@ namespace Intrepid2 {
      
      \note this does not copy the points.
     */
-    template<size_t numTensorComponents>
     TensorPoints(TensorPoints otherPointsContainer, std::vector<int> whichDims)
     :
     numTensorComponents_(whichDims.size()),
