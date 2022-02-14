@@ -132,7 +132,7 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
   // Allocate arrays for factor/solve
   typedef Kokkos::View<value_type*,  Kokkos::LayoutLeft, memory_space> ViewType1D;
   typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space> ViewType2D;
-  typedef Kokkos::View<int*, Kokkos::LayoutLeft, memory_space> ViewIntType1D;
+  typedef Kokkos::View<int*, Kokkos::LayoutLeft, Kokkos::HostSpace> ViewIntType1D;
 
   totmem += (blksz) * (my_rows) * sizeof(ADELUS_DATA_TYPE);             //col1_view
   totmem += blksz * (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);//row1_view

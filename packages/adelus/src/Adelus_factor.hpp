@@ -140,6 +140,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
   int cur_col_i, cur_col_j, cur_row_i, cur_row_j, act_col_i, act_row_j, update_i, update_j;
   int sav_col_i, sav_col_j, sav_piv_row_i, sav_piv_row_j, act_piv_row_i, piv_row_i;
   int cur_col1_row_i, piv_col1_row_i;
+  int sav_pivot_vec_i;
 
   int ringdist,rdist;
   long type,bytes;
@@ -216,6 +217,8 @@ void factor(ZDView& ZV,                    // matrix and rhs
   act_row_j = 0;                    // location of matrix of rows being saved for gemm update
   sav_piv_row_i=0; sav_piv_row_j=0; // location for next row being saved for gemm update
   update_i=0; update_j=0;           // location of remaining local matrix
+
+  sav_pivot_vec_i = 0;              // location to store name of pivot row
 
 #ifdef GET_TIMING
   xpivmsgtime=bcastpivstime=bcastpivrtime=bcastcolstime=bcastcolrtime=bcastrowtime=sendrowtime=recvrowtime=0.0;
@@ -344,6 +347,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
       xpivmsgtime += (MPI_Wtime()-t1);
 #endif
 
+      pivot_vec_view(sav_pivot_vec_i) = pivot.row;
       gpivot_row = pivot.row;
       pivot_mag = abs(pivot.entry);
       if (pivot_mag == 0.0) {
@@ -450,6 +454,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
       act_row_j++;
       sav_piv_row_j++;
       cols_used++;
+      sav_pivot_vec_i++;
     }
     else {
 
