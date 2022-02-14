@@ -133,10 +133,11 @@ namespace Intrepid2 {
     }
     
     /**
-     \brief Constructor that takes a subset of the dimensions of another points container.
+     \brief Constructor that takes a subset of the tensorial components of another points container.
      \param [in] otherPointsContainer - the original points container
      \param [in] whichDims - the tensorial component indices to take from the other container.
      
+     \note this does not copy the points.
     */
     template<size_t numTensorComponents>
     TensorPoints(TensorPoints otherPointsContainer, std::vector<int> whichDims)
