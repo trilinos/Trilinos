@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -672,10 +672,10 @@ namespace Ioex {
             std::ostringstream errmsg;
             fmt::print(
                 errmsg,
-                "ERROR: In sideset/surface '{}' for the element with id {:L} of topology '{}';\n\t"
+                "ERROR: In sideset/surface '{}' for the element with id {} of topology '{}';\n\t"
                 "an invalid face index '{}' is specified.\n\tFace indices "
                 "must be between 1 and {}. ({})",
-                surface_name, elem_id, block->topology()->name(), current_side,
+                surface_name, fmt::group_digits(elem_id), block->topology()->name(), current_side,
                 block->topology()->number_boundaries(), __func__);
             IOSS_ERROR(errmsg);
           }

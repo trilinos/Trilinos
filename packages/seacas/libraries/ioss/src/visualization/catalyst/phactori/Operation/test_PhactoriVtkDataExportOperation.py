@@ -71,12 +71,21 @@ class TestPhactoriVtkDataExportOperation(unittest.TestCase):
       "test_vtkdataexport_simpleimagedata_0000.vtm",
       "test_vtkdataexport_simpleimagedata_0000"])
 
+  def localSetThresholdRange(self, threshOp, lowerValue, upperValue):
+    global gParaViewCatalystVersionFlag
+    if gParaViewCatalystVersionFlag < 51000:
+      threshOp.ThresholdRange = [lowerValue, upperValue]
+    else:
+      threshOp.LowerThreshold = lowerValue
+      threshOp.UpperThreshold = upperValue
+      threshOp.ThresholdMethod = vtk.vtkThreshold.THRESHOLD_BETWEEN
+
   def test_ThresholdUnstructuredVtkMultiblockOutput(self):
     testWavelet = Wavelet()
     testWavelet.UpdatePipeline()
     testThresh1 = Threshold(registrationName='Threshold3', Input=testWavelet)
     testThresh1.Scalars = ['POINTS', 'RTData']
-    testThresh1.ThresholdRange = [150.0, 300.0]
+    self.localSetThresholdRange(testThresh1, 150.0, 300.0)
     #testGroup = GroupDatasets(input=[testWavelet, wavelet2])
     testGroup = GroupDatasets(registrationName='GroupDatasets4', Input=testThresh1)
     #testGroup = GroupDatasets()
@@ -110,7 +119,7 @@ class TestPhactoriVtkDataExportOperation(unittest.TestCase):
     testWavelet.UpdatePipeline()
     testThresh1 = Threshold(registrationName='Threshold3', Input=testWavelet)
     testThresh1.Scalars = ['POINTS', 'RTData']
-    testThresh1.ThresholdRange = [300.0, 400.0]
+    self.localSetThresholdRange(testThresh1, 300.0, 400.0)
     #testGroup = GroupDatasets(input=[testWavelet, wavelet2])
     testGroup = GroupDatasets(registrationName='GroupDatasets3', Input=testThresh1)
     #testGroup = GroupDatasets()

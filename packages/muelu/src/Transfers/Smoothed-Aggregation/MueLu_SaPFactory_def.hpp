@@ -231,7 +231,7 @@ namespace MueLu {
         finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,
                     GetOStream(Statistics2), std::string("MueLu::SaP-")+levelIDs, APparams);
         if (enforceConstraints) {
-           if (A->GetFixedBlockSize() == 1) newSatisfyPConstraints( finalP);
+           if (A->GetFixedBlockSize() == 1) optimalSatisfyPConstraintsForScalarPDEs( finalP);
            else                             SatisfyPConstraints( A, finalP);
         }
       }
@@ -385,7 +385,7 @@ namespace MueLu {
   } //SatsifyPConstraints()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::newSatisfyPConstraints(RCP<Matrix>& P) const {
+  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::optimalSatisfyPConstraintsForScalarPDEs(RCP<Matrix>& P) const {
 
     const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
     const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();

@@ -8713,8 +8713,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                << std::endl;
             std::cerr << os.str ();
           }
-          Distor.doReversePostsAndWaits (numExportPacketsPerLID, 1,
-                                         numImportPacketsPerLID);
+          Distor.doReversePostsAndWaits(destMat->numExportPacketsPerLID_.view_host(), 1,
+                                            destMat->numImportPacketsPerLID_.view_host());
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Finished 3-arg doReversePostsAndWaits"
@@ -8732,13 +8732,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           destMat->reallocImportsIfNeeded (totalImportPackets, verbose,
                                            verbosePrefix.get ());
           destMat->imports_.modify_host ();
-          Teuchos::ArrayView<char> hostImports =
-            getArrayViewFromDualView (destMat->imports_);
+          auto hostImports = destMat->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destMat->exports_.sync_host ();
-          Teuchos::ArrayView<const char> hostExports =
-            getArrayViewFromDualView (destMat->exports_);
+          auto hostExports = destMat->exports_.view_host();
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Calling 4-arg doReversePostsAndWaits"
@@ -8764,13 +8762,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             std::cerr << os.str ();
           }
           destMat->imports_.modify_host ();
-          Teuchos::ArrayView<char> hostImports =
-            getArrayViewFromDualView (destMat->imports_);
+          auto hostImports = destMat->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destMat->exports_.sync_host ();
-          Teuchos::ArrayView<const char> hostExports =
-            getArrayViewFromDualView (destMat->exports_);
+          auto hostExports = destMat->exports_.view_host();
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Calling 3-arg doReversePostsAndWaits"
@@ -8811,8 +8807,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                << std::endl;
             std::cerr << os.str ();
           }
-          Distor.doPostsAndWaits (numExportPacketsPerLID, 1,
-                                  numImportPacketsPerLID);
+          Distor.doPostsAndWaits(destMat->numExportPacketsPerLID_.view_host(), 1,
+                                      destMat->numImportPacketsPerLID_.view_host());
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Finished 3-arg doPostsAndWaits"
@@ -8830,13 +8826,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           destMat->reallocImportsIfNeeded (totalImportPackets, verbose,
                                            verbosePrefix.get ());
           destMat->imports_.modify_host ();
-          Teuchos::ArrayView<char> hostImports =
-            getArrayViewFromDualView (destMat->imports_);
+          auto hostImports = destMat->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destMat->exports_.sync_host ();
-          Teuchos::ArrayView<const char> hostExports =
-            getArrayViewFromDualView (destMat->exports_);
+          auto hostExports = destMat->exports_.view_host();
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Calling 4-arg doPostsAndWaits"
@@ -8862,13 +8856,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             std::cerr << os.str ();
           }
           destMat->imports_.modify_host ();
-          Teuchos::ArrayView<char> hostImports =
-            getArrayViewFromDualView (destMat->imports_);
+          auto hostImports = destMat->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destMat->exports_.sync_host ();
-          Teuchos::ArrayView<const char> hostExports =
-            getArrayViewFromDualView (destMat->exports_);
+          auto hostExports = destMat->exports_.view_host();
           if (verbose) {
             std::ostringstream os;
             os << *verbosePrefix << "Calling 3-arg doPostsAndWaits"

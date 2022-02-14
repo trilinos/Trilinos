@@ -1,6 +1,8 @@
 
 function(generatePhactoriUnitTests)
   set(PhactoriClassUnitTests
+    test_PhactoriClipPlaneOperation
+    test_PhactoriContourOperation
     test_PhactoriDataArtifactMetaDataControl
     test_PhactoriGeometricCellSampler1
     test_PhactoriMarkCellSurfaceStatus2
@@ -9,6 +11,7 @@ function(generatePhactoriUnitTests)
     test_PhactoriSegmentCellSampler3
     test_PhactoriSegment
     test_PhactoriSliceWithPlaneOperation
+    test_PhactoriThresholdOperation
     test_PhactoriVtkCellOperations
     test_PhactoriVtkDataExportOperation
   )

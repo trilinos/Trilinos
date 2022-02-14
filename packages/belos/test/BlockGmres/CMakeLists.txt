@@ -28,6 +28,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       COMM serial mpi
       ARGS
         "--verbose --filename=mhd1280b.cua"
+        "--verbose --filename=cg05.cua --num-rhs=2 --blocksize=2"
         "--verbose --filename=mhd1280b.cua --pseudo"
         "--verbose --filename=mhd1280a.cua --subspace-length=200 --tol=1e-4"
       STANDARD_PASS_OUTPUT 
@@ -50,6 +51,11 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles
         SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
         SOURCE_FILES mhd1280b.cua mhd1280a.cua
+        EXEDEPS bl_gmres_complex_hb
+      )
+      TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles2
+        SOURCE_DIR ${Belos_SOURCE_DIR}/test/BlockGmres
+        SOURCE_FILES cg05.cua
         EXEDEPS bl_gmres_complex_hb
       )
     ENDIF()

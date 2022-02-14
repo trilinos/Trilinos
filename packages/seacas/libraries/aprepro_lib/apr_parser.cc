@@ -151,17 +151,17 @@ namespace SEAMS {
   if (false)                                                                                       \
   std::cerr
 #define YY_SYMBOL_PRINT(Title, Symbol) YYUSE(Symbol)
-#define YY_REDUCE_PRINT(Rule) static_cast<void>(0)
-#define YY_STACK_PRINT() static_cast<void>(0)
+#define YY_REDUCE_PRINT(Rule)          static_cast<void>(0)
+#define YY_STACK_PRINT()               static_cast<void>(0)
 
 #endif // !SEAMSDEBUG
 
-#define yyerrok (yyerrstatus_ = 0)
+#define yyerrok   (yyerrstatus_ = 0)
 #define yyclearin (yyla.clear())
 
-#define YYACCEPT goto yyacceptlab
-#define YYABORT goto yyabortlab
-#define YYERROR goto yyerrorlab
+#define YYACCEPT       goto yyacceptlab
+#define YYABORT        goto yyabortlab
+#define YYERROR        goto yyerrorlab
 #define YYRECOVERING() (!!yyerrstatus_)
 
 namespace SEAMS {
@@ -860,7 +860,7 @@ namespace SEAMS {
 #line 238 "aprepro.yy"
           {
             (yylhs.value.arrval) = (yystack_[0].value.arrval);
-            delete (yystack_[2].value.tptr)->value.avar;
+            aprepro.redefine_array((yystack_[2].value.tptr)->value.avar);
             (yystack_[2].value.tptr)->value.avar = (yystack_[0].value.arrval);
             redefined_warning(aprepro, (yystack_[2].value.tptr));
             set_type(aprepro, (yystack_[2].value.tptr), token::AVAR);
@@ -1018,7 +1018,7 @@ namespace SEAMS {
 #line 285 "aprepro.yy"
           {
             (yylhs.value.string) = (yystack_[0].value.string);
-            delete (yystack_[2].value.tptr)->value.avar;
+            aprepro.redefine_array((yystack_[2].value.tptr)->value.avar);
             (yystack_[2].value.tptr)->value.svar = (yystack_[0].value.string);
             redefined_warning(aprepro, (yystack_[2].value.tptr));
             set_type(aprepro, (yystack_[2].value.tptr), token::SVAR);
@@ -1277,7 +1277,7 @@ namespace SEAMS {
 #line 363 "aprepro.yy"
           {
             (yylhs.value.val) = (yystack_[0].value.val);
-            delete (yystack_[2].value.tptr)->value.avar;
+            aprepro.redefine_array((yystack_[2].value.tptr)->value.avar);
             (yystack_[2].value.tptr)->value.var = (yystack_[0].value.val);
             redefined_warning(aprepro, (yystack_[2].value.tptr));
             set_type(aprepro, (yystack_[2].value.tptr), token::VAR);

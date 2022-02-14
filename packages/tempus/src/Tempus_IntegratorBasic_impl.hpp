@@ -578,6 +578,9 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                     tempusPL,
   bool runInitialize)
 {
+  auto integrator = Teuchos::rcp(new IntegratorBasic<Scalar>());
+  if (tempusPL == Teuchos::null || tempusPL->numParams() == 0) return integrator;
+
   auto integratorName = tempusPL->get<std::string>("Integrator Name");
   auto integratorPL = Teuchos::sublist(tempusPL, integratorName, true);
 
@@ -588,7 +591,6 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
     << "'Integrator Basic'.\n"
     << "    Integrator Type = " << integratorType << "\n");
 
-  auto integrator = Teuchos::rcp(new IntegratorBasic<Scalar>());
   integrator->setIntegratorName(integratorName);
 
   // Set Stepper

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -57,9 +57,8 @@ int main(int argc, char **argv)
   int  num_props, prop_value, *prop_values;
   int  idum;
 
-  float  time_value, *time_values, *var_values;
-  float *dist_fact;
-  float  version, fdum;
+  float time_value, *time_values, *var_values;
+  float version, fdum;
 
   char *coord_names[3], *qa_record[2][4], *info[3], *var_names[10];
   char  title[MAX_LINE_LENGTH + 1], elem_type[MAX_STR_LENGTH + 1];
@@ -409,8 +408,6 @@ int main(int argc, char **argv)
   error = ex_get_ids(exoid, EX_NODE_SET, ids);
   printf("\nafter ex_get_node_set_ids, error = %3d\n", error);
 
-  int *node_list = NULL;
-  int *elem_list = NULL;
   for (int i = 0; i < num_node_sets; i++) {
     error = ex_get_set_param(exoid, EX_NODE_SET, ids[i], &num_nodes_in_set, &num_df_in_set);
     printf("\nafter ex_get_node_set_param, error = %3d\n", error);
@@ -418,8 +415,8 @@ int main(int argc, char **argv)
     printf("\nnode set %2d parameters: \n", ids[i]);
     printf("num_nodes = %2d\n", num_nodes_in_set);
 
-    node_list = (int *)my_calloc(num_nodes_in_set, sizeof(int));
-    dist_fact = (float *)my_calloc(num_nodes_in_set, sizeof(float));
+    int   *node_list = (int *)my_calloc(num_nodes_in_set, sizeof(int));
+    float *dist_fact = (float *)my_calloc(num_nodes_in_set, sizeof(float));
 
     error = ex_get_set(exoid, EX_NODE_SET, ids[i], node_list, NULL);
     printf("\nafter ex_get_node_set, error = %3d\n", error);
@@ -485,74 +482,76 @@ int main(int argc, char **argv)
    * the above code which reads individual node sets
    */
 
-  error = ex_inquire(exoid, EX_INQ_NODE_SETS, &num_node_sets, &fdum, cdum);
-  printf("\nafter ex_inquire, error = %3d\n", error);
-
-  ids               = (int *)my_calloc(num_node_sets, sizeof(int));
-  num_nodes_per_set = (int *)my_calloc(num_node_sets, sizeof(int));
-  num_df_per_set    = (int *)my_calloc(num_node_sets, sizeof(int));
-  node_ind          = (int *)my_calloc(num_node_sets, sizeof(int));
-  df_ind            = (int *)my_calloc(num_node_sets, sizeof(int));
-
-  error = ex_inquire(exoid, EX_INQ_NS_NODE_LEN, &list_len, &fdum, cdum);
-  printf("\nafter ex_inquire: EX_INQ_NS_NODE_LEN = %d, error = %3d\n", list_len, error);
-  node_list = (int *)my_calloc(list_len, sizeof(int));
-
-  error = ex_inquire(exoid, EX_INQ_NS_DF_LEN, &list_len, &fdum, cdum);
-  printf("\nafter ex_inquire: EX_INQ_NS_DF_LEN = %d, error = %3d\n", list_len, error);
-  dist_fact = (float *)my_calloc(list_len, sizeof(float));
-
   {
-    struct ex_set_specs set_specs;
+    error = ex_inquire(exoid, EX_INQ_NODE_SETS, &num_node_sets, &fdum, cdum);
+    printf("\nafter ex_inquire, error = %3d\n", error);
 
-    set_specs.sets_ids            = ids;
-    set_specs.num_entries_per_set = num_nodes_per_set;
-    set_specs.num_dist_per_set    = num_df_per_set;
-    set_specs.sets_entry_index    = node_ind;
+    ids               = (int *)my_calloc(num_node_sets, sizeof(int));
+    num_nodes_per_set = (int *)my_calloc(num_node_sets, sizeof(int));
+    num_df_per_set    = (int *)my_calloc(num_node_sets, sizeof(int));
+    node_ind          = (int *)my_calloc(num_node_sets, sizeof(int));
+    df_ind            = (int *)my_calloc(num_node_sets, sizeof(int));
 
-    set_specs.sets_dist_index = df_ind;
-    set_specs.sets_entry_list = node_list;
-    set_specs.sets_extra_list = NULL;
-    set_specs.sets_dist_fact  = dist_fact;
+    error = ex_inquire(exoid, EX_INQ_NS_NODE_LEN, &list_len, &fdum, cdum);
+    printf("\nafter ex_inquire: EX_INQ_NS_NODE_LEN = %d, error = %3d\n", list_len, error);
+    int *node_list = (int *)my_calloc(list_len, sizeof(int));
 
-    error = ex_get_concat_sets(exoid, EX_NODE_SET, &set_specs);
+    error = ex_inquire(exoid, EX_INQ_NS_DF_LEN, &list_len, &fdum, cdum);
+    printf("\nafter ex_inquire: EX_INQ_NS_DF_LEN = %d, error = %3d\n", list_len, error);
+    float *dist_fact = (float *)my_calloc(list_len, sizeof(float));
+
+    {
+      struct ex_set_specs set_specs;
+
+      set_specs.sets_ids            = ids;
+      set_specs.num_entries_per_set = num_nodes_per_set;
+      set_specs.num_dist_per_set    = num_df_per_set;
+      set_specs.sets_entry_index    = node_ind;
+
+      set_specs.sets_dist_index = df_ind;
+      set_specs.sets_entry_list = node_list;
+      set_specs.sets_extra_list = NULL;
+      set_specs.sets_dist_fact  = dist_fact;
+
+      error = ex_get_concat_sets(exoid, EX_NODE_SET, &set_specs);
+    }
+    printf("\nafter ex_get_concat_node_sets, error = %3d\n", error);
+
+    printf("\nconcatenated node set info\n");
+
+    printf("ids = \n");
+    for (int i = 0; i < num_node_sets; i++) {
+      printf("%3d\n", ids[i]);
+    }
+
+    printf("num_nodes_per_set = \n");
+    for (int i = 0; i < num_node_sets; i++) {
+      printf("%3d\n", num_nodes_per_set[i]);
+    }
+
+    printf("node_ind = \n");
+    for (int i = 0; i < num_node_sets; i++) {
+      printf("%3d\n", node_ind[i]);
+    }
+
+    printf("node_list = \n");
+    for (int i = 0; i < list_len; i++) {
+      printf("%3d\n", node_list[i]);
+    }
+
+    printf("dist_fact = \n");
+    for (int i = 0; i < list_len; i++) {
+      printf("%5.3f\n", dist_fact[i]);
+    }
+
+    free(ids);
+    free(num_nodes_per_set);
+    free(df_ind);
+    free(node_ind);
+    free(num_df_per_set);
+    free(node_list);
+    free(dist_fact);
   }
-  printf("\nafter ex_get_concat_node_sets, error = %3d\n", error);
-
-  printf("\nconcatenated node set info\n");
-
-  printf("ids = \n");
-  for (int i = 0; i < num_node_sets; i++) {
-    printf("%3d\n", ids[i]);
-  }
-
-  printf("num_nodes_per_set = \n");
-  for (int i = 0; i < num_node_sets; i++) {
-    printf("%3d\n", num_nodes_per_set[i]);
-  }
-
-  printf("node_ind = \n");
-  for (int i = 0; i < num_node_sets; i++) {
-    printf("%3d\n", node_ind[i]);
-  }
-
-  printf("node_list = \n");
-  for (int i = 0; i < list_len; i++) {
-    printf("%3d\n", node_list[i]);
-  }
-
-  printf("dist_fact = \n");
-  for (int i = 0; i < list_len; i++) {
-    printf("%5.3f\n", dist_fact[i]);
-  }
-
-  free(ids);
-  free(num_nodes_per_set);
-  free(df_ind);
-  free(node_ind);
-  free(num_df_per_set);
-  free(node_list);
-  free(dist_fact);
 
   /* read individual side sets */
 
@@ -672,15 +671,14 @@ int main(int argc, char **argv)
    */
 
   /* concatenated side set read */
-
   ids              = (int *)my_calloc(num_side_sets, sizeof(int));
   num_elem_per_set = (int *)my_calloc(num_side_sets, sizeof(int));
   num_df_per_set   = (int *)my_calloc(num_side_sets, sizeof(int));
   elem_ind         = (int *)my_calloc(num_side_sets, sizeof(int));
   df_ind           = (int *)my_calloc(num_side_sets, sizeof(int));
-  elem_list        = (int *)my_calloc(elem_list_len, sizeof(int));
-  int *side_list   = (int *)my_calloc(elem_list_len, sizeof(int));
-  dist_fact        = (float *)my_calloc(df_list_len, sizeof(float));
+  int   *elem_list = (int *)my_calloc(elem_list_len, sizeof(int));
+  int   *side_list = (int *)my_calloc(elem_list_len, sizeof(int));
+  float *dist_fact = (float *)my_calloc(df_list_len, sizeof(float));
 
   {
     struct ex_set_specs set_specs;

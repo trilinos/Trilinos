@@ -38,9 +38,12 @@ from Operation.test_PhactoriSampledCellInfo import *
 from Operation.test_PhactoriGeometricCellSampler1 import *
 from Operation.test_PhactoriVtkCellOperations import *
 from Operation.test_PhactoriDataArtifactMetaDataControl import *
-#from Operation.test_PhactoriCreateSegmentsNormalToCells import *
+from Operation.test_PhactoriCreateSegmentsNormalToCells import *
 from Operation.test_PhactoriMarkCellSurfaceStatus2 import *
 from Operation.test_PhactoriSliceWithPlaneOperation import *
+from Operation.test_PhactoriThresholdOperation import *
+from Operation.test_PhactoriContourOperation import *
+from Operation.test_PhactoriClipPlaneOperation import *
 
 if __name__ == '__main__':
     cc = Cone()

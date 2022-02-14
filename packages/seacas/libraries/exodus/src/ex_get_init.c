@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -34,7 +34,7 @@
 /*!
   \ingroup ModelDescription
 
-The function ex_get_init() reads the initializationinitialization
+The function ex_get_init() reads the initialization
 parameters from an opened exodus file.
 
 \return In case of an error, ex_get_init() returns a negative number;

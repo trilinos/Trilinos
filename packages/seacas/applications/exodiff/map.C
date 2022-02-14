@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -186,10 +186,11 @@ void Compute_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map, ExoII_
         // Check that the element types are the same.
         if (num_nodes_per_elmt != block2->Num_Nodes_per_Element()) {
           Error(fmt::format("Files are different.\n"
-                            " In File 1: Element {:L} in Block {} has {}  and\n"
-                            " In File 2: Element {:L} in Block {} has {}\n",
-                            i + 1, file1.Block_Id(b), num_nodes_per_elmt, bl_idx.second + 1,
-                            file2.Block_Id(bl_idx.first), block2->Num_Nodes_per_Element()));
+                            " In File 1: Element {} in Block {} has {}  and\n"
+                            " In File 2: Element {} in Block {} has {}\n",
+                            fmt::group_digits(i + 1), file1.Block_Id(b), num_nodes_per_elmt,
+                            fmt::group_digits(bl_idx.second + 1), file2.Block_Id(bl_idx.first),
+                            block2->Num_Nodes_per_Element()));
         }
 
         // Get connectivity for file2 element.
@@ -241,10 +242,11 @@ void Compute_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map, ExoII_
                                !interFace.coord_tol.Diff(y2a, y2b) &&
                                !interFace.coord_tol.Diff(z2a, z2b));
                   Error(fmt::format("No unique node mapping possible.\n"
-                                    "\tFile 1, Node {:L} at ({}, {}, {}) maps to both:\n"
-                                    "\tFile 2, Node {:L} at ({}, {}, {}) and\n"
-                                    "\tFile 2, Node {:L} at ({}, {}, {})\n\n",
-                                    node1, x1a, y1a, z1a, n1, x2a, y2a, z2a, n2, x2b, y2b, z2b));
+                                    "\tFile 1, Node {} at ({}, {}, {}) maps to both:\n"
+                                    "\tFile 2, Node {} at ({}, {}, {}) and\n"
+                                    "\tFile 2, Node {} at ({}, {}, {})\n\n",
+                                    fmt::group_digits(node1), x1a, y1a, z1a, fmt::group_digits(n1),
+                                    x2a, y2a, z2a, fmt::group_digits(n2), x2b, y2b, z2b));
                 }
                 found = 1;
                 break;
@@ -258,23 +260,23 @@ void Compute_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map, ExoII_
             std::ostringstream out;
             fmt::print(out,
                        "\nCannot find a match for node at position {} in first element.\n"
-                       "\tFile 1: Element {:L} in Block {} nodes:\n",
-                       ln1 + 1, i + 1, file1.Block_Id(b));
+                       "\tFile 1: Element {} in Block {} nodes:\n",
+                       ln1 + 1, fmt::group_digits(i + 1), file1.Block_Id(b));
             for (size_t l1 = 0; l1 < num_nodes_per_elmt; ++l1) {
               double x_val = x1_f[conn1[l1] - 1];
               double y_val = dim > 1 ? y1_f[conn1[l1] - 1] : 0.0;
               double z_val = dim > 2 ? z1_f[conn1[l1] - 1] : 0.0;
-              fmt::print(out, "\t({})\t{:L}\t{:.9e}\t{:.9e}\t{:.9e}\n", l1 + 1, conn1[l1], x_val,
-                         y_val, z_val);
+              fmt::print(out, "\t({})\t{}\t{:.9e}\t{:.9e}\t{:.9e}\n", l1 + 1,
+                         fmt::group_digits(conn1[l1]), x_val, y_val, z_val);
             }
-            fmt::print(out, "\tFile 2: Element {:L} in Block {} nodes:\n", bl_idx.second + 1,
-                       file1.Block_Id(b));
+            fmt::print(out, "\tFile 2: Element {} in Block {} nodes:\n",
+                       fmt::group_digits(bl_idx.second + 1), file1.Block_Id(b));
             for (size_t l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
               double x_val = x2_f[conn2[l3] - 1];
               double y_val = dim > 1 ? y2_f[conn2[l3] - 1] : 0.0;
               double z_val = dim > 2 ? z2_f[conn2[l3] - 1] : 0.0;
-              fmt::print(out, "\t({})\t{:L}\t{:.9e}\t{:.9e}\t{:.9e}\n", l3 + 1, conn2[l3], x_val,
-                         y_val, z_val);
+              fmt::print(out, "\t({})\t{}\t{:.9e}\t{:.9e}\t{:.9e}\n", l3 + 1,
+                         fmt::group_digits(conn2[l3]), x_val, y_val, z_val);
             }
             fmt::print(out, "Coordinates compared using tolerance: {} ({}), floor: {}\n",
                        interFace.coord_tol.value, interFace.coord_tol.typestr(),
@@ -481,10 +483,11 @@ void Compute_Partial_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map
         // Check that the element types are the same.
         if (num_nodes_per_elmt != block2->Num_Nodes_per_Element()) {
           Error(fmt::format("Files are different.\n"
-                            " In File 1: Element {:L} in Block {} has {}  and\n"
-                            " In File 2: Element {:L} in Block {} has {}\n",
-                            i + 1, file1.Block_Id(b), num_nodes_per_elmt, bl_idx.second + 1,
-                            file2.Block_Id(bl_idx.first), block2->Num_Nodes_per_Element()));
+                            " In File 1: Element {} in Block {} has {}  and\n"
+                            " In File 2: Element {} in Block {} has {}\n",
+                            fmt::group_digits(i + 1), file1.Block_Id(b), num_nodes_per_elmt,
+                            fmt::group_digits(bl_idx.second + 1), file2.Block_Id(bl_idx.first),
+                            block2->Num_Nodes_per_Element()));
         }
 
         // Get connectivity for file2 element.
@@ -516,23 +519,23 @@ void Compute_Partial_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map
             std::ostringstream out;
             fmt::print(out,
                        "\nCannot find a match for node at position {} in first element.\n"
-                       "\tFile 1: Element {:L} in Block {} nodes:\n",
-                       ln1 + 1, i + 1, file1.Block_Id(b));
+                       "\tFile 1: Element {} in Block {} nodes:\n",
+                       ln1 + 1, fmt::group_digits(i + 1), file1.Block_Id(b));
             for (size_t l1 = 0; l1 < num_nodes_per_elmt; ++l1) {
               double x_val = x1_f[conn1[l1] - 1];
               double y_val = dim > 1 ? y1_f[conn1[l1] - 1] : 0.0;
               double z_val = dim > 2 ? z1_f[conn1[l1] - 1] : 0.0;
-              fmt::print(out, "\t({})\t{:L}\t{:.9e}\t{:.9e}\t{:.9e}\n", l1 + 1, conn1[l1], x_val,
-                         y_val, z_val);
+              fmt::print(out, "\t({})\t{}\t{:.9e}\t{:.9e}\t{:.9e}\n", l1 + 1,
+                         fmt::group_digits(conn1[l1]), x_val, y_val, z_val);
             }
-            fmt::print(out, "\tFile 2: Element {:L} in Block {} nodes:\n", bl_idx.second + 1,
-                       file1.Block_Id(b));
+            fmt::print(out, "\tFile 2: Element {} in Block {} nodes:\n",
+                       fmt::group_digits(bl_idx.second + 1), file1.Block_Id(b));
             for (size_t l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
               double x_val = x2_f[conn2[l3] - 1];
               double y_val = dim > 1 ? y2_f[conn2[l3] - 1] : 0.0;
               double z_val = dim > 2 ? z2_f[conn2[l3] - 1] : 0.0;
-              fmt::print(out, "\t({})\t{:L}\t{:.9e}\t{:.9e}\t{:.9e}\n", l3 + 1, conn2[l3], x_val,
-                         y_val, z_val);
+              fmt::print(out, "\t({})\t{}\t{:.9e}\t{:.9e}\t{:.9e}\n", l3 + 1,
+                         fmt::group_digits(conn2[l3]), x_val, y_val, z_val);
             }
             fmt::print(out, "Coordinates compared using tolerance: {} ({}), floor: {}\n",
                        interFace.coord_tol.value, interFace.coord_tol.typestr(),
@@ -549,7 +552,7 @@ void Compute_Partial_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map
 
   } // End of loop on file1 blocks.
   if (!first) {
-    fmt::print("\nPartial Map selected -- {:L} elements unmatched\n", unmatched);
+    fmt::print("\nPartial Map selected -- {} elements unmatched\n", fmt::group_digits(unmatched));
   }
   else {
     if (num_elmts1 == num_elmts2 && num_nodes1 == num_nodes2) {
@@ -771,8 +774,8 @@ namespace {
     // message and exit.
     if (count_1 != count_2) {
       Error(fmt::format("Files are different (free node count in file1 is "
-                        "{:L} but file2 free node count is {:L})\n",
-                        count_1, count_2));
+                        "{} but file2 free node count is {})\n",
+                        fmt::group_digits(count_1), fmt::group_digits(count_2)));
     }
 
     // Now, need to match all nodes in 'mapped_1' with nodes in
@@ -815,9 +818,9 @@ namespace {
 
     // Check that all nodes were matched.
     if (matched != count_1) {
-      Error(fmt::format("Unable to match all free nodes in the model.  There are {:L}"
+      Error(fmt::format("Unable to match all free nodes in the model.  There are {}"
                         " unmatched nodes remaining.\n",
-                        count_1 - matched));
+                        fmt::group_digits(count_1 - matched)));
     }
     interFace.coord_tol.type = save_tolerance_type;
   }
@@ -887,11 +890,12 @@ namespace {
           double z2 = dim > 2 ? z[id[index]] : 0.0;
 
           Warning(fmt::format("Two elements in file 2 have the same midpoint (within tolerance).\n"
-                            "\tLocal element {:L} at ({}, {}, {}) and\n"
-                            "\tLocal element {:L} at ({}, {}, {})\n"
-                            "\tNo unique element mapping possible.\n",
-                            id[i] + 1, x1, y1, z1, id[index] + 1, x2, y2, z2));
-	  return -1;
+                              "\tLocal element {} at ({}, {}, {}) and\n"
+                              "\tLocal element {} at ({}, {}, {})\n"
+                              "\tNo unique element mapping possible.\n",
+                              fmt::group_digits(id[i] + 1), x1, y1, z1,
+                              fmt::group_digits(id[index] + 1), x2, y2, z2));
+          return -1;
         }
 
         index = i;

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -80,6 +80,16 @@ namespace {
                           reinterpret_cast<int64_t *>(id_data), count, offset);
     }
   }
+
+  void fill_constant_data(const Ioss::Field &field, void *data, double value)
+  {
+    auto  *rdata           = reinterpret_cast<double *>(data);
+    size_t count           = field.raw_count();
+    size_t component_count = field.raw_storage()->component_count();
+    for (size_t i = 0; i < count * component_count; i++) {
+      rdata[i] = value;
+    }
+  }
 } // namespace
 namespace Iotm {
   // ========================================================================
@@ -92,7 +102,7 @@ namespace Iotm {
   IOFactory::IOFactory() : Ioss::IOFactory("textmesh") {}
 
   Ioss::DatabaseIO *IOFactory::make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                                       MPI_Comm                     communicator,
+                                       Ioss_MPI_Comm                communicator,
                                        const Ioss::PropertyManager &props) const
   {
     return new DatabaseIO(nullptr, filename, db_usage, communicator, props);
@@ -100,7 +110,7 @@ namespace Iotm {
 
   // ========================================================================
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
-                         Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                         Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
       : Ioss::DatabaseIO(region, filename, db_usage, communicator, props)
   {
@@ -111,6 +121,10 @@ namespace Iotm {
       std::ostringstream errmsg;
       fmt::print(errmsg, "Text mesh option is only valid for input mesh.");
       IOSS_ERROR(errmsg);
+    }
+
+    if (props.exists("USE_CONSTANT_DF")) {
+      m_useVariableDf = false;
     }
   }
 
@@ -144,12 +158,13 @@ namespace Iotm {
         int_byte_size_api() == 4) {
       std::ostringstream errmsg;
       fmt::print(errmsg,
-                 "ERROR: The node count is {:L} and the element count is {:L}.\n"
-                 "       This exceeds the capacity of the 32-bit integers ({:L})\n"
+                 "ERROR: The node count is {} and the element count is {}.\n"
+                 "       This exceeds the capacity of the 32-bit integers ({})\n"
                  "       which are being requested by the client.\n"
                  "       The mesh requires 64-bit integers which can be requested by setting the "
                  "`INTEGER_SIZE_API=8` property.",
-                 glob_node_count, glob_elem_count, two_billion);
+                 fmt::group_digits(glob_node_count), fmt::group_digits(glob_elem_count),
+                 fmt::group_digits(two_billion));
       IOSS_ERROR(errmsg);
     }
 
@@ -157,12 +172,16 @@ namespace Iotm {
     nodeCount         = m_textMesh->node_count_proc();
     elementCount      = m_textMesh->element_count_proc();
     elementBlockCount = m_textMesh->block_count();
+    nodesetCount      = m_textMesh->nodeset_count();
+    sidesetCount      = m_textMesh->sideset_count();
 
     get_step_times__();
 
     add_transient_fields(this_region);
     get_nodeblocks();
     get_elemblocks();
+    get_nodesets();
+    get_sidesets();
     get_commsets();
 
     this_region->property_add(
@@ -322,13 +341,149 @@ namespace Iotm {
   int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *ef_blk, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
-    return -1;
+    size_t num_to_get = field.verify(data_size);
+
+    int64_t id           = ef_blk->get_property("id").get_int();
+    size_t  entity_count = ef_blk->entity_count();
+    if (num_to_get != entity_count) {
+      std::ostringstream errmsg;
+      fmt::print(errmsg, "Partial field input not implemented for side blocks");
+      IOSS_ERROR(errmsg);
+    }
+
+    Ioss::Field::RoleType role = field.get_role();
+
+    if (role == Ioss::Field::MESH) {
+
+      if (field.get_name() == "ids") {
+        // A sideset' is basically an exodus sideset.  A
+        // sideset has a list of elements and a corresponding local
+        // element side (1-based) The side id is: side_id =
+        // 10*element_id + local_side_number This assumes that all
+        // sides in a sideset are boundary sides.
+        std::vector<int64_t> elem_side;
+        m_textMesh->sideblock_elem_sides(id, ef_blk->name(), elem_side);
+        if (field.is_type(Ioss::Field::INTEGER)) {
+          int *ids = static_cast<int *>(data);
+          for (size_t i = 0; i < num_to_get; i++) {
+            ids[i] = static_cast<int>(10 * elem_side[2 * i + 0] + elem_side[2 * i + 1]);
+          }
+        }
+        else {
+          auto *ids = static_cast<int64_t *>(data);
+          for (size_t i = 0; i < num_to_get; i++) {
+            ids[i] = 10 * elem_side[2 * i + 0] + elem_side[2 * i + 1];
+          }
+        }
+      }
+
+      else if (field.get_name() == "element_side" || field.get_name() == "element_side_raw") {
+        // Since we only have a single array, we need to allocate an extra
+        // array to store all of the data.  Note also that the element_id
+        // is the global id but only the local id is stored so we need to
+        // map from local_to_global prior to generating the side id...
+
+        std::vector<int64_t> elem_side;
+        m_textMesh->sideblock_elem_sides(id, ef_blk->name(), elem_side);
+        if (field.get_name() == "element_side_raw") {
+          map_global_to_local(get_element_map(), elem_side.size(), 2, &elem_side[0]);
+        }
+
+        if (field.is_type(Ioss::Field::INTEGER)) {
+          int *element_side = static_cast<int *>(data);
+          for (size_t i = 0; i < num_to_get; i++) {
+            element_side[2 * i + 0] = static_cast<int>(elem_side[2 * i + 0]);
+            element_side[2 * i + 1] = static_cast<int>(elem_side[2 * i + 1]);
+          }
+        }
+        else {
+          auto *element_side = static_cast<int64_t *>(data);
+          for (size_t i = 0; i < num_to_get; i++) {
+            element_side[2 * i + 0] = elem_side[2 * i + 0];
+            element_side[2 * i + 1] = elem_side[2 * i + 1];
+          }
+        }
+      }
+
+      else if (field.get_name() == "distribution_factors") {
+        if (m_useVariableDf) {
+          const Ioss::Field &id_fld = ef_blk->get_fieldref("ids");
+          std::vector<char>  ids(id_fld.get_size());
+          get_field_internal(ef_blk, id_fld, ids.data(), id_fld.get_size());
+          fill_transient_data(ef_blk, field, data, ids.data(), num_to_get);
+        }
+        else {
+          fill_constant_data(field, data, 1.0);
+        }
+      }
+
+      else {
+        num_to_get = Ioss::Utils::field_warning(ef_blk, field, "input");
+      }
+    }
+    else if (role == Ioss::Field::TRANSIENT) {
+      const Ioss::Field &id_fld = ef_blk->get_fieldref("ids");
+      std::vector<char>  ids(id_fld.get_size());
+      get_field_internal(ef_blk, id_fld, ids.data(), id_fld.get_size());
+      fill_transient_data(ef_blk, field, data, ids.data(), num_to_get, currentTime);
+    }
+    return num_to_get;
   }
 
   int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
-    return -1;
+    size_t num_to_get = field.verify(data_size);
+
+    int64_t               id   = ns->get_property("id").get_int();
+    Ioss::Field::RoleType role = field.get_role();
+    if (role == Ioss::Field::MESH) {
+
+      if (field.get_name() == "ids" || field.get_name() == "ids_raw") {
+        std::vector<int64_t> nodes;
+        m_textMesh->nodeset_nodes(id, nodes);
+        if (field.get_name() == "ids_raw") {
+          map_global_to_local(get_node_map(), nodes.size(), 1, &nodes[0]);
+        }
+
+        if (field.is_type(Ioss::Field::INTEGER)) {
+          int *ids = static_cast<int *>(data);
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
+          std::copy(nodes.begin(), nodes.end(), ids);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+        }
+        else {
+          auto *ids = static_cast<int64_t *>(data);
+          std::copy(nodes.begin(), nodes.end(), ids);
+        }
+      }
+      else if (field.get_name() == "distribution_factors") {
+        if (m_useVariableDf) {
+          const Ioss::Field &id_fld = ns->get_fieldref("ids");
+          std::vector<char>  ids(id_fld.get_size());
+          get_field_internal(ns, id_fld, ids.data(), id_fld.get_size());
+          fill_transient_data(ns, field, data, ids.data(), num_to_get);
+        }
+        else {
+          fill_constant_data(field, data, 1.0);
+        }
+      }
+      else {
+        num_to_get = Ioss::Utils::field_warning(ns, field, "input");
+      }
+    }
+    else if (role == Ioss::Field::TRANSIENT) {
+      const Ioss::Field &id_fld = ns->get_fieldref("ids");
+      std::vector<char>  ids(id_fld.get_size());
+      get_field_internal(ns, id_fld, ids.data(), id_fld.get_size());
+      fill_transient_data(ns, field, data, ids.data(), num_to_get, currentTime);
+    }
+    return num_to_get;
   }
 
   int64_t DatabaseIO::get_field_internal(const Ioss::EdgeBlock * /* fs */,
@@ -584,6 +739,81 @@ namespace Iotm {
     }
   }
 
+  void DatabaseIO::get_nodesets()
+  {
+    // Attributes of a nodeset are:
+    // -- id
+    // -- name
+    // -- number of nodes
+    // -- number of distribution factors (see next comment)
+    // ----the #distribution factors should equal #nodes or 0, any
+    //     other value does not make sense. If it is 0, then a substitute
+    //     list will be created returning 1.0 for the factor
+
+    // In a parallel execution, it is possible that a nodeset will have
+    // no nodes or distribution factors on a particular processor...
+
+    // Get nodeset metadata
+    std::vector<std::string> nodesetNames = m_textMesh->get_nodeset_names();
+    for (const std::string &name : nodesetNames) {
+      int64_t id           = m_textMesh->get_nodeset_id(name);
+      int64_t number_nodes = m_textMesh->nodeset_node_count_proc(id);
+
+      auto nodeset = new Ioss::NodeSet(this, name, number_nodes);
+      nodeset->property_add(Ioss::Property("id", id));
+      nodeset->property_add(Ioss::Property("guid", util().generate_guid(id)));
+      get_region()->add(nodeset);
+      add_transient_fields(nodeset);
+    }
+  }
+
+  void DatabaseIO::get_sidesets()
+  {
+    std::vector<std::string> sidesetNames = m_textMesh->get_sideset_names();
+    for (const std::string &name : sidesetNames) {
+      int64_t id      = m_textMesh->get_sideset_id(name);
+      auto    sideset = new Ioss::SideSet(this, name);
+      sideset->property_add(Ioss::Property("id", id));
+      sideset->property_add(Ioss::Property("guid", util().generate_guid(id)));
+      get_region()->add(sideset);
+
+      get_region()->add_alias(name, Ioss::Utils::encode_entity_name("sideset", id), Ioss::SIDESET);
+
+      std::vector<SideBlockInfo> infoVec = m_textMesh->get_side_block_info_for_sideset(name);
+
+      for (const SideBlockInfo &info : infoVec) {
+        size_t sideCount = m_textMesh->get_local_side_block_indices(name, info).size();
+        auto   sideblock = new Ioss::SideBlock(this, info.name, info.sideTopology,
+                                               info.elementTopology, sideCount);
+        sideset->add(sideblock);
+
+        // Note that all sideblocks within a specific
+        // sideset might have the same id.
+        assert(sideblock != nullptr);
+        sideblock->property_add(Ioss::Property("id", id));
+        sideblock->property_add(Ioss::Property("guid", util().generate_guid(id)));
+
+        // If splitting by element block, need to set the
+        // element block member on this side block.
+        auto split_type = m_textMesh->get_sideset_split_type(name);
+        if (split_type == text_mesh::SplitType::ELEMENT_BLOCK) {
+          Ioss::ElementBlock *block = get_region()->get_element_block(info.touchingBlock);
+          sideblock->set_parent_element_block(block);
+        }
+
+        if (split_type != text_mesh::SplitType::NO_SPLIT) {
+          std::string storage = "Real[";
+          storage += std::to_string(info.numNodesPerSide);
+          storage += "]";
+          sideblock->field_add(
+              Ioss::Field("distribution_factors", Ioss::Field::REAL, storage, Ioss::Field::MESH));
+        }
+
+        add_transient_fields(sideblock);
+      }
+    }
+  }
+
   void DatabaseIO::get_commsets()
   {
     if (util().parallel_size() > 1) {
@@ -600,7 +830,7 @@ namespace Iotm {
 
   unsigned DatabaseIO::entity_field_support() const
   {
-    return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::REGION;
+    return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::REGION | Ioss::NODESET | Ioss::SIDESET;
   }
 
   void DatabaseIO::add_transient_fields(Ioss::GroupingEntity *entity)

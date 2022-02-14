@@ -125,6 +125,7 @@ local installed-developer-files =
   Utst_ioel
   Utst_superelement
   Utst_database_io
+  Utst_textmesh
   Utst_sort
   Utst_map
   Utst_structured_decomp
@@ -1804,6 +1805,17 @@ exe Utst_database_io
     /tpl/netcdf-c//netcdf
     /tpl/gtest//gtest
   : <tag>@utility-exec-tag
+  ;
+
+exe Utst_textmesh
+  :
+  [ glob $(seacas-root)/libraries/ioss/src/unit_tests/*.C ]
+    ioinit
+    iotm
+    /tpl/netcdf-c//netcdf
+    /tpl/gtest//gtest
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
   ;
 
 rule xcb-for_cray-rule ( properties * )
