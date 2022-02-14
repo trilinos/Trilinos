@@ -55,6 +55,7 @@
 #include "ROL_TypeB_LSecantBAlgorithm.hpp"
 #include "ROL_TypeB_QuasiNewtonAlgorithm.hpp"
 #include "ROL_TypeB_TrustRegionSPGAlgorithm.hpp"
+#include "ROL_TypeB_ColemanLiAlgorithm.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
@@ -171,6 +172,8 @@ inline Ptr<Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
         return makePtr<KelleySachsAlgorithm<Real>>(parlist);
       else if (trmod=="SPG")
         return makePtr<TrustRegionSPGAlgorithm<Real>>(parlist);
+      else if (trmod=="Coleman-Li")
+        return makePtr<ColemanLiAlgorithm<Real>>(parlist);
       else
         return makePtr<LinMoreAlgorithm<Real>>(parlist);
     }

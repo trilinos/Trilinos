@@ -185,6 +185,58 @@ public:
   */
   virtual bool isFeasible( const Vector<Real> &v );
 
+  /** \brief Check if the vector, v, is in the interior of the bounds.
+
+      This function returns true if \f$a < v < b\f$.
+      @param[in]    v   is the vector to be checked.
+  */
+  virtual bool isInterior( const Vector<Real> &v ) const;
+
+  /** \brief Apply scaling function.
+
+      This function applies the scaling function \f$d(x,g)\f$ to
+      a vector \f$v\f$, i.e., the output is \f$\mathrm{diag}(d(x,g))v\f$.
+      The scaling function must satisfy:
+      (i) \f$d(x,g)_i = 0\f$ if \f$x_i = a_i\f$ and \f$g_i \ge 0\f$;
+      (ii) \f$d(x,g)_i = 0\f$ if \f$x_i = b_i\f$ and \f$g_i \le 0\f$; and
+      (iii) \f$d(x,g)_i > 0\f$ otherwise.
+      @param[out] dv   is the scaling function applied to v.
+      @param[in]   v   is the vector being scaled.
+      @param[in]   x   is the primal vector at which the scaling function is evaluated.
+      @param[in]   g   is the dual vector at which the scaling function is evaluated.
+  */
+  virtual void applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const;
+
+  /** \brief Apply inverse scaling function.
+
+      This function applies the inverse scaling function \f$d(x,g)\f$ to
+      a vector \f$v\f$, i.e., the output is \f$\mathrm{diag}(d(x,g)^{-1})v\f$.
+      The scaling function must satisfy:
+      (i) \f$d(x,g)_i = 0\f$ if \f$x_i = a_i\f$ and \f$g_i \ge 0\f$;
+      (ii) \f$d(x,g)_i = 0\f$ if \f$x_i = b_i\f$ and \f$g_i \le 0\f$; and
+      (iii) \f$d(x,g)_i > 0\f$ otherwise.
+      @param[out] dv   is the inverse scaling function applied to v.
+      @param[in]   v   is the vector being scaled.
+      @param[in]   x   is the primal vector at which the scaling function is evaluated.
+      @param[in]   g   is the dual vector at which the scaling function is evaluated.
+  */
+  virtual void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const;
+
+  /** \brief Apply scaling function Jacobian.
+
+      This function applies the Jacobian of the scaling function \f$d(x,g)\f$ to
+      a vector \f$v\f$.  The output is \f$\mathrm{diag}(d_x(x,g)g)v\f$.  The
+      scaling function must satisfy:
+      (i) \f$d(x,g)_i = 0\f$ if \f$x_i = a_i\f$ and \f$g_i \ge 0\f$;
+      (ii) \f$d(x,g)_i = 0\f$ if \f$x_i = b_i\f$ and \f$g_i \le 0\f$; and
+      (iii) \f$d(x,g)_i > 0\f$ otherwise.
+      @param[out] dv   is the scaling function Jacobian applied to v.
+      @param[in]   v   is the vector being scaled.
+      @param[in]   x   is the primal vector at which the scaling function is evaluated.
+      @param[in]   g   is the dual vector at which the scaling function is evaluated.
+  */
+  virtual void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const;
+
   /** \brief Turn on lower bound.
 
       This function turns on lower bounds.

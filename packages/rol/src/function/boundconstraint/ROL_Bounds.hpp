@@ -64,7 +64,7 @@ private:
   using BoundConstraint<Real>::lower_;
   using BoundConstraint<Real>::upper_;
 
-  Ptr<Vector<Real>> mask_;
+  Ptr<Vector<Real>> mask_, pvec_;
 
   Real min_diff_;
 
@@ -107,17 +107,56 @@ private:
       }
   } prune_;
 
+  class BuildC : public Elementwise::UnaryFunction<Real> {
+    public:
+      Real apply( const Real &x ) const {
+        const Real zeta(0.5), kappa(1);
+        return std::min(zeta * x, kappa);
+      }
+  } buildC_;
+
+  class MinAbs : public Elementwise::BinaryFunction<Real> {
+    public:
+      Real apply(const Real &x, const Real &y) const {
+        return std::min(std::abs(x),std::abs(y));
+      }
+  } minAbs_;
+
+  class SetZeroEntry : public Elementwise::BinaryFunction<Real> {
+    public:
+      Real apply(const Real &x, const Real &y) const {
+        const Real zero(0);
+        return (x==zero ? y : x);
+      }
+  } setZeroEntry_;
+
+  class Sgn : public Elementwise::BinaryFunction<Real> {
+    public:
+      Real apply(const Real &x, const Real &y) const {
+        const Real zero(0), one(1);
+        return (y < zero ? -one : (y > zero ? one : zero));
+      }
+  } sgn_;
+
+  class SgnPlus : public Elementwise::BinaryFunction<Real> {
+    public:
+      Real apply(const Real &x, const Real &y) const {
+        const Real zero(0), one(1);
+        return (x==zero ? (y < zero ? -one : one) : x);
+      }
+  } sgnPlus_;
+
 public:
 
   Bounds(const Vector<Real> &x,
          bool isLower = true,
          Real scale = 1,
-         Real feasTol = 1e-2);
+         Real feasTol = std::sqrt(ROL_EPSILON<Real>()));
 
   Bounds(const Ptr<Vector<Real>> &x_lo,
          const Ptr<Vector<Real>> &x_up,
          const Real scale = 1,
-         const Real feasTol = 1e-2);
+         const Real feasTol = std::sqrt(ROL_EPSILON<Real>()));
 
   void project( Vector<Real> &x ) override;
 
@@ -132,6 +171,11 @@ public:
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) override;
 
   bool isFeasible( const Vector<Real> &v ) override;
+  bool isInterior( const Vector<Real> &v ) const override;
+
+  void applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override;
+  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override;
+  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override;
 
 }; // class Bounds
 
