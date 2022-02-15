@@ -281,14 +281,12 @@ public:
 
   //! get the local number of block rows
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED
-  size_t getNodeNumRows() const override;
+  TPETRA_DEPRECATED size_t getNodeNumRows() const override;
 #endif
   size_t getLocalNumRows() const override;
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED
-  size_t getNodeMaxNumRowEntries() const override;
+  TPETRA_DEPRECATED size_t getNodeMaxNumRowEntries() const override;
 #endif
   size_t getLocalMaxNumRowEntries() const override;
 
@@ -1157,8 +1155,7 @@ public:
   virtual global_size_t getGlobalNumCols() const override;
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED
-  virtual size_t getNodeNumCols() const override;
+  TPETRA_DEPRECATED virtual size_t getNodeNumCols() const override;
 #endif
   virtual size_t getLocalNumCols() const override;
 
@@ -1170,8 +1167,7 @@ public:
   //! The local number of stored (structurally nonzero) entries.
   virtual size_t getLocalNumEntries() const override;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED
-  virtual size_t getNodeNumEntries() const override;
+  TPETRA_DEPRECATED virtual size_t getNodeNumEntries() const override;
 #endif
 
   /// \brief The current number of entries on the calling process in the specified global row.
