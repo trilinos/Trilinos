@@ -118,7 +118,8 @@ enum solverType {
   AUGMENTATION,
   MUELU_REFMAXWELL,
   ML_REFMAXWELL,
-  CG
+  CG,
+  GMRES
 };
 
 enum linearAlgebraType {
@@ -154,8 +155,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     bool matrix_output = false;
     std::string input_file = "maxwell.xml";
     std::string xml = "";
-    solverType solverValues[4] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL, CG};
-    const char * solverNames[4] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell", "CG"};
+    solverType solverValues[5] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL, CG, GMRES};
+    const char * solverNames[5] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell", "CG", "GMRES"};
     solverType solver = MUELU_REFMAXWELL;
     int numTimeSteps = 1;
     bool resetSolver = false;
@@ -176,7 +177,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("matrix-output","no-matrix-output",&matrix_output);
     clp.setOption("inputFile",&input_file,"XML file with the problem definitions");
     clp.setOption("solverFile",&xml,"XML file with the solver params");
-    clp.setOption<solverType>("solver",&solver,4,solverValues,solverNames,"Solver that is used");
+    clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
     clp.setOption("numTimeSteps",&numTimeSteps);
     clp.setOption("resetSolver","no-resetSolver",&resetSolver,"update the solver in every timestep");
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
@@ -347,6 +348,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
       else if (solver == CG)
         if (linAlgebra == linAlgTpetra)
           updateParams("solverCG.xml", lin_solver_pl, comm, out);
+        else
+          return EXIT_FAILURE;
+      else if (solver == GMRES)
+        if (linAlgebra == linAlgTpetra)
+          updateParams("solverGMRES.xml", lin_solver_pl, comm, out);
         else
           return EXIT_FAILURE;
       else if (solver == ML_REFMAXWELL) {
@@ -754,10 +760,10 @@ int main(int argc,char * argv[]){
   const char * linAlgebraNames[2] = {"Tpetra", "Epetra"};
   linearAlgebraType linAlgebra = linAlgTpetra;
   clp.setOption<linearAlgebraType>("linAlgebra",&linAlgebra,2,linAlgebraValues,linAlgebraNames);
-  solverType solverValues[4] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL, CG};
-  const char * solverNames[4] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell", "CG"};
+  solverType solverValues[5] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL, CG, GMRES};
+  const char * solverNames[5] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell", "CG", "GMRES"};
   solverType solver = MUELU_REFMAXWELL;
-  clp.setOption<solverType>("solver",&solver,4,solverValues,solverNames,"Solver that is used");
+  clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
   // bool useComplex = false;
   // clp.setOption("complex","real",&useComplex);
   clp.recogniseAllOptions(false);

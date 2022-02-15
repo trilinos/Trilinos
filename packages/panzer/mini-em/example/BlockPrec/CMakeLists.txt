@@ -17,7 +17,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   maxwell-bdot-small.xml maxwell-bdot-medium.xml maxwell-bdot-large.xml
   maxwell-exterior-small.xml maxwell-exterior-medium.xml maxwell-exterior-large.xml
   solverAugmentation.xml solverAugmentationEpetra.xml
-  solverCG.xml
+  solverCG.xml solverGMRES.xml
   solverMueLuRefMaxwell.xml solverMueLuRefMaxwell2D.xml solverMueLuRefMaxwellEpetra.xml
   solverMueLuRefMaxwellOpenMP.xml solverMueLuRefMaxwellCuda.xml
   solverAugmentationUseILU.xml
