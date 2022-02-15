@@ -1500,7 +1500,7 @@ public:
     /// This may return either a copy or a view of the row offsets.
     /// In either case, it will <i>always</i> live in host memory,
     /// never in (CUDA) device memory.
-    Teuchos::ArrayRCP<const size_t> getNodeRowPtrs () const;
+    TPETRA_DEPRECATED Teuchos::ArrayRCP<const size_t> getNodeRowPtrs () const;
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
     row_ptrs_host_view_type getLocalRowPtrsHost () const;
 

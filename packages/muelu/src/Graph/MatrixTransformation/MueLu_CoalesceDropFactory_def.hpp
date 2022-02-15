@@ -1969,7 +1969,7 @@ namespace MueLu {
      auto sym = rcp(new Tpetra::CrsGraphTransposer<LocalOrdinal,GlobalOrdinal,Node>(tpGraph));
      auto tpGraphSym = sym->symmetrize();
 
-     auto colIndsSym =        // temporary; better fix would be change to LWGraph constructor
+     auto colIndsSym =        // FIXME persistingView is temporary; better fix would be change to LWGraph constructor
           Kokkos::Compat::persistingView(tpGraphSym->getLocalIndicesHost());
           
      auto rowsSym = tpGraphSym->getLocalRowPtrsHost();
