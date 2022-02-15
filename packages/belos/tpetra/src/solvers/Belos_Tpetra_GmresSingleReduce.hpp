@@ -571,9 +571,9 @@ private:
     Teuchos::BLAS<LO ,SC> blas;
     dense_matrix_type H (restart+1, restart,   true);
     dense_matrix_type T (restart+1, restart+2, true);
-    dense_vector_type y (restart+1, true);
-    dense_vector_type z (restart+1, true);
-    dense_vector_type w (restart+1, true);
+    dense_vector_type y (restart+1, true); // solution of least-square problem
+    dense_vector_type z (restart+1, true); // z and w save y and the last column of H,
+    dense_vector_type w (restart+1, true); //  to continue restart-cycle in case explicit convergence check failed at restart
     std::vector<real_type> cs (restart);
     std::vector<SC> sn (restart);
     
