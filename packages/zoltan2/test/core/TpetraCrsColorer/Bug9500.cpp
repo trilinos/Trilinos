@@ -181,12 +181,10 @@ public:
    
 
     if (ierr > 0) {
-      if (me == 0) {
-        std::cout << testname << " FAILED with "
-                  << (useBlock ? "Block maps" : "Cyclic maps")
-                  << std::endl;
-        params.print();
-      }
+      std::cout << testname << " FAILED on rank " << me << " with "
+                << (useBlock ? "Block maps" : "Cyclic maps")
+                << std::endl;
+      params.print();
     }
 
     return (ierr == 0);
