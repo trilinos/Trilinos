@@ -142,8 +142,8 @@ public:
     return G_->getLocalNumRows ();
   }
 
-  size_t getNodeNumCols () const override {
-    return G_->getNodeNumCols ();
+  size_t getLocalNumCols () const override {
+    return G_->getLocalNumCols ();
   }
 
   GO getIndexBase () const override {
@@ -327,8 +327,8 @@ public:
     return A_->getLocalNumRows ();
   }
 
-  size_t getNodeNumCols () const override {
-    return A_->getNodeNumCols ();
+  size_t getLocalNumCols () const override {
+    return A_->getLocalNumCols ();
   }
 
   GO getIndexBase () const override {

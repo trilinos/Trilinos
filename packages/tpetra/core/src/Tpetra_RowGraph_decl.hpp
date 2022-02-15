@@ -145,10 +145,16 @@ namespace Tpetra {
     virtual global_size_t getGlobalNumCols() const = 0;
 
     //! Returns the number of rows owned on the calling node.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeNumRows() const = 0;
+#endif
     virtual size_t getLocalNumRows() const = 0;
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
-    virtual size_t getNodeNumCols() const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeNumCols() const = 0;
+#endif
+    virtual size_t getLocalNumCols() const = 0;
 
     //! Returns the index base for global indices for this graph.
     virtual GlobalOrdinal getIndexBase() const = 0;

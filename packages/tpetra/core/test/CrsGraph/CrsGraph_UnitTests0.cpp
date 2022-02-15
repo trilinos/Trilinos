@@ -483,7 +483,7 @@ namespace { // (anonymous)
       TEST_EQUALITY( test_row->getGlobalNumRows(), (size_t)numProcs-1 );
       TEST_EQUALITY( test_row->getLocalNumRows(), numLocal );
       TEST_EQUALITY( test_row->getGlobalNumCols(), (size_t)numProcs-1 );
-      TEST_EQUALITY( test_row->getNodeNumCols(), numLocal );
+      TEST_EQUALITY( test_row->getLocalNumCols(), numLocal );
       TEST_EQUALITY( test_row->getIndexBase(), 0 );
 
       TEST_EQUALITY( test_row->getGlobalNumEntries(), (size_t)numProcs-1 );
@@ -515,7 +515,7 @@ namespace { // (anonymous)
         TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
         TEST_EQUALITY( zero->getLocalNumRows(), numLocal );
         TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
-        TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+        TEST_EQUALITY( zero->getLocalNumCols(), 0 );
         TEST_EQUALITY( zero->getIndexBase(), 0 );
 
         TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
@@ -545,7 +545,7 @@ namespace { // (anonymous)
       TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
       TEST_EQUALITY( zero->getLocalNumRows(), numLocal );
       TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
-      TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+      TEST_EQUALITY( zero->getLocalNumCols(), 0 );
       TEST_EQUALITY( zero->getIndexBase(), 0 );
 
       TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
@@ -588,7 +588,7 @@ namespace { // (anonymous)
     TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
     TEST_EQUALITY( zero->getLocalNumRows(), numLocal );
     TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
-    TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+    TEST_EQUALITY( zero->getLocalNumCols(), 0 );
     TEST_EQUALITY( zero->getIndexBase(), 0 );
 
     TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );

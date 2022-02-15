@@ -671,7 +671,7 @@ namespace Tpetra {
             for (int p = 0; p < numProcs; ++p) {
               if (myRank == p) {
                 std::cerr << "-- Proc " << p << " owns "
-                          << pMatrix->getNodeNumCols() << " columns, and "
+                          << pMatrix->getLocalNumCols() << " columns, and "
                           << pMatrix->getNodeNumEntries() << " entries." << std::endl;
               }
               pComm->barrier ();

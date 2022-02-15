@@ -124,7 +124,7 @@ namespace {
     }
     // test that *readMatrix == *testMatrix
     TEST_EQUALITY( testMatrix->getLocalNumRows(), readMatrix->getLocalNumRows() );
-    TEST_EQUALITY( testMatrix->getNodeNumCols(), readMatrix->getNodeNumCols() );
+    TEST_EQUALITY( testMatrix->getLocalNumCols(), readMatrix->getLocalNumCols() );
     TEST_EQUALITY( testMatrix->getNodeNumEntries(), readMatrix->getNodeNumEntries() );
     if (success) {
       typename crs_matrix_type::local_inds_host_view_type rowinds1, rowinds2;

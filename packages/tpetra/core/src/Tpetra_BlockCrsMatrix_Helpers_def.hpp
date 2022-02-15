@@ -220,9 +220,9 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(A.getLocalNumRows() != 0,
         std::runtime_error, "Tpetra::writeMatrixStrip: pid "
         << myRank << " should have 0 rows but has " << A.getLocalNumRows());
-      TEUCHOS_TEST_FOR_EXCEPTION(A.getNodeNumCols() != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION(A.getLocalNumCols() != 0,
         std::runtime_error, "Tpetra::writeMatrixStrip: pid "
-        << myRank << " should have 0 columns but has " << A.getNodeNumCols());
+        << myRank << " should have 0 columns but has " << A.getLocalNumCols());
 
     } else {
 

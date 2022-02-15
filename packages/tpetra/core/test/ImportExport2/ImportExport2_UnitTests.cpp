@@ -1599,11 +1599,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
   try {
     OSTab tab2 (out);
     // Assume we always own the diagonal
-    size_t num_local = A->getNodeNumCols()-A->getLocalNumRows();
+    size_t num_local = A->getLocalNumCols()-A->getLocalNumRows();
     Teuchos::Array<GO> MyGIDs(num_local);
 
     size_t idx=0;
-    for (LO i_lcl = 0; static_cast<size_t> (i_lcl) < A->getNodeNumCols (); ++i_lcl) {
+    for (LO i_lcl = 0; static_cast<size_t> (i_lcl) < A->getLocalNumCols (); ++i_lcl) {
       const GO i_gbl = A->getColMap ()->getGlobalElement (i_lcl);
       if (A->getRowMap ()->getLocalElement (i_gbl) == Teuchos::OrdinalTraits<LO>::invalid ()) {
         MyGIDs[idx] = A->getColMap()->getGlobalElement (i_lcl);

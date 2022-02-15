@@ -2364,7 +2364,11 @@ namespace Tpetra {
     /// \brief The number of columns connected to the locally owned rows of this matrix.
     ///
     /// Throws std::runtime_error if <tt>! hasColMap ()</tt>.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeNumCols() const override;
+#endif
+    size_t getLocalNumCols() const override;
 
     //! The index base for global indices for this matrix.
     GlobalOrdinal getIndexBase() const override;

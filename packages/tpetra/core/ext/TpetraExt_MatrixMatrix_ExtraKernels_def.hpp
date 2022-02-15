@@ -75,7 +75,7 @@ size_t Ac_estimate_nnz(CrsMatrixType & A, CrsMatrixType &P){
   if (A.getNodeNumEntries() > 0)
     nnzPerRowA = (A.getLocalNumRows() > 0)?  A.getNodeNumEntries()/A.getLocalNumRows() : 9;
   if (P.getNodeNumEntries() > 0)
-    Pcols = (P.getNodeNumCols() > 0) ? P.getNodeNumCols() : 100;
+    Pcols = (P.getLocalNumCols() > 0) ? P.getLocalNumCols() : 100;
   return (size_t)(Pcols*nnzPerRowA + 5*nnzPerRowA + 300);
 }
 

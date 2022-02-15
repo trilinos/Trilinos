@@ -384,7 +384,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(tri->getNodeNumEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
     TEST_EQUALITY(tri->getGlobalNumRows()      , static_cast<size_t>(2*numImages));
     TEST_EQUALITY(tri->getLocalNumRows()          , 2);
-    TEST_EQUALITY(tri->getNodeNumCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
+    TEST_EQUALITY(tri->getLocalNumCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*tri), static_cast<GO> (2*numImages));
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*tri), static_cast<LO> (2) );
     TEST_EQUALITY(tri->getGlobalMaxNumRowEntries(), 3);
@@ -530,7 +530,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(A.getNodeNumEntries()       , myNNZ);
     TEST_EQUALITY(A.getGlobalNumRows()       , static_cast<size_t>(numImages));
     TEST_EQUALITY_CONST(A.getLocalNumRows()     , ONE);
-    TEST_EQUALITY(A.getNodeNumCols()           , myNNZ);
+    TEST_EQUALITY(A.getLocalNumCols()           , myNNZ);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (A), static_cast<GO> (numImages));
     TEST_EQUALITY_CONST( Tpetra::Details::getLocalNumDiags (A), static_cast<LO> (ONE) );
     TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , 3);

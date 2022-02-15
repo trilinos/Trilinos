@@ -180,6 +180,9 @@ namespace Tpetra {
     virtual global_size_t getGlobalNumCols() const = 0;
 
     //! The number of rows owned by the calling process.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeNumRows() const = 0;
+#endif
     virtual size_t getLocalNumRows() const = 0;
 
     /// \brief The number of columns needed to apply the forward operator on this node.
@@ -187,7 +190,10 @@ namespace Tpetra {
     /// This is the same as the number of elements listed in the
     /// column Map.  It is <i>not</i> necessarily the same as the
     /// number of domain Map elements owned by the calling process.
-    virtual size_t getNodeNumCols() const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeNumCols() const = 0;
+#endif
+    virtual size_t getLocalNumCols() const = 0;
 
     //! The index base for global indices in this matrix.
     virtual GlobalOrdinal getIndexBase() const = 0;

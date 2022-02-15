@@ -1152,7 +1152,11 @@ public:
   //! The global number of columns of this matrix.
   virtual global_size_t getGlobalNumCols() const override;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  TPETRA_DEPRECATED
   virtual size_t getNodeNumCols() const override;
+#endif
+  virtual size_t getLocalNumCols() const override;
 
   virtual GO getIndexBase() const override;
 

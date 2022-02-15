@@ -981,7 +981,11 @@ public:
     //! Returns the number of columns connected to the locally owned rows of this graph.
     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
      */
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeNumCols () const override;
+#endif
+    size_t getLocalNumCols () const override;
 
     //! Returns the index base for global indices for this graph.
     global_ordinal_type getIndexBase () const override;

@@ -2705,7 +2705,7 @@ namespace Tpetra {
             for (int p = 0; p < numProcs; ++p) {
               if (myRank == p) {
                 cerr << "-- Proc " << p << " owns "
-                     << pMatrix->getNodeNumCols() << " columns, and "
+                     << pMatrix->getLocalNumCols() << " columns, and "
                      << pMatrix->getNodeNumEntries() << " entries." << endl;
               }
               pComm->barrier ();
@@ -3250,7 +3250,7 @@ namespace Tpetra {
           for (int p = 0; p < numProcs; ++p) {
             if (myRank == p) {
               cerr << "-- Proc " << p << " owns "
-                   << pMatrix->getNodeNumCols() << " columns, and "
+                   << pMatrix->getLocalNumCols() << " columns, and "
                    << pMatrix->getNodeNumEntries() << " entries." << endl;
             }
             pComm->barrier ();
@@ -3894,7 +3894,7 @@ namespace Tpetra {
             for (int p = 0; p < numProcs; ++p) {
               if (myRank == p) {
                 cerr << "-- Proc " << p << " owns "
-                     << A->getNodeNumCols() << " columns, and "
+                     << A->getLocalNumCols() << " columns, and "
                      << A->getNodeNumEntries() << " entries." << endl;
               }
               pComm->barrier ();

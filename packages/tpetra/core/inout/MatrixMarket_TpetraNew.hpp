@@ -1120,7 +1120,7 @@ readSparseFile(
                 << "  minRow " << A->getRowMap()->getMinGlobalIndex()
                 << "  maxRow " << A->getRowMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nCols " << A->getNodeNumCols()
+                << "  nCols " << A->getLocalNumCols()
                 << "  minCol " << A->getColMap()->getMinGlobalIndex()
                 << "  maxCol " << A->getColMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 

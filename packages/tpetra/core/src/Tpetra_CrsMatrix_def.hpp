@@ -965,11 +965,21 @@ namespace Tpetra {
     return getCrsGraphRef ().getLocalNumRows ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNodeNumCols () const {
-    return getCrsGraphRef ().getNodeNumCols ();
+    return getCrsGraphRef ().getLocalNumCols ();
+  }
+#endif
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalNumCols () const {
+    return getCrsGraphRef ().getLocalNumCols ();
   }
 
 
