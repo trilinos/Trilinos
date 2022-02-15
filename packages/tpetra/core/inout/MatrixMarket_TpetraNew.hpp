@@ -936,7 +936,7 @@ readSparseFile(
   
   // Read nonzeros from the given file(s)
   size_t nRow = 0, nCol = 0;
-  unsigned int *buffer; size_t nNz = 0;
+  unsigned int *buffer=0; size_t nNz = 0;
   if(binary){
     if(readPerProcess)
       readPerProcessBinary(filename, comm, params, nRow, nCol, localNZ, dist, buffer, nNz);
