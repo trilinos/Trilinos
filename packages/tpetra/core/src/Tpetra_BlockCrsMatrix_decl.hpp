@@ -286,7 +286,11 @@ public:
 #endif
   size_t getLocalNumRows() const override;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  TPETRA_DEPRECATED
   size_t getNodeMaxNumRowEntries() const override;
+#endif
+  size_t getLocalMaxNumRowEntries() const override;
 
   /// \brief For this matrix A, compute <tt>Y := beta * Y + alpha * Op(A) * X</tt>.
   ///

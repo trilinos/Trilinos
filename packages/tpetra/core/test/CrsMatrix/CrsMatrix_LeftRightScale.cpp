@@ -120,8 +120,8 @@ namespace {
     typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MAT;
 
     MT mySum = STM::zero ();
-    Array<LO> inds (matrix->getNodeMaxNumRowEntries ());
-    Array<Scalar> vals (matrix->getNodeMaxNumRowEntries ());
+    Array<LO> inds (matrix->getLocalMaxNumRowEntries ());
+    Array<Scalar> vals (matrix->getLocalMaxNumRowEntries ());
 
     const size_t myNumRows = matrix->getLocalNumRows ();
     for (size_t i = 0; i < myNumRows; ++i) {

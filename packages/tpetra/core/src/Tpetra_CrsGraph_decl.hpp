@@ -1068,7 +1068,7 @@ public:
     /// \pre <tt>! isFillActive()</tt>
     ///
     /// \note This is the same as the result of a global maximum of
-    ///   getNodeMaxNumRowEntries() over all processes.  That may not
+    ///   getLocalMaxNumRowEntries() over all processes.  That may not
     ///   necessarily mean what you think it does if some rows of the
     ///   matrix are owned by multiple processes.  In particular, some
     ///   processes might only own some of the entries in a particular
@@ -1081,7 +1081,10 @@ public:
     ///   on this process.
     ///
     /// \pre <tt>! isFillActive()</tt>
-    size_t getNodeMaxNumRowEntries () const override;
+    size_t getLocalMaxNumRowEntries () const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED size_t getNodeMaxNumRowEntries () const override;
+#endif
 
     /// \brief Whether the graph has a column Map.
     ///

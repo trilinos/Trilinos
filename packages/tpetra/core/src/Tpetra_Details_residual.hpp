@@ -358,7 +358,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
   //use it and follow the reference residual code
   LO maxRowImbalance = 0;
   if(numLocalRows != 0)
-    maxRowImbalance = A.getNodeMaxNumRowEntries() - (myNnz / numLocalRows);
+    maxRowImbalance = A.getLocalMaxNumRowEntries() - (myNnz / numLocalRows);
   if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
   {
     //note: lclOp will be wrapped in shared_ptr
@@ -509,7 +509,7 @@ void localResidualWithCommCompOverlap(const CrsMatrix<SC,LO,GO,NO> &  A,
   // //use it and follow the reference residual code
   // LO maxRowImbalance = 0;
   // if(numLocalRows != 0)
-  //   maxRowImbalance = A.getNodeMaxNumRowEntries() - (myNnz / numLocalRows);
+  //   maxRowImbalance = A.getLocalMaxNumRowEntries() - (myNnz / numLocalRows);
   // if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
   // {
   //   //note: lclOp will be wrapped in shared_ptr

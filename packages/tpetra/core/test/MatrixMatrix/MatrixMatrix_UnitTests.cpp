@@ -1134,7 +1134,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
 	if (n < B->getNumEntriesInLocalRow(i))
 	  n = B->getNumEntriesInLocalRow(i);
       }
-      n += A->getNodeMaxNumRowEntries();
+      n += A->getLocalMaxNumRowEntries();
 
       RCP<const map_type> rm = B->getRowMap();
       RCP<Matrix_t> E = rcp (new Matrix_t(rm, n));

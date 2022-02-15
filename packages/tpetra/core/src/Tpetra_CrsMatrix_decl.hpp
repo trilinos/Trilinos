@@ -2415,7 +2415,11 @@ namespace Tpetra {
     ///
     /// This method only uses the matrix's graph.  Explicitly stored
     /// zeros count as "entries."
+    size_t getLocalMaxNumRowEntries () const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeMaxNumRowEntries () const override;
+#endif
 
     //! Whether the matrix has a well-defined column Map.
     bool hasColMap () const override;

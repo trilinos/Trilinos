@@ -171,7 +171,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY( static_cast<size_t>( sview.size()), numEntries ); \
       STMAX = std::max( STMAX, numEntries ); \
     } \
-    TEST_EQUALITY( matrix.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
     global_size_t STGMAX; \
     Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
     TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
@@ -238,7 +238,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getColMap())   , true);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getDomainMap()), true);
@@ -461,7 +461,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap()!=Teuchos::null, true);
     TEST_EQUALITY_CONST(eye->getColMap()!=Teuchos::null, true);
@@ -529,7 +529,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap()!=Teuchos::null, true);
     TEST_EQUALITY_CONST(eye->getColMap()!=Teuchos::null, true);

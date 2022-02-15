@@ -363,7 +363,7 @@ namespace Tpetra {
       RCP<block_crs_matrix_type> blockMatrix = rcp(new block_crs_matrix_type(*meshCrsGraph, blockSize));
 
       //preallocate the maximum number of (dense) block entries needed by any row
-      int maxBlockEntries = blockMatrix->getNodeMaxNumRowEntries();
+      int maxBlockEntries = blockMatrix->getLocalMaxNumRowEntries();
       Array<Array<Scalar>> blocks(maxBlockEntries);
       for (int i=0; i<maxBlockEntries; ++i)
         blocks[i].reserve(blockSize*blockSize);

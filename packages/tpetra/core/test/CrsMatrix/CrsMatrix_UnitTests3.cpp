@@ -171,7 +171,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY( static_cast<size_t>( sview.size()), numEntries ); \
       STMAX = std::max( STMAX, numEntries ); \
     } \
-    TEST_EQUALITY( matrix.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
     global_size_t STGMAX; \
     Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
     TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \

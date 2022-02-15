@@ -1014,11 +1014,21 @@ namespace Tpetra {
     return getCrsGraphRef ().getGlobalMaxNumRowEntries ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNodeMaxNumRowEntries () const {
-    return getCrsGraphRef ().getNodeMaxNumRowEntries ();
+    return getCrsGraphRef ().getLocalMaxNumRowEntries ();
+  }
+#endif
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalMaxNumRowEntries () const {
+    return getCrsGraphRef ().getLocalMaxNumRowEntries ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5564,7 +5574,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     LocalOrdinal nrows = getLocalNumRows();
     LocalOrdinal maxRowImbalance = 0;
     if(nrows != 0)
-      maxRowImbalance = getNodeMaxNumRowEntries() - (getLocalNumEntries() / nrows);
+      maxRowImbalance = getLocalMaxNumRowEntries() - (getLocalNumEntries() / nrows);
 
     if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
       matrix_lcl->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
@@ -5879,7 +5889,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
               << staticGraph_->getNodeAllocationSize () << endl;
         }
         out << "Number of entries: " << getLocalNumEntries () << endl
-            << "Max number of entries per row: " << getNodeMaxNumRowEntries ()
+            << "Max number of entries per row: " << getLocalMaxNumRowEntries ()
             << endl;
       }
       // Give output time to complete by executing some barriers.
@@ -7139,7 +7149,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // Compute the number of "packets" (in this case, bytes) per
     // export LID (in this case, local index of the row to send), and
     // actually pack the data.
-    auto maxRowNumEnt = this->getNodeMaxNumRowEntries();
+    auto maxRowNumEnt = this->getLocalMaxNumRowEntries();
 
 
     // Temporary buffer for global column indices.

@@ -82,7 +82,7 @@ namespace { // (anonymous)
       TEST_EQUALITY( graph.getNumEntriesInLocalRow (STR), graph.getNumEntriesInGlobalRow (STMYGIDS[STR]) ); \
       STMAX = std::max (STMAX, graph.getNumEntriesInLocalRow(STR)); \
     } \
-    TEST_EQUALITY( graph.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( graph.getLocalMaxNumRowEntries(), STMAX ); \
     GST STGMAX; \
     Teuchos::reduceAll<int, GST> (*STCOMM, Teuchos::REDUCE_MAX, STMAX, Teuchos::outArg (STGMAX)); \
     TEST_EQUALITY( graph.getGlobalMaxNumRowEntries(), STGMAX ); \

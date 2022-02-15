@@ -145,7 +145,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
   const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
-  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
+  size_t b_max_nnz_per_row = Bview.origMatrix->getLocalMaxNumRowEntries();
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
@@ -155,7 +155,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
     Irowptr = lclB.graph.row_map;
     Icolind = lclB.graph.entries;
     Ivals   = lclB.values;
-    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getLocalMaxNumRowEntries());
   }
 
   // Sizes
@@ -518,7 +518,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
   const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
-  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
+  size_t b_max_nnz_per_row = Bview.origMatrix->getLocalMaxNumRowEntries();
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
@@ -528,7 +528,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
     Irowptr = lclB.graph.row_map;
     Icolind = lclB.graph.entries;
     Ivals   = lclB.values;
-    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getLocalMaxNumRowEntries());
   }
 
   // Jacobi-specific inner stuff

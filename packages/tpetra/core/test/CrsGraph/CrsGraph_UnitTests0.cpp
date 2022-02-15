@@ -84,7 +84,7 @@ namespace { // (anonymous)
       TEST_EQUALITY( graph.getNumEntriesInLocalRow (STR), graph.getNumEntriesInGlobalRow (STMYGIDS[STR]) ); \
       STMAX = std::max (STMAX, graph.getNumEntriesInLocalRow(STR)); \
     } \
-    TEST_EQUALITY( graph.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( graph.getLocalMaxNumRowEntries(), STMAX ); \
     GST STGMAX; \
     reduceAll<int, GST> (*STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg (STGMAX)); \
     TEST_EQUALITY( graph.getGlobalMaxNumRowEntries(), STGMAX ); \
@@ -489,7 +489,7 @@ namespace { // (anonymous)
       TEST_EQUALITY( test_row->getGlobalNumEntries(), (size_t)numProcs-1 );
       TEST_EQUALITY( test_row->getLocalNumEntries(), numLocal );
       TEST_EQUALITY( test_row->getGlobalMaxNumRowEntries(), 1 );
-      TEST_EQUALITY( test_row->getNodeMaxNumRowEntries(), numLocal );
+      TEST_EQUALITY( test_row->getLocalMaxNumRowEntries(), numLocal );
       STD_TESTS((*test_row));
     }
 
@@ -521,7 +521,7 @@ namespace { // (anonymous)
         TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
         TEST_EQUALITY( zero->getLocalNumEntries(), 0 );
         TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
-        TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+        TEST_EQUALITY( zero->getLocalMaxNumRowEntries(), 0 );
         STD_TESTS((*zero));
       }
     }
@@ -551,7 +551,7 @@ namespace { // (anonymous)
       TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
       TEST_EQUALITY( zero->getLocalNumEntries(), 0 );
       TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
-      TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+      TEST_EQUALITY( zero->getLocalMaxNumRowEntries(), 0 );
       STD_TESTS((*zero));
     }
 
@@ -594,7 +594,7 @@ namespace { // (anonymous)
     TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
     TEST_EQUALITY( zero->getLocalNumEntries(), 0 );
     TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
-    TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+    TEST_EQUALITY( zero->getLocalMaxNumRowEntries(), 0 );
     STD_TESTS((*zero));
 
     // All procs fail if any proc fails

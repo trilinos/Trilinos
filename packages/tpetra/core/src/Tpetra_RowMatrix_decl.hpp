@@ -247,7 +247,10 @@ namespace Tpetra {
     ///
     /// This method only uses the matrix's graph.  Explicitly stored
     /// zeros count as "entries."
-    virtual size_t getNodeMaxNumRowEntries () const = 0;
+    virtual size_t getLocalMaxNumRowEntries () const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeMaxNumRowEntries () const = 0;
+#endif
 
     //! Whether this matrix has a well-defined column Map.
     virtual bool hasColMap () const = 0;

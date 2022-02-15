@@ -509,8 +509,8 @@ void Add(
   }
 
   size_t a_numEntries;
-  typename crs_matrix_type::nonconst_global_inds_host_view_type a_inds("a_inds",A.getNodeMaxNumRowEntries());
-  typename crs_matrix_type::nonconst_values_host_view_type a_vals("a_vals",A.getNodeMaxNumRowEntries());
+  typename crs_matrix_type::nonconst_global_inds_host_view_type a_inds("a_inds",A.getLocalMaxNumRowEntries());
+  typename crs_matrix_type::nonconst_values_host_view_type a_vals("a_vals",A.getLocalMaxNumRowEntries());
   GO row;
 
   if (scalarB != Teuchos::ScalarTraits<SC>::one())
@@ -1756,7 +1756,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
-  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
+  size_t b_max_nnz_per_row = Bview.origMatrix->getLocalMaxNumRowEntries();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
   const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
@@ -1774,7 +1774,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
     Irowptr = lclB.graph.row_map;
     Icolind = lclB.graph.entries;
     Ivals   = lclB.values;
-    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getLocalMaxNumRowEntries());
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -2390,7 +2390,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
-  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
+  size_t b_max_nnz_per_row = Bview.origMatrix->getLocalMaxNumRowEntries();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
   const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
@@ -2408,7 +2408,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
     Irowptr = lclB.graph.row_map;
     Icolind = lclB.graph.entries;
     Ivals   = lclB.values;
-    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getLocalMaxNumRowEntries());
   }
 
   // Jacobi-specific inner stuff

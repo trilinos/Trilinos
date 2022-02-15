@@ -178,7 +178,7 @@ compareLocalMatVec (Teuchos::FancyOStream& out,
   const size_t lclNumMeshRows = G.getRowMap ()->getLocalNumElements ();
   const LO blockSize = A.getBlockSize ();
   const size_t maxNumTermsInRowSum =
-    static_cast<size_t> (G.getNodeMaxNumRowEntries ()) *
+    static_cast<size_t> (G.getLocalMaxNumRowEntries ()) *
     static_cast<size_t> (blockSize);
   const mag_type tol =
     STM::squareroot (static_cast<mag_type> (maxNumTermsInRowSum)) *

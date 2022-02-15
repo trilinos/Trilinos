@@ -1604,7 +1604,7 @@ namespace {
         const LO numEnt = static_cast<LO> (overlapGraph.getNumEntriesInLocalRow (lclRow));
         TEST_EQUALITY( numEnt, static_cast<LO> (2) );
       }
-      const LO maxNumRowEnt = static_cast<LO> (overlapGraph.getNodeMaxNumRowEntries ());
+      const LO maxNumRowEnt = static_cast<LO> (overlapGraph.getLocalMaxNumRowEntries ());
       TEST_EQUALITY( maxNumRowEnt, static_cast<LO> (2) );
     }
 
@@ -1641,7 +1641,7 @@ namespace {
         const LO numEnt = static_cast<LO> (graph->getNumEntriesInLocalRow (lclRow));
         TEST_ASSERT( numEnt >= static_cast<LO> (2) );
       }
-      const LO maxNumRowEnt = static_cast<LO> (graph->getNodeMaxNumRowEntries ());
+      const LO maxNumRowEnt = static_cast<LO> (graph->getLocalMaxNumRowEntries ());
       TEST_ASSERT( maxNumRowEnt >= static_cast<LO> (2) );
     }
 

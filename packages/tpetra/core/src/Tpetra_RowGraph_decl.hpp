@@ -180,7 +180,10 @@ namespace Tpetra {
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
     //! \brief Returns the maximum number of entries across all rows/columns on this node.
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    virtual size_t getLocalMaxNumRowEntries() const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeMaxNumRowEntries() const = 0;
+#endif
 
     //! Whether the graph has a well-defined column Map.
     virtual bool hasColMap() const = 0;

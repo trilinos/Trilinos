@@ -178,7 +178,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY( static_cast<size_t>( sview.size()), numEntries ); \
       STMAX = std::max( STMAX, numEntries ); \
     } \
-    TEST_EQUALITY( matrix.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
     global_size_t STGMAX; \
     Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
     TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
@@ -388,7 +388,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*tri), static_cast<GO> (2*numImages));
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*tri), static_cast<LO> (2) );
     TEST_EQUALITY(tri->getGlobalMaxNumRowEntries(), 3);
-    TEST_EQUALITY(tri->getNodeMaxNumRowEntries()    , 3);
+    TEST_EQUALITY(tri->getLocalMaxNumRowEntries()    , 3);
     TEST_EQUALITY(tri->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(tri->getRowMap()->isSameAs(*rowmap), true);
     TEST_EQUALITY_CONST(tri->getRangeMap()->isSameAs(*rngmap), true);
@@ -534,7 +534,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (A), static_cast<GO> (numImages));
     TEST_EQUALITY_CONST( Tpetra::Details::getLocalNumDiags (A), static_cast<LO> (ONE) );
     TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , 3);
-    TEST_EQUALITY(A.getNodeMaxNumRowEntries()     , myNNZ);
+    TEST_EQUALITY(A.getLocalMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , 0);
     TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getColMap())   , false);
     TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getDomainMap()), true);

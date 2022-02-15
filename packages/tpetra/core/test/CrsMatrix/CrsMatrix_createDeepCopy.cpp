@@ -170,8 +170,8 @@ public:
     return G_->getGlobalMaxNumRowEntries ();
   }
 
-  size_t getNodeMaxNumRowEntries () const override {
-    return G_->getNodeMaxNumRowEntries ();
+  size_t getLocalMaxNumRowEntries () const override {
+    return G_->getLocalMaxNumRowEntries ();
   }
 
   bool hasColMap () const override {
@@ -355,8 +355,8 @@ public:
     return A_->getGlobalMaxNumRowEntries ();
   }
 
-  size_t getNodeMaxNumRowEntries () const override {
-    return A_->getNodeMaxNumRowEntries ();
+  size_t getLocalMaxNumRowEntries () const override {
+    return A_->getLocalMaxNumRowEntries ();
   }
 
   bool hasColMap () const override {

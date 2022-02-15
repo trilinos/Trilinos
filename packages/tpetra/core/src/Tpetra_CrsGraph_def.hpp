@@ -1126,10 +1126,21 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalMaxNumRowEntries () const
+  {
+    return nodeMaxNumRowEntries_;
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
+  size_t
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNodeMaxNumRowEntries () const
   {
     return nodeMaxNumRowEntries_;
   }
+#endif
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool

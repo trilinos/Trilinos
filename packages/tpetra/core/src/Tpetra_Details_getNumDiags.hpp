@@ -210,7 +210,7 @@ namespace Impl {
     }
     else {
       using inds_type = typename ::Tpetra::RowGraph<LO,GO,NT>::nonconst_local_inds_host_view_type;
-      inds_type lclColIndsBuf("lclColIndsBuf",G.getNodeMaxNumRowEntries());
+      inds_type lclColIndsBuf("lclColIndsBuf",G.getLocalMaxNumRowEntries());
       const LO lclNumRows = static_cast<LO> (G.getLocalNumRows ());
 
       LO diagCount = 0;

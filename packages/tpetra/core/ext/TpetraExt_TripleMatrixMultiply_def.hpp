@@ -933,7 +933,7 @@ namespace Tpetra {
       RCP<const map_type> Accolmap = Ac.getColMap();
       size_t m = Rview.origMatrix->getLocalNumRows();
       size_t n = Accolmap->getLocalNumElements();
-      size_t p_max_nnz_per_row = Pview.origMatrix->getNodeMaxNumRowEntries();
+      size_t p_max_nnz_per_row = Pview.origMatrix->getLocalMaxNumRowEntries();
 
       // Routine runs on host; have to put arguments on host, too
       auto Acol2Prow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
@@ -968,7 +968,7 @@ namespace Tpetra {
         Irowptr = lclP.graph.row_map;
         Icolind = lclP.graph.entries;
         Ivals   = lclP.values;
-        p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getNodeMaxNumRowEntries());
+        p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getLocalMaxNumRowEntries());
       }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1194,7 +1194,7 @@ namespace Tpetra {
       RCP<const map_type> Accolmap = Ac.getColMap();
       size_t m = Rview.origMatrix->getLocalNumRows();
       size_t n = Accolmap->getLocalNumElements();
-      size_t p_max_nnz_per_row = Pview.origMatrix->getNodeMaxNumRowEntries();
+      size_t p_max_nnz_per_row = Pview.origMatrix->getLocalMaxNumRowEntries();
 
       // Routine runs on host; have to put arguments on host, too
       auto Acol2Prow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
@@ -1225,7 +1225,7 @@ namespace Tpetra {
         Irowptr = lclP.graph.row_map;
         Icolind = lclP.graph.entries;
         Ivals   = lclP.values;
-        p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getNodeMaxNumRowEntries());
+        p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getLocalMaxNumRowEntries());
       }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
