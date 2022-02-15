@@ -420,10 +420,10 @@ public:
   FactorOutput
   delayedRenorm(Teuchos::FancyOStream* outPtr,
                 MV& Q,
-                dense_matrix_type& C,
-                dense_matrix_type& G,
-                dense_matrix_type& G2,
-                dense_vector_type& delta,
+                dense_matrix_type& C,  // store aggregated coefficient, results of block dot-products
+                dense_matrix_type& G,  // current Hessenburg matrix for the block
+                dense_matrix_type& G2, // updated Hessenburg matrix after re-orthogonalization
+                dense_vector_type& delta, // contains the results of dot-products with previous and last vector (this output is currently not used)
                 int iiter, int step, int prevStep, int numIters)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(iiter <= 0,
@@ -560,7 +560,7 @@ public:
     #endif
 
     {
-      Teuchos::Range1D index2 (prevIter, iiter-1);
+      Teuchos::Range1D index2 (prevIter, iiter);
       MV Q2 = * (Q.subView (index2));
 
       // vectors to be orthogonalized against
@@ -569,7 +569,7 @@ public:
 
       // compute coefficient, C(:,iiter-stepSize:iiter+step) = Q(:,0:iiter+step)'*Q(iiter-stepSize:iiter+step)
       Teuchos::RCP< dense_matrix_type > t
-        = Teuchos::rcp (new dense_matrix_type (Teuchos::View, C, iiter, prevStep, 0, prevIter));
+        = Teuchos::rcp (new dense_matrix_type (Teuchos::View, C, iiter, 1+prevStep, 0, prevIter));
       {
         MVT::MvTransMv (one, Q1, Q2, *t);
       }
@@ -579,6 +579,7 @@ public:
       }
     }
     {
+      #ifdef DEBUG_GMRESSSTEP_DELAYED_ORTHO
       // previous vectors
       Teuchos::Range1D index1(0, iiter-1);
       Teuchos::RCP< const MV > P = MVT::CloneView (Q, index1);
@@ -588,7 +589,11 @@ public:
       {
         MVT::MvTransMv (one, *P, q, delta);
       }
+      #else
+      for (int i = 0; i < iiter; i++) delta(i) = C(i, iiter);
+      #endif
     }
+
     return (1 ? delayed_rank : current_rank);
   }
 
