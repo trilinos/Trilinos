@@ -182,7 +182,9 @@ namespace Tpetra {
     //! The number of rows owned by the calling process.
     virtual size_t getLocalNumRows() const = 0;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED virtual size_t getNodeNumRows() const = 0;
+    TPETRA_DEPRECATED virtual size_t getNodeNumRows() const {
+      return this->getLocalNumRows();
+    }
 #endif
 
     /// \brief The number of columns needed to apply the forward operator on this node.
@@ -192,7 +194,9 @@ namespace Tpetra {
     /// number of domain Map elements owned by the calling process.
     virtual size_t getLocalNumCols() const = 0;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED virtual size_t getNodeNumCols() const = 0;
+    TPETRA_DEPRECATED virtual size_t getNodeNumCols() const {
+      return this->getLocalNumCols();
+    }
 #endif
 
     //! The index base for global indices in this matrix.
@@ -204,7 +208,9 @@ namespace Tpetra {
     //! The local number of stored (structurally nonzero) entries.
     virtual size_t getLocalNumEntries() const = 0;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED virtual size_t getNodeNumEntries() const = 0;
+    TPETRA_DEPRECATED virtual size_t getNodeNumEntries() const {
+      return this->getLocalNumEntries();
+    }
 #endif
 
     /// \brief The current number of entries on the calling process in the specified global row.
@@ -249,7 +255,9 @@ namespace Tpetra {
     /// zeros count as "entries."
     virtual size_t getLocalMaxNumRowEntries () const = 0;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED virtual size_t getNodeMaxNumRowEntries () const = 0;
+    TPETRA_DEPRECATED virtual size_t getNodeMaxNumRowEntries () const {
+      return this->getLocalMaxNumRowEntries();
+    }
 #endif
 
     //! Whether this matrix has a well-defined column Map.

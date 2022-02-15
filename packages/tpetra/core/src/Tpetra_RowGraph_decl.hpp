@@ -147,13 +147,17 @@ namespace Tpetra {
     //! Returns the number of rows owned on the calling node.
     virtual size_t getLocalNumRows() const = 0;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED virtual size_t getNodeNumRows() const = 0;
+    TPETRA_DEPRECATED virtual size_t getNodeNumRows() const {
+      return this->getLocalNumRows();
+    }
 #endif
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
     virtual size_t getLocalNumCols() const = 0;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED virtual size_t getNodeNumCols() const = 0;
+    TPETRA_DEPRECATED virtual size_t getNodeNumCols() const {
+      return this->getLocalNumCols();
+    }
 #endif
 
     //! Returns the index base for global indices for this graph.
@@ -165,7 +169,9 @@ namespace Tpetra {
     //! Returns the local number of entries in the graph.
     virtual size_t getLocalNumEntries() const = 0;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED virtual size_t getNodeNumEntries() const = 0;
+    TPETRA_DEPRECATED virtual size_t getNodeNumEntries() const {
+      return this->getLocalNumEntries();
+    }
 #endif
 
     //! \brief Returns the current number of entries on this node in the specified global row.
@@ -182,7 +188,9 @@ namespace Tpetra {
     //! \brief Returns the maximum number of entries across all rows/columns on this node.
     virtual size_t getLocalMaxNumRowEntries() const = 0;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED virtual size_t getNodeMaxNumRowEntries() const = 0;
+    TPETRA_DEPRECATED virtual size_t getNodeMaxNumRowEntries() const {
+      return this->getLocalMaxNumRowEntries();
+    }
 #endif
 
     //! Whether the graph has a well-defined column Map.

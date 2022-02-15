@@ -3300,7 +3300,7 @@ public:
     return graph_.getGlobalNumEntries();
   }
 
-#ifdef TEPTRA_ENABLE_DEPRECATED_CODE
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
   TPETRA_DEPRECATED
   size_t
