@@ -803,7 +803,10 @@ namespace Tpetra {
     /// and cache the list of global indices for later use.  Beware of
     /// calling this if the calling process owns a very large number
     /// of global indices.
-    Teuchos::ArrayView<const global_ordinal_type> getNodeElementList() const;
+    Teuchos::ArrayView<const global_ordinal_type> getLocalElementList() const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED Teuchos::ArrayView<const global_ordinal_type> getNodeElementList() const;
+#endif
 
     //@}
     //! @name Boolean tests
@@ -1213,13 +1216,13 @@ namespace Tpetra {
     /// <ol>
     /// <li> It is always created for a noncontiguous Map, in the
     ///    noncontiguous version of the Map constructor.</li>
-    /// <li> In getNodeElementList(), on demand (if it wasn't created
+    /// <li> In getLocalElementList(), on demand (if it wasn't created
     ///    before).</li>
     /// </ol>
     ///
     /// The potential for on-demand creation is why this member datum
     /// is declared "mutable".  Note that other methods, such as
-    /// describe(), may invoke getNodeElementList().
+    /// describe(), may invoke getLocalElementList().
     ///
     /// To clarify: If this is empty, then it could be either that the
     /// Map is contiguous (meaning that we don't need to store all the
@@ -1240,7 +1243,7 @@ namespace Tpetra {
     /// \brief Host View of lgMap_.
     ///
     /// This is allocated along with lgMap_, on demand (lazily), by
-    /// getNodeElementList() (which see).  It is also used by
+    /// getLocalElementList() (which see).  It is also used by
     /// getGlobalElement() (which is a host method, and therefore
     /// requires a host View) if necessary (only noncontiguous Maps
     /// need this).

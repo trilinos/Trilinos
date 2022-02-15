@@ -93,7 +93,7 @@ createMatrix (const Teuchos::RCP<const typename CrsMatrixType::map_type>& map)
   // const size_t numMyElements = map->getLocalNumElements ();
 
   // The list of global elements owned by this MPI process.
-  ArrayView<const GO> myGlobalElements = map->getNodeElementList ();
+  ArrayView<const GO> myGlobalElements = map->getLocalElementList ();
 
   typedef typename ArrayView<const GO>::const_iterator iter_type;
   for (iter_type it = myGlobalElements.begin(); it != myGlobalElements.end(); ++it) {

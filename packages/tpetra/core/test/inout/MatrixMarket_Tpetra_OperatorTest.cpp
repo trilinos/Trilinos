@@ -154,7 +154,7 @@ computeGatherMap (Teuchos::RCP<const MapType> map,
     const int rootProc = 0;
     gather<int, int> (&myEltCount, 1, recvCounts.getRawPtr (), 1, rootProc, *comm);
 
-    ArrayView<const GO> myGlobalElts = oneToOneMap->getNodeElementList ();
+    ArrayView<const GO> myGlobalElts = oneToOneMap->getLocalElementList ();
     const int numMyGlobalElts = static_cast<int> (myGlobalElts.size ());
     // Only Proc 0 needs to receive and store all the GIDs (from
     // all processes).
@@ -273,7 +273,7 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::
   size_t numEntriesOrig = 0;
   size_t numEntries = 0;
 
-  ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
+  ArrayView<const GO> localElts = A.getRowMap ()->getLocalElementList ();
   const size_type numLocalElts = localElts.size ();
   for (size_type i = 0; i < numLocalElts; ++i) {
     const GO globalRow = localElts[i];
@@ -346,7 +346,7 @@ compareCrsMatrixValues (const CrsMatrixType& A_orig,
   size_t numEntriesOrig = 0;
   size_t numEntries = 0;
 
-  ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
+  ArrayView<const GO> localElts = A.getRowMap ()->getLocalElementList ();
   const size_type numLocalElts = localElts.size ();
   MT localDiff = STM::zero (); // \sum_{i,j} |A_orig(i,j) - A(i,j)| locally
   for (size_type i = 0; i < numLocalElts; ++i) {

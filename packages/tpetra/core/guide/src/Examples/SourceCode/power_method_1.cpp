@@ -219,7 +219,7 @@ main (int argc, char *argv[])
     // converting local indices to global indices.
     //
     // ArrayView<const global_ordinal_type> myGlobalElements =
-    //   map->getNodeElementList ();
+    //   map->getLocalElementList ();
     out << endl << "Creating the sparse matrix" << endl;
 
     // Create a Tpetra sparse matrix whose rows have distribution given by the Map.

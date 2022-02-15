@@ -119,7 +119,7 @@ getIdentityMatrix (Teuchos::FancyOStream& out,
     Tpetra::createCrsMatrix<SC, LO, GO, NT> (identityRowMap, 1);
 
   out << "Fill CrsMatrix" << endl;
-  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getNodeElementList ();
+  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getLocalElementList ();
   for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
     Teuchos::Array<GO> col (1, *it);
     Teuchos::Array<SC> val (1, Teuchos::ScalarTraits<SC>::one ());
@@ -152,7 +152,7 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
     Tpetra::createCrsMatrix<SC, LO, GO, NT> (identityRowMap, 1);
 
   out << "Fill CrsMatrix" << endl;
-  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getNodeElementList ();
+  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getLocalElementList ();
   for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
     Teuchos::Array<GO> col (1, *it);
     Teuchos::Array<SC> val (1, Teuchos::ScalarTraits<SC>::one ());

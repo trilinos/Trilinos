@@ -146,7 +146,7 @@ compareCrsGraph (const CrsGraphType& A_orig, const CrsGraphType& A, Teuchos::Fan
   size_t numEntriesOrig = 0;
   size_t numEntries = 0;
 
-  ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
+  ArrayView<const GO> localElts = A.getRowMap ()->getLocalElementList ();
   const size_type numLocalElts = localElts.size ();
   for (size_type i = 0; i < numLocalElts; ++i) {
     const GO globalRow = localElts[i];

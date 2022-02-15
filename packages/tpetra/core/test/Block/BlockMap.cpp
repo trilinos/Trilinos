@@ -101,7 +101,7 @@ namespace {
     // in the output point Map on that process.  Furthermore, the
     // order must be the same as in the original Map.
     {
-      ArrayView<const GO> gblMeshInds = meshMap.getNodeElementList ();
+      ArrayView<const GO> gblMeshInds = meshMap.getLocalElementList ();
       TEST_EQUALITY( static_cast<size_t> (gblMeshInds.size ()),
                      static_cast<size_t> (meshMap.getLocalNumElements ()) );
       Array<GO> gblPointIndsIdeal (gblMeshInds.size () * static_cast<size_type> (blockSize));
@@ -116,7 +116,7 @@ namespace {
 
       TEST_EQUALITY( static_cast<size_t> (gblPointIndsIdeal.size ()),
                      static_cast<size_t> (pointMap.getLocalNumElements ()) );
-      ArrayView<const GO> gblPointIndsActual = pointMap.getNodeElementList ();
+      ArrayView<const GO> gblPointIndsActual = pointMap.getLocalElementList ();
       TEST_EQUALITY( gblPointIndsIdeal.size (), gblPointIndsActual.size () );
       if (static_cast<size_t> (gblPointIndsIdeal.size ()) ==
           static_cast<size_t> (pointMap.getLocalNumElements ())) {
@@ -160,7 +160,7 @@ namespace {
     // in the output point Map on that process.  Furthermore, the
     // order must be the same as in the original Map.
     {
-      ArrayView<const GO> gblMeshInds = ovrlpngMeshMap.getNodeElementList ();
+      ArrayView<const GO> gblMeshInds = ovrlpngMeshMap.getLocalElementList ();
       TEST_EQUALITY( static_cast<size_t> (gblMeshInds.size ()),
                      static_cast<size_t> (ovrlpngMeshMap.getLocalNumElements ()) );
       Array<GO> gblPointIndsIdeal (gblMeshInds.size () * static_cast<size_type> (blockSize));
@@ -175,7 +175,7 @@ namespace {
 
       TEST_EQUALITY( static_cast<size_t> (gblPointIndsIdeal.size ()),
                      static_cast<size_t> (ovrlpngPointMap.getLocalNumElements ()) );
-      ArrayView<const GO> gblPointIndsActual = ovrlpngPointMap.getNodeElementList ();
+      ArrayView<const GO> gblPointIndsActual = ovrlpngPointMap.getLocalElementList ();
       TEST_EQUALITY( gblPointIndsIdeal.size (), gblPointIndsActual.size () );
       if (static_cast<size_t> (gblPointIndsIdeal.size ()) ==
           static_cast<size_t> (ovrlpngPointMap.getLocalNumElements ())) {

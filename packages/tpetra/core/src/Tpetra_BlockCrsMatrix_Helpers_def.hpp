@@ -424,7 +424,7 @@ namespace Tpetra {
     typedef Tpetra::Map<LO,GO,Node> map_type;
 
     //calculate mesh GIDs
-    Teuchos::ArrayView<const GO> pointGids = pointMap.getNodeElementList();
+    Teuchos::ArrayView<const GO> pointGids = pointMap.getLocalElementList();
     Teuchos::Array<GO> meshGids;
     GO indexBase = pointMap.getIndexBase();
 
@@ -455,7 +455,7 @@ namespace Tpetra {
     typedef Tpetra::Map<LO,GO,Node> map_type;
 
     //calculate mesh GIDs
-    Teuchos::ArrayView<const GO> blockGids = blockMap.getNodeElementList();
+    Teuchos::ArrayView<const GO> blockGids = blockMap.getLocalElementList();
     Teuchos::Array<GO> pointGids(blockGids.size() * blockSize);
     GO indexBase = blockMap.getIndexBase();
 

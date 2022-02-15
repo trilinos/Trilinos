@@ -155,7 +155,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug6069_2, SC, LO, GO, NT)
   RCP<MatrixType> A = rcp (new MatrixType (map, nnz));
 
   ArrayView<const GO> myGlobalElements =
-    map->getNodeElementList ();
+    map->getLocalElementList ();
 
   // GO center, left, right, lower, upper;
 

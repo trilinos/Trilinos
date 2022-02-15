@@ -241,7 +241,7 @@ namespace {
         }
       }
     } else { // original column Map is not contiguous
-      ArrayView<const GO> curGblInds = curColMap->getNodeElementList ();
+      ArrayView<const GO> curGblInds = curColMap->getLocalElementList ();
       for (size_type k = 0; k < curGblInds.size (); ++k) {
         const size_type k_opposite = (newGblInds.size () - 1) - k;
         newGblInds[k] = curGblInds[k_opposite];

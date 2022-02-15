@@ -294,8 +294,8 @@ namespace Tpetra {
       this->verboseOutputStream () << os.str ();
     }
 
-    ArrayView<const GO> sourceGIDs = source->getNodeElementList ();
-    ArrayView<const GO> targetGIDs = target->getNodeElementList ();
+    ArrayView<const GO> sourceGIDs = source->getLocalElementList ();
+    ArrayView<const GO> targetGIDs = target->getLocalElementList ();
 
     Array<GO> tRemoteGIDs;
     if (this->verbose ()) {
@@ -639,8 +639,8 @@ namespace Tpetra {
           tgtGIDs[k] = curTgtGID;
         }
       }
-      else { // avoid calling getNodeElementList on a contiguous Map
-        auto srcGIDs = sourceMap.getNodeElementList (); // Teuchos::ArrayView has a different
+      else { // avoid calling getLocalElementList on a contiguous Map
+        auto srcGIDs = sourceMap.getLocalElementList (); // Teuchos::ArrayView has a different
         for (LO k = 0; k < numLclSrcIDs; ++k) {         // iterator type, so can't std::copy
           tgtGIDs[k] = srcGIDs[k];
         }
@@ -972,8 +972,8 @@ namespace Tpetra {
 
     const map_type& source = * (this->getSourceMap ());
     const map_type& target = * (this->getTargetMap ());
-    ArrayView<const GO> sourceGIDs = source.getNodeElementList ();
-    ArrayView<const GO> targetGIDs = target.getNodeElementList ();
+    ArrayView<const GO> sourceGIDs = source.getLocalElementList ();
+    ArrayView<const GO> targetGIDs = target.getLocalElementList ();
 
 #ifdef HAVE_TPETRA_DEBUG
     ArrayView<const GO> rawSrcGids = sourceGIDs;
@@ -1481,10 +1481,10 @@ namespace Tpetra {
     // Get the same GIDs (same GIDs are a subview of the first numSame target
     // GIDs)
     const size_type numSameGIDs1 = this->getNumSameIDs();
-    ArrayView<const GO> sameGIDs1 = (tgtMap1->getNodeElementList())(0,numSameGIDs1);
+    ArrayView<const GO> sameGIDs1 = (tgtMap1->getLocalElementList())(0,numSameGIDs1);
 
     const size_type numSameGIDs2 = rhs.getNumSameIDs();
-    ArrayView<const GO> sameGIDs2 = (tgtMap2->getNodeElementList())(0,numSameGIDs2);
+    ArrayView<const GO> sameGIDs2 = (tgtMap2->getLocalElementList())(0,numSameGIDs2);
 
     // Get permute GIDs
     ArrayView<const LO> permuteToLIDs1 = this->getPermuteToLIDs();
@@ -1698,8 +1698,8 @@ namespace Tpetra {
     RCP<const map_type> tgtMap = this->getTargetMap ();
     RCP<const Comm<int> > comm = srcMap->getComm ();
 
-    ArrayView<const GO> srcGIDs = srcMap->getNodeElementList ();
-    ArrayView<const GO> tgtGIDs = tgtMap->getNodeElementList ();
+    ArrayView<const GO> srcGIDs = srcMap->getLocalElementList ();
+    ArrayView<const GO> tgtGIDs = tgtMap->getLocalElementList ();
 
     // All elements in srcMap will be in the "new" target map, so...
     size_t numSameIDsNew    = srcMap->getLocalNumElements ();

@@ -192,7 +192,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Map, removeEmptyProcesses_MpiComm_noncontigMap
             << origMap->getMaxAllGlobalIndex() << "." << endl;
       }
 
-      ArrayView<const GO> myNewGids = newMap->getNodeElementList();
+      ArrayView<const GO> myNewGids = newMap->getLocalElementList();
       if (myNewGids.size() != myGids.size() ||
           ! std::equal(myNewGids.begin(), myNewGids.end(), myGids.begin())) {
         localSuccess = 0;
@@ -338,9 +338,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Map, removeEmptyProcesses_MpiComm_contigMap, L
       }
 
       ArrayView<const GO> myNewGids =
-        newMap->getNodeElementList();
+        newMap->getLocalElementList();
       ArrayView<const GO> myGids =
-        origMap->getNodeElementList();
+        origMap->getLocalElementList();
       if (myNewGids.size() != myGids.size() ||
           ! std::equal(myNewGids.begin(), myNewGids.end(), myGids.begin())) {
         localSuccess = 0;
@@ -484,7 +484,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, removeEmptyProcesses_SerialComm1, LO, GO
     }
 
     ArrayView<const GO> myNewGids =
-      newMap->getNodeElementList();
+      newMap->getLocalElementList();
     if (myNewGids.size() != myGids.size() ||
         ! std::equal(myNewGids.begin(), myNewGids.end(), myGids.begin())) {
       localSuccess = 0;

@@ -125,7 +125,7 @@ countFailures (const Teuchos::RCP<const Teuchos::Comm<int> >& teuchosComm,
   int localEpetraFailureCount = 0;
   int localTpetraFailureCount = 0;
   std::ostringstream localOut;
-  for (int lid = 0; lid < tpetraOverlapMap->getNodeElementList().size(); ++lid) {
+  for (int lid = 0; lid < tpetraOverlapMap->getLocalElementList().size(); ++lid) {
     int gid = tpetraOverlapMap->getGlobalElement(lid);
     if (epetraOverlapVector[lid] != gid) {
       localOut << "Process " << pid << ": epetraOverlapVector[" << lid << "] = "
@@ -406,7 +406,7 @@ testMain (int argc, char *argv[])
   ArrayRCP<double> tpetraOwnedArray   = tpetraOwnedVector.getDataNonConst(0);
   ArrayRCP<double> tpetraOverlapArray = tpetraOverlapVector.getDataNonConst(0);
   for (int owned_lid = 0;
-       owned_lid < tpetraOwnedMap->getNodeElementList().size();
+       owned_lid < tpetraOwnedMap->getLocalElementList().size();
        ++owned_lid) {
     int gid         = tpetraOwnedMap->getGlobalElement(owned_lid);
     int overlap_lid = tpetraOverlapMap->getLocalElement(gid);
@@ -442,7 +442,7 @@ testMain (int argc, char *argv[])
     tpetraOwnedArray   = tpetraOwnedVector.getDataNonConst(0);
     tpetraOverlapArray = tpetraOverlapVector.getDataNonConst(0);
     for (int owned_lid = 0;
-         owned_lid < tpetraOwnedMap->getNodeElementList().size();
+         owned_lid < tpetraOwnedMap->getLocalElementList().size();
          ++owned_lid)
       {
         int gid         = tpetraOwnedMap->getGlobalElement(owned_lid);
@@ -476,7 +476,7 @@ testMain (int argc, char *argv[])
     tpetraOwnedArray   = tpetraOwnedVector.getDataNonConst(0);
     tpetraOverlapArray = tpetraOverlapVector.getDataNonConst(0);
     for (int owned_lid = 0;
-         owned_lid < tpetraOwnedMap->getNodeElementList().size();
+         owned_lid < tpetraOwnedMap->getLocalElementList().size();
          ++owned_lid)
       {
         int gid         = tpetraOwnedMap->getGlobalElement(owned_lid);

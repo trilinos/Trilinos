@@ -520,8 +520,8 @@ namespace {
     // has 9 rows.  Note that X2's Map has 9 rows, as X2 should have;
     // we account for X2's starting position with the offset argument
     // to the offset view constructor.
-    map_type X1_meshMap (INVALID, (meshMap.getNodeElementList ()) (0, 11), indexBase, comm);
-    map_type X2_meshMap (INVALID, (meshMap.getNodeElementList ()) (11, 9), indexBase+11, comm);
+    map_type X1_meshMap (INVALID, (meshMap.getLocalElementList ()) (0, 11), indexBase, comm);
+    map_type X2_meshMap (INVALID, (meshMap.getLocalElementList ()) (11, 9), indexBase+11, comm);
 
     TEST_EQUALITY_CONST( X1_meshMap.getLocalNumElements (), static_cast<size_t> (11) );
     TEST_EQUALITY_CONST( X2_meshMap.getLocalNumElements (), static_cast<size_t> (9) );

@@ -106,7 +106,7 @@ namespace { // (anonymous)
 
     RCP<crs_matrix_type> matrix = rcp (new crs_matrix_type (map, 10));
     const LO NumMyElements = map->getLocalNumElements ();
-    Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList ();
+    Teuchos::ArrayView<const GO> MyGlobalElements = map->getLocalElementList ();
 
     // Make the matrix the identity matrix.
     if (myRank == 0) {

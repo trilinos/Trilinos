@@ -193,7 +193,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug6069_1, SC, LO, GO, NT)
   LO nnz=5;
   RCP<MatrixType> A = rcp (new MatrixType (map, nnz));
 
-  ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+  ArrayView<const GO> myGlobalElements = map->getLocalElementList();
 
   GO center, left, right, lower, upper;
   std::vector<SC> vals(nnz);

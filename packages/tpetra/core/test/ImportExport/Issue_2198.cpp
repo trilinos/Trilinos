@@ -429,7 +429,7 @@ makeTargetMapFromTestInput (const Issue2198TestInput<LO, GO, NT>& testInput,
     }
   }
   else {
-    auto srcGids = sourceMap.getNodeElementList ();
+    auto srcGids = sourceMap.getLocalElementList ();
     for (LO k = 0; k < numLclSrcGids; ++k) {
       tgtGids[k] = srcGids[k];
     }

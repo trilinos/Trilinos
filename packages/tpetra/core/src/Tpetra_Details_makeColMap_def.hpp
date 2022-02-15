@@ -215,7 +215,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
     if (domMap->isContiguous ()) {
       // NOTE (mfh 03 Mar 2013, 02 Sep 2014) In the common case that
       // the domain Map is contiguous, it's more efficient to avoid
-      // calling getNodeElementList(), since that permanently
+      // calling getLocalElementList(), since that permanently
       // constructs and caches the GID list in the contiguous Map.
       GO curColMapGid = domMap->getMinGlobalIndex ();
       for (size_t k = 0; k < numLocalColGIDs; ++k, ++curColMapGid) {
@@ -223,7 +223,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
       }
     }
     else {
-      ArrayView<const GO> domainElts = domMap->getNodeElementList ();
+      ArrayView<const GO> domainElts = domMap->getLocalElementList ();
       std::copy (domainElts.begin(), domainElts.end(), LocalColGIDs.begin());
     }
   }
@@ -234,7 +234,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
     if (domMap->isContiguous ()) {
       // NOTE (mfh 03 Mar 2013, 02 Sep 2014) In the common case that
       // the domain Map is contiguous, it's more efficient to avoid
-      // calling getNodeElementList(), since that permanently
+      // calling getLocalElementList(), since that permanently
       // constructs and caches the GID list in the contiguous Map.
       GO curColMapGid = domMap->getMinGlobalIndex ();
       for (size_t i = 0; i < numDomainElts; ++i, ++curColMapGid) {
@@ -244,7 +244,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
       }
     }
     else {
-      ArrayView<const GO> domainElts = domMap->getNodeElementList ();
+      ArrayView<const GO> domainElts = domMap->getLocalElementList ();
       for (size_t i = 0; i < numDomainElts; ++i) {
         if (GIDisLocal[i]) {
           LocalColGIDs[numLocalCount++] = domainElts[i];
@@ -383,7 +383,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
         }
       }
       else { // the column Map is NOT contiguous
-        ArrayView<const GO> curGids = graph.getColMap ()->getNodeElementList ();
+        ArrayView<const GO> curGids = graph.getColMap ()->getLocalElementList ();
         // The number of indices on each process must fit in LO.
         const LO numCurGids = static_cast<LO> (curGids.size ());
         myColumns.resize (numCurGids);

@@ -120,7 +120,7 @@ getIdentityMatrix (Teuchos::FancyOStream& out,
     Tpetra::createCrsMatrix<SC, LO, GO, NT> (identityRowMap, 1);
 
   out << "Fill CrsMatrix" << endl;
-  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getNodeElementList ();
+  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getLocalElementList ();
   for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
     Teuchos::Array<GO> col (1, *it);
     Teuchos::Array<SC> val (1, Teuchos::ScalarTraits<SC>::one ());
@@ -153,7 +153,7 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
     Tpetra::createCrsMatrix<SC, LO, GO, NT> (identityRowMap, 1);
 
   out << "Fill CrsMatrix" << endl;
-  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getNodeElementList ();
+  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getLocalElementList ();
   for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
     Teuchos::Array<GO> col (1, *it);
     Teuchos::Array<SC> val (1, Teuchos::ScalarTraits<SC>::one ());
@@ -1277,7 +1277,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
 
   newOut << "Fill bMatrix" << endl;
   {
-    Teuchos::ArrayView<const GO> gblRows = bRowMap->getNodeElementList ();
+    Teuchos::ArrayView<const GO> gblRows = bRowMap->getLocalElementList ();
     for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
       Array<GO> col(1,(*it)/2);
       Array<SC> val(1,3.0);
@@ -1339,7 +1339,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)
     Tpetra::createCrsMatrix<SC,LO,GO,NT>(bTransRowMap, 2);
 
   {
-    Teuchos::ArrayView<const GO> gblRows = bRowMap->getNodeElementList ();
+    Teuchos::ArrayView<const GO> gblRows = bRowMap->getLocalElementList ();
     for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
       Teuchos::Array<GO> col(1,*it);
       Teuchos::Array<SC> val(1,3.0);
@@ -1472,7 +1472,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
 
   newOut << "Fill matrix aMat" << endl;
   {
-    Teuchos::ArrayView<const GO> gblRows = aRowMap->getNodeElementList ();
+    Teuchos::ArrayView<const GO> gblRows = aRowMap->getLocalElementList ();
     for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
       Teuchos::Array<GO> col(1,(*it)/2);
       Teuchos::Array<SC> val(1,3.0);

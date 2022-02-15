@@ -90,7 +90,7 @@ generate_crs_matrix(const RCP<const Tpetra::Map<LO,GO,NT>>& map)
   // const size_t numMyElements = map->getLocalNumElements ();
   // The list of global elements owned by this MPI process.
   const Tpetra::global_size_t num_gbl_inds = map->getGlobalNumElements();
-  auto my_gbl_elems = map->getNodeElementList();
+  auto my_gbl_elems = map->getLocalElementList();
   for (auto it : my_gbl_elems) {
     const auto gbl_row = map->getGlobalElement(it);
     if (gbl_row == 0)

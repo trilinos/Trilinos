@@ -140,7 +140,7 @@ CrsWrapper_GraphBuilder (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdina
    rowmap_(map),
    max_row_length_(0)
 {
-  Teuchos::ArrayView<const GlobalOrdinal> rows = map->getNodeElementList ();
+  Teuchos::ArrayView<const GlobalOrdinal> rows = map->getLocalElementList ();
   const LocalOrdinal numRows = static_cast<LocalOrdinal> (rows.size ());
   for (LocalOrdinal i = 0; i < numRows; ++i) {
     graph_[rows[i]] = new std::set<GlobalOrdinal>;

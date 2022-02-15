@@ -902,7 +902,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   //     each domain GID is a column GID.  we want to do this to
   //     maintain a consistent ordering of GIDs between the columns
   //     and the domain.
-  Teuchos::ArrayView<const GO> domainGlobalElements = domainMap.getNodeElementList();
+  Teuchos::ArrayView<const GO> domainGlobalElements = domainMap.getLocalElementList();
   if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
     if (NumLocalColGIDs > 0) {
       // Load Global Indices into first numMyCols elements column GID list

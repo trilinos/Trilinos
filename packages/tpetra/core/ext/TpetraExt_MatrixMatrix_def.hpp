@@ -1320,13 +1320,13 @@ void mult_A_B(
   LocalOrdinal C_firstCol_import = OrdinalTraits<LocalOrdinal>::zero();
   LocalOrdinal C_lastCol_import  = OrdinalTraits<LocalOrdinal>::invalid();
 
-  ArrayView<const GlobalOrdinal> bcols = Bview.colMap->getNodeElementList();
+  ArrayView<const GlobalOrdinal> bcols = Bview.colMap->getLocalElementList();
   ArrayView<const GlobalOrdinal> bcols_import = null;
   if (Bview.importColMap != null) {
     C_firstCol_import = Bview.importColMap->getMinLocalIndex();
     C_lastCol_import  = Bview.importColMap->getMaxLocalIndex();
 
-    bcols_import = Bview.importColMap->getNodeElementList();
+    bcols_import = Bview.importColMap->getLocalElementList();
   }
 
   size_t C_numCols = C_lastCol - C_firstCol +
@@ -2940,7 +2940,7 @@ void import_and_extract_views(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       TimeMonitor MM2 = *TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap-Mode2"));
 #endif
-      ArrayView<const GO> rows    = targetMap->getNodeElementList();
+      ArrayView<const GO> rows    = targetMap->getLocalElementList();
       size_t              numRows = targetMap->getLocalNumElements();
 
       Array<GO> remoteRows(numRows);

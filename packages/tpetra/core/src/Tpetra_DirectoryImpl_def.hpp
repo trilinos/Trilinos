@@ -595,7 +595,7 @@ namespace Tpetra {
       // from the minimum to the maximum GID of the user Map, and a
       // minimum GID of minAllGID from the user Map.  It doesn't
       // actually have to store all those entries, though do beware of
-      // calling getNodeElementList on it (see Bug 5822).
+      // calling getLocalElementList on it (see Bug 5822).
       const global_size_t numGlobalEntries = maxAllGID - minAllGID + 1;
 
       // We can't afford to replicate the whole directory on each
@@ -643,7 +643,7 @@ namespace Tpetra {
       const int myRank = comm->getRank ();
       const size_t numMyEntries = map.getLocalNumElements ();
       Array<int> sendImageIDs (numMyEntries);
-      ArrayView<const GO> myGlobalEntries = map.getNodeElementList ();
+      ArrayView<const GO> myGlobalEntries = map.getLocalElementList ();
       // An ID not present in this lookup indicates that it lies outside
       // of the range [minAllGID,maxAllGID] (from map_).  this means
       // something is wrong with map_, our fault.
@@ -657,7 +657,7 @@ namespace Tpetra {
         << Teuchos::toString (sendImageIDs ()) << ".  The input Map itself has "
         "the following entries on the calling process " <<
         map.getComm ()->getRank () << ": " <<
-        Teuchos::toString (map.getNodeElementList ()) << ", and has "
+        Teuchos::toString (map.getLocalElementList ()) << ", and has "
         << map.getGlobalNumElements () << " total global indices in ["
         << map.getMinAllGlobalIndex () << "," << map.getMaxAllGlobalIndex ()
         << "].  The Directory Map has "

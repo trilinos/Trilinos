@@ -290,7 +290,7 @@ makePointMap (const map_type& meshMap, const LO blockSize)
     // "Hilbert's Hotel" trick: multiply each process' GIDs by
     // blockSize, and fill in.  That ensures correctness even if the
     // mesh Map is overlapping.
-    Teuchos::ArrayView<const GO> lclMeshGblInds = meshMap.getNodeElementList ();
+    Teuchos::ArrayView<const GO> lclMeshGblInds = meshMap.getLocalElementList ();
     const size_type lclNumMeshGblInds = lclMeshGblInds.size ();
     Teuchos::Array<GO> lclPointGblInds (lclNumPointMapInds);
     for (size_type g = 0; g < lclNumMeshGblInds; ++g) {

@@ -1428,7 +1428,7 @@ namespace Tpetra {
     // If both Maps are contiguous, we can compare their GID ranges
     // easily by looking at the min and max GID on this process.
     // Otherwise, we'll compare their GID lists.  If only one Map is
-    // contiguous, then we only have to call getNodeElementList() on
+    // contiguous, then we only have to call getLocalElementList() on
     // the noncontiguous Map.  (It's best to avoid calling it on a
     // contiguous Map, since it results in unnecessary storage that
     // persists for the lifetime of the Map.)
@@ -1454,7 +1454,7 @@ namespace Tpetra {
           TEUCHOS_TEST_FOR_EXCEPTION(
             ! this->isContiguous () || map.isContiguous (), std::logic_error,
             "Tpetra::Map::locallySameAs: BUG");
-          ArrayView<const GO> rhsElts = map.getNodeElementList ();
+          ArrayView<const GO> rhsElts = map.getLocalElementList ();
           const GO minLhsGid = this->getMinGlobalIndex ();
           const size_type numRhsElts = rhsElts.size ();
           for (size_type k = 0; k < numRhsElts; ++k) {
@@ -1470,7 +1470,7 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION(
           this->isContiguous () || ! map.isContiguous (), std::logic_error,
           "Tpetra::Map::locallySameAs: BUG");
-        ArrayView<const GO> lhsElts = this->getNodeElementList ();
+        ArrayView<const GO> lhsElts = this->getLocalElementList ();
         const GO minRhsGid = map.getMinGlobalIndex ();
         const size_type numLhsElts = lhsElts.size ();
         for (size_type k = 0; k < numLhsElts; ++k) {
@@ -1491,8 +1491,8 @@ namespace Tpetra {
           return false; // We already checked above, but check just in case
         }
         else {
-          ArrayView<const GO> lhsElts =     getNodeElementList ();
-          ArrayView<const GO> rhsElts = map.getNodeElementList ();
+          ArrayView<const GO> lhsElts =     getLocalElementList ();
+          ArrayView<const GO> rhsElts = map.getLocalElementList ();
 
           // std::equal requires that the latter range is as large as
           // the former.  We know the ranges have equal length, because
@@ -1724,9 +1724,19 @@ namespace Tpetra {
     return lgMapHost_;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::ArrayView<const GlobalOrdinal>
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList () const
+  {
+    return this->getLocalElementList();
+  }
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::ArrayView<const GlobalOrdinal>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::getLocalElementList () const
   {
     using GO = global_ordinal_type;
 
@@ -2000,7 +2010,7 @@ namespace Tpetra {
          "becomes " << lclNumInds << ".  Please report this bug to the Tpetra "
          "developers.");
 #else
-      Teuchos::ArrayView<const GO> lgMap = this->getNodeElementList ();
+      Teuchos::ArrayView<const GO> lgMap = this->getLocalElementList ();
 #endif // 1
 
       const GO indexBase = this->getIndexBase ();
@@ -2523,7 +2533,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
         cerr << os.str ();
       }
       ArrayView<const GO> myGids =
-        (myRank == 0) ? M->getNodeElementList() : Teuchos::null;
+        (myRank == 0) ? M->getLocalElementList() : Teuchos::null;
       auto retMap =
         rcp(new map_type(GINV, myGids(), M->getIndexBase(),
                          M->getComm()));
@@ -2553,7 +2563,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
     }
     Tpetra::Directory<LO, GO, NT> directory;
     const size_t numMyElems = M->getLocalNumElements ();
-    ArrayView<const GO> myElems = M->getNodeElementList ();
+    ArrayView<const GO> myElems = M->getLocalElementList ();
     Array<int> owner_procs_vec (numMyElems);
 
     if (verbose) {
@@ -2649,7 +2659,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
     cerr << os.str ();
   }
   size_t numMyElems = M->getLocalNumElements ();
-  ArrayView<const GO> myElems = M->getNodeElementList ();
+  ArrayView<const GO> myElems = M->getLocalElementList ();
   Array<int> owner_procs_vec (numMyElems);
   if (verbose) {
     std::ostringstream os;

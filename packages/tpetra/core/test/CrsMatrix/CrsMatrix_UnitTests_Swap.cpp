@@ -799,7 +799,7 @@ std::string filedir;
 #define STD_TESTS(graph)                                                                                        \
     {                                                                                                           \
         auto   STCOMM   = graph.getComm();                                                                      \
-        auto   STMYGIDS = graph.getRowMap()->getNodeElementList();                                              \
+        auto   STMYGIDS = graph.getRowMap()->getLocalElementList();                                              \
         size_t STMAX    = 0;                                                                                    \
                                                                                                                 \
         for(size_t STR = 0; STR < graph.getLocalNumRows(); ++STR)                                                \

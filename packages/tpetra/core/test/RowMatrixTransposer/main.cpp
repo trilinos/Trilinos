@@ -109,7 +109,7 @@ main (int argc, char* argv[])
 
   const size_t numMyElements = map->getLocalNumElements();
 
-  Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+  Teuchos::ArrayView<const GO> myGlobalElements = map->getLocalElementList();
 
   // Create an OTeger vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation

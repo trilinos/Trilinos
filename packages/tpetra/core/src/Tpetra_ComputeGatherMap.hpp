@@ -263,7 +263,7 @@ namespace Tpetra {
         const int rootProc = 0;
         gather<int> (&myEltCount, 1, recvCounts.getRawPtr (), 1, rootProc, comm);
 
-        ArrayView<const GO> myGlobalElts = oneToOneMap->getNodeElementList ();
+        ArrayView<const GO> myGlobalElts = oneToOneMap->getLocalElementList ();
         const int numMyGlobalElts = as<int> (myGlobalElts.size ());
         // Only Proc 0 needs to receive and store all the GIDs (from
         // all processes).

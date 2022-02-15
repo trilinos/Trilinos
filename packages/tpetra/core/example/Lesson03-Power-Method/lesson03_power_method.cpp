@@ -248,7 +248,7 @@ main (int argc, char *argv[])
     // converting local indices to global indices.
     //
     // ArrayView<const global_ordinal_type> myGlobalElements =
-    //   map->getNodeElementList ();
+    //   map->getLocalElementList ();
 
     if (myRank == 0) {
       cout << endl << "Creating the sparse matrix" << endl;
