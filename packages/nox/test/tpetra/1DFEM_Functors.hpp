@@ -397,8 +397,8 @@ struct JacobianEvaluatorFunctor
             scalar_type value = basis.wt * basis.dz
               * ((basis.dphide[j]*basis.dphide[i])/(basis.dz*basis.dz)
               + 2.0*basis.uu*basis.phi[j]*basis.phi[i]*k_);
-            // Do we need to set force_atomic true in this?
-            J_local_.sumIntoValues(localRow, &localColumn, 1, &value);
+
+            J_local_.sumIntoValues(localRow, &localColumn, 1, &value, false, true);
           }
         }
       }

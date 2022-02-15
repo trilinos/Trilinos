@@ -48,6 +48,8 @@
 #include <KokkosKernels_Utils.hpp>
 // needed for two-stage/classical GS
 #include <KokkosSparse_CrsMatrix.hpp>
+// needed for the set of available coloring algorithms
+#include <KokkosGraph_Distance1ColorHandle.hpp>
 
 #ifndef _GAUSSSEIDELHANDLE_HPP
 #define _GAUSSSEIDELHANDLE_HPP
@@ -255,18 +257,23 @@ namespace KokkosSparse{
     //Temporary space for matvec over long rows - size is only max num long rows in a color.
     scalar_persistent_work_view_t long_row_x;
 
+    // Coloring algorithm to use
+    KokkosGraph::ColoringAlgorithm coloring_algo;
+
   public:
 
     /**
      * \brief Default constructor.
      */
-    PointGaussSeidelHandle(GSAlgorithm gs = GS_DEFAULT) :
+    PointGaussSeidelHandle(GSAlgorithm gs = GS_DEFAULT,
+        KokkosGraph::ColoringAlgorithm coloring_algo_ = KokkosGraph::COLORING_DEFAULT) :
       GSHandle(gs),
       permuted_xadj(), permuted_adj(), permuted_adj_vals(), old_to_new_map(),
       permuted_y_vector(), permuted_x_vector(),
       permuted_inverse_diagonal(), block_size(1),
       num_values_in_l1(-1), num_values_in_l2(-1),num_big_rows(0), level_1_mem(0), level_2_mem(0),
-      long_row_threshold(0)
+      long_row_threshold(0),
+      coloring_algo(coloring_algo_)
     {
       if (gs == GS_DEFAULT)
         this->choose_default_algorithm();
@@ -280,6 +287,13 @@ namespace KokkosSparse{
         this->algorithm_type = GS_TEAM;
       else
         this->algorithm_type = GS_PERMUTED;
+    }
+
+    KokkosGraph::ColoringAlgorithm get_coloring_algorithm() const {
+      return this->coloring_algo;
+    }
+    void set_coloring_algorithm(KokkosGraph::ColoringAlgorithm algo) {
+      this->coloring_algo = algo;
     }
 
     ~PointGaussSeidelHandle() = default;
@@ -482,6 +496,9 @@ namespace KokkosSparse{
     //but cluster_xadj always has the exact size of each.
     nnz_lno_t cluster_size;
 
+    // Coloring algorithm to use on the coarsened graph
+    KokkosGraph::ColoringAlgorithm coloring_algo;
+
     int suggested_vector_size;
     int suggested_team_size;
 
@@ -500,13 +517,21 @@ namespace KokkosSparse{
      */
 
     //Constructor for cluster-coloring based GS and SGS
-    ClusterGaussSeidelHandle(ClusteringAlgorithm cluster_algo_, nnz_lno_t cluster_size_)
+    ClusterGaussSeidelHandle(ClusteringAlgorithm cluster_algo_, nnz_lno_t cluster_size_,
+                           KokkosGraph::ColoringAlgorithm coloring_algo_)
       : GSHandle(GS_CLUSTER), cluster_algo(cluster_algo_), cluster_size(cluster_size_),
-      inverse_diagonal(), cluster_xadj(), cluster_adj(), vert_clusters()
+      coloring_algo(coloring_algo_), inverse_diagonal(), cluster_xadj(), cluster_adj(), vert_clusters()
     {}
 
     void set_cluster_size(nnz_lno_t cs) {this->cluster_size = cs;}
     nnz_lno_t get_cluster_size() const {return this->cluster_size;}
+
+    KokkosGraph::ColoringAlgorithm get_coloring_algorithm() const {
+      return this->coloring_algo;
+    }
+    void set_coloring_algorithm(KokkosGraph::ColoringAlgorithm algo) {
+      this->coloring_algo = algo;
+    }
 
     void set_vert_clusters(nnz_lno_persistent_work_view_t& vert_clusters_) {
       this->vert_clusters = vert_clusters_;
