@@ -122,7 +122,7 @@ localDeepCopyLocallyIndexedRowMatrix
     Kokkos::resize(inputValsBuf,maxNumEnt);
   }
 
-  const LO lclNumRows (A.getNodeNumRows ());
+  const LO lclNumRows (A.getLocalNumRows ());
   offset_type curPos = 0;
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
     h_lids_type_const inputInds_av;

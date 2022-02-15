@@ -931,7 +931,7 @@ namespace Tpetra {
 
       // Sizes
       RCP<const map_type> Accolmap = Ac.getColMap();
-      size_t m = Rview.origMatrix->getNodeNumRows();
+      size_t m = Rview.origMatrix->getLocalNumRows();
       size_t n = Accolmap->getLocalNumElements();
       size_t p_max_nnz_per_row = Pview.origMatrix->getNodeMaxNumRowEntries();
 
@@ -1192,7 +1192,7 @@ namespace Tpetra {
 
       // Sizes
       RCP<const map_type> Accolmap = Ac.getColMap();
-      size_t m = Rview.origMatrix->getNodeNumRows();
+      size_t m = Rview.origMatrix->getLocalNumRows();
       size_t n = Accolmap->getLocalNumElements();
       size_t p_max_nnz_per_row = Pview.origMatrix->getNodeMaxNumRowEntries();
 
@@ -1467,7 +1467,7 @@ namespace Tpetra {
       const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
       // number of rows on the process of the fine matrix
-      // size_t m = Pview.origMatrix->getNodeNumRows();
+      // size_t m = Pview.origMatrix->getLocalNumRows();
       // number of rows on the process of the coarse matrix
       size_t n = Ac.getRowMap()->getLocalNumElements();
       LO maxAccol = Ac.getColMap()->getMaxLocalIndex();
@@ -1563,7 +1563,7 @@ namespace Tpetra {
       size_t nnz_alloc = std::max(Ac_estimate_nnz(*Aview.origMatrix, *Pview.origMatrix), n);
       size_t nnzPerRowA = 100;
       if (Aview.origMatrix->getNodeNumEntries() > 0)
-        nnzPerRowA = Aview.origMatrix->getNodeNumEntries()/Aview.origMatrix->getNodeNumRows();
+        nnzPerRowA = Aview.origMatrix->getNodeNumEntries()/Aview.origMatrix->getLocalNumRows();
       Acrowptr_RCP.resize(n+1);
       Acrowptr = Acrowptr_RCP();
       Accolind_RCP.resize(nnz_alloc);

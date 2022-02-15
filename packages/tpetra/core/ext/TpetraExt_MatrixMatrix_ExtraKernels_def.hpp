@@ -57,9 +57,9 @@ size_t C_estimate_nnz_per_row(CrsMatrixType & A, CrsMatrixType &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
   size_t Aest = 100, Best=100;
   if (A.getNodeNumEntries() > 0)
-    Aest = (A.getNodeNumRows() > 0)?  A.getNodeNumEntries()/A.getNodeNumRows() : 100;
+    Aest = (A.getLocalNumRows() > 0)?  A.getNodeNumEntries()/A.getLocalNumRows() : 100;
   if (B.getNodeNumEntries() > 0)
-    Best = (B.getNodeNumRows() > 0) ? B.getNodeNumEntries()/B.getNodeNumRows() : 100;
+    Best = (B.getLocalNumRows() > 0) ? B.getNodeNumEntries()/B.getLocalNumRows() : 100;
 
   size_t nnzperrow = (size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);
   nnzperrow *= nnzperrow;
@@ -73,7 +73,7 @@ template<class CrsMatrixType>
 size_t Ac_estimate_nnz(CrsMatrixType & A, CrsMatrixType &P){
   size_t nnzPerRowA = 100, Pcols = 100;
   if (A.getNodeNumEntries() > 0)
-    nnzPerRowA = (A.getNodeNumRows() > 0)?  A.getNodeNumEntries()/A.getNodeNumRows() : 9;
+    nnzPerRowA = (A.getLocalNumRows() > 0)?  A.getNodeNumEntries()/A.getLocalNumRows() : 9;
   if (P.getNodeNumEntries() > 0)
     Pcols = (P.getNodeNumCols() > 0) ? P.getNodeNumCols() : 100;
   return (size_t)(Pcols*nnzPerRowA + 5*nnzPerRowA + 300);
@@ -160,7 +160,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
   size_t Cest_nnz_per_row = 2*C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
 
@@ -371,7 +371,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
 
   // Get my node / thread info (right from openmp or parameter list)
@@ -537,7 +537,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
   size_t Cest_nnz_per_row = 2*C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
 
@@ -780,7 +780,7 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
 
   // Get my node / thread info (right from openmp or parameter list)
@@ -1071,7 +1071,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
 
         // Sizes
         RCP<const map_type> Accolmap = Ac.getColMap();
-        size_t m = Rview.origMatrix->getNodeNumRows();
+        size_t m = Rview.origMatrix->getLocalNumRows();
         size_t n = Accolmap->getLocalNumElements();
 
         // Get raw Kokkos matrices, and the raw CSR views
@@ -1335,7 +1335,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
 
         // Sizes
         RCP<const map_type> Accolmap = Ac.getColMap();
-        size_t m = Rview.origMatrix->getNodeNumRows();
+        size_t m = Rview.origMatrix->getLocalNumRows();
         size_t n = Accolmap->getLocalNumElements();
 
         // Get raw Kokkos matrices, and the raw CSR views

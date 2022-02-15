@@ -230,7 +230,7 @@ public:
     }
 
     std::cout << comm->getRank() 
-              << ": nRows " << Amat->getNodeNumRows()
+              << ": nRows " << Amat->getLocalNumRows()
               << "; nCols " << Amat->getNodeNumCols()
               << "; nnz " << Amat->getNodeNumEntries()
               << "; import " 
@@ -311,7 +311,7 @@ public:
     }
 
     std::cout << comm->getRank() 
-              << ": nRows " << Amat->getNodeNumRows()
+              << ": nRows " << Amat->getLocalNumRows()
               << "; nCols " << Amat->getNodeNumCols()
               << "; nnz " << Amat->getNodeNumEntries()
               << "; import " 

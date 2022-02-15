@@ -138,8 +138,8 @@ public:
     return G_->getGlobalNumCols ();
   }
 
-  size_t getNodeNumRows () const override {
-    return G_->getNodeNumRows ();
+  size_t getLocalNumRows () const override {
+    return G_->getLocalNumRows ();
   }
 
   size_t getNodeNumCols () const override {
@@ -323,8 +323,8 @@ public:
     return A_->getGlobalNumCols ();
   }
 
-  size_t getNodeNumRows () const override {
-    return A_->getNodeNumRows ();
+  size_t getLocalNumRows () const override {
+    return A_->getLocalNumRows ();
   }
 
   size_t getNodeNumCols () const override {
@@ -594,7 +594,7 @@ crsMatrixInstancesEqual (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
   }
 
   const auto& rowMap = * (A.getRowMap ());
-  const LO lclNumRows = A.getNodeNumRows ();
+  const LO lclNumRows = A.getLocalNumRows ();
 
   values_view A_vals;
   values_view B_vals;

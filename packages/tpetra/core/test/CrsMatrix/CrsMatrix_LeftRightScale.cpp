@@ -123,7 +123,7 @@ namespace {
     Array<LO> inds (matrix->getNodeMaxNumRowEntries ());
     Array<Scalar> vals (matrix->getNodeMaxNumRowEntries ());
 
-    const size_t myNumRows = matrix->getNodeNumRows ();
+    const size_t myNumRows = matrix->getLocalNumRows ();
     for (size_t i = 0; i < myNumRows; ++i) {
       const LO myRow = as<LO> (i);
       const size_t numRowEnts = matrix->getNumEntriesInLocalRow (myRow);

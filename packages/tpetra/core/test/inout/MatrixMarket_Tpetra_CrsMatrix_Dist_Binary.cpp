@@ -433,7 +433,7 @@ private:
 
     // Write the nonzeros
     unsigned int entry[2];
-    for(size_t r = 0; r < graph->getNodeNumRows(); r++) {
+    for(size_t r = 0; r < graph->getLocalNumRows(); r++) {
 
       // Get the global index for row r
       auto gblRow = rowMap->getGlobalElement(static_cast<gno_t>(r));

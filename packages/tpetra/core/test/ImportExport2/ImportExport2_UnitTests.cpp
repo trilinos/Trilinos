@@ -919,7 +919,7 @@ bool graphs_are_same(const RCP<Graph>& G1, const RCP<const Graph>& G2)
 
   if (errors != 0) return false;
 
-  for (LO i=0; i<static_cast<LO>(G1->getNodeNumRows()); i++) {
+  for (LO i=0; i<static_cast<LO>(G1->getLocalNumRows()); i++) {
     typename Graph::local_inds_host_view_type V1, V2;
     G1->getLocalRowView(i, V1);
     G2->getLocalRowView(i, V2);
@@ -1599,7 +1599,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
   try {
     OSTab tab2 (out);
     // Assume we always own the diagonal
-    size_t num_local = A->getNodeNumCols()-A->getNodeNumRows();
+    size_t num_local = A->getNodeNumCols()-A->getLocalNumRows();
     Teuchos::Array<GO> MyGIDs(num_local);
 
     size_t idx=0;

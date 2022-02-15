@@ -825,12 +825,23 @@ public:
     return graph_.getGlobalNumRows();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
+  TPETRA_DEPRECATED
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNodeNumRows() const
   {
-    return graph_.getNodeNumRows();
+    return graph_.getLocalNumRows();
+  }
+#endif
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalNumRows() const
+  {
+    return graph_.getLocalNumRows();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -3448,7 +3459,7 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalDiagCopy (::Tpetra::Vector<Scalar,LO,GO,Node>& diag) const
   {
-    const size_t lclNumMeshRows = graph_.getNodeNumRows ();
+    const size_t lclNumMeshRows = graph_.getLocalNumRows ();
 
     Kokkos::View<size_t*, device_type> diagOffsets ("diagOffsets", lclNumMeshRows);
     graph_.getLocalDiagOffsets (diagOffsets);
@@ -3464,7 +3475,7 @@ public:
     size_t rowOffset = 0;
     size_t offset = 0;
     LO bs = getBlockSize();
-    for(size_t r=0; r<getNodeNumRows(); r++)
+    for(size_t r=0; r<getLocalNumRows(); r++)
     {
       // move pointer to start of diagonal block
       offset = rowOffset + diagOffsetsHost(r)*bs*bs;

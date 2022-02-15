@@ -157,7 +157,7 @@ namespace { // (anonymous)
          * the number of replaced diagonal entries to match the
          * local number of rows.
          */
-	const LO lclNumRows = static_cast<LO> (matrix->getNodeNumRows ());
+	const LO lclNumRows = static_cast<LO> (matrix->getLocalNumRows ());
         TEST_EQUALITY(numReplacedDiagEntries, lclNumRows);
 
         /* Test for successful replacement

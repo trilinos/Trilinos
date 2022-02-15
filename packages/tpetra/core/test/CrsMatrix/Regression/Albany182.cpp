@@ -869,7 +869,7 @@ namespace { // (anonymous)
     }
     else {
       const LO lclNumRows =
-        static_cast<LO> (A_nonoverlapping.getNodeNumRows ());
+        static_cast<LO> (A_nonoverlapping.getLocalNumRows ());
       TEST_EQUALITY_CONST( lclNumRows, LO (0) );
     }
 

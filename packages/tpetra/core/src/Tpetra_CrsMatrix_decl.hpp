@@ -2355,7 +2355,11 @@ namespace Tpetra {
     /// in the row Map's communicator does not necessarily equal the
     /// global number of rows in the matrix, if the row Map is
     /// overlapping.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeNumRows() const override;
+#endif
+    size_t getLocalNumRows() const override;
 
     /// \brief The number of columns connected to the locally owned rows of this matrix.
     ///
@@ -2832,7 +2836,7 @@ public:
     ///   has a column Map).
     /// \pre All diagonal entries of the matrix's graph must be
     ///   populated on this process.  Results are undefined otherwise.
-    /// \post <tt>offsets.size() == getNodeNumRows()</tt>
+    /// \post <tt>offsets.size() == getLocalNumRows()</tt>
     ///
     /// This method creates an array of offsets of the local diagonal
     /// entries in the matrix.  This array is suitable for use in the

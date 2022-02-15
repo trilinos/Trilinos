@@ -77,7 +77,7 @@ namespace { // (anonymous)
     typename MAT::local_inds_host_view_type loview; \
     typename MAT::values_host_view_type sview; \
     size_t STMAX = 0; \
-    for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
+    for (size_t STR=0; STR < matrix.getLocalNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
       TEST_EQUALITY( numEntries, matrix.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
       matrix.getLocalRowView(STR,loview,sview); \
@@ -194,7 +194,7 @@ namespace { // (anonymous)
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
     TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
     TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
@@ -274,7 +274,7 @@ namespace { // (anonymous)
     TEST_EQUALITY(A.getGlobalNumEntries()   , static_cast<size_t>(3*numImages-2));
     TEST_EQUALITY(A.getNodeNumEntries()       , myNNZ);
     TEST_EQUALITY(A.getGlobalNumRows()       , static_cast<size_t>(numImages));
-    TEST_EQUALITY_CONST(A.getNodeNumRows()     , ONE);
+    TEST_EQUALITY_CONST(A.getLocalNumRows()     , ONE);
     TEST_EQUALITY(A.getNodeNumCols()           , myNNZ);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (A), static_cast<GO> (numImages));
     TEST_EQUALITY_CONST( Tpetra::Details::getLocalNumDiags (A), static_cast<LO> (ONE) );

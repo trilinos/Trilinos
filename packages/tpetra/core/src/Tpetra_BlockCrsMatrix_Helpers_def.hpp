@@ -217,23 +217,23 @@ namespace Tpetra {
 
     if (myRank !=0) {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(A.getNodeNumRows() != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION(A.getLocalNumRows() != 0,
         std::runtime_error, "Tpetra::writeMatrixStrip: pid "
-        << myRank << " should have 0 rows but has " << A.getNodeNumRows());
+        << myRank << " should have 0 rows but has " << A.getLocalNumRows());
       TEUCHOS_TEST_FOR_EXCEPTION(A.getNodeNumCols() != 0,
         std::runtime_error, "Tpetra::writeMatrixStrip: pid "
         << myRank << " should have 0 columns but has " << A.getNodeNumCols());
 
     } else {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(numRows != A.getNodeNumRows(),
+      TEUCHOS_TEST_FOR_EXCEPTION(numRows != A.getLocalNumRows(),
         std::runtime_error, "Tpetra::writeMatrixStrip: "
         "number of rows on pid 0 does not match global number of rows");
 
 
       int err = 0;
       const LO blockSize = A.getBlockSize();
-      const size_t numLocalRows = A.getNodeNumRows();
+      const size_t numLocalRows = A.getLocalNumRows();
       bool precisionChanged=false;
       int oldPrecision = 0; // avoid "unused variable" warning
       if (params.isParameter("precision")) {
@@ -340,7 +340,7 @@ namespace Tpetra {
       meshColGids.reserve(pointMatrix.getGlobalMaxNumRowEntries());
       //again, I assume that point GIDs associated with a mesh GID are consecutive.
       //if they are not, this will break!!
-      for (size_t i=0; i<pointMatrix.getNodeNumRows()/blockSize; i++) {
+      for (size_t i=0; i<pointMatrix.getLocalNumRows()/blockSize; i++) {
         for (int j=0; j<blockSize; ++j) {
           LO rowLid = i*blockSize+j;
           pointMatrix.getLocalRowView(rowLid,pointColInds,pointVals); //TODO optimization: Since I don't care about values,
@@ -376,7 +376,7 @@ namespace Tpetra {
       //int offset;
       //if (pointMatrix.getIndexBase()) offset = 0;
       //else                     offset = 1;
-      for (size_t i=0; i<pointMatrix.getNodeNumRows()/blockSize; i++) {
+      for (size_t i=0; i<pointMatrix.getLocalNumRows()/blockSize; i++) {
         int blkCnt=0; //how many unique block entries encountered so far in current block row
         for (int j=0; j<blockSize; ++j) {
           LO rowLid = i*blockSize+j;

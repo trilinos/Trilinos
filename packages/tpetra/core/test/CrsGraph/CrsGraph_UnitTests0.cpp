@@ -80,7 +80,7 @@ namespace { // (anonymous)
     auto STCOMM = graph.getComm(); \
     auto STMYGIDS = graph.getRowMap()->getNodeElementList(); \
     size_t STMAX = 0; \
-    for (size_t STR = 0; STR < graph.getNodeNumRows(); ++STR) { \
+    for (size_t STR = 0; STR < graph.getLocalNumRows(); ++STR) { \
       TEST_EQUALITY( graph.getNumEntriesInLocalRow (STR), graph.getNumEntriesInGlobalRow (STMYGIDS[STR]) ); \
       STMAX = std::max (STMAX, graph.getNumEntriesInLocalRow(STR)); \
     } \
@@ -481,7 +481,7 @@ namespace { // (anonymous)
       RCP<const map_type> cmap = test_row->getColMap();
       TEST_EQUALITY( cmap->getGlobalNumElements(), (size_t)numProcs-1 );
       TEST_EQUALITY( test_row->getGlobalNumRows(), (size_t)numProcs-1 );
-      TEST_EQUALITY( test_row->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( test_row->getLocalNumRows(), numLocal );
       TEST_EQUALITY( test_row->getGlobalNumCols(), (size_t)numProcs-1 );
       TEST_EQUALITY( test_row->getNodeNumCols(), numLocal );
       TEST_EQUALITY( test_row->getIndexBase(), 0 );
@@ -513,7 +513,7 @@ namespace { // (anonymous)
         RCP<const map_type> cmap = zero->getColMap();
         TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
         TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
-        TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+        TEST_EQUALITY( zero->getLocalNumRows(), numLocal );
         TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
         TEST_EQUALITY( zero->getNodeNumCols(), 0 );
         TEST_EQUALITY( zero->getIndexBase(), 0 );
@@ -543,7 +543,7 @@ namespace { // (anonymous)
       RCP<const map_type> cmap = zero->getColMap();
       TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
       TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
-      TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( zero->getLocalNumRows(), numLocal );
       TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
       TEST_EQUALITY( zero->getNodeNumCols(), 0 );
       TEST_EQUALITY( zero->getIndexBase(), 0 );
@@ -586,7 +586,7 @@ namespace { // (anonymous)
     RCP<const map_type> cmap = zero->getColMap();
     TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
     TEST_EQUALITY( zero->getGlobalNumRows(), numProcs*numLocal );
-    TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+    TEST_EQUALITY( zero->getLocalNumRows(), numLocal );
     TEST_EQUALITY( zero->getGlobalNumCols(), numProcs*numLocal );
     TEST_EQUALITY( zero->getNodeNumCols(), 0 );
     TEST_EQUALITY( zero->getIndexBase(), 0 );

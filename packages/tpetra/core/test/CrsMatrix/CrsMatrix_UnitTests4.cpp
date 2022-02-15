@@ -163,7 +163,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     ArrayView<const LO> loview; \
     ArrayView<const Scalar> sview; \
     size_t STMAX = 0; \
-    for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
+    for (size_t STR=0; STR < matrix.getLocalNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
       TEST_EQUALITY( numEntries, matrix.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
       matrix.getLocalRowView(STR,loview,sview); \
@@ -233,7 +233,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
     TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
     TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
@@ -456,7 +456,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
     TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
     TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
@@ -524,7 +524,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
     TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
     TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );

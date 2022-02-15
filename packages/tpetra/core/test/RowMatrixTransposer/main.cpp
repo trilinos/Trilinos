@@ -51,7 +51,7 @@ typename CrsMatrix_t::scalar_type getNorm(CrsMatrix_t& matrix){
   typedef typename CrsMatrix_t::scalar_type Scalar;
   Scalar mySum = 0;
 
-  for(int i =0; ((size_t)i)<matrix.getNodeNumRows(); ++i){
+  for(int i =0; ((size_t)i)<matrix.getLocalNumRows(); ++i){
     size_t numRowEnts = matrix.getNumEntriesInLocalRow(i);
     typename CrsMatrix_t::local_inds_host_view_type indsView;
     typename CrsMatrix_t::values_host_view_type valsView;

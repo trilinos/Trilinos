@@ -62,7 +62,7 @@ localRowCounts (const RowGraph<LO, GO, NT>& G)
   using offsets_type = typename result_type::offsets_type;
   using offset_type = typename result_type::offset_type;
 
-  const LO lclNumRows (G.getNodeNumRows ());
+  const LO lclNumRows (G.getLocalNumRows ());
   offsets_type entPerRow;
   if (lclNumRows != 0) {
     using Kokkos::view_alloc;
@@ -104,7 +104,7 @@ localRowOffsetsFromRowGraph (const RowGraph<LO, GO, NT>& G)
     maxNumEnt = result.second;
   }
 
-  const LO lclNumRows (G.getNodeNumRows ());
+  const LO lclNumRows (G.getLocalNumRows ());
   offsets_type ptr;
   offset_type nnz = 0;
   if (lclNumRows != 0) {

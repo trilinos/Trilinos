@@ -280,7 +280,11 @@ public:
   global_size_t getGlobalNumRows() const override;
 
   //! get the local number of block rows
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  TPETRA_DEPRECATED
   size_t getNodeNumRows() const override;
+#endif
+  size_t getLocalNumRows() const override;
 
   size_t getNodeMaxNumRowEntries() const override;
 
@@ -635,7 +639,7 @@ public:
   ///   has a column Map).
   /// \pre All diagonal entries of the matrix's graph must be
   ///   populated on this process.  Results are undefined otherwise.
-  /// \post <tt>offsets.extent(0) == getNodeNumRows()</tt>
+  /// \post <tt>offsets.extent(0) == getLocalNumRows()</tt>
   ///
   /// This method creates an array of offsets of the local diagonal
   /// entries in the matrix.  This array is suitable for use in the

@@ -180,7 +180,7 @@ namespace Tpetra {
     virtual global_size_t getGlobalNumCols() const = 0;
 
     //! The number of rows owned by the calling process.
-    virtual size_t getNodeNumRows() const = 0;
+    virtual size_t getLocalNumRows() const = 0;
 
     /// \brief The number of columns needed to apply the forward operator on this node.
     ///

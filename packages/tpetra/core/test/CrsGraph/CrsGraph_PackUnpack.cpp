@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
 
   out << "Preparing arguments for packCrsGraph" << endl;
 
-  LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
+  LO num_loc_rows = static_cast<LO>(A->getLocalNumRows());
   Array<LO> exportLIDs (num_loc_rows); // input argument
   for (LO i=0; i < num_loc_rows; ++i) {
     exportLIDs[i] = static_cast<LO>(i); // pack all the rows
@@ -319,7 +319,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackWithError, LO, GO, NT)
   std::ostringstream errStrm; // for error string local to each process
 
   {
-    LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
+    LO num_loc_rows = static_cast<LO>(A->getLocalNumRows());
     Array<LO> exportLIDs(num_loc_rows);
     // exportLIDs[i] should equal i, but we set it to i+2
     for (LO i=0; i<num_loc_rows; i++) {
@@ -359,7 +359,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackWithError, LO, GO, NT)
 
   {
     // Let's try this again, but send in the wrong number of exportLIDs
-    LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
+    LO num_loc_rows = static_cast<LO>(A->getLocalNumRows());
     // Note the -1!
     out << "Allocating ids... ";
     Array<LO> exportLIDs(num_loc_rows-1);

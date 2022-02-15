@@ -1116,7 +1116,7 @@ readSparseFile(
 
     if (verbose) {
       std::cout << "\nRank " << A->getComm()->getRank() 
-                << "  nRows " << A->getNodeNumRows()
+                << "  nRows " << A->getLocalNumRows()
                 << "  minRow " << A->getRowMap()->getMinGlobalIndex()
                 << "  maxRow " << A->getRowMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 

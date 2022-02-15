@@ -1130,7 +1130,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       B = Reader<Matrix_t >::readSparseFile(B_file, comm, true, false, false);
       //declare E with enough entries to receive A + B
       size_t n = 0;
-      for (size_t i = 0; i < B->getNodeNumRows(); i++) {
+      for (size_t i = 0; i < B->getLocalNumRows(); i++) {
 	if (n < B->getNumEntriesInLocalRow(i))
 	  n = B->getNumEntriesInLocalRow(i);
       }
@@ -1814,7 +1814,7 @@ bool checkLocallySorted(const CrsMat& A)
   using Teuchos::reduceAll;
   using Teuchos::outArg;
   auto graph = A.getLocalMatrixHost().graph;
-  LO numLocalRows = A.getNodeNumRows();
+  LO numLocalRows = A.getLocalNumRows();
   int allSorted = 1;
   for(int i = 0; i < numLocalRows; i++)
   {
@@ -1941,7 +1941,7 @@ RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getTestMatrix(
   auto mat = rcp(new Tpetra::CrsMatrix<SC, LO, GO, NT>(rowRangeMap, colMap, maxNnzPerRow));
   //get consistent results between runs on a given machine
   srand(seed);
-  LO numLocalRows = mat->getNodeNumRows();
+  LO numLocalRows = mat->getLocalNumRows();
   for(LO i = 0; i < numLocalRows; i++)
   {
     int n = rand() % maxNnzPerRow;

@@ -324,7 +324,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
@@ -554,7 +554,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
  
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff

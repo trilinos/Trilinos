@@ -77,7 +77,7 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
                             G->getExporter ());
   }
   else if (A.isGloballyIndexed ()) {
-    const LO lclNumRows (A.getNodeNumRows ());
+    const LO lclNumRows (A.getLocalNumRows ());
 
     std::unique_ptr<size_t[]> entPerRow (new size_t [lclNumRows]);
     size_t maxNumEnt = 0;

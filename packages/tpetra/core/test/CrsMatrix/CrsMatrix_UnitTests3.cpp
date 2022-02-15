@@ -163,7 +163,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typename MAT::local_inds_host_view_type loview; \
     typename MAT::values_host_view_type sview; \
     size_t STMAX = 0; \
-    for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
+    for (size_t STR=0; STR < matrix.getLocalNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
       TEST_EQUALITY( numEntries, matrix.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
       matrix.getLocalRowView(STR,loview,sview); \

@@ -517,7 +517,7 @@ void Add(
     B.scale(scalarB);
 
   bool bFilled = B.isFillComplete();
-  size_t numMyRows = B.getNodeNumRows();
+  size_t numMyRows = B.getLocalNumRows();
   if (scalarA != Teuchos::ScalarTraits<SC>::zero()) {
     for (LO i = 0; (size_t)i < numMyRows; ++i) {
       row = B.getRowMap()->getGlobalElement(i);
@@ -1037,7 +1037,7 @@ void Add(
       prefix << "At this point, curRowMap is null. Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-    const size_t localNumRows = Mat[k]->getNodeNumRows ();
+    const size_t localNumRows = Mat[k]->getLocalNumRows ();
     for (size_t i = 0; i < localNumRows; ++i) {
       const GlobalOrdinal globalRow = curRowMap->getGlobalElement (i);
       size_t numEntries = Mat[k]->getNumEntriesInGlobalRow (globalRow);
@@ -1526,15 +1526,15 @@ template<class CrsMatrixType>
 size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
   size_t Aest = 100, Best=100;
-  if (A.getNodeNumEntries() >= A.getNodeNumRows())
-    Aest = (A.getNodeNumRows() > 0) ? A.getNodeNumEntries()/A.getNodeNumRows() : 100;
-  if (B.getNodeNumEntries() >= B.getNodeNumRows())
-    Best = (B.getNodeNumRows() > 0) ? B.getNodeNumEntries()/B.getNodeNumRows() : 100;
+  if (A.getNodeNumEntries() >= A.getLocalNumRows())
+    Aest = (A.getLocalNumRows() > 0) ? A.getNodeNumEntries()/A.getLocalNumRows() : 100;
+  if (B.getNodeNumEntries() >= B.getLocalNumRows())
+    Best = (B.getLocalNumRows() > 0) ? B.getNodeNumEntries()/B.getLocalNumRows() : 100;
 
   size_t nnzperrow = (size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);
   nnzperrow *= nnzperrow;
 
-  return (size_t)(A.getNodeNumRows()*nnzperrow*0.75 + 100);
+  return (size_t)(A.getLocalNumRows()*nnzperrow*0.75 + 100);
 }
 
 
@@ -1754,7 +1754,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
   size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
 
@@ -2071,7 +2071,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
@@ -2388,7 +2388,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
   size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
 
@@ -2726,7 +2726,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t m = Aview.origMatrix->getLocalNumRows();
   size_t n = Ccolmap->getLocalNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
