@@ -192,7 +192,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   // Now make sure that the pack is correct by creating an empty graph and
   // unpacking in to it.  The graph should end up being the same as the above graph.
   out << "Building second graph" << endl;
-  RCP<crs_graph_type> B = rcp(new crs_graph_type(row_map, col_map, A->getNodeNumEntries()));
+  RCP<crs_graph_type> B = rcp(new crs_graph_type(row_map, col_map, A->getLocalNumEntries()));
 
 #if 0
   out << "Calling unpackCrsGraphAndCombine" << endl;

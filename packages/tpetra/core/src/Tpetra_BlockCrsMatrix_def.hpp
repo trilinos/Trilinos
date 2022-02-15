@@ -3289,12 +3289,23 @@ public:
     return graph_.getGlobalNumEntries();
   }
 
+#ifdef TEPTRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
+  TPETRA_DEPRECATED
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNodeNumEntries() const
   {
-    return graph_.getNodeNumEntries();
+    return graph_.getLocalNumEntries();
+  }
+#endif
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalNumEntries() const
+  {
+    return graph_.getLocalNumEntries();
   }
 
   template<class Scalar, class LO, class GO, class Node>

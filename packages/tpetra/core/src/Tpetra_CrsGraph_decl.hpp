@@ -972,20 +972,20 @@ public:
     global_size_t getGlobalNumCols () const override;
 
     //! Returns the number of graph rows owned on the calling node.
+    size_t getLocalNumRows () const override;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     TPETRA_DEPRECATED
     size_t getNodeNumRows () const override;
 #endif
-    size_t getLocalNumRows () const override;
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
      */
+    size_t getLocalNumCols () const override;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     TPETRA_DEPRECATED
     size_t getNodeNumCols () const override;
 #endif
-    size_t getLocalNumCols () const override;
 
     //! Returns the index base for global indices for this graph.
     global_ordinal_type getIndexBase () const override;
@@ -1004,7 +1004,10 @@ public:
     ///   not store the number of entries as a separate integer field,
     ///   since doing so and keeping it updated would hinder
     ///   thread-parallel insertion of new entries.  See #1357.
-    size_t getNodeNumEntries() const override;
+    size_t getLocalNumEntries() const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED size_t getNodeNumEntries() const override;
+#endif
 
     //! \brief Returns the current number of entries on this node in the specified global row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */

@@ -911,7 +911,7 @@ bool graphs_are_same(const RCP<Graph>& G1, const RCP<const Graph>& G2)
       cerr << "***Error: Graph 1's range map is different than Graph 2's" << endl;
     errors++;
   }
-  if (G1->getNodeNumEntries() != G2->getNodeNumEntries()) {
+  if (G1->getLocalNumEntries() != G2->getLocalNumEntries()) {
     cerr << "***Error: Graph 1 does not have the same number of entries as Graph 2 on Process "
          << my_rank << endl;
     errors++;
@@ -2289,7 +2289,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     B = rcp(new CrsMatrixType(MapTarget,0));
     B->doImport(*A, *Importer, Tpetra::INSERT);
     B->fillComplete(A->getDomainMap(),A->getRangeMap());
-    size_t nnz1=B->getNodeNumEntries();
+    size_t nnz1=B->getLocalNumEntries();
 
     // Call the P&PWOPIDs
     Teuchos::Array<int> SourcePids(A->getColMap()->getLocalNumElements());

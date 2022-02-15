@@ -192,7 +192,7 @@ namespace { // (anonymous)
     }
     // test the properties
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getLocalNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
     TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
     TEST_EQUALITY(eye->getLocalNumCols()          , numLocal);
@@ -272,7 +272,7 @@ namespace { // (anonymous)
     A.fillComplete();
     // test the properties
     TEST_EQUALITY(A.getGlobalNumEntries()   , static_cast<size_t>(3*numImages-2));
-    TEST_EQUALITY(A.getNodeNumEntries()       , myNNZ);
+    TEST_EQUALITY(A.getLocalNumEntries()       , myNNZ);
     TEST_EQUALITY(A.getGlobalNumRows()       , static_cast<size_t>(numImages));
     TEST_EQUALITY_CONST(A.getLocalNumRows()     , ONE);
     TEST_EQUALITY(A.getLocalNumCols()           , myNNZ);

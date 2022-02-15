@@ -1164,7 +1164,11 @@ public:
   virtual global_size_t getGlobalNumEntries() const override;
 
   //! The local number of stored (structurally nonzero) entries.
+  virtual size_t getLocalNumEntries() const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  TPETRA_DEPRECATED
   virtual size_t getNodeNumEntries() const override;
+#endif
 
   /// \brief The current number of entries on the calling process in the specified global row.
   ///

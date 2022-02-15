@@ -1044,10 +1044,21 @@ namespace Tpetra {
     return globalNumEntries_;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNodeNumEntries () const
+  {
+    return this->getLocalNumEntries();
+  }
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalNumEntries () const
   {
     typedef LocalOrdinal LO;
 
@@ -2131,10 +2142,10 @@ namespace Tpetra {
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->isStorageOptimized () &&
-         nodeAllocSize != this->getNodeNumEntries (),
+         nodeAllocSize != this->getLocalNumEntries (),
          std::logic_error, "Storage is optimized, but "
          "this->getNodeAllocationSize() = " << nodeAllocSize
-         << " != this->getNodeNumEntries() = " << this->getNodeNumEntries ()
+         << " != this->getLocalNumEntries() = " << this->getLocalNumEntries ()
          << "." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! this->haveGlobalConstants_ &&
@@ -2150,7 +2161,7 @@ namespace Tpetra {
          "some of them are marked as invalid." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->haveGlobalConstants_ &&
-         (this->globalNumEntries_ < this->getNodeNumEntries () ||
+         (this->globalNumEntries_ < this->getLocalNumEntries () ||
           this->globalMaxNumRowEntries_ < this->nodeMaxNumRowEntries_),
          std::logic_error, "Graph claims to have global constants, and "
          "all of the values of the global constants are valid, but "
@@ -4013,7 +4024,7 @@ namespace Tpetra {
          "an exception not a subclass of std::exception.");
     }
 
-    if (this->getNodeNumEntries () != allocSize) {
+    if (this->getLocalNumEntries () != allocSize) {
       // Use the nonconst version of row_map_type for ptr_d, because
       // the latter is const and we need to modify ptr_d here.
       non_const_row_map_type ptr_d;
@@ -4632,7 +4643,7 @@ namespace Tpetra {
       // don't have to wait around for the first one to finish before
       // starting the second one.
       GST lcl, gbl;
-      lcl = static_cast<GST> (this->getNodeNumEntries ());
+      lcl = static_cast<GST> (this->getLocalNumEntries ());
 
       reduceAll<int,GST> (comm, Teuchos::REDUCE_SUM, 1, &lcl, &gbl);
       this->globalNumEntries_ = gbl;
@@ -5135,7 +5146,7 @@ namespace Tpetra {
         for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
           if (myImageID == imageCtr) {
             out << "Node ID = " << imageCtr << std::endl
-                << "Node number of entries = " << this->getNodeNumEntries () << std::endl
+                << "Node number of entries = " << this->getLocalNumEntries () << std::endl
                 << "Node max number of entries = " << nodeMaxNumRowEntries_ << std::endl;
             if (! indicesAreAllocated ()) {
               out << "Indices are not allocated." << std::endl;

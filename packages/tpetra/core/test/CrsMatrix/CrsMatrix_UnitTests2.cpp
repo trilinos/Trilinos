@@ -381,7 +381,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
     // test the properties
     TEST_EQUALITY(tri->getGlobalNumEntries()  , static_cast<size_t>(6*numImages-2));
-    TEST_EQUALITY(tri->getNodeNumEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
+    TEST_EQUALITY(tri->getLocalNumEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
     TEST_EQUALITY(tri->getGlobalNumRows()      , static_cast<size_t>(2*numImages));
     TEST_EQUALITY(tri->getLocalNumRows()          , 2);
     TEST_EQUALITY(tri->getLocalNumCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
@@ -527,7 +527,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // test the properties
     TEST_EQUALITY(A.getGlobalNumEntries()     , static_cast<size_t>(3*numImages-2));
-    TEST_EQUALITY(A.getNodeNumEntries()       , myNNZ);
+    TEST_EQUALITY(A.getLocalNumEntries()       , myNNZ);
     TEST_EQUALITY(A.getGlobalNumRows()       , static_cast<size_t>(numImages));
     TEST_EQUALITY_CONST(A.getLocalNumRows()     , ONE);
     TEST_EQUALITY(A.getLocalNumCols()           , myNNZ);

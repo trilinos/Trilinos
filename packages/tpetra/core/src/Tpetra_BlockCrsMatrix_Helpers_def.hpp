@@ -503,7 +503,7 @@ namespace Tpetra {
 
     LO blocksize = blockMatrix.getBlockSize();
     const offset_type bs2 = blocksize * blocksize; 
-    size_t block_nnz = blockMatrix.getNodeNumEntries();
+    size_t block_nnz = blockMatrix.getLocalNumEntries();
     size_t point_nnz = block_nnz * bs2;
 
     // We can get these from the blockMatrix directly

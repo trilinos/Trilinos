@@ -1132,7 +1132,7 @@ readSparseFile(
                 << "  minRange " << A->getRangeMap()->getMinGlobalIndex()
                 << "  maxRange " << A->getRangeMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nEntries " << A->getNodeNumEntries()
+                << "  nEntries " << A->getLocalNumEntries()
                 << std::endl;
     }
   }

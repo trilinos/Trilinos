@@ -231,7 +231,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
     // test the properties
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getLocalNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
     TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
     TEST_EQUALITY(eye->getLocalNumCols()          , numLocal);
@@ -454,7 +454,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // test the properties
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getLocalNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
     TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
     TEST_EQUALITY(eye->getLocalNumCols()          , numLocal);
@@ -522,7 +522,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // test the properties
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getLocalNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
     TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
     TEST_EQUALITY(eye->getLocalNumCols()          , numLocal);

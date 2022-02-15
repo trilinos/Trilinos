@@ -927,11 +927,21 @@ namespace Tpetra {
     return getCrsGraphRef ().getGlobalNumEntries ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getNodeNumEntries () const {
-    return getCrsGraphRef ().getNodeNumEntries ();
+    return getCrsGraphRef ().getLocalNumEntries ();
+  }
+#endif
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalNumEntries () const {
+    return getCrsGraphRef ().getLocalNumEntries ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1135,7 +1145,7 @@ namespace Tpetra {
     auto localMatrix = getLocalMatrixDevice();
 #ifdef HAVE_TPETRACORE_CUDA
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    if(this->getNodeNumEntries() <= size_t(Teuchos::OrdinalTraits<LocalOrdinal>::max()) &&
+    if(this->getLocalNumEntries() <= size_t(Teuchos::OrdinalTraits<LocalOrdinal>::max()) &&
        std::is_same<Node, Kokkos::Compat::KokkosCudaWrapperNode>::value)
     {
       if(this->ordinalRowptrs.data() == nullptr)
@@ -1441,7 +1451,7 @@ namespace Tpetra {
          << numOffsets << ") = " << valToCheck << ".");
     }
 
-    if (myGraph_->getNodeNumEntries() !=
+    if (myGraph_->getLocalNumEntries() !=
         myGraph_->getNodeAllocationSize()) {
 
       // Use the nonconst version of row_map_type for k_ptrs,
@@ -1453,7 +1463,7 @@ namespace Tpetra {
 
       if (verbose) {
         std::ostringstream os;
-        const auto numEnt = myGraph_->getNodeNumEntries();
+        const auto numEnt = myGraph_->getLocalNumEntries();
         const auto allocSize = myGraph_->getNodeAllocationSize();
         os << *prefix << "Unpacked 1-D storage: numEnt=" << numEnt
            << ", allocSize=" << allocSize << endl;
@@ -1764,7 +1774,7 @@ namespace Tpetra {
     // fill both the graph and the matrix at the same time).
 
     // get data from staticGraph_
-    size_t nodeNumEntries   = staticGraph_->getNodeNumEntries ();
+    size_t nodeNumEntries   = staticGraph_->getLocalNumEntries ();
     size_t nodeNumAllocated = staticGraph_->getNodeAllocationSize ();
     row_map_type k_rowPtrs = staticGraph_->rowPtrsPacked_dev_; 
 
@@ -3909,7 +3919,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
 
     const size_t nlrs = staticGraph_->getLocalNumRows ();
-    const size_t numEntries = staticGraph_->getNodeNumEntries ();
+    const size_t numEntries = staticGraph_->getLocalNumEntries ();
     if (! staticGraph_->indicesAreAllocated () ||
         nlrs == 0 || numEntries == 0) {
       // do nothing
@@ -3933,7 +3943,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // it is easiest to replace all allocated values, instead of replacing only the ones with valid entries
     // however, if there are no valid entries, we can short-circuit
     // furthermore, if the values aren't allocated, we can short-circuit (no entry have been inserted so far)
-    const size_t numEntries = staticGraph_->getNodeNumEntries();
+    const size_t numEntries = staticGraph_->getLocalNumEntries();
     if (! staticGraph_->indicesAreAllocated () || numEntries == 0) {
       // do nothing
     }
@@ -4349,11 +4359,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     // check the cache first
     mag_type mySum = STM::zero ();
-    if (getNodeNumEntries() > 0) {
+    if (getLocalNumEntries() > 0) {
       if (isStorageOptimized ()) {
         // "Optimized" storage is packed storage.  That means we can
         // iterate in one pass through the 1-D values array.
-        const size_t numEntries = getNodeNumEntries ();
+        const size_t numEntries = getLocalNumEntries ();
         auto values = valuesPacked_wdv.getHostView(Access::ReadOnly);
         for (size_t k = 0; k < numEntries; ++k) {
           auto val = values[k];
@@ -5554,7 +5564,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     LocalOrdinal nrows = getLocalNumRows();
     LocalOrdinal maxRowImbalance = 0;
     if(nrows != 0)
-      maxRowImbalance = getNodeMaxNumRowEntries() - (getNodeNumEntries() / nrows);
+      maxRowImbalance = getNodeMaxNumRowEntries() - (getLocalNumEntries() / nrows);
 
     if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
       matrix_lcl->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
@@ -5868,7 +5878,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           out << "Number of allocated entries: "
               << staticGraph_->getNodeAllocationSize () << endl;
         }
-        out << "Number of entries: " << getNodeNumEntries () << endl
+        out << "Number of entries: " << getLocalNumEntries () << endl
             << "Max number of entries per row: " << getNodeMaxNumRowEntries ()
             << endl;
       }

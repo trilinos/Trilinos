@@ -56,10 +56,10 @@ template<class CrsMatrixType>
 size_t C_estimate_nnz_per_row(CrsMatrixType & A, CrsMatrixType &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
   size_t Aest = 100, Best=100;
-  if (A.getNodeNumEntries() > 0)
-    Aest = (A.getLocalNumRows() > 0)?  A.getNodeNumEntries()/A.getLocalNumRows() : 100;
-  if (B.getNodeNumEntries() > 0)
-    Best = (B.getLocalNumRows() > 0) ? B.getNodeNumEntries()/B.getLocalNumRows() : 100;
+  if (A.getLocalNumEntries() > 0)
+    Aest = (A.getLocalNumRows() > 0)?  A.getLocalNumEntries()/A.getLocalNumRows() : 100;
+  if (B.getLocalNumEntries() > 0)
+    Best = (B.getLocalNumRows() > 0) ? B.getLocalNumEntries()/B.getLocalNumRows() : 100;
 
   size_t nnzperrow = (size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);
   nnzperrow *= nnzperrow;
@@ -72,9 +72,9 @@ size_t C_estimate_nnz_per_row(CrsMatrixType & A, CrsMatrixType &B){
 template<class CrsMatrixType>
 size_t Ac_estimate_nnz(CrsMatrixType & A, CrsMatrixType &P){
   size_t nnzPerRowA = 100, Pcols = 100;
-  if (A.getNodeNumEntries() > 0)
-    nnzPerRowA = (A.getLocalNumRows() > 0)?  A.getNodeNumEntries()/A.getLocalNumRows() : 9;
-  if (P.getNodeNumEntries() > 0)
+  if (A.getLocalNumEntries() > 0)
+    nnzPerRowA = (A.getLocalNumRows() > 0)?  A.getLocalNumEntries()/A.getLocalNumRows() : 9;
+  if (P.getLocalNumEntries() > 0)
     Pcols = (P.getLocalNumCols() > 0) ? P.getLocalNumCols() : 100;
   return (size_t)(Pcols*nnzPerRowA + 5*nnzPerRowA + 300);
 }

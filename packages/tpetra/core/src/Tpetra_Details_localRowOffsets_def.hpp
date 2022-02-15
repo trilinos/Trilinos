@@ -133,7 +133,7 @@ localRowOffsetsFromFillCompleteCrsGraph (const CrsGraph<LO, GO, NT>& G)
                     G_lcl.row_map.extent (0));
   Kokkos::deep_copy (ptr, G_lcl.row_map);
 
-  const offset_type nnz = G.getNodeNumEntries ();
+  const offset_type nnz = G.getLocalNumEntries ();
   const size_t maxNumEnt = G.getNodeMaxNumRowEntries ();
   return {ptr, nnz, maxNumEnt};
 }

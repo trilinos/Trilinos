@@ -1562,8 +1562,8 @@ namespace Tpetra {
 
       size_t nnz_alloc = std::max(Ac_estimate_nnz(*Aview.origMatrix, *Pview.origMatrix), n);
       size_t nnzPerRowA = 100;
-      if (Aview.origMatrix->getNodeNumEntries() > 0)
-        nnzPerRowA = Aview.origMatrix->getNodeNumEntries()/Aview.origMatrix->getLocalNumRows();
+      if (Aview.origMatrix->getLocalNumEntries() > 0)
+        nnzPerRowA = Aview.origMatrix->getLocalNumEntries()/Aview.origMatrix->getLocalNumRows();
       Acrowptr_RCP.resize(n+1);
       Acrowptr = Acrowptr_RCP();
       Accolind_RCP.resize(nnz_alloc);

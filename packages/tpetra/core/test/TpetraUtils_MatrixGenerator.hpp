@@ -672,7 +672,7 @@ namespace Tpetra {
               if (myRank == p) {
                 std::cerr << "-- Proc " << p << " owns "
                           << pMatrix->getLocalNumCols() << " columns, and "
-                          << pMatrix->getNodeNumEntries() << " entries." << std::endl;
+                          << pMatrix->getLocalNumEntries() << " entries." << std::endl;
               }
               pComm->barrier ();
             }

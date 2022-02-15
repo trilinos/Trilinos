@@ -232,7 +232,7 @@ public:
     std::cout << comm->getRank() 
               << ": nRows " << Amat->getLocalNumRows()
               << "; nCols " << Amat->getLocalNumCols()
-              << "; nnz " << Amat->getNodeNumEntries()
+              << "; nnz " << Amat->getLocalNumEntries()
               << "; import " 
               << (Amat->getGraph()->getImporter() == Teuchos::null ? 0 :
                   Amat->getGraph()->getImporter()->getNumExportIDs())
@@ -313,7 +313,7 @@ public:
     std::cout << comm->getRank() 
               << ": nRows " << Amat->getLocalNumRows()
               << "; nCols " << Amat->getLocalNumCols()
-              << "; nnz " << Amat->getNodeNumEntries()
+              << "; nnz " << Amat->getLocalNumEntries()
               << "; import " 
               << (Amat->getGraph()->getImporter() == Teuchos::null ? 0 :
                   Amat->getGraph()->getImporter()->getNumExportIDs())

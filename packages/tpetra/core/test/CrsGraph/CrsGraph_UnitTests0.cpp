@@ -241,7 +241,7 @@ namespace { // (anonymous)
     }
     params->set("Optimize Storage",false);
     graph.fillComplete(params);
-    TEST_EQUALITY(graph.getNodeNumEntries(), (size_t)numLocal);
+    TEST_EQUALITY(graph.getLocalNumEntries(), (size_t)numLocal);
     TEST_EQUALITY_CONST(graph.isStorageOptimized(), false);
     //
     graph.resumeFill();
@@ -249,7 +249,7 @@ namespace { // (anonymous)
     params->set("Optimize Storage",true);
     graph.fillComplete(params);
     TEST_EQUALITY_CONST(params->get<bool>("Optimize Storage"), true);
-    TEST_EQUALITY(graph.getNodeNumEntries(), 0);
+    TEST_EQUALITY(graph.getLocalNumEntries(), 0);
     TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
 
     int lclSuccess = success ? 1 : 0;
@@ -487,7 +487,7 @@ namespace { // (anonymous)
       TEST_EQUALITY( test_row->getIndexBase(), 0 );
 
       TEST_EQUALITY( test_row->getGlobalNumEntries(), (size_t)numProcs-1 );
-      TEST_EQUALITY( test_row->getNodeNumEntries(), numLocal );
+      TEST_EQUALITY( test_row->getLocalNumEntries(), numLocal );
       TEST_EQUALITY( test_row->getGlobalMaxNumRowEntries(), 1 );
       TEST_EQUALITY( test_row->getNodeMaxNumRowEntries(), numLocal );
       STD_TESTS((*test_row));
@@ -519,7 +519,7 @@ namespace { // (anonymous)
         TEST_EQUALITY( zero->getIndexBase(), 0 );
 
         TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
-        TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+        TEST_EQUALITY( zero->getLocalNumEntries(), 0 );
         TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
         TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
         STD_TESTS((*zero));
@@ -549,7 +549,7 @@ namespace { // (anonymous)
       TEST_EQUALITY( zero->getIndexBase(), 0 );
 
       TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
-      TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+      TEST_EQUALITY( zero->getLocalNumEntries(), 0 );
       TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
       TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
       STD_TESTS((*zero));
@@ -592,7 +592,7 @@ namespace { // (anonymous)
     TEST_EQUALITY( zero->getIndexBase(), 0 );
 
     TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
-    TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+    TEST_EQUALITY( zero->getLocalNumEntries(), 0 );
     TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
     TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
     STD_TESTS((*zero));

@@ -154,8 +154,8 @@ public:
     return G_->getGlobalNumEntries ();
   }
 
-  size_t getNodeNumEntries () const override {
-    return G_->getNodeNumEntries ();
+  size_t getLocalNumEntries () const override {
+    return G_->getLocalNumEntries ();
   }
 
   size_t getNumEntriesInGlobalRow (GO gblRow) const override {
@@ -339,8 +339,8 @@ public:
     return A_->getGlobalNumEntries ();
   }
 
-  size_t getNodeNumEntries () const override {
-    return A_->getNodeNumEntries ();
+  size_t getLocalNumEntries () const override {
+    return A_->getLocalNumEntries ();
   }
 
   size_t getNumEntriesInGlobalRow (GO gblRow) const override {

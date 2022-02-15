@@ -582,15 +582,15 @@ namespace Tpetra {
     /// \note This function should be thread safe and thread scalable,
     ///   assuming that you refer to the Map by value or reference,
     ///   not by Teuchos::RCP.
+    size_t getLocalNumElements () const {
+      return numLocalElements_;
+    }
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     TPETRA_DEPRECATED
     size_t getNodeNumElements () const {
       return numLocalElements_;
     }
 #endif
-    size_t getLocalNumElements () const {
-      return numLocalElements_;
-    }
 
     /// \brief The index base for this Map.
     ///

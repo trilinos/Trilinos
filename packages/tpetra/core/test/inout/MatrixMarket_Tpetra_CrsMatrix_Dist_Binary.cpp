@@ -420,7 +420,7 @@ private:
 
     // Write the header
     unsigned int nRows = static_cast<unsigned int>(AmatWrite->getRowMap()->getMaxAllGlobalIndex()) + 1;
-    unsigned long long  nNzs = static_cast<unsigned long long>(AmatWrite->getNodeNumEntries());
+    unsigned long long  nNzs = static_cast<unsigned long long>(AmatWrite->getLocalNumEntries());
     out.write((char *)& nRows, sizeof(unsigned int));
     out.write((char *)& nRows, sizeof(unsigned int));
     out.write((char *)& nNzs, sizeof(unsigned long long));
