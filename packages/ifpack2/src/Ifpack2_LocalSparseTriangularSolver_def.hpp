@@ -126,7 +126,9 @@ public:
 
     Teuchos::RCP<HtsCrsMatrix> T_hts = Teuchos::rcpWithDealloc(
       HTST::make_CrsMatrix(rowptr.size() - 1,
-                           rowptr.data(), colidx.data(), val.data(),
+                           rowptr.data(), colidx.data(), 
+                           // For std/Kokkos::complex.
+                           reinterpret_cast<const scalar_type*>(val.data()),
                            transpose_, conjugate_),
       HtsCrsMatrixDeleter());
 
