@@ -162,17 +162,14 @@ TRIBITS_ADD_TEST(
    RUN_SERIAL
    )
 
-IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP)
 
-  TRIBITS_ADD_TEST(
-    BlockPrec
-    NAME "MiniEM-BlockPrec_RefMaxwell2D"
-    ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Tpetra --inputFile=maxwell2D.xml"
-    COMM mpi
-    NUM_MPI_PROCS 4
-    )
-
-ENDIF()
+ TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell2D"
+   ARGS "--solver=MueLu-RefMaxwell --numTimeSteps=1 --linAlgebra=Tpetra --inputFile=maxwell2D.xml"
+   COMM mpi
+   NUM_MPI_PROCS 4
+   )
 
 IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra AND NOT HAVE_TPETRA_INST_INT_LONG_LONG AND HAVE_TPETRA_INST_INT_INT)
  # We want GlobalOrdinal=int. Panzer picks long long, if it is available, and otherwise Tpetra's default.
