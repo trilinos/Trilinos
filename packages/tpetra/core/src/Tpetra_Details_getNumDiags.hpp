@@ -46,7 +46,7 @@
 /// \brief Declaration and definition of getLocalNumDiags and getGlobalNumDiags
 ///
 /// These two functions are meant to help Tpetra developers deprecate
-/// and remove the getNodeNumDiags and getGlobalNumDiags methods from
+/// and remove the getLocalNumDiags and getGlobalNumDiags methods from
 /// various Tpetra classes.  See Trilinos GitHub issue #2630.
 
 #include "Tpetra_CrsGraph.hpp"
