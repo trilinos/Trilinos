@@ -1175,10 +1175,21 @@ namespace Tpetra {
     return indicesAreGlobal_;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNodeAllocationSize () const
+  {
+    return this->getLocalAllocationSize();
+  }
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  size_t
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalAllocationSize () const
   {
     typedef LocalOrdinal LO;
 
@@ -2133,21 +2144,21 @@ namespace Tpetra {
 
       size_t nodeAllocSize = 0;
       try {
-        nodeAllocSize = this->getNodeAllocationSize ();
+        nodeAllocSize = this->getLocalAllocationSize ();
       }
       catch (std::logic_error& e) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::runtime_error, "getNodeAllocationSize threw "
+          (true, std::runtime_error, "getLocalAllocationSize threw "
            "std::logic_error: " << e.what ());
       }
       catch (std::exception& e) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::runtime_error, "getNodeAllocationSize threw an "
+          (true, std::runtime_error, "getLocalAllocationSize threw an "
            "std::exception: " << e.what ());
       }
       catch (...) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::runtime_error, "getNodeAllocationSize threw an exception "
+          (true, std::runtime_error, "getLocalAllocationSize threw an exception "
            "not a subclass of std::exception.");
       }
 
@@ -2155,7 +2166,7 @@ namespace Tpetra {
         (this->isStorageOptimized () &&
          nodeAllocSize != this->getLocalNumEntries (),
          std::logic_error, "Storage is optimized, but "
-         "this->getNodeAllocationSize() = " << nodeAllocSize
+         "this->getLocalAllocationSize() = " << nodeAllocSize
          << " != this->getLocalNumEntries() = " << this->getLocalNumEntries ()
          << "." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -2268,14 +2279,14 @@ namespace Tpetra {
         (indicesAreLocal_ && nodeAllocSize > 0 &&
          lclIndsUnpacked_wdv.extent (0) == 0 && getLocalNumRows () > 0,
          std::logic_error, "Indices are local and "
-         "getNodeAllocationSize() = " << nodeAllocSize << " > 0, but "
+         "getLocalAllocationSize() = " << nodeAllocSize << " > 0, but "
          "lclIndsUnpacked_wdv.extent(0) = 0 and getLocalNumRows() = "
          << getLocalNumRows () << " > 0." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (indicesAreGlobal_ && nodeAllocSize > 0 &&
          gblInds_wdv.extent (0) == 0 && getLocalNumRows () > 0,
          std::logic_error, "Indices are global and "
-         "getNodeAllocationSize() = " << nodeAllocSize << " > 0, but "
+         "getLocalAllocationSize() = " << nodeAllocSize << " > 0, but "
          "gblInds_wdv.extent(0) = 0 and getLocalNumRows() = "
          << getLocalNumRows () << " > 0." << suffix);
       // check the actual allocations
@@ -4012,26 +4023,26 @@ namespace Tpetra {
 
     size_t allocSize = 0;
     try {
-      allocSize = this->getNodeAllocationSize ();
+      allocSize = this->getLocalAllocationSize ();
     }
     catch (std::logic_error& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::logic_error, "getNodeAllocationSize threw "
+        (true, std::logic_error, "getLocalAllocationSize threw "
          "std::logic_error: " << e.what ());
     }
     catch (std::runtime_error& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "getNodeAllocationSize threw "
+        (true, std::runtime_error, "getLocalAllocationSize threw "
          "std::runtime_error: " << e.what ());
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "getNodeAllocationSize threw "
+        (true, std::runtime_error, "getLocalAllocationSize threw "
          "std::exception: " << e.what ());
     }
     catch (...) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "getNodeAllocationSize threw "
+        (true, std::runtime_error, "getLocalAllocationSize threw "
          "an exception not a subclass of std::exception.");
     }
 
@@ -4311,7 +4322,7 @@ namespace Tpetra {
         if (hasColMap ()) { // locally indexed, and currently has a column Map
           const map_type& oldColMap = * (getColMap ());
           // Allocate storage for the new local indices.
-          const size_t allocSize = this->getNodeAllocationSize ();
+          const size_t allocSize = this->getLocalAllocationSize ();
           newLclInds1D = col_inds_type("Tpetra::CrsGraph::lclIndsReindexedHost",
                                        allocSize);
           // Attempt to convert the new indices locally.

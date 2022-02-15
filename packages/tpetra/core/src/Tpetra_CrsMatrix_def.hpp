@@ -1462,7 +1462,7 @@ namespace Tpetra {
     }
 
     if (myGraph_->getLocalNumEntries() !=
-        myGraph_->getNodeAllocationSize()) {
+        myGraph_->getLocalAllocationSize()) {
 
       // Use the nonconst version of row_map_type for k_ptrs,
       // because row_map_type is const and we need to modify k_ptrs here.
@@ -1474,7 +1474,7 @@ namespace Tpetra {
       if (verbose) {
         std::ostringstream os;
         const auto numEnt = myGraph_->getLocalNumEntries();
-        const auto allocSize = myGraph_->getNodeAllocationSize();
+        const auto allocSize = myGraph_->getLocalAllocationSize();
         os << *prefix << "Unpacked 1-D storage: numEnt=" << numEnt
            << ", allocSize=" << allocSize << endl;
         std::cerr << os.str ();
@@ -1785,7 +1785,7 @@ namespace Tpetra {
 
     // get data from staticGraph_
     size_t nodeNumEntries   = staticGraph_->getLocalNumEntries ();
-    size_t nodeNumAllocated = staticGraph_->getNodeAllocationSize ();
+    size_t nodeNumAllocated = staticGraph_->getLocalAllocationSize ();
     row_map_type k_rowPtrs = staticGraph_->rowPtrsPacked_dev_; 
 
     row_map_type k_ptrs; // "packed" row offsets array
@@ -5682,7 +5682,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // one of the allocations should be present
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (staticGraph_->indicesAreAllocated () &&
-         staticGraph_->getNodeAllocationSize() > 0 &&
+         staticGraph_->getLocalAllocationSize() > 0 &&
          staticGraph_->getLocalNumRows() > 0 &&
          valuesUnpacked_wdv.extent (0) == 0,
          std::logic_error, err);
@@ -5886,7 +5886,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         }
         else {
           out << "Number of allocated entries: "
-              << staticGraph_->getNodeAllocationSize () << endl;
+              << staticGraph_->getLocalAllocationSize () << endl;
         }
         out << "Number of entries: " << getLocalNumEntries () << endl
             << "Max number of entries per row: " << getLocalMaxNumRowEntries ()

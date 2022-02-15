@@ -1042,7 +1042,10 @@ public:
     /// \return If indicesAreAllocated() is true, the allocation size.
     ///   Otherwise,
     ///   <tt>Tpetra::Details::OrdinalTraits<size_t>::invalid()</tt>.
-    size_t getNodeAllocationSize () const;
+    size_t getLocalAllocationSize () const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED size_t getNodeAllocationSize () const;
+#endif
 
     /// \brief Current number of allocated entries in the given row on
     ///   the calling (MPI) process, using a global row index.

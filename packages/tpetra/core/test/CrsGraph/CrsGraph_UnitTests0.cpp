@@ -470,13 +470,13 @@ namespace { // (anonymous)
       // allocate
       RCP<crs_graph_type> test_crs = rcp (new crs_graph_type (map, 1));
       // invalid, because none are allocated yet
-      TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV );
+      TEST_EQUALITY_CONST( test_crs->getLocalAllocationSize(), STINV );
       if (myRank != 1) {
         test_crs->insertGlobalIndices (map->getMinGlobalIndex (),
                                        tuple<GO> (map->getMinGlobalIndex ()));
       }
       test_crs->fillComplete ();
-      TEST_EQUALITY( test_crs->getNodeAllocationSize(), numLocal );
+      TEST_EQUALITY( test_crs->getLocalAllocationSize(), numLocal );
       test_row = test_crs;
       RCP<const map_type> cmap = test_row->getColMap();
       TEST_EQUALITY( cmap->getGlobalNumElements(), (size_t)numProcs-1 );
@@ -505,10 +505,10 @@ namespace { // (anonymous)
         // allocate with no space
         RCP<crs_graph_type> zero_crs = rcp (new crs_graph_type (map, 0));
         // invalid, because none are allocated yet
-        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV );
+        TEST_EQUALITY_CONST( zero_crs->getLocalAllocationSize(), STINV );
         zero_crs->fillComplete ();
         // zero, because none were allocated.
-        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0 );
+        TEST_EQUALITY_CONST( zero_crs->getLocalAllocationSize(), 0 );
         zero = zero_crs;
         RCP<const map_type> cmap = zero->getColMap();
         TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
@@ -535,10 +535,10 @@ namespace { // (anonymous)
       // allocate with no space
       RCP<crs_graph_type> zero_crs = rcp (new crs_graph_type (map, 0));
       // invalid, because none are allocated yet
-        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV );
+        TEST_EQUALITY_CONST( zero_crs->getLocalAllocationSize(), STINV );
       zero_crs->fillComplete ();
       // zero, because none were allocated.
-      TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0 );
+      TEST_EQUALITY_CONST( zero_crs->getLocalAllocationSize(), 0 );
       zero = zero_crs;
       RCP<const map_type> cmap = zero->getColMap();
       TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
@@ -579,7 +579,7 @@ namespace { // (anonymous)
 
     // allocated with space for one entry per row
     RCP<graph_type> zero_crs = rcp (new graph_type (map,1));
-    TEST_EQUALITY( zero_crs->getNodeAllocationSize(), STINV ); // zero, because none are allocated yet
+    TEST_EQUALITY( zero_crs->getLocalAllocationSize(), STINV ); // zero, because none are allocated yet
 
     zero_crs->fillComplete ();
     zero = zero_crs;
