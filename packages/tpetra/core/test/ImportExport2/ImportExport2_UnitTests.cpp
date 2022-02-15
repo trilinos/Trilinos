@@ -2430,7 +2430,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     auto Bvals = B->getLocalValuesHost(Tpetra::Access::ReadOnly);
 
     // Check the rowptrs
-    if(Browptr.size()!= rowptr.size()) test_err++;
+    if(Browptr.size()!= as<size_t>(rowptr.size())) test_err++;
     if(!test_err) {
       for(size_t i=0; i < as<size_t>(rowptr.size()); i++) {
         if(Browptr[i]!=rowptr[i]) {
@@ -2440,8 +2440,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       }
     }
     // Check the indices / values... but sort first
-    if(Bcolind.size()!=colind.size()) {test_err++; std::cout<<"--colind mismatch"<<std::endl;}
-    if(Bvals.size()  !=vals.size())   {test_err++; std::cout<<"--vals mismatch"<<std::endl;}
+    if(Bcolind.size()!= as<size_t>(colind.size())) {test_err++; std::cout<<"--colind mismatch"<<std::endl;}
+    if(Bvals.size()  != as<size_t>(vals.size()))   {test_err++; std::cout<<"--vals mismatch"<<std::endl;}
     if(!test_err) {
 
       // Reindex colind to local indices

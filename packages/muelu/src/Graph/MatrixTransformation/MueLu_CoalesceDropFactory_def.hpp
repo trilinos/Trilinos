@@ -1975,7 +1975,7 @@ namespace MueLu {
      auto rowsSym = tpGraphSym->getLocalRowPtrsHost();
      ArrayRCP<LO> rows_graphSym;
      rows_graphSym.resize(rowsSym.size());
-     for (LO row = 0; row < rowsSym.size(); row++)
+     for (size_t row = 0; row < rowsSym.size(); row++)
        rows_graphSym[row] = rowsSym[row];
      outputGraph =  rcp(new LWGraph(rows_graphSym, colIndsSym, inputGraph->GetDomainMap(), Xpetra::toXpetra(tpGraphSym->getColMap()), "block-diagonalized graph of A"));
      outputGraph->SetBoundaryNodeMap(inputGraph->GetBoundaryNodeMap());
