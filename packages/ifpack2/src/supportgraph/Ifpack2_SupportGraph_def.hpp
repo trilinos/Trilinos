@@ -256,11 +256,11 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   // Check in serial or one-process mode if the matrix is square.
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! A.is_null() && A->getComm()->getSize() == 1 &&
-    A->getNodeNumRows() != A->getNodeNumCols(),
+    A->getLocalNumRows() != A->getLocalNumCols(),
     std::runtime_error, "Ifpack2::ILUT::setMatrix: If A's communicator only "
     "contains one process, then A must be square.  Instead, you provided a "
-    "matrix A with " << A->getNodeNumRows() << " rows and "
-    << A->getNodeNumCols() << " columns.");
+    "matrix A with " << A->getLocalNumRows() << " rows and "
+    << A->getLocalNumCols() << " columns.");
 
   // It's legal for A to be null; in that case, you may not call
   // initialize() until calling setMatrix() with a nonnull input.
@@ -292,9 +292,9 @@ SupportGraph<MatrixType>::findSupport ()
 
   //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
 
-  size_t num_verts = A_local_->getNodeNumRows();
+  size_t num_verts = A_local_->getLocalNumRows();
   size_t num_edges
-    = (A_local_->getNodeNumEntries() - A_local_->getNodeNumDiags())/2;
+    = (A_local_->getLocalNumEntries() - A_local_->getLocalNumDiags())/2;
 
 
   // Create data structures for the BGL code
@@ -306,7 +306,7 @@ SupportGraph<MatrixType>::findSupport ()
   lemon::ListGraph::EdgeMap<magnitude_type> edgeWeights(graph);
 
   size_t num_entries;
-  size_t max_num_entries = A_local_->getNodeMaxNumRowEntries();
+  size_t max_num_entries = A_local_->getLocalMaxNumRowEntries();
 
   std::vector<scalar_type> valuestemp (max_num_entries);
   std::vector<local_ordinal_type> indicestemp (max_num_entries);

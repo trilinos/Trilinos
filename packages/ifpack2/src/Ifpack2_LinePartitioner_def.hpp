@@ -88,13 +88,13 @@ void LinePartitioner<GraphType,Scalar>::computePartitions() {
 
   // Sanity Checks
   TEUCHOS_TEST_FOR_EXCEPTION(coord_.is_null(),std::runtime_error,"Ifpack2::LinePartitioner: coordinates not defined");
-  TEUCHOS_TEST_FOR_EXCEPTION((size_t)this->Partition_.size() != this->Graph_->getNodeNumRows(),std::runtime_error,"Ifpack2::LinePartitioner: partition size error");
+  TEUCHOS_TEST_FOR_EXCEPTION((size_t)this->Partition_.size() != this->Graph_->getLocalNumRows(),std::runtime_error,"Ifpack2::LinePartitioner: partition size error");
 
   // Short circuit
   if(this->Partition_.size() == 0) {this->NumLocalParts_ = 0; return;}
 
   // Set partitions to invalid to initialize algorithm
-  for(size_t i=0; i<this->Graph_->getNodeNumRows(); i++)
+  for(size_t i=0; i<this->Graph_->getLocalNumRows(); i++)
     this->Partition_[i] = invalid;
 
   // Use the auto partitioner
@@ -119,8 +119,8 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
   if(coord_->getNumVectors() > 2) { zvalsRCP = coord_->getData(2); zvals = zvalsRCP(); }
 
   double tol             = threshold_;
-  size_t N               = this->Graph_->getNodeNumRows();
-  size_t allocated_space = this->Graph_->getNodeMaxNumRowEntries();
+  size_t N               = this->Graph_->getLocalNumRows();
+  size_t allocated_space = this->Graph_->getLocalMaxNumRowEntries();
 
   nonconst_local_inds_host_view_type cols("cols",allocated_space);
   Teuchos::Array<LO>     indices(allocated_space);
@@ -188,8 +188,8 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
   if(coord_->getNumVectors() > 1) { yvalsRCP = coord_->getData(1); yvals = yvalsRCP(); }
   if(coord_->getNumVectors() > 2) { zvalsRCP = coord_->getData(2); zvals = zvalsRCP(); }
 
-  size_t N               = this->Graph_->getNodeNumRows();
-  size_t allocated_space = this->Graph_->getNodeMaxNumRowEntries();
+  size_t N               = this->Graph_->getLocalNumRows();
+  size_t allocated_space = this->Graph_->getLocalMaxNumRowEntries();
 
   nonconst_local_inds_host_view_type cols(itemp.data(),allocated_space);
   Teuchos::ArrayView<LO>     indices = itemp.view(allocated_space,allocated_space);

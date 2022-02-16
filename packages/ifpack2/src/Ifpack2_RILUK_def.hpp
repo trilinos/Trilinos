@@ -221,7 +221,7 @@ size_t RILUK<MatrixType>::getNodeSmootherComplexity() const {
     "input matrix, then call compute(), before calling this method.");
   // RILUK methods cost roughly one apply + the nnz in the upper+lower triangles
   if(!L_.is_null() && !U_.is_null())
-    return A_->getNodeNumEntries() + L_->getNodeNumEntries() + U_->getNodeNumEntries();
+    return A_->getLocalNumEntries() + L_->getLocalNumEntries() + U_->getLocalNumEntries();
   else
     return 0;
 }
@@ -505,16 +505,16 @@ void RILUK<MatrixType>::initialize ()
     if (this->isKokkosKernelsSpiluk_) {
       this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
       KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
-                                           A_local_->getNodeNumRows(),
-                                           2*A_local_->getNodeNumEntries()*(LevelOfFill_+1), 
-                                           2*A_local_->getNodeNumEntries()*(LevelOfFill_+1) );
+                                           A_local_->getLocalNumRows(),
+                                           2*A_local_->getLocalNumEntries()*(LevelOfFill_+1), 
+                                           2*A_local_->getLocalNumEntries()*(LevelOfFill_+1) );
     }
 
     {
       RCP<const crs_matrix_type> A_local_crs =
         rcp_dynamic_cast<const crs_matrix_type> (A_local_);
       if (A_local_crs.is_null ()) {
-        local_ordinal_type numRows = A_local_->getNodeNumRows();
+        local_ordinal_type numRows = A_local_->getLocalNumRows();
         Array<size_t> entriesPerRow(numRows);
         for(local_ordinal_type i = 0; i < numRows; i++) {
           entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
@@ -524,8 +524,8 @@ void RILUK<MatrixType>::initialize ()
                                     A_local_->getColMap (),
                                     entriesPerRow()));
         // copy entries into A_local_crs
-        nonconst_local_inds_host_view_type indices("indices",A_local_->getNodeMaxNumRowEntries());
-        nonconst_values_host_view_type values("values",A_local_->getNodeMaxNumRowEntries());
+        nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
+        nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
         for(local_ordinal_type i = 0; i < numRows; i++) {
           size_t numEntries = 0;
           A_local_->getLocalRowCopy(i, indices, values, numEntries);
@@ -566,8 +566,8 @@ checkOrderingConsistency (const row_matrix_type& A)
   // First check that the local row map ordering is the same as the local portion of the column map.
   // The extraction of the strictly lower/upper parts of A, as well as the factorization,
   // implicitly assume that this is the case.
-  Teuchos::ArrayView<const global_ordinal_type> rowGIDs = A.getRowMap()->getNodeElementList();
-  Teuchos::ArrayView<const global_ordinal_type> colGIDs = A.getColMap()->getNodeElementList();
+  Teuchos::ArrayView<const global_ordinal_type> rowGIDs = A.getRowMap()->getLocalElementList();
+  Teuchos::ArrayView<const global_ordinal_type> colGIDs = A.getColMap()->getLocalElementList();
   bool gidsAreConsistentlyOrdered=true;
   global_ordinal_type indexOfInconsistentGID=0;
   for (global_ordinal_type i=0; i<rowGIDs.size(); ++i) {
@@ -634,8 +634,8 @@ initAllValues (const row_matrix_type& A)
   // This is ok, as the *order* of the GIDs in the rowmap is a better
   // expression of the user's intent than the GIDs themselves.
 
-  Teuchos::ArrayView<const global_ordinal_type> nodeGIDs = rowMap->getNodeElementList();
-  for (size_t myRow=0; myRow<A.getNodeNumRows(); ++myRow) {
+  Teuchos::ArrayView<const global_ordinal_type> nodeGIDs = rowMap->getLocalElementList();
+  for (size_t myRow=0; myRow<A.getLocalNumRows(); ++myRow) {
     local_ordinal_type local_row = myRow;
 
     //TODO JJH 4April2014 An optimization is to use getLocalRowView.  Not all matrices support this,
@@ -670,7 +670,7 @@ initAllValues (const row_matrix_type& A)
         LV[NumL] = InV[j];
         NumL++;
       }
-      else if (Teuchos::as<size_t>(k) <= rowMap->getNodeNumElements()) {
+      else if (Teuchos::as<size_t>(k) <= rowMap->getLocalNumElements()) {
         UI[NumU] = k;
         UV[NumU] = InV[j];
         NumU++;
@@ -764,11 +764,11 @@ void RILUK<MatrixType>::compute ()
 
     // Get Maximum Row length
     const size_t MaxNumEntries =
-            L_->getNodeMaxNumRowEntries () + U_->getNodeMaxNumRowEntries () + 1;
+            L_->getLocalMaxNumRowEntries () + U_->getLocalMaxNumRowEntries () + 1;
 
     Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
     Teuchos::Array<scalar_type> InV(MaxNumEntries);
-    size_t num_cols = U_->getColMap()->getNodeNumElements();
+    size_t num_cols = U_->getColMap()->getLocalNumElements();
     Teuchos::Array<int> colflag(num_cols);
 
     auto DV = Kokkos::subview(D_->getLocalViewHost(Tpetra::Access::ReadWrite), Kokkos::ALL(), 0);
@@ -779,7 +779,7 @@ void RILUK<MatrixType>::compute ()
       colflag[j] = -1;
     }
     using IST = typename row_matrix_type::impl_scalar_type;
-    for (size_t i = 0; i < L_->getNodeNumRows (); ++i) {
+    for (size_t i = 0; i < L_->getLocalNumRows (); ++i) {
       local_ordinal_type local_row = i;
       // Need some integer workspace and pointers
       size_t NumUU;
@@ -906,7 +906,7 @@ void RILUK<MatrixType>::compute ()
       RCP<const crs_matrix_type> A_local_crs =
         rcp_dynamic_cast<const crs_matrix_type> (A_local_);
       if (A_local_crs.is_null ()) {
-        local_ordinal_type numRows = A_local_->getNodeNumRows();
+        local_ordinal_type numRows = A_local_->getLocalNumRows();
         Array<size_t> entriesPerRow(numRows);
         for(local_ordinal_type i = 0; i < numRows; i++) {
           entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
@@ -916,8 +916,8 @@ void RILUK<MatrixType>::compute ()
                                     A_local_->getColMap (),
                                     entriesPerRow()));
         // copy entries into A_local_crs
-        nonconst_local_inds_host_view_type indices("indices",A_local_->getNodeMaxNumRowEntries());
-        nonconst_values_host_view_type values("values",A_local_->getNodeMaxNumRowEntries());
+        nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
+        nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
         for(local_ordinal_type i = 0; i < numRows; i++) {
           size_t numEntries = 0;
           A_local_->getLocalRowCopy(i, indices, values, numEntries);

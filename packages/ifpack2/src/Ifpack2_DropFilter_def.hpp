@@ -66,13 +66,13 @@ DropFilter<MatrixType>::DropFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Sc
 {
 
  // use this filter only on serial matrices
-  if (A_->getComm()->getSize() != 1 || A_->getNodeNumRows() != A_->getGlobalNumRows()) {
+  if (A_->getComm()->getSize() != 1 || A_->getLocalNumRows() != A_->getGlobalNumRows()) {
     throw std::runtime_error("Ifpack2::DropFilter can be used with Comm().getSize() == 1 only. This class is a tool for Ifpack2_AdditiveSchwarz, and it is not meant to be used otherwise.");
   }
 
 
   // localized matrix has all the local rows of Matrix
-  NumRows_ = A_->getNodeNumRows();
+  NumRows_ = A_->getLocalNumRows();
 
   // NodeNumEntries_ will contain the actual number of nonzeros
   // for each localized row (that is, without external nodes,
@@ -81,8 +81,8 @@ DropFilter<MatrixType>::DropFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Sc
 
   // tentative value for MaxNumEntries. This is the number of
   // nonzeros in the local matrix
-  MaxNumEntries_  = A_->getNodeMaxNumRowEntries();
-  MaxNumEntriesA_ = A_->getNodeMaxNumRowEntries();
+  MaxNumEntries_  = A_->getLocalMaxNumRowEntries();
+  MaxNumEntriesA_ = A_->getLocalMaxNumRowEntries();
 
   // ExtractMyRowCopy() will use these vectors
   Kokkos::resize(Indices_,MaxNumEntries_);
@@ -186,7 +186,7 @@ global_size_t DropFilter<MatrixType>::getGlobalNumCols() const
 
 //==========================================================================
 template<class MatrixType>
-size_t DropFilter<MatrixType>::getNodeNumRows() const
+size_t DropFilter<MatrixType>::getLocalNumRows() const
 {
   return NumRows_;
 }
@@ -194,7 +194,7 @@ size_t DropFilter<MatrixType>::getNodeNumRows() const
 //==========================================================================
 
 template<class MatrixType>
-size_t DropFilter<MatrixType>::getNodeNumCols() const
+size_t DropFilter<MatrixType>::getLocalNumCols() const
 {
   return NumRows_;
 }
@@ -215,7 +215,7 @@ global_size_t DropFilter<MatrixType>::getGlobalNumEntries() const
 
 //==========================================================================
 template<class MatrixType>
-size_t DropFilter<MatrixType>::getNodeNumEntries() const
+size_t DropFilter<MatrixType>::getLocalNumEntries() const
 {
   return NumNonzeros_;
 }
@@ -243,7 +243,7 @@ size_t DropFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 
 //==========================================================================
 template<class MatrixType>
-size_t DropFilter<MatrixType>::getNodeMaxNumRowEntries() const
+size_t DropFilter<MatrixType>::getLocalMaxNumRowEntries() const
 {
   return MaxNumEntries_;
 }

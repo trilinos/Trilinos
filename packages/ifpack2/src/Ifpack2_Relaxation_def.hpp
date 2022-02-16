@@ -572,7 +572,7 @@ size_t Relaxation<MatrixType>::getNodeSmootherComplexity() const {
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
     "input matrix, then call compute(), before calling this method.");
   // Relaxation methods cost roughly one apply + one diagonal inverse per iteration
-  return A_->getNodeNumRows() + A_->getNodeNumEntries();
+  return A_->getLocalNumRows() + A_->getLocalNumEntries();
 }
 
 
@@ -788,7 +788,7 @@ void Relaxation<MatrixType>::initialize ()
         mtKernelHandle_->set_gs_set_num_inner_sweeps (NumInnerSweeps_);
         mtKernelHandle_->set_gs_set_num_outer_sweeps (NumOuterSweeps_);
         mtKernelHandle_->set_gs_set_inner_damp_factor (InnerDampingFactor_);
-        mtKernelHandle_->set_gs_twostage (!InnerSpTrsv_, A_->getNodeNumRows ());
+        mtKernelHandle_->set_gs_twostage (!InnerSpTrsv_, A_->getLocalNumRows ());
         mtKernelHandle_->set_gs_twostage_compact_form (CompactForm_);
       }
 
@@ -796,8 +796,8 @@ void Relaxation<MatrixType>::initialize ()
       gauss_seidel_symbolic<mt_kernel_handle_type,
                             lno_row_view_t,
                             lno_nonzero_view_t> (mtKernelHandle_.getRawPtr (),
-                                                 A_->getNodeNumRows (),
-                                                 A_->getNodeNumCols (),
+                                                 A_->getLocalNumRows (),
+                                                 A_->getLocalNumCols (),
                                                  kcsr.graph.row_map,
                                                  kcsr.graph.entries,
                                                  is_matrix_structurally_symmetric_);
@@ -910,7 +910,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
     IsComputed_ = false;
 
     const LO lclNumMeshRows =
-      blockCrsA->getCrsGraph ().getNodeNumRows ();
+      blockCrsA->getCrsGraph ().getLocalNumRows ();
     const LO blockSize = blockCrsA->getBlockSize ();
 
     if (! savedDiagOffsets_) {
@@ -944,7 +944,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
 
     if (DoL1Method_ && IsParallel_) {
       const scalar_type two = one + one;
-      const size_t maxLength = A_->getNodeMaxNumRowEntries ();
+      const size_t maxLength = A_->getLocalMaxNumRowEntries ();
       nonconst_local_inds_host_view_type indices ("indices",maxLength);
       nonconst_values_host_view_type values_ ("values",maxLength * blockSize * blockSize);
       size_t numEntries = 0;
@@ -1075,7 +1075,7 @@ void Relaxation<MatrixType>::compute ()
     // It's helpful not to have to recompute this magnitude each time.
     const magnitude_type minDiagValMag = STS::magnitude (MinDiagonalValue_);
 
-    const LO numMyRows = static_cast<LO> (A_->getNodeNumRows ());
+    const LO numMyRows = static_cast<LO> (A_->getLocalNumRows ());
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (NumSweeps_ < 0, std::logic_error, methodName
@@ -1275,7 +1275,7 @@ void Relaxation<MatrixType>::compute ()
         const row_matrix_type& A_row = *A_;
         auto diag = Diagonal->getLocalViewHost(Tpetra::Access::ReadWrite);
         const magnitude_type two = STM::one () + STM::one ();
-        const size_t maxLength = A_row.getNodeMaxNumRowEntries ();
+        const size_t maxLength = A_row.getLocalMaxNumRowEntries ();
         nonconst_local_inds_host_view_type indices("indices",maxLength);
         nonconst_values_host_view_type values("values",maxLength);
         size_t numEntries;
@@ -1365,8 +1365,8 @@ void Relaxation<MatrixType>::compute ()
                            lno_row_view_t,
                            lno_nonzero_view_t,
                            scalar_nonzero_view_t> (mtKernelHandle_.getRawPtr (),
-                                                   A_->getNodeNumRows (),
-                                                   A_->getNodeNumCols (),
+                                                   A_->getLocalNumRows (),
+                                                   A_->getLocalNumCols (),
                                                    kcsr.graph.row_map,
                                                    kcsr.graph.entries,
                                                    kcsr.values,
@@ -2143,7 +2143,7 @@ ApplyInverseMTGS_CrsMatrix(
 
     if (direction == Tpetra::Symmetric) {
       KokkosSparse::Experimental::symmetric_gauss_seidel_apply
-      (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+      (mtKernelHandle_.getRawPtr(), A_->getLocalNumRows(), A_->getLocalNumCols(),
           kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
           X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),
           B_in->getLocalViewDevice(Tpetra::Access::ReadOnly),
@@ -2151,7 +2151,7 @@ ApplyInverseMTGS_CrsMatrix(
     }
     else if (direction == Tpetra::Forward) {
       KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply
-      (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+      (mtKernelHandle_.getRawPtr(), A_->getLocalNumRows(), A_->getLocalNumCols(),
           kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
           X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),
           B_in->getLocalViewDevice(Tpetra::Access::ReadOnly),
@@ -2159,7 +2159,7 @@ ApplyInverseMTGS_CrsMatrix(
     }
     else if (direction == Tpetra::Backward) {
       KokkosSparse::Experimental::backward_sweep_gauss_seidel_apply
-      (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+      (mtKernelHandle_.getRawPtr(), A_->getLocalNumRows(), A_->getLocalNumCols(),
           kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
           X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),
           B_in->getLocalViewDevice(Tpetra::Access::ReadOnly),
