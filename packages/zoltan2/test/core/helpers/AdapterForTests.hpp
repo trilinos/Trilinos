@@ -330,33 +330,33 @@ AdapterWithTemplateName
   if(input_type == "coordinates")
   {
     RCP<tMVector_t> data = uinput->getUICoordinates();
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "tpetra_vector")
   {
     RCP<tVector_t> data = uinput->getUITpetraVector();
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "tpetra_multivector")
   {
     int nvec = pList.get<int>("vector_dimension");
     RCP<tMVector_t> data = uinput->getUITpetraMultiVector(nvec);
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "tpetra_crs_graph")
   {
     RCP<tcrsGraph_t> data = uinput->getUITpetraCrsGraph();
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
-    localCount = data->getNodeNumCols();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
+    localCount = data->getLocalNumCols();
   }
   else if(input_type == "tpetra_crs_matrix")
   {
     RCP<tcrsMatrix_t> data = uinput->getUITpetraCrsMatrix();
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
-    localCount = data->getNodeNumCols();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
+    localCount = data->getLocalNumCols();
   }
   else if(input_type == "xpetra_vector")
   {
@@ -847,7 +847,7 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
   if(input_type == "coordinates")
   {
     RCP<tMVector_t> data = uinput->getUICoordinates();
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
     localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
@@ -891,7 +891,7 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
   else if(input_type == "tpetra_vector")
   {
     RCP<tVector_t> data = uinput->getUITpetraVector();
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
     localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
@@ -918,7 +918,7 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
     int nvec = pList.get<int>("vector_dimension");
     
     RCP<tMVector_t> data = uinput->getUITpetraMultiVector(nvec);
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
     localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data

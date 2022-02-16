@@ -92,7 +92,7 @@ public:
     cyclic_graph->fillComplete(vMapCyclic, wMapCyclic);
     JCyclic = rcp(new matrix_t(cyclic_graph));
     JCyclic->resumeFill();
-    TEUCHOS_ASSERT(block_graph->getNodeNumRows() == cyclic_graph->getNodeNumRows());
+    TEUCHOS_ASSERT(block_graph->getLocalNumRows() == cyclic_graph->getLocalNumRows());
     {
       auto val_s = JBlock->getLocalMatrixHost().values;
       auto val_d = JCyclic->getLocalMatrixHost().values;
@@ -173,7 +173,7 @@ public:
     // Check that values of J = values of Jp
     auto J_local_matrix = J->getLocalMatrixDevice();
     auto Jp_local_matrix = Jp->getLocalMatrixDevice();
-    const size_t num_local_nz = J->getNodeNumEntries();
+    const size_t num_local_nz = J->getLocalNumEntries();
 
     Kokkos::parallel_reduce(
       "TpetraCrsColorer::testReconstructedMatrix()",
