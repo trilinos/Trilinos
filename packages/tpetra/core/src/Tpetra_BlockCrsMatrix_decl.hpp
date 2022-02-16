@@ -48,6 +48,8 @@
 #include "Tpetra_BlockMultiVector_decl.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
 
+#include "KokkosSparse_BsrMatrix.hpp"
+
 namespace Tpetra {
 
 template<class BlockCrsMatrixType>
@@ -251,6 +253,17 @@ public:
   using nonconst_values_host_view_type =
         typename row_matrix_type::nonconst_values_host_view_type;
 
+  using local_graph_device_type = typename crs_graph_type::local_graph_device_type;
+
+  using  local_matrix_device_type =
+    KokkosSparse::Experimental::BsrMatrix<impl_scalar_type,
+                          local_ordinal_type,
+                          device_type,
+                          void,
+                          typename local_graph_device_type::size_type>;
+  using local_matrix_host_type =
+    typename local_matrix_device_type::HostMirror;
+
   //@}
   //! \name Constructors and destructor
   //@{
@@ -268,6 +281,10 @@ public:
   /// \param graph [in] A fill-complete graph.
   /// \param blockSize [in] Number of degrees of freedom per mesh point.
   BlockCrsMatrix (const crs_graph_type& graph, const LO blockSize);
+
+  BlockCrsMatrix (const crs_graph_type& graph,
+                  const typename local_matrix_device_type::values_type& values,
+                  const LO blockSize);
 
   /// \brief Constructor that takes a graph, domain and range point
   ///   Maps, and a block size.
@@ -585,6 +602,11 @@ public:
   /// returns zero, since the calling process trivially does not own
   /// any entries in that row.
   size_t getNumEntriesInLocalRow (const LO localRowInd) const override;
+
+
+  /// Get KokkosSparce::Experimental::BsrMatrix representation
+  /// of this BlockCrsMatrix 
+  local_matrix_device_type getLocalMatrixDevice () const;
 
   /// \brief Whether this object had an error on the calling process.
   ///
@@ -1053,6 +1075,7 @@ private:
 
 
 public:
+
   //! The communicator over which this matrix is distributed.
   virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const override;
 
