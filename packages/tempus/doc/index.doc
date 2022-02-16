@@ -202,12 +202,15 @@
         <td> \ref 00_Basic_Problem.cpp "Basic Problem"
         <td> Introduces the problem used in following examples.
     <tr><td>  01    
-        <td> Utilize Thyra 
-        <td> Utilize Thyra Vectors (under construction).
+        <td> \ref 01_Utilize_Thyra.cpp "Utilize Thyra"
+        <td> Utilize Thyra Vectors instead of std::vectors.
+    <tr><td>  02    
+        <td> Use ModelEvaluator
+        <td> Use ModelEvaluator for problem description (under construction).
   </table>
 
-
   Also, one can look at the tests and unit tests for examples of usage,
-  but these may not show standard usage or context.
+  but these may not show standard usage or context as they are meant for
+  testing.
 
  */
