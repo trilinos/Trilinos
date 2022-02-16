@@ -4236,6 +4236,7 @@ namespace Tpetra {
         Tuple<GO, 3> dims;
         dims[0] = 0;
         dims[1] = 0;
+        dims[2] = 0;
 
         // Current line number in the input stream.  Only valid on
         // Proc 0.  Various calls will modify this depending on the
