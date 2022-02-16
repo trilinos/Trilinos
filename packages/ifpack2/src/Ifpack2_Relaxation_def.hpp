@@ -792,15 +792,13 @@ void Relaxation<MatrixType>::initialize ()
         mtKernelHandle_->set_gs_twostage_compact_form (CompactForm_);
       }
 
-      using KokkosSparse::Experimental::gauss_seidel_symbolic;
-      gauss_seidel_symbolic<mt_kernel_handle_type,
-                            lno_row_view_t,
-                            lno_nonzero_view_t> (mtKernelHandle_.getRawPtr (),
-                                                 A_->getLocalNumRows (),
-                                                 A_->getLocalNumCols (),
-                                                 kcsr.graph.row_map,
-                                                 kcsr.graph.entries,
-                                                 is_matrix_structurally_symmetric_);
+      KokkosSparse::Experimental::gauss_seidel_symbolic(
+          mtKernelHandle_.getRawPtr (),
+          A_->getLocalNumRows (),
+          A_->getLocalNumCols (),
+          kcsr.graph.row_map,
+          kcsr.graph.entries,
+          is_matrix_structurally_symmetric_);
     }
   } // timing of initialize stops here
 
@@ -1349,6 +1347,7 @@ void Relaxation<MatrixType>::compute ()
         PrecType_ == Ifpack2::Details::SGS2) {
 
       //KokkosKernels GaussSeidel Initialization.
+      using scalar_view_t = typename local_matrix_device_type::values_type;
 
       TEUCHOS_TEST_FOR_EXCEPTION
         (crsMat.is_null(), std::logic_error, methodName << ": "
@@ -1359,19 +1358,16 @@ void Relaxation<MatrixType>::compute ()
       //TODO BMK: This should be ReadOnly, and KokkosKernels should accept a
       //const-valued view for user-provided D^-1. OK for now, Diagonal_ is nonconst.
       auto diagView_2d = Diagonal_->getLocalViewDevice (Tpetra::Access::ReadWrite);
-      auto diagView_1d = Kokkos::subview (diagView_2d, Kokkos::ALL (), 0);
-      using KokkosSparse::Experimental::gauss_seidel_numeric;
-      gauss_seidel_numeric<mt_kernel_handle_type,
-                           lno_row_view_t,
-                           lno_nonzero_view_t,
-                           scalar_nonzero_view_t> (mtKernelHandle_.getRawPtr (),
-                                                   A_->getLocalNumRows (),
-                                                   A_->getLocalNumCols (),
-                                                   kcsr.graph.row_map,
-                                                   kcsr.graph.entries,
-                                                   kcsr.values,
-                                                   diagView_1d,
-                                                   is_matrix_structurally_symmetric_);
+      scalar_view_t diagView_1d = Kokkos::subview (diagView_2d, Kokkos::ALL (), 0);
+      KokkosSparse::Experimental::gauss_seidel_numeric(
+          mtKernelHandle_.getRawPtr (),
+          A_->getLocalNumRows (),
+          A_->getLocalNumCols (),
+          kcsr.graph.row_map,
+          kcsr.graph.entries,
+          kcsr.values,
+          diagView_1d,
+          is_matrix_structurally_symmetric_);
     }
     else if(PrecType_ == Ifpack2::Details::GS || PrecType_ == Ifpack2::Details::SGS) {
       if(crsMat)
