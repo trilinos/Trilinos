@@ -321,10 +321,10 @@ private:
     
     Amat->apply(*xvec, *yvec, Teuchos::NO_TRANS, alpha, beta);
 
-    std::cout << me << " " << testName 
-              << " YVEC alpha=" << alpha 
-              << " beta=" << beta << std::endl;
-    yvec->describe(foo, Teuchos::VERB_LOW);
+//    std::cout << me << " " << testName 
+//              << " YVEC alpha=" << alpha 
+//              << " beta=" << beta << std::endl;
+//    yvec->describe(foo, Teuchos::VERB_LOW);
   
     return checkResult(yvec, alpha, beta);
   }
@@ -343,10 +343,10 @@ private:
 
     Amat->apply(*xvec, *yvec, Teuchos::TRANS, alpha, beta);
 
-    std::cout << me << " " << testName 
-              << " YVEC Transpose alpha=" << alpha
-              << " beta=" << beta << std::endl;
-    yvec->describe(foo, Teuchos::VERB_LOW);
+//    std::cout << me << " " << testName 
+//              << " YVEC Transpose alpha=" << alpha
+//              << " beta=" << beta << std::endl;
+//    yvec->describe(foo, Teuchos::VERB_LOW);
   
     return checkResultTranspose(yvec, alpha, beta);
   }
@@ -370,14 +370,14 @@ private:
 
     Tpetra::batchedApply(matrices, *xvec, yvec, alpha, beta);
 
-    std::cout << me << " " << testName 
-              << " Y1 Batched alpha=" << alpha
-              << " beta=" << beta << std::endl;
-    y1->describe(foo, Teuchos::VERB_LOW);
-    std::cout << me << " " << testName 
-              << " Y2 Batched alpha=" << alpha
-              << " beta=" << beta << std::endl;
-    y2->describe(foo, Teuchos::VERB_LOW);
+//    std::cout << me << " " << testName 
+//              << " Y1 Batched alpha=" << alpha
+//              << " beta=" << beta << std::endl;
+//    y1->describe(foo, Teuchos::VERB_LOW);
+//    std::cout << me << " " << testName 
+//              << " Y2 Batched alpha=" << alpha
+//              << " beta=" << beta << std::endl;
+//    y2->describe(foo, Teuchos::VERB_LOW);
 
     return checkResultBatched(yvec, alpha, beta);
   }
