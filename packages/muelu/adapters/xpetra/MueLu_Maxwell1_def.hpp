@@ -324,6 +324,19 @@ namespace MueLu {
       Kn_Matrix_ = generate_kn();
     }
 
+    if (parameterList_.get<bool>("rap: fix zero diagonals", true)) {
+      magnitudeType threshold;
+      if (parameterList_.isType<magnitudeType>("rap: fix zero diagonals threshold"))
+        threshold = parameterList_.get<magnitudeType>("rap: fix zero diagonals threshold",
+                                                      Teuchos::ScalarTraits<double>::eps());
+      else
+        threshold = Teuchos::as<magnitudeType>(parameterList_.get<double>("rap: fix zero diagonals threshold",
+                                                                          Teuchos::ScalarTraits<double>::eps()));
+      Scalar replacement = Teuchos::as<Scalar>(parameterList_.get<double>("rap: fix zero diagonals replacement",
+                                                                          MasterList::getDefault<double>("rap: fix zero diagonals replacement")));
+      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Kn_Matrix_, true, GetOStream(Warnings1), threshold, replacement);
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////
     // Generate the (2,2) Hierarchy
@@ -401,8 +414,6 @@ namespace MueLu {
     RCP<RAPFactory> rapFact = rcp(new RAPFactory());
     ParameterList rapList = *(rapFact->GetValidParameterList());
     rapList.set("transpose: use implicit", true);
-    rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
-    rapList.set("rap: fix zero diagonals threshold", parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps()));
     rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
     rapFact->SetParameterList(rapList);
     coarseLevel.Request("A", rapFact.get());
