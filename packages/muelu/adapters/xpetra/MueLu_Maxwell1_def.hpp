@@ -141,6 +141,7 @@ namespace MueLu {
     }
     std::string  mode_string   = list.get("maxwell1: mode",                  MasterList::getDefault<std::string>("maxwell1: mode"));
     applyBCsTo22_              = list.get("maxwell1: apply BCs to 22",       true);
+    dump_matrices_             = list.get("maxwell1: dump matrices",         MasterList::getDefault<bool>("maxwell1: dump matrices"));
 
     // Default smoother.  We'll copy this around.
     Teuchos::ParameterList defaultSmootherList;
