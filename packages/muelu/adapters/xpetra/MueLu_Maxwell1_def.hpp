@@ -280,16 +280,8 @@ namespace MueLu {
       GetOStream(Warnings0) << "All edges are detected as boundary edges!" << std::endl;
       mode_ = MODE_EDGE_ONLY;
 
-      // Switch smoother off of Hiptmair
-      if(precList11_.get<std::string>("smoother: type") == "HIPTMAIR") {        
-        precList11_.set("smoother: type",precList11_.get("hiptmair: smoother type 1","CHEBYSHEV"));
-        precList11_.sublist("smoother: sublist") = precList11_.sublist("hiptmair: smoother list 1");
-      }
-
       // Generate single level hierarchy for the edge
-      throw std::runtime_error("Maxwell1: Not yet supported");
-
-      return;
+      precList22_.set("max levels", 1);
     }
       
     if (allNodesBoundary_) {
@@ -297,16 +289,9 @@ namespace MueLu {
       // Do not attempt to construct sub-hierarchies, but just set up a single level preconditioner.
       GetOStream(Warnings0) << "All nodes are detected as boundary edges!" << std::endl;
       mode_ = MODE_EDGE_ONLY;
-      // Switch smoother off of Hiptmair
-      if(precList11_.get<std::string>("smoother: type") == "HIPTMAIR") {        
-        precList11_.set("smoother: type",precList11_.get("hiptmair: smoother type 1","CHEBYSHEV"));
-        precList11_.sublist("smoother: sublist") = precList11_.sublist("hiptmair: smoother list 1");
-      }
 
       // Generate single level hierarchy for the edge
-      throw std::runtime_error("Maxwell1: Not yet supported");
-
-      return;
+      precList22_.set("max levels", 1);
     }
                                               
 
