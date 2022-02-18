@@ -685,7 +685,7 @@ void AlgZoltan<Adapter>::partition(
       zz->Set_Param(zname.c_str(), zval.c_str());      
     }
   }
-  catch (std::exception &e) {
+  catch (std::exception &) {
     // No zoltan_parameters sublist found; no Zoltan parameters to register
   }
 

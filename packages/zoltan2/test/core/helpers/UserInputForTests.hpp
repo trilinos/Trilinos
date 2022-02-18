@@ -1215,7 +1215,7 @@ void UserInputForTests::readMatrixMarketFile(
     try{
       coordFile.open(fname.str().c_str());
     }
-    catch (std::exception &e){ // there is no coordinate file
+    catch (std::exception &){ // there is no coordinate file
       fail = 1;
     }
 
@@ -1416,7 +1416,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
     (params.GetMatrixType(), map, params.GetParameterList());
     M_ = Pr->BuildMatrix();
   }
-  catch (std::exception &e) {    // Probably not enough memory
+  catch (std::exception &) {    // Probably not enough memory
     aok = false;
   }
   TEST_FAIL_AND_THROW(*tcomm_, aok,
