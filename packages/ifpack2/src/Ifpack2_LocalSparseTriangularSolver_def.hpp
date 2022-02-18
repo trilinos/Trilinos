@@ -119,15 +119,16 @@ public:
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     using Teuchos::ArrayRCP;
 
-    Teuchos::ArrayRCP<const size_t> rowptr;
-    Teuchos::ArrayRCP<const local_ordinal_type> colidx;
-    Teuchos::ArrayRCP<const scalar_type> val;
-    T_in.getAllValues(rowptr, colidx, val);
+    auto rowptr = T_in.getLocalRowPtrsHost();
+    auto colidx = T_in.getLocalIndicesHost();
+    auto val = T_in.getLocalValuesHost(Tpetra::Access::ReadOnly);
     Kokkos::fence();
 
     Teuchos::RCP<HtsCrsMatrix> T_hts = Teuchos::rcpWithDealloc(
       HTST::make_CrsMatrix(rowptr.size() - 1,
-                           rowptr.getRawPtr(), colidx.getRawPtr(), val.getRawPtr(),
+                           rowptr.data(), colidx.data(), 
+                           // For std/Kokkos::complex.
+                           reinterpret_cast<const scalar_type*>(val.data()),
                            transpose_, conjugate_),
       HtsCrsMatrixDeleter());
 

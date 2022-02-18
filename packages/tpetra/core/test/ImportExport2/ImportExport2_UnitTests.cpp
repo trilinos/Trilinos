@@ -2425,13 +2425,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     }
 
     // Do the comparison
-    Teuchos::ArrayRCP<const size_t>  Browptr;
-    Teuchos::ArrayRCP<const LO>      Bcolind;
-    Teuchos::ArrayRCP<const Scalar>  Bvals;
-    B->getAllValues (Browptr, Bcolind, Bvals);
+    auto Browptr = B->getLocalRowPtrsHost();
+    auto Bcolind = B->getLocalIndicesHost();
+    auto Bvals = B->getLocalValuesHost(Tpetra::Access::ReadOnly);
 
     // Check the rowptrs
-    if(Browptr.size()!= rowptr.size()) test_err++;
+    if(Browptr.size()!= as<size_t>(rowptr.size())) test_err++;
     if(!test_err) {
       for(size_t i=0; i < as<size_t>(rowptr.size()); i++) {
         if(Browptr[i]!=rowptr[i]) {
@@ -2441,8 +2440,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       }
     }
     // Check the indices / values... but sort first
-    if(Bcolind.size()!=colind.size()) {test_err++; std::cout<<"--colind mismatch"<<std::endl;}
-    if(Bvals.size()  !=vals.size())   {test_err++; std::cout<<"--vals mismatch"<<std::endl;}
+    if(Bcolind.size()!= as<size_t>(colind.size())) {test_err++; std::cout<<"--colind mismatch"<<std::endl;}
+    if(Bvals.size()  != as<size_t>(vals.size()))   {test_err++; std::cout<<"--vals mismatch"<<std::endl;}
     if(!test_err) {
 
       // Reindex colind to local indices
@@ -2503,10 +2502,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
   build_test_matrix_wideband<CrsMatrixType>(Comm,A);
 
   // Get the matrix pointers / map
-  ArrayRCP<const size_t> rowptr;
-  ArrayRCP<const LO> colind;
-  ArrayRCP<const Scalar> values;
-  A->getAllValues(rowptr,colind,values);
+  // Conversion to Teuchos::ArrayRCP (via persistingView) is needed
+  // only to satisfy the interface of lowCommunicationMakeColMapAndReindex.
+  // Ideally, that function would take Kokkos::Views (and perhaps someday
+  // it will), in which case we can remove the persistingView call.
+  auto rowptr = Kokkos::Compat::persistingView(A->getLocalRowPtrsHost());
+  auto colind = Kokkos::Compat::persistingView(A->getLocalIndicesHost());
+  
   Acolmap = A->getColMap();
   Adomainmap = A->getDomainMap();
 

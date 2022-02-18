@@ -192,8 +192,8 @@ template<typename Scalar,
          typename Node>
 void
 reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & SourceMatrix,
-                         const Teuchos::ArrayRCP<const size_t> & rowptr,
-                         const Teuchos::ArrayRCP<const LocalOrdinal> & colind,
+                         const typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::row_ptrs_host_view_type & rowptr,
+                         const typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type & colind,
                          const Tpetra::Details::Transfer<LocalOrdinal,GlobalOrdinal,Node>& RowTransfer,
                          Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > MyImporter,
                          Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MyDomainMap,
