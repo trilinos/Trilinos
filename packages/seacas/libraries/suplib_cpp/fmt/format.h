@@ -1946,7 +1946,7 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, const DecimalFP& fp,
 template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
 FMT_CONSTEXPR20 bool isinf(T value) {
   if (is_constant_evaluated()) {
-#if defined(__cpp_if_constexpr)
+#if defined(__cpp_if_constexpr) && FMT_ICC_VERSION == 0
     if constexpr (std::numeric_limits<double>::is_iec559) {
       auto bits = detail::bit_cast<uint64_t>(static_cast<double>(value));
       constexpr auto significand_bits =
@@ -1962,7 +1962,7 @@ FMT_CONSTEXPR20 bool isinf(T value) {
 template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
 FMT_CONSTEXPR20 bool isfinite(T value) {
   if (is_constant_evaluated()) {
-#if defined(__cpp_if_constexpr)
+#if defined(__cpp_if_constexpr) && FMT_ICC_VERSION == 0
     if constexpr (std::numeric_limits<double>::is_iec559) {
       auto bits = detail::bit_cast<uint64_t>(static_cast<double>(value));
       return (bits & exponent_mask<double>()) != exponent_mask<double>();
@@ -1975,7 +1975,7 @@ FMT_CONSTEXPR20 bool isfinite(T value) {
 template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
 FMT_INLINE FMT_CONSTEXPR bool signbit(T value) {
   if (is_constant_evaluated()) {
-#ifdef __cpp_if_constexpr
+#if defined(__cpp_if_constexpr)  && FMT_ICC_VERSION == 0
     if constexpr (std::numeric_limits<double>::is_iec559) {
       auto bits = detail::bit_cast<uint64_t>(static_cast<double>(value));
       return (bits & (uint64_t(1) << (num_bits<uint64_t>() - 1))) != 0;

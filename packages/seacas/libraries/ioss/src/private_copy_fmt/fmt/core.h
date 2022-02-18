@@ -19,7 +19,6 @@
 #ifndef FMT_HEADER_ONLY
 #define FMT_HEADER_ONLY
 #endif
-#define FMT_STATIC_THOUSANDS_SEPARATOR ','
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 80100
@@ -1444,8 +1443,8 @@ template <typename Context> struct arg_mapper {
                       !std::is_const<remove_reference_t<T>>::value ||
                       has_fallback_formatter<U, char_type>::value> {};
 
-#if FMT_MSC_VER != 0 && FMT_MSC_VER < 1910
-  // Workaround a bug in MSVC.
+#if (FMT_MSC_VER != 0 && FMT_MSC_VER < 1910) || FMT_ICC_VERSION != 0 || FMT_NVCC != 0
+  // Workaround a bug in MSVC and Intel (Issue 2746).
   template <typename T> FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
     return val;
   }
