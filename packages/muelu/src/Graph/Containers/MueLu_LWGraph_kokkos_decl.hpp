@@ -203,7 +203,7 @@ namespace MueLu {
     size_type maxNumRowEntries_;
 
     //! Name of this graph.
-    const std::string& objectLabel_;
+    const std::string objectLabel_;
   };
 
 }

@@ -56,8 +56,10 @@ extern int H5get_libversion(unsigned *, unsigned *, unsigned *);
 #endif
 #endif
 
+#if 0
 #if NC_HAS_PNETCDF
 extern char *ncmpi_inq_libvers();
+#endif
 #endif
 
 /*!
@@ -124,8 +126,12 @@ const char *ex_config(void)
 #endif
 #if NC_HAS_PNETCDF
   {
+#if 0
     char *libver = ncmpi_inq_libvers();
     j += sprintf(buffer + j, "\t\tParallel IO enabled via PnetCDF (%s)\n", libver);
+#else
+    j += sprintf(buffer + j, "\t\tParallel IO enabled via PnetCDF.\n");
+#endif
   }
 #else
   j += sprintf(buffer + j, "\t\tParallel IO *NOT* enabled via PnetCDF\n");
@@ -755,14 +761,14 @@ char *ex__name_of_map(ex_entity_type map_type, int map_index)
 */
 int ex__id_lkup(int exoid, ex_entity_type id_type, ex_entity_id num)
 {
-  char *   id_table   = NULL;
-  char *   id_dim     = NULL;
-  char *   stat_table = NULL;
+  char    *id_table   = NULL;
+  char    *id_dim     = NULL;
+  char    *stat_table = NULL;
   int      varid, dimid;
   size_t   dim_len;
   int64_t  i;
   int64_t *id_vals   = NULL;
-  int *    stat_vals = NULL;
+  int     *stat_vals = NULL;
 
   static bool           sequential = false;
   struct ex__obj_stats *tmp_stats;

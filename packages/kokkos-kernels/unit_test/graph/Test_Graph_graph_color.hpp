@@ -148,7 +148,7 @@ void test_coloring(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_
     size_t num_colors;
 
 
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
     crsMat_t output_mat;
     int res = run_graphcolor<crsMat_t, device>(input_mat, coloring_algorithm, num_colors, vector_colors);
     //double coloring_time = timer1.seconds();
@@ -208,12 +208,17 @@ TEST_F( TestCategory, graph ## _ ## graph_color ## _ ## SCALAR ## _ ## ORDINAL #
  EXECUTE_TEST(double, int64_t, int, TestExecSpace)
 #endif
 
+// FIXME_SYCL
+#ifndef KOKKOS_ENABLE_SYCL
 #if (defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(double, int, size_t, TestExecSpace)
+#endif
 #endif
 
 #if (defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
  && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
 #endif
+
+#undef EXECUTE_TEST

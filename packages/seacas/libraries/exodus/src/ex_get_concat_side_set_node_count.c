@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -24,8 +24,6 @@
 #include "exodusII.h"     // for ex_err, EX_MSG, etc
 #include "exodusII_int.h" // for elem_blk_parm, EX_FATAL, etc
 
-/*! \endcond */
-
 /*! \undoc */
 int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
 {
@@ -33,11 +31,11 @@ int ex_get_concat_side_set_node_count(int exoid, int *side_set_node_cnt_list)
   ex_entity_id side_set_id;
   int          num_side_sets, num_elem_blks, ndim;
   int64_t      tot_num_elem = 0, tot_num_ss_elem = 0, num_df = 0, side, elem;
-  void_int *   elem_blk_ids       = NULL;
-  void_int *   side_set_ids       = NULL;
-  void_int *   ss_elem_ndx        = NULL;
-  void_int *   side_set_elem_list = NULL;
-  void_int *   side_set_side_list = NULL;
+  void_int    *elem_blk_ids       = NULL;
+  void_int    *side_set_ids       = NULL;
+  void_int    *ss_elem_ndx        = NULL;
+  void_int    *side_set_elem_list = NULL;
+  void_int    *side_set_side_list = NULL;
   size_t       elem_ctr;
   int          int_size, ids_size;
   int          status;

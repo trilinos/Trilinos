@@ -127,9 +127,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
   std::vector<INT> ns_cnts_global(globals.Num_Node_Set);
 
   INT ***eb_map_ptr    = nullptr;
-  INT ** eb_cnts_local = nullptr;
+  INT  **eb_cnts_local = nullptr;
   int    exoid         = 0;
-  int *  par_exoid     = nullptr;
+  int   *par_exoid     = nullptr;
 
   float       vers;
   std::string cTemp;
@@ -783,7 +783,7 @@ int NemSpread<T, INT>::read_elem_vars_1(int exoid, int index, INT *eb_ids, INT *
           size_t var_offset =
               ivar * (globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc]);
 
-          INT *  elem_map = eb_map_ptr[iproc][iblk];
+          INT   *elem_map = eb_map_ptr[iproc][iblk];
           size_t num_elem = eb_cnts_local[iproc][iblk];
 
           for (size_t i1 = 0; i1 < num_elem; i1++) {

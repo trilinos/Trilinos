@@ -68,6 +68,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_SGS_calore1_mm.xml 
   test_MTSGS_calore1_mm.xml
   calore1.mtx 
+  calore1_rhs.mtx
   test_pseudoblockcg_small_sym_mm.xml
   test_minres_small_sym_mm.xml
   test_Jacobi_small_sym_mm.xml 
@@ -101,6 +102,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_FILDL_small_sym_sing.xml
   small_sym_sing.mtx consist_rhs.vec small_null.vec
   mueluMatrix.mtx
+  mueluMatrix_rhs.mtx
   test_4_GS_muelu.xml
   test_4_MTGS_muelu.xml
   test_4_SGS_muelu.xml

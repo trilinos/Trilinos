@@ -118,7 +118,7 @@ namespace Tacho {
       ///
 
       void reorder(const ordinal_type verbose = 0) {
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
         double t_scotch = 0;
 
         _verbose = verbose;

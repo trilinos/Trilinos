@@ -167,9 +167,13 @@ int main( int argc, char* argv[] )
 
   fprintf(stderr,"GetDistribution -- rank %d, nprocs %d, my_rows %d, my_cols %d, my_first_row %d, my_first_col %d, my_rhs %d, my_row %d, my_col %d, my_rows_max %d, my_cols_max %d\n", rank,size,my_rows,my_cols,my_first_row,my_first_col,my_rhs,my_row,my_col,my_rows_max,my_cols_max);
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   int gpu_count;
+#ifdef KOKKOS_ENABLE_CUDA
   cudaGetDeviceCount ( &gpu_count );
+#else
+  hipGetDeviceCount ( &gpu_count );
+#endif
   Kokkos::InitArguments args;
   args.num_threads = 0;
   args.num_numa    = 0;
@@ -189,9 +193,13 @@ int main( int argc, char* argv[] )
     env_var = getenv ("OMP_NUM_THREADS");
     if (env_var!=NULL) printf("Rank %d, the current OMP_NUM_THREADS is: %s\n",rank, env_var);
 
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    int device_id;
 #ifdef KOKKOS_ENABLE_CUDA
-  int device_id;
-  cudaGetDevice ( &device_id );
+    cudaGetDevice ( &device_id );
+#else
+    hipGetDevice ( &device_id );
+#endif
   printf("Rank %d, After Kokkos initialization, GPU %d/%d\n", rank, device_id, gpu_count);
 #endif
 
@@ -231,8 +239,8 @@ int main( int argc, char* argv[] )
 
     // Create host views
     ViewMatrixType::HostMirror h_my_A = Kokkos::create_mirror( my_A );     //backup data for multiple runs
-#if defined(HOSTPTR_API) && defined(KOKKOS_ENABLE_CUDA)
-    ViewMatrixType::HostMirror h_my_A_hptr = Kokkos::create_mirror( my_A );//in place of my_A, for testing host pointer API with CUDA enabled
+#if defined(HOSTPTR_API) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+    ViewMatrixType::HostMirror h_my_A_hptr = Kokkos::create_mirror( my_A );//in place of my_A, for testing host pointer API with CUDA or HIP enabled
 #endif
     ViewVectorType_Host h_X ( "h_X",  N );                                 //store the final solution vector on host
     ViewVectorType_Host h_X0( "h_X0", N );                                 //store the referencen solution vector on host for error checking
@@ -245,6 +253,7 @@ int main( int argc, char* argv[] )
     gettimeofday( &begin, NULL );
     if(rank == 0) {//generate on rank 0
       Kokkos::fill_random(X0,rand_pool,Kokkos::rand<Kokkos::Random_XorShift64<execution_space>,ScalarA >::max());
+      Kokkos::fence();//Note: need a fence here to make sure "fill_random" completes before broadcast
     }
     MPI_Bcast(reinterpret_cast<char *>(X0.data()), N*sizeof(ScalarA), MPI_CHAR, 0, MPI_COMM_WORLD);//broadcast X0 to other nodes
     Kokkos::deep_copy( h_X0, X0 );//copy from device to host
@@ -311,6 +320,9 @@ int main( int argc, char* argv[] )
 #ifdef KOKKOS_ENABLE_CUDA
       printf("CUDA is enabled\n");
 #endif
+#ifdef KOKKOS_ENABLE_HIP
+      printf("HIP is enabled\n");
+#endif
 #ifdef KOKKOS_ENABLE_OPENMP
       printf("OPENMP is enabled\n");
 #endif
@@ -323,6 +335,9 @@ int main( int argc, char* argv[] )
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
       printf("Found cuBLAS TPL\n");
 #endif
+#ifdef KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+      printf("Found rocBLAS TPL\n");
+#endif
     }
 
     double time = 0.0;
@@ -330,7 +345,7 @@ int main( int argc, char* argv[] )
     MPI_Barrier (MPI_COMM_WORLD);
 
     for ( int repeat = 0; repeat < nrepeat; repeat++ ) {
-#if defined(HOSTPTR_API) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(HOSTPTR_API) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
       Kokkos::deep_copy( h_my_A_hptr, h_my_A ); //restore the orig. matrix and RHS
 #else
       Kokkos::deep_copy( my_A, h_my_A ); //restore the orig. matrix and RHS
@@ -345,13 +360,13 @@ int main( int argc, char* argv[] )
 #ifdef KKVIEW_API
       Adelus::FactorSolve (my_A, my_rows, my_cols, &matrix_size, &nprocs_row, &nrhs, &secs);
 #endif
-#if defined(DEVPTR_API) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(DEVPTR_API) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
       Adelus::FactorSolve_devPtr (reinterpret_cast<ADELUS_DATA_TYPE *>(my_A.data()),my_rows,my_cols,my_rhs,&matrix_size,&nprocs_row,&nrhs,&secs);
 #endif
-#if defined(HOSTPTR_API) && !defined(KOKKOS_ENABLE_CUDA)//KOKKOS_ENABLE_OPENMP
+#if defined(HOSTPTR_API) && !(defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))//KOKKOS_ENABLE_OPENMP
       Adelus::FactorSolve_hostPtr (reinterpret_cast<ADELUS_DATA_TYPE *>(my_A.data()),my_rows,my_cols,my_rhs,&matrix_size,&nprocs_row,&nrhs,&secs);
 #endif
-#if defined(HOSTPTR_API) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(HOSTPTR_API) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
       Adelus::FactorSolve_hostPtr (reinterpret_cast<ADELUS_DATA_TYPE *>(h_my_A_hptr.data()),my_rows,my_cols,my_rhs,&matrix_size,&nprocs_row,&nrhs,&secs);
 #endif
 
@@ -370,7 +385,7 @@ int main( int argc, char* argv[] )
       time += time_iter;
     }
 
-#if defined(HOSTPTR_API) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(HOSTPTR_API) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
     Kokkos::deep_copy( my_A, h_my_A_hptr );
 #endif
 

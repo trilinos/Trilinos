@@ -104,6 +104,6 @@ struct morkon_base_impl {
 #include <Kokkos_UnorderedMap.hpp>
 
 #include <Kokkos_Macros.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #endif

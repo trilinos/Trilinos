@@ -15,14 +15,14 @@ OUTPUT_DIRECTORY       = .
 #
 # What and how documentation is extracted
 #
-INPUT                  = index.dox ../src ../test ../unit_test
+INPUT                  = index.doc ../src ../test ../unit_test ../examples
 
 #FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATTERNS       =
-EXAMPLE_PATH           = 
+EXAMPLE_PATH           = ../examples
 IMAGE_PATH             = 
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES

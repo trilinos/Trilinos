@@ -114,13 +114,12 @@ namespace { // (anonymous)
     {
       RCPMap map  = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
       MV mv(map,1);
-      zero = rcp( new MAT(map,0,TPETRA_DEFAULT_PROFILE_TYPE) );
+      zero = rcp( new MAT(map,0) );
       TEST_THROW(zero->apply(mv,mv), std::runtime_error);
 #   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS)
       // throw exception because we required increased allocation
       TEST_THROW(zero->insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(0),tuple<Scalar>(ST::one())), std::runtime_error);
 #   endif
-      TEST_ASSERT( zero->getProfileType() == TPETRA_DEFAULT_PROFILE_TYPE );
       zero->fillComplete();
     }
     STD_TESTS((*zero));
@@ -184,11 +183,10 @@ namespace { // (anonymous)
     GO base = numLocal*myImageID;
     RCP<Tpetra::RowMatrix<Scalar,LO,GO,Node> > eye;
     {
-      RCP<MAT> eye_crs = rcp(new MAT(map,numLocal,TPETRA_DEFAULT_PROFILE_TYPE));
+      RCP<MAT> eye_crs = rcp(new MAT(map,numLocal));
       for (size_t i=0; i<numLocal; ++i) {
         eye_crs->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<Scalar>(ST::one()));
       }
-      TEST_ASSERT( eye_crs->getProfileType() == TPETRA_DEFAULT_PROFILE_TYPE );
       eye_crs->fillComplete();
       eye = eye_crs;
     }
@@ -420,6 +418,82 @@ namespace { // (anonymous)
     }
   }
 
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, InsertLocalValuesCombineModes, LO, GO, Scalar, Node )
+  {
+    typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map
+    const size_t numLocalRows = 3;
+    const size_t numLocalColumns = 3;
+    const int numRanks = comm->getSize();
+    RCP<const Tpetra::Map<LO,GO,Node> > rowMap =
+      createContigMapWithNode<LO,GO,Node>(numLocalRows * numRanks, numLocalRows, comm);
+    RCP<const Tpetra::Map<LO,GO,Node> > colMap =
+      createContigMapWithNode<LO,GO,Node>(numLocalColumns * numRanks, numLocalColumns, comm);
+
+    Teuchos::Array<size_t> entriesPerRow(numLocalRows);
+    for(size_t i = 0; i < numLocalRows; i++)
+      entriesPerRow[i] = 3;
+    MAT A(rowMap, colMap, entriesPerRow());
+
+    //Insert 1 as value in all entries.
+    Teuchos::Array<Scalar> vals(numLocalColumns-1, ST::one());
+    Teuchos::Array<LO> cols(numLocalColumns-1);
+    for(size_t i = 0; i < numLocalColumns-1; i++)
+      cols[i] = i;
+    auto valsView = vals();
+    auto colsView = cols();
+
+    Teuchos::Array<Scalar> vals2(numLocalColumns, ST::one());
+    Teuchos::Array<LO> cols2(numLocalColumns);
+    for(size_t i = 0; i < numLocalColumns; i++)
+      cols2[i] = i;
+    auto valsView2 = vals2();
+    auto colsView2 = cols2();
+
+    // only the second pair of (cols, vals) inserts into the third column
+
+    // default CombineMode = ADD
+    A.insertLocalValues(0, colsView, valsView);
+    A.insertLocalValues(0, colsView2, valsView2);
+    // ADD
+    A.insertLocalValues(1, colsView, valsView, Tpetra::ADD);
+    A.insertLocalValues(1, colsView2, valsView2, Tpetra::ADD);
+    //INSERT
+    A.insertLocalValues(2, colsView, valsView, Tpetra::INSERT);
+    A.insertLocalValues(2, colsView2, valsView2, Tpetra::INSERT);
+    A.fillComplete(colMap, rowMap);
+
+    //auto fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    //A.describe(*fancy,Teuchos::VERB_EXTREME);
+
+    const Scalar one = ST::one();
+    const Scalar two = one+one;
+
+    // Checks:
+    // The first two entries have been added/replaced according to the
+    // CombineMode
+    // The third entry should always be 1.
+
+    typename MAT::local_inds_host_view_type kColsView;
+    typename MAT::values_host_view_type kValsView;
+    A.getLocalRowView(0, kColsView, kValsView);
+    for(size_t i = 0; i < numLocalColumns-1; i++)
+      TEST_EQUALITY(kValsView(i), two);
+    TEST_EQUALITY(kValsView(numLocalColumns-1), one);
+    A.getLocalRowView(1, kColsView, kValsView);
+    for(size_t i = 0; i < numLocalColumns-1; i++)
+      TEST_EQUALITY(kValsView(i), two);
+    TEST_EQUALITY(kValsView(numLocalColumns-1), one);
+    A.getLocalRowView(2, kColsView, kValsView);
+    for(size_t i = 0; i < numLocalColumns-1; i++)
+      TEST_EQUALITY(kValsView(i), one);
+    TEST_EQUALITY(kValsView(numLocalColumns-1), one);
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -430,14 +504,16 @@ namespace { // (anonymous)
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TheEyeOfTruth,  LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ZeroMatrix,     LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, BadCalls,       LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SimpleEigTest,  LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SimpleEigTest,  LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, InsertLocalValuesCombineModes,  LO, GO, SCALAR, NODE )
 #else
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TheEyeOfTruth,  LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ZeroMatrix,     LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ImbalancedRowMatrix, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, BadCalls,       LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SimpleEigTest,  LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, SimpleEigTest,  LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, InsertLocalValuesCombineModes,  LO, GO, SCALAR, NODE )
 #endif
 
   TPETRA_ETI_MANGLING_TYPEDEFS()

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo
-echo "Starting nightly Trilinos development testing on geminga: `date`"
+echo "Starting nightly Trilinos development testing on $HOSTNAME: `date`"
 echo
 
 #
@@ -35,17 +35,30 @@ export TDD_HTTPS_PROXY=$https_proxy
 
 . ~/.bashrc
 
-# If you update the list of modules, go to ~/code/trilinos-test/trilinos/ and
-# do "git pull". Otherwise, the tests could fail on the first night, as we
-# would first run old cron_driver.sh and only then pull
+# Machine independent cron_driver:
+SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
+
+
+# Trilinos source repo
+export TRILINOS_SOURCE=$SCRIPT_DIR/../../../..
+
+# folder with the machine specific build info
+export BUILDS_DIR=$TRILINOS_SOURCE/cmake/ctest/drivers/$HOSTNAME
+
+# So we can load the env module specific to the build
+export MODULEPATH=$BUILDS_DIR:$MODULEPATH
+echo "Loading modules from $MODULEPATH"
+
+# update the Trilinos source
+pushd $TRILINOS_SOURCE
+./cmake/tribits/python_utils/gitdist --dist-no-color pull
+popd
+
 
 # ===========================================================================
 export CTEST_CONFIGURATION="default"
-module load sems-cmake/3.17.1
-module load sems-gcc/5.3.0
-module load sems-openmpi/1.10.1
-module load sems-superlu/4.3/base
-module load sems-git/2.10.1
+module load muelu-gcc
+module list
 
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
@@ -55,34 +68,45 @@ export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
 echo "Configuration = $CTEST_CONFIGURATION"
 env
 
-export OMP_NUM_THREADS=2
+case "$(date +%a)" in
+    Sun|Tue|Thu)
+        heavy_memory_tests=true
+        coverage=false
+        ;;
+    Mon|Wed)
+        heavy_memory_tests=false
+        coverage=true
+        ;;
+    *)
+        heavy_memory_tests=false
+        coverage=false
+        ;;
+esac
 
-# Machine independent cron_driver:
-SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
-$SCRIPT_DIR/../cron_driver.py
+pushd $TRILINOS_SOURCE
+ctest -S $BUILDS_DIR/ctest_linux_nightly_serial_debug_muelu_tpetra_geminga.cmake
+ctest -S $BUILDS_DIR/ctest_linux_nightly_serial_debug_muelu_epetra_geminga.cmake
+# ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_complex_muelu_geminga.cmake
+ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_tpetra_no_int_no_serial_geminga.cmake
+ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_no_epetra_no_serial_openmp_geminga.cmake
+ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_tpetra_no_int_experimental_geminga.cmake
 
-module unload sems-superlu/4.3/base
-module unload sems-openmpi/1.10.1
-module unload sems-gcc/5.3.0
-module unload sems-cmake/3.17.1
+if [ "$heavy_memory_tests" = true ] ; then
+    ctest -S $BUILDS_DIR/ctest_linux_nightly_serial_debug_valgrind_muelu_geminga.cmake
+    ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_debug_muelu_geminga.cmake
+else
+    ctest -S $BUILDS_DIR/ctest_linux_nightly_serial_debug_muelu_geminga.cmake
+fi
+
+if [ "$coverage" = true ] ; then
+   ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_debug_muelu_coverage_geminga.cmake
+fi
+
+popd
+
 # ===========================================================================
 export CTEST_CONFIGURATION="nvcc_wrapper"
-#module load openmpi/1.10.0
-#module load gcc/4.9.2
-#module load cuda/7.5-gcc
-#module load nvcc-wrapper/gcc
 
-module load sems-env
-module load sems-cmake/3.17.1
-module load sems-gcc/8.3.0
-module load sems-boost/1.69.0/base
-module load sems-python/2.7.9
-module load sems-zlib/1.2.8/base
-module load sems-openmpi/4.0.2
-module load sems-cuda/10.1
-module load sems-cuda_openmpi/4.0.2/base
-module load sems-superlu/4.3
-module load sems-netcdf/4.7.3/parallel
 # See Trilinos github issue #2115.
 export OMPI_CXX=/home/jhu/code/trilinos-test/trilinos/packages/kokkos/bin/nvcc_wrapper
 
@@ -97,31 +121,15 @@ echo "OMPI_CXXFLAGS after $OMPI_CXXFLAGS"
 echo "Configuration = $CTEST_CONFIGURATION"
 env
 
-export CUDA_LAUNCH_BLOCKING=1
-export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
-# Only run on the Tesla K40, not the Quadro
-export CUDA_VISIBLE_DEVICES=0
-# Machine independent cron_driver:
-SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
-$SCRIPT_DIR/../cron_driver.py
+pushd $TRILINOS_SOURCE
+ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_kokkos_refactor_cuda_geminga.cmake
+ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_amgx_cuda_geminga.cmake
+ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_cuda_no_uvm_geminga.cmake
+popd
 
-#module unload nvcc-wrapper
-#module unload cuda
-#module unload gcc
-#module unload openmpi
-module unload sems-netcdf/4.7.3/parallel
-module unload sems-superlu/4.3
-module unload sems-cuda_openmpi/4.0.2/base
-module unload sems-cuda/10.1
-module unload sems-openmpi/4.0.2
-module unload sems-zlib/1.2.8/base
-module unload sems-python/2.7.9
-module unload sems-boost/1.69.0/base
-module unload sems-gcc/8.3.0
-module unload sems-cmake/3.17.1
-module unload sems-env
+module unload muelu-gcc
 # ===========================================================================
 
 echo
-echo "Ending nightly Trilinos development testing on geminga: `date`"
+echo "Ending nightly Trilinos development testing on $HOSTNAME: `date`"
 echo

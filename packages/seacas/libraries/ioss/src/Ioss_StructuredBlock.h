@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_StructuredBlock_h
-#define IOSS_Ioss_StructuredBlock_h
+#pragma once
 
 #include <Ioss_BoundingBox.h>
 #include <Ioss_CodeTypes.h>
@@ -19,12 +18,12 @@
 
 #if defined(SEACAS_HAVE_CGNS) && !defined(BUILT_IN_SIERRA)
 #include <cgnstypes.h>
-using INT = cgsize_t;
+using IOSS_SB_INT = cgsize_t;
 #else
 // If this is not being built with CGNS, then default to using 32-bit integers.
 // Currently there is no way to input/output a structured mesh without CGNS,
 // so this block is simply to get things to compile and probably has no use.
-using INT = int;
+using IOSS_SB_INT = int;
 #endif
 
 namespace Ioss {
@@ -115,7 +114,7 @@ namespace Ioss {
     EntityType  type() const override { return STRUCTUREDBLOCK; }
 
     const Ioss::NodeBlock &get_node_block() const { return m_nodeBlock; }
-    Ioss::NodeBlock &      get_node_block() { return m_nodeBlock; }
+    Ioss::NodeBlock       &get_node_block() { return m_nodeBlock; }
 
     /** \brief Does block contain any cells
      */
@@ -229,10 +228,10 @@ namespace Ioss {
       return get_local_node_offset(index[0], index[1], index[2]);
     }
 
-    std::vector<INT> get_cell_node_ids(bool add_offset) const
+    std::vector<IOSS_SB_INT> get_cell_node_ids(bool add_offset) const
     {
-      size_t           node_count = get_property("node_count").get_int();
-      std::vector<INT> ids(node_count);
+      size_t                   node_count = get_property("node_count").get_int();
+      std::vector<IOSS_SB_INT> ids(node_count);
       get_cell_node_ids(ids.data(), add_offset);
       return ids;
     }
@@ -357,4 +356,3 @@ namespace Ioss {
     }
   };
 } // namespace Ioss
-#endif

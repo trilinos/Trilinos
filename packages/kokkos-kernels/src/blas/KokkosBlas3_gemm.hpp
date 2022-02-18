@@ -48,11 +48,73 @@
 
 #include <KokkosKernels_Macros.hpp>
 #include <KokkosBlas3_gemm_spec.hpp>
+#include <KokkosBlas2_gemv.hpp>
+#include <KokkosBlas1_scal.hpp>
 #include <KokkosKernels_helpers.hpp>
 #include <sstream>
 #include <type_traits>
 
 namespace KokkosBlas {
+
+namespace Impl {
+  // Special codepath for when B/C have 1 column: use GEMV (matrix-vector) instead.
+  // GEMV performs better than tiled GEMM in this case.
+  //
+  // Returns true if the criteria are met and GEMV was run, false otherwise.
+  //
+  // This case must be intercepted here rather than impl in order to call TPL
+  // GEMV instead of TPL GEMM. This codepath was measured to be profitable with cuBLAS.
+  template<class AViewType,
+           class BViewType,
+           class CViewType>
+  bool
+  gemv_based_gemm
+       (const char transA[],
+        const char transB[],
+        typename AViewType::const_value_type& alpha,
+        const AViewType& A,
+        const BViewType& B,
+        typename CViewType::const_value_type& beta,
+        const CViewType& C,
+        typename std::enable_if<
+          !std::is_same<typename BViewType::array_layout, Kokkos::LayoutStride>::value &&
+          !std::is_same<typename CViewType::array_layout, Kokkos::LayoutStride>::value>::type* = nullptr)
+  {
+    if(toupper(transA[0]) == 'N' && toupper(transB[0]) == 'N' && B.extent(1) == size_t(1))
+    {
+      // since B/C both have a single column and are not LayoutStride,
+      // can create a raw contiguous rank-1 vector from them rather than using subview.
+      Kokkos::View<typename BViewType::value_type*, typename BViewType::array_layout,
+        typename BViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>> Bvec(B.data(), B.extent(0));
+      Kokkos::View<typename CViewType::value_type*, typename CViewType::array_layout,
+        typename CViewType::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>> Cvec(C.data(), C.extent(0));
+      KokkosBlas::gemv("N", alpha, A, Bvec, beta, Cvec);
+      return true;
+    }
+    return false;
+  }
+
+  // Don't attempt to call GEMV with LayoutStride vectors.
+  // GEMV is not ETI'd for this case, so there would be undefined symbol errors in tests.
+  template<class AViewType,
+           class BViewType,
+           class CViewType>
+  bool
+  gemv_based_gemm
+       (const char /*transA*/[],
+        const char /*transB*/[],
+        typename AViewType::const_value_type& /*alpha*/,
+        const AViewType& /*A*/,
+        const BViewType& /*B*/,
+        typename CViewType::const_value_type& /*beta*/,
+        const CViewType& /*C*/,
+        typename std::enable_if<
+          std::is_same<typename BViewType::array_layout, Kokkos::LayoutStride>::value ||
+          std::is_same<typename CViewType::array_layout, Kokkos::LayoutStride>::value>::type* = nullptr)
+  {
+    return false;
+  }
+}
 
 /// \brief Dense matrix-matrix multiply: C = beta*C + alpha*op(A)*op(B).
 ///
@@ -138,11 +200,22 @@ gemm (const char transA[],
     }
   #endif // KOKKOSKERNELS_DEBUG_LEVEL > 0
 
-  // Return if degenerated matrices are provided
-  if((A.extent(0) == 0) || (A.extent(1) == 0) || (C.extent(1) == 0))
+  // Return if C matrix is degenerated
+  if((C.extent(0) == 0) || (C.extent(1) == 0)) {
+    return;
+  }
+
+  // Simply scale C if A matrix is degenerated
+  if(A.extent(1) == 0) {
+    scal(C, beta, C);
+    return;
+  }
+
+  // Check if gemv code path is allowed and profitable, and if so run it.
+  if(Impl::gemv_based_gemm(transA, transB, alpha, A, B, beta, C))
     return;
 
-  // Minimize the number of Impl::GEMV instantiations, by
+  // Minimize the number of Impl::GEMM instantiations, by
   // standardizing on particular View specializations for its template
   // parameters.
   typedef Kokkos::View<typename AViewType::const_value_type**,

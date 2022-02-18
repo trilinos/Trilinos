@@ -137,7 +137,7 @@ namespace Tacho {
                     typename DeviceType::memory_space >::assignable, 
                     "DeviceType is not assignable from HostSpace" );
         
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
 

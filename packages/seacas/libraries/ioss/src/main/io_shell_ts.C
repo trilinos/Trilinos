@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,10 +32,6 @@
 #include <vector>
 
 #include "shell_interface.h"
-
-#ifdef SEACAS_HAVE_MPI
-#include <mpi.h>
-#endif
 
 #ifdef SEACAS_HAVE_KOKKOS
 #include <Kokkos_Core.hpp> // for Kokkos::View
@@ -90,7 +86,7 @@ namespace {
   void transform_field_data(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
                             Ioss::Field::RoleType role, const IOShell::Interface &interFace);
   void transfer_field_data_internal(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                                    const std::string &       field_name,
+                                    const std::string        &field_name,
                                     const IOShell::Interface &interFace);
 
   void file_copy(IOShell::Interface &interFace, int rank);
@@ -109,13 +105,13 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-  int num_proc = 1;
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
   ON_BLOCK_EXIT(MPI_Finalize);
 #endif
+  Ioss::ParallelUtils pu{};
+  rank         = pu.parallel_rank();
+  int num_proc = pu.parallel_size();
 
 #ifdef SEACAS_HAVE_KOKKOS
   Kokkos::ScopeGuard kokkos(argc, argv);
@@ -167,25 +163,24 @@ int main(int argc, char *argv[])
   if (mem_stats) {
     int64_t MiB = 1024 * 1024;
 #ifdef SEACAS_HAVE_MPI
-    int64_t             min, max, avg;
-    int64_t             hwmin, hwmax, hwavg;
-    Ioss::ParallelUtils parallel(MPI_COMM_WORLD);
-    parallel.memory_stats(min, max, avg);
-    parallel.hwm_memory_stats(hwmin, hwmax, hwavg);
+    int64_t min, max, avg;
+    int64_t hwmin, hwmax, hwavg;
+    pu.memory_stats(min, max, avg);
+    pu.hwm_memory_stats(hwmin, hwmax, hwavg);
     if (rank == 0) {
-      fmt::print(stderr, "\n\tCurrent Memory: {:L}M  {:L}M  {:L}M\n", min / MiB, max / MiB,
-                 avg / MiB);
-      fmt::print(stderr, "\tHigh Water Memory: {:L}M  {:L}M  {:L}M\n", hwmin / MiB, hwmax / MiB,
-                 hwavg / MiB);
+      fmt::print(stderr, "\n\tCurrent Memory: {}M  {}M  {}M\n", fmt::group_digits(min / MiB),
+                 fmt::group_digits(max / MiB), fmt::group_digits(avg / MiB));
+      fmt::print(stderr, "\tHigh Water Memory: {}M  {}M  {}M\n", fmt::group_digits(hwmin / MiB),
+                 fmt::group_digits(hwmax / MiB), fmt::group_digits(hwavg / MiB));
     }
 #else
     int64_t mem = Ioss::Utils::get_memory_info();
     int64_t hwm = Ioss::Utils::get_hwm_memory_info();
     if (rank == 0) {
       fmt::print(stderr,
-                 "\n\tCurrent Memory:    {:L}M\n"
-                 "\tHigh Water Memory: {:L}M\n",
-                 mem / MiB, hwm / MiB);
+                 "\n\tCurrent Memory:    {}M\n"
+                 "\tHigh Water Memory: {}M\n",
+                 fmt::group_digits(mem / MiB), fmt::group_digits(hwm / MiB));
     }
 #endif
   }
@@ -203,8 +198,9 @@ namespace {
 
     bool first = true;
     for (const auto &inpfile : interFace.inputFile) {
-      Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(
-          interFace.inFiletype, inpfile, Ioss::READ_MODEL, (MPI_Comm)MPI_COMM_WORLD, properties);
+      Ioss::DatabaseIO *dbi =
+          Ioss::IOFactory::create(interFace.inFiletype, inpfile, Ioss::READ_MODEL,
+                                  Ioss::ParallelUtils::comm_world(), properties);
       if (dbi == nullptr || !dbi->ok(true)) {
         std::exit(EXIT_FAILURE);
       }
@@ -272,7 +268,7 @@ namespace {
       //========================================================================
       Ioss::DatabaseIO *dbo =
           Ioss::IOFactory::create(interFace.outFiletype, interFace.outputFile, Ioss::WRITE_RESTART,
-                                  (MPI_Comm)MPI_COMM_WORLD, properties);
+                                  Ioss::ParallelUtils::comm_world(), properties);
       if (dbo == nullptr || !dbo->ok(true)) {
         std::exit(EXIT_FAILURE);
       }
@@ -315,18 +311,14 @@ namespace {
 
       transfer_nodeblock(region, output_region, interFace.debug);
 
-#ifdef SEACAS_HAVE_MPI
       // This also assumes that the node order and count is the same for input
       // and output regions... (This is checked during nodeset output)
       if (output_region.get_database()->needs_shared_node_information()) {
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
         if (interFace.ints_64_bit)
           set_owned_node_count(region, rank, (int64_t)0);
         else
           set_owned_node_count(region, rank, (int)0);
       }
-#endif
 
       transfer_edgeblocks(region, output_region, interFace.debug);
       transfer_faceblocks(region, output_region, interFace.debug);
@@ -664,8 +656,8 @@ namespace {
 
   struct param
   {
-    Ioss::GroupingEntity *    entity;
-    Ioss::Region *            output_region;
+    Ioss::GroupingEntity     *entity;
+    Ioss::Region             *output_region;
     Ioss::Field::RoleType     role;
     const IOShell::Interface *interFace;
   };
@@ -825,7 +817,12 @@ namespace {
       for (const auto &ifb : fbs) {
         if (ifb->parent_block() != nullptr) {
           auto  fb_name = ifb->parent_block()->name();
-          auto *parent  = dynamic_cast<Ioss::EntityBlock *>(output_region.get_entity(fb_name));
+          auto *parent  = dynamic_cast<Ioss::EntityBlock *>(
+              output_region.get_entity(fb_name, Ioss::ELEMENTBLOCK));
+          if (parent == nullptr) {
+            parent = dynamic_cast<Ioss::EntityBlock *>(
+                output_region.get_entity(fb_name, Ioss::STRUCTUREDBLOCK));
+          }
 
           auto *ofb = surf->get_side_block(ifb->name());
           ofb->set_parent_block(parent);
@@ -922,8 +919,7 @@ namespace {
                        Ioss::Field::RoleType role, const std::string &prefix)
   {
     // Check for transient fields...
-    Ioss::NameList fields;
-    ige->field_describe(role, &fields);
+    Ioss::NameList fields = ige->field_describe(role);
 
     // Iterate through results fields and transfer to output
     // database...  If a prefix is specified, only transfer fields
@@ -942,8 +938,7 @@ namespace {
                         Ioss::Field::RoleType role)
   {
     // Check for transient fields...
-    Ioss::NameList fields;
-    ige->field_describe(role, &fields);
+    Ioss::NameList fields = ige->field_describe(role);
 
     // Iterate through results fields and transfer to output database...
     for (const auto &field_name : fields) {
@@ -972,8 +967,7 @@ namespace {
   {
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.
-    Ioss::NameList state_fields;
-    ige->field_describe(role, &state_fields);
+    Ioss::NameList state_fields = ige->field_describe(role);
     // Iterate through mesh description fields and transfer to
     // output database...
     for (const auto &field_name : state_fields) {
@@ -1186,8 +1180,7 @@ namespace {
   {
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.
-    Ioss::NameList state_fields;
-    ige->field_describe(role, &state_fields);
+    Ioss::NameList state_fields = ige->field_describe(role);
 
     // Complication here is that if the 'role' is 'Ioss::Field::MESH',
     // then the 'ids' field must be transferred first...
@@ -1218,7 +1211,7 @@ namespace {
   }
 
   void transfer_field_data_internal(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                                    const std::string &       field_name,
+                                    const std::string        &field_name,
                                     const IOShell::Interface &interFace)
   {
 
@@ -1462,8 +1455,7 @@ namespace {
 
   void transfer_properties(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge)
   {
-    Ioss::NameList properties;
-    ige->property_describe(&properties);
+    Ioss::NameList properties = ige->property_describe();
 
     // Iterate through properties and transfer to output database...
     for (const auto &property : properties) {

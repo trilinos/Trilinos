@@ -57,7 +57,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_Assert.hpp"
-
+#include "Teuchos_Range1D.hpp"
 
 namespace Thyra {
 
@@ -200,7 +200,7 @@ void SpmdVectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(
 #ifdef THYRA_DEBUG
   TEUCHOS_ASSERT(sub_vec);
 #endif
-  if( rng_in == Range1D::Invalid ) {
+  if( rng_in == Range1D::INVALID ) {
     // Just return an null view
     *sub_vec = RTOpPack::ConstSubVectorView<Scalar>();
     return;
@@ -270,7 +270,7 @@ void SpmdVectorDefaultBase<Scalar>::acquireNonconstDetachedVectorViewImpl(
 #ifdef THYRA_DEBUG
   TEUCHOS_ASSERT(sub_vec);
 #endif
-  if( rng_in == Range1D::Invalid ) {
+  if( rng_in == Range1D::INVALID ) {
     // Just return an null view
     *sub_vec = RTOpPack::SubVectorView<Scalar>();
     return;

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -338,9 +338,10 @@ namespace Ioss {
 
   std::ostream &operator<<(std::ostream &os, const BoundaryCondition &bc)
   {
-    fmt::print(os, "\t\tBC Name '{}' owns {:10L} faces.\tRange: [{}..{}, {}..{}, {}..{}]",
-               bc.m_bcName, bc.get_face_count(), bc.m_rangeBeg[0], bc.m_rangeEnd[0],
-               bc.m_rangeBeg[1], bc.m_rangeEnd[1], bc.m_rangeBeg[2], bc.m_rangeEnd[2]);
+    fmt::print(os, "\t\tBC Name '{}' owns {:10} faces.\tRange: [{}..{}, {}..{}, {}..{}]",
+               bc.m_bcName, fmt::group_digits(bc.get_face_count()), bc.m_rangeBeg[0],
+               bc.m_rangeEnd[0], bc.m_rangeBeg[1], bc.m_rangeEnd[1], bc.m_rangeBeg[2],
+               bc.m_rangeEnd[2]);
     return os;
   }
 

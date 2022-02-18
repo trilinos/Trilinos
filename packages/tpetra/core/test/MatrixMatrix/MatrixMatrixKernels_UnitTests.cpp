@@ -362,10 +362,10 @@ mult_test_results multiply_test_kernel(
 
   // Now let's handle incompatibilities between the cols of Aeff and the rows of Beff, by copying and rearranging Beff if needed
   if(!Aeff->getGraph()->getColMap()->isSameAs(*Beff->getGraph()->getColMap())) {
-    Teuchos::ArrayRCP<const size_t> Be1_rowptr;
-    Teuchos::ArrayRCP<const LO> Be1_colind;
-    Teuchos::ArrayRCP<const SC> Be1_vals;
-    Beff->getAllValues(Be1_rowptr,Be1_colind,Be1_vals);
+    auto lclBeff = Beff->getLocalMatrixHost();
+    auto Be1_rowptr = lclBeff.row_map;
+    auto Be1_colind = lclBeff.entries;
+    auto Be1_vals = lclBeff.values;
 
     RCP<const Map_t> Be1_rowmap = Beff->getGraph()->getRowMap();
     RCP<const Map_t> Be2_rowmap = Aeff->getGraph()->getColMap();
@@ -455,10 +455,9 @@ mult_test_results multiply_test_kernel(
     Tpetra::Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
 
     // Compare the returned arrays with that of actual C
-    Teuchos::ArrayRCP<const size_t> Real_rowptr;
-    Teuchos::ArrayRCP<const LO> Real_colind;
-    Teuchos::ArrayRCP<const SC> Real_vals;
-    C->getAllValues(Real_rowptr,Real_colind,Real_vals);
+    auto Real_rowptr = C->getLocalRowPtrsHost();
+    auto Real_colind = C->getLocalIndicesHost();
+    auto Real_vals = C->getLocalValuesHost(Tpetra::Access::ReadOnly);
 
     // Check number of rows
     if((size_t)Real_rowptr.size() != (size_t)row_mapC.size()) throw std::runtime_error("mult_test_results multiply_test_kernel: rowmap size mismatch");

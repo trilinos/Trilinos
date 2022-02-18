@@ -177,7 +177,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
 fi
 
 # Ninja
-module load ninja/1.7.2
+#module load ninja/1.7.2
 
 # CMake
 #module swap cmake/3.6.2 cmake/3.12.3

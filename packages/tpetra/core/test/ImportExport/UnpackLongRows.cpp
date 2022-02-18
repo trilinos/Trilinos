@@ -154,8 +154,8 @@ generate_graphs(
     shared_map = rcp(new map_type(invalid, indices(), 0, comm));
   }
 
-  owned = rcp(new graph_type(owned_map, rows_per_rank + dense_rows, Tpetra::StaticProfile));
-  shared = rcp(new graph_type(shared_map, rows_per_rank + dense_rows, Tpetra::StaticProfile));
+  owned = rcp(new graph_type(owned_map, rows_per_rank + dense_rows));
+  shared = rcp(new graph_type(shared_map, rows_per_rank + dense_rows));
 
   {
     using Teuchos::tuple;

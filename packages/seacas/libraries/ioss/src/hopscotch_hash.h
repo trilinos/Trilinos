@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) 2017 Thibaut Goetghebuer-Planchon <tessil@gmx.com>
+ * Copyright (c) 2017, 2022 Thibaut Goetghebuer-Planchon <tessil@gmx.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -683,8 +683,8 @@ namespace tsl {
       hopscotch_hash(hopscotch_hash &&other) noexcept(
           std::is_nothrow_move_constructible<Hash>::value &&std::is_nothrow_move_constructible<
               KeyEqual>::value &&std::is_nothrow_move_constructible<GrowthPolicy>::value
-              &&                 std::is_nothrow_move_constructible<buckets_container_type>::value
-                  &&             std::is_nothrow_move_constructible<overflow_container_type>::value)
+                               &&std::is_nothrow_move_constructible<buckets_container_type>::value
+                               &&std::is_nothrow_move_constructible<overflow_container_type>::value)
           : Hash(std::move(static_cast<Hash &>(other))),
             KeyEqual(std::move(static_cast<KeyEqual &>(other))),
             GrowthPolicy(std::move(static_cast<GrowthPolicy &>(other))),
@@ -740,24 +740,24 @@ namespace tsl {
        */
       iterator begin() noexcept
       {
-        auto begin = m_buckets_data.begin();
-        while (begin != m_buckets_data.end() && begin->empty()) {
-          ++begin;
+        auto l_begin = m_buckets_data.begin();
+        while (l_begin != m_buckets_data.end() && l_begin->empty()) {
+          ++l_begin;
         }
 
-        return iterator(begin, m_buckets_data.end(), m_overflow_elements.begin());
+        return iterator(l_begin, m_buckets_data.end(), m_overflow_elements.begin());
       }
 
       const_iterator begin() const noexcept { return cbegin(); }
 
       const_iterator cbegin() const noexcept
       {
-        auto begin = m_buckets_data.cbegin();
-        while (begin != m_buckets_data.cend() && begin->empty()) {
-          ++begin;
+        auto l_begin = m_buckets_data.cbegin();
+        while (l_begin != m_buckets_data.cend() && l_begin->empty()) {
+          ++l_begin;
         }
 
-        return const_iterator(begin, m_buckets_data.cend(), m_overflow_elements.cbegin());
+        return const_iterator(l_begin, m_buckets_data.cend(), m_overflow_elements.cbegin());
       }
 
       iterator end() noexcept

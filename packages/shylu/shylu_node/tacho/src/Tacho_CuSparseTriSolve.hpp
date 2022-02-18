@@ -112,7 +112,7 @@ namespace Tacho {
         printf("cuSparse: Analyze\n");
         printf("=================\n");
       }
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       _m = m;
 
@@ -239,7 +239,7 @@ namespace Tacho {
         printf("cuSolver: Solve\n");
         printf("===============\n");
       }
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
 

@@ -23,7 +23,7 @@
 
       <ParameterList name="myAggregationFact">
         <Parameter name="factory"                             type="string" value="StructuredAggregationFactory"/>
-        <Parameter name="aggregation: mode"               type="string" value="uncoupled"/>
+        <Parameter name="aggregation: mode"                   type="string" value="uncoupled"/>
         <Parameter name="aggregation: output type"            type="string" value="CrsGraph"/>
         <Parameter name="aggregation: coarsening rate"        type="string" value="{3}"/>
         <Parameter name="aggregation: coarsening order"       type="int"    value="0"/>
@@ -38,18 +38,18 @@
       <!-- Note that ParameterLists must be defined prior to being used -->
       <ParameterList name="myProlongatorFact">
         <Parameter name="factory"                             type="string" value="GeometricInterpolationPFactory"/>
-        <Parameter name="interp: interpolation order"         type="int"    value="0"/>
-        <Parameter name="interp: numDimensions"               type="int"    value="3"/>
         <Parameter name="interp: build coarse coordinates"    type="bool"   value="true"/>
         <Parameter name="prolongatorGraph"                    type="string" value="myAggregationFact"/>
         <Parameter name="coarseCoordinatesFineMap"            type="string" value="myAggregationFact"/>
         <Parameter name="coarseCoordinatesMap"                type="string" value="myAggregationFact"/>
       </ParameterList>
 
-      <!-- <ParameterList name="myCoordTransferFact"> -->
-      <!--   <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/> -->
-      <!--   <Parameter name="structured aggregation"              type="bool"   value="true"/> -->
-      <!-- </ParameterList> -->
+    <ParameterList name="myCoordTransferFact">
+      <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
+      <Parameter name="structured aggregation"              type="bool"   value="true"/>
+      <Parameter name="numDimensions"                       type="string" value="myAggregationFact"/>
+      <Parameter name="lCoarseNodesPerDim"                  type="string" value="myAggregationFact"/>
+    </ParameterList>
 
       <ParameterList name="myNullspaceFact">
         <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
@@ -72,10 +72,10 @@
         <Parameter name="factory"                             type="string" value="RAPFactory"/>
         <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
         <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
-        <!-- <ParameterList name="TransferFactories"> -->
-        <!--   <Parameter name="CoordinateTransfer"                type="string" value="myCoordTransferFact"/> -->
-        <!-- <Parameter name="AggregationExportFactory"                type="string" value="myAggExport"/> -->
-        <!-- </ParameterList> -->
+        <ParameterList name="TransferFactories">
+          <Parameter name="CoordinateTransfer"                type="string" value="myCoordTransferFact"/>
+          <!--<Parameter name="AggregationExportFactory"                type="string" value="myAggExport"/> -->
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="myJacobi">
@@ -122,6 +122,7 @@
       <Parameter name="cycle type"                            type="string"   value="V"/>
       <Parameter name="coarse: max size"                      type="int"      value="100"/> <!-- Min number of rows on coarsest level -->
       <Parameter name="verbosity"                             type="string"   value="High"/>
+      <Parameter name="use kokkos refactor"                   type="bool"     value="false"/>
 
       <ParameterList name="All">
         <Parameter name="PreSmoother"                         type="string"   value="myJacobi"/>
@@ -135,9 +136,8 @@
         <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
         <!-- <Parameter name="CoarseSolver"                        type="string"   value="myILU"/> -->
         <Parameter name="Coordinates"                         type="string"   value="myProlongatorFact"/>
-        <Parameter name="lNodesPerDim"                        type="string"   value="myProlongatorFact"/>
-        <!-- <Parameter name="CoarseNumZLayers"                    type="string"   value="myLineDetectionFact"/> -->
-        <!-- <Parameter name="LineDetection_VertLineIds"           type="string"   value="myLineDetectionFact"/> -->
+        <Parameter name="lNodesPerDim"                        type="string"   value="myCoordTransferFact"/>
+        <Parameter name="numDimensions"                       type="string"   value="myCoordTransferFact"/>
       </ParameterList>
     </ParameterList>
 

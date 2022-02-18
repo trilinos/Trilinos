@@ -42,29 +42,14 @@
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_MP_VECTOR_CONTIGUOUS_HPP
 #define KOKKOS_EXPERIMENTAL_VIEW_MP_VECTOR_CONTIGUOUS_HPP
 
-#include "Sacado_Traits.hpp"
-#include "Sacado_MP_Vector.hpp"
-#include "Sacado_MP_VectorTraits.hpp"
-
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
-#include "Kokkos_Core_fwd.hpp"
-#include "Kokkos_View.hpp"
+#include "Kokkos_View_MP_Vector_Fwd.hpp"
 #include "Kokkos_Layout.hpp"
 #include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_MP_Vector_Utils.hpp"
 
-
 //----------------------------------------------------------------------------
-
-namespace Kokkos {
-
-  namespace Impl {
-    template<class Space, class T, class ... P>
-    struct MirrorType;
-  }
-
-}
 
 namespace Kokkos {
 namespace Experimental {
@@ -107,115 +92,13 @@ dimension_scalar(const View<T,P...>& view) {
   return view.impl_map().dimension_scalar();
 }
 
-// Declare overloads of create_mirror() so they are in scope
-// Kokkos_Core.hpp is included below
-
-template< class T , class ... P >
-inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror(
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    std::is_same< typename ViewTraits<T,P...>::specialize ,
-      Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
-    !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-        Kokkos::LayoutStride >::value >::type * = 0);
-
-template< class T , class ... P >
-inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror(
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    std::is_same< typename ViewTraits<T,P...>::specialize ,
-      Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value &&
-    std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-      Kokkos::LayoutStride >::value >::type * = 0);
-
-template<class Space, class T, class ... P>
-typename Impl::MirrorType<Space,T,P ...>::view_type
-create_mirror(
-  const Space&,
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    std::is_same< typename ViewTraits<T,P...>::specialize ,
-      Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value >::type * = 0);
-
-// Overload of deep_copy for MP::Vector views intializing to a constant scalar
-template< class DT, class ... DP >
-void deep_copy(
-  const View<DT,DP...> & view ,
-  const typename View<DT,DP...>::array_type::value_type & value
-  , typename std::enable_if<(
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
-                 )>::type * = 0 );
-
-// Overload of deep_copy for MP::Vector views intializing to a constant MP::Vector
-template< class DT, class ... DP >
-void deep_copy(
-  const View<DT,DP...> & view ,
-  const typename View<DT,DP...>::value_type & value
-  , typename std::enable_if<(
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
-                 )>::type * = 0 );
-
-// Overload of deep_copy for MP::Vector views intializing to a constant scalar
-template< class ExecSpace , class DT, class ... DP >
-void deep_copy(
-  const ExecSpace &,
-  const View<DT,DP...> & view ,
-  const typename View<DT,DP...>::array_type::value_type & value
-  , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
-                 )>::type * = 0 );
-
-// Overload of deep_copy for MP::Vector views intializing to a constant MP::Vector
-template< class ExecSpace , class DT, class ... DP >
-void deep_copy(
-  const ExecSpace &,
-  const View<DT,DP...> & view ,
-  const typename View<DT,DP...>::value_type & value
-  , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
-                 )>::type * = 0 );
-
-/* Specialize for deep copy of MP::Vector */
-template< class DT , class ... DP , class ST , class ... SP >
-inline
-void deep_copy( const View<DT,DP...> & dst ,
-                const View<ST,SP...> & src
-  , typename std::enable_if<(
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
-  &&
-  std::is_same< typename ViewTraits<ST,SP...>::specialize
-              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
-    )>::type * = 0 );
-
-/* Specialize for deep copy of MP::Vector */
-template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
-inline
-void deep_copy( const ExecSpace &,
-                const View<DT,DP...> & dst ,
-                const View<ST,SP...> & src
-  , typename std::enable_if<(
-  std::is_same< typename ViewTraits<DT,DP...>::specialize
-              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
-  &&
-  std::is_same< typename ViewTraits<ST,SP...>::specialize
-              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
-    )>::type * = 0 );
-
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
 
+#include "Sacado_Traits.hpp"
+#include "Sacado_MP_Vector.hpp"
+#include "Sacado_MP_VectorTraits.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace Kokkos {
@@ -357,7 +240,7 @@ void deep_copy(
   const View<DT,DP...> & view ,
   const typename View<DT,DP...>::array_type::value_type & value
   , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  Kokkos::is_execution_space< ExecSpace >::value &&
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
   )>::type * )
@@ -378,7 +261,7 @@ void deep_copy(
   const View<DT,DP...> & view ,
   const typename View<DT,DP...>::value_type & value
   , typename std::enable_if<(
-  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  Kokkos::is_execution_space< ExecSpace >::value &&
   std::is_same< typename ViewTraits<DT,DP...>::specialize
               , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
   )>::type * )

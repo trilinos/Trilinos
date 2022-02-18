@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_FieldManager_h
-#define IOSS_Ioss_FieldManager_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Field.h> // for Field, Field::RoleType
@@ -44,10 +43,12 @@ namespace Ioss {
     const Field &getref(const std::string &field_name) const;
 
     // Returns the names of all fields
-    int describe(NameList *names) const;
+    int      describe(NameList *names) const;
+    NameList describe() const;
 
     // Returns the names of all fields with the specified 'RoleType'
-    int describe(Field::RoleType role, NameList *names) const;
+    int      describe(Field::RoleType role, NameList *names) const;
+    NameList describe(Field::RoleType role) const;
 
     size_t count() const;
 
@@ -58,4 +59,3 @@ namespace Ioss {
 #endif
   };
 } // namespace Ioss
-#endif

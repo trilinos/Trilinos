@@ -126,12 +126,12 @@ namespace MueLu {
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy(label);
     H->setlib(op->getDomainMap()->lib());
 
-    // Stick the non-serializible data on the hierarchy.
-    HierarchyUtils::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
-
     // Set fine level operator
     H->GetLevel(0)->Set("A", op);
     H->SetProcRankVerbose(op->getDomainMap()->getComm()->getRank());
+
+    // Stick the non-serializible data on the hierarchy.
+    HierarchyUtils::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
 
     mueLuFactory->SetupHierarchy(*H);
 

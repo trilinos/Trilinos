@@ -198,7 +198,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
 
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
-  const scalar_view_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X"), nv);
+  const scalar_view_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv);
   //create_random_x_vector operates on host mirror, then copies to device. But create_y does everything on device.
   create_random_x_vector(solution_x);
   exec_space().fence();
@@ -233,7 +233,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
         for (int skip_symbolic = 0; skip_symbolic < 2; ++skip_symbolic){
           for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric){
 
-            Kokkos::Impl::Timer timer1;
+            Kokkos::Timer timer1;
             //int res =
             run_block_gauss_seidel_1<crsMat_t, scalar_view_t, typename scalar_view_t::const_type, device>
               (input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric, shmem_size, omega);
@@ -262,7 +262,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
-  typedef Kokkos::View<scalar_t**, Kokkos::LayoutLeft, device> scalar_view2d_t;
+  typedef Kokkos::View<scalar_t**, default_layout, device> scalar_view2d_t;
   typedef typename Kokkos::Details::ArithTraits<scalar_t>::mag_type mag_t;
 
   lno_t numCols = numRows;
@@ -307,7 +307,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   //how many columns X/Y have
   constexpr lno_t numVecs = 2;
 
-  scalar_view2d_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X"), nv, numVecs);
+  scalar_view2d_t solution_x(Kokkos::view_alloc(Kokkos::WithoutInitializing, "X"), nv, numVecs);
   create_random_x_vector(solution_x);
   scalar_view2d_t y_vector = create_random_y_vector_mv(crsmat2, solution_x);
   exec_space().fence();
@@ -356,7 +356,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
         for (int skip_symbolic = 0; skip_symbolic < 2; ++skip_symbolic){
           for (int skip_numeric = 0; skip_numeric < 2; ++skip_numeric){
 
-            Kokkos::Impl::Timer timer1;
+            Kokkos::Timer timer1;
             //int res =
             run_block_gauss_seidel_1<crsMat_t, scalar_view2d_t, typename scalar_view2d_t::const_type, device>
               (input_mat, block_size, gs_algorithm, x_vector, y_vector, is_symmetric_graph, apply_type, skip_symbolic, skip_numeric, shmem_size, omega);

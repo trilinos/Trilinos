@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -12,9 +12,31 @@
 #include <Ioss_SmartAssert.h>
 #include <algorithm>
 #include <fmt/format.h>
+#include <string>
 
 //! \file
 extern unsigned int debug_level;
+
+template <> struct fmt::formatter<Loc> : formatter<std::string>
+{
+  // parse is inherited from formatter<std::string>.
+  template <typename FormatContext> auto format(Loc l, FormatContext &ctx)
+  {
+    std::string name = "unknown";
+    switch (l) {
+    case Loc::C: name = "Center"; break;
+    case Loc::BL: name = "Bottom Left"; break;
+    case Loc::B: name = "Bottom"; break;
+    case Loc::BR: name = "Bottom Right"; break;
+    case Loc::L: name = "Left"; break;
+    case Loc::R: name = "Right"; break;
+    case Loc::TL: name = "Top Left"; break;
+    case Loc::T: name = "Top"; break;
+    case Loc::TR: name = "Top Right"; break;
+    }
+    return formatter<std::string>::format(name, ctx);
+  }
+};
 
 namespace {
   // Iterate over the interior nodes on the specified face.  Skips
@@ -266,11 +288,11 @@ size_t Cell::processor_boundary_node_count() const
 }
 
 template void Cell::populate_node_communication_map(const std::vector<int> &node_map,
-                                                    std::vector<int> &      nodes,
-                                                    std::vector<int> &      procs) const;
+                                                    std::vector<int>       &nodes,
+                                                    std::vector<int>       &procs) const;
 template void Cell::populate_node_communication_map(const std::vector<int64_t> &node_map,
-                                                    std::vector<int64_t> &      nodes,
-                                                    std::vector<int64_t> &      procs) const;
+                                                    std::vector<int64_t>       &nodes,
+                                                    std::vector<int64_t>       &procs) const;
 
 template <typename INT>
 void Cell::populate_node_communication_map(const std::vector<INT> &node_map,

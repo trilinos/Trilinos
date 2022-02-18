@@ -4,21 +4,27 @@
 //
 // See packages/seacas/LICENSE for details
 
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
+#include <stdio.h>
+#else
 #include <limits.h>
 #include <unistd.h>
+#endif
 
 int open_file_limit()
 {
   // Returns maximum number of files that one process can have open
   // at one time. (POSIX)
-#if !defined(_WIN64) && !defined(WIN32) && !defined(_WINDOWS) && !defined(_MSC_VER)
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
+  int fdmax = _getmaxstdio();
+#else
   int fdmax = sysconf(_SC_OPEN_MAX);
   if (fdmax == -1) {
     // POSIX indication that there is no limit on open files...
     fdmax = INT_MAX;
   }
-#else
-  int fdmax = _getmaxstdio();
 #endif
 
   // File descriptors are assigned in order (0,1,2,3,...) on a per-process

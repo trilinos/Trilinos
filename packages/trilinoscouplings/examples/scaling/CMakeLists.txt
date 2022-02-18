@@ -172,6 +172,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
     Example_Poisson2D_pn_tpetra
     SOURCES example_Poisson2D_pn_tpetra.cpp
     TrilinosCouplings_Pamgen_Utils.cpp
+    TrilinosCouplings_IntrepidPoissonExampleHelpers.cpp	
     COMM mpi
     )
 

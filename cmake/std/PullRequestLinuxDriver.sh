@@ -12,10 +12,10 @@ function bootstrap_modules() {
     print_banner "Bootstrap environment modules start"
 
     cuda_regex=".*(_cuda_).*"
-    ride_regex=".*(ride).*"
+    weaver_regex=".*(weaver).*"
     vortex_regex=".*(vortex).*"
     if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
-        if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
+        if [[ ${NODE_NAME:?} =~ ${weaver_regex} ]]; then
             message_std "PRDriver> " "Job is CUDA"
             module unload git
             module unload python
@@ -34,10 +34,10 @@ function bootstrap_modules() {
             exit -1
         fi
     else
-        source /projects/sems/modulefiles/utils/sems-modules-init.sh
-        module unload sems-git
-        module unload sems-python
-        module load sems-git/2.10.1
+        source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
+        module unload sems-archive-git
+        module unload sems-archive-python
+        module load sems-archive-git/2.10.1
 
 #        module load sems-python/3.5.2      # Currently not on cloud nodes
 #        #pip3 install --user configparser
@@ -68,9 +68,11 @@ function bootstrap_modules() {
 print_banner "PullRequestLinuxDriver.sh"
 
 # Set up Sandia PROXY environment vars
-export https_proxy=http://proxy.sandia.gov:80
-export http_proxy=http://proxy.sandia.gov:80
-export no_proxy='localhost,.sandia.gov,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
+if [[ "${TRILINOS_PR_DO_NOT_SET_PROXY}}" == "" ]] ; then
+  export https_proxy=http://proxy.sandia.gov:80
+  export http_proxy=http://proxy.sandia.gov:80
+  export no_proxy='localhost,.sandia.gov,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
+fi
 
 
 # bootstrap the python and git modules for this system
@@ -178,6 +180,3 @@ message_std "PRDriver> " "cd $(pwd)"
 message_std "PRDriver> " "${test_cmd:?} --pullrequest-cdash-track='${PULLREQUEST_CDASH_TRACK:?}'"
 ${test_cmd} --pullrequest-cdash-track="${PULLREQUEST_CDASH_TRACK:?}"
 exit $?
-
-
-

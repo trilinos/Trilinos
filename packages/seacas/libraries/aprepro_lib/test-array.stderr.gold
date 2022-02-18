@@ -1,19 +1,19 @@
 
 $   Variable    = Value
-$  {a         	 (array) rows = 27, cols = 21}
-$  {b         	 (array) rows = 3, cols = 2}
 $  {c         	 (array) rows = 2, cols = 3}
-$  {d         	 (array) rows = 3, cols = 3}
-$  {e         	 (array) rows = 2, cols = 2}
-$  {_col      	= 3}
-$  {std       	 (array) rows = 10, cols = 1}
-$  {asub_rows 	= 17}
-$  {st        	 (array) rows = 20, cols = 1}
 $  {_c        	= 3}
-$  {_r        	= 2}
+$  {a         	 (array) rows = 27, cols = 21}
+$  {BirthYear 	= 1958}
 $  {a_rows    	= 27}
-$  {BirthYear   = 1958}
-$  {asub      	 (array) rows = 17, cols = 21}
+$  {asub_rows 	= 17}
+$  {std       	 (array) rows = 10, cols = 1}
+$  {b         	 (array) rows = 3, cols = 2}
+$  {Greg      	= "Is the author of this code"}	(immutable)
 $  {_therow   	= 2}
+$  {_r        	= 2}
+$  {asub      	 (array) rows = 17, cols = 21}
+$  {_col      	= 3}
+$  {e         	 (array) rows = 2, cols = 2}
+$  {d         	 (array) rows = 3, cols = 3}
 $  {et        	 (array) rows = 2, cols = 2}
-$  {Greg        = "Is the author of this code"} (immutable)
+$  {st        	 (array) rows = 20, cols = 1}

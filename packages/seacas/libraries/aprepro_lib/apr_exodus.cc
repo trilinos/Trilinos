@@ -8,6 +8,7 @@
 #include "aprepro.h"
 #include "exodusII.h"
 
+#include "apr_symrec.h"
 #include "apr_util.h"
 #include "aprepro_parser.h"
 

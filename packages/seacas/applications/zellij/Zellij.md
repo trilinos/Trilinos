@@ -25,84 +25,84 @@ Executing zellij with the `-help` option will result in output similar to the fo
 
 ```
 Zellij
-	(A code for tiling 1 or more template databases into a single output database.)
-	(Version: 1.4.1) Modified: 2021/03/16
-	Parallel Capability Not Enabled.
+        (A code for tiling 1 or more template databases into a single output database.)
+        (Version: 1.4.1) Modified: 2021/03/16
+        Parallel Capability Not Enabled.
 
 usage: zellij [options] -lattice <lattice_definition_file>
-	-lattice <$val> (Name of file to read lattice definition from. [required])
-	-output <$val> (Name of output file to create. Default is `zellij-out.e`)
+        -lattice <$val> (Name of file to read lattice definition from. [required])
+        -output <$val> (Name of output file to create. Default is `zellij-out.e`)
 
-	-rcb (Use recursive coordinate bisection method to decompose the input mesh in a parallel run.)
-	-rib (Use recursive inertial bisection method to decompose the input mesh in a parallel run.)
-	-hsfc (Use hilbert space-filling curve method to decompose the input mesh in a parallel run. [default])
-	-linear (Use the linear method to decompose the input mesh in a parallel run.
-		Elements in order first n/p to proc 0, next to proc 1.)
-	-cyclic (Use the cyclic method to decompose the input mesh in a parallel run.
-		Elements handed out to id % proc_count)
-	-random (Use the random method to decompose the input mesh in a parallel run.
-		Elements assigned randomly to processors in a way that preserves balance
-		(do _not_ use for a real run))
+        -rcb (Use recursive coordinate bisection method to decompose the input mesh in a parallel run.)
+        -rib (Use recursive inertial bisection method to decompose the input mesh in a parallel run.)
+        -hsfc (Use hilbert space-filling curve method to decompose the input mesh in a parallel run. [default])
+        -linear (Use the linear method to decompose the input mesh in a parallel run.
+                Elements in order first n/p to proc 0, next to proc 1.)
+        -cyclic (Use the cyclic method to decompose the input mesh in a parallel run.
+                Elements handed out to id % proc_count)
+        -random (Use the random method to decompose the input mesh in a parallel run.
+                Elements assigned randomly to processors in a way that preserves balance
+                (do _not_ use for a real run))
 
-	-ranks <$val> (Number of ranks to decompose mesh across)
-	-start_rank <$val> (In partial output mode, start outputting decomposed files at this rank)
-	-rank_count <$val> (In partial output or subcycle modes, output this number of ranks)
-	-subcycle (Process cells in groups of '-rank_count'.  Helps minimize open files,
-		but is faster than only having a single file open.)
-	-scale <$val> (Scale the output mesh coordinates by the specified value)
-	-minimize_open_files [$val] (Close files after accessing them to avoid issues with too many open files.
-		If argument is 'output' then close output, if 'unit' then close unit cells;
-		if 'all' or no argument close all.
-		Should not need to use this option unless you get an error message indicating this issue.)
+        -ranks <$val> (Number of ranks to decompose mesh across)
+        -start_rank <$val> (In partial output mode, start outputting decomposed files at this rank)
+        -rank_count <$val> (In partial output or subcycle modes, output this number of ranks)
+        -subcycle (Process cells in groups of '-rank_count'.  Helps minimize open files,
+                but is faster than only having a single file open.)
+        -scale <$val> (Scale the output mesh coordinates by the specified value)
+        -minimize_open_files [$val] (Close files after accessing them to avoid issues with too many open files.
+                If argument is 'output' then close output, if 'unit' then close unit cells;
+                if 'all' or no argument close all.
+                Should not need to use this option unless you get an error message indicating this issue.)
 
-	-ignore_sidesets (Do not copy any sidesets in the unit cells to the output file.)
-	-generate_sidesets <$val> (Which surfaces on the output mesh should have sidesets generated,
-		 Valid options are:
-		 'x' or 'i' for surface on minimum X coordinate, default name = `min_i`
-		 'y' or 'j' for surface on minimum Y coordinate, default name = `min_j`
-		 'z' or 'k' for surface on minimum Z coordinate, default name = `min_k`
-		 'X' or 'I' for surface on maximum X coordinate, default name = `max_i`
-		 'Y' or 'J' for surface on maximum Y coordinate, default name = `max_j`
-		 'Z' or 'K' for surface on maximum Z coordinate, default name = `max_k`
-		 For example `xyXY` would generate sidesets on min/max X and Y surfaces.)
-	-sideset_names <$val> (Specify names for one or more of the generated sidesets.
-		 Form is `axis:name,axis:name,...`
-		 where 'axis' is one of 'ijkIJKxyzXYZ', and 'name' is the name of the sideset.
-		 The default names are 'min_i', 'max_i', 'min_j', 'max_j', 'min_k', 'max_k'.
-		 For example `x:left,X:right` would name the sideset on the min x face 'left' and the max X face 'right'.)
+        -ignore_sidesets (Do not copy any sidesets in the unit cells to the output file.)
+        -generate_sidesets <$val> (Which surfaces on the output mesh should have sidesets generated,
+                 Valid options are:
+                 'x' or 'i' for surface on minimum X coordinate, default name = `min_i`
+                 'y' or 'j' for surface on minimum Y coordinate, default name = `min_j`
+                 'z' or 'k' for surface on minimum Z coordinate, default name = `min_k`
+                 'X' or 'I' for surface on maximum X coordinate, default name = `max_i`
+                 'Y' or 'J' for surface on maximum Y coordinate, default name = `max_j`
+                 'Z' or 'K' for surface on maximum Z coordinate, default name = `max_k`
+                 For example `xyXY` would generate sidesets on min/max X and Y surfaces.)
+        -sideset_names <$val> (Specify names for one or more of the generated sidesets.
+                 Form is `axis:name,axis:name,...`
+                 where 'axis' is one of 'ijkIJKxyzXYZ', and 'name' is the name of the sideset.
+                 The default names are 'min_i', 'max_i', 'min_j', 'max_j', 'min_k', 'max_k'.
+                 For example `x:left,X:right` would name the sideset on the min x face 'left' and the max X face 'right'.)
 
-	-netcdf3 (Output database will be a netcdf3 native classical netcdf file format (32-bit only))
-	-netcdf4 (Output database will be a netcdf4 hdf5-based file instead of the classical netcdf file format (default))
-	-netcdf5 (Output database will be a netcdf5 (CDF5) file instead of the classical netcdf file format)
+        -netcdf3 (Output database will be a netcdf3 native classical netcdf file format (32-bit only))
+        -netcdf4 (Output database will be a netcdf4 hdf5-based file instead of the classical netcdf file format (default))
+        -netcdf5 (Output database will be a netcdf5 (CDF5) file instead of the classical netcdf file format)
 
-	-32-bit (True if forcing the use of 32-bit integers for the output file)
-	-64-bit (True if forcing the use of 64-bit integers for the output file (default))
+        -32-bit (True if forcing the use of 32-bit integers for the output file)
+        -64-bit (True if forcing the use of 64-bit integers for the output file (default))
 
-	-zlib (Use the Zlib / libz compression method if compression is enabled (default) [exodus only].)
-	-szip (Use SZip compression. [exodus only, enables netcdf-4])
-	-compress <$val> (Specify the hdf5 zlib compression level [0..9] or szip [even, 4..32] to be used on the output file.)
+        -zlib (Use the Zlib / libz compression method if compression is enabled (default) [exodus only].)
+        -szip (Use SZip compression. [exodus only, enables netcdf-4])
+        -compress <$val> (Specify the hdf5 zlib compression level [0..9] or szip [even, 4..32] to be used on the output file.)
 
-	-separate_cells (Do not equivalence the nodes between adjacent unit cells.)
-	-repeat <$val> (Each lattice entry will be used the specified number of times as will
-		each row in the lattice (for debugging). `-repeat 2` would double the lattice.)
-	-skip <$val> (Skip the specified number of lattice entries and rows. For example, -skip 1
-		would read every other entry on the row and every other row. (for debugging))
-	-help (Print this summary and exit)
-	-version (Print version and exit)
-	-debug <$val> (debug level (values are or'd)
-		   1 = Time stamp information.
-		   2 = Memory information.
-		   4 = Verbose Unit Cell information.
-		   8 = Verbose output of Grid finalization calculations.
-		  16 = Put exodus library into verbose mode.
-		  32 = Verbose decomposition information.
-		  64 = Verbose output database summary information.
-		 128 = Verbose sideset generation information.)
-	-copyright (Show copyright and license data.)
+        -separate_cells (Do not equivalence the nodes between adjacent unit cells.)
+        -repeat <$val> (Each lattice entry will be used the specified number of times as will
+                each row in the lattice (for debugging). `-repeat 2` would double the lattice.)
+        -skip <$val> (Skip the specified number of lattice entries and rows. For example, -skip 1
+                would read every other entry on the row and every other row. (for debugging))
+        -help (Print this summary and exit)
+        -version (Print version and exit)
+        -debug <$val> (debug level (values are or'd)
+                   1 = Time stamp information.
+                   2 = Memory information.
+                   4 = Verbose Unit Cell information.
+                   8 = Verbose output of Grid finalization calculations.
+                  16 = Put exodus library into verbose mode.
+                  32 = Verbose decomposition information.
+                  64 = Verbose output database summary information.
+                 128 = Verbose sideset generation information.)
+        -copyright (Show copyright and license data.)
 
-	Can also set options via ZELLIJ_OPTIONS environment variable.
+        Can also set options via ZELLIJ_OPTIONS environment variable.
 
-	->->-> Send email to gdsjaar@sandia.gov for zellij support.<-<-<-
+        ->->-> Send email to gdsjaar@sandia.gov for zellij support.<-<-<-
 ```
 The only required option is `-lattice` followed by the name of the file containing the lattice description.  The other options are used to specify compression of the output file; the format of the output file; or to request additional debug output.
 
@@ -246,8 +246,8 @@ decomposition methods are:
 *   `-rib` Use recursive inertial bisection method to decompose the input mesh in a parallel run.
 *   `-hsfc` Use hilbert space-filling curve method to decompose the input mesh in a parallel run.
 *   `-linear` Use the linear method to decompose the input mesh in a parallel run. Elements in order first `n/p` to proc 0, next to proc 1.
-*   `-cyclic` Use the cyclic method to decompose the input mesh in a parallel run.	Elements handed out to `id % proc_count`.
-*   `-random` Use the random method to decompose the input mesh in a parallel run.	Elements are assigned randomly to processors in a way that preserves balance (do _not_ use for a real run))
+*   `-cyclic` Use the cyclic method to decompose the input mesh in a parallel run.      Elements handed out to `id % proc_count`.
+*   `-random` Use the random method to decompose the input mesh in a parallel run.      Elements are assigned randomly to processors in a way that preserves balance (do _not_ use for a real run))
 
 The `-hsfc` method is the default if no other decomposition method is
 specified. Note that the decomposition occurs at the _grid_ level so

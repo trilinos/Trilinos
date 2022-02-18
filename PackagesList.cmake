@@ -112,6 +112,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Compadre              packages/compadre                 ST
   STK                   packages/stk                      PT # Depends on boost
   Percept               packages/percept                  PT # Depends on boost
+  Krino                 packages/krino                    PT # Depends on boost
   SCORECapf_zoltan      SCOREC/zoltan                     ST
   SCORECapf_stk         SCOREC/stk                        ST
   SCORECma              SCOREC/ma                         ST
@@ -131,6 +132,8 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Stokhos               packages/stokhos                  PT
   ROL                   packages/rol                      PT
   Piro                  packages/piro                     PT
+  SGM                   packages/sgm                      ST
+  UMR                   packages/umr                      ST
   Panzer                packages/panzer                   PT
   CTrilinos             packages/CTrilinos                ST # Switched to ST to speed up checkin testing
   PyTrilinos            packages/PyTrilinos               ST
@@ -168,6 +171,8 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Optika)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Mesquite)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(WebTrilinos)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(xSDKTrilinos)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SGM)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(UMR)
 
 #
 # Disable certain packages on certain platforms.

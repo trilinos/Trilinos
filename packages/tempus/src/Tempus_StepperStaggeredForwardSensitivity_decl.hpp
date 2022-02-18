@@ -16,6 +16,13 @@
 
 namespace Tempus {
 
+enum class SensitivityStepMode {
+  Forward,
+  Sensitivity,
+  Combined,
+  Adjoint
+};
+
 /** \brief A stepper implementing staggered forward sensitivity analysis.
  */
 /**
@@ -166,6 +173,9 @@ public:
   virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const
   { return stepperPL_; }
 
+  //! What mode the current time integration step is in
+  SensitivityStepMode getStepMode() const { return stepMode_; }
+
 private:
 
   void setParams(const Teuchos::RCP<Teuchos::ParameterList> & pl,
@@ -183,6 +193,7 @@ protected:
   Teuchos::RCP<SolutionHistory<Scalar> > sensSolutionHistory_;
   bool reuse_solver_;
   bool force_W_update_;
+  SensitivityStepMode stepMode_;
 
 };
 

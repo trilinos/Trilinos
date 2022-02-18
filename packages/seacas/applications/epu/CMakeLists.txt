@@ -39,6 +39,7 @@ IF (TPL_ENABLE_MPI)
     COMM mpi
     INSTALLABLE
     )
+    target_compile_definitions(pepu PUBLIC SEACAS_HAVE_MPI)
 ENDIF()
 ENDIF()
 

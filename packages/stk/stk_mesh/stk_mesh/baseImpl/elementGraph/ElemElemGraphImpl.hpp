@@ -297,7 +297,7 @@ struct GraphEdge
     {}
 
     GraphEdge(const GraphEdge&& rhs)
-    : vertex1(std::move(rhs.vertex1)), vertex2(std::move(rhs.vertex2))
+    : vertex1(rhs.vertex1), vertex2(rhs.vertex2)
     {}
 
     GraphEdge& operator=(const GraphEdge&) = default;
@@ -350,7 +350,45 @@ struct GraphEdge
     impl::LocalId vertex2;
 };
 
-typedef GraphEdge CoincidentElementConnection;
+using CoincidentElementConnection = GraphEdge;
+
+struct GraphEdgeLessByElem1 {
+    bool operator()(const GraphEdge& a, const GraphEdge& b) const
+    {
+        impl::LocalId a_elem1 = a.elem1();
+        impl::LocalId b_elem1 = b.elem1();
+
+        if (a_elem1 != b_elem1)
+        {
+            return a_elem1 < b_elem1;
+        }
+
+        impl::LocalId a_elem2 = std::abs(a.elem2());
+        impl::LocalId b_elem2 = std::abs(b.elem2());
+        if (a_elem2 != b_elem2)
+        {
+            return a_elem2 < b_elem2;
+        }
+
+        int a_side2 = a.side2();
+        int b_side2 = b.side2();
+        if (a_side2 != b_side2)
+        {
+            return a_side2 < b_side2;
+        }
+        else
+        {
+            return a.side1() < b.side1();
+        }
+    }
+};
+
+inline
+bool operator<(const GraphEdge& a, const GraphEdge& b)
+{
+  GraphEdgeLessByElem1 lessByElem1;
+  return lessByElem1(a, b);
+}
 
 struct GraphEdgeLessByElem2 {
     bool operator()(const GraphEdge& a, const GraphEdge& b) const

@@ -1020,10 +1020,12 @@ TEST(ElementGraph, test_parallel_graph_info_data_structure)
 
         stk::mesh::Graph graph;
         graph.set_num_local_elements(2);
-        graph.add_edge(stk::mesh::GraphEdge(0, 4, 1, 1));
-        graph.add_edge(stk::mesh::GraphEdge(1, 1, 0, 4));
         stk::mesh::GraphEdge graphEdge(1, 5, -3, other_side_ord);
-        graph.add_edge(graphEdge);
+        std::vector<stk::mesh::GraphEdge> edges =
+          { stk::mesh::GraphEdge(0, 4, 1, 1),
+            stk::mesh::GraphEdge(1, 1, 0, 4),
+            graphEdge };
+        graph.add_sorted_edges(edges);
 
         stk::mesh::ParallelInfoForGraphEdges parallel_graph(stk::parallel_machine_rank(MPI_COMM_WORLD));
         int other_proc = 1;
@@ -3973,8 +3975,8 @@ TEST( ElementGraph, Hex0AddShell1Hex0Parallel )
     }
     else if (p_rank == 1) {
         // Connectivity for Shell Element 3
-        unsigned hex1Index = 1;
-        unsigned hex2Index = 0;
+        unsigned hex1Index = 0;
+        unsigned hex2Index = 1;
         EXPECT_EQ(2u,   elemElemGraph.get_num_connected_elems(shell3));
         EXPECT_EQ(1,    elemElemGraph.get_connected_remote_id_and_via_side(shell3, hex1Index).side);
         EXPECT_EQ(0,    elemElemGraph.get_connected_remote_id_and_via_side(shell3, hex2Index).side);

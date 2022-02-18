@@ -63,19 +63,19 @@ namespace Xpetra {
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const map_type > &rowMap, size_t maxNumEntriesPerRow, const RCP< ParameterList > &params)
-: graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), maxNumEntriesPerRow, Tpetra::StaticProfile, params))) {  }
+: graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), maxNumEntriesPerRow, params))) {  }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const Map > &rowMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, const RCP< ParameterList > &params)
-: graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), NumEntriesPerRowToAlloc(), Tpetra::StaticProfile, params))) {  }
+: graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), NumEntriesPerRowToAlloc(), params))) {  }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const Map>&rowMap, const RCP< const Map > &colMap, size_t maxNumEntriesPerRow, const RCP< ParameterList > &params)
-: graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), maxNumEntriesPerRow, Tpetra::StaticProfile, params))) {  }
+: graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), maxNumEntriesPerRow, params))) {  }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::TpetraCrsGraph(const RCP< const Map > &rowMap, const RCP< const Map > &colMap, const ArrayRCP< const size_t > &NumEntriesPerRowToAlloc, const RCP< ParameterList > &params)
-: graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc(), Tpetra::StaticProfile, params))) {  }
+: graph_(Teuchos::rcp(new Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node >(toTpetra(rowMap), toTpetra(colMap), NumEntriesPerRowToAlloc(), params))) {  }
 
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -170,8 +170,8 @@ setAllIndices(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & co
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
 getAllIndices(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind) const {
-  rowptr = graph_->getNodeRowPtrs();
-  colind = graph_->getNodePackedIndices();
+  rowptr = Kokkos::Compat::persistingView(graph_->getLocalRowPtrsHost());
+  colind = Kokkos::Compat::persistingView(graph_->getLocalIndicesHost());
 }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -352,7 +352,7 @@ void TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::describe(Teuchos::FancyOSt
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 ArrayRCP< const size_t > TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeRowPtrs() const
-{ XPETRA_MONITOR("TpetraCrsGraph::getNodeRowPtrs"); return graph_->getNodeRowPtrs(); }
+{ XPETRA_MONITOR("TpetraCrsGraph::getNodeRowPtrs"); return Kokkos::Compat::persistingView(graph_->getLocalRowPtrsHost()); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Map<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getMap() const

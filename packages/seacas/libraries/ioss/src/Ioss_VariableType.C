@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -82,6 +82,17 @@ namespace Ioss {
     return count;
   }
 
+  /** \brief Get the names of variable types known to IOSS.
+   *
+   *  \returns The list of known variable type names.
+   */
+  Ioss::NameList VariableType::describe()
+  {
+    Ioss::NameList names;
+    describe(&names);
+    return names;
+  }
+
   bool VariableType::add_field_type_mapping(const std::string &raw_field,
                                             const std::string &raw_type)
   {
@@ -96,7 +107,7 @@ namespace Ioss {
     return registry().customFieldTypes.insert(std::make_pair(field, type)).second;
   }
 
-  bool VariableType::create_named_suffix_field_type(const std::string &             type_name,
+  bool VariableType::create_named_suffix_field_type(const std::string              &type_name,
                                                     const std::vector<std::string> &suffices)
   {
     size_t count = suffices.size();
@@ -217,10 +228,8 @@ namespace Ioss {
     if (static_cast<int>(suffices.size()) == suffix_count()) {
       for (int i = 0; i < suffix_count(); i++) {
         if (suffices[i] != label(i + 1)) {
-          if (!Ioss::Utils::str_equal(suffices[i].m_data, label(i + 1))) {
-            result = false;
-            break;
-          }
+          result = false;
+          break;
         }
       }
     }
@@ -230,8 +239,8 @@ namespace Ioss {
     return result;
   }
 
-  std::string VariableType::label_name(const std::string &base, int which,
-                                       const char suffix_sep) const
+  std::string VariableType::label_name(const std::string &base, int which, const char suffix_sep,
+                                       bool suffices_uppercase) const
   {
     std::string my_name = base;
     std::string suffix  = label(which, suffix_sep);
@@ -239,7 +248,12 @@ namespace Ioss {
       if (suffix_sep != 0) {
         my_name += suffix_sep;
       }
-      my_name += suffix;
+      if (suffices_uppercase) {
+        my_name += Ioss::Utils::uppercase(suffix);
+      }
+      else {
+        my_name += suffix;
+      }
     }
     return my_name;
   }
@@ -281,7 +295,7 @@ namespace Ioss {
 
     char *countstr = std::strtok(nullptr, "[]");
     assert(countstr != nullptr);
-    int count = std::atoi(countstr);
+    int count = std::strtol(countstr, nullptr, 10);
     if (count <= 0) {
       delete[] typecopy;
       return false;
@@ -300,9 +314,9 @@ namespace Ioss {
     if (ncomp >= 100'000) {
       std::ostringstream errmsg;
       fmt::print(errmsg,
-                 "ERROR: Variable '{}' has {:L} components which is larger than the current maximum"
+                 "ERROR: Variable '{}' has {} components which is larger than the current maximum"
                  " of 100,000. Please contact developer.\n",
-                 name, ncomp);
+                 name, fmt::group_digits(ncomp));
       IOSS_ERROR(errmsg);
     }
 

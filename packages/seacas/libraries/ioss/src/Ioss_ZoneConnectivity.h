@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_ZoneConnectivity_h
-#define IOSS_Ioss_ZoneConnectivity_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>
 #include <array>
@@ -14,12 +13,12 @@
 
 #if defined(SEACAS_HAVE_CGNS) && !defined(BUILT_IN_SIERRA)
 #include <cgnstypes.h>
-using INT = cgsize_t;
+using IOSS_ZC_INT = cgsize_t;
 #else
 // If this is not being built with CGNS, then default to using 32-bit integers.
 // Currently there is no way to input/output a structured mesh without CGNS,
 // so this block is simply to get things to compile and probably has no use.
-using INT = int;
+using IOSS_ZC_INT = int;
 #endif
 
 namespace Ioss {
@@ -79,9 +78,9 @@ namespace Ioss {
     bool has_faces() const;
     bool retain_original() const; // True if need to retain in parallel decomp
 
-    std::array<INT, 9> transform_matrix() const;
-    Ioss::IJK_t        transform(const Ioss::IJK_t &index_1) const;
-    Ioss::IJK_t        inverse_transform(const Ioss::IJK_t &index_1) const;
+    std::array<IOSS_ZC_INT, 9> transform_matrix() const;
+    Ioss::IJK_t                transform(const Ioss::IJK_t &index_1) const;
+    Ioss::IJK_t                inverse_transform(const Ioss::IJK_t &index_1) const;
 
     std::vector<int>     get_range(int ordinal) const;
     friend std::ostream &operator<<(std::ostream &os, const ZoneConnectivity &zgc);
@@ -143,5 +142,3 @@ namespace Ioss {
     bool equal_(const Ioss::ZoneConnectivity &rhs, bool quiet) const;
   };
 } // namespace Ioss
-
-#endif

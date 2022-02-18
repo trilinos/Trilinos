@@ -690,10 +690,10 @@ namespace Tpetra {
       // required, and the latter is generally the case, but we should
       // still check for this.
       const int packetSize = 3; // We're sending triples, so packet size is 3.
-      Array<GO> exportEntries (packetSize * numMyEntries); // data to send out
+      Kokkos::View<GO*, Kokkos::HostSpace> exportEntries("exportEntries", packetSize * numMyEntries);
       {
-        size_type exportIndex = 0;
-        for (size_type i = 0; i < static_cast<size_type> (numMyEntries); ++i) {
+        size_t exportIndex = 0;
+        for (size_t i = 0; i < numMyEntries; ++i) {
           exportEntries[exportIndex++] = myGlobalEntries[i];
           exportEntries[exportIndex++] = as<GO> (myRank);
           exportEntries[exportIndex++] = as<GO> (i);
@@ -702,10 +702,10 @@ namespace Tpetra {
       // Buffer of data to receive.  The Distributor figured out for
       // us how many packets we're receiving, when we called its
       // createFromSends() method to set up the distribution plan.
-      Array<GO> importElements (packetSize * distor.getTotalReceiveLength ());
+      Kokkos::View<GO*, Kokkos::HostSpace> importElements("importElements", packetSize * distor.getTotalReceiveLength());
 
       // Distribute the triples of (GID, process ID, LID).
-      distor.doPostsAndWaits (exportEntries ().getConst (), packetSize, importElements ());
+      distor.doPostsAndWaits(exportEntries, packetSize, importElements);
 
       // Unpack the redistributed data.  Both implementations of
       // Directory storage map from an LID in the Directory Map (which
@@ -894,8 +894,8 @@ namespace Tpetra {
           // ownedPidLidPairs[curLID].size() > 1.  In that case, we
           // will use the TieBreak object to pick exactly one pair.
           Array<std::vector<std::pair<int, LO> > > ownedPidLidPairs (dir_numMyEntries);
-          size_type importIndex = 0;
-          for (size_type i = 0; i < static_cast<size_type> (numReceives); ++i) {
+          size_t importIndex = 0;
+          for (size_t i = 0; i < numReceives; ++i) {
             const GO  GID = importElements[importIndex++];
             const int PID = importElements[importIndex++];
             const LO  LID = importElements[importIndex++];
@@ -1111,7 +1111,7 @@ namespace Tpetra {
       //    global_size_t >= size_t >= int
       //    global_size_t >= size_t >= LO
       // Therefore, we can safely store all of these in a global_size_t
-      Array<global_size_t> exports (packetSize * numSends);
+      Kokkos::View<global_size_t*, Kokkos::HostSpace> exports("exports", packetSize * numSends);
       {
         // Packet format:
         // - If computing LIDs: (GID, PID, LID)
@@ -1124,7 +1124,7 @@ namespace Tpetra {
         // sendGIDs[k] in exports[2*k], exports[2*k+1].  If sending
         // triples, we pack the (GID, PID, LID) pair for gid =
         // sendGIDs[k] in exports[3*k, 3*k+1, 3*k+2].
-        size_type exportsIndex = 0;
+        size_t exportsIndex = 0;
 
         if (useHashTables_) {
           if (verbose) {
@@ -1180,7 +1180,7 @@ namespace Tpetra {
         }
 
         TEUCHOS_TEST_FOR_EXCEPTION
-          (exportsIndex > exports.size (), std::logic_error,
+          (exportsIndex > exports.size(), std::logic_error,
            funcPrefix << "On Process " << comm->getRank () << ", "
            "exportsIndex = " << exportsIndex << " > exports.size() = "
            << exports.size () << "." << errSuffix);
@@ -1216,7 +1216,7 @@ namespace Tpetra {
           "Please report this bug to the Tpetra developers.");
       }
 
-      Array<global_size_t> imports (packetSize * distor.getTotalReceiveLength ());
+      Kokkos::View<global_size_t*, Kokkos::HostSpace> imports("imports", packetSize * distor.getTotalReceiveLength());
       // FIXME (mfh 20 Mar 2014) One could overlap the sort2() below
       // with communication, by splitting this call into doPosts and
       // doWaits.  The code is still correct in this form, however.
@@ -1228,7 +1228,7 @@ namespace Tpetra {
         os << "}" << endl;
         cerr << os.str ();
       }
-      distor.doPostsAndWaits (exports ().getConst (), packetSize, imports ());
+      distor.doPostsAndWaits(exports, packetSize, imports);
       if (verbose) {
         std::ostringstream os;
         os << *procPrefix << "doPostsAndWaits result: ";

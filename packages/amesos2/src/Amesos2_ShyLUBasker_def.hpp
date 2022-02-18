@@ -97,9 +97,11 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.btf_matching   = 2; // use cardinary matching from Trilinos, globally
   ShyLUbasker->Options.blk_matching   = 1; // use max-weight matching from Basker on each diagonal block
   ShyLUbasker->Options.min_block_size = 0; // no merging small blocks
-  ShyLUbasker->Options.amd_dom          = BASKER_TRUE;  // use block-wise AMD
-  ShyLUbasker->Options.use_metis        = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
-  ShyLUbasker->Options.run_nd_on_leaves = BASKER_FALSE; // run ND on the final leaf-nodes
+  ShyLUbasker->Options.amd_dom           = BASKER_TRUE;  // use block-wise AMD
+  ShyLUbasker->Options.use_metis         = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
+  ShyLUbasker->Options.use_nodeNDP       = BASKER_TRUE;  // use nodeNDP to compute ND partition
+  ShyLUbasker->Options.run_nd_on_leaves  = BASKER_TRUE;  // run ND on the final leaf-nodes
+  ShyLUbasker->Options.run_amd_on_leaves = BASKER_FALSE; // run AMD on the final leaf-nodes
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
   ShyLUbasker->Options.replace_tiny_pivot = BASKER_TRUE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
@@ -122,9 +124,11 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr->Options.btf_matching   = 2; // use cardinary matching from Trilinos, globally
   ShyLUbaskerTr->Options.blk_matching   = 1; // use max-weight matching from Basker on each diagonal block
   ShyLUbaskerTr->Options.min_block_size = 0; // no merging small blocks
-  ShyLUbaskerTr->Options.amd_dom          = BASKER_TRUE;  // use block-wise AMD
-  ShyLUbaskerTr->Options.use_metis        = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
-  ShyLUbaskerTr->Options.run_nd_on_leaves = BASKER_FALSE; // run ND on the final leaf-nodes
+  ShyLUbaskerTr->Options.amd_dom           = BASKER_TRUE;  // use block-wise AMD
+  ShyLUbaskerTr->Options.use_metis         = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
+  ShyLUbaskerTr->Options.use_nodeNDP       = BASKER_TRUE;  // use nodeNDP to compute ND partition
+  ShyLUbaskerTr->Options.run_nd_on_leaves  = BASKER_TRUE;  // run ND on the final leaf-nodes
+  ShyLUbaskerTr->Options.run_amd_on_leaves = BASKER_FALSE; // run ND on the final leaf-nodes
   ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
   ShyLUbaskerTr->Options.replace_tiny_pivot = BASKER_TRUE;
   ShyLUbaskerTr->Options.verbose_matrix_out = BASKER_FALSE;
@@ -612,10 +616,25 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       ShyLUbasker->Options.use_metis = parameterList->get<bool>("use_metis");
       ShyLUbaskerTr->Options.use_metis = parameterList->get<bool>("use_metis");
     }
+  if(parameterList->isParameter("use_nodeNDP"))
+    {
+      ShyLUbasker->Options.use_nodeNDP = parameterList->get<bool>("use_nodeNDP");
+      ShyLUbaskerTr->Options.use_nodeNDP = parameterList->get<bool>("use_nodeNDP");
+    }
   if(parameterList->isParameter("run_nd_on_leaves"))
     {
       ShyLUbasker->Options.run_nd_on_leaves = parameterList->get<bool>("run_nd_on_leaves");
       ShyLUbaskerTr->Options.run_nd_on_leaves = parameterList->get<bool>("run_nd_on_leaves");
+    }
+  if(parameterList->isParameter("run_amd_on_leaves"))
+    {
+      ShyLUbasker->Options.run_amd_on_leaves = parameterList->get<bool>("run_amd_on_leaves");
+      ShyLUbaskerTr->Options.run_amd_on_leaves = parameterList->get<bool>("run_amd_on_leaves");
+    }
+  if(parameterList->isParameter("amd_on_blocks"))
+    {
+      ShyLUbasker->Options.amd_dom = parameterList->get<bool>("amd_on_blocks");
+      ShyLUbaskerTr->Options.amd_dom = parameterList->get<bool>("amd_on_blocks");
     }
   if(parameterList->isParameter("transpose"))
     {
@@ -713,8 +732,14 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
              "Replace tiny pivots during the numerical factorization");
       pl->set("use_metis", true,
 	      "Use METIS for ND");
+      pl->set("use_nodeNDP", true,
+	      "Use nodeND to compute ND partition");
       pl->set("run_nd_on_leaves", false,
-	      "Run ND on the final leaf-nodes");
+	      "Run ND on the final leaf-nodes for ND factorization");
+      pl->set("run_amd_on_leaves", false,
+	      "Run AMD on the final leaf-nodes for ND factorization");
+      pl->set("amd_on_blocks", true,
+	      "Run AMD on each diagonal blocks");
       pl->set("transpose", false,
 	      "Solve the transpose A");
       pl->set("use_sequential_diag_facto", false,

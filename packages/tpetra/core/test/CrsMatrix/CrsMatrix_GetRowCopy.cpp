@@ -42,7 +42,7 @@
 */
 
 // Test Tpetra::CrsMatrix::get{Global,Local}RowCopy for the case where
-// the matrix has StaticProfile, but has never yet been made fill
+// the matrix has never yet been made fill
 // complete.
 
 #include "Tpetra_TestingUtilities.hpp"
@@ -91,7 +91,7 @@ namespace {
                          indexBase, comm));
     // Leave room for three locally owned entries per row.
     // We will only fill in two entries per row.
-    crs_matrix_type A (rowMap, 3, Tpetra::StaticProfile);
+    crs_matrix_type A (rowMap, 3);
     const GO gblNumCols = gblNumRows;
 
     out << "Fill the matrix" << endl;
@@ -197,7 +197,7 @@ namespace {
 
     // Leave room for three locally owned entries per row.
     // We will only fill in two entries per row.
-    crs_matrix_type A (rowMap, colMap, 3, Tpetra::StaticProfile);
+    crs_matrix_type A (rowMap, colMap, 3);
 
     out << "Fill the matrix" << endl;
 

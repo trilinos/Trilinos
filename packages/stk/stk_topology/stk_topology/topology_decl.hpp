@@ -4,6 +4,8 @@
 // IWYU pragma: private, include "stk_topology/topology.hpp"
 #include "stk_util/stk_config.h"
 #include <string>
+#include <cstdint>
+#include <limits>
 
 namespace stk {
 
@@ -25,7 +27,7 @@ struct EquivalentPermutation
 
 struct topology
 {
-  enum rank_t
+  enum rank_t : int8_t
   {
       BEGIN_RANK
     , NODE_RANK = BEGIN_RANK
@@ -35,8 +37,7 @@ struct topology
     , CONSTRAINT_RANK
     , END_RANK
     , NUM_RANKS = END_RANK
-    , INVALID_RANK = 256
-    , FORCE_RANK_TO_UNSIGNED = 256
+    , INVALID_RANK = std::numeric_limits<int8_t>::max()
   };
 
   //To add new topologies consult the toolkit team

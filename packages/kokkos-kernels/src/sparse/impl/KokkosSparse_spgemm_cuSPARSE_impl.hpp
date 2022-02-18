@@ -141,7 +141,7 @@ namespace Impl{
           nnzC -= baseC;
       }
       handle->set_c_nnz(nnzC);
-      //entriesC = cin_nonzero_index_view_type(Kokkos::ViewAllocateWithoutInitializing("entriesC"), nnzC);
+      //entriesC = cin_nonzero_index_view_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), nnzC);
     }
     else {
       throw std::runtime_error ("CUSPARSE requires local ordinals to be integer.\n");

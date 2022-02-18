@@ -344,7 +344,6 @@ void ConstructData(bool is3D, const Tensor<typename Teuchos::ScalarTraits<Scalar
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayRCP;
-  using Teuchos::RCP;
   using Teuchos::TimeMonitor;
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
   typedef typename Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
@@ -370,7 +369,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayRCP;
-  using Teuchos::RCP;
   using Teuchos::TimeMonitor;
   using namespace std::chrono;
 

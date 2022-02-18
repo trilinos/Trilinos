@@ -99,6 +99,8 @@ gPipeAndViewsState = None
 
 def GetFrameTagCounter():
   global gPipeAndViewsState
+  if gPipeAndViewsState == None:
+    return 0
   return gPipeAndViewsState.mFrameTagCounter
 
 try: paraview.simple
@@ -114,6 +116,15 @@ global gParaViewCatalystVersionFlag
 #gParaViewCatalystVersionFlag = 40100
 #gParaViewCatalystVersionFlag = 50400
 gParaViewCatalystVersionFlag = 50502
+#gParaViewCatalystVersionFlag = 51000
+
+#attempt to use paraview.simple.GetParaViewVersion() to set version
+try:
+  versionTuple = GetParaViewVersion()
+  gParaViewCatalystVersionFlag = versionTuple.major * 10000
+  gParaViewCatalystVersionFlag += versionTuple.minor * 100
+except:
+  raise Exception("exception while working with paraview.simple.GetParaViewVersion()")
 
 global gPointsString
 if gParaViewCatalystVersionFlag <= 40100:
@@ -1867,8 +1878,19 @@ def vecDistance(inPtA, inPtB):
 def vecAdd(inVecA, inVecB):
   return [inVecA[0]+inVecB[0],inVecA[1]+inVecB[1],inVecA[2]+inVecB[2]]
 
+def vecAddInPlace(inVecA, inVecB):
+  "changes inVecA to inVecA + inVecB"
+  inVecA[0] += inVecB[0]
+  inVecA[1] += inVecB[1]
+  inVecA[2] += inVecB[2]
+
 def vecScale(inScale, inVec):
   return [inScale*inVec[0], inScale*inVec[1], inScale*inVec[2]]
+
+def vecScaleInPlace(inScale, inVec):
+  inVec[0] *= inScale
+  inVec[1] *= inScale
+  inVec[2] *= inScale
 
 def vecMultiplyAdd(inVecA, inVecB, inMM):
   "returns inVecA + (inMM * inVecB)"
@@ -2193,6 +2215,9 @@ def PhactoriFindSurfaceStatusForOneCellUsingFaceInfo(inInputCsData,
     #test cell flatness
     indexFaceListSize, sortedFaceSizeList = PhactoriCalculateCellFaceAreasAndSort(inInputCsData, oneCell)
     flatnessRatio = sortedFaceSizeList[-1] / sortedFaceSizeList[0]
+    if len(sortedFaceSizeList) <= 0:
+      retStatus = 11
+      return retStatus
     cellIsFlat = (flatnessRatio >= flatnessTestRatio)
     #see if any of the exterior faces are the biggest
     outsideFaceIsMaxAreaFace = False
@@ -2283,6 +2308,9 @@ def PhactoriFindSurfaceStatusForOneCell(inInputCsData, inCellIndex,
     #test cell flatness
     indexFaceListSize, sortedFaceSizeList = PhactoriCalculateCellFaceAreasAndSort(inInputCsData, oneCell)
     flatnessRatio = sortedFaceSizeList[-1] / sortedFaceSizeList[0]
+    if len(sortedFaceSizeList) <= 0:
+      retStatus = 11
+      return retStatus
     cellIsFlat = (flatnessRatio >= flatnessTestRatio)
     if minCtpc >= 4:
       #outside surface, not edge or corner
@@ -2364,6 +2392,19 @@ def PhactoriFindLargestCellFaceNormal(inInputCsData, oneCell):
   retNormalVec = PhactoriFindFaceNormal(inInputCsData, faceForNormal)
   return retNormalVec
 
+def PhactoriGetAverageOfCellPoints(inInputCsData, oneCell):
+  numPoints = oneCell.GetNumberOfPoints()
+  retAvgPt = [0.0, 0.0, 0.0]
+  if numPoints <= 0:
+    return retAvgPt
+  ptIds = oneCell.GetPointIds()
+  for ii in range(0, numPoints):
+    ptA = inInputCsData.GetPoint(ptIds.GetId(ii))
+    vecAddInPlace(retAvgPt, ptA)
+  avgFac = 1.0/float(numPoints)
+  vecScaleInPlace(avgFac, retAvgPt)
+  return retAvgPt
+  
 def PhactoriFindSelectedAngleBetweenEdgeAndCellNormal(inInputCsData, oneCell,
   compareNormal, paramUseSmallestAngle, paramOffsetIndex):
   edgeCompareDotProdList = []
@@ -2640,6 +2681,9 @@ def GetPhactoriVtkCellOperationsProgrammableFilterLines(pfLns):
   pfLns.append("  else:\n")
   pfLns.append("    indexFaceListSize, sortedFaceSizeList = PhactoriCalculateCellFaceAreasAndSort(inInputCsData, oneCell)\n")
   pfLns.append("    flatnessRatio = sortedFaceSizeList[-1] / sortedFaceSizeList[0]\n")
+  pfLns.append("    if len(sortedFaceSizeList) <= 0:\n")
+  pfLns.append("      retStatus = 11\n")
+  pfLns.append("      return retStatus\n")
   pfLns.append("    cellIsFlat = (flatnessRatio >= flatnessTestRatio)\n")
   pfLns.append("    outsideFaceIsMaxAreaFace = False\n")
   pfLns.append("    for outsideFaceIndex in exteriorFaceList:\n")
@@ -2699,6 +2743,9 @@ def GetPhactoriVtkCellOperationsProgrammableFilterLines(pfLns):
   pfLns.append("  else:\n")
   pfLns.append("    indexFaceListSize, sortedFaceSizeList = PhactoriCalculateCellFaceAreasAndSort(inInputCsData, oneCell)\n")
   pfLns.append("    flatnessRatio = sortedFaceSizeList[-1] / sortedFaceSizeList[0]\n")
+  pfLns.append("    if len(sortedFaceSizeList) <= 0:\n")
+  pfLns.append("      retStatus = 11\n")
+  pfLns.append("      return retStatus\n")
   pfLns.append("    cellIsFlat = (flatnessRatio >= flatnessTestRatio)\n")
   pfLns.append("    if minCtpc >= 4:\n")
   pfLns.append("      outsideFaceIsMaxAreaFace = PhactoriIsOutsideSurfaceHexCellFaceMaxAreaFace(\n")
@@ -3107,7 +3154,11 @@ def SetDataRepresentationToDefault(inDataRepresentation):
   inDataRepresentation.SelectionPointLabelColor = [0.5, 0.5, 0.5]
   inDataRepresentation.SelectionPointFieldDataArrayName = 'displ'
   inDataRepresentation.SuppressLOD = 0
-  inDataRepresentation.BlockVisibility = []
+  global gParaViewCatalystVersionFlag
+  if gParaViewCatalystVersionFlag < 51000:
+    inDataRepresentation.BlockVisibility = []
+    inDataRepresentation.BlockOpacity = {}
+    inDataRepresentation.BlockColor = {}
   inDataRepresentation.Position = [0.0, 0.0, 0.0]
   inDataRepresentation.BackfaceRepresentation = 'Follow Frontface'
   inDataRepresentation.SelectionOpacity = 1.0
@@ -3158,7 +3209,6 @@ def SetDataRepresentationToDefault(inDataRepresentation):
   inDataRepresentation.Texture = []
   inDataRepresentation.SelectionCellLabelShadow = 0
   inDataRepresentation.AmbientColor = [1.0, 1.0, 1.0]
-  inDataRepresentation.BlockOpacity = {}
   inDataRepresentation.MapScalars = 1
   inDataRepresentation.PointSize = 2.0
   inDataRepresentation.SelectionCellLabelFormat = ''
@@ -3177,7 +3227,6 @@ def SetDataRepresentationToDefault(inDataRepresentation):
   inDataRepresentation.SelectionPointLabelFontSize = 18
   inDataRepresentation.SelectionCellFieldDataArrayName = 'GlobalElementId'
   inDataRepresentation.SelectionColor = [1.0, 0.0, 1.0]
-  inDataRepresentation.BlockColor = {}
   inDataRepresentation.Ambient = 0.0
   inDataRepresentation.ScaleFactor = 0.775
   inDataRepresentation.BackfaceAmbientColor = [1.0, 1.0, 1.0]
@@ -3230,6 +3279,7 @@ def AddRenderView(inPhactoriImagesetInfo, inColorSettings,
     global localCpViews
     global PhactoriRenderViewInfoList
     global currentPhactoriRenderViewInfo
+    global gParaViewCatalystVersionFlag
 
     if PhactoriDbg(100):
       myDebugPrint3("AddRenderView entered\n", 100)
@@ -3300,7 +3350,6 @@ def AddRenderView(inPhactoriImagesetInfo, inColorSettings,
         RenderView1.LightSwitch = 0
       RenderView1.UseOutlineForLODRendering = 0
       RenderView1.KeyLightAzimuth = 10.0
-      RenderView1.UseTexturedBackground = 0
       RenderView1.UseLight = 1
       RenderView1.CameraPosition = [3.681775921856809, 3.2427490288581042, 6.445486324396935]
       RenderView1.FillLightKFRatio = 3.0
@@ -3355,11 +3404,14 @@ def AddRenderView(inPhactoriImagesetInfo, inColorSettings,
       RenderView1.OrientationAxesOutlineColor = [1.0, 1.0, 1.0]
       RenderView1.LODThreshold = 5.0
       RenderView1.CollectGeometryThreshold = 100.0
-      RenderView1.UseGradientBackground = 0
       RenderView1.KeyLightWarmth = 0.6
       RenderView1.OrientationAxesLabelColor = [1.0, 1.0, 1.0]
       #RenderView1.OrientationAxesLabelColor = inColorSettings.mOrientationAxesLabelColor
       #rigid_body_impact_6_ff_e = CreateProducer( datadescription, "input" )
+
+      if gParaViewCatalystVersionFlag < 51000:
+        RenderView1.UseTexturedBackground = 0
+        RenderView1.UseGradientBackground = 0
 
       SetAxesGridVisibility(RenderView1, 0)
 
@@ -4669,6 +4721,8 @@ def SetForCorrectColorBy(inImagesetInfo, inPhactoriOperation,
         inPvDataRepresentation, inPhactoriRepresentation,
         inInitializeColorLegendFlag):
 
+  global gParaViewCatalystVersionFlag
+
   if PhactoriDbg():
     if inPhactoriOperation != None:
         opStr = inPhactoriOperation.mName
@@ -4702,7 +4756,8 @@ def SetForCorrectColorBy(inImagesetInfo, inPhactoriOperation,
   if inPhactoriRepresentation != None:
     if inPhactoriRepresentation.mColorByBlockFlag == False:
       #clear block color
-      inPvDataRepresentation.BlockColor = {}
+      if gParaViewCatalystVersionFlag < 51000:
+        inPvDataRepresentation.BlockColor = {}
     if inPhactoriRepresentation.mColorByBlockFlag:
       if PhactoriDbg():
         myDebugPrint3("inPhactoriRepresentation.mColorByBlockFlag is true\n")
@@ -4874,9 +4929,21 @@ def ParseOneFilterTypeFromViewMapOperation(ioOperationBlock, inTypeString, inOpe
 def ConstructClipPlaneOperationFromParsedOperationBlockC(ioPipeAndViewsState, ioOperationBlock):
   return
 
+def ConstructPipelineOperationFromParsedOperationBlockC_ForTest(ioOperationBlock, inputParaviewFilter):
+  if PhactoriDbg(100):
+    myDebugPrint3("ConstructPipelineOperationFromParsedOperationBlockC_ForTest entered\n", 100)
+  particularOperation = ioOperationBlock.mOperationSpecifics
+  if ioOperationBlock.mType == 'group':
+    myDebugPrint3("not doing group yet")
+    raise Exception("not doing group yet")
+  else:
+    inputSource = inputParaviewFilter
+    newParaViewFilter = particularOperation.CreateParaViewFilter2(inputSource, None)
+  ioOperationBlock.mParaViewFilter = newParaViewFilter
+  if PhactoriDbg(100):
+    myDebugPrint3("ConstructPipelineOperationFromParsedOperationBlockC_ForTest returning\n", 100)
 
 def ConstructPipelineOperationFromParsedOperationBlockC(ioPipeAndViewsState, ioOperationBlock):
-
   if PhactoriDbg(100):
     myDebugPrint3("ConstructPipelineOperationFromParsedOperationBlockC entered\n", 100)
   if PhactoriDbg():
@@ -4980,6 +5047,21 @@ def MakeFiltersFromViewMapOperationsC(ioPipeAndViewsState, inOperationBlocksJson
       ParseOneFilterTypeFromViewMapOperation(newOperationBlock,
               'aggregatedataset',
               PhactoriAggregateDatasetOperation,
+              operationParams)
+    elif operationParams['type'] == 'createsegmentsnormaltocells':
+      ParseOneFilterTypeFromViewMapOperation(newOperationBlock,
+              'createsegmentsnormaltocells',
+              PhactoriCreateSegmentsNormalToCells,
+              operationParams)
+    elif operationParams['type'] == 'vectorproject':
+      ParseOneFilterTypeFromViewMapOperation(newOperationBlock,
+              'vectorproject',
+              PhactoriVectorProject,
+              operationParams)
+    elif operationParams['type'] == 'glyph':
+      ParseOneFilterTypeFromViewMapOperation(newOperationBlock,
+              'glyph',
+              PhactoriGlyphOperation,
               operationParams)
     elif operationParams['type'] == 'triangulate':
       ParseOneFilterTypeFromViewMapOperation(newOperationBlock,
@@ -5264,6 +5346,9 @@ def FindReferredBlockC(referringBlock, referringKey, referredBlockset):
 
 def UpdatePipelineWithCurrentTimeArgument(inParaViewFilter):
   global gPipeAndViewsState
+  if gPipeAndViewsState == None:
+    inParaViewFilter.UpdatePipeline()
+    return
   thisTime = gPipeAndViewsState.CurrentDatadescription.GetTime()
   inParaViewFilter.UpdatePipeline(thisTime)
 
@@ -7372,7 +7457,13 @@ class PhactoriThresholdOperation(PhactoriOperationSpecifics):
         myDebugPrint3(inInputFilter.CellData.GetArray(ii).Name + "\n")
 
     newParaViewFilter = Threshold(inInputFilter)
-    newParaViewFilter.ThresholdRange = self.mRange
+    global gParaViewCatalystVersionFlag
+    if gParaViewCatalystVersionFlag < 51000:
+      newParaViewFilter.ThresholdRange = self.mRange
+    else:
+      newParaViewFilter.LowerThreshold = self.mRange[0]
+      newParaViewFilter.UpperThreshold = self.mRange[1]
+      newParaViewFilter.ThresholdMethod = vtk.vtkThreshold.THRESHOLD_BETWEEN
 
     self.HandleVariableNeedingDetection(inInputFilter, newParaViewFilter)
 
@@ -10021,6 +10112,581 @@ class PhactoriAggregateDatasetOperation(PhactoriOperationSpecifics):
 
 #phactori_combine_to_single_python_file_subpiece_end_1
 
+#phactori_combine_to_single_python_file_parent_1
+#from Operation.PhactoriCreateSegmentsNormalToCells import *
+#phactori_combine_to_single_python_file_subpiece_begin_1
+
+class SegmentCollectionRecursionParameters():
+  def __init__(self):
+    self.SegmentLength = 1.0
+    self.SegmentResolution = 10
+    self.DirectionReferencePoint = [0.0, 0.0, 0.0]
+    self.DirectionFlag = -1
+    self.SegmentCollection = None
+    self.workingBlockIndex = 0
+
+  def Initialize(self, inLen, inRes, inRefPt, inDrctnFlg):
+    self.SegmentLength = inLen
+    self.SegmentResolution = inRes
+    self.DirectionReferencePoint = inRefPt
+    self.DirectionFlag = inDrctnFlg
+    self.workingBlockIndex = 0
+    self.SegmentCollection = []
+
+class PcsntcSegment:
+  def __init__(self, inBlockIndex, inCellIndex, inSegPtA, inSegDir):
+    self.blockIndex = inBlockIndex
+    self.cellIndex = inCellIndex
+    self.ptA = inSegPtA
+    self.segDir = inSegDir
+    self.segmentLength = 1.0
+    self.ptB = None
+
+class PhactoriCreateSegmentsNormalToCells(PhactoriOperationSpecifics):
+  "takes a grid with cells and for each cell creates a line segment\n     which starts in the middle of the cell and goes 'normal' to the cell.\n     Normal is defined by finding the largest face on the cell and using\n     that face to define the cell normal"
+
+  def __init__(self):
+    PhactoriOperationSpecifics.__init__(self)
+    self.SegmentLength = 1.0
+    self.SegmentResolution = 10
+    self.DirectionReferencePoint = [0.0, 0.0, 0.0]
+    self.DirectionFlag = 1
+    self.RecursionResults = None
+    self.IncomingPvFilter = None
+    self.OutgoingGroupFilter = None
+    self.myVtkPoints = None
+    self.myVtkCellArray = None
+    self.myVtkPolyData = None
+    self.addPerPointCoordinateSystem = True
+    self.localCrdSysXName = "localcrdsysx"
+    self.localCrdSysYName = "localcrdsysy"
+    self.localCrdSysZName = "localcrdsysz"
+    self.addPerPointSegmentId = True
+    self.segmentIdArrayName = "segmentid"
+    self.localAxisXReference = [1.0, 0.0, 0.0]
+    self.localAxisXReference2 = [0.0, 1.0, 0.0]
+    self.geometricSamplingMultiplier = 1.0
+    self.segmentSampleMethod = "linear"
+
+  def ParseCheckFor3ValueList(self, itemToCheck, itemKey):
+    if (type(itemToCheck) is not list) or (len(itemToCheck) != 3):
+      myDebugPrint3AndException(
+        "PhactoriCreateSegmentsNormalToCells.ParseParametersFromJson:\n"
+        "'" + itemKey + "' must be 3 value list\n")
+
+  def ParseParametersFromJson(self, inJson):
+    key1 = "segment length"
+    if key1 in inJson:
+      self.SegmentLength = inJson[key1]
+      if self.SegmentLength <= 0.0:
+        myDebugPrint3AndException(
+          "PhactoriCreateSegmentsNormalToCells.ParseParametersFromJson:\n"
+          "'" + key1 + "' must be > 0.0\n")
+    key1 = "segment resolution"
+    if key1 in inJson:
+      self.SegmentResolution = inJson[key1]
+      if self.SegmentResolution < 2:
+        myDebugPrint3AndException(
+          "PhactoriCreateSegmentsNormalToCells.ParseParametersFromJson:\n"
+          "'" + key1 + "' must be >= 2\n")
+    key1 = "segment direction reference point"
+    if key1 in inJson:
+      self.DirectionReferencePoint = inJson[key1]
+      self.ParseCheckFor3ValueList(self.DirectionReferencePoint, key1)
+    key1 = "segment direction flag"
+    if key1 in inJson:
+      self.DirectionFlag = inJson[key1]
+    key1 = "geometric progression sampling"
+    if key1 in inJson:
+      self.segmentSampleMethod = "geometric"
+      self.geometricSamplingMultiplier = inJson[key1]
+      if self.geometricSamplingMultiplier <= 0.0:
+        myDebugPrint3AndException(
+          "PhactoriCreateSegmentsNormalToCells.ParseParametersFromJson:\n"
+          "'" + key1 + "' must be > 0.0\n")
+    key1 = "global x axis"
+    if key1 in inJson:
+      self.localAxisXReference = inJson[key1]
+      self.ParseCheckFor3ValueList(self.localAxisXReference, key1)
+      self.localAxisXReference = vecNormalize(self.localAxisXReference)
+      key2 = "global x axis backup"
+      if key2 in inJson:
+        self.localAxisXReference2 = inJson[key2]
+        self.ParseCheckFor3ValueList(self.localAxisXReference2, key2)
+        self.localAxisXReference2 = vecNormalize(self.localAxisXReference2)
+      else:
+        #construct second axis for when segment is parallel to this one
+        dpxa = abs(vecDotProduct(self.localAxisXReference, [1.0, 0.0, 0.0]))
+        dpya = abs(vecDotProduct(self.localAxisXReference, [0.0, 1.0, 0.0]))
+        dpza = abs(vecDotProduct(self.localAxisXReference, [0.0, 0.0, 1.0]))
+        if (dpxa <= dpya) and (dpxa <= dpza):
+          self.localAxisXReference2 = [1.0, 0.0, 0.0]
+        elif (dpya <= dpxa) and (dpya <= dpza):
+          self.localAxisXReference2 = [0.0, 1.0, 0.0]
+        else:
+          self.localAxisXReference2 = [0.0, 0.0, 1.0]
+    key1 = "add per point coordinate system"
+    if key1 in inJson:
+      self.addPerPointCoordinateSystem = inJson[key1]
+    key1 = "add per point segment id"
+    if key1 in inJson:
+      self.addPerPointSegmentId = inJson[key1]
+
+  @staticmethod
+  def CreateSegmentsNormalToCellsInBlock(recursionObject, inInputCsData, inParameters):
+    if PhactoriDbg(100):
+      myDebugPrint3("FindCellEdgeAngleMetricsInBlock entered\n")
+
+    inParameters.workingBlockIndex += 1
+
+    numCells = inInputCsData.GetNumberOfCells()
+    numPoints = inInputCsData.GetNumberOfPoints()
+    if PhactoriDbg(100):
+      myDebugPrint3("numCells: " + str(numCells) + \
+        "  numPoints: " + str(numPoints) + "\n")
+
+    for cellIndex in range(0, numCells):
+      oneCell = inInputCsData.GetCell(cellIndex)
+      cellFaceNormal = PhactoriFindLargestCellFaceNormal(inInputCsData, oneCell)
+      cellPtAvg =  PhactoriGetAverageOfCellPoints(inInputCsData, oneCell)
+      if PhactoriDbg(100):
+        if cellIndex % 1000 == 0:
+          myDebugPrint3("cellIndex: " + str(cellIndex) + " c: " + \
+            str(cellPtAvg) + " n: " + str(cellFaceNormal) + "\n")
+      newSegmentItem = PcsntcSegment(inParameters.workingBlockIndex, cellIndex,
+        cellPtAvg, cellFaceNormal)
+      inParameters.SegmentCollection.append(newSegmentItem)
+
+    if PhactoriDbg(100):
+      myDebugPrint3("FindCellEdgeAngleMetricsInBlock returning\n")
+
+  def FindSecondPointForSegments(self):
+    for oneLineInfo in self.RecursionResults.SegmentCollection:
+      vecFromCellToRef = vecNormalize(vecFromAToB(oneLineInfo.ptA, self.DirectionReferencePoint))
+      testDotProd = vecDotProduct(oneLineInfo.segDir, vecFromCellToRef)
+      if testDotProd < 0.0:
+        if self.DirectionFlag < 0:
+          vecScaleInPlace(-1.0, oneLineInfo.segDir)
+      else:
+        if self.DirectionFlag >= 0:
+          vecScaleInPlace(-1.0, oneLineInfo.segDir)
+      oneSegLen = self.SegmentLength
+      oneLineInfo.segmentLength = oneSegLen
+      oneLineInfo.ptB = vecMultiplyAdd(oneLineInfo.ptA, oneLineInfo.segDir, oneSegLen)
+
+  def AddPerPointSegmentIdIfRequested(self):
+    if self.addPerPointSegmentId == False:
+      return
+    #find most segments out of any processes and use that to construct unique
+    #for each segment
+    localNumSegmentsArray = [len(self.RecursionResults.SegmentCollection)]
+    maxNumSegmentsArray = UseReduceOnIntegerList(localNumSegmentsArray, 0)
+    maxNumSegmentsOnAnyProcess = maxNumSegmentsArray[0]
+    totalNumPts = len(self.RecursionResults.SegmentCollection)*self.SegmentResolution
+    segIdArray = vtk.vtkIntArray()
+    segIdArray.SetNumberOfComponents(3)
+    segIdArray.SetNumberOfTuples(totalNumPts)
+    segIdArray.SetName(self.segmentIdArrayName)
+    localPid = SmartGetLocalProcessId()
+    numPid = SmartGetNumberOfProcesses()
+    ptNdx = 0
+    segNdx = 0
+    #using +1 guarantees sequence gap between each process so which segments
+    #went with which proceses can be reconstructed if necessary
+    localSegIdCntr = localPid * (maxNumSegmentsOnAnyProcess+1)
+    idTuple = [localSegIdCntr, segNdx, 0]
+    for oneLineInfo in self.RecursionResults.SegmentCollection:
+      thisSegmentPointIndex = 0
+      for resNdx in range(0,self.SegmentResolution):
+        idTuple[2] = thisSegmentPointIndex
+        segIdArray.SetTuple(ptNdx, idTuple)
+        ptNdx += 1
+        thisSegmentPointIndex += 1
+      localSegIdCntr += 1
+      segNdx += 1
+      idTuple[0] = localSegIdCntr
+      idTuple[1] = segNdx
+    self.myVtkPolyData.GetPointData().AddArray(segIdArray)
+
+  def AddPerPointCoordinateSystemIfRequested(self):
+    if self.addPerPointCoordinateSystem == False:
+      return
+    ptNdx = 0
+    totalNumPts = len(self.RecursionResults.SegmentCollection)*self.SegmentResolution
+    crdSysXArray = vtk.vtkDoubleArray()
+    crdSysXArray.SetNumberOfComponents(3)
+    crdSysXArray.SetNumberOfTuples(totalNumPts)
+    crdSysXArray.SetName(self.localCrdSysXName)
+    crdSysYArray = vtk.vtkDoubleArray()
+    crdSysYArray.SetNumberOfComponents(3)
+    crdSysYArray.SetNumberOfTuples(totalNumPts)
+    crdSysYArray.SetName(self.localCrdSysYName)
+    crdSysZArray = vtk.vtkDoubleArray()
+    crdSysZArray.SetNumberOfComponents(3)
+    crdSysZArray.SetNumberOfTuples(totalNumPts)
+    crdSysZArray.SetName(self.localCrdSysZName)
+    for oneLineInfo in self.RecursionResults.SegmentCollection:
+      localYAxis = vecNormalize(oneLineInfo.segDir)
+      localZAxis = vecCrossProduct(self.localAxisXReference, localYAxis)
+      zAxisLen = vecMagnitude(localZAxis)
+      if zAxisLen < 1.0e-20:
+        localZAxis = vecCrossProduct(self.localAxisXReference2, localYAxis)
+      vecNormalize2(localZAxis, localZAxis)
+      localXAxis = vecCrossProduct(localYAxis, localZAxis)
+      vecNormalize2(localXAxis, localXAxis)
+      for resNdx in range(0,self.SegmentResolution):
+        crdSysXArray.SetTuple(ptNdx, localXAxis)
+        crdSysYArray.SetTuple(ptNdx, localYAxis)
+        crdSysZArray.SetTuple(ptNdx, localZAxis)
+        ptNdx += 1
+    self.myVtkPolyData.GetPointData().AddArray(crdSysXArray)
+    self.myVtkPolyData.GetPointData().AddArray(crdSysYArray)
+    self.myVtkPolyData.GetPointData().AddArray(crdSysZArray)
+
+  def CalculateGeometricProgressionSampleValues(self, oneLineInfo):
+    samplePos = [0.0]
+    samplePt = 0.0
+    sampleSpacing = self.geometricSamplingMultiplier
+    for ii in range(0, self.SegmentResolution-1):
+      samplePt += sampleSpacing
+      samplePos.append(samplePt)
+      sampleSpacing *= self.geometricSamplingMultiplier
+    maxSamplePt = samplePos[-1]
+    adj1 = oneLineInfo.segmentLength/maxSamplePt
+    for ii in range(0, self.SegmentResolution-1):
+      samplePos[ii] *= adj1
+    samplePos[-1] = oneLineInfo.segmentLength
+    return samplePos
+
+  def CreateSegmentWithChosenSamplingMethod(self, oneLineInfo, ptNdx):
+    myNewPolyLine = vtk.vtkPolyLine()
+    myPlyLnIds = myNewPolyLine.GetPointIds()
+    myPlyLnIds.SetNumberOfIds(self.SegmentResolution)
+    if self.segmentSampleMethod == "linear" or self.segmentSampleMethod == "geometric":
+      if self.segmentSampleMethod == "linear":
+        self.geometricSamplingMultiplier = 1.0
+      samplePos = self.CalculateGeometricProgressionSampleValues(oneLineInfo)
+      for resNdx in range(0,self.SegmentResolution):
+        ratio1 = samplePos[resNdx]
+        newPtAlongLine = vecMultiplyAdd(oneLineInfo.ptA, oneLineInfo.segDir, ratio1)
+        self.myVtkPoints.SetPoint(ptNdx, newPtAlongLine)
+        myPlyLnIds.SetId(resNdx, ptNdx)
+        ptNdx += 1
+    else:
+      myDebugPrint3AndException(
+        "PhactoriCreateSegmentsNormalToCells.CreateSegmentWithChosenSamplingMethod:\n"
+        "bad self.segmentSampleMethod: " + str(self.segmentSampleMethod) + "\n")
+    return myNewPolyLine
+
+  def CreateParaViewSourcesForSegments(self):
+    pvLineList = []
+    if PhactoriDbg(100):
+      myDebugPrint3("CreateParaViewSourcesForSegments\n" + \
+        "self.SegmentLength: " + str(self.SegmentLength) + "\n" + \
+        "self.SegmentResolution: " + str(self.SegmentResolution) + "\n" + \
+        "self.DirectionReferencePoint: " + str(self.DirectionReferencePoint) + "\n" + \
+        "self.DirectionFlag: " + str(self.DirectionFlag) + "\n")
+
+    self.myVtkPoints = vtk.vtkPoints()
+    self.myVtkCellArray = vtk.vtkCellArray()
+    self.myVtkPolyData = vtk.vtkPolyData()
+
+    self.FindSecondPointForSegments()
+    ptNdx = 0
+    totalNumPts = len(self.RecursionResults.SegmentCollection)*self.SegmentResolution
+    self.myVtkPoints.SetNumberOfPoints(totalNumPts)
+    for oneLineInfo in self.RecursionResults.SegmentCollection:
+      myNewPolyLine = self.CreateSegmentWithChosenSamplingMethod(oneLineInfo, ptNdx)
+      ptNdx += self.SegmentResolution
+      self.myVtkCellArray.InsertNextCell(myNewPolyLine)
+
+    self.myVtkPolyData.SetPoints(self.myVtkPoints)
+    #self.myVtkPolyData.SetVerts(self.myVtkCellArray)
+    self.myVtkPolyData.SetLines(self.myVtkCellArray)
+
+    self.AddPerPointCoordinateSystemIfRequested()
+    self.AddPerPointSegmentIdIfRequested()
+
+    newParaViewFilter = PVTrivialProducer()
+    newParaViewFilter.GetClientSideObject().SetOutput(self.myVtkPolyData)
+    return newParaViewFilter
+
+  def CreateSegmentsForAllCells(self, inInputFilter):
+    recursionControlObj = PhactoriParaviewMultiBlockRecursionControl()
+    self.RecursionResults = SegmentCollectionRecursionParameters()
+    self.RecursionResults.Initialize(
+      self.SegmentLength,
+      self.SegmentResolution,
+      self.DirectionReferencePoint,
+      self.DirectionFlag)
+    recursionControlObj.mParameters = self.RecursionResults
+    recursionControlObj.mOperationToDoPerBlock = self.CreateSegmentsNormalToCellsInBlock
+    PhactoriRecusivelyDoMethodPerBlockFromParaViewFilter(recursionControlObj, inInputFilter)
+
+  def CreateParaViewFilter(self, inInputFilter):
+    if PhactoriDbg(100):
+      myDebugPrint3("PhactoriCreateSegmentsNormalToCells.CreateParaViewFilter "
+          "entered\n", 100)
+
+    self.IncomingPvFilter = inInputFilter
+    savedActiveSource = GetActiveSource()
+
+    UpdatePipelineWithCurrentTimeArgument(inInputFilter)
+
+    #go through all cells and create a segment for each one.
+    #(find the geometry for all segments)
+    self.CreateSegmentsForAllCells(inInputFilter)
+
+    self.OutgoingGroupFilter = self.CreateParaViewSourcesForSegments()
+    UpdatePipelineWithCurrentTimeArgument(self.OutgoingGroupFilter)
+
+    SetActiveSource(self.OutgoingGroupFilter)
+    SetActiveSource(savedActiveSource)
+
+    if PhactoriDbg(100):
+      myDebugPrint3("PhactoriCreateSegmentsNormalToCells.CreateParaViewFilter "
+          "returning\n", 100)
+
+    return self.OutgoingGroupFilter
+
+#phactori_combine_to_single_python_file_subpiece_end_1
+
+#phactori_combine_to_single_python_file_parent_1
+#from Operation.PhactoriVectorProject import *
+#phactori_combine_to_single_python_file_subpiece_begin_1
+class PhactoriVectorProject(PhactoriOperationSpecifics):
+  "manages calculator filter"
+  def __init__(self):
+    PhactoriOperationSpecifics.__init__(self)
+    self.projectionList = None
+    self.pvCalcs = None
+
+  def ParseParametersFromJson(self, inJson):
+    key1 = "project list"
+    if key1 not in inJson:
+      myDebugPrint3AndException(
+        "PhactoriVectorProject::ParseParametersFromJson\n"
+        "Error: must have key " + key1 + "\n")
+    self.projectionList = inJson[key1]
+    if len(self.projectionList) % 3 != 0:
+      myDebugPrint3AndException(
+        "PhactoriVectorProject::ParseParametersFromJson\n"
+        "projection list must have three entries per projection")
+
+  def CreateParaViewFilter(self, inInputFilter):
+    "create the projection calculators for ParaView"
+    if PhactoriDbg(100):
+      myDebugPrint3("PhactoriVectorProject.CreateParaViewFilter "
+          "entered\n", 100)
+
+    savedActiveSource = GetActiveSource()
+
+    UpdatePipelineWithCurrentTimeArgument(inInputFilter)
+
+    ndx = 0
+    testend = len(self.projectionList) - 1
+    self.pvCalcs = []
+    nextInput = inInputFilter
+    while ndx < testend:
+      vecToProj = self.projectionList[ndx]
+      vecToProjOnTo = self.projectionList[ndx+1]
+      targetProjLenName = self.projectionList[ndx+2]
+      ndx += 3
+      functionstr = vecToProj + "." + vecToProjOnTo
+      #functionstr = \
+      #  vecToProj + "_X*" + vecToProjOnTo + "_X+" + \
+      #  vecToProj + "_Y*" + vecToProjOnTo + "_Y+" + \
+      #  vecToProj + "_Z*" + vecToProjOnTo + "_Z"
+      if PhactoriDbg(100):
+        myDebugPrint3("ndx " + str(ndx) + "\n"
+          "vecToProj " + str(vecToProj) + "\n"
+          "vecToProjOnTo " + str(vecToProjOnTo) + "\n"
+          "targetProjLenName " + str(targetProjLenName) + "\n"
+          "functionstr " + str(functionstr) + "\n")
+      newPvCalc = Calculator(nextInput)
+      newPvCalc.Function = functionstr
+      newPvCalc.ResultArrayName = targetProjLenName
+      #newParaViewFilter.AttributeType = self.mPointOrCell
+      newPvCalc.AttributeType = "Point Data"
+      self.pvCalcs.append(newPvCalc)
+      nextInput = newPvCalc
+      UpdatePipelineWithCurrentTimeArgument(newPvCalc)
+
+    newParaViewFilter = self.pvCalcs[-1]
+    SetActiveSource(newParaViewFilter)
+    SetActiveSource(savedActiveSource)
+
+    if PhactoriDbg(100):
+      myDebugPrint3(
+        "PhactoriTransformOperation.CreateParaViewFilter returning\n", 100)
+
+    return newParaViewFilter
+#phactori_combine_to_single_python_file_subpiece_end_1
+
+#phactori_combine_to_single_python_file_parent_1
+#from Operation.PhactoriGlyphOperation import *
+#phactori_combine_to_single_python_file_subpiece_begin_1
+class PhactoriGlyphOperation(PhactoriOperationSpecifics):
+  "manages Glyph filter"
+  def __init__(self):
+    PhactoriOperationSpecifics.__init__(self)
+    self.scaleFactor = None
+    self.glyphType = "Arrow"
+    self.ArrowTipResolution = None
+    self.ArrowTipRadius = None
+    self.ArrowTipLength = None
+    self.ArrowShaftResolution = None
+    self.ArrowShaftRadius = None
+    self.scaleArray = None
+    self.orientationArray = None
+
+  def ParseParametersFromJson(self, inJson):
+    if PhactoriDbg(100):
+      myDebugPrint3("PhactoriGlyphOperation.ParseParametersFromJson "
+          "entered\n", 100)
+ 
+    key1 = "scale factor"
+    if key1 in inJson:
+      self.scaleFactor = inJson[key1]
+      if self.scaleFactor <= 0.0:
+        myDebugPrint3AndException(
+          "PhactoriGlyphOperation.ParseParametersFromJson:\nbad " + \
+          key1 + "\n")
+        exit(-1)
+
+    glyphSet = {}
+    glyphSet["arrow"] = "Arrow"
+    glyphSet["box"] = "Box"
+    key1 = "glyph type"
+    if key1 in inJson:
+      glyphkey1 = inJson[key1]
+      if glyphkey1 not in glyphSet:
+        myDebugPrint3AndException(
+          "PhactoriGlyphOperation.ParseParametersFromJson:\nbad " + \
+          key1 + "\n")
+        exit(-1)
+      self.glyphType = glyphSet[glyphkey1]
+
+    key1 = "scale array"
+    if key1 in inJson:
+      self.scaleArray = inJson[key1]
+
+    key1 = "orientation array"
+    if key1 in inJson:
+      self.orientationArray = inJson[key1]
+
+    if PhactoriDbg(100):
+      myDebugPrint3("self.scaleArray " + str(self.scaleArray) + "\n")
+      myDebugPrint3("self.orientationArray " + str(self.orientationArray) + "\n")
+
+    if self.glyphType == "Arrow":
+      key1 = "tip resolution"
+      if key1 in inJson:
+        self.ArrowTipResolution = inJson[key1]
+        if self.ArrowTipResolution <= 0:
+          myDebugPrint3AndException(
+            "PhactoriGlyphOperation.ParseParametersFromJson:\nbad " + \
+            key1 + "\n")
+          exit(-1)
+      key1 = "tip length"
+      if key1 in inJson:
+        self.ArrowTipLength = inJson[key1]
+        if self.ArrowTipLength < 0.0:
+          myDebugPrint3AndException(
+            "PhactoriGlyphOperation.ParseParametersFromJson:\nbad " + \
+            key1 + "\n")
+          exit(-1)
+      key1 = "tip radius"
+      if key1 in inJson:
+        self.ArrowTipRadius = inJson[key1]
+        if self.ArrowTipRadius <= 0.0:
+          myDebugPrint3AndException(
+            "PhactoriGlyphOperation.ParseParametersFromJson:\nbad " + \
+            key1 + "\n")
+          exit(-1)
+      key1 = "shaft resolution"
+      if key1 in inJson:
+        self.ArrowShaftResolution = inJson[key1]
+        if self.ArrowShaftResolution <= 0:
+          myDebugPrint3AndException(
+            "PhactoriGlyphOperation.ParseParametersFromJson:\nbad " + \
+            key1 + "\n")
+          exit(-1)
+      key1 = "shaft radius"
+      if key1 in inJson:
+        self.ArrowShaftRadius = inJson[key1]
+        if self.ArrowShaftRadius <= 0.0:
+          myDebugPrint3AndException(
+            "PhactoriGlyphOperation.ParseParametersFromJson:\nbad " + \
+            key1 + "\n")
+          exit(-1)
+
+    if PhactoriDbg(100):
+      myDebugPrint3("PhactoriGlyphOperation.ParseParametersFromJson "
+          "returning\n", 100)
+
+  def CreateParaViewFilter(self, inInputFilter):
+    "create the Glyph filter for ParaView"
+    if PhactoriDbg(100):
+      myDebugPrint3("PhactoriGlyphOperation.CreateParaViewFilter "
+          "entered\n", 100)
+
+    savedActiveSource = GetActiveSource()
+
+    UpdatePipelineWithCurrentTimeArgument(inInputFilter)
+
+    if PhactoriDbg(100):
+      myDebugPrint3("self.glyphType: " + str(self.glyphType) + "\n")
+
+    newParaViewFilter = Glyph(Input=inInputFilter, GlyphType=self.glyphType)
+    #newParaViewFilter.OrientationArray = ['POINTS', 'No orientation array']
+    #newParaViewFilter.ScaleArray = ['POINTS', 'No scale array']
+    #newParaViewFilter.ScaleFactor = 0.1753620492294431
+    newParaViewFilter.GlyphTransform = 'Transform2'
+    if self.scaleArray != None:
+      newParaViewFilter.ScaleArray = self.scaleArray
+    else:
+      newParaViewFilter.ScaleArray = ['POINTS', 'velocity_xyz']
+    if self.orientationArray != None:
+      newParaViewFilter.OrientationArray = self.orientationArray
+    else:
+      newParaViewFilter.OrientationArray = ['POINTS', 'velocity_xyz']
+    if PhactoriDbg(100):
+      myDebugPrint3("newParaViewFilter.ScaleArray " + str(newParaViewFilter.ScaleArray) + "\n")
+      myDebugPrint3("newParaViewFilter.OrientationArray " + str(newParaViewFilter.OrientationArray) + "\n")
+    #newParaViewFilter.ScaleFactor = 1e-05
+    newParaViewFilter.GlyphMode = 'All Points'
+    if self.scaleFactor != None:
+      newParaViewFilter.ScaleFactor = self.scaleFactor
+    if self.ArrowTipResolution != None:
+      newParaViewFilter.GlyphType.TipResolution = self.ArrowTipResolution
+    if self.ArrowShaftResolution != None:
+      newParaViewFilter.GlyphType.ShaftResolution = self.ArrowShaftResolution
+    if self.ArrowTipRadius != None:
+      newParaViewFilter.GlyphType.TipRadius = self.ArrowTipRadius
+    if self.ArrowShaftRadius != None:
+      newParaViewFilter.GlyphType.ShaftRadius = self.ArrowShaftRadius
+    if self.ArrowTipLength != None:
+      newParaViewFilter.GlyphType.TipLength = self.ArrowTipLength
+
+    # init the 'Arrow' selected for 'GlyphType'
+    #newParaViewFilter.GlyphType.TipResolution = 6
+    #newParaViewFilter.GlyphType.TipRadius = 0.05
+    #newParaViewFilter.GlyphType.TipLength = 0.3
+    #newParaViewFilter.GlyphType.ShaftResolution = 6
+    #newParaViewFilter.GlyphType.ShaftRadius = 0.05
+
+    UpdatePipelineWithCurrentTimeArgument(newParaViewFilter)
+    SetActiveSource(newParaViewFilter)
+    SetActiveSource(savedActiveSource)
+
+    if PhactoriDbg(100):
+      myDebugPrint3("PhactoriGlyphOperation.CreateParaViewFilter "
+          "returning\n", 100)
+
+    return newParaViewFilter
+
+#phactori_combine_to_single_python_file_subpiece_end_1
 
 #phactori_combine_to_single_python_file_parent_1
 #from Operation.PhactoriTriangulateOperation import *
@@ -10895,6 +11561,7 @@ class PhactoriPlaneOpBase(PhactoriOperationSpecifics):
 
       if 'plane normal' in inJson:
         self.mPlaneNormal = inJson['plane normal']
+        self.mPlaneNormal = vecNormalize(self.mPlaneNormal)
       else:
         self.mPlaneNormal = [0.0, 1.0, 0.0]
 
@@ -11800,6 +12467,9 @@ class PhactoriResampleWithDatasetOperation(PhactoriOperationSpecifics):
 
     #self.InternalParaViewFilterPtr = ResampleWithDataset(Input = inInputFilter, Source=paraviewResampleDataset)
     self.InternalParaViewFilterPtr = ResampleWithDataset(SourceDataArrays = inInputFilter, DestinationMesh=paraviewResampleDataset)
+    self.InternalParaViewFilterPtr.PassCellArrays = 1
+    self.InternalParaViewFilterPtr.PassPointArrays = 1
+
     self.InternalParaViewFilterPtr.CellLocator = 'Static Cell Locator'
 
     self.DebugPrintInputPortAndOutputPortInfo("pre filter update 1\n")
@@ -18312,7 +18982,11 @@ class PhactoriAnnotationViewSettings:
     self.mShadow = False
     self.mOpacity = 1.0
     self.mAlign = 'Center'
-    self.mWindowLocation = 'UpperLeftCorner'
+    global gParaViewCatalystVersionFlag
+    if gParaViewCatalystVersionFlag < 51000:
+      self.mWindowLocation = 'UpperLeftCorner'
+    else:
+      self.mWindowLocation = 'Upper Left Corner'
     if PhactoriDbg():
       myDebugPrint3("ViewSettingsPhactoriAnnotation::__init__ returning\n")
 
@@ -18333,22 +19007,41 @@ class PhactoriAnnotationViewSettings:
       winPos = windowPosSize[0]
       winSize = windowPosSize[1]
       self.SetSizeScale(winSize)
-      if winPos == 'top left':
-        self.SetWindowLocation('UpperLeftCorner')
-      elif winPos == 'top right':
-        self.SetWindowLocation('UpperRightCorner')
-      elif winPos == 'top':
-        self.SetWindowLocation('UpperCenter')
-      elif winPos == 'bottom left':
-        self.SetWindowLocation('LowerLeftCorner')
-      elif winPos == 'bottom right':
-        self.SetWindowLocation('LowerRightCorner')
-      elif winPos == 'bottom':
-        self.SetWindowLocation('LowerCenter')
-      else:
-        if PhactoriDbg():
-          myDebugPrint3("bad time annotation position, using upper left\n")
-        self.SetWindowLocation('UpperLeftCorner')
+      global gParaViewCatalystVersionFlag
+      if gParaViewCatalystVersionFlag < 51000:
+        if winPos == 'top left':
+          self.SetWindowLocation('UpperLeftCorner')
+        elif winPos == 'top right':
+          self.SetWindowLocation('UpperRightCorner')
+        elif winPos == 'top':
+          self.SetWindowLocation('UpperCenter')
+        elif winPos == 'bottom left':
+          self.SetWindowLocation('LowerLeftCorner')
+        elif winPos == 'bottom right':
+          self.SetWindowLocation('LowerRightCorner')
+        elif winPos == 'bottom':
+          self.SetWindowLocation('LowerCenter')
+        else:
+          if PhactoriDbg():
+            myDebugPrint3("bad time annotation position, using upper left\n")
+          self.SetWindowLocation('UpperLeftCorner')
+      else: #gParaViewCatalystVersionFlag >= 51000
+        if winPos == 'top left':
+          self.SetWindowLocation('Upper Left Corner')
+        elif winPos == 'top right':
+          self.SetWindowLocation('Upper Right Corner')
+        elif winPos == 'top':
+          self.SetWindowLocation('Upper Center')
+        elif winPos == 'bottom left':
+          self.SetWindowLocation('Lower Left Corner')
+        elif winPos == 'bottom right':
+          self.SetWindowLocation('Lower Right Corner')
+        elif winPos == 'bottom':
+          self.SetWindowLocation('Lower Center')
+        else:
+          if PhactoriDbg():
+            myDebugPrint3("bad time annotation position, using upper left\n")
+          self.SetWindowLocation('UpperLeftCorner')
 
     if 'time format string' in inJsn:
       self.mTimeFormatString = inJsn['time format string']
@@ -18378,9 +19071,15 @@ class PhactoriAnnotationViewSettings:
     #self.mParaViewRepresentation.FontSize = self.mFontSize
 
   def SetWindowLocation(self, inNewPosition):
-    validPositions = ['UpperLeftCorner', 'UpperRightCorner', 
-        'LowerLeftCorner', 'LowerRightCorner',
-        'UpperCenter', 'LowerCenter']
+    global gParaViewCatalystVersionFlag
+    if gParaViewCatalystVersionFlag < 51000:
+      validPositions = ['UpperLeftCorner', 'UpperRightCorner', 
+          'LowerLeftCorner', 'LowerRightCorner',
+          'UpperCenter', 'LowerCenter']
+    else:
+      validPositions = ['Upper Left Corner', 'Upper Right Corner', 
+          'Lower Left Corner', 'Lower Right Corner',
+          'Upper Center', 'Lower Center']
     if inNewPosition in validPositions:
       #self.mParaViewRepresentation.WindowLocation = inNewPosition
       self.mWindowLocation = inNewPosition
@@ -18667,7 +19366,6 @@ class PhactoriPlot1Base:
     self.mSharedPvRenderView2.BottomAxisUseCustomRange = 0
 
     if self.m_PlotType == "PhactoriPlotOverTimeBlock":
-      self.mPvDataRepresentation2.AttributeType = "Point Data"
       self.mPvDataRepresentation2.AttributeType = "Row Data"
       self.mSharedPvRenderView2.LeftAxisTitle = self.m_YAxisVariableInfo.GetXYPlotAxisTitle()
       self.mSharedPvRenderView2.BottomAxisTitle = "Time"
@@ -19172,18 +19870,31 @@ class PhactoriImagesetBlock:
                 RunCalculationToCastRays(gPipeAndViewsState)
             UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
           if onevisop.mName == "surfaceofinterest1":
-            svrng = onevisop.mParaViewFilter.ThresholdRange
-            #onevisop.mParaViewFilter.ThresholdRange = [svrng[0]*0.5, svrng[1]*0.5]
-            onevisop.mParaViewFilter.ThresholdRange = [1.0, 10.0]
-            UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
-            onevisop.mParaViewFilter.ThresholdRange = svrng
-            UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
-            
+            global gParaViewCatalystVersionFlag
+            if gParaViewCatalystVersionFlag < 51000:
+              svrng = onevisop.mParaViewFilter.ThresholdRange
+              #onevisop.mParaViewFilter.ThresholdRange = [svrng[0]*0.5, svrng[1]*0.5]
+              onevisop.mParaViewFilter.ThresholdRange = [1.0, 10.0]
+              UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
+              onevisop.mParaViewFilter.ThresholdRange = svrng
+              UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
+            else:
+              svrngLower = onevisop.mParaViewFilter.LowerThreshold
+              svrngUpper = onevisop.mParaViewFilter.UpperThreshold
+              onevisop.mParaViewFilter.LowerThreshold = 1.0
+              onevisop.mParaViewFilter.UpperThreshold = 10.0
+              UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
+              onevisop.mParaViewFilter.LowerThreshold = svrngLower
+              onevisop.mParaViewFilter.UpperThreshold = svrngUpper
+              UpdatePipelineWithCurrentTimeArgument(onevisop.mParaViewFilter)
+
         if PhactoriDbg():
           firstop = self.mVisibleOps[0]
           firstPvFilter = firstop.GetPvFilter()
           label1 = "before WriteImage() " + fname + "\n"
           DebugPrintCellAndPointArrayInfo(label1, firstPvFilter, 100)
+          myDebugPrint3("self.mPvDataRepresentation2.Representation:\n" + \
+            str(self.mPvDataRepresentation2.Representation) + "\n")
 
         if PhactoriDbg():
           myDebugPrint3("calling WriteImage() " + fname + "\n")
@@ -21185,6 +21896,8 @@ def ColorByVariableComponentOrMagnitudeXX(inParaViewDataRepresentation,
     if PhactoriDbg():
       myDebugPrint3("using ColorBy() to set color var " + \
         inVariableName + "  " + inVariableArrayType + " 1\n")
+      myDebugPrint3("inComponentOrMagnitude: " + str(inComponentOrMagnitude) \
+        + "\ninWhichComponent: " + str(inWhichComponent) + "\n")
     inParaViewDataRepresentation.RescaleTransferFunctionToDataRange(False)
     SafeColorBy(inParaViewDataRepresentation,
         (inVariableArrayType, inVariableName))
@@ -21394,20 +22107,24 @@ def ColorByBlock(inParaViewDataSource, inParaViewDataRepresentation,
 
   blockAndLeafBlockCounter = [0,0]
 
-  blockColorData = inParaViewDataRepresentation.BlockColor
-  if PhactoriDbg(100):
-    myDebugPrint3('  blockColorData is ' + str(blockColorData) + '\n', 100)
-  if PhactoriDbg(100):
-    myDebugPrint3('  blockColorData type is ' + str(type(blockColorData)) + '\n', 100)
+  global gParaViewCatalystVersionFlag
+  if gParaViewCatalystVersionFlag < 51000:
 
-  ColorByBlockRecurse1(csdata, blockAndLeafBlockCounter, inParaViewDataRepresentation.BlockColor, False)
+    blockColorData = inParaViewDataRepresentation.BlockColor
+    if PhactoriDbg(100):
+      myDebugPrint3('  blockColorData is ' + str(blockColorData) + '\n', 100)
+    if PhactoriDbg(100):
+      myDebugPrint3('  blockColorData type is ' + str(type(blockColorData)) + '\n', 100)
 
-  #inParaViewDataRepresentation.BlockColor = blockColorData
+    ColorByBlockRecurse1(csdata, blockAndLeafBlockCounter, inParaViewDataRepresentation.BlockColor, False)
+
+    #inParaViewDataRepresentation.BlockColor = blockColorData
   
-  if PhactoriDbg(100):
-    myDebugPrint3('   block color data: ' + str(inParaViewDataRepresentation.BlockColor) + '\n', 100)
-  if PhactoriDbg(100):
-    myDebugPrint3('   final count: ' + str(blockAndLeafBlockCounter) + '\n', 100)
+    if PhactoriDbg(100):
+      myDebugPrint3('   block color data: ' + str(inParaViewDataRepresentation.BlockColor) + '\n', 100)
+    if PhactoriDbg(100):
+      myDebugPrint3('   final count: ' + str(blockAndLeafBlockCounter) + '\n', 100)
+
   if PhactoriDbg(100):
     myDebugPrint3('ColorByBlock returning\n', 100)
 
@@ -21992,6 +22709,8 @@ def ShowDataColorLegendXX(inPvView,
         inColorLegendRepRef, inPvDataRep):
   "Turns on or off the display of the color bar legend showing the mapping\n     between the color and the data value (and the name of the data value.\n     (note this is primarily to do the paraview-side work to turn bar on or\n      off, on to set up for rendering in the shared view, off to turn off\n      rendering in shared view.  On or off state for rendering is stored\n      as a flag in the ioPhactoriImagesetBlock instance"
 
+  global gParaViewCatalystVersionFlag
+
   if PhactoriDbg(100):
     myDebugPrint3('phactori.ShowDataColorLegendXX entered, setting:' + \
         inOnOffSetting + '\n', 100)
@@ -22123,7 +22842,7 @@ def ShowDataColorLegendXX(inPvView,
         "  legendOrientation: " + str(legendOrientation) + "\n"\
         "  legendFontSize: " + str(legendFontSize) + "\n")
 
-  else:
+  elif gParaViewCatalystVersionFlag < 51000:
     defaultLegendLength = 0.33
     defaultMidPos = 0.5 - 0.5*defaultLegendLength
     #legendFontSize = 16
@@ -22165,6 +22884,48 @@ def ShowDataColorLegendXX(inPvView,
     else:
       legendOrientation = 'Vertical'
       legendWindowLocation = 'LowerRightCorner'
+  else:
+    defaultLegendLength = 0.33
+    defaultMidPos = 0.5 - 0.5*defaultLegendLength
+    #legendFontSize = 16
+    #legendSize = 1.0
+    #validPositions = ['UpperLeftCorner', 'UpperRightCorner', 
+    #    'LowerLeftCorner', 'LowerRightCorner',
+    #    'UpperCenter', 'LowerCenter']
+    legendPosition=[0.0, 0.0]
+    if inColorLegendPositionAndSize[0] == 'top':
+      legendOrientation = 'Horizontal'
+      legendWindowLocation = 'Upper Center'
+    elif inColorLegendPositionAndSize[0] == 'bottom':
+      legendOrientation = 'Horizontal'
+      legendWindowLocation = 'Lower Center'
+    elif inColorLegendPositionAndSize[0] == 'left':
+      legendOrientation = 'Vertical'
+      legendPosition=[0.02, defaultMidPos]
+      legendWindowLocation = 'Any Location'
+    elif inColorLegendPositionAndSize[0] == 'right':
+      legendOrientation = 'Vertical'
+      legendPosition=[0.89, defaultMidPos]
+      legendWindowLocation = 'Any Location'
+    elif inColorLegendPositionAndSize[0] == 'top left':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'Upper Left Corner'
+    elif inColorLegendPositionAndSize[0] == 'top right':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'Upper Right Corner'
+    elif inColorLegendPositionAndSize[0] == 'bottom left':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'Lower Left Corner'
+    elif inColorLegendPositionAndSize[0] == 'bottom right':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'Lower Right Corner'
+    elif inColorLegendPositionAndSize[0] == 'parameters':
+      legendOrientation = inColorLegendPositionAndSize[1]
+      legendPosition = inColorLegendPositionAndSize[2]
+      legendWindowLocation = 'Any Location'
+    else:
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'Lower Right Corner'
 
     #newScalarBarWidgetRepresentation = CreateScalarBar( Title=inPvDataRep.ColorArrayName, Position2=[0.13, 0.5], TitleOpacity=1.0, TitleShadow=0, AutomaticLabelFormat=1, TitleFontSize=12, TitleColor=[1.0, 1.0, 1.0], AspectRatio=20.0, NumberOfLabels=5, ComponentTitle='', Resizable=1, TitleFontFamily='Arial', Visibility=myVisibility, LabelFontSize=12, LabelFontFamily='Arial', TitleItalic=0, Selectable=0, LabelItalic=0, Enabled=0, LabelColor=[1.0, 1.0, 1.0], Position=[0.9, 0.31396255850234012], LabelBold=0, UseNonCompositedRenderer=1, LabelOpacity=1.0, TitleBold=0, LabelFormat='%-#6.3g', Orientation='Vertical', LabelShadow=0, LookupTable=inPvDataRep.LookupTable, Repositionable=1 )
   if gParaViewCatalystVersionFlag <= 40100:
@@ -22230,9 +22991,34 @@ def ShowDataColorLegendXX(inPvView,
       #LabelShadow=0,
       #Repositionable=1
       )
-  else:
+  elif gParaViewCatalystVersionFlag < 51000:
     newScalarBarWidgetRepresentation = CreateScalarBar(
         Title=localColorArrayName, ComponentTitle='')
+    newScalarBarWidgetRepresentation.Orientation = legendOrientation
+    newScalarBarWidgetRepresentation.WindowLocation = legendWindowLocation
+    if legendWindowLocation == 'AnyLocation':
+      newScalarBarWidgetRepresentation.Position = legendPosition
+    if PhactoriDbg():
+      nbwr = newScalarBarWidgetRepresentation
+      myDebugPrint3("newScalarBarWidgetRepresentation:\n" +\
+        str(nbwr) + "\n" +\
+        "  Title: " + str(nbwr.Title) + "\n" +\
+        "  ComponentTitle: " + str(nbwr.ComponentTitle) + "\n" +\
+        "  WindowLocation: " + str(nbwr.WindowLocation) + "\n" +\
+        "  Position: " + str(nbwr.Position) + "\n" +\
+        "  ScalarBarLength: " + str(nbwr.ScalarBarLength) + "\n" +\
+        "  ScalarBarThickness: " + str(nbwr.ScalarBarThickness) + "\n" +\
+        "  Orientation: " + str(nbwr.Orientation) + "\n" +\
+        "  LabelFontSize: " + str(nbwr.LabelFontSize) + "\n" +\
+        "  TitleFontSize: " + str(nbwr.TitleFontSize) + "\n" +\
+        "  LabelFontFamily: " + str(nbwr.LabelFontFamily) + "\n" +\
+        "  TitleFontFamily: " + str(nbwr.TitleFontSize) + "\n")
+        #"  LockPosition: " + str(nbwr.LockPosition) + "\n" +\
+        #"  Repositionable: " + str(nbwr.Repositionable) + "\n" +\
+        #"  AutoOrient: " + str(nbwr.AutoOrient) + "\n" +\
+  else:
+    pv_4_3_LUT = GetColorTransferFunction(inPvDataRep.ColorArrayName[1])
+    newScalarBarWidgetRepresentation = GetScalarBar(pv_4_3_LUT, inPvView)
     newScalarBarWidgetRepresentation.Orientation = legendOrientation
     newScalarBarWidgetRepresentation.WindowLocation = legendWindowLocation
     if legendWindowLocation == 'AnyLocation':
@@ -22291,76 +23077,6 @@ def ApplyClipPlane(inNormal, inOrigin, inClipPlaneFilterName):
   newClip.ClipType.Origin = inOrigin
   SetActiveSource(newClip);
   AddFilterToFilterMap(inClipPlaneFilterName, newClip)
-
-global gThresholdFilterNameCounter
-gThresholdFilterNameCounter = 0
-
-def ThresholdFilter(inVariableName, inType, inRange, inThresholdFilterName = None):
-  "Apply a threshold filter.  inVariableName is the variable to use for "
-  "thresholding, inType is 'POINTS' or 'CELLS', inRange is the threhold "
-  "range, such as [0.5, 1.5] or [-10.0, 10.0]"
-  if PhactoriDbg(100):
-    myDebugPrint3('phactori.ThresholdFilter entered, setting:' + inVariableName + ' ' + inType + ' ' + str(inRange) + '\n', 100)
-
-  activeSource = GetActiveSource()
-
-  CellDataList = []
-  for ii in range(activeSource.CellData.GetNumberOfArrays()):
-      CellDataList.append(activeSource.CellData.GetArray(ii).Name)
-  if PhactoriDbg():
-    myDebugPrint3('before threshold cell data items: ' + str(CellDataList) + '\n');
-
-  myThreshold = Threshold(activeSource)
-  myThreshold.ThresholdRange = inRange
-  myThreshold.Scalars = [inType, inVariableName]
-  SetActiveSource(myThreshold)
-  if inThresholdFilterName == None:
-    global gThresholdFilterNameCounter
-    inThresholdFilterName = "ThresholdFilter" + str(gThresholdFilterNameCounter)
-    gThresholdFilterNameCounter += 1
-  AddFilterToFilterMap(inThresholdFilterName, myThreshold)
-
-  activeSource = GetActiveSource()
-  CellDataList = []
-  for ii in range(activeSource.CellData.GetNumberOfArrays()):
-      CellDataList.append(activeSource.CellData.GetArray(ii).Name)
-  if PhactoriDbg():
-    myDebugPrint3('after threshold cell data items: ' + str(CellDataList) + '\n');
-
-  if PhactoriDbg(100):
-    myDebugPrint3('phactori.ThresholdFilter returning \n', 100)
-
-
-#def WarpMeshByDisplacement(inDisplacementVariableName, inWarpDisplacementFilterName = 'WarpDisplacementCalculator'):
-#  "Warp the mesh by the displacement variable; in paraview this means we "
-#  "add a calculator with adds the displacement value to the coordinates "
-#  "of each corresponding mesh element"
-#
-#  print 'WarpMeshByDisplacement entered'
-#  print '  active view A: ' + str(GetActiveView())
-#  print '  active source A: ' + str(GetActiveSource())
-#
-#
-#
-#  myDebugPrint3('phactori.WarpMeshByDisplacement entered, setting:' + inDisplacementVariableName + '\n')
-#
-#  PointDataList = []
-#
-#  FunctionString = 'coords + ' + inDisplacementVariableName
-#  DisplacementWarpCalculator = Calculator( guiName="Calculator1", Function=FunctionString, ReplacementValue=0.0, ResultArrayName='Result', ReplaceInvalidResults=1, CoordinateResults=1 )
-#  #DisplacementWarpCalculator = Calculator( guiName="Calculator1", Function=FunctionString, ReplacementValue=0.0, ResultArrayName='Result', ReplaceInvalidResults=1, AttributeMode='point_data', CoordinateResults=1 )
-#  myDebugPrint3('DisplacementWarpCalculator has ' + str(DisplacementWarpCalculator.PointData.GetNumberOfArrays()) + ' point data items\n');
-#  for ii in range(DisplacementWarpCalculator.PointData.GetNumberOfArrays()):
-#      PointDataList.append(DisplacementWarpCalculator.PointData.GetArray(ii).Name)
-#  myDebugPrint3('DisplacementWarpCalculator point data items: ' + str(PointDataList) + '\n');
-#  #tempDataRepresentation = GetDisplayProperties(currentSi.ActiveSource)
-#  #tempDataRepresentation.Visibility = 0
-#  SetActiveSource(DisplacementWarpCalculator);
-#  AddFilterToFilterMap(inWarpDisplacementFilterName, DisplacementWarpCalculator)
-#
-#  print '  active view B: ' + str(GetActiveView())
-#  print '  active source B: ' + str(GetActiveSource())
-#  print 'WarpMeshByDisplacement returning'
 
 def TempAddTestFiltersAfterDispl():
     "create the clip plane filter for ParaView"

@@ -101,7 +101,6 @@ namespace {
   using Tpetra::INSERT;
   using Tpetra::Map;
   using Tpetra::REPLACE;
-  using Tpetra::StaticProfile;
 
   using std::cerr;
   using std::cout;
@@ -114,7 +113,9 @@ namespace {
   bool testMpi = true;
   double errorTolSlack = 1e+1;
   std::string distributorSendType ("Send");
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   bool barrierBetween = true;
+#endif
   bool verbose = false;
 
   TEUCHOS_STATIC_SETUP()
@@ -134,10 +135,12 @@ namespace {
     clp.setOption ("distributor-send-type", &distributorSendType,
                    "In MPI tests, the type of send operation that the Tpetra::"
                    "Distributor will use.  Valid values include \"Isend\", "
-                   "\"Rsend\", \"Send\", and \"Ssend\".");
+                   "and \"Send\".");
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     clp.setOption ("barrier-between", "no-barrier-between", &barrierBetween,
                    "In MPI tests, whether Tpetra::Distributor will execute a "
                    "barrier between posting receives and posting sends.");
+#endif
     clp.setOption ("verbose", "quiet", &verbose, "Whether to print verbose "
                    "output.");
   }
@@ -160,7 +163,9 @@ namespace {
     if (plist.is_null ()) {
       plist = parameterList ("Tpetra::Distributor");
       plist->set ("Send type", distributorSendType);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       plist->set ("Barrier between receives and sends", barrierBetween);
+#endif
 
       if (verbose && getDefaultComm()->getRank() == 0) {
         cout << "ParameterList for Distributor: " << *plist << endl;
@@ -255,10 +260,10 @@ namespace {
         out << "Creating source and target CrsGraphs" << endl;
       }
       RCP<CrsGraph<LO, GO> > src_graph =
-        rcp (new CrsGraph<LO, GO> (src_map, 1, StaticProfile,
+        rcp (new CrsGraph<LO, GO> (src_map, 1,
                                    getCrsGraphParameterList ()));
       RCP<CrsGraph<LO, GO> > tgt_graph =
-        rcp (new CrsGraph<LO, GO> (tgt_map, 1, StaticProfile,
+        rcp (new CrsGraph<LO, GO> (tgt_map, 1,
                                    getCrsGraphParameterList ()));
 
       // Create a simple diagonal source graph.
@@ -327,10 +332,10 @@ namespace {
           createContigMap<LO, GO> (INVALID, tgt_num_local, comm);
 
         RCP<CrsGraph<LO, GO> > src_graph =
-          rcp (new CrsGraph<LO, GO> (src_map, 24, StaticProfile,
+          rcp (new CrsGraph<LO, GO> (src_map, 24,
                                      getCrsGraphParameterList ()));
         RCP<CrsGraph<LO, GO> > tgt_graph =
-          rcp (new CrsGraph<LO, GO> (tgt_map, 24, StaticProfile,
+          rcp (new CrsGraph<LO, GO> (tgt_map, 24,
                                      getCrsGraphParameterList ()));
 
         // This time make src_graph be a full lower-triangular graph.
@@ -447,10 +452,10 @@ namespace {
 
       // Create CrsMatrix objects.
       RCP<CrsMatrix<Scalar, LO, GO> > src_mat =
-        rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 1, StaticProfile,
+        rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 1,
                                             crsMatPlist));
       RCP<CrsMatrix<Scalar, LO, GO> > tgt_mat =
-        rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 1, StaticProfile,
+        rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 1,
                                             crsMatPlist));
 
       // Create a simple diagonal source graph.
@@ -497,7 +502,6 @@ namespace {
       // constructor.  The returned matrix should also be diagonal and
       // should equal tgt_mat.
       Teuchos::ParameterList dummy;
-      typedef CrsMatrix<Scalar, LO, GO> crs_type;
       RCP<crs_type> A_tgt2 =
         Tpetra::importAndFillCompleteCrsMatrix<crs_type> (src_mat, importer,
                                                           Teuchos::null,
@@ -605,9 +609,9 @@ namespace {
           createContigMap<LO, GO> (INVALID, tgt_num_local, comm);
 
         RCP<CrsMatrix<Scalar, LO, GO> > src_mat =
-          rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 24, StaticProfile, crsMatPlist));
+          rcp (new CrsMatrix<Scalar, LO, GO> (src_map, 24, crsMatPlist));
         RCP<CrsMatrix<Scalar, LO, GO> > tgt_mat =
-          rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 24, StaticProfile, crsMatPlist));
+          rcp (new CrsMatrix<Scalar, LO, GO> (tgt_map, 24, crsMatPlist));
 
         // This time make src_mat a full lower-triangular matrix.  Each
         // row of column-indices will have length 'globalrow', and
@@ -2216,7 +2220,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   typedef Tpetra::Map<LO, GO> map_type;
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
-  using packet_type = typename Tpetra::CrsMatrix<Scalar, LO, GO>::packet_type;
   using GST = Tpetra::global_size_t;
   using IST = typename CrsMatrixType::impl_scalar_type;
   using buffer_device_type = typename CrsMatrixType::buffer_device_type;
@@ -2322,13 +2325,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       std::cerr << os.str ();
     }
     exports.sync_host ();
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Getting Teuchos::ArrayView" << std::endl;
-      std::cerr << os.str ();
-    }
-    Teuchos::ArrayView<char> exports_av =
-      Tpetra::Details::getArrayViewFromDualView (exports);
     if (debug) {
       Comm->barrier ();
     }
@@ -2339,7 +2335,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       os << *prefix << "Calling 3-arg doPostsAndWaits" << std::endl;
       std::cerr << os.str ();
     }
-    distor.doPostsAndWaits<size_t>(numExportPackets().getConst(), 1,numImportPackets());
+    Kokkos::View<const size_t*, Kokkos::HostSpace> numExportPacketsView(numExportPackets.data(), numExportPackets.size());
+    Kokkos::View<size_t*, Kokkos::HostSpace> numImportPacketsView(numImportPackets.data(), numImportPackets.size());
+    distor.doPostsAndWaits(numExportPacketsView, 1, numImportPacketsView);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done with 3-arg doPostsAndWaits" << std::endl;
@@ -2356,7 +2354,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       os << *prefix << "Calling 4-arg doPostsAndWaits" << std::endl;
       std::cerr << os.str ();
     }
-    distor.doPostsAndWaits<packet_type>(exports_av,numExportPackets(),imports(),numImportPackets());
+    Kokkos::View<char*, Kokkos::HostSpace> importsView(imports.data(), imports.size());
+    distor.doPostsAndWaits(exports.view_host(),numExportPackets(),importsView,numImportPackets());
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done with 4-arg doPostsAndWaits" << std::endl;
@@ -2426,13 +2425,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     }
 
     // Do the comparison
-    Teuchos::ArrayRCP<const size_t>  Browptr;
-    Teuchos::ArrayRCP<const LO>      Bcolind;
-    Teuchos::ArrayRCP<const Scalar>  Bvals;
-    B->getAllValues (Browptr, Bcolind, Bvals);
+    auto Browptr = B->getLocalRowPtrsHost();
+    auto Bcolind = B->getLocalIndicesHost();
+    auto Bvals = B->getLocalValuesHost(Tpetra::Access::ReadOnly);
 
     // Check the rowptrs
-    if(Browptr.size()!= rowptr.size()) test_err++;
+    if(Browptr.size()!= as<size_t>(rowptr.size())) test_err++;
     if(!test_err) {
       for(size_t i=0; i < as<size_t>(rowptr.size()); i++) {
         if(Browptr[i]!=rowptr[i]) {
@@ -2442,8 +2440,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       }
     }
     // Check the indices / values... but sort first
-    if(Bcolind.size()!=colind.size()) {test_err++; std::cout<<"--colind mismatch"<<std::endl;}
-    if(Bvals.size()  !=vals.size())   {test_err++; std::cout<<"--vals mismatch"<<std::endl;}
+    if(Bcolind.size()!= as<size_t>(colind.size())) {test_err++; std::cout<<"--colind mismatch"<<std::endl;}
+    if(Bvals.size()  != as<size_t>(vals.size()))   {test_err++; std::cout<<"--vals mismatch"<<std::endl;}
     if(!test_err) {
 
       // Reindex colind to local indices
@@ -2504,10 +2502,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
   build_test_matrix_wideband<CrsMatrixType>(Comm,A);
 
   // Get the matrix pointers / map
-  ArrayRCP<const size_t> rowptr;
-  ArrayRCP<const LO> colind;
-  ArrayRCP<const Scalar> values;
-  A->getAllValues(rowptr,colind,values);
+  // Conversion to Teuchos::ArrayRCP (via persistingView) is needed
+  // only to satisfy the interface of lowCommunicationMakeColMapAndReindex.
+  // Ideally, that function would take Kokkos::Views (and perhaps someday
+  // it will), in which case we can remove the persistingView call.
+  auto rowptr = Kokkos::Compat::persistingView(A->getLocalRowPtrsHost());
+  auto colind = Kokkos::Compat::persistingView(A->getLocalIndicesHost());
+  
   Acolmap = A->getColMap();
   Adomainmap = A->getDomainMap();
 
@@ -3035,12 +3036,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, GetPids, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, GetTwoTransferOwnershipVector, LO, GO )
 
-#define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                   \
+// These are the tests associated to UNIT_TEST_GROUP_SC_LO_GO that work for all backends.
+#define UNIT_TEST_GROUP_SC_LO_GO_COMMON( SC, LO, GO )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixImportExport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVectorImport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, doImport, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Import_Util, UnpackAndCombineWithOwningPIDs, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, MueLuStyle, LO, GO, SC )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Import_Util, UnpackAndCombineWithOwningPIDs, LO, GO, SC )
+
+// FIXME_SYCL requires querying free device memory in KokkosKernels, see
+// https://github.com/kokkos/kokkos-kernels/issues/1062.
+// The SYCL specifications don't allow asking for that.
+#ifdef HAVE_TPETRA_SYCL
+  #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )  \
+    UNIT_TEST_GROUP_SC_LO_GO_COMMON( SC, LO, GO )
+#else
+  #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                                      \
+    UNIT_TEST_GROUP_SC_LO_GO_COMMON( SC, LO, GO )                                     \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, MueLuStyle, LO, GO, SC )
+#endif
 
   // Note: This test fails.  Should fix later.
   //      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ReverseImportExport, doImport, ORDINAL, SCALAR )

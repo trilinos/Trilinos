@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -98,7 +98,7 @@ namespace {
 
 #if !defined(NO_PARMETIS_SUPPORT)
   int get_common_node_count(const std::vector<Ioss::BlockDecompositionData> &el_blocks,
-                            Ioss::ParallelUtils &                            pu)
+                            Ioss::ParallelUtils                             &pu)
   {
     // Determine number of nodes that elements must share to be
     // considered connected.  A 8-node hex-only mesh would have 4
@@ -148,7 +148,10 @@ namespace Ioss {
   {
     static const std::vector<std::string> valid_methods
     {
-      "LINEAR", "MAP", "VARIABLE"
+      "EXTERNAL"
+#ifdef SEACAS_HAVE_MPI
+          ,
+          "LINEAR", "MAP", "VARIABLE"
 #if !defined(NO_ZOLTAN_SUPPORT)
           ,
           "BLOCK", "CYCLIC", "RANDOM", "RCB", "RIB", "HSFC"
@@ -157,15 +160,16 @@ namespace Ioss {
           ,
           "KWAY", "KWAY_GEOM", "GEOM_KWAY", "METIS_SFC"
 #endif
+#endif
     };
     return valid_methods;
   }
 
-  template Decomposition<int>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm);
-  template Decomposition<int64_t>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm);
+  template Decomposition<int>::Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm);
+  template Decomposition<int64_t>::Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm);
 
   template <typename INT>
-  Decomposition<INT>::Decomposition(const Ioss::PropertyManager &props, MPI_Comm comm)
+  Decomposition<INT>::Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm)
       : m_comm(comm), m_pu(comm), m_processor(m_pu.parallel_rank()),
         m_processorCount(m_pu.parallel_size())
   {
@@ -297,8 +301,8 @@ namespace Ioss {
     show_progress(__func__);
     if (m_processor == 0) {
       fmt::print(Ioss::OUTPUT(),
-                 "\nIOSS: Using decomposition method '{}' for {:L} elements on {} mpi ranks.\n",
-                 m_method, m_globalElementCount, m_processorCount);
+                 "\nIOSS: Using decomposition method '{}' for {} elements on {} mpi ranks.\n",
+                 m_method, fmt::group_digits(m_globalElementCount), m_processorCount);
 
       if ((size_t)m_processorCount > m_globalElementCount) {
         fmt::print(Ioss::WARNING(),
@@ -427,7 +431,7 @@ namespace Ioss {
 #if IOSS_DEBUG_OUTPUT
     fmt::print(Ioss::DEBUG(),
                "Processor {} communicates {} nodes from and {} nodes to other processors\n",
-               m_processor, sumr, sums);
+               m_processor, fmt::group_digits(sumr), fmt::group_digits(sums));
 #endif
     // Build the list telling the other processors which of their nodes I will
     // need data from...
@@ -688,7 +692,8 @@ namespace Ioss {
 
 #if IOSS_DEBUG_OUTPUT
     fmt::print(Ioss::DEBUG(), "Processor {}:\t{} local, {} imported and {} exported elements\n",
-               m_processor, m_elementCount - exp_size, imp_size, exp_size);
+               m_processor, fmt::group_digits(m_elementCount - exp_size),
+               fmt::group_digits(imp_size), fmt::group_digits(exp_size));
 #endif
   }
 
@@ -855,7 +860,8 @@ namespace Ioss {
 
 #if IOSS_DEBUG_OUTPUT
     fmt::print(Ioss::DEBUG(), "Processor {}:\t{} local, {} imported and {} exported elements\n",
-               m_processor, m_elementCount - exp_size, imp_size, exp_size);
+               m_processor, fmt::group_digits(m_elementCount - exp_size),
+               fmt::group_digits(imp_size), fmt::group_digits(exp_size));
 #endif
   }
 
@@ -905,7 +911,7 @@ namespace Ioss {
       idx_t *dual_xadj      = nullptr;
       idx_t *dual_adjacency = nullptr;
       int    rc = ParMETIS_V3_Mesh2Dual(element_dist, pointer, adjacency, &num_flag, &common_nodes,
-                                     &dual_xadj, &dual_adjacency, &m_comm);
+                                        &dual_xadj, &dual_adjacency, &m_comm);
 
       if (rc != METIS_OK) {
         std::ostringstream errmsg;
@@ -999,10 +1005,10 @@ namespace Ioss {
     ZOLTAN_ID_PTR import_local_ids  = nullptr;
     ZOLTAN_ID_PTR export_global_ids = nullptr;
     ZOLTAN_ID_PTR export_local_ids  = nullptr;
-    int *         import_procs      = nullptr;
-    int *         import_to_part    = nullptr;
-    int *         export_procs      = nullptr;
-    int *         export_to_part    = nullptr;
+    int          *import_procs      = nullptr;
+    int          *import_to_part    = nullptr;
+    int          *export_procs      = nullptr;
+    int          *export_to_part    = nullptr;
 
     num_local = 1;
 
@@ -1019,7 +1025,8 @@ namespace Ioss {
 
 #if IOSS_DEBUG_OUTPUT
     fmt::print(Ioss::DEBUG(), "Processor {}:\t{} local, {} imported and {} exported elements\n",
-               m_processor, m_elementCount - num_export, num_import, num_export);
+               m_processor, fmt::group_digits(m_elementCount - num_export),
+               fmt::group_digits(num_import), fmt::group_digits(num_export));
 #endif
 
     // Don't need centroid data anymore... Free up space
@@ -1363,7 +1370,8 @@ namespace Ioss {
 // Map that converts nodes from the global index (1-based) to a
 // local-per-processor index (1-based)
 #if IOSS_DEBUG_OUTPUT
-    fmt::print(Ioss::DEBUG(), "Processor {}:\tNode Count = {}\n", m_processor, nodes.size());
+    fmt::print(Ioss::DEBUG(), "Processor {}:\tNode Count = {}\n", m_processor,
+               fmt::group_digits(nodes.size()));
 #endif
     nodeGTL.swap(nodes);
     for (size_t i = 0; i < nodeGTL.size(); i++) {
@@ -1491,7 +1499,7 @@ namespace Ioss {
     }
 #if IOSS_DEBUG_OUTPUT
     fmt::print(Ioss::DEBUG(), "Processor {} has {} shared nodes\n", m_processor,
-               m_nodeCommMap.size() / 2);
+               fmt::group_digits(m_nodeCommMap.size() / 2));
 #endif
     show_progress(__func__);
   }

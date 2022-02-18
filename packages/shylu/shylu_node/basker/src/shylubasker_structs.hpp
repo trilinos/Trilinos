@@ -777,6 +777,8 @@ namespace BaskerNS
       // ND Ordering Options (Should METIS optional?)
       use_metis = true;
       run_nd_on_leaves = false;
+      run_amd_on_leaves = false;
+      use_nodeNDP = true;
 
       // AMD Option
       amd_dom = true;
@@ -847,6 +849,8 @@ namespace BaskerNS
     // ND Ordering Options
     BASKER_BOOL use_metis;
     BASKER_BOOL run_nd_on_leaves;
+    BASKER_BOOL run_amd_on_leaves;
+    BASKER_BOOL use_nodeNDP;
 
     //Pivot Options
     BASKER_BOOL  no_pivot;

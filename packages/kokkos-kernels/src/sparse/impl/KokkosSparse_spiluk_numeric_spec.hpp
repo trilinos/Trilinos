@@ -186,7 +186,7 @@ template<class KernelHandle,
 struct SPILUK_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType, LRowMapType, LEntriesType, LValuesType, URowMapType, UEntriesType, UValuesType, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY>{
   static void
   spiluk_numeric (KernelHandle *handle,
-                  const typename KernelHandle::const_nnz_lno_t &fill_lev,
+                  const typename KernelHandle::const_nnz_lno_t &/*fill_lev*/,
                   const ARowMapType&  A_row_map,
                   const AEntriesType& A_entries,
                   const AValuesType&  A_values,

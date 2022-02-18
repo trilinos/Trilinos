@@ -45,7 +45,7 @@ namespace mesh {
 using DeviceCommMapIndices      = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
 using EntityKeyViewType         = Kokkos::View<EntityKey*, stk::ngp::MemSpace>;
 using EntityViewType            = Kokkos::View<Entity*, stk::ngp::MemSpace>;
-using BucketConnectivityType    = Kokkos::View<Entity**, stk::ngp::MemSpace>;
+using BucketConnectivityType    = Kokkos::View<Entity*, stk::ngp::MemSpace>;
 using UnsignedViewType          = Kokkos::View<unsigned*, stk::ngp::MemSpace>;
 using BoolViewType              = Kokkos::View<bool*, stk::ngp::MemSpace>;
 using OrdinalViewType           = Kokkos::View<ConnectivityOrdinal*, stk::ngp::MemSpace>;
@@ -57,6 +57,9 @@ using MeshIndexType             = Kokkos::View<const FastMeshIndex*, stk::ngp::M
 
 template <typename T> using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::MemSpace>;
 template <typename T> using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::HostPinnedSpace>;
+
+using FieldDataPointerHostViewType = Kokkos::View<uintptr_t*, Kokkos::LayoutRight, stk::ngp::HostPinnedSpace>;
+using FieldDataPointerDeviceViewType = Kokkos::View<uintptr_t*, Kokkos::LayoutRight, stk::ngp::MemSpace>;
 
 template <typename T> using UnmanagedHostInnerView = Kokkos::View<T**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 template <typename T> using UnmanagedDevInnerView = Kokkos::View<T**, Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;

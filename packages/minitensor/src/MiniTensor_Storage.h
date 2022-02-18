@@ -39,6 +39,7 @@
 // ************************************************************************
 // @HEADER
 
+#include "Kokkos_Macros.hpp"
 #if !defined(MiniTensor_Storage_h)
 #define MiniTensor_Storage_h
 
@@ -49,12 +50,12 @@ namespace minitensor {
 /// Set to constant value if not dynamic
 template<Index N, Index C>
 struct dimension_const {
-  static Index const value = C;
+  static constexpr Index value = C;
 };
 
 template<Index C>
 struct dimension_const<DYNAMIC, C> {
-  static Index const value = DYNAMIC;
+  static constexpr Index value = DYNAMIC;
 };
 
 /// Validate dimension
@@ -64,13 +65,13 @@ struct check_static {
 #if defined(KOKKOS_ENABLE_CUDA)
     // Empty
 #else
-  static Index const
-  maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
+  static constexpr Index maximum_dimension =
+      static_cast<Index>(std::numeric_limits<Index>::digits);
 
   static_assert(D > maximum_dimension, "Dimension is too large");
 #endif
 
-  static Index const value = D;
+    static constexpr Index value = D;
 };
 
 template<typename Store>
@@ -91,132 +92,105 @@ check_dynamic(Index const dimension)
 /// Integer power template restricted to orders defined below
 template<Index D, Index O>
 struct dimension_power {
-  static Index const value = 0;
+  static constexpr Index value = 0;
 };
 
 template<Index D>
 struct dimension_power<D, 1> {
-  static Index const value = D;
+  static constexpr Index value = D;
 };
 
 template<Index D>
 struct dimension_power<D, 2> {
-  static Index const value = D * D;
+  static constexpr Index value = D * D;
 };
 
 template<Index D>
 struct dimension_power<D, 3> {
-  static Index const value = D * D * D;
+  static constexpr Index value = D * D * D;
 };
 
 template<Index D>
 struct dimension_power<D, 4> {
-  static Index const value = D * D * D * D;
+  static constexpr Index value = D * D * D * D;
 };
 
 /// Integer square for manipulations between 2nd and 4rd-order tensors.
 template<Index N>
 struct dimension_square {
-  static Index const value = 0;
+  static constexpr Index value = 0;
 };
 
 template<>
 struct dimension_square<DYNAMIC> {
-  static Index const value = DYNAMIC;
+  static constexpr Index value = DYNAMIC;
 };
 
-template<>
-struct dimension_square<1> {
-  static Index const value = 1;
-};
+template <> struct dimension_square<1> { static constexpr Index value = 1; };
 
-template<>
-struct dimension_square<2> {
-  static Index const value = 4;
-};
+template <> struct dimension_square<2> { static constexpr Index value = 4; };
 
-template<>
-struct dimension_square<3> {
-  static Index const value = 9;
-};
+template <> struct dimension_square<3> { static constexpr Index value = 9; };
 
-template<>
-struct dimension_square<4> {
-  static Index const value = 16;
-};
+template <> struct dimension_square<4> { static constexpr Index value = 16; };
 
 /// Integer square root template restricted to dimensions defined below.
 /// Useful for constructing a 2nd-order tensor from a 4th-order
 /// tensor with static storage.
-template<Index N>
-struct dimension_sqrt {
-  static Index const value = 0;
-};
+template <Index N> struct dimension_sqrt { static constexpr Index value = 0; };
 
 template<>
 struct dimension_sqrt<DYNAMIC> {
-  static Index const value = DYNAMIC;
+  static constexpr Index value = DYNAMIC;
 };
 
-template<>
-struct dimension_sqrt<1> {
-  static Index const value = 1;
-};
+template <> struct dimension_sqrt<1> { static constexpr Index value = 1; };
 
-template<>
-struct dimension_sqrt<4> {
-  static Index const value = 2;
-};
+template <> struct dimension_sqrt<4> { static constexpr Index value = 2; };
 
-template<>
-struct dimension_sqrt<9> {
-  static Index const value = 3;
-};
+template <> struct dimension_sqrt<9> { static constexpr Index value = 3; };
 
-template<>
-struct dimension_sqrt<16> {
-  static Index const value = 4;
-};
+template <> struct dimension_sqrt<16> { static constexpr Index value = 4; };
 
 /// Manipulation of static and dynamic dimensions.
 template<Index N, Index P>
 struct dimension_add {
-  static Index const value = N + P;
+  static constexpr Index value = N + P;
 };
 
 template<Index P>
 struct dimension_add<DYNAMIC, P> {
-  static Index const value = DYNAMIC;
+  static constexpr Index value = DYNAMIC;
 };
 
 template<Index N, Index P>
 struct dimension_subtract {
-  static Index const value = N - P;
+  static constexpr Index value = N - P;
 };
 
 template<Index P>
 struct dimension_subtract<DYNAMIC, P> {
-  static Index const value = DYNAMIC;
+  static constexpr Index value = DYNAMIC;
 };
 
 template<Index N, Index P>
 struct dimension_product {
-  static Index const value = N * P;
+  static constexpr Index value = N * P;
 };
 
 template<Index N>
 struct dimension_product<N, DYNAMIC> {
-  static Index const value = DYNAMIC;
+  static constexpr Index value = DYNAMIC;
 };
 
 template<Index P>
 struct dimension_product<DYNAMIC, P> {
-  static Index const value = DYNAMIC;
+  static constexpr Index value = DYNAMIC;
 };
 
 template<>
 struct dimension_product<DYNAMIC, DYNAMIC> {
-  static Index const value = DYNAMIC;
+  static constexpr Index value = DYNAMIC;
 };
 
 ///
@@ -240,13 +214,12 @@ public:
   bool
   IS_DYNAMIC = false;
 
+  KOKKOS_INLINE_FUNCTION
   Storage()
   {
   }
 
-  explicit
-  Storage(Index const number_entries)
-  {
+  explicit KOKKOS_INLINE_FUNCTION Storage(Index const number_entries) {
     resize(number_entries);
   }
 
@@ -255,6 +228,7 @@ public:
   Storage<T, N> &
   operator=(Storage<T, N> const & s) = delete;
 
+  KOKKOS_INLINE_FUNCTION
   ~Storage()
   {
   }
@@ -316,12 +290,7 @@ public:
     return &storage_[0];
   }
 
-  static constexpr
-  Index
-  static_size()
-  {
-    return N;
-  }
+  static KOKKOS_INLINE_FUNCTION constexpr Index static_size() { return N; }
 
 private:
 
@@ -353,13 +322,12 @@ public:
   bool
   IS_STATIC = false;
 
+  KOKKOS_INLINE_FUNCTION
   Storage()
   {
   }
 
-  explicit
-  Storage(Index const number_entries)
-  {
+  explicit KOKKOS_INLINE_FUNCTION Storage(Index const number_entries) {
     resize(number_entries);
   }
 
@@ -368,6 +336,7 @@ public:
   Storage<T, DYNAMIC> &
   operator=(Storage<T, DYNAMIC> const & s) = delete;
 
+  KOKKOS_INLINE_FUNCTION
   ~Storage()
   {
     clear();
@@ -432,12 +401,7 @@ public:
     return storage_;
   }
 
-  static constexpr
-  Index
-  static_size()
-  {
-    return 0;
-  }
+  static KOKKOS_INLINE_FUNCTION constexpr Index static_size() { return 0; }
 
 private:
 

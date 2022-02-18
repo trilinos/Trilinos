@@ -37,7 +37,7 @@ namespace {
 
   template <typename T, typename INT> INT ex_int_median3(T *v, INT iv[], size_t left, size_t right)
   {
-    size_t center = (static_cast<ssize_t>(left) + static_cast<ssize_t>(right)) / 2;
+    size_t center = (left + right) / 2;
 
     if (v[iv[left]] > v[iv[center]]) {
       ex_swap(iv, left, center);

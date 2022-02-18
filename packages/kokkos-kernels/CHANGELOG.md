@@ -1,5 +1,95 @@
 # Change Log
 
+## [3.5.00](https://github.com/kokkos/kokkos-kernels/tree/3.5.00) (2021-10-19)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.4.01...3.5.00)
+
+**Features:**
+- Batched serial SVD [\#1107](https://github.com/kokkos/kokkos-kernels/pull/1107)
+- Batched: Add BatchedDblBufGemm [\#1095](https://github.com/kokkos/kokkos-kernels/pull/1095)
+- feature/gemv rps test -- RAJAPerf Suite Version of the BLAS2 GEMV Test [\#1085](https://github.com/kokkos/kokkos-kernels/pull/1085)
+- Add new bsrmatrix [\#1077](https://github.com/kokkos/kokkos-kernels/pull/1077)
+- Adding Kokkos GMRES example [\#1028](https://github.com/kokkos/kokkos-kernels/pull/1028)
+- Add fast two-level mode N GEMV (#926) [\#939](https://github.com/kokkos/kokkos-kernels/pull/939)
+- Batched: Add BatchedGemm interface [\#935](https://github.com/kokkos/kokkos-kernels/pull/935)
+- OpenMPTarget: adding ETI and CMake logic for OpenMPTarget backend [\#886](https://github.com/kokkos/kokkos-kernels/pull/886)
+
+**Implemented enhancements Algorithms and Archs:**
+- Use float as accumulator for GEMV on half_t (Fix #1081) [\#1082](https://github.com/kokkos/kokkos-kernels/pull/1082)
+- Supernodal SpTRSV: add option to use MAGMA TPL for TRTRI [\#1069](https://github.com/kokkos/kokkos-kernels/pull/1069)
+- Updates for running GMRES example with half precision [\#1067](https://github.com/kokkos/kokkos-kernels/pull/1067)
+- src/blas/impl: Explicitly cast to LHS type for ax [\#1073](https://github.com/kokkos/kokkos-kernels/pull/1073)
+- Update BatchedGemm interface to match design proposal [\#1054](https://github.com/kokkos/kokkos-kernels/pull/1054)
+- Move dot-based GEMM out of TPL CUBLAS [\#1050](https://github.com/kokkos/kokkos-kernels/pull/1050)
+- Adding ArmPL option to spmv perf_test [\#1038](https://github.com/kokkos/kokkos-kernels/pull/1038)
+- Add (right) preconditioning to GMRES [\#1078](https://github.com/kokkos/kokkos-kernels/pull/1078)
+- Supernodal SpTRSV: perform TRMM only if TPL CuBLAS is enabled [\#1027](https://github.com/kokkos/kokkos-kernels/pull/1027)
+- Supernodal SpTRSV: support SuperLU version < 5 [\#1012](https://github.com/kokkos/kokkos-kernels/pull/1012)
+- perf_test/blas/blas3: Add dgemm armpl experiment [\#1005](https://github.com/kokkos/kokkos-kernels/pull/1005)
+- Supernodal SpTRSV: run TRMM on device for setup [\#983](https://github.com/kokkos/kokkos-kernels/pull/983)
+- Merge pull request #951 from vqd8a/move_sort_ifpack2riluk [\#972](https://github.com/kokkos/kokkos-kernels/pull/972)
+- Point multicolor GS: faster handling of long/bulk rows [\#993](https://github.com/kokkos/kokkos-kernels/pull/993)
+- Make CRS sorting utils work with unmanaged [\#963](https://github.com/kokkos/kokkos-kernels/pull/963)
+- Add sort and make sure using host mirror on host memory in kspiluk_symbolic [\#951](https://github.com/kokkos/kokkos-kernels/pull/951)
+- GEMM: call GEMV instead in certain cases [\#948](https://github.com/kokkos/kokkos-kernels/pull/948)
+- SpAdd performance improvements, better perf test, fix mtx reader columns [\#930](https://github.com/kokkos/kokkos-kernels/pull/930)
+
+**Implemented enhancements BuildSystem:**
+- Automate documentation generation [\#1116](https://github.com/kokkos/kokkos-kernels/pull/1116)
+- Move the batched dense files to specific directories [\#1098](https://github.com/kokkos/kokkos-kernels/pull/1098)
+- cmake: Update SUPERLU tpl option for Tribits [\#1066](https://github.com/kokkos/kokkos-kernels/pull/1066)
+- cmake/Modules: Allow user to use MAGMA_DIR from env [\#1007](https://github.com/kokkos/kokkos-kernels/pull/1007)
+- Supernodal SpTRSV: update TPLs requirements [\#997](https://github.com/kokkos/kokkos-kernels/pull/997)
+- cmake: Add MAGMA TPL support [\#982](https://github.com/kokkos/kokkos-kernels/pull/982)
+- Host only macro: adding macro to check for any device backend [\#940](https://github.com/kokkos/kokkos-kernels/pull/940)
+- Prevent redundant spmv kernel instantiations (reduce library size) [\#937](https://github.com/kokkos/kokkos-kernels/pull/937)
+- unit-test: refactor infrastructure to remove most *.cpp [\#906](https://github.com/kokkos/kokkos-kernels/pull/906)
+
+**Implemented enhancements Other:**
+- Allow reading integer mtx files into floating-point matrices [\#1100](https://github.com/kokkos/kokkos-kernels/pull/1100)
+- Warnings: remove -Wunused-parameter warnings in Kokkos Kernels [\#962](https://github.com/kokkos/kokkos-kernels/pull/962)
+- Clean up CrsMatrix raw pointer constructor [\#949](https://github.com/kokkos/kokkos-kernels/pull/949)
+- unit_test/batched: Remove *_half fns from gemm unit tests [\#943](https://github.com/kokkos/kokkos-kernels/pull/943)
+- Move sorting functionality out of Impl:: [\#932](https://github.com/kokkos/kokkos-kernels/pull/932)
+
+**Incompatibilities:**
+- Deprecation warning: SpaceAccessibility move out of impl [\#1141](https://github.com/kokkos/kokkos-kernels/pull/1141)
+- Rename CUDA_SAFE_CALL to KOKKOS_IMPL_CUDA_SAFE_CALL [\#1130](https://github.com/kokkos/kokkos-kernels/pull/1130)
+- Workaround error with intel [\#1128](https://github.com/kokkos/kokkos-kernels/pull/1128)
+- gmres: disable examples for builds with ibm/xl [\#1123](https://github.com/kokkos/kokkos-kernels/pull/1123)
+- CrsMatrix: deprecate constructor without ncols input [\#1115](https://github.com/kokkos/kokkos-kernels/pull/1115)
+- perf_test/blas/blas3: Disable simd verify for cuda/10.2.2 [\#1093](https://github.com/kokkos/kokkos-kernels/pull/1093)
+- Replace impl/Kokkos_Timer.hpp includes with Kokkos_Timer.hpp [\#1074](https://github.com/kokkos/kokkos-kernels/pull/1074)
+- Remove deprecated ViewAllocateWithoutInitializing [\#1058](https://github.com/kokkos/kokkos-kernels/pull/1058)
+- src/sparse: spadd resolve deprecation warnings [\#1053](https://github.com/kokkos/kokkos-kernels/pull/1053)
+- Give full namespace path for D2 coloring [\#999](https://github.com/kokkos/kokkos-kernels/pull/999)
+- Fix -Werror=deprecated errors with c++20 standard [\#964](https://github.com/kokkos/kokkos-kernels/pull/964)
+- Deprecation: a deprecated function is called in the SpADD perf_test [\#954](https://github.com/kokkos/kokkos-kernels/pull/954)
+
+**Enabled tests:**
+- HIP: enabling all unit tests [\#968](https://github.com/kokkos/kokkos-kernels/pull/968)
+- Fix build and add CI coverage for LayoutLeft=OFF [\#965](https://github.com/kokkos/kokkos-kernels/pull/965)
+- Enable SYCL tests [\#927](https://github.com/kokkos/kokkos-kernels/pull/927)
+- Fixup HIP nightly builds [\#907](https://github.com/kokkos/kokkos-kernels/pull/907)
+
+**Fixed Bugs:**
+- Fix SpGEMM for Nvidia Turing/Ampere [\#1118](https://github.com/kokkos/kokkos-kernels/pull/1118)
+- Fix #1111: spmv tpl instantiations [\#1112](https://github.com/kokkos/kokkos-kernels/pull/1112)
+- Fix C's numCols in spadd simplified interface [\#1102](https://github.com/kokkos/kokkos-kernels/pull/1102)
+- Fix #1089 (failing batched UTV tests) [\#1096](https://github.com/kokkos/kokkos-kernels/pull/1096)
+- Blas GEMM: fix early exit logic, see issue #1088 [\#1091](https://github.com/kokkos/kokkos-kernels/pull/1091)
+- Fix #1048: handle mode C spmv correctly in serial/openmp [\#1084](https://github.com/kokkos/kokkos-kernels/pull/1084)
+- src/batched: Fix multiple definitions of singleton [\#1072](https://github.com/kokkos/kokkos-kernels/pull/1072)
+- Fix host accessing View in non-host space [\#1057](https://github.com/kokkos/kokkos-kernels/pull/1057)
+- Fix559: Intel 18 has trouble with pointer in ternary expr [\#1042](https://github.com/kokkos/kokkos-kernels/pull/1042)
+- Work around team size AUTO issue on kepler [\#1020](https://github.com/kokkos/kokkos-kernels/pull/1020)
+- Supernodal SpTrsv: fix out-of-bound error [\#1019](https://github.com/kokkos/kokkos-kernels/pull/1019)
+- Some fixes for MAGMA TPL and gesv [\#1008](https://github.com/kokkos/kokkos-kernels/pull/1008)
+- Merge pull request #981 from Tech-XCorp/4005-winllvmbuild [\#984](https://github.com/kokkos/kokkos-kernels/pull/984)
+- This is a PR for 4005 vs2019build, which fixes a few things on Windows [\#981](https://github.com/kokkos/kokkos-kernels/pull/981)
+- Fix build for no-ETI build [\#977](https://github.com/kokkos/kokkos-kernels/pull/977)
+- Fix invalid mem accesses in new GEMV kernel [\#961](https://github.com/kokkos/kokkos-kernels/pull/961)
+- Kokkos_ArithTraits.hpp: Fix isInf and isNan with complex types [\#936](https://github.com/kokkos/kokkos-kernels/pull/936)
+
 ## [3.4.01](https://github.com/kokkos/kokkos-kernels/tree/3.4.01) (2021-05-19)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/3.4.00...3.4.01)
 

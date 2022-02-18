@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_GroupingEntity_h
-#define IOSS_Ioss_GroupingEntity_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>       // for Complex
 #include <Ioss_DatabaseIO.h>      // for DatabaseIO
@@ -78,7 +77,7 @@ namespace Ioss {
 
     State get_state() const;
 
-    DatabaseIO * get_database() const;
+    DatabaseIO  *get_database() const;
     void         set_database(DatabaseIO *io_database);
     void         reset_database(DatabaseIO *io_database);
     virtual void delete_database();
@@ -169,7 +168,9 @@ namespace Ioss {
     int64_t     get_optional_property(const std::string &property, int64_t optional_value) const;
     std::string get_optional_property(const std::string &property_name,
                                       const std::string &optional_value) const;
+    NameList    property_describe() const;
     int         property_describe(NameList *names) const;
+    NameList    property_describe(Ioss::Property::Origin origin) const;
     int         property_describe(Ioss::Property::Origin origin, NameList *names) const;
     size_t      property_count() const;
     /** Add a property, or change its value if it already exists with
@@ -187,7 +188,9 @@ namespace Ioss {
     Field        get_field(const std::string &field_name) const;
     const Field &get_fieldref(const std::string &field_name) const;
     int          field_describe(NameList *names) const;
+    NameList     field_describe() const;
     int          field_describe(Field::RoleType role, NameList *names) const;
+    NameList     field_describe(Field::RoleType role) const;
     size_t       field_count() const;
     size_t       field_count(Field::RoleType role) const;
 
@@ -359,6 +362,15 @@ Ioss::GroupingEntity::get_optional_property(const std::string &property_name,
 
 /** \brief Get the names of all properties in the property manager for this entity.
  *
+ * \returns The property names in the property manager.
+ */
+inline Ioss::NameList Ioss::GroupingEntity::property_describe() const
+{
+  return properties.describe();
+}
+
+/** \brief Get the names of all properties in the property manager for this entity.
+ *
  * \param[out] names All the property names in the property manager.
  * \returns The number of properties extracted from the property manager.
  */
@@ -367,8 +379,13 @@ inline int Ioss::GroupingEntity::property_describe(NameList *names) const
   return properties.describe(names);
 }
 
+inline Ioss::NameList Ioss::GroupingEntity::property_describe(Ioss::Property::Origin origin) const
+{
+  return properties.describe(origin);
+}
+
 inline int Ioss::GroupingEntity::property_describe(Ioss::Property::Origin origin,
-                                                   NameList *             names) const
+                                                   NameList              *names) const
 {
   return properties.describe(origin, names);
 }
@@ -427,6 +444,13 @@ inline const Ioss::Field &Ioss::GroupingEntity::get_fieldref(const std::string &
 
 /** \brief Get the names of all fields in the entity's field manager.
  *
+ * \returns All field names in the entity's field manager.
+ *
+ */
+inline Ioss::NameList Ioss::GroupingEntity::field_describe() const { return fields.describe(); }
+
+/** \brief Get the names of all fields in the entity's field manager.
+ *
  * \param[out] names All field names in the entity's field manager.
  * \returns The number of fields extracted from the entity's field manager.
  *
@@ -434,6 +458,17 @@ inline const Ioss::Field &Ioss::GroupingEntity::get_fieldref(const std::string &
 inline int Ioss::GroupingEntity::field_describe(NameList *names) const
 {
   return fields.describe(names);
+}
+
+/** \brief Get the names of all fields of a specified RoleType in the entity's field manager.
+ *
+ * \param[in] role The role type (MESH, ATTRIBUTE, TRANSIENT, REDUCTION, etc.)
+ * \returns All field names of the specified RoleType in the entity's field manager.
+ *
+ */
+inline Ioss::NameList Ioss::GroupingEntity::field_describe(Ioss::Field::RoleType role) const
+{
+  return fields.describe(role);
 }
 
 /** \brief Get the names of all fields of a specified RoleType in the entity's field manager.
@@ -463,7 +498,7 @@ inline size_t Ioss::GroupingEntity::field_count() const { return fields.count();
  */
 template <typename T>
 int64_t Ioss::GroupingEntity::get_field_data(const std::string &field_name,
-                                             std::vector<T> &   data) const
+                                             std::vector<T>    &data) const
 {
   verify_field_exists(field_name, "input");
 
@@ -490,7 +525,7 @@ int64_t Ioss::GroupingEntity::get_field_data(const std::string &field_name,
  *
  */
 template <typename T>
-int64_t Ioss::GroupingEntity::put_field_data(const std::string &   field_name,
+int64_t Ioss::GroupingEntity::put_field_data(const std::string    &field_name,
                                              const std::vector<T> &data) const
 {
   verify_field_exists(field_name, "output");
@@ -511,14 +546,14 @@ int64_t Ioss::GroupingEntity::put_field_data(const std::string &   field_name,
 
 template <typename T>
 int64_t Ioss::GroupingEntity::put_field_data(const std::string &field_name,
-                                             std::vector<T> &   data) const
+                                             std::vector<T>    &data) const
 {
   verify_field_exists(field_name, "output");
 
   Ioss::Field field = get_field(field_name);
   field.check_type(Ioss::Field::get_field_type(T(0)));
   size_t data_size = data.size() * sizeof(T);
-  T *    my_data   = const_cast<T *>(data.data());
+  T     *my_data   = const_cast<T *>(data.data());
   field.transform(my_data);
   return internal_put_field_data(field, my_data, data_size);
 }
@@ -535,7 +570,7 @@ int64_t Ioss::GroupingEntity::put_field_data(const std::string &field_name,
  *
  */
 template <typename T, typename... Args>
-int64_t Ioss::GroupingEntity::get_field_data(const std::string &         field_name,
+int64_t Ioss::GroupingEntity::get_field_data(const std::string          &field_name,
                                              Kokkos::View<T *, Args...> &data) const
 {
   typedef Kokkos::View<T *, Args...> ViewType;
@@ -578,7 +613,7 @@ int64_t Ioss::GroupingEntity::get_field_data(const std::string &         field_n
  *
  */
 template <typename T, typename... Args>
-int64_t Ioss::GroupingEntity::get_field_data(const std::string &          field_name,
+int64_t Ioss::GroupingEntity::get_field_data(const std::string           &field_name,
                                              Kokkos::View<T **, Args...> &data) const
 {
   typedef Kokkos::View<T **, Args...> ViewType;
@@ -640,7 +675,7 @@ int64_t Ioss::GroupingEntity::get_field_data(const std::string &          field_
  *
  */
 template <typename T, typename... Args>
-int64_t Ioss::GroupingEntity::put_field_data(const std::string &         field_name,
+int64_t Ioss::GroupingEntity::put_field_data(const std::string          &field_name,
                                              Kokkos::View<T *, Args...> &data) const
 {
   typedef Kokkos::View<T *, Args...> ViewType;
@@ -676,7 +711,7 @@ int64_t Ioss::GroupingEntity::put_field_data(const std::string &         field_n
  *
  */
 template <typename T, typename... Args>
-int64_t Ioss::GroupingEntity::put_field_data(const std::string &          field_name,
+int64_t Ioss::GroupingEntity::put_field_data(const std::string           &field_name,
                                              Kokkos::View<T **, Args...> &data) const
 {
   typedef Kokkos::View<T **, Args...> ViewType;
@@ -732,6 +767,4 @@ int64_t Ioss::GroupingEntity::put_field_data(const std::string &          field_
 
   return retval;
 }
-#endif
-
 #endif

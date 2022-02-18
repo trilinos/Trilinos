@@ -35,9 +35,8 @@
 
 // Only include forward declarations so any overloads appear before they
 // might be used inside Kokkos
-#include "Kokkos_Core_fwd.hpp"
+#include "Kokkos_View_Fad_Fwd.hpp"
 #include "Kokkos_Layout.hpp"
-#include "Kokkos_View.hpp"
 
 // Some definition that should exist whether the specializations exist or not
 
@@ -118,72 +117,6 @@ struct is_view_fad_contiguous< View<T,P...> > {
 };
 
 }
-
-namespace Kokkos {
-namespace Impl {
-
-// Overload view_copy for Fad View's:
-//   1.  Should be faster than using Fad directly
-//   2.  Fixes issues with hierarchical parallelism since the default
-//       implementation uses MDRangePolicy which doesn't work with hierarchical
-//       parallelism.
-// Needs to go before include of Kokkos_Core.hpp so it is in scope when
-// Kokkos_CopyViews.hpp is included by Kokkos_Core.hpp, which internally
-// calls view_copy().
-template<class DT, class ... DP,
-         class ST, class ... SP>
-typename std::enable_if< is_view_fad< Kokkos::View<DT,DP...> >::value &&
-                         is_view_fad< Kokkos::View<ST,SP...> >::value
-                       >::type
-view_copy(const Kokkos::View<DT,DP...>& dst, const Kokkos::View<ST,SP...>& src);
-
-template<class Space, class T, class ... P>
-struct MirrorType;
-
-} // namespace Impl
-
-// Declare overloads of create_mirror() so they are in scope
-// Kokkos_Core.hpp is included below
-
-template< class T , class ... P >
-inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror(
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    ( std::is_same< typename ViewTraits<T,P...>::specialize ,
-        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
-      std::is_same< typename ViewTraits<T,P...>::specialize ,
-        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
-    !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-        Kokkos::LayoutStride >::value >::type * = 0);
-
-
-template< class T , class ... P >
-inline
-typename Kokkos::View<T,P...>::HostMirror
-create_mirror(
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    ( std::is_same< typename ViewTraits<T,P...>::specialize ,
-        Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
-      std::is_same< typename ViewTraits<T,P...>::specialize ,
-        Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
-    std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
-      Kokkos::LayoutStride >::value >::type * = 0);
-
-template<class Space, class T, class ... P>
-typename Impl::MirrorType<Space,T,P ...>::view_type
-create_mirror(
-  const Space&,
-  const Kokkos::View<T,P...> & src,
-  typename std::enable_if<
-    std::is_same< typename ViewTraits<T,P...>::specialize ,
-      Kokkos::Impl::ViewSpecializeSacadoFad >::value ||
-    std::is_same< typename ViewTraits<T,P...>::specialize ,
-      Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value >::type * = 0);
-
-} // namespace Kokkos
 
 #include "Sacado_Traits.hpp"
 #include "Kokkos_Core.hpp"

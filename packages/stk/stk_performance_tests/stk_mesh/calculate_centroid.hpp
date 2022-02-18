@@ -146,6 +146,40 @@ void calculate_centroid_using_coord_field(const stk::mesh::BulkData &bulk, stk::
   calculate_centroid_using_coord_field<CoordFieldType>(bulk, bulk.mesh_meta_data().locally_owned_part(), centroid);
 }
 
+inline void calculate_centroid_using_host_coord_fields(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase& centroid)
+{
+  stk::mesh::Selector selector(centroid);
+  selector &= bulk.mesh_meta_data().locally_owned_part();
+  auto& bucketVector = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
+  const stk::mesh::FieldBase& coords = *bulk.mesh_meta_data().coordinate_field();
+
+  for(auto bucket : bucketVector) {
+    const unsigned centroidNumPerEntity = stk::mesh::field_scalars_per_entity(centroid, *bucket);
+    const unsigned coordNumPerEntity = stk::mesh::field_scalars_per_entity(coords, *bucket);
+    EXPECT_EQ(centroidNumPerEntity, coordNumPerEntity);
+    auto numNodes = bucket->topology().num_nodes();
+
+    for(auto elem : *bucket) {
+      double* centroidData = reinterpret_cast<double*>(stk::mesh::field_data(centroid, elem));
+      std::fill(centroidData, centroidData+centroidNumPerEntity, 0.0);
+
+      auto nodes = bulk.begin_nodes(elem);
+      EXPECT_EQ(numNodes, bulk.num_nodes(elem));
+
+      for(unsigned j = 0; j < coordNumPerEntity; j++) {
+        for(unsigned i = 0; i < numNodes; i++) {
+          auto node = nodes[i];
+
+          double* coordData = reinterpret_cast<double*>(stk::mesh::field_data(coords, node));
+          centroidData[j] += coordData[j];
+        }
+
+        centroidData[j] /= numNodes;
+      }
+    }
+  }
+}
+
 inline
 std::vector<double> get_centroid_average_from_host(stk::mesh::BulkData &bulk, stk::mesh::Field<double, stk::mesh::Cartesian3d> &centroid, const stk::mesh::Selector& selector)
 {

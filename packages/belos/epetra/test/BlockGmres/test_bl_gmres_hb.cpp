@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  bool debug = false;
   bool verbose = false;
   bool success = true;
   try {
@@ -89,11 +90,13 @@ int main(int argc, char *argv[]) {
 
     Teuchos::CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    cmdp.setOption("debug","no-debug",&debug,"Print debug messages.");
     cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear systems.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
     cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
     cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
+    cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
     cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
     cmdp.setOption("maxiters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -126,8 +129,11 @@ int main(int argc, char *argv[]) {
     belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
     if (verbose) {
-      belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
-          Belos::TimingDetails + + Belos::StatusTestDetails );
+      int verbosity = Belos::Errors + Belos::Warnings +
+          Belos::TimingDetails + Belos::StatusTestDetails; 
+      if (debug)
+          verbosity += Belos::Debug + Belos::OrthoDetails;
+      belosList.set( "Verbosity", verbosity );                  
       if (frequency > 0)
         belosList.set( "Output Frequency", frequency );
     }
@@ -137,6 +143,12 @@ int main(int argc, char *argv[]) {
     //
     // Construct an unpreconditioned linear problem instance.
     //
+    if (numrhs > 1) {
+      X = rcp( new Epetra_MultiVector(Map, numrhs) );
+      X->PutScalar( 0.0 );
+      B = rcp( new Epetra_MultiVector(Map, numrhs) );
+      B->Random();
+    }
     Belos::LinearProblem<double,MV,OP> problem( A, X, B );
     bool set = problem.setProblem();
     if (set == false) {

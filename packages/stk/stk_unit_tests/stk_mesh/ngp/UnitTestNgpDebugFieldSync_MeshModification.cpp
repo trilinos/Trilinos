@@ -60,6 +60,27 @@ namespace {
 
 class NgpDebugFieldSync_MeshModification : public NgpDebugFieldSyncFixture {};
 
+TEST_F(NgpDebugFieldSync_MeshModification, ChangeBucket_ProperlySyncToDevice_WithSimultaneousHostField_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
+  build_mesh({{"Part1", 2}, {"Part2", 1}});
+  stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
+  stk::mesh::HostField<double> hostField(get_bulk(), stkField);
+
+  testing::internal::CaptureStdout();
+  modify_element_part_membership({{2, "Part2", "Part1"}});
+
+  write_scalar_field_on_host_using_entity(stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+
+  read_scalar_field_on_device(stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
 TEST_F(NgpDebugFieldSync_MeshModification, ChangeBucket_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
@@ -198,7 +219,6 @@ TEST_F(NgpDebugFieldSync_MeshModification, ChangeBucket_MissingAllModifySyncCall
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
   check_no_warnings(stdoutString);
 }
 
@@ -217,8 +237,6 @@ TEST_F(NgpDebugFieldSync_MeshModification, CreateBucket_MissingAllModifySyncCall
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
   check_no_warnings(stdoutString);
 }
 
@@ -237,11 +255,10 @@ TEST_F(NgpDebugFieldSync_MeshModification, DeleteBucket_MissingAllModifySyncCall
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_MeshModification, UsingBucketIdAndOrdinal_ChangeBucket_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync_MeshModification, UsingBucketIdAndOrdinal_ChangeBucket_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
@@ -255,11 +272,10 @@ TEST_F(NgpDebugFieldSync_MeshModification, UsingBucketIdAndOrdinal_ChangeBucket_
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_MeshModification, UsingBucketIdAndOrdinal_CreateBucket_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync_MeshModification, UsingBucketIdAndOrdinal_CreateBucket_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
@@ -274,12 +290,10 @@ TEST_F(NgpDebugFieldSync_MeshModification, UsingBucketIdAndOrdinal_CreateBucket_
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_MeshModification, UsingBucketIdAndOrdinal_DeleteBucket_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync_MeshModification, UsingBucketIdAndOrdinal_DeleteBucket_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
@@ -294,7 +308,6 @@ TEST_F(NgpDebugFieldSync_MeshModification, UsingBucketIdAndOrdinal_DeleteBucket_
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
   check_no_warnings(stdoutString);
 }
 
@@ -947,7 +960,7 @@ TEST_F(NgpDebugFieldSync_MeshModification, TwoConsecutiveMods_DeleteBucket_Delet
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_MeshModification, TwoConsecutiveMods_ChangeBucket_ChangeBucket_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync_MeshModification, TwoConsecutiveMods_ChangeBucket_ChangeBucket_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
@@ -964,11 +977,10 @@ TEST_F(NgpDebugFieldSync_MeshModification, TwoConsecutiveMods_ChangeBucket_Chang
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 3, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.140000");
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_MeshModification, TwoConsecutiveMods_CreateBucket_CreateBucket_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync_MeshModification, TwoConsecutiveMods_CreateBucket_CreateBucket_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
@@ -985,12 +997,10 @@ TEST_F(NgpDebugFieldSync_MeshModification, TwoConsecutiveMods_CreateBucket_Creat
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.140000");
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_MeshModification, TwoConsecutiveMods_DeleteBucket_DeleteBucket_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync_MeshModification, TwoConsecutiveMods_DeleteBucket_DeleteBucket_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
@@ -1007,7 +1017,6 @@ TEST_F(NgpDebugFieldSync_MeshModification, TwoConsecutiveMods_DeleteBucket_Delet
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
   check_no_warnings(stdoutString);
 }
 
@@ -1561,7 +1570,7 @@ TEST_F(NgpDebugFieldSync_MeshModification, TwoMods_DeleteBucket_DeleteBucket_Pro
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_MeshModification, TwoMods_ChangeBucket_ChangeBucket_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync_MeshModification, TwoMods_ChangeBucket_ChangeBucket_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   declare_scalar_field<double>("doubleScalarField", {"Part1", "Part2"});
@@ -1579,12 +1588,10 @@ TEST_F(NgpDebugFieldSync_MeshModification, TwoMods_ChangeBucket_ChangeBucket_Mis
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 3, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.14");
-  extract_warning(stdoutString, 3, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=2.18");
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_MeshModification, TwoMods_CreateBucket_CreateBucket_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync_MeshModification, TwoMods_CreateBucket_CreateBucket_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
@@ -1603,13 +1610,10 @@ TEST_F(NgpDebugFieldSync_MeshModification, TwoMods_CreateBucket_CreateBucket_Mis
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.140000");
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=2.180000");
-  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_MeshModification, TwoMods_DeleteBucket_DeleteBucket_MissingAllModifySyncCallsToDevice_Warning)
+TEST_F(NgpDebugFieldSync_MeshModification, TwoMods_DeleteBucket_DeleteBucket_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   const unsigned bucketCapacity = 1;
@@ -1628,8 +1632,6 @@ TEST_F(NgpDebugFieldSync_MeshModification, TwoMods_DeleteBucket_DeleteBucket_Mis
   read_scalar_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=3.140000");
-  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleScalarField[0]=10.000000");
   check_no_warnings(stdoutString);
 }
 

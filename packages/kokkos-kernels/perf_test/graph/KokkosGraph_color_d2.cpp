@@ -63,6 +63,7 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <KokkosKernels_TestParameters.hpp>
 #include <KokkosGraph_Distance2Color.hpp>
+#include "KokkosKernels_default_types.hpp"
 
 using namespace KokkosGraph;
 
@@ -101,29 +102,9 @@ struct D2Parameters
   }
 };
 
-#ifdef KOKKOSKERNELS_INST_DOUBLE
-    typedef double kk_scalar_t;
-#else
-    #ifdef KOKKOSKERNELS_INST_FLOAT
-        typedef float kk_scalar_t;
-    #endif
-#endif
-
-#ifdef KOKKOSKERNELS_INST_OFFSET_INT
-    typedef int kk_size_type;
-#else
-    #ifdef KOKKOSKERNELS_INST_OFFSET_SIZE_T
-        typedef size_t kk_size_type;
-    #endif
-#endif
-
-#ifdef KOKKOSKERNELS_INST_ORDINAL_INT
-    typedef int kk_lno_t;
-#else
-    #ifdef KOKKOSKERNELS_INST_ORDINAL_INT64_T
-        typedef int64_t kk_lno_t;
-    #endif
-#endif
+typedef default_scalar kk_scalar_t;
+typedef default_size_type kk_size_type;
+typedef default_lno_t kk_lno_t;
 
 using namespace KokkosGraph;
 
@@ -427,7 +408,7 @@ void run_experiment(crsGraph_t crsGraph, int num_cols, const D2Parameters& param
     // ------------------------------------------
     std::cout << "Compute Distance-2 Degree " << std::endl;
 
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
 
     double total_time                   = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time();
     double total_time_color_greedy      = kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time_phase1();

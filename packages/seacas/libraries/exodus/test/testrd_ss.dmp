@@ -403,11 +403,11 @@ node list for side set 38
  31
 no dist factors for side set 38
 
-after ex_inquire: EX_INQ_SS_ELEM_LEN = 23,  error = 0
+after ex_inquire: EX_INQ_SS_ELEM_LEN = 23
 
-after ex_inquire: EX_INQ_SS_NODE_LEN = 69,  error = 0
+after ex_inquire: EX_INQ_SS_NODE_LEN = 69
 
-after ex_inquire: EX_INQ_SS_DF_LEN = 8,  error = 0
+after ex_inquire: EX_INQ_SS_DF_LEN = 8
 
 after ex_get_concat_side_sets, error =   0
 concatenated side set info

@@ -315,8 +315,6 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   }
   else { //no solution_dot 
     if (solution_dxdp_mv != Teuchos::null) {
-      std::cout << "IKT solution = " << solution << "\n";
-      std::cout << "IKT soluttion_dxdp_mv = " << solution_dxdp_mv << "\n";
       wrappedObserver_->observeSolution(*solution, *solution_dxdp_mv, time);
     }
     else {

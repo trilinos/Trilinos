@@ -6,26 +6,14 @@
 // ****************************************************************************
 // @HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
+#include "Tempus_UnitTest_RK_Utils.hpp"
 
-#include "Thyra_VectorStdOps.hpp"
-
-#include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperFactory.hpp"
-#include "Tempus_UnitTest_Utils.hpp"
 #include "Tempus_StepperRKButcherTableau.hpp"
-
 
 #include "../TestModels/DahlquistTestModel.hpp"
 #include "../TestModels/VanDerPol_IMEX_ExplicitModel.hpp"
 #include "../TestModels/VanDerPol_IMEX_ImplicitModel.hpp"
-#include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
-#include <fstream>
-#include <vector>
 
 namespace Tempus_Unit_Test {
 
@@ -35,7 +23,6 @@ using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
-using Teuchos::getParametersFromXmlFile;
 
 using Tempus::StepperFactory;
 using Tempus::StepperExplicitRK;
@@ -205,7 +192,7 @@ class StepperRKModifierIMEX_TrapezoidaTest
       double time = currentState->getTime();
       double imp_time = time;
       if (stageNumber >= 0) {
-        time     += c(stageNumber)*dt;   
+        time     += c(stageNumber)*dt;
         imp_time += chat(stageNumber)*dt;
       }
 
@@ -228,7 +215,7 @@ class StepperRKModifierIMEX_TrapezoidaTest
             TEST_FLOATING_EQUALITY(dt, 1.0, relTol);
 
             const double x_0    = get_ele(*(x), 0);
-            TEST_FLOATING_EQUALITY(x_0,    1.0, relTol);      
+            TEST_FLOATING_EQUALITY(x_0,    1.0, relTol);
             TEST_ASSERT(std::abs(time) < relTol);
             TEST_ASSERT(std::abs(imp_time) < relTol);
             TEST_FLOATING_EQUALITY(dt,      1.0, relTol);
@@ -336,15 +323,15 @@ TEUCHOS_UNIT_TEST(IMEX_RK, IMEX_RK_Modifier)
   auto implicitTableau      = stepperSDIRK->getTableau();
   int order                 = 2;
 
-  stepper->setStepperName(stepperType);               
-  stepper->setExplicitTableau(explicitTableau);      
-  stepper->setImplicitTableau(implicitTableau);     
-  stepper->setOrder(order);                        
-  stepper->setSolver(solver);                          
-  stepper->setUseFSAL(useFSAL);                       
-  stepper->setICConsistency(ICConsistency);           
-  stepper->setICConsistencyCheck(ICConsistencyCheck); 
-  stepper->setZeroInitialGuess(zeroInitialGuess);    
+  stepper->setStepperName(stepperType);
+  stepper->setExplicitTableau(explicitTableau);
+  stepper->setImplicitTableau(implicitTableau);
+  stepper->setOrder(order);
+  stepper->setSolver(solver);
+  stepper->setUseFSAL(useFSAL);
+  stepper->setICConsistency(ICConsistency);
+  stepper->setICConsistencyCheck(ICConsistencyCheck);
+  stepper->setZeroInitialGuess(zeroInitialGuess);
 
   stepper->setModel(model);
   stepper->setAppAction(modifier);
@@ -360,8 +347,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK, IMEX_RK_Modifier)
   double dt = 1.0;
   solutionHistory->getWorkingState()->setTimeStep(dt);
   solutionHistory->getWorkingState()->setTime(dt);
-  stepper->takeStep(solutionHistory);          
-                                              
+  stepper->takeStep(solutionHistory);
+
   // Test stepper properties.
   TEUCHOS_ASSERT(stepper->getOrder() == 2);
 }

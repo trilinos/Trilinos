@@ -26,14 +26,14 @@ int ex_put_sets(int exoid, size_t set_count, const struct ex_set *sets)
   size_t start[1];
   int    cur_num_sets;
   char   errmsg[MAX_ERR_LENGTH];
-  int *  sets_to_define = NULL;
-  char * numentryptr    = NULL;
-  char * entryptr       = NULL;
-  char * extraptr       = NULL;
-  char * idsptr         = NULL;
-  char * statptr        = NULL;
-  char * numdfptr       = NULL;
-  char * factptr        = NULL;
+  int   *sets_to_define = NULL;
+  char  *numentryptr    = NULL;
+  char  *entryptr       = NULL;
+  char  *extraptr       = NULL;
+  char  *idsptr         = NULL;
+  char  *statptr        = NULL;
+  char  *numdfptr       = NULL;
+  char  *factptr        = NULL;
 
   int int_type;
 

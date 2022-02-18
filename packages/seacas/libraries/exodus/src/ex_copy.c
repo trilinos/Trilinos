@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,7 +10,7 @@
 #include "exodusII_int.h" // for ex__get_counter_list, etc
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   if ((funcall) != NC_NOERR) {                                                                     \
@@ -134,6 +134,7 @@ static int ex_copy_internal(int in_exoid, int out_exoid, int mesh_only)
 
   EX_FUNC_LEAVE(EX_NOERR);
 }
+/*! \endcond */
 
 /*!
   \ingroup Utilities
@@ -249,6 +250,7 @@ int cpy_variables(int in_exoid, int out_exoid, int in_large, int mesh_only)
   }
   return EX_NOERR;
 }
+/*! \endcond */
 
 /*! \cond INTERNAL */
 int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
@@ -260,7 +262,7 @@ int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
   EXCHECKI(nc_inq(in_exoid, &ndims, NULL, NULL, &recdimid));
   for (int dimid = 0; dimid < ndims; dimid++) {
 
-    char   dim_nm[NC_MAX_NAME];
+    char   dim_nm[NC_MAX_NAME + 1];
     size_t dim_sz;
     EXCHECK(nc_inq_dim(in_exoid, dimid, dim_nm, &dim_sz));
 
@@ -385,6 +387,7 @@ int cpy_global_att(int in_exoid, int out_exoid)
 
   return EX_NOERR;
 }
+/*! \endcond */
 
 /*! \cond INTERNAL */
 int cpy_att(int in_id, int out_id, int var_in_id, int var_out_id)
@@ -413,6 +416,7 @@ int cpy_att(int in_id, int out_id, int var_in_id, int var_out_id)
 
   return (EX_NOERR);
 }
+/*! \endcond */
 
 /*! \internal */
 int cpy_coord_def(int in_id, int out_id, int rec_dim_id, char *var_nm, int in_large)
@@ -470,6 +474,7 @@ int cpy_coord_def(int in_id, int out_id, int rec_dim_id, char *var_nm, int in_la
 
   return var_out_id; /* OK */
 }
+/*! \endcond */
 
 /*! \internal */
 int cpy_var_def(int in_id, int out_id, int rec_dim_id, char *var_nm)
@@ -506,7 +511,7 @@ int cpy_var_def(int in_id, int out_id, int rec_dim_id, char *var_nm)
   /* Get the dimension sizes and names */
   int dim_out_id[NC_MAX_VAR_DIMS];
   for (int idx = 0; idx < nbr_dim; idx++) {
-    char   dim_nm[NC_MAX_NAME];
+    char   dim_nm[NC_MAX_NAME + 1];
     size_t dim_sz;
 
     EXCHECKI(nc_inq_dim(in_id, dim_in_id[idx], dim_nm, &dim_sz));

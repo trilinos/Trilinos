@@ -1717,6 +1717,7 @@ getCubaturePointsRef(const bool cache,
       Kokkos::parallel_for("copy values",policy,KOKKOS_LAMBDA (const int cell,const int point, const int dim) {
         aux(cell,point_offset + point,dim) = side_cub_points(point,dim);
       });
+      PHX::Device::execution_space().fence();
     }
 
   } else {

@@ -356,6 +356,22 @@ public:
   }
 };
 
+class DataTraitsSignedChar : public DataTraitsIntegral<signed char> {
+public:
+  DataTraitsSignedChar()
+    : DataTraitsIntegral<signed char>( "signed char" ) {}
+
+  virtual void print( std::ostream & s , const void * v , std::size_t n ) const
+  {
+    if ( n ) {
+      const signed char * x = reinterpret_cast<const signed char*>( v );
+      const signed char * const x_end = x + n ;
+      s << static_cast<int>(*x++) ;
+      while ( x_end != x ) { s << " " << static_cast<int>(*x++) ; }
+    }
+  }
+};
+
 }
 
 #define DATA_TRAITS_NUMERIC( T )        \
@@ -380,6 +396,10 @@ const DataTraits & data_traits<char>()
 template<>
 const DataTraits & data_traits<unsigned char>()
 { static const DataTraitsUnsignedChar traits ; return traits ; }
+
+template<>
+const DataTraits & data_traits<signed char>()
+{ static const DataTraitsSignedChar traits ; return traits ; }
 
 DATA_TRAITS_INTEGRAL( short )
 DATA_TRAITS_INTEGRAL( unsigned short )
@@ -465,6 +485,7 @@ template<> const DataTraits & data_traits<T*>()  \
 
 DATA_TRAITS_POINTER( char )
 DATA_TRAITS_POINTER( unsigned char )
+DATA_TRAITS_POINTER( signed char )
 DATA_TRAITS_POINTER( short )
 DATA_TRAITS_POINTER( unsigned short )
 DATA_TRAITS_POINTER( int )

@@ -51,7 +51,8 @@
 
 #define OMP_BENCH_RESTRICT __restrict__
 
-int* OMP_BENCH_RESTRICT threadStarts;
+// Done to prevent conflicting definitions of threadStarts
+extern int* OMP_BENCH_RESTRICT threadStarts;
 
 template<typename AType, typename Offset, typename Ordinal, typename Scalar>
 void establishSmartSchedule(AType A) {

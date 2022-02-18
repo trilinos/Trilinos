@@ -663,7 +663,7 @@ check_strong_ellipticity(Tensor4<T, N> const & A)
     Tensor<T, N>
     D;
 
-    boost::tie(V, D) = eig_sym(Q);
+    std::tie(V, D) = eig_sym(Q);
 
     curr_eigenvalue = D(dimension - 1, dimension - 1);
 

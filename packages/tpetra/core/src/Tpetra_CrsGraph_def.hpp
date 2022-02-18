@@ -288,18 +288,30 @@ namespace Tpetra {
     return Details::Behavior::verbose("CrsGraph");
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const size_t maxNumEntriesPerRow,
             const ProfileType /* pftype */,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, maxNumEntriesPerRow, params)
+  {}
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const size_t maxNumEntriesPerRow,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , numAllocForAllRows_ (maxNumEntriesPerRow)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,maxNumEntriesPerRow,pftype,params): ";
+      "CrsGraph(rowMap,maxNumEntriesPerRow,params): ";
     staticAssertions ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (maxNumEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid (),
@@ -310,12 +322,25 @@ namespace Tpetra {
     checkInternalState ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
             const size_t maxNumEntriesPerRow,
             const ProfileType /* pftype */,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, colMap, maxNumEntriesPerRow, params)
+  {}
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const size_t maxNumEntriesPerRow,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
@@ -323,7 +348,7 @@ namespace Tpetra {
     , numAllocForAllRows_ (maxNumEntriesPerRow)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,colMap,maxNumEntriesPerRow,pftype,params): ";
+      "CrsGraph(rowMap,colMap,maxNumEntriesPerRow,params): ";
     staticAssertions ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       maxNumEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid (),
@@ -334,18 +359,30 @@ namespace Tpetra {
     checkInternalState ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::ArrayView<const size_t>& numEntPerRow,
             const ProfileType /* pftype */,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, numEntPerRow, params)
+  {}
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::ArrayView<const size_t>& numEntPerRow,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , numAllocForAllRows_ (0)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
+      "CrsGraph(rowMap,numEntPerRow,params): ";
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
@@ -388,11 +425,22 @@ namespace Tpetra {
 
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
             const ProfileType /* pftype */,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, numEntPerRow, params)
+  {}
+#endif
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
@@ -400,7 +448,7 @@ namespace Tpetra {
     , numAllocForAllRows_ (0)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
+      "CrsGraph(rowMap,numEntPerRow,params): ";
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
@@ -427,12 +475,25 @@ namespace Tpetra {
   }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
             const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
             const ProfileType /* pftype */,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, colMap, numEntPerRow, params)
+  {}
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
@@ -441,7 +502,7 @@ namespace Tpetra {
     , numAllocForAllRows_ (0)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,colMap,numEntPerRow,pftype,params): ";
+      "CrsGraph(rowMap,colMap,numEntPerRow,params): ";
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
@@ -468,20 +529,33 @@ namespace Tpetra {
   }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
             const Teuchos::ArrayView<const size_t>& numEntPerRow,
             const ProfileType /* pftype */,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, colMap, numEntPerRow, params)
+  {}
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Teuchos::ArrayView<const size_t>& numEntPerRow,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
     , numAllocForAllRows_ (0)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,colMap,numEntPerRow,pftype,params): ";
+      "CrsGraph(rowMap,colMap,numEntPerRow,params): ";
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
@@ -921,13 +995,16 @@ namespace Tpetra {
     return isOpt;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   ProfileType
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getProfileType () const
   {
     return StaticProfile;
   }
+#endif
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t
@@ -1393,6 +1470,9 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // Deprecated but protected; 
+  // not emitting warnings prevents Tpetra from emitting deprecation warnings
+  // TPETRA_DEPRECATED
   Teuchos::ArrayView<const LocalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalView (const RowInfo& rowinfo) const
@@ -1429,6 +1509,9 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // Deprecated but protected; 
+  // not emitting warnings prevents Tpetra from emitting deprecation warnings
+  // TPETRA_DEPRECATED
   Teuchos::ArrayView<const GlobalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalView (const RowInfo& rowinfo) const
@@ -2246,7 +2329,9 @@ namespace Tpetra {
   }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::ArrayRCP<const size_t>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNodeRowPtrs () const
@@ -2258,7 +2343,17 @@ namespace Tpetra {
     const char prefix[] = "Tpetra::CrsGraph::getNodeRowPtrs: ";
     const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
-    const size_t size = rowPtrsUnpacked_host_.extent (0);
+    // UVM REMOVAL:  10/21
+    // This function originally returned unpacked RowPtrs.  But ...
+    // (1) it was used in tandem with getNodePackedIndices, which intends
+    //     to return packed indices;
+    // (2) unpacked row pointers are not useful without a count of number
+    //     of valid indices in the row, which is not provided by this function;
+    // (3) in most cases, graphs are storageOptimized, so packed and unpacked
+    //     row pointers are the same.
+    // To match getNodePackedIndices, we change this function to return 
+    // packed row pointers.
+    const size_t size = rowPtrsPacked_host_.extent (0);
     constexpr bool same = std::is_same<size_t, row_offset_type>::value;
 
     if (size == 0) {
@@ -2268,13 +2363,13 @@ namespace Tpetra {
     ArrayRCP<const row_offset_type> ptr_rot;
     ArrayRCP<const size_t> ptr_st;
     if (same) { // size_t == row_offset_type
-      ptr_rot = Kokkos::Compat::persistingView (rowPtrsUnpacked_host_);
+      ptr_rot = Kokkos::Compat::persistingView (rowPtrsPacked_host_);
     }
     else { // size_t != row_offset_type
       typedef Kokkos::View<size_t*, device_type> ret_view_type;
       ret_view_type ptr_d (ViewAllocateWithoutInitializing ("ptr"), size);
 
-      ::Tpetra::Details::copyOffsets (ptr_d, rowPtrsUnpacked_dev_);
+      ::Tpetra::Details::copyOffsets (ptr_d, rowPtrsPacked_dev_);
 
       typename ret_view_type::HostMirror ptr_h = 
                                          Kokkos::create_mirror_view (ptr_d);
@@ -2305,24 +2400,58 @@ namespace Tpetra {
     }
     return retval;
   }
-
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::row_ptrs_host_view_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalRowPtrsHost () const
+  {
+    return rowPtrsPacked_host_;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::row_ptrs_device_view_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalRowPtrsDevice () const
+  {
+    return rowPtrsPacked_dev_;
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::ArrayRCP<const LocalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNodePackedIndices () const
   {
-    // KDDKDD  UVM REMOVAL:  3/21
-    // KDDKDD  This function used to return k_lclInds1D_.  
-    // KDDKDD  I retain its behavior by return lclIndsUnpacked_wdv.getHostView.
-    // KDDKDD  However, k_lclInds1D_ was not necessarily PACKED;
-    // KDDKDD  PACKED indices are in the static graph.
-    // KDDKDD  However, with OptimizeStorage, k_lclInds1D_ was PACKED.
-    // return Kokkos::Compat::persistingView (k_lclInds1D_);
+    // UVM REMOVAL:  10/21
+    // This function used to return k_lclInds1D_, which was not 
+    // necessarily packed. It was packed only when storage was optimized
+    // which, as the default in fillComplete, was probably always in 
+    // applications. 
+    // With UVM removal, we change the behavior to match the original
+    // function name (getNodePackedIndices).
     return Kokkos::Compat::persistingView (
-                           lclIndsUnpacked_wdv.getHostView(Access::ReadOnly));
+                           lclIndsPacked_wdv.getHostView(Access::ReadOnly));
+  }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalIndicesHost () const
+  {
+    return lclIndsPacked_wdv.getHostView(Access::ReadOnly);
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_inds_device_view_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalIndicesDevice () const
+  {
+    return lclIndsPacked_wdv.getDeviceView(Access::ReadOnly);
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -2371,6 +2500,7 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowCopy (LocalOrdinal localRow,
@@ -2456,6 +2586,7 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalRowCopy (GlobalOrdinal globalRow,
@@ -2571,8 +2702,8 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
-//  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowView (const LocalOrdinal localRow,
                    Teuchos::ArrayView<const LocalOrdinal>& indices) const
@@ -2613,8 +2744,8 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
-//  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalRowView (const GlobalOrdinal globalRow,
                     Teuchos::ArrayView<const GlobalOrdinal>& indices) const
@@ -3090,6 +3221,7 @@ namespace Tpetra {
   }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   TPETRA_DEPRECATED
   void
@@ -3194,6 +3326,7 @@ namespace Tpetra {
     boundForAllLocalRows = numEntriesForAll;
     boundSameForAllLocalRows = allRowsSame;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -3318,8 +3451,7 @@ namespace Tpetra {
     //    number of entries in each nonlocal row.
 
     RCP<crs_graph_type> nonlocalGraph =
-      rcp(new crs_graph_type(nonlocalRowMap, numEntPerNonlocalRow(),
-                             StaticProfile));
+      rcp(new crs_graph_type(nonlocalRowMap, numEntPerNonlocalRow()));
     {
       size_type curPos = 0;
       for (auto mapIter = this->nonlocals_.begin ();
@@ -4450,6 +4582,7 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalGraph () const
@@ -5049,14 +5182,14 @@ namespace Tpetra {
                 if (isGloballyIndexed()) {
                   auto rowview = gblInds_wdv.getHostView(Access::ReadOnly);
                   for (size_t j=0; j < rowinfo.numEntries; ++j){ 
-                    GlobalOrdinal colgid = rowview[j] + rowinfo.offset1D;
+                    GlobalOrdinal colgid = rowview[j + rowinfo.offset1D];
                     out << colgid << " ";
                   }
                 }
                 else if (isLocallyIndexed()) {
                   auto rowview = lclIndsUnpacked_wdv.getHostView(Access::ReadOnly);
                   for (size_t j=0; j < rowinfo.numEntries; ++j) {
-                    LocalOrdinal collid = rowview[j] + rowinfo.offset1D;
+                    LocalOrdinal collid = rowview[j + rowinfo.offset1D];
                     out << colMap_->getGlobalElement(collid) << " ";
                   }
                 }
@@ -7174,7 +7307,7 @@ namespace Tpetra {
     // If the user gave us a null destGraph, then construct the new
     // destination graph.  We will replace its column Map later.
     if (destGraph.is_null()) {
-      destGraph = rcp(new this_type(MyRowMap, 0, StaticProfile, graphparams));
+      destGraph = rcp(new this_type(MyRowMap, 0, graphparams));
     }
 
     /***************************************************/
@@ -7369,8 +7502,9 @@ namespace Tpetra {
           destGraph->numImportPacketsPerLID_.sync_host();
           Teuchos::ArrayView<size_t> numImportPacketsPerLID =
             getArrayViewFromDualView(destGraph->numImportPacketsPerLID_);
-          Distor.doReversePostsAndWaits(numExportPacketsPerLID, 1,
-                                         numImportPacketsPerLID);
+
+          Distor.doReversePostsAndWaits(destGraph->numExportPacketsPerLID_.view_host(), 1,
+                                            destGraph->numImportPacketsPerLID_.view_host());
           size_t totalImportPackets = 0;
           for (Array_size_type i = 0; i < numImportPacketsPerLID.size(); ++i) {
             totalImportPackets += numImportPacketsPerLID[i];
@@ -7380,13 +7514,11 @@ namespace Tpetra {
           // because it may clear out the flags.
           destGraph->reallocImportsIfNeeded(totalImportPackets, false, nullptr);
           destGraph->imports_.modify_host();
-          Teuchos::ArrayView<packet_type> hostImports =
-            getArrayViewFromDualView(destGraph->imports_);
+          auto hostImports = destGraph->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
-          Teuchos::ArrayView<const packet_type> hostExports =
-            getArrayViewFromDualView(destGraph->exports_);
+          auto hostExports = destGraph->exports_.view_host();
           Distor.doReversePostsAndWaits(hostExports,
                                          numExportPacketsPerLID,
                                          hostImports,
@@ -7394,13 +7526,11 @@ namespace Tpetra {
         }
         else { // constant number of packets per LI
           destGraph->imports_.modify_host();
-          Teuchos::ArrayView<packet_type> hostImports =
-            getArrayViewFromDualView(destGraph->imports_);
+          auto hostImports = destGraph->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
-          Teuchos::ArrayView<const packet_type> hostExports =
-            getArrayViewFromDualView(destGraph->exports_);
+          auto hostExports = destGraph->exports_.view_host();
           Distor.doReversePostsAndWaits(hostExports,
                                          constantNumPackets,
                                          hostImports);
@@ -7412,13 +7542,12 @@ namespace Tpetra {
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
           destGraph->numExportPacketsPerLID_.sync_host();
-          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-            getArrayViewFromDualView(destGraph->numExportPacketsPerLID_);
           destGraph->numImportPacketsPerLID_.sync_host();
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
+          Distor.doPostsAndWaits(destGraph->numExportPacketsPerLID_.view_host(), 1,
+                                      destGraph->numImportPacketsPerLID_.view_host());
+
+          Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
             getArrayViewFromDualView(destGraph->numImportPacketsPerLID_);
-          Distor.doPostsAndWaits(numExportPacketsPerLID, 1,
-                                  numImportPacketsPerLID);
           size_t totalImportPackets = 0;
           for (Array_size_type i = 0; i < numImportPacketsPerLID.size(); ++i) {
             totalImportPackets += numImportPacketsPerLID[i];
@@ -7428,30 +7557,23 @@ namespace Tpetra {
           // because it may clear out the flags.
           destGraph->reallocImportsIfNeeded(totalImportPackets, false, nullptr);
           destGraph->imports_.modify_host();
-          Teuchos::ArrayView<packet_type> hostImports =
-            getArrayViewFromDualView(destGraph->imports_);
+          auto hostImports = destGraph->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
-          Teuchos::ArrayView<const packet_type> hostExports =
-            getArrayViewFromDualView(destGraph->exports_);
-          Distor.doPostsAndWaits(hostExports,
-                                  numExportPacketsPerLID,
-                                  hostImports,
-                                  numImportPacketsPerLID);
+          auto hostExports = destGraph->exports_.view_host();
+          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
+            getArrayViewFromDualView(destGraph->numExportPacketsPerLID_);
+          Distor.doPostsAndWaits(hostExports, numExportPacketsPerLID, hostImports, numImportPacketsPerLID);
         }
         else { // constant number of packets per LID
           destGraph->imports_.modify_host();
-          Teuchos::ArrayView<packet_type> hostImports =
-            getArrayViewFromDualView(destGraph->imports_);
+          auto hostImports = destGraph->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
-          Teuchos::ArrayView<const packet_type> hostExports =
-            getArrayViewFromDualView(destGraph->exports_);
-          Distor.doPostsAndWaits(hostExports,
-                                  constantNumPackets,
-                                  hostImports);
+          auto hostExports = destGraph->exports_.view_host();
+          Distor.doPostsAndWaits(hostExports, constantNumPackets, hostImports);
         }
       }
     }

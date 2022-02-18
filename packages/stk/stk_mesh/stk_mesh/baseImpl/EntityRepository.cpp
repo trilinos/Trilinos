@@ -120,7 +120,9 @@ void EntityRepository::clear_destroyed_entity_cache(EntityRank rank) const
     }
     if (endIdx < entities.size()) {
       size_t len = entities.size() - endIdx;
-      std::memmove(&entities[keep], &entities[endIdx], len*sizeof(EntityKeyEntity));
+      for(size_t i=0; i<len; ++i) {
+        entities[keep+i] = entities[endIdx+i];
+      }
       keep += len;
     }
     entities.resize(keep);

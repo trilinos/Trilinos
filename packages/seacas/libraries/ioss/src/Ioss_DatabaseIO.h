@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_DatabaseIO_h
-#define IOSS_Ioss_DatabaseIO_h
+#pragma once
 
 #include <Ioss_BoundingBox.h>
 #include <Ioss_CodeTypes.h>
@@ -413,12 +412,14 @@ namespace Ioss {
     virtual void set_maximum_symbol_length(int /* requested_symbol_size */) {
     } // Default does nothing...
 
-    char get_field_separator() const { return fieldSeparator; }
-    bool get_field_recognition() const { return enableFieldRecognition; }
-    bool get_field_strip_trailing_() const { return fieldStripTrailing_; }
-    void set_field_separator(char separator);
-    void set_field_recognition(bool yes_no) { enableFieldRecognition = yes_no; }
-    void set_field_strip_trailing_(bool yes_no) { fieldStripTrailing_ = yes_no; }
+    std::string get_component_name(const Ioss::Field &field, Ioss::Field::InOut in_out,
+                                   int component) const;
+    char        get_field_separator() const { return fieldSeparator; }
+    bool        get_field_recognition() const { return enableFieldRecognition; }
+    bool        get_field_strip_trailing_() const { return fieldStripTrailing_; }
+    void        set_field_separator(char separator);
+    void        set_field_recognition(bool yes_no) { enableFieldRecognition = yes_no; }
+    void        set_field_strip_trailing_(bool yes_no) { fieldStripTrailing_ = yes_no; }
 
     void set_lower_case_variable_names(bool true_false) const
     {
@@ -441,7 +442,7 @@ namespace Ioss {
     {
       return get_block_adjacencies__(eb, block_adjacency);
     }
-    void compute_block_membership(Ioss::SideBlock *         efblock,
+    void compute_block_membership(Ioss::SideBlock          *efblock,
                                   std::vector<std::string> &block_membership) const
     {
       return compute_block_membership__(efblock, block_membership);
@@ -512,7 +513,7 @@ namespace Ioss {
 
     void set_time_scale_factor(double factor) { timeScaleFactor = factor; }
 
-    const Ioss::ParallelUtils &  util() const { return util_; }
+    const Ioss::ParallelUtils   &util() const { return util_; }
     const Ioss::PropertyManager &get_property_manager() const { return properties; }
     /** \brief Get the processor that this mesh database is on.
      *
@@ -531,7 +532,7 @@ namespace Ioss {
 
   protected:
     DatabaseIO(Region *region, std::string filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
 
     /*!
      * The properties member data contains properties that can be
@@ -807,6 +808,7 @@ namespace Ioss {
 #endif
     Region *region_{nullptr};
     char    fieldSeparator{'_'};
+    bool    fieldSeparatorSpecified{false};
     bool    enableFieldRecognition{true};
     bool    fieldStripTrailing_{false};
     bool    isInput;
@@ -832,4 +834,3 @@ namespace Ioss {
         m_stateStart; // Used for optional output step timing.
   };
 } // namespace Ioss
-#endif

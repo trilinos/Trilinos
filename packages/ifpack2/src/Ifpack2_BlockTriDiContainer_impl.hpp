@@ -315,10 +315,10 @@ namespace Ifpack2 {
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN \
-    CUDA_SAFE_CALL(cudaProfilerStart());
+    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaProfilerStart());
 
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END \
-    { CUDA_SAFE_CALL( cudaProfilerStop() ); }
+    { KOKKOS_IMPL_CUDA_SAFE_CALL( cudaProfilerStop() ); }
 #else
     /// later put vtune profiler region
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN
@@ -676,7 +676,7 @@ namespace Ifpack2 {
           exec_instances.clear();
           exec_instances.resize(num_streams);
           for (local_ordinal_type i=0;i<num_streams;++i) {
-            CUDA_SAFE_CALL(cudaStreamCreateWithFlags(&stream[i], cudaStreamNonBlocking));
+            KOKKOS_IMPL_CUDA_SAFE_CALL(cudaStreamCreateWithFlags(&stream[i], cudaStreamNonBlocking));
             ExecutionSpaceFactory<execution_space>::createInstance(stream[i], exec_instances[i]);
           }
         }
@@ -688,7 +688,7 @@ namespace Ifpack2 {
         {
           const local_ordinal_type num_streams = stream.size();
           for (local_ordinal_type i=0;i<num_streams;++i)
-            CUDA_SAFE_CALL(cudaStreamDestroy(stream[i]));
+            KOKKOS_IMPL_CUDA_SAFE_CALL(cudaStreamDestroy(stream[i]));
         }
         stream.clear();
         exec_instances.clear();

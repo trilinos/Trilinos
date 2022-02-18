@@ -60,12 +60,7 @@ void copy_parts(const stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta
 
 stk::mesh::FieldBase* clone_field(const stk::mesh::FieldBase& field, stk::mesh::MetaData& newMeta)
 {
-    return newMeta.declare_field_base(field.name(),
-                                      field.entity_rank(),
-                                      field.data_traits(),
-                                      field.field_array_rank(),
-                                      field.dimension_tags(),
-                                      field.number_of_states());
+    return field.clone(newMeta.get_field_repository());
 }
 
 void copy_field_restrictions(const stk::mesh::FieldBase& field, stk::mesh::MetaData& newMeta, stk::mesh::FieldBase* newField)
