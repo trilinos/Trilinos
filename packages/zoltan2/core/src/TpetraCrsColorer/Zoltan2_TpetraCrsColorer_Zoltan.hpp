@@ -32,7 +32,7 @@ public:
 
   // Constructor
   ZoltanCrsColorer(const Teuchos::RCP<matrix_t> &matrix_)
-    : matrix(matrix_), graph(matrix_->getCrsGraph()), transpose_graph()
+    : matrix(matrix_), graph(matrix_->getCrsGraph())
   {}
 
   // Destructor
@@ -50,7 +50,6 @@ private:
 
   const Teuchos::RCP<const matrix_t> matrix;
   const Teuchos::RCP<const graph_t> graph;
-  Teuchos::RCP<const graph_t> transpose_graph;
 
   //
   // Call-back functions for Zoltan interface
