@@ -769,19 +769,38 @@ then they must be the same or a configure error will occur.
 
 Options can also be targeted to a specific TriBITS package using::
 
-  -D <TRIBITS_PACKAGE>_<LANG>_FLAGS="<EXTRA_COMPILER_OPTIONS>"
+  -D <TRIBITS_PACKAGE>_<LANG>_FLAGS="<PACKAGE_EXTRA_COMPILER_OPTIONS>"
 
-The package-specific options get appended to those already in
+The package-specific options get appended **after** those already in
 ``CMAKE_<LANG>_FLAGS`` and therefore override (but not replace) those set
-globally in ``CMAKE_<LANG>_FLAGS`` (either internally or by the user in the
-cache).
+globally in ``CMAKE_<LANG>_FLAGS`` (either internally in the CMakeLists.txt
+files or by the user in the cache).
+
+In addition, flags can be targeted to a specific TriBITS subpackage using the
+same syntax::
+
+  -D <TRIBITS_SUBPACKAGE>_<LANG>_FLAGS="<SUBPACKAGE_EXTRA_COMPILER_OPTIONS>"
+
+If top-level package-specific flags and subpackage-specific flags are both set
+for the same parent package such as with::
+
+  -D SomePackage_<LANG>_FLAGS="<Package-flags>" \
+  -D SomePackageSpkgA_<LANG>_FLAGS="<Subpackage-flags>" \
+
+then the flags for the subpackage ``SomePackageSpkgA`` will be listed after
+those for its parent package ``SomePackage`` on the compiler command-line as::
+
+  <Package-flags> <SubPackage-flags>
+
+That way, compiler options for a subpackage override flags set for the parent
+package.
 
 NOTES:
 
-1) Setting ``CMAKE_<LANG>_FLAGS`` will override but will not replace any
-other internally set flags in ``CMAKE_<LANG>_FLAGS`` defined by the
-<Project> CMake system because these flags will come after those set
-internally.  To get rid of these project/TriBITS default flags, see below.
+1) Setting ``CMAKE_<LANG>_FLAGS`` as a cache varible by the user on input be
+listed after and therefore override, but will not replace, any internally set
+flags in ``CMAKE_<LANG>_FLAGS`` defined by the <Project> CMake system.  To get
+rid of these project/TriBITS set compiler flags/options, see the below items.
 
 2) Given that CMake passes in flags in
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` after those in
@@ -828,30 +847,6 @@ NOTES: The TriBITS CMake cache variable
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` because is given a default
 internally by CMake and the new variable is needed to make the override
 explicit.
-
-
-Appending arbitrary libraries and link flags every executable
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-In order to append any set of arbitrary libraries and link flags to your
-executables use::
-
-  -D<Project>_EXTRA_LINK_FLAGS="<EXTRA_LINK_LIBRARIES>" \
-  -DCMAKE_EXE_LINKER_FLAGS="<EXTRA_LINK_FLAGG>"
-
-Above, you can pass any type of library and they will always be the last
-libraries listed, even after all of the TPLs.
-
-NOTE: This is how you must set extra libraries like Fortran libraries and
-MPI libraries (when using raw compilers).  Please only use this variable
-as a last resort.
-
-NOTE: You must only pass in libraries in ``<Project>_EXTRA_LINK_FLAGS`` and
-*not* arbitrary linker flags.  To pass in extra linker flags that are not
-libraries, use the built-in CMake variable ``CMAKE_EXE_LINKER_FLAGS``
-instead.  The TriBITS variable ``<Project>_EXTRA_LINK_FLAGS`` is badly named
-in this respect but the name remains due to backward compatibility
-requirements.
 
 
 Turning off strong warnings for individual packages
@@ -934,8 +929,51 @@ To get the compiler to add debug symbols to the build, configure with::
 
   -D <Project>_ENABLE_DEBUG_SYMBOLS=ON
 
-This will add ``-g`` on most compilers.  NOTE: One does **not** generally
-need to create a fully debug build to get debug symbols on most compilers.
+This will add ``-g`` on most compilers.  NOTE: One does **not** generally need
+to create a full debug build to get debug symbols on most compilers.
+
+
+Printing out compiler flags for each package
+++++++++++++++++++++++++++++++++++++++++++++
+
+To print out the exact ``CMAKE_<LANG>_FLAGS`` that will be used for each
+package, set::
+
+  -D <Project>_PRINT_PACKAGE_COMPILER_FLAGS=ON
+
+That will print lines in STDOUT that are formatted as::
+
+  <TRIBITS_SUBPACKAGE>: CMAKE_<LANG>_FLAGS="<exact-flags-usedy-by-package>"
+  <TRIBITS_SUBPACKAGE>: CMAKE_<LANG>_FLAGS_<BUILD_TYPE>="<build-type-flags>"
+
+This will print the value of the ``CMAKE_<LANG>_FLAGS`` and
+``CMAKE_<LANG>_FLAGS_<BUILD_TYPE>`` variables that are used as each package is
+being processed and will contain the flags in the exact order they are applied
+by CMake
+
+
+Appending arbitrary libraries and link flags every executable
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In order to append any set of arbitrary libraries and link flags to your
+executables use::
+
+  -D<Project>_EXTRA_LINK_FLAGS="<EXTRA_LINK_LIBRARIES>" \
+  -DCMAKE_EXE_LINKER_FLAGS="<EXTRA_LINK_FLAGG>"
+
+Above, you can pass any type of library and they will always be the last
+libraries listed, even after all of the TPLs.
+
+NOTE: This is how you must set extra libraries like Fortran libraries and
+MPI libraries (when using raw compilers).  Please only use this variable
+as a last resort.
+
+NOTE: You must only pass in libraries in ``<Project>_EXTRA_LINK_FLAGS`` and
+*not* arbitrary linker flags.  To pass in extra linker flags that are not
+libraries, use the built-in CMake variable ``CMAKE_EXE_LINKER_FLAGS``
+instead.  The TriBITS variable ``<Project>_EXTRA_LINK_FLAGS`` is badly named
+in this respect but the name remains due to backward compatibility
+requirements.
 
 
 Enabling support for Ninja
