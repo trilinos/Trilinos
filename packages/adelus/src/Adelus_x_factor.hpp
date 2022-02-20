@@ -56,6 +56,7 @@
 #include "Adelus_macros.h"
 #include "Adelus_block.h"
 #include "Adelus_factor.hpp"
+#include "Adelus_perm_mat.hpp"
 #include "Adelus_pcomm.hpp"
 #include "Adelus_mytime.hpp"
 #include "Kokkos_Core.hpp"
@@ -68,7 +69,7 @@ namespace Adelus {
 
 template<class ZDView, class IDView>
 inline
-void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView pivot, double *secs)
+void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView& permute, double *secs)
 {
 #ifdef ADELUS_HAVE_TIME_MONITOR
   using Teuchos::TimeMonitor;
@@ -130,11 +131,13 @@ void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView pivot, double *se
   totmem += blksz * (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);//row1_view
   totmem += (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);        //row2_view
   totmem += (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);        //row3_view
+  totmem += my_cols * sizeof(int);                                      //lpiv_view
   
-  ViewType2D    col1_view      ( "col1_view",      my_rows, blksz );
-  ViewType2D    row1_view      ( "row1_view",      blksz, my_cols + blksz + nrhs );
-  ViewType1D    row2_view      ( "row2_view",      my_cols + blksz + nrhs );
-  ViewType1D    row3_view      ( "row3_view",      my_cols + blksz + nrhs );
+  ViewType2D  col1_view ( "col1_view", my_rows, blksz );
+  ViewType2D  row1_view ( "row1_view", blksz, my_cols + blksz + nrhs );
+  ViewType1D  row2_view ( "row2_view", my_cols + blksz + nrhs );
+  ViewType1D  row3_view ( "row3_view", my_cols + blksz + nrhs );
+  IDView      lpiv_view ( "lpiv_view", my_cols );
 
   {
   // Factor the system
@@ -155,19 +158,33 @@ void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView pivot, double *se
            row1_view,
            row2_view, 
            row3_view, 
-           pivot);
+           lpiv_view);
 #ifdef ADELUS_HAVE_TIME_MONITOR
   }
 #endif
 
+  // Permute the lower triangular matrix
+  //NOTE: Currently doing matrix permutation in host memory
+  ZDView::HostMirror h_ZV = Kokkos::create_mirror_view( ZV );
+  Kokkos::deep_copy (h_ZV, ZV);
+
+#ifdef ADELUS_HAVE_TIME_MONITOR
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: matrix permutation"));
+#endif
+    permute_mat(h_ZV, lpiv_view, permute);
+#ifdef ADELUS_HAVE_TIME_MONITOR
+  }
+#endif
+
+  Kokkos::deep_copy (ZV, h_ZV);
+
   tsecs = get_seconds(tsecs);
 
   run_secs = (double) tsecs;
-
-  // Solve time secs
-
+  
   *secs = run_secs;
-  showtime("Total time in Factor",&run_secs);
+  showtime("Total time in Factor (inl. matrix permutation)",&run_secs);
   }
 }
 

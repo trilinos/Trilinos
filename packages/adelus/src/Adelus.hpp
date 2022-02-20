@@ -49,6 +49,7 @@
 #include <Kokkos_View.hpp>
 #include <Adelus_defines.h>
 #include <Adelus_xlu_solve.hpp>
+#include <Adelus_perm_mat.hpp>
 #include <Adelus_x_factor.hpp>
 #include <Adelus_distribute.hpp>
 #include <mpi.h>
@@ -143,7 +144,7 @@ namespace Adelus {
   /// \param my_cols_ (In)    -- number of columns of the matrix on this processor
   /// \param matrix_size (In) -- order of the dense matrix
   /// \param num_procsr (In)  -- number of processors for a row
-  /// \param pivot (In)       -- Kokkos View that has the pivot vector
+  /// \param permute (In)     -- Kokkos View that has the global pivot vector
   /// \param secs (Out)       -- factor and solve time in seconds
 
   template<class ZDView, class IDView>
@@ -153,7 +154,7 @@ namespace Adelus {
                int my_cols_,
                int* matrix_size,
                int* num_procsr,
-               IDView pivot,
+               IDView permute,
                double* secs ) {
     int rank;
 
@@ -166,11 +167,8 @@ namespace Adelus {
     lu_(AA,
         matrix_size,
         num_procsr,
-        pivot,
+        permute,
         secs);
-
-    // Permute the lower triangular matrix
-    // dpermute_(AA, pivot);
 
   }
 
