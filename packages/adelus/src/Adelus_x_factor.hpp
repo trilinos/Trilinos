@@ -110,7 +110,7 @@ void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView& permute, double 
   my_first_row = mesh_row(me);
 
   my_rows = nrows_matrix / nprocs_col;
-  if (my_first_row < nrows_matrix % nprocs_col)i
+  if (my_first_row < nrows_matrix % nprocs_col)
     ++my_rows;
   my_cols = ncols_matrix / nprocs_row;
   if (my_first_col < ncols_matrix % nprocs_row)
@@ -165,7 +165,7 @@ void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView& permute, double 
 
   // Permute the lower triangular matrix
   //NOTE: Currently doing matrix permutation in host memory
-  ZDView::HostMirror h_ZV = Kokkos::create_mirror_view( ZV );
+  typename ZDView::HostMirror h_ZV = Kokkos::create_mirror_view( ZV );
   Kokkos::deep_copy (h_ZV, ZV);
 
 #ifdef ADELUS_HAVE_TIME_MONITOR
