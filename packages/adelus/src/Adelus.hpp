@@ -49,7 +49,6 @@
 #include <Kokkos_View.hpp>
 #include <Adelus_defines.h>
 #include <Adelus_xlu_solve.hpp>
-#include <Adelus_perm_mat.hpp>
 #include <Adelus_x_factor.hpp>
 #include <Adelus_distribute.hpp>
 #include <mpi.h>
