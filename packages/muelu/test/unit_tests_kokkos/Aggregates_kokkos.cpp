@@ -611,6 +611,112 @@ namespace MueLuTests {
 
   } //UncoupledPhase3
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, AllowDroppingToCreateAdditionalDirichletRows, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Test option that allows dropping during aggregation to create new Dirichlet rows" << std::endl;
+
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    using device_type  = typename Aggregates_kokkos::device_type;
+
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
+    A->resumeFill();
+
+    // Create one row on every processor with small off-diagonal entries that will be dropped with
+    // an appropriately chosen threshold.  Avoid domain boundaries.
+    LocalOrdinal localRowToModify = 1;
+    Teuchos::ArrayView<const LocalOrdinal> indices;
+    Teuchos::ArrayView<const Scalar>  values;
+    A->getLocalRowView(localRowToModify, indices, values);
+    Array<Scalar> newvalues(values.size(),TST::zero());
+    for (int j = 0; j < indices.size(); j++) {
+      if (indices[j] == localRowToModify)
+        newvalues[j] = values[j]; //keep diagonal unmodified
+      else
+        newvalues[j] = -TST::eps();
+    }
+    A->replaceLocalValues(localRowToModify,indices,newvalues);
+    A->fillComplete();
+
+    // Dropping connections will not lead to the creation of new Dirichlet rows.
+    RCP<AmalgamationInfo> amalgInfo;
+    Level level;
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
+
+    RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetParameter("aggregation: dropping may create Dirichlet",Teuchos::ParameterEntry(false));
+    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(-100*TST::eps()));
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    level.Request("Graph",dropFact.get());
+
+    // Setup aggregation factory (use default factory for graph)
+    RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetFactory("Graph", dropFact);
+
+    level.Request("Aggregates", aggFact.get());
+    level.Request("UnAmalgamationInfo", amalgFact.get());
+
+    level.Request(*aggFact);
+    aggFact->Build(level);
+    RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get());
+    RCP<LWGraph_kokkos> graph = level.Get<RCP<LWGraph_kokkos>>("Graph",dropFact.get());
+    Kokkos::View<const bool*, device_type> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+    int numDirichletRows=0;
+    using execution_space   = typename LWGraph_kokkos::execution_space;
+    LO numRows = graph->GetNodeNumVertices();
+    Kokkos::parallel_reduce("Count Dirichlet rows",
+                            Kokkos::RangePolicy<LO, execution_space>(0, numRows),
+                            KOKKOS_LAMBDA(const LO rowIdx, LO& numDirichlet) {
+                              if(dirichletBoundaryMap[rowIdx]) {
+                                ++numDirichlet;
+                              }
+                            }, numDirichletRows);
+    TEST_EQUALITY(numDirichletRows, 0);
+
+    Array< LO > aggPtr;
+    Array< LO > aggNodes;
+    Array< LO > unaggregated;
+
+    // Repeat with "aggregation: dropping may create Dirichlet" = TRUE, i.e.,
+    // dropping connections may lead to the creation of new Dirichlet rows.
+    // The second row should be flagged as Dirichlet because all off-diagonal entries are dropped.
+    amalgFact = rcp(new AmalgamationFactory_kokkos());
+    dropFact = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetParameter("aggregation: dropping may create Dirichlet",Teuchos::ParameterEntry(true));
+    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(-100*TST::eps()));
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    level.Request("Graph",dropFact.get());
+
+    // Setup aggregation factory (use default factory for graph)
+    aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetFactory("Graph", dropFact);
+
+    level.Request("Aggregates", aggFact.get());
+    level.Request("UnAmalgamationInfo", amalgFact.get());
+
+    level.Request(*aggFact);
+    aggFact->Build(level);
+    aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get());
+    graph = level.Get<RCP<LWGraph_kokkos>>("Graph",dropFact.get());
+    dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+    numDirichletRows=0;
+    Kokkos::parallel_reduce("Count Dirichlet rows",
+                            Kokkos::RangePolicy<LO, execution_space>(0, numRows),
+                            KOKKOS_LAMBDA(const LO rowIdx, LO& numDirichlet) {
+                              if(dirichletBoundaryMap[rowIdx]) {
+                                ++numDirichlet;
+                              }
+                            }, numDirichletRows);
+    TEST_EQUALITY(numDirichletRows,1);
+
+  } //AllowDroppingToCreateAdditionalDirichletRows
+
+
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustUncoupledAggregationFactory, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustUncoupledAggregation, SC, LO, GO, NO) \
@@ -621,7 +727,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, DiscontiguousAggregates, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase1, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase2, SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase3, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase3, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, AllowDroppingToCreateAdditionalDirichletRows, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 
