@@ -41,21 +41,20 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Unit tests for Orientation class.
-    \author Created by Kyungjoo Kim
+    \brief  Test for checking orientation tools for quadrialateral elements.
+    \author Created by Mauro Perego
 */
 
 #include "Kokkos_Core.hpp"
 
-#include "test_orientationtools_modify_basis_quad_hcurl_i1.hpp"
+#include "test_orientation_QUAD.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
-
-  using device_type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>;
-  const int r_val = Intrepid2::Test::OrientationToolsModifyBasis_QUAD_HCURLI1<device_type >(verbose);
+  
+  const int r_val = Intrepid2::Test::OrientationQuad<@ETI_VALUETYPE@,@ETI_DEVICE@>(verbose);
 
   Kokkos::finalize();
   return r_val;

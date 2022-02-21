@@ -41,20 +41,20 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Test for checking orientation tools for quadrialateral elements.
+    \brief  Test for checking orientation tools for triangular elements.
     \author Created by Mauro Perego
 */
 
 #include "Kokkos_Core.hpp"
 
-#include "test_orientation_QUAD.hpp"
+#include "test_orientation_TRI.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
   
-  const int r_val = Intrepid2::Test::OrientationQuad<double,Kokkos::Serial>(verbose);
+  const int r_val = Intrepid2::Test::OrientationTri<double,@ETI_DEVICE@>(verbose);
 
   Kokkos::finalize();
   return r_val;
