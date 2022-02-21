@@ -839,9 +839,16 @@ namespace {
 
       Import<LO, GO> importer(source->getMap(), target->getMap());
 
-      if (numProcs > 1 && myRank == 0) {
-        target->beginImport(*source, importer, INSERT);
-        TEST_ASSERT(!target->transferArrived());
+      if (numProcs > 1) {
+        if (myRank == 0) {
+          target->beginImport(*source, importer, INSERT);
+          TEST_ASSERT(!target->transferArrived());
+        }
+        comm->barrier();
+        if (myRank != 0) {
+          target->beginImport(*source, importer, INSERT);
+        }
+        target->endImport(*source, importer, INSERT);
       }
     }
 
@@ -877,9 +884,16 @@ namespace {
 
       Export<LO, GO> exporter(source->getMap(), target->getMap());
 
-      if (numProcs > 1 && myRank == 0) {
-        target->beginExport(*source, exporter, INSERT);
-        TEST_ASSERT(!target->transferArrived());
+      if (numProcs > 1) {
+        if (myRank == 0) {
+          target->beginExport(*source, exporter, INSERT);
+          TEST_ASSERT(!target->transferArrived());
+        }
+        comm->barrier();
+        if (myRank != 0) {
+          target->beginExport(*source, exporter, INSERT);
+        }
+        target->endExport(*source, exporter, INSERT);
       }
     }
 
