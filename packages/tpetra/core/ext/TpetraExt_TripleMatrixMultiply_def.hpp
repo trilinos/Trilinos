@@ -1473,40 +1473,42 @@ namespace Tpetra {
       LO maxAccol = Ac.getColMap()->getMaxLocalIndex();
 
       // Get Data Pointers
-      ArrayRCP<const size_t> Arowptr_RCP, Prowptr_RCP, Irowptr_RCP;
       ArrayRCP<size_t> Acrowptr_RCP;
-      ArrayRCP<const LO> Acolind_RCP, Pcolind_RCP, Icolind_RCP;
       ArrayRCP<LO> Accolind_RCP;
-      ArrayRCP<const Scalar> Avals_RCP, Pvals_RCP, Ivals_RCP;
       ArrayRCP<SC> Acvals_RCP;
 
-      // mfh 27 Sep 2016: "getAllValues" just gets the three CSR arrays
+      // mfh 27 Sep 2016: get the three CSR arrays
       // out of the CrsMatrix.  This code computes R * A * (P_local +
       // P_remote), where P_local contains the locally owned rows of P,
       // and P_remote the (previously Import'ed) remote rows of P.
 
-      Aview.origMatrix->getAllValues(Arowptr_RCP, Acolind_RCP, Avals_RCP);
-      Pview.origMatrix->getAllValues(Prowptr_RCP, Pcolind_RCP, Pvals_RCP);
+      auto Arowptr = Aview.origMatrix->getLocalRowPtrsHost();
+      auto Acolind = Aview.origMatrix->getLocalIndicesHost();
+      auto Avals   = Aview.origMatrix->getLocalValuesHost(
+                                                     Tpetra::Access::ReadOnly);
+      auto Prowptr = Pview.origMatrix->getLocalRowPtrsHost();
+      auto Pcolind = Pview.origMatrix->getLocalIndicesHost();
+      auto Pvals   = Pview.origMatrix->getLocalValuesHost(
+                                                     Tpetra::Access::ReadOnly);
+      decltype(Prowptr) Irowptr;
+      decltype(Pcolind) Icolind;
+      decltype(Pvals)   Ivals;
 
-      if (!Pview.importMatrix.is_null())
-        Pview.importMatrix->getAllValues(Irowptr_RCP, Icolind_RCP, Ivals_RCP);
+      if (!Pview.importMatrix.is_null()) {
+        Irowptr = Pview.importMatrix->getLocalRowPtrsHost();
+        Icolind = Pview.importMatrix->getLocalIndicesHost();
+        Ivals   = Pview.importMatrix->getLocalValuesHost(
+                                                    Tpetra::Access::ReadOnly);
+      }
 
       // mfh 27 Sep 2016: Remark below "For efficiency" refers to an issue
       // where Teuchos::ArrayRCP::operator[] may be slower than
       // Teuchos::ArrayView::operator[].
 
       // For efficiency
-      ArrayView<const size_t>   Arowptr, Prowptr, Irowptr;
-      ArrayView<const LO>       Acolind, Pcolind, Icolind;
-      ArrayView<const SC>       Avals, Pvals, Ivals;
-      ArrayView<size_t>         Acrowptr;
+      ArrayView<size_t> Acrowptr;
       ArrayView<LO> Accolind;
       ArrayView<SC> Acvals;
-      Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
-      Prowptr = Prowptr_RCP();  Pcolind = Pcolind_RCP();  Pvals = Pvals_RCP();
-      if (!Pview.importMatrix.is_null()) {
-        Irowptr = Irowptr_RCP(); Icolind = Icolind_RCP(); Ivals = Ivals_RCP();
-      }
 
       //////////////////////////////////////////////////////////////////////
       // In a first pass, determine the graph of Ac.
@@ -1525,13 +1527,6 @@ namespace Tpetra {
       // Get the local transpose of the graph of P by locally transposing
       // all of P
 
-      ArrayRCP<const size_t>  Rrowptr_RCP;
-      ArrayRCP<const LO>      Rcolind_RCP;
-      ArrayRCP<const Scalar>  Rvals_RCP;
-      ArrayView<const size_t> Rrowptr;
-      ArrayView<const LO>     Rcolind;
-      ArrayView<const SC>     Rvals;
-
       transposer_type transposer (Pview.origMatrix,label+std::string("XP: "));
 
       using Teuchos::ParameterList;
@@ -1545,10 +1540,9 @@ namespace Tpetra {
       RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ptrans =
         transposer.createTransposeLocal (transposeParams);
 
-      Ptrans->getAllValues(Rrowptr_RCP, Rcolind_RCP, Rvals_RCP);
-      Rrowptr = Rrowptr_RCP();
-      Rcolind = Rcolind_RCP();
-      Rvals = Rvals_RCP();
+      auto Rrowptr = Ptrans->getLocalRowPtrsHost();
+      auto Rcolind = Ptrans->getLocalIndicesHost();
+      auto Rvals = Ptrans->getLocalValuesHost(Tpetra::Access::ReadOnly);
 
       //////////////////////////////////////////////////////////////////////
       // Construct graph

@@ -128,8 +128,8 @@ namespace Stokhos {
       flat_row_map = create_flat_map(*(graph.getRowMap()), block_size);
 
     // Build flattened row offsets and column indices
-    ArrayRCP<const size_t> row_offsets = graph.getNodeRowPtrs();
-    ArrayRCP<const LocalOrdinal> col_indices = graph.getNodePackedIndices();
+    auto row_offsets = graph.getLocalRowPtrsHost();
+    auto col_indices = graph.getLocalIndicesHost();
     const size_t num_row = graph.getNodeNumRows();
     const size_t num_col_indices = col_indices.size();
     ArrayRCP<size_t> flat_row_offsets(num_row*block_size+1);
@@ -206,8 +206,8 @@ namespace Stokhos {
       flat_row_map = create_flat_map(*(graph.getRowMap()), block_size);
 
     // Build flattened row offsets and column indices
-    ArrayRCP<const size_t> row_offsets = graph.getNodeRowPtrs();
-    ArrayRCP<const LocalOrdinal> col_indices = graph.getNodePackedIndices();
+    auto row_offsets = graph.getLocalRowPtrsHost();
+    auto col_indices = graph.getLocalIndicesHost();
     const size_t num_row = graph.getNodeNumRows();
     const size_t num_col_indices = col_indices.size();
     RowPtrs flat_row_offsets("row_ptrs", num_row*block_size+1);

@@ -1494,19 +1494,33 @@ public:
     setAllIndices (const Teuchos::ArrayRCP<size_t> & rowPointers,
                    const Teuchos::ArrayRCP<local_ordinal_type> & columnIndices);
 
-    /// \brief Get a host view of the row offsets.
+    /// \brief Get a host view of the packed row offsets.
     ///
-    /// \note Please prefer getLocalGraph() to get the row offsets.
-    ///
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// This may return either a copy or a view of the row offsets.
     /// In either case, it will <i>always</i> live in host memory,
     /// never in (CUDA) device memory.
-    Teuchos::ArrayRCP<const size_t> getNodeRowPtrs () const;
+    TPETRA_DEPRECATED Teuchos::ArrayRCP<const size_t> getNodeRowPtrs () const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+    row_ptrs_host_view_type getLocalRowPtrsHost () const;
 
+    /// \brief Get a device view of the packed row offsets.
+    ///
+    row_ptrs_device_view_type getLocalRowPtrsDevice () const;
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get an Teuchos::ArrayRCP of the packed column-indices.
     /*!  The returned buffer exists in host-memory.
      */
+    TPETRA_DEPRECATED
     Teuchos::ArrayRCP<const local_ordinal_type> getNodePackedIndices () const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+    /// \brief Get a host view of the packed column indicies
+    local_inds_host_view_type getLocalIndicesHost () const;
+
+    /// \brief Get a device view of the packed column indicies
+    local_inds_device_view_type getLocalIndicesDevice () const;
 
     /// \brief Replace the graph's current column Map with the given Map.
     ///

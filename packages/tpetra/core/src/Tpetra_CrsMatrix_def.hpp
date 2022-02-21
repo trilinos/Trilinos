@@ -379,11 +379,6 @@ namespace Tpetra {
     valuesPacked_wdv = values_wdv_type(val);
     valuesUnpacked_wdv = valuesPacked_wdv;
 
-    // FIXME (22 Jun 2016) I would very much like to get rid of
-    // k_values1D_ at some point.  I find it confusing to have all
-    // these extra references lying around.
-//    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
-
     checkInternalState ();
 
     if (verbose) {
@@ -809,8 +804,10 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
-             const Teuchos::DataAccess copyOrView)
-    : CrsMatrix (source.getCrsGraph (), source.getLocalValuesView ())
+             const Teuchos::DataAccess copyOrView):
+    dist_object_type (source.getCrsGraph()->getRowMap ()),
+    staticGraph_ (source.getCrsGraph()),
+    storageStatus_ (source.storageStatus_)
   {
     const char tfecfFuncName[] = "Tpetra::CrsMatrix("
       "const CrsMatrix&, const Teuchos::DataAccess): ";
@@ -820,7 +817,7 @@ namespace Tpetra {
 
     if (copyOrView == Teuchos::Copy) {
       using values_type = typename local_matrix_device_type::values_type;
-      values_type vals = source.getLocalValuesView ();
+      auto vals = source.getLocalValuesDevice (Access::ReadOnly);
       using Kokkos::view_alloc;
       using Kokkos::WithoutInitializing;
       values_type newvals (view_alloc ("val", WithoutInitializing),
@@ -828,13 +825,12 @@ namespace Tpetra {
       Kokkos::deep_copy (newvals, vals);
       valuesPacked_wdv = values_wdv_type(newvals);
       valuesUnpacked_wdv = valuesPacked_wdv;
-//      k_values1D_ = newvals;
-      if (source.isFillComplete ()) {
-        fillComplete (source.getDomainMap (), source.getRangeMap ());
-      }
+      fillComplete (source.getDomainMap (), source.getRangeMap ());
     }
     else if (copyOrView == Teuchos::View) {
-      return;
+      valuesPacked_wdv = values_wdv_type(source.valuesPacked_wdv);
+      valuesUnpacked_wdv = values_wdv_type(source.valuesUnpacked_wdv);
+      fillComplete (source.getDomainMap (), source.getRangeMap ());
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -843,6 +839,7 @@ namespace Tpetra {
          "include Teuchos::Copy = " << Teuchos::Copy << " and "
          "Teuchos::View = " << Teuchos::View << ".");
     }
+    checkInternalState();
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1273,7 +1270,9 @@ namespace Tpetra {
                                     lclTotalNumEntries));
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getAllValues (Teuchos::ArrayRCP<const size_t>& rowPointers,
@@ -1290,24 +1289,11 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       relevantGraph.is_null (), std::runtime_error,
       "Requires that getCrsGraph() is not null.");
-    try {
-      rowPointers = relevantGraph->getNodeRowPtrs ();
-    }
-    catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        true, std::runtime_error,
-        "Caught exception while calling graph->getNodeRowPtrs(): "
-        << e.what ());
-    }
-    try {
-      columnIndices = relevantGraph->getNodePackedIndices ();
-    }
-    catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        true, std::runtime_error,
-        "Caught exception while calling graph->getNodePackedIndices(): "
-        << e.what ());
-    }
+    auto rowPointersView = relevantGraph->getLocalRowPtrsHost ();
+    auto columnIndicesView = relevantGraph->getLocalIndicesHost ();
+
+    rowPointers = Kokkos::Compat::persistingView(rowPointersView);
+    columnIndices = Kokkos::Compat::persistingView(columnIndicesView);
 
     // UVM REMOVAL:  10/21
     // This function originally returned unpacked values.  But ...
@@ -1323,8 +1309,11 @@ namespace Tpetra {
       Kokkos::Compat::persistingView (valuesPacked_wdv.getHostView(Access::ReadOnly));
     values = Teuchos::arcp_reinterpret_cast<const Scalar> (vals);
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getAllValues(Teuchos::ArrayRCP<Scalar>& values) {
@@ -1338,6 +1327,7 @@ namespace Tpetra {
       Kokkos::Compat::persistingView (valuesPacked_wdv.getHostView(Access::ReadWrite));
     values = Teuchos::arcp_reinterpret_cast<Scalar> (vals);
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -9106,21 +9096,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
         if (verbose) {
           std::ostringstream os;
-          os << *verbosePrefix << "Calling getAllValues" << endl;
+          os << *verbosePrefix << "Getting CRS pointers" << endl;
           std::cerr << os.str ();
         }
 
         Teuchos::ArrayRCP<LocalOrdinal> type3LIDs;
         Teuchos::ArrayRCP<int>          type3PIDs;
-        Teuchos::ArrayRCP<const size_t> rowptr;
-        Teuchos::ArrayRCP<const LO> colind;
-        Teuchos::ArrayRCP<const Scalar> vals;
-        {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-            TimeMonitor tm_getAllValues (*TimeMonitor::getNewTimer(prefix + std::string("isMMgetAllValues")));
-#endif
-            getAllValues(rowptr,colind,vals);
-        }
+        auto rowptr = getCrsGraph()->getLocalRowPtrsHost();
+        auto colind = getCrsGraph()->getLocalIndicesHost();
 
         if (verbose) {
           std::ostringstream os;

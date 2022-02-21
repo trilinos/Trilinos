@@ -309,7 +309,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   // we need the LIDs for all sub-blocks, not just the single
   // sub-block for the field residual scatter.
   int elementBlockGIDCount = 0;
-  for (const auto blockDOFMgr : globalIndexer_->getFieldDOFManagers())
+  for (const auto& blockDOFMgr : globalIndexer_->getFieldDOFManagers())
     elementBlockGIDCount += blockDOFMgr->getElementBlockGIDCount(blockId);
 
   worksetLIDs_ = Kokkos::View<LO**, Kokkos::LayoutRight, PHX::Device>(

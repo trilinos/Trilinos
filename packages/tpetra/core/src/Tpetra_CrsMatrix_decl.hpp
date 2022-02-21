@@ -507,6 +507,33 @@ namespace Tpetra {
                              scalar_type,
                              device_type>;
 
+    using row_ptrs_device_view_type = 
+          typename row_matrix_type::row_ptrs_device_view_type;
+    using row_ptrs_host_view_type = 
+          typename row_matrix_type::row_ptrs_host_view_type;
+
+
+    using local_inds_device_view_type = 
+          typename row_matrix_type::local_inds_device_view_type;
+    using local_inds_host_view_type = 
+          typename row_matrix_type::local_inds_host_view_type;
+    using nonconst_local_inds_host_view_type = 
+          typename row_matrix_type::nonconst_local_inds_host_view_type;
+
+    using global_inds_device_view_type = 
+          typename row_matrix_type::global_inds_device_view_type;
+    using global_inds_host_view_type = 
+          typename row_matrix_type::global_inds_host_view_type;
+    using nonconst_global_inds_host_view_type = 
+          typename row_matrix_type::nonconst_global_inds_host_view_type;
+
+    using values_device_view_type = 
+          typename row_matrix_type::values_device_view_type;
+    using values_host_view_type = 
+          typename row_matrix_type::values_host_view_type;
+    using nonconst_values_host_view_type = 
+          typename row_matrix_type::nonconst_values_host_view_type;
+
     //@}
     //! @name Constructors and destructor
     //@{
@@ -1896,18 +1923,40 @@ namespace Tpetra {
                   const Teuchos::ArrayRCP<LocalOrdinal>& ind,
                   const Teuchos::ArrayRCP<Scalar>& val);
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     void
     getAllValues (Teuchos::ArrayRCP<const size_t>& rowPointers,
                   Teuchos::ArrayRCP<const LocalOrdinal>& columnIndices,
                   Teuchos::ArrayRCP<const Scalar>& values) const;
+#endif
 
+    /// \brief Get a host view of the CRS packed row pointers
+    row_ptrs_host_view_type getLocalRowPtrsHost () const
+    { return getCrsGraph()->getLocalRowPtrsHost(); }
+
+    /// \brief Get a device view of the CRS packed row pointers
+    row_ptrs_device_view_type getLocalRowPtrsDevice () const
+    { return getCrsGraph()->getLocalRowPtrsDevice(); }
+
+    /// \brief Get a host view of the CRS packed column indicies
+    local_inds_host_view_type getLocalIndicesHost () const
+    { return getCrsGraph()->getLocalIndicesHost(); }
+
+    /// \brief Get a device_view of the CRS packed column indicies
+    local_inds_device_view_type getLocalIndicesDevice () const
+    { return getCrsGraph()->getLocalIndicesDevice(); }
+
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// Gets just the values array.  This *will* be a shallow copy
     /// of the array (at least on the host memory space.  This
     /// is not a const function, since the user can change these
     /// values.
     ///
     /// \param values [out] Array of values. 
-    void getAllValues(Teuchos::ArrayRCP<Scalar>& values);
+    TPETRA_DEPRECATED void getAllValues(Teuchos::ArrayRCP<Scalar>& values);
+#endif
 
     //@}
     //! @name Transformational methods
@@ -2550,33 +2599,6 @@ protected:
     mutable ordinal_rowptrs_type ordinalRowptrs;
 
 public:
-
-    using row_ptrs_device_view_type = 
-          typename row_matrix_type::row_ptrs_device_view_type;
-    using row_ptrs_host_view_type = 
-          typename row_matrix_type::row_ptrs_host_view_type;
-
-
-    using local_inds_device_view_type = 
-          typename row_matrix_type::local_inds_device_view_type;
-    using local_inds_host_view_type = 
-          typename row_matrix_type::local_inds_host_view_type;
-    using nonconst_local_inds_host_view_type = 
-          typename row_matrix_type::nonconst_local_inds_host_view_type;
-
-    using global_inds_device_view_type = 
-          typename row_matrix_type::global_inds_device_view_type;
-    using global_inds_host_view_type = 
-          typename row_matrix_type::global_inds_host_view_type;
-    using nonconst_global_inds_host_view_type = 
-          typename row_matrix_type::nonconst_global_inds_host_view_type;
-
-    using values_device_view_type = 
-          typename row_matrix_type::values_device_view_type;
-    using values_host_view_type = 
-          typename row_matrix_type::values_host_view_type;
-    using nonconst_values_host_view_type = 
-          typename row_matrix_type::nonconst_values_host_view_type;
 
     /// \brief Fill given arrays with a deep copy of the locally owned
     ///   entries of the matrix in a given row, using global column
@@ -3423,10 +3445,54 @@ public:
     //@}
 
   public:
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get the Kokkos local values
     typename local_matrix_device_type::values_type getLocalValuesView () const {
       // TODO:  UVM SHOULD ADD ACCESS TAGS; SAFEST TO ASSUME ReadWrite FOR NOW
       return valuesPacked_wdv.getDeviceView(Access::ReadWrite);
+    }
+#endif
+
+    //! Get the Kokkos local values on host, read only
+    typename local_matrix_host_type::values_type::const_type
+    getLocalValuesHost (Access::ReadOnlyStruct s) const
+    {
+      return valuesPacked_wdv.getHostView(s);
+    }
+
+    //! Get the Kokkos local values on host, read write
+    typename local_matrix_host_type::values_type
+    getLocalValuesHost (Access::ReadWriteStruct s)
+    {
+      return valuesPacked_wdv.getHostView(s);
+    }
+
+    //! Get the Kokkos local values on host, overwrite all
+    typename local_matrix_host_type::values_type
+    getLocalValuesHost (Access::OverwriteAllStruct s)
+    {
+      return valuesPacked_wdv.getHostView(s);
+    }
+
+    //! Get the Kokkos local values on device, read only
+    typename local_matrix_device_type::values_type::const_type
+    getLocalValuesDevice (Access::ReadOnlyStruct s) const
+    {
+      return valuesPacked_wdv.getDeviceView(s);
+    }
+
+    //! Get the Kokkos local values on device, read write
+    typename local_matrix_device_type::values_type
+    getLocalValuesDevice (Access::ReadWriteStruct s)
+    {
+      return valuesPacked_wdv.getDeviceView(s);
+    }
+
+    //! Get the Kokkos local values on device, overwrite all
+    typename local_matrix_device_type::values_type
+    getLocalValuesDevice (Access::OverwriteAllStruct s)
+    {
+      return valuesPacked_wdv.getDeviceView(s);
     }
 
   private:

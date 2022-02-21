@@ -926,9 +926,10 @@ void RILUK<MatrixType>::compute ()
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
-      A_local_rowmap_  = A_local_crs->getLocalMatrixDevice().graph.row_map;
-      A_local_entries_ = A_local_crs->getLocalMatrixDevice().graph.entries;
-      A_local_values_  = A_local_crs->getLocalValuesView();
+      auto lclMtx = A_local_crs->getLocalMatrixDevice();
+      A_local_rowmap_  = lclMtx.graph.row_map;
+      A_local_entries_ = lclMtx.graph.entries;
+      A_local_values_  = lclMtx.values;
     }
 
     L_->resumeFill ();
@@ -945,12 +946,12 @@ void RILUK<MatrixType>::compute ()
       auto lclL = L_->getLocalMatrixDevice();
       row_map_type L_rowmap  = lclL.graph.row_map;
       auto L_entries = lclL.graph.entries;
-      auto L_values  = L_->getLocalValuesView();
+      auto L_values  = lclL.values;
 
       auto lclU = U_->getLocalMatrixDevice();
       row_map_type U_rowmap  = lclU.graph.row_map;
       auto U_entries = lclU.graph.entries;
-      auto U_values  = U_->getLocalValuesView();
+      auto U_values  = lclU.values;
 
       KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_, 
                                                   A_local_rowmap_, A_local_entries_, A_local_values_, 

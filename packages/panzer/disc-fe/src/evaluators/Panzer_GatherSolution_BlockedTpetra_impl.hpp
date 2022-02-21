@@ -215,7 +215,9 @@ evaluateFields(typename TRAITS::EvalData workset)
   for (std::size_t fieldIndex = 0; fieldIndex < gatherFields_.size(); fieldIndex++) {
     // workset LIDs only change for different sub blocks 
     if (productVectorBlockIndex_[fieldIndex] != currentWorksetLIDSubBlock) {
-      fieldGlobalIndexers_[fieldIndex]->getElementLIDs(localCellIds,worksetLIDs_); 
+      const std::string blockId = this->wda(workset).block_id;
+      const int num_dofs = fieldGlobalIndexers_[fieldIndex]->getElementBlockGIDCount(blockId);
+      fieldGlobalIndexers_[fieldIndex]->getElementLIDs(localCellIds,worksetLIDs_,num_dofs); 
       currentWorksetLIDSubBlock = productVectorBlockIndex_[fieldIndex];
     }
 
@@ -545,7 +547,9 @@ evaluateFields(typename TRAITS::EvalData workset)
     // workset LIDs only change if in different sub blocks 
     if (productVectorBlockIndex_[fieldIndex] != currentWorksetLIDSubBlock) {
       const auto& blockIndexer = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fieldIndex]];
-      blockIndexer->getElementLIDs(localCellIds,worksetLIDs_); 
+      const std::string blockId = this->wda(workset).block_id;
+      const int num_dofs = globalIndexer_->getFieldDOFManagers()[productVectorBlockIndex_[fieldIndex]]->getElementBlockGIDCount(blockId);
+      blockIndexer->getElementLIDs(localCellIds,worksetLIDs_,num_dofs); 
       currentWorksetLIDSubBlock = productVectorBlockIndex_[fieldIndex];
     }
 
