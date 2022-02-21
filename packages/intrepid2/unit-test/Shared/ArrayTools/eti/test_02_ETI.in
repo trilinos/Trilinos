@@ -45,6 +45,11 @@
 \author Created by Kyungjoo Kim
 */
 
+#define ETI_SACADO @ETI_SACADO@
+#if ETI_SACADO == 1
+#define INTREPID2_ENABLE_SACADO_ETI_TEST
+#endif
+
 #include "Kokkos_Core.hpp"
 
 #include "test_02.hpp"
@@ -55,7 +60,7 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
 
   const int r_val = Intrepid2::Test::ArrayTools_Test02
-    <double,@ETI_DEVICE@ >(verbose);
+    <@ETI_VALUETYPE@,@ETI_DEVICE@ >(verbose);
   
   Kokkos::finalize();
   return r_val;

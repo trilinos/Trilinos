@@ -47,14 +47,14 @@
 
 #include "Kokkos_Core.hpp"
 
-#include "test_05.hpp"
+#include "test_01.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
 
-  const int r_val = Intrepid2::Test::CellTools_Test05<double,Kokkos::Serial>(verbose);
+  const int r_val = Intrepid2::Test::CellTools_Test01<double,@ETI_DEVICE@ >(verbose);
   
   Kokkos::finalize();
   return r_val;

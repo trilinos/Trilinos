@@ -115,7 +115,12 @@ namespace Intrepid2 {
       typedef RealSpaceTools<DeviceType> rst;
       typedef ArrayTools<DeviceType> art; 
       typedef Kokkos::DynRankView<value_type,DeviceType> DynRankView;
+#if defined(INTREPID2_ENABLE_SACADO_ETI_TEST)
+#define NumDerivative 10
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__, NumDerivative+1)
+#else
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+#endif 
       
       const value_type tol = tolerence()*10000.0;
       int errorFlag = 0;
