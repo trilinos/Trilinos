@@ -189,7 +189,7 @@ namespace MueLu {
                     typename cols_type::non_const_type colsAux_,
                     typename vals_type::non_const_type valsAux_,
                     bool reuseGraph_, bool lumping_, SC /* threshold_ */,
-                    bool filteringMayCreateDirichlet_ ) :
+                    bool aggregationMayCreateDirichlet_ ) :
           A(A_),
           bndNodes(bndNodes_),
           dropFunctor(dropFunctor_),
@@ -198,7 +198,7 @@ namespace MueLu {
           valsAux(valsAux_),
           reuseGraph(reuseGraph_),
           lumping(lumping_),
-          filteringMayCreateDirichlet(filteringMayCreateDirichlet_)
+          aggregationMayCreateDirichlet(aggregationMayCreateDirichlet_)
       {
         rowsA = A.graph.row_map;
         zero = ATS::zero();
@@ -252,7 +252,7 @@ namespace MueLu {
         //        boundaryNodes[row] = true;
         // We do not do it this way now because there is no framework for distinguishing isolated
         // and boundary nodes in the aggregation algorithms
-        bndNodes(row) = (rownnz == 1 && filteringMayCreateDirichlet);
+        bndNodes(row) = (rownnz == 1 && aggregationMayCreateDirichlet);
 
         nnz += rownnz;
       }
@@ -270,7 +270,7 @@ namespace MueLu {
 
       bool                                  reuseGraph;
       bool                                  lumping;
-      bool                                  filteringMayCreateDirichlet;
+      bool                                  aggregationMayCreateDirichlet;
       SC                                    zero;
     };
 
@@ -562,7 +562,7 @@ namespace MueLu {
       if (lumping)
         GetOStream(Runtime0) << "Lumping dropped entries" << std::endl;
 
-      const bool filteringMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
+      const bool aggregationMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
 
       // FIXME_KOKKOS: replace by ViewAllocateWithoutInitializing + setting a single value
       rows_type rows   ("FA_rows",     numRows+1);
@@ -609,7 +609,7 @@ namespace MueLu {
 
             CoalesceDrop_Kokkos_Details::ClassicalDropFunctor<LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
             CoalesceDrop_Kokkos_Details::ScalarFunctor<typename ATS::val_type, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-              scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold, filteringMayCreateDirichlet);
+              scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold, aggregationMayCreateDirichlet);
 
             Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
                                     scalarFunctor, nnzFA);
