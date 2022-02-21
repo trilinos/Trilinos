@@ -833,6 +833,9 @@ namespace MueLu {
       else
         lambdaMax = paramList.get<SC>(maxEigString);
       this->GetOStream(Statistics1) << label << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
+      RCP<Matrix> matA = rcp_dynamic_cast<Matrix>(A_);
+      if (!matA.is_null())
+        matA->SetMaxEigenvalueEstimate(lambdaMax);
       
     } else {
       lambdaMax = currentA->GetMaxEigenvalueEstimate();
