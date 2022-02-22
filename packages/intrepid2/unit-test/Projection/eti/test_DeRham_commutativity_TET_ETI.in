@@ -45,7 +45,7 @@
     \author Created by Mauro Perego
 */
 
-#include "../test_convergence_TRI.hpp"
+#include "test_DeRham_commutativity_TET.hpp"
 #include "Kokkos_Core.hpp"
 
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
   
-  const int r_val = Intrepid2::Test::ConvergenceTri<double,Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace> >(verbose);
+  const int r_val = Intrepid2::Test::DeRhamCommutativityTet<@ETI_VALUETYPE@,@ETI_DEVICE@>(verbose);
 
   Kokkos::finalize();
   return r_val;

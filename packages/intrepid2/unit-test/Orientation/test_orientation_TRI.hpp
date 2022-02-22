@@ -104,11 +104,11 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-template<typename ValueType, typename DeviceSpaceType>
+template<typename ValueType, typename DeviceType>
 int OrientationTri(const bool verbose) {
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ordinal_type,DeviceSpaceType> DynRankViewInt;
+  typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
+  typedef Kokkos::DynRankView<ordinal_type,DeviceType> DynRankViewInt;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
   Teuchos::RCP<std::ostream> outStream;
@@ -121,13 +121,6 @@ int OrientationTri(const bool verbose) {
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-
-  typedef typename
-      Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-
-  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-  *outStream << "\n";
 
   int errorFlag = 0;
   const ValueType tol = tolerence();
@@ -179,12 +172,12 @@ int OrientationTri(const bool verbose) {
   };
 
   typedef std::array<ordinal_type,2> edgeType;
-  typedef CellTools<DeviceSpaceType> ct;
-  typedef OrientationTools<DeviceSpaceType> ots;
+  typedef CellTools<DeviceType> ct;
+  typedef OrientationTools<DeviceType> ots;
   typedef Impl::OrientationTools iots;
-  typedef RealSpaceTools<DeviceSpaceType> rst;
-  typedef FunctionSpaceTools<DeviceSpaceType> fst;
-  typedef ArrayTools<DeviceSpaceType> at;
+  typedef RealSpaceTools<DeviceType> rst;
+  typedef FunctionSpaceTools<DeviceType> fst;
+  typedef ArrayTools<DeviceType> at;
 
   constexpr ordinal_type dim = 2;
   constexpr ordinal_type numCells = 2;
@@ -267,17 +260,17 @@ int OrientationTri(const bool verbose) {
        }
 
        //compute reference points
-       Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+       Basis_HGRAD_TRI_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
        ordinal_type numRefCoords = warpBasis.getCardinality();
        DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
        warpBasis.getDofCoords(refPoints);
 
        // compute orientations for cells (one time computation)
        DynRankViewInt elemNodes(&tris[0][0], numCells, numElemVertexes);
-       Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
+       Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
        ots::getOrientation(elemOrts, elemNodes, tri);
 
-       Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+       Basis_HGRAD_TRI_Cn_FEM<DeviceType,ValueType,ValueType> basis(order);
        ordinal_type basisCardinality = basis.getCardinality();
 
        //compute DofCoords Oriented
@@ -293,7 +286,7 @@ int OrientationTri(const bool verbose) {
            }
 
 
-         Basis_HGRAD_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order);
+         Basis_HGRAD_LINE_Cn_FEM<DeviceType,ValueType,ValueType> lineBasis(order);
          ordinal_type lineBasisCardinality = lineBasis.getCardinality();
          DynRankView ConstructWithLabel(lineDofCoords, lineBasisCardinality, dim-1);
          lineBasis.getDofCoords(lineDofCoords);
@@ -330,7 +323,7 @@ int OrientationTri(const bool verbose) {
        DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
        DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
        {
-         Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
+         Basis_HGRAD_TRI_C1_FEM<DeviceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
          DynRankView ConstructWithLabel(triLinearBasisValuesAtRefCoords, tri.getNodeCount(), numRefCoords);
          triLinearBasis.getValues(triLinearBasisValuesAtRefCoords, refPoints);
          DynRankView ConstructWithLabel(triLinearBasisValuesAtDofCoords, numCells, tri.getNodeCount(), basisCardinality);
@@ -560,18 +553,18 @@ int OrientationTri(const bool verbose) {
         }
 
         //compute reference points
-        Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+        Basis_HGRAD_TRI_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
         ordinal_type numRefCoords = warpBasis.getCardinality();
         DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
         warpBasis.getDofCoords(refPoints);
 
         // compute orientations for cells (one time computation)
         DynRankViewInt elemNodes(&tris[0][0], numCells, numElemVertexes);
-        Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
+        Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, tri);
 
 
-        Basis_HCURL_TRI_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+        Basis_HCURL_TRI_In_FEM<DeviceType,ValueType,ValueType> basis(order);
         ordinal_type basisCardinality = basis.getCardinality();
 
         //compute DofCoords Oriented
@@ -579,7 +572,7 @@ int OrientationTri(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_HVOL_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order-1);
+          Basis_HVOL_LINE_Cn_FEM<DeviceType,ValueType,ValueType> lineBasis(order-1);
           ordinal_type lineBasisCardinality = lineBasis.getCardinality();
           DynRankView ConstructWithLabel(lineDofCoords, lineBasisCardinality, dim-1);
           lineBasis.getDofCoords(lineDofCoords);
@@ -616,7 +609,7 @@ int OrientationTri(const bool verbose) {
         DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
         DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
         {
-          Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
+          Basis_HGRAD_TRI_C1_FEM<DeviceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(triLinearBasisValuesAtRefCoords, tri.getNodeCount(), numRefCoords);
           triLinearBasis.getValues(triLinearBasisValuesAtRefCoords, refPoints);
           DynRankView ConstructWithLabel(triLinearBasisValuesAtDofCoords, numCells, tri.getNodeCount(), basisCardinality);
@@ -900,16 +893,16 @@ int OrientationTri(const bool verbose) {
 
         // compute orientations for cells (one time computation)
         DynRankViewInt elemNodes(&tris[0][0], numCells, numElemVertexes);
-        Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
+        Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, tri);
 
         //compute reference points
-        Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+        Basis_HGRAD_TRI_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
         ordinal_type numRefCoords = warpBasis.getCardinality();
         DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
         warpBasis.getDofCoords(refPoints);
 
-        Basis_HDIV_TRI_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+        Basis_HDIV_TRI_In_FEM<DeviceType,ValueType,ValueType> basis(order);
         ordinal_type basisCardinality = basis.getCardinality();
 
         //compute DofCoords Oriented
@@ -957,7 +950,7 @@ int OrientationTri(const bool verbose) {
         DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
         DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
         {
-          Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
+          Basis_HGRAD_TRI_C1_FEM<DeviceType,ValueType,ValueType> triLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(triLinearBasisValuesAtRefCoords, tri.getNodeCount(), numRefCoords);
           triLinearBasis.getValues(triLinearBasisValuesAtRefCoords, refPoints);
           DynRankView ConstructWithLabel(triLinearBasisValuesAtDofCoords, numCells, tri.getNodeCount(), basisCardinality);
