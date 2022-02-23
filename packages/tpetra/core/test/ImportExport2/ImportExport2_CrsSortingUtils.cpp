@@ -176,7 +176,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, SortCrsEntries, Scalar, LO, GO)
   using Tpetra::Import_Util::sortCrsEntries;
   using Tpetra::Import_Util::sortAndMergeCrsEntries;
 
-  typedef size_t index_type;
+  typedef ::Tpetra::Details::DefaultTypes::offset_type index_type;
   typedef Scalar scalar_type;
   typedef GO ordinal_type;
 

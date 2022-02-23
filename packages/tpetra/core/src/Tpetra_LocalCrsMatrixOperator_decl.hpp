@@ -77,7 +77,7 @@ namespace Tpetra {
                               local_ordinal_type,
                               device_type,
                               void,
-                              size_t>;
+                              Details::DefaultTypes::offset_type>;
   private:
     //The type of a matrix with offset=ordinal, but otherwise the same as local_matrix_device_type
     using local_cusparse_matrix_type =

@@ -85,6 +85,12 @@ namespace DefaultTypes {
     #error "Tpetra: No global ordinal types in the set {int, long long, long, unsigned long, unsigned} have been enabled."
 #endif
 
+  //! Default offset type
+  using offset_type = size_t;  // For #9289, change this line to local_ordinal_type
+                               // On 2/22/22, Tpetra would compile and pass tests
+                               // with offset_type = local_ordinal_type
+                               // (albeit with lots of unsigned vs signed compiler warnings)
+
   /// \typedef execution_space
   /// \brief Default Tpetra execution space and Node type.
 #if defined(HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)

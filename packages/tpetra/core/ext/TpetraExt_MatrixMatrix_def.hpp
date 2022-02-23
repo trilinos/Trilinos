@@ -3285,7 +3285,7 @@ convertToGlobalAndAdd(
   using Teuchos::TimeMonitor;
   //Need to use a different KokkosKernelsHandle type than other versions,
   //since the ordinals are now GO
-  using KKH_GO = KokkosKernels::Experimental::KokkosKernelsHandle<size_t, GO, impl_scalar_type,
+  using KKH_GO = KokkosKernels::Experimental::KokkosKernelsHandle<Details::DefaultTypes::offset_type, GO, impl_scalar_type,
               typename NO::execution_space, typename NO::memory_space, typename NO::memory_space>;
 
   const values_array Avals = A.values;

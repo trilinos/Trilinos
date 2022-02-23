@@ -98,7 +98,7 @@ namespace Tpetra {
         nonconst_global_inds_host_view_type;
 
     typedef typename 
-        Kokkos::View<const size_t*, typename Node::device_type>::const_type
+        Kokkos::View<const Details::DefaultTypes::offset_type*, typename Node::device_type>::const_type
         row_ptrs_device_view_type;
     typedef typename row_ptrs_device_view_type::HostMirror::const_type
         row_ptrs_host_view_type;

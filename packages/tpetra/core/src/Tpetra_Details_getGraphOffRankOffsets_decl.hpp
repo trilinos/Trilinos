@@ -75,7 +75,7 @@ namespace Impl {
 template<class LO,
          class GO,
          class DeviceType,
-         class OffsetType = size_t>
+         class OffsetType = Details::DefaultTypes::offset_type>
 class GetGraphOffRankOffsets {
 public:
   typedef typename DeviceType::device_type device_type;
@@ -86,7 +86,9 @@ public:
   typedef ::Kokkos::StaticCrsGraph<LO,
                                    ::Kokkos::LayoutLeft,
                                    device_type,
-                                   void, size_t> local_graph_type;
+                                   void, 
+                                   Details::DefaultTypes::offset_type> 
+                    local_graph_type;
   typedef ::Tpetra::Details::LocalMap<LO, GO, device_type> local_map_type;
   typedef ::Kokkos::View<const typename local_graph_type::size_type*,
                          ::Kokkos::LayoutLeft,

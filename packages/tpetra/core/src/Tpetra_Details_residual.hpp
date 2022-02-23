@@ -278,7 +278,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
                    const MultiVector<SC,LO,GO,NO> & X_colmap,
                    const MultiVector<SC,LO,GO,NO> & B,
                    MultiVector<SC,LO,GO,NO> & R,
-                   const Kokkos::View<const size_t*, typename NO::device_type>& offsets,
+                   const typename CrsMatrix<SC,LO,GO,NO>::row_ptrs_device_view_type & offsets,
                    const MultiVector<SC,LO,GO,NO> * X_domainmap=nullptr) {
   using Tpetra::Details::ProfilingRegion;
   using Teuchos::NO_TRANS;
@@ -287,7 +287,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
   using local_matrix_device_type = typename CrsMatrix<SC,LO,GO,NO>::local_matrix_device_type;
   using local_view_device_type = typename  MultiVector<SC,LO,GO,NO>::dual_view_type::t_dev::non_const_type;
   using const_local_view_device_type = typename  MultiVector<SC,LO,GO,NO>::dual_view_type::t_dev::const_type;
-  using offset_type = Kokkos::View<const size_t*, typename NO::device_type>;
+  using offset_type = Kokkos::View<const Details::DefaultTypes::offset_type*, typename NO::device_type>;
 
   local_matrix_device_type     A_lcl = A.getLocalMatrixDevice ();
   const_local_view_device_type X_colmap_lcl = X_colmap.getLocalViewDevice(Access::ReadOnly);
@@ -434,7 +434,7 @@ void localResidualWithCommCompOverlap(const CrsMatrix<SC,LO,GO,NO> &  A,
                                       MultiVector<SC,LO,GO,NO> & X_colmap,
                                       const MultiVector<SC,LO,GO,NO> & B,
                                       MultiVector<SC,LO,GO,NO> & R,
-                                      const Kokkos::View<const size_t*, typename NO::device_type>& offsets,
+                                      const typename CrsMatrix<SC,LO,GO,NO>::row_ptrs_device_view_type & offsets,
                                       const MultiVector<SC,LO,GO,NO> & X_domainmap) {
   using Tpetra::Details::ProfilingRegion;
   using Teuchos::NO_TRANS;
@@ -446,7 +446,7 @@ void localResidualWithCommCompOverlap(const CrsMatrix<SC,LO,GO,NO> &  A,
   using local_matrix_device_type = typename CrsMatrix<SC,LO,GO,NO>::local_matrix_device_type;
   using local_view_device_type = typename  MultiVector<SC,LO,GO,NO>::dual_view_type::t_dev::non_const_type;
   using const_local_view_device_type = typename  MultiVector<SC,LO,GO,NO>::dual_view_type::t_dev::const_type;
-  using offset_type = Kokkos::View<const size_t*, typename NO::device_type>;
+  using offset_type = Kokkos::View<const Details::DefaultTypes::offset_type*, typename NO::device_type>;
 
   local_matrix_device_type     A_lcl = A.getLocalMatrixDevice ();
   const_local_view_device_type X_colmap_lcl = X_colmap.getLocalViewDevice(Access::ReadOnly);
@@ -725,9 +725,9 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
     if ( ! importer.is_null ())
       X_colMap->endImport (X_in, *importer, INSERT, restrictedMode);
     if (restrictedMode && !importer.is_null ())
-      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, offsets, &X_in);
+      localResidual<SC,LO,GO,NO> (A, *X_colMap, *B_rowMap, *R_rowMap, offsets, &X_in);
     else
-      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, offsets);
+      localResidual<SC,LO,GO,NO> (A, *X_colMap, *B_rowMap, *R_rowMap, offsets);
     
     {
       ProfilingRegion regionExport ("Tpetra::CrsMatrix::residual: R Export");
@@ -740,15 +740,15 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
 
     if (restrictedMode)
       if (overlapCommunicationAndComputation) {
-        localResidualWithCommCompOverlap (A, *X_colMap, *B_rowMap, *R_rowMap, offsets, X_in);
+        localResidualWithCommCompOverlap<SC,LO,GO,NO> (A, *X_colMap, *B_rowMap, *R_rowMap, offsets, X_in);
       } else {
         X_colMap->endImport (X_in, *importer, INSERT, restrictedMode);
-        localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, offsets, &X_in);
+        localResidual<SC,LO,GO,NO> (A, *X_colMap, *B_rowMap, *R_rowMap, offsets, &X_in);
       }
     else {
       if ( ! importer.is_null ())
         X_colMap->endImport (X_in, *importer, INSERT, restrictedMode);
-      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, offsets);
+      localResidual<SC,LO,GO,NO> (A, *X_colMap, *B_rowMap, *R_rowMap, offsets);
     }
 
     //

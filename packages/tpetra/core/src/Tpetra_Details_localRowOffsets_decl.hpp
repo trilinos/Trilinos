@@ -58,7 +58,8 @@ struct LocalRowOffsetsResult {
 private:
   using local_graph_device_type =
     typename KokkosSparse::CrsMatrix<
-      double, int, typename NT::device_type, void, size_t>::
+      double, int, typename NT::device_type, void, 
+      Details::DefaultTypes::offset_type>::
         staticcrsgraph_type;
 public:
   using offsets_type =

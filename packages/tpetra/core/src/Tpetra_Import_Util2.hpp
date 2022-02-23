@@ -70,13 +70,13 @@ namespace Import_Util {
 ///   within each row.
 template<typename Scalar, typename Ordinal>
 void
-sortCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
+sortCrsEntries (const Teuchos::ArrayView<Details::DefaultTypes::offset_type>& CRS_rowptr,
                 const Teuchos::ArrayView<Ordinal>& CRS_colind,
                 const Teuchos::ArrayView<Scalar>&CRS_vals);
 
 template<typename Ordinal>
 void
-sortCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
+sortCrsEntries (const Teuchos::ArrayView<Details::DefaultTypes::offset_type>& CRS_rowptr,
                 const Teuchos::ArrayView<Ordinal>& CRS_colind);
 
 template<typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
@@ -96,13 +96,13 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
 /// Entries with the same column index get merged additively.
 template<typename Scalar, typename Ordinal>
 void
-sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
+sortAndMergeCrsEntries (const Teuchos::ArrayView<Details::DefaultTypes::offset_type>& CRS_rowptr,
                         const Teuchos::ArrayView<Ordinal>& CRS_colind,
                         const Teuchos::ArrayView<Scalar>& CRS_vals);
 
 template<typename Ordinal>
 void
-sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
+sortAndMergeCrsEntries (const Teuchos::ArrayView<Details::DefaultTypes::offset_type>& CRS_rowptr,
                         const Teuchos::ArrayView<Ordinal>& CRS_colind);
 
 /// \brief lowCommunicationMakeColMapAndReindex
@@ -122,7 +122,7 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t>& CRS_rowptr,
 ///   and should never be called by user code.
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowPointers,
+lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const Details::DefaultTypes::offset_type> &rowPointers,
                                       const Teuchos::ArrayView<LocalOrdinal> &columnIndices_LID,
                                       const Teuchos::ArrayView<GlobalOrdinal> &columnIndices_GID,
                                       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
@@ -455,7 +455,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 // Note: This should get merged with the other Tpetra sort routines eventually.
 template<typename Scalar, typename Ordinal>
 void
-sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
+sortCrsEntries (const Teuchos::ArrayView<Details::DefaultTypes::offset_type> &CRS_rowptr,
                 const Teuchos::ArrayView<Ordinal> & CRS_colind,
                 const Teuchos::ArrayView<Scalar> &CRS_vals)
 {
@@ -505,7 +505,7 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
 
 template<typename Ordinal>
 void
-sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
+sortCrsEntries (const Teuchos::ArrayView<Details::DefaultTypes::offset_type> &CRS_rowptr,
                 const Teuchos::ArrayView<Ordinal> & CRS_colind)
 {
   // Generate dummy values array
@@ -630,7 +630,7 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
 // Note: This should get merged with the other Tpetra sort routines eventually.
 template<typename Scalar, typename Ordinal>
 void
-sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
+sortAndMergeCrsEntries (const Teuchos::ArrayView<Details::DefaultTypes::offset_type> &CRS_rowptr,
                         const Teuchos::ArrayView<Ordinal> & CRS_colind,
                         const Teuchos::ArrayView<Scalar> &CRS_vals)
 {
@@ -705,7 +705,7 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
 
 template<typename Ordinal>
 void
-sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
+sortAndMergeCrsEntries (const Teuchos::ArrayView<Details::DefaultTypes::offset_type> &CRS_rowptr,
                         const Teuchos::ArrayView<Ordinal> & CRS_colind)
 {
   Teuchos::ArrayView<Tpetra::Details::DefaultTypes::scalar_type> CRS_vals;
@@ -715,7 +715,7 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
 
 template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void
-lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &rowptr,
+lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const Details::DefaultTypes::offset_type> &rowptr,
                                       const Teuchos::ArrayView<LocalOrdinal> &colind_LID,
                                       const Teuchos::ArrayView<GlobalOrdinal> &colind_GID,
                                       const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMapRCP,

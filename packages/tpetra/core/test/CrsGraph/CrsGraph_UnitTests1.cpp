@@ -497,7 +497,7 @@ namespace { // (anonymous)
       const size_t numLocal = 2;
       const RCP<const map_type> rmap =
         rcp (new map_type (INVALID, numLocal, 0, comm));
-      ArrayRCP<size_t> rowptr(numLocal+1);
+      ArrayRCP<::Tpetra::Details::DefaultTypes::offset_type> rowptr(numLocal+1);
       ArrayRCP<LO>     colind(numLocal); // one unknown per row
       rowptr[0] = 0; rowptr[1] = 1; rowptr[2] = 2;
       colind[0] = Teuchos::as<LO>(0);
@@ -538,7 +538,7 @@ namespace { // (anonymous)
       const size_t numLocal = 2;
       RCP<const map_type> rmap =
         rcp (new map_type (INVALID, numLocal, 0, comm));
-      ArrayRCP<size_t> rowptr(numLocal+1);
+      ArrayRCP<::Tpetra::Details::DefaultTypes::offset_type> rowptr(numLocal+1);
       ArrayRCP<LO>     colind(numLocal); // one unknown per row
       rowptr[0] = 0; rowptr[1] = 1; rowptr[2] = 2;
       colind[0] = Teuchos::as<LO>(0);
@@ -601,7 +601,7 @@ namespace { // (anonymous)
       cmap_ind[1] = ((comm->getRank()+1)*numLocal) % (numProcs*numLocal);
       RCP<const map_type> cmap =
         rcp (new map_type (INVALID, cmap_ind(), 0, comm));
-      ArrayRCP<size_t> rowptr(numLocal+1);
+      ArrayRCP<::Tpetra::Details::DefaultTypes::offset_type> rowptr(numLocal+1);
       ArrayRCP<LO>     colind(numLocal); // one unknown per row
       rowptr[0] = 0; rowptr[1] = 1; rowptr[2] = 2;
       colind[0] = Teuchos::as<LO>(0);

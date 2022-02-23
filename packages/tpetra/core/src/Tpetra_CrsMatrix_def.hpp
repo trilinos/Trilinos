@@ -575,7 +575,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
-             const Teuchos::ArrayRCP<size_t>& ptr,
+             const Teuchos::ArrayRCP<Details::DefaultTypes::offset_type>& ptr,
              const Teuchos::ArrayRCP<LocalOrdinal>& ind,
              const Teuchos::ArrayRCP<Scalar>& val,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
@@ -3961,7 +3961,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  setAllValues (const Teuchos::ArrayRCP<size_t>& ptr,
+  setAllValues (const Teuchos::ArrayRCP<Details::DefaultTypes::offset_type>& ptr,
                 const Teuchos::ArrayRCP<LocalOrdinal>& ind,
                 const Teuchos::ArrayRCP<Scalar>& val)
   {
@@ -3979,7 +3979,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // copy.  We need to make a deep copy anyway so that Kokkos can
     // own the memory.  Regardless, ptrIn gets the copy.
     typename row_map_type::non_const_type ptrNative ("ptr", ptr.size ());
-    Kokkos::View<const size_t*,
+    Kokkos::View<const Details::DefaultTypes::offset_type*,
       typename row_map_type::array_layout,
       Kokkos::HostSpace,
       Kokkos::MemoryUnmanaged> ptrSizeT (ptr.getRawPtr (), ptr.size ());
@@ -5526,10 +5526,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if(nrows != 0)
       maxRowImbalance = getNodeMaxNumRowEntries() - (getNodeNumEntries() / nrows);
 
-    if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
+    if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold()) {
       matrix_lcl->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
-    else
+    }
+    else {
       matrix_lcl->apply (X_lcl, Y_lcl, mode, alpha, beta);
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -8907,7 +8909,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     size_t N = BaseRowMap->getNodeNumElements ();
 
     // Allocations
-    ArrayRCP<size_t> CSR_rowptr(N+1);
+    ArrayRCP<Details::DefaultTypes::offset_type> CSR_rowptr(N+1);
     ArrayRCP<GO> CSR_colind_GID;
     ArrayRCP<LO> CSR_colind_LID;
     ArrayRCP<Scalar> CSR_vals;
