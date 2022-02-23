@@ -31,41 +31,29 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#ifndef STK_BALANCE_M2N_OUTPUTMESH_HPP
-#define STK_BALANCE_M2N_OUTPUTMESH_HPP
 
-#include <stk_balance/m2n/TransientFieldTransferById.hpp>
-#include <stk_balance/m2n/OutputSerializerBulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <vector>
+#ifndef STK_MESH_BASE_COMPOSITERANK_HPP_
+#define STK_MESH_BASE_COMPOSITERANK_HPP_
 
-namespace stk { namespace balance { namespace m2n { class InputMesh; }}}
+#include "stk_mesh/base/MetaData.hpp"  // for MetaData
+#include "stk_mesh/base/Part.hpp"      // for Part
+#include "stk_mesh/base/Types.hpp"
 
-namespace stk {
-namespace balance {
-namespace m2n {
-
-class OutputMesh
+namespace stk
 {
-public:
-  OutputMesh(const InputMesh& inputMesh,
-             const std::vector<unsigned>& targetSubdomains);
-  ~OutputMesh() = default;
+namespace mesh
+{
+class CompositeRank
+{
+ public:
+  static stk::mesh::EntityRank get_rank(stk::mesh::Part* part);
 
-  void transfer_and_write();
-
-  OutputSerializerBulkData& get_bulk() { return m_bulk; }
-  stk::mesh::MetaData& get_meta() { return m_meta; }
-
-private:
-  void clone_input_mesh();
-  void move_subdomain_to_owning_processor();
-
-  const InputMesh& m_inputMesh;
-  const std::vector<unsigned>& m_targetSubdomains;
-  stk::mesh::MetaData m_meta;
-  OutputSerializerBulkData m_bulk;
+ private:
+  static stk::mesh::PartVector get_unique_leaf_parts(const stk::mesh::Part& part);
+  static stk::mesh::EntityRank get_composite_rank(const stk::mesh::Part& part);
 };
 
-}}}
-#endif
+}  // namespace mesh
+}  // namespace stk
+
+#endif /* STK_MESH_BASE_COMPOSITERANK_HPP_ */

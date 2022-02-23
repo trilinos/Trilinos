@@ -90,8 +90,10 @@ TEST_F(M2NBalanceCommandLine, normalPostionalArguments)
 {
   const stk::balance::M2NBalanceSettings & balanceSettings = get_balance_settings({"mesh.g", "16"});
 
+  const int initialNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+
   EXPECT_EQ(balanceSettings.get_input_filename(), "mesh.g");
-  EXPECT_EQ(balanceSettings.get_log_filename(), "stk_balance_m2n.log");
+  EXPECT_EQ(balanceSettings.get_log_filename(), "mesh." + std::to_string(initialNumProcs) + "_to_16.log");
   EXPECT_EQ(balanceSettings.get_num_output_processors(), 16u);
   EXPECT_EQ(balanceSettings.get_use_nested_decomp(), false);
 }
@@ -100,8 +102,10 @@ TEST_F(M2NBalanceCommandLine, normalArguments)
 {
   const stk::balance::M2NBalanceSettings & balanceSettings = get_balance_settings({"--infile=mesh.g", "--nprocs=32"});
 
+  const int initialNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+  
   EXPECT_EQ(balanceSettings.get_input_filename(), "mesh.g");
-  EXPECT_EQ(balanceSettings.get_log_filename(), "stk_balance_m2n.log");
+  EXPECT_EQ(balanceSettings.get_log_filename(), "mesh." + std::to_string(initialNumProcs) + "_to_32.log");
   EXPECT_EQ(balanceSettings.get_num_output_processors(), 32u);
   EXPECT_EQ(balanceSettings.get_use_nested_decomp(), false);
 }

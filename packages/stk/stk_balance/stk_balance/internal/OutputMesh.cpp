@@ -33,13 +33,12 @@
 //
 #include "OutputMesh.hpp"
 #include <stk_tools/mesh_clone/MeshClone.hpp>
-#include <stk_balance/m2n/InputMesh.hpp>
+#include <stk_balance/internal/InputMesh.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include "stk_io/IossBridge.hpp"
 
 namespace stk {
 namespace balance {
-namespace m2n {
 
 OutputMesh::OutputMesh(const InputMesh& inputMesh,
                        const std::vector<unsigned>& targetSubdomains)
@@ -89,7 +88,7 @@ OutputMesh::move_subdomain_to_owning_processor()
 void
 OutputMesh::transfer_and_write()
 {
-  TransientFieldTransferById transientIo(m_inputMesh.get_io_broker(), m_inputMesh.get_num_output_processors());
+  RebalanceTransientFieldTransferById transientIo(m_inputMesh.get_io_broker(), m_inputMesh.get_num_output_processors());
 
   const unsigned mySubdomain = m_targetSubdomains[m_inputMesh.get_bulk().parallel_rank()];
   stk::io::EntitySharingInfo nodeSharingInfo = m_inputMesh.get_node_sharing_info(mySubdomain, m_targetSubdomains);
@@ -100,4 +99,4 @@ OutputMesh::transfer_and_write()
   transientIo.transfer_and_write_transient_data(mySubdomain);
 }
 
-}}}
+}}

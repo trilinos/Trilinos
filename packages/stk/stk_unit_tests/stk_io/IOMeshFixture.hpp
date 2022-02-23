@@ -46,6 +46,12 @@
 #include <string>
 #include <vector>
 
+namespace stk
+{
+namespace io
+{
+namespace unit_test
+{
 class IOMeshFixture : public stk::unit_test_util::MeshFixture
 {
 protected:
@@ -97,6 +103,10 @@ protected:
     return meshSubsetSelector;
   }
 };
+
+}  // namespace unit_test
+}  // namespace io
+}  // namespace stk
 
 #endif
 

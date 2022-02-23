@@ -127,7 +127,8 @@ void parse_command_line_args(int argc, const char** argv,
   if (optionsDesc.get_num_positional_options() > 0) {
     int positionalArgIndex = 0;
     for(int i=1; i<argc; ++i) {
-      const bool isPositionalArg = !argHasBeenUsed[i];
+      const char* arg = argv[i];
+      const bool isPositionalArg = !argHasBeenUsed[i] && (arg[0] != '-');
       if (isPositionalArg) {
         const Option& option = optionsDesc.get_positional_option(positionalArgIndex);
         if (option.position != INVALID_POSITION) {
@@ -146,8 +147,7 @@ void parse_command_line_args(int argc, const char** argv,
   if (optionsDesc.is_error_on_unrecognized()) {
     for(int i=1; i<argc; ++i) {
       if (!argHasBeenUsed[i]) {
-        throw std::runtime_error(std::string("Unrecognized option: ")
-                                 +std::string(argv[i]));
+        throw std::runtime_error(std::string("Unrecognized option: '") + std::string(argv[i]) + "'");
       }
     }
   }

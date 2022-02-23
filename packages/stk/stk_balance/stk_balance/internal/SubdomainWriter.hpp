@@ -34,14 +34,13 @@
 #ifndef SUBDOMAINWRITER_HPP
 #define SUBDOMAINWRITER_HPP
 
-#include "stk_balance/m2n/OutputSerializerBulkData.hpp"
+#include "stk_balance/internal/OutputSerializerBulkData.hpp"
 #include "stk_io/IOHelpers.hpp"
 
 namespace Ioss { class Region; }
 
 namespace stk {
 namespace balance {
-namespace m2n {
 
 class SubdomainWriterBase {
 public:
@@ -97,7 +96,6 @@ public:
   void parallel_consistent_global_variable_read();
 };
 
-}
 }
 }
 

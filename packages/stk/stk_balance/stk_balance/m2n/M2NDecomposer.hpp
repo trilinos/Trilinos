@@ -30,44 +30,68 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+#ifndef M2NDECOMPOSER_HPP
+#define M2NDECOMPOSER_HPP
 
-#include "OutputSerializerBulkData.hpp"
-#include "stk_mesh/base/MetaData.hpp"
-#include "stk_mesh/base/GetEntities.hpp"
+#include <stk_mesh/base/Types.hpp>
+
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace balance { class M2NBalanceSettings; } }
 
 namespace stk {
 namespace balance {
 namespace m2n {
 
-OutputSerializerBulkData::OutputSerializerBulkData(stk::mesh::MetaData& mesh_meta_data, ParallelMachine parallel)
-  : BulkData(mesh_meta_data, parallel, stk::mesh::BulkData::NO_AUTO_AURA, true)
-{}
+class Decomposer
+{
+public:
+  Decomposer(stk::mesh::BulkData & bulkData,
+             const M2NBalanceSettings & balanceSettings);
+  virtual ~Decomposer() = default;
 
-void
-OutputSerializerBulkData::switch_to_serial_mesh() {
+  virtual stk::mesh::EntityProcVec get_partition() = 0;
+  virtual std::vector<unsigned> map_new_subdomains_to_original_processors() = 0;
 
-  modification_begin();
+  unsigned num_required_subdomains_for_each_proc();
 
-  stk::mesh::EntityVector nodesToUnshare;
-  stk::mesh::get_entities(*this, stk::topology::NODE_RANK, mesh_meta_data().globally_shared_part(), nodesToUnshare);
+protected:
+  stk::mesh::BulkData & m_bulkData;
+  const stk::balance::M2NBalanceSettings & m_balanceSettings;
+};
 
-  for (const stk::mesh::Entity& node : nodesToUnshare) {
-    internal_set_owner(node, 0);
-    remove_entity_comm(node);
-    entity_comm_map_clear(entity_key(node));
-  }
 
-  destroy_all_ghosting();
+class DefaultDecomposer : public Decomposer
+{
+public:
+  DefaultDecomposer(stk::mesh::BulkData & bulkData,
+                    const M2NBalanceSettings & balanceSettings);
+  virtual ~DefaultDecomposer() override = default;
 
-  stk::mesh::PartVector addParts{&mesh_meta_data().locally_owned_part()};
-  stk::mesh::PartVector removeParts{&mesh_meta_data().globally_shared_part()};
-  internal_verify_and_change_entity_parts(nodesToUnshare, addParts, removeParts);
+  virtual stk::mesh::EntityProcVec get_partition() override;
+  virtual std::vector<unsigned> map_new_subdomains_to_original_processors() override;
+};
 
-  m_parallel = Parallel(MPI_COMM_SELF);
 
-  modification_end();
+class NestedDecomposer : public Decomposer
+{
+public:
+  NestedDecomposer(stk::mesh::BulkData & bulkData,
+                   const stk::balance::M2NBalanceSettings & balanceSettings);
+  virtual ~NestedDecomposer() override = default;
+
+  virtual stk::mesh::EntityProcVec get_partition() override;
+  virtual std::vector<unsigned> map_new_subdomains_to_original_processors() override;
+
+private:
+  std::string get_initial_subdomain_part_name(int subdomainId);
+  void declare_all_initial_subdomain_parts();
+  void move_entities_into_initial_subdomain_part();
+
+  int m_numFinalSubdomainsPerProc;
+};
+
 }
-
 }
 }
-}
+#endif // M2NDECOMPOSER_HPP

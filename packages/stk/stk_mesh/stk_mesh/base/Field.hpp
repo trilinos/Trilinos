@@ -176,7 +176,7 @@ public:
 
   virtual ~Field(){}
 
-  virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const
+  virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const override
   {
     const unsigned num_scalar_values = size_per_entity / sizeof(Scalar);
     Scalar* casted_data = reinterpret_cast<Scalar*>(data);

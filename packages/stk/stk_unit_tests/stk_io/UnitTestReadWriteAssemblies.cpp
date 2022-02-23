@@ -37,6 +37,12 @@
 #include <fstream>
 #include "Assembly.hpp"
 
+namespace stk
+{
+namespace io
+{
+namespace unit_test
+{
 TEST_F(Assembly, readWriteAssembly_simple)
 {
   if(stk::parallel_machine_size(get_comm()) != 1) { return; }
@@ -183,3 +189,6 @@ TEST_F(Assembly, readWriteAssembly_deeperHierarchy)
   test_write_then_read_assemblies(6);
 }
 
+}  // namespace unit_test
+}  // namespace io
+}  // namespace stk
