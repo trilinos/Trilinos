@@ -71,7 +71,7 @@ create_matrix()
 
 
   // Map with everything on rank zero
-  const size_t num_rows = 25;
+  const GlobalOrdinal num_rows = 25;
   const LocalOrdinal num_ent_per_row = 5;
   RCP<const map_type> map = rcp(
     new map_type(invalid, (rank == 0 ? num_rows : 0), 0, comm)
