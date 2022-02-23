@@ -1103,99 +1103,99 @@ unpackAndCombineIntoCrsArrays(
   {
     auto nth_offset_h = getEntryOnHost(offsets, num_import_lids);
     const bool condition =
-	      nth_offset_h != static_cast<size_t>(imports.extent (0));
-	    TEUCHOS_TEST_FOR_EXCEPTION
-	      (condition, std::logic_error, prefix
-	       << "The final offset in bytes " << nth_offset_h
-	       << " != imports.size() = " << imports.extent(0)
-	       << ".  Please report this bug to the Tpetra developers.");
-	  }
-	#endif // HAVE_TPETRA_DEBUG
+      nth_offset_h != static_cast<size_t>(imports.extent (0));
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (condition, std::logic_error, prefix
+       << "The final offset in bytes " << nth_offset_h
+       << " != imports.size() = " << imports.extent(0)
+       << ".  Please report this bug to the Tpetra developers.");
+  }
+#endif // HAVE_TPETRA_DEBUG
 
-	  // Setup row pointers for remotes
-	  int k_error =
-	    setupRowPointersForRemotes<LO,DT,BDT>(tgt_rowptr,
-	      import_lids, imports, num_packets_per_lid, offsets);
-	  TEUCHOS_TEST_FOR_EXCEPTION(k_error != 0, std::logic_error, prefix
-	    << " Error transferring data to target row pointers.  "
-	       "Please report this bug to the Tpetra developers.");
+  // Setup row pointers for remotes
+  int k_error =
+    setupRowPointersForRemotes<LO,DT,BDT>(tgt_rowptr,
+      import_lids, imports, num_packets_per_lid, offsets);
+  TEUCHOS_TEST_FOR_EXCEPTION(k_error != 0, std::logic_error, prefix
+    << " Error transferring data to target row pointers.  "
+       "Please report this bug to the Tpetra developers.");
 
-	  // If multiple processes contribute to the same row, we may need to
-	  // update row offsets.  This tracks that.
-	  View<Details::DefaultTypes::offset_type*, DT> new_start_row ("new_start_row", N+1);
+  // If multiple processes contribute to the same row, we may need to
+  // update row offsets.  This tracks that.
+  View<Details::DefaultTypes::offset_type*, DT> new_start_row ("new_start_row", N+1);
 
-	  // Turn row length into a real CRS row pointer
-	  makeCrsRowPtrFromLengths(tgt_rowptr, new_start_row);
+  // Turn row length into a real CRS row pointer
+  makeCrsRowPtrFromLengths(tgt_rowptr, new_start_row);
 
-	  // SameIDs: Copy the data over
-	  copyDataFromSameIDs(tgt_colind, tgt_pids, tgt_vals, new_start_row,
-	      tgt_rowptr, src_pids, local_matrix, local_col_map, num_same_ids, my_pid);
+  // SameIDs: Copy the data over
+  copyDataFromSameIDs(tgt_colind, tgt_pids, tgt_vals, new_start_row,
+      tgt_rowptr, src_pids, local_matrix, local_col_map, num_same_ids, my_pid);
 
-	  copyDataFromPermuteIDs(tgt_colind, tgt_pids, tgt_vals, new_start_row,
-	      tgt_rowptr, src_pids, permute_to_lids, permute_from_lids,
-	      local_matrix, local_col_map, my_pid);
+  copyDataFromPermuteIDs(tgt_colind, tgt_pids, tgt_vals, new_start_row,
+      tgt_rowptr, src_pids, permute_to_lids, permute_from_lids,
+      local_matrix, local_col_map, my_pid);
 
-	  if (imports.extent(0) <= 0) {
-	    return;
-	  }
+  if (imports.extent(0) <= 0) {
+    return;
+  }
 
-	  int unpack_err = unpackAndCombineIntoCrsArrays2(tgt_colind, tgt_pids,
-	      tgt_vals, new_start_row, offsets, import_lids, imports, num_packets_per_lid,
-	      local_matrix, local_col_map, my_pid, bytes_per_value);
-	  TEUCHOS_TEST_FOR_EXCEPTION(
-	    unpack_err != 0, std::logic_error, prefix << "unpack loop failed.  This "
-	    "should never happen.  Please report this bug to the Tpetra developers.");
+  int unpack_err = unpackAndCombineIntoCrsArrays2(tgt_colind, tgt_pids,
+      tgt_vals, new_start_row, offsets, import_lids, imports, num_packets_per_lid,
+      local_matrix, local_col_map, my_pid, bytes_per_value);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    unpack_err != 0, std::logic_error, prefix << "unpack loop failed.  This "
+    "should never happen.  Please report this bug to the Tpetra developers.");
 
-	  return;
-	}
+  return;
+}
 
-	} // namespace UnpackAndCombineCrsMatrixImpl
+} // namespace UnpackAndCombineCrsMatrixImpl
 
-	/// \brief Unpack the imported column indices and values, and combine into matrix.
-	///
-	/// \tparam ST The type of the numerical entries of the matrix.
-	///   (You can use real-valued or complex-valued types here, unlike
-	///   in Epetra, where the scalar type is always \c double.)
-	/// \tparam LO The type of local indices.  See the
-	///   documentation of Map for requirements.
-	/// \tparam GO The type of global indices.  See the
-	///   documentation of Map for requirements.
-	/// \tparam Node The Kokkos Node type.  See the documentation of Map
-	///   for requirements.
-	///
-	/// \param sourceMatrix [in] the CrsMatrix source
-	///
-	/// \param imports [in] Input pack buffer
-	///
-	/// \param numPacketsPerLID [out] Entry k gives the number of bytes
-	///   packed for row exportLIDs[k] of the local matrix.
-	///
-	/// \param importLIDs [in] Local indices of the rows to pack.
-	///
-	/// \param constantNumPackets [out] Setting this to zero tells the caller
-	///   to expect a possibly /// different ("nonconstant") number of packets per local index
-	///   (i.e., a possibly different number of entries per row).
-	///
-	/// \param distor [in] The distributor (not used)
-	///
-	/// \param combineMode [in] the mode to use for combining values
-	///
-	/// \param atomic [in] whether or not do atomic adds/replaces in to the matrix
-	///
-	/// \warning The allowed \c combineMode are:
-	///   ADD, REPLACE, and ABSMAX. INSERT is not allowed.
-	///
-	/// This is the public interface to the unpack and combine machinery and
-	/// converts passed Teuchos::ArrayView objects to Kokkos::View objects (and
-	/// copies back in to the Teuchos::ArrayView objects, if needed).  When
-	/// CrsMatrix migrates fully to adopting Kokkos::DualView objects for its storage
-	/// of data, this procedure could be bypassed.
-	template<typename ST, typename LO, typename GO, typename Node>
-	void
-	unpackCrsMatrixAndCombine(
-	    const CrsMatrix<ST, LO, GO, Node>& sourceMatrix,
-	    const Teuchos::ArrayView<const char>& imports,
-	    const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+/// \brief Unpack the imported column indices and values, and combine into matrix.
+///
+/// \tparam ST The type of the numerical entries of the matrix.
+///   (You can use real-valued or complex-valued types here, unlike
+///   in Epetra, where the scalar type is always \c double.)
+/// \tparam LO The type of local indices.  See the
+///   documentation of Map for requirements.
+/// \tparam GO The type of global indices.  See the
+///   documentation of Map for requirements.
+/// \tparam Node The Kokkos Node type.  See the documentation of Map
+///   for requirements.
+///
+/// \param sourceMatrix [in] the CrsMatrix source
+///
+/// \param imports [in] Input pack buffer
+///
+/// \param numPacketsPerLID [out] Entry k gives the number of bytes
+///   packed for row exportLIDs[k] of the local matrix.
+///
+/// \param importLIDs [in] Local indices of the rows to pack.
+///
+/// \param constantNumPackets [out] Setting this to zero tells the caller
+///   to expect a possibly /// different ("nonconstant") number of packets per local index
+///   (i.e., a possibly different number of entries per row).
+///
+/// \param distor [in] The distributor (not used)
+///
+/// \param combineMode [in] the mode to use for combining values
+///
+/// \param atomic [in] whether or not do atomic adds/replaces in to the matrix
+///
+/// \warning The allowed \c combineMode are:
+///   ADD, REPLACE, and ABSMAX. INSERT is not allowed.
+///
+/// This is the public interface to the unpack and combine machinery and
+/// converts passed Teuchos::ArrayView objects to Kokkos::View objects (and
+/// copies back in to the Teuchos::ArrayView objects, if needed).  When
+/// CrsMatrix migrates fully to adopting Kokkos::DualView objects for its storage
+/// of data, this procedure could be bypassed.
+template<typename ST, typename LO, typename GO, typename Node>
+void
+unpackCrsMatrixAndCombine(
+    const CrsMatrix<ST, LO, GO, Node>& sourceMatrix,
+    const Teuchos::ArrayView<const char>& imports,
+    const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     const Teuchos::ArrayView<const LO>& importLIDs,
     size_t /* constantNumPackets */,
     CombineMode combineMode)
