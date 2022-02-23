@@ -44,6 +44,12 @@
 #include <algorithm>
 #include <fstream>
 
+namespace stk
+{
+namespace io
+{
+namespace unit_test
+{
 class Assembly : public IOMeshFixture
 {
 protected:
@@ -202,6 +208,10 @@ protected:
     unlink(fileName.c_str());
   }
 };
+
+}  // namespace unit_test
+}  // namespace io
+}  // namespace stk
 
 #endif
 

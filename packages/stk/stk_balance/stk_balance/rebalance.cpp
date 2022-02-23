@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,22 +30,26 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
-
-#include <stk_mesh/base/Iterators.hpp>
-#include "stk_mesh/base/Selector.hpp"   // for Selector
-namespace stk { namespace mesh { class Bucket; } }
+//
+#include "rebalance.hpp"
+#include "stk_balance/internal/InputMesh.hpp"
+#include "stk_balance/internal/OutputMesh.hpp"
+#include <vector>
 
 namespace stk {
-namespace mesh {
+namespace balance {
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after December 2021
-STK_DEPRECATED SelectedBucketVectorIteratorRange get_selected_bucket_range(const BucketVector& buckets, const Selector& selector)
+void rebalance(stk::io::StkMeshIoBroker & ioBroker, const stk::balance::BalanceSettings & balanceSettings)
 {
-  return std::make_pair(SelectedBucketVectorIterator(selector, buckets.begin(), buckets.end()),
-                        SelectedBucketVectorIterator(buckets.end()));
-}
-#endif
+  stk::balance::InputMesh inputMesh(ioBroker, balanceSettings);
 
-} //namespace mesh
-} //namespace stk
+  const std::vector<std::vector<unsigned>> targetSubdomainsForEachBatch = inputMesh.get_output_subdomains_for_each_batch();
+
+  for (const std::vector<unsigned>& targetSubdomains : targetSubdomainsForEachBatch) {
+    stk::balance::OutputMesh outputMesh(inputMesh, targetSubdomains);
+    outputMesh.transfer_and_write();
+  }
+}
+
+}
+}

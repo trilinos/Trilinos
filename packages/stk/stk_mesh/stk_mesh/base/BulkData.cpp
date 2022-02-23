@@ -1614,25 +1614,6 @@ bool BulkData::is_communicated_with_proc(Entity entity, int proc) const
 
   return false;
 }
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after January 2022
-  STK_DEPRECATED_MSG("BulkData::comm_procs(EntityKey, ...) has been deprecated. Use BulkData::comm_procs(Entity,...) instead.") 
-  void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
-{
-  ThrowAssertMsg(is_valid(get_entity(key)),
-                  "BulkData::comm_procs ERROR, input key "<<key<<" not a valid entity. Contact sierra-help@sandia.gov");
-
-#ifndef NDEBUG
-  EntityCommListInfoVector::const_iterator lb_itr = std::lower_bound(m_entity_comm_list.begin(),
-                                                                     m_entity_comm_list.end(),
-                                                                     key);
-  if (lb_itr != m_entity_comm_list.end() && lb_itr->key == key) {
-      ThrowAssertMsg( lb_itr->entity != Entity(),
-                      "comm-list contains invalid entity for key "<<key<<". Contact sierra-help@sandia.gov");
-  }
-#endif
-  impl::fill_sorted_procs(internal_entity_comm_map(key), procs);
-}
-#endif // STK_HIDE_DEPRECATED_CODE
 
 void BulkData::comm_procs(Entity entity, std::vector<int> & procs ) const
 {
@@ -5262,28 +5243,36 @@ void BulkData::batch_change_entity_parts(const stk::mesh::EntityVector& entities
     internal_modification_end_for_change_parts(opt);
 }
 
+void BulkData::change_entity_parts(const Selector& selector,
+                                   EntityRank rank,
+                                   const PartVector& add_parts,
+                                   const PartVector& remove_parts)
+{
+    if(m_runConsistencyCheck) {
+      impl::check_matching_selectors_and_parts_across_procs(selector, add_parts, remove_parts, parallel());
+    }    
+
+    bool stkMeshRunningUnderFramework = m_add_fmwk_data;
+    if(!stkMeshRunningUnderFramework)
+    {    
+        internal_throw_error_if_manipulating_internal_part_memberships(add_parts);
+        internal_throw_error_if_manipulating_internal_part_memberships(remove_parts);
+    }    
+
+    internal_verify_and_change_entity_parts(selector, rank, add_parts, remove_parts);
+}
+
 void BulkData::batch_change_entity_parts(const Selector& selector,
                                          EntityRank rank,
                                          const PartVector& add_parts,
                                          const PartVector& remove_parts,
-                                         ModEndOptimizationFlag opt)
+                                         ModEndOptimizationFlag opt) 
 {
-    if(m_runConsistencyCheck) {
-      impl::check_matching_selectors_and_parts_across_procs(selector, add_parts, remove_parts, parallel());
-    }
-
-    bool stkMeshRunningUnderFramework = m_add_fmwk_data;
-    if(!stkMeshRunningUnderFramework)
-    {
-        internal_throw_error_if_manipulating_internal_part_memberships(add_parts);
-        internal_throw_error_if_manipulating_internal_part_memberships(remove_parts);
-    }
-
-    bool starting_modification = modification_begin();
+    const bool starting_modification = modification_begin();
     ThrowRequireMsg(starting_modification, "ERROR: BulkData already being modified,\n"
                     <<"BulkData::change_entity_parts(vector-of-entities) can not be called within an outer modification scope.");
 
-    internal_verify_and_change_entity_parts(selector, rank, add_parts, remove_parts);
+    change_entity_parts(selector, rank, add_parts, remove_parts);
 
     internal_modification_end_for_change_parts(opt);
 }

@@ -46,8 +46,6 @@ namespace expreval {
 template <int MAX_BOUND_VARIABLES>
 class DeviceVariableMap
 {
-  using VariableMapView = Kokkos::View<DeviceVariable*, stk::ngp::MemSpace>;
-
 public:
   KOKKOS_DEFAULTED_FUNCTION ~DeviceVariableMap() = default;
 

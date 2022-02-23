@@ -40,18 +40,17 @@
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace io { class StkMeshIoBroker; } }
-namespace stk { namespace balance { class M2NBalanceSettings; } }
-namespace stk { namespace balance { namespace m2n { class Decomposer; } } }
+namespace stk { namespace balance { class BalanceSettings; } }
+namespace stk { namespace balance { class Decomposer; } }
 
 namespace stk {
 namespace balance {
-namespace m2n {
 
 class InputMesh
 {
 public:
   InputMesh(stk::io::StkMeshIoBroker& ioBroker,
-            const stk::balance::M2NBalanceSettings& balanceSettings);
+            const stk::balance::BalanceSettings& balanceSettings);
   ~InputMesh();
 
   std::vector<std::vector<unsigned>> get_output_subdomains_for_each_batch() const;
@@ -79,7 +78,7 @@ private:
   stk::io::StkMeshIoBroker& m_ioBroker;
   stk::mesh::BulkData& m_bulk;
   stk::mesh::MetaData& m_meta;
-  const M2NBalanceSettings& m_balanceSettings;
+  const BalanceSettings& m_balanceSettings;
   Decomposer* m_decomposer;
   int m_globalNumNodes;
   int m_globalNumElems;
@@ -88,7 +87,6 @@ private:
   stk::mesh::PartVector m_subdomainParts;
 };
 
-}
 }
 }
 

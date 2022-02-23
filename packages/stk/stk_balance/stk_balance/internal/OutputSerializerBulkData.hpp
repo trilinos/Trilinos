@@ -30,68 +30,25 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-#ifndef DECOMPOSER_HPP
-#define DECOMPOSER_HPP
 
-#include <stk_mesh/base/Types.hpp>
+#ifndef OUTPUTSERIALIZERBULKDATA_HPP
+#define OUTPUTSERIALIZERBULKDATA_HPP
 
-namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace balance { class M2NBalanceSettings; } }
+#include "stk_mesh/base/BulkData.hpp"
 
 namespace stk {
 namespace balance {
-namespace m2n {
 
-class Decomposer
+class OutputSerializerBulkData : public stk::mesh::BulkData
 {
 public:
-  Decomposer(stk::mesh::BulkData & bulkData,
-             const M2NBalanceSettings & balanceSettings);
-  virtual ~Decomposer() = default;
+  OutputSerializerBulkData(stk::mesh::MetaData& mesh_meta_data, ParallelMachine parallel);
+  virtual ~OutputSerializerBulkData() override = default;
 
-  virtual stk::mesh::EntityProcVec get_partition() = 0;
-  virtual std::vector<unsigned> map_new_subdomains_to_original_processors() = 0;
-
-  unsigned num_required_subdomains_for_each_proc();
-
-protected:
-  stk::mesh::BulkData & m_bulkData;
-  const stk::balance::M2NBalanceSettings & m_balanceSettings;
-};
-
-
-class DefaultDecomposer : public Decomposer
-{
-public:
-  DefaultDecomposer(stk::mesh::BulkData & bulkData,
-                    const M2NBalanceSettings & balanceSettings);
-  virtual ~DefaultDecomposer() override = default;
-
-  virtual stk::mesh::EntityProcVec get_partition() override;
-  virtual std::vector<unsigned> map_new_subdomains_to_original_processors() override;
-};
-
-
-class NestedDecomposer : public Decomposer
-{
-public:
-  NestedDecomposer(stk::mesh::BulkData & bulkData,
-                   const stk::balance::M2NBalanceSettings & balanceSettings);
-  virtual ~NestedDecomposer() override = default;
-
-  virtual stk::mesh::EntityProcVec get_partition() override;
-  virtual std::vector<unsigned> map_new_subdomains_to_original_processors() override;
-
-private:
-  std::string get_initial_subdomain_part_name(int subdomainId);
-  void declare_all_initial_subdomain_parts();
-  void move_entities_into_initial_subdomain_part();
-
-  int m_numFinalSubdomainsPerProc;
+  void switch_to_serial_mesh();
 };
 
 }
 }
-}
-#endif // M2NDECOMPOSER_HPP
+
+#endif // OUTPUTSERIALIZERBULKDATA_HPP

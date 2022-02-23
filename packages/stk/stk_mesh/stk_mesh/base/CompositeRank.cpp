@@ -30,27 +30,58 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 
-#ifndef OUTPUTSERIALIZERBULKDATA_HPP
-#define OUTPUTSERIALIZERBULKDATA_HPP
-
-#include "stk_mesh/base/BulkData.hpp"
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include "stk_mesh/base/CompositeRank.hpp"
 
 namespace stk {
-namespace balance {
-namespace m2n {
+namespace mesh {
 
-class OutputSerializerBulkData : public stk::mesh::BulkData
+stk::mesh::EntityRank CompositeRank::get_rank(stk::mesh::Part* part)
 {
-public:
-  OutputSerializerBulkData(stk::mesh::MetaData& mesh_meta_data, ParallelMachine parallel);
-  virtual ~OutputSerializerBulkData() override = default;
+  if(nullptr == part) return stk::topology::INVALID_RANK;
 
-  void switch_to_serial_mesh();
-};
+  if(part->primary_entity_rank() == stk::topology::INVALID_RANK) {
+    return get_composite_rank(*part);
+  }
 
-}
-}
+  return part->primary_entity_rank();
 }
 
-#endif // OUTPUTSERIALIZERBULKDATA_HPP
+stk::mesh::PartVector CompositeRank::get_unique_leaf_parts(const stk::mesh::Part& part)
+{
+  stk::mesh::PartVector leafParts;
+
+  if(part.primary_entity_rank() == stk::topology::INVALID_RANK) {
+    for(stk::mesh::Part* subset : part.subsets()) {
+      if(subset->primary_entity_rank() != stk::topology::INVALID_RANK) {
+        leafParts.push_back(subset);
+      }
+    }
+  }
+  return leafParts;
+}
+
+stk::mesh::EntityRank CompositeRank::get_composite_rank(const stk::mesh::Part& part)
+{
+  stk::mesh::EntityRank rank = stk::topology::INVALID_RANK;
+  stk::mesh::PartVector childParts = get_unique_leaf_parts(part);
+
+  if(!childParts.empty()) {
+    rank = childParts[0]->primary_entity_rank();
+  }
+
+  for(size_t i = 1; i < childParts.size(); i++) {
+    if(childParts[i]->primary_entity_rank() != rank) {
+      rank = stk::topology::INVALID_RANK;
+      break;
+    }
+  }
+
+  return rank;
+}
+
+} // namespace mesh
+} // namespace stk

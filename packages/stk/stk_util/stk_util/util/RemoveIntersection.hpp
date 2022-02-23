@@ -64,6 +64,26 @@ void remove_intersection(std::vector<T1>& v1, std::vector<T2>& v2, COMPARE comp=
     }
 }
 
+template<typename T1, typename T2, typename COMPARE=std::less<T1> >
+void remove_intersection_from_first(std::vector<T1>& v1, std::vector<T2>& v2, COMPARE comp=std::less<T1>())
+{
+    std::vector<T1> intersection(std::min(v1.size(), v2.size()));
+    typename std::vector<T1>::iterator it;
+
+    std::sort(v1.begin(), v1.end(), comp);
+    std::sort(v2.begin(), v2.end(), comp);
+
+    it=std::set_intersection(v1.begin(), v1.end(), v2.begin(), v2.end(), intersection.begin(), comp);
+    intersection.resize(it-intersection.begin());
+
+    for (T1 item : intersection) {
+        typename std::vector<T1>::iterator found1 = std::lower_bound(v1.begin(), v1.end(), item, comp);
+        if (*found1 == item) {
+            v1.erase(found1);
+        }
+    }
+}
+
 } //namespace util
 } //namespace stk
 

@@ -631,6 +631,26 @@ int num_volume_elements_connected_to_beam(const stk::mesh::BulkData& bulk, stk::
   return numVolumeElems;
 }
 
+
+
+void register_internal_fields(stk::mesh::BulkData & bulk, const stk::balance::BalanceSettings & balanceSettings)
+{
+  if (balanceSettings.shouldFixSpiders()) {
+    stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    const int initValue = 0;
+
+    stk::mesh::Field<int> & beamField =
+        meta.declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK,
+                                                  balanceSettings.getSpiderBeamConnectivityCountFieldName());
+    stk::mesh::put_field_on_mesh(beamField, meta.universal_part(), &initValue);
+
+    stk::mesh::Field<int> & volumeField =
+        meta.declare_field<stk::mesh::Field<int>>(stk::topology::ELEM_RANK,
+                                                  balanceSettings.getSpiderVolumeConnectivityCountFieldName());
+    stk::mesh::put_field_on_mesh(volumeField, meta.universal_part(), &initValue);
+  }
+}
+
 void fill_spider_connectivity_count_fields(stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings)
 {
   if (balanceSettings.shouldFixSpiders()) {

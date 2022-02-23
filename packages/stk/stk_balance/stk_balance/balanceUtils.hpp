@@ -87,6 +87,15 @@ public:
         COLOR_MESH_AND_OUTPUT_COLOR_FIELDS,
     };
 
+    virtual void set_num_input_processors(unsigned numInputProcs) { m_numInputProcessors = numInputProcs; }
+    virtual unsigned get_num_input_processors() const { return m_numInputProcessors; }
+
+    virtual void set_num_output_processors(unsigned numOutputProcs) { m_numOutputProcessors = numOutputProcs; }
+    virtual unsigned get_num_output_processors() const { return m_numOutputProcessors; }
+
+    virtual void set_is_rebalancing(bool isRebalancing) { m_isRebalancing = isRebalancing; }
+    virtual bool get_is_rebalancing() const { return m_isRebalancing; }
+
     virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const;
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const;
     virtual int getGraphVertexWeight(stk::topology type) const;
@@ -168,12 +177,19 @@ public:
     virtual void setVertexWeightMultiplierForVertexInSearch(double w) { }
     virtual void setToleranceForFaceSearch(double tol) { }
 
+    void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
+    bool get_use_nested_decomp() const { return m_useNestedDecomp; }
+
 private:
+    unsigned m_numInputProcessors;
+    unsigned m_numOutputProcessors;
+    bool m_isRebalancing;
     std::string m_initialDecompMethod;
     std::string m_inputFilename;
     std::string m_outputFilename;
     std::string m_logFilename;
     BlockWeightMultipliers m_vertexWeightBlockMultipliers;
+    bool m_useNestedDecomp;
 };
 
 class BasicGeometricSettings : public BalanceSettings
