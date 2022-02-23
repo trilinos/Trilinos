@@ -211,6 +211,8 @@ private:
     }
 
     // SpMV
+    // Warm-up -- don't time it
+    Amat->Multiply(false, X[nIter-1], Y[nIter-1]);
     {
       auto tm = ttm::getNewTimer("CRS Apply Epetra");
       tm->start();
@@ -509,6 +511,8 @@ private:
     }
 
     // SpMV
+    // Warm-up -- don't time it
+    Amat->apply(X[nIter-1], Y[nIter-1]);
     {
       auto tm = ttm::getNewTimer("CRS Apply Tpetra");
       tm->start();
@@ -518,6 +522,7 @@ private:
       tm->stop();
     }
   
+    if (comm->getSize() == 1)
     {
       auto lclmat = Amat->getLocalMatrixHost();
       using mvdata_t = typename multivector_t::dual_view_type::t_host;
@@ -625,7 +630,7 @@ private:
       }
 
       auto tm = ttm::getNewTimer("MV Update Kokkos a*A+b*this"
-                                 " -- KokkosBlas:axpby");
+                                 " -- local only, KokkosBlas:axpby");
       tm->start();
       for (int it = 0; it < nIter; it++) {
         KokkosBlas::axpby (a, xvec[it], b, wvec[it]);
@@ -663,7 +668,7 @@ private:
       }
 
       auto tm = ttm::getNewTimer("MV Update Kokkos a*A+b*B+c*this"
-                                 " -- KokkosBlas:update");
+                                 " -- local only, KokkosBlas:update");
       tm->start();
       for (int it = 0; it < nIter; it++) {
         KokkosBlas::update(a, xvec[it], b, zvec[it], c, wvec[it]);
