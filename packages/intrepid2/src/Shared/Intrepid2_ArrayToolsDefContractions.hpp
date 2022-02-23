@@ -49,10 +49,6 @@
 #ifndef __INTREPID2_ARRAYTOOLS_DEF_CONTRACTIONS_HPP__
 #define __INTREPID2_ARRAYTOOLS_DEF_CONTRACTIONS_HPP__
 
-#ifdef HAVE_INTREPID2_SACADO
-#include "Sacado.hpp"  // for Sacado::IsADType
-#endif
-
 namespace Intrepid2 {
 
 
@@ -134,44 +130,19 @@ namespace Intrepid2 {
       inputFieldsViewType   _inputFields;
       const bool _sumInto; 
       typedef typename outputFieldsViewType::value_type value_type;
-#ifdef HAVE_INTREPID2_SACADO
-      using memory_space = typename outputFieldsViewType::memory_space;
-      using tmp_view_type = Kokkos::View<value_type*,memory_space>;
-      tmp_view_type tmp_;
-#endif
 
       KOKKOS_INLINE_FUNCTION
       F_contractDataField(outputFieldsViewType outputFields_,
               inputDataViewType inputData_,
               inputFieldsViewType inputFields_,
               const bool sumInto_) 
-        : _outputFields(outputFields_), _inputData(inputData_), _inputFields(inputFields_), _sumInto(sumInto_)
-      {
-#ifdef HAVE_INTREPID2_SACADO
-	if (Sacado::IsADType<value_type>::value) {
-	  const auto fadSize = Kokkos::dimension_scalar(outputFields_);
-	  tmp_ = tmp_view_type("Intrepid2::FunctorArrayTools::F_contractDataField::_tmp",outputFields_.extent(0),fadSize);
-	} else {
-	  tmp_ = tmp_view_type("Intrepid2::FunctorArrayTools::F_contractDataField::_tmp",outputFields_.extent(0));
-	}
-#endif
-      }
+        : _outputFields(outputFields_), _inputData(inputData_), _inputFields(inputFields_), _sumInto(sumInto_) {}
 
       KOKKOS_DEFAULTED_FUNCTION
       ~F_contractDataField() = default;
-
-      // If Sacado is enabled, we use SFINAE to swap between two
-      // implementations, one for views with AD types and one for
-      // views with non-AD types. This implementation is for non-AD
-      // types.
-#ifdef HAVE_INTREPID2_SACADO
-      template<typename T_ = outputFieldsViewType>
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter, std::enable_if_t<!Sacado::IsADType<typename T_::value_type>::value && std::is_same<T_,outputFieldsViewType>::value>* = nullptr) const {
-#else
+      
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
-#endif
         size_type cl, bf;
         unrollIndex( cl, bf, 
                            _inputFields.extent(0),
@@ -205,49 +176,6 @@ namespace Intrepid2 {
         else
           result() = tmp;
       }
-      
-      // If Sacado is enabled, we use SFINAE to swap between two
-      // implementations, one for views with AD types and one for
-      // views with non-AD types. This implementation is for AD types.
-#ifdef HAVE_INTREPID2_SACADO
-      template<typename T_ = outputFieldsViewType>
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type iter, std::enable_if_t<Sacado::IsADType<typename T_::value_type>::value && std::is_same<T_,outputFieldsViewType>::value>* = nullptr) const {
-        size_type cl, bf;
-        unrollIndex( cl, bf, 
-                           _inputFields.extent(0),
-                           _inputFields.extent(1),
-                           iter );
-        
-        auto result = Kokkos::subview( _outputFields, cl, bf );
-
-        const auto field = Kokkos::subview( _inputFields, cl, bf, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
-        const auto data  = Kokkos::subview( _inputData,   cl,     Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
-
-        const size_type npts = field.extent(0);
-        const ordinal_type iend = field.extent(1);
-        const ordinal_type jend = field.extent(2);
-
-        //value_type tmp(0);        
-	tmp_(cl) = 0.0;
-
-        if(_inputData.extent(1) != 1)
-          for (size_type qp = 0; qp < npts; ++qp)
-            for (ordinal_type i = 0; i < iend; ++i)
-              for (ordinal_type j = 0; j < jend; ++j)
-                tmp_(cl) += field(qp, i, j) * data(qp, i, j);
-        else
-          for (size_type qp = 0; qp < npts; ++qp)
-            for (ordinal_type i = 0; i < iend; ++i)
-              for (ordinal_type j = 0; j < jend; ++j)
-                tmp_(cl) += field(qp, i, j) * data(0, i, j);
-
-        if (_sumInto)
-          result() = result() + tmp_(cl);
-        else
-          result() = tmp_(cl);
-      }
-#endif
     };
     } //namespace
 
