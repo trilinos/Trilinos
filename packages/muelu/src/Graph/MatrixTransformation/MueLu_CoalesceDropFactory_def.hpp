@@ -194,7 +194,7 @@ namespace MueLu {
 
     GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
     std::string algo = pL.get<std::string>("aggregation: drop scheme");
-    const bool filteringMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
+    const bool aggregationMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
     
     RCP<RealValuedMultiVector> Coords;
     RCP<Matrix> A;
@@ -672,7 +672,7 @@ namespace MueLu {
           columns.resize(realnnz);
           numTotal = A->getNodeNumEntries();
 
-          if (filteringMayCreateDirichlet) {
+          if (aggregationMayCreateDirichlet) {
             // If the only element remaining after filtering is diagonal, mark node as boundary
             for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
               if (rows[row+1]- rows[row] <= 1)

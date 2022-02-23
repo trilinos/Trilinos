@@ -66,6 +66,8 @@ public:
   const PartVector & get_all_parts()  const;  // returns all parts
   const PartVector   get_mesh_parts() const; // returns the non-internal parts
 
+  size_t size() const;
+
   Part * declare_part( const std::string & arg_name , EntityRank arg_rank, bool force_no_induce=false );
   void declare_subset( Part & superset, Part & subset );
 
@@ -113,6 +115,12 @@ bool
 PartRepository::remove_attribute( Part & p, const T * a )
 {
   return p.m_partImpl.remove_attribute<T>( a );
+}
+
+inline
+size_t PartRepository::size() const 
+{
+  return m_all_parts.size();
 }
 
 bool is_internal_part(const Part& part);

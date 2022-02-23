@@ -41,6 +41,7 @@ namespace balance {
 
 struct DefaultSettings {
   static constexpr const char * logFile {"stk_balance.log"};
+  static constexpr const char * outputDirectory {"."};
   static constexpr const char * decompMethod {"parmetis"};
   static constexpr const char * contactSearch {"on"};
   static constexpr bool useContactSearch {true};

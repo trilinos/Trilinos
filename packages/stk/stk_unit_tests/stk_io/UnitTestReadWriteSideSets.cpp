@@ -13,6 +13,12 @@
 #include "stk_unit_test_utils/MeshFixture.hpp"
 #include "IOMeshFixture.hpp"
 
+namespace stk
+{
+namespace io
+{
+namespace unit_test
+{
 class StkIoSubset : public IOMeshFixture
 {
 protected:
@@ -680,3 +686,6 @@ TEST_F(ShellSidesets, testWriteThenRead)
   test_write_then_read();
 }
 
+}  // namespace unit_test
+}  // namespace io
+}  // namespace stk

@@ -199,7 +199,7 @@ TEST_F(NgpFieldAccess, CentroidPartialBlock)
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 50;
+  const int NUM_RUNS = 500;
   const int ELEMS_PER_DIM = 100;
   const int NUM_BLOCKS = 100;
   int BLOCKS = stk::unit_test_util::get_command_line_option<int>("-n", 50);

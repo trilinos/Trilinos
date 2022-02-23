@@ -1861,7 +1861,12 @@ optimized neighbor discovery for Importer construction.</description>
       <description>Specifies the multigrid solver for the 22 block</description>
     </parameter>
 
-
+    <parameter>
+      <name>maxwell1: dump matrices</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Dump matrices to disk.</description>
+    </parameter>
   </maxwell1>
 
   <refmaxwell>

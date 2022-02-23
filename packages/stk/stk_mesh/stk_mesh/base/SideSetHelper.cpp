@@ -195,10 +195,10 @@ void SideSetHelper::fill_coincident_sideset_entries_for_side_using_connectivity(
 
     EntityVector sideNodes_i, sideNodes_j;
     for(unsigned i=0; i<numElements; ++i) {
-      impl::fill_element_side_nodes_from_topology(mesh, elems[i], ordinals[i], sideNodes_i);
+      impl::fill_element_side_nodes_from_topology(mesh.bucket(elems[i]).topology(), mesh.begin_nodes(elems[i]), ordinals[i], sideNodes_i);
 
       for(unsigned j=i+1; j<numElements; ++j) {
-        impl::fill_element_side_nodes_from_topology(mesh, elems[j], ordinals[j], sideNodes_j);
+        impl::fill_element_side_nodes_from_topology(mesh.bucket(elems[j]).topology(), mesh.begin_nodes(elems[j]), ordinals[j], sideNodes_j);
 
         if(impl::is_coincident_connection(mesh, elems[i], sideNodes_i, ordinals[i], mesh.bucket(elems[j]).topology(), sideNodes_j)) {
           coincidentEdges.emplace_back(std::make_pair(SideSetEntry(elems[i], ordinals[i]), SideSetEntry(elems[j], ordinals[j])));
@@ -364,7 +364,7 @@ bool SideSetHelper::element_side_has_remote_coincidence_using_elem_elem_graph(En
 
     stk::mesh::EntityRank sideRank = mesh.mesh_meta_data().side_rank();
     EntityVector sideNodes;
-    impl::fill_element_side_nodes_from_topology(mesh, element, ordinal, sideNodes);
+    impl::fill_element_side_nodes_from_topology(mesh.bucket(element).topology(), mesh.begin_nodes(element), ordinal, sideNodes);
     stk::mesh::OrdinalAndPermutation connectedOrdAndPerm = stk::mesh::get_ordinal_and_permutation(mesh, element, sideRank, sideNodes);
     ThrowRequire(connectedOrdAndPerm.second != INVALID_PERMUTATION);
     bool localPolarity = mesh.bucket(element).topology().sub_topology(sideRank, connectedOrdAndPerm.first).is_positive_polarity(connectedOrdAndPerm.second);
@@ -406,11 +406,11 @@ bool SideSetHelper::element_side_has_coincidence_using_connectivity(const Entity
     }
 
     EntityVector inputSideNodes, sideNodes;
-    impl::fill_element_side_nodes_from_topology(mesh, element, ordinal, inputSideNodes);
+    impl::fill_element_side_nodes_from_topology(mesh.bucket(element).topology(), mesh.begin_nodes(element), ordinal, inputSideNodes);
 
     for(unsigned i=0; i<numElements; ++i) {
       if(elems[i] != element) {
-        impl::fill_element_side_nodes_from_topology(mesh, elems[i], ordinals[i], sideNodes);
+        impl::fill_element_side_nodes_from_topology(mesh.bucket(elems[i]).topology(), mesh.begin_nodes(elems[i]), ordinals[i], sideNodes);
 
         if(impl::is_coincident_connection(mesh, element, inputSideNodes, ordinal, mesh.bucket(elems[i]).topology(), sideNodes)) {
           return true;

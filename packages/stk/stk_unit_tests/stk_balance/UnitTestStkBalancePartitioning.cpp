@@ -40,7 +40,8 @@ protected:
       0,1,1, 1,1,1, 2,1,1, 0,2,1, 1,2,1, 2,2,1
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void balance_mesh(const stk::ParallelMachine & decompCommunicator,

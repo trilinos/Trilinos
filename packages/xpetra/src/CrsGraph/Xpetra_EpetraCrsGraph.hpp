@@ -305,7 +305,7 @@ public:
   typename local_graph_type::HostMirror getLocalGraphHost () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
       "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
-    TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
+    TEUCHOS_UNREACHABLE_RETURN((typename local_graph_type::HostMirror()));
   }
 #else
 #ifdef __GNUC__
@@ -742,7 +742,7 @@ public:
   typename local_graph_type::HostMirror getLocalGraphHost () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support Kokkos::StaticCrsGraph!");
-    TEUCHOS_UNREACHABLE_RETURN((local_graph_type::HostMirror()));
+    TEUCHOS_UNREACHABLE_RETURN((typename local_graph_type::HostMirror()));
   }
 #else
 #ifdef __GNUC__
@@ -1203,10 +1203,10 @@ public:
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-  local_graph_type getLocalGraphHost () const {
+  typename local_graph_type::HostMirror getLocalGraphHost () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
                                "Epetra does not support Kokkos::StaticCrsGraph!");
-    TEUCHOS_UNREACHABLE_RETURN((local_graph_type()));
+    TEUCHOS_UNREACHABLE_RETURN((typename local_graph_type::HostMirror()));
   }
 #else
 #ifdef __GNUC__

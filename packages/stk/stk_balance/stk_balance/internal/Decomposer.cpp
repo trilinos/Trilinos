@@ -39,10 +39,9 @@
 
 namespace stk {
 namespace balance {
-namespace m2n {
 
 Decomposer::Decomposer(stk::mesh::BulkData & bulkData,
-                       const stk::balance::M2NBalanceSettings & balanceSettings)
+                       const stk::balance::BalanceSettings &balanceSettings)
   : m_bulkData(bulkData),
     m_balanceSettings(balanceSettings)
 {
@@ -58,7 +57,7 @@ Decomposer::num_required_subdomains_for_each_proc()
 
 
 DefaultDecomposer::DefaultDecomposer(stk::mesh::BulkData & bulkData,
-                                     const stk::balance::M2NBalanceSettings & balanceSettings)
+                                     const stk::balance::BalanceSettings & balanceSettings)
   : Decomposer(bulkData, balanceSettings)
 {
 }
@@ -89,7 +88,7 @@ DefaultDecomposer::map_new_subdomains_to_original_processors()
 
 
 NestedDecomposer::NestedDecomposer(stk::mesh::BulkData& bulkData,
-                                   const M2NBalanceSettings& balanceSettings)
+                                   const BalanceSettings& balanceSettings)
   : Decomposer(bulkData, balanceSettings)
 {
   const int numInitialSubdomains = m_bulkData.parallel_size();
@@ -163,6 +162,5 @@ NestedDecomposer::get_initial_subdomain_part_name(int subdomainId)
   return out.str();
 }
 
-}
 }
 }

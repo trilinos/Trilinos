@@ -98,7 +98,8 @@ protected:
             1,eps+2,1,
             0,eps+2,1,
         };
-        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+        stk::unit_test_util::setup_text_mesh(
+            get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     }
 
     unsigned get_num_search_results_with_app_settings(const stk::balance::GraphCreationSettings &balanceSettings)

@@ -31,12 +31,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#include "InputMesh.hpp"
+#include "M2NInputMesh.hpp"
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Part.hpp>
-#include <stk_balance/m2n/Decomposer.hpp>
+#include <stk_balance/m2n/M2NDecomposer.hpp>
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_balance/m2n/TransientFieldTransferById.hpp>

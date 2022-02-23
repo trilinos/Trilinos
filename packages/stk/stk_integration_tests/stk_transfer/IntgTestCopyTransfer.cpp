@@ -2397,7 +2397,7 @@ TEST(Transfer, mismatchedFieldDataTypeCopyTransfer)
   stk::mesh::put_field_on_mesh(*fieldBaseA, metaA.universal_part(), &intInitVals);
 
   std::string meshDescA = "0,1,QUAD_4_2D,1,2,4,3,block_1";
-  stk::unit_test_util::setup_text_mesh(bulkA, meshDescA, coords);
+  stk::unit_test_util::setup_text_mesh(bulkA, stk::unit_test_util::get_full_text_mesh_desc(meshDescA, coords));
 
   stk::mesh::MetaData metaB(2);
   stk::mesh::BulkData bulkB(metaB, MPI_COMM_WORLD);
@@ -2411,7 +2411,7 @@ TEST(Transfer, mismatchedFieldDataTypeCopyTransfer)
   } else {
     meshDescB = "1,1,QUAD_4_2D,1,2,4,3,block_1";
   }
-  stk::unit_test_util::setup_text_mesh(bulkB, meshDescB, coords);
+  stk::unit_test_util::setup_text_mesh(bulkB, stk::unit_test_util::get_full_text_mesh_desc(meshDescB, coords));
 
   // Set up CopyTransfer
   stk::mesh::EntityVector entitiesA;

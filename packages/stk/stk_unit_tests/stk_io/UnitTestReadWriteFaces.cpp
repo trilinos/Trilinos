@@ -60,7 +60,7 @@ void StkFaceIoTest::setup_face_mesh(unsigned numBlocks)
   std::vector<double> coords = stk::unit_test_util::get_many_block_coordinates(numBlocks);
   stk::mesh::Part* facePart = &get_meta().declare_part_with_topology(facePartName, stk::topology::QUAD_4);
   stk::io::put_face_block_io_part_attribute(*facePart);
-  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coords);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
 
   stk::mesh::PartVector faceParts = {facePart};
   stk::mesh::create_interior_block_boundary_sides(get_bulk(), get_meta().universal_part(), faceParts);
@@ -81,7 +81,7 @@ void StkFaceIoTest::setup_mesh_with_edges_and_faces(unsigned numBlocks)
   stk::mesh::Part* facePart = &get_meta().declare_part_with_topology(facePartName, stk::topology::QUAD_4);
   stk::io::put_face_block_io_part_attribute(*facePart);
   stk::io::put_edge_block_io_part_attribute(*edgePart);
-  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coords);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
 
   stk::mesh::PartVector faceParts = {facePart};
   stk::mesh::create_interior_block_boundary_sides(get_bulk(), get_meta().universal_part(), faceParts);

@@ -88,7 +88,9 @@ std::string get_file_contents(const std::string & fileName) {
 
 TEST_F(TestLogFile, defaultLogFile)
 {
-  clean_up_file(stk::balance::DefaultSettings::logFile);
+  const int finalNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD); 
+  const std::string logFileName = "dummy_mesh.1_to_" + std::to_string(finalNumProcs) + ".log";
+  clean_up_file(logFileName);
   make_dummy_mesh("dummy_mesh.g");
 
   std::vector<const char*> args = assemble_args({});
@@ -99,11 +101,11 @@ TEST_F(TestLogFile, defaultLogFile)
   sierra::Env::outputP0().flush();
 
   if (get_parallel_rank() == 0) {
-    ASSERT_TRUE(test_file_exists(stk::balance::DefaultSettings::logFile));
-    EXPECT_EQ(get_file_contents(stk::balance::DefaultSettings::logFile), expectedOutput);
+    ASSERT_TRUE(test_file_exists(logFileName));
+    EXPECT_EQ(get_file_contents(logFileName), expectedOutput);
   }
 
-  clean_up_file(stk::balance::DefaultSettings::logFile);
+  clean_up_file(logFileName);
   clean_up_file("dummy_mesh.g");
 }
 

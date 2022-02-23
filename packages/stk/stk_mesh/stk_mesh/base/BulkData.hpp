@@ -426,6 +426,11 @@ public:
       const PARTVECTOR & add_parts ,
       const PARTVECTOR & remove_parts = PARTVECTOR());
 
+  void change_entity_parts(const Selector& selector,
+                           EntityRank rank,
+                           const PartVector& add_parts,
+                           const PartVector& remove_parts = PartVector());
+
   /** \brief Change part-membership of the specified entities by adding
    * and/or removing parts for each entity.
    *
@@ -654,9 +659,6 @@ public:
   // Comm-related convenience methods
 
   bool is_communicated_with_proc(Entity entity, int proc) const;
-  #ifndef STK_HIDE_DEPRECATED_CODE //delete after January 2022
-  STK_DEPRECATED_MSG("BulkData::comm_procs(EntityKey, ...) has been deprecated. Use BulkData::comm_procs(Entity,...) instead.") void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
-#endif // STK_HIDE_DEPRECATED_CODE
   void comm_procs(Entity entity, std::vector<int> & procs ) const;
   void comm_procs( const Ghosting & ghost , EntityKey key, std::vector<int> & procs ) const;
   void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const;
