@@ -50,6 +50,7 @@
 #include <Adelus_defines.h>
 #include <Adelus_xlu_solve.hpp>
 #include <Adelus_x_factor.hpp>
+#include <Adelus_x_solve.hpp>
 #include <Adelus_distribute.hpp>
 #include <mpi.h>
 
@@ -139,21 +140,21 @@ namespace Adelus {
   /// Factors the dense matrix for later solve
 
   /// \param AA (InOut)       -- Kokkos View that has the matrix and rhs packed (Note: matrix and rhs are overwritten)
+  /// \param permute (In)     -- Kokkos View that has the global pivot vector
   /// \param my_rows_ (In)    -- number of rows of the matrix on this processor
   /// \param my_cols_ (In)    -- number of columns of the matrix on this processor
   /// \param matrix_size (In) -- order of the dense matrix
   /// \param num_procsr (In)  -- number of processors for a row
-  /// \param permute (In)     -- Kokkos View that has the global pivot vector
   /// \param secs (Out)       -- factor and solve time in seconds
 
   template<class ZDView, class IDView>
   inline
   void Factor( ZDView AA,
+               IDView permute,
                int my_rows_,
                int my_cols_,
                int* matrix_size,
                int* num_procsr,
-               IDView permute,
                double* secs ) {
     int rank;
 
@@ -164,10 +165,46 @@ namespace Adelus {
 #endif
 
     lu_(AA,
+        permute,
         matrix_size,
         num_procsr,
-        permute,
         secs);
+
+  }
+
+  /// Adelus Solve
+  /// Solves the previously factored dense matrix for provided RHS 
+
+  /// \param AA (InOut)       -- Kokkos View that has the matrix and rhs packed (Note: matrix and rhs are overwritten)
+  /// \param permute (In)     -- Kokkos View that has the global pivot vector
+  /// \param my_rows_ (In)    -- number of rows of the matrix on this processor
+  /// \param my_cols_ (In)    -- number of columns of the matrix on this processor
+  /// \param matrix_size (In) -- order of the dense matrix
+  /// \param num_procsr (In)  -- number of processors for a row
+  /// \param secs (Out)       -- factor and solve time in seconds
+
+  template<class ZDView, class IDView>
+  inline
+  void Solve( ZDView AA,
+              IDView permute,
+              int my_rows_,
+              int my_cols_,
+              int* matrix_size,
+              int* num_procsr,
+              int* num_rhs,
+              double* secs ) {
+    int rank;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+#ifdef PRINT_STATUS
+    printf("Solve (Kokkos View interface) in rank %d -- my_rows %u , my_cols %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, *matrix_size, *num_procsr, *num_rhs);
+#endif
+
+    solve_(AA,
+           permute,
+           num_rhs,
+           secs);
 
   }
 

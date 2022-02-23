@@ -67,19 +67,19 @@
 
 namespace Adelus {
 
-template<class ZDView, class IDView>
+template<class ZViewType, class PViewType>
 inline
-void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView& permute, double *secs)
+void lu_(ZViewType& Z, PViewType& permute, int *matrix_size, int *num_procsr, double *secs)
 {
 #ifdef ADELUS_HAVE_TIME_MONITOR
   using Teuchos::TimeMonitor;
 #endif
 
-  using value_type      = typename ZDView::value_type;
+  using value_type      = typename ZViewType::value_type;
 #ifdef PRINT_STATUS
-  using execution_space = typename ZDView::device_type::execution_space;
+  using execution_space = typename ZViewType::device_type::execution_space;
 #endif
-  using memory_space    = typename ZDView::device_type::memory_space;
+  using memory_space    = typename ZViewType::device_type::memory_space;
 
   double run_secs;              // time (in secs) during which the prog ran
   double tsecs;                 // intermediate storage of timing info
@@ -93,7 +93,7 @@ void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView& permute, double 
   ncols_matrix = *matrix_size;
   nprocs_row   = *num_procsr;
 
-  totmem=0;                      // Initialize the total memory used
+  totmem=0;  // Initialize the total memory used
   nprocs_col = nprocs_cube/nprocs_row;
   max_procs = (nprocs_row < nprocs_col) ? nprocs_col : nprocs_row;
 
@@ -120,12 +120,12 @@ void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView& permute, double 
   blksz = DEFBLKSZ;
 
 #ifdef PRINT_STATUS
-  printf("Rank %i -- factor_() Begin LU with blksz %d, value_type %s, execution_space %s, memory_space %s\n", me, blksz, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+  printf("Rank %i -- factor_() Begin LU with blksz %d, myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", me, blksz, myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ncols_matrix, my_rows, my_cols, my_rhs, nrhs, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
 #endif
 
-  // Allocate arrays for factor/solve
-  typedef Kokkos::View<value_type*,  Kokkos::LayoutLeft, memory_space> ViewType1D;
-  typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space> ViewType2D;
+  // Allocate arrays for factor
+  using ViewType1D = Kokkos::View<value_type*,  Kokkos::LayoutLeft, memory_space>;
+  using ViewType2D = Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space>;
 
   totmem += (blksz) * (my_rows) * sizeof(ADELUS_DATA_TYPE);             //col1_view
   totmem += blksz * (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);//row1_view
@@ -137,7 +137,7 @@ void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView& permute, double 
   ViewType2D  row1_view ( "row1_view", blksz, my_cols + blksz + nrhs );
   ViewType1D  row2_view ( "row2_view", my_cols + blksz + nrhs );
   ViewType1D  row3_view ( "row3_view", my_cols + blksz + nrhs );
-  IDView      lpiv_view ( "lpiv_view", my_cols );
+  PViewType   lpiv_view ( "lpiv_view", my_cols );
 
   {
   // Factor the system
@@ -153,7 +153,7 @@ void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView& permute, double 
   {
     TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: factor"));
 #endif
-    factor(ZV,
+    factor(Z,
            col1_view,
            row1_view,
            row2_view, 
@@ -165,19 +165,19 @@ void lu_(ZDView& ZV, int *matrix_size, int *num_procsr, IDView& permute, double 
 
   // Permute the lower triangular matrix
   //NOTE: Currently doing matrix permutation in host memory
-  typename ZDView::HostMirror h_ZV = Kokkos::create_mirror_view( ZV );
-  Kokkos::deep_copy (h_ZV, ZV);
-
 #ifdef ADELUS_HAVE_TIME_MONITOR
   {
     TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: matrix permutation"));
 #endif
-    permute_mat(h_ZV, lpiv_view, permute);
+    typename ZViewType::HostMirror h_Z = Kokkos::create_mirror_view( Z );
+    Kokkos::deep_copy (h_Z, Z);
+  
+    permute_mat(h_Z, lpiv_view, permute);
+
+    Kokkos::deep_copy (Z, h_Z);
 #ifdef ADELUS_HAVE_TIME_MONITOR
   }
 #endif
-
-  Kokkos::deep_copy (ZV, h_ZV);
 
   tsecs = get_seconds(tsecs);
 

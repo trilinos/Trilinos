@@ -1,0 +1,167 @@
+/*
+//@HEADER
+// ************************************************************************
+//
+//                        Adelus v. 1.0
+//       Copyright (2020) National Technology & Engineering
+//               Solutions of Sandia, LLC (NTESS).
+//
+// Under the terms of Contract DE-NA0003525 with NTESS,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of NTESS nor the names of the contributors may be
+// used to endorse or promote products derived from this software without
+// specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY NTESS "AS IS" AND ANY EXPRESS OR IMPLIED
+// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+// IN NO EVENT SHALL NTESS OR THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Vinh Dang (vqdang@sandia.gov)
+//                    Joseph Kotulski (jdkotul@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
+
+#ifndef __ADELUS_XSOLVE_HPP__
+#define __ADELUS_XSOLVE_HPP__
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "Adelus_defines.h"
+#include "mpi.h"
+#include "Adelus_vars.hpp"
+#include "Adelus_macros.h"
+#include "Adelus_block.h"
+#include "Adelus_perm_rhs.hpp"
+#include "Adelus_forward.hpp"
+#include "Adelus_solve.hpp"
+#include "Adelus_perm1.hpp"
+#include "Adelus_pcomm.hpp"
+#include "Adelus_mytime.hpp"
+#include "Kokkos_Core.hpp"
+
+#ifdef ADELUS_HAVE_TIME_MONITOR
+#include "Teuchos_TimeMonitor.hpp"
+#endif
+
+namespace Adelus {
+
+template<class ZViewType, class PViewType>
+inline
+void solve_(ZViewType& ZRHS, PViewType& permute, int *num_rhs, double *secs)
+{
+#ifdef ADELUS_HAVE_TIME_MONITOR
+  using Teuchos::TimeMonitor;
+#endif
+
+  using value_type      = typename ZViewType::value_type;
+#ifdef PRINT_STATUS
+  using execution_space = typename ZViewType::device_type::execution_space;
+  using memory_space    = typename ZViewType::device_type::memory_space;
+#endif
+
+
+  double run_secs; // time (in secs) during which the prog ran
+  double tsecs;    // intermediate storage of timing info
+
+  // Distribution for the rhs on me
+  nrhs = *num_rhs;
+  my_rhs = nrhs / nprocs_row;
+  if (my_first_col < nrhs % nprocs_row) ++my_rhs;
+
+#ifdef PRINT_STATUS
+  printf("Rank %i -- solve_() Begin FwdSolve+BwdSolve+Perm with blksz %d, myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", me, blksz, myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ncols_matrix, my_rows, my_cols, my_rhs, nrhs, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+#endif
+
+  {
+    tsecs = get_seconds(0.0);
+    
+    //NOTE: Currently doing RHS permute and forward solve in host memory and for a single RHS
+    //TODO: do these in device memory
+    typename ZViewType::HostMirror h_Z = Kokkos::create_mirror_view( ZRHS );
+    Kokkos::deep_copy (h_Z, ZRHS);
+    auto h_RHS = subview(h_Z, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols + my_rhs + 6));
+
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    {
+      TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: rhs permutation"));
+#endif
+      // Permute the RHS  
+      permute_rhs(h_RHS, permute);
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    }
+#endif
+
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    {
+      TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: forward solve"));
+#endif
+      //Forward Solve
+      forward(h_Z, h_RHS);
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    }
+#endif
+
+    Kokkos::deep_copy (ZRHS, h_Z);//bring back to device memory
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    {
+      TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: backsolve"));
+#endif
+      //TODO: Need to separate Z and RHS in the input argument of back_solve6()
+      back_solve6(ZRHS);
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    }
+#endif
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    {
+      TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: permutation"));
+#endif
+      auto RHS = subview(ZRHS, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols + my_rhs + 6));
+      perm1_(RHS, &my_rhs);
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    }
+#endif
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    tsecs = get_seconds(tsecs);
+
+    run_secs = (double) tsecs;
+  
+    *secs = run_secs;
+    showtime("Total time in Solve",&run_secs);
+  }
+}
+
+}//namespace Adelus
+
+#endif

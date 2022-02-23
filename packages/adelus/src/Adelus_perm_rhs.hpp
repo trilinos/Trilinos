@@ -44,8 +44,8 @@
 //@HEADER
 */
 
-#ifndef __ADELUS_PERMMAT_HPP__
-#define __ADELUS_PERMMAT_HPP__
+#ifndef __ADELUS_PERMRHS_HPP__
+#define __ADELUS_PERMRHS_HPP__
 
 #include <math.h>
 #include <stdio.h>
@@ -63,100 +63,64 @@
 //extern int ncols_matrix;       // number of cols in the matrix
 //extern int my_rows;            // num of rows I own
 //extern int my_cols;            // num of cols I own
+//extern int my_rhs;             // num of right hand side I own
 //extern int myrow;
 //extern int mycol;
 //extern MPI_Comm col_comm;
 
 namespace Adelus {
-
-  template<class PViewType>
-  inline 
-  void exchange_pivots(PViewType& lpiv_view, PViewType& permute) {
-  
-    MPI_Status msgstatus;
-    int rank_row,k_row,pivot_col;
-
-    //  First gather the permutation vector to processor 0 in row_comm
-    if (myrow == 0 || mycol == 0) {
-      for (int k=0;k<=nrows_matrix-1;k++) {
-        pivot_col = k%nprocs_row;
-        k_row = k%nprocs_col;
-        rank_row = k_row*nprocs_row;
-        if (me == pivot_col) {
-          int j=k/nprocs_row;
-          MPI_Send(lpiv_view.data()+j,1,MPI_INT,rank_row,0,MPI_COMM_WORLD);
-        }
-        if (me == rank_row) {
-          int i=k/nprocs_col;
-          MPI_Recv(permute.data()+i,1,MPI_INT,pivot_col,0,MPI_COMM_WORLD,&msgstatus);
-        }
-      }
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-    // Broadcast to the rest of the processors  in row_comm
-    MPI_Bcast(permute.data(),my_rows,MPI_INT,0,row_comm);
-  }// End of function exchange_pivots
   
   template<class ZViewType, class PViewType>
   inline
-  void permute_mat(ZViewType& ZV, PViewType& lpiv_view, PViewType& permute) {
-    //NOTE: Currently assume that ZV resides in host memory
+  void permute_rhs(ZViewType& RHS, PViewType& permute) {
+    //NOTE: Currently assume that a single RHS resides in host memory
     using value_type  = typename ZViewType::value_type;
 
     MPI_Status msgstatus;
   
-    int pivot_row, k_row;
+    int pivot_row, k_row, rhs_col;
     value_type tmpr, tmps;
 
 #ifdef GET_TIMING
-   double exchpivtime,permutemattime,t1;
+   double permuterhstime,t1;
 
    t1 = MPI_Wtime();
 #endif
 
-    exchange_pivots(lpiv_view, permute);
-
-#ifdef GET_TIMING
-    exchpivtime = MPI_Wtime()-t1;
-
-    t1 = MPI_Wtime();
-#endif
-  
-    for (int j=0;j<=my_cols-1;j++) {
-      int J=j*nprocs_row+mycol; // global column index
-      for (int k=J+1;k<=nrows_matrix-1;k++) {
-        k_row=k%nprocs_col;
+    rhs_col = 0;
+    for (int k=0;k<=nrows_matrix-2;k++) {
+      k_row=k%nprocs_col;
+      if (mycol == rhs_col) {
         if (myrow==k_row)
           pivot_row=permute(k/nprocs_col);
         MPI_Bcast(&pivot_row,1,MPI_INT,k_row,col_comm);
         if (k != pivot_row) {
           if (myrow == k_row) {
-            tmps = ZV(k/nprocs_col, J/nprocs_row);
+            tmps = RHS(k/nprocs_col,0);
             MPI_Send((char *)(&tmps),sizeof(value_type),MPI_CHAR,pivot_row%nprocs_col,2,col_comm);
           }
           if (myrow == pivot_row%nprocs_col) {
-            tmps = ZV(pivot_row/nprocs_col, J/nprocs_row);
+            tmps = RHS(pivot_row/nprocs_col,0);
             MPI_Send((char *)(&tmps),sizeof(value_type),MPI_CHAR,k_row,3,col_comm);
           }
           if (myrow == k_row) {
             MPI_Recv((char *)(&tmpr),sizeof(value_type),MPI_CHAR,pivot_row%nprocs_col,3,col_comm,&msgstatus);
-            ZV(k/nprocs_col, J/nprocs_row) = tmpr;
+            RHS(k/nprocs_col,0) = tmpr;
           }
           if (myrow == pivot_row%nprocs_col) {
             MPI_Recv((char *)(&tmpr),sizeof(value_type),MPI_CHAR,k_row,2,col_comm,&msgstatus);
-            ZV(pivot_row/nprocs_col, J/nprocs_row)  = tmpr;
+            RHS(pivot_row/nprocs_col,0)  = tmpr;
           }
         }// End of if (k != pivot_row)
-      }// End of for (k=J+1;k<=nrows_matrix-2;k++)
-    }// End of for (j=0;j<=my_cols-1;j++)
+      }
+    }// End of for (k=0;k<=nrows_matrix-2;k++)
 
 #ifdef GET_TIMING
-    permutemattime = MPI_Wtime()-t1;
+    permuterhstime = MPI_Wtime()-t1;
 
-    showtime("Time to exchange pivot information",&exchpivtime);
-    showtime("Time to permute matrix",&permutemattime);    
+    showtime("Time to permute rhs",&permuterhstime);    
 #endif
-  }// End of function permute_mat
+  }// End of function permute_rhs
 
 }//namespace Adelus
 
