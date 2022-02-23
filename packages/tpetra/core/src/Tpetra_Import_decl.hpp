@@ -103,7 +103,7 @@ namespace Tpetra {
   /// method.  Most users do not need to worry about these parameters;
   /// the default values are fine.  However, for expert users, we
   /// expose the following parameter:
-  /// - "Barrier between receives and sends" (\c bool): Whether to
+  /// - "Barrier between receives and sends" (\c bool): (DEPRECATED) Whether to
   ///   execute a barrier between receives and sends, when executing
   ///   the Import (i.e., when calling DistObject's doImport()
   ///   (forward mode) or doExport() (reverse mode)).

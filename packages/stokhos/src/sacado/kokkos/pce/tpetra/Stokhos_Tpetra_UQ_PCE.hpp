@@ -68,7 +68,7 @@ namespace Kokkos {
     getKokkosViewDeepCopy(const Teuchos::ArrayView< Sacado::UQ::PCE<S> >& a) {
       typedef Sacado::UQ::PCE<S> T;
       typedef typename Kokkos::Impl::if_c<
-        ::Kokkos::Impl::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
+        ::Kokkos::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
       typedef Kokkos::View<T*,D>  view_type;
@@ -86,7 +86,7 @@ namespace Kokkos {
     getKokkosViewDeepCopy(const Teuchos::ArrayView<const Sacado::UQ::PCE<S> >& a) {
       typedef Sacado::UQ::PCE<S> T;
       typedef typename Kokkos::Impl::if_c<
-        ::Kokkos::Impl::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
+        ::Kokkos::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
       typedef Kokkos::View<T*,D>  view_type;

@@ -238,7 +238,8 @@ void Piro::TempusSolver<Scalar>::initialize(
     // below, as more explicit schemes get added to Tempus
     // Explicit time-integrators for 1st order ODEs 
     const bool lump_mass_matrix = tempusPL->get("Lump Mass Matrix", false);
-    const bool const_mass_matrix = tempusPL->get("Constant Mass Matrix", false);
+    const bool invert_mass_matrix = tempusPL->get("Invert Mass Matrix", true);
+    const bool constant_mass_matrix = tempusPL->get("Constant Mass Matrix", false);
     if (
       stepperType == "Forward Euler" ||
       stepperType == "RK Forward Euler" ||
@@ -262,14 +263,21 @@ void Piro::TempusSolver<Scalar>::initialize(
       stepperType == "SSPERK54" ||
       stepperType == "General ERK" ) {
 
-      Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
-      model_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-        sublist(tempusPL,"Stratimikos", true), origModel, const_mass_matrix, lump_mass_matrix, false));
-      if (lump_mass_matrix == false) { //don't need adjointModel_ if doing mass lumping
-	//IKT 8/25/2021: warning - have not tested this block of code
-        Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origAdjointModel = adjointModel_;
-        adjointModel_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-          sublist(tempusPL,"Stratimikos", true), origAdjointModel, const_mass_matrix, lump_mass_matrix, false));
+      if (invert_mass_matrix) {
+        Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
+        model_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
+          sublist(tempusPL,"Stratimikos", true), origModel, constant_mass_matrix, lump_mass_matrix, false));
+        if ((lump_mass_matrix == false) && (adjointModel_ != Teuchos::null)) { //don't need adjointModel_ if doing mass lumping
+	  //IKT 8/25/2021: warning - have not tested this block of code
+          Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origAdjointModel = adjointModel_;
+          adjointModel_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
+            sublist(tempusPL,"Stratimikos", true), origAdjointModel, constant_mass_matrix, lump_mass_matrix, false));
+        }
+      }
+      else {
+         *out_ << "\n WARNING in Piro::TempusSolver!  You are attempting to run \n"
+               << "Explicit Stepper (" << stepperType << ") with 'Invert Mass Matrix' set to 'false'. \n"
+               << "This option should be set to 'true' unless your mass matrix is the identiy.\n";
       }
       is_explicit_ = true; 
     }
@@ -277,14 +285,21 @@ void Piro::TempusSolver<Scalar>::initialize(
     //Explicit time-integrators for 2nd order ODEs
     //IKT, FIXME: fill this in as more explicit integrators for 2nd order ODEs are added to Tempus.
     else if (stepperType == "Newmark Explicit a-Form") {
-      Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
-      model_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-        sublist(tempusPL,"Stratimikos", true), origModel, const_mass_matrix, lump_mass_matrix, true));
-      if (lump_mass_matrix == false) { //don't need adjointModel_ if doing mass lumping
-	//IKT 8/25/2021: warning - have not tested this block of code
-        Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origAdjointModel = adjointModel_;
-        adjointModel_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-          sublist(tempusPL,"Stratimikos", true), origAdjointModel, const_mass_matrix, lump_mass_matrix, false));
+      if (invert_mass_matrix) {
+        Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
+        model_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
+          sublist(tempusPL,"Stratimikos", true), origModel, constant_mass_matrix, lump_mass_matrix, true));
+        if ((lump_mass_matrix == false) && (adjointModel_ != Teuchos::null)) { //don't need adjointModel_ if doing mass lumping
+	  //IKT 8/25/2021: warning - have not tested this block of code
+          Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origAdjointModel = adjointModel_;
+          adjointModel_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
+            sublist(tempusPL,"Stratimikos", true), origAdjointModel, constant_mass_matrix, lump_mass_matrix, true));
+        }
+      }
+      else {
+         *out_ << "\n WARNING in Piro::TempusSolver!  You are attempting to run \n"
+               << "Explicit Stepper (" << stepperType << ") with 'Invert Mass Matrix' set to 'false'. \n"
+               << "This option should be set to 'true' unless your mass matrix is the identiy.\n";
       }
       is_explicit_ = true; 
     }
@@ -591,6 +606,7 @@ Piro::TempusSolver<Scalar>::getValidTempusParameters() const
   validPL->sublist("NonLinear Solver", false, "");
   //validPL->set<std::string>("Verbosity Level", "", "");
   validPL->set<bool>("Lump Mass Matrix", false, "Boolean to tell code whether to lump mass matrix");
+  validPL->set<bool>("Invert Mass Matrix", true, "Boolean to tell code whether or not to invert mass matrix");
   validPL->set<bool>("Constant Mass Matrix", false, "Boolean to tell code if mass matrix is constant in time");
   validPL->set<bool>("Abort on Failure", true, "");
   validPL->set<std::string>("Integrator Name", "Tempus Integrator", "");

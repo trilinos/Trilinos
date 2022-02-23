@@ -393,6 +393,13 @@ namespace Sacado {
     }
   };
 
+  //! A simple template function for invoking ScalarValue<>
+  template <typename T>
+  SACADO_INLINE_FUNCTION
+  typename ScalarType<T>::type scalarValue(const T& x) {
+    return ScalarValue<T>::eval(x);
+  }
+
   //! Base template specification for marking constants
   template <typename T> struct MarkConstant {
     SACADO_INLINE_FUNCTION

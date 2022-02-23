@@ -49,7 +49,13 @@ int main(int argc, char *argv[])
         }
         catch (std::exception & /* e */) {
           // If cannot convert to double; make it a string variable...
-          aprepro.add_variable(var, value, true); // Make it immutable
+          try {
+            aprepro.add_variable(var, value, true); // Make it immutable
+          }
+          catch (std::exception &e) {
+            std::cerr << "Aprepro terminated due to exception: " << e.what() << '\n';
+            exit_status = EXIT_FAILURE;
+          }
         }
       }
     }

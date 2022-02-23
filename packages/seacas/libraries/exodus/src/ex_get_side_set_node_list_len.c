@@ -41,8 +41,8 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
   size_t    list_len     = 0;
   int64_t   tot_num_elem = 0, tot_num_ss_elem = 0;
   void_int *elem_blk_ids   = NULL;
-  int *     ss_elem_ndx    = NULL;
-  int64_t * ss_elem_ndx_64 = NULL;
+  int      *ss_elem_ndx    = NULL;
+  int64_t  *ss_elem_ndx_64 = NULL;
 
   void_int *side_set_elem_list = NULL;
   void_int *side_set_side_list = NULL;

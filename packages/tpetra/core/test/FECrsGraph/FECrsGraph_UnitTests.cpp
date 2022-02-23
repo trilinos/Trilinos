@@ -141,7 +141,7 @@ bool compare_final_graph_structure_relaxed(Teuchos::FancyOStream &out,
   }
 
   const LO num_my_rows = g1.getNodeNumRows();
-  if (num_my_rows!=static_cast<LO>(g2.getNodeNumEntries())) {
+  if (num_my_rows!=static_cast<LO>(g2.getNodeNumRows())) {
     out << "Compare: number of local rows differ on some MPI rank: "
         << num_my_rows << " vs " << g2.getNodeNumRows() << ".\n";
     return false;
@@ -409,7 +409,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal, LO, GO, Node )
     Tpetra::endAssembly(g2);
     g1.fillComplete();
 
-    success = compare_final_graph_structure(out,g1,g2);
+    success = compare_final_graph_structure(out,g1,g2) && success;
     TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
@@ -581,12 +581,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
   success = compare_final_graph_structure(out,g11,g1);
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
 
-  success = compare_final_graph_structure(out,g1,g2);
+  success = compare_final_graph_structure(out,g1,g2) && success;
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
 
   // Passing a domain map different from the uniqueMap should cause a rearrangement of
   // off-rank indices in the column map. Other than that, the graphs should still coincide.
-  success = compare_final_graph_structure_relaxed(out,g1,g3);
+  success = compare_final_graph_structure_relaxed(out,g1,g3) && success;
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
 
   // We can check that g3 is exactly what we would get if g1's col map had been
@@ -600,7 +600,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
   auto importer = g12.getImporter();
   g12.replaceDomainMapAndImporter(pack.uniqueMap,importer);
 
-  success = compare_final_graph_structure(myout,g12,g3);
+  success = compare_final_graph_structure(myout,g12,g3) && success;
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
 }
 
@@ -620,5 +620,3 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
   TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
 
 } // end namespace (anonymous)
-
-

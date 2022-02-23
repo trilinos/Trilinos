@@ -270,7 +270,10 @@ ZoltanCrsColorer<CrsMatrixType>::computeColoring(
   // Do coloring of columns with Zoltan -- we can request colors for
   // columns we don't own
   const size_t num_local_cols  = this->graph->getNodeNumCols();
-  const size_t num_global_rows = this->graph->getGlobalNumRows();
+  const size_t num_global_rows = std::max(
+                   static_cast<typename CrsMatrixType::global_ordinal_type>(
+                               this->graph->getGlobalNumRows()),
+                   this->graph->getRowMap()->getMaxAllGlobalIndex()+1);
 
   Teuchos::Array<ZOLTAN_ID_TYPE> col_gids(num_local_cols);
   auto gids = this->graph->getColMap()->getNodeElementList();
@@ -351,7 +354,10 @@ ZoltanCrsColorer<CrsMatrixType>::get_vertex_list(
 
   const size_t num_local_rows  = zoltan_data->graph->getNodeNumRows();
   const size_t num_local_cols  = zoltan_data->trans_graph->getNodeNumRows();
-  const size_t num_global_rows = zoltan_data->graph->getGlobalNumRows();
+  const size_t num_global_rows = std::max(
+                   static_cast<typename CrsMatrixType::global_ordinal_type>(
+                               zoltan_data->graph->getGlobalNumRows()),
+                   zoltan_data->graph->getRowMap()->getMaxAllGlobalIndex()+1);
   auto row_gids = zoltan_data->graph->getRowMap()->getNodeElementList();
   auto col_gids = zoltan_data->trans_graph->getRowMap()->getNodeElementList();
 
@@ -419,7 +425,10 @@ ZoltanCrsColorer<CrsMatrixType>::get_edge_list(
   *ierr = ZOLTAN_OK;
 
   const size_t num_local_rows = zoltan_data->graph->getNodeNumRows();
-  const size_t num_global_rows = zoltan_data->graph->getGlobalNumRows();
+  const size_t num_global_rows = std::max(
+                   static_cast<typename CrsMatrixType::global_ordinal_type>(
+                               zoltan_data->graph->getGlobalNumRows()),
+                   zoltan_data->graph->getRowMap()->getMaxAllGlobalIndex()+1);
   const ZOLTAN_ID_TYPE lid = *local_id;
 
   if (lid < num_local_rows)

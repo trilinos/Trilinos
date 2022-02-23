@@ -63,12 +63,12 @@ class Boolf {
     return *this;
   }
 
-#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(USE_STK_SIMD_NONE)
+#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(__HIPCC__) && !defined(USE_STK_SIMD_NONE)
   STK_MATH_FORCE_INLINE float operator[](int i) const {
     __m512 tmp = _mm512_mask_blend_ps(_data.get(), _mm512_set1_ps(0.0), _mm512_set1_ps(1.0));
     return (reinterpret_cast<const float*>(&tmp))[i];
   }
-#elif defined(__CUDACC__) || defined(USE_STK_SIMD_NONE)
+#elif defined(__CUDACC__) || defined(__HIPCC__) || defined(USE_STK_SIMD_NONE)
   STK_MATH_FORCE_INLINE float operator[](int i) const {
     return _data.get() ? 1.0f : 0.0f;
   }

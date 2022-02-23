@@ -30,6 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from Operation.test_PhactoriVtkDataExportOperation import *
 from Operation.test_PhactoriSegmentCellSampler3 import *
 from Operation.test_PhactoriSegment import *
 from Operation.test_PhactoriPointSourceFromJsonList import *
@@ -37,8 +38,13 @@ from Operation.test_PhactoriSampledCellInfo import *
 from Operation.test_PhactoriGeometricCellSampler1 import *
 from Operation.test_PhactoriVtkCellOperations import *
 from Operation.test_PhactoriDataArtifactMetaDataControl import *
-from Operation.test_PhactoriCreateSegmentsNormalToCells import *
+#from Operation.test_PhactoriCreateSegmentsNormalToCells import *
+from Operation.test_PhactoriMarkCellSurfaceStatus2 import *
+from Operation.test_PhactoriSliceWithPlaneOperation import *
+
 if __name__ == '__main__':
+    cc = Cone()
+    rr = Show()
     unittest.main()
 
 

@@ -1,0 +1,86 @@
+# {PreW = 0.25}
+# {PreT = 0.02}
+# {BrpT = 0.01}
+# {CndW=0.2}
+# {CndT=0.05}
+# {PolT=0.01}
+# {ShdT = 0.02}
+
+reset
+create brick x {PreW + 2 * ShdT} y {PreT + 2 * BrpT + 2 * CndT + 2 * PolT + 2 * ShdT} z {CndW}
+webcut vol 1 with plane yplane offset {-PreT / 2}
+webcut vol 2 with plane yplane offset {PreT / 2}
+webcut vol 1 with plane yplane offset {-PreT / 2 - BrpT}
+webcut vol 3 with plane yplane offset {PreT / 2 + BrpT}
+webcut vol 1 with plane yplane offset {-PreT / 2 - BrpT - CndT}
+webcut vol 5 with plane yplane offset {PreT / 2 + BrpT + CndT}
+webcut vol 1 with plane yplane offset {-PreT / 2 - BrpT - CndT - PolT}
+webcut vol 7 with plane yplane offset {PreT / 2 + BrpT + CndT + PolT}
+webcut vol all with plane xplane offset {-CndW/2}
+webcut vol all with plane xplane offset {CndW/2}
+webcut vol all with plane xplane offset {-PreW/2}
+webcut vol all with plane xplane offset {PreW/2}
+create surf from surf with z_coord > 0
+delete vol 1 to 45
+imprint all
+merge all
+compress all
+
+surf all size 0.01
+mesh surf all
+
+block 1 add surf 5
+block 1 name "upper_a"
+block 2 add surf 6
+block 2 name "lower_a"
+block 3 add surf 2 31 12
+block 3 name "center"
+block 4 add surf 37 33 3 14 18 
+block 4 name "upper_b"
+block 5 add surf 20 16 4 35 39 
+block 5 name "lower_b"
+block 6 add surf 41 7 22
+block 6 name "upper_c"
+block 7 add surf 24 8 43
+block 7 name "lower_c"
+block 8 add surf 11 10 1 29 28 42 38 34 30 32 36 40 44 45 9 26 27 23 19 15 13 17 21 25 
+block 8 name "other"
+
+sideset 1 add curve 16 wrt surf 7
+sideset 1 add curve 10 wrt surf 3
+sideset 1 add curve 15 wrt surf 37
+sideset 1 add curve 17 wrt surf 18
+sideset 1 name "upper_a_sideset"
+sideset 2 add curve 20 wrt surf 8
+sideset 2 add curve 14 wrt surf 4
+sideset 2 add curve 18 wrt surf 39
+sideset 2 add curve 19 wrt surf 20
+sideset 2 name "lower_a_sideset"
+sideset 3 add curve 58 wrt surf 22
+sideset 3 add curve 22 wrt surf 7
+sideset 3 add curve 98 wrt surf 41
+sideset 3 add curve 95 wrt surf 41
+sideset 3 add curve 87 wrt surf 37
+sideset 3 add curve 79 wrt surf 33
+sideset 3 add curve 73 wrt surf 31
+sideset 3 add curve 83 wrt surf 35
+sideset 3 add curve 91 wrt surf 39
+sideset 3 add curve 99 wrt surf 43
+sideset 3 add curve 71 wrt surf 43
+sideset 3 add curve 2 wrt surf 8
+sideset 3 add curve 31 wrt surf 24
+sideset 3 add curve 61 wrt surf 24
+sideset 3 add curve 53 wrt surf 20
+sideset 3 add curve 45 wrt surf 16
+sideset 3 add curve 35 wrt surf 12
+sideset 3 add curve 41 wrt surf 14
+sideset 3 add curve 49 wrt surf 18
+sideset 3 add curve 57 wrt surf 22
+sideset 3 name "inner_box"
+sideset 4 add curve 65 64 27 104 103 102 96 88 80 75 85 93 100 69 68 72 4 30 34 33 62 55 47 39 44 52 60 66 
+sideset 4 name "outer_box"
+
+block all element type quad8
+set large exodus file on
+export genesis 'quad8.gen' dimension 2 block all overwrite
+

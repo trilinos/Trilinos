@@ -97,6 +97,8 @@ public:
   FieldBase(const FieldBase &) = delete;
   FieldBase & operator=(const FieldBase &) = delete;
 
+  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo) const = 0;
+
    /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
    */
@@ -254,7 +256,9 @@ public:
 
   template <typename StkDebugger>
   void make_field_sync_debugger() const {
-    m_stkFieldSyncDebugger = Teuchos::any(StkDebugger(this));
+    if (m_stkFieldSyncDebugger.empty()) {
+      m_stkFieldSyncDebugger = Teuchos::any(StkDebugger(this));
+    }
   }
 
   template <typename StkDebugger>
@@ -297,7 +301,7 @@ public:
     }
 
   template<typename FieldType>
-  void set_field_states( FieldType ** field_states)
+  void set_field_states(FieldType ** field_states)
   {
     for (unsigned i = 0; i < m_num_states; ++i) {
       m_field_states[i] = field_states[i];
@@ -337,6 +341,7 @@ public:
 
   template <typename T, template <typename> class NgpDebugger> friend class HostField;
   template <typename T, template <typename> class NgpDebugger> friend class DeviceField;
+  template <typename Scalar, class Tag1, class Tag2, class Tag3, class Tag4, class Tag5, class Tag6, class Tag7> friend class Field;
 
 protected:
   FieldBase(MetaData                   * arg_mesh_meta_data,

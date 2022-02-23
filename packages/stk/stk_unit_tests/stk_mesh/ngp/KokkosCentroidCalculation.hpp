@@ -73,6 +73,8 @@ typedef Kokkos::Serial   ExecSpace ;
 typedef Kokkos::OpenMP       MemSpace;
 #elif defined(KOKKOS_ENABLE_CUDA)
 typedef Kokkos::CudaSpace    MemSpace;
+#elif defined(KOKKOS_ENABLE_HIP)
+typedef Kokkos::Experimental::HIPSpace MemSpace;
 #else
 typedef Kokkos::HostSpace    MemSpace;
 #endif

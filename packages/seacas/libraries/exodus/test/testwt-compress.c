@@ -56,10 +56,10 @@ int main(int argc, char **argv)
   float  time_value;
   float  x[100], y[100], z[100];
   float  attrib[1], dist_fact[100];
-  char * coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
-  char * block_names[10], *nset_names[10], *sset_names[10];
-  char * prop_names[2], *attrib_names[2];
-  char * title = "This is a test";
+  char  *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
+  char  *block_names[10], *nset_names[10], *sset_names[10];
+  char  *prop_names[2], *attrib_names[2];
+  char  *title = "This is a test";
 
   struct ex_block blocks[10];
   int             mode;

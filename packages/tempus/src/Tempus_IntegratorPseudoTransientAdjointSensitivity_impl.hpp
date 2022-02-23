@@ -22,13 +22,46 @@ IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 IntegratorPseudoTransientAdjointSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                inputPL,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model)
 {
   model_ = model;
-  adjoint_model_ = adjoint_model;
-  state_integrator_ = integratorBasic<Scalar>(inputPL, model_);
-  sens_model_ = createSensitivityModel(model_, adjoint_model_, inputPL);
-  sens_integrator_ = integratorBasic<Scalar>(inputPL, sens_model_);
+  adjoint_residual_model_ = adjoint_residual_model;
+  adjoint_solve_model_ = adjoint_solve_model;
+  state_integrator_ = createIntegratorBasic<Scalar>(inputPL, model_);
+  sens_model_ = createSensitivityModel(model_, adjoint_residual_model_,
+                                       adjoint_solve_model_, inputPL);
+  sens_integrator_ = createIntegratorBasic<Scalar>(inputPL, sens_model_);
+  stepMode_ = SensitivityStepMode::Forward;
+}
+
+template<class Scalar>
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+IntegratorPseudoTransientAdjointSensitivity(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model,
+  std::string stepperType)
+{
+  model_ = model;
+  adjoint_residual_model_ = adjoint_residual_model;
+  adjoint_solve_model_ = adjoint_solve_model;
+  state_integrator_ = createIntegratorBasic<Scalar>(model_, stepperType);
+  sens_model_ = createSensitivityModel(model_, adjoint_residual_model_,
+                                       adjoint_solve_model_, Teuchos::null);
+  sens_integrator_ = createIntegratorBasic<Scalar>(sens_model_, stepperType);
+  stepMode_ = SensitivityStepMode::Forward;
+}
+
+template<class Scalar>
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+IntegratorPseudoTransientAdjointSensitivity(
+  Teuchos::RCP<Teuchos::ParameterList>                inputPL,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model) :
+  IntegratorPseudoTransientAdjointSensitivity(
+    inputPL, model, adjoint_model, adjoint_model)
+{
 }
 
 template<class Scalar>
@@ -36,13 +69,10 @@ IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 IntegratorPseudoTransientAdjointSensitivity(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model,
-  std::string stepperType)
+  std::string stepperType) :
+  IntegratorPseudoTransientAdjointSensitivity(
+    model, adjoint_model, adjoint_model, stepperType)
 {
-  model_ = model;
-  adjoint_model_ = adjoint_model;
-  state_integrator_ = integratorBasic<Scalar>(model_, stepperType);
-  sens_model_ = createSensitivityModel(model_, adjoint_model_, Teuchos::null);
-  sens_integrator_ = integratorBasic<Scalar>(sens_model_, stepperType);
 }
 
 template<class Scalar>
@@ -69,8 +99,9 @@ template<class Scalar>
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 IntegratorPseudoTransientAdjointSensitivity()
 {
-  state_integrator_ = integratorBasic<Scalar>();
-  sens_integrator_ = integratorBasic<Scalar>();
+  state_integrator_ = createIntegratorBasic<Scalar>();
+  sens_integrator_ = createIntegratorBasic<Scalar>();
+  stepMode_ = SensitivityStepMode::Forward;
 }
 
 template<class Scalar>
@@ -93,6 +124,7 @@ advanceTime(const Scalar timeFinal)
   typedef Thyra::ModelEvaluatorBase MEB;
 
   // Run state integrator and get solution
+  stepMode_ = SensitivityStepMode::Forward;
   bool state_status = state_integrator_->advanceTime(timeFinal);
 
   // For at least some time-stepping methods, the time of the last time step
@@ -106,9 +138,10 @@ advanceTime(const Scalar timeFinal)
     state_integrator_->getSolutionHistory());
 
   // Run sensitivity integrator
+  stepMode_ = SensitivityStepMode::Adjoint;
   bool sens_status = sens_integrator_->advanceTime(timeFinal);
 
-  // Compute final dg/dp which is computed by response 0 of the adjoint
+  // Compute final dg/dp, g which is computed by response 0, 1 of the adjoint
   // model evaluator
   MEB::InArgs<Scalar> inargs = sens_model_->getNominalValues();
   MEB::OutArgs<Scalar> outargs = sens_model_->createOutArgs();
@@ -123,7 +156,10 @@ advanceTime(const Scalar timeFinal)
     G = Thyra::createMember(sens_model_->get_g_space(0));
     dgdp_ = Teuchos::rcp_dynamic_cast<DMVPV>(G);
   }
+  if (g_ == Teuchos::null)
+    g_ = Thyra::createMember(sens_model_->get_g_space(1));
   outargs.set_g(0, G);
+  outargs.set_g(1, g_);
   sens_model_->evalModel(inargs, outargs);
 
   buildSolutionHistory();
@@ -176,6 +212,7 @@ getStepper() const
   return state_integrator_->getStepper();
 }
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
@@ -193,12 +230,29 @@ setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl)
   sens_integrator_->setTempusParameterList(pl);
 }
 
+#endif
 template<class Scalar>
 Teuchos::RCP<const SolutionHistory<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 getSolutionHistory() const
 {
   return solutionHistory_;
+}
+
+template<class Scalar>
+Teuchos::RCP<const SolutionHistory<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getStateSolutionHistory() const
+{
+  return state_integrator_->getSolutionHistory();
+}
+
+template<class Scalar>
+Teuchos::RCP<const SolutionHistory<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getSensSolutionHistory() const
+{
+  return sens_integrator_->getSolutionHistory();
 }
 
 template<class Scalar>
@@ -223,6 +277,39 @@ IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 getNonConstTimeStepControl()
 {
   return state_integrator_->getNonConstTimeStepControl();
+}
+
+template<class Scalar>
+Teuchos::RCP<TimeStepControl<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getStateNonConstTimeStepControl()
+{
+  return state_integrator_->getNonConstTimeStepControl();
+}
+
+template<class Scalar>
+Teuchos::RCP<TimeStepControl<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getSensNonConstTimeStepControl()
+{
+  return sens_integrator_->getNonConstTimeStepControl();
+}
+
+template<class Scalar>
+Teuchos::RCP<IntegratorObserver<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getObserver()
+{
+  return state_integrator_->getObserver();
+}
+
+template<class Scalar>
+void
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+setObserver(Teuchos::RCP<IntegratorObserver<Scalar> > obs)
+{
+  state_integrator_->setObserver(obs);
+  sens_integrator_->setObserver(obs);
 }
 
 template<class Scalar>
@@ -299,6 +386,53 @@ getXDotDot() const
 template<class Scalar>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getY() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  RCP<const DMVPV> mvpv =
+    rcp_dynamic_cast<const DMVPV>(sens_integrator_->getX());
+  return mvpv->getMultiVector();
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getYDot() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  RCP<const DMVPV> mvpv =
+    rcp_dynamic_cast<const DMVPV>(sens_integrator_->getXDot());
+  return mvpv->getMultiVector();
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getYDotDot() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  RCP<const DMVPV> mvpv =
+    rcp_dynamic_cast<const DMVPV>(sens_integrator_->getXDotDot());
+  return mvpv->getMultiVector();
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getG() const
+{
+  return g_;
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 getDgDp() const
 {
   return dgdp_->getMultiVector();
@@ -334,8 +468,18 @@ void
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & inputPL)
 {
-  state_integrator_->setParameterList(inputPL);
-  sens_integrator_->setParameterList(inputPL);
+  // IntegratorBasic is no longer a Teuchos::ParameterListAcceptor.
+  // Since setting the ParameterList is essentially a complete reset,
+  // we will rebuild from scratch and reuse the ModelEvaluator.
+  auto model = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>> (
+    state_integrator_->getStepper()->getModel());
+  auto tmp_state_integrator = createIntegratorBasic<Scalar>(inputPL, model);
+  state_integrator_->copy(tmp_state_integrator);
+
+  model = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>> (
+    sens_integrator_->getStepper()->getModel());
+  auto tmp_sens_integrator = createIntegratorBasic<Scalar>(inputPL, model);
+  sens_integrator_->copy(tmp_sens_integrator);
 }
 
 template<class Scalar>
@@ -343,8 +487,22 @@ Teuchos::RCP<Teuchos::ParameterList>
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 unsetParameterList()
 {
-  state_integrator_->unsetParameterList();
-  return sens_integrator_->unsetParameterList();
+  // IntegratorBasic is no longer a Teuchos::ParameterListAcceptor.
+  // We will treat unsetting the ParameterList as a reset to default
+  // settings, and reuse the ModelEvaluator.
+  auto tmp_state_integrator = createIntegratorBasic<Scalar>();
+  auto model = state_integrator_->getStepper()->getModel();
+  tmp_state_integrator->setModel(model);
+  state_integrator_->copy(tmp_state_integrator);
+
+  auto tmp_sens_integrator = createIntegratorBasic<Scalar>();
+  model = sens_integrator_->getStepper()->getModel();
+  tmp_sens_integrator->setModel(model);
+  sens_integrator_->copy(tmp_sens_integrator);
+
+  auto pl = Teuchos::rcp_const_cast<Teuchos::ParameterList> (
+    sens_integrator_->getValidParameters());
+  return pl;
 }
 
 template<class Scalar>
@@ -369,7 +527,17 @@ Teuchos::RCP<Teuchos::ParameterList>
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 getNonconstParameterList()
 {
-  return state_integrator_->getNonconstParameterList();
+  auto pl = Teuchos::rcp_const_cast<Teuchos::ParameterList> (
+    state_integrator_->getValidParameters());
+  return pl;
+}
+
+template<class Scalar>
+SensitivityStepMode
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getStepMode() const
+{
+  return stepMode_;
 }
 
 template <class Scalar>
@@ -377,7 +545,8 @@ Teuchos::RCP<AdjointSensitivityModelEvaluator<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 createSensitivityModel(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_solve_model,
   const Teuchos::RCP<Teuchos::ParameterList>& inputPL)
 {
   using Teuchos::rcp;
@@ -389,7 +558,8 @@ createSensitivityModel(
   const Scalar tinit = state_integrator_->getTimeStepControl()->getInitTime();
   const Scalar tfinal = state_integrator_->getTimeStepControl()->getFinalTime();
   return rcp(new AdjointSensitivityModelEvaluator<Scalar>(
-               model, adjoint_model, tinit, tfinal, true, pl));
+               model, adjoint_residual_model, adjoint_solve_model_,
+               tinit, tfinal, true, pl));
 }
 
 template<class Scalar>
@@ -410,9 +580,8 @@ buildSolutionHistory()
 
   // Create combined solution histories, first for the states with zero
   // adjoint and then for the adjoint with frozen states
-  RCP<ParameterList> shPL =
-    Teuchos::sublist(state_integrator_->getIntegratorParameterList(),
-                     "Solution History", true);
+  auto shPL = Teuchos::rcp_const_cast<Teuchos::ParameterList> (
+    state_integrator_->getSolutionHistory()->getValidParameters());
   solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   RCP<const VectorSpaceBase<Scalar> > x_space =
@@ -553,6 +722,34 @@ integratorPseudoTransientAdjointSensitivity(
 {
   Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> > integrator =
     Teuchos::rcp(new IntegratorPseudoTransientAdjointSensitivity<Scalar>(model, adjoint_model, stepperType));
+  return(integrator);
+}
+
+/// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> >
+integratorPseudoTransientAdjointSensitivity(
+  Teuchos::RCP<Teuchos::ParameterList>                     pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      adjoint_solve_model)
+{
+  Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorPseudoTransientAdjointSensitivity<Scalar>(pList, model, adjoint_residual_model, adjoint_solve_model));
+  return(integrator);
+}
+
+/// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> >
+integratorPseudoTransientAdjointSensitivity(
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      adjoint_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      adjoint_solve_model,
+  std::string stepperType)
+{
+  Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> > integrator =
+    Teuchos::rcp(new IntegratorPseudoTransientAdjointSensitivity<Scalar>(model, adjoint_residual_model, adjoint_solve_model, stepperType));
   return(integrator);
 }
 

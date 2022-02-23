@@ -71,6 +71,7 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("semicoarsen: piecewise constant");
     SET_VALID_ENTRY("semicoarsen: coarsen rate");
+    SET_VALID_ENTRY("semicoarsen: calculate nonsym restriction");
 #undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",               Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",       Teuchos::null, "Generating factory of the nullspace");
@@ -128,6 +129,7 @@ namespace MueLu {
     // get user-provided coarsening rate parameter (constant over all levels)
     const ParameterList& pL = GetParameterList();
     LO CoarsenRate = as<LO>(pL.get<int>("semicoarsen: coarsen rate"));
+    bool buildRestriction = pL.get<bool>("semicoarsen: calculate nonsym restriction");
 
     // collect general input data
     LO BlkSize            = A->GetFixedBlockSize();
@@ -144,10 +146,10 @@ namespace MueLu {
 
     // generate transfer operator with semicoarsening
     RCP<const Map> theCoarseMap;
-    RCP<Matrix>    P;
+    RCP<Matrix>    P, R;
     RCP<MultiVector> coarseNullspace;
     GO Ncoarse = MakeSemiCoarsenP(Nnodes,FineNumZLayers,CoarsenRate,LayerId,VertLineId,
-                               BlkSize, A, P, theCoarseMap, fineNullspace,coarseNullspace);
+                               BlkSize, A, P, theCoarseMap, fineNullspace,coarseNullspace,R,buildRestriction);
 
     // set StridingInformation of P
     if (A->IsView("stridedMaps") == true)
@@ -155,8 +157,16 @@ namespace MueLu {
     else
       P->CreateView("stridedMaps", P->getRangeMap(), theCoarseMap);
 
-    if  (pL.get<bool>("semicoarsen: piecewise constant"))
+    if (buildRestriction) {
+      if (A->IsView("stridedMaps") == true)
+        R->CreateView("stridedMaps", theCoarseMap, A->getRowMap("stridedMaps"));
+      else
+        R->CreateView("stridedMaps", theCoarseMap, R->getDomainMap());
+    }
+    if  (pL.get<bool>("semicoarsen: piecewise constant")) {
+      TEUCHOS_TEST_FOR_EXCEPTION(buildRestriction, Exceptions::RuntimeError, "Cannot use calculate nonsym restriction with piecewise constant.");
       RevertToPieceWiseConstant(P, BlkSize);
+    }
 
     // Store number of coarse z-layers on the coarse level container
     // This information is used by the LineDetectionAlgorithm
@@ -168,6 +178,7 @@ namespace MueLu {
 
     // store semicoarsening transfer on coarse level
     Set(coarseLevel, "P", P);
+    if (buildRestriction) Set(coarseLevel, "RfromPfactory", R);
 
     Set(coarseLevel, "Nullspace", coarseNullspace);
 
@@ -319,7 +330,7 @@ namespace MueLu {
   MakeSemiCoarsenP(LO const Ntotal, LO const nz, LO const CoarsenRate, LO const LayerId[],
                    LO const VertLineId[], LO const DofsPerNode, RCP<Matrix> & Amat, RCP<Matrix>& P,
                    RCP<const Map>& coarseMap, const RCP<MultiVector> fineNullspace,
-                   RCP<MultiVector>& coarseNullspace ) const {
+                   RCP<MultiVector>& coarseNullspace, RCP<Matrix>& R, bool buildRestriction) const {
 
     /*
      * Given a CSR matrix (OrigARowPtr, OrigAcols, OrigAvals), information
@@ -375,14 +386,17 @@ namespace MueLu {
     int    *InvLineLayer=NULL, *CptLayers=NULL, StartLayer, NStencilNodes;
     int    BlkRow, dof_j, node_k, *Sub2FullMap=NULL, RowLeng;
     int    i, j, iii, col, count, index, loc, PtRow, PtCol;
-    SC     *BandSol=NULL, *BandMat=NULL, TheSum;
+    SC     *BandSol=NULL, *BandMat=NULL, TheSum, *RestrictBandMat=NULL, *RestrictBandSol=NULL;
     int    *IPIV=NULL, KL, KU, KLU, N, NRHS, LDAB,INFO;
     int    *Pcols;
     size_t *Pptr;
     SC     *Pvals;
+    LO     *Rcols;
+    size_t *Rptr;
+    SC     *Rvals;
     int    MaxStencilSize, MaxNnzPerRow;
     LO     *LayDiff=NULL;
-    int    CurRow, LastGuy = -1, NewPtr;
+    int    CurRow, LastGuy = -1, NewPtr, RLastGuy = -1;
     int    Ndofs;
     int    Nghost;
     LO     *Layerdofs = NULL, *Col2Dof = NULL;
@@ -392,6 +406,9 @@ namespace MueLu {
     char notrans[3];
     notrans[0] = 'N';
     notrans[1] = 'N';
+    char trans[3];
+    trans[0] = 'T';
+    trans[1] = 'T';
 
 
     MaxNnzPerRow = MaxHorNeighborNodes*DofsPerNode*3;
@@ -486,6 +503,10 @@ namespace MueLu {
 
     Teuchos::ArrayRCP<LO> TSub2FullMap= Teuchos::arcp<LO>((MaxStencilSize+1)*DofsPerNode); Sub2FullMap= TSub2FullMap.getRawPtr();
     Teuchos::ArrayRCP<SC> TBandSol= Teuchos::arcp<SC>((MaxStencilSize+1)*DofsPerNode*DofsPerNode); BandSol = TBandSol.getRawPtr();
+    Teuchos::ArrayRCP<SC> TResBandSol;
+    if (buildRestriction) {
+      TResBandSol= Teuchos::arcp<SC>((MaxStencilSize+1)*DofsPerNode*DofsPerNode); RestrictBandSol = TResBandSol.getRawPtr();
+    }
     /*
      * Lapack variables. See comments for dgbsv().
      */
@@ -496,6 +517,11 @@ namespace MueLu {
     NRHS   = DofsPerNode;
     Teuchos::ArrayRCP<SC> TBandMat= Teuchos::arcp<SC>(LDAB*MaxStencilSize*DofsPerNode+1); BandMat = TBandMat.getRawPtr();
     Teuchos::ArrayRCP<LO> TIPIV= Teuchos::arcp<LO>((MaxStencilSize+1)*DofsPerNode); IPIV = TIPIV.getRawPtr();
+
+    Teuchos::ArrayRCP<SC> TResBandMat;
+    if (buildRestriction) {
+     TResBandMat= Teuchos::arcp<SC>(LDAB*MaxStencilSize*DofsPerNode+1); RestrictBandMat = TResBandMat.getRawPtr();
+    }
 
     /*
      * Allocate storage for the final interpolation matrix. Note: each prolongator
@@ -535,10 +561,23 @@ namespace MueLu {
     Teuchos::ArrayRCP<size_t> TPptr = Teuchos::arcp<size_t>(DofsPerNode*(2+Ntotal)); Pptr = TPptr.getRawPtr();
     Teuchos::ArrayRCP<LO>     TPcols= Teuchos::arcp<LO>(1+MaxNnz);                   Pcols= TPcols.getRawPtr();
 
+    TEUCHOS_TEST_FOR_EXCEPTION(Pcols == NULL, Exceptions::RuntimeError, "MakeSemiCoarsenP: Not enough space \n");
     Pptr[0] = 0; Pptr[1] = 0;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(Pcols == NULL, Exceptions::RuntimeError, "MakeSemiCoarsenP: Not enough space \n");
 
+    Teuchos::ArrayRCP<SC> TRvals;
+    Teuchos::ArrayRCP<size_t> TRptr;
+    Teuchos::ArrayRCP<LO>     TRcols;
+    LO RmaxNnz, RmaxPerRow;
+    if (buildRestriction) {
+      RmaxPerRow = ((LO) ceil(((double) (MaxNnz+7))/((double) (coarseMap->getNodeNumElements()))));
+      RmaxNnz = RmaxPerRow*coarseMap->getNodeNumElements();
+      TRvals= Teuchos::arcp<SC>(1+RmaxNnz);               Rvals= TRvals.getRawPtr();
+      TRptr = Teuchos::arcp<size_t>((2+coarseMap->getNodeNumElements())); Rptr = TRptr.getRawPtr();
+      TRcols= Teuchos::arcp<LO>(1+RmaxNnz);                   Rcols= TRcols.getRawPtr();
+      TEUCHOS_TEST_FOR_EXCEPTION(Rcols == NULL, Exceptions::RuntimeError, "MakeSemiCoarsenP: Not enough space \n");
+      Rptr[0] = 0; Rptr[1] = 0;
+    }
     /*
      * Setup P's rowptr as if each row had its maximum of 2*DofsPerNode nonzeros.
      * This will be useful while filling up P, and then later we will squeeze out
@@ -550,6 +589,14 @@ namespace MueLu {
     for (i = 1; i <= DofsPerNode*Ntotal+1; i++) {
       Pptr[i]  = count;
       count   += (2*DofsPerNode);
+    }
+    if (buildRestriction) {
+      for (i = 1; i <= RmaxNnz; i++) Rcols[i] = -1;  /* mark all entries as unused */
+      count = 1;
+      for (i = 1; i <= (int) (coarseMap->getNodeNumElements()+1); i++) {
+        Rptr[i]  = count;
+        count   += RmaxPerRow;
+      }
     }
 
     /*
@@ -591,9 +638,12 @@ namespace MueLu {
          *  so we could avoid zeroing out some entries?
          */
 
-        for (i = 0; i < NStencilNodes*DofsPerNode*DofsPerNode; i++)
-          BandSol[ i] = 0.0;
+        for (i = 0; i < NStencilNodes*DofsPerNode*DofsPerNode; i++) BandSol[ i] = 0.0;
         for (i = 0; i < LDAB*N; i++) BandMat[ i] = 0.0;
+        if (buildRestriction) {
+          for (i = 0; i < NStencilNodes*DofsPerNode*DofsPerNode; i++) RestrictBandSol[ i] = 0.0;
+          for (i = 0; i < LDAB*N; i++) RestrictBandMat[ i] = 0.0;
+        }
 
         /*
          *  Fill BandMat and BandSol (which is initially the rhs) for each
@@ -620,7 +670,6 @@ namespace MueLu {
            *    2) the current layer is a Cpoint layer and so we
            *       stick an identity block in BandMat and rhs.
            */
-          if (StartLayer+node_k-1 != MyLayer) {
             for (int dof_i=0; dof_i < DofsPerNode; dof_i++) {
 
               j = (BlkRow-1)*DofsPerNode+dof_i;
@@ -654,6 +703,7 @@ namespace MueLu {
                 }
                 index = LDAB*(PtCol-1)+KLU+PtRow-PtCol;
                 BandMat[index] = TheSum;
+                if (buildRestriction) RestrictBandMat[index] = TheSum;
                 if (node_k != NStencilNodes) {
                   /* Stick Mat(PtRow,PtCol+DofsPerNode) entry  */
                   /* see dgbsv() comments for matrix format.  */
@@ -665,6 +715,7 @@ namespace MueLu {
                   j = PtCol+DofsPerNode;
                   index=LDAB*(j-1)+KLU+PtRow-j;
                   BandMat[index] = TheSum;
+                  if (buildRestriction) RestrictBandMat[index] = TheSum;
                 }
                 if (node_k != 1) {
                   /* Stick Mat(PtRow,PtCol-DofsPerNode) entry  */
@@ -677,12 +728,12 @@ namespace MueLu {
                   j = PtCol-DofsPerNode;
                   index=LDAB*(j-1)+KLU+PtRow-j;
                   BandMat[index] = TheSum;
+                  if (buildRestriction) RestrictBandMat[index] = TheSum;
                 }
               }
             }
-          }
-          else {
-
+        }
+        node_k = MyLayer - StartLayer+1;
              /* inject the null space */
             // int FineStride  = Ntotal*DofsPerNode;
             // int CoarseStride= NVertLines*NCLayers*DofsPerNode;
@@ -698,12 +749,39 @@ namespace MueLu {
               /* Stick Mat(PtRow,PtRow) and Rhs(PtRow,dof_i+1) */
               /* see dgbsv() comments for matrix format.     */
               PtRow = (node_k-1)*DofsPerNode+dof_i+1;
-              index = LDAB*(PtRow-1)+KLU;
-              BandMat[index] = 1.0;
               BandSol[(dof_i)*DofsPerNode*NStencilNodes+PtRow-1] = 1.;
+              if (buildRestriction) RestrictBandSol[(dof_i)*DofsPerNode*NStencilNodes+PtRow-1] = 1.;
+
+              for (dof_j = 0; dof_j < DofsPerNode; dof_j++) {
+                PtCol = (node_k-1)*DofsPerNode+dof_j+1;
+                index = LDAB*(PtCol-1)+KLU+PtRow-PtCol;
+                if (PtCol == PtRow)  BandMat[index] = 1.0;
+                else                 BandMat[index] = 0.0;
+                if (buildRestriction) {
+                  index = LDAB*(PtRow-1)+KLU+PtCol-PtRow;
+                  if (PtCol == PtRow)  RestrictBandMat[index] = 1.0;
+                  else                 RestrictBandMat[index] = 0.0;
+                }
+                if (node_k != NStencilNodes) {
+                  PtCol = (node_k  )*DofsPerNode+dof_j+1;
+                  index = LDAB*(PtCol-1)+KLU+PtRow-PtCol;
+                  BandMat[index] = 0.0;
+                  if (buildRestriction) {
+                    index = LDAB*(PtRow-1)+KLU+PtCol-PtRow;
+                    RestrictBandMat[index] = 0.0;
+                  }
+                }
+                if (node_k != 1) {
+                  PtCol = (node_k-2)*DofsPerNode+dof_j+1;
+                  index = LDAB*(PtCol-1)+KLU+PtRow-PtCol;
+                  BandMat[index] = 0.0;
+                  if (buildRestriction) {
+                    index = LDAB*(PtRow-1)+KLU+PtCol-PtRow;
+                    RestrictBandMat[index] = 0.0;
+                  }
+                }
+              }
             }
-          }
-        }
 
         /* Solve banded system and then stick result in Pmatrix arrays */
 
@@ -725,6 +803,24 @@ namespace MueLu {
               Pvals[loc] = BandSol[dof_j*DofsPerNode*NStencilNodes +
                   (i-1)*DofsPerNode + dof_i];
               Pptr[index]= Pptr[index] + 1;
+            }
+          }
+        }
+        if (buildRestriction) {
+          lapack.GBTRF( N, N, KL, KU, RestrictBandMat, LDAB, IPIV, &INFO);
+          TEUCHOS_TEST_FOR_EXCEPTION(INFO != 0, Exceptions::RuntimeError, "Lapack band factorization failed");
+          lapack.GBTRS(trans[0], N, KL, KU, NRHS, RestrictBandMat, LDAB, IPIV, RestrictBandSol, N, &INFO );
+          TEUCHOS_TEST_FOR_EXCEPTION(INFO != 0, Exceptions::RuntimeError, "Lapack band solve back substitution failed");
+          for (dof_j=0; dof_j < DofsPerNode; dof_j++) {
+            for (int dof_i=0; dof_i < DofsPerNode; dof_i++) {
+              for (i =1; i <= NStencilNodes ; i++) {
+                index = (col-1)*DofsPerNode+dof_j+1;
+                loc = Rptr[index];
+                Rcols[loc] = (Sub2FullMap[i]-1)*DofsPerNode+dof_i+1;
+                Rvals[loc] = RestrictBandSol[dof_j*DofsPerNode*NStencilNodes +
+                    (i-1)*DofsPerNode + dof_i];
+                Rptr[index]= Rptr[index] + 1;
+              }
             }
           }
         }
@@ -766,6 +862,32 @@ namespace MueLu {
     }
     Pptr[0] = 0;
 
+    // do the same for R
+    if (buildRestriction) {
+      CurRow = 1;
+      NewPtr = 1;
+      for (size_t ii=1; ii <= Rptr[coarseMap->getNodeNumElements()]-1; ii++) {
+        if (ii == Rptr[CurRow]) {
+          Rptr[CurRow] = RLastGuy;
+          CurRow++;
+          while (ii > Rptr[CurRow]) {
+            Rptr[CurRow] = RLastGuy;
+            CurRow++;
+          }
+        }
+        if (Rcols[ii] != -1) {
+          Rcols[NewPtr-1] = Rcols[ii]-1;   /* these -1's fix the offset and */
+          Rvals[NewPtr-1] = Rvals[ii];     /* start using the zeroth element */
+          RLastGuy = NewPtr;
+          NewPtr++;
+        }
+      }
+      for (i = CurRow; i <=  ((int) coarseMap->getNodeNumElements()); i++) Rptr[CurRow] = RLastGuy;
+      for (i=-coarseMap->getNodeNumElements()+1; i>= 2 ; i--) {
+        Rptr[i-1] = Rptr[i-2];  /* extra -1 added to start from 0 */
+      }
+      Rptr[0] = 0;
+    }
     ArrayRCP<size_t>  rcpRowPtr;
     ArrayRCP<LO>      rcpColumns;
     ArrayRCP<SC>      rcpValues;
@@ -785,7 +907,28 @@ namespace MueLu {
     for (LO ii = 0; ii < nnz; ii++) values[ii]  = Pvals[ii];
     PCrs->setAllValues(rcpRowPtr, rcpColumns, rcpValues);
     PCrs->expertStaticFillComplete(coarseMap, Amat->getDomainMap());
+    ArrayRCP<size_t>  RrcpRowPtr;
+    ArrayRCP<LO>      RrcpColumns;
+    ArrayRCP<SC>      RrcpValues;
+    RCP<CrsMatrix> RCrs;
+    if (buildRestriction) {
+      R      = rcp(new CrsMatrixWrap(coarseMap, rowMap, 0));
+      RCrs = rcp_dynamic_cast<CrsMatrixWrap>(R)->getCrsMatrix();
+      nnz =  Rptr[coarseMap->getNodeNumElements()];
+      RCrs->allocateAllValues(nnz, RrcpRowPtr, RrcpColumns, RrcpValues);
 
+      ArrayView<size_t> RrowPtr  = RrcpRowPtr();
+      ArrayView<LO>     Rcolumns = RrcpColumns();
+      ArrayView<SC>     Rvalues  = RrcpValues();
+
+      // copy data over
+
+      for (LO ii = 0; ii <= ((LO)coarseMap->getNodeNumElements()); ii++) RrowPtr[ii]  = Rptr[ii];
+      for (LO ii = 0; ii < nnz; ii++)    Rcolumns[ii] = Rcols[ii];
+      for (LO ii = 0; ii < nnz; ii++)    Rvalues[ii]  = Rvals[ii];
+      RCrs->setAllValues(RrcpRowPtr, RrcpColumns, RrcpValues);
+      RCrs->expertStaticFillComplete(Amat->getRangeMap(), coarseMap);
+    }
 
     return NCLayers*NVertLines*DofsPerNode;
   }

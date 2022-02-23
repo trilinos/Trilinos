@@ -235,6 +235,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string coordMapFile;                           clp.setOption("coordsmap",             &coordMapFile,      "coordinates map data file");
   std::string nullFile;                               clp.setOption("nullspace",             &nullFile,          "nullspace data file");
   std::string materialFile;                           clp.setOption("material",              &materialFile,      "material data file");
+  bool        setNullSpace      = true;               clp.setOption("driver-nullspace","muelu-computed-nullspace", &setNullSpace, "driver sets nullspace");
   int         numRebuilds       = 0;                  clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
   int         numResolves       = 0;                  clp.setOption("resolve",               &numResolves,       "#times to redo solve");
   int         maxIts            = 200;                clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
@@ -476,7 +477,7 @@ MueLu::MueLu_AMGX_initialize_plugins();
         comm->barrier();
         // Build the preconditioner numRebuilds+1 times
         MUELU_SWITCH_TIME_MONITOR(tm,"Driver: 2 - MueLu Setup");
-        PreconditionerSetup(A,coordinates,nullspace,material,mueluList,profileSetup,useAMGX,useML,numRebuilds,H,Prec);
+        PreconditionerSetup(A,coordinates,nullspace,material,mueluList,profileSetup,useAMGX,useML,setNullSpace,numRebuilds,H,Prec);
 
         comm->barrier();
         tm = Teuchos::null;

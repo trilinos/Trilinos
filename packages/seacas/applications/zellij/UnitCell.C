@@ -237,8 +237,8 @@ void UnitCell::generate_boundary_faces(unsigned int which_faces)
 
   std::array<enum Flg, 6> boundary_flag{Flg::MIN_I, Flg::MAX_I, Flg::MIN_J,
                                         Flg::MAX_J, Flg::MIN_K, Flg::MAX_K};
-  auto &                  faces = face_generator.faces("ALL");
-  Ioss::ElementBlock *    block = nullptr;
+  auto                   &faces = face_generator.faces("ALL");
+  Ioss::ElementBlock     *block = nullptr;
   for (auto &face : faces) {
     if (face.elementCount_ == 1) {
       block             = get_element_block(block, face.element[0] / 10, m_region);

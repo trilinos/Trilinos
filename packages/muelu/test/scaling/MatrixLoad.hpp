@@ -156,6 +156,26 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
       Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
     A = Pr->BuildMatrix();
     nullspace = Pr->BuildNullspace();
+    //  The coordinates used by Galeri here might not match the coordinates that come into this function.
+    //  In particular, they might correspond to different stretch factors. To fix this, we overwrite the 
+    //  coordinate array with those that Galeri now provides. 
+    
+
+    if(!coordinates.is_null() && (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") ) {
+      Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > newcoordinates;
+      newcoordinates = Pr->BuildCoords();
+
+      // Galeri makes multiple copies of coordinates to deal with
+      // some issues when Ndofs != Nmeshnodes
+     
+
+      for (size_t kkk = 0; kkk < coordinates->getNumVectors(); kkk++) {
+        Teuchos::ArrayRCP<real_type> old = coordinates->getDataNonConst(kkk);
+        Teuchos::ArrayRCP<real_type> newvals  = newcoordinates->getDataNonConst(kkk);
+        int numCopies = newvals.size() / old.size();  
+        for (int jj=0; jj < old.size(); jj++) old[jj] = newvals[numCopies*jj];
+      }
+    }
 
     if (matrixType == "Elasticity2D" ||
         matrixType == "Elasticity3D") {

@@ -25,7 +25,7 @@ extern unsigned int debug_level;
 namespace {
 #ifdef USE_ZOLTAN
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 #define ZCHECK(funcall)                                                                            \
   do {                                                                                             \
     ierr = (funcall);                                                                              \
@@ -43,7 +43,7 @@ namespace {
   struct
   {
     size_t ndot; /* Length of x, y, z, and part (== # of elements) */
-    int *  vwgt; /* vertex weights */
+    int   *vwgt; /* vertex weights */
     float *x;    /* x-coordinates */
     float *y;    /* y-coordinates */
     float *z;    /* z-coordinates */
@@ -180,11 +180,11 @@ void decompose_grid(Grid &grid, int ranks, const std::string &method)
 
   /* Initialize Zoltan */
   int           argc   = 0;
-  char **       argv   = nullptr;
+  char        **argv   = nullptr;
   ZOLTAN_ID_PTR zgids  = nullptr;
   ZOLTAN_ID_PTR zlids  = nullptr; /* Useful output from Zoltan_LB_Partition */
-  int *         zprocs = nullptr; /* Useful output from Zoltan_LB_Partition */
-  int *         zparts = nullptr; /* Useful output from Zoltan_LB_Partition */
+  int          *zprocs = nullptr; /* Useful output from Zoltan_LB_Partition */
+  int          *zparts = nullptr; /* Useful output from Zoltan_LB_Partition */
 
   int   ierr = 0;
   float ver  = 0.0;
@@ -226,8 +226,8 @@ void decompose_grid(Grid &grid, int ranks, const std::string &method)
     ZOLTAN_ID_PTR dummy1    = nullptr;
     ZOLTAN_ID_PTR dummy2    = nullptr; /* Empty output from Zoltan_LB_Partition */
     int           dummy0    = 0;
-    int *         dummy3    = nullptr;
-    int *         dummy4    = nullptr;
+    int          *dummy3    = nullptr;
+    int          *dummy4    = nullptr;
     int           changes   = 0;
 
     ZCHECK(Zoltan_LB_Partition(zz, &changes, &zngid_ent, &znlid_ent, &dummy0, &dummy1, &dummy2,

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Copyright(C) 1999-2021 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
@@ -14,19 +15,22 @@ import tempfile
 import ctypes
 from contextlib import contextmanager
 
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
-sys.path.append(os.path.join(path, "lib"))
+ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
+sys.path.append(os.path.join(ACCESS, "lib"))
 import exodus as exo
+
 
 
 class TestAssemblies(unittest.TestCase):
 
     def setUp(self):
-        exofile = exo.exodus("test-assembly.exo", mode='r')
+        input_dir = os.path.dirname(__file__)
+        self.exofile = exo.exodus(os.path.join(input_dir, "test-assembly.exo"), mode='r')
         self.tempdir = tempfile.TemporaryDirectory()
         self.temp_exo_path = os.path.join(self.tempdir.name, "temp-test-assembly.exo")
-        self.temp_exofile = exofile.copy(self.temp_exo_path)
-        exofile.close()
+        self.temp_exofile = self.exofile.copy(self.temp_exo_path, True)
+        self.exofile.close()
+        self.temp_exofile.close()
 
     def tearDown(self):
         self.tempdir.cleanup()
@@ -51,18 +55,18 @@ class TestAssemblies(unittest.TestCase):
         self.assertIsInstance(ctype_assem.entity_list, ctypes.POINTER(ctypes.c_longlong))
 
     def test_get_name_assembly(self):
-        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+        temp_exofile = exo.exodus(self.temp_exo_path)
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         names = [temp_exofile.get_name("EX_ASSEMBLY", assembly) for assembly in assembly_ids]
         self.assertEqual(['Root', 'Child2', 'Child3', 'Child4', 'NewAssembly', 'FromPython'], names)
 
     def test_inquire_assembly(self):
-        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+        temp_exofile = exo.exodus(self.temp_exo_path)
         assem_count = temp_exofile.inquire("EX_INQ_ASSEMBLY")
         self.assertEqual(6, assem_count)
 
     def test_get_assembly(self):
-        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+        temp_exofile = exo.exodus(self.temp_exo_path)
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
         root = exo.assembly(name='Root', type='EX_ASSEMBLY', id=100)
@@ -70,7 +74,7 @@ class TestAssemblies(unittest.TestCase):
         self.assertEqual(str(root), str(assemblies[0]))
 
     def test_get_assemblies(self):
-        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+        temp_exofile = exo.exodus(self.temp_exo_path)
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = temp_exofile.get_assemblies(assembly_ids)
         expected = [exo.assembly(name='Root', type='EX_ASSEMBLY', id=100),
@@ -93,8 +97,9 @@ class TestAssemblies(unittest.TestCase):
     def test_put_assembly(self):
         new = exo.assembly(name='Unit_test', type=exo.ex_entity_type.EX_ASSEMBLY, id=444)
         new.entity_list = [100, 222]
-        self.temp_exofile.put_assembly(new)
-        self.temp_exofile.close()
+        temp_exofile = exo.exodus(self.temp_exo_path, mode='a')
+        temp_exofile.put_assembly(new)
+        temp_exofile.close()
         temp_exofile = exo.exodus(self.temp_exo_path)
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
@@ -104,7 +109,8 @@ class TestAssemblies(unittest.TestCase):
         self.assertEqual(new.entity_list, assemblies[6].entity_list)
 
     def test_get_reduction_variables_assembly(self):
-        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+
+        temp_exofile = exo.exodus(self.temp_exo_path, mode='r')
         red_var = temp_exofile.get_reduction_variable_number("EX_ASSEMBLY")
         self.assertEqual(4, red_var)
         names = temp_exofile.get_reduction_variable_names("EX_ASSEMBLY")
@@ -114,7 +120,8 @@ class TestAssemblies(unittest.TestCase):
         self.assertIn("Kinetic_Energy", names)
 
     def test_get_reduction_variables_assembly_enum(self):
-        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+
+        temp_exofile = exo.exodus(self.temp_exo_path, mode='r')
         red_var = temp_exofile.get_reduction_variable_number(exo.ex_entity_type.EX_ASSEMBLY)
         self.assertEqual(4, red_var)
         names = temp_exofile.get_reduction_variable_names(exo.ex_entity_type.EX_ASSEMBLY)
@@ -124,28 +131,32 @@ class TestAssemblies(unittest.TestCase):
         self.assertIn("Kinetic_Energy", names)
 
     def test_get_reduction_variable_assembly(self):
-        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+
+        temp_exofile = exo.exodus(self.temp_exo_path, mode='r')
         red_var = temp_exofile.get_reduction_variable_number("EX_ASSEMBLY")
         self.assertEqual(4, red_var)
         name = temp_exofile.get_reduction_variable_name("EX_ASSEMBLY", 1)
         self.assertIn("Momentum_X", name)
 
     def test_get_reduction_variable_assembly_enum(self):
-        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+
+        temp_exofile = exo.exodus(self.temp_exo_path, mode='r')
         red_var = temp_exofile.get_reduction_variable_number(exo.ex_entity_type.EX_ASSEMBLY)
         self.assertEqual(4, red_var)
         name = temp_exofile.get_reduction_variable_name(exo.ex_entity_type.EX_ASSEMBLY, 1)
         self.assertIn("Momentum_X", name)
 
     def test_get_reduction_variable_values_assembly(self):
-        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+
+        temp_exofile = exo.exodus(self.temp_exo_path, mode='r')
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
         values = temp_exofile.get_reduction_variable_values('EX_ASSEMBLY', assemblies[0].id, 1)
         self.assertListEqual([0.02, 0.03, 0.04, 0.05], list(values))
 
     def test_get_reduction_variable_values_assembly_no_values(self):
-        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+
+        temp_exofile = exo.exodus(self.temp_exo_path, mode='r')
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
         values = temp_exofile.get_reduction_variable_values('EX_ASSEMBLY', assemblies[5].id, 1)
@@ -154,8 +165,9 @@ class TestAssemblies(unittest.TestCase):
     def test_put_assemblies(self):
         new = exo.assembly(name='Unit_test', type='EX_ASSEMBLY', id=444)
         new.entity_list = [100, 222]
-        self.temp_exofile.put_assemblies([new])
-        self.temp_exofile.close()
+        temp_exofile = exo.exodus(self.temp_exo_path, mode='a')
+        temp_exofile.put_assemblies([new])
+        temp_exofile.close()
         temp_exofile = exo.exodus(self.temp_exo_path)
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
@@ -169,8 +181,9 @@ class TestAssemblies(unittest.TestCase):
         new.entity_list = [100, 222]
         new2 = exo.assembly(name='Unit_test2', type='EX_ASSEMBLY', id=448)
         new2.entity_list = [102, 224]
-        self.temp_exofile.put_assemblies([new, new2])
-        self.temp_exofile.close()
+        temp_exofile = exo.exodus(self.temp_exo_path, mode='a')
+        temp_exofile.put_assemblies([new, new2])
+        temp_exofile.close()
         temp_exofile = exo.exodus(self.temp_exo_path)
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]

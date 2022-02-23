@@ -53,6 +53,7 @@
 #include <Ionit_Initializer.h>                       // for Initializer
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include "stk_io/StkIoUtils.hpp"
+#include "stk_io/WriteMesh.hpp"
 
 namespace stk { namespace mesh { class FieldBase; } }
 namespace {
@@ -703,4 +704,51 @@ TEST(StkIoFieldType, inputFile)
       describe_fields(nodeSet);
   }
 }
+
+void write_mesh_file_with_scalar_and_array_field_sizes(const std::string & fileName, const std::string & fieldName)
+{
+  stk::mesh::MetaData meta(3);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+
+  stk::mesh::Part & scalarPart = meta.declare_part("scalar_part", stk::topology::ELEM_RANK);
+  stk::mesh::Part & arrayPart = meta.declare_part("array_part", stk::topology::ELEM_RANK);
+
+  stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, fieldName);
+  double scalarInitValue {1};
+  stk::mesh::put_field_on_mesh(field, scalarPart, &scalarInitValue);
+  double arrayInitValue[5] {1, 2, 3, 4, 5};
+  stk::mesh::put_field_on_mesh(field, arrayPart, 5, arrayInitValue);
+
+  const std::string meshSpec = "textmesh:0,1,HEX_8,1,2,3,4,5,6,7,8,scalar_part\n"
+                                        "0,2,HEX_8,5,6,7,8,9,10,11,12,array_part";
+  stk::io::fill_mesh(meshSpec, bulk);
+
+  stk::io::write_mesh_with_fields(fileName, bulk, 1);
+}
+
+bool check_single_field_registration(const stk::mesh::MetaData & meta, const std::string & fieldName)
+{
+  const stk::mesh::FieldVector & allFields = meta.get_fields();
+
+  return std::count_if(allFields.begin(), allFields.end(),
+                       [&](const stk::mesh::FieldBase * field){ return field->name() == fieldName;} ) == 1;
+}
+
+TEST(StkIoFieldType, varyingSizePerBlock)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  const std::string fileName {"varying_field_sizes.g"};
+  const std::string fieldName {"variable_length_field"};
+  write_mesh_file_with_scalar_and_array_field_sizes(fileName, fieldName);
+
+  stk::mesh::MetaData meta(3);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::io::fill_mesh(fileName, bulk);
+
+  EXPECT_TRUE(check_single_field_registration(meta, fieldName));
+  unlink(fileName.c_str());
+}
+
+
 }

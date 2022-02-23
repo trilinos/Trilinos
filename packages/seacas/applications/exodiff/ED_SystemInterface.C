@@ -1183,7 +1183,7 @@ void SystemInterface::Parse_Command_File()
       else if (abbreviation(tok1, "global", 4) && abbreviation(tok2, "variables", 3)) {
         glob_var_default = default_tol;
         xline            = Parse_Variables(xline, cmd_file, glob_var_do_all_flag, glob_var_default,
-                                glob_var_names, glob_var);
+                                           glob_var_names, glob_var);
 
         Check_Parsed_Names(glob_var_names, glob_var_do_all_flag);
 
@@ -1199,7 +1199,7 @@ void SystemInterface::Parse_Command_File()
       else if (abbreviation(tok1, "nodal", 4) && abbreviation(tok2, "variables", 3)) {
         node_var_default = default_tol;
         xline            = Parse_Variables(xline, cmd_file, node_var_do_all_flag, node_var_default,
-                                node_var_names, node_var);
+                                           node_var_names, node_var);
 
         Check_Parsed_Names(node_var_names, node_var_do_all_flag);
 
@@ -1215,7 +1215,7 @@ void SystemInterface::Parse_Command_File()
       else if (abbreviation(tok1, "element", 4) && abbreviation(tok2, "variables", 3)) {
         elmt_var_default = default_tol;
         xline            = Parse_Variables(xline, cmd_file, elmt_var_do_all_flag, elmt_var_default,
-                                elmt_var_names, elmt_var);
+                                           elmt_var_names, elmt_var);
 
         Check_Parsed_Names(elmt_var_names, elmt_var_do_all_flag);
 
@@ -1377,7 +1377,7 @@ void SystemInterface::Parse_Command_File()
       else if (abbreviation(tok1, "element", 4) && abbreviation(tok2, "attributes", 3)) {
         elmt_att_default = default_tol;
         xline            = Parse_Variables(xline, cmd_file, elmt_att_do_all_flag, elmt_att_default,
-                                elmt_att_names, elmt_att);
+                                           elmt_att_names, elmt_att);
 
         Check_Parsed_Names(elmt_att_names, elmt_att_do_all_flag);
 

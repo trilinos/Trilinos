@@ -77,7 +77,7 @@ int ex_put_prop_array(int exoid, ex_entity_type obj_type, const char *prop_name,
   bool   found = false;
   int    int_type;
   size_t num_obj;
-  char * name;
+  char  *name;
   char   tmpstr[MAX_STR_LENGTH + 1];
 
   char errmsg[MAX_ERR_LENGTH];

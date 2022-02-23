@@ -868,24 +868,39 @@ namespace MueLu {
     
     this->GetOStream(Statistics1) << label << eigRatioString << " (computed) = " << ratio << std::endl;
     paramList.set(eigRatioString, ratio);
-    
+
     if (paramList.isParameter("chebyshev: use rowsumabs diagonal scaling")) {
       this->GetOStream(Runtime1) << "chebyshev: using rowsumabs diagonal scaling" << std::endl;
       bool doScale = false;
       doScale = paramList.get<bool>("chebyshev: use rowsumabs diagonal scaling");
       paramList.remove("chebyshev: use rowsumabs diagonal scaling");
       double chebyReplaceTol = Teuchos::ScalarTraits<Scalar>::eps()*100;
-      if (paramList.isParameter("chebyshev: rowsumabs diagonal replacement tolerance")) {
-        paramList.get<double>("chebyshev: rowsumabs diagonal replacement tolerance",chebyReplaceTol);
-        paramList.remove("chebyshev: rowsumabs diagonal replacement tolerance");
+      std::string paramName = "chebyshev: rowsumabs diagonal replacement tolerance";
+      if (paramList.isParameter(paramName)) {
+        chebyReplaceTol = paramList.get<double>(paramName);
+        paramList.remove(paramName);
       }
       double chebyReplaceVal = Teuchos::ScalarTraits<double>::zero();
-      if (paramList.isParameter("chebyshev: rowsumabs diagonal replacement value")) {
-        paramList.get<double>("chebyshev: rowsumabs diagonal replacement value",chebyReplaceVal);
-        paramList.remove("chebyshev: rowsumabs diagonal replacement value");
+      paramName = "chebyshev: rowsumabs diagonal replacement value";
+      if (paramList.isParameter(paramName)) {
+        chebyReplaceVal = paramList.get<double>(paramName);
+        paramList.remove(paramName);
+      }
+      bool chebyReplaceSingleEntryRowWithZero = false;
+      paramName = "chebyshev: rowsumabs replace single entry row with zero";
+      if (paramList.isParameter(paramName)) {
+        chebyReplaceSingleEntryRowWithZero = paramList.get<bool>(paramName);
+        paramList.remove(paramName);
+      }
+      bool useAverageAbsDiagVal = false;
+      paramName = "chebyshev: rowsumabs use automatic diagonal tolerance";
+      if (paramList.isParameter(paramName)) {
+        useAverageAbsDiagVal = paramList.get<bool>(paramName);
+        paramList.remove(paramName);
       }
       if (doScale) {
-        RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(*currentA,true, chebyReplaceTol, chebyReplaceVal);
+        const bool doReciprocal = true;
+        RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(*currentA, doReciprocal, chebyReplaceTol, chebyReplaceVal, chebyReplaceSingleEntryRowWithZero, useAverageAbsDiagVal);
         const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*lumpedDiagonal);
         paramList.set("chebyshev: operator inv diagonal",tmpVec.getTpetra_Vector());
       }

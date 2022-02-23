@@ -143,7 +143,10 @@ class PhactoriVtkDataExportOperation(PhactoriOperationSpecifics):
     self.mWriter.SetInputData(self.mFilterToWriteDataFrom.GetClientSideObject().GetOutputDataObject(0))
 
   def CreateCurrentCallbackOutputFilename(self):
-    ftc = GetFrameTagCounter()
+    try:
+      ftc = GetFrameTagCounter()
+    except:
+      ftc = 0
     outName = self.mOutputFileBasedirectory + "/" + \
       self.mOutputFileBasename + "_" + \
       str(ftc).zfill(self.mNumCounterDigits) + \

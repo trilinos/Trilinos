@@ -23,7 +23,11 @@ ReporterBase*& getDeviceReporterOnHost()
 
 NGP_TEST_INLINE ReporterBase*& getDeviceReporterOnDevice()
 {
-  static ReporterBase* deviceReporterOnDevice = nullptr;
+  #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP_GPU
+    __device__ static ReporterBase* deviceReporterOnDevice = nullptr;
+  #else
+    static ReporterBase* deviceReporterOnDevice = nullptr;
+  #endif
   return deviceReporterOnDevice;
 }
 
