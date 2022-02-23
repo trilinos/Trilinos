@@ -245,6 +245,26 @@ private:
 // CuSparse Testing
 // =========================================================================
 #if defined(HAVE_MUELU_CUSPARSE) && defined(HAVE_MUELU_TPETRA)
+
+#define CHECK_CUDA(func)                                                       \
+{                                                                              \
+    cudaError_t status = (func);                                               \
+    if (status != cudaSuccess) {                                               \
+        printf("CUDA API failed at line %d with error: %s (%d)\n",             \
+               __LINE__, cudaGetErrorString(status), status);                  \
+    }                                                                          \
+}
+
+#define CHECK_CUSPARSE(func)                                                   \
+{                                                                              \
+    cusparseStatus_t status = (func);                                          \
+    if (status != CUSPARSE_STATUS_SUCCESS) {                                   \
+        printf("CUSPARSE API failed at line %d with error: %s (%d)\n",         \
+               __LINE__, cusparseGetErrorString(status), status);              \
+    }                                                                          \
+}
+
+
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 class CuSparse_SpmV_Pack {
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
@@ -308,60 +328,69 @@ public:
 
     auto X_lcl = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
     auto Y_lcl = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
-    x = reinterpret_cast<const Scalar*>(X_lcl.data());
+    x = const_cast<Scalar*>(reinterpret_cast<const Scalar*>(X_lcl.data()));
     y = reinterpret_cast<Scalar*>(Y_lcl.data());
 
     /* Get handle to the CUBLAS context */
     cublasCreate(&cublasHandle);
     /* Get handle to the CUSPARSE context */
     cusparseCreate(&cusparseHandle);
-    cusparseCreateMatDescr(&descrA);
 
-    cusparseSetMatType(descrA,CUSPARSE_MATRIX_TYPE_GENERAL);
-    cusparseSetMatIndexBase(descrA,CUSPARSE_INDEX_BASE_ZERO);
+    CHECK_CUSPARSE(cusparseCreateCsr(&descrA, m, n, nnz,
+                                      rowptr, cols, vals,
+                                      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                                      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F));
+
+    CHECK_CUSPARSE(cusparseCreateDnVec(&vecY, m, y, CUDA_R_64F));
+    CHECK_CUSPARSE(cusparseCreateDnVec(&vecX, n, x, CUDA_R_64F));
   }
 
   ~CuSparse_SpmV_Pack () {
+    CHECK_CUSPARSE( cusparseDestroySpMat(descrA) );
+    CHECK_CUSPARSE( cusparseDestroyDnVec(vecX) );
+    CHECK_CUSPARSE( cusparseDestroyDnVec(vecY) );
     cusparseDestroy(cusparseHandle);
     cublasDestroy(cublasHandle);
   }
 
   cusparseStatus_t spmv(const Scalar alpha, const Scalar beta) {
     // compute: y = alpha*Ax + beta*y
-    //cusparseDcsrmv(cusparseHandle_t handle,
-    //               cusparseOperation_t transA,
-    //               int m,
-    //               int n,
-    //               int nnz,
-    //               const double *alpha,
-    //               // CUSPARSE_MATRIX_TYPE_GENERAL
-    //               const cusparseMatDescr_t descrA,
-    //               const double *csrValA,
-    //               const int    *csrRowPtrA,
-    //               const int    *csrColIndA,
-    //               const double *x,
-    //               const double *beta,
-    //                     double *y)
-    cusparseStatus_t rc;
-    rc = cusparseDcsrmv(
-        cusparseHandle,
-        transA,
-        m, n, nnz,
-        &alpha,
-        descrA,
-        vals,
-        rowptr,
-        cols,
-        x,
-        &beta,
-        y);
+
+    size_t bufferSize;
+    CHECK_CUSPARSE(cusparseSpMV_bufferSize(cusparseHandle,
+                                           transA,
+                                           &alpha,
+                                           descrA,
+                                           vecX,
+                                           &beta,
+                                           vecY,
+                                           CUDA_R_64F,
+                                           CUSPARSE_MV_ALG_DEFAULT,
+                                           &bufferSize));
+
+    void* dBuffer = NULL;
+    CHECK_CUDA(cudaMalloc(&dBuffer, bufferSize));
+
+    cusparseStatus_t rc = cusparseSpMV(cusparseHandle,
+                                       transA,
+                                       &alpha,
+                                       descrA,
+                                       vecX,
+                                       &beta,
+                                       vecY,
+                                       CUDA_R_64F,
+                                       CUSPARSE_MV_ALG_DEFAULT,
+                                       dBuffer);
+
+    CHECK_CUDA(cudaFree(dBuffer));
 
     return (rc);
   }
 private:
   cublasHandle_t     cublasHandle   = 0;
   cusparseHandle_t   cusparseHandle = 0;
-  cusparseMatDescr_t descrA         = 0;
+  cusparseSpMatDescr_t descrA         = 0;
+  cusparseDnVecDescr_t vecX = 0, vecY = 0;
 
   // CUSPARSE_OPERATION_NON_TRANSPOSE
   // CUSPARSE_OPERATION_TRANSPOSE
@@ -373,7 +402,7 @@ private:
   Scalar * vals  = nullptr; // aliased
   int * cols     = nullptr; // copied
   int * rowptr   = nullptr; // copied
-  const Scalar * x     = nullptr; // aliased
+  Scalar * x     = nullptr; // aliased
   Scalar * y     = nullptr; // aliased
 
   // handles to the copied data
@@ -787,7 +816,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         #endif
 
         #ifdef HAVE_MUELU_CUSPARSE
-        // MKL
+        // CUSPARSE
         case Experiments::CUSPARSE:
         {
            const Scalar alpha = 1.0;
