@@ -61,6 +61,8 @@ bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& st
     internal::logMessage(stkMeshBulkData.parallel(), "Computing new decomposition using '" +
                          balanceSettings.getDecompMethod() + "' method");
 
+    internal::EnableAura enableAura(stkMeshBulkData);
+
     if (sizeof(BalanceGlobalNumber) < sizeof(stk::mesh::EntityId)) {
       verify_mesh_ids_are_not_too_large(stkMeshBulkData);
     }

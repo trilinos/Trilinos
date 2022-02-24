@@ -139,14 +139,13 @@ bool verify_parallel_attributes_for_bucket(const Bucket& bucket,
 
     bool this_result = true;
 
-    const EntityKey key = mesh.entity_key(entity);
     const int      p_owner    = mesh.parallel_owner_rank(entity);
     const bool     ordered    = impl::is_comm_ordered(getEntityComm(entity));
-    const bool     shares     = mesh.in_shared( key );
-    const bool     recv_aura = mesh.in_receive_ghost( mesh.aura_ghosting(), key );
-    const bool     recv_any_ghost = mesh.in_receive_ghost( key );
+    const bool     shares     = mesh.in_shared( entity );
+    const bool     recv_aura = mesh.in_receive_ghost( mesh.aura_ghosting(), entity );
+    const bool     recv_any_ghost = mesh.in_receive_ghost( entity );
     const bool     custom_ghost = recv_any_ghost && !recv_aura;
-    const bool     send_ghost = mesh.in_send_ghost( key );
+    const bool     send_ghost = mesh.in_send_ghost( entity );
     const bool     ownedClosure = mesh.owned_closure(entity);
 
     if ( ! ordered ) {
@@ -190,7 +189,7 @@ bool verify_parallel_attributes_for_bucket(const Bucket& bucket,
 
     if (   ownedClosure &&   recv_aura ) {
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "problem: entity "<<key<<" (with topology "<<bucket.topology()<<") is both recv aura ghost and in owned_closure;"<<std::endl;
+      error_log << "problem: entity "<<mesh.entity_key(entity)<<" (with topology "<<bucket.topology()<<") is both recv aura ghost and in owned_closure;"<<std::endl;
       this_result = false ;
     }
     if ( ! ownedClosure && ! recv_any_ghost ) {

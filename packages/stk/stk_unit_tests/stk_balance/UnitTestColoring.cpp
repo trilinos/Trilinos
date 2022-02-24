@@ -195,7 +195,7 @@ TEST_F(Color2DMesh, colorHeterogeneousMeshWithQuadsSurroundingTriangles)
 {
     if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) return;
 
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     Vector2dFieldType & node_coord = get_meta().declare_field<Vector2dFieldType>(stk::topology::NODE_RANK, "coordinates");
     stk::mesh::put_field_on_mesh( node_coord , get_meta().universal_part() , 2, (stk::mesh::FieldTraits<Vector2dFieldType>::data_type*) nullptr);
 

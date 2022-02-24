@@ -54,7 +54,7 @@ protected:
 
   void setup_initial_mesh(const std::string & inputMeshFile)
   {
-    setup_mesh(inputMeshFile, stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh(inputMeshFile, stk::mesh::BulkData::AUTO_AURA);
   }
 
   void unbalance_mesh()

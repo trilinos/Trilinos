@@ -411,7 +411,7 @@ BulkData::BulkData(MetaData & mesh_meta_data,
 
   impl::check_size_of_types();
 
-  register_observer(m_meshDiagnosticObserver);
+  register_observer(m_meshDiagnosticObserver, ModificationObserverPriority::STK_INTERNAL);
 
   init_mesh_consistency_check_mode();
 
@@ -1087,7 +1087,7 @@ bool entity_is_purely_local(const BulkData& mesh, Entity entity)
 {
     const Bucket& bucket = mesh.bucket(entity);
     return bucket.owned() && !bucket.shared()
-            && !bucket.in_aura() && !mesh.in_send_ghost(mesh.entity_key(entity));
+            && !bucket.in_aura() && !mesh.in_send_ghost(entity);
 }
 
 void require_fmwk_or_entity_purely_local(const BulkData& mesh, Entity entity, const std::string& caller)
@@ -1760,9 +1760,10 @@ void BulkData::reallocate_field_data(stk::mesh::FieldBase & field)
   }
 }
 
-void BulkData::register_observer(std::shared_ptr<ModificationObserver> observer) const
+void BulkData::register_observer(std::shared_ptr<ModificationObserver> observer,
+                                 ModificationObserverPriority priority) const
 {
-    notifier.register_observer(observer);
+    notifier.register_observer(observer, priority);
 }
 
 void BulkData::unregister_observer(std::shared_ptr<ModificationObserver> observer) const
@@ -4031,7 +4032,7 @@ EntityVector BulkData::get_upward_recv_ghost_relations(const Entity entity)
 {
   EntityVector ghosts;
   filter_upward_ghost_relations(entity, [&](Entity relation) {
-    if(in_receive_ghost(entity_key(relation))) {
+    if(in_receive_ghost(relation)) {
       ghosts.push_back(relation);
     }
   });
@@ -4043,7 +4044,7 @@ EntityVector BulkData::get_upward_send_ghost_relations(const Entity entity)
 {
   EntityVector ghosts;
   filter_upward_ghost_relations(entity, [&](Entity relation) {
-    if(in_send_ghost(entity_key(relation))) {
+    if(in_send_ghost(relation)) {
       ghosts.push_back(relation);
     }
   });
@@ -5614,7 +5615,7 @@ void BulkData::internal_propagate_induced_part_changes_to_downward_connected_ent
                 if (remote_changes_needed)
                 {
                     Bucket *bucket_old = bucket_ptr(e_to);
-                    if ( !m_meshModification.did_any_shared_entity_change_parts() && bucket_old && (bucket_old->shared()  || this->in_send_ghost(entity_key(entity)) || this->in_receive_ghost(entity_key(entity)) ))
+                    if ( !m_meshModification.did_any_shared_entity_change_parts() && bucket_old && (bucket_old->shared()  || this->in_send_ghost(entity) || this->in_receive_ghost(entity) ))
                     {
                         m_meshModification.set_shared_entity_changed_parts();
                     }
@@ -6377,7 +6378,7 @@ void BulkData::initialize_face_adjacent_element_graph()
     {
         m_elemElemGraph = new ElemElemGraph(*this);
         m_elemElemGraphUpdater = std::make_shared<ElemElemGraphUpdater>(*this,*m_elemElemGraph);
-        register_observer(m_elemElemGraphUpdater);
+        register_observer(m_elemElemGraphUpdater, ModificationObserverPriority::STK_INTERNAL);
     }
 }
 

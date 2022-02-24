@@ -228,9 +228,11 @@ void StkMeshIoBroker::create_sideset_observer()
         }
 
         if(bulk_data().synchronized_count() > 0) {
-          bulk_data().register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(bulk_data(), activeSelector));
+          bulk_data().register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(bulk_data(), activeSelector),
+                                        stk::mesh::ModificationObserverPriority::STK_INTERNAL);
         } else {
-          bulk_data().register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk_data(), activeSelector));
+          bulk_data().register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk_data(), activeSelector),
+                                        stk::mesh::ModificationObserverPriority::STK_INTERNAL);
         }
     }
 }

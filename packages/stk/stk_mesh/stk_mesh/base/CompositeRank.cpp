@@ -39,15 +39,20 @@
 namespace stk {
 namespace mesh {
 
-stk::mesh::EntityRank CompositeRank::get_rank(stk::mesh::Part* part)
+stk::mesh::EntityRank CompositeRank::get_rank(const stk::mesh::Part* part)
 {
   if(nullptr == part) return stk::topology::INVALID_RANK;
 
-  if(part->primary_entity_rank() == stk::topology::INVALID_RANK) {
-    return get_composite_rank(*part);
+  return get_rank(*part);
+}
+
+stk::mesh::EntityRank CompositeRank::get_rank(const stk::mesh::Part& part)
+{
+  if(part.primary_entity_rank() == stk::topology::INVALID_RANK) {
+    return get_composite_rank(part);
   }
 
-  return part->primary_entity_rank();
+  return part.primary_entity_rank();
 }
 
 stk::mesh::PartVector CompositeRank::get_unique_leaf_parts(const stk::mesh::Part& part)
