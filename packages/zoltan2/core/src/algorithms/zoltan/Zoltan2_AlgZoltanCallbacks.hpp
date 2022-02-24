@@ -225,7 +225,7 @@ static void zoltanHGCS_withGraphAdapter(void *data, int nGidEnt, int nLists,
     adp->getIDsView(ids);
     adp->getEdgesView(offsets, adjIds);
   }
-  catch (std::exception &e) {
+  catch (std::exception &) {
     *ierr = ZOLTAN_FATAL;
   }
 
@@ -306,7 +306,7 @@ static void zoltanHGEdgeWts_withGraphAdapter(
     adp->getEdgesView(offsets, adjIds);
     adp->getEdgeWeightsView(ewgts, stride, 0);  // Use only first weight
   }
-  catch (std::exception &e) {
+  catch (std::exception &) {
     *ierr = ZOLTAN_FATAL;
   }
   if (ierr == ZOLTAN_OK) {
@@ -399,7 +399,7 @@ static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists,
       madp->getRowIDsView(Ids);
       madp->getCRSView(offsets, pIds);
     }
-    catch (std::exception &e) {
+    catch (std::exception &) {
       *ierr = ZOLTAN_FATAL;
     }
   }
@@ -408,7 +408,7 @@ static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists,
       madp->getColumnIDsView(Ids);
       madp->getCCSView(offsets, pIds);
     }
-    catch (std::exception &e) {
+    catch (std::exception &) {
       *ierr = ZOLTAN_FATAL;
     }
   }
@@ -520,7 +520,7 @@ static void zoltanHGCS_withMeshAdapter(
     try {
       madp->getIDsViewOf(listType,Ids);
     }
-    catch (std::exception &e) {
+    catch (std::exception &) {
       *ierr = ZOLTAN_FATAL;
     }
 
@@ -530,7 +530,7 @@ static void zoltanHGCS_withMeshAdapter(
     try {
       madp->getAdjsView(listType, pinType, offsets, adjIds);
     }
-    catch (std::exception &e) {
+    catch (std::exception &) {
       *ierr = ZOLTAN_FATAL;
     }
 
