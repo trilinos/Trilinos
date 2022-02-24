@@ -45,26 +45,41 @@
     \author Created by P. Bochev, D. Ridzal, K. Peterson.
 */
 
+
 #include "Kokkos_Core.hpp"
+
+#define ETI_SACADO @ETI_SACADO@
+#if (ETI_SACADO != 0)  /// SACADO
 #include "Kokkos_ViewFactory.hpp"
-#include <Sacado.hpp>
+#include "Sacado.hpp"
+#endif
 
-
+#if (ETI_SACADO == 0)  /// double double
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__)
+#elif (ETI_SACADO == 11 /* SFAD SFAD */ || ETI_SACADO == 33 /* DFAD DFAD */)
+constexpr int num_deriv = 10;
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#elif (ETI_SACADO == 23)
 constexpr int num_deriv = 9;
 constexpr int max_deriv = 10;
 #define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, max_deriv+1)
 #define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#elif (ETI_SACADO == 20)
+constexpr int num_deriv = 2;
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__, num_deriv+1)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__)
+#endif
 
 #include "test_01.hpp"
-typedef Sacado::Fad::SLFad<double,max_deriv> Fad_SLFadType;
-typedef Sacado::Fad::DFad<double> Fad_DFadType;
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
 
-  const int r_val = Intrepid2::Test::HVOL_HEX_Cn_FEM_Test01<Fad_SLFadType, Fad_DFadType, Kokkos::Serial>(verbose);
+  const int r_val = Intrepid2::Test::HVOL_HEX_Cn_FEM_Test01<@ETI_VALUETYPE@,@ETI_DEVICE@>(verbose);
 
   Kokkos::finalize();
   return r_val;
