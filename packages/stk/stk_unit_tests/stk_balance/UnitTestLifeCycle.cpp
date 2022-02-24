@@ -49,14 +49,14 @@ protected:
   }
 
   void build_parallel_mesh() {
-    stk::unit_test_util::GeneratedMeshToFile gMesh(get_comm(), stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::unit_test_util::GeneratedMeshToFile gMesh(get_comm(), stk::mesh::BulkData::AUTO_AURA);
     const bool useBigIds = false;
     gMesh.setup_mesh("1x1x4", m_inFile, useBigIds);
     gMesh.write_mesh();
   }
 
   void build_parallel_mesh_with_big_ids() {
-    stk::unit_test_util::GeneratedMeshToFile gMesh(get_comm(), stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::unit_test_util::GeneratedMeshToFile gMesh(get_comm(), stk::mesh::BulkData::AUTO_AURA);
     const bool useBigIds = true;
     gMesh.setup_mesh("1x1x4", m_inFile, useBigIds);
     gMesh.write_mesh();
@@ -80,7 +80,7 @@ protected:
     std::string transientFieldName = "transient_field";
     std::string globalVariableName = "global_variable";
     stk::unit_test_util::GeneratedMeshToFileWithTransientFields gMesh(get_comm(),
-                                                                      stk::mesh::BulkData::NO_AUTO_AURA,
+                                                                      stk::mesh::BulkData::AUTO_AURA,
                                                                       transientFieldName,
                                                                       stk::topology::NODE_RANK);
     const bool useBigIds = false;

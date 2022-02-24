@@ -340,7 +340,8 @@ void create_sideset_observer(stk::mesh::BulkData& bulk, stk::mesh::Selector acti
       if (activeSelector == stk::mesh::Selector()) {
           activeSelector = bulk.mesh_meta_data().universal_part();
       }
-      bulk.register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk, activeSelector));
+      bulk.register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk, activeSelector),
+                             stk::mesh::ModificationObserverPriority::STK_INTERNAL);
   }
 }
 }

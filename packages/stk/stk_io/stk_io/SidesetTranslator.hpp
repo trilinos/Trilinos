@@ -56,13 +56,17 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
                                             std::vector<INT>& elem_side_ids)
 {
   const mesh::BulkData &bulk_data = params.bulk_data();
-  const stk::mesh::Selector *subset_selector = params.get_subset_selector();
-  const stk::mesh::Selector *output_selector = params.get_output_selector(stk::topology::ELEM_RANK);
+  const stk::mesh::Selector *elemSubsetSelector = params.get_subset_selector();
+  const stk::mesh::Selector *elemOutputSelector = params.get_output_selector(stk::topology::ELEM_RANK);
+  const stk::mesh::Selector *faceOutputSelector = params.get_output_selector(bulk_data.mesh_meta_data().side_rank());
 
   size_t num_sides = sset.size();
   elem_side_ids.reserve(num_sides*2);
 
   stk::mesh::Selector selector = *part & construct_sideset_selector(params);
+  if (nullptr != faceOutputSelector) {
+    selector &= *faceOutputSelector;
+  }
   stk::mesh::Selector parentElementSelector =  (parentElementBlock == nullptr) ? stk::mesh::Selector() : *parentElementBlock;
   const stk::mesh::EntityRank sideRank = part->primary_entity_rank();
 
@@ -95,8 +99,8 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
                                          stk_element_topology == elementBucket.topology())) {
 
           bool selectedByParent = (parentElementBlock == nullptr) ? true : parentElementSelector(elementBucket);
-          bool selectedByBucket = (   subset_selector == nullptr) ? true :    (*subset_selector)(elementBucket);
-          bool selectedByOutput = (   output_selector == nullptr) ? true :    (*output_selector)(elementBucket);
+          bool selectedByBucket = (elemSubsetSelector == nullptr) ? true : (*elemSubsetSelector)(elementBucket);
+          bool selectedByOutput = (elemOutputSelector == nullptr) ? true : (*elemOutputSelector)(elementBucket);
 
           if (selectedByBucket && selectedByParent && selectedByOutput) {
             elem_side_ids.push_back(elemId);
@@ -258,9 +262,7 @@ void fill_element_and_side_ids(stk::io::OutputParams &params,
 
 inline size_t get_number_sides_in_sideset(OutputParams &params,
                                           const stk::mesh::Part &ssPart,
-                                          stk::mesh::Selector selector,
                                           stk::topology stk_element_topology,
-                                          const stk::mesh::BucketVector& buckets,
                                           const stk::mesh::Part *parentElementBlock = nullptr)
 {
     stk::mesh::EntityVector sides;

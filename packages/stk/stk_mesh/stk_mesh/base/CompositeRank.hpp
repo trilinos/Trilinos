@@ -46,7 +46,8 @@ namespace mesh
 class CompositeRank
 {
  public:
-  static stk::mesh::EntityRank get_rank(stk::mesh::Part* part);
+  static stk::mesh::EntityRank get_rank(const stk::mesh::Part* part);
+  static stk::mesh::EntityRank get_rank(const stk::mesh::Part& part);
 
  private:
   static stk::mesh::PartVector get_unique_leaf_parts(const stk::mesh::Part& part);

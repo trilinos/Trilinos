@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <stk_io/FillMesh.hpp>
 #include <stk_io/IossBridge.hpp>
+#include <stk_mesh/base/CompositeRank.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
@@ -143,12 +144,10 @@ class GetAssemblyEntities : public Assembly
     return entities;
   }
 
-  void test_get_entities(stk::mesh::Part& assemblyPart, stk::mesh::EntityRank rank, const EntityTestData& gold)
+  void compare_selected_entities(
+      stk::mesh::Part& assemblyPart, stk::mesh::EntityRank rank, const stk::mesh::EntityIdVector& goldIds)
   {
-    stk::mesh::PartVector parts = stk::io::get_unique_leaf_parts(get_meta(), assemblyPart.name());
-    EXPECT_EQ(gold.numUniqueLeaves, parts.size());
-
-    stk::mesh::EntityVector goldEntities = get_sorted_entities_from_ids(rank, gold.ids);
+    stk::mesh::EntityVector goldEntities = get_sorted_entities_from_ids(rank, goldIds);
 
     stk::mesh::Selector assemblySelector(assemblyPart);
     stk::mesh::EntityVector entities;
@@ -161,6 +160,13 @@ class GetAssemblyEntities : public Assembly
           std::binary_search(goldEntities.begin(), goldEntities.end(), entity, stk::mesh::EntityLess(get_bulk())))
           << "Could not find selected entity: " << key << " in gold list";
     }
+  }
+
+  void test_get_entities(stk::mesh::Part& assemblyPart, stk::mesh::EntityRank rank, const EntityTestData& gold)
+  {
+    stk::mesh::PartVector parts = stk::io::get_unique_leaf_parts(get_meta(), assemblyPart.name());
+    EXPECT_EQ(gold.numUniqueLeaves, parts.size());
+    compare_selected_entities(assemblyPart, rank, gold.ids);
   }
 
   stk::mesh::Part& setup_single_particle_mesh()
@@ -570,6 +576,114 @@ TEST_F(GetAssemblyEntities, hexPyramidMesh_getNodesOnPyramid)
 
   test_assembly_part_attributes(assemblyPart);
   test_get_entities(assemblyPart, stk::topology::NODE_RANK, EntityTestData(1, {5, 6, 7, 8, 9}));
+}
+
+//  (ID) = nodeset assembly nodes
+//  [ID] = sideset assembly faces
+//  {ID} = element block assembly elements
+//
+//                      3--------------7------------(11)-------------15
+//                     /|             /|             /|             /|
+//                    / |            / |            / |            / |
+//                   /  |           /  |           /  |           /  |
+//                  4--------------8------------(12)-------------16  |
+//                  |   |          |   |          |   |          |   |
+//             [15] |   |  {1}     |   |   2      |   |   3      |   | [36]
+//                  |   |          |   |          |   |          |   |
+//                  |   2----------|---6----------|-(10)---------|---14
+//     Y            |  /           |  /           |  /           |  /
+//     |  X         | /            | /            | /            | /
+//     | /          |/             |/             |/             |/
+//     |/           1--------------5-------------(9)-------------13
+//     ------Z
+
+TEST_F(GetAssemblyEntities, heterogeneousAssemblies)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) {
+    return;
+  }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+
+  const std::string assemblyName("simpleAssembly");
+
+  stk::mesh::Part& block1Assembly = create_assembly("block1Assembly", 10);
+  stk::mesh::Part& surface1Assembly = create_assembly("surface1Assembly", 11);
+  stk::mesh::Part& surface2Assembly = create_assembly("surface2Assembly", 12);
+  stk::mesh::Part& surface1And2Assembly = create_assembly("surface1And2Assembly", 13);
+  stk::mesh::Part& block1AndSurface1And2Assembly = create_assembly("block1AndSurface1And2Assembly", 14);
+  stk::mesh::Part& nodeset1Assembly = create_assembly("nodeset1Assembly", 15);
+  stk::mesh::Part& block1AndSurface1And2AndNodeset1Assembly =
+      create_assembly("block1AndSurface1And2AndNodeset1Assembly", 16);
+
+  stk::mesh::Part& block1 = create_io_part("block_1", 1, stk::topology::HEX_8);
+  stk::mesh::Part& block2 = create_io_part("block_2", 2, stk::topology::HEX_8);
+  stk::mesh::Part& surface1 = create_io_part("surface_1", 1, stk::topology::QUAD_4);
+  stk::mesh::Part& surface2 = create_io_part("surface_2", 2, stk::topology::QUAD_4);
+  stk::mesh::Part& nodeset1 = create_io_part("nodelist_1", 1, stk::topology::NODE);
+
+  stk::io::fill_mesh("generated:1x1x3|sideset:zZ", get_bulk());
+
+  move_element(2, block1, block2);
+  move_element(3, block1, block2);
+
+  add_nodes({9, 10, 11, 12}, nodeset1);
+
+  declare_subsets(block1Assembly, {&block1});
+  declare_subsets(surface1Assembly, {&surface1});
+  declare_subsets(surface2Assembly, {&surface2});
+  declare_subsets(surface1And2Assembly, {&surface1Assembly, &surface2Assembly});
+  declare_subsets(block1AndSurface1And2Assembly, {&block1Assembly, &surface1Assembly, &surface2Assembly});
+  declare_subsets(nodeset1Assembly, {&nodeset1});
+  declare_subsets(
+      block1AndSurface1And2AndNodeset1Assembly, {&block1Assembly, &surface1Assembly, &surface2Assembly, &nodeset1});
+
+  EXPECT_EQ(stk::topology::ELEM_RANK, stk::mesh::CompositeRank::get_rank(block1Assembly));
+  EXPECT_EQ(stk::topology::FACE_RANK, stk::mesh::CompositeRank::get_rank(surface1Assembly));
+  EXPECT_EQ(stk::topology::FACE_RANK, stk::mesh::CompositeRank::get_rank(surface2Assembly));
+  EXPECT_EQ(stk::topology::FACE_RANK, stk::mesh::CompositeRank::get_rank(surface1And2Assembly));
+  EXPECT_EQ(stk::topology::INVALID_RANK, stk::mesh::CompositeRank::get_rank(block1AndSurface1And2Assembly));
+  EXPECT_EQ(stk::topology::NODE_RANK, stk::mesh::CompositeRank::get_rank(nodeset1Assembly));
+  EXPECT_EQ(stk::topology::INVALID_RANK, stk::mesh::CompositeRank::get_rank(block1AndSurface1And2AndNodeset1Assembly));
+
+  test_assembly_part_attributes(block1Assembly);
+  test_assembly_part_attributes(surface1Assembly);
+  test_assembly_part_attributes(surface2Assembly);
+  test_assembly_part_attributes(surface1And2Assembly);
+  test_assembly_part_attributes(block1AndSurface1And2Assembly);
+  test_assembly_part_attributes(nodeset1Assembly);
+  test_assembly_part_attributes(block1AndSurface1And2AndNodeset1Assembly);
+
+  compare_selected_entities(block1Assembly, stk::topology::ELEM_RANK, {1});
+  compare_selected_entities(block1Assembly, stk::topology::FACE_RANK, {15});
+  compare_selected_entities(block1Assembly, stk::topology::EDGE_RANK, {});
+  compare_selected_entities(block1Assembly, stk::topology::NODE_RANK, {1, 2, 3, 4, 5, 6, 7, 8});
+
+  compare_selected_entities(surface1Assembly, stk::topology::FACE_RANK, {15});
+  compare_selected_entities(surface1Assembly, stk::topology::EDGE_RANK, {});
+  compare_selected_entities(surface1Assembly, stk::topology::NODE_RANK, {1, 2, 3, 4});
+
+  compare_selected_entities(surface2Assembly, stk::topology::FACE_RANK, {36});
+  compare_selected_entities(surface2Assembly, stk::topology::EDGE_RANK, {});
+  compare_selected_entities(surface2Assembly, stk::topology::NODE_RANK, {13, 14, 15, 16});
+
+  compare_selected_entities(surface1And2Assembly, stk::topology::FACE_RANK, {15, 36});
+  compare_selected_entities(surface1And2Assembly, stk::topology::EDGE_RANK, {});
+  compare_selected_entities(surface1And2Assembly, stk::topology::NODE_RANK, {1, 2, 3, 4, 13, 14, 15, 16});
+
+  compare_selected_entities(block1AndSurface1And2Assembly, stk::topology::ELEM_RANK, {1});
+  compare_selected_entities(block1AndSurface1And2Assembly, stk::topology::FACE_RANK, {15, 36});
+  compare_selected_entities(block1AndSurface1And2Assembly, stk::topology::EDGE_RANK, {});
+  compare_selected_entities(
+      block1AndSurface1And2Assembly, stk::topology::NODE_RANK, {1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16});
+
+  compare_selected_entities(nodeset1Assembly, stk::topology::NODE_RANK, {9, 10, 11, 12});
+
+  compare_selected_entities(block1AndSurface1And2AndNodeset1Assembly, stk::topology::ELEM_RANK, {1});
+  compare_selected_entities(block1AndSurface1And2AndNodeset1Assembly, stk::topology::FACE_RANK, {15, 36});
+  compare_selected_entities(block1AndSurface1And2AndNodeset1Assembly, stk::topology::EDGE_RANK, {});
+  compare_selected_entities(block1AndSurface1And2AndNodeset1Assembly, stk::topology::NODE_RANK,
+      {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
 }
 
 }  // namespace unit_test
