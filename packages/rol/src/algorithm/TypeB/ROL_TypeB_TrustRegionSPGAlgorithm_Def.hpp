@@ -95,6 +95,7 @@ TrustRegionSPGAlgorithm<Real>::TrustRegionSPGAlgorithm(ParameterList &list,
   tol2_      = lmlist.sublist("Solver").get("Relative Tolerance",                  1e-2);
   useMin_    = lmlist.sublist("Solver").get("Use Smallest Model Iterate",          true);
   useNMSP_   = lmlist.sublist("Solver").get("Use Nonmonotone Search",              false);
+  useSimpleSPG_ = !lmlist.sublist("Solver").get("Compute Cauchy Point",            true);
   // Inexactness Information
   ParameterList &glist = list.sublist("General");
   useInexact_.clear();
@@ -246,27 +247,33 @@ void TrustRegionSPGAlgorithm<Real>::run(Vector<Real>          &x,
     model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
 
     /**** SOLVE TRUST-REGION SUBPROBLEM ****/
-    // Compute Cauchy point (TRON notation: x = x[1])
-    dcauchy(*state_->stepVec,alpha_,q,*state_->iterateVec,
-            state_->gradientVec->dual(),state_->searchSize,
-            *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
-    x.plus(*state_->stepVec);               // Set x = x[0] + alpha*g
+    q = zero;
+    gmod->set(*state_->gradientVec);
+    if (useSimpleSPG_)
+      dpsg_simple(x,q,*gmod,*state_->iterateVec,state_->searchSize,*model_,
+                  *pwa1,*pwa2,*dwa1,outStream);
+    else {
+      // Compute Cauchy point (TRON notation: x = x[1])
+      dcauchy(*state_->stepVec,alpha_,q,*state_->iterateVec,
+              state_->gradientVec->dual(),state_->searchSize,
+              *model_,*dwa1,*dwa2,outStream); // Solve 1D optimization problem for alpha
+      x.plus(*state_->stepVec);               // Set x = x[0] + alpha*g
 
-    // Model gradient at s = x[1] - x[0]
-    gmod->set(*dwa1); // hessVec from Cauchy point computation
-    gmod->plus(*state_->gradientVec);
+      // Model gradient at s = x[1] - x[0]
+      gmod->plus(*dwa1); // hessVec from Cauchy point computation
 
-    // Apply SPG starting from the Cauchy point
-    dpsg(x,q,*gmod,*state_->iterateVec,state_->searchSize,*model_,
-         *pwa1,*pwa2,*pwa3,*pwa4,*pwa5,*pwa6,*pwa7,*dwa1,outStream);
+      // Apply SPG starting from the Cauchy point
+      dpsg(x,q,*gmod,*state_->iterateVec,state_->searchSize,*model_,
+           *pwa1,*pwa2,*pwa3,*pwa4,*pwa5,*pwa6,*pwa7,*dwa1,outStream);
+    }
+
+    // Update storage and compute predicted reduction
     pRed = -q;
     state_->stepVec->set(x); state_->stepVec->axpy(-one,*state_->iterateVec);
     state_->snorm = state_->stepVec->norm();
 
     // Compute trial objective value
     ftrial = computeValue(inTol,outTol,pRed,state_->value,state_->iter,x,*state_->iterateVec,obj);
-    //obj.update(x,UpdateType::Trial);
-    //ftrial = obj.value(x,tol0);
     state_->nfval++;
 
     // Compute ratio of acutal and predicted reduction
@@ -312,8 +319,6 @@ void TrustRegionSPGAlgorithm<Real>::run(Vector<Real>          &x,
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate
       dwa1->set(*state_->gradientVec);
-      //obj.gradient(*state_->gradientVec,x,tol0);
-      //state_->gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,*state_->gradientVec,*pwa1,outStream);
       state_->gnorm = computeGradient(x,*state_->gradientVec,*pwa1,state_->searchSize,obj,outStream);
       state_->ngrad++;
       state_->iterateVec->set(x);
@@ -425,6 +430,105 @@ Real TrustRegionSPGAlgorithm<Real>::dcauchy(Vector<Real> &s,
     }
   }
   return snorm;
+}
+
+template<typename Real>
+void TrustRegionSPGAlgorithm<Real>::dpsg_simple(Vector<Real> &y,
+                                                Real         &q,
+                                                Vector<Real> &gmod,
+                                                const Vector<Real> &x,
+                                                Real del,
+                                                TrustRegionModel_U<Real> &model,
+                                                Vector<Real> &pwa,
+                                                Vector<Real> &pwa1,
+                                                Vector<Real> &dwa,
+                                                std::ostream &outStream) {
+  // Use SPG to approximately solve TR subproblem:
+  //   min 1/2 <H(y-x), (y-x)> + <g, (y-x)>  subject to y\in C, ||y|| \le del
+  //
+  //   Inpute:
+  //       y = Primal vector
+  //       x = Current iterate
+  //       g = Current gradient
+  const Real half(0.5), one(1), safeguard(1e2*ROL_EPSILON<Real>());
+  Real tol(std::sqrt(ROL_EPSILON<Real>()));
+  Real alpha(1), alphaMax(1), s0s0(0), ss0(0), sHs(0), lambdaTmp(1), snorm(0);
+  pwa1.zero();
+
+  // Set y = x
+  y.set(x);
+
+  // Compute initial step
+  Real coeff  = one/gmod.norm();
+  Real lambda = std::max(lambdaMin_,std::min(coeff,lambdaMax_));
+  pwa.set(y); pwa.axpy(-lambda,gmod.dual());      // pwa = x - lambda gmod.dual()
+  proj_->project(pwa,outStream); state_->nproj++; // pwa = P(x - lambda gmod.dual())
+  pwa.axpy(-one,y);                               // pwa = P(x - lambda gmod.dual()) - x = step
+  Real gs = gmod.apply(pwa);                      // gs  = <step, model gradient>
+  Real ss = pwa.dot(pwa);                         // Norm squared of step
+  Real gnorm = std::sqrt(ss);
+
+  // Compute initial projected gradient norm
+  const Real gtol = std::min(tol1_,tol2_*gnorm);
+
+  if (verbosity_ > 1)
+    outStream << "  Spectral Projected Gradient"          << std::endl;
+
+  SPiter_ = 0;
+  while (SPiter_ < maxit_) {
+    SPiter_++;
+
+    // Evaluate model Hessian
+    model.hessVec(dwa,pwa,x,tol); nhess_++; // dwa = H step
+    sHs = dwa.apply(pwa);                   // sHs = <step, H step>
+
+    // Perform line search
+    alphaMax = 1;
+    if (gnorm >= del-safeguard) { // Trust-region constraint is violated
+      ss0      = pwa1.dot(pwa);
+      alphaMax = std::min(one, (-ss0 + std::sqrt(ss0*ss0 - ss*(s0s0-del*del)))/ss);
+    }
+    if (sHs <= safeguard)
+      alpha = alphaMax;
+    else
+      alpha = std::min(alphaMax, -gs/sHs);
+
+    // Update model quantities
+    q += alpha * (gs + half * alpha * sHs); // Update model value
+    gmod.axpy(alpha,dwa);                   // Update model gradient
+    y.axpy(alpha,pwa);                      // New iterate
+
+    // Check trust-region constraint violation
+    pwa1.set(y); pwa1.axpy(-one,x);
+    s0s0 = pwa1.dot(pwa1);
+    snorm = std::sqrt(s0s0);
+
+    if (verbosity_ > 1) {
+      outStream << std::endl;
+      outStream << "    Iterate:                          " << SPiter_ << std::endl;
+      outStream << "    Spectral step length (lambda):    " << lambda  << std::endl;
+      outStream << "    Step length (alpha):              " << alpha   << std::endl;
+      outStream << "    Model decrease (pRed):            " << -q      << std::endl;
+      outStream << "    Optimality criterion:             " << gnorm   << std::endl;
+      outStream << "    Step norm:                        " << snorm   << std::endl;
+      outStream << std::endl;
+    }
+
+    if (snorm >= del - safeguard) { SPflag_ = 2; break; }
+
+    // Compute new spectral step
+    lambdaTmp = (sHs <= safeguard ? one/gmod.norm() : ss/sHs);
+    lambda = std::max(lambdaMin_,std::min(lambdaTmp,lambdaMax_));
+    pwa.set(y); pwa.axpy(-lambda,gmod.dual());
+    proj_->project(pwa,outStream); state_->nproj++;
+    pwa.axpy(-one,y);
+    gs = gmod.apply(pwa);
+    ss = pwa.dot(pwa);
+    gnorm = std::sqrt(ss);
+
+    if (gnorm <= gtol) { SPflag_ = 0; break; }
+  }
+  SPflag_ = (SPiter_==maxit_) ? 1 : SPflag_;
 }
 
 template<typename Real>

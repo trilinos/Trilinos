@@ -105,6 +105,7 @@ private:
   int maxSize_;
   bool useMin_;
   bool useNMSP_;
+  bool useSimpleSPG_;
 
   // Inexactness Parameters
   std::vector<bool> useInexact_;
@@ -189,6 +190,10 @@ private:
                const Real del, TrustRegionModel_U<Real> &model,
                Vector<Real> &dwa, Vector<Real> &dwa1,
                std::ostream &outStream = std::cout);
+
+  void dpsg_simple(Vector<Real> &y, Real &q, Vector<Real> &gmod, const Vector<Real> &x,
+                   Real del, TrustRegionModel_U<Real> &model, Vector<Real> &pwa,
+                   Vector<Real> &pwa1, Vector<Real> &dwa, std::ostream &outStream = std::cout);
 
   void dpsg(Vector<Real> &y, Real &q, Vector<Real> &gmod, const Vector<Real> &x,
             Real del, TrustRegionModel_U<Real> &model, Vector<Real> &ymin,
