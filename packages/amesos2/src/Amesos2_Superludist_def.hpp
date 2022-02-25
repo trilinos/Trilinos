@@ -500,7 +500,7 @@ namespace Amesos2 {
 
     // local_len_rhs is how many of the multivector rows belong to
     // this processor in the SuperLU_DIST processor grid.
-    const size_t local_len_rhs = superlu_rowmap_->getNodeNumElements();
+    const size_t local_len_rhs = superlu_rowmap_->getLocalNumElements();
     const global_size_type nrhs = X->getGlobalNumVectors();
     const global_ordinal_type first_global_row_b = superlu_rowmap_->getMinGlobalIndex();
 
