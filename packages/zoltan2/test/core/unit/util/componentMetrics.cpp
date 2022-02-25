@@ -126,7 +126,7 @@ int test_every_third(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   const size_t gNvtx = 27;
 
   Teuchos::RCP<const zmap_t> map = rcp(new zmap_t(gNvtx, 0, comm));
-  size_t nVtx = map->getNodeNumElements();
+  size_t nVtx = map->getLocalNumElements();
 
   // Create a Tpetra::Matrix with every third local row in the same component
   size_t maxRowLen = 3;
@@ -181,7 +181,7 @@ int test_dist_component(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   const size_t gNvtx = 25;
 
   Teuchos::RCP<const zmap_t> map = rcp(new zmap_t(gNvtx, 0, comm));
-  size_t nVtx = map->getNodeNumElements();
+  size_t nVtx = map->getLocalNumElements();
 
   // Create a Tpetra::Matrix with a single component
   size_t maxRowLen = 3;
@@ -309,7 +309,7 @@ int test_no_graph(Teuchos::RCP<const Teuchos::Comm<int> > &comm)
   const size_t gNvtx = 25;
 
   Teuchos::RCP<const zmap_t> map = rcp(new zmap_t(gNvtx, 0, comm));
-  size_t nVtx = map->getNodeNumElements();
+  size_t nVtx = map->getLocalNumElements();
 
   // Create a Tpetra::Matrix with no edges
   size_t maxRowLen = 1;

@@ -513,7 +513,7 @@ protected:
     {
         elemElemGraph = new ElemElemGraphTester(get_bulk());
         updater = std::make_shared<stk::mesh::ElemElemGraphUpdater>(get_bulk(), *elemElemGraph);
-        get_bulk().register_observer(updater);
+        get_bulk().register_observer(updater, stk::mesh::ModificationObserverPriority::STK_INTERNAL);
         coincident_graph = &elemElemGraph->my_get_coincident_graph();
     }
 

@@ -272,7 +272,7 @@ namespace {
       }
       Array<GO> diag(1);
       LO row = 0;
-      for (size_t i = 0; i < src_map->getNodeNumElements (); ++i, ++row) {
+      for (size_t i = 0; i < src_map->getLocalNumElements (); ++i, ++row) {
         const GO globalrow = src_map->getGlobalElement (row);
         diag[0] = globalrow;
         src_graph->insertGlobalIndices (globalrow, diag ());
@@ -291,7 +291,7 @@ namespace {
         out << "Verifying target CrsGraph" << endl;
       }
       row = 0;
-      for (size_t i = 0; i < tgt_map->getNodeNumElements (); ++i, ++row) {
+      for (size_t i = 0; i < tgt_map->getLocalNumElements (); ++i, ++row) {
         typename CrsGraph<LO,GO>::local_inds_host_view_type rowview;
         tgt_graph->getLocalRowView( row, rowview );
         TEST_EQUALITY(rowview.size(), 1);
@@ -911,7 +911,7 @@ bool graphs_are_same(const RCP<Graph>& G1, const RCP<const Graph>& G2)
       cerr << "***Error: Graph 1's range map is different than Graph 2's" << endl;
     errors++;
   }
-  if (G1->getNodeNumEntries() != G2->getNodeNumEntries()) {
+  if (G1->getLocalNumEntries() != G2->getLocalNumEntries()) {
     cerr << "***Error: Graph 1 does not have the same number of entries as Graph 2 on Process "
          << my_rank << endl;
     errors++;
@@ -919,7 +919,7 @@ bool graphs_are_same(const RCP<Graph>& G1, const RCP<const Graph>& G2)
 
   if (errors != 0) return false;
 
-  for (LO i=0; i<static_cast<LO>(G1->getNodeNumRows()); i++) {
+  for (LO i=0; i<static_cast<LO>(G1->getLocalNumRows()); i++) {
     typename Graph::local_inds_host_view_type V1, V2;
     G1->getLocalRowView(i, V1);
     G2->getLocalRowView(i, V2);
@@ -1047,7 +1047,7 @@ test_with_matvec_reduced_maps (const CrsMatrixType& A,
 
   RCP<const MapType>  Amap  = A.getDomainMap();
   vector_type Xa(Amap,1), Ya(Amap,1), Diff(Amap,1);
-  RCP<const MapType> Bmap  = Bfullmap.getNodeNumElements() > 0 ?
+  RCP<const MapType> Bmap  = Bfullmap.getLocalNumElements() > 0 ?
     B.getDomainMap() : Teuchos::null;
 
   vector_type Xb_alias(rcp(&Bfullmap,false),1);
@@ -1327,7 +1327,7 @@ build_test_prolongator (const Teuchos::RCP<const CrsMatrixType>& A,
 
   // Make DomainMap
   Array<GO> gids;
-  for (size_t i = 0; i < RowMap->getNodeNumElements (); ++i) {
+  for (size_t i = 0; i < RowMap->getLocalNumElements (); ++i) {
     const GO gid = RowMap->getGlobalElement (i);
     if (gid % static_cast<GO> (3) == static_cast<GO> (0)) {
       gids.push_back (gid / 3);
@@ -1341,7 +1341,7 @@ build_test_prolongator (const Teuchos::RCP<const CrsMatrixType>& A,
   Teuchos::Array<GO> Indices(1);
   Values[0] = STS::one ();
   const GO minP = DomainMap->getMinGlobalIndex ();
-  for (size_t i = 0; i < RowMap->getNodeNumElements (); ++i) {
+  for (size_t i = 0; i < RowMap->getLocalNumElements (); ++i) {
     const GO GID = RowMap->getGlobalElement (i);
     Indices[0] = (static_cast<GO> (GID / 3.0) < minP) ? minP : static_cast<GO> (GID / 3.0);
     P->insertGlobalValues (GID, Indices (), Values ());
@@ -1529,7 +1529,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
   out << "Test #2: Tridiagonal Matrix; Locally Reversed Map" << endl;
   try {
     OSTab tab2 (out);
-    size_t num_local = A->getRowMap()->getNodeNumElements();
+    size_t num_local = A->getRowMap()->getLocalNumElements();
 
     Teuchos::Array<GO> MyGIDs(num_local);
     for(size_t i=0; i<num_local; i++)
@@ -1599,11 +1599,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
   try {
     OSTab tab2 (out);
     // Assume we always own the diagonal
-    size_t num_local = A->getNodeNumCols()-A->getNodeNumRows();
+    size_t num_local = A->getLocalNumCols()-A->getLocalNumRows();
     Teuchos::Array<GO> MyGIDs(num_local);
 
     size_t idx=0;
-    for (LO i_lcl = 0; static_cast<size_t> (i_lcl) < A->getNodeNumCols (); ++i_lcl) {
+    for (LO i_lcl = 0; static_cast<size_t> (i_lcl) < A->getLocalNumCols (); ++i_lcl) {
       const GO i_gbl = A->getColMap ()->getGlobalElement (i_lcl);
       if (A->getRowMap ()->getLocalElement (i_gbl) == Teuchos::OrdinalTraits<LO>::invalid ()) {
         MyGIDs[idx] = A->getColMap()->getGlobalElement (i_lcl);
@@ -1756,7 +1756,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
     // Test the graph version
     Import1 = rcp(new ImportType(Ag->getRowMap(),Map3));
     Bg = Tpetra::importAndFillCompleteCrsGraph<Graph>(Ag,*Import1,Map3,Map3,rcp(&params,false));
-    if (Map3->getNodeNumElements() > 0) {
+    if (Map3->getLocalNumElements() > 0) {
       if (!graphs_are_same(Bg, B->getCrsGraph())) {
         if (MyPID == 0) cerr << "FusedImport: CrsGraph test #6 FAILED." << endl;
         total_err--;
@@ -1778,7 +1778,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
     // Test the graph version
     Export1 = rcp(new ExportType(Ag->getRowMap(),Map3));
     Bg = Tpetra::exportAndFillCompleteCrsGraph<Graph>(Ag,*Export1,Map3,Map3,rcp(&params,false));
-    if (Map3->getNodeNumElements() > 0) {
+    if (Map3->getLocalNumElements() > 0) {
       if (!graphs_are_same(Bg, B->getCrsGraph())) {
         if (MyPID == 0) cerr << "FusedExport: CrsGraph test #6 FAILED." << endl;
         total_err--;
@@ -2289,10 +2289,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     B = rcp(new CrsMatrixType(MapTarget,0));
     B->doImport(*A, *Importer, Tpetra::INSERT);
     B->fillComplete(A->getDomainMap(),A->getRangeMap());
-    size_t nnz1=B->getNodeNumEntries();
+    size_t nnz1=B->getLocalNumEntries();
 
     // Call the P&PWOPIDs
-    Teuchos::Array<int> SourcePids(A->getColMap()->getNodeNumElements());
+    Teuchos::Array<int> SourcePids(A->getColMap()->getLocalNumElements());
     Tpetra::Distributor &distor = Importer->getDistributor();
     if(A->getGraph()->getImporter()==Teuchos::null) SourcePids.assign(SourcePids.size(),MyPID);
     else Tpetra::Import_Util::getPids<LO, GO, Node>(*A->getGraph()->getImporter(),SourcePids,false);
@@ -2387,7 +2387,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     /////////////////////////////////////////////////////////
     // Test #2: Actual combine test
     /////////////////////////////////////////////////////////
-    Teuchos::Array<size_t>  rowptr (MapTarget->getNodeNumElements () + 1);
+    Teuchos::Array<size_t>  rowptr (MapTarget->getLocalNumElements () + 1);
     Teuchos::Array<GO>      colind (nnz2);
     Teuchos::Array<Scalar>  vals (nnz2);
     Teuchos::Array<int>     TargetPids;
@@ -2409,7 +2409,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       Importer->getNumSameIDs (),
       Importer->getPermuteToLIDs (),
       Importer->getPermuteFromLIDs (),
-      MapTarget->getNodeNumElements (),
+      MapTarget->getLocalNumElements (),
       nnz2,
       MyPID,
       rowptr (),
@@ -2513,7 +2513,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
   Adomainmap = A->getDomainMap();
 
   // Get owning PID information
-  size_t numMyCols = A->getColMap()->getNodeNumElements();
+  size_t numMyCols = A->getColMap()->getLocalNumElements();
   RCP<const ImportType> Importer = A->getGraph()->getImporter();
   Teuchos::Array<int> AcolmapPIDs(numMyCols,-1);
   if(Importer!=Teuchos::null)
@@ -2538,9 +2538,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
 
     // Since this was sorted to begin with, the outgoing maps should be
     // in an identical order.  So let's check.
-    if(Acolmap->getNodeNumElements()!=Bcolmap->getNodeNumElements()) test_err++;
+    if(Acolmap->getLocalNumElements()!=Bcolmap->getLocalNumElements()) test_err++;
     else {
-      for(size_t i=0; i<Acolmap->getNodeNumElements(); i++)
+      for(size_t i=0; i<Acolmap->getLocalNumElements(); i++)
         if(Acolmap->getGlobalElement(i)!=Bcolmap->getGlobalElement(i)) test_err++;
     }
 
@@ -2896,7 +2896,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( RemoteOnlyImport, Basic, LO, GO )  {
     Teuchos::ArrayRCP<const Scalar> view1 = TargetVector->get1dView();
     Teuchos::ArrayRCP<const Scalar> view2 = TestVector->get1dView();
     double diff=0;
-    size_t NumComps = Map0->getNodeNumElements();
+    size_t NumComps = Map0->getLocalNumElements();
     for(size_t i=0; i < NumComps; i++) {
       const size_t j = (size_t) Import1->getTargetMap ()->getLocalElement (Map0->getGlobalElement (static_cast<LO> (i)));
       diff += std::abs (view1[j] - view2[i]);
@@ -2997,7 +2997,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
 
 
   // Check answer [ownership(GID i) should contain the owning PID in Map0]
-  for(size_t i=0; i<Map2->getNodeNumElements(); i++) {
+  for(size_t i=0; i<Map2->getLocalNumElements(); i++) {
     GO GID  = Map2->getGlobalElement(i);
     int PID = (int)(GID / num_per_proc);
     if (odata[i]!=PID) {

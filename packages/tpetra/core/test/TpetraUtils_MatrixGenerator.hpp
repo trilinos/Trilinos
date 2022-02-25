@@ -270,7 +270,7 @@ namespace Tpetra {
 
         // List of the global indices of my rows.
         // They may or may not be contiguous.
-        ArrayView<const GO> myRows = pRowMap->getNodeElementList ();
+        ArrayView<const GO> myRows = pRowMap->getLocalElementList ();
         const size_type myNumRows = myRows.size ();
 
         // Add this processor's matrix entries to the CrsMatrix.
@@ -360,7 +360,7 @@ namespace Tpetra {
 
         // List of the global indices of my rows.
         // They may or may not be contiguous.
-        ArrayView<const GO> myRows = pRowMap->getNodeElementList();
+        ArrayView<const GO> myRows = pRowMap->getLocalElementList();
         const size_type myNumRows = myRows.size();
 
         // Add this processor's matrix entries to the CrsMatrix.
@@ -425,7 +425,7 @@ namespace Tpetra {
 
         // List of the global indices of my rows.
         // They may or may not be contiguous.
-        ArrayView<const GO> myRows = rowMap->getNodeElementList ();
+        ArrayView<const GO> myRows = rowMap->getLocalElementList ();
         const size_type myNumRows = myRows.size ();
 
         // Add this process' matrix entries to the CrsMatrix.
@@ -671,8 +671,8 @@ namespace Tpetra {
             for (int p = 0; p < numProcs; ++p) {
               if (myRank == p) {
                 std::cerr << "-- Proc " << p << " owns "
-                          << pMatrix->getNodeNumCols() << " columns, and "
-                          << pMatrix->getNodeNumEntries() << " entries." << std::endl;
+                          << pMatrix->getLocalNumCols() << " columns, and "
+                          << pMatrix->getLocalNumEntries() << " entries." << std::endl;
               }
               pComm->barrier ();
             }

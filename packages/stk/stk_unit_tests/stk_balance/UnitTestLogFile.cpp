@@ -55,7 +55,7 @@ protected:
 
   void make_dummy_mesh(const std::string & meshFileName) {
     if (get_parallel_rank() == 0) {
-      stk::unit_test_util::TextMeshToFile mesh(MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
+      stk::unit_test_util::TextMeshToFile mesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
       mesh.setup_mesh("0,1,HEX_8,1,2,3,4,5,6,7,8,block_1", meshFileName);
       mesh.write_mesh();
     }

@@ -825,20 +825,42 @@ public:
     return graph_.getGlobalNumRows();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
+  TPETRA_DEPRECATED
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNodeNumRows() const
   {
-    return graph_.getNodeNumRows();
+    return graph_.getLocalNumRows();
   }
+#endif
 
   template<class Scalar, class LO, class GO, class Node>
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalNumRows() const
+  {
+    return graph_.getLocalNumRows();
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template<class Scalar, class LO, class GO, class Node>
+  TPETRA_DEPRECATED
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNodeMaxNumRowEntries() const
   {
-    return graph_.getNodeMaxNumRowEntries();
+    return graph_.getLocalMaxNumRowEntries();
+  }
+#endif
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalMaxNumRowEntries() const
+  {
+    return graph_.getLocalMaxNumRowEntries();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -979,7 +1001,7 @@ public:
     using Kokkos::parallel_for;
     const char prefix[] = "Tpetra::BlockCrsMatrix::getLocalDiagCopy (2-arg): ";
 
-    const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
+    const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getLocalNumElements ());
     const LO blockSize = this->getBlockSize ();
     TEUCHOS_TEST_FOR_EXCEPTION
       (static_cast<LO> (diag.extent (0)) < lclNumMeshRows ||
@@ -1928,7 +1950,7 @@ public:
     }
     else { // must convert column indices to global
       // Reserve space to store the destination matrix's local column indices.
-      const size_t maxNumEnt = src->graph_.getNodeMaxNumRowEntries ();
+      const size_t maxNumEnt = src->graph_.getLocalMaxNumRowEntries ();
       Teuchos::Array<LO> lclDstCols (maxNumEnt);
 
       // Copy local rows that are the "same" in both source and target.
@@ -2737,7 +2759,7 @@ public:
         PackTraits<impl_scalar_type>::packValueCount
         (val_host.extent (0) ? val_host(0) : impl_scalar_type ());
     }
-    const size_t maxRowNumEnt = graph_.getNodeMaxNumRowEntries ();
+    const size_t maxRowNumEnt = graph_.getLocalMaxNumRowEntries ();
     const size_t maxRowNumScalarEnt = maxRowNumEnt * blockSize * blockSize;
 
     if (verbose) {
@@ -3242,12 +3264,24 @@ public:
     return graph_.getGlobalNumCols();
   }
 
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
+  TPETRA_DEPRECATED
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNodeNumCols() const
   {
-    return graph_.getNodeNumCols();
+    return graph_.getLocalNumCols();
+  }
+#endif
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalNumCols() const
+  {
+    return graph_.getLocalNumCols();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -3266,12 +3300,23 @@ public:
     return graph_.getGlobalNumEntries();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
+  TPETRA_DEPRECATED
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNodeNumEntries() const
   {
-    return graph_.getNodeNumEntries();
+    return graph_.getLocalNumEntries();
+  }
+#endif
+
+  template<class Scalar, class LO, class GO, class Node>
+  size_t
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalNumEntries() const
+  {
+    return graph_.getLocalNumEntries();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -3448,7 +3493,7 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalDiagCopy (::Tpetra::Vector<Scalar,LO,GO,Node>& diag) const
   {
-    const size_t lclNumMeshRows = graph_.getNodeNumRows ();
+    const size_t lclNumMeshRows = graph_.getLocalNumRows ();
 
     Kokkos::View<size_t*, device_type> diagOffsets ("diagOffsets", lclNumMeshRows);
     graph_.getLocalDiagOffsets (diagOffsets);
@@ -3464,7 +3509,7 @@ public:
     size_t rowOffset = 0;
     size_t offset = 0;
     LO bs = getBlockSize();
-    for(size_t r=0; r<getNodeNumRows(); r++)
+    for(size_t r=0; r<getLocalNumRows(); r++)
     {
       // move pointer to start of diagonal block
       offset = rowOffset + diagOffsetsHost(r)*bs*bs;

@@ -2053,23 +2053,22 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         const Ioss::ElementTopology *element_topo = nullptr;
         stk::topology stk_element_topology = stk::topology::INVALID_TOPOLOGY;
         if (tokens.size() >= 4) {
-	  // If the sideset has a "canonical" name as in "surface_{id}",
-	  // Then the sideblock name will be of the form:
+          // If the sideset has a "canonical" name as in "surface_{id}",
+          // Then the sideblock name will be of the form:
           //  * "surface_eltopo_sidetopo_id" or
           //  * "surface_block_id_sidetopo_id"
-	  // If the sideset does *not* have a canonical name, then
-	  // the sideblock name will be of the form:
-	  //  * "{sideset_name}_eltopo_sidetopo" or
-	  //  * "{sideset_name}_block_id_sidetopo"
+          // If the sideset does *not* have a canonical name, then
+          // the sideblock name will be of the form:
+          //  * "{sideset_name}_eltopo_sidetopo" or
+          //  * "{sideset_name}_block_id_sidetopo"
 
-	  // Check the last token and see if it is an integer...
-	  bool all_dig = tokens.back().find_first_not_of("0123456789") == std::string::npos;
-	  if (all_dig) {
-	    element_topo = Ioss::ElementTopology::factory(tokens[1], true);
-	  }
-	  else {
-	    element_topo = Ioss::ElementTopology::factory(tokens[tokens.size() - 2], true);
-	  }
+          // Check the last token and see if it is an integer...
+          bool all_dig = tokens.back().find_first_not_of("0123456789") == std::string::npos;
+          if (all_dig) {
+            element_topo = Ioss::ElementTopology::factory(tokens[1], true);
+          } else {
+            element_topo = Ioss::ElementTopology::factory(tokens[tokens.size() - 2], true);
+          }
 
           if (element_topo != nullptr) {
             element_topo_name = element_topo->name();
@@ -2079,9 +2078,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
         const stk::mesh::Part *parentElementBlock = get_parent_element_block(bulk, params.io_region(), part.name());
 
-        size_t side_count = get_number_sides_in_sideset(params, part, selector,
-                                                        stk_element_topology, bulk.buckets(type),
-                                                        parentElementBlock);
+        size_t side_count = get_number_sides_in_sideset(params, part, stk_element_topology, parentElementBlock);
 
         std::string name = getPartName(part);
         Ioss::SideBlock *side_block = sset->get_side_block(name);
@@ -2740,12 +2737,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
            }
            else if (is_part_edge_block_io_part(*part)) {
              define_edge_block(params, *part);
-           }
-           else if (is_sideset_part(*part)) {
+           } else if (is_sideset_part(*part) && isValidForOutput) {
              define_side_set(params, *part);
-           }
-           else if ((rank == stk::topology::EDGE_RANK) && spatialDim == 3 &&
-                    params.get_enable_edge_io()) {
+           } else if ((rank == stk::topology::EDGE_RANK) && spatialDim == 3 && params.get_enable_edge_io()) {
              define_edge_block(params, *part);
            }
          }

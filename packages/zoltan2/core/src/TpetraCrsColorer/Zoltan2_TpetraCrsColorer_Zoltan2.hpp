@@ -83,7 +83,7 @@ public:
     const size_t len = local_list_of_colors.size();
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-        len != this->graph->getColMap()->getNodeNumElements(), std::logic_error,
+        len != this->graph->getColMap()->getLocalNumElements(), std::logic_error,
         "Incorrect length of color list!");
 
     list_of_colors_host_t list_of_colors_tmp(

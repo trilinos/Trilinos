@@ -159,7 +159,7 @@ int main(int narg, char** arg)
     std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
          << "NumProcs = " << comm->getSize() << std::endl
-         << "NumLocalRows (rank 0) = " << origMatrix->getNodeNumRows() << std::endl;
+         << "NumLocalRows (rank 0) = " << origMatrix->getLocalNumRows() << std::endl;
   }
 
 

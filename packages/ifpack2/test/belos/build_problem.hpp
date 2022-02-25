@@ -215,7 +215,7 @@ build_problem (Teuchos::ParameterList& test_params,
     using vals_type = typename crs_matrix_type::values_host_view_type;
     lids_type ind;
     vals_type val;
-    const LO numLocalRows = static_cast<LO> (A->getNodeNumRows ());
+    const LO numLocalRows = static_cast<LO> (A->getLocalNumRows ());
     for (LO localRow = 0; localRow < numLocalRows; ++localRow) {
       A->getLocalRowView (localRow, ind, val);
       A_constGraph->replaceLocalValues (localRow, ind, val);

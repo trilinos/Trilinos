@@ -126,7 +126,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
           "domain and range Maps as input." << endl;
       }
     }
-    if (numLocalColGIDs == domMap->getNodeNumElements ()) {
+    if (numLocalColGIDs == domMap->getLocalNumElements ()) {
       colMap = domMap; // shallow copy
       return errCode;
     }
@@ -207,7 +207,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   //    maintain a consistent ordering of GIDs between the columns
   //    and the domain.
 
-  const size_t numDomainElts = domMap->getNodeNumElements ();
+  const size_t numDomainElts = domMap->getLocalNumElements ();
   if (numLocalColGIDs == numDomainElts) {
     // If the number of locally owned GIDs are the same as the
     // number of local domain Map elements, then the local domain
@@ -215,7 +215,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
     if (domMap->isContiguous ()) {
       // NOTE (mfh 03 Mar 2013, 02 Sep 2014) In the common case that
       // the domain Map is contiguous, it's more efficient to avoid
-      // calling getNodeElementList(), since that permanently
+      // calling getLocalElementList(), since that permanently
       // constructs and caches the GID list in the contiguous Map.
       GO curColMapGid = domMap->getMinGlobalIndex ();
       for (size_t k = 0; k < numLocalColGIDs; ++k, ++curColMapGid) {
@@ -223,7 +223,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
       }
     }
     else {
-      ArrayView<const GO> domainElts = domMap->getNodeElementList ();
+      ArrayView<const GO> domainElts = domMap->getLocalElementList ();
       std::copy (domainElts.begin(), domainElts.end(), LocalColGIDs.begin());
     }
   }
@@ -234,7 +234,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
     if (domMap->isContiguous ()) {
       // NOTE (mfh 03 Mar 2013, 02 Sep 2014) In the common case that
       // the domain Map is contiguous, it's more efficient to avoid
-      // calling getNodeElementList(), since that permanently
+      // calling getLocalElementList(), since that permanently
       // constructs and caches the GID list in the contiguous Map.
       GO curColMapGid = domMap->getMinGlobalIndex ();
       for (size_t i = 0; i < numDomainElts; ++i, ++curColMapGid) {
@@ -244,7 +244,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
       }
     }
     else {
-      ArrayView<const GO> domainElts = domMap->getNodeElementList ();
+      ArrayView<const GO> domainElts = domMap->getLocalElementList ();
       for (size_t i = 0; i < numDomainElts; ++i) {
         if (GIDisLocal[i]) {
           LocalColGIDs[numLocalCount++] = domainElts[i];
@@ -375,7 +375,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
       // Assume that we want to recreate the column Map.
       if (colMap->isContiguous ()) {
         // The number of indices on each process must fit in LO.
-        const LO numCurGids = static_cast<LO> (colMap->getNodeNumElements ());
+        const LO numCurGids = static_cast<LO> (colMap->getLocalNumElements ());
         myColumns.resize (numCurGids);
         const GO myFirstGblInd = colMap->getMinGlobalIndex ();
         for (LO k = 0; k < numCurGids; ++k) {
@@ -383,7 +383,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
         }
       }
       else { // the column Map is NOT contiguous
-        ArrayView<const GO> curGids = graph.getColMap ()->getNodeElementList ();
+        ArrayView<const GO> curGids = graph.getColMap ()->getLocalElementList ();
         // The number of indices on each process must fit in LO.
         const LO numCurGids = static_cast<LO> (curGids.size ());
         myColumns.resize (numCurGids);
@@ -423,7 +423,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
 
     // GIDisLocal[lid] is false if and only if local index lid in the
     // domain Map is remote (not local).
-    std::vector<bool> GIDisLocal (domMap->getNodeNumElements (), false);
+    std::vector<bool> GIDisLocal (domMap->getLocalNumElements (), false);
     std::set<GO> RemoteGIDSet;
     // This preserves the not-sorted Epetra order of GIDs.
     // We only use this if sortEachProcsGids is false.
@@ -431,7 +431,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
 
     if (! graph.getRowMap ().is_null ()) {
       const Tpetra::Map<LO, GO, NT>& rowMap = * (graph.getRowMap ());
-      const LO lclNumRows = rowMap.getNodeNumElements ();
+      const LO lclNumRows = rowMap.getLocalNumElements ();
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
         const GO gblRow = rowMap.getGlobalElement (lclRow);
         typename RowGraph<LO,GO,NT>::global_inds_host_view_type rowGids;
@@ -639,7 +639,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   //Finally, populate the STL structures which hold the index lists
   std::set<GO> RemoteGIDSet;
   std::vector<GO> RemoteGIDUnorderedVector;
-  std::vector<bool> GIDisLocal (domMap->getNodeNumElements (), false);
+  std::vector<bool> GIDisLocal (domMap->getLocalNumElements (), false);
   for(GO i = 0; i < numLocalColGIDs; i++)
   {
     GO gid = localsHost(i);

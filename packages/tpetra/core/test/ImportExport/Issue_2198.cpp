@@ -95,7 +95,7 @@ printMapCompactly (Teuchos::FancyOStream& out,
 
   std::ostringstream lclOut;
   lclOut << "Proc " << myRank << ": [";
-  if (map.getNodeNumElements () != 0) {
+  if (map.getLocalNumElements () != 0) {
     for (LO lid = map.getMinLocalIndex (); lid <= map.getMaxLocalIndex (); ++lid) {
       const GO gid = map.getGlobalElement (lid);
       lclOut << gid;
@@ -417,7 +417,7 @@ makeTargetMapFromTestInput (const Issue2198TestInput<LO, GO, NT>& testInput,
   const std::vector<GO>& remoteGlobalIndices = optimized ?
     testInput.optimizedRemoteGlobalIndices : testInput.remoteGlobalIndices;
 
-  const LO numLclSrcGids = static_cast<LO> (sourceMap.getNodeNumElements ());
+  const LO numLclSrcGids = static_cast<LO> (sourceMap.getLocalNumElements ());
   const LO numInputGids = static_cast<LO> (remoteGlobalIndices.size ());
   const LO numLclTgtGids = numLclSrcGids + numInputGids;
   std::vector<GO> tgtGids (numLclTgtGids);
@@ -429,7 +429,7 @@ makeTargetMapFromTestInput (const Issue2198TestInput<LO, GO, NT>& testInput,
     }
   }
   else {
-    auto srcGids = sourceMap.getNodeElementList ();
+    auto srcGids = sourceMap.getLocalElementList ();
     for (LO k = 0; k < numLclSrcGids; ++k) {
       tgtGids[k] = srcGids[k];
     }

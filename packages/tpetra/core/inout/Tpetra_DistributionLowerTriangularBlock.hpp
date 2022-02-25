@@ -299,7 +299,7 @@ public:
       Teuchos::Array<gno_t> cols(1);
       Teuchos::Array<scalar_t> vals(1); vals[0] = 1.;
 
-      for (size_t i = 0; i < permMap->getNodeNumElements(); i++) {
+      for (size_t i = 0; i < permMap->getLocalNumElements(); i++) {
         gno_t gid = permMap->getGlobalElement(i);
         cols[0] = permuteIndex[gid];
         permMatrix->insertGlobalValues(gid, cols(), vals());

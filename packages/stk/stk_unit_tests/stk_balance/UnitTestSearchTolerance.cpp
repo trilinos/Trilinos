@@ -74,7 +74,7 @@ protected:
 
     void make_two_separated_hex_mesh()
     {
-        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
 
         std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
                                "0,2,HEX_8,9,10,11,12,13,14,15,16";

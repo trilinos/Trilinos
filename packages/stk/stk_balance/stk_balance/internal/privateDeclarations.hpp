@@ -162,6 +162,17 @@ void print_solution_statistics(const ZoltanAdapter& stkMeshAdapter, const Zoltan
     print_zoltan_statistics(stkMeshAdapter, ep, parallel_rank);
 }
 
+class EnableAura
+{
+public:
+  EnableAura(stk::mesh::BulkData & bulk);
+  ~EnableAura();
+
+private:
+  stk::mesh::BulkData & m_bulk;
+  bool m_weTurnedOnAura;
+};
+
 }
 }
 }

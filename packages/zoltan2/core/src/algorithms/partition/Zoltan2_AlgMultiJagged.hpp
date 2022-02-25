@@ -192,10 +192,10 @@ struct uSortItem
  */
 template <class IT, class WT>
 void uqsort(IT n, uSortItem<IT, WT> * arr) {
-  int NSTACK = 50;
+  const int NSTACK = 50;
   int M = 7;
   IT         i, ir=n, j, k, l=1;
-  IT         jstack=0, istack[50];
+  IT         jstack=0, istack[NSTACK];
   WT aval;
   uSortItem<IT,WT>    a;
 
@@ -301,10 +301,10 @@ struct uSignedSortItem
  */
 template <class IT, class WT, class SIGN>
 void uqSignsort(IT n, uSignedSortItem<IT, WT, SIGN> * arr) {
-  IT NSTACK = 50;
+  const IT NSTACK = 50;
   IT M = 7;
   IT         i, ir=n, j, k, l=1;
-  IT         jstack=0, istack[50];
+  IT         jstack=0, istack[NSTACK];
   uSignedSortItem<IT,WT,SIGN>    a;
 
   --arr;

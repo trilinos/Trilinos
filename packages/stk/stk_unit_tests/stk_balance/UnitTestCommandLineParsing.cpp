@@ -21,7 +21,7 @@ protected:
       m_infileOptionName("--infile"),
       m_outputDirOptionName("--output-directory")
   {
-    setup_mesh("generated:1x1x4|sideset:x", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh("generated:1x1x4|sideset:x", stk::mesh::BulkData::AUTO_AURA);
     stk::mesh::get_entities(get_bulk(), stk::topology::FACE_RANK, get_meta().universal_part(), m_faces);
     ThrowRequire(m_faces.size() > 0);
   }

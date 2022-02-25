@@ -124,7 +124,7 @@ public:
     if (diagonal == "exclude") {
       A_baseline->resumeFill();
       auto rowMap = A_baseline->getRowMap();
-      size_t nMyRows = rowMap->getNodeNumElements();
+      size_t nMyRows = rowMap->getLocalNumElements();
       for (size_t i = 0; i < nMyRows; i++) {
         gno_t gid = rowMap->getGlobalElement(i);
         scalar_t val = Teuchos::ScalarTraits<scalar_t>::zero();

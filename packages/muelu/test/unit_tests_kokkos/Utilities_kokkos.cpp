@@ -48,6 +48,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
 
@@ -141,7 +142,7 @@ namespace MueLuTests
     TEST_EQUALITY(drowsHost(localRowToZero - 1), false);
 
     // row 5 should be Dirichlet
-    drows = Utils_Kokkos::DetectDirichletRows(*A, TST::magnitude(0.26));
+    drows = Utils_Kokkos::DetectDirichletRows(*A, TST::magnitude(0.26), true);
     drowsHost = Kokkos::create_mirror_view(drows);
     Kokkos::deep_copy(drowsHost, drows);
 
@@ -557,6 +558,8 @@ namespace MueLuTests
 
     using TpetraMat = Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using Operator = Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using CrsMatrixFactory = Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     auto compareMat = [&](const Matrix &xpetraMat, const TpetraMat &tpetraMat)
     {
@@ -578,6 +581,17 @@ namespace MueLuTests
     auto nonConstTpetraCrs2 = Utils_Kokkos::Op2NonConstTpetraCrs(*A);
     compareMat(*A, nonConstTpetraCrs2);
 
+    auto crsMat = CrsMatrixFactory::Build(map);
+
+    auto op = Utils_Kokkos::Crs2Op(crsMat);
+
+    TEST_EQUALITY(crsMat->getGlobalNumRows(), op->getGlobalNumRows());
+    TEST_EQUALITY(crsMat->getNodeNumRows(), op->getNodeNumRows());
+
+    auto transposeRes = Utils_Kokkos::Transpose(*A);
+    TEST_EQUALITY(transposeRes->getGlobalNumRows(), A->getGlobalNumRows());
+    TEST_EQUALITY(transposeRes->getNodeNumRows(), A->getNodeNumRows());
+
     auto tpetraRow = Utils_Kokkos::Op2TpetraRow(A);
     compareMat(*A, *tpetraRow);
 
@@ -587,6 +601,46 @@ namespace MueLuTests
     auto tpetraMap = Utils_Kokkos::Map2TpetraMap(*map);
     TEST_INEQUALITY(tpetraMap, Teuchos::null);
     TEST_EQUALITY_CONST(tpetraMap->getGlobalNumElements(), map->getGlobalNumElements());
+
+    using VectorFactory = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using MultiVectorFactory = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // GetInverse
+    {
+      auto vec = Teuchos::RCP<Vector>(VectorFactory::Build(map));
+      vec->putScalar(Scalar(5.0));
+
+      auto inv = Utils_Kokkos::GetInverse(vec);
+
+      auto invData = inv->getData(0);
+
+      TEST_EQUALITY(vec->getData(0).size(), invData.size());
+      for (int i = 0; i < invData.size(); ++i)
+      {
+        TEST_EQUALITY(Scalar(1.0 / 5.0), invData[i]);
+      }
+    }
+
+    // ResidualNorm
+    {
+      auto vector2 = MultiVectorFactory::Build(map, 1);
+      vector2->putScalar(Scalar(3.0));
+      vector->putScalar(Scalar(2.0));
+
+      auto residualNormRes = Utils_Kokkos::ResidualNorm((Operator &)(*A), *vector, *vector2);
+      TEST_EQUALITY(residualNormRes.size(), 1);
+    }
+
+    // PowerMethod
+    {
+      auto powerRes = Utils_Kokkos::PowerMethod(*A);
+
+      auto inversDiag = Utils_Kokkos::GetMatrixDiagonalInverse(*A);
+      auto powerRes2 = Utils_Kokkos::PowerMethod(*A, inversDiag);
+
+      TEST_INEQUALITY(powerRes, Scalar(0.0));
+      TEST_INEQUALITY(powerRes2, Scalar(0.0));
+    }
 
 #endif
   } //TransformFunctions
