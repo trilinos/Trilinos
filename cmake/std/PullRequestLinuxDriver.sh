@@ -30,8 +30,11 @@ function bootstrap_modules() {
             get_python_packages pip3
             export PYTHON_EXE=python3
         else
-            message_std "PRDriver> " "ERROR: Unable to find matching environment for CUDA job not on Ride."
-            exit -1
+            message_std "PRDriver> " "WARNING: Unable to find explicit match for CUDA environment on ${NODE_NAME} trying SEMS..."
+	    module load sems-git
+            module load sems-python
+            get_python_packages pip3
+            export PYTHON_EXE=python3
         fi
     else
       	source /projects/sems/modulefiles/utils/sems-modules-init.sh
