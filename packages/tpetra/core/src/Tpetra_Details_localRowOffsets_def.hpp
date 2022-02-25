@@ -187,10 +187,6 @@ template LocalRowOffsetsResult<NT> \
 localRowOffsets (const RowGraph<LO, GO, NT>& A); \
 }
 
-#else  // !TPETRA_ENABLE_DEPRECATED_CODE
-
-#define TPETRA_DETAILS_LOCALROWOFFSETS_INSTANT(LO, GO, NT)
-
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 #endif // TPETRA_DETAILS_LOCALROWOFFSETS_DEF_HPP
