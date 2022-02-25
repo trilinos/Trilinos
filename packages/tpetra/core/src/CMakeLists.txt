@@ -809,6 +809,17 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
       "${TpetraCore_ETI_NODES}"
       FALSE)
     LIST(APPEND SOURCES ${CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES})
+
+    # Generate ETI .cpp files for Tpetra::Details::localRowOffsets.
+    TPETRA_PROCESS_ALL_LGN_TEMPLATES(LOCALROWOFFSETS_OUTPUT_FILES
+      "Tpetra_ETI_LO_GO_NT.tmpl"
+      "Details_localRowOffsets"
+      "DETAILS_LOCALROWOFFSETS"
+      "${TpetraCore_ETI_LORDS}"
+      "${TpetraCore_ETI_GORDS}"
+      "${TpetraCore_ETI_NODES}")
+    LIST(APPEND SOURCES ${LOCALROWOFFSETS_OUTPUT_FILES})
+
   ENDIF ()
 
   # Generate ETI .cpp files for Tpetra::LocalCrsMatrixOperator.
@@ -917,16 +928,6 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "${TpetraCore_ETI_GORDS}"
     "${TpetraCore_ETI_NODES}")
   LIST(APPEND SOURCES ${UNPACKCRSGRAPHANDCOMBINE_OUTPUT_FILES})
-
-  # Generate ETI .cpp files for Tpetra::Details::localRowOffsets.
-  TPETRA_PROCESS_ALL_LGN_TEMPLATES(LOCALROWOFFSETS_OUTPUT_FILES
-    "Tpetra_ETI_LO_GO_NT.tmpl"
-    "Details_localRowOffsets"
-    "DETAILS_LOCALROWOFFSETS"
-    "${TpetraCore_ETI_LORDS}"
-    "${TpetraCore_ETI_GORDS}"
-    "${TpetraCore_ETI_NODES}")
-  LIST(APPEND SOURCES ${LOCALROWOFFSETS_OUTPUT_FILES})
 
   #MESSAGE(STATUS "SOURCES = ${SOURCES}")
 ENDIF()
