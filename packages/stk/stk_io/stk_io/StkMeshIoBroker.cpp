@@ -34,72 +34,61 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <stk_util/stk_config.h>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_util/environment/Env.hpp>
 #include <Ionit_Initializer.h>                       // for Initializer
-#include <assert.h>                                  // for assert
-#include <stdlib.h>                                  // for exit, etc
+#include <cassert>                                   // for assert
 #include <string.h>                                  // for memcpy
+#include <algorithm>                                 // for max, sort
 #include <cstdint>                                   // for int64_t
-#include <iostream>                                  // for operator<<, etc
-#include <iterator>
+#include <iostream>                                  // for operator<<, basi...
 #include <limits>                                    // for numeric_limits
-#include <map>
-#include <stdexcept>                                 // for runtime_error
-#include <stk_io/IOHelpers.hpp>
+#include <map>                                       // for _Rb_tree_iterator
+#include <memory>                                    // for make_shared, all...
+#include <set>                                       // for set
+#include <stk_io/IOHelpers.hpp>                      // for internal_read_gl...
 #include <stk_io/InputFile.hpp>                      // for InputFile
-#include <stk_io/OutputFile.hpp>                     // for InputFile
-#include <stk_io/IossBridge.hpp>                     // for FieldAndName, etc
-#include <stk_mesh/base/BulkData.hpp>                // for BulkData, etc
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>                   // for Field
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#include <stk_mesh/base/SideSetUtil.hpp>
-#include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/util/ReportHandler.hpp>    // for ThrowErrorMsgIf, etc
-#include <utility>                                   // for pair, make_pair
-#include "Ioss_CodeTypes.h"                          // for NameList
-#include "Ioss_DBUsage.h"
+#include <stk_io/IossBridge.hpp>                     // for db_api_int_size
+#include <stk_io/OutputFile.hpp>                     // for OutputFile
+#include <stk_mesh/base/BulkData.hpp>                // for BulkData, BulkDa...
+#include <stk_mesh/base/Comm.hpp>                    // for comm_mesh_counts
+#include <stk_mesh/base/FEMHelpers.hpp>              // for get_max_id_on_lo...
+#include <stk_mesh/base/MetaData.hpp>                // for MetaData, entity...
+#include <stk_mesh/base/SideSetUtil.hpp>             // for toggle_sideset_u...
+#include <stk_util/environment/FileUtils.hpp>        // for filename_substit...
+#include <stk_util/util/ReportHandler.hpp>           // for ThrowErrorMsgIf
+#include <utility>                                   // for pair, move, make...
+#include "Ioss_DBUsage.h"                            // for DB_APPEND
 #include "Ioss_DatabaseIO.h"                         // for DatabaseIO
-#include "Ioss_ElementBlock.h"                       // for ElementBlock
-#include "Ioss_ElementTopology.h"                    // for ElementTopology
-#include "Ioss_EntityType.h"
-#include "Ioss_Field.h"
+#include "Ioss_EntityType.h"                         // for ELEMENTBLOCK
+#include "Ioss_Field.h"                              // for Field, Field::Ba...
 #include "Ioss_GroupingEntity.h"                     // for GroupingEntity
-#include "Ioss_IOFactory.h"                          // for IOFactory
-#include "Ioss_NodeBlock.h"                          // for NodeBlock
-#include "Ioss_NodeSet.h"                            // for NodeSet
+#include "Ioss_IOFactory.h"                          // for NameList
 #include "Ioss_ParallelUtils.h"                      // for ParallelUtils
 #include "Ioss_Property.h"                           // for Property
 #include "Ioss_PropertyManager.h"                    // for PropertyManager
-#include "Ioss_Region.h"                             // for Region, etc
-#include "Ioss_SideBlock.h"                          // for SideBlock
-#include "Ioss_SideSet.h"                            // for SideSet
-#include "Ioss_State.h"
+#include "Ioss_Region.h"                             // for Region, Coordina...
 #include "Ioss_VariableType.h"                       // for VariableType
-#include "ProcessSetsOrBlocks.hpp"
-#include "SidesetTranslator.hpp"
-#include "StkIoUtils.hpp"
-#include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
-#include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
-#include "stk_io/MeshField.hpp"                      // for MeshField, etc
-#include "stk_mesh/base/SidesetUpdater.hpp"
+#include "ProcessSetsOrBlocks.hpp"                   // for process_edge_blocks
+#include "StkIoUtils.hpp"                            // for IossBlockMembership
+#include "Teuchos_RCP.hpp"                           // for RCP::operator->
+#include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose
+#include "stk_io/Heartbeat.hpp"                      // for Heartbeat, Heart...
+#include "stk_io/MeshField.hpp"                      // for MeshField, MeshF...
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
-#include "stk_mesh/base/FieldParallel.hpp"
+#include "stk_mesh/base/FieldParallel.hpp"           // for communicate_fiel...
 #include "stk_mesh/base/FieldState.hpp"              // for FieldState
 #include "stk_mesh/base/Part.hpp"                    // for Part
-#include "stk_mesh/base/Selector.hpp"                // for Selector, etc
-#include "stk_mesh/base/Types.hpp"                   // for FieldVector, etc
-#include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_util/parallel/Parallel.hpp"            // for ParallelMachine, etc
-#include "stk_util/parallel/ParallelReduceBool.hpp"
-#include "stk_util/util/ParameterList.hpp"           // for Type, etc
-#include "stk_util/diag/StringUtil.hpp"           // for Type, etc
-#include "stk_util/util/string_case_compare.hpp"
+#include "stk_mesh/base/Selector.hpp"                // for Selector
+#include "stk_mesh/base/SideSetEntry.hpp"            // for SideSet
+#include "stk_mesh/base/SidesetUpdater.hpp"          // for SidesetUpdater
+#include "stk_mesh/base/Types.hpp"                   // for FieldVector, Ent...
+#include "stk_topology/topology.hpp"                 // for operator++, topo...
+#include "stk_util/parallel/Parallel.hpp"            // for parallel_machine...
+#include "stk_util/parallel/ParallelReduce.hpp"      // for all_reduce_max
+#include "stk_util/parallel/ParallelReduceBool.hpp"  // for is_true_on_any_proc
+#include "stk_util/util/ParameterList.hpp"           // for Parameter
+namespace stk { namespace mesh { class FieldDataManager; } }
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -239,9 +228,11 @@ void StkMeshIoBroker::create_sideset_observer()
         }
 
         if(bulk_data().synchronized_count() > 0) {
-          bulk_data().register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(bulk_data(), activeSelector));
+          bulk_data().register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(bulk_data(), activeSelector),
+                                        stk::mesh::ModificationObserverPriority::STK_INTERNAL);
         } else {
-          bulk_data().register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk_data(), activeSelector));
+          bulk_data().register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk_data(), activeSelector),
+                                        stk::mesh::ModificationObserverPriority::STK_INTERNAL);
         }
     }
 }

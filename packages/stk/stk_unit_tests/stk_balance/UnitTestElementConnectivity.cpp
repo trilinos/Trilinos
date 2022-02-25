@@ -14,7 +14,7 @@ protected:
   ElementConnectivity()
     : stk::unit_test_util::MeshFixture(3)
   {
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   }
 };
 

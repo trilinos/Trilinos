@@ -172,7 +172,8 @@ protected:
     {
         elemElemGraph = new ElemElemGraphTester(get_bulk());
         elemElemGraphUpdater = std::make_shared<stk::mesh::ElemElemGraphUpdater>(get_bulk(), *elemElemGraph);
-        get_bulk().register_observer(elemElemGraphUpdater);
+        get_bulk().register_observer(elemElemGraphUpdater,
+                                     stk::mesh::ModificationObserverPriority::STK_INTERNAL);
     }
 
     ElemElemGraphTester &get_elem_graph()
@@ -514,7 +515,8 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
         EXPECT_EQ(2, numLocallyOwnedElems);
 
         ElemElemGraphTester elem_graph(bulkData);
-        bulkData.register_observer(std::make_shared<stk::mesh::ElemElemGraphUpdater>(bulkData, elem_graph));
+        bulkData.register_observer(std::make_shared<stk::mesh::ElemElemGraphUpdater>(bulkData, elem_graph),
+                                   stk::mesh::ModificationObserverPriority::STK_INTERNAL);
 
         // Create a vector of the elements to be moved
         std::vector <stk::mesh::Entity> elems_to_move;

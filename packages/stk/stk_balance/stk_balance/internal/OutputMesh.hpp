@@ -30,44 +30,42 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+#ifndef STK_BALANCE_OUTPUTMESH_HPP
+#define STK_BALANCE_OUTPUTMESH_HPP
 
-#include "OutputSerializerBulkData.hpp"
-#include "stk_mesh/base/MetaData.hpp"
-#include "stk_mesh/base/GetEntities.hpp"
+#include <stk_balance/internal/RebalanceTransientFieldTransferById.hpp>
+#include <stk_balance/internal/OutputSerializerBulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <vector>
+
+namespace stk { namespace balance { class InputMesh; }}
 
 namespace stk {
 namespace balance {
-namespace m2n {
 
-OutputSerializerBulkData::OutputSerializerBulkData(stk::mesh::MetaData& mesh_meta_data, ParallelMachine parallel)
-  : BulkData(mesh_meta_data, parallel, stk::mesh::BulkData::NO_AUTO_AURA, true)
-{}
+class OutputMesh
+{
+public:
+  OutputMesh(const InputMesh& inputMesh,
+             const std::vector<unsigned>& targetSubdomains);
+  ~OutputMesh() = default;
 
-void
-OutputSerializerBulkData::switch_to_serial_mesh() {
+  void transfer_and_write();
 
-  modification_begin();
+  OutputSerializerBulkData& get_bulk() { return m_bulk; }
+  stk::mesh::MetaData& get_meta() { return m_meta; }
 
-  stk::mesh::EntityVector nodesToUnshare;
-  stk::mesh::get_entities(*this, stk::topology::NODE_RANK, mesh_meta_data().globally_shared_part(), nodesToUnshare);
+private:
+  void clone_input_mesh();
+  void move_subdomain_to_owning_processor();
 
-  for (const stk::mesh::Entity& node : nodesToUnshare) {
-    internal_set_owner(node, 0);
-    remove_entity_comm(node);
-    entity_comm_map_clear(entity_key(node));
-  }
+  const InputMesh& m_inputMesh;
+  const std::vector<unsigned>& m_targetSubdomains;
+  stk::mesh::MetaData m_meta;
+  OutputSerializerBulkData m_bulk;
+};
 
-  destroy_all_ghosting();
+}}
 
-  stk::mesh::PartVector addParts{&mesh_meta_data().locally_owned_part()};
-  stk::mesh::PartVector removeParts{&mesh_meta_data().globally_shared_part()};
-  internal_verify_and_change_entity_parts(nodesToUnshare, addParts, removeParts);
-
-  m_parallel = Parallel(MPI_COMM_SELF);
-
-  modification_end();
-}
-
-}
-}
-}
+#endif

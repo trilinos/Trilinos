@@ -256,7 +256,7 @@ void test_distributed_input_adapter(
   Zoltan2::PartitioningSolution<mytest_adapter_t> 
     single_phase_mapping_solution(env, global_tcomm, 0);
   Teuchos::ArrayView< const zgno_t> gids = 
-    distributed_map->getNodeElementList();
+    distributed_map->getLocalElementList();
 
   ArrayRCP<int> initial_part_ids(myTasks);
   for (zgno_t i = 0; i < myTasks; ++i) {
@@ -427,7 +427,7 @@ void test_serial_input_adapter(
   // the whole thing.
   Zoltan2::PartitioningSolution<mytest_adapter_t> 
     single_phase_mapping_solution(env, global_tcomm, 0);
-  Teuchos::ArrayView< const zgno_t> gids = serial_map->getNodeElementList();
+  Teuchos::ArrayView< const zgno_t> gids = serial_map->getLocalElementList();
 
   ArrayRCP<int> initial_part_ids(myTasks);
   for (zgno_t i = 0; i < myTasks; ++i) {

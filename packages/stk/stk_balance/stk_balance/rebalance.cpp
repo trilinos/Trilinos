@@ -31,41 +31,25 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#ifndef STK_BALANCE_M2N_OUTPUTMESH_HPP
-#define STK_BALANCE_M2N_OUTPUTMESH_HPP
-
-#include <stk_balance/m2n/TransientFieldTransferById.hpp>
-#include <stk_balance/m2n/OutputSerializerBulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include "rebalance.hpp"
+#include "stk_balance/internal/InputMesh.hpp"
+#include "stk_balance/internal/OutputMesh.hpp"
 #include <vector>
-
-namespace stk { namespace balance { namespace m2n { class InputMesh; }}}
 
 namespace stk {
 namespace balance {
-namespace m2n {
 
-class OutputMesh
+void rebalance(stk::io::StkMeshIoBroker & ioBroker, const stk::balance::BalanceSettings & balanceSettings)
 {
-public:
-  OutputMesh(const InputMesh& inputMesh,
-             const std::vector<unsigned>& targetSubdomains);
-  ~OutputMesh() = default;
+  stk::balance::InputMesh inputMesh(ioBroker, balanceSettings);
 
-  void transfer_and_write();
+  const std::vector<std::vector<unsigned>> targetSubdomainsForEachBatch = inputMesh.get_output_subdomains_for_each_batch();
 
-  OutputSerializerBulkData& get_bulk() { return m_bulk; }
-  stk::mesh::MetaData& get_meta() { return m_meta; }
+  for (const std::vector<unsigned>& targetSubdomains : targetSubdomainsForEachBatch) {
+    stk::balance::OutputMesh outputMesh(inputMesh, targetSubdomains);
+    outputMesh.transfer_and_write();
+  }
+}
 
-private:
-  void clone_input_mesh();
-  void move_subdomain_to_owning_processor();
-
-  const InputMesh& m_inputMesh;
-  const std::vector<unsigned>& m_targetSubdomains;
-  stk::mesh::MetaData m_meta;
-  OutputSerializerBulkData m_bulk;
-};
-
-}}}
-#endif
+}
+}

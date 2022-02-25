@@ -278,7 +278,7 @@ namespace {
     if (! X_mv.getMap ().is_null ()) {
       mv_map = * (X_mv.getMap ()); // Map implements view semantics
     }
-    TEST_EQUALITY_CONST( mv_map.getNodeNumElements (), static_cast<size_t> (48) );
+    TEST_EQUALITY_CONST( mv_map.getLocalNumElements (), static_cast<size_t> (48) );
 
     // X has three columns.  In the following tests, change only
     // blocks in column 1.  Entries in all other columns must remain
@@ -338,7 +338,7 @@ namespace {
     // Make sure that all entries of X_mv (the MultiVector) contain
     // zeros, except for rows 20-23 in column colToModify.  Those must
     // contain 1,2,3,4 (in order).
-    const size_t numLocalDofs = mv_map.getNodeNumElements ();
+    const size_t numLocalDofs = mv_map.getLocalNumElements ();
     for (LO curCol = 0; curCol < numVecs; ++curCol) {
       Teuchos::ArrayRCP<const Scalar> X_mv_curCol =
         X_mv.getData (static_cast<size_t> (curCol));
@@ -520,11 +520,11 @@ namespace {
     // has 9 rows.  Note that X2's Map has 9 rows, as X2 should have;
     // we account for X2's starting position with the offset argument
     // to the offset view constructor.
-    map_type X1_meshMap (INVALID, (meshMap.getNodeElementList ()) (0, 11), indexBase, comm);
-    map_type X2_meshMap (INVALID, (meshMap.getNodeElementList ()) (11, 9), indexBase+11, comm);
+    map_type X1_meshMap (INVALID, (meshMap.getLocalElementList ()) (0, 11), indexBase, comm);
+    map_type X2_meshMap (INVALID, (meshMap.getLocalElementList ()) (11, 9), indexBase+11, comm);
 
-    TEST_EQUALITY_CONST( X1_meshMap.getNodeNumElements (), static_cast<size_t> (11) );
-    TEST_EQUALITY_CONST( X2_meshMap.getNodeNumElements (), static_cast<size_t> (9) );
+    TEST_EQUALITY_CONST( X1_meshMap.getLocalNumElements (), static_cast<size_t> (11) );
+    TEST_EQUALITY_CONST( X2_meshMap.getLocalNumElements (), static_cast<size_t> (9) );
 
     BMV X1 (X, X1_meshMap);
     BMV X2 (X, X2_meshMap, static_cast<size_t> (11));

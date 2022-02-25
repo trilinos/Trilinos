@@ -136,7 +136,7 @@ getLclRowsToTest(const export_type& exporter)
 {
   Teuchos::ArrayView<const LO> incomingRows = exporter.getRemoteLIDs();
   const map_type& tgtMap = *(exporter.getTargetMap());
-  const LO tgtLclNumRows = LO(tgtMap.getNodeNumElements());
+  const LO tgtLclNumRows = LO(tgtMap.getLocalNumElements());
 
   using device_type = crs_matrix_type::device_type;
   using Kokkos::view_alloc;
@@ -558,13 +558,13 @@ void benchmark(const RCP<const Teuchos::Comm<int>>& comm,
     std::unique_ptr<GO[]> colGids(new GO[numColsToFill]);
     std::iota(colGids.get(), colGids.get()+numColsToFill,
               domainMap->getIndexBase());
-    const LO tgtLclNumRows = LO(tgtRowMap->getNodeNumElements());
+    const LO tgtLclNumRows = LO(tgtRowMap->getLocalNumElements());
     for(LO lclRow = 0; lclRow < tgtLclNumRows; ++lclRow) {
       const GO gblRow = tgtRowMap->getGlobalElement(lclRow);
       tgtGraph->insertGlobalIndices(gblRow, numColsToFill,
                                     colGids.get());
     }
-    const LO srcLclNumRows = LO(srcRowMap->getNodeNumElements());
+    const LO srcLclNumRows = LO(srcRowMap->getLocalNumElements());
     for(LO lclRow = 0; lclRow < srcLclNumRows; ++lclRow) {
       const GO gblRow = srcRowMap->getGlobalElement(lclRow);
       srcGraph->insertGlobalIndices(gblRow, numColsToFill,

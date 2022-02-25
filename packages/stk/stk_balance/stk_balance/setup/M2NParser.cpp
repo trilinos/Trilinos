@@ -75,8 +75,8 @@ void M2NParser::parse_command_line_options(int argc, const char** argv, M2NBalan
   stk::parse_command_line(argc, argv, m_quickExample, m_longExamples, m_commandLineParser, m_comm);
 
   set_filename(settings);
-  set_logfile(settings);
   set_num_procs(settings);
+  set_logfile(settings);
   set_use_nested_decomp(settings);
 }
 
@@ -127,8 +127,16 @@ void M2NParser::set_num_procs(M2NBalanceSettings& settings) const
 
 void M2NParser::set_logfile(M2NBalanceSettings& settings) const
 {
-  ThrowRequire(m_commandLineParser.is_option_provided(m_optionNames.logfile));
-  settings.set_log_filename(m_commandLineParser.get_option_value<std::string>(m_optionNames.logfile));
+  if (m_commandLineParser.is_option_parsed(m_optionNames.logfile)) {
+    settings.set_log_filename(m_commandLineParser.get_option_value<std::string>(m_optionNames.logfile));
+  }
+  else {
+    const int initialNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    const int finalNumProcs = settings.get_num_output_processors();
+    settings.set_log_filename(stk::basename(stk::tailname(settings.get_input_filename())) + "." + std::to_string(initialNumProcs) + "_to_" 
+                                                                                                + std::to_string(finalNumProcs) + ".log");
+  }
+
 }
 
 void M2NParser::set_use_nested_decomp(M2NBalanceSettings& settings) const

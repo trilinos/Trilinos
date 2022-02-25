@@ -62,7 +62,7 @@ localRowCounts (const RowGraph<LO, GO, NT>& G)
   using offsets_type = typename result_type::offsets_type;
   using offset_type = typename result_type::offset_type;
 
-  const LO lclNumRows (G.getNodeNumRows ());
+  const LO lclNumRows (G.getLocalNumRows ());
   offsets_type entPerRow;
   if (lclNumRows != 0) {
     using Kokkos::view_alloc;
@@ -74,7 +74,7 @@ localRowCounts (const RowGraph<LO, GO, NT>& G)
   using host = Kokkos::DefaultHostExecutionSpace;
   auto entPerRow_h = Kokkos::create_mirror_view (host (), entPerRow);
 
-  // Don't trust G.getNodeMaxNumRowEntries() unless G is fillComplete.
+  // Don't trust G.getLocalMaxNumRowEntries() unless G is fillComplete.
   // Even then, I would rather this method didn't exist (since it adds
   // state and imposes overhead on fillComplete), and it's easy to
   // compute ourselves here.
@@ -104,7 +104,7 @@ localRowOffsetsFromRowGraph (const RowGraph<LO, GO, NT>& G)
     maxNumEnt = result.second;
   }
 
-  const LO lclNumRows (G.getNodeNumRows ());
+  const LO lclNumRows (G.getLocalNumRows ());
   offsets_type ptr;
   offset_type nnz = 0;
   if (lclNumRows != 0) {
@@ -133,8 +133,8 @@ localRowOffsetsFromFillCompleteCrsGraph (const CrsGraph<LO, GO, NT>& G)
                     G_lcl.row_map.extent (0));
   Kokkos::deep_copy (ptr, G_lcl.row_map);
 
-  const offset_type nnz = G.getNodeNumEntries ();
-  const size_t maxNumEnt = G.getNodeMaxNumRowEntries ();
+  const offset_type nnz = G.getLocalNumEntries ();
+  const size_t maxNumEnt = G.getLocalMaxNumRowEntries ();
   return {ptr, nnz, maxNumEnt};
 }
 

@@ -972,7 +972,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
       // FIXME (mfh 15 Apr 2014) What if indexBase isn't the least
       // global index in the list of GIDs on this process?
       localMap_ =
-        rcp (new map_type (INVALID, rowMap->getNodeNumElements (),
+        rcp (new map_type (INVALID, rowMap->getLocalNumElements (),
                            indexBase, localComm));
     }
 

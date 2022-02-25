@@ -972,12 +972,20 @@ public:
     global_size_t getGlobalNumCols () const override;
 
     //! Returns the number of graph rows owned on the calling node.
+    size_t getLocalNumRows () const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeNumRows () const override;
+#endif
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
      */
+    size_t getLocalNumCols () const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeNumCols () const override;
+#endif
 
     //! Returns the index base for global indices for this graph.
     global_ordinal_type getIndexBase () const override;
@@ -996,7 +1004,10 @@ public:
     ///   not store the number of entries as a separate integer field,
     ///   since doing so and keeping it updated would hinder
     ///   thread-parallel insertion of new entries.  See #1357.
-    size_t getNodeNumEntries() const override;
+    size_t getLocalNumEntries() const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED size_t getNodeNumEntries() const override;
+#endif
 
     //! \brief Returns the current number of entries on this node in the specified global row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
@@ -1031,7 +1042,10 @@ public:
     /// \return If indicesAreAllocated() is true, the allocation size.
     ///   Otherwise,
     ///   <tt>Tpetra::Details::OrdinalTraits<size_t>::invalid()</tt>.
-    size_t getNodeAllocationSize () const;
+    size_t getLocalAllocationSize () const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED size_t getNodeAllocationSize () const;
+#endif
 
     /// \brief Current number of allocated entries in the given row on
     ///   the calling (MPI) process, using a global row index.
@@ -1057,7 +1071,7 @@ public:
     /// \pre <tt>! isFillActive()</tt>
     ///
     /// \note This is the same as the result of a global maximum of
-    ///   getNodeMaxNumRowEntries() over all processes.  That may not
+    ///   getLocalMaxNumRowEntries() over all processes.  That may not
     ///   necessarily mean what you think it does if some rows of the
     ///   matrix are owned by multiple processes.  In particular, some
     ///   processes might only own some of the entries in a particular
@@ -1070,7 +1084,10 @@ public:
     ///   on this process.
     ///
     /// \pre <tt>! isFillActive()</tt>
-    size_t getNodeMaxNumRowEntries () const override;
+    size_t getLocalMaxNumRowEntries () const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED size_t getNodeMaxNumRowEntries () const override;
+#endif
 
     /// \brief Whether the graph has a column Map.
     ///
@@ -1413,11 +1430,11 @@ public:
     /// \pre The graph must have a column Map.
     /// \pre All diagonal entries of the graph must be populated on
     ///   this process.  Results are undefined otherwise.
-    /// \pre <tt>offsets.extent(0) >= this->getNodeNumRows()</tt>
+    /// \pre <tt>offsets.extent(0) >= this->getLocalNumRows()</tt>
     ///
     /// \param offsets [out] Output array of offsets.  This method
     ///   does NOT allocate the array; the caller must allocate.  Must
-    ///   have getNodeNumRows() entries on the calling process.  (This
+    ///   have getLocalNumRows() entries on the calling process.  (This
     ///   may be different on different processes.)
     void
     getLocalDiagOffsets (const Kokkos::View<size_t*, device_type, Kokkos::MemoryUnmanaged>& offsets) const;
@@ -1472,7 +1489,7 @@ public:
     ///
     /// \pre columnIndices are sorted within rows
     /// \pre <tt>hasColMap() == true</tt>
-    /// \pre <tt>rowPointers.size() != getNodeNumRows()+1</tt>
+    /// \pre <tt>rowPointers.size() != getLocalNumRows()+1</tt>
     /// \pre No insert routines have been called.
     ///
     /// \warning This method is intended for expert developer use
@@ -1485,7 +1502,7 @@ public:
     ///
     /// \pre columnIndices are sorted within rows
     /// \pre <tt>hasColMap() == true</tt>
-    /// \pre <tt>rowPointers.size() != getNodeNumRows()+1</tt>
+    /// \pre <tt>rowPointers.size() != getLocalNumRows()+1</tt>
     /// \pre No insert routines have been called.
     ///
     /// \warning This method is intended for expert developer use
@@ -2477,8 +2494,8 @@ public:
     /// space."  If the graph's storage is packed, then there is no
     /// extra space, and the k_numRowEntries_ array is invalid.
     ///
-    /// If it is allocated, k_rowPtrs_ has length getNodeNumRows()+1.
-    /// The k_numRowEntries_ array has has length getNodeNumRows(),
+    /// If it is allocated, k_rowPtrs_ has length getLocalNumRows()+1.
+    /// The k_numRowEntries_ array has has length getLocalNumRows(),
     /// again if it is allocated.
 
     /// \brief The type of k_numRowEntries_ (see below).

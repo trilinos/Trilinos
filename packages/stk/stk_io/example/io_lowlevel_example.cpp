@@ -30,26 +30,55 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-#include <iostream>
-#include <assert.h>
-
-#include <stk_util/command_line/CommandLineParser.hpp>
-
-#include <Ionit_Initializer.h>
-#include <Ioss_SubSystem.h>
-
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_topology/topology.hpp>
-
-#include <stk_io/IossBridge.hpp>
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <Ionit_Initializer.h>                          // for Initializer
+#include <cstdlib>                                      // for exit, size_t
+#include <algorithm>                                    // for copy, max
+#include <cassert>                                      // for assert
+#include <cstdint>                                      // for int64_t
+#include <iostream>                                     // for operator<<
+#include <stdexcept>                                    // for runtime_error
+#include <stk_io/IossBridge.hpp>                        // for include_entity
+#include <stk_mesh/base/BulkData.hpp>                   // for BulkData
+#include <stk_mesh/base/CoordinateSystems.hpp>          // for Cartesian
+#include <stk_mesh/base/FEMHelpers.hpp>                 // for declare_element
+#include <stk_mesh/base/Field.hpp>                      // for Field
+#include <stk_mesh/base/MetaData.hpp>                   // for MetaData, put...
+#include <stk_mesh/base/TopologyDimensions.hpp>         // for ElementNode
+#include <stk_util/command_line/CommandLineParser.hpp>  // for CommandLinePa...
+#include <stk_util/parallel/Parallel.hpp>               // for parallel_mach...
+#include <string>                                       // for string, opera...
+#include <vector>                                       // for vector, vecto...
+#include "Ioss_DBUsage.h"                               // for READ_MODEL
+#include "Ioss_DatabaseIO.h"                            // for DatabaseIO
+#include "Ioss_ElementBlock.h"                          // for ElementBlock
+#include "Ioss_ElementTopology.h"                       // for ElementTopology
+#include "Ioss_EntityType.h"                            // for SIDESET
+#include "Ioss_Field.h"                                 // for Field, Field:...
+#include "Ioss_GroupingEntity.h"                        // for GroupingEntity
+#include "Ioss_IOFactory.h"                             // for NameList, IOF...
+#include "Ioss_NodeBlock.h"                             // for NodeBlock
+#include "Ioss_NodeSet.h"                               // for NodeSet
+#include "Ioss_Property.h"                              // for Property
+#include "Ioss_PropertyManager.h"                       // for PropertyManager
+#include "Ioss_Region.h"                                // for Region, NodeB...
+#include "Ioss_SideBlock.h"                             // for SideBlock
+#include "Ioss_SideSet.h"                               // for SideSet, Side...
+#include "Ioss_State.h"                                 // for STATE_DEFINE_...
+#include "Ioss_Utils.h"                                 // for Utils
+#include "Ioss_VariableType.h"                          // for VariableType
+#include "mpi.h"                                        // for MPI_COMM_WORLD
+#include "stk_io/OutputParams.hpp"                      // for OutputParams
+#include "stk_mesh/base/Entity.hpp"                     // for Entity
+#include "stk_mesh/base/FieldBase.hpp"                  // for FieldBase
+#include "stk_mesh/base/Part.hpp"                       // for Part
+#include "stk_mesh/base/Types.hpp"                      // for PartVector
+#include "stk_topology/topology.hpp"                    // for topology, top...
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 /** \addtogroup stk_io_module
  * \{

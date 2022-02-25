@@ -146,7 +146,7 @@ namespace {
       TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (matrix), static_cast<GO> (numLocal*numImages) );
       TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (matrix), static_cast<LO> (numLocal) );
       TEST_EQUALITY( matrix.getGlobalNumEntries(), numLocal*numImages );
-      TEST_EQUALITY( matrix.getNodeNumEntries(), numLocal );
+      TEST_EQUALITY( matrix.getLocalNumEntries(), numLocal );
       for (LO r = 0; r < static_cast<LO> (numLocal); ++r) {
         typename MAT::local_inds_host_view_type inds;
         typename MAT::values_host_view_type vals;
