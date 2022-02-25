@@ -155,14 +155,14 @@ public:
   virtual global_size_t getGlobalNumCols () const;
 
   //! The number of rows owned by the calling process.
-  virtual size_t getNodeNumRows () const;
+  virtual size_t getLocalNumRows () const;
 
   /// \brief The number of columns owned by the calling process.
   ///
   /// This is the number of columns needed to apply the forward
   /// operator on the calling process, that is, the number of elements
   /// listed in the column Map on the calling process.
-  virtual size_t getNodeNumCols () const;
+  virtual size_t getLocalNumCols () const;
 
   //! The index base for global indices for this graph.
   virtual global_ordinal_type getIndexBase () const;
@@ -171,7 +171,7 @@ public:
   virtual global_size_t getGlobalNumEntries () const;
 
   //! The number of entries in this graph owned by the calling process.
-  virtual size_t getNodeNumEntries () const;
+  virtual size_t getLocalNumEntries () const;
 
   /// \brief The number of entries in the given global row that are
   ///   owned by the calling process.
@@ -199,7 +199,7 @@ public:
   virtual size_t getGlobalMaxNumRowEntries () const;
 
   //! The maximum number of entries in any row on the calling process.
-  virtual size_t getNodeMaxNumRowEntries() const;
+  virtual size_t getLocalMaxNumRowEntries() const;
 
   //! Whether this graph has a column Map.
   virtual bool hasColMap() const;

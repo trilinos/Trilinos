@@ -400,7 +400,7 @@ timeTpetra (const TPETRA_GO numGlobalCoords,
   {
     Teuchos::TimeMonitor timeMon (*tmvBuildN);
 
-    ArrayView<const TPETRA_GO> gidList = mvector->getMap ()->getNodeElementList ();
+    ArrayView<const TPETRA_GO> gidList = mvector->getMap ()->getLocalElementList ();
     subMap = rcp (new map_type (globalSize, gidList, 0, subComm));
     globalSize = subMap->getGlobalNumElements ();
 

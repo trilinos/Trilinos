@@ -140,10 +140,10 @@ bool compare_final_graph_structure_relaxed(Teuchos::FancyOStream &out,
     return false;
   }
 
-  const LO num_my_rows = g1.getNodeNumRows();
-  if (num_my_rows!=static_cast<LO>(g2.getNodeNumRows())) {
+  const LO num_my_rows = g1.getLocalNumRows();
+  if (num_my_rows!=static_cast<LO>(g2.getLocalNumRows())) {
     out << "Compare: number of local rows differ on some MPI rank: "
-        << num_my_rows << " vs " << g2.getNodeNumRows() << ".\n";
+        << num_my_rows << " vs " << g2.getLocalNumRows() << ".\n";
     return false;
   }
 
@@ -212,12 +212,12 @@ public:
   void print(int rank, std::ostream & out) {
     using std::endl;
     out << "["<<rank<<"] Unique Map  : ";
-    for(size_t i=0; i<uniqueMap->getNodeNumElements(); i++)
+    for(size_t i=0; i<uniqueMap->getLocalNumElements(); i++)
       out << uniqueMap->getGlobalElement(i) << " ";
     out<<endl;
 
     out << "["<<rank<<"] Overlap Map : ";
-    for(size_t i=0; i<overlapMap->getNodeNumElements(); i++)
+    for(size_t i=0; i<overlapMap->getLocalNumElements(); i++)
       out << overlapMap->getGlobalElement(i) << " ";
     out<<endl;
 

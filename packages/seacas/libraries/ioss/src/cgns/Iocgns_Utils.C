@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -372,8 +372,8 @@ namespace {
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
     for (auto &eb : ebs) {
       const std::string &name = eb->name();
-      fmt::print("\t|{2:^{0}}|{3:{1}L}  |\n", max_name, max_face - 2, name,
-                 boundary_faces[name].size());
+      fmt::print("\t|{2:^{0}}|{3:{1}}  |\n", max_name, max_face - 2, name,
+                 fmt::group_digits(boundary_faces[name].size()));
     }
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
   }
@@ -815,13 +815,11 @@ namespace {
     } // End of processor 0 only processing...
 
     // Send the list of unique zgc instances to all processors so they can all output.
-    MPI_Bcast(&count, 1, MPI_INT, 0, region.get_database()->util().communicator());
+    region.get_database()->util().broadcast(count);
     snd_zgc_name.resize(count * BYTE_PER_NAME);
     snd_zgc_data.resize(count * INT_PER_ZGC);
-    MPI_Bcast(snd_zgc_name.data(), (int)snd_zgc_name.size(), MPI_BYTE, 0,
-              region.get_database()->util().communicator());
-    MPI_Bcast(snd_zgc_data.data(), (int)snd_zgc_data.size(), MPI_INT, 0,
-              region.get_database()->util().communicator());
+    region.get_database()->util().broadcast(snd_zgc_name);
+    region.get_database()->util().broadcast(snd_zgc_data);
 
     // Now clean out existing ZGC lists for all blocks and add on the consolidated instances.
     // Also create a vector for mapping from zone to sb name.
@@ -1030,11 +1028,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     // platform_information() contained different node info ("ser9"
     // and "ser43") on certain ranks which caused an HDF5 failure way
     // downstream -- basically at file close.
-    char tmp[2048];
-    Ioss::Utils::copy_string(tmp, version, 2048);
-    MPI_Bcast(tmp, (int)version.size() + 1, MPI_BYTE, 0,
-              region.get_database()->util().communicator());
-    version = std::string{tmp};
+    region.get_database()->util().broadcast(version);
   }
 #endif
 
@@ -2424,10 +2418,11 @@ void Iocgns::Utils::decompose_model(std::vector<Iocgns::StructuredZoneData *> &z
     if (rank == 0) {
       fmt::print(
           Ioss::OUTPUT(),
-          "Decomposing structured mesh with {} zones for {} processors.\nAverage workload is {:L}, "
-          "Load Balance Threshold is {}, Work range {:L} to {:L}\n",
-          num_active, proc_count, (size_t)avg_work, load_balance_threshold,
-          (size_t)(avg_work / load_balance_threshold), (size_t)(avg_work * load_balance_threshold));
+          "Decomposing structured mesh with {} zones for {} processors.\nAverage workload is {}, "
+          "Load Balance Threshold is {}, Work range {} to {}\n",
+          num_active, proc_count, fmt::group_digits((size_t)avg_work), load_balance_threshold,
+          fmt::group_digits((size_t)(avg_work / load_balance_threshold)),
+          fmt::group_digits((size_t)(avg_work * load_balance_threshold)));
     }
   }
 
@@ -2442,8 +2437,8 @@ void Iocgns::Utils::decompose_model(std::vector<Iocgns::StructuredZoneData *> &z
     if (rank == 0) {
       fmt::print(Ioss::DEBUG(),
                  "========================================================================\n");
-      fmt::print(Ioss::DEBUG(), "Pre-Splitting: (Average = {:L}, LB Threshold = {}\n",
-                 (size_t)avg_work, load_balance_threshold);
+      fmt::print(Ioss::DEBUG(), "Pre-Splitting: (Average = {}, LB Threshold = {}\n",
+                 fmt::group_digits((size_t)avg_work), load_balance_threshold);
     }
   }
   // Split all blocks where block->work() > avg_work * load_balance_threshold
@@ -2474,14 +2469,14 @@ void Iocgns::Utils::decompose_model(std::vector<Iocgns::StructuredZoneData *> &z
         if (verbose && rank == 0) {
           fmt::print(Ioss::DEBUG(), "{}",
                      fmt::format(fg(fmt::color::red),
-                                 "\nProcessor {} work: {:L}, workload ratio: {} (exceeds)", i,
-                                 work_vector[i], workload_ratio));
+                                 "\nProcessor {} work: {}, workload ratio: {} (exceeds)", i,
+                                 fmt::group_digits(work_vector[i]), workload_ratio));
         }
       }
       else {
         if (verbose && rank == 0) {
-          fmt::print(Ioss::DEBUG(), "\nProcessor {} work: {:L}, workload ratio: {}", i,
-                     work_vector[i], workload_ratio);
+          fmt::print(Ioss::DEBUG(), "\nProcessor {} work: {}, workload ratio: {}", i,
+                     fmt::group_digits(work_vector[i]), workload_ratio);
         }
       }
     }
@@ -2526,8 +2521,8 @@ void Iocgns::Utils::decompose_model(std::vector<Iocgns::StructuredZoneData *> &z
       auto active = std::count_if(zones.begin(), zones.end(),
                                   [](Iocgns::StructuredZoneData *a) { return a->is_active(); });
       if (rank == 0) {
-        fmt::print(Ioss::DEBUG(), "Number of active zones = {}, average work = {:L}\n", active,
-                   (size_t)avg_work);
+        fmt::print(Ioss::DEBUG(), "Number of active zones = {}, average work = {}\n", active,
+                   fmt::group_digits((size_t)avg_work));
         fmt::print(Ioss::DEBUG(),
                    "========================================================================\n");
       }
@@ -2570,10 +2565,11 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
     auto &zone   = zones[i];
     zone->m_proc = i;
     if (verbose) {
-      fmt::print(
-          Ioss::DEBUG(),
-          "Assigning zone '{}' with work {:L} to processor {}. Changing work from {:L} to {:L}\n",
-          zone->m_name, zone->work(), zone->m_proc, work_vector[i], zone->work() + work_vector[i]);
+      fmt::print(Ioss::DEBUG(),
+                 "Assigning zone '{}' with work {} to processor {}. Changing work from {} to {}\n",
+                 zone->m_name, fmt::group_digits(zone->work()), zone->m_proc,
+                 fmt::group_digits(work_vector[i]),
+                 fmt::group_digits(zone->work() + work_vector[i]));
     }
     work_vector[i] += zone->work();
     proc_adam_map.insert(std::make_pair(zone->m_adam->m_zone, zone->m_proc));
@@ -2593,10 +2589,11 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
         zone->m_proc = proc;
         if (verbose) {
           fmt::print(Ioss::DEBUG(),
-                     "Assigning zone '{}' with work {:L} to processor {}. Changing work from {:L} "
-                     "to {:L}\n",
-                     zone->m_name, zone->work(), zone->m_proc, work_vector[proc],
-                     zone->work() + work_vector[proc]);
+                     "Assigning zone '{}' with work {} to processor {}. Changing work from {} "
+                     "to {}\n",
+                     zone->m_name, fmt::group_digits(zone->work()), zone->m_proc,
+                     fmt::group_digits(work_vector[proc]),
+                     fmt::group_digits(zone->work() + work_vector[proc]));
         }
         work_vector[proc] += zone->work();
       }

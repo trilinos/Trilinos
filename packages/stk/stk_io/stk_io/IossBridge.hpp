@@ -37,32 +37,37 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <Ioss_DBUsage.h>                // for DatabaseUsage
-#include <Ioss_Field.h>                  // for Field, Field::RoleType, etc
-#include <stddef.h>                      // for size_t
-#include <stk_mesh/base/Types.hpp>       // for EntityId, EntityRank
-#include <stk_topology/topology.hpp>     // for topology
-#include <string>                        // for string, operator<, etc
-#include <utility>                       // for pair
-#include <vector>                        // for vector
-#include "Ioss_EntityType.h"             // for EntityType
-#include "Ioss_GroupingEntity.h"
-#include "stk_mesh/base/FieldState.hpp"  // for FieldState
-#include "stk_mesh/base/FieldBase.hpp"  // for FieldState
-#include "stk_mesh/base/Part.hpp"        // for Part
-#include "stk_mesh/base/SideSetUtil.hpp"
-#include "Ioss_GroupingEntity.h"                     // for GroupingEntity
-#include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#include "SidesetTranslator.hpp"
-#include "stk_io/OutputParams.hpp"
-#include "stk_io/FieldAndName.hpp"
-
-namespace stk { namespace mesh { class BulkData; } }
+#include <Ioss_DBUsage.h>                   // for DatabaseUsage
+#include <Ioss_Field.h>                     // for Field, Field::RoleType
+#include <cstddef>                          // for size_t
+#include <cstdint>                          // for int64_t
+#include <stk_mesh/base/MetaData.hpp>       // for MetaData
+#include <stk_mesh/base/Types.hpp>          // for EntityId, EntityRank, Ent...
+#include <string>                           // for string, operator<, basic_...
+#include <utility>                          // for pair
+#include <vector>                           // for vector
+#include "Ioss_EntityType.h"                // for EntityType, SIDEBLOCK
+#include "Ioss_GroupingEntity.h"            // for GroupingEntity
+#include "SidesetTranslator.hpp"            // for fill_element_and_side_ids
+#include "stk_io/OutputParams.hpp"          // for OutputParams
+#include "stk_mesh/base/BulkData.hpp"       // for BulkData
+#include "stk_mesh/base/FieldState.hpp"     // for FieldState
+#include "stk_mesh/base/Part.hpp"           // for Part
+#include "stk_topology/topology.hpp"        // for topology
+#include "stk_util/util/ParameterList.hpp"  // for STK_ANY_NAMESPACE, Type
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
+namespace Ioss { class DatabaseIO; }
+namespace Ioss { class ElementTopology; }
+namespace Ioss { class EntityBlock; }
+namespace Ioss { class Region; }
+namespace Teuchos { class any; }
+namespace stk { namespace io { struct FieldAndName; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class FieldRestriction; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { struct Entity; } }
-namespace stk { namespace mesh { class Selector; } }
+
+namespace stk { namespace mesh { class BulkData; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -74,10 +79,6 @@ class SideBlock;
 class NodeBlock;
 class Field;
 class GroupingEntity;
-class Region;
-class ElementTopology;
-class EntityBlock;
-class DatabaseIO;
 }
 
 void STKIORequire(bool cond);
@@ -458,6 +459,10 @@ bool is_part_edge_block_io_part(const stk::mesh::Part &part);
 
 bool is_part_assembly_io_part(const stk::mesh::Part &part);
 
+bool is_part_element_block_io_part(const stk::mesh::Part &part);
+
+bool is_part_surface_io_part(const stk::mesh::Part &part);
+
 Ioss::GroupingEntity* get_grouping_entity(const Ioss::Region& region, stk::mesh::Part& part);
 
 std::vector<Ioss::EntityType> get_ioss_entity_types(const stk::mesh::MetaData& meta, stk::mesh::EntityRank rank);
@@ -519,6 +524,7 @@ std::vector<std::string> get_sub_assembly_names(const stk::mesh::MetaData& meta,
 
 bool has_sub_assemblies(const stk::mesh::MetaData& meta, const std::string& assemblyName);
 
+stk::mesh::PartVector get_unique_leaf_parts(const stk::mesh::Part &assemblyPart);
 stk::mesh::PartVector get_unique_leaf_parts(const stk::mesh::MetaData& meta, const std::string& assemblyName);
 
 /** Remove the existing attribute on the specified part 'part' that indicates that

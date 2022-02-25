@@ -299,7 +299,7 @@ public:
       Teuchos::Array<gno_t> cols(1);
       Teuchos::Array<scalar_t> vals(1); vals[0] = 1.;
 
-      for (size_t i = 0; i < permMap->getNodeNumElements(); i++) {
+      for (size_t i = 0; i < permMap->getLocalNumElements(); i++) {
         gno_t gid = permMap->getGlobalElement(i);
         cols[0] = permuteIndex[gid];
         permMatrix->insertGlobalValues(gid, cols(), vals());
@@ -374,9 +374,9 @@ public:
     chunksComputed = true;
 
     // Determine new owner of each nonzero; buffer for sending
-    Teuchos::Array<gno_t> iOut(localNZ.size());
-    Teuchos::Array<gno_t> jOut(localNZ.size());
-    Teuchos::Array<scalar_t> vOut(localNZ.size());
+    Kokkos::View<gno_t*, Kokkos::HostSpace> iOut("iOut", localNZ.size());
+    Kokkos::View<gno_t*, Kokkos::HostSpace> jOut("jOut", localNZ.size());
+    Kokkos::View<scalar_t*, Kokkos::HostSpace> vOut("vOut", localNZ.size());
     Teuchos::Array<int> pOut(localNZ.size());
 
     size_t sendCnt = 0;
@@ -400,14 +400,15 @@ public:
     // Use a Distributor to send nonzeros to new processors.
     Tpetra::Distributor plan(comm);
     size_t nrecvs = plan.createFromSends(pOut(0,sendCnt));
-    Teuchos::Array<gno_t> iIn(nrecvs);
-    Teuchos::Array<gno_t> jIn(nrecvs);
-    Teuchos::Array<scalar_t> vIn(nrecvs);
+    Kokkos::View<gno_t*, Kokkos::HostSpace> iIn("iIn", nrecvs);
+    Kokkos::View<gno_t*, Kokkos::HostSpace> jIn("jIn", nrecvs);
+    Kokkos::View<scalar_t*, Kokkos::HostSpace> vIn("vIn", nrecvs);
 
     // TODO:  With more clever packing, could do only one round of communication
-    plan.doPostsAndWaits<gno_t>(iOut(0,sendCnt), 1, iIn());
-    plan.doPostsAndWaits<gno_t>(jOut(0,sendCnt), 1, jIn());
-    plan.doPostsAndWaits<scalar_t>(vOut(0,sendCnt), 1, vIn());
+    auto sendIndices = std::make_pair(static_cast<size_t>(0), sendCnt);
+    plan.doPostsAndWaits(Kokkos::subview(iOut, sendIndices), 1, iIn);
+    plan.doPostsAndWaits(Kokkos::subview(jOut, sendIndices), 1, jIn);
+    plan.doPostsAndWaits(Kokkos::subview(vOut, sendIndices), 1, vIn);
 
     // Put received nonzeros in map
     for (size_t n = 0; n < nrecvs; n++) {

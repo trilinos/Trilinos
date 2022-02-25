@@ -453,7 +453,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RILUK_UserOrdering, Sc
   out << "Filling in ParameterList for AdditiveSchwarz" << endl;
 
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
-  size_t N = rowmap->getNodeNumElements();
+  size_t N = rowmap->getLocalNumElements();
   params.set ("schwarz: use reordering", true);
 
   // Now let's do some user ordering.  Reverse ordering, because, why not?

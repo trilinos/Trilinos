@@ -627,7 +627,7 @@ createTimeEventComposite(Teuchos::RCP<Teuchos::ParameterList> const& pList)
   using Teuchos::ParameterList;
 
   auto tec = Teuchos::rcp(new TimeEventComposite<Scalar>());
-  if (pList == Teuchos::null) return tec;  // Return default TimeEventComposite.
+  if (pList == Teuchos::null || pList->numParams() == 0) return tec;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     pList->get<std::string>("Type", "Composite") != "Composite",
@@ -681,7 +681,7 @@ createTimeEventComposite(Teuchos::RCP<Teuchos::ParameterList> const& pList)
         Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       out->setOutputToRootOnly(0);
       Teuchos::OSTab ostab(out,1, "createTimeEventComposite()");
-      *out << "Warning -- Unknown Time Event Type!\n"
+      *out << "Warning -- createTimeEventComposite() - Unknown Time Event Type!\n"
            << "'Type' = '" << timeEventType << "'\n"
            << "Should call add() with this "
            << "(app-specific?) Time Event.\n" << std::endl;
@@ -693,9 +693,11 @@ createTimeEventComposite(Teuchos::RCP<Teuchos::ParameterList> const& pList)
       Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1, "createTimeEventComposite()");
-    *out << "Warning -- Did not find a Tempus Time Events to create!\n"
-         << "Should call add() with this (app-specific?) "
-         << "Time Event.\n" << std::endl;
+    *out << "Warning -- createTimeEventComposite() - Did not\n"
+         << "           find/recognize any TimeEvents to create!\n"
+         << "           If there is a app-specific TimeEvent,\n"
+         << "           explicitly add it to this TimeEventComposite.\n"
+         << std::endl;
   }
 
   return tec;

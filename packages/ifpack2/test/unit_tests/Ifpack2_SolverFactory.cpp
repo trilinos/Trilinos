@@ -75,7 +75,7 @@ namespace {
     const size_t maxNumEntPerRow = 1;
     RCP<MAT> A (new MAT (rowMap, colMap, maxNumEntPerRow));
 
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       Teuchos::Array<SC> vals (1);
       Teuchos::Array<LO> inds (1);
       for (LO lclRow = rowMap->getMinLocalIndex ();

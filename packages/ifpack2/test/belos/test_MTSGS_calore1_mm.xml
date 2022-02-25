@@ -1,5 +1,6 @@
 <ParameterList name="test_params">
-  <Parameter name="mm_file" type="string" value="calore1.mtx"/>
+  <Parameter name="mm_file"     type="string" value="calore1.mtx"/>
+  <Parameter name="rhs_mm_file" type="string" value="calore1_rhs.mtx"/>
 
   <Parameter name="solver_type" type="string" value="Block Gmres"/>
   <ParameterList name="Belos">
@@ -8,9 +9,10 @@
 
   <Parameter name="Ifpack2::Preconditioner" type="string" value="RELAXATION"/>
   <ParameterList name="Ifpack2">
-    <Parameter name="relaxation: type" type="string" value="MT Symmetric Gauss-Seidel"/>
-    <Parameter name="relaxation: damping factor" type="double" value="1.1"/>
+    <Parameter name="relaxation: type"                    type="string" value="MT Symmetric Gauss-Seidel"/>
+    <Parameter name="relaxation: mtgs coloring algorithm" type="string" value="vbdbit"/>
+    <Parameter name="relaxation: damping factor"          type="double" value="1.1"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="19"/>
+  <Parameter name="expectNumIters" type="int" value="18"/>
 </ParameterList>

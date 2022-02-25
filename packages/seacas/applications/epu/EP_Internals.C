@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-, 20212021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022,  National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -1469,10 +1469,10 @@ namespace {
     }
 
     if (sizeof(INT) == sizeof(int64_t)) {
-      status = nc_put_var_longlong(exoid, var_id, (long long int *)&array[0]);
+      status = nc_put_var_longlong(exoid, var_id, (long long int *)array.data());
     }
     else {
-      status = nc_put_var_int(exoid, var_id, &array[0]);
+      status = nc_put_var_int(exoid, var_id, array.data());
     }
 
     if (status != NC_NOERR) {
@@ -1500,7 +1500,7 @@ namespace {
     int id_type = get_type(exoid, EX_IDS_INT64_API);
 
     if (id_type == NC_INT64) {
-      status = nc_put_var_longlong(exoid, var_id, (long long int *)&ids[0]);
+      status = nc_put_var_longlong(exoid, var_id, (long long int *)ids.data());
     }
     else {
       // Have ex_entity_id (long long), need ints...
@@ -1513,7 +1513,7 @@ namespace {
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-      status = nc_put_var_int(exoid, var_id, &int_ids[0]);
+      status = nc_put_var_int(exoid, var_id, int_ids.data());
     }
 
     if (status != NC_NOERR) {

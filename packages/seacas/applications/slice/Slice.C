@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -9,6 +9,7 @@
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_CopyDatabase.h>
+#include <Ioss_DatabaseIO.h>
 #include <Ioss_FileInfo.h>
 #include <Ioss_MeshCopyOptions.h>
 #include <Ioss_Region.h>
@@ -16,7 +17,6 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
 #include <cassert>
-#include <exodus/Ioex_DatabaseIO.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <init/Ionit_Initializer.h>
@@ -122,8 +122,8 @@ namespace {
     if ((debug_level & 1) != 0) {
       auto                          now  = std::chrono::steady_clock::now();
       std::chrono::duration<double> diff = now - start;
-      fmt::print(stderr, " [{:.2f} - {:L}]\t{}\n", diff.count(), Ioss::Utils::get_memory_info(),
-                 output);
+      fmt::print(stderr, " [{:.2f} - {}]\t{}\n", diff.count(),
+                 fmt::group_digits(Ioss::Utils::get_memory_info()), output);
     }
   }
 
@@ -244,8 +244,9 @@ int main(int argc, char *argv[])
   // INPUT ...
   // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
   //========================================================================
-  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(interFace.inputFormat_, interFace.inputFile_,
-                                                  Ioss::READ_RESTART, (MPI_Comm)MPI_COMM_WORLD);
+  Ioss::DatabaseIO *dbi =
+      Ioss::IOFactory::create(interFace.inputFormat_, interFace.inputFile_, Ioss::READ_RESTART,
+                              Ioss::ParallelUtils::comm_world());
   if (dbi == nullptr || !dbi->ok(true)) {
     std::exit(EXIT_FAILURE);
   }
@@ -274,7 +275,8 @@ int main(int argc, char *argv[])
 #ifdef SEACAS_HAVE_MPI
   MPI_Finalize();
 #endif
-  fmt::print(stderr, "High-Water Memory Use: {:L} bytes\n", Ioss::Utils::get_hwm_memory_info());
+  fmt::print(stderr, "High-Water Memory Use: {} bytes\n",
+             fmt::group_digits(Ioss::Utils::get_hwm_memory_info()));
   fmt::print(stderr, "Total execution time = {:.5}\n", seacas_timer() - begin);
   fmt::print(stderr, "\nSlice execution successful.\n");
   return EXIT_SUCCESS;
@@ -301,7 +303,8 @@ namespace {
 
     pointer.reserve(count + 1);
     adjacency.reserve(sum);
-    fmt::print(stderr, "\tAdjacency Size = {:L} for {:L} elements.\n", sum, count);
+    fmt::print(stderr, "\tAdjacency Size = {} for {} elements.\n", fmt::group_digits(sum),
+               fmt::group_digits(count));
 
     // Now, iterate the blocks again, get connectivity and build adjacency structure.
     std::vector<INT> connectivity;
@@ -337,8 +340,9 @@ namespace {
 
     elem_to_proc.reserve(element_count);
 
-    fmt::print(stderr, "Decomposing {:L} elements across {:L} processors using method '{}'.\n\n",
-               element_count, interFace.processor_count(), interFace.decomposition_method());
+    fmt::print(stderr, "Decomposing {} elements across {} processors using method '{}'.\n\n",
+               fmt::group_digits(element_count), fmt::group_digits(interFace.processor_count()),
+               interFace.decomposition_method());
 
     if (interFace.decomposition_method() == "linear") {
       size_t elem_beg = 0;
@@ -495,8 +499,7 @@ namespace {
       map_name = map_name.substr(0, pos);
 
       Ioss::DatabaseIO *db    = region.get_database();
-      auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
-      int               exoid = ex_db != nullptr ? ex_db->get_file_pointer() : 0;
+      int               exoid = db->get_file_pointer();
 
       bool map_read  = false;
       int  map_count = ex_inquire_int(exoid, EX_INQ_ELEM_MAP);
@@ -608,22 +611,24 @@ namespace {
           proc  = std::stoi(tokens[1]);
         }
         if (proc > interFace.processor_count()) {
-          fmt::print(
-              stderr,
-              "\nERROR: Invalid processor {:L} specified on line {:L} of decomposition file.\n"
-              "\tValid range is 0..{:L}\n",
-              proc, line_num, interFace.processor_count() - 1);
+          fmt::print(stderr,
+                     "\nERROR: Invalid processor {} specified on line {} of decomposition file.\n"
+                     "\tValid range is 0..{}\n",
+                     fmt::group_digits(proc), fmt::group_digits(line_num),
+                     fmt::group_digits(interFace.processor_count() - 1));
           exit(EXIT_FAILURE);
         }
 
         if (elem_to_proc.size() + count > element_count) {
           fmt::print(stderr,
-                     "\nERROR: The processor specification on line {:L}"
+                     "\nERROR: The processor specification on line {}"
                      " of the decomposition file results in too many elements being specified.\n"
-                     "\tThe total number of elements in the model is {:L}\n"
-                     "\tPrior to this line, {:L} elements were specified.\n"
-                     "\tIncluding this line, {:L} elements will be specified.\n",
-                     line_num, element_count, elem_to_proc.size(), elem_to_proc.size() + count);
+                     "\tThe total number of elements in the model is {}\n"
+                     "\tPrior to this line, {} elements were specified.\n"
+                     "\tIncluding this line, {} elements will be specified.\n",
+                     fmt::group_digits(line_num), fmt::group_digits(element_count),
+                     fmt::group_digits(elem_to_proc.size()),
+                     fmt::group_digits(elem_to_proc.size() + count));
           exit(EXIT_FAILURE);
         }
 
@@ -1160,13 +1165,12 @@ namespace {
     }
     progress("\tReserve processor coordinate vectors");
 
-    Ioss::DatabaseIO *db    = region.get_database();
-    auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    Ioss::DatabaseIO *db = region.get_database();
 
     size_t node_count = region.get_property("node_count").get_int();
 
-    if (ex_db != nullptr && node_count > partial_count) {
-      int exoid = ex_db->get_file_pointer();
+    if (node_count > partial_count) {
+      int exoid = db->get_file_pointer();
 
       glob_coord_x.resize(partial_count);
       glob_coord_y.resize(partial_count);
@@ -1248,8 +1252,7 @@ namespace {
     size_t                           processor_count = proc_region.size();
     std::vector<std::vector<double>> coordinates(processor_count);
 
-    Ioss::DatabaseIO *db    = region.get_database();
-    auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    Ioss::DatabaseIO *db = region.get_database();
 
     size_t node_count = region.get_property("node_count").get_int();
 
@@ -1264,8 +1267,8 @@ namespace {
         coordinates[p].resize(0);
       }
 
-      if (ex_db != nullptr && node_count > partial_count) {
-        int exoid = ex_db->get_file_pointer();
+      if (node_count > partial_count) {
+        int exoid = db->get_file_pointer();
 
         glob_coord.resize(partial_count);
         for (size_t beg = 1; beg <= node_count; beg += partial_count) {
@@ -1341,8 +1344,7 @@ namespace {
 
     size_t processor_count = proc_region.size();
 
-    Ioss::DatabaseIO *db    = region.get_database();
-    auto             *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    Ioss::DatabaseIO *db = region.get_database();
 
     std::vector<INT> glob_conn;
     size_t           offset = 0;
@@ -1361,8 +1363,8 @@ namespace {
       }
 
       // Do a 'partial_count' elements at a time...
-      if (ex_db != nullptr && element_count >= partial_count) {
-        int exoid = ex_db->get_file_pointer();
+      if (element_count >= partial_count) {
+        int exoid = db->get_file_pointer();
 
         glob_conn.resize(partial_count * element_nodes);
         for (size_t beg = 1; beg <= element_count; beg += partial_count) {
@@ -1373,7 +1375,8 @@ namespace {
 
           ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
                               nullptr);
-          progress(fmt::format("\tpartial_conn-- start: {:L}\tcount: {:L}", beg, count));
+          progress(fmt::format("\tpartial_conn-- start: {}\tcount: {}", fmt::group_digits(beg),
+                               fmt::group_digits(count)));
 
           size_t el = 0;
           for (size_t j = 0; j < count; j++) {
@@ -1441,7 +1444,8 @@ namespace {
       }
       proc_elem_block_cnt[block_count][i] = sum;
       if (debug_level & 2) {
-        fmt::print(stderr, "\tProcessor {:L} has {:L} elements.\n", i, sum);
+        fmt::print(stderr, "\tProcessor {} has {} elements.\n", fmt::group_digits(i),
+                   fmt::group_digits(sum));
       }
     }
   }
@@ -1478,7 +1482,6 @@ namespace {
 
     size_t            sum_on_proc_count = 0;
     Ioss::DatabaseIO *db                = region.get_database();
-    auto             *ex_db             = dynamic_cast<Ioex::DatabaseIO *>(db);
 
     auto  &ebs         = region.get_element_blocks();
     size_t block_count = ebs.size();
@@ -1492,8 +1495,8 @@ namespace {
       size_t           block_id      = ebs[b]->get_property("id").get_int();
 
       // Do a 'partial_count' elements at a time...
-      if (ex_db != nullptr && element_count >= partial_count) {
-        int exoid = ex_db->get_file_pointer();
+      if (element_count >= partial_count) {
+        int exoid = db->get_file_pointer();
 
         glob_conn.resize(partial_count * element_nodes);
         for (size_t beg = 1; beg <= element_count; beg += partial_count) {
@@ -1504,7 +1507,8 @@ namespace {
 
           ex_get_partial_conn(exoid, EX_ELEM_BLOCK, block_id, beg, count, glob_conn.data(), nullptr,
                               nullptr);
-          progress(fmt::format("\tpartial_conn-- start: {:L}\tcount: {:L}", beg, count));
+          progress(fmt::format("\tpartial_conn-- start: {}\tcount: {}", fmt::group_digits(beg),
+                               fmt::group_digits(count)));
           populate_proc_node(count, offset, element_nodes, elem_to_proc, glob_conn, proc_node,
                              on_proc_count);
           offset += count;
@@ -1522,7 +1526,8 @@ namespace {
           new Ioss::NodeBlock(proc_region[p]->get_database(), "node_block1", on_proc_count[p], 3);
       proc_region[p]->add(nb);
       if (debug_level & 2) {
-        fmt::print(stderr, "\tProcessor {:L} has {:L} nodes.\n", p, on_proc_count[p]);
+        fmt::print(stderr, "\tProcessor {} has {} nodes.\n", fmt::group_digits(p),
+                   fmt::group_digits(on_proc_count[p]));
       }
       sum_on_proc_count += on_proc_count[p];
     }
@@ -1538,7 +1543,8 @@ namespace {
     for (size_t i = 0; i < node_count; i++) {
       size_t num_procs = proc_node[i].size();
       if (num_procs == 0) {
-        fmt::print(stderr, "WARNING: Node {:L} is not connected to any elements.\n", i + 1);
+        fmt::print(stderr, "WARNING: Node {} is not connected to any elements.\n",
+                   fmt::group_digits(i + 1));
       }
       else if (num_procs < proc_histo.size()) {
         proc_histo[num_procs]++;
@@ -1554,13 +1560,15 @@ namespace {
     fmt::print(stderr, "Processor count per node histogram:\n");
     for (size_t i = 1; i < proc_histo.size(); i++) {
       if (proc_histo[i] > 0) {
-        fmt::print(stderr, "\tNodes on {:2L} processors = {:12L}\t({:2})%\n", i, proc_histo[i],
+        fmt::print(stderr, "\tNodes on {:2} processors = {:12}\t({:2})%\n", fmt::group_digits(i),
+                   fmt::group_digits(proc_histo[i]),
                    (proc_histo[i] * 100 + node_count / 2) / node_count);
       }
     }
     if (proc_histo[0] > 0) {
-      fmt::print(stderr, "\tNodes on {:L} or more processors = {:L}\t({:2})%\n", proc_histo.size(),
-                 proc_histo[0], (proc_histo[0] * 100 + node_count / 2) / node_count);
+      fmt::print(stderr, "\tNodes on {} or more processors = {}\t({:2})%\n",
+                 fmt::group_digits(proc_histo.size()), fmt::group_digits(proc_histo[0]),
+                 (proc_histo[0] * 100 + node_count / 2) / node_count);
     }
     fmt::print(stderr, "\n");
 
@@ -1616,8 +1624,8 @@ namespace {
     bool close_files = interFace.processor_count() + 1 > interFace.max_files();
     for (size_t i = 0; i < interFace.processor_count(); i++) {
       std::string outfile   = Ioss::Utils::decode_filename(nemfile, i, interFace.processor_count());
-      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodus", outfile, Ioss::WRITE_RESTART,
-                                                      (MPI_Comm)MPI_COMM_WORLD, properties);
+      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
+          "exodus", outfile, Ioss::WRITE_RESTART, Ioss::ParallelUtils::comm_world(), properties);
       if (ints64) {
         dbo->set_int_byte_size_api(Ioss::USE_INT64_API);
       }
@@ -1708,8 +1716,8 @@ namespace {
       if (proc_begin + proc_size > proc_count) {
         proc_size = proc_count - proc_begin;
       }
-      fmt::print(stderr, "\nProcessor range {:L} to {:L}\n", proc_begin,
-                 proc_begin + proc_size - 1);
+      fmt::print(stderr, "\nProcessor range {} to {}\n", fmt::group_digits(proc_begin),
+                 fmt::group_digits(proc_begin + proc_size - 1));
 
       for (size_t p = proc_begin; p < proc_begin + proc_size; p++) {
         Ioss::transfer_coordinate_frames(region, *proc_region[p]);

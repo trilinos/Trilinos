@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -194,12 +194,12 @@ void parse_input(int argc, char *argv[], bool *debug, INT *map_origin, INT *num_
   while (++arg < argc) {
     if (strcmp("-c", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_nodal_fields = atoi(argv[arg]);
+        *num_nodal_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-compress", argv[arg]) == 0) {
       if (++arg < argc) {
-        *compression_level = atoi(argv[arg]);
+        *compression_level = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-shuffle", argv[arg]) == 0) {
@@ -210,22 +210,22 @@ void parse_input(int argc, char *argv[], bool *debug, INT *map_origin, INT *num_
     }
     else if (strcmp("-nv", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_nodal_fields = atoi(argv[arg]);
+        *num_nodal_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-gv", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_global_fields = atoi(argv[arg]);
+        *num_global_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-ev", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_element_fields = atoi(argv[arg]);
+        *num_element_fields = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-t", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_timesteps = atoi(argv[arg]);
+        *num_timesteps = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-d", argv[arg]) == 0) {
@@ -238,7 +238,7 @@ void parse_input(int argc, char *argv[], bool *debug, INT *map_origin, INT *num_
     }
     else if (strcmp("-m", argv[arg]) == 0) {
       if (++arg < argc) {
-        *map_origin = atoi(argv[arg]);
+        *map_origin = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-n", argv[arg]) == 0) {
@@ -248,7 +248,7 @@ void parse_input(int argc, char *argv[], bool *debug, INT *map_origin, INT *num_
     }
     else if (strcmp("-p", argv[arg]) == 0) {
       if (++arg < argc) {
-        *num_domains = atoi(argv[arg]);
+        *num_domains = strtol(argv[arg], NULL, 10);
       }
     }
     else if (strcmp("-x", argv[arg]) == 0) {

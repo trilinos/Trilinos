@@ -1485,8 +1485,8 @@ TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
   auto massMatrix_4 = projectionFactory.buildMassMatrix(false,&ebMultipliers);
   timer->stop("projectionFactory.buildMassMatrix() 4.0");
 
-  const auto view_1 = massMatrix_1->getLocalValuesView();
-  const auto view_4 = massMatrix_4->getLocalValuesView();
+  const auto view_1 = massMatrix_1->getLocalValuesDevice(Tpetra::Access::ReadOnly);
+  const auto view_4 = massMatrix_4->getLocalValuesDevice(Tpetra::Access::ReadOnly);
 
   const double tol = 100.0 * std::numeric_limits<double>::epsilon();
   int valuesCheck = 0; // if check > 0 then multipliers broke

@@ -194,7 +194,7 @@ namespace MueLu {
 
     GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
     std::string algo = pL.get<std::string>("aggregation: drop scheme");
-    const bool filteringMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
+    const bool aggregationMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
     
     RCP<RealValuedMultiVector> Coords;
     RCP<Matrix> A;
@@ -672,7 +672,7 @@ namespace MueLu {
           columns.resize(realnnz);
           numTotal = A->getNodeNumEntries();
 
-          if (filteringMayCreateDirichlet) {
+          if (aggregationMayCreateDirichlet) {
             // If the only element remaining after filtering is diagonal, mark node as boundary
             for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
               if (rows[row+1]- rows[row] <= 1)
@@ -1969,12 +1969,15 @@ namespace MueLu {
      auto sym = rcp(new Tpetra::CrsGraphTransposer<LocalOrdinal,GlobalOrdinal,Node>(tpGraph));
      auto tpGraphSym = sym->symmetrize();
 
-     auto rowsSym = tpGraphSym->getNodeRowPtrs();
+     auto colIndsSym =        // FIXME persistingView is temporary; better fix would be change to LWGraph constructor
+          Kokkos::Compat::persistingView(tpGraphSym->getLocalIndicesHost());
+          
+     auto rowsSym = tpGraphSym->getLocalRowPtrsHost();
      ArrayRCP<LO> rows_graphSym;
      rows_graphSym.resize(rowsSym.size());
-     for (LO row = 0; row < rowsSym.size(); row++)
+     for (size_t row = 0; row < rowsSym.size(); row++)
        rows_graphSym[row] = rowsSym[row];
-     outputGraph =  rcp(new LWGraph(rows_graphSym, tpGraphSym->getNodePackedIndices(), inputGraph->GetDomainMap(), Xpetra::toXpetra(tpGraphSym->getColMap()), "block-diagonalized graph of A"));
+     outputGraph =  rcp(new LWGraph(rows_graphSym, colIndsSym, inputGraph->GetDomainMap(), Xpetra::toXpetra(tpGraphSym->getColMap()), "block-diagonalized graph of A"));
      outputGraph->SetBoundaryNodeMap(inputGraph->GetBoundaryNodeMap());
 #endif
    }

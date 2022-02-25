@@ -1061,7 +1061,7 @@ namespace Ifpack2 {
 
       std::vector<global_ordinal_type> gids;
       bool separate_remotes = true, found_first = false, need_owned_permutation = false;
-      for (size_t i=0;i<column_map->getNodeNumElements();++i) {
+      for (size_t i=0;i<column_map->getLocalNumElements();++i) {
         const global_ordinal_type gid = column_map->getGlobalElement(i);
         if (!domain_map->isNodeGlobalElement(gid)) {
           found_first = true;
@@ -1092,9 +1092,9 @@ namespace Ifpack2 {
           // make the importer only if needed.
           local_ordinal_type_1d_view dm2cm;
           if (need_owned_permutation) {
-            dm2cm = local_ordinal_type_1d_view(do_not_initialize_tag("dm2cm"), domain_map->getNodeNumElements());
+            dm2cm = local_ordinal_type_1d_view(do_not_initialize_tag("dm2cm"), domain_map->getLocalNumElements());
             const auto dm2cm_host = Kokkos::create_mirror_view(dm2cm);
-            for (size_t i=0;i<domain_map->getNodeNumElements();++i)
+            for (size_t i=0;i<domain_map->getLocalNumElements();++i)
               dm2cm_host(i) = domain_map->getLocalElement(column_map->getGlobalElement(i));
             Kokkos::deep_copy(dm2cm, dm2cm_host);
           }
@@ -1174,7 +1174,7 @@ namespace Ifpack2 {
       PartInterface<MatrixType> interf;
 
       const bool jacobi = partitions.size() == 0;
-      const local_ordinal_type A_n_lclrows = A->getNodeNumRows();
+      const local_ordinal_type A_n_lclrows = A->getLocalNumRows();
       const local_ordinal_type nparts = jacobi ? A_n_lclrows : partitions.size();
 
 #if defined(BLOCKTRIDICONTAINER_DEBUG)
@@ -1186,7 +1186,7 @@ namespace Ifpack2 {
 
       TEUCHOS_TEST_FOR_EXCEPT_MSG
         (nrows != A_n_lclrows, get_msg_prefix(comm) << "The #rows implied by the local partition is not "
-         << "the same as getNodeNumRows: " << nrows << " vs " << A_n_lclrows);
+         << "the same as getLocalNumRows: " << nrows << " vs " << A_n_lclrows);
 #endif
 
       // permutation vector
@@ -1594,7 +1594,7 @@ namespace Ifpack2 {
       const local_ordinal_type nrows = partptr(partptr.extent(0) - 1);
 
       // find column to row map on host
-      Kokkos::View<local_ordinal_type*,host_execution_space> col2row("col2row", A->getNodeNumCols());
+      Kokkos::View<local_ordinal_type*,host_execution_space> col2row("col2row", A->getLocalNumCols());
       Kokkos::deep_copy(col2row, Teuchos::OrdinalTraits<local_ordinal_type>::invalid());
       {
         const auto rowmap = g.getRowMap();

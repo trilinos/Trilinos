@@ -30,24 +30,33 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include <stk_io/MeshField.hpp>
-#include <stk_io/DbStepTimeInterval.hpp>
-#include <stk_io/IossBridge.hpp>        
-#include <stk_mesh/base/Part.hpp>      
-#include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
-#include <stk_util/util/ReportHandler.hpp>
-
-#include <Ioss_GroupingEntity.h>        // for GroupingEntity
-#include <Ioss_VariableType.h>          // for VariableType
-
-#include <math.h>
-#include <assert.h>
-#include <algorithm>
-#include <string>
+#include <Ioss_GroupingEntity.h>            // for GroupingEntity
+#include <Ioss_VariableType.h>              // for VariableType
+#include <cassert>                          // for assert
+#include <ostream>                          // for operator<<, basic_ostream
+#include <stk_io/DbStepTimeInterval.hpp>    // for DBStepTimeInterval
+#include <stk_io/IossBridge.hpp>            // for STKIORequire, get_input_e...
+#include <stk_mesh/base/FieldBase.hpp>      // for FieldBase, field_data
+#include <stk_mesh/base/MetaData.hpp>       // for MetaData
+#include <stk_mesh/base/Part.hpp>           // for Part
+#include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
+#include <string>                           // for string, operator<<, opera...
+#include <utility>                          // for swap
+#include "Ioss_EntityType.h"                // for NODEBLOCK
+#include "Ioss_Field.h"                     // for Field
+#include "Ioss_Region.h"                    // for Region
+#include "stk_mesh/base/BulkData.hpp"       // for BulkData
+#include "stk_mesh/base/Entity.hpp"         // for Entity
+#include "stk_mesh/base/EntityKey.hpp"      // for operator<<
+#include "stk_mesh/base/FieldState.hpp"     // for FieldState, StateNew
+#include "stk_topology/topology.hpp"        // for operator<<, topology, top...
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
   namespace io {

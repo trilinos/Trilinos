@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iotm_DatabaseIO_h
-#define IOSS_Iotm_DatabaseIO_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
@@ -57,7 +56,7 @@ namespace Iotm {
   private:
     IOFactory();
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              MPI_Comm                     communicator,
+                              Ioss_MPI_Comm                communicator,
                               const Ioss::PropertyManager &props) const override;
   };
 
@@ -65,7 +64,7 @@ namespace Iotm {
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
     DatabaseIO(const DatabaseIO &from) = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
 
@@ -96,6 +95,8 @@ namespace Iotm {
     void get_step_times__() override;
     void get_nodeblocks();
     void get_elemblocks();
+    void get_nodesets();
+    void get_sidesets();
     void get_commsets();
 
     const Ioss::Map &get_node_map() const;
@@ -194,6 +195,9 @@ namespace Iotm {
     int    spatialDimension{3};
 
     int elementBlockCount{0};
+    int nodesetCount{0};
+    int sidesetCount{0};
+
+    bool m_useVariableDf{true};
   };
 } // namespace Iotm
-#endif // IOSS_Iotm_DatabaseIO_h

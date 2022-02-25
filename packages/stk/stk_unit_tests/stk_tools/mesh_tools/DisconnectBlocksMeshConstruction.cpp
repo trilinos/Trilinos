@@ -116,7 +116,7 @@ stk::mesh::PartVector setup_mesh_1block_1quad(stk::mesh::BulkData& bulk)
   stk::mesh::Part & block1 = create_part(bulk.mesh_meta_data(), stk::topology::QUAD_4_2D, "block_1", 1);
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -127,7 +127,7 @@ stk::mesh::PartVector setup_mesh_1block_2quad(stk::mesh::BulkData& bulk)
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
                          "0,2,QUAD_4_2D,2,5,6,4,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -138,7 +138,7 @@ stk::mesh::PartVector setup_mesh_1block_2quad_1node_hinge(stk::mesh::BulkData& b
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
                          "0,2,QUAD_4_2D,7,5,6,4,block_1";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,1, 1,1, 2,0, 2,1, (1+EPS),0 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -150,7 +150,7 @@ stk::mesh::PartVector setup_mesh_2block_2quad_1node_hinge(stk::mesh::BulkData& b
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
                          "0,2,QUAD_4_2D,7,5,6,4,block_2";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,1, 1,1, 2,0, 2,1, (1+EPS),0 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2};
 }
@@ -161,7 +161,7 @@ stk::mesh::PartVector setup_mesh_1block_2quad_2hinge(stk::mesh::BulkData& bulk)
   std::string meshDesc = "0,1,QUAD_4_2D,3,4,1,2,block_1\n"
                          "0,2,QUAD_4_2D,2,6,4,5,block_1";
   std::vector<double> coordinates = { 0,2, 2,1, 1,2, 2,3, 3,2, 4,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -173,7 +173,7 @@ stk::mesh::PartVector setup_mesh_2block_2quad_2hinge(stk::mesh::BulkData& bulk)
   std::string meshDesc = "0,1,QUAD_4_2D,3,4,1,2,block_1\n"
                          "0,2,QUAD_4_2D,2,6,4,5,block_2";
   std::vector<double> coordinates = { 0,2, 2,1, 1,2, 2,3, 3,2, 4,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2};
 }
@@ -185,7 +185,7 @@ stk::mesh::PartVector setup_mesh_1block_3quad_1hinge(stk::mesh::BulkData& bulk)
                          "0,2,QUAD_4_2D,2,5,6,4,block_1\n"
                          "0,3,QUAD_4_2D,4,7,8,9,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,(1-EPS), 2,(1+EPS), 2,2, 1,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -197,7 +197,7 @@ stk::mesh::PartVector setup_mesh_1block_3quad_1hinge_linear_stack(stk::mesh::Bul
                          "0,2,QUAD_4_2D,2,5,6,4,block_1\n"
                          "0,3,QUAD_4_2D,7,8,9,6,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, (2-EPS),0, 2,1, (2+EPS),0, 3,0, 3,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -211,7 +211,7 @@ stk::mesh::PartVector setup_mesh_3block_3quad_1hinge_linear_stack(stk::mesh::Bul
                          "0,2,QUAD_4_2D,2,5,6,4,block_2\n"
                          "0,3,QUAD_4_2D,7,8,9,6,block_3";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, (2-EPS),0, 2,1, (2+EPS),0, 3,0, 3,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3};
 }
@@ -225,7 +225,7 @@ stk::mesh::PartVector setup_mesh_1block_4quad_bowtie_1hinge(stk::mesh::BulkData&
                          "0,4,QUAD_4_2D,4,11,12,13,block_1";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0,
                                       2,0, 2,(1-EPS), 2,(1+EPS), 2,2, (1+EPS),2, (1-EPS),2, 0,2, 0,(1+EPS) };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -238,7 +238,7 @@ stk::mesh::PartVector setup_mesh_1block_4quad_2hinge(stk::mesh::BulkData& bulk)
                          "0,3,QUAD_4_2D,6,7,8,9,block_1\n"
                          "0,4,QUAD_4_2D,3,9,8,10,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,(1-EPS), 2,0, 2,1, 2,2, 1,2, 1,(1+EPS), 0,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -254,7 +254,7 @@ stk::mesh::PartVector setup_mesh_4block_4quad_2hinge(stk::mesh::BulkData& bulk)
                          "0,3,QUAD_4_2D,6,7,8,9,block_3\n"
                          "0,4,QUAD_4_2D,3,9,8,10,block_4";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,(1-EPS), 2,0, 2,1, 2,2, 1,2, 1,(1+EPS), 0,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -267,7 +267,7 @@ stk::mesh::PartVector setup_mesh_1block_4quad_4hinge(stk::mesh::BulkData& bulk)
                          "0,3,QUAD_4_2D,6,9,10,8,block_1\n"
                          "0,4,QUAD_4_2D,3,11,10,12,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,1, 1,1, 1,1, 2,2, 1,2, 1,1, 0,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -283,7 +283,7 @@ stk::mesh::PartVector setup_mesh_4block_4quad_4hinge(stk::mesh::BulkData& bulk)
                          "0,3,QUAD_4_2D,6,9,10,8,block_3\n"
                          "0,4,QUAD_4_2D,3,11,10,12,block_4";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,1, 1,1, 1,1, 2,2, 1,2, 1,1, 0,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -296,7 +296,7 @@ stk::mesh::PartVector setup_mesh_1block_4quad_pacman(stk::mesh::BulkData& bulk)
                          "0,3,QUAD_4_2D,4,7,8,9,block_1\n"
                          "0,4,QUAD_4_2D,3,4,9,10,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,(1-EPS), 2,(1+EPS), 2,2, 1,2, 0,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -312,7 +312,7 @@ stk::mesh::PartVector setup_mesh_4block_4quad_pacman(stk::mesh::BulkData& bulk)
                          "0,3,QUAD_4_2D,4,7,8,9,block_3\n"
                          "0,4,QUAD_4_2D,3,4,9,10,block_4";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,(1-EPS), 2,(1+EPS), 2,2, 1,2, 0,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -325,7 +325,7 @@ stk::mesh::PartVector setup_mesh_1block_4quad_1hinge(stk::mesh::BulkData& bulk)
                          "0,3,QUAD_4_2D,7,8,9,4,block_1\n"
                          "0,4,QUAD_4_2D,4,9,10,11,block_1";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0, 2,0, 2,1, 2,2, 1,2, 0,2, 0,(1+EPS) };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -341,7 +341,7 @@ stk::mesh::PartVector setup_mesh_4block_4quad_1hinge(stk::mesh::BulkData& bulk)
                          "0,3,QUAD_4_2D,7,8,9,4,block_3\n"
                          "0,4,QUAD_4_2D,4,9,10,11,block_4";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0, 2,0, 2,1, 2,2, 1,2, 0,2, 0,(1+EPS) };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -356,7 +356,7 @@ stk::mesh::PartVector setup_mesh_2block_3quad_2tri_1hinge(stk::mesh::BulkData& b
                          "0,4,QUAD_4_2D,7,8,9,4,block_2\n"
                          "0,5,QUAD_4_2D,4,9,10,11,block_2";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0, 2,0, 2,1, 2,2, 1,2, 0,2, 0,(1+EPS) };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2};
 }
@@ -374,7 +374,7 @@ stk::mesh::PartVector setup_mesh_5block_3quad_2tri_1hinge(stk::mesh::BulkData& b
                          "0,4,QUAD_4_2D,7,8,9,4,block_4\n"
                          "0,5,QUAD_4_2D,4,9,10,11,block_5";
   std::vector<double> coordinates = { 0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0, 2,0, 2,1, 2,2, 1,2, 0,2, 0,(1+EPS) };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3,&block4,&block5};
 }
@@ -385,7 +385,7 @@ stk::mesh::PartVector setup_mesh_1block_1hex(stk::mesh::BulkData& bulk)
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1";
   std::vector<double> coordinates = { 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1};
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -401,7 +401,7 @@ stk::mesh::PartVector setup_mesh_1block_2hex(stk::mesh::BulkData& bulk)
     0,0,2, 1,0,2, 1,1,2, 0,1,2
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -418,7 +418,7 @@ stk::mesh::PartVector setup_mesh_1block_2hex_1node_hinge(stk::mesh::BulkData& bu
     1,0,2, 1,1,2, 0,1,2
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -434,7 +434,7 @@ stk::mesh::PartVector setup_mesh_1block_2hex_2node_hinge(stk::mesh::BulkData& bu
     1,1,0, (0.5+EPS),(0.5+EPS),0, 1,EPS,1, 1,1,1, 0,(1+EPS),1, (0.5+EPS),(0.5+EPS),1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -452,7 +452,7 @@ stk::mesh::PartVector setup_mesh_1block_3hex_1node_hinge(stk::mesh::BulkData& bu
     (1+EPS),0,0, 2,0,0, 2,1,0, (1+EPS),1,0, 2,0,1, 2,1,1, (1+EPS),1,1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -467,7 +467,7 @@ stk::mesh::PartVector setup_mesh_1block_2hex_face_test(stk::mesh::BulkData& bulk
     2,0,0, 2,1,0, 2,0,1, 2,1,1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -495,7 +495,7 @@ stk::mesh::PartVector setup_mesh_1block_8hex_flower_1node_hinge(stk::mesh::BulkD
     0,(1+EPS),(1+EPS), (1-EPS),2,(1+EPS), 0,2,(1+EPS), 0,(1+EPS),2, (1-EPS),(1+EPS),2, (1-EPS),2,2, 0,2,2
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -511,7 +511,7 @@ stk::mesh::PartVector setup_mesh_1block_2tet_1node_hinge(stk::mesh::BulkData& bu
     1,1,0, 0,2,0, 0,1,1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -526,7 +526,7 @@ stk::mesh::PartVector setup_mesh_1block_2hex_1edge_hinge(stk::mesh::BulkData& bu
     2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -542,7 +542,7 @@ stk::mesh::PartVector setup_mesh_2block_2hex_1edge_hinge(stk::mesh::BulkData& bu
     2,0,0, 2,0,-1, 1,0,-1, 2,1,0, 2,1,-1, 1,1,-1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2};
 }
@@ -559,7 +559,7 @@ stk::mesh::PartVector setup_mesh_1block_3hex_1edge_hinge(stk::mesh::BulkData& bu
     0,(1+EPS),0, 1,(1+EPS),0, 1,2,0, 0,2,0, 1,2,1, 0,2,1,
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -578,7 +578,7 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1edge_hinge(stk::mesh::BulkData& bu
     0,(1+EPS),0, 1,(1+EPS),0, 1,2,0, 0,2,0, 1,2,1, 0,2,1,
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3};
 }
@@ -595,7 +595,7 @@ stk::mesh::PartVector setup_mesh_1block_3hex_1node_hinge_1edge_hinge(stk::mesh::
     2,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -614,7 +614,7 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1node_hinge_1edge_hinge(stk::mesh::
     2,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3};
 }
@@ -631,7 +631,7 @@ stk::mesh::PartVector setup_mesh_1block_3hex_1node_hinge_1edge_hinge2(stk::mesh:
     1,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -650,7 +650,7 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1node_hinge_1edge_hinge2(stk::mesh:
     1,(1+EPS),0, 2,(1+EPS),-1, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3};
 }
@@ -667,7 +667,7 @@ stk::mesh::PartVector setup_mesh_1block_3hex_1node_hinge_1edge_hinge3(stk::mesh:
     1,(1+EPS),0, 2,(1+EPS),0, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -686,7 +686,7 @@ stk::mesh::PartVector setup_mesh_3block_3hex_1node_hinge_1edge_hinge3(stk::mesh:
     1,(1+EPS),0, 2,(1+EPS),0, 1,(1+EPS),-1, 1,2,0, 2,2,0, 2,2,-1, 1,2,-1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3};
 }
@@ -705,7 +705,7 @@ stk::mesh::PartVector setup_mesh_1block_4hex_bowtie_1edge_hinge(stk::mesh::BulkD
     2,2,1, (1+EPS),2,1, (1-EPS),2,1, 0,2,1, 0,(1+EPS),1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -727,7 +727,7 @@ stk::mesh::PartVector setup_mesh_4block_4hex_bowtie_1edge_hinge(stk::mesh::BulkD
     2,2,1, (1+EPS),2,1, (1-EPS),2,1, 0,2,1, 0,(1+EPS),1
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -746,7 +746,7 @@ stk::mesh::PartVector setup_mesh_1block_two_by_two_hex_2edge_hinge(stk::mesh::Bu
     2,2,0, 2,2,-1, 1,2,-1,
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -768,7 +768,7 @@ stk::mesh::PartVector setup_mesh_4block_two_by_two_hex_2edge_hinge(stk::mesh::Bu
     2,2,0, 2,2,-1, 1,2,-1,
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -786,7 +786,7 @@ stk::mesh::PartVector setup_mesh_1block_four_hex_one_edge_one_node_hinge(stk::me
     0,2,1, -1,2,1, -1,(1+EPS),1, 0,1,2, 0,2,2, -1,2,2, -1,1,2
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -807,7 +807,7 @@ stk::mesh::PartVector setup_mesh_4block_four_hex_one_edge_one_node_hinge(stk::me
     0,2,1, -1,2,1, -1,(1+EPS),1, 0,1,2, 0,2,2, -1,2,2, -1,1,2
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -826,7 +826,7 @@ stk::mesh::PartVector setup_mesh_1block_four_hex_2node_hinge(stk::mesh::BulkData
     1,3,1, 0,3,1, 0,(2+EPS),1, 1,2,2, 1,3,2, 0,3,2, 0,2,2
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -848,7 +848,7 @@ stk::mesh::PartVector setup_mesh_4block_four_hex_2node_hinge(stk::mesh::BulkData
     1,3,1, 0,3,1, 0,(2+EPS),1, 1,2,2, 1,3,2, 0,3,2, 0,2,2
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -868,7 +868,7 @@ stk::mesh::PartVector setup_mesh_1block_four_hex_2node_one_edge_hinge_manual(stk
     (1-EPS),1,0, (1-EPS),2,0
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -964,7 +964,7 @@ stk::mesh::PartVector setup_mesh_1block_four_hex_2node_one_edge_hinge(stk::mesh:
     (1-EPS),1,0, (1-EPS),2,0
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -988,7 +988,7 @@ stk::mesh::PartVector setup_mesh_1block_eight_tri_1node_hinge(stk::mesh::BulkDat
     2,(2-EPS)
   };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1};
 }
@@ -1007,7 +1007,7 @@ stk::mesh::PartVector setup_mesh_4block_4quad_bowtie_1hinge(stk::mesh::BulkData&
     0,0, (1-EPS),0, 0,(1-EPS), 1,1, (1+EPS),0,
     2,0, 2,(1-EPS), 2,(1+EPS), 2,2, (1+EPS),2, (1-EPS),2, 0,2, 0,(1+EPS)
   };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3,&block4};
 }
@@ -1021,7 +1021,7 @@ stk::mesh::PartVector setup_mesh_3block_3quad_1hinge(stk::mesh::BulkData& bulk)
                          "0,2,QUAD_4_2D,2,5,6,4,block_2\n"
                          "0,3,QUAD_4_2D,4,7,8,9,block_3";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,(1-EPS), 2,(1+EPS), 2,2, 1,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2,&block3};
 }
@@ -1391,7 +1391,7 @@ stk::mesh::PartVector setup_mesh_2block_1quad(stk::mesh::BulkData& bulk)
 
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(0u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
   EXPECT_EQ(4u, get_num_total_nodes(bulk));
@@ -1406,7 +1406,7 @@ stk::mesh::PartVector setup_mesh_2block_2quad_only_on_proc_0(stk::mesh::BulkData
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,4,3,block_1\n"
                          "0,2,QUAD_4_2D,2,5,6,4,block_2";
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,0, 2,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   return {&block1,&block2};
 }
@@ -1426,7 +1426,7 @@ stk::mesh::PartVector setup_mesh_2block_2quad(stk::mesh::BulkData& bulk)
                "1,2,QUAD_4_2D,2,3,6,5,block_2";
   }
   std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(2u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
   EXPECT_EQ(6u, get_num_total_nodes(bulk));
@@ -1449,7 +1449,7 @@ stk::mesh::PartVector setup_mesh_2block_2quad_reversed(stk::mesh::BulkData& bulk
                "1,2,QUAD_4_2D,2,3,6,5,block_1";
   }
   std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(2u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
   EXPECT_EQ(6u, get_num_total_nodes(bulk));
@@ -1505,7 +1505,7 @@ stk::mesh::PartVector setup_mesh_2block_4quad_corner(stk::mesh::BulkData& bulk, 
   }
   std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(3u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
   EXPECT_EQ(9u, get_num_total_nodes(bulk));
@@ -1587,7 +1587,7 @@ stk::mesh::PartVector setup_mesh_2block_4quad_swappedCorner(stk::mesh::BulkData&
   }
   std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(3u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
   EXPECT_EQ(9u, get_num_total_nodes(bulk));
@@ -1708,7 +1708,7 @@ void setup_mesh_3block_4quad_base(stk::mesh::BulkData& bulk, stk::mesh::PartVect
   }
   std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(4u, get_num_intersecting_nodes(bulk, blocks));
   EXPECT_EQ(9u, get_num_total_nodes(bulk));
@@ -1765,7 +1765,7 @@ stk::mesh::PartVector setup_mesh_3block_4quad_reverse_ordinal(stk::mesh::BulkDat
 
   std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(4u, get_num_intersecting_nodes(bulk, {&vl, &radax, &lateral}));
   EXPECT_EQ(9u, get_num_total_nodes(bulk));
@@ -1836,7 +1836,7 @@ stk::mesh::PartVector setup_mesh_3block_4quad_keepLowerRight(stk::mesh::BulkData
   }
   std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(4u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3}));
   EXPECT_EQ(9u, get_num_total_nodes(bulk));
@@ -1882,7 +1882,7 @@ stk::mesh::PartVector setup_mesh_2block_4quad_checkerboard(stk::mesh::BulkData& 
   }
   std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(5u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
   EXPECT_EQ(9u, get_num_total_nodes(bulk));
@@ -1929,7 +1929,7 @@ stk::mesh::PartVector setup_mesh_3block_4quad_checkerboard(stk::mesh::BulkData& 
   }
   std::vector<double> coordinates = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1, 0,2, 1,2, 2,2 };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(5u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3}));
   EXPECT_EQ(9u, get_num_total_nodes(bulk));
@@ -1953,7 +1953,7 @@ stk::mesh::PartVector setup_mesh_2block_2quad_diagonal(stk::mesh::BulkData& bulk
   }
   std::vector<double> coordinates = { 0,0, 1,0, 0,1, 1,1, 2,1, 1,2, 2,2 };
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(1u, get_num_intersecting_nodes(bulk, {&block1, &block2}));
   EXPECT_EQ(7u, get_num_total_nodes(bulk));
@@ -1972,7 +1972,7 @@ stk::mesh::PartVector setup_mesh_3block_4quad_bowtie(stk::mesh::BulkData& bulk)
                          "0,3,QUAD_4_2D,8,6,11,10,block_3\n"
                          "0,4,QUAD_4_2D,6,9,13,12,block_1";
   std::vector<double> coordinates = { 0,0, 0.9,0, 1.1,0, 2,0, 0,0.9, 1,1, 2,0.9, 0,1.1, 2,1.1, 0,2, 0.9,2, 1.1,2, 2,2 };
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ( 1u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3}));
   EXPECT_EQ(13u, get_num_total_nodes(bulk));
@@ -2121,7 +2121,7 @@ stk::mesh::PartVector setup_mesh_4block_4quad(stk::mesh::BulkData& bulk, unsigne
     break;
   }
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(5u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4}));
   EXPECT_EQ(9u, get_num_total_nodes(bulk));
@@ -2165,7 +2165,7 @@ stk::mesh::PartVector setup_mesh_6block_6quad(stk::mesh::BulkData& bulk)
     break;
   }
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(8u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4, &block5, &block6}));
   EXPECT_EQ(12u, get_num_total_nodes(bulk));
@@ -2219,7 +2219,7 @@ stk::mesh::PartVector setup_mesh_9block_9quad(stk::mesh::BulkData& bulk)
     break;
   }
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
   EXPECT_EQ(12u, get_num_intersecting_nodes(bulk, {&block1, &block2, &block3, &block4, &block5, &block6, &block7, &block8, &block9}));
   EXPECT_EQ(16u, get_num_total_nodes(bulk));

@@ -936,7 +936,7 @@ readSparseFile(
   
   // Read nonzeros from the given file(s)
   size_t nRow = 0, nCol = 0;
-  unsigned int *buffer; size_t nNz = 0;
+  unsigned int *buffer=0; size_t nNz = 0;
   if(binary){
     if(readPerProcess)
       readPerProcessBinary(filename, comm, params, nRow, nCol, localNZ, dist, buffer, nNz);
@@ -1116,23 +1116,23 @@ readSparseFile(
 
     if (verbose) {
       std::cout << "\nRank " << A->getComm()->getRank() 
-                << "  nRows " << A->getNodeNumRows()
+                << "  nRows " << A->getLocalNumRows()
                 << "  minRow " << A->getRowMap()->getMinGlobalIndex()
                 << "  maxRow " << A->getRowMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nCols " << A->getNodeNumCols()
+                << "  nCols " << A->getLocalNumCols()
                 << "  minCol " << A->getColMap()->getMinGlobalIndex()
                 << "  maxCol " << A->getColMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nDomain " << A->getDomainMap()->getNodeNumElements()
+                << "  nDomain " << A->getDomainMap()->getLocalNumElements()
                 << "  minDomain " << A->getDomainMap()->getMinGlobalIndex()
                 << "  maxDomain " << A->getDomainMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nRange " << A->getRangeMap()->getNodeNumElements()
+                << "  nRange " << A->getRangeMap()->getLocalNumElements()
                 << "  minRange " << A->getRangeMap()->getMinGlobalIndex()
                 << "  maxRange " << A->getRangeMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nEntries " << A->getNodeNumEntries()
+                << "  nEntries " << A->getLocalNumEntries()
                 << std::endl;
     }
   }

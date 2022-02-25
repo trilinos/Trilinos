@@ -643,15 +643,15 @@ namespace BaskerNS
       thread_array(kid).error_blk    = U_col;
       thread_array(kid).error_subblk = U_row;
       if(Options.realloc == BASKER_FALSE)
-       {
-         thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
-         return BASKER_ERROR;
-       }
+      {
+        thread_array(kid).error_type = BASKER_ERROR_NOMALLOC;
+        return BASKER_ERROR;
+      }
       else
-       {
-         thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
-         thread_array(kid).error_info = newsize;
-         return BASKER_ERROR;
+      {
+        thread_array(kid).error_type = BASKER_ERROR_REMALLOC;
+        thread_array(kid).error_info = newsize;
+        return BASKER_ERROR;
       }//if/else realloc
     }
     //#endif
@@ -1058,7 +1058,7 @@ namespace BaskerNS
 
     #ifdef BASKER_DEBUG_NFACTOR_COL
     printf("LOWER_COL_FACTOR kid: %d \n", kid);
-    printf("kid %d using L: %d %d  U: %d %d  X %d \n",
+    printf("kid %d using L (%d %d),  U (%d %d),  and X (%d) \n",
 	   kid, L_col, L_row, U_col, U_row, X_col);
     #endif
     //end get needed variables
@@ -1423,15 +1423,17 @@ namespace BaskerNS
            if(t < k+brow_g)
            {
 #ifdef BASKER_DEBUG_NFACTOR_COL
+             //if(kid>=0)
+             if (L_col == 2 && kid == 0)
+             {
              #ifdef BASKER_2DL
-             if(kid>=0)
-               printf("U insert: %f at %d \n",
-                   X[j], t);
+               printf("U insert: %e %d at %d \n",
+                   X[j], t-brow_g, unnz);
              #else
-             if(kid>=0)
-               printf("U insert: %f at %d \n",
-                   X[j], gperm[j]);
+               printf("U insert: %e %d at %d \n",
+                   X[j], t-brow_g, unnz);
              #endif
+             }
 #endif
              //U.row_idx[unnz] = gperm[j];
              //can't we reuse, this seems
@@ -1494,6 +1496,12 @@ namespace BaskerNS
     //Fill in last element of U
     U.row_idx(unnz) = k;
     U.val(unnz) = lastU;
+#ifdef BASKER_DEBUG_NFACTOR_COL
+    if (L_col == 2 && kid == 0)
+    {
+      printf( " Insert U(last) = %e %d at %d\n",lastU,k,unnz );
+    }
+#endif
     unnz++;
    
     xnnz = 0;
@@ -1615,6 +1623,7 @@ namespace BaskerNS
     pivot = U.tpivot;
 
     //printf("\n\n\n");
+    printf(" t_lower_col_factor_offdiag( LL(%d)(%d) and LU(%d)(%d)) \n",L_col,L_row, U_col,U_row );
     //printf("lower_off, kid: %d leader_id: %d lsize: %d X: %d %d U %d %d L: %d %d \n",
     //	   kid, leader_id, lteam_size, 
     //	   X_col, X_row, U_col, U_row, L_col, L_row);

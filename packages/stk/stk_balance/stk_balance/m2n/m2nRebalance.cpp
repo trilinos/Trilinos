@@ -32,8 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include "m2nRebalance.hpp"
-#include <stk_balance/m2n/InputMesh.hpp>
-#include <stk_balance/m2n/OutputMesh.hpp>
+#include <stk_balance/m2n/M2NInputMesh.hpp>
+#include <stk_balance/m2n/M2NOutputMesh.hpp>
 #include <stk_balance/balanceUtils.hpp>
 #include "stk_balance/internal/LogUtils.hpp"
 #include <stk_io/StkMeshIoBroker.hpp>

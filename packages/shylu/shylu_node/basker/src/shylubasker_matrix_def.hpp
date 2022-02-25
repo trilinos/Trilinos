@@ -573,7 +573,7 @@ namespace BaskerNS
       for(Int i = col_ptr(k-scol); i < M.col_ptr(k+1); i++)
       {
         Int j = M.row_idx(i);
-        /*if (kid == 3)
+        /*if (nrow == 289 && ncol == 100)
         {
           printf( " > row_idx[%d] = %d, val[%d] = %e (%d + %d) with k = %d+%d\n",i,j, i,M.val(i), srow,nrow, scol,k );
         }*/
@@ -615,6 +615,9 @@ namespace BaskerNS
         {
           row_idx(temp_count) = j-srow;
           val(temp_count) = M.val(i);
+          /*if (nrow == 289 && ncol == 100) {
+            printf( " (%d %e) k=%d nnz = %d\n",j-srow,M.val(i),k-scol,temp_count );
+          }*/
 
           anorm_k += abs(M.val(i));
           temp_count++;

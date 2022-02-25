@@ -151,7 +151,7 @@ namespace { // (anonymous)
         }
         });
       local_graph_device_type I_G_lcl (I_lclColInds, I_rowOffsets);
-      I_A_lcl = local_matrix_device_type("A_lcl", colMap->getNodeNumElements(),I_values,I_G_lcl);
+      I_A_lcl = local_matrix_device_type("A_lcl", colMap->getLocalNumElements(),I_values,I_G_lcl);
     }
     crs_matrix_type input_matrix (I_A_lcl, rowMap, colMap, domMap, ranMap);
 
@@ -180,7 +180,7 @@ namespace { // (anonymous)
           }            
         });
       local_graph_device_type O_G_lcl (O_lclColInds, O_rowOffsets);
-      O_A_lcl = local_matrix_device_type("A_lcl", colMap->getNodeNumElements(),O_values,O_G_lcl);
+      O_A_lcl = local_matrix_device_type("A_lcl", colMap->getLocalNumElements(),O_values,O_G_lcl);
     }
     crs_matrix_type output_matrix (O_A_lcl, rowMap, colMap, domMap, ranMap);
 
@@ -301,7 +301,7 @@ namespace { // (anonymous)
         }
         });
       local_graph_device_type I_G_lcl (I_lclColInds, I_rowOffsets);
-      I_A_lcl = local_matrix_device_type("A_lcl", colMap->getNodeNumElements(),I_values,I_G_lcl);
+      I_A_lcl = local_matrix_device_type("A_lcl", colMap->getLocalNumElements(),I_values,I_G_lcl);
     }
     crs_matrix_type input_matrix (I_A_lcl, rowMap, colMap, domMap, ranMap);
 
@@ -331,7 +331,7 @@ namespace { // (anonymous)
           }            
         });
       local_graph_device_type O_G_lcl (O_lclColInds, O_rowOffsets);
-      O_A_lcl = local_matrix_device_type("A_lcl", colMap->getNodeNumElements(),O_values,O_G_lcl);
+      O_A_lcl = local_matrix_device_type("A_lcl", colMap->getLocalNumElements(),O_values,O_G_lcl);
     }
     crs_matrix_type output_matrix (O_A_lcl, rowMap, colMap, domMap, ranMap);
 

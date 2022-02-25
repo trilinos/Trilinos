@@ -227,7 +227,7 @@ size_t Chebyshev<MatrixType>::getNodeSmootherComplexity() const {
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
     "input matrix, then call compute(), before calling this method.");
   // Chevyshev costs roughly one apply + one diagonal inverse per iteration
-  return A->getNodeNumRows() + A->getNodeNumEntries();
+  return A->getLocalNumRows() + A->getLocalNumEntries();
 }
 
 

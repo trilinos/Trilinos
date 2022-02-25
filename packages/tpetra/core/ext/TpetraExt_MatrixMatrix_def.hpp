@@ -509,15 +509,15 @@ void Add(
   }
 
   size_t a_numEntries;
-  typename crs_matrix_type::nonconst_global_inds_host_view_type a_inds("a_inds",A.getNodeMaxNumRowEntries());
-  typename crs_matrix_type::nonconst_values_host_view_type a_vals("a_vals",A.getNodeMaxNumRowEntries());
+  typename crs_matrix_type::nonconst_global_inds_host_view_type a_inds("a_inds",A.getLocalMaxNumRowEntries());
+  typename crs_matrix_type::nonconst_values_host_view_type a_vals("a_vals",A.getLocalMaxNumRowEntries());
   GO row;
 
   if (scalarB != Teuchos::ScalarTraits<SC>::one())
     B.scale(scalarB);
 
   bool bFilled = B.isFillComplete();
-  size_t numMyRows = B.getNodeNumRows();
+  size_t numMyRows = B.getLocalNumRows();
   if (scalarA != Teuchos::ScalarTraits<SC>::zero()) {
     for (LO i = 0; (size_t)i < numMyRows; ++i) {
       row = B.getRowMap()->getGlobalElement(i);
@@ -1037,7 +1037,7 @@ void Add(
       prefix << "At this point, curRowMap is null. Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-    const size_t localNumRows = Mat[k]->getNodeNumRows ();
+    const size_t localNumRows = Mat[k]->getLocalNumRows ();
     for (size_t i = 0; i < localNumRows; ++i) {
       const GlobalOrdinal globalRow = curRowMap->getGlobalElement (i);
       size_t numEntries = Mat[k]->getNumEntriesInGlobalRow (globalRow);
@@ -1069,53 +1069,53 @@ void Add(
 namespace MMdetails{
 
 /*********************************************************************************************************/
-// Prints MMM-style statistics on communication done with an Import or Export object
-template <class TransferType>
-void printMultiplicationStatistics(Teuchos::RCP<TransferType > Transfer, const std::string &label) {
-  if (Transfer.is_null())
-    return;
-
-  const Distributor & Distor                   = Transfer->getDistributor();
-  Teuchos::RCP<const Teuchos::Comm<int> > Comm = Transfer->getSourceMap()->getComm();
-
-  size_t rows_send   = Transfer->getNumExportIDs();
-  size_t rows_recv   = Transfer->getNumRemoteIDs();
-
-  size_t round1_send = Transfer->getNumExportIDs() * sizeof(size_t);
-  size_t round1_recv = Transfer->getNumRemoteIDs() * sizeof(size_t);
-  size_t num_send_neighbors = Distor.getNumSends();
-  size_t num_recv_neighbors = Distor.getNumReceives();
-  size_t round2_send, round2_recv;
-  Distor.getLastDoStatistics(round2_send,round2_recv);
-
-  int myPID    = Comm->getRank();
-  int NumProcs = Comm->getSize();
-
-  // Processor by processor statistics
-  //    printf("[%d] %s Statistics: neigh[s/r]=%d/%d rows[s/r]=%d/%d r1bytes[s/r]=%d/%d r2bytes[s/r]=%d/%d\n",
-  //    myPID, label.c_str(),num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv);
-
-  // Global statistics
-  size_t lstats[8] = {num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv};
-  size_t gstats_min[8], gstats_max[8];
-
-  double lstats_avg[8], gstats_avg[8];
-  for(int i=0; i<8; i++)
-    lstats_avg[i] = ((double)lstats[i])/NumProcs;
-
-  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_MIN,8,lstats,gstats_min);
-  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_MAX,8,lstats,gstats_max);
-  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_SUM,8,lstats_avg,gstats_avg);
-
-  if(!myPID) {
-    printf("%s Send Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
-           (int)gstats_min[0],gstats_avg[0],(int)gstats_max[0], (int)gstats_min[2],gstats_avg[2],(int)gstats_max[2],
-           (int)gstats_min[4],gstats_avg[4],(int)gstats_max[4], (int)gstats_min[6],gstats_avg[6],(int)gstats_max[6]);
-    printf("%s Recv Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
-           (int)gstats_min[1],gstats_avg[1],(int)gstats_max[1], (int)gstats_min[3],gstats_avg[3],(int)gstats_max[3],
-           (int)gstats_min[5],gstats_avg[5],(int)gstats_max[5], (int)gstats_min[7],gstats_avg[7],(int)gstats_max[7]);
-  }
-}
+//// Prints MMM-style statistics on communication done with an Import or Export object
+//template <class TransferType>
+//void printMultiplicationStatistics(Teuchos::RCP<TransferType > Transfer, const std::string &label) {
+//  if (Transfer.is_null())
+//    return;
+//
+//  const Distributor & Distor                   = Transfer->getDistributor();
+//  Teuchos::RCP<const Teuchos::Comm<int> > Comm = Transfer->getSourceMap()->getComm();
+//
+//  size_t rows_send   = Transfer->getNumExportIDs();
+//  size_t rows_recv   = Transfer->getNumRemoteIDs();
+//
+//  size_t round1_send = Transfer->getNumExportIDs() * sizeof(size_t);
+//  size_t round1_recv = Transfer->getNumRemoteIDs() * sizeof(size_t);
+//  size_t num_send_neighbors = Distor.getNumSends();
+//  size_t num_recv_neighbors = Distor.getNumReceives();
+//  size_t round2_send, round2_recv;
+//  Distor.getLastDoStatistics(round2_send,round2_recv);
+//
+//  int myPID    = Comm->getRank();
+//  int NumProcs = Comm->getSize();
+//
+//  // Processor by processor statistics
+//  //    printf("[%d] %s Statistics: neigh[s/r]=%d/%d rows[s/r]=%d/%d r1bytes[s/r]=%d/%d r2bytes[s/r]=%d/%d\n",
+//  //    myPID, label.c_str(),num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv);
+//
+//  // Global statistics
+//  size_t lstats[8] = {num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv};
+//  size_t gstats_min[8], gstats_max[8];
+//
+//  double lstats_avg[8], gstats_avg[8];
+//  for(int i=0; i<8; i++)
+//    lstats_avg[i] = ((double)lstats[i])/NumProcs;
+//
+//  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_MIN,8,lstats,gstats_min);
+//  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_MAX,8,lstats,gstats_max);
+//  Teuchos::reduceAll(*Comm(),Teuchos::REDUCE_SUM,8,lstats_avg,gstats_avg);
+//
+//  if(!myPID) {
+//    printf("%s Send Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
+//           (int)gstats_min[0],gstats_avg[0],(int)gstats_max[0], (int)gstats_min[2],gstats_avg[2],(int)gstats_max[2],
+//           (int)gstats_min[4],gstats_avg[4],(int)gstats_max[4], (int)gstats_min[6],gstats_avg[6],(int)gstats_max[6]);
+//    printf("%s Recv Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n", label.c_str(),
+//           (int)gstats_min[1],gstats_avg[1],(int)gstats_max[1], (int)gstats_min[3],gstats_avg[3],(int)gstats_max[3],
+//           (int)gstats_min[5],gstats_avg[5],(int)gstats_max[5], (int)gstats_min[7],gstats_avg[7],(int)gstats_max[7]);
+//  }
+//}
 
 // Kernel method for computing the local portion of C = A*B
 template<class Scalar,
@@ -1320,13 +1320,13 @@ void mult_A_B(
   LocalOrdinal C_firstCol_import = OrdinalTraits<LocalOrdinal>::zero();
   LocalOrdinal C_lastCol_import  = OrdinalTraits<LocalOrdinal>::invalid();
 
-  ArrayView<const GlobalOrdinal> bcols = Bview.colMap->getNodeElementList();
+  ArrayView<const GlobalOrdinal> bcols = Bview.colMap->getLocalElementList();
   ArrayView<const GlobalOrdinal> bcols_import = null;
   if (Bview.importColMap != null) {
     C_firstCol_import = Bview.importColMap->getMinLocalIndex();
     C_lastCol_import  = Bview.importColMap->getMaxLocalIndex();
 
-    bcols_import = Bview.importColMap->getNodeElementList();
+    bcols_import = Bview.importColMap->getLocalElementList();
   }
 
   size_t C_numCols = C_lastCol - C_firstCol +
@@ -1351,8 +1351,8 @@ void mult_A_B(
 
   // Run through all the hash table lookups once and for all
   LocalOrdinal LO_INVALID = OrdinalTraits<LocalOrdinal>::invalid();
-  Array<LocalOrdinal> Acol2Brow(Aview.colMap->getNodeNumElements(),LO_INVALID);
-  Array<LocalOrdinal> Acol2Irow(Aview.colMap->getNodeNumElements(),LO_INVALID);
+  Array<LocalOrdinal> Acol2Brow(Aview.colMap->getLocalNumElements(),LO_INVALID);
+  Array<LocalOrdinal> Acol2Irow(Aview.colMap->getLocalNumElements(),LO_INVALID);
   if(Aview.colMap->isSameAs(*Bview.origMatrix->getRowMap())){
     // Maps are the same: Use local IDs as the hash
     for(LocalOrdinal i=Aview.colMap->getMinLocalIndex(); i <=
@@ -1376,19 +1376,19 @@ void mult_A_B(
   //
   // Our goal, of course, is to navigate the data in A and B once, without
   // performing searches for column-indices, etc.
-  ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP;
-  ArrayRCP<const LocalOrdinal> Acolind_RCP, Bcolind_RCP, Icolind_RCP;
-  ArrayRCP<const Scalar> Avals_RCP, Bvals_RCP, Ivals_RCP;
-  ArrayView<const size_t> Arowptr, Browptr, Irowptr;
-  ArrayView<const LocalOrdinal> Acolind, Bcolind, Icolind;
-  ArrayView<const Scalar> Avals, Bvals, Ivals;
-  Aview.origMatrix->getAllValues(Arowptr_RCP,Acolind_RCP,Avals_RCP);
-  Bview.origMatrix->getAllValues(Browptr_RCP,Bcolind_RCP,Bvals_RCP);
-  Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
-  Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
+  auto Arowptr = Aview.origMatrix->getLocalRowPtrsHost();
+  auto Acolind = Aview.origMatrix->getLocalIndicesHost();
+  auto Avals   = Aview.origMatrix->getLocalValuesHost(Tpetra::Access::ReadOnly);
+  auto Browptr = Bview.origMatrix->getLocalRowPtrsHost();
+  auto Bcolind = Bview.origMatrix->getLocalIndicesHost();
+  auto Bvals   = Bview.origMatrix->getLocalValuesHost(Tpetra::Access::ReadOnly);
+  decltype(Browptr) Irowptr;
+  decltype(Bcolind) Icolind;
+  decltype(Bvals) Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Bview.importMatrix->getAllValues(Irowptr_RCP,Icolind_RCP,Ivals_RCP);
-    Irowptr = Irowptr_RCP();  Icolind = Icolind_RCP();  Ivals = Ivals_RCP();
+    Irowptr = Bview.importMatrix->getLocalRowPtrsHost();
+    Icolind = Bview.importMatrix->getLocalIndicesHost();
+    Ivals   = Bview.importMatrix->getLocalValuesHost(Tpetra::Access::ReadOnly);
   }
 
   bool C_filled = C.isFillComplete();
@@ -1397,7 +1397,7 @@ void mult_A_B(
       c_index[i] = OrdinalTraits<size_t>::invalid();
 
   // Loop over the rows of A.
-  size_t Arows = Aview.rowMap->getNodeNumElements();
+  size_t Arows = Aview.rowMap->getLocalNumElements();
   for(size_t i=0; i<Arows; ++i) {
 
     // Only navigate the local portion of Aview... which is, thankfully, all of
@@ -1432,7 +1432,8 @@ void mult_A_B(
             C_row_i_length++;
 
           } else {
-            C_row_i[c_index[col]] += Aval*Bvals[j];
+            // static cast from impl_scalar_type to Scalar needed for complex
+            C_row_i[c_index[col]] += Aval * static_cast<Scalar>(Bvals[j]);
           }
         }
     }
@@ -1474,7 +1475,8 @@ void mult_A_B(
 
             } else {
               // This has to be a +=  so insertGlobalValue goes out
-              C_row_i[c_index[col]] += Aval*Ivals[j];
+              // static cast from impl_scalar_type to Scalar needed for complex
+              C_row_i[c_index[col]] += Aval * static_cast<Scalar>(Ivals[j]);
             }
         }
     }
@@ -1526,15 +1528,15 @@ template<class CrsMatrixType>
 size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B){
   // Follows the NZ estimate in ML's ml_matmatmult.c
   size_t Aest = 100, Best=100;
-  if (A.getNodeNumEntries() >= A.getNodeNumRows())
-    Aest = (A.getNodeNumRows() > 0) ? A.getNodeNumEntries()/A.getNodeNumRows() : 100;
-  if (B.getNodeNumEntries() >= B.getNodeNumRows())
-    Best = (B.getNodeNumRows() > 0) ? B.getNodeNumEntries()/B.getNodeNumRows() : 100;
+  if (A.getLocalNumEntries() >= A.getLocalNumRows())
+    Aest = (A.getLocalNumRows() > 0) ? A.getLocalNumEntries()/A.getLocalNumRows() : 100;
+  if (B.getLocalNumEntries() >= B.getLocalNumRows())
+    Best = (B.getLocalNumRows() > 0) ? B.getLocalNumEntries()/B.getLocalNumRows() : 100;
 
   size_t nnzperrow = (size_t)(sqrt((double)Aest) + sqrt((double)Best) - 1);
   nnzperrow *= nnzperrow;
 
-  return (size_t)(A.getNodeNumRows()*nnzperrow*0.75 + 100);
+  return (size_t)(A.getLocalNumRows()*nnzperrow*0.75 + 100);
 }
 
 
@@ -1601,13 +1603,13 @@ void mult_A_B_newmatrix(
   // same number of columns.)  The kernel uses this, instead of
   // copying the entire input matrix B and converting its column
   // indices to those of C.
-  lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
+  lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getLocalNumElements()), Icol2Ccol;
 
   if (Bview.importMatrix.is_null()) {
     // mfh 27 Sep 2016: B has no "remotes," so B and C have the same column Map.
     Cimport = Bimport;
     Ccolmap = Bview.colMap;
-    const LO colMapSize = static_cast<LO>(Bview.colMap->getNodeNumElements());
+    const LO colMapSize = static_cast<LO>(Bview.colMap->getLocalNumElements());
     // Bcol2Ccol is trivial
     Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_fill",
       Kokkos::RangePolicy<execution_space, LO>(0, colMapSize),
@@ -1649,12 +1651,12 @@ void mult_A_B_newmatrix(
     // mfh 27 Sep 2016: What the above comment means, is that the
     // setUnion operation on Import objects could also compute these
     // local index - to - local index look-up tables.
-    Kokkos::resize(Icol2Ccol,Bview.importMatrix->getColMap()->getNodeNumElements());
+    Kokkos::resize(Icol2Ccol,Bview.importMatrix->getColMap()->getLocalNumElements());
     local_map_type Ccolmap_local = Ccolmap->getLocalMap();
-    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_getGlobalElement",range_type(0,Bview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_getGlobalElement",range_type(0,Bview.origMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
         Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(i));
       });
-    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Icol2Ccol_getGlobalElement",range_type(0,Bview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+    Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Icol2Ccol_getGlobalElement",range_type(0,Bview.importMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
         Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
       });
 
@@ -1682,8 +1684,8 @@ void mult_A_B_newmatrix(
   // (a flag value).
 
   // Run through all the hash table lookups once and for all
-  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
-  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
+  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getLocalNumElements());
 
   Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
@@ -1754,9 +1756,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
-  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
+  size_t m = Aview.origMatrix->getLocalNumRows();
+  size_t n = Ccolmap->getLocalNumElements();
+  size_t b_max_nnz_per_row = Bview.origMatrix->getLocalMaxNumRowEntries();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
   const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
@@ -1774,7 +1776,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
     Irowptr = lclB.graph.row_map;
     Icolind = lclB.graph.entries;
     Ivals   = lclB.values;
-    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getLocalMaxNumRowEntries());
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1984,11 +1986,11 @@ void mult_A_B_reuse(
   local_map_type Ccolmap_local = Ccolmap->getLocalMap();
 
   // Build the final importer / column map, hash table lookups for C
-  lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
+  lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getLocalNumElements()), Icol2Ccol;
   {
     // Bcol2Col may not be trivial, as Ccolmap is compressed during fillComplete in newmatrix
     // So, column map of C may be a strict subset of the column map of B
-    Kokkos::parallel_for(range_type(0,Bview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+    Kokkos::parallel_for(range_type(0,Bview.origMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
         Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(i));
       });
 
@@ -1996,16 +1998,16 @@ void mult_A_B_reuse(
       TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
                                  std::runtime_error, "Tpetra::MMM: Import setUnion messed with the DomainMap in an unfortunate way");
 
-      Kokkos::resize(Icol2Ccol,Bview.importMatrix->getColMap()->getNodeNumElements());
-      Kokkos::parallel_for(range_type(0,Bview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+      Kokkos::resize(Icol2Ccol,Bview.importMatrix->getColMap()->getLocalNumElements());
+      Kokkos::parallel_for(range_type(0,Bview.importMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
           Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
         });
     }
   }
 
   // Run through all the hash table lookups once and for all
-  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
-  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
+  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getLocalNumElements());
   Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
       LO B_LID = Browmap_local.getLocalElement(aidx);
@@ -2071,8 +2073,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
+  size_t m = Aview.origMatrix->getLocalNumRows();
+  size_t n = Ccolmap->getLocalNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
   const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
@@ -2231,7 +2233,7 @@ void jacobi_A_B_newmatrix(
   // same number of columns.)  The kernel uses this, instead of
   // copying the entire input matrix B and converting its column
   // indices to those of C.
-  lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
+  lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getLocalNumElements()), Icol2Ccol;
 
   if (Bview.importMatrix.is_null()) {
     // mfh 27 Sep 2016: B has no "remotes," so B and C have the same column Map.
@@ -2240,7 +2242,7 @@ void jacobi_A_B_newmatrix(
     // Bcol2Ccol is trivial
     // Bcol2Ccol is trivial
 
-    Kokkos::RangePolicy<execution_space, LO> range (0, static_cast<LO> (Bview.colMap->getNodeNumElements ()));
+    Kokkos::RangePolicy<execution_space, LO> range (0, static_cast<LO> (Bview.colMap->getLocalNumElements ()));
     Kokkos::parallel_for (range, KOKKOS_LAMBDA (const size_t i) {
         Bcol2Ccol(i) = static_cast<LO> (i);
       });
@@ -2276,12 +2278,12 @@ void jacobi_A_B_newmatrix(
     // mfh 27 Sep 2016: What the above comment means, is that the
     // setUnion operation on Import objects could also compute these
     // local index - to - local index look-up tables.
-    Kokkos::resize(Icol2Ccol,Bview.importMatrix->getColMap()->getNodeNumElements());
+    Kokkos::resize(Icol2Ccol,Bview.importMatrix->getColMap()->getLocalNumElements());
     local_map_type Ccolmap_local = Ccolmap->getLocalMap();
-    Kokkos::parallel_for(range_type(0,Bview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+    Kokkos::parallel_for(range_type(0,Bview.origMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
         Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(i));
       });
-    Kokkos::parallel_for(range_type(0,Bview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+    Kokkos::parallel_for(range_type(0,Bview.importMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
         Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
       });
 
@@ -2309,8 +2311,8 @@ void jacobi_A_B_newmatrix(
   // (a flag value).
 
   // Run through all the hash table lookups once and for all
-  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
-  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
+  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getLocalNumElements());
   Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
       LO B_LID = Browmap_local.getLocalElement(aidx);
@@ -2388,9 +2390,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
-  size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
+  size_t m = Aview.origMatrix->getLocalNumRows();
+  size_t n = Ccolmap->getLocalNumElements();
+  size_t b_max_nnz_per_row = Bview.origMatrix->getLocalMaxNumRowEntries();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
   const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
@@ -2408,7 +2410,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
     Irowptr = lclB.graph.row_map;
     Icolind = lclB.graph.entries;
     Ivals   = lclB.values;
-    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
+    b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getLocalMaxNumRowEntries());
   }
 
   // Jacobi-specific inner stuff
@@ -2631,11 +2633,11 @@ void jacobi_A_B_reuse(
   local_map_type Ccolmap_local = Ccolmap->getLocalMap();
 
   // Build the final importer / column map, hash table lookups for C
-  lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
+  lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getLocalNumElements()), Icol2Ccol;
   {
     // Bcol2Col may not be trivial, as Ccolmap is compressed during fillComplete in newmatrix
     // So, column map of C may be a strict subset of the column map of B
-    Kokkos::parallel_for(range_type(0,Bview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+    Kokkos::parallel_for(range_type(0,Bview.origMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
         Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(i));
       });
 
@@ -2643,16 +2645,16 @@ void jacobi_A_B_reuse(
       TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
                                  std::runtime_error, "Tpetra::Jacobi: Import setUnion messed with the DomainMap in an unfortunate way");
 
-      Kokkos::resize(Icol2Ccol,Bview.importMatrix->getColMap()->getNodeNumElements());
-      Kokkos::parallel_for(range_type(0,Bview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+      Kokkos::resize(Icol2Ccol,Bview.importMatrix->getColMap()->getLocalNumElements());
+      Kokkos::parallel_for(range_type(0,Bview.importMatrix->getColMap()->getLocalNumElements()),KOKKOS_LAMBDA(const LO i) {
           Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
         });
     }
   }
 
   // Run through all the hash table lookups once and for all
-  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
-  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
+  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getLocalNumElements());
   Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
       LO B_LID = Browmap_local.getLocalElement(aidx);
@@ -2726,8 +2728,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
-  size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
+  size_t m = Aview.origMatrix->getLocalNumRows();
+  size_t n = Ccolmap->getLocalNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
   const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
@@ -2940,8 +2942,8 @@ void import_and_extract_views(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       TimeMonitor MM2 = *TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM I&X RemoteMap-Mode2"));
 #endif
-      ArrayView<const GO> rows    = targetMap->getNodeElementList();
-      size_t              numRows = targetMap->getNodeNumElements();
+      ArrayView<const GO> rows    = targetMap->getLocalElementList();
+      size_t              numRows = targetMap->getLocalNumElements();
 
       Array<GO> remoteRows(numRows);
       for(size_t i = 0; i < numRows; ++i) {

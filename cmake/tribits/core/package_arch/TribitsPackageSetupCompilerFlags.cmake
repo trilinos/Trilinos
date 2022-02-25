@@ -58,9 +58,9 @@ macro(tribits_apply_warnings_as_error_flags_lang LANG)
 endmacro()
 
 
-macro(tribits_set_package_language_flags LANG)
+macro(tribits_set_package_compiler_lang_flags LANG)
 
-  #message("Entering tribits_set_package_language_flags(${LANG})")
+  #message("Entering tribits_set_package_compiler_lang_flags(${LANG})")
   #print_var(${PROJECT_NAME}_ENABLE_STRONG_${LANG}_COMPILE_WARNINGS)
 
   if (${PACKAGE_NAME}_${LANG}_FLAGS)
@@ -68,65 +68,77 @@ macro(tribits_set_package_language_flags LANG)
       "${${PACKAGE_NAME}_${LANG}_FLAGS}")
   endif()
 
-  if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    message(STATUS "Adding strong ${LANG} warning flags \"${${LANG}_STRONG_COMPILE_WARNING_FLAGS}\"")
-    print_var(CMAKE_${LANG}_FLAGS)
-  endif()
-
 endmacro()
 
 
-function(tribits_setup_add_package_compile_flags)
+function(tribits_print_package_compiler_lang_flags LANG SUFFIX)
+    message("-- " "${PACKAGE_NAME}: CMAKE_${LANG}_FLAGS${SUFFIX}=\"${CMAKE_${LANG}_FLAGS${SUFFIX}}\"")
+endfunction()
 
-  #message("Entering tribits_setup_add_package_compile_flags()")
 
-  #
+# Function that appends package-specific compiler flags for each language
+#
+function(tribits_append_package_specific_compiler_flags)
+
+  #message("Entering tribits_append_package_specific_compiler_flags() for ${PACKAGE_NAME}")
+
   # C compiler options
-  #
-
   assert_defined(${PROJECT_NAME}_ENABLE_C CMAKE_C_COMPILER_ID)
   if (${PROJECT_NAME}_ENABLE_C)
-    tribits_set_package_language_flags(C)
+    tribits_set_package_compiler_lang_flags(C)
   endif()
 
-  #
   # C++ compiler options
-  #
-
   assert_defined(${PROJECT_NAME}_ENABLE_CXX CMAKE_CXX_COMPILER_ID)
   if (${PROJECT_NAME}_ENABLE_CXX)
-    tribits_set_package_language_flags(CXX)
+    tribits_set_package_compiler_lang_flags(CXX)
   endif()
 
-  #
   # Fortran compiler options
-  #
-
   assert_defined(${PROJECT_NAME}_ENABLE_Fortran)
   if (${PROJECT_NAME}_ENABLE_Fortran)
-    tribits_set_package_language_flags(Fortran)
+    tribits_set_package_compiler_lang_flags(Fortran)
   endif()
 
 endfunction()
 
 
-
-
-
-
-
-
-
-
-
-
-
+# Function that prints out all of the compiler flags for a package
 #
-# Macro that sets up compiler flags for a package
+function(tribits_print_package_compiler_flags)
+
+  if(${PROJECT_NAME}_VERBOSE_CONFIGURE OR ${PROJECT_NAME}_PRINT_PACKAGE_COMPILER_FLAGS)
+
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" upperBuildType)
+    set(buildNameSuffix "_${upperBuildType}")
+
+    # C compiler options
+    if (${PROJECT_NAME}_ENABLE_C)
+      tribits_print_package_compiler_lang_flags(C "")
+      tribits_print_package_compiler_lang_flags(C ${buildNameSuffix})
+    endif()
+
+    # C++ compiler options
+    if (${PROJECT_NAME}_ENABLE_CXX)
+      tribits_print_package_compiler_lang_flags(CXX "")
+      tribits_print_package_compiler_lang_flags(CXX ${buildNameSuffix})
+    endif()
+
+    # Fortran compiler options
+    if (${PROJECT_NAME}_ENABLE_Fortran)
+      tribits_print_package_compiler_lang_flags(Fortran "")
+      tribits_print_package_compiler_lang_flags(Fortran ${buildNameSuffix})
+    endif()
+
+  endif()
+
+endfunction()
+
+
+# Macro that sets up compiler flags for a top-level package (not subpackage)
 #
 # This CMake code is broken out in order to allow it to be unit tested.
 #
-
 macro(tribits_setup_compiler_flags  PACKAGE_NAME_IN)
 
   # Set up strong warning flags
@@ -149,17 +161,11 @@ macro(tribits_setup_compiler_flags  PACKAGE_NAME_IN)
     tribits_apply_warnings_as_error_flags_lang(CXX)
   endif()
 
-  # Append package specific options
-  tribits_setup_add_package_compile_flags()
+  tribits_append_package_specific_compiler_flags()
 
-  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    message("Final compiler flags:")
-    print_var(CMAKE_CXX_FLAGS)
-    print_var(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE})
-    print_var(CMAKE_C_FLAGS)
-    print_var(CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE})
-    print_var(CMAKE_Fortran_FLAGS)
-    print_var(CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE})
+  if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("Final package compiler flags:")
   endif()
+  tribits_print_package_compiler_flags()
 
 endmacro()

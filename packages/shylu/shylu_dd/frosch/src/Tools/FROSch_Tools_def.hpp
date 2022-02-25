@@ -138,7 +138,7 @@ namespace FROSch {
 
         const int packetSize = 2;
         IntVec sendImageIDs(numPackages);
-        GOVec exportEntries(packetSize*numPackages); // data to send out
+        GOView exportEntries("FROSch::sendDataToOriginalMap::exportEntries", packetSize*numPackages); // data to send out
         {
             typename OverlappingDataPtrVec::iterator tmpODPtrVecIt;
             typename IntVec::iterator tmpIntVecIt;
@@ -151,8 +151,8 @@ namespace FROSch {
                 tmpLOVecIt = (*tmpODPtrVecIt)->LIDs_.begin();
                 for (tmpIntVecIt = (*tmpODPtrVecIt)->PIDs_.begin(); tmpIntVecIt != (*tmpODPtrVecIt)->PIDs_.end(); tmpIntVecIt++) {
                     for (tmpIntVecIt2 = (*tmpODPtrVecIt)->PIDs_.begin(); tmpIntVecIt2 != (*tmpODPtrVecIt)->PIDs_.end(); tmpIntVecIt2++) {
-                        exportEntries[exportIndex++] = (*tmpODPtrVecIt)->GID_;
-                        exportEntries[exportIndex++] = as<GO>(*tmpIntVecIt2);
+                        exportEntries(exportIndex++) = (*tmpODPtrVecIt)->GID_;
+                        exportEntries(exportIndex++) = as<GO>(*tmpIntVecIt2);
                         sendImageIDs[exportIndex2++] = *tmpIntVecIt;
                     }
                     tmpLOVecIt++;
@@ -161,13 +161,13 @@ namespace FROSch {
         }
         distor.createFromSends(sendImageIDs);
 
-        GOVec importElements(packetSize*distor.getTotalReceiveLength());
+        GOView importElements("FROSch::sendDataToOriginalMap::importElements", packetSize*distor.getTotalReceiveLength());
 
-        distor.doPostsAndWaits(exportEntries().getConst(),packetSize,importElements());
+        distor.doPostsAndWaits(exportEntries,packetSize,importElements);
 
-        LO length = importElements.size()/packetSize;
+        LO length = importElements.extent(0)/packetSize;
         for (LO i=0; i<length; i++) {
-            ComponentsSubdomains_[OriginalMap_->getLocalElement(importElements[2*i])].push_back(importElements[2*i+1]);
+            ComponentsSubdomains_[OriginalMap_->getLocalElement(importElements(2*i))].push_back(importElements(2*i+1));
         }
 
         return 0;

@@ -3,6 +3,7 @@
 #include <stk_mesh/base/Field.hpp>  // for Field
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>  // for MetaData, put_field, etc
+#include <stk_mesh/base/SideSetUtil.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
@@ -33,11 +34,6 @@ void TextMeshFixture::setup_text_mesh(const std::string& meshDesc)
   stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
 }
 
-void TextMeshFixture::setup_text_mesh(const std::string& meshDesc, const std::vector<double>& coordinates)
-{
-  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
-}
-
 void TextMeshFixture::verify_shared_nodes(const stk::mesh::EntityIdVector& nodeIds, int sharingProc)
 {
   std::vector<size_t> counts;
@@ -59,11 +55,113 @@ void TextMeshFixture::verify_num_elements(size_t goldCount)
 void TextMeshFixture::verify_single_element(
     stk::mesh::EntityId elemId, const std::string& textMeshTopologyName, const stk::mesh::EntityIdVector& nodeIds)
 {
-  stk::topology topology = m_topologyMapping.topology(textMeshTopologyName);
+  stk::topology topology = m_topologyMapping.topology(textMeshTopologyName).topology;
   stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
   EXPECT_TRUE(get_bulk().is_valid(element));
   EXPECT_EQ(topology, get_bulk().bucket(element).topology());
   verify_nodes_on_element(element, nodeIds);
+}
+
+void TextMeshFixture::verify_num_sidesets(size_t goldCount)
+{
+  EXPECT_EQ(goldCount, get_bulk().get_number_of_sidesets());
+}
+
+void TextMeshFixture::verify_single_sideset(const std::string& name, const unsigned id, const SideVector& elemSidePairs)
+{
+  verify_single_sideset(name, id, std::vector<std::string>{}, elemSidePairs);
+}
+
+void TextMeshFixture::verify_sideset_subset(
+    stk::mesh::Part* sidesetPart, const unsigned id, const std::vector<std::string>& subsetNames)
+{
+  EXPECT_TRUE(nullptr != sidesetPart);
+  EXPECT_TRUE(stk::io::is_part_io_part(*sidesetPart));
+  EXPECT_EQ(get_meta().side_rank(), sidesetPart->primary_entity_rank());
+  EXPECT_EQ(id, sidesetPart->id());
+  EXPECT_EQ(sidesetPart->subsets().size(), subsetNames.size());
+
+  for (const std::string& subsetName : subsetNames) {
+    stk::mesh::Part* subsetPart = get_meta().get_part(subsetName);
+    EXPECT_TRUE(nullptr != subsetPart);
+    EXPECT_TRUE(stk::io::is_part_io_part(*subsetPart));
+    EXPECT_EQ(get_meta().side_rank(), subsetPart->primary_entity_rank());
+    EXPECT_EQ(id, subsetPart->id());
+
+    auto iter = std::find(sidesetPart->subsets().begin(), sidesetPart->subsets().end(), subsetPart);
+    EXPECT_NE(iter, sidesetPart->subsets().end());
+  }
+}
+
+bool TextMeshFixture::element_has_side_on_ordinal(stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal ordinal)
+{
+  stk::mesh::ConnectivityOrdinal const* ordinals = get_bulk().begin_ordinals(element, get_meta().side_rank());
+  unsigned numOrdinals = get_bulk().num_connectivity(element, get_meta().side_rank());
+  bool foundOrdinal = false;
+  for (unsigned i = 0; i < numOrdinals; ++i) {
+    if (ordinals[i] == ordinal) {
+      foundOrdinal = true;
+      break;
+    }
+  }
+  return foundOrdinal;
+}
+
+void TextMeshFixture::verify_single_sideset(const std::string& name,
+    const unsigned id,
+    const std::vector<std::string>& subsets,
+    const SideVector& elemSidePairs)
+{
+  stk::mesh::Part* sidesetPart = get_meta().get_part(name);
+  verify_sideset_subset(sidesetPart, id, subsets);
+
+  EXPECT_TRUE(get_bulk().does_sideset_exist(*sidesetPart));
+
+  stk::mesh::SideSet& sideset = get_bulk().get_sideset(*sidesetPart);
+
+  for (const SideEntry& sideEntry : elemSidePairs) {
+    stk::mesh::EntityId elemId = sideEntry.first;
+    int side = sideEntry.second;
+
+    stk::mesh::Entity element = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
+    EXPECT_TRUE(get_bulk().is_valid(element));
+
+    stk::topology topology = get_bulk().bucket(element).topology();
+    EXPECT_TRUE(side > 0);
+    EXPECT_TRUE(side <= (int) topology.num_sides());
+
+    stk::mesh::ConnectivityOrdinal ordinal = side - 1;
+    EXPECT_TRUE(sideset.contains(element, ordinal));
+
+    EXPECT_TRUE(element_has_side_on_ordinal(element, ordinal));
+  }
+}
+
+void TextMeshFixture::verify_num_nodesets(size_t goldCount)
+{
+  size_t numNodesets = 0;
+  for (stk::mesh::Part* part : get_meta().get_parts()) {
+    if (stk::io::is_part_io_part(*part) && part->primary_entity_rank() == stk::topology::NODE_RANK) {
+      numNodesets++;
+    }
+  }
+  EXPECT_EQ(goldCount, numNodesets);
+}
+
+void TextMeshFixture::verify_single_nodeset(
+    const std::string& name, const unsigned id, const stk::mesh::EntityIdVector& nodeIds)
+{
+  stk::mesh::Part* nodesetPart = get_meta().get_part(name);
+  EXPECT_TRUE(nullptr != nodesetPart);
+  EXPECT_EQ(stk::topology::NODE_RANK, nodesetPart->primary_entity_rank());
+  EXPECT_TRUE(stk::io::is_part_io_part(*nodesetPart));
+  EXPECT_EQ(id, nodesetPart->id());
+
+  for (stk::mesh::EntityId nodeId : nodeIds) {
+    stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, nodeId);
+    EXPECT_TRUE(get_bulk().is_valid(node));
+    EXPECT_TRUE(get_bulk().bucket(node).member(*nodesetPart));
+  }
 }
 
 void TextMeshFixture::verify_part_membership(const std::vector<PartInfo> golds)
