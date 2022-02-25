@@ -63,9 +63,9 @@ class Test {
 
 public:
 
-  Test(const char* filename, int nIter) {
-    testTpetra(filename, nIter);
-    testEpetra(filename, nIter);
+  Test(const char* filename, int nIter, bool doReplaceMyValues) {
+    testTpetra(filename, nIter, doReplaceMyValues);
+    testEpetra(filename, nIter, doReplaceMyValues);
     Teuchos::TimeMonitor::summarize();
   }
 
@@ -73,7 +73,7 @@ public:
 private:
   
   ////////////////////////////////////////////////////////////////////////
-  void testEpetra(const char* filename, int nIter)
+  void testEpetra(const char* filename, int nIter, bool doReplaceMyValues)
   {
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     using crsmatrix_t = Epetra_CrsMatrix;
@@ -192,6 +192,7 @@ private:
     }
 
     // Replace matrix values using ReplaceMyValues (as in Xyce)
+    if (doReplaceMyValues)
     {
       auto tm = ttm::getNewTimer("CRS Replace Epetra ReplaceLocalValues");
       tm->start();
@@ -359,7 +360,7 @@ private:
   }
 
   ////////////////////////////////////////////////////////////////////////
-  void testTpetra(const char* filename, int nIter)
+  void testTpetra(const char* filename, int nIter, bool doReplaceMyValues)
   {
     std::cout << "testTpetra:  begin file " << filename
               << "; " << nIter << " iterations" << std::endl;
@@ -384,9 +385,9 @@ private:
       reader_t::readSparseFile(filename, comm, params);
 
     std::cout << comm->getRank() << " Tpetra Matrix:  "
-              << Amat->getNodeNumRows() << " rows; " 
-              << Amat->getNodeNumCols() << " cols; " 
-              << Amat->getNodeNumEntries() << " nnz; " 
+              << Amat->getLocalNumRows() << " rows; " 
+              << Amat->getLocalNumCols() << " cols; " 
+              << Amat->getLocalNumEntries() << " nnz; " 
               << Amat->getGlobalNumRows() << " global rows; "
               << Amat->getGlobalNumEntries() << " global nnz"
               << std::endl;
@@ -395,7 +396,7 @@ private:
     crsmatrix_t Cmat(*Amat);
 
     // Create some new matrix values to be used in tests
-    lno_t maxValuesPerRow = Amat->getNodeMaxNumRowEntries();
+    lno_t maxValuesPerRow = Amat->getLocalMaxNumRowEntries();
     nc_kval_t newMatValues("newMatValues", maxValuesPerRow);
     for (lno_t i = 0; i < maxValuesPerRow; i++) newMatValues[i] = scalar_t(i);
 
@@ -429,7 +430,7 @@ private:
       scalar_t **matValues;
       lno_t *nEntries;
       {
-        nrows = Amat->getRowMap()->getNodeNumElements();
+        nrows = Amat->getRowMap()->getLocalNumElements();
         matValues = new scalar_t*[nrows];
         nEntries = new lno_t[nrows];
 
@@ -480,10 +481,9 @@ private:
       auto tm = ttm::getNewTimer("CRS Replace Tpetra using views");
       tm->start();
       for (int it = 0; it < nIter; it++) {
-        lno_t nrows = Amat->getRowMap()->getNodeNumElements();
-        auto lclMat = Amat->getLocalMatrixHost();
-        auto offsets = lclMat.graph.row_map;
-        auto matValues = lclMat.values;
+        lno_t nrows = Amat->getRowMap()->getLocalNumElements();
+        auto offsets = Amat->getLocalRowPtrsHost();
+        auto matValues = Amat->getLocalValuesHost(Tpetra::Access::OverwriteAll);
         for (lno_t i = 0; i < nrows; i++) {
           lno_t nEntries = offsets[i+1] - offsets[i];
           for (lno_t j = offsets[i], k = 0; k < nEntries; j++, k++) {
@@ -495,20 +495,25 @@ private:
     }
 
     // Replace matrix values using ReplaceMyValues (as in Xyce)
-    {
-      auto tm = ttm::getNewTimer("CRS Replace Tpetra ReplaceLocalValues");
-      tm->start();
-      for (int it = 0; it < nIter; it++) {
-        kval_t matValues;
-        kind_t indices;
-        lno_t nrows = Amat->getRowMap()->getNodeNumElements();
-        for (lno_t i = 0; i < nrows; i++) {
-          Amat->getLocalRowView(i, indices, matValues);
-          Amat->replaceLocalValues(i, indices, newMatValues);
+    if (doReplaceMyValues) {
+      Amat->resumeFill();
+      {
+        auto tm = ttm::getNewTimer("CRS Replace Tpetra ReplaceLocalValues");
+        tm->start();
+        for (int it = 0; it < nIter; it++) {
+          kval_t matValues;
+          kind_t indices;
+          lno_t nrows = Amat->getRowMap()->getLocalNumElements();
+          for (lno_t i = 0; i < nrows; i++) {
+            Amat->getLocalRowView(i, indices, matValues);
+            Amat->replaceLocalValues(i, indices, newMatValues);
+          }
         }
+        tm->stop();
       }
-      tm->stop();
+      Amat->fillComplete();
     }
+
 
     // SpMV
     // Warm-up -- don't time it
@@ -551,9 +556,9 @@ private:
       tm->start();
       for (int it = 0; it < nIter; it++) {
 
-        auto avalues = Amat->getLocalMatrixHost().values;
-        auto bvalues = Bmat.getLocalMatrixHost().values;
-        auto cvalues = Cmat.getLocalMatrixHost().values;
+        auto avalues = Amat->getLocalValuesHost(Tpetra::Access::ReadOnly);
+        auto bvalues = Bmat.getLocalValuesHost(Tpetra::Access::ReadOnly);
+        auto cvalues = Cmat.getLocalValuesHost(Tpetra::Access::OverwriteAll);
 
         int nEntries = avalues.extent(0);
 
@@ -575,7 +580,7 @@ private:
     }
 
     {
-      auto vals = Amat->getLocalMatrixHost().values;
+      auto vals = Amat->getLocalValuesHost(Tpetra::Access::OverwriteAll);
 
       auto tm = ttm::getNewTimer("CRS Init Kokkos set all to scalar "
                                  " -- Kokkos::deep_copy");
@@ -693,9 +698,12 @@ int main(int narg, char *arg[])
   auto comm = Tpetra::getDefaultComm();
 
   int niter = 10;
-  if (narg == 3) niter = std::atoi(arg[2]);
+  if (narg >= 3) niter = std::atoi(arg[2]);
 
-  Test test(arg[1], niter);
+  bool doReplaceMyValues = true;
+  if (narg >= 4) doReplaceMyValues = std::atoi(arg[3]);
+
+  Test test(arg[1], niter, doReplaceMyValues);
 
   if (comm->getRank() == 0) std::cout << "TEST PASSED" << std::endl;
   return 0;
