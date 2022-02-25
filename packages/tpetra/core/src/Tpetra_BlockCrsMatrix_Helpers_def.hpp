@@ -131,7 +131,7 @@ namespace Tpetra {
     if (numProcs==1 && !alwaysUseParallelAlgorithm) {
       writeMatrixStrip(A,os,params);
     } else {
-      size_t numRows = rowMap->getNodeNumElements();
+      size_t numRows = rowMap->getLocalNumElements();
 
       //Create source map
       RCP<const map_type> allMeshGidsMap = rcp(new map_type(TOT::invalid(), numRows, A.getIndexBase(), comm));
@@ -217,23 +217,23 @@ namespace Tpetra {
 
     if (myRank !=0) {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(A.getNodeNumRows() != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION(A.getLocalNumRows() != 0,
         std::runtime_error, "Tpetra::writeMatrixStrip: pid "
-        << myRank << " should have 0 rows but has " << A.getNodeNumRows());
-      TEUCHOS_TEST_FOR_EXCEPTION(A.getNodeNumCols() != 0,
+        << myRank << " should have 0 rows but has " << A.getLocalNumRows());
+      TEUCHOS_TEST_FOR_EXCEPTION(A.getLocalNumCols() != 0,
         std::runtime_error, "Tpetra::writeMatrixStrip: pid "
-        << myRank << " should have 0 columns but has " << A.getNodeNumCols());
+        << myRank << " should have 0 columns but has " << A.getLocalNumCols());
 
     } else {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(numRows != A.getNodeNumRows(),
+      TEUCHOS_TEST_FOR_EXCEPTION(numRows != A.getLocalNumRows(),
         std::runtime_error, "Tpetra::writeMatrixStrip: "
         "number of rows on pid 0 does not match global number of rows");
 
 
       int err = 0;
       const LO blockSize = A.getBlockSize();
-      const size_t numLocalRows = A.getNodeNumRows();
+      const size_t numLocalRows = A.getLocalNumRows();
       bool precisionChanged=false;
       int oldPrecision = 0; // avoid "unused variable" warning
       if (params.isParameter("precision")) {
@@ -340,7 +340,7 @@ namespace Tpetra {
       meshColGids.reserve(pointMatrix.getGlobalMaxNumRowEntries());
       //again, I assume that point GIDs associated with a mesh GID are consecutive.
       //if they are not, this will break!!
-      for (size_t i=0; i<pointMatrix.getNodeNumRows()/blockSize; i++) {
+      for (size_t i=0; i<pointMatrix.getLocalNumRows()/blockSize; i++) {
         for (int j=0; j<blockSize; ++j) {
           LO rowLid = i*blockSize+j;
           pointMatrix.getLocalRowView(rowLid,pointColInds,pointVals); //TODO optimization: Since I don't care about values,
@@ -363,7 +363,7 @@ namespace Tpetra {
       RCP<block_crs_matrix_type> blockMatrix = rcp(new block_crs_matrix_type(*meshCrsGraph, blockSize));
 
       //preallocate the maximum number of (dense) block entries needed by any row
-      int maxBlockEntries = blockMatrix->getNodeMaxNumRowEntries();
+      int maxBlockEntries = blockMatrix->getLocalMaxNumRowEntries();
       Array<Array<Scalar>> blocks(maxBlockEntries);
       for (int i=0; i<maxBlockEntries; ++i)
         blocks[i].reserve(blockSize*blockSize);
@@ -376,7 +376,7 @@ namespace Tpetra {
       //int offset;
       //if (pointMatrix.getIndexBase()) offset = 0;
       //else                     offset = 1;
-      for (size_t i=0; i<pointMatrix.getNodeNumRows()/blockSize; i++) {
+      for (size_t i=0; i<pointMatrix.getLocalNumRows()/blockSize; i++) {
         int blkCnt=0; //how many unique block entries encountered so far in current block row
         for (int j=0; j<blockSize; ++j) {
           LO rowLid = i*blockSize+j;
@@ -424,7 +424,7 @@ namespace Tpetra {
     typedef Tpetra::Map<LO,GO,Node> map_type;
 
     //calculate mesh GIDs
-    Teuchos::ArrayView<const GO> pointGids = pointMap.getNodeElementList();
+    Teuchos::ArrayView<const GO> pointGids = pointMap.getLocalElementList();
     Teuchos::Array<GO> meshGids;
     GO indexBase = pointMap.getIndexBase();
 
@@ -455,7 +455,7 @@ namespace Tpetra {
     typedef Tpetra::Map<LO,GO,Node> map_type;
 
     //calculate mesh GIDs
-    Teuchos::ArrayView<const GO> blockGids = blockMap.getNodeElementList();
+    Teuchos::ArrayView<const GO> blockGids = blockMap.getLocalElementList();
     Teuchos::Array<GO> pointGids(blockGids.size() * blockSize);
     GO indexBase = blockMap.getIndexBase();
 
@@ -503,7 +503,7 @@ namespace Tpetra {
 
     LO blocksize = blockMatrix.getBlockSize();
     const offset_type bs2 = blocksize * blocksize; 
-    size_t block_nnz = blockMatrix.getNodeNumEntries();
+    size_t block_nnz = blockMatrix.getLocalNumEntries();
     size_t point_nnz = block_nnz * bs2;
 
     // We can get these from the blockMatrix directly
@@ -520,8 +520,8 @@ namespace Tpetra {
     // Get the last few things
 
     const crs_graph_type & blockGraph = blockMatrix.getCrsGraph();
-    LO point_rows = (LO) pointRowMap->getNodeNumElements();
-    LO block_rows = (LO) blockRowMap->getNodeNumElements();
+    LO point_rows = (LO) pointRowMap->getLocalNumElements();
+    LO block_rows = (LO) blockRowMap->getLocalNumElements();
     auto blockValues = blockMatrix.getValuesDevice();
     auto blockLocalGraph = blockGraph.getLocalGraphDevice();
     row_map_type_const blockRowptr = blockLocalGraph.row_map;

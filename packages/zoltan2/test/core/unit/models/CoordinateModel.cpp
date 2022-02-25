@@ -121,7 +121,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
   // Are these coordinates correct
 
   int nLocalIds = coords->getLocalLength();
-  ArrayView<const zgno_t> idList = coords->getMap()->getNodeElementList();
+  ArrayView<const zgno_t> idList = coords->getMap()->getLocalElementList();
 
   int nGlobalIds = 0;
   if (nodeZeroHasAll){

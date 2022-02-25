@@ -718,7 +718,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
 
   //Create a permuted row map.  The first entry is the same as the original row map,
   //the remainder are in descending order.
-  Teuchos::ArrayView<const GO> GIDs = rowMap->getNodeElementList();
+  Teuchos::ArrayView<const GO> GIDs = rowMap->getLocalElementList();
   Teuchos::Array<GO> permutedGIDs(GIDs.size());
   Teuchos::Array<GO> origToPerm(GIDs.size());
   permutedGIDs[0] = GIDs[0];
@@ -886,7 +886,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency,
   // Create a column Map with the same GIDs at the row Map, but in
   // permuted order.  The first entry is the same as the row Map, the
   // remainder are in descending order.
-  Teuchos::ArrayView<const GO> rowGIDs = rowMap->getNodeElementList ();
+  Teuchos::ArrayView<const GO> rowGIDs = rowMap->getLocalElementList ();
   Teuchos::Array<GO> colElements (rowGIDs.size ());
   colElements[0] = rowGIDs[0];
   for (GO i = 1; i < rowGIDs.size (); ++i) {
@@ -903,7 +903,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency,
   const Scalar two = one + one;
   Teuchos::Array<GO> col (3);
   Teuchos::Array<Scalar> val (3);
-  size_t numLocalElts = rowMap->getNodeNumElements ();
+  size_t numLocalElts = rowMap->getLocalNumElements ();
   for (LO l_row = 0; static_cast<size_t> (l_row) < numLocalElts; ++l_row) {
     const GO g_row = rowMap->getGlobalElement (l_row);
     size_t i = 0;

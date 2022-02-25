@@ -170,7 +170,7 @@ public:
       Teuchos::RCP<tpetraMap_t> gatheredMap = ;
      
       Teuchos::ArrayView<const part_t> allParts = 
-                                       gatheredMap->getNodeElementList();
+                                       gatheredMap->getLocalElementList();
 
       // Look up the rank for all parts assigned by oneToOneMap
       Teuchos::Array<int> allRanks(allParts.size());

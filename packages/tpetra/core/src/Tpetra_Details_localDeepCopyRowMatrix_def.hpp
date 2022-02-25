@@ -122,7 +122,7 @@ localDeepCopyLocallyIndexedRowMatrix
     Kokkos::resize(inputValsBuf,maxNumEnt);
   }
 
-  const LO lclNumRows (A.getNodeNumRows ());
+  const LO lclNumRows (A.getLocalNumRows ());
   offset_type curPos = 0;
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
     h_lids_type_const inputInds_av;
@@ -150,7 +150,7 @@ localDeepCopyLocallyIndexedRowMatrix
   Kokkos::deep_copy (val, val_h);
 
   local_graph_device_type lclGraph (ind, ptr);
-  const size_t numCols = A.getColMap ()->getNodeNumElements ();
+  const size_t numCols = A.getColMap ()->getLocalNumElements ();
   return local_matrix_device_type (label, numCols, val, lclGraph);
 }
 

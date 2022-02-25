@@ -138,12 +138,12 @@ public:
     return G_->getGlobalNumCols ();
   }
 
-  size_t getNodeNumRows () const override {
-    return G_->getNodeNumRows ();
+  size_t getLocalNumRows () const override {
+    return G_->getLocalNumRows ();
   }
 
-  size_t getNodeNumCols () const override {
-    return G_->getNodeNumCols ();
+  size_t getLocalNumCols () const override {
+    return G_->getLocalNumCols ();
   }
 
   GO getIndexBase () const override {
@@ -154,8 +154,8 @@ public:
     return G_->getGlobalNumEntries ();
   }
 
-  size_t getNodeNumEntries () const override {
-    return G_->getNodeNumEntries ();
+  size_t getLocalNumEntries () const override {
+    return G_->getLocalNumEntries ();
   }
 
   size_t getNumEntriesInGlobalRow (GO gblRow) const override {
@@ -170,8 +170,8 @@ public:
     return G_->getGlobalMaxNumRowEntries ();
   }
 
-  size_t getNodeMaxNumRowEntries () const override {
-    return G_->getNodeMaxNumRowEntries ();
+  size_t getLocalMaxNumRowEntries () const override {
+    return G_->getLocalMaxNumRowEntries ();
   }
 
   bool hasColMap () const override {
@@ -323,12 +323,12 @@ public:
     return A_->getGlobalNumCols ();
   }
 
-  size_t getNodeNumRows () const override {
-    return A_->getNodeNumRows ();
+  size_t getLocalNumRows () const override {
+    return A_->getLocalNumRows ();
   }
 
-  size_t getNodeNumCols () const override {
-    return A_->getNodeNumCols ();
+  size_t getLocalNumCols () const override {
+    return A_->getLocalNumCols ();
   }
 
   GO getIndexBase () const override {
@@ -339,8 +339,8 @@ public:
     return A_->getGlobalNumEntries ();
   }
 
-  size_t getNodeNumEntries () const override {
-    return A_->getNodeNumEntries ();
+  size_t getLocalNumEntries () const override {
+    return A_->getLocalNumEntries ();
   }
 
   size_t getNumEntriesInGlobalRow (GO gblRow) const override {
@@ -355,8 +355,8 @@ public:
     return A_->getGlobalMaxNumRowEntries ();
   }
 
-  size_t getNodeMaxNumRowEntries () const override {
-    return A_->getNodeMaxNumRowEntries ();
+  size_t getLocalMaxNumRowEntries () const override {
+    return A_->getLocalMaxNumRowEntries ();
   }
 
   bool hasColMap () const override {
@@ -594,7 +594,7 @@ crsMatrixInstancesEqual (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
   }
 
   const auto& rowMap = * (A.getRowMap ());
-  const LO lclNumRows = A.getNodeNumRows ();
+  const LO lclNumRows = A.getLocalNumRows ();
 
   values_view A_vals;
   values_view B_vals;

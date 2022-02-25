@@ -280,11 +280,11 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
   constructOverlapGraph();
 
   // Get Maximum Row length
-  const int MaxNumIndices = OverlapGraph_->getNodeMaxNumRowEntries ();
+  const int MaxNumIndices = OverlapGraph_->getLocalMaxNumRowEntries ();
 
   // FIXME (mfh 23 Dec 2013) Use size_t or whatever
-  // getNodeNumElements() returns, instead of ptrdiff_t.
-  const int NumMyRows = OverlapGraph_->getRowMap ()->getNodeNumElements ();
+  // getLocalNumElements() returns, instead of ptrdiff_t.
+  const int NumMyRows = OverlapGraph_->getRowMap ()->getLocalNumElements ();
 
   using device_type = typename node_type::device_type;
   using execution_space = typename device_type::execution_space;
@@ -583,8 +583,8 @@ void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleT
   constructOverlapGraph();
 
   // FIXME (mfh 23 Dec 2013) Use size_t or whatever
-  // getNodeNumElements() returns, instead of ptrdiff_t.
-  const int NumMyRows = OverlapGraph_->getRowMap()->getNodeNumElements();
+  // getLocalNumElements() returns, instead of ptrdiff_t.
+  const int NumMyRows = OverlapGraph_->getRowMap()->getLocalNumElements();
   auto localOverlapGraph = OverlapGraph_->getLocalGraphDevice();
 
   if (KernelHandle->get_spiluk_handle()->get_nrows() < static_cast<size_type>(NumMyRows)) {

@@ -188,8 +188,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, LowerTriangularBlockCrsMatrix, Scalar,
   MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY( x.getMap()->getNodeNumElements (), blockSize * num_rows_per_proc );
-  TEST_EQUALITY( y.getMap ()->getNodeNumElements (), blockSize * num_rows_per_proc );
+  TEST_EQUALITY( x.getMap()->getLocalNumElements (), blockSize * num_rows_per_proc );
+  TEST_EQUALITY( y.getMap ()->getLocalNumElements (), blockSize * num_rows_per_proc );
 
   try {
     prec->apply (x, y);
@@ -250,8 +250,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, UpperTriangularBlockCrsMatrix, Scalar,
   MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(x.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
   TEST_NOTHROW(prec.apply(x, y));
 
   Teuchos::Array<Scalar> exactSol(num_rows_per_proc);
@@ -303,8 +303,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, FullLocalBlockCrsMatrix, Scalar, Local
   MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(x.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
   TEST_NOTHROW(prec.apply(x, y));
 
   Teuchos::Array<Scalar> exactSol(num_rows_per_proc);
@@ -364,8 +364,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, BandedBlockCrsMatrixWithDropping, Scal
 
   x.randomize();
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(x.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
   TEST_NOTHROW(prec.apply(x, y));
 
   RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsgraph->getRowMap(),rbandwidth);

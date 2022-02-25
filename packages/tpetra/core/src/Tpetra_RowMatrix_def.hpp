@@ -182,7 +182,7 @@ namespace Tpetra {
     // sum of the two entry counts in each row.  If we choose this as
     // the actual per-row upper bound, we can use static profile.
     if (A_rowMap->isSameAs (*B_rowMap)) {
-      const LO localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
+      const LO localNumRows = static_cast<LO> (A_rowMap->getLocalNumElements ());
       Array<size_t> C_maxNumEntriesPerRow (localNumRows, 0);
 
       // Get the number of entries in each row of A.
@@ -236,7 +236,7 @@ namespace Tpetra {
     vals_type val;
 
     if (alpha != STS::zero ()) {
-      const LO A_localNumRows = static_cast<LO> (A_rowMap->getNodeNumElements ());
+      const LO A_localNumRows = static_cast<LO> (A_rowMap->getLocalNumElements ());
       for (LO localRow = 0; localRow < A_localNumRows; ++localRow) {
         size_t A_numEntries = A.getNumEntriesInLocalRow (localRow);
         const GO globalRow = A_rowMap->getGlobalElement (localRow);
@@ -260,7 +260,7 @@ namespace Tpetra {
     }
 
     if (beta != STS::zero ()) {
-      const LO B_localNumRows = static_cast<LO> (B_rowMap->getNodeNumElements ());
+      const LO B_localNumRows = static_cast<LO> (B_rowMap->getLocalNumElements ());
       for (LO localRow = 0; localRow < B_localNumRows; ++localRow) {
         size_t B_numEntries = B.getNumEntriesInLocalRow (localRow);
         const GO globalRow = B_rowMap->getGlobalElement (localRow);

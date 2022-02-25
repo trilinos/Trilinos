@@ -194,8 +194,8 @@ namespace Tpetra {
 
     const map_type& source = * (this->getSourceMap ());
     const map_type& target = * (this->getTargetMap ());
-    ArrayView<const GO> sourceGIDs = source.getNodeElementList ();
-    ArrayView<const GO> targetGIDs = target.getNodeElementList ();
+    ArrayView<const GO> sourceGIDs = source.getLocalElementList ();
+    ArrayView<const GO> targetGIDs = target.getLocalElementList ();
 
 #ifdef HAVE_TPETRA_DEBUG
     ArrayView<const GO> rawSrcGids = sourceGIDs;

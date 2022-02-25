@@ -58,11 +58,11 @@ namespace LOCA {
     ::Tpetra::global_size_t LowRankUpdateRowMatrix::getGlobalNumCols() const
     {return J_rowMatrix->getGlobalNumCols();}
 
-    size_t LowRankUpdateRowMatrix::getNodeNumRows() const
-    {return J_rowMatrix->getNodeNumRows();}
+    size_t LowRankUpdateRowMatrix::getLocalNumRows() const
+    {return J_rowMatrix->getLocalNumRows();}
 
-    size_t LowRankUpdateRowMatrix::getNodeNumCols() const
-    {return J_rowMatrix->getNodeNumCols();}
+    size_t LowRankUpdateRowMatrix::getLocalNumCols() const
+    {return J_rowMatrix->getLocalNumCols();}
 
     NOX::GlobalOrdinal LowRankUpdateRowMatrix::getIndexBase() const
     {return J_rowMatrix->getIndexBase();}
@@ -70,8 +70,8 @@ namespace LOCA {
     ::Tpetra::global_size_t LowRankUpdateRowMatrix::getGlobalNumEntries() const
     {return J_rowMatrix->getGlobalNumEntries();}
 
-    size_t LowRankUpdateRowMatrix::getNodeNumEntries() const
-    {return J_rowMatrix->getNodeNumEntries();}
+    size_t LowRankUpdateRowMatrix::getLocalNumEntries() const
+    {return J_rowMatrix->getLocalNumEntries();}
 
     size_t LowRankUpdateRowMatrix::getNumEntriesInGlobalRow(NOX::GlobalOrdinal globalRow) const
     {return J_rowMatrix->getNumEntriesInGlobalRow(globalRow);}
@@ -82,8 +82,8 @@ namespace LOCA {
     size_t LowRankUpdateRowMatrix::getGlobalMaxNumRowEntries() const
     {return J_rowMatrix->getGlobalMaxNumRowEntries();}
 
-    size_t LowRankUpdateRowMatrix::getNodeMaxNumRowEntries() const
-    {return J_rowMatrix->getNodeMaxNumRowEntries();}
+    size_t LowRankUpdateRowMatrix::getLocalMaxNumRowEntries() const
+    {return J_rowMatrix->getLocalMaxNumRowEntries();}
 
     bool LowRankUpdateRowMatrix::hasColMap() const
     {return J_rowMatrix->hasColMap();}

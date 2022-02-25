@@ -130,11 +130,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   { \
     using Teuchos::outArg; \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
-    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getNodeElementList(); \
+    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getLocalElementList(); \
     ArrayView<const LO> loview; \
     ArrayView<const Scalar> sview; \
     size_t STMAX = 0; \
-    for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
+    for (size_t STR=0; STR < matrix.getLocalNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
       TEST_EQUALITY( numEntries, matrix.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
       matrix.getLocalRowView(STR,loview,sview); \
@@ -142,7 +142,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY( static_cast<size_t>( sview.size()), numEntries ); \
       STMAX = std::max( STMAX, numEntries ); \
     } \
-    TEST_EQUALITY( matrix.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
     global_size_t STGMAX; \
     reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
     TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
@@ -794,7 +794,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
       out << "Call matrix.getLocalDiagOffsets (ArrayRCP version)" << endl;
       matrix.getLocalDiagOffsets (offsets);
-      TEST_EQUALITY( matrix.getNodeNumRows(), Teuchos::as<size_t>(offsets.size()) );
+      TEST_EQUALITY( matrix.getLocalNumRows(), Teuchos::as<size_t>(offsets.size()) );
 
       out << "Call matrix.getLocalDiagCopy (2-arg version with "
         "ArrayView offsets)" << endl;

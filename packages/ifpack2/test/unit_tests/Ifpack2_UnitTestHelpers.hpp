@@ -104,7 +104,7 @@ create_tridiag_graph (const LocalOrdinal num_rows_per_proc)
 
   Teuchos::Array<GlobalOrdinal> cols;
   const LocalOrdinal lclNumRows =
-    static_cast<LocalOrdinal> (rowmap->getNodeNumElements ());
+    static_cast<LocalOrdinal> (rowmap->getLocalNumElements ());
   for (LocalOrdinal l_row = 0; l_row < lclNumRows; ++l_row) {
     GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
     if (g_row == rowmap->getMinAllGlobalIndex() ||
@@ -146,7 +146,7 @@ create_test_graph (const LocalOrdinal num_rows_per_proc)
   Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowmap, global_size));
 
   Teuchos::Array<GlobalOrdinal> cols;
-  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
+  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getLocalNumElements(); l_row++) {
     GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
     if (g_row == rowmap->getMinAllGlobalIndex()) {
       cols.resize(global_size);
@@ -304,7 +304,7 @@ Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_
   Teuchos::Array<LocalOrdinal> indices(1);
   Teuchos::Array<Scalar> values(1);
   values[0] = Teuchos::ScalarTraits<Scalar>::zero();
-  for(LO i=0; i<(LO)A->getNodeNumRows(); i++) {
+  for(LO i=0; i<(LO)A->getLocalNumRows(); i++) {
     indices[0] = i;
     values[0] += Teuchos::ScalarTraits<Scalar>::one();
     A->sumIntoLocalValues(i,indices(),values());
@@ -363,7 +363,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
 
   size_t upper_limit;
 
-  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
+  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getLocalNumElements(); l_row++) {
     GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
 
     if (g_row == rowmap->getMinAllGlobalIndex()) {
@@ -415,7 +415,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   Scalar two = one*mag_two;
   const Scalar onetenth = one / mag_ten;
 
-  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
+  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getLocalNumElements(); l_row++) {
     GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
     if (g_row == rowmap->getMinAllGlobalIndex()) {
       col.resize(2);
@@ -477,7 +477,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   Scalar two = one*mag_two;
   const Scalar onetenth = one / mag_ten;
 
-  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
+  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getLocalNumElements(); l_row++) {
     GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
     if (g_row == rowmap->getMinGlobalIndex()) {
       col.resize(2);
@@ -531,7 +531,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   Scalar four = one*mag_four;
 
   size_t ne;
-  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getNodeNumElements(); l_row++) {
+  for(LocalOrdinal l_row = 0; (size_t) l_row<rowmap->getLocalNumElements(); l_row++) {
     GlobalOrdinal g_row = rowmap->getGlobalElement(l_row);
     if (g_row == rowmap->getMinGlobalIndex()) {
       ne=2;
@@ -630,7 +630,7 @@ Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
   Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bcrsmatrix =
       Teuchos::rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*graph, blockSize));
 
-  const LocalOrdinal numLocalRows = bcrsmatrix->getNodeNumRows();
+  const LocalOrdinal numLocalRows = bcrsmatrix->getLocalNumRows();
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& meshRowMap = *bcrsmatrix->getRowMap();
 
   Teuchos::Array<GlobalOrdinal> col(1);
@@ -702,7 +702,7 @@ Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
   magnitude mag_four = mag_one*4.0;
   Scalar four = one*mag_four;
 
-  for(LocalOrdinal l_row = 0; (size_t) l_row < meshRowMap.getNodeNumElements(); ++l_row)
+  for(LocalOrdinal l_row = 0; (size_t) l_row < meshRowMap.getLocalNumElements(); ++l_row)
   {
     h_inds inds;
     h_vals vals;
@@ -728,7 +728,7 @@ Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
   Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bcrsmatrix =
       Teuchos::rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*graph, blockSize));
 
-  const LocalOrdinal numLocalRows = bcrsmatrix->getNodeNumRows();
+  const LocalOrdinal numLocalRows = bcrsmatrix->getLocalNumRows();
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& meshRowMap = *bcrsmatrix->getRowMap();
 
   Teuchos::Array<GlobalOrdinal> col(1);
@@ -826,7 +826,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   crsmatrix->insertGlobalValues(rb+4, indices(0,2), values(0,2));
 
   // All other rows
-  for(size_t i=5; i<rowmap->getNodeNumElements(); i++) {
+  for(size_t i=5; i<rowmap->getLocalNumElements(); i++) {
     indices[0]=rb+i;
     values[0] = 1;
     crsmatrix->insertGlobalValues(rb+i, indices(0,1), values(0,1));
@@ -882,7 +882,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   crsmatrix->insertGlobalValues(rb+4, indices(0,3), values(0,3));
 
   // All other rows
-  for(size_t i=5; i<rowmap->getNodeNumElements(); i++) {
+  for(size_t i=5; i<rowmap->getLocalNumElements(); i++) {
     indices[0]=rb+i;
     values[0] = 1;
     crsmatrix->insertGlobalValues(rb+i, indices(0,1), values(0,1));
@@ -938,7 +938,7 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   crsmatrix->insertGlobalValues(rb+4, indices(0,3), values(0,3));
 
   // All other rows
-  for(size_t i=5; i<rowmap->getNodeNumElements(); i++) {
+  for(size_t i=5; i<rowmap->getLocalNumElements(); i++) {
     indices[0]=rb+i;
     values[0] = 1;
     crsmatrix->insertGlobalValues(rb+i, indices(0,1), values(0,1));
@@ -983,15 +983,15 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
     getGraph () const {return A_->getGraph();}
     virtual global_size_t getGlobalNumRows() const {return A_->getGlobalNumRows();}
     virtual global_size_t getGlobalNumCols() const {return A_->getGlobalNumCols();}
-    virtual size_t getNodeNumRows() const {return A_->getNodeNumRows();}
-    virtual size_t getNodeNumCols() const {return A_->getNodeNumCols();}
+    virtual size_t getLocalNumRows() const {return A_->getLocalNumRows();}
+    virtual size_t getLocalNumCols() const {return A_->getLocalNumCols();}
     virtual GlobalOrdinal getIndexBase() const {return A_->getIndexBase();}
     virtual global_size_t getGlobalNumEntries() const {return A_->getGlobalNumEntries();}
-    virtual size_t getNodeNumEntries() const {return A_->getNodeNumEntries();}
+    virtual size_t getLocalNumEntries() const {return A_->getLocalNumEntries();}
     virtual size_t getNumEntriesInGlobalRow (GlobalOrdinal globalRow) const {return A_->getNumEntriesInGlobalRow(globalRow);}
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {return A_->getNumEntriesInLocalRow(localRow);}
     virtual size_t getGlobalMaxNumRowEntries() const {return A_->getGlobalMaxNumRowEntries();}
-    virtual size_t getNodeMaxNumRowEntries() const {return A_->getNodeMaxNumRowEntries();}
+    virtual size_t getLocalMaxNumRowEntries() const {return A_->getLocalMaxNumRowEntries();}
     virtual bool hasColMap() const {return A_->hasColMap();}
     virtual bool isLocallyIndexed() const {return A_->isLocallyIndexed();}
     virtual bool isGloballyIndexed() const {return A_->isGloballyIndexed();}

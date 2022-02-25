@@ -128,7 +128,7 @@ namespace Tpetra {
       else {
         dir = new ::Tpetra::Details::ReplicatedDirectory<LO, GO, NT> (map);
 
-        if (tieBreak.mayHaveSideEffects () && map.getNodeNumElements () != 0) {
+        if (tieBreak.mayHaveSideEffects () && map.getLocalNumElements () != 0) {
           // We need the second clause in the above test because Map's
           // interface provides an inclusive range of local indices.
           const int myRank = map.getComm ()->getRank ();
@@ -155,7 +155,7 @@ namespace Tpetra {
       // This code appears twice because ReplicatedDirectory is a
       // special case: we already know what gets replicated.
       if (! usedTieBreak && tieBreak.mayHaveSideEffects () &&
-          map.getNodeNumElements () != 0) {
+          map.getLocalNumElements () != 0) {
         // We need the third clause in the above test because Map's
         // interface provides an inclusive range of local indices.
         std::vector<std::pair<int, LO> > pidLidList (1);

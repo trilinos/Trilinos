@@ -224,7 +224,7 @@ namespace Zoltan2 {
 
       // Get size information 
       const size_t numGlobalEntries = graph_->getGlobalNumEntries();
-      const size_t numLocalRows = graph_->getNodeNumRows();
+      const size_t numLocalRows = graph_->getLocalNumRows();
       const size_t numGlobalRows = graph_->getGlobalNumRows();
 
       // Compute local maximum degree 
@@ -377,7 +377,7 @@ namespace Zoltan2 {
 
 	scalar_t *val = new scalar_t[1];
 	lno_t *ind = new lno_t[1];
-	lno_t numRows = static_cast<lno_t>(graph_->getNodeNumRows());
+	lno_t numRows = static_cast<lno_t>(graph_->getLocalNumRows());
 
 	// Insert the diagonal entries as the degrees
 	for (lno_t i = 0; i < numRows; ++i) {
@@ -405,8 +405,8 @@ namespace Zoltan2 {
       using values_view_t = Kokkos::View<scalar_t*, typename node_t::device_type>;
       using offset_view_t = Kokkos::View<size_t*, typename node_t::device_type>;
   
-      const size_t numEnt = graph_->getNodeNumEntries();
-      const size_t numRows = graph_->getNodeNumRows();
+      const size_t numEnt = graph_->getLocalNumEntries();
+      const size_t numRows = graph_->getLocalNumRows();
 
       // Create new values for the Laplacian, initialize to -1 
       values_view_t newVal (Kokkos::view_alloc("CombLapl::val", Kokkos::WithoutInitializing), numEnt);
@@ -451,8 +451,8 @@ namespace Zoltan2 {
       using dual_view_t = typename vector_t::dual_view_type;
       using KAT = Kokkos::Details::ArithTraits<scalar_t>;
 
-      const size_t numEnt = graph_->getNodeNumEntries();
-      const size_t numRows = graph_->getNodeNumRows();
+      const size_t numEnt = graph_->getLocalNumEntries();
+      const size_t numRows = graph_->getLocalNumRows();
 
       // Create new values for the Laplacian, initialize to -1 
       values_view_t newVal (Kokkos::view_alloc("NormLapl::val", Kokkos::WithoutInitializing), numEnt);
@@ -538,7 +538,7 @@ namespace Zoltan2 {
     // Return a trivial solution if only one part is requested
     if(numGlobalParts_ == 1) {
 
-      size_t numRows =adapter_->getUserGraph()->getNodeNumRows();
+      size_t numRows =adapter_->getUserGraph()->getLocalNumRows();
       Teuchos::ArrayRCP<part_t> parts(numRows,0);
       solution->setParts(parts);
       

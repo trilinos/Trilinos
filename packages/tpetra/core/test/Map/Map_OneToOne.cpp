@@ -241,7 +241,7 @@ namespace { // (anonymous)
     //Now we need to make sure they're in the right place. Keep in mind Tpetra
     //Directory gives precidence to the higher numbered proc.
 
-    ArrayView<const GO> my_owned = new_map->getNodeElementList();
+    ArrayView<const GO> my_owned = new_map->getLocalElementList();
 
     for(int i=(myRank*unit),j=0;i<(myRank*unit)+unit; ++i,++j)
     {
@@ -319,11 +319,11 @@ namespace { // (anonymous)
 
     if(myRank<numProc-1)//I shouldn't have any elements.
     {
-      TEST_EQUALITY(new_map->getNodeNumElements(),0);
+      TEST_EQUALITY(new_map->getLocalNumElements(),0);
     }
     else//I should have all of them.
     {
-      TEST_EQUALITY(new_map->getNodeNumElements(),NUM_GLOBAL_ELEMENTS);
+      TEST_EQUALITY(new_map->getLocalNumElements(),NUM_GLOBAL_ELEMENTS);
     }
   }
 
@@ -378,7 +378,7 @@ namespace { // (anonymous)
     //Now we need to make sure they're in the right place. Keep in mind we are
     //overriding the tpetra directory precidence
 
-    ArrayView<const GO> my_owned = new_map->getNodeElementList();
+    ArrayView<const GO> my_owned = new_map->getLocalElementList();
 
     if(myRank==0) { // zero rank should have everythin
       for(int i=0;i<num_loc_elems;++i) {
