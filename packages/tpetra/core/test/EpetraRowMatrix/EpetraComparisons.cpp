@@ -78,6 +78,7 @@ private:
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     using crsmatrix_t = Epetra_CrsMatrix;
     using multivector_t = Epetra_MultiVector;
+    const int nvecs = 2;
 
     std::cout << "testEpetra:  begin file " << filename 
               << "; " << nIter << " iterations" << std::endl;
@@ -108,8 +109,8 @@ private:
     std::vector<multivector_t> W;
     std::vector<multivector_t> Z;
     for (int it = 0; it < nIter; it++) {
-      multivector_t y(Amat->RangeMap(), 2);
-      multivector_t x(Amat->DomainMap(), 2);
+      multivector_t y(Amat->RangeMap(), nvecs);
+      multivector_t x(Amat->DomainMap(), nvecs);
       x.Random();
 
       multivector_t w(x);
@@ -355,6 +356,25 @@ private:
       tm->stop();
     }
 
+    {
+      auto tm = ttm::getNewTimer("MV putScalar Epetra");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
+        W[it].PutScalar(0.);
+      }
+      tm->stop();
+    }
+
+    {
+      double norms[nvecs];
+      auto tm = ttm::getNewTimer("MV Norm2 Epetra");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
+        W[it].Norm2(norms);
+      }
+      tm->stop();
+    }
+
     delete [] newMatValues;
     std::cout << "testEpetra:  done " << std::endl;
   }
@@ -401,13 +421,14 @@ private:
     for (lno_t i = 0; i < maxValuesPerRow; i++) newMatValues[i] = scalar_t(i);
 
     // Create multivectors for SpMV
+    const int nvecs = 2;
     std::vector<multivector_t> Y;
     std::vector<multivector_t> X;
     std::vector<multivector_t> W;
     std::vector<multivector_t> Z;
     for (int it = 0; it < nIter; it++) {
-      multivector_t y(Amat->getRangeMap(), 2);
-      multivector_t x(Amat->getDomainMap(), 2);
+      multivector_t y(Amat->getRangeMap(), nvecs);
+      multivector_t x(Amat->getDomainMap(), nvecs);
       x.randomize();
 
       multivector_t w(x);
@@ -680,6 +701,57 @@ private:
       }
       tm->stop();
     }
+
+    {
+      auto tm = ttm::getNewTimer("MV putScalar Tpetra");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
+        W[it].putScalar(0.);
+      }
+      tm->stop();
+    }
+
+    {
+      using mvdata_t = typename multivector_t::dual_view_type::t_host;
+      std::vector<mvdata_t> xvec;
+      for (int it = 0; it < nIter; it++) 
+        xvec.push_back(X[it].getLocalViewHost(Tpetra::Access::OverwriteAll));
+
+      auto tm = ttm::getNewTimer("MV putScalar Kokkos -- local only");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
+        Kokkos::deep_copy(xvec[it], 0.);
+      }
+      tm->stop();
+    }
+
+    {
+      Kokkos::View<double *, Kokkos::HostSpace> norms("norms", nvecs);
+      auto tm = ttm::getNewTimer("MV Norm2 Tpetra");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
+        W[it].norm2(norms);
+      }
+      tm->stop();
+    }
+
+    {
+      Kokkos::View<double *, Kokkos::HostSpace> norms("norms", nvecs);
+
+      using mvdata_t = typename multivector_t::dual_view_type::t_host;
+      std::vector<mvdata_t::const_type> xvec;
+      for (int it = 0; it < nIter; it++) 
+        xvec.push_back(X[it].getLocalViewHost(Tpetra::Access::ReadOnly));
+
+      auto tm = ttm::getNewTimer("MV Norm2 Kokkos-only");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
+        KokkosBlas::nrm2_squared(norms, xvec[it]);
+      }
+      tm->stop();
+    }
+
+
     std::cout << "testTpetra:  done " << std::endl;
   }
 
