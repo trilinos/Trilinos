@@ -133,7 +133,7 @@ global_size_t TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumElements()
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumElements() const
-{ XPETRA_MONITOR("TpetraMap::getNodeNumElements"); return map_->getNodeNumElements(); }
+{ XPETRA_MONITOR("TpetraMap::getNodeNumElements"); return map_->getLocalNumElements(); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 GlobalOrdinal TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getIndexBase() const
@@ -181,7 +181,7 @@ LookupStatus TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(cons
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::ArrayView< const GlobalOrdinal > TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList() const
-{ XPETRA_MONITOR("TpetraMap::getNodeElementList"); return map_->getNodeElementList(); }
+{ XPETRA_MONITOR("TpetraMap::getNodeElementList"); return map_->getLocalElementList(); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 bool TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::isNodeLocalElement(LocalOrdinal localIndex) const

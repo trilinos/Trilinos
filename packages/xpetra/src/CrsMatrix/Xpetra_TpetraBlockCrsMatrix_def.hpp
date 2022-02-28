@@ -399,14 +399,14 @@ namespace Xpetra {
     size_t 
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
     getNodeNumRows() const
-    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeNumRows"); return mtx_->getNodeNumRows(); }
+    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeNumRows"); return mtx_->getLocalNumRows(); }
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     size_t 
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
     getNodeNumCols() const
-    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeNumCols"); return mtx_->getNodeNumCols(); }
+    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeNumCols"); return mtx_->getLocalNumCols(); }
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -420,7 +420,7 @@ namespace Xpetra {
     size_t 
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
     getNodeNumEntries() const
-    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeNumEntries"); return mtx_->getNodeNumEntries(); }
+    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeNumEntries"); return mtx_->getLocalNumEntries(); }
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -444,7 +444,7 @@ namespace Xpetra {
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     size_t TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeMaxNumRowEntries() const
-    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeMaxNumRowEntries"); return mtx_->getNodeMaxNumRowEntries(); }
+    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeMaxNumRowEntries"); return mtx_->getLocalMaxNumRowEntries(); }
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -654,7 +654,7 @@ namespace Xpetra {
     {
         XPETRA_MONITOR("TpetraBlockCrsMatrix::getLocalDiagOffsets");
 
-        const size_t lclNumRows = mtx_->getGraph()->getNodeNumRows();
+        const size_t lclNumRows = mtx_->getGraph()->getLocalNumRows();
         if (static_cast<size_t>(offsets.size()) < lclNumRows) 
         {
             offsets.resize(lclNumRows);
