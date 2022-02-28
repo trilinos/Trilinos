@@ -70,8 +70,6 @@ IF (${ETI_DEVICE_COUNT} GREATER_EQUAL 0)
 ENDIF()
 
 
-# Device test: Mauro, please fix uvm requirement in projection tools when it goes into serial path
-#              uvm removal from projection tools is not done yet
 IF (Trilinos_ENABLE_KokkosKernels)
   SET(Intrepid2_TEST_ETI_FILE "")
   LIST(APPEND Intrepid2_TEST_ETI_FILE 
@@ -131,6 +129,8 @@ ENDIF()
 
 # Device test: Mauro, please fix uvm requirement in projection tools when it goes into serial path
 #              uvm removal from projection tools is not done yet
+#              This test is incomplete and it does not use a device type. Temporarily we 
+#              use cuda execution space as its template device type. This MUST BE FIXED.
 IF (Trilinos_ENABLE_KokkosKernels)
   SET(Intrepid2_TEST_ETI_FILE "")
   LIST(APPEND Intrepid2_TEST_ETI_FILE 
@@ -147,10 +147,11 @@ IF (Trilinos_ENABLE_KokkosKernels)
     LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "CUDA")
     LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Cuda,Kokkos::CudaUVMSpace>")
   ENDIF()
-  IF(Kokkos_ENABLE_HIP)
-    LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "HIP")
-    LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>")
-  ENDIF()
+# HIP does not have UVM
+#  IF(Kokkos_ENABLE_HIP)
+#    LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "HIP")
+#    LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>")
+#  ENDIF()
 
   LIST(LENGTH Intrepid2_TEST_ETI_DEVICE_NAME ETI_DEVICE_COUNT)
   MATH(EXPR ETI_DEVICE_COUNT "${ETI_DEVICE_COUNT}-1")
