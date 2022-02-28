@@ -509,7 +509,7 @@ namespace Amesos2 {
     // compatibility, but things are working fine now.
 
     RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rmap = get_mat->getRowMap();
-    ArrayView<const global_ordinal_t> node_elements = rmap->getNodeElementList();
+    ArrayView<const global_ordinal_t> node_elements = rmap->getLocalElementList();
     //if( node_elements.size() == 0 ) return; // no more contribution
     typename ArrayView<const global_ordinal_t>::iterator row_it, row_end;
     row_end = node_elements.end();
