@@ -981,8 +981,8 @@ namespace MueLu {
     auto rowLocalMap = rowMap.getLocalMap();
     auto colLocalMap = colMap.getLocalMap();
 
-    const size_t numRows = rowLocalMap.getNodeNumElements();
-    const size_t numCols = colLocalMap.getNodeNumElements();
+    const size_t numRows = rowLocalMap.getLocalNumElements();
+    const size_t numCols = colLocalMap.getLocalNumElements();
 
     if (numCols < numRows)
       return false;

@@ -94,8 +94,8 @@ int main(int argc, char *argv[]) {
     RCP<const Map> map =
       rcp (new Map (static_cast<Tpetra::global_size_t> (numGlobalElements),
                     indexBase, comm));
-    const size_t numMyElements = map->getNodeNumElements();
-    Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+    const size_t numMyElements = map->getLocalNumElements();
+    Teuchos::ArrayView<const GO> myGlobalElements = map->getLocalElementList();
 
     MemoryUsageStart("Tpetra");
     PrintMemoryUsage("Initial memory usage", "tpetra-init.heap");

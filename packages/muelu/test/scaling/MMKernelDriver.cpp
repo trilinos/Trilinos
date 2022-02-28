@@ -649,9 +649,9 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
     typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
       typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
     KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(algorithm_name);
-    typename KernelHandle::nnz_lno_t AnumRows = Au->getNodeNumRows();
-    typename KernelHandle::nnz_lno_t BnumRows = Bu->getNodeNumRows();
-    typename KernelHandle::nnz_lno_t BnumCols = Bu->getNodeNumCols();
+    typename KernelHandle::nnz_lno_t AnumRows = Au->getLocalNumRows();
+    typename KernelHandle::nnz_lno_t BnumRows = Bu->getLocalNumRows();
+    typename KernelHandle::nnz_lno_t BnumCols = Bu->getLocalNumCols();
 
     // **********************************
     // Multiply
