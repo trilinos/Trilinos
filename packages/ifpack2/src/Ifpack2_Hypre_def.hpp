@@ -416,16 +416,16 @@ int Hypre<MatrixType>::SetDiscreteGradient(Teuchos::RCP<const crs_matrix_type> G
 
   std::vector<GO> new_indices(G->getLocalMaxNumRowEntries());
   for(LO i = 0; i < (LO)G->getLocalNumRows(); i++){
-    Teuchos::ArrayView<const SC> values;
-    Teuchos::ArrayView<const LO> indices;
+    typename crs_matrix_type::values_host_view_type     values;
+    typename crs_matrix_type::local_inds_host_view_type indices;
     G->getLocalRowView(i, indices, values);
-    for(LO j = 0; j < (LO) indices.size(); j++){
-      new_indices[j] = GloballyContiguousNodeColMap_->getGlobalElement(indices[j]);
+    for(LO j = 0; j < (LO) indices.extent(0); j++){
+      new_indices[j] = GloballyContiguousNodeColMap_->getGlobalElement(indices(j));
     }
     GO GlobalRow[1];
-    GO numEntries = (GO) indices.size();
+    GO numEntries = (GO) indices.extent(0);
     GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);
-    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreG_, 1, &numEntries, GlobalRow, new_indices.data(), values.getRawPtr()));
+    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreG_, 1, &numEntries, GlobalRow, new_indices.data(), values.data()));
   }
   IFPACK2_CHK_ERR(HYPRE_IJMatrixAssemble(HypreG_));
   IFPACK2_CHK_ERR(HYPRE_IJMatrixGetObject(HypreG_, (void**)&ParMatrixG_));
@@ -892,16 +892,16 @@ int Hypre<MatrixType>::CopyTpetraToHypre(){
 
   std::vector<GO> new_indices(Matrix->getLocalMaxNumRowEntries());
   for(LO i = 0; i < (LO) Matrix->getLocalNumRows(); i++){
-    Teuchos::ArrayView<const SC> values;
-    Teuchos::ArrayView<const LO> indices;
+    typename crs_matrix_type::values_host_view_type     values;
+    typename crs_matrix_type::local_inds_host_view_type indices;
     Matrix->getLocalRowView(i, indices, values);
-    for(LO j = 0; j < (LO)indices.size(); j++){
-      new_indices[j] = GloballyContiguousColMap_->getGlobalElement(indices[j]);
+    for(LO j = 0; j < (LO)indices.extent(0); j++){
+      new_indices[j] = GloballyContiguousColMap_->getGlobalElement(indices(j));
     }
     GO GlobalRow[1];
-    GO numEntries = (GO) indices.size();
+    GO numEntries = (GO) indices.extent(0);
     GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);    
-    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values.getRawPtr()));
+    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values.data()));
   }
   IFPACK2_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
   IFPACK2_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
