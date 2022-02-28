@@ -91,13 +91,14 @@ IF (Trilinos_ENABLE_KokkosKernels)
 
   SET(Intrepid2_TEST_ETI_DEVICE_NAME "")
   SET(Intrepid2_TEST_ETI_DEVICE "")
+  # Mauro, this code is not UVM free
   IF(Kokkos_ENABLE_CUDA)
     LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "CUDA")
-    LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>")
+    LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Cuda,Kokkos::CudaUVMSpace>")
   ENDIF()
   IF(Kokkos_ENABLE_HIP)
-    LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "HIP")
-    LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>")
+#    LIST(APPEND Intrepid2_TEST_ETI_DEVICE_NAME "HIP")
+#    LIST(APPEND Intrepid2_TEST_ETI_DEVICE      "Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>")
   ENDIF()
 
   LIST(LENGTH Intrepid2_TEST_ETI_DEVICE_NAME ETI_DEVICE_COUNT)
