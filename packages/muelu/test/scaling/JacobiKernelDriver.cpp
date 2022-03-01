@@ -278,7 +278,7 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>    vector_type;
     typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>           import_type;
-    typedef typename crs_matrix_type::local_matrix_type    KCRS;
+    typedef typename crs_matrix_type::local_matrix_device_type    KCRS;
     typedef typename KCRS::device_type device_t;
     typedef typename KCRS::StaticCrsGraphType graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -322,8 +322,8 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
     Cnc->replaceColMap(Bu->getColMap());
 
     // Bcol2Ccol is trivial
-    lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
-    const LO colMapSize = static_cast<LO>(Bview.colMap->getNodeNumElements());
+    lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getLocalNumElements()), Icol2Ccol;
+    const LO colMapSize = static_cast<LO>(Bview.colMap->getLocalNumElements());
     Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::Bcol2Ccol_fill",
                          Kokkos::RangePolicy<execution_space, LO>(0, colMapSize),
                          KOKKOS_LAMBDA(const LO i) {
@@ -333,7 +333,7 @@ void Jacobi_Wrapper(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
     // Acol2Brow
     local_map_type Acolmap_local = Aview.colMap->getLocalMap();
     local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
-    lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
+    lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
     lo_view_t targetMapToImportRow;
     Kokkos::parallel_for("Tpetra::mult_A_B_newmatrix::construct_tables",range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
