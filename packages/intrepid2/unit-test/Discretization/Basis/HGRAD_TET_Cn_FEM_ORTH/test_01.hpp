@@ -89,7 +89,7 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
   oldFormatState.copyfmt(std::cout);
 
   using DeviceSpaceType = typename DeviceType::execution_space;
-  typedef typename Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType;
+  typedef typename Kokkos::DefaultHostExecutionSpace;
 
   *outStream << "DeviceSpace::  ";
   DeviceSpaceType::print_configuration(*outStream, false);
