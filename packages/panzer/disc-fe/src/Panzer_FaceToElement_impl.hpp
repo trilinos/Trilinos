@@ -270,7 +270,7 @@ initialize(panzer::ConnManager & conn)
 
   // Now cache the data
   face_map_ = face_map;
-  LocalOrdinal nfaces = face_map_->getNodeNumElements();
+  LocalOrdinal nfaces = face_map_->getLocalNumElements();
   elems_by_face_ = PHX::View<GlobalOrdinal *[2]>("FaceToElement::elems_by_face_", nfaces);
   lidx_by_face_ = PHX::View<int *[2]>("FaceToElement::elems_by_face_", nfaces);
   blocks_by_face_ = PHX::View<int *[2]> ("FaceToElement::blocks_by_face_", nfaces);
