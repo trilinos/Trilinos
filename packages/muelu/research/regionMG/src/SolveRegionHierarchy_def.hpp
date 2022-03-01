@@ -347,13 +347,13 @@ void vCycleAdapter(const int numLevels, ///< Total number of levels
   RCP<Vector> regB;
   compositeToRegional(B, quasiRegB, regB,
                       revisedRowMap, rowImport);
-  // scaleInterfaceDOFs(regB, regInterfaceScalings, false);
+  // scaleInterfaceDOFs(regB, regInterfaceScalings, true);
 
   RCP<Vector> quasiRegX;
   RCP<Vector> regX;
   compositeToRegional(X, quasiRegX, regX,
                       revisedRowMap, rowImport);
-  scaleInterfaceDOFs(regX, regInterfaceScalings, true);
+  // scaleInterfaceDOFs(regX, regInterfaceScalings, true);
 
   vCycle(0, numLevels, cycleType, regHierarchy,
          regX, regB,
@@ -605,12 +605,18 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
                 smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
   P->update(SC_one, *Z, SC_zero); // deep copy values of Z into P
 
-  Scalar alpha = SC_zero, beta = SC_zero;
+  Scalar alpha = SC_zero, beta_old = SC_zero, beta_new = SC_zero, PAP = SC_zero;
   for (cycle = 0; cycle < maxIts; ++cycle) {
     A->apply(*P, *AP, Teuchos::NO_TRANS, SC_one, SC_zero);
-    alpha = Res->dot(*Z);
-    beta  = 1 / alpha;             // Res and Z get overwritten later so we store 1 / (R^T * Z);
-    alpha = alpha / P->dot(*AP);
+    PAP = P->dot(*AP);
+
+    TEUCHOS_TEST_FOR_EXCEPTION(PAP <= SC_zero, std::runtime_error,
+	 "At iteration " << (cycle) << " out of " << maxIts
+         << ", P.dot(AP) = " << PAP << " <= 0.  This usually means that "
+	 "the matrix A is not symmetric (Hermitian) positive definite.");
+
+    beta_old = Res->dot(*Z);
+    alpha = beta_old / PAP;
     X->update(alpha, *P, SC_one);
     Res->update(-alpha, *AP, SC_one);
 
@@ -633,8 +639,9 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
     vCycleAdapter(numLevels, cycleType, regHierarchy,
                   Z, Res,
                   smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
-    beta = Res->dot(*Z)*beta;
-    P->update(SC_one, *Z, beta);
+
+    P->update(SC_one, *Z, (beta_new / beta_old));
+    beta_old = beta_new;
   }
   out << "Number of iterations performed for this solve: " << cycle << std::endl;
 
