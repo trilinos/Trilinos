@@ -92,9 +92,9 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
   typedef typename Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType;
 
   *outStream << "DeviceSpace::  ";
-  DeviceSpaceType::print_configuration(*outStream, false);
+  DeviceSpaceType().print_configuration(*outStream, false);
   *outStream << "HostSpace::    ";
-  HostSpaceType::print_configuration(*outStream, false);
+  HostSpaceType().print_configuration(*outStream, false);
 
   *outStream
   << "===============================================================================\n"

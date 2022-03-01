@@ -81,7 +81,7 @@ int main (int argc, char *argv[]) {
 
 #if !defined(KOKKOS_ENABLE_CUDA)
   Kokkos::initialize(argc, argv);
-  Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
+  Kokkos::DefaultHostExecutionSpace().print_configuration(std::cout, false);
 
   {
     /// basic typedef

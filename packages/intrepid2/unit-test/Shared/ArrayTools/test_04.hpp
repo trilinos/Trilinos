@@ -94,8 +94,8 @@ namespace Intrepid2 {
        using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
        using DeviceSpaceType = typename DeviceType::execution_space;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, false);
+      *outStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(std::cout, false);
+      *outStream << "HostSpace::    ";   HostSpaceType().print_configuration(std::cout, false);
 
       *outStream                                                        \
         << "===============================================================================\n" \

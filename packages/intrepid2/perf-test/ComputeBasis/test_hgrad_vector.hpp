@@ -94,8 +94,8 @@ namespace Intrepid2 {
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
-      *verboseStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*verboseStream, false);
-      *verboseStream << "HostSpace::    ";   HostSpaceType::print_configuration(*verboseStream, false);
+      *verboseStream << "DeviceSpace::  "; DeviceSpaceType().print_configuration(*verboseStream, false);
+      *verboseStream << "HostSpace::    ";   HostSpaceType().print_configuration(*verboseStream, false);
       *verboseStream << "VectorLength::  " << (VectorLength) << "\n";
 
       using BasisTypeHost = Basis_HGRAD_HEX_C1_FEM<HostSpaceType,ValueType,ValueType>;

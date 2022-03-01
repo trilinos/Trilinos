@@ -89,7 +89,7 @@ namespace Tacho {
       throw std::logic_error(msg.c_str());
     }
     std::cout << std::setw(16) << name << "::  ";
-    SpT::print_configuration(std::cout, detail);
+    SpT().print_configuration(std::cout, detail);
   }
 
   template<typename T>
