@@ -425,7 +425,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   // GRAD and D1 values are stored in (F,P,D) format in a data file. Read file and do the test
   std::vector<scalar_type> basisGrads;           // Flat array for the gradient values.
   {
-    fileName = "../testdata/HEX_C2_GradVals.dat";
+    fileName = "./testdata/HEX_C2_GradVals.dat";
     dataFile.open(fileName.c_str());
     INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
         ">>> ERROR (HGRAD_HEX_C2/test01): could not open GRAD values data file, test aborted.");
@@ -445,7 +445,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   //D2: flat array with the values of D2 applied to basis functions. Multi-index is (F,P,D2cardinality)
   std::vector<scalar_type> basisD2;
   {
-    fileName = "../testdata/HEX_C2_D2Vals.dat";
+    fileName = "./testdata/HEX_C2_D2Vals.dat";
     dataFile.open(fileName.c_str());
     INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
         ">>> ERROR (HGRAD_HEX_C2/test01): could not open D2 values data file, test aborted.");
@@ -465,7 +465,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   //D3: flat array with the values of D3 applied to basis functions. Multi-index is (F,P,D3cardinality)
   std::vector<scalar_type> basisD3;
   {
-    fileName = "../testdata/HEX_C2_D3Vals.dat";
+    fileName = "./testdata/HEX_C2_D3Vals.dat";
     dataFile.open(fileName.c_str());
     TEUCHOS_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
         ">>> ERROR (HGRAD_HEX_C2/test01): could not open D3 values data file, test aborted.");
@@ -486,7 +486,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   //D4: flat array with the values of D applied to basis functions. Multi-index is (F,P,D4cardinality)
   std::vector<scalar_type> basisD4;
   {
-    fileName = "../testdata/HEX_C2_D4Vals.dat";
+    fileName = "./testdata/HEX_C2_D4Vals.dat";
     dataFile.open(fileName.c_str());
     TEUCHOS_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
         ">>> ERROR (HGRAD_HEX_C2/test01): could not open D4 values data file, test aborted.");

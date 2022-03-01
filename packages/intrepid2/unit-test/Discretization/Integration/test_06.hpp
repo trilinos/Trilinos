@@ -132,7 +132,7 @@ namespace Intrepid2 {
       int errorFlag = 0;
 
       // get names of files with analytic values
-      std::string basedir = "../data";
+      std::string basedir = "./data";
       std::stringstream namestream;
       std::string filename;
       namestream << basedir << "/TET_integrals" << ".dat";
