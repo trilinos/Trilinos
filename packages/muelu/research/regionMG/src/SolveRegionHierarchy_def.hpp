@@ -336,35 +336,30 @@ void vCycleAdapter(const int numLevels, ///< Total number of levels
 
   // Extract some info from the hierarchy
   // to convert vectors from composite to regional and back
-  RCP<Level> level0 = regHierarchy->GetLevel(0);
-  RCP<Matrix> regMat  = level0->Get<RCP<Matrix> >("A");
-  RCP<const Map> revisedRowMap  = regMat->getRowMap();
-  RCP<Import> rowImport = level0->Get<RCP<Import> >("rowImport");
+  RCP<Level> level0                = regHierarchy->GetLevel(0);
+  RCP<Import> rowImport            = level0->Get<RCP<Import> >("rowImport");
+  RCP<Vector> regInterfaceScalings = level0->Get<RCP<Vector> >("regInterfaceScalings");
+  RCP<Matrix> regMat               = level0->Get<RCP<Matrix> >("A");
+  RCP<const Map> revisedRowMap     = regMat->getRowMap();
 
   // Compute region vectors for B and X
   RCP<Vector> quasiRegB;
   RCP<Vector> regB;
   compositeToRegional(B, quasiRegB, regB,
                       revisedRowMap, rowImport);
+  // scaleInterfaceDOFs(regB, regInterfaceScalings, false);
 
   RCP<Vector> quasiRegX;
   RCP<Vector> regX;
   compositeToRegional(X, quasiRegX, regX,
                       revisedRowMap, rowImport);
-
-  Teuchos::RCP<Vector> regCorrect;
-  regCorrect = VectorFactory::Build(revisedRowMap, true);
-
-  // std::cout << "regB->norm2() " << regB->norm2() << std::endl;
+  scaleInterfaceDOFs(regX, regInterfaceScalings, true);
 
   vCycle(0, numLevels, cycleType, regHierarchy,
          regX, regB,
          smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
 
-  // std::cout << "regX->norm2() " << regX->norm2() << std::endl;
-
   // Bring solution back to composite format
-  RCP<Vector> regInterfaceScalings = level0->Get<RCP<Vector> >("regInterfaceScalings");
   scaleInterfaceDOFs(regX, regInterfaceScalings, true);
   regionalToComposite(regX, X, rowImport);
 } // vCycleAdapter
@@ -608,7 +603,7 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
   vCycleAdapter(numLevels, cycleType, regHierarchy,
                 Z, Res,
                 smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
-  *P = *Z; // deep copy values of Z into P
+  P->update(SC_one, *Z, SC_zero); // deep copy values of Z into P
 
   Scalar alpha = SC_zero, beta = SC_zero;
   for (cycle = 0; cycle < maxIts; ++cycle) {
