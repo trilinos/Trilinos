@@ -91,8 +91,8 @@ public:
 
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   /// KK : do we really need this complication instead of using default host exec space ????
-  typedef typename Kokkos::Impl::is_space<DeviceType>::host_execution_space HostExecutionSpaceType;
-  typedef typename Kokkos::Impl::is_space<DeviceType>::host_memory_space HostMemorySpaceType;
+  typedef Kokkos::HostExecutionSpace HostExecutionSpaceType;
+  typedef Kokkos::HostSpace HostMemorySpaceType;
   typedef Kokkos::Device<HostExecutionSpaceType,HostMemorySpaceType> HostDeviceType;
   typedef Kokkos::DynRankView<ValueType,HostDeviceType > view_type;
   typedef Kokkos::View<range_type**,HostDeviceType> range_tag;

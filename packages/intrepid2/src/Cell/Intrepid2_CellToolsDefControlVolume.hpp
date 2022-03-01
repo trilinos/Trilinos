@@ -159,8 +159,8 @@ namespace Intrepid2 {
         // work space for barycenter and midpoints on edges
         typedef typename subcvCoordViewType::value_type value_type;
         value_type buf_center[2], buf_midpts[4*2];
-        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 2);
-        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> midpts(buf_midpts, 4, 2);
+        Kokkos::View<value_type*,Kokkos::AnonymousSpace> center(buf_center, 2);
+        Kokkos::View<value_type**,Kokkos::AnonymousSpace> midpts(buf_midpts, 4, 2);
 
         getBaryCenter(center, verts);
         getMidPoints(midpts, _edgeMap, verts);
@@ -210,9 +210,9 @@ namespace Intrepid2 {
         //  work space for barycenter and midpoints on edges
         typedef typename subcvCoordViewType::value_type value_type;
         value_type buf_center[3], buf_edge_midpts[12*3], buf_face_midpts[6*3];
-        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 3);
-        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> edge_midpts(buf_edge_midpts, 12, 3);
-        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> face_midpts(buf_face_midpts,  6, 3);
+        Kokkos::View<value_type*,Kokkos::AnonymousSpace> center(buf_center, 3);
+        Kokkos::View<value_type**,Kokkos::AnonymousSpace> edge_midpts(buf_edge_midpts, 12, 3);
+        Kokkos::View<value_type**,Kokkos::AnonymousSpace> face_midpts(buf_face_midpts,  6, 3);
 
         getBaryCenter(center, verts);
         getMidPoints(edge_midpts, _edgeMap, verts);
@@ -300,9 +300,9 @@ namespace Intrepid2 {
         //  work space for barycenter and midpoints on edges
         typedef typename subcvCoordViewType::value_type value_type;
         value_type buf_center[3], buf_edge_midpts[6*3], buf_face_midpts[4*3];
-        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 3);
-        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> edge_midpts(buf_edge_midpts,  6, 3);
-        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> face_midpts(buf_face_midpts,  4, 3);
+        Kokkos::View<value_type*,Kokkos::AnonymousSpace> center(buf_center, 3);
+        Kokkos::View<value_type**,Kokkos::AnonymousSpace> edge_midpts(buf_edge_midpts,  6, 3);
+        Kokkos::View<value_type**,Kokkos::AnonymousSpace> face_midpts(buf_face_midpts,  4, 3);
 
         getBaryCenter(center, verts);
         getMidPoints(edge_midpts, _edgeMap, verts);
