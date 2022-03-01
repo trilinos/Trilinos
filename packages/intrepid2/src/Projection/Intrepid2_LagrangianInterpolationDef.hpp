@@ -268,7 +268,7 @@ LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
     const BasisType* basis,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts) {
 
-  using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+  using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
   using scalarType = typename BasisType::scalarType;
   using ScalarViewType = Kokkos::DynRankView<scalarType, DeviceType>;
   using ScalarViewTypeHost = Kokkos::DynRankView<scalarType, HostSpaceType>;
