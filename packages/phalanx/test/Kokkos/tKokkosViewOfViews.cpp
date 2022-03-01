@@ -1,11 +1,14 @@
 #include "Kokkos_Core.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
-// This test demonstrates how to create a view of views for double and FAD types.
 using exec_t = Kokkos::DefaultExecutionSpace;
 using mem_t = Kokkos::DefaultExecutionSpace::memory_space;
 
-TEUCHOS_UNIT_TEST(ViewOfViews,double) {
+// *************************************
+// This test demonstrates how to create a view of views from separate
+// already allocated views for double and FAD types.
+// *************************************
+TEUCHOS_UNIT_TEST(ViewOfViews,from_separate_views) {
 
   const int num_cells = 10;
   const int num_pts = 8;
@@ -18,7 +21,7 @@ TEUCHOS_UNIT_TEST(ViewOfViews,double) {
   Kokkos::deep_copy(a,2.0);
   Kokkos::deep_copy(b,3.0);
 
-  // Requirement 1: The inner view must be unmanaged to prevent double deleteion!
+  // Requirement 1: The inner view must be unmanaged to prevent double deletion!
   using InnerView = Kokkos::View<double***,mem_t,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using OuterView = Kokkos::View<InnerView*,mem_t>;
 

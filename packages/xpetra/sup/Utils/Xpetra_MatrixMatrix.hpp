@@ -258,7 +258,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           Bprime = Tpetra::importAndFillCompleteCrsMatrix<tcrs_matrix_type>(Bprime, *import, Aprime->getDomainMap(), Aprime->getRangeMap());
         }
         //Count the entries to allocate for C in each local row.
-        LO numLocalRows = Aprime->getNodeNumRows();
+        LO numLocalRows = Aprime->getLocalNumRows();
         Array<size_t> allocPerRow(numLocalRows);
         //0 is always the minimum LID
         for(LO i = 0; i < numLocalRows; i++)

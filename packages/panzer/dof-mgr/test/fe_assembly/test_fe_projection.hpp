@@ -131,6 +131,7 @@ namespace Example {
       }
     }
 
+    KOKKOS_INLINE_FUNCTION
     Fun(const Intrepid2::EFunctionSpace& space) {
       a=a0=a1=a2=0;
       if(space != Intrepid2::FUNCTION_SPACE_HCURL)

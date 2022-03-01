@@ -260,7 +260,7 @@ namespace Intrepid2 {
         auto mass_matrices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), mass_matrices);
         auto stiffness_matrices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), stiffness_matrices);
 
-        std::string basedir = "../testdata";
+        std::string basedir = "./testdata";
         for (auto cid=0;cid<num_cells-1;++cid) {
           std::stringstream namestream;
           std::string filename;

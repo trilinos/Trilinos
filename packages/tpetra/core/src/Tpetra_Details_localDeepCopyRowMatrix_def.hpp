@@ -40,7 +40,6 @@
 #ifndef TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DEF_HPP
 #define TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DEF_HPP
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 /// \file Tpetra_Details_localDeepCopyRowMatrix_def.hpp
 /// \brief Definition of function for making a deep copy of a
 ///   Tpetra::RowMatrix's local matrix.
@@ -53,6 +52,9 @@
 #include "Kokkos_Core.hpp"
 #include <algorithm>
 #include <stdexcept>
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+// This file can be deleted when deprecated code is removed
 
 namespace Tpetra {
 namespace Details {

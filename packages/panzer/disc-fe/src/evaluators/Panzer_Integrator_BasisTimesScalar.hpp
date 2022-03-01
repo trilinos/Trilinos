@@ -315,6 +315,11 @@ namespace panzer
        */
       PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP> basis_;
 
+    /// For storing temporaries, one value per thread
+    PHX::View<ScalarT*> tmp_;
+    /// For storing temporaries, one value per thread
+    PHX::View<ScalarT*> tmp2_;
+
   }; // end of class Integrator_BasisTimesScalar
 
 } // end of namespace panzer

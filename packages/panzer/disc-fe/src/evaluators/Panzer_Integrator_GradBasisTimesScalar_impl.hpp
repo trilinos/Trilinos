@@ -119,18 +119,20 @@ namespace panzer
 
     // Create the fields that we're either contributing to or evaluating
     // (storing).
-    fields_ = PHX::View<PHX::MDField<ScalarT, Cell, BASIS>*>("Integrator_GradBasisTimesScalar",resNames.size());
+    fields_host_ = typename OuterView::HostMirror("Integrator_GradBasisCrossVector::fields_", resNames.size());
+    fields_ = OuterView("Integrator_GradBasisCrossVector::fields_", resNames.size());
     {
       int i=0;
       for (const auto& name : resNames)
-        fields_(i++) = MDField<ScalarT, Cell, BASIS>(name, basis.functional);
+        fields_host_(i++) = PHX::View<ScalarT**>(name, basis.functional->extent(0),basis.functional->extent(1));
     }
     for (std::size_t i=0; i<fields_.extent(0); ++i) {
-      const auto& field = fields_(i);
+      const auto& field = fields_host_(i);
+      PHX::Tag<ScalarT> tag(resNames[i],basis.functional);
       if (evalStyle_ == EvaluatorStyle::CONTRIBUTES)
-        this->addContributedField(field);
+        this->addContributedField(tag,field);
       else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
-        this->addEvaluatedField(field);
+        this->addEvaluatedField(tag,field);
     }
 
     // Add the dependent field multipliers, if there are any.
@@ -151,9 +153,9 @@ namespace panzer
     else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
       n += "EVALUATES";
     n += "):  {";
-    for (size_t j=0; j < fields_.extent(0) - 1; ++j)
-      n += fields_[j].fieldTag().name() + ", ";
-    n += fields_(fields_.extent(0)-1).fieldTag().name() + "}";
+    for (size_t j=0; j < fields_host_.extent(0) - 1; ++j)
+      n += resNames[j] + ", ";
+    n += resNames[resNames.size()-1] + "}";
     this->setName(n);
   } // end of Constructor
 

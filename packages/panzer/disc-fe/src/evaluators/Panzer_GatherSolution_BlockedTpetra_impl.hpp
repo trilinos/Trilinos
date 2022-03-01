@@ -539,8 +539,6 @@ evaluateFields(typename TRAITS::EvalData workset)
   if(disableSensitivities_)
     seedValue = 0.0;
 
-  const int numFieldBlocks = globalIndexer_->getNumFieldBlocks();
-
   // Loop over fields to gather
   int currentWorksetLIDSubBlock = -1;
   for (std::size_t fieldIndex = 0; fieldIndex < gatherFields_.size(); fieldIndex++) {
@@ -565,12 +563,12 @@ evaluateFields(typename TRAITS::EvalData workset)
     auto blockOffsets_h = Kokkos::create_mirror_view(blockOffsets);
     Kokkos::deep_copy(blockOffsets_h, blockOffsets);
     const int blockStart = blockOffsets_h(blockRowIndex);
-    const int numDerivatives = blockOffsets_h(numFieldBlocks);
 
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
       for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
         const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
-        fieldValues(cell,basis) = ScalarT(numDerivatives,kokkosSolution(rowLID,0));
+	fieldValues(cell,basis).zero();
+        fieldValues(cell,basis).val() = kokkosSolution(rowLID,0);
         fieldValues(cell,basis).fastAccessDx(blockStart+fieldOffsets(basis)) = seedValue;
       }
     });

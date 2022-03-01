@@ -580,7 +580,7 @@ namespace {
       M m(numDofsPerProc*numProcs, 0/*indexBase*/, comm);
       auto localMap = m.getLocalMap();
 
-      TEST_EQUALITY(localMap.getNodeNumElements(), numDofsPerProc);
+      TEST_EQUALITY(localMap.getLocalNumElements(), numDofsPerProc);
       for (int i = 0; i < numDofsPerProc; i++) {
         // localMap.getGlobalElement is device only
         GO globalElement;
@@ -606,7 +606,7 @@ namespace {
       M m(INVALID, elementList, indexBase, comm);
       auto localMap = m.getLocalMap();
 
-      TEST_EQUALITY(localMap.getNodeNumElements(), numDofsPerProc);
+      TEST_EQUALITY(localMap.getLocalNumElements(), numDofsPerProc);
       for (int i = 0; i < numDofsPerProc; i++) {
         // localMap.getGlobalElement is device only
         GO globalElement;
@@ -632,7 +632,7 @@ namespace {
       M m(INVALID, elementList, indexBase, comm);
       auto localMap = m.getLocalMap();
 
-      TEST_EQUALITY(localMap.getNodeNumElements(), numDofsPerProc);
+      TEST_EQUALITY(localMap.getLocalNumElements(), numDofsPerProc);
       for (int i = 0; i < numDofsPerProc; i++) {
         // localMap.getGlobalElement is device only
         GO globalElement;

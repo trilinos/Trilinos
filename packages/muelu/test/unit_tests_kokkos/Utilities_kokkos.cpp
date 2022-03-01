@@ -565,7 +565,7 @@ namespace MueLuTests
     {
       TEST_EQUALITY(xpetraMat.getGlobalNumRows(), tpetraMat.getGlobalNumRows());
       TEST_EQUALITY(xpetraMat.getGlobalNumCols(), tpetraMat.getGlobalNumCols());
-      TEST_EQUALITY(xpetraMat.getNodeNumRows(), tpetraMat.getNodeNumRows());
+      TEST_EQUALITY(xpetraMat.getNodeNumRows(), tpetraMat.getLocalNumRows());
       TEST_EQUALITY(xpetraMat.getGlobalNumEntries(), tpetraMat.getGlobalNumEntries());
     };
 

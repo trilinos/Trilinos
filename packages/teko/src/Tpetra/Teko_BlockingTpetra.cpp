@@ -205,7 +205,7 @@ RCP<Tpetra::Vector<GO,LO,GO,NT> > getSubBlockColumnGIDs(const Tpetra::CrsMatrix<
 
    // fill index vector for rows
    Tpetra::Vector<GO,LO,GO,NT> rIndex(A.getRowMap(),true);
-   for(size_t i=0;i<A.getNodeNumRows();i++) {
+   for(size_t i=0;i<A.getLocalNumRows();i++) {
       // LID is need to get to contiguous map
       LO lid = blkGIDMap->getLocalElement(A.getRowMap()->getGlobalElement(i)); // this LID makes me nervous
       if(lid>-1)
@@ -240,8 +240,8 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
 
 
    // get entry information
-   LO numMyRows = rowMap->getNodeNumElements();
-   LO maxNumEntries = A->getNodeMaxNumRowEntries();
+   LO numMyRows = rowMap->getLocalNumElements();
+   LO maxNumEntries = A->getLocalMaxNumRowEntries();
 
    // for extraction
    auto indices = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_local_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),maxNumEntries);
@@ -340,8 +340,8 @@ void rebuildSubBlock(int i,int j,const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> 
    mat.setAllToScalar(0.0);
 
    // get entry information
-   LO numMyRows = rowMap.getNodeNumElements();
-   LO maxNumEntries = A->getNodeMaxNumRowEntries();
+   LO numMyRows = rowMap.getLocalNumElements();
+   LO maxNumEntries = A->getLocalMaxNumRowEntries();
 
    // for extraction
    auto indices = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_local_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),maxNumEntries);

@@ -511,7 +511,7 @@ namespace MueLu {
         const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp.getDomainMap();
         const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap  = tpOp.getRangeMap();
 
-        size_t maxRowSize = tpOp.getNodeMaxNumRowEntries();
+        size_t maxRowSize = tpOp.getLocalMaxNumRowEntries();
         if (maxRowSize == Teuchos::as<size_t>(-1)) // hasn't been determined yet
           maxRowSize = 20;
 
@@ -523,7 +523,7 @@ namespace MueLu {
 	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type cols;
 	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
-          for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+          for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
             tpOp.getLocalRowView(i, cols, vals);
             size_t nnz = tpOp.getNumEntriesInLocalRow(i);
             if (nnz > maxRowSize) {
@@ -544,7 +544,7 @@ namespace MueLu {
           typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_inds_host_view_type cols;
           typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
-          for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+          for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
             GO gid = rowMap->getGlobalElement(i);
             tpOp.getGlobalRowView(gid, cols, vals);
             size_t nnz = tpOp.getNumEntriesInGlobalRow(gid);

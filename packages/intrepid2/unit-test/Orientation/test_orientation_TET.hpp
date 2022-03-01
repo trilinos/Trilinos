@@ -109,11 +109,11 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-template<typename ValueType, typename DeviceSpaceType>
+template<typename ValueType, typename DeviceType>
 int OrientationTet(const bool verbose) {
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ordinal_type,DeviceSpaceType> DynRankViewInt;
+  typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
+  typedef Kokkos::DynRankView<ordinal_type,DeviceType> DynRankViewInt;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
   Teuchos::RCP<std::ostream> outStream;
@@ -126,13 +126,6 @@ int OrientationTet(const bool verbose) {
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-
-  typedef typename
-      Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-
-  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-  *outStream << "\n";
 
   int errorFlag = 0;
   const ValueType tol = tolerence();
@@ -193,12 +186,12 @@ int OrientationTet(const bool verbose) {
 
   typedef std::array<ordinal_type,2> edgeType;
   typedef std::array<ordinal_type,3> faceType;
-  typedef CellTools<DeviceSpaceType> ct;
-  typedef OrientationTools<DeviceSpaceType> ots;
+  typedef CellTools<DeviceType> ct;
+  typedef OrientationTools<DeviceType> ots;
   typedef Impl::OrientationTools iots;
-  typedef RealSpaceTools<DeviceSpaceType> rst;
-  typedef FunctionSpaceTools<DeviceSpaceType> fst;
-  typedef ArrayTools<DeviceSpaceType> at;
+  typedef RealSpaceTools<DeviceType> rst;
+  typedef FunctionSpaceTools<DeviceType> fst;
+  typedef ArrayTools<DeviceType> at;
 
   constexpr ordinal_type dim = 3;
   constexpr ordinal_type numCells = 2;
@@ -298,17 +291,17 @@ int OrientationTet(const bool verbose) {
        }
 
        //compute reference points
-       Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+       Basis_HGRAD_TET_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
        ordinal_type numRefCoords = warpBasis.getCardinality();
        DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
        warpBasis.getDofCoords(refPoints);
 
        // compute orientations for cells (one time computation)
        DynRankViewInt elemNodes(&tets[0][0], numCells, numElemVertexes);
-       Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
+       Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
        ots::getOrientation(elemOrts, elemNodes, tet);
 
-       Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+       Basis_HGRAD_TET_Cn_FEM<DeviceType,ValueType,ValueType> basis(order);
        ordinal_type basisCardinality = basis.getCardinality();
 
        //compute DofCoords Oriented
@@ -324,7 +317,7 @@ int OrientationTet(const bool verbose) {
            }
 
 
-         Basis_HGRAD_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order);
+         Basis_HGRAD_LINE_Cn_FEM<DeviceType,ValueType,ValueType> lineBasis(order);
          ordinal_type lineBasisCardinality = lineBasis.getCardinality();
          DynRankView ConstructWithLabel(lineDofCoords, lineBasisCardinality, dim-2);
          lineBasis.getDofCoords(lineDofCoords);
@@ -348,7 +341,7 @@ int OrientationTet(const bool verbose) {
            }
          }
         
-         Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType,ValueType,ValueType> triBasis(order);
+         Basis_HGRAD_TRI_Cn_FEM<DeviceType,ValueType,ValueType> triBasis(order);
          ordinal_type triBasisCardinality = triBasis.getCardinality();
          ordinal_type numInternalDofs = triBasis.getDofCount(dim-1,0);
          DynRankView ConstructWithLabel(triDofCoords, triBasisCardinality, dim-1);
@@ -389,7 +382,7 @@ int OrientationTet(const bool verbose) {
        DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
        DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
        {
-         Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
+         Basis_HGRAD_TET_C1_FEM<DeviceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
          DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
          tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
          DynRankView ConstructWithLabel(tetLinearBasisValuesAtDofCoords, numCells, tet.getNodeCount(), basisCardinality);
@@ -670,18 +663,18 @@ int OrientationTet(const bool verbose) {
         }
 
         //compute reference points
-        Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+        Basis_HGRAD_TET_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
         ordinal_type numRefCoords = warpBasis.getCardinality();
         DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
         warpBasis.getDofCoords(refPoints);
 
         // compute orientations for cells (one time computation)
         DynRankViewInt elemNodes(&tets[0][0], numCells, numElemVertexes);
-        Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
+        Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, tet);
 
 
-        Basis_HCURL_TET_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+        Basis_HCURL_TET_In_FEM<DeviceType,ValueType,ValueType> basis(order);
         ordinal_type basisCardinality = basis.getCardinality();
 
         //compute DofCoords Oriented
@@ -689,7 +682,7 @@ int OrientationTet(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_HVOL_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order-1);
+          Basis_HVOL_LINE_Cn_FEM<DeviceType,ValueType,ValueType> lineBasis(order-1);
           ordinal_type lineBasisCardinality = lineBasis.getCardinality();
           DynRankView ConstructWithLabel(lineDofCoords, lineBasisCardinality, dim-2);
           lineBasis.getDofCoords(lineDofCoords);
@@ -713,7 +706,7 @@ int OrientationTet(const bool verbose) {
             }
           }
 
-          Basis_HCURL_TRI_In_FEM<DeviceSpaceType,ValueType,ValueType> triBasis(order);
+          Basis_HCURL_TRI_In_FEM<DeviceType,ValueType,ValueType> triBasis(order);
           ordinal_type triBasisCardinality = triBasis.getCardinality();
           ordinal_type numInternalDofs = triBasis.getDofCount(dim-1,0);
           DynRankView ConstructWithLabel(triDofCoords, triBasisCardinality, dim-1);
@@ -754,7 +747,7 @@ int OrientationTet(const bool verbose) {
         DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
         DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
         {
-          Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
+          Basis_HGRAD_TET_C1_FEM<DeviceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
           tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
           DynRankView ConstructWithLabel(tetLinearBasisValuesAtDofCoords, numCells, tet.getNodeCount(), basisCardinality);
@@ -791,7 +784,7 @@ int OrientationTet(const bool verbose) {
 
 
           DynRankView ortJacobian("ortJacobian", dim-1, dim-1);
-          Basis_HCURL_TRI_In_FEM<DeviceSpaceType,ValueType,ValueType> triBasis(order);
+          Basis_HCURL_TRI_In_FEM<DeviceType,ValueType,ValueType> triBasis(order);
           DynRankView ConstructWithLabel(triDofCoeffs, triBasis.getCardinality(), dim-1);
           triBasis.getDofCoeffs(triDofCoeffs);
           for(ordinal_type i=0; i<numCells; ++i) {
@@ -1091,16 +1084,16 @@ int OrientationTet(const bool verbose) {
 
         // compute orientations for cells (one time computation)
         DynRankViewInt elemNodes(&tets[0][0], numCells, numElemVertexes);
-        Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
+        Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, tet);
 
         //compute reference points
-        Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+        Basis_HGRAD_TET_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
         ordinal_type numRefCoords = warpBasis.getCardinality();
         DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
         warpBasis.getDofCoords(refPoints);
 
-        Basis_HDIV_TET_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+        Basis_HDIV_TET_In_FEM<DeviceType,ValueType,ValueType> basis(order);
         ordinal_type basisCardinality = basis.getCardinality();
 
         //compute DofCoords Oriented
@@ -1108,7 +1101,7 @@ int OrientationTet(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_HVOL_TRI_Cn_FEM<DeviceSpaceType,ValueType,ValueType> triBasis(order-1);
+          Basis_HVOL_TRI_Cn_FEM<DeviceType,ValueType,ValueType> triBasis(order-1);
           ordinal_type triBasisCardinality = triBasis.getCardinality();
           ordinal_type numInternalDofs = triBasis.getDofCount(dim-1,0);
           DynRankView ConstructWithLabel(triDofCoords, triBasisCardinality, dim-1);
@@ -1149,7 +1142,7 @@ int OrientationTet(const bool verbose) {
         DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
         DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
         {
-          Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
+          Basis_HGRAD_TET_C1_FEM<DeviceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
           tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
           DynRankView ConstructWithLabel(tetLinearBasisValuesAtDofCoords, numCells, tet.getNodeCount(), basisCardinality);

@@ -649,9 +649,9 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
     typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
       typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
     KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(algorithm_name);
-    typename KernelHandle::nnz_lno_t AnumRows = Au->getNodeNumRows();
-    typename KernelHandle::nnz_lno_t BnumRows = Bu->getNodeNumRows();
-    typename KernelHandle::nnz_lno_t BnumCols = Bu->getNodeNumCols();
+    typename KernelHandle::nnz_lno_t AnumRows = Au->getLocalNumRows();
+    typename KernelHandle::nnz_lno_t BnumRows = Bu->getLocalNumRows();
+    typename KernelHandle::nnz_lno_t BnumCols = Bu->getLocalNumCols();
 
     // **********************************
     // Multiply
@@ -818,7 +818,7 @@ struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpen
 #if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>          import_type;
-    typedef typename crs_matrix_type::local_matrix_type    KCRS;
+    typedef typename crs_matrix_type::local_matrix_device_type    KCRS;
     typedef typename KCRS::device_type device_t;
     typedef typename KCRS::StaticCrsGraphType graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -856,12 +856,12 @@ struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpen
     Bview.domainMap    = Bu->getDomainMap();
     Bview.importColMap = Teuchos::null;
 
-    lo_view_t Bcol2Ccol(no_init_view("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
-    const LO colMapSize = static_cast<LO>(Bview.colMap->getNodeNumElements());
+    lo_view_t Bcol2Ccol(no_init_view("Bcol2Ccol"),Bview.colMap->getLocalNumElements()), Icol2Ccol;
+    const LO colMapSize = static_cast<LO>(Bview.colMap->getLocalNumElements());
 
     local_map_type Acolmap_local = Aview.colMap->getLocalMap();
     local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
-    lo_view_t targetMapToOrigRow(no_init_view("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
+    lo_view_t targetMapToOrigRow(no_init_view("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
     lo_view_t targetMapToImportRow;
 
     // Copy in work

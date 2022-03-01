@@ -175,7 +175,7 @@ void identityRowIndices(const Tpetra::Map<LO,GO,NT> & rowMap, const Tpetra::CrsM
    std::vector<GO> indices(maxSz);
 
    // loop over elements owned by this processor
-   for(size_t i=0;i<rowMap.getNodeNumElements();i++) {
+   for(size_t i=0;i<rowMap.getLocalNumElements();i++) {
       bool rowIsIdentity = true;
       GO rowGID = rowMap.getGlobalElement(i);
 

@@ -421,7 +421,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
     const EOperator operatorType ) {
   typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
   typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
-  typedef typename ExecSpace<typename inputPointViewType::execution_space,typename DT::execution_space>::ExecSpaceType ExecSpaceType;
+  typedef typename DT::execution_space ExecSpaceType;
 
   // loopSize corresponds to the # of points
   const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);

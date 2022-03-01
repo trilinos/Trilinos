@@ -87,7 +87,7 @@ template <typename EvalT>
 void Response_Probe<EvalT>::
 scatterResponse()
 {
-  double glbValue = Sacado::ScalarValue<ScalarT>::eval(value);
+  double glbValue = Sacado::scalarValue(value);
 
   // find the minimum processor who has the probe value
   int locProc = have_probe ? this->getComm()->getRank() : this->getComm()->getSize();
