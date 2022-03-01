@@ -597,8 +597,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                      revisedRowMap, revisedColMap,
                      rowImport, quasiRegionMats, regionMats);
 
-  // We don't need the composite operator on the fine level anymore. Free it!
-  A = Teuchos::null;
+  // Actually for now we are keeping it so we can implement
+  // iterative solvers using composite operator and vectors.
+  // // We don't need the composite operator on the fine level anymore. Free it!
+  // A = Teuchos::null;
 
   comm->barrier();
   tmLocal = Teuchos::null;
@@ -766,10 +768,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // fclose(fp);
 #endif
 
-  solveRegionProblem(tol, scaleResidualHist, maxIts,
-                     cycleType, convergenceLog,
-                     coarseSolverData, smootherParams, hierarchyData,
-                     regHierarchy, X, B);
+  // solveRegionProblem(tol, scaleResidualHist, maxIts,
+  //                    cycleType, convergenceLog,
+  //                    coarseSolverData, smootherParams, hierarchyData,
+  //                    regHierarchy, X, B);
+  // solveCompositeProblemRichardson(tol, scaleResidualHist, maxIts,
+  //                                 cycleType, convergenceLog,
+  //                                 coarseSolverData, smootherParams, hierarchyData,
+  //                                 regHierarchy, A, X, B);
+  solveCompositeProblemPCG(tol, scaleResidualHist, maxIts,
+                           cycleType, convergenceLog,
+                           coarseSolverData, smootherParams, hierarchyData,
+                           regHierarchy, A, X, B);
 
   comm->barrier();
   tm = Teuchos::null;
