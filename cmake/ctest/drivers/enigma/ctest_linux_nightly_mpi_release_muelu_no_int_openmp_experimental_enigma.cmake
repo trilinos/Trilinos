@@ -82,7 +82,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
     "-DTpetra_INST_INT_LONG:BOOL=OFF"
     "-DTpetra_INST_INT_LONG_LONG:BOOL=ON"
     "-DTpetra_INST_SERIAL:BOOL=ON"
-    "-DKokkos_ENABLE_Serial:BOOL=ON"
+    "-DKokkos_ENABLE_SERIAL:BOOL=ON"
     "-DTrilinos_ENABLE_OpenMP=ON"
 
   ### MISC ###
