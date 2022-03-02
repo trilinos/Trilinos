@@ -418,6 +418,7 @@ void solveRegionProblem(const double tol, const bool scaleResidualHist, const in
     }
 
   // Print type of residual norm to the screen
+  out << "using region solver" << std::endl;
   if (scaleResidualHist)
     out << "Using scaled residual norm." << std::endl;
   else
@@ -570,6 +571,7 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
     }
 
   // Print type of residual norm to the screen
+  out << "Using CG solver" << std::endl;
   if (scaleResidualHist)
     out << "Using scaled residual norm." << std::endl;
   else
@@ -597,7 +599,7 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
 
   A->apply(*X, *Res, Teuchos::NO_TRANS, -SC_one, SC_zero);
   Res->update(SC_one, *B, SC_one);
-  // normRes = Res->norm2();
+  normResIni = Res->norm2();
   Z->putScalar(SC_zero);
 
   vCycleAdapter(numLevels, cycleType, regHierarchy,
@@ -624,7 +626,7 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
     {
       normRes = Res->norm2();
 
-      if(cycle == 0) { normResIni = normRes; }// out << "NormResIni = " << normResIni << std::endl;}
+      // if(cycle == 0) { normResIni = normRes; }// out << "NormResIni = " << normResIni << std::endl;}
       if(scaleResidualHist) { normRes /= normResIni; }
 
       // Output current residual norm to screen (on proc 0 only)
@@ -706,6 +708,7 @@ void solveCompositeProblemRichardson(const double tol, const bool scaleResidualH
     }
 
   // Print type of residual norm to the screen
+  out << "Using Richardson solver" << std::endl;
   if (scaleResidualHist)
     out << "Using scaled residual norm." << std::endl;
   else
