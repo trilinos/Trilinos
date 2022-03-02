@@ -597,7 +597,7 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
 
   A->apply(*X, *Res, Teuchos::NO_TRANS, -SC_one, SC_zero);
   Res->update(SC_one, *B, SC_one);
-  normRes = Res->norm2();
+  // normRes = Res->norm2();
   Z->putScalar(SC_zero);
 
   vCycleAdapter(numLevels, cycleType, regHierarchy,
@@ -636,10 +636,12 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
         break;
     }
 
+    Z->putScalar(SC_zero);
     vCycleAdapter(numLevels, cycleType, regHierarchy,
                   Z, Res,
                   smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
 
+    beta_new = Res->dot(*Z);
     P->update(SC_one, *Z, (beta_new / beta_old));
     beta_old = beta_new;
   }
