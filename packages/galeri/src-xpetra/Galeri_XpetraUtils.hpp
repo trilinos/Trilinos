@@ -112,8 +112,8 @@ namespace Galeri {
           nz = list.get<GlobalOrdinal>("nz");
       }
 
-      size_t NumMyElements = map->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+      size_t NumMyElements = map->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
 
       if (coordType == "1D") {
         coordinates = VectorTraits<Map,RealValuedMultiVector>::Build(map, 1, false);

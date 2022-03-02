@@ -98,8 +98,8 @@ namespace ADR {
       //this->A_ = Galeri::Xpetra::TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(this->Map_, nx, 2.0, -1.0, -1.0);
       Teuchos::RCP<Matrix> mtx = Galeri::Xpetra::MatrixTraits<Map,Matrix>::Build(this->Map_, 3);
 
-      LocalOrdinal NumMyElements = this->Map_->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = this->Map_->getNodeElementList();
+      LocalOrdinal NumMyElements = this->Map_->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = this->Map_->getLocalElementList();
       GlobalOrdinal indexBase = this->Map_->getIndexBase();
 
       Teuchos::RCP<const Teuchos::Comm<int> > comm = this->Map_->getComm();
@@ -257,10 +257,10 @@ namespace ADR {
 
       Teuchos::RCP<Matrix> mtx = Galeri::Xpetra::MatrixTraits<Map,Matrix>::Build(this->Map_, nnz);
 
-      LocalOrdinal  numMyElements = (this->Map_)->getNodeNumElements();
+      LocalOrdinal  numMyElements = (this->Map_)->getLocalNumElements();
       GlobalOrdinal indexBase     = (this->Map_)->getIndexBase();
 
-      Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = (this->Map_)->getNodeElementList();
+      Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = (this->Map_)->getLocalElementList();
 
       GlobalOrdinal center, left, right, lower, upper;
       std::vector<Scalar>        vals(nnz);
@@ -406,10 +406,10 @@ namespace ADR {
 
       Teuchos::RCP<Matrix> mtx = Galeri::Xpetra::MatrixTraits<Map,Matrix>::Build(this->Map_, nnz);
 
-      LocalOrdinal  numMyElements = this->Map_->getNodeNumElements();
+      LocalOrdinal  numMyElements = this->Map_->getLocalNumElements();
       GlobalOrdinal indexBase     = this->Map_->getIndexBase();
 
-      Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = (this->Map_)->getNodeElementList();
+      Teuchos::ArrayView<const GlobalOrdinal> myGlobalElements = (this->Map_)->getLocalElementList();
 
       GlobalOrdinal center, left, right, bottom, top, front, back;
       std::vector<GlobalOrdinal> inds(nnz);

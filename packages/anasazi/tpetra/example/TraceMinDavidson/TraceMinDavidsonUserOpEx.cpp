@@ -145,7 +145,7 @@ public:
     //
     // Get the local number of rows
     //
-    LocalOrdinal nlocal = opMap_->getNodeNumElements ();
+    LocalOrdinal nlocal = opMap_->getLocalNumElements ();
 
     //
     // Define the distribution that you need for the matvec.

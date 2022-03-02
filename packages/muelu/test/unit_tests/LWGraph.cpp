@@ -108,7 +108,7 @@ namespace MueLuTests {
     auto rows = graphLWK->getRowPtrs();
 
     if(numRanks == 1) {
-      TEST_EQUALITY(graph->getNodeMaxNumRowEntries() == 3,   true);
+      TEST_EQUALITY(graph->getLocalMaxNumRowEntries() == 3,   true);
       TEST_EQUALITY(graph->GetNodeNumVertices() == 16,   true);
       TEST_EQUALITY(graph->GetNodeNumEdges() == 46,   true);
       TEST_EQUALITY(rows.size() == 17,   true);
@@ -123,9 +123,9 @@ namespace MueLuTests {
     }
 
     auto crsGraph = graphLWK->GetCrsGraph();
-    TEST_EQUALITY(crsGraph->getNodeNumEntries() == graph->GetNodeNumEdges(),    true);
-    TEST_EQUALITY(crsGraph->getNodeNumRows() == graph->GetNodeNumVertices(),    true);
-    TEST_EQUALITY(crsGraph->getNodeMaxNumRowEntries() == graph->getNodeMaxNumRowEntries(),    true);
+    TEST_EQUALITY(crsGraph->getLocalNumEntries() == graph->GetNodeNumEdges(),    true);
+    TEST_EQUALITY(crsGraph->getLocalNumRows() == graph->GetNodeNumVertices(),    true);
+    TEST_EQUALITY(crsGraph->getLocalMaxNumRowEntries() == graph->getLocalMaxNumRowEntries(),    true);
 
     TEST_THROW(graphLWK->SetBoundaryNodeMap(graphLWK->GetDomainMap()), MueLu::Exceptions::NotImplemented);
 

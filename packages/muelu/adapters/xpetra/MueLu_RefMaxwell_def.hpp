@@ -320,7 +320,7 @@ namespace MueLu {
         coordinateType localMinLen = Teuchos::ScalarTraits<coordinateType>::rmax();
         coordinateType localMeanLen = Teuchos::ScalarTraits<coordinateType>::zero();
         coordinateType localMaxLen = Teuchos::ScalarTraits<coordinateType>::zero();
-        for (size_t j=0; j < Nullspace_->getMap()->getNodeNumElements(); j++) {
+        for (size_t j=0; j < Nullspace_->getMap()->getLocalNumElements(); j++) {
           Scalar lenSC = Teuchos::ScalarTraits<Scalar>::zero();
           for (size_t i=0; i < Nullspace_->getNumVectors(); i++)
            lenSC += localNullspace[i][j]*localNullspace[i][j];
@@ -1238,7 +1238,7 @@ namespace MueLu {
     const SC SC_ONE = Teuchos::ScalarTraits<SC>::one();
     const Scalar half = SC_ONE / (SC_ONE + SC_ONE);
     size_t dim = Nullspace_->getNumVectors();
-    size_t numLocalRows = SM_Matrix_->getNodeNumRows();
+    size_t numLocalRows = SM_Matrix_->getLocalNumRows();
 
     RCP<Matrix> P_nodal;
     RCP<CrsMatrix> P_nodal_imported;
@@ -1443,7 +1443,7 @@ namespace MueLu {
           auto localNullspace = Nullspace_->getDeviceLocalView(Xpetra::Access::ReadOnly);
 
           // enter values
-          if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+          if (D0_Matrix_->getLocalMaxNumRowEntries()>2) {
             // The matrix D0 has too many entries per row.
             // Therefore we need to check whether its entries are actually non-zero.
             // This is the case for the matrices built by MiniEM.
@@ -1560,7 +1560,7 @@ namespace MueLu {
           auto localNullspace = Nullspace_->getDeviceLocalView(Xpetra::Access::ReadOnly);
 
           // enter values
-          if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+          if (D0_Matrix_->getLocalMaxNumRowEntries()>2) {
             // The matrix D0 has too many entries per row.
             // Therefore we need to check whether its entries are actually non-zero.
             // This is the case for the matrices built by MiniEM.
@@ -1714,7 +1714,7 @@ namespace MueLu {
             RCP<const Map> P_nodal_imported_colmap = P_nodal_imported->getColMap();
             RCP<const Map> D0_P_nodal_colmap = D0_P_nodal->getColMap();
             // enter values
-            if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+            if (D0_Matrix_->getLocalMaxNumRowEntries()>2) {
               // The matrix D0 has too many entries per row.
               // Therefore we need to check whether its entries are actually non-zero.
               // This is the case for the matrices built by MiniEM.
@@ -1816,7 +1816,7 @@ namespace MueLu {
             ArrayView<SC>     P11vals   = P11vals_RCP();
 
             size_t nnz;
-            if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+            if (D0_Matrix_->getLocalMaxNumRowEntries()>2) {
               // The matrix D0 has too many entries per row.
               // Therefore we need to check whether its entries are actually non-zero.
               // This is the case for the matrices built by MiniEM.
@@ -1956,7 +1956,7 @@ namespace MueLu {
               }
 
             // enter values
-            if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+            if (D0_Matrix_->getLocalMaxNumRowEntries()>2) {
               // The matrix D0 has too many entries per row.
               // Therefore we need to check whether its entries are actually non-zero.
               // This is the case for the matrices built by MiniEM.
@@ -2065,7 +2065,7 @@ namespace MueLu {
           M0inv_Matrix_->getLocalDiagCopy(*diag);
 	  {
 	    ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
-	    for (size_t j=0; j < diag->getMap()->getNodeNumElements(); j++) {
+	    for (size_t j=0; j < diag->getMap()->getLocalNumElements(); j++) {
 	      diagVals[j] = Teuchos::ScalarTraits<Scalar>::squareroot(diagVals[j]);
 	    }
 	  }
@@ -2107,7 +2107,7 @@ namespace MueLu {
 
     if (!AH_.is_null() && !skipFirstLevel_) {
       ArrayRCP<bool> AHBCrows;
-      AHBCrows.resize(AH_->getRowMap()->getNodeNumElements());
+      AHBCrows.resize(AH_->getRowMap()->getLocalNumElements());
       size_t dim = Nullspace_->getNumVectors();
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
       if (useKokkos_)

@@ -155,7 +155,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     {
       for(size_t i = 0; i < primalInterfaceDofMapDofs->getGlobalNumElements(); ++i)
       {
-        interfaceGlobalDofsOnCurrentProc[i] = primalInterfaceDofMapDofs->getNodeElementList()[i];
+        interfaceGlobalDofsOnCurrentProc[i] = primalInterfaceDofMapDofs->getLocalElementList()[i];
       }
     }
     Teuchos::reduceAll<int>(*comm, Teuchos::REDUCE_MAX, interfaceGlobalDofs.size(),

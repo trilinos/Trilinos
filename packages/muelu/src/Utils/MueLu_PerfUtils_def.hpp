@@ -154,7 +154,7 @@ namespace MueLu {
     RCP<const Import> importer = A.getCrsGraph()->getImporter();
     RCP<const Export> exporter = A.getCrsGraph()->getExporter();
 
-    size_t numMyNnz = A.getNodeNumEntries(), numMyRows = A.getNodeNumRows();
+    size_t numMyNnz = A.getLocalNumEntries(), numMyRows = A.getLocalNumRows();
 
     // Create communicator only for active processes
     RCP<const Teuchos::Comm<int> > origComm = A.getRowMap()->getComm();

@@ -181,7 +181,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     else localEntries = 300;
     if(comm->getSize() == 2) localEntries = 299;
     if(comm->getSize() == 1) localEntries = 298;*/
-    //    TEST_EQUALITY(sOp->getNodeNumEntries(), localEntries);
+    //    TEST_EQUALITY(sOp->getLocalNumEntries(), localEntries);
     //    TEST_EQUALITY(sOp->getGlobalNumEntries(),  Teuchos::as<size_t>(comm->getSize() * 300 - 2));
 
     RCP<Vector> v = VectorFactory::Build(sOp->getRangeMap(),true);
@@ -211,7 +211,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     if(comm->getSize() == 2) localEntries = 299;
     if(comm->getSize() == 1) localEntries = 298;*/
 
-    //    TEST_EQUALITY(sOp->getNodeNumEntries(), localEntries);
+    //    TEST_EQUALITY(sOp->getLocalNumEntries(), localEntries);
     //    TEST_EQUALITY(sOp->getGlobalNumEntries(), Teuchos::as<size_t>(comm->getSize() * 300 - 2));
 
     /*v = VectorFactory::Build(sOp->getRangeMap(),true);
@@ -258,7 +258,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     TEST_EQUALITY(sOp->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * 10 + 9);
     TEST_EQUALITY(Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(sOp), Teuchos::null);
 
-    TEST_EQUALITY(sOp->getNodeNumEntries(), 5);
+    TEST_EQUALITY(sOp->getLocalNumEntries(), 5);
     TEST_EQUALITY(sOp->getGlobalNumEntries(), Teuchos::as<size_t>(comm->getSize() * 5));
 
     RCP<Vector> v = VectorFactory::Build(sOp->getRangeMap(),true);
@@ -389,7 +389,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     TEST_EQUALITY(sOp->getDomainMap()->getMinGlobalIndex(), comm->getRank() * 40 + 5);
     TEST_EQUALITY(sOp->getDomainMap()->getMaxGlobalIndex(), comm->getRank() * 40 + 19);
 
-    TEST_EQUALITY(sOp->getNodeNumEntries(), 15);
+    TEST_EQUALITY(sOp->getLocalNumEntries(), 15);
     TEST_EQUALITY(sOp->getGlobalNumEntries(), Teuchos::as<size_t>(comm->getSize() * 15));
 
     RCP<Vector> v = VectorFactory::Build(sOp->getRangeMap(),true);

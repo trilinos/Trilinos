@@ -95,7 +95,7 @@ namespace MueLuTests {
     l->Set("A", A);
     l->Set("Coordinates",coords);
 
-    Teuchos::ArrayRCP<LocalOrdinal> dofPresent(A->getRowMap()->getNodeNumElements(),1);
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent(A->getRowMap()->getLocalNumElements(),1);
     l->Set<Teuchos::ArrayRCP<LocalOrdinal> >("DofPresent", dofPresent);
 
     VariableDofLaplacianFactory lapFact;
@@ -163,7 +163,7 @@ namespace MueLuTests {
 
     //->describe(out, Teuchos::VERB_EXTREME);
 
-    TEST_EQUALITY(dofMap->getNodeNumElements(),2*nodeMap->getNodeNumElements());
+    TEST_EQUALITY(dofMap->getLocalNumElements(),2*nodeMap->getLocalNumElements());
 
     // build hierarchy
     RCP<Level> l = rcp(new Level());
@@ -172,7 +172,7 @@ namespace MueLuTests {
     l->Set("A", A);
     l->Set("Coordinates",coordinates);
 
-    Teuchos::ArrayRCP<LocalOrdinal> dofPresent(A->getRowMap()->getNodeNumElements(),1);
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent(A->getRowMap()->getLocalNumElements(),1);
     l->Set<Teuchos::ArrayRCP<LocalOrdinal> >("DofPresent", dofPresent);
 
     //A->getColMap()->describe(out,Teuchos::VERB_EXTREME);
@@ -192,7 +192,7 @@ namespace MueLuTests {
     Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(lapA)->apply(*oneVec,*res);
     TEST_COMPARE(res->normInf(),<, 100*TMT::eps());
 
-    Teuchos::ArrayRCP<LocalOrdinal> dofPresent2(3 * lapA->getRowMap()->getNodeNumElements(),1);
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent2(3 * lapA->getRowMap()->getLocalNumElements(),1);
     for(decltype(dofPresent2.size()) i = 2; i < dofPresent2.size(); i = i+3) {
       dofPresent2[i] = 0;
     }
@@ -264,9 +264,9 @@ namespace MueLuTests {
 
     //->describe(out, Teuchos::VERB_EXTREME);
 
-    TEST_EQUALITY(dofMap->getNodeNumElements(),2*nodeMap->getNodeNumElements());
+    TEST_EQUALITY(dofMap->getLocalNumElements(),2*nodeMap->getLocalNumElements());
 
-    Teuchos::ArrayRCP<LocalOrdinal> dofPresent(A->getRowMap()->getNodeNumElements(),1);
+    Teuchos::ArrayRCP<LocalOrdinal> dofPresent(A->getRowMap()->getLocalNumElements(),1);
 
     // build hierarchy
     typedef Teuchos::ScalarTraits<Scalar> TST;
@@ -299,7 +299,7 @@ namespace MueLuTests {
     RCP<Matrix> pMat = coarseLevel.Get<RCP<Matrix> >("P", &PFact);
 
     TEST_EQUALITY(pMat->getRowMap()->isSameAs(*(lapA->getRowMap())),true);
-    TEST_EQUALITY(pMat->getNodeNumEntries(), pMat->getRowMap()->getNodeNumElements());
+    TEST_EQUALITY(pMat->getLocalNumEntries(), pMat->getRowMap()->getLocalNumElements());
   } // VarLaplPtent
 
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \

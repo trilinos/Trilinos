@@ -58,7 +58,7 @@ namespace MueLu {
 
     // loop over all local rows in matrix A and keep diagonal entries if corresponding
     // matrix rows are not contained in permRowMap
-    for (size_t row = 0; row < A->getRowMap()->getNodeNumElements(); row++) {
+    for (size_t row = 0; row < A->getRowMap()->getLocalNumElements(); row++) {
       GlobalOrdinal grow = A->getRowMap()->getGlobalElement(row);
 
       if(permRowMap->isNodeGlobalElement(grow) == true) continue;
@@ -91,7 +91,7 @@ namespace MueLu {
 
     //////////
     // handle rows that are marked to be relevant for permutations
-    for (size_t row = 0; row < permRowMap->getNodeNumElements(); row++) {
+    for (size_t row = 0; row < permRowMap->getLocalNumElements(); row++) {
       GlobalOrdinal grow = permRowMap->getGlobalElement(row);
       LocalOrdinal lArow = A->getRowMap()->getLocalElement(grow);
       size_t nnz = A->getNumEntriesInLocalRow(lArow);
@@ -608,7 +608,7 @@ namespace MueLu {
     Teuchos::RCP<CrsMatrixWrap> permPTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1));
     Teuchos::RCP<CrsMatrixWrap> permQTmatrix = Teuchos::rcp(new CrsMatrixWrap(A->getRowMap(),1));
 
-    for(size_t row=0; row<A->getNodeNumRows(); row++) {
+    for(size_t row=0; row<A->getLocalNumRows(); row++) {
       // FIXME (mfh 30 Oct 2015): Teuchos::as doesn't know how to
       // convert from complex Scalar to GO, so we have to take the real
       // part first.  I think that's the right thing to do in this case.
@@ -624,7 +624,7 @@ namespace MueLu {
 
     Teuchos::RCP<Matrix> permPmatrix = Utilities::Transpose(*permPTmatrix, true);
 
-    for(size_t row=0; row<permPTmatrix->getNodeNumRows(); row++) {
+    for(size_t row=0; row<permPTmatrix->getLocalNumRows(); row++) {
       if(permPTmatrix->getNumEntriesInLocalRow(row) != 1)
         GetOStream(Warnings0) <<"#entries in row " << row << " of permPTmatrix is " << permPTmatrix->getNumEntriesInLocalRow(row) << std::endl;
       if(permPmatrix->getNumEntriesInLocalRow(row) != 1)
@@ -650,7 +650,7 @@ namespace MueLu {
     Teuchos::ArrayRCP< Scalar > invDiagVecData = invDiagVec->getDataNonConst(0);
 
     permPApermQt->getLocalDiagCopy(*diagVec);
-    for(size_t i = 0; i<diagVec->getMap()->getNodeNumElements(); ++i) {
+    for(size_t i = 0; i<diagVec->getMap()->getLocalNumElements(); ++i) {
       if(diagVecData[i] != SC_ZERO)
         invDiagVecData[i] = SC_ONE / diagVecData[i];
       else {
@@ -661,7 +661,7 @@ namespace MueLu {
 
     Teuchos::RCP<CrsMatrixWrap> diagScalingOp = Teuchos::rcp(new CrsMatrixWrap(permPApermQt->getRowMap(),1));
 
-    for(size_t row=0; row<A->getNodeNumRows(); row++) {
+    for(size_t row=0; row<A->getLocalNumRows(); row++) {
       Teuchos::ArrayRCP<GlobalOrdinal> indout(1,permPApermQt->getRowMap()->getGlobalElement(row)); // column idx for Perm^T
       Teuchos::ArrayRCP<Scalar> valout(1,invDiagVecData[row]);
       diagScalingOp->insertGlobalValues(A->getRowMap()->getGlobalElement(row), indout.view(0,indout.size()), valout.view(0,valout.size()));
@@ -683,7 +683,7 @@ namespace MueLu {
     Teuchos::ArrayRCP< const Scalar > diagPVecData = diagPVec->getData(0);
     LocalOrdinal lNumRowPermutations = 0;
     GlobalOrdinal gNumRowPermutations = 0;
-    for(size_t i = 0; i<diagPVec->getMap()->getNodeNumElements(); ++i) {
+    for(size_t i = 0; i<diagPVec->getMap()->getLocalNumElements(); ++i) {
       if(diagPVecData[i] == SC_ZERO) {
         lNumRowPermutations++;
       }
@@ -699,7 +699,7 @@ namespace MueLu {
     Teuchos::ArrayRCP< const Scalar > diagQTVecData = diagQTVec->getData(0);
     LocalOrdinal lNumColPermutations = 0;
     GlobalOrdinal gNumColPermutations = 0;
-    for(size_t i = 0; i<diagQTVec->getMap()->getNodeNumElements(); ++i) {
+    for(size_t i = 0; i<diagQTVec->getMap()->getLocalNumElements(); ++i) {
       if(diagQTVecData[i] == SC_ZERO) {
         lNumColPermutations++;
       }

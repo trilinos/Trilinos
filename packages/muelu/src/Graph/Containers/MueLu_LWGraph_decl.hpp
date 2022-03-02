@@ -131,7 +131,7 @@ namespace MueLu {
     void SetBoundaryNodeMap(const ArrayRCP<const bool>& bndry)   { dirichletBoundaries_ = bndry; }
 
     //! Returns the maximum number of entries across all rows/columns on this node
-    size_t getNodeMaxNumRowEntries () const                      { return maxNumRowEntries_; }
+    size_t getLocalMaxNumRowEntries () const                      { return maxNumRowEntries_; }
 
     //! Returns map with global ids of boundary nodes.
     const ArrayRCP<const bool> GetBoundaryNodeMap() const        { return dirichletBoundaries_; }

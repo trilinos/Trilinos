@@ -1051,7 +1051,7 @@ namespace MueLu {
     rghtScaleVec = Teuchos::rcp(new Tpetra::Vector<SC,LO,GO,NO>(tpetraMat->getColMap()));
     rghtScaleData  = rghtScaleVec->getDataNonConst(0);
     size_t itemp = 0;
-    for (size_t i = 0; i < tpetraMat->getColMap()->getNodeNumElements(); i++) {
+    for (size_t i = 0; i < tpetraMat->getColMap()->getLocalNumElements(); i++) {
       rghtScaleData[i] = rghtDofPerNodeScale[itemp++];
       if (itemp == blkSize) itemp = 0;
     }
@@ -1062,7 +1062,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void leftRghtDofScalingWithinNode(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Amat, size_t blkSize, size_t nSweeps, Teuchos::ArrayRCP<Scalar> & rowScaling, Teuchos::ArrayRCP<Scalar> & colScaling) {
 
-     LocalOrdinal     nBlks = (Amat.getRowMap()->getNodeNumElements())/blkSize;
+     LocalOrdinal     nBlks = (Amat.getRowMap()->getLocalNumElements())/blkSize;
 
      Teuchos::ArrayRCP<Scalar>   rowScaleUpdate(blkSize);
      Teuchos::ArrayRCP<Scalar>   colScaleUpdate(blkSize);

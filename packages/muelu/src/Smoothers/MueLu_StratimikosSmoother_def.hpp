@@ -213,7 +213,7 @@ system(mystring);
     TEUCHOS_TEST_FOR_EXCEPTION( (LayerId == NULL) || (VertLineId == NULL), Exceptions::RuntimeError, "MueLu::StratimikosSmoother:: no line information found on this level. Cannot use recurMgOnFilteredA on this level.");
 
     Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
-    for (size_t i = 0; i < A_->getRowMap()->getNodeNumElements(); i++) {
+    for (size_t i = 0; i < A_->getRowMap()->getLocalNumElements(); i++) {
       A_->getLocalRowView(i, inds, valsA);
       size_t nnz = inds.size();
       ArrayView<const Scalar> vals1;

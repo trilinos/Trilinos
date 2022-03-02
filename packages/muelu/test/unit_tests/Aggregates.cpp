@@ -384,7 +384,7 @@ public:
     for (int j=0; j<comm->getSize(); ++j) {
       if (comm->getRank() == j) {
         out << "++ pid " << j << " ++" << std::endl;
-        out << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
+        out << "   num local DOFs = " << rowmap->getLocalNumElements() << std::endl;
         for (int i=0; i< numAggs; ++i) {
           out << "   aggregate " << i << ": ";
           for (int k=aggStart[i]; k< aggStart[i+1]; ++k)
@@ -508,7 +508,7 @@ public:
     for (int j=0; j<comm->getSize(); ++j) {
       if (comm->getRank() == j) {
         out << "++ pid " << j << " ++" << std::endl;
-        out << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
+        out << "   num local DOFs = " << rowmap->getLocalNumElements() << std::endl;
         for (int i=0; i< numAggs; ++i) {
           out << "   aggregate " << i << ": ";
           for (int k=aggStart[i]; k< aggStart[i+1]; ++k)
@@ -587,7 +587,7 @@ public:
     for (int j=0; j<comm->getSize(); ++j) {
       if (comm->getRank() == j) {
         out << "++ pid " << j << " ++" << std::endl;
-        out << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
+        out << "   num local DOFs = " << rowmap->getLocalNumElements() << std::endl;
         for (int i=0; i< numAggs; ++i) {
           out << "   aggregate " << i << ": ";
           for (int k=aggStart[i]; k< aggStart[i+1]; ++k)
@@ -686,7 +686,7 @@ public:
     for (int j=0; j<comm->getSize(); ++j) {
       if (comm->getRank() == j) {
         out << "++ pid " << j << " ++" << std::endl;
-        out << "   num local DOFs = " << rowmap->getNodeNumElements() << std::endl;
+        out << "   num local DOFs = " << rowmap->getLocalNumElements() << std::endl;
         for (int i=0; i< numAggs; ++i) {
           out << "   aggregate " << i << ": ";
           for (int k=aggStart[i]; k< aggStart[i+1]; ++k)
@@ -715,14 +715,14 @@ public:
 
     RCP<const Map> rowmap = A->getRowMap();
     rowmap->describe(out,Teuchos::VERB_EXTREME);
-    out<< "getNodeNumElements() gives: " << rowmap->getNodeNumElements() << std::endl;
+    out<< "getLocalNumElements() gives: " << rowmap->getLocalNumElements() << std::endl;
 
     // Specify root nodes on interface
-    Teuchos::Array<LO> nodeOnInterface(rowmap->getNodeNumElements(),0);
+    Teuchos::Array<LO> nodeOnInterface(rowmap->getLocalNumElements(),0);
     if( rowmap->getMinAllGlobalIndex() == rowmap->getMinGlobalIndex() )
       nodeOnInterface[0] = 1;
     if( rowmap->getMaxAllGlobalIndex() == rowmap->getMaxGlobalIndex() )
-      nodeOnInterface[rowmap->getNodeNumElements()-1] = 1;
+      nodeOnInterface[rowmap->getLocalNumElements()-1] = 1;
 
     RCP<AmalgamationInfo> amalgInfo;
     RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::gimmeInterfaceAggregates(A, amalgInfo,nodeOnInterface);
@@ -1088,7 +1088,7 @@ public:
     //    print_matrix("Afiltered",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Afiltered));
 
     // We use the full graph for the filtered matrix, so the notional nnz should be the same
-    TEST_EQUALITY(A->getNodeNumRows()==Afiltered->getNodeNumRows(), true);
+    TEST_EQUALITY(A->getLocalNumRows()==Afiltered->getLocalNumRows(), true);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FilteredA, SpreadLumpingRootStencil, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -1151,7 +1151,7 @@ public:
     //    print_matrix("Afiltered",MueLu::Utilities<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Afiltered));
 
     // We use the full graph for the filtered matrix, so the notional nnz should be the same
-    TEST_EQUALITY(A->getNodeNumRows()==Afiltered->getNodeNumRows(), true);
+    TEST_EQUALITY(A->getLocalNumRows()==Afiltered->getLocalNumRows(), true);
   } //SpreadLumping
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FilteredA, SpreadLumpingReuseGraph, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -1210,7 +1210,7 @@ public:
     RCP<Matrix> Afiltered = level.Get<RCP<Matrix> >("A",filterFact.get());
 
     // We use the full graph for the filtered matrix, so the notional nnz should be the same
-    TEST_EQUALITY(A->getNodeNumRows()==Afiltered->getNodeNumRows(), true);
+    TEST_EQUALITY(A->getLocalNumRows()==Afiltered->getLocalNumRows(), true);
   } // SpreadLumpingReuseGraph
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FilteredA, SpreadLumpingNoStencilRootNoReuseGraph, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -1269,7 +1269,7 @@ public:
     RCP<Matrix> Afiltered = level.Get<RCP<Matrix> >("A",filterFact.get());
 
     // We use the full graph for the filtered matrix, so the notional nnz should be the same
-    TEST_EQUALITY(A->getNodeNumRows()==Afiltered->getNodeNumRows(), true);
+    TEST_EQUALITY(A->getLocalNumRows()==Afiltered->getLocalNumRows(), true);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FilteredA, SpreadNoLumpingNoStencilRootNoReuseGraph, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -1328,7 +1328,7 @@ public:
     RCP<Matrix> Afiltered = level.Get<RCP<Matrix> >("A",filterFact.get());
 
     // We use the full graph for the filtered matrix, so the notional nnz should be the same
-    TEST_EQUALITY(A->getNodeNumRows()==Afiltered->getNodeNumRows(), true);
+    TEST_EQUALITY(A->getLocalNumRows()==Afiltered->getLocalNumRows(), true);
   } // SpreadNoLumpingNoStencilRootNoReuseGraph
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, AllowDroppingToCreateAdditionalDirichletRows, Scalar, LocalOrdinal, GlobalOrdinal, Node)

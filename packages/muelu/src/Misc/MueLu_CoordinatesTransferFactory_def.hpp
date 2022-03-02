@@ -186,7 +186,7 @@ namespace MueLu {
       // Therefore, if we amalgamate coarseMap, logical nodes in the coordinates vector would correspond to
       // logical blocks in the matrix
 
-      ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
+      ArrayView<const GO> elementAList = coarseMap->getLocalElementList();
 
       LO                  blkSize      = 1;
       if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
