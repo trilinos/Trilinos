@@ -431,7 +431,7 @@ namespace {
         false,
         *yAB);
       TEUCHOS_TEST_EQUALITY(xAB->getFrobeniusNorm(), yAB->getFrobeniusNorm(), out, success );
-      TEUCHOS_TEST_EQUALITY(xAB->getNodeNumEntries(), yAB->getNodeNumEntries(), out, success );
+      TEUCHOS_TEST_EQUALITY(xAB->getLocalNumEntries(), yAB->getLocalNumEntries(), out, success );
 
       Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
           *xA,
@@ -440,7 +440,7 @@ namespace {
           false,
           *yAtB);
         TEUCHOS_TEST_EQUALITY(xAtB->getFrobeniusNorm(), yAtB->getFrobeniusNorm(), out, success );
-        TEUCHOS_TEST_EQUALITY(xAtB->getNodeNumEntries(), yAtB->getNodeNumEntries(), out, success );
+        TEUCHOS_TEST_EQUALITY(xAtB->getLocalNumEntries(), yAtB->getLocalNumEntries(), out, success );
 
       Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
           *xA,
@@ -449,7 +449,7 @@ namespace {
           true,
           *yABt);
         TEUCHOS_TEST_EQUALITY(xABt->getFrobeniusNorm(), yABt->getFrobeniusNorm(), out, success );
-        TEUCHOS_TEST_EQUALITY(xABt->getNodeNumEntries(), yABt->getNodeNumEntries(), out, success );
+        TEUCHOS_TEST_EQUALITY(xABt->getLocalNumEntries(), yABt->getLocalNumEntries(), out, success );
 
       Xpetra::MatrixMatrix<Scalar, LO, GO, Node>::Multiply (
           *xA,
@@ -458,7 +458,7 @@ namespace {
           true,
           *yAtBt);
         TEUCHOS_TEST_EQUALITY(xAtBt->getFrobeniusNorm(), yAtBt->getFrobeniusNorm(), out, success );
-        TEUCHOS_TEST_EQUALITY(xAtBt->getNodeNumEntries(), yAtBt->getNodeNumEntries(), out, success );
+        TEUCHOS_TEST_EQUALITY(xAtBt->getLocalNumEntries(), yAtBt->getLocalNumEntries(), out, success );
     }// end Tpetra test
 #endif
   }

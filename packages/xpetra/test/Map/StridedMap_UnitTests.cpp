@@ -252,8 +252,8 @@ namespace {
     TEST_EQUALITY_CONST( map.getMinAllGlobalIndex(), 0 );
     TEST_EQUALITY_CONST( map.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalElements) - 2 );
     TEST_EQUALITY_CONST( map.isContiguous(), false);
-    TEST_EQUALITY_CONST( map.getNodeNumElements() % 2 , 0);
-    TEST_EQUALITY_CONST( map.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
+    TEST_EQUALITY_CONST( map.getLocalNumElements() % 2 , 0);
+    TEST_EQUALITY_CONST( map.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
 
     SM map2(lib, numGlobalElements, numLocalElements, 0,stridedInfo, comm, 1);
     TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 3 );
@@ -262,7 +262,7 @@ namespace {
     TEST_EQUALITY_CONST( map2.getMinAllGlobalIndex(), 2 );
     TEST_EQUALITY_CONST( map2.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalElements) - 1 );
     TEST_EQUALITY_CONST( map2.isContiguous(), false);
-    TEST_EQUALITY_CONST( map2.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
+    TEST_EQUALITY_CONST( map2.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
   }
 
   ////
@@ -293,8 +293,8 @@ namespace {
     TEST_EQUALITY_CONST( map.getMinAllGlobalIndex(), 0 );
     TEST_EQUALITY_CONST( map.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalElements) - 10 );
     TEST_EQUALITY_CONST( map.isContiguous(), false);
-    TEST_EQUALITY_CONST( map.getNodeNumElements() % 3 , 0);
-    TEST_EQUALITY_CONST( map.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
+    TEST_EQUALITY_CONST( map.getLocalNumElements() % 3 , 0);
+    TEST_EQUALITY_CONST( map.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
 
     SM map2(lib, numGlobalElements, 0,stridedInfo, comm, 1);
     TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 12 );
@@ -303,8 +303,8 @@ namespace {
     TEST_EQUALITY_CONST( map2.getMinAllGlobalIndex(), 3 );
     TEST_EQUALITY_CONST( map2.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalElements) - 6 );
     TEST_EQUALITY_CONST( map2.isContiguous(), false);
-    TEST_EQUALITY_CONST( map2.getNodeNumElements() % 4 , 0);
-    TEST_EQUALITY_CONST( map2.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
+    TEST_EQUALITY_CONST( map2.getLocalNumElements() % 4 , 0);
+    TEST_EQUALITY_CONST( map2.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
 
     SM map3(lib, numGlobalElements, 0,stridedInfo, comm, 2);
     TEST_EQUALITY_CONST( map3.getFixedBlockSize(), 12 );
@@ -313,8 +313,8 @@ namespace {
     TEST_EQUALITY_CONST( map3.getMinAllGlobalIndex(), 7 );
     TEST_EQUALITY_CONST( map3.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalElements) - 1 );
     TEST_EQUALITY_CONST( map3.isContiguous(), false);
-    TEST_EQUALITY_CONST( map3.getNodeNumElements() % 5 , 0);
-    TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
+    TEST_EQUALITY_CONST( map3.getLocalNumElements() % 5 , 0);
+    TEST_EQUALITY_CONST( map3.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( StridedMap, StridedPartConstructor3, M, LO, GO, N )
@@ -347,8 +347,8 @@ namespace {
     TEST_EQUALITY_CONST( map.getMinAllGlobalIndex(), indexBase );
     TEST_EQUALITY_CONST( map.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalElements) + indexBase - 10 );
     TEST_EQUALITY_CONST( map.isContiguous(), false);
-    TEST_EQUALITY_CONST( map.getNodeNumElements() % 3 , 0);
-    TEST_EQUALITY_CONST( map.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
+    TEST_EQUALITY_CONST( map.getLocalNumElements() % 3 , 0);
+    TEST_EQUALITY_CONST( map.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
 
     SM map2(lib, numGlobalElements, indexBase ,stridedInfo, comm, 1);
     TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 12 );
@@ -357,8 +357,8 @@ namespace {
     TEST_EQUALITY_CONST( map2.getMinAllGlobalIndex(), 3 + indexBase );
     TEST_EQUALITY_CONST( map2.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalElements) + indexBase - 6 );
     TEST_EQUALITY_CONST( map2.isContiguous(), false);
-    TEST_EQUALITY_CONST( map2.getNodeNumElements() % 4 , 0);
-    TEST_EQUALITY_CONST( map2.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
+    TEST_EQUALITY_CONST( map2.getLocalNumElements() % 4 , 0);
+    TEST_EQUALITY_CONST( map2.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
 
     SM map3(lib, numGlobalElements, indexBase ,stridedInfo, comm, 2);
     TEST_EQUALITY_CONST( map3.getFixedBlockSize(), 12 );
@@ -367,8 +367,8 @@ namespace {
     TEST_EQUALITY_CONST( map3.getMinAllGlobalIndex(), 7 + indexBase);
     TEST_EQUALITY_CONST( map3.getMaxAllGlobalIndex(), Teuchos::as<GO>(numGlobalElements) + indexBase - 1 );
     TEST_EQUALITY_CONST( map3.isContiguous(), false);
-    TEST_EQUALITY_CONST( map3.getNodeNumElements() % 5 , 0);
-    TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
+    TEST_EQUALITY_CONST( map3.getLocalNumElements() % 5 , 0);
+    TEST_EQUALITY_CONST( map3.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
   }
 
   ////
@@ -401,8 +401,8 @@ namespace {
     TEST_EQUALITY_CONST( map.getMinAllGlobalIndex(), offset );
     TEST_EQUALITY_CONST( map.getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 10 );
     TEST_EQUALITY_CONST( map.isContiguous(), false);
-    TEST_EQUALITY_CONST( map.getNodeNumElements() % 3 , 0);
-    TEST_EQUALITY_CONST( map.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
+    TEST_EQUALITY_CONST( map.getLocalNumElements() % 3 , 0);
+    TEST_EQUALITY_CONST( map.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
 
     SM map2(lib, numGlobalElements, 0,stridedInfo, comm, 1, offset);
     TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 12 );
@@ -411,8 +411,8 @@ namespace {
     TEST_EQUALITY_CONST( map2.getMinAllGlobalIndex(), offset + 3 );
     TEST_EQUALITY_CONST( map2.getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 6 );
     TEST_EQUALITY_CONST( map2.isContiguous(), false);
-    TEST_EQUALITY_CONST( map2.getNodeNumElements() % 4 , 0);
-    TEST_EQUALITY_CONST( map2.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
+    TEST_EQUALITY_CONST( map2.getLocalNumElements() % 4 , 0);
+    TEST_EQUALITY_CONST( map2.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
 
     SM map3(lib, numGlobalElements, 0,stridedInfo, comm, 2, offset);
     TEST_EQUALITY_CONST( map3.getFixedBlockSize(), 12 );
@@ -421,8 +421,8 @@ namespace {
     TEST_EQUALITY_CONST( map3.getMinAllGlobalIndex(), offset + 7 );
     TEST_EQUALITY_CONST( map3.getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 1 );
     TEST_EQUALITY_CONST( map3.isContiguous(), false);
-    TEST_EQUALITY_CONST( map3.getNodeNumElements() % 5 , 0);
-    TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
+    TEST_EQUALITY_CONST( map3.getLocalNumElements() % 5 , 0);
+    TEST_EQUALITY_CONST( map3.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
   }
 
   ////
@@ -456,8 +456,8 @@ namespace {
     TEST_EQUALITY_CONST( map.getMinAllGlobalIndex(), indexBase + offset );
     TEST_EQUALITY_CONST( map.getMaxAllGlobalIndex(), indexBase + offset + Teuchos::as<GO>(numGlobalElements) - 10 );
     TEST_EQUALITY_CONST( map.isContiguous(), false);
-    TEST_EQUALITY_CONST( map.getNodeNumElements() % 3 , 0);
-    TEST_EQUALITY_CONST( map.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
+    TEST_EQUALITY_CONST( map.getLocalNumElements() % 3 , 0);
+    TEST_EQUALITY_CONST( map.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[0] );
 
     SM map2(lib, numGlobalElements, indexBase ,stridedInfo, comm, 1, offset);
     TEST_EQUALITY_CONST( map2.getFixedBlockSize(), 12 );
@@ -466,8 +466,8 @@ namespace {
     TEST_EQUALITY_CONST( map2.getMinAllGlobalIndex(), indexBase + offset + 3 );
     TEST_EQUALITY_CONST( map2.getMaxAllGlobalIndex(), indexBase + offset + Teuchos::as<GO>(numGlobalElements) - 6 );
     TEST_EQUALITY_CONST( map2.isContiguous(), false);
-    TEST_EQUALITY_CONST( map2.getNodeNumElements() % 4 , 0);
-    TEST_EQUALITY_CONST( map2.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
+    TEST_EQUALITY_CONST( map2.getLocalNumElements() % 4 , 0);
+    TEST_EQUALITY_CONST( map2.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[1]);
 
     SM map3(lib, numGlobalElements, indexBase ,stridedInfo, comm, 2, offset);
     TEST_EQUALITY_CONST( map3.getFixedBlockSize(), 12 );
@@ -476,8 +476,8 @@ namespace {
     TEST_EQUALITY_CONST( map3.getMinAllGlobalIndex(), indexBase + offset + 7 );
     TEST_EQUALITY_CONST( map3.getMaxAllGlobalIndex(), indexBase + offset + Teuchos::as<GO>(numGlobalElements) - 1 );
     TEST_EQUALITY_CONST( map3.isContiguous(), false);
-    TEST_EQUALITY_CONST( map3.getNodeNumElements() % 5 , 0);
-    TEST_EQUALITY_CONST( map3.getNodeNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
+    TEST_EQUALITY_CONST( map3.getLocalNumElements() % 5 , 0);
+    TEST_EQUALITY_CONST( map3.getLocalNumElements(), numLocalElements / map.getFixedBlockSize() * stridedInfo[2]);
   }
 
 

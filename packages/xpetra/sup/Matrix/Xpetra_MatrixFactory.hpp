@@ -286,8 +286,8 @@ namespace Xpetra {
     //! Constructor for creating a diagonal Xpetra::Matrix using the entries of a given vector for the diagonal
     static RCP<Matrix> Build(const RCP<const Vector>& diagonal) {
       Teuchos::ArrayRCP<const Scalar>         vals             = diagonal->getData(0);
-      LocalOrdinal                            NumMyElements    = diagonal->getMap()->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = diagonal->getMap()->getNodeElementList();
+      LocalOrdinal                            NumMyElements    = diagonal->getMap()->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = diagonal->getMap()->getLocalElementList();
 
       Teuchos::RCP<CrsMatrixWrap> mtx = Teuchos::rcp(new CrsMatrixWrap(diagonal->getMap(), 1));
 
@@ -365,7 +365,7 @@ namespace Xpetra {
       RCP<const MapExtractor> doMapExt = Teuchos::rcp(new MapExtractor(*(input->getDomainMapExtractor())));
 
       // create new BlockedCrsMatrix object
-      RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExt, doMapExt, input->getNodeMaxNumRowEntries()));
+      RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExt, doMapExt, input->getLocalMaxNumRowEntries()));
 
       for (size_t r = 0; r < input->Rows(); ++r) {
         for (size_t c = 0; c < input->Cols(); ++c)
