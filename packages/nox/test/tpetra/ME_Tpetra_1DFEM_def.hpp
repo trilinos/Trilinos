@@ -70,7 +70,7 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   else {
     std::size_t overlapNumMyNodes;
     GO overlapMinMyGID;
-    overlapNumMyNodes = xOwnedMap_->getNodeNumElements() + 2;
+    overlapNumMyNodes = xOwnedMap_->getLocalNumElements() + 2;
     if ( (comm_->getRank() == 0) || (comm_->getRank() == (comm_->getSize() - 1)) )
       --overlapNumMyNodes;
 
@@ -103,7 +103,7 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   W_graph_ = createGraph();
 
   // Create the nodal coorinates
-  std::size_t numLocalNodes = xOwnedMap_->getNodeNumElements();
+  std::size_t numLocalNodes = xOwnedMap_->getLocalNumElements();
   GO minGID = xOwnedMap_->getMinGlobalIndex();
   Scalar dz = (zMax_ - zMin_)/static_cast<Scalar>(numGlobalElements_);
   nodeCoordinates_ = Teuchos::rcp(new tpetra_vec(xOwnedMap_));
@@ -184,7 +184,7 @@ EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::createGraph()
   // Compute graph offset array
   int numProcs = comm_->getSize();
   int myRank = comm_->getRank();
-  std::size_t numMyNodes = xOwnedMap_->getNodeNumElements();
+  std::size_t numMyNodes = xOwnedMap_->getLocalNumElements();
   std::size_t numLocalEntries = 0;
   //Kokkos::View<std::size_t*> counts("row counts", numMyNodes);
   Kokkos::View<size_type*> counts("row counts", numMyNodes);
@@ -457,7 +457,7 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // Sizes for functors
   int myRank = comm_->getRank();
-  std::size_t numMyElements = xGhostedMap_->getNodeNumElements()-1;
+  std::size_t numMyElements = xGhostedMap_->getLocalNumElements()-1;
 
   // Get parameters, default is from nominal values
   auto k_tpetra = tpetra_extract::getConstTpetraMultiVector(nominalValues_.get_p(2));
