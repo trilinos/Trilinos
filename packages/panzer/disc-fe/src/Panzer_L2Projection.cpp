@@ -340,7 +340,7 @@ namespace panzer {
 
     // Now insert the non-zero pattern per row
     // count number of entries per row; required by CrsGraph constructor
-    std::vector<size_t> nEntriesPerRow(ghostedTargetMap->getNodeNumElements(),0);
+    std::vector<size_t> nEntriesPerRow(ghostedTargetMap->getLocalNumElements(),0);
     std::vector<std::string> elementBlockIds;
     targetGlobalIndexer_->getElementBlockIds(elementBlockIds);
     std::vector<std::string>::const_iterator blockItr;

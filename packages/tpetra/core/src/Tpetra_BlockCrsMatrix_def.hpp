@@ -222,7 +222,6 @@ namespace Impl {
     KOKKOS_INLINE_FUNCTION void
     operator () (const local_ordinal_type& lclRow) const 
     {
-      using ::Tpetra::COPY;
       using ::Tpetra::FILL;
       using ::Tpetra::SCAL;
       using ::Tpetra::GEMV;
@@ -236,7 +235,7 @@ namespace Impl {
       using Kokkos::subview;
       typedef typename decltype (ptr_)::non_const_value_type offset_type;
       typedef Kokkos::View<typename MatrixValuesType::const_value_type**,
-                           Kokkos::LayoutRight,
+                           BlockCrsMatrixLittleBlockArrayLayout,
                            device_type,
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >
         little_block_type;
@@ -387,7 +386,7 @@ namespace Impl {
       using Kokkos::subview;
       typedef typename decltype (ptr_)::non_const_value_type offset_type;
       typedef Kokkos::View<typename MatrixValuesType::const_value_type**,
-                           Kokkos::LayoutRight,
+                           BlockCrsMatrixLittleBlockArrayLayout,
                            device_type,
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >
         little_block_type;
@@ -489,7 +488,8 @@ namespace Impl {
     static_assert (static_cast<int> (InMultiVecType::rank) == 2,
                    "InMultiVecType must be a rank-2 Kokkos::View.");
 
-    typedef typename GraphType::device_type::execution_space execution_space;
+    typedef typename MatrixValuesType::device_type::execution_space execution_space;
+    typedef typename MatrixValuesType::device_type::memory_space memory_space;
     typedef typename MatrixValuesType::const_type matrix_values_type;
     typedef typename OutMultiVecType::non_const_type out_multivec_type;
     typedef typename InMultiVecType::const_type in_multivec_type;
@@ -498,6 +498,8 @@ namespace Impl {
     typedef typename std::remove_const<typename GraphType::data_type>::type LO;
     
     constexpr bool is_builtin_type_enabled = std::is_arithmetic<typename InMultiVecType::non_const_value_type>::value;
+    constexpr bool is_host_memory_space = std::is_same<memory_space,Kokkos::HostSpace>::value;
+    constexpr bool use_team_policy = (is_builtin_type_enabled && !is_host_memory_space);
 
     const LO numLocalMeshRows = graph.row_map.extent (0) == 0 ?
       static_cast<LO> (0) :
@@ -520,13 +522,13 @@ namespace Impl {
     typedef decltype (Kokkos::subview (Y_out, Kokkos::ALL (), 0)) out_vec_type;
     typedef BcrsApplyNoTransFunctor<alpha_type, GraphType,
                                     matrix_values_type, in_vec_type, beta_type, out_vec_type,
-                                    is_builtin_type_enabled> functor_type;
+                                    use_team_policy> functor_type;
 
     auto X_0 = Kokkos::subview (X_in, Kokkos::ALL (), 0);
     auto Y_0 = Kokkos::subview (Y_out, Kokkos::ALL (), 0);
 
     // Compute the first column of Y.
-    if (is_builtin_type_enabled) {
+    if (use_team_policy) {
       functor_type functor (alpha, graph, val, blockSize, X_0, beta, Y_0);
       // Built-in version uses atomic add which might not be supported from sacado or any user-defined types.
       typedef Kokkos::TeamPolicy<execution_space> policy_type;
@@ -620,7 +622,7 @@ public:
 
     // Get a view of the block.  BCRS currently uses LayoutRight
     // regardless of the device.
-    typedef Kokkos::View<const IST**, Kokkos::LayoutRight,
+    typedef Kokkos::View<const IST**, Impl::BlockCrsMatrixLittleBlockArrayLayout,
       device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       const_little_block_type;
     const_little_block_type D_in (val_.data () + pointOffset,

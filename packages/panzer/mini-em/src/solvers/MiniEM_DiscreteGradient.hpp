@@ -106,7 +106,7 @@ void addDiscreteGradientToRequestHandler(
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
     blockedDOFMngr->getElementBlockIds(elementBlockIds);
-    std::vector<bool> insertedEdges(rowmap->getNodeNumElements(),false);
+    std::vector<bool> insertedEdges(rowmap->getLocalNumElements(),false);
     auto eLIDs_k = eUgi->getLIDs();
     auto nLIDs_k = nUgi->getLIDs();
     auto eLIDs = Kokkos::create_mirror_view(eLIDs_k);
