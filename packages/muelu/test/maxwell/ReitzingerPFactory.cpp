@@ -107,7 +107,7 @@ CheckCommutingProperty(MueLu::Level & nodeLevel_coarse, MueLu::Level & edgeLevel
   RCP<Matrix> right = XMM::Multiply(*D0_f,false,*Pn,false,dummy,*out0);
   
   // We need a non-FC matrix for the add, sadly
-  RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getNodeMaxNumRowEntries()+right->getNodeMaxNumRowEntries());    
+  RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getLocalMaxNumRowEntries()+right->getLocalMaxNumRowEntries());    
   RCP<Matrix> summation = rcp(new CrsMatrixWrap(sum_c));
   XMM::TwoMatrixAdd(*left,  false, one, *summation, zero);
   XMM::TwoMatrixAdd(*right, false, -one, *summation, one);

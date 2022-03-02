@@ -459,7 +459,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<GO>  sendGIDs;
   Array<int> sendPIDs;
   Array<LO>  rNodesPerDim(3);
-  Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
+  Array<LO>  compositeToRegionLIDs(nodeMap->getLocalNumElements()*numDofsPerNode);
   Array<GO>  quasiRegionGIDs;
   Array<GO>  quasiRegionCoordGIDs;
   Array<GO>  interfaceGIDs;
@@ -737,7 +737,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     fp = fopen(str,"w");
     fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
     LO numNzs = 0;
-    for (size_t kkk = 0; kkk < regionMats->getNodeNumRows(); kkk++) {
+    for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) {
       ArrayView<const LO> AAcols;
       ArrayView<const SC> AAvals;
       regionMats->getLocalRowView(kkk, AAcols, AAvals);
@@ -745,9 +745,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       const SC  *Avals = AAvals.getRawPtr();
       numNzs += AAvals.size();
     }
-    fprintf(fp, "%d %d %d\n",regionMats->getNodeNumRows(),regionMats->getNodeNumRows(),numNzs);
+    fprintf(fp, "%d %d %d\n",regionMats->getLocalNumRows(),regionMats->getLocalNumRows(),numNzs);
 
-    for (size_t kkk = 0; kkk < regionMats->getNodeNumRows(); kkk++) {
+    for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) {
       ArrayView<const LO> AAcols;
       ArrayView<const SC> AAvals;
       regionMats->getLocalRowView(kkk, AAcols, AAvals);
@@ -762,7 +762,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // sprintf(str,"theX.%d",myRank);
     // fp = fopen(str,"w");
     // ArrayRCP<SC> lX= regX->getDataNonConst(0);
-    // for (size_t kkk = 0; kkk < regionMats->getNodeNumRows(); kkk++) fprintf(fp, "%22.16e\n",lX[kkk]);
+    // for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) fprintf(fp, "%22.16e\n",lX[kkk]);
     // fclose(fp);
 #endif
 

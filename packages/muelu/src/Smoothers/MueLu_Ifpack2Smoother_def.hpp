@@ -138,10 +138,10 @@ namespace MueLu {
     if(!precList.is_null() && precList->isParameter("partitioner: type") && precList->get<std::string>("partitioner: type") == "linear" &&
        !precList->isParameter("partitioner: local parts")) {
       LO matrixBlockSize = 1;
-      int lclSize = A_->getRangeMap()->getNodeNumElements();
+      int lclSize = A_->getRangeMap()->getLocalNumElements();
       RCP<Matrix> matA = rcp_dynamic_cast<Matrix>(A_);
       if (!matA.is_null()) {
-        lclSize = matA->getNodeNumRows();
+        lclSize = matA->getLocalNumRows();
         matrixBlockSize = matA->GetFixedBlockSize();
       }
       precList->set("partitioner: local parts", lclSize / matrixBlockSize);
@@ -361,9 +361,9 @@ namespace MueLu {
           TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
                                      "Matrix A must be of type BlockedCrsMatrix.");
 
-          size_t numVels = bA->getMatrix(0,0)->getNodeNumRows();
-          size_t numPres = bA->getMatrix(1,0)->getNodeNumRows();
-          size_t numRows = rcp_dynamic_cast<Matrix>(A_, true)->getNodeNumRows();
+          size_t numVels = bA->getMatrix(0,0)->getLocalNumRows();
+          size_t numPres = bA->getMatrix(1,0)->getLocalNumRows();
+          size_t numRows = rcp_dynamic_cast<Matrix>(A_, true)->getLocalNumRows();
 
           ArrayRCP<LocalOrdinal> blockSeeds(numRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
 
@@ -521,7 +521,7 @@ namespace MueLu {
     
     // Ifpack2 wants the seeds in an array of the same length as the number of local elements,
     // with local partition #s marked for the ones that are seeds, and invalid for the rest
-    int myNodeCount = matA->getRowMap()->getNodeNumElements();
+    int myNodeCount = matA->getRowMap()->getLocalNumElements();
     ArrayRCP<LocalOrdinal> nodeSeeds(myNodeCount,lo_invalid);
     int localPartitionNumber = 0;
     for (LocalOrdinal seed : seeds[dimension])
@@ -566,7 +566,7 @@ namespace MueLu {
         if(maxPart < TVertLineIdSmoo[k]) maxPart = TVertLineIdSmoo[k];
       }
       RCP<Matrix> matA = rcp_dynamic_cast<Matrix>(A_, true);
-      size_t numLocalRows = matA->getNodeNumRows();
+      size_t numLocalRows = matA->getLocalNumRows();
 
       TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineIdSmoo.size() != 0, Exceptions::RuntimeError,
         "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIdsSmoo.");
@@ -670,10 +670,10 @@ namespace MueLu {
         Teuchos::RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO> > coordinates = Teuchos::rcpFromRef(Xpetra::toTpetra<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>(*xCoordinates));
 
         RCP<Matrix> matA = rcp_dynamic_cast<Matrix>(A_);
-        size_t lclSize = A_->getRangeMap()->getNodeNumElements();
+        size_t lclSize = A_->getRangeMap()->getLocalNumElements();
         if (!matA.is_null())
-          lclSize = matA->getNodeNumRows();
-        size_t numDofsPerNode = lclSize / xCoordinates->getMap()->getNodeNumElements();
+          lclSize = matA->getLocalNumRows();
+        size_t numDofsPerNode = lclSize / xCoordinates->getMap()->getLocalNumElements();
         myparamList.set("partitioner: coordinates", coordinates);
         myparamList.set("partitioner: PDE equations", (int) numDofsPerNode);
       }

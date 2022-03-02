@@ -813,7 +813,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::ArrayRCP<LO> colInd;
     Teuchos::ArrayRCP<SC> values;
     Teuchos::ArrayRCP<const SC> diags = diag->getData(0);
-    size_t nodeNumElements = node_map->getNodeNumElements();
+    size_t nodeNumElements = node_map->getLocalNumElements();
     M0inv_CrsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
     SC ONE = Teuchos::ScalarTraits<Scalar>::one();
     for (size_t i = 0; i < nodeNumElements; i++) {

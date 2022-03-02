@@ -161,10 +161,10 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     const KCRS & B1mat = B1u->getLocalMatrix();
     const KCRS & B2mat = B2u->getLocalMatrix();
     KCRS Cmat = Cu->getLocalMatrix();
-    if(A.getNodeNumRows()!=C.getNodeNumRows())  throw std::runtime_error("C is not sized correctly");
+    if(A.getLocalNumRows()!=C.getLocalNumRows())  throw std::runtime_error("C is not sized correctly");
 
     c_lno_view_t Arowptr = Amat.graph.row_map, B1rowptr = B1mat.graph.row_map, B2rowptr = B2mat.graph.row_map;
-    lno_view_t Crowptr("Crowptr",C.getNodeNumRows()+1);
+    lno_view_t Crowptr("Crowptr",C.getLocalNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, B1colind = B1mat.graph.entries, B2colind = B2mat.graph.entries;
     lno_nnz_view_t Ccolind = Cmat.graph.entries;
     const scalar_view_t Avals = Amat.values, B1vals = B1mat.values, B2vals = B2mat.values;
@@ -218,9 +218,9 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     copy_view(Acolind,AcolindMKL);
 
     if(std::is_same<Scalar,double>::value) {
-      mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, Au->getNodeNumRows(), Au->getNodeNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
-      mkl_sparse_d_create_csr(&B1MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getNodeNumElements(), B1rowptrMKL.data(),B1rowptrMKL.data()+1,B1colindMKL.data(),(double*)B1vals.data());
-      mkl_sparse_d_create_csr(&B2MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getNodeNumElements(), B2rowptrMKL.data(),B2rowptrMKL.data()+1,B2colindMKL.data(),(double*)B2vals.data());
+      mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO, Au->getLocalNumRows(), Au->getLocalNumCols(), ArowptrMKL.data(),ArowptrMKL.data()+1,AcolindMKL.data(),(double*)Avals.data());
+      mkl_sparse_d_create_csr(&B1MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getLocalNumElements(), B1rowptrMKL.data(),B1rowptrMKL.data()+1,B1colindMKL.data(),(double*)B1vals.data());
+      mkl_sparse_d_create_csr(&B2MKL, SPARSE_INDEX_BASE_ZERO, Nb+Ni, Ccolmap->getLocalNumElements(), B2rowptrMKL.data(),B2rowptrMKL.data()+1,B2colindMKL.data(),(double*)B2vals.data());
     }
     else
       throw std::runtime_error("MKL Type Mismatch");
@@ -280,7 +280,7 @@ void MM2_MKL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, co
     size_t cnnz = rows_end[c_rows-1];
     Kokkos::resize(Ccolind,cnnz);
     Kokkos::resize(Cvals,cnnz);
-    if(c_rows != A.getNodeNumRows() || c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
+    if(c_rows != A.getLocalNumRows() || c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
     copy_view_n(c_rows,rows_start,Crowptr); Crowptr(c_rows) = rows_end[c_rows-1];
     copy_view_n(cnnz,columns,Ccolind);
     copy_view_n(cnnz,values,Cvals);
@@ -579,7 +579,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     
     // Do some surgery to generate B1 and B2
     const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
-    size_t brows = Browmap->getNodeNumElements();
+    size_t brows = Browmap->getLocalNumElements();
     size_t b2rows = std::max((size_t)0,std::min((size_t)(brows * percent_rows_to_remove/100.0),brows));
     size_t b1rows = brows - b2rows;
     {

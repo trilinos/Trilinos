@@ -138,7 +138,7 @@ namespace MueLu {
     }
 
     //! Returns the maximum number of entries across all rows/columns on this node
-    KOKKOS_INLINE_FUNCTION size_type getNodeMaxNumRowEntries () const {
+    KOKKOS_INLINE_FUNCTION size_type getLocalMaxNumRowEntries () const {
       return maxNumRowEntries_;
     }
 

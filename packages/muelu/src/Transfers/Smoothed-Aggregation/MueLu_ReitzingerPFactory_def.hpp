@@ -155,7 +155,7 @@ namespace MueLu {
         utils.getPids(*D0_Pn->getCrsGraph()->getImporter(),D0_Pn_col_pids,false);
       }
       else {
-        D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getNodeNumElements(),MyPID);
+        D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getLocalNumElements(),MyPID);
       }
     }
           
@@ -182,7 +182,7 @@ namespace MueLu {
         utils.getPids(*D0_Pn->getCrsGraph()->getImporter(),D0_Pn_col_pids,false);
       }
       else {
-        D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getNodeNumElements(),MyPID);
+        D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getLocalNumElements(),MyPID);
       }
     }
 
@@ -191,18 +191,18 @@ namespace MueLu {
     ArrayView<const LO>     colind_E, colind_N;
     ArrayView<const SC>     values_E, values_N;
 
-    size_t Ne=EdgeMatrix->getNodeNumRows();
-    size_t Nn=NodeMatrix->getNodeNumRows();
+    size_t Ne=EdgeMatrix->getLocalNumRows();
+    size_t Nn=NodeMatrix->getLocalNumRows();
 
     // Upper bound on local number of coarse edges
-    size_t max_edges = (NodeMatrix->getNodeNumEntries() + Nn +1) / 2;      
+    size_t max_edges = (NodeMatrix->getLocalNumEntries() + Nn +1) / 2;      
     ArrayRCP<size_t>  D0_rowptr(Ne+1);
     ArrayRCP<LO>      D0_colind(max_edges);
     ArrayRCP<SC>      D0_values(max_edges);
     D0_rowptr[0] = 0;
 
     LO current = 0;
-    LO Nnc = PnT_D0T->getRowMap()->getNodeNumElements();
+    LO Nnc = PnT_D0T->getRowMap()->getLocalNumElements();
     
     for(LO i=0; i<(LO)Nnc; i++) {
       //      GO global_i = PnT_D0T->getRowMap()->getGlobalElement(i);
@@ -440,7 +440,7 @@ namespace MueLu {
      RCP<Matrix> right = XMM::Multiply(D0_f,false,Pn,false,dummy,out0);
      
      // We need a non-FC matrix for the add, sadly
-     RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getNodeMaxNumRowEntries()+right->getNodeMaxNumRowEntries());    
+     RCP<CrsMatrix> sum_c = CrsMatrixFactory::Build(left->getRowMap(),left->getLocalMaxNumRowEntries()+right->getLocalMaxNumRowEntries());    
      RCP<Matrix> summation = rcp(new CrsMatrixWrap(sum_c));
      XMM::TwoMatrixAdd(*left,  false, one, *summation, zero);
      XMM::TwoMatrixAdd(*right, false, -one, *summation, one);

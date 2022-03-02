@@ -147,13 +147,13 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
 
   // Import data from AComp into the quasiRegion matrices
   // Since the stencil size does not grow between composite and region format
-  // use AComp->getCrsGraph()->getNodeMaxNumRowEntries() to get an upper
+  // use AComp->getCrsGraph()->getLocalMaxNumRowEntries() to get an upper
   // bound of the number of nonzeros per row in quasiRegionMat
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 1 - Create Matrix")));
 
   quasiRegionMats = MatrixFactory::Build(rowMap,
                                          colMap,
-                                         AComp->getCrsGraph()->getNodeMaxNumRowEntries());
+                                         AComp->getCrsGraph()->getLocalMaxNumRowEntries());
 
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MakeQuasiregionMatrices: 2 - Import data")));
@@ -387,7 +387,7 @@ void regionalToComposite(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOr
   {
     quasiRegMat = rcp(new CrsMatrixWrap(rowMap,
                                            colMap,
-                                           regMat->getCrsGraph()->getNodeMaxNumRowEntries()));
+                                           regMat->getCrsGraph()->getLocalMaxNumRowEntries()));
 
     // Extract current quasi-region CrsMatrix
     RCP<CrsMatrix> quasiRegionCrsMat = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegMat)->getCrsMatrix();
@@ -426,7 +426,7 @@ void regionalToComposite(const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOr
   // Export from quasiRegional format to composite layout
   RCP<Matrix> partialCompMat;
   partialCompMat = MatrixFactory::Build(compMat->getRowMap(),
-                                           8*regMat->getCrsGraph()->getNodeMaxNumRowEntries());
+                                           8*regMat->getCrsGraph()->getLocalMaxNumRowEntries());
   partialCompMat->doExport(*(quasiRegMat), *(rowImport), Xpetra::INSERT);
   partialCompMat->fillComplete();
 
