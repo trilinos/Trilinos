@@ -362,6 +362,9 @@ namespace Tpetra {
       //create and populate the block matrix
       RCP<block_crs_matrix_type> blockMatrix = rcp(new block_crs_matrix_type(*meshCrsGraph, blockSize));
 
+      /// temporary pack
+      Array<Scalar> tmpBlock(blockSize*blockSize);
+
       //preallocate the maximum number of (dense) block entries needed by any row
       int maxBlockEntries = blockMatrix->getLocalMaxNumRowEntries();
       Array<Array<Scalar>> blocks(maxBlockEntries);
@@ -402,7 +405,17 @@ namespace Tpetra {
         for (iter=bcol2bentry.begin(); iter != bcol2bentry.end(); ++iter) {
           LO localBlockCol = iter->first;
           Scalar *vals = (blocks[iter->second]).getRawPtr();
-          blockMatrix->replaceLocalValues(i, &localBlockCol, vals, 1);
+          if (std::is_same<typename block_crs_matrix_type::little_block_type::array_layout,Kokkos::LayoutLeft>::value) {
+            /// col major
+            for (LO ii=0;ii<blockSize;++ii)
+              for (LO jj=0;jj<blockSize;++jj)
+                tmpBlock[ii+jj*blockSize] = vals[ii*blockSize+jj];
+            Scalar *tmp_vals = tmpBlock.getRawPtr();
+            blockMatrix->replaceLocalValues(i, &localBlockCol, tmp_vals, 1);
+          } else {
+            /// row major
+            blockMatrix->replaceLocalValues(i, &localBlockCol, vals, 1);
+          }
         }
 
         //Done with block row.  Zero everything out.
@@ -411,6 +424,8 @@ namespace Tpetra {
         blkCnt = 0;
         bcol2bentry.clear();
       }
+
+      tmpBlock.clear();
 
       return blockMatrix;
 
