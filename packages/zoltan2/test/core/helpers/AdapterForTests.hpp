@@ -361,27 +361,27 @@ AdapterWithTemplateName
   else if(input_type == "xpetra_vector")
   {
     RCP<xVector_t> data = uinput->getUIXpetraVector();
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "xpetra_multivector")
   {
     int nvec = pList.get<int>("vector_dimension");
     RCP<xMVector_t> data = uinput->getUIXpetraMultiVector(nvec);
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "xpetra_crs_graph")
   {
     RCP<xcrsGraph_t> data = uinput->getUIXpetraCrsGraph();
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
-    localCount = data->getNodeNumCols();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
+    localCount = data->getLocalNumCols();
   }
   else if(input_type == "xpetra_crs_matrix")
   {
     RCP<xcrsMatrix_t> data = uinput->getUIXpetraCrsMatrix();
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
-    localCount = data->getNodeNumCols();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
+    localCount = data->getLocalNumCols();
   }
 #ifdef HAVE_EPETRA_DATA_TYPES
   else if(input_type == "epetra_vector")
@@ -934,7 +934,7 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
   else if(input_type == "xpetra_vector")
   {
     RCP<xVector_t> data = uinput->getUIXpetraVector();
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
     localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
@@ -959,7 +959,7 @@ AdapterWithTemplateName AdapterFactory::getBasicVectorAdapterForInput(
   {
     int nvec = pList.get<int>("vector_dimension");
     RCP<xMVector_t> data = uinput->getUIXpetraMultiVector(nvec);
-    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getLocalElementList().getRawPtr();
     localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data

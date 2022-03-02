@@ -102,11 +102,11 @@ int verifyInputAdapter(
   RCP<const Comm<int> > comm = M.getComm();
   int fail = 0, gfail=0;
 
-  if (!fail && ia.getLocalNumRows() != M.getNodeNumRows())
+  if (!fail && ia.getLocalNumRows() != M.getLocalNumRows())
     fail = 4;
 
-  if (M.getNodeNumRows()){
-    if (!fail && ia.getLocalNumColumns() != M.getNodeNumCols())
+  if (M.getLocalNumRows()){
+    if (!fail && ia.getLocalNumColumns() != M.getLocalNumCols())
       fail = 6;
   }
 
@@ -123,7 +123,7 @@ int verifyInputAdapter(
     ia.getRowIDsView(rowIds);
     ia.getCRSView(offsets, colIds);
 
-    if (nrows != M.getNodeNumRows())
+    if (nrows != M.getLocalNumRows())
       fail = 8;
 
     gfail = globalFail(*comm, fail);
@@ -168,7 +168,7 @@ int main(int narg, char *arg[])
   RCP<tmatrix_t> newM;   // migrated matrix
 
   tM = uinput->getUITpetraCrsMatrix();
-  size_t nrows = tM->getNodeNumRows();
+  size_t nrows = tM->getLocalNumRows();
 
   // To test migration in the input adapter we need a Solution object. 
 
