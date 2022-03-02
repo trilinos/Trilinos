@@ -8992,6 +8992,12 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                    SourcePids (),
                                    TargetPids);
 
+    // On return from unpackAndCombineIntoCrsArrays TargetPids[i] == -1 for locally
+    // owned entries.  Convert them to the actual PID.
+    for(size_t i=0; i<static_cast<size_t>(TargetPids.size()); i++)
+    {
+      if(TargetPids[i] == -1) TargetPids[i] = MyPID;
+    }
     /**************************************************************/
     /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/
     /**************************************************************/
