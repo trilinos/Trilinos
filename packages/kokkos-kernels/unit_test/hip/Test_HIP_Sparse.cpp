@@ -4,4 +4,4 @@
 #include "Test_HIP.hpp"
 #include "Test_Sparse.hpp"
 
-#endif // TEST_HIP_Sparse_CPP
+#endif  // TEST_HIP_Sparse_CPP

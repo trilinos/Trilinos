@@ -67,13 +67,34 @@
 #if defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
 // GCC 4.8.5 and older do not support #pragma omp simd
 // Do not enable when using GCC 7.2.0 + C++17 due to a bug in gcc
-#if (KOKKOS_COMPILER_GNU > 485) && !(KOKKOS_COMPILER_GNU == 720 && defined(KOKKOS_ENABLE_CXX17))
+#if (KOKKOS_COMPILER_GNU > 485) && \
+    !(KOKKOS_COMPILER_GNU == 720 && defined(KOKKOS_ENABLE_CXX17))
 #define KOKKOSKERNELS_ENABLE_OMP_SIMD
 #endif
 // TODO: Check for a clang version that supports #pragma omp simd
 #else
 // All other Kokkos-supported compilers support it.
 #define KOKKOSKERNELS_ENABLE_OMP_SIMD
+#endif
+#endif
+
+// Macro to place before an ordinary loop to force vectorization, based
+// on the pragmas that are supported by the compiler. "Force" means to
+// override the compiler's heuristics and always vectorize.
+// This respects the fact that "omp simd" is incompatible with
+// "vector always" and "ivdep" in the Intel OneAPI toolchain.
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
+#define KOKKOSKERNELS_FORCE_SIMD _Pragma("omp simd")
+#else
+#if defined(KOKKOS_ENABLE_PRAGMA_IVDEP) && defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
+#define KOKKOSKERNELS_FORCE_SIMD _Pragma("ivdep") _Pragma("vector always")
+#elif defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
+#define KOKKOSKERNELS_FORCE_SIMD _Pragma("ivdep")
+#elif defined(KOKKOS_ENABLE_PRAGMA_VECTOR)
+#define KOKKOSKERNELS_FORCE_SIMD _Pragma("vector always")
+#else
+// No macros available to suggest vectorization
+#define KOKKOSKERNELS_FORCE_SIMD
 #endif
 #endif
 

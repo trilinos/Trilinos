@@ -54,7 +54,6 @@
 
 template <class ExecSpace, class Layout>
 testData_gemv<ExecSpace, Layout> setup_test(int m, int n, int repeat) {
-
   testData_gemv<ExecSpace, Layout> testData_gemv_obj(m, n, repeat);
 
   return testData_gemv_obj;

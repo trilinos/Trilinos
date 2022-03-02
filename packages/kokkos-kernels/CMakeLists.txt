@@ -10,7 +10,7 @@ SET(KOKKOSKERNELS_TOP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 SET(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
-  cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+  cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
   IF (Spack_WORKAROUND)
     #if we are explicitly using Spack for development,
     #nuke the Spack compiler
@@ -24,14 +24,14 @@ IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
     PROJECT(KokkosKernels CXX)
   ENDIF()
   SET(KokkosKernels_VERSION_MAJOR 3)
-  SET(KokkosKernels_VERSION_MINOR 5)
+  SET(KokkosKernels_VERSION_MINOR 6)
   SET(KokkosKernels_VERSION_PATCH 00)
+  SET(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
+  MATH(EXPR KOKKOSKERNELS_VERSION "${KokkosKernels_VERSION_MAJOR} * 10000 + ${KokkosKernels_VERSION_MINOR} * 100 + ${KokkosKernels_VERSION_PATCH}")
 ENDIF()
 
-IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
-  MESSAGE(STATUS "Setting policy CMP0074 to use <Package>_ROOT variables")
-  CMAKE_POLICY(SET CMP0074 NEW)
-ENDIF()
+MESSAGE(STATUS "Setting policy CMP0074 to use <Package>_ROOT variables")
+CMAKE_POLICY(SET CMP0074 NEW)
 
 INCLUDE(GNUInstallDirs)
 IF (KOKKOSKERNELS_HAS_TRILINOS)
@@ -46,6 +46,8 @@ ELSE()
 ENDIF()
 INCLUDE(cmake/fake_tribits.cmake)
 INCLUDE(cmake/kokkoskernels_tribits.cmake)
+
+OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 KOKKOSKERNELS_PACKAGE()
 

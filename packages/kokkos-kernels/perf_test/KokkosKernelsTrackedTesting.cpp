@@ -9,6 +9,7 @@
 // For RPS version of BLAS Level-1 Tests
 #include "blas/blas1/tracked_testing.hpp"
 #include "blas/blas2/tracked_testing.hpp"
+#include "blas/blas3/tracked_testing.hpp"
 int main(int argc, char* argv[]) {
   {
     // argument parsing for setting input data at runtime
@@ -54,6 +55,8 @@ int main(int argc, char* argv[]) {
     test::blas::build_blas_executor(exec, argc, argv, run_params);
 
     test::blas2::build_blas2_executor(exec, argc, argv, run_params);
+
+    test::blas3::build_blas3_executor(exec, argc, argv, run_params);
 
     exec.setupSuite();
 
