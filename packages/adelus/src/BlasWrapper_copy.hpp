@@ -64,9 +64,9 @@ template<class XMV, class YMV>
 void
 copy (const XMV& X, const YMV& Y)
 {
-  static_assert (Kokkos::Impl::is_view<XMV>::value, "BlasWrapper::copy: "
+  static_assert (Kokkos::is_view<XMV>::value, "BlasWrapper::copy: "
                  "X is not a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<YMV>::value, "BlasWrapper::copy: "
+  static_assert (Kokkos::is_view<YMV>::value, "BlasWrapper::copy: "
                  "Y is not a Kokkos::View.");
   static_assert (std::is_same<typename YMV::value_type,
                  typename YMV::non_const_value_type>::value,

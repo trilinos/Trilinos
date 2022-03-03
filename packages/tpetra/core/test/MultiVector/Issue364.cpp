@@ -51,7 +51,7 @@ namespace TpetraTest {
 
 template<class ViewType>
 class VectorsEqual {
-  static_assert (Kokkos::Impl::is_view<ViewType>::value,
+  static_assert (Kokkos::is_view<ViewType>::value,
                  "ViewType must be a Kokkos::View specialization.");
   static_assert (static_cast<int> (ViewType::rank) == 1,
                  "ViewType must be a 1-D Kokkos::View.");
@@ -101,7 +101,7 @@ private:
 
 template<class ViewType>
 class NegateAllEntries {
-  static_assert (Kokkos::Impl::is_view<ViewType>::value,
+  static_assert (Kokkos::is_view<ViewType>::value,
                  "ViewType must be a Kokkos::View specialization.");
   static_assert (static_cast<int> (ViewType::rank) == 1,
                  "ViewType must be a 1-D Kokkos::View.");
@@ -135,7 +135,7 @@ namespace { // (anonymous)
   bool
   vectorsEqual (const ViewType& x, const ViewType& y)
   {
-    static_assert (Kokkos::Impl::is_view<ViewType>::value,
+    static_assert (Kokkos::is_view<ViewType>::value,
                    "ViewType must be a Kokkos::View specialization.");
     static_assert (static_cast<int> (ViewType::rank) == 1,
                    "ViewType must be a 1-D Kokkos::View.");
@@ -146,7 +146,7 @@ namespace { // (anonymous)
   void
   negateAllEntries (const ViewType& x)
   {
-    static_assert (Kokkos::Impl::is_view<ViewType>::value,
+    static_assert (Kokkos::is_view<ViewType>::value,
                    "ViewType must be a Kokkos::View specialization.");
     static_assert (static_cast<int> (ViewType::rank) == 1,
                    "ViewType must be a 1-D Kokkos::View.");

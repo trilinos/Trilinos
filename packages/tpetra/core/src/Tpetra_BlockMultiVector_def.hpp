@@ -773,9 +773,9 @@ blockJacobiUpdate (const ViewY& Y,
                    const ViewZ& Z,
                    const Scalar& beta)
 {
-  static_assert (Kokkos::Impl::is_view<ViewY>::value, "Y must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<ViewD>::value, "D must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<ViewZ>::value, "Z must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewY>::value, "Y must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewD>::value, "D must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewZ>::value, "Z must be a Kokkos::View.");
   static_assert (static_cast<int> (ViewY::rank) == static_cast<int> (ViewZ::rank),
                  "Y and Z must have the same rank.");
   static_assert (static_cast<int> (ViewD::rank) == 3, "D must have rank 3.");

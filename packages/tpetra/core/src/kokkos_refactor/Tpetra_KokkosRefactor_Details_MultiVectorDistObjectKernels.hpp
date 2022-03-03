@@ -166,11 +166,11 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename Enabled = void>
   class PackArraySingleColumnWithBoundsCheck {
   private:
-    static_assert (Kokkos::Impl::is_view<DstView>::value,
+    static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<SrcView>::value,
+    static_assert (Kokkos::is_view<SrcView>::value,
                    "SrcView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<IdxView>::value,
+    static_assert (Kokkos::is_view<IdxView>::value,
                    "IdxView must be a Kokkos::View.");
     static_assert (static_cast<int> (DstView::rank) == 1,
                    "DstView must be a rank-1 Kokkos::View.");
@@ -287,11 +287,11 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                             const size_t col,
                             const bool debug = true)
   {
-    static_assert (Kokkos::Impl::is_view<DstView>::value,
+    static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<SrcView>::value,
+    static_assert (Kokkos::is_view<SrcView>::value,
                    "SrcView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<IdxView>::value,
+    static_assert (Kokkos::is_view<IdxView>::value,
                    "IdxView must be a Kokkos::View.");
     static_assert (static_cast<int> (DstView::rank) == 1,
                    "DstView must be a rank-1 Kokkos::View.");
@@ -465,11 +465,11 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                            const size_t numCols,
                            const bool debug = true)
   {
-    static_assert (Kokkos::Impl::is_view<DstView>::value,
+    static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<SrcView>::value,
+    static_assert (Kokkos::is_view<SrcView>::value,
                    "SrcView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<IdxView>::value,
+    static_assert (Kokkos::is_view<IdxView>::value,
                    "IdxView must be a Kokkos::View.");
     static_assert (static_cast<int> (DstView::rank) == 1,
                    "DstView must be a rank-1 Kokkos::View.");
@@ -712,13 +712,13 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                                            const size_t numCols,
                                            const bool debug = true)
   {
-    static_assert (Kokkos::Impl::is_view<DstView>::value,
+    static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<SrcView>::value,
+    static_assert (Kokkos::is_view<SrcView>::value,
                    "SrcView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<IdxView>::value,
+    static_assert (Kokkos::is_view<IdxView>::value,
                    "IdxView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<ColView>::value,
+    static_assert (Kokkos::is_view<ColView>::value,
                    "ColView must be a Kokkos::View.");
     static_assert (static_cast<int> (DstView::rank) == 1,
                    "DstView must be a rank-1 Kokkos::View.");
@@ -811,11 +811,11 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename Enabled = void>
   class UnpackArrayMultiColumn {
   private:
-    static_assert (Kokkos::Impl::is_view<DstView>::value,
+    static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<SrcView>::value,
+    static_assert (Kokkos::is_view<SrcView>::value,
                    "SrcView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<IdxView>::value,
+    static_assert (Kokkos::is_view<IdxView>::value,
                    "IdxView must be a Kokkos::View.");
     static_assert (static_cast<int> (DstView::rank) == 2,
                    "DstView must be a rank-2 Kokkos::View.");
@@ -902,11 +902,11 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename Enabled = void>
   class UnpackArrayMultiColumnWithBoundsCheck {
   private:
-    static_assert (Kokkos::Impl::is_view<DstView>::value,
+    static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<SrcView>::value,
+    static_assert (Kokkos::is_view<SrcView>::value,
                    "SrcView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<IdxView>::value,
+    static_assert (Kokkos::is_view<IdxView>::value,
                    "IdxView must be a Kokkos::View.");
     static_assert (static_cast<int> (DstView::rank) == 2,
                    "DstView must be a rank-2 Kokkos::View.");
@@ -1071,11 +1071,11 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                              const bool use_atomic_updates,
                              const bool debug)
   {
-    static_assert (Kokkos::Impl::is_view<DstView>::value,
+    static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<SrcView>::value,
+    static_assert (Kokkos::is_view<SrcView>::value,
                    "SrcView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<IdxView>::value,
+    static_assert (Kokkos::is_view<IdxView>::value,
                    "IdxView must be a Kokkos::View.");
     static_assert (static_cast<int> (DstView::rank) == 2,
                    "DstView must be a rank-2 Kokkos::View.");
@@ -1107,13 +1107,13 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename Enabled = void>
   class UnpackArrayMultiColumnVariableStride {
   private:
-    static_assert (Kokkos::Impl::is_view<DstView>::value,
+    static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<SrcView>::value,
+    static_assert (Kokkos::is_view<SrcView>::value,
                    "SrcView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<IdxView>::value,
+    static_assert (Kokkos::is_view<IdxView>::value,
                    "IdxView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<ColView>::value,
+    static_assert (Kokkos::is_view<ColView>::value,
                    "ColView must be a Kokkos::View.");
     static_assert (static_cast<int> (DstView::rank) == 2,
                    "DstView must be a rank-2 Kokkos::View.");
@@ -1209,13 +1209,13 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
             typename Enabled = void>
   class UnpackArrayMultiColumnVariableStrideWithBoundsCheck {
   private:
-    static_assert (Kokkos::Impl::is_view<DstView>::value,
+    static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<SrcView>::value,
+    static_assert (Kokkos::is_view<SrcView>::value,
                    "SrcView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<IdxView>::value,
+    static_assert (Kokkos::is_view<IdxView>::value,
                    "IdxView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<ColView>::value,
+    static_assert (Kokkos::is_view<ColView>::value,
                    "ColView must be a Kokkos::View.");
     static_assert (static_cast<int> (DstView::rank) == 2,
                    "DstView must be a rank-2 Kokkos::View.");
@@ -1445,13 +1445,13 @@ outOfBounds (const IntegerType x, const IntegerType exclusiveUpperBound)
                                              const bool use_atomic_updates,
                                              const bool debug)
   {
-    static_assert (Kokkos::Impl::is_view<DstView>::value,
+    static_assert (Kokkos::is_view<DstView>::value,
                    "DstView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<SrcView>::value,
+    static_assert (Kokkos::is_view<SrcView>::value,
                    "SrcView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<IdxView>::value,
+    static_assert (Kokkos::is_view<IdxView>::value,
                    "IdxView must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<ColView>::value,
+    static_assert (Kokkos::is_view<ColView>::value,
                    "ColView must be a Kokkos::View.");
     static_assert (static_cast<int> (DstView::rank) == 2,
                    "DstView must be a rank-2 Kokkos::View.");

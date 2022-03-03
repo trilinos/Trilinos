@@ -441,7 +441,7 @@ namespace { // (anonymous)
 // possibly unmanaged) to their managed versions.
 template<class LittleBlockType>
 struct GetManagedView {
-  static_assert (Kokkos::Impl::is_view<LittleBlockType>::value,
+  static_assert (Kokkos::is_view<LittleBlockType>::value,
                  "LittleBlockType must be a Kokkos::View.");
   typedef Kokkos::View<typename LittleBlockType::non_const_data_type,
                        typename LittleBlockType::array_layout,
