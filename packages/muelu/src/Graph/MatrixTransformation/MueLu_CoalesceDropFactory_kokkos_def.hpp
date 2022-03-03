@@ -181,6 +181,8 @@ namespace MueLu {
       typedef typename graph_type::entries_type         cols_type;
       typedef typename MatrixType::values_type          vals_type;
       typedef          Kokkos::ArithTraits<SC>          ATS;
+      typedef typename ATS::val_type                    impl_Scalar;
+      typedef Kokkos::ArithTraits<impl_Scalar>          impl_ATS;
       typedef typename ATS::magnitudeType               magnitudeType;
 
     public:
@@ -201,7 +203,7 @@ namespace MueLu {
           aggregationMayCreateDirichlet(aggregationMayCreateDirichlet_)
       {
         rowsA = A.graph.row_map;
-        zero = ATS::zero();
+        zero = impl_ATS::zero();
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -210,12 +212,12 @@ namespace MueLu {
         auto length  = rowView.length;
         auto offset  = rowsA(row);
 
-        SC diag = zero;
+        impl_Scalar diag = zero;
         LO rownnz = 0;
         LO diagID = -1;
         for (decltype(length) colID = 0; colID < length; colID++) {
           LO col = rowView.colidx(colID);
-          SC val = rowView.value (colID);
+          impl_Scalar val = rowView.value (colID);
 
           if (!dropFunctor(row, col, rowView.value(colID)) || row == col) {
             colsAux(offset+rownnz) = col;
@@ -271,7 +273,7 @@ namespace MueLu {
       bool                                  reuseGraph;
       bool                                  lumping;
       bool                                  aggregationMayCreateDirichlet;
-      SC                                    zero;
+      impl_Scalar                           zero;
     };
 
     // collect number nonzeros of blkSize rows in nnz_(row+1)
@@ -555,7 +557,9 @@ namespace MueLu {
       auto rowsA = kokkosMatrix.graph.row_map;
 
 
-      typedef Kokkos::ArithTraits<SC>     ATS;
+      typedef Kokkos::ArithTraits<SC>          ATS;
+      typedef typename ATS::val_type           impl_Scalar;
+      typedef Kokkos::ArithTraits<impl_Scalar> impl_ATS;
 
       bool reuseGraph = pL.get<bool>("filtered matrix: reuse graph");
       bool lumping    = pL.get<bool>("filtered matrix: use lumping");
@@ -653,11 +657,11 @@ namespace MueLu {
                 auto rowView = kokkosGraph.rowConst(row);
                 auto length  = rowView.length;
 
-                SC d = ATS::zero();
+                impl_Scalar d = impl_ATS::zero();
                 for (decltype(length) colID = 0; colID < length; colID++) {
                   auto col = rowView(colID);
                   if (row != col)
-                    d += ATS::one()/distFunctor.distance2(row, col);
+                    d += impl_ATS::one()/distFunctor.distance2(row, col);
                 }
                 localLaplDiagView(row,0) = d;
               });
