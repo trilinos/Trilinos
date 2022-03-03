@@ -533,7 +533,7 @@ namespace MueLu {
 
       // Trivial LWGraph construction
       graph = rcp(new LWGraph_kokkos(A->getLocalMatrixDevice().graph, A->getRowMap(), A->getColMap(), "graph of A"));
-      graph->SetBoundaryNodeMap(boundaryNodes);
+      graph->getLocalLWGraph().SetBoundaryNodeMap(boundaryNodes);
 
       numTotal = A->getLocalNumEntries();
       dofsPerNode = 1;
@@ -750,7 +750,7 @@ namespace MueLu {
         SubFactoryMonitor m2(*this, "LWGraph construction", currentLevel);
 
         graph = rcp(new LWGraph_kokkos(kokkosGraph, A->getRowMap(), A->getColMap(), "filtered graph of A"));
-        graph->SetBoundaryNodeMap(boundaryNodes);
+        graph->getLocalLWGraph().SetBoundaryNodeMap(boundaryNodes);
       }
 
       numTotal = A->getLocalNumEntries();
@@ -870,7 +870,7 @@ namespace MueLu {
       graph = rcp(new LWGraph_kokkos(kokkosGraph, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
 
       boundaryNodes = bndNodes;
-      graph->SetBoundaryNodeMap(boundaryNodes);
+      graph->getLocalLWGraph().SetBoundaryNodeMap(boundaryNodes);
       numTotal = A->getLocalNumEntries();
 
       dofsPerNode = blkSize;
