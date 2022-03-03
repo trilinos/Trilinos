@@ -239,11 +239,11 @@ namespace MueLu {
     // build scaling matrix
     Teuchos::RCP<Vector> diagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
     Teuchos::RCP<Vector> invDiagVec = VectorFactory::Build(permPApermQt->getRowMap(),true);
-    Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
     Teuchos::ArrayRCP< Scalar > invDiagVecData = invDiagVec->getDataNonConst(0);
 
     LO lCntZeroDiagonals = 0;
     permPApermQt->getLocalDiagCopy(*diagVec);
+    Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
     for(size_t i = 0; i<diagVec->getMap()->getLocalNumElements(); ++i) {
       if(diagVecData[i] != SC_ZERO)
         invDiagVecData[i] = Teuchos::ScalarTraits<Scalar>::one()/diagVecData[i];
