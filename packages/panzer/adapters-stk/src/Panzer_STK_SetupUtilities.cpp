@@ -361,7 +361,8 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
 	 	        const std::string & blockId, 
 		        const std::vector<stk::mesh::Entity> & entities,
 		        std::vector<std::size_t> & localEntityIds, 
-		        std::vector<stk::mesh::Entity> & elements)
+		        std::vector<stk::mesh::Entity> & elements,
+			std::vector<stk::size_t> & missingElementIndices)
 {
   // for verifying that an element is in specified block
   stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
@@ -370,9 +371,11 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
 
   // loop over each entitiy extracting elements and local entity ID that
   // are containted in specified block.
+  std::size_t entityIndex =-1;
   std::vector<stk::mesh::Entity>::const_iterator entityItr;
   for(entityItr=entities.begin();entityItr!=entities.end();++entityItr) {
     stk::mesh::Entity entity = *entityItr;
+    entityIndex += 1;
 
     const size_t num_rels = bulkData.num_elements(entity);
     stk::mesh::Entity const* relations = bulkData.begin_elements(entity);
@@ -389,6 +392,10 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
         // add element and Side ID to output vectors
         elements.push_back(element);
         localEntityIds.push_back(entityId);
+      } else if(!inBlock && (num_rels == 1)) {
+        // add index of side whose neighbor element in blockPart does not belong 
+	// to the current processor
+        missingElementIndices.push_back(entityIndex);
       }
     }
   }
