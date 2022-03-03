@@ -49,8 +49,8 @@ int main( int argc, char* argv[] ) {
     errorFlag = -1000;
   }; // end try
 
-  if(errorFlag)
-    std::cout << "End Result: TEST FAILED" << std::endl;
+  if(errorFlag==0)
+    std::cout << "End Result: TEST PASSED" << std::endl;
   else
     std::cout << "End Result: TEST FAILED" << std::endl;
 
