@@ -1394,7 +1394,7 @@ namespace MueLuTests {
     comm->gatherAll(1*sizeof(GO),(char*)send_colgids.data(),NumProcs*sizeof(GO),(char*)recv_colgids.data());
 
     // Build the h2l map
-    std::vector<LO> hi_to_lo_map(hi_colMap->getNodeNumElements(),lo_invalid);
+    std::vector<LO> hi_to_lo_map(hi_colMap->getLocalNumElements(),lo_invalid);
     for(size_t i=0; i<(size_t)NumProcs; i++)
       hi_to_lo_map[recv_colgids[i]]=i;
 
@@ -1404,7 +1404,7 @@ namespace MueLuTests {
     MueLu::MueLuIntrepid::GenerateColMapFromImport(*hi_importer,hi_to_lo_map,*lo_domainMap,lo_columnMapLength,lo_colMap);
 
     // Final test
-    for(size_t i=0; i<lo_colMap->getNodeNumElements(); i++)
+    for(size_t i=0; i<lo_colMap->getLocalNumElements(); i++)
       TEST_EQUALITY(recv_colgids[i],lo_colMap->getGlobalElement(i));
 
   }

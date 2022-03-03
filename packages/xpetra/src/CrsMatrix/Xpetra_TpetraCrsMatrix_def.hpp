@@ -222,7 +222,7 @@ namespace Xpetra {
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values)
-    { XPETRA_MONITOR("TpetraCrsMatrix::allocateAllValues"); rowptr.resize(getNodeNumRows()+1); colind.resize(numNonZeros); values.resize(numNonZeros);}
+    { XPETRA_MONITOR("TpetraCrsMatrix::allocateAllValues"); rowptr.resize(getLocalNumRows()+1); colind.resize(numNonZeros); values.resize(numNonZeros);}
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values)
@@ -230,11 +230,26 @@ namespace Xpetra {
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
-    { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); mtx_->getAllValues(rowptr,colind,values); }
+    { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); 
+      // TODO: Change getAllValues interface to return Kokkos views,
+      // TODO: or add getLocalRowPtrsHost, getLocalIndicesHost, etc., interfaces
+      // TODO: and use them in MueLu
+      rowptr = Kokkos::Compat::persistingView(mtx_->getLocalRowPtrsHost());
+      colind = Kokkos::Compat::persistingView(mtx_->getLocalIndicesHost());
+      values = Teuchos::arcp_reinterpret_cast<const Scalar>(
+                 Kokkos::Compat::persistingView(mtx_->getLocalValuesHost(
+                                                   Tpetra::Access::ReadOnly)));
+    }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getAllValues(ArrayRCP<Scalar>& values)
-    { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); mtx_->getAllValues(values); }
+    { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); 
+      // TODO: Change getAllValues interface to return Kokkos view,
+      // TODO: or add getLocalValuesDevice() interfaces
+     values = Teuchos::arcp_reinterpret_cast<Scalar>(
+                Kokkos::Compat::persistingView(mtx_->getLocalValuesDevice(
+                                                  Tpetra::Access::ReadWrite)));
+    }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     bool TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::haveGlobalConstants() const
@@ -296,16 +311,16 @@ namespace Xpetra {
     global_size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumCols() const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalNumCols"); return mtx_->getGlobalNumCols(); }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeNumRows() const { XPETRA_MONITOR("TpetraCrsMatrix::getNodeNumRows"); return mtx_->getNodeNumRows(); }
+    size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalNumRows() const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalNumRows"); return mtx_->getLocalNumRows(); }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeNumCols() const { XPETRA_MONITOR("TpetraCrsMatrix::getNodeNumCols"); return mtx_->getNodeNumCols(); }
+    size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalNumCols() const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalNumCols"); return mtx_->getLocalNumCols(); }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     global_size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumEntries() const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalNumEntries"); return mtx_->getGlobalNumEntries(); }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeNumEntries() const { XPETRA_MONITOR("TpetraCrsMatrix::getNodeNumEntries"); return mtx_->getNodeNumEntries(); }
+    size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalNumEntries() const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalNumEntries"); return mtx_->getLocalNumEntries(); }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNumEntriesInLocalRow(LocalOrdinal localRow) const { XPETRA_MONITOR("TpetraCrsMatrix::getNumEntriesInLocalRow"); return mtx_->getNumEntriesInLocalRow(localRow); }
@@ -317,7 +332,7 @@ namespace Xpetra {
     size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalMaxNumRowEntries"); return mtx_->getGlobalMaxNumRowEntries(); }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeMaxNumRowEntries() const { XPETRA_MONITOR("TpetraCrsMatrix::getNodeMaxNumRowEntries"); return mtx_->getNodeMaxNumRowEntries(); }
+    size_t TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMaxNumRowEntries() const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalMaxNumRowEntries"); return mtx_->getLocalMaxNumRowEntries(); }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     bool TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::isLocallyIndexed() const { XPETRA_MONITOR("TpetraCrsMatrix::isLocallyIndexed"); return mtx_->isLocallyIndexed(); }

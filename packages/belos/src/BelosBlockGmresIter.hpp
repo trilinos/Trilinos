@@ -58,6 +58,7 @@
 #include "BelosMultiVecTraits.hpp"
 
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -266,8 +267,19 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   private:
 
   //
+  // Internal structs
+  //
+  struct CheckList {
+      bool checkV;
+      bool checkArn;
+      CheckList() : checkV(false), checkArn(false) {};
+  };
+  //
   // Internal methods
   //
+  //! Check accuracy of Arnoldi factorization
+  std::string accuracyCheck(const CheckList &chk, const std::string &where) const;
+
   //! Method for initalizing the state storage needed by block GMRES.
   void setStateSize();
 
@@ -356,7 +368,10 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     iter_(0)
   {
     // Find out whether we are saving the Hessenberg matrix.
-    keepHessenberg_ = params.get("Keep Hessenberg", false);
+    if ( om_->isVerbosity( Debug ) )
+      keepHessenberg_ = true;
+    else
+      keepHessenberg_ = params.get("Keep Hessenberg", false);
 
     // Find out whether we are initializing the Hessenberg matrix.
     initHessenberg_ = params.get("Initialize Hessenberg", false);
@@ -507,8 +522,8 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     if (curDim_==0) {
       return currentUpdate;
     } else {
-      const ScalarType one  = Teuchos::ScalarTraits<ScalarType>::one();
-      const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+      const ScalarType one  = SCT::one();
+      const ScalarType zero = SCT::zero();
       Teuchos::BLAS<int,ScalarType> blas;
       currentUpdate = MVT::Clone( *V_, blockSize_ );
       //
@@ -570,7 +585,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
                                "Belos::BlockGmresIter::initialize(): Cannot initialize state storage!");
 
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero(), one = Teuchos::ScalarTraits<ScalarType>::one();
+    const ScalarType zero = SCT::zero(), one = SCT::one();
 
     // NOTE:  In BlockGmresIter, V and Z are required!!!
     // inconsitent multivectors widths and lengths will not be tolerated, and
@@ -639,16 +654,13 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     // the solver is initialized
     initialized_ = true;
 
-    /*
     if (om_->isVerbosity( Debug ) ) {
       // Check almost everything here
       CheckList chk;
       chk.checkV = true;
       chk.checkArn = true;
-      chk.checkAux = true;
       om_->print( Debug, accuracyCheck(chk, ": after initialize()") );
     }
-    */
 
   }
 
@@ -745,21 +757,19 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       Vnext = Teuchos::null;
       curDim_ += blockSize_;
       //
-      /*
       // When required, monitor some orthogonalities
       if (om_->isVerbosity( Debug ) ) {
-      // Check almost everything here
-      CheckList chk;
-      chk.checkV = true;
-      chk.checkArn = true;
-      om_->print( Debug, accuracyCheck(chk, ": after local update") );
+        // Check almost everything here
+        CheckList chk;
+        chk.checkV = true;
+        chk.checkArn = true;
+        om_->print( Debug, accuracyCheck(chk, ": after local update") );
       }
       else if (om_->isVerbosity( OrthoDetails ) ) {
         CheckList chk;
         chk.checkV = true;
         om_->print( OrthoDetails, accuracyCheck(chk, ": after local update") );
       }
-      */
 
     } // end while (statusTest == false)
 
@@ -771,7 +781,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   {
     int i, j, maxidx;
     ScalarType sigma, mu, vscale, maxelem;
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero(), one = Teuchos::ScalarTraits<ScalarType>::one();
+    const ScalarType zero = SCT::zero();
 
     // Get correct dimension based on input "dim"
     // Remember that ortho failures result in an exit before updateLSQR() is called.
@@ -817,7 +827,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
         for (i=0; i<curDim+j; i++) {
           sigma = blas.DOT( blockSize_, &(*R_)(i+1,i), 1, &(*R_)(i+1,curDim+j), 1);
           sigma += (*R_)(i,curDim+j);
-          sigma *= beta[i];
+          sigma *= SCT::conjugate(beta[i]);
           blas.AXPY(blockSize_, ScalarType(-sigma), &(*R_)(i+1,i), 1, &(*R_)(i+1,curDim+j), 1);
           (*R_)(i,curDim+j) -= sigma;
         }
@@ -825,23 +835,20 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
         // Compute new Householder reflector
         //
         maxidx = blas.IAMAX( blockSize_+1, &(*R_)(curDim+j,curDim+j), 1 );
-        maxelem = (*R_)(curDim+j+maxidx-1,curDim+j);
+        maxelem = SCT::magnitude((*R_)(curDim+j+maxidx-1,curDim+j));
         for (i=0; i<blockSize_+1; i++)
           (*R_)(curDim+j+i,curDim+j) /= maxelem;
         sigma = blas.DOT( blockSize_, &(*R_)(curDim+j+1,curDim+j), 1,
                           &(*R_)(curDim+j+1,curDim+j), 1 );
+        MagnitudeType sign_Rjj = -SCT::real((*R_)(curDim+j,curDim+j)) /
+                 SCT::magnitude(SCT::real(((*R_)(curDim+j,curDim+j))));
         if (sigma == zero) {
           beta[curDim + j] = zero;
         } else {
-          mu = Teuchos::ScalarTraits<ScalarType>::squareroot((*R_)(curDim+j,curDim+j)*(*R_)(curDim+j,curDim+j)+sigma);
-          if ( Teuchos::ScalarTraits<ScalarType>::real((*R_)(curDim+j,curDim+j))
-               < Teuchos::ScalarTraits<MagnitudeType>::zero() ) {
-            vscale = (*R_)(curDim+j,curDim+j) - mu;
-          } else {
-            vscale = -sigma / ((*R_)(curDim+j,curDim+j) + mu);
-          }
-          beta[curDim+j] = Teuchos::as<ScalarType>(2)*one*vscale*vscale/(sigma + vscale*vscale);
-          (*R_)(curDim+j,curDim+j) = maxelem*mu;
+          mu = SCT::squareroot(SCT::conjugate((*R_)(curDim+j,curDim+j))*(*R_)(curDim+j,curDim+j)+sigma);
+          vscale = (*R_)(curDim+j,curDim+j) - Teuchos::as<ScalarType>(sign_Rjj)*mu;
+          beta[curDim+j] = -Teuchos::as<ScalarType>(sign_Rjj) * vscale / mu;
+          (*R_)(curDim+j,curDim+j) = Teuchos::as<ScalarType>(sign_Rjj)*maxelem*mu;
           for (i=0; i<blockSize_; i++)
             (*R_)(curDim+j+1+i,curDim+j) /= vscale;
         }
@@ -852,7 +859,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
           sigma = blas.DOT( blockSize_, &(*R_)(curDim+j+1,curDim+j),
                             1, &(*z_)(curDim+j+1,i), 1);
           sigma += (*z_)(curDim+j,i);
-          sigma *= beta[curDim+j];
+          sigma *= SCT::conjugate(beta[curDim+j]);
           blas.AXPY(blockSize_, ScalarType(-sigma), &(*R_)(curDim+j+1,curDim+j),
                     1, &(*z_)(curDim+j+1,i), 1);
           (*z_)(curDim+j,i) -= sigma;
@@ -866,6 +873,84 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     }
 
   } // end updateLSQR()
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Check accuracy, orthogonality, and other debugging stuff
+  //
+  // bools specify which tests we want to run (instead of running more than we actually care about)
+  //
+  // checkV : V orthonormal
+  //
+  // checkArn: check the Arnoldi factorization
+  //
+  // NOTE:  This method needs to check the current dimension of the subspace, since it is possible to
+  //        call this method when curDim_ = 0 (after initialization).
+  template <class ScalarType, class MV, class OP>
+  std::string BlockGmresIter<ScalarType,MV,OP>::accuracyCheck( const CheckList &chk, const std::string &where ) const
+  {
+    std::stringstream os;
+    os.precision(2);
+    os.setf(std::ios::scientific, std::ios::floatfield);
+    MagnitudeType tmp;
+
+    os << " Debugging checks: iteration " << iter_ << where << std::endl;
+
+    // index vectors for V and F
+    std::vector<int> lclind(curDim_);
+    for (int i=0; i<curDim_; i++) lclind[i] = i;
+    std::vector<int> bsind(blockSize_);
+    for (int i=0; i<blockSize_; i++) { bsind[i] = curDim_ + i; }
+
+    Teuchos::RCP<const MV> lclV,lclF;
+    Teuchos::RCP<MV> lclAV;
+    if (curDim_)
+      lclV = MVT::CloneView(*V_,lclind);
+    lclF = MVT::CloneView(*V_,bsind);
+
+    if (chk.checkV) {
+      if (curDim_) {
+        tmp = ortho_->orthonormError(*lclV);
+        os << " >> Error in V^H M V == I  : " << tmp << std::endl;
+      }
+      tmp = ortho_->orthonormError(*lclF);
+      os << " >> Error in F^H M F == I  : " << tmp << std::endl;
+      if (curDim_) {
+        tmp = ortho_->orthogError(*lclV,*lclF);
+        os << " >> Error in V^H M F == 0  : " << tmp << std::endl;
+      }
+    }
+  
+    if (chk.checkArn) {
+
+      if (curDim_) {
+        // Compute AV    
+        lclAV = MVT::Clone(*V_,curDim_);
+        lp_->apply(*lclV,*lclAV);
+
+        // Compute AV - VH
+        const ScalarType one  = Teuchos::ScalarTraits<ScalarType>::one();
+        Teuchos::SerialDenseMatrix<int,ScalarType> subH(Teuchos::View,*H_,curDim_,curDim_);
+        MVT::MvTimesMatAddMv( -one, *lclV, subH, one, *lclAV );
+
+        // Compute FB_k^T - (AV-VH)
+        Teuchos::SerialDenseMatrix<int,ScalarType> curB(Teuchos::View,*H_,
+                                                        blockSize_,curDim_, curDim_ );
+        MVT::MvTimesMatAddMv( -one, *lclF, curB, one, *lclAV );
+
+        // Compute || FE_k^T - (AV-VH) ||
+        std::vector<MagnitudeType> arnNorms( curDim_ );
+        ortho_->norm( *lclAV, arnNorms );
+
+        for (int i=0; i<curDim_; i++) {
+        os << " >> Error in Krylov factorization (R = AV-VH-FB^H), ||R[" << i << "]|| : " << arnNorms[i] << std::endl;
+        }
+      }
+    }
+
+    os << std::endl;
+
+    return os.str();
+  }
 
 } // end Belos namespace
 

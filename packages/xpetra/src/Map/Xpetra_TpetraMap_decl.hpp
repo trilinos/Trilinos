@@ -122,7 +122,7 @@ namespace Xpetra {
     global_size_t getGlobalNumElements() const;
 
     //! The number of elements belonging to the calling node.
-    size_t getNodeNumElements() const;
+    size_t getLocalNumElements() const;
 
     //! The index base for this Map.
     GlobalOrdinal getIndexBase() const;
@@ -158,7 +158,7 @@ namespace Xpetra {
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const;
 
     //! Return a view of the global indices owned by this node.
-    Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const;
+    Teuchos::ArrayView< const GlobalOrdinal > getLocalElementList() const;
 
     //@}
 

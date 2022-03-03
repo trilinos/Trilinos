@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
     RCP<crs_matrix_type> K = rcp (new crs_matrix_type (UniqueMap, 10));
 
-    for (LO i = 0; i < static_cast<LO>(UniqueMap->getNodeNumElements()); ++i) {
+    for (LO i = 0; i < static_cast<LO>(UniqueMap->getLocalNumElements()); ++i) {
       LO numEntries = 10-i;
       Array<GO> indicesArray(numEntries);
       Array<SC> valuesArray(numEntries);

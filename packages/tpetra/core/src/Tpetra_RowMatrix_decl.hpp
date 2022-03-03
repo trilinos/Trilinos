@@ -180,14 +180,24 @@ namespace Tpetra {
     virtual global_size_t getGlobalNumCols() const = 0;
 
     //! The number of rows owned by the calling process.
-    virtual size_t getNodeNumRows() const = 0;
+    virtual size_t getLocalNumRows() const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeNumRows() const {
+      return this->getLocalNumRows();
+    }
+#endif
 
     /// \brief The number of columns needed to apply the forward operator on this node.
     ///
     /// This is the same as the number of elements listed in the
     /// column Map.  It is <i>not</i> necessarily the same as the
     /// number of domain Map elements owned by the calling process.
-    virtual size_t getNodeNumCols() const = 0;
+    virtual size_t getLocalNumCols() const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeNumCols() const {
+      return this->getLocalNumCols();
+    }
+#endif
 
     //! The index base for global indices in this matrix.
     virtual GlobalOrdinal getIndexBase() const = 0;
@@ -196,7 +206,12 @@ namespace Tpetra {
     virtual global_size_t getGlobalNumEntries() const = 0;
 
     //! The local number of stored (structurally nonzero) entries.
-    virtual size_t getNodeNumEntries() const = 0;
+    virtual size_t getLocalNumEntries() const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeNumEntries() const {
+      return this->getLocalNumEntries();
+    }
+#endif
 
     /// \brief The current number of entries on the calling process in the specified global row.
     ///
@@ -238,7 +253,12 @@ namespace Tpetra {
     ///
     /// This method only uses the matrix's graph.  Explicitly stored
     /// zeros count as "entries."
-    virtual size_t getNodeMaxNumRowEntries () const = 0;
+    virtual size_t getLocalMaxNumRowEntries () const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeMaxNumRowEntries () const {
+      return this->getLocalMaxNumRowEntries();
+    }
+#endif
 
     //! Whether this matrix has a well-defined column Map.
     virtual bool hasColMap () const = 0;

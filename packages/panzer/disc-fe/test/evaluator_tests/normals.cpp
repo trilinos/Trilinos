@@ -135,7 +135,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point,panzer::Dim> > normalsPtr;
   {
      Teuchos::ParameterList p;
@@ -189,12 +188,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
 
      // useful for checking if normals are consistent: transformation is
      // affine!
-     double nx0 = ScalarValue::eval(normals_h(i,0,0));
-     double ny0 = ScalarValue::eval(normals_h(i,0,1));
+     double nx0 = Sacado::scalarValue(normals_h(i,0,0));
+     double ny0 = Sacado::scalarValue(normals_h(i,0,1));
 
      for(int v=0;v<quadRule->num_points;v++) {
-        double nx = ScalarValue::eval(normals_h(i,v,0)); 
-        double ny = ScalarValue::eval(normals_h(i,v,1)); 
+        double nx = Sacado::scalarValue(normals_h(i,v,0)); 
+        double ny = Sacado::scalarValue(normals_h(i,v,1)); 
  
         TEST_FLOATING_EQUALITY(nx*nx+ny*ny,1.0,1e-15);
 
@@ -206,8 +205,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
 
   // check cell 0
   {
-     double nx = ScalarValue::eval(normals_h(0,0,0));
-     double ny = ScalarValue::eval(normals_h(0,0,1));
+     double nx = Sacado::scalarValue(normals_h(0,0,0));
+     double ny = Sacado::scalarValue(normals_h(0,0,1));
    
      TEST_FLOATING_EQUALITY(nx,0.0,1e-15);
      TEST_FLOATING_EQUALITY(ny,1.0,1e-15);
@@ -215,8 +214,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
 
   // check cell 1
   {
-     double nx = ScalarValue::eval(normals_h(1,0,0));
-     double ny = ScalarValue::eval(normals_h(1,0,1));
+     double nx = Sacado::scalarValue(normals_h(1,0,0));
+     double ny = Sacado::scalarValue(normals_h(1,0,1));
      double sqrt2 = std::sqrt(2.0);
    
      TEST_FLOATING_EQUALITY(nx,1.0/sqrt2,1e-15);

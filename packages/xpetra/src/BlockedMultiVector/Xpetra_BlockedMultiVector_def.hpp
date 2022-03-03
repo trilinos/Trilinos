@@ -91,19 +91,19 @@ BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 BlockedMultiVector(Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> bmap,
                    Teuchos::RCP<const MultiVector>                                           v)
 {
-    XPETRA_TEST_FOR_EXCEPTION(bmap->getMap()->getNodeNumElements() != v->getMap()->getNodeNumElements(),
+    XPETRA_TEST_FOR_EXCEPTION(bmap->getMap()->getLocalNumElements() != v->getMap()->getLocalNumElements(),
                               Xpetra::Exceptions::RuntimeError,
                               "BlockedMultiVector: inconsistent number of local elements of MultiVector and BlockedMap. The BlockedMap has "
-                                << bmap->getMap()->getNodeNumElements() << " local elements. The vector has " << v->getMap()->getNodeNumElements()
+                                << bmap->getMap()->getLocalNumElements() << " local elements. The vector has " << v->getMap()->getLocalNumElements()
                                 << ".");
     XPETRA_TEST_FOR_EXCEPTION(bmap->getMap()->getGlobalNumElements() != v->getMap()->getGlobalNumElements(),
                               Xpetra::Exceptions::RuntimeError,
                               "BlockedMultiVector: inconsistent number of global elements of MultiVector and BlockedMap. The BlockedMap has "
                                 << bmap->getMap()->getGlobalNumElements() << " local elements. The vector has " << v->getMap()->getGlobalNumElements()
                                 << ".");
-    // TEUCHOS_TEST_FOR_EXCEPTION(bmap->getFullMap()->getNodeNumElements() != v->getMap()->getNodeNumElements(), Xpetra::Exceptions::RuntimeError,
+    // TEUCHOS_TEST_FOR_EXCEPTION(bmap->getFullMap()->getLocalNumElements() != v->getMap()->getLocalNumElements(), Xpetra::Exceptions::RuntimeError,
     // "BlockedMultiVector: inconsistent number of local elements of MultiVector and BlockedMap. The BlockedMap has " <<
-    // bmap->getFullMap()->getNodeNumElements() << " local elements. The vector has " << v->getMap()->getNodeNumElements() << ".");
+    // bmap->getFullMap()->getLocalNumElements() << " local elements. The vector has " << v->getMap()->getLocalNumElements() << ".");
     // TEUCHOS_TEST_FOR_EXCEPTION(bmap->getFullMap()->getGlobalNumElements() != v->getMap()->getGlobalNumElements(), Xpetra::Exceptions::RuntimeError,
     // "BlockedMultiVector: inconsistent number of global elements of MultiVector and BlockedMap. The BlockedMap has " <<
     // bmap->getFullMap()->getGlobalNumElements() << " local elements. The vector has " << v->getMap()->getGlobalNumElements() << ".");
@@ -381,11 +381,11 @@ update(const Scalar& alpha, const MultiVector& A, const Scalar& beta)
         for(size_t r = 0; r < map_->getNumMaps(); r++)
         {
 
-            XPETRA_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->getNodeNumElements() != bA->getMultiVector(r)->getMap()->getNodeNumElements(),
+            XPETRA_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->getLocalNumElements() != bA->getMultiVector(r)->getMap()->getLocalNumElements(),
                                       Xpetra::Exceptions::RuntimeError,
                                       "BlockedMultiVector::update: in subvector "
-                                        << r << ": Cannot add a vector of (local) length " << bA->getMultiVector(r)->getMap()->getNodeNumElements()
-                                        << " to the existing vector with " << getMultiVector(r)->getMap()->getNodeNumElements() << " entries.");
+                                        << r << ": Cannot add a vector of (local) length " << bA->getMultiVector(r)->getMap()->getLocalNumElements()
+                                        << " to the existing vector with " << getMultiVector(r)->getMap()->getLocalNumElements() << " entries.");
             XPETRA_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->getGlobalNumElements() != bA->getMultiVector(r)->getMap()->getGlobalNumElements(),
                                       Xpetra::Exceptions::RuntimeError,
                                       "BlockedMultiVector::update: in subvector "
@@ -445,11 +445,11 @@ update(const Scalar& alpha, const MultiVector& A, const Scalar& beta)
                 // Call "update" on the subvector. Note, that getMultiVector(r) could return another BlockedMultiVector.
                 // That is, in Thyra mode the maps could differ (local Xpetra versus Thyra style gids)
                 Teuchos::RCP<const MultiVector> part = this->ExtractVector(rcpA, r, map_->getThyraMode());
-                XPETRA_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->getNodeNumElements() != part->getMap()->getNodeNumElements(),
+                XPETRA_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->getLocalNumElements() != part->getMap()->getLocalNumElements(),
                                           Xpetra::Exceptions::RuntimeError,
                                           "BlockedMultiVector::update: in subvector "
-                                            << r << ": Cannot add a vector of (local) length " << part->getMap()->getNodeNumElements()
-                                            << " to the existing vector with " << getMultiVector(r)->getMap()->getNodeNumElements() << " entries.");
+                                            << r << ": Cannot add a vector of (local) length " << part->getMap()->getLocalNumElements()
+                                            << " to the existing vector with " << getMultiVector(r)->getMap()->getLocalNumElements() << " entries.");
                 XPETRA_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->getGlobalNumElements() != part->getMap()->getGlobalNumElements(),
                                           Xpetra::Exceptions::RuntimeError,
                                           "BlockedMultiVector::update: in subvector "
@@ -616,10 +616,10 @@ elementWiseMultiply(Scalar scalarAB,
                               "BlockedMultiVector::elementWiseMultipy: B must have same blocked map than this.");
     // XPETRA_TEST_FOR_EXCEPTION(A.getMap()->isSameAs(*(this->getMap()))==false, Xpetra::Exceptions::RuntimeError,
     // "BlockedMultiVector::elementWiseMultipy: A must have same blocked map than this.");
-    TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getNodeNumElements() != B.getMap()->getNodeNumElements(),
+    TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getLocalNumElements() != B.getMap()->getLocalNumElements(),
                                Xpetra::Exceptions::RuntimeError,
-                               "BlockedMultiVector::elementWiseMultipy: A has " << A.getMap()->getNodeNumElements() << " elements, B has "
-                                                                                << B.getMap()->getNodeNumElements() << ".");
+                               "BlockedMultiVector::elementWiseMultipy: A has " << A.getMap()->getLocalNumElements() << " elements, B has "
+                                                                                << B.getMap()->getLocalNumElements() << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getGlobalNumElements() != B.getMap()->getGlobalNumElements(),
                                Xpetra::Exceptions::RuntimeError,
                                "BlockedMultiVector::elementWiseMultipy: A has " << A.getMap()->getGlobalNumElements() << " elements, B has "
@@ -665,7 +665,7 @@ BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getLocalLength() const
 {
     XPETRA_MONITOR("BlockedMultiVector::getLocalLength()");
-    return map_->getFullMap()->getNodeNumElements();
+    return map_->getFullMap()->getLocalNumElements();
 }
 
 

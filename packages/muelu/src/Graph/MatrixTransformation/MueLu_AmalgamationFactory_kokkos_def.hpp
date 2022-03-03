@@ -167,7 +167,7 @@ namespace MueLu {
     typedef std::map<GO,size_type> container;
 
     GO                      indexBase = sourceMap.getIndexBase();
-    ArrayView<const GO>     elementAList = sourceMap.getNodeElementList();
+    ArrayView<const GO>     elementAList = sourceMap.getLocalElementList();
     size_type               numElements  = elementAList.size();
     container               filter; // TODO:  replace std::set with an object having faster lookup/insert, hashtable for instance
 

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -608,11 +608,12 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
     fmt::print("---------------------------------------------------------\n"
                "\t\tLoad balance file global information\n"
                "---------------------------------------------------------\n"
-               "\tNumber of nodes:          {:L}\n"
-               "\tNumber of elements:       {:L}\n"
-               "\tNumber of element blocks: {:L}\n"
+               "\tNumber of nodes:          {}\n"
+               "\tNumber of elements:       {}\n"
+               "\tNumber of element blocks: {}\n"
                "---------------------------------------------------------\n",
-               num_nodes, num_elem, num_elem_blk);
+               fmt::group_digits(num_nodes), fmt::group_digits(num_elem),
+               fmt::group_digits(num_elem_blk));
   }
 #endif
 
@@ -670,17 +671,19 @@ in mesh file",
                    "\t\tLoad balance parameters as read by Processor 0\n"
                    "--------------------------------------------------------\n");
       }
-      fmt::print("Read on processor 0 for processor {:L}\n"
-                 "\tNumber internal nodes:         {:L}\n"
-                 "\tNumber border nodes:           {:L}\n"
-                 "\tNumber external nodes:         {:L}\n"
-                 "\tNumber internal elements:      {:L}\n"
-                 "\tNumber border elements:        {:L}\n"
-                 "\tNumber of nodal comm maps:     {:L}\n"
-                 "\tNumber of elemental comm maps: {:L}\n"
+      fmt::print("Read on processor 0 for processor {}\n"
+                 "\tNumber internal nodes:         {}\n"
+                 "\tNumber border nodes:           {}\n"
+                 "\tNumber external nodes:         {}\n"
+                 "\tNumber internal elements:      {}\n"
+                 "\tNumber border elements:        {}\n"
+                 "\tNumber of nodal comm maps:     {}\n"
+                 "\tNumber of elemental comm maps: {}\n"
                  "--------------------------------------------------------\n",
-                 i, Int_Node_Num[i], Bor_Node_Num[i], Ext_Node_Num[i], Int_Elem_Num[i],
-                 Bor_Elem_Num[i], Node_Comm_Num[i], Elem_Comm_Num[i]);
+                 fmt::group_digits(i), fmt::group_digits(Int_Node_Num[i]),
+                 fmt::group_digits(Bor_Node_Num[i]), fmt::group_digits(Ext_Node_Num[i]),
+                 fmt::group_digits(Int_Elem_Num[i]), fmt::group_digits(Bor_Elem_Num[i]),
+                 fmt::group_digits(Node_Comm_Num[i]), fmt::group_digits(Elem_Comm_Num[i]));
     }
 #endif /* DEBUG */
 

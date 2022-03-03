@@ -151,6 +151,8 @@ namespace FROSch {
         using GOVecVec                  = Array<GOVec>;
         using GOVecVecPtr               = ArrayRCP<GOVec>;
 
+        using GOView                    = Kokkos::View<GO*, Kokkos::HostSpace>;
+
     public:
         LowerPIDTieBreak(CommPtr comm,
                          ConstXMapPtr originalMap,

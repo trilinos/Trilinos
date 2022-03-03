@@ -270,11 +270,11 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   // Check in serial or one-process mode if the matrix is square.
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! A.is_null () && A->getComm ()->getSize () == 1 &&
-    A->getNodeNumRows () != A->getNodeNumCols (),
+    A->getLocalNumRows () != A->getLocalNumCols (),
     std::runtime_error, "Ifpack2::IdentitySolver::setMatrix: If A's communicator only "
     "contains one process, then A must be square.  Instead, you provided a "
-    "matrix A with " << A->getNodeNumRows () << " rows and "
-    << A->getNodeNumCols () << " columns.");
+    "matrix A with " << A->getLocalNumRows () << " rows and "
+    << A->getLocalNumCols () << " columns.");
 
   // It's legal for A to be null; in that case, you may not call
   // initialize() until calling setMatrix() with a nonnull input.

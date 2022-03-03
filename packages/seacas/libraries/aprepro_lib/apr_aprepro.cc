@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,7 +32,7 @@
 #endif
 
 namespace {
-  const char *version_string = "6.04 (2021/10/26)";
+  const char *version_string = "6.05 (2022/01/10)";
 
   void output_copyright();
 
@@ -584,6 +584,15 @@ namespace SEAMS {
     auto ptr = new array(from);
     array_allocations.push_back(ptr);
     return ptr;
+  }
+
+  void Aprepro::redefine_array(array *array)
+  {
+    // This data pointer from an array is being redefined.  Remove it
+    // from `array_allocations` to avoid double delete.
+    array_allocations.erase(std::remove(array_allocations.begin(), array_allocations.end(), array),
+                            array_allocations.end());
+    delete array;
   }
 
   void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value,

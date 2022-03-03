@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -135,8 +135,8 @@ static void *smalloc(size_t n)
   if (pntr == nullptr && n != 0) {
     fmt::print(stderr,
                "smalloc: Out of space - number of bytes "
-               "requested = {:L}\n",
-               n);
+               "requested = {}\n",
+               fmt::group_digits(n));
     exit(0);
   }
   return (pntr);

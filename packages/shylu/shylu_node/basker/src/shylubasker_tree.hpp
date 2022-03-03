@@ -920,6 +920,9 @@ namespace BaskerNS
             tree.col_tabs[i],
             (tree.col_tabs[i+1] - tree.col_tabs[i])
             );
+        #ifdef MY_DEBUG
+        printf( " LL(%d)(%d).set_shape(%dx%d)\n",i,L_view_count[i], tree.col_tabs[j+1]-tree.col_tabs[j],tree.col_tabs[i+1]-tree.col_tabs[i] );
+        #endif
 
         L_view_count[i] = L_view_count[i]+1;
 

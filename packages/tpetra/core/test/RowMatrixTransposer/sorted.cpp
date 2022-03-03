@@ -223,7 +223,7 @@ testTranspose (bool& success,
 
     // By this point, we know that the row Maps are the same.
     auto rowMap_at = AT_unsorted->getRowMap ();
-    const LO lclNumRows_at (rowMap_at->getNodeNumElements ());
+    const LO lclNumRows_at (rowMap_at->getLocalNumElements ());
     if (lclNumRows_at != 0) {
       std::vector<LO> lclColIndsBuf;
       std::vector<ST> valsBuf;
@@ -295,7 +295,7 @@ testTranspose (bool& success,
 
     // By this point, we know that the row Maps are the same.
     auto rowMap_at = AT_sorted->getRowMap ();
-    const LO lclNumRows_at (rowMap_at->getNodeNumElements ());
+    const LO lclNumRows_at (rowMap_at->getLocalNumElements ());
     if (lclNumRows_at != 0) {
       for (LO lclRow = 0; lclRow < lclNumRows_at; ++lclRow) {
         typename crs_matrix_type::local_inds_host_view_type lclColInds;

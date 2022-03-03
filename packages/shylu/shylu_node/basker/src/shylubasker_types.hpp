@@ -63,7 +63,8 @@ enum BASKER_MATCHING_CODE
 #define BASKER_BTF_NNZ_OVER      2.0 //Upped from 1.20
 #define BASKER_BTF_PRUNE_SIZE    100
 
-#define BASKER_DOM_NNZ_OVER      1.0 //Added to control estimate for DOM/SEP blocks
+#define BASKER_DOM_NNZ_OVER      1.0 //Added to control estimate for DOM blocks
+#define BASKER_SEP_NNZ_OVER      3.0 //Added to control estimate for SEP blocks
 
 enum BASKER_INCOMPLETE_CODE
 {

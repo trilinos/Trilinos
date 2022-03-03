@@ -389,6 +389,8 @@ namespace panzer
       PHX::MDField<const double, panzer::Cell, panzer::BASIS, panzer::IP,
         panzer::Dim> basis_;
 
+    /// Temporary for caching field multipliers
+    PHX::View<ScalarT*> tmp_;
   }; // end of class Integrator_BasisTimesVector
 
 } // end of namespace panzer

@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -429,9 +429,10 @@ C=======================================================================
 C=======================================================================
       ELSE IF (VERB .EQ. 'EXPLODE') THEN
         DO 170 IBLK = 1, NELBLK
-          CALL INTSTR (1, 0, IDELB(IBLK), WORD, LW)
-          WRITE (CTEMP, 10010) 'Offset for Material ', WORD(:LW),'> '
-10010     FORMAT (1X, 3A)
+          WRITE (CTEMP, 10010) 'Offset for Material ', idelb(iblk),' > '
+10010     FORMAT (1X, A, I10, A)
+          CALL SQZSTR (CTEMP, LSTR)
+          
           CALL FREFLD (0, 0, CTEMP(:LENSTR(CTEMP)+1), MAXFLD,
      &      IOSTAT, NUMFLD, INTYP, CFIELD, IFIELD, RFIELD)
           IF (IOSTAT .LT. 0) GOTO 430

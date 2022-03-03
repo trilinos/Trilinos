@@ -243,7 +243,7 @@ namespace Stokhos {
     typedef Tpetra::CrsMatrix<Scalar,LO,GO,N> MatrixType;
     typedef Tpetra::Map<LO,GO,N> Map;
 
-    typedef typename MatrixType::local_matrix_type KokkosMatrixType;
+    typedef typename MatrixType::local_matrix_device_type KokkosMatrixType;
 
     typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
     typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;
@@ -251,7 +251,7 @@ namespace Stokhos {
     RCP< const Map > rmap = A.getRowMap();
     RCP< const Map > cmap = A.getColMap();
 
-    KokkosMatrixType kokkos_matrix = A.getLocalMatrix();
+    KokkosMatrixType kokkos_matrix = A.getLocalMatrixDevice();
     KokkosGraphType kokkos_graph = kokkos_matrix.graph;
     KokkosMatrixValuesType matrix_values = kokkos_matrix.values;
     const size_t ncols = kokkos_matrix.numCols();
@@ -281,8 +281,8 @@ namespace Stokhos {
     typedef Tpetra::CrsMatrix<BaseScalar,LO,GO,N> ScalarMatrixType;
     typedef Tpetra::Map<LO,GO,N> Map;
 
-    typedef typename MatrixType::local_matrix_type KokkosMatrixType;
-    typedef typename ScalarMatrixType::local_matrix_type ScalarKokkosMatrixType;
+    typedef typename MatrixType::local_matrix_device_type KokkosMatrixType;
+    typedef typename ScalarMatrixType::local_matrix_device_type ScalarKokkosMatrixType;
 
     typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
     typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;
@@ -290,7 +290,7 @@ namespace Stokhos {
     RCP< const Map > rmap = A.getRowMap();
     RCP< const Map > cmap = A.getColMap();
 
-    KokkosMatrixType kokkos_matrix = A.getLocalMatrix();
+    KokkosMatrixType kokkos_matrix = A.getLocalMatrixDevice();
     KokkosGraphType kokkos_graph = kokkos_matrix.graph;
     KokkosMatrixValuesType matrix_values = kokkos_matrix.values;
     const size_t ncols = kokkos_matrix.numCols();
@@ -331,7 +331,7 @@ namespace Stokhos {
       Kokkos::parallel_for( policy, KOKKOS_LAMBDA(const size_t i)
       {
         for (size_t j=0; j<n; ++j) {
-          Scalar& s = src(i,j);
+          const Scalar& s = src(i,j);
           for (size_t k=0; k<p; ++k)
             dst(i,j*p+k) = s.fastAccessCoeff(k);
         }
@@ -539,8 +539,8 @@ namespace Stokhos {
     {
       typedef typename scalar_mv_type::device_type device_type;
 
-      auto xv = X.template getLocalView<device_type>();
-      auto yv = Y.template getLocalView<device_type>();
+      auto xv = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto yv = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
       const size_t pce_size = Kokkos::dimension_scalar(xv);
       if (X_s == Teuchos::null ||
           X_s->getNumVectors() != X.getNumVectors()*pce_size)
@@ -550,8 +550,8 @@ namespace Stokhos {
           Y_s->getNumVectors() != Y.getNumVectors()*pce_size)
         Y_s = Teuchos::rcp(new scalar_mv_type(Y.getMap(),
                                               Y.getNumVectors()*pce_size));
-      auto xv_s = X_s->template getLocalView<device_type>();
-      auto yv_s = Y_s->template getLocalView<device_type>();
+      auto xv_s = X_s->getLocalViewDevice(Tpetra::Access::ReadWrite);
+      auto yv_s = Y_s->getLocalViewDevice(Tpetra::Access::ReadWrite);
       base_scalar_type alpha_s = alpha.fastAccessCoeff(0);
       base_scalar_type beta_s = beta.fastAccessCoeff(0);
 

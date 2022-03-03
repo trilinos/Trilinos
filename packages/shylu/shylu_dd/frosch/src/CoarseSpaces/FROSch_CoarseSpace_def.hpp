@@ -69,16 +69,16 @@ namespace FROSch {
     {
         FROSCH_ASSERT(!subspaceBasisMap.is_null(),"FROSch::CoarseSpace: subspaceBasisMap.is_null()");
         if (!subspaceBasis.is_null()) {
-            FROSCH_ASSERT(subspaceBasis->getNumVectors()==subspaceBasisMap->getNodeNumElements(),"FROSch::CoarseSpace: subspaceBasis->getNumVectors()!=subspaceBasisMap->getNodeNumElements()");
+            FROSCH_ASSERT(subspaceBasis->getNumVectors()==subspaceBasisMap->getLocalNumElements(),"FROSch::CoarseSpace: subspaceBasis->getNumVectors()!=subspaceBasisMap->getLocalNumElements()");
         } else {
-            FROSCH_ASSERT(subspaceBasisMap->getNodeNumElements()==0,"FROSch::CoarseSpace: subspaceBasisMap->getNodeNumElements()!=0");
+            FROSCH_ASSERT(subspaceBasisMap->getLocalNumElements()==0,"FROSch::CoarseSpace: subspaceBasisMap->getLocalNumElements()!=0");
         }
 
         UnassembledBasesMaps_.push_back(subspaceBasisMap);
         UnassembledBasesMapsUnique_.push_back(subspaceBasisMapUnique);
         UnassembledSubspaceBases_.push_back(subspaceBasis);
         Offsets_.push_back(offset);
-        LocalSubspacesSizes_.push_back(subspaceBasisMap->getNodeNumElements());
+        LocalSubspacesSizes_.push_back(subspaceBasisMap->getLocalNumElements());
 
         return 0;
     }
@@ -125,7 +125,7 @@ namespace FROSch {
                 }
                 XMapPtr serialMap = MapFactory<LO,GO,NO>::Build(AssembledBasisMap_->lib(),totalSize,0,this->SerialComm_);
 
-                AssembledBasis_ = MultiVectorFactory<SC,LO,GO,NO >::Build(serialMap,AssembledBasisMap_->getNodeNumElements());
+                AssembledBasis_ = MultiVectorFactory<SC,LO,GO,NO >::Build(serialMap,AssembledBasisMap_->getLocalNumElements());
                 #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
                 if (AssembledBasis_->getMap()->lib() == UseTpetra) {
                     UN itmp = 0;
@@ -223,7 +223,7 @@ namespace FROSch {
             auto AssembledBasisView = AssembledBasis_->getDeviceLocalView(Access::ReadOnly);
 
             // count number of nonzeros per row
-            UN numLocalRows = rowMap->getNodeNumElements();
+            UN numLocalRows = rowMap->getLocalNumElements();
             rowptr_type Rowptr ("Rowptr", numLocalRows+1);
             Kokkos::deep_copy(Rowptr, 0);
             Kokkos::parallel_for(
@@ -291,7 +291,7 @@ namespace FROSch {
 #endif
         {
             if (rowMap->lib()==UseEpetra) {
-                GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+                GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_->getLocalNumElements()); // Nonzeroes abhängig von dim/dofs!!!
                 LO iD;
                 SC valueTmp;
                 for (UN i=0; i<AssembledBasis_->getLocalLength(); i++) {
@@ -311,7 +311,7 @@ namespace FROSch {
                     }
                 }
             } else {
-                GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_,AssembledBasisMap_->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+                GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_,AssembledBasisMap_->getLocalNumElements()); // Nonzeroes abhängig von dim/dofs!!!
                 LO iD;
                 SC valueTmp;
                 for (UN i=0; i<AssembledBasis_->getLocalLength(); i++) {

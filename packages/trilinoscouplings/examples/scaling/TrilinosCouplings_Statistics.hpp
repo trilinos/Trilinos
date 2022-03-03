@@ -337,7 +337,7 @@ class MachineLearningStatistics_Hex3D {
     Teuchos::RCP<const Xpetra::Map<LO, GO, Node> > rowMap = gl_StiffGraph->getRowMap();
     Teuchos::RCP<vector_type > laplDiagOwned = vector_factory::Build(rowMap, true);
     Teuchos::ArrayView<const LO> indices;
-    size_t numOwnedRows = rowMap->getNodeNumElements();
+    size_t numOwnedRows = rowMap->getLocalNumElements();
     for (size_t row=0; row<numOwnedRows; row++) {
       gl_StiffGraph->getLocalRowView(row, indices);
       size_t numIndices = indices.size();

@@ -106,7 +106,7 @@ namespace Intrepid2 {
           typedef Kokkos::pair<int,int> range_type;
           
           // parallel execution with serial interface
-          Kokkos::RangePolicy<DeviceType> policy(0, npts);
+          Kokkos::RangePolicy<typename DeviceType::execution_space> policy(0, npts);
           Kokkos::parallel_for(policy, KOKKOS_LAMBDA(int i) {
               // we evaluate a single point 
               const range_type pointRange = range_type(i,i+1);

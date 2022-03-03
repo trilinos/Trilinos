@@ -258,7 +258,7 @@ TpetraCrsColorer<CrsMatrixType>::computeSeedMatrixFitted(
       "You must call the non-fitted version of this function.");
 
   auto V_view_dev = V.getLocalViewDevice(Tpetra::Access::OverwriteAll);
-  const size_t num_local_cols = graph->getNodeNumCols();
+  const size_t num_local_cols = graph->getLocalNumCols();
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
@@ -323,7 +323,7 @@ TpetraCrsColorer<CrsMatrixType>::reconstructMatrixFitted(
   auto W_view_dev = W.getLocalViewDevice(Tpetra::Access::ReadOnly);
   auto local_matrix = mat.getLocalMatrixDevice();
   auto local_graph = local_matrix.graph;
-  const size_t num_local_rows = graph->getNodeNumRows();
+  const size_t num_local_rows = graph->getLocalNumRows();
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(
@@ -486,7 +486,7 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrixFitted(
   auto W_view_dev                       = W.getLocalViewDevice();
   auto matrix_vals                      = matrix->getValuesDevice();
   auto local_graph                      = graph->getLocalGraph();
-  const size_t num_local_rows           = graph->getNodeNumRows();
+  const size_t num_local_rows           = graph->getLocalNumRows();
   list_of_colors_t my_list_of_colors = list_of_colors;
 
   Kokkos::parallel_for(

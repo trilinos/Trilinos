@@ -304,7 +304,7 @@ namespace MueLu {
         RCP<const Map> rowMap = inA->getRowMap();
         RCP<const Map> colMap = inA->getColMap();
 
-        int N = rowMap->getNodeNumElements(), Nc = colMap->getNodeNumElements();
+        int N = rowMap->getLocalNumElements(), Nc = colMap->getLocalNumElements();
         muelu2amgx_.resize(Nc, -1);
 
         int numUniqExports = 0;
@@ -387,8 +387,8 @@ namespace MueLu {
       for (int i = 0; i < ia.size(); i++)
         ia[i] = Teuchos::as<int>(ia_s[i]);
 
-      N_      = inA->getNodeNumRows();
-      int nnz = inA->getNodeNumEntries();
+      N_      = inA->getLocalNumRows();
+      int nnz = inA->getLocalNumEntries();
 
       matrixTransformTimer->stop();
       matrixTransformTimer->incrementNumCalls();

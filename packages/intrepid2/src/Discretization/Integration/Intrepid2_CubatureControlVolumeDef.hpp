@@ -149,10 +149,10 @@ namespace Intrepid2 {
                                      subcvJacobianNode);    // C, P, D, D
     }
     
-    typedef typename ExecSpace<typename PointViewType::execution_space,DT>::ExecSpaceType ExecSpaceType;
+    //typedef typename ExecSpace<typename PointViewType::execution_space,DT>::ExecSpaceType ExecSpaceType;
     
     const auto loopSize = numCells;
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::RangePolicy<typename DT::execution_space,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     
     typedef Functor<PointViewType,weightViewType,tempPointViewType,tempPointViewType,tempPointViewType> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(cubPoints, 

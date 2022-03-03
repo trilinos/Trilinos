@@ -99,7 +99,7 @@ void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData wo
   auto l_coordinates = coordinates.get_static_view();
   Kokkos::parallel_for("DOF PointFields", l_coordinates.extent_int(0), KOKKOS_LAMBDA (int i) {
      for (int j = 0; j < l_coordinates.extent_int(1); ++j)
-      l_intrpCoords(i,j) = Sacado::ScalarValue<ScalarT>::eval(l_coordinates(i,j));
+      l_intrpCoords(i,j) = Sacado::scalarValue(l_coordinates(i,j));
     });
 
   if(workset.num_cells>0) {

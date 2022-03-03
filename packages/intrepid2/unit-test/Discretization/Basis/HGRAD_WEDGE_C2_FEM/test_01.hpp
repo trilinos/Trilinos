@@ -316,7 +316,7 @@ namespace Intrepid2 {
       // GRAD and D1 values are stored in (F,P,D) format in a data file. Read file and do the test     
       std::vector<ValueType> basisGrads;           // Flat array for the gradient values.
       { 
-        std::ifstream dataFile("../testdata/WEDGE_C2_GradVals.dat");
+        std::ifstream dataFile("./testdata/WEDGE_C2_GradVals.dat");
         
         INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                                       ">>> ERROR (HGRAD_WEDGE_C2/test01): could not open GRAD values data file, test aborted.");
@@ -333,7 +333,7 @@ namespace Intrepid2 {
       //D2: flat array with the values of D2 applied to basis functions. Multi-index is (F,P,D2cardinality)
       std::vector<ValueType> basisD2;
       { 
-        std::ifstream dataFile("../testdata/WEDGE_C2_D2Vals.dat");
+        std::ifstream dataFile("./testdata/WEDGE_C2_D2Vals.dat");
         
         INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                                       ">>> ERROR (HGRAD_WEDGE_C2/test01): could not open D2 values data file, test aborted.");
@@ -350,7 +350,7 @@ namespace Intrepid2 {
       //D3: flat array with the values of D3 applied to basis functions. Multi-index is (F,P,D3cardinality)
       std::vector<ValueType> basisD3;
       { 
-        std::ifstream dataFile("../testdata/WEDGE_C2_D3Vals.dat");
+        std::ifstream dataFile("./testdata/WEDGE_C2_D3Vals.dat");
         
         INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                                       ">>> ERROR (HGRAD_WEDGE_C2/test01): could not open D3 values data file, test aborted.");
@@ -367,7 +367,7 @@ namespace Intrepid2 {
       //D4: flat array with the values of D3 applied to basis functions. Multi-index is (F,P,D4cardinality)
       std::vector<ValueType> basisD4;
       { 
-        std::ifstream dataFile("../testdata/WEDGE_C2_D4Vals.dat");
+        std::ifstream dataFile("./testdata/WEDGE_C2_D4Vals.dat");
         
         INTREPID2_TEST_FOR_EXCEPTION( !dataFile.good(), std::logic_error,
                                       ">>> ERROR (HGRAD_WEDGE_C2/test01): could not open D4 values data file, test aborted.");

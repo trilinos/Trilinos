@@ -108,9 +108,11 @@ PARALLEL_IO_MODE | netcdf4, hdf5, pnetcdf, (mpiio and mpiposix are deprecated)
 ## Properties for the heartbeat output
  Property              | Value  | Description
 -----------------------|:------:|-----------------------------------------------------------
+  FILE_FORMAT          | [default], spyhis, csv, ts_csv, text, ts_text | predefined formats for heartbeat output. `ts_` outputs timestamp.
   FLUSH_INTERVAL       | int   | Minimum time interval between flushing heartbeat data to disk.  Default is 10 seconds
   TIME_STAMP_FORMAT    | [%H:%M:%S] | Format used to format time stamp.  See strftime man page
   SHOW_TIME_STAMP      | on/off | Should the output lines be preceded by the timestamp
+  FIELD_SEPARATOR      | [, ]   | separator to be used between output fields.
   PRECISION            | 0..16 [5] | Precision used for floating point output.
   FIELD_WIDTH          | 0.. |  Width of an output field. If 0, then use natural width.
   SHOW_LABELS          | on/[off]  | Should each field be preceded by its name (ke=1.3e9, ie=2.0e9)

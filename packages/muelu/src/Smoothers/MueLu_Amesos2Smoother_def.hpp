@@ -184,7 +184,7 @@ namespace MueLu {
       ArrayRCP<LO>     newColIndices_RCP;
       ArrayRCP<SC>     newValues_RCP;
 
-      size_t N = rowMap->getNodeNumElements();
+      size_t N = rowMap->getLocalNumElements();
       newRowPointers_RCP.resize(N+1);
       newColIndices_RCP.resize(N*M);
       newValues_RCP.resize(N*M);

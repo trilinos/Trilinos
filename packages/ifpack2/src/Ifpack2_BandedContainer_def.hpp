@@ -104,7 +104,7 @@ computeBandwidth()
   using Teuchos::ArrayView;
   //now, for any block where kl_ or ku_ has not already been set, compute the actual bandwidth
   const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
-  size_t colToOffsetSize = this->inputMatrix_->getNodeNumCols();
+  size_t colToOffsetSize = this->inputMatrix_->getLocalNumCols();
   if(this->pointIndexed_)
     colToOffsetSize *= this->bcrsBlockSize_;
   Array<LO> colToBlockOffset(colToOffsetSize, INVALID);
@@ -273,7 +273,7 @@ void BandedContainer<MatrixType, LocalScalarType>::extract()
   //This provides the block and col within a block in O(1).
   if(this->scalarsPerRow_ > 1)
   {
-    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getNodeNumCols(), INVALID);
+    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getLocalNumCols(), INVALID);
     for(int i = 0; i < this->numBlocks_; i++)
     {
       //Get the interval where block i is defined in blockRows_
@@ -327,7 +327,7 @@ void BandedContainer<MatrixType, LocalScalarType>::extract()
   {
     //get the mapping from point-indexed matrix columns to offsets in blockRows_
     //(this includes regular CrsMatrix columns, in which case bcrsBlockSize_ == 1)
-    Array<LO> colToBlockOffset(this->inputMatrix_->getNodeNumCols() * this->bcrsBlockSize_, INVALID);
+    Array<LO> colToBlockOffset(this->inputMatrix_->getLocalNumCols() * this->bcrsBlockSize_, INVALID);
     for(int i = 0; i < this->numBlocks_; i++)
     {
       //Get the interval where block i is defined in blockRows_

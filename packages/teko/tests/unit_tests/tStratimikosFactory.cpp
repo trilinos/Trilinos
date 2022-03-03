@@ -147,7 +147,7 @@ const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildSystem(const Teuchos::RCP<const T
    GO iTemp[] = {-1,0,1}, indices[3];
    ST * vPtr;
    GO * iPtr;
-   for(size_t i=0;i<map->getNodeNumElements();i++) {
+   for(size_t i=0;i<map->getLocalNumElements();i++) {
       int count = 3;
       GO gid = map->getGlobalElement(i);
 
@@ -239,7 +239,7 @@ const RCP<Tpetra::Operator<ST,LO,GO,NT> > buildStridedSystem(const Teuchos::RCP<
   ST * vPtr;
   GO * iPtr;
 
-  for(size_t i=0;i<map->getNodeNumElements()/numUnks;i++) {
+  for(size_t i=0;i<map->getLocalNumElements()/numUnks;i++) {
      int count = 4;
      GO gidA = map->getGlobalElement(2*i);
      GO gidB = gidA+1;

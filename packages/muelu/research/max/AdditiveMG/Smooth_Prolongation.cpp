@@ -143,7 +143,7 @@ AdditiveVariant::AdditiveCoarseSolver( RCP<crs_matrix_type> A )
 
 	  // We have to transform P into a condensed multivector
 	  RCP<multivector_type> identity_shrunk = rcp( new multivector_type(tpetra_prolong->getDomainMap(), 3) );
-	  Teuchos::ArrayView<const global_ordinal_type> myIdentityGlobalElements = tpetra_prolong->getDomainMap()->getNodeElementList();
+	  Teuchos::ArrayView<const global_ordinal_type> myIdentityGlobalElements = tpetra_prolong->getDomainMap()->getLocalElementList();
 	  typedef typename Teuchos::ArrayView<const global_ordinal_type>::const_iterator iter_type;
 
 	  int my_color = (mypid-1)%3;
@@ -177,7 +177,7 @@ AdditiveVariant::AdditiveCoarseSolver( RCP<crs_matrix_type> A )
 	  GlobalComm_->barrier();
 
 	  RCP<crs_matrix_type> BAP = rcp( new crs_matrix_type( tpetra_prolong->getRowMap(), AP->getColMap(), tpetra_prolong->getGlobalNumCols() ) ); 
-	  Teuchos::ArrayView<const global_ordinal_type> myLocalElements = BAP->getRowMap()->getNodeElementList();
+	  Teuchos::ArrayView<const global_ordinal_type> myLocalElements = BAP->getRowMap()->getLocalElementList();
 
 	  for(int color = 0; color<3; ++color)
 	  {

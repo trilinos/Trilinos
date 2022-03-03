@@ -117,7 +117,7 @@ namespace FROSch {
     OriginalMap_ (originalMap),
     ElementCounter_ (),
     OverlappingDataList_ (dimension*(OriginalMap_->getGlobalNumElements()/MpiComm_->getSize())+pow(3,dimension)),
-    ComponentsSubdomains_ (OriginalMap_->getNodeNumElements()),
+    ComponentsSubdomains_ (OriginalMap_->getLocalNumElements()),
     LevelID_ (levelID)
     {
         FROSCH_DETAILTIMER_START_LEVELID(lowerPIDTieBreakTime,"LowerPIDTieBreak::LowerPIDTieBreak");
@@ -138,7 +138,7 @@ namespace FROSch {
 
         const int packetSize = 2;
         IntVec sendImageIDs(numPackages);
-        GOVec exportEntries(packetSize*numPackages); // data to send out
+        GOView exportEntries("FROSch::sendDataToOriginalMap::exportEntries", packetSize*numPackages); // data to send out
         {
             typename OverlappingDataPtrVec::iterator tmpODPtrVecIt;
             typename IntVec::iterator tmpIntVecIt;
@@ -151,8 +151,8 @@ namespace FROSch {
                 tmpLOVecIt = (*tmpODPtrVecIt)->LIDs_.begin();
                 for (tmpIntVecIt = (*tmpODPtrVecIt)->PIDs_.begin(); tmpIntVecIt != (*tmpODPtrVecIt)->PIDs_.end(); tmpIntVecIt++) {
                     for (tmpIntVecIt2 = (*tmpODPtrVecIt)->PIDs_.begin(); tmpIntVecIt2 != (*tmpODPtrVecIt)->PIDs_.end(); tmpIntVecIt2++) {
-                        exportEntries[exportIndex++] = (*tmpODPtrVecIt)->GID_;
-                        exportEntries[exportIndex++] = as<GO>(*tmpIntVecIt2);
+                        exportEntries(exportIndex++) = (*tmpODPtrVecIt)->GID_;
+                        exportEntries(exportIndex++) = as<GO>(*tmpIntVecIt2);
                         sendImageIDs[exportIndex2++] = *tmpIntVecIt;
                     }
                     tmpLOVecIt++;
@@ -161,13 +161,13 @@ namespace FROSch {
         }
         distor.createFromSends(sendImageIDs);
 
-        GOVec importElements(packetSize*distor.getTotalReceiveLength());
+        GOView importElements("FROSch::sendDataToOriginalMap::importElements", packetSize*distor.getTotalReceiveLength());
 
-        distor.doPostsAndWaits(exportEntries().getConst(),packetSize,importElements());
+        distor.doPostsAndWaits(exportEntries,packetSize,importElements);
 
-        LO length = importElements.size()/packetSize;
+        LO length = importElements.extent(0)/packetSize;
         for (LO i=0; i<length; i++) {
-            ComponentsSubdomains_[OriginalMap_->getLocalElement(importElements[2*i])].push_back(importElements[2*i+1]);
+            ComponentsSubdomains_[OriginalMap_->getLocalElement(importElements(2*i))].push_back(importElements(2*i+1));
         }
 
         return 0;
@@ -247,7 +247,7 @@ namespace FROSch {
     RCP<Map<LO,GO,NO> > BuildRepeatedMapGaleriStruct2D(RCP<const Matrix<SC,LO,GO,NO> > matrix,int M,int Dim)
     {
         Teuchos::ArrayView< const GO> eleList;
-        eleList = matrix->getMap()->getNodeElementList();
+        eleList = matrix->getMap()->getLocalElementList();
         Teuchos::RCP< const Teuchos::Comm< int > > Comm = matrix->getMap()->getComm();
 
         int size = Comm->getSize();
@@ -304,7 +304,7 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START(Galeri3DMap,"BuildGeometricMap3D");
 
         Teuchos::ArrayView< const GO> eleList;
-        eleList = matrix->getNodeElementList();
+        eleList = matrix->getLocalElementList();
         Teuchos::RCP< const Teuchos::Comm< int > > Comm = matrix->getComm();
 
         int size = Comm->getSize();
@@ -483,7 +483,7 @@ namespace FROSch {
         ArrayRCP<RCP<Map<LO,GO,NO> > > repeatedSubMaps(subMaps.size());
         for (unsigned i = 0; i < subMaps.size(); i++) {
             RCP<Matrix<SC,LO,GO,NO> > subMatrixII;
-            ArrayView<GO> indI = av_const_cast<GO> ( subMaps[i]->getNodeElementList() );
+            ArrayView<GO> indI = av_const_cast<GO> ( subMaps[i]->getLocalElementList() );
 
             BuildSubmatrix(matrix,indI,subMatrixII);
 
@@ -501,7 +501,7 @@ namespace FROSch {
         ArrayRCP<RCP<Map<LO,GO,NO> > > repeatedSubMaps(subMaps.size());
         for (unsigned i = 0; i < subMaps.size(); i++) {
             RCP<CrsGraph<LO,GO,NO> > subGraphII;
-            ArrayView<GO> indI = av_const_cast<GO> ( subMaps[i]->getNodeElementList() );
+            ArrayView<GO> indI = av_const_cast<GO> ( subMaps[i]->getLocalElementList() );
 
             BuildSubgraph(graph,indI,subGraphII);
 
@@ -537,7 +537,7 @@ namespace FROSch {
         RCP<Matrix<SC,LO,GO,NO> > commMat = MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,10);
         RCP<Matrix<SC,LO,GO,NO> > commMatTmp = MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,10);
 
-        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getLocalNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             if (uniqueMap->getLocalElement(globalRow)<0) {
                 ArrayView<const GO> indices;
@@ -557,7 +557,7 @@ namespace FROSch {
         commMatTmp->doExport(*commMat,*gather,INSERT);
 
         RCP<Matrix<SC,LO,GO,NO> > commMatTmp2 = MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,10);
-        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<uniqueMap->getLocalNumElements(); i++) {
             GO globalRow = uniqueMap->getGlobalElement(i);
             ArrayView<const GO> indices;
             ArrayView<const SC> values;
@@ -578,13 +578,13 @@ namespace FROSch {
 
         commMat->doImport(*commMatTmp2,*gather,ADD);
 
-        ArrayView<const GO> myGlobalElements = uniqueMap->getNodeElementList();
-        Array<GO> repeatedIndices(uniqueMap->getNodeNumElements());
-        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
+        ArrayView<const GO> myGlobalElements = uniqueMap->getLocalElementList();
+        Array<GO> repeatedIndices(uniqueMap->getLocalNumElements());
+        for (unsigned i=0; i<uniqueMap->getLocalNumElements(); i++) {
             repeatedIndices.at(i) = myGlobalElements[i];
         }
 
-        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getLocalNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             ArrayView<const GO> indices;
             ArrayView<const SC> values;
@@ -634,7 +634,7 @@ namespace FROSch {
         RCP<CrsGraph<LO,GO,NO> > commGraph = CrsGraphFactory<LO,GO,NO>::Build(overlappingMap,10);
         RCP<CrsGraph<LO,GO,NO> > commGraphTmp = CrsGraphFactory<LO,GO,NO>::Build(uniqueMap,10);
 
-        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getLocalNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             if (uniqueMap->getLocalElement(globalRow)<0) {
                 ArrayView<const GO> indices;
@@ -653,7 +653,7 @@ namespace FROSch {
         commGraphTmp->doExport(*commGraph,*gather,INSERT);
 
         RCP<CrsGraph<LO,GO,NO> > commGraphTmp2 = CrsGraphFactory<LO,GO,NO>::Build(uniqueMap,10);
-        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<uniqueMap->getLocalNumElements(); i++) {
             GO globalRow = uniqueMap->getGlobalElement(i);
             ArrayView<const GO> indices;
             commGraphTmp->getGlobalRowView(globalRow,indices);
@@ -673,13 +673,13 @@ namespace FROSch {
 
         commGraph->doImport(*commGraphTmp2,*gather,ADD);
 
-        ArrayView<const GO> myGlobalElements = uniqueMap->getNodeElementList();
-        Array<GO> repeatedIndices(uniqueMap->getNodeNumElements());
-        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
+        ArrayView<const GO> myGlobalElements = uniqueMap->getLocalElementList();
+        Array<GO> repeatedIndices(uniqueMap->getLocalNumElements());
+        for (unsigned i=0; i<uniqueMap->getLocalNumElements(); i++) {
             repeatedIndices.at(i) = myGlobalElements[i];
         }
 
-        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getLocalNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             ArrayView<const GO> indices;
             commGraph->getGlobalRowView(globalRow,indices);
@@ -725,7 +725,7 @@ namespace FROSch {
 
         RCP<CrsGraph<LO,GO,NO> > tmpGraphUnique = CrsGraphFactory<LO,GO,NO>::Build(uniqueMap,1);
         Array<GO> myPID(1,uniqueMap->getComm()->getRank());
-        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<uniqueMap->getLocalNumElements(); i++) {
             tmpGraphUnique->insertGlobalIndices(uniqueMap->getGlobalElement(i),myPID());
         }
         RCP<Map<LO,GO,NO> > domainMap = MapFactory<LO,GO,NO>::Build(uniqueMap->lib(),-1,myPID(),0,uniqueMap->getComm());
@@ -735,7 +735,7 @@ namespace FROSch {
         tmpGraphOverlap->doImport(*tmpGraphUnique,*importer,ADD);
         ArrayView<const GO> indices;
         Array<GO> repeatedIndices(0);
-        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getLocalNumElements(); i++) {
             tmpGraphOverlap->getGlobalRowView(overlappingMap->getGlobalElement(i),indices);
             for (unsigned j=0; j<indices.size(); j++) {
                 if (indices[j]<=uniqueMap->getComm()->getRank()) {
@@ -761,7 +761,7 @@ namespace FROSch {
         FROSCH_ASSERT(dofOrdering==0 || dofOrdering==1,"ERROR: Specify a valid DofOrdering.");
         FROSCH_ASSERT(!nodesMap.is_null(),"nodesMap.is_null().");
 
-        unsigned numNodes = nodesMap->getNodeNumElements();
+        unsigned numNodes = nodesMap->getLocalNumElements();
         Teuchos::Array<GO> globalIDs(dofsPerNode*numNodes);
         if (dofOrdering==0) {
             for (unsigned i=0; i<dofsPerNode; i++) {
@@ -802,7 +802,7 @@ namespace FROSch {
         RCP<Matrix<SC,LO,GO,NO> > commMatTmp = MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,10);
         RCP<Export<LO,GO,NO> > commExporter = ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
 
-        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getLocalNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             if (uniqueMap->getLocalElement(globalRow)<0) {
                 ArrayView<const GO> indices;
@@ -822,7 +822,7 @@ namespace FROSch {
         commMatTmp->doExport(*commMat,*commExporter,INSERT);
 
         RCP<Matrix<SC,LO,GO,NO> > commMatTmp2 = MatrixFactory<SC,LO,GO,NO>::Build(uniqueMap,10);
-        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<uniqueMap->getLocalNumElements(); i++) {
             GO globalRow = uniqueMap->getGlobalElement(i);
             ArrayView<const GO> indices;
             ArrayView<const SC> values;
@@ -842,13 +842,13 @@ namespace FROSch {
         commMat = MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,10);
         commMat->doImport(*commMatTmp2,*commExporter,ADD);
 
-        ArrayView<const GO> myGlobalElements = uniqueMap->getNodeElementList();
-        Array<GO> repeatedIndices(uniqueMap->getNodeNumElements());
-        for (unsigned i=0; i<uniqueMap->getNodeNumElements(); i++) {
+        ArrayView<const GO> myGlobalElements = uniqueMap->getLocalElementList();
+        Array<GO> repeatedIndices(uniqueMap->getLocalNumElements());
+        for (unsigned i=0; i<uniqueMap->getLocalNumElements(); i++) {
             repeatedIndices.at(i) = myGlobalElements[i];
         }
 
-        for (unsigned i=0; i<overlappingMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<overlappingMap->getLocalNumElements(); i++) {
             GO globalRow = overlappingMap->getGlobalElement(i);
             ArrayView<const GO> indices;
             ArrayView<const SC> values;
@@ -881,7 +881,7 @@ namespace FROSch {
         outputMatrix = tmpMatrix.getConst();
 
         Array<GO> indicesOverlappingSubdomain(0);
-        for (unsigned i=0; i<inputMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<inputMap->getLocalNumElements(); i++) {
             ArrayView<const GO> indices;
             ArrayView<const SC> values;
             outputMatrix->getGlobalRowView(inputMap->getGlobalElement(i),indices,values);
@@ -937,7 +937,7 @@ namespace FROSch {
     RCP<const Map<LO,GO,NO> > SortMapByGlobalIndex(RCP<const Map<LO,GO,NO> > inputMap)
     {
         FROSCH_DETAILTIMER_START(sortMapByGlobalIndexTime,"SortMapByGlobalIndex");
-        Array<GO> globalIDs(inputMap->getNodeElementList());
+        Array<GO> globalIDs(inputMap->getLocalElementList());
         sort(globalIDs);
         return MapFactory<LO,GO,NO>::Build(inputMap->lib(),-1,globalIDs(),0,inputMap->getComm());
     }
@@ -958,7 +958,7 @@ namespace FROSch {
 
         ArrayRCP<GO> assembledMapTmp(0);
         for (unsigned j=0; j<mapVector.size(); j++) {
-            sizetmp = mapVector[j]->getNodeNumElements();
+            sizetmp = mapVector[j]->getLocalNumElements();
             partMappings[j] = ArrayRCP<LO>(sizetmp);
 
             size += sizetmp;
@@ -1002,7 +1002,7 @@ namespace FROSch {
 
             ArrayRCP<GO> assembledMapTmp(0);
             for (unsigned j=0; j<mapVector.size(); j++) {
-                sizetmp = mapVector[j]->getNodeNumElements();
+                sizetmp = mapVector[j]->getLocalNumElements();
                 partMappings[j] = ArrayRCP<LO>(sizetmp);
 
                 size += sizetmp;
@@ -1044,9 +1044,9 @@ namespace FROSch {
         for (unsigned i=0; i<numberOfBlocks; i++) {
             FROSCH_ASSERT(!dofsMaps[i].is_null(),"FROSch: dofsMaps[i].is_null()");
             FROSCH_ASSERT(dofsMaps[i].size()==dofsPerNode[i],"FROSch: dofsMaps[i].size()!=dofsPerNode[i]");
-            unsigned numMyElements = dofsMaps[i][0]->getNodeNumElements();
+            unsigned numMyElements = dofsMaps[i][0]->getLocalNumElements();
             for (unsigned j=1; j<dofsPerNode[i]; j++) {
-                FROSCH_ASSERT(dofsMaps[i][j]->getNodeNumElements()==(unsigned) numMyElements,"FROSch: dofsMaps[i][j]->getNodeNumElements()==numMyElements");
+                FROSCH_ASSERT(dofsMaps[i][j]->getLocalNumElements()==(unsigned) numMyElements,"FROSch: dofsMaps[i][j]->getLocalNumElements()==numMyElements");
             }
             for (unsigned j=0; j<numMyElements; j++) {
                 for (unsigned k=0; k<dofsPerNode[i]; k++) {
@@ -1065,10 +1065,10 @@ namespace FROSch {
         FROSCH_ASSERT(!mapVector.is_null(),"mapVector is null!");
         FROSCH_ASSERT(mapVector.size()>0,"Length of mapVector is == 0!");
 
-        Array<GO> elementList(mapVector[0]->getNodeElementList());
+        Array<GO> elementList(mapVector[0]->getLocalElementList());
         GO tmpOffset = 0;
         for (unsigned i=1; i<mapVector.size(); i++) {
-            LO nodeNumElements = mapVector[i]->getNodeNumElements();
+            LO nodeNumElements = mapVector[i]->getLocalNumElements();
             tmpOffset += mapVector[i-1]->getMaxAllGlobalIndex()+1;
 
             Array<GO> subElementList(nodeNumElements);
@@ -1120,12 +1120,12 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START(buildDofMapsTime,"BuildDofMaps");
         //if (map->getComm()->getRank()==0) cout << "WARNING: BuildDofMaps is yet to be tested...\n";
         FROSCH_ASSERT(dofOrdering==0 || dofOrdering==1,"ERROR: Specify a valid DofOrdering.");
-        FROSCH_ASSERT(map->getGlobalNumElements()%dofsPerNode==0 && map->getNodeNumElements()%dofsPerNode==0,"ERROR: The number of dofsPerNode does not divide the number of global dofs in the map!");
+        FROSCH_ASSERT(map->getGlobalNumElements()%dofsPerNode==0 && map->getLocalNumElements()%dofsPerNode==0,"ERROR: The number of dofsPerNode does not divide the number of global dofs in the map!");
 
-        Array<GO> nodes(map->getNodeNumElements()/dofsPerNode);
+        Array<GO> nodes(map->getLocalNumElements()/dofsPerNode);
         Array<ArrayRCP<GO> > dofs(dofsPerNode);
         for (unsigned j=0; j<dofsPerNode; j++) {
-            dofs[j] = ArrayRCP<GO>(map->getNodeNumElements()/dofsPerNode);
+            dofs[j] = ArrayRCP<GO>(map->getLocalNumElements()/dofsPerNode);
         }
         if (dofOrdering==0) {
             for (unsigned i=0; i<nodes.size(); i++) {
@@ -1164,10 +1164,10 @@ namespace FROSch {
         FROSCH_ASSERT(!dofMaps.is_null(),"dofMaps.is_null().");
         FROSCH_ASSERT(dofMaps.size()==dofsPerNode,"dofMaps.size!=dofsPerNode.");
         for (unsigned i=0; i<dofMaps.size(); i++) {
-            FROSCH_ASSERT(dofMaps[i]->getGlobalNumElements()%dofsPerNode==0 && dofMaps[i]->getNodeNumElements()%dofsPerNode==0,"ERROR: The number of dofsPerNode does not divide the number of global dofs in the dofMaps!");
+            FROSCH_ASSERT(dofMaps[i]->getGlobalNumElements()%dofsPerNode==0 && dofMaps[i]->getLocalNumElements()%dofsPerNode==0,"ERROR: The number of dofsPerNode does not divide the number of global dofs in the dofMaps!");
         }
 
-        unsigned numNodes = dofMaps[0]->getNodeNumElements();
+        unsigned numNodes = dofMaps[0]->getLocalNumElements();
         Array<GO> globalIDs(numNodes);
         if (dofOrdering==0) {
             for (unsigned i=0; i<dofsPerNode; i++) {
@@ -1196,7 +1196,7 @@ namespace FROSch {
         FROSCH_ASSERT(dofOrdering==0 || dofOrdering==1,"ERROR: Specify a valid DofOrdering.");
         FROSCH_ASSERT(!nodesMap.is_null(),"nodesMap.is_null().");
 
-        unsigned numNodes = nodesMap->getNodeNumElements();
+        unsigned numNodes = nodesMap->getLocalNumElements();
         Array<GO> globalIDs(dofsPerNode*numNodes);
         if (dofOrdering==0) {
             for (unsigned i=0; i<dofsPerNode; i++) {
@@ -1281,7 +1281,7 @@ namespace FROSch {
         for (unsigned block=0; block<nmbBlocks; block++) {
 
             if (dofOrderingVec[block] == NodeWise) {
-                ArrayView< const GO > globalIndices = dofsMapsVecVec[block][0]->getNodeElementList();
+                ArrayView< const GO > globalIndices = dofsMapsVecVec[block][0]->getLocalElementList();
                 Array<GO> globalIndicesNode( globalIndices );
                 GO offset = dofsMapsVecVec[block][0]->getMinAllGlobalIndex();
                 for (unsigned i=0; i<globalIndicesNode.size(); i++) {
@@ -1295,7 +1295,7 @@ namespace FROSch {
                 nodeMapsVec[block] = MapFactory<LO,GO,NO>::Build( dofsMapsVecVec[block][0]->lib(), -1,globalIndicesNode(), 0, dofsMapsVecVec[block][0]->getComm() );
             } else { //DimensionWise
                 GO minGID = dofsMapsVecVec[block][0]->getMinAllGlobalIndex();
-                ArrayView< const GO > globalIndices = dofsMapsVecVec[block][0]->getNodeElementList();
+                ArrayView< const GO > globalIndices = dofsMapsVecVec[block][0]->getLocalElementList();
                 Array<GO> globalIndicesNode( globalIndices );
                 for (unsigned i=0; i<globalIndicesNode.size(); i++)
                     globalIndicesNode[i] -= minGID;
@@ -1314,8 +1314,8 @@ namespace FROSch {
         ArrayRCP<RCP<Map<LO,GO,NO> > > subMaps(maxSubGIDVec.size());
 
         Array<Array<GO> > indicesSubMaps(maxSubGIDVec.size());
-        ArrayView<const GO> nodeElementList = fullMap->getNodeElementList();
-        for (unsigned i = 0; i<fullMap->getNodeNumElements(); i++) {
+        ArrayView<const GO> nodeElementList = fullMap->getLocalElementList();
+        for (unsigned i = 0; i<fullMap->getLocalNumElements(); i++) {
             LO subMapNumber = -1;
             for (unsigned j = (maxSubGIDVec.size()); j > 0; j--) {
                 if (nodeElementList[i] <= maxSubGIDVec[j-1]) {
@@ -1340,11 +1340,11 @@ namespace FROSch {
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(matrix->getRowMap(),repeatedMap);
         repeatedMatrix->doImport(*matrix,*scatter,ADD);
 
-        ArrayRCP<GO> oneEntryOnlyRows(repeatedMatrix->getNodeNumRows());
+        ArrayRCP<GO> oneEntryOnlyRows(repeatedMatrix->getLocalNumRows());
         LO tmp = 0;
         LO nnz;
         GO row;
-        for (unsigned i=0; i<repeatedMatrix->getNodeNumRows(); i++) {
+        for (unsigned i=0; i<repeatedMatrix->getLocalNumRows(); i++) {
             row = repeatedMap->getGlobalElement(i);
             ArrayView<const GO> indices;
             ArrayView<const SC> values;
@@ -1378,10 +1378,10 @@ namespace FROSch {
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(graph->getRowMap(),repeatedMap);
         repeatedGraph->doImport(*graph,*scatter,ADD);
 
-        ArrayRCP<GO> oneEntryOnlyRows(repeatedGraph->getNodeNumRows());
+        ArrayRCP<GO> oneEntryOnlyRows(repeatedGraph->getLocalNumRows());
         LO tmp = 0;
         GO row;
-        for (unsigned i=0; i<repeatedGraph->getNodeNumRows(); i++) {
+        for (unsigned i=0; i<repeatedGraph->getLocalNumRows(); i++) {
             row = repeatedMap->getGlobalElement(i);
             ArrayView<const GO> indices;
             repeatedGraph->getGlobalRowView(row,indices);
@@ -1517,7 +1517,7 @@ namespace FROSch {
         if (nullSpaceType == NullSpaceType::Laplace) {
             nullSpaceBasis = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap,dofsPerNode);
             for (unsigned i=0; i<dofsPerNode; i++) {
-                for (unsigned j=0; j<dofsMaps[i]->getNodeNumElements(); j++) {
+                for (unsigned j=0; j<dofsMaps[i]->getLocalNumElements(); j++) {
                     nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = ScalarTraits<SC>::one();
                 }
             }
@@ -1530,12 +1530,12 @@ namespace FROSch {
                 nullSpaceBasis = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap,3);
                 // translations
                 for (unsigned i=0; i<2; i++) {
-                    for (unsigned j=0; j<dofsMaps[i]->getNodeNumElements(); j++) {
+                    for (unsigned j=0; j<dofsMaps[i]->getLocalNumElements(); j++) {
                         nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = ScalarTraits<SC>::one();
                     }
                 }
                 // rotation
-                for (unsigned j=0; j<dofsMaps[0]->getNodeNumElements(); j++) {
+                for (unsigned j=0; j<dofsMaps[0]->getLocalNumElements(); j++) {
                     nullSpaceBasis->getDataNonConst(2)[repeatedMap->getLocalElement(dofsMaps[0]->getGlobalElement(j))] = -nodeList->getData(1)[j];
                     nullSpaceBasis->getDataNonConst(2)[repeatedMap->getLocalElement(dofsMaps[1]->getGlobalElement(j))] = nodeList->getData(0)[j];
                 }
@@ -1543,12 +1543,12 @@ namespace FROSch {
                 nullSpaceBasis = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap,6);
                 // translations
                 for (unsigned i=0; i<3; i++) {
-                    for (unsigned j=0; j<dofsMaps[i]->getNodeNumElements(); j++) {
+                    for (unsigned j=0; j<dofsMaps[i]->getLocalNumElements(); j++) {
                         nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = ScalarTraits<SC>::one();
                     }
                 }
                 // rotations
-                for (unsigned j=0; j<dofsMaps[0]->getNodeNumElements(); j++) {
+                for (unsigned j=0; j<dofsMaps[0]->getLocalNumElements(); j++) {
                     nullSpaceBasis->getDataNonConst(3)[repeatedMap->getLocalElement(dofsMaps[0]->getGlobalElement(j))] = nodeList->getData(1)[j];
                     nullSpaceBasis->getDataNonConst(3)[repeatedMap->getLocalElement(dofsMaps[1]->getGlobalElement(j))] = -nodeList->getData(0)[j];
                     nullSpaceBasis->getDataNonConst(3)[repeatedMap->getLocalElement(dofsMaps[2]->getGlobalElement(j))] = ScalarTraits<SC>::zero();
@@ -1621,7 +1621,7 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START(convertMatrixTime,"ConvertToXpetra::ConvertMatrix");
         RCP<Map<LO,int,NO> > rowMap = ConvertToXpetra<SC,LO,int,NO>::ConvertMap(lib,matrix.RowMap(),comm);
         RCP<Matrix<SC,LO,int,NO> > xmatrix = MatrixFactory<SC,LO,int,NO>::Build(rowMap,matrix.MaxNumEntries());
-        for (unsigned i=0; i<xmatrix->getNodeNumRows(); i++) {
+        for (unsigned i=0; i<xmatrix->getLocalNumRows(); i++) {
             LO numEntries;
             LO* indices;
             SC* values;
@@ -1672,7 +1672,7 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START(convertMatrixTime,"ConvertToXpetra::ConvertMatrix");
         RCP<Map<LO,long long,NO> > rowMap = ConvertToXpetra<SC,LO,long long,NO>::ConvertMap(lib,matrix.RowMap(),comm);
         RCP<Matrix<SC,LO,long long,NO> > xmatrix = MatrixFactory<SC,LO,long long,NO>::Build(rowMap,matrix.MaxNumEntries());
-        for (unsigned i=0; i<xmatrix->getNodeNumRows(); i++) {
+        for (unsigned i=0; i<xmatrix->getLocalNumRows(); i++) {
             LO numEntries;
             LO* indices;
             SC* values;
@@ -1746,7 +1746,7 @@ namespace FROSch {
                                     RCP<Epetra_Comm> epetraComm)
     {
         FROSCH_DETAILTIMER_START(convertToEpetraTime,"ConvertToEpetra");
-        ArrayView<const GO> elementList = map.getNodeElementList();
+        ArrayView<const GO> elementList = map.getLocalElementList();
 
         GO numGlobalElements = map.getGlobalNumElements();
 
@@ -1781,7 +1781,7 @@ namespace FROSch {
         ArrayView<const SC> valuesArrayView;
         ArrayView<const LO> indicesArrayView;
 
-        for (LO i=0; i<(LO) matrix.getRowMap()->getNodeNumElements(); i++) {
+        for (LO i=0; i<(LO) matrix.getRowMap()->getLocalNumElements(); i++) {
             matrix.getLocalRowView(i, indicesArrayView, valuesArrayView);
             Array<GO> indicesGlobal(indicesArrayView.size());
             for (LO j=0; j<indicesArrayView.size(); j++) {
@@ -1865,7 +1865,7 @@ namespace FROSch {
         }
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         Teuchos::Array<GO> repeatedMapEntries(0);
-        for (unsigned i = 0; i<ReGraph->getRowMap()->getNodeNumElements(); i++) {
+        for (unsigned i = 0; i<ReGraph->getRowMap()->getLocalNumElements(); i++) {
             Teuchos::ArrayView<const GO> arr;
             Teuchos::ArrayView<const LO> cc;
             GO gi = ReGraph->getRowMap()->getGlobalElement(i);

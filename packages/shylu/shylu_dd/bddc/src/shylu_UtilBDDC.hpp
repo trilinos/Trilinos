@@ -332,7 +332,7 @@ namespace bddc {
     nodeProcsAll.fillComplete(colMap, nodeMap1to1);
     Teuchos::ArrayView<const LO> Indices;
     RCP<const Map> colMap2 = nodeProcsAll.getColMap();
-    const LO numProcAll = colMap2->getNodeNumElements();
+    const LO numProcAll = colMap2->getLocalNumElements();
     adjProcs.resize(std::max(0, numProcAll-1)); // don't include self
     LO numOtherProc(0);
     for (LO i=0; i<numProcAll; i++) {

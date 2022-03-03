@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -123,8 +123,8 @@ namespace {
     size_t v_size  = sizeof(std::vector<INT>);
     size_t vv_size = sizeof(std::vector<std::vector<INT>>);
     size_t total   = vv_size + mesh->num_nodes * v_size + sur_elem_total_size * sizeof(INT);
-    fmt::print(stderr, "\ttotal size of reverse connectivity array: {:L} entries ({:L} bytes).\n",
-               sur_elem_total_size, total);
+    fmt::print(stderr, "\ttotal size of reverse connectivity array: {} entries ({} bytes).\n",
+               fmt::group_digits(sur_elem_total_size), fmt::group_digits(total));
     vec_free(last_element);
 
     // Attempt to reserve an array with this size...

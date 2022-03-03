@@ -90,7 +90,7 @@ namespace MueLu {
         ArrayRCP<Scalar> xnodes, ynodes, znodes;
         Scalar cx, cy, cz;
         ArrayRCP<Scalar> nsValues0, nsValues1, nsValues2, nsValues3, nsValues4, nsValues5;
-        int nDOFs=xmap->getNodeNumElements();
+        int nDOFs=xmap->getLocalNumElements();
         xnodes = Coords->getDataNonConst(0);
         ynodes = Coords->getDataNonConst(1);
         znodes = Coords->getDataNonConst(2);
@@ -157,7 +157,7 @@ namespace MueLu {
         ArrayRCP<Scalar> xnodes, ynodes, znodes;
         Scalar cx, cy, cz;
         ArrayRCP<Scalar> nsValues0, nsValues1, nsValues2, nsValues3, nsValues4, nsValues5;
-        int nDOFs=xmap->getNodeNumElements();
+        int nDOFs=xmap->getLocalNumElements();
         xnodes = Coords->getDataNonConst(0);
         ynodes = Coords->getDataNonConst(1);
         znodes = Coords->getDataNonConst(2);

@@ -86,11 +86,11 @@ namespace Intrepid2 {
                                                                         \
       cub->getCubature(pts, wts);                                       \
                                                                         \
-      Kokkos::RangePolicy<DeviceType> policy(0, P);                \
+      Kokkos::RangePolicy<ExecSpaceType> policy(0, P);                \
       typedef F_checkPointInclusion<CellTopologyTag,decltype(check),decltype(pts)> FunctorType; \
       Kokkos::parallel_for(policy, FunctorType(offset, check, pts));    \
                                                                         \
-      auto check_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), check); \
+      auto check_host = Kokkos::create_mirror_view(check);              \
       Kokkos::deep_copy(check_host, check);                             \
                                                                         \
       for (ordinal_type i=0;i<P;++i) {                                  \
@@ -148,7 +148,7 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       typedef typename
-        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::Impl::is_space<ExecSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
       *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);

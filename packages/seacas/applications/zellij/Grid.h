@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -116,7 +116,7 @@ private:
   UnitCellMap                                m_unitCells;
   std::vector<std::unique_ptr<Ioss::Region>> m_outputRegions;
   std::vector<Cell>                          m_grid{};
-  Ioss::ParallelUtils                        m_pu{MPI_COMM_WORLD};
+  Ioss::ParallelUtils                        m_pu{};
   size_t                                     m_gridI{0};
   size_t                                     m_gridJ{0};
   double                                     m_scaleFactor{1.0};

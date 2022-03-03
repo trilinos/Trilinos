@@ -178,7 +178,7 @@ namespace MueLu {
       F_->getLocalDiagCopy(*diagFVector);       // extract diagonal of F
     } else {
       /*const RCP<const Map> rowmap = F_->getRowMap();
-      size_t locSize = rowmap->getNodeNumElements();
+      size_t locSize = rowmap->getLocalNumElements();
       Teuchos::ArrayRCP<SC> diag = diagFVector->getDataNonConst(0);
       Teuchos::ArrayView<const LO> cols;
       Teuchos::ArrayView<const SC> vals;

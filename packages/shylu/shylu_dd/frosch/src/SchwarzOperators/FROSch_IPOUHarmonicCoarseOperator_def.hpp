@@ -123,7 +123,7 @@ namespace FROSch {
         string blockIdString = blockIdStringstream.str();
         RCP<ParameterList> coarseSpaceList = sublist(sublist(this->ParameterList_,"Blocks"),blockIdString.c_str());
 
-        Teuchos::Array<GO> nodeEle = nodesMap->getNodeElementList();
+        Teuchos::Array<GO> nodeEle = nodesMap->getLocalElementList();
 
         Teuchos::Array<GO> dofEle(nodeEle.size()*dofsPerNode);
         Teuchos::Array<GO> dmapEle(nodeEle.size());

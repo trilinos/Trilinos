@@ -11,8 +11,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_util/parallel/CommSparse.hpp"
 
-#include <stk_tools/mesh_tools/CustomAura.hpp>
-
 namespace stk { namespace balance { namespace internal {
 
 void translate_data_for_dsd_detection(const Zoltan2ParallelGraph &zoltan2Graph, const stk::mesh::BulkData& bulk, const stk::mesh::impl::LocalIdMapper& localIds,
@@ -29,7 +27,6 @@ std::vector<int> get_components_to_move(const stk::mesh::BulkData& bulk, const s
 
 bool detectAndFixMechanisms(const stk::balance::BalanceSettings& graphSettings, stk::mesh::BulkData &bulk)
 {
-    stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(bulk, bulk.mesh_meta_data().globally_shared_part(), "customAura");
     stk::mesh::impl::LocalIdMapper localIds(bulk, stk::topology::ELEM_RANK);
 
     Zoltan2ParallelGraph zoltan2Graph;
@@ -58,8 +55,6 @@ bool detectAndFixMechanisms(const stk::balance::BalanceSettings& graphSettings, 
     if(globallyHaveMechanisms) {
         move_components(zoltan2Graph, localIds, bulk, elementsPerComponent, componentsToMove);
     }
-
-    stk::tools::destroy_custom_aura(bulk, customAura);
 
     return globallyHaveMechanisms;
 }

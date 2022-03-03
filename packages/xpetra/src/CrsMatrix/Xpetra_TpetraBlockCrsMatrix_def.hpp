@@ -398,15 +398,15 @@ namespace Xpetra {
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     size_t 
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-    getNodeNumRows() const
-    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeNumRows"); return mtx_->getNodeNumRows(); }
+    getLocalNumRows() const
+    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getLocalNumRows"); return mtx_->getLocalNumRows(); }
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     size_t 
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-    getNodeNumCols() const
-    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeNumCols"); return mtx_->getNodeNumCols(); }
+    getLocalNumCols() const
+    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getLocalNumCols"); return mtx_->getLocalNumCols(); }
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -419,8 +419,8 @@ namespace Xpetra {
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     size_t 
     TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-    getNodeNumEntries() const
-    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeNumEntries"); return mtx_->getNodeNumEntries(); }
+    getLocalNumEntries() const
+    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getLocalNumEntries"); return mtx_->getLocalNumEntries(); }
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -443,8 +443,8 @@ namespace Xpetra {
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    size_t TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeMaxNumRowEntries() const
-    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getNodeMaxNumRowEntries"); return mtx_->getNodeMaxNumRowEntries(); }
+    size_t TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMaxNumRowEntries() const
+    { XPETRA_MONITOR("TpetraBlockCrsMatrix::getLocalMaxNumRowEntries"); return mtx_->getLocalMaxNumRowEntries(); }
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -654,7 +654,7 @@ namespace Xpetra {
     {
         XPETRA_MONITOR("TpetraBlockCrsMatrix::getLocalDiagOffsets");
 
-        const size_t lclNumRows = mtx_->getGraph()->getNodeNumRows();
+        const size_t lclNumRows = mtx_->getGraph()->getLocalNumRows();
         if (static_cast<size_t>(offsets.size()) < lclNumRows) 
         {
             offsets.resize(lclNumRows);
@@ -1039,16 +1039,16 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     global_size_t getGlobalNumCols() const { return 0; }
 
     //! Returns the number of matrix rows owned on the calling node.
-    size_t getNodeNumRows() const { return 0; }
+    size_t getLocalNumRows() const { return 0; }
 
     //! Returns the number of columns connected to the locally owned rows of this matrix.
-    size_t getNodeNumCols() const { return 0; }
+    size_t getLocalNumCols() const { return 0; }
 
     //! Returns the global number of entries in this matrix.
     global_size_t getGlobalNumEntries() const { return 0; }
 
     //! Returns the local number of entries in this matrix.
-    size_t getNodeNumEntries() const { return 0; }
+    size_t getLocalNumEntries() const { return 0; }
 
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
@@ -1060,7 +1060,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     size_t getGlobalMaxNumRowEntries() const { return 0; }
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    size_t getNodeMaxNumRowEntries() const { return 0; }
+    size_t getLocalMaxNumRowEntries() const { return 0; }
 
     //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
     bool isLocallyIndexed() const { return false; }
@@ -1384,16 +1384,16 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     global_size_t getGlobalNumCols() const { return 0; }
 
     //! Returns the number of matrix rows owned on the calling node.
-    size_t getNodeNumRows() const { return 0; }
+    size_t getLocalNumRows() const { return 0; }
 
     //! Returns the number of columns connected to the locally owned rows of this matrix.
-    size_t getNodeNumCols() const { return 0; }
+    size_t getLocalNumCols() const { return 0; }
 
     //! Returns the global number of entries in this matrix.
     global_size_t getGlobalNumEntries() const { return 0; }
 
     //! Returns the local number of entries in this matrix.
-    size_t getNodeNumEntries() const { return 0; }
+    size_t getLocalNumEntries() const { return 0; }
 
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return 0; }
@@ -1405,7 +1405,7 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     size_t getGlobalMaxNumRowEntries() const { return 0; }
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    size_t getNodeMaxNumRowEntries() const { return 0; }
+    size_t getLocalMaxNumRowEntries() const { return 0; }
 
     //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
     bool isLocallyIndexed() const { return false; }

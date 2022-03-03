@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_SideBlock_h
-#define IOSS_Ioss_SideBlock_h
+#pragma once
 
 #include <Ioss_ElementBlock.h>
 #include <Ioss_EntityBlock.h> // for EntityBlock
@@ -61,7 +60,7 @@ namespace Ioss {
      * that the sideblock faces are part of (SPLIT_BY_TOPOLOGIES) or
      * "UNKNOWN" if mixed topology (SPLIT_BY_DONT_SPLIT)
      * \param[in] face_topology_name The name of the topology of the
-     * sideblock faces. "UNKNOWN" if not homogenous.
+     * sideblock faces. "UNKNOWN" if not homogeneous.
      * \returns The generated sideblock name.
      */
     static std::string generate_sideblock_name(const std::string &sideset_name,
@@ -133,4 +132,3 @@ namespace Ioss {
     mutable int consistentSideNumber{-1};
   };
 } // namespace Ioss
-#endif

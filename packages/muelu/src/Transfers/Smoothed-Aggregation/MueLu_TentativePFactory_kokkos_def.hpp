@@ -457,7 +457,7 @@ namespace MueLu {
     RCP<RealValuedMultiVector> coarseCoords;
 
     if(bTransferCoordinates_) {
-      ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
+      ArrayView<const GO> elementAList = coarseMap->getLocalElementList();
       GO                  indexBase    = coarseMap->getIndexBase();
 
       LO blkSize = 1;
@@ -571,7 +571,7 @@ namespace MueLu {
     auto rowMap = A->getRowMap();
     auto colMap = A->getColMap();
 
-    const size_t numRows  = rowMap->getNodeNumElements();
+    const size_t numRows  = rowMap->getLocalNumElements();
     const size_t NSDim    = fineNullspace->getNumVectors();
 
     typedef Kokkos::ArithTraits<SC>     ATS;
@@ -948,7 +948,7 @@ namespace MueLu {
       // Stage 3: construct Xpetra::Matrix
       SubFactoryMonitor m2(*this, "Stage 3 (LocalMatrix+FillComplete)", coarseLevel);
 
-      local_matrix_type lclMatrix = local_matrix_type("A", numRows, coarseMap->getNodeNumElements(), nnz, vals, rows, cols);
+      local_matrix_type lclMatrix = local_matrix_type("A", numRows, coarseMap->getLocalNumElements(), nnz, vals, rows, cols);
 
       // Managing labels & constants for ESFC
       RCP<ParameterList> FCparams;
@@ -981,8 +981,8 @@ namespace MueLu {
     auto rowLocalMap = rowMap.getLocalMap();
     auto colLocalMap = colMap.getLocalMap();
 
-    const size_t numRows = rowLocalMap.getNodeNumElements();
-    const size_t numCols = colLocalMap.getNodeNumElements();
+    const size_t numRows = rowLocalMap.getLocalNumElements();
+    const size_t numCols = colLocalMap.getLocalNumElements();
 
     if (numCols < numRows)
       return false;

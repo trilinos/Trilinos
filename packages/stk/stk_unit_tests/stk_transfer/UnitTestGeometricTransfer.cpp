@@ -404,6 +404,7 @@ TEST(ReducedDependencyGeometricTransferTest, MpmdSingleElemToPointInSubCommunica
   MPI_Comm_split(global_pm, external_color, stk::parallel_machine_rank(global_pm), &transfer_shared_pm);
   if (external_color == 0)
   {
+    MPI_Comm_free(&transfer_shared_pm);
     return; //rank 0 doesn't participate
   }
 
@@ -416,6 +417,8 @@ TEST(ReducedDependencyGeometricTransferTest, MpmdSingleElemToPointInSubCommunica
     test.meshB->m_owning_rank = 1;
   test.run(stk::search::SearchMethod::KDTREE);
   check_single_elem_to_point_parametric_mask(transfer_shared_pm, test.meshA.get());
+
+  MPI_Comm_free(&transfer_shared_pm);
 }
 
 

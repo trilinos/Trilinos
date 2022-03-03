@@ -265,7 +265,7 @@ namespace Kokkos {
         dst, std::make_pair (dst_offset, dst_end));
       SrcViewType src_sub = Kokkos::subview(
         src, std::make_pair (src_offset, src_end));
-      Kokkos::deep_copy(dst_sub, src_sub);
+      Kokkos::deep_copy(typename SrcViewType::execution_space(), dst_sub, src_sub);
     }
 
     template <class ViewType>

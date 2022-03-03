@@ -20,19 +20,18 @@ TEST_F(TestTextMeshAura, twoQuadShellWithCoordinates)
   if (get_parallel_size() != 2) return;
   int rank = get_parallel_rank();
 
-  std::string meshDesc = "0,1,SHELL_QUAD_4,1,2,5,4\n"
-                         "1,2,SHELL_QUAD_4,2,3,6,5";
-  std::vector<double> coordinates = {
-    0,0,0, 1,0,0, 2,0,0,
-    0,1,0, 1,1,0, 2,1,0
-  };
+  std::string meshDesc =
+      "0,1,SHELL_QUAD_4,1,2,5,4\n"
+      "1,2,SHELL_QUAD_4,2,3,6,5"
+      "|coordinates:  0,0,0, 1,0,0, 2,0,0, 0,1,0, 1,1,0, 2,1,0";
+  std::vector<double> goldCoordinates = {0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 1, 0, 1, 1, 0, 2, 1, 0};
 
-  setup_text_mesh(meshDesc, coordinates);
+  setup_text_mesh(meshDesc);
 
   verify_num_elements(2);
   verify_single_element(1u, "SHELL_QUAD_4", EntityIdVector{1, 2, 5, 4});
   verify_single_element(2u, "SHELL_QUAD_4", EntityIdVector{2, 3, 6, 5});
-  verify_coordinates(EntityIdVector{1, 2, 3, 4, 5, 6}, coordinates);
+  verify_coordinates(EntityIdVector{1, 2, 3, 4, 5, 6}, goldCoordinates);
 
   if (rank == 0) verify_shared_nodes(EntityIdVector{2,5}, 1);
   if (rank == 1) verify_shared_nodes(EntityIdVector{2,5}, 0);

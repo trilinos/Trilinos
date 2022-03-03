@@ -124,7 +124,7 @@ module load sems-archive-env
 module use /home/projects/x86-64/modulefiles/local
 module load sems-archive-git/2.10.1
 
-module load sems-archive-cmake/3.12.2
+module load sems-archive-cmake/3.17.1
 module load sems-archive-ninja_fortran/1.8.2
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "CUDA" ]] ; then
@@ -196,7 +196,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.5" ]] ; then
   export ATDM_CONFIG_BLAS_LIBS="-mkl"
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5" ]] ; then
   module load sems-archive-gcc/7.2.0
-  module load sems-archive-intel/18.0.5
+  module load sems-archive-intel/19.0.5
   module load atdm-env
   module load atdm-mkl/18.0.5
   export ATDM_CONFIG_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"

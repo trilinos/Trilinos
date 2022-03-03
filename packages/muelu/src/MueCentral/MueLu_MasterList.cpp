@@ -156,6 +156,7 @@ namespace MueLu {
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "maxwell1: dump matrices") { ss << "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: mode") { ss << "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: disable addon") { ss << "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: use as preconditioner") { ss << "<Parameter name=\"refmaxwell: use as preconditioner\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
@@ -362,6 +363,7 @@ namespace MueLu {
   "<Parameter name=\"maxwell1: mode\" type=\"string\" value=\"standard\"/>"
   "<ParameterList name=\"maxwell1: 11list\"/>"
   "<ParameterList name=\"maxwell1: 22list\"/>"
+  "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=\"additive\"/>"
   "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"refmaxwell: 11list\"/>"
@@ -935,6 +937,8 @@ namespace MueLu {
          ("maxwell1: 11list","maxwell1: 11list")
       
          ("maxwell1: 22list","maxwell1: 22list")
+      
+         ("maxwell1: dump matrices","maxwell1: dump matrices")
       
          ("refmaxwell: mode","refmaxwell: mode")
       

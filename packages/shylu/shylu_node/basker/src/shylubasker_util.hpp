@@ -117,6 +117,18 @@ namespace BaskerNS
           basker->t_reset_BTF_factor(kid);
         }
       }
+#if defined(BASKER_SPLIT_A) 
+      if (basker->btf_top_nblks > 0) {
+        Int tot_num_ranks = (Int)(thread.league_size()*thread.team_size());
+        Int chunk_size = basker->btf_top_nblks / tot_num_ranks;
+        Int chunk_start = kid*chunk_size;
+        if (kid == tot_num_ranks-1) {
+          chunk_size = basker->btf_top_nblks - chunk_start;
+        }
+        Int chunk_end = chunk_start + chunk_size;
+        basker->t_reset_BTF_factor_top(chunk_start, chunk_end);
+      }
+#endif
     }//end operator()
   };//end kokkos_reset_factor
 
@@ -314,6 +326,20 @@ namespace BaskerNS
     }
   }//end t_reset_BTF_factor
 
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void Basker<Int,Entry,Exe_Space>::t_reset_BTF_factor_top(Int chunk_start, Int chunk_end)
+  {
+#if defined(BASKER_SPLIT_A)
+    for(Int b=chunk_start; b < chunk_end; b++)
+    {
+      BASKER_MATRIX &L = L_D(b);
+      L.clear_pend();
+      L.nnz = L.mnnz;
+    }//end-for over chunck
+#endif
+  }
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -633,7 +659,7 @@ namespace BaskerNS
           {
             //printf("Using BTF AL \n");
             #ifdef BASKER_DEBUG_INIT
-            printf("ALM alloc: b=%d row=%d kid=%d \n",
+            printf("ALM alloc (btf): b=%d row=%d kid=%d \n",
                    b, row, kid);
             #endif
             ALM(b)(row).convert2D(BTF_A, alloc, kid);
@@ -774,97 +800,87 @@ namespace BaskerNS
   {
     Int max_sep_size = 0;
 
+    //printf( " *** kid=%d :: t_init_worksppace(%d, %d) ***\n",kid, flag,btf_tabs_offset );
+    #ifdef BASKER_2DL
     if(flag)
     {
       if(btf_tabs_offset != 0)
       {
-        // init_workspace for a big A block (delayed till numeric Factor if MWM is enabled0
-        #ifdef BASKER_2DL
-        Int            b  = S(0)(kid);
-        //INT_1DARRAY    ws = LL[b][0].iws;
-        //ENTRY_1DARRAY  X  = LL[b][0].ews;
-        //Int      iws_size = LL[b][0].iws_size;
-        //Int      ews_size = LL[b][0].ews_size;
-        //Int      iws_mult = LL[b][0].iws_mult;
-        //Int      ews_mult = LL[b][0].ews_mult;
-        #else
-        INT_1DARRAY  &ws = thread_array(kid).iws;
-        ENTRY_1DARRAY &X = thread_array(kid).ews;
-        Int iws_size     = thread_array(kid).iws_size;
-        Int iws_mult     = thread_array(kid).iws_mult;
-        Int ews_size     = thread_array(kid).ews_size;
-        Int ews_mult     = thread_array(kid).ews_mult;
-        #endif
-        //Note: need to add a size array for all these
-
-        #ifdef BASKER_2DL
-        for(Int l = 0; l < LL_size(b); l++)
+        // init_workspace for a big A block (delayed till numeric Factor if MWM is enabled
+        //Int            b  = S(0)(kid);
+        for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
         {
-          //defining here
-          LL(b)(l).iws_size = LL(b)(l).nrow;
-          //This can be made smaller, see notes in Sfactor_old
-          LL(b)(l).iws_mult = 5;
-          LL(b)(l).ews_size = LL(b)(l).nrow;
-          //This can be made smaller, see notes in sfactor_old
-          LL(b)(l).ews_mult = 2;
-
-          Int iws_size = LL(b)(l).iws_size;
-          Int iws_mult = LL(b)(l).iws_mult;
-          Int ews_size = LL(b)(l).ews_size;
-          Int ews_mult = LL(b)(l).ews_mult;
-
-          if(iws_size > max_sep_size)
+          if(kid%((Int)pow(2,lvl)) == 0)
           {
-            max_sep_size = iws_size;
-          }
+            Int b = S(lvl)(kid);
 
-          if(iws_size == 0)
-          {
-            iws_size  = 1;
-          }
-
-          BASKER_ASSERT((iws_size*iws_mult)>0, "util iws");
-          MALLOC_INT_1DARRAY(LL(b)(l).iws, iws_size*iws_mult);
-          for(Int i=0; i<iws_mult*iws_size; i++)
-          {
-            LL(b)(l).iws(i) = 0;
-          }
-
-
-          //TEST
-          //INT_1DARRAY att = LL(b)(l).iws; 
-          /*if(ews_size == 0)
-          {
-            ews_size = 1;
-          }*/
-          if (ews_size*ews_mult > 0) {
-            BASKER_ASSERT((ews_size*ews_mult)>0, "util ews");
-            MALLOC_ENTRY_1DARRAY(LL(b)(l).ews, ews_size*ews_mult);
-
-            for(Int i=0; i<ews_mult*ews_size; i++)
+            for(Int l = 0; l < LL_size(b); l++)
             {
-              LL(b)(l).ews(i) = 0;
-            }
+              //defining here
+              LL(b)(l).iws_size = LL(b)(l).nrow;
+              //This can be made smaller, see notes in Sfactor_old
+              LL(b)(l).iws_mult = 5;
+              LL(b)(l).ews_size = LL(b)(l).nrow;
+              //This can be made smaller, see notes in sfactor_old
+              LL(b)(l).ews_mult = 2;
+
+              Int iws_size = LL(b)(l).iws_size;
+              Int iws_mult = LL(b)(l).iws_mult;
+              Int ews_size = LL(b)(l).ews_size;
+              Int ews_mult = LL(b)(l).ews_mult;
+
+              if(iws_size > max_sep_size)
+              {
+                max_sep_size = iws_size;
+              }
+
+              if(iws_size == 0)
+              {
+                iws_size  = 1;
+              }
+
+              BASKER_ASSERT((iws_size*iws_mult)>0, "util iws");
+              MALLOC_INT_1DARRAY(LL(b)(l).iws, iws_size*iws_mult);
+              for(Int i=0; i<iws_mult*iws_size; i++)
+              {
+                LL(b)(l).iws(i) = 0;
+              }
+
+              //TEST
+              //INT_1DARRAY att = LL(b)(l).iws; 
+              /*if(ews_size == 0)
+              {
+                ews_size = 1;
+              }*/
+              if (ews_size*ews_mult > 0) {
+                BASKER_ASSERT((ews_size*ews_mult)>0, "util ews");
+                MALLOC_ENTRY_1DARRAY(LL(b)(l).ews, ews_size*ews_mult);
+
+                for(Int i=0; i<ews_mult*ews_size; i++)
+                {
+                  LL(b)(l).ews(i) = 0;
+                }
+              }
+
+              //printf( " kid=%d :: LL(%d, %d).fill\n",kid, b,l );
+              //LL(b)(l).fill();
+              Kokkos::deep_copy(LL(b)(l).col_ptr, 0);
+
+              if(l==0)
+              {
+                //Also workspace matrix 
+                //This could be made smaller
+                //printf("C: size: %d kid: %d \n",
+                //	   iws_size, kid);
+
+                //thread_array[kid].C.init_matrix("cwork", 
+                //			     0, iws_size,
+                //			     0, 2, 
+                //			     iws_size*2);
+              }
+            } //end for l
           }
-
-          //printf( " LL(%d, %d).fill\n",b,l );
-          //LL(b)(l).fill();
-          Kokkos::deep_copy(LL(b)(l).col_ptr, 0);
-
-          if(l==0)
-          {
-            //Also workspace matrix 
-            //This could be made smaller
-            //printf("C: size: %d kid: %d \n",
-            //	   iws_size, kid);
-
-            //thread_array[kid].C.init_matrix("cwork", 
-            //			     0, iws_size,
-            //			     0, 2, 
-            //			     iws_size*2);
-          }
-        } //end for l
-
+        }
         //Also workspace matrix 
         //This could be made smaller
         thread_array(kid).C.init_matrix("cwork", 0, max_sep_size,
@@ -896,6 +912,18 @@ namespace BaskerNS
       }//else
     }
     #else //ifdef basker_2dl
+    if(flag)
+    {
+      if(btf_tabs_offset != 0)
+      {
+        INT_1DARRAY  &ws = thread_array(kid).iws;
+        ENTRY_1DARRAY &X = thread_array(kid).ews;
+        Int iws_size     = thread_array(kid).iws_size;
+        Int iws_mult     = thread_array(kid).iws_mult;
+        Int ews_size     = thread_array(kid).ews_size;
+        Int ews_mult     = thread_array(kid).ews_mult;
+      }
+    }
     printf("init_workspace 1d, kid: %d size: %d %d %d %d \n",
 	    kid, iws_mult, iws_size, ews_mult, ews_size);
     for(Int i=0; i< iws_mult*iws_size; i++)

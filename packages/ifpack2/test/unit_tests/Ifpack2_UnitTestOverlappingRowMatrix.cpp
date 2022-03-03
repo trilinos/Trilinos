@@ -234,7 +234,7 @@ void reducedMatvec(const OverlappedMatrixClass & A,
   auto Y_lcl = Y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   
   // Do the "Local part"
-  auto numLocalRows = undA->getNodeNumRows();
+  auto numLocalRows = undA->getLocalNumRows();
   localReducedMatvec(undA_lcl,X_lcl,numLocalRows,Y_lcl);
 
   
@@ -352,7 +352,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   size_t NumGlobalRowsB = B->getGlobalNumRows ();
   size_t NumGlobalNonzerosB = B->getGlobalNumEntries ();
 
-  for (LO i = 0 ; i < static_cast<LO> (A->getNodeNumRows ()); ++i) {
+  for (LO i = 0 ; i < static_cast<LO> (A->getLocalNumRows ()); ++i) {
     x_ptr[0][i] = 1.0 * A->getRowMap ()->getGlobalElement (i);
   }
   Y.putScalar (0.0);
@@ -396,10 +396,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   // getDomainMap () and getRangeMap (), as desired, and see the overlap
   // pattern.
   {
-    const auto n = B->getRowMap ()->getNodeNumElements ();
-    TEST_EQUALITY( B->getColMap ()->getNodeNumElements (), n );
-    TEST_EQUALITY( B->getRangeMap ()->getNodeNumElements (), n );
-    TEST_EQUALITY( B->getDomainMap ()->getNodeNumElements (), n );
+    const auto n = B->getRowMap ()->getLocalNumElements ();
+    TEST_EQUALITY( B->getColMap ()->getLocalNumElements (), n );
+    TEST_EQUALITY( B->getRangeMap ()->getLocalNumElements (), n );
+    TEST_EQUALITY( B->getDomainMap ()->getLocalNumElements (), n );
   }
 
   try {
@@ -618,9 +618,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, reducedMatvec, Sc
       printf("%d ",(int) hstarts[i]);
     printf("\n");
 #endif
-    //    printf("Before matvec A is (locally)%dx%d x is of size %d, ovX is ov size %d\n",(int)A->getNodeNumRows(),(int)A->getNodeNumCols(),
-    //           (int)x.getMap()->getNodeNumElements(),(int)ovX.getMap()->getNodeNumElements());
-    //    printf("ovA->getUnderlyingMatrix() is (locally) %dx%d\n",(int)ovA.getUnderlyingMatrix()->getNodeNumRows(),(int)ovA.getUnderlyingMatrix()->getNodeNumCols());
+    //    printf("Before matvec A is (locally)%dx%d x is of size %d, ovX is ov size %d\n",(int)A->getLocalNumRows(),(int)A->getLocalNumCols(),
+    //           (int)x.getMap()->getLocalNumElements(),(int)ovX.getMap()->getLocalNumElements());
+    //    printf("ovA->getUnderlyingMatrix() is (locally) %dx%d\n",(int)ovA.getUnderlyingMatrix()->getLocalNumRows(),(int)ovA.getUnderlyingMatrix()->getLocalNumCols());
 
     reducedMatvec(ovA,ovX,2,temp1);
     reducedMatvec(ovA,temp1,1,temp2);

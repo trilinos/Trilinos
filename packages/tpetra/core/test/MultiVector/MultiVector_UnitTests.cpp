@@ -3971,7 +3971,7 @@ namespace {
     RCP<const map_type> map = rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
     TEST_ASSERT( ! map.is_null () );
     TEST_EQUALITY( map->getGlobalNumElements (), gblNumRows );
-    TEST_EQUALITY( map->getNodeNumElements (), lclNumRows );
+    TEST_EQUALITY( map->getLocalNumElements (), lclNumRows );
     TEST_EQUALITY( map->getIndexBase (), indexBase );
 
     //
@@ -5270,7 +5270,7 @@ namespace {
     RCP<const map_type> map = rcp (new map_type (1000, 0, comm));
     MV x(map, 1);
     x.putScalar(0.0);
-    LO N= (LO) map->getNodeNumElements();
+    LO N= (LO) map->getLocalNumElements();
 
     // Vector parallel fill
     // If we

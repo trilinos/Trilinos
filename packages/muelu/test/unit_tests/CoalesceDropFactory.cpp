@@ -202,7 +202,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1))); //u,v and p
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -224,7 +224,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationBasic
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, AmalgamationStrided, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -300,7 +300,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -322,7 +322,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationStrided
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, AmalgamationStrided2, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -407,7 +407,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -429,7 +429,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationStrided2
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, AmalgamationStridedOffset, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -517,7 +517,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -539,7 +539,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationStridedOffset
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, AmalgamationLightweight, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -598,7 +598,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -620,7 +620,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationLightweight
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, AmalgamationLightweightDrop, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -682,7 +682,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(3*comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==3), true);
+    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getLocalNumElements()==3), true);
   } // AmalgamationLightweightDrop
 
 
@@ -761,7 +761,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -783,7 +783,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationStridedLW
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, AmalgamationStrided2LW, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -869,7 +869,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -891,7 +891,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationStrided2LW
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, AmalgamationStridedOffsetLW, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -980,7 +980,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -993,7 +993,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationStridedOffsetLW
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, AmalgamationDroppingLW, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -1043,7 +1043,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -1056,7 +1056,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getLocalNumElements()==1), true);
 
   } // AmalgamationDroppingLW
 
@@ -1147,7 +1147,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -1158,7 +1158,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()));
-    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationStridedOffsetDropping2LW
 
 

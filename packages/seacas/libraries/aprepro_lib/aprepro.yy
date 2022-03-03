@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -215,7 +215,7 @@ aexp:   AVAR                    { $$ = aprepro->make_array(*($1->value.avar)); }
                                   $1->value.avar= $3;
                                   redefined_warning(aprepro, $1);
                                   set_type(aprepro, $1, token::AVAR);           }
-        | AVAR EQUAL aexp       { $$ = $3; delete $1->value.avar; $1->value.avar = $3;
+        | AVAR EQUAL aexp       { $$ = $3; aprepro.redefine_array($1->value.avar); $1->value.avar = $3;
                                   redefined_warning(aprepro, $1);
                                   set_type(aprepro, $1, token::AVAR); }
         | UNDVAR EQUAL aexp     { $$ = $3; $1->value.avar = $3;
@@ -263,7 +263,7 @@ sexp:     QSTRING               { $$ = $1;                              }
                                   redefined_warning(aprepro, $1);
                                   set_type(aprepro, $1, token::SVAR);           }
         | AVAR EQUAL sexp       { $$ = $3;
-	                          delete $1->value.avar;
+                                  aprepro.redefine_array($1->value.avar);
                                   $1->value.svar= $3;
                                   redefined_warning(aprepro, $1);
                                   set_type(aprepro, $1, token::SVAR);           }
@@ -341,7 +341,7 @@ exp:      NUM                   { $$ = $1;                              }
                                   redefined_warning(aprepro, $1);
                                   set_type(aprepro, $1, token::VAR);                    }
         | AVAR EQUAL exp        { $$ = $3;
-	                          delete $1->value.avar;
+	                          aprepro.redefine_array($1->value.avar);
                                   $1->value.var= $3;
                                   redefined_warning(aprepro, $1);
                                   set_type(aprepro, $1, token::VAR);           }

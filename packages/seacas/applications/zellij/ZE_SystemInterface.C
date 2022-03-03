@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -326,7 +326,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   repeat_ = options_.get_option_value("repeat", repeat_);
 
   // Adjust start_rank and rank_count if running in parallel...
-  Ioss::ParallelUtils pu{MPI_COMM_WORLD};
+  Ioss::ParallelUtils pu{};
   if (pu.parallel_size() > 1) {
     if (subcycle_) {
       if (myRank_ == 0) {

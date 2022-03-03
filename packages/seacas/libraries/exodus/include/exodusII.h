@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -371,7 +371,7 @@ typedef struct ex_attribute
 {
   ex_entity_type entity_type;
   int64_t        entity_id;
-  char           name[NC_MAX_NAME];
+  char           name[NC_MAX_NAME + 1];
   ex_type        type; /* int, double, text */
   size_t         value_count;
   void          *values; /* not accessed if NULL */

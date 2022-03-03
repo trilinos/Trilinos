@@ -90,7 +90,8 @@ std::string get_file_contents(const std::string & fileName) {
 
 TEST_F(TestM2NLogFile, defaultLogFile)
 {
-  const std::string logFileName{"stk_balance_m2n.log"};
+  const int initialNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD); 
+  const std::string logFileName{"dummy_mesh." + std::to_string(initialNumProcs) + "_to_16.log"};
   clean_up_file(logFileName);
   set_up_output_streams({});
 
