@@ -245,6 +245,14 @@ namespace panzer
     // Determine the index in the Workset bases for our particular basis name.
     if (not useDescriptors_)
       basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
+
+    if (Sacado::IsADType<ScalarT>::value) {
+      const auto fadSize = Kokkos::dimension_scalar(field_.get_view());
+      tmp_ = PHX::View<ScalarT*>("GradBasisDotVector::tmp_",field_.extent(0),fadSize);
+    } else {
+      tmp_ = PHX::View<ScalarT*>("GradBasisDotVector::tmp_",field_.extent(0));
+    }
+
   } // end of postRegistrationSetup()
 
   /////////////////////////////////////////////////////////////////////////////
@@ -267,7 +275,6 @@ namespace panzer
       for (int basis(0); basis < numBases; ++basis)
         field_(cell, basis) = 0.0;
 
-    ScalarT tmp;
     // Loop over the quadrature points and dimensions of our vector fields,
     // scale the integrand by the tensor,
     // and then perform the actual integration, looping over the bases.
@@ -275,11 +282,11 @@ namespace panzer
       {
         for (int dim(0); dim < numDim_; ++dim)
           {
-            tmp = 0.;
+            tmp_(cell) = 0.0;
             for (int dim2(0); dim2 < numDim_; ++dim2)
-              tmp += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
+              tmp_(cell) += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
             for (int basis(0); basis < numBases; ++basis)
-              field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp;
+              field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp_(cell);
           } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
   } // end of operator()()

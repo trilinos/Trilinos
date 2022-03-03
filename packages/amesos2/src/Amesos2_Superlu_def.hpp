@@ -213,7 +213,7 @@ Superlu<Matrix,Vector>::preOrdering_impl()
    *   permc_spec = MY_PERMC: the ordering already supplied in perm_c[]
    */
   int permc_spec = data_.options.ColPerm;
-  if ( permc_spec != SLU::MY_PERMC && this->root_ ){
+  if (!use_metis_ && permc_spec != SLU::MY_PERMC && this->root_ ){
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor preOrderTimer(this->timers_.preOrderTime_);
 #endif
@@ -278,7 +278,9 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
 
       // free
       SLU::SUPERLU_FREE(new_col_ptr);
-      SLU::SUPERLU_FREE(new_row_ind);
+      if (new_nz > 0) {
+        SLU::SUPERLU_FREE(new_row_ind);
+      }
     }
 
     // reorder will convert both graph and perm/iperm to the internal METIS integer type
@@ -303,7 +305,6 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
     // Turn off Equil not to mess up METIS ordering?
     //data_.options.Equil = SLU::NO;
   }
-
   return(0);
 }
 
@@ -1060,7 +1061,6 @@ Superlu<Matrix,Vector>::triangular_solve_factor()
   if (data_.options.ConditionNumber == SLU::YES) {
     using STM = Teuchos::ScalarTraits<magnitude_type>;
     const magnitude_type eps = STM::eps ();
-    int n = data_.perm_r.extent(0);
 
     SCformat *Lstore = (SCformat*)(data_.L.Store);
     int nsuper = 1 + Lstore->nsuper;
@@ -1077,6 +1077,7 @@ Superlu<Matrix,Vector>::triangular_solve_factor()
     condition_flag = (((double)max_cols * nsuper) * eps * multiply_fact >= data_.rcond);
 
 #ifdef HAVE_AMESOS2_VERBOSE_DEBUG
+    int n = data_.perm_r.extent(0);
     std::cout << this->getComm()->getRank()
               << " : anorm = " << data_.anorm << ", rcond = " << data_.rcond << ", n = " << n
               << ", num super cols = " << nsuper << ", max super cols = " << max_cols

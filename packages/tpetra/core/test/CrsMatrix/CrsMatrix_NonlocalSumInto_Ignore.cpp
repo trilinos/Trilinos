@@ -210,7 +210,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto_Ignore, LocalOrdin
     // is in the CrsMatrix_NonlocalSumInto.cpp test) so that there
     // would actually be room for the incoming entries from remote
     // calls to sumIntoGlobalValues().
-    RCP<crs_graph_type> nonconstGraph (new crs_graph_type (rowMap, 2, Tpetra::StaticProfile));
+    RCP<crs_graph_type> nonconstGraph (new crs_graph_type (rowMap, 2));
 
     TEUCHOS_TEST_FOR_EXCEPTION(globalMinRow >= globalMaxRow, std::logic_error,
       "This test only works if globalMinRow < globalMaxRow.");

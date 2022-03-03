@@ -120,11 +120,11 @@ namespace {
 
       // create CrsGraph object
       RCP<Tpetra::CrsGraph<LO, GO, NO> > graph =
-             rcp (new Tpetra::CrsGraph<LO, GO, NO> (map, 3, Tpetra::StaticProfile));
+             rcp (new Tpetra::CrsGraph<LO, GO, NO> (map, 3));
 
       // Create a simple tridiagonal source graph.
       Array<GO> entry(1);
-      for (size_t i = 0; i < map->getNodeNumElements (); i++) {
+      for (size_t i = 0; i < map->getLocalNumElements (); i++) {
         const GO globalrow = map->getGlobalElement (i);
         entry[0] = globalrow;
         graph->insertGlobalIndices (globalrow, entry());
@@ -147,8 +147,8 @@ namespace {
       RCP<const Tpetra::Import<LO,GO,NO> > importer = graph->getImporter();
       Tpetra::MultiVector<Scalar,LO,GO,NO> Vdomain(domainMap,1), Vcolumn(columnMap,1);
       Tpetra::FEMultiVector<Scalar,LO,GO,NO> Vfe(domainMap,importer,1);
-      size_t Ndomain = domainMap->getNodeNumElements();
-      size_t Ncolumn = domainMap->getNodeNumElements();
+      size_t Ndomain = domainMap->getLocalNumElements();
+      size_t Ncolumn = domainMap->getLocalNumElements();
 
       if(importer.is_null()) throw std::runtime_error("No valid importer");
 

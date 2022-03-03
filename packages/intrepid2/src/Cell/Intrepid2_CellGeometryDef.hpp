@@ -140,7 +140,7 @@ namespace Intrepid2
   numNodesPerCell_(cellGeometry.numNodesPerCell_)
   {
     // host-only registration with HostMemberLookup:
-#ifndef __CUDA_ARCH__
+#ifndef INTREPID2_COMPILE_DEVICE_CODE
     shards::CellTopology cellTopo = cellGeometry.cellTopology();
     BasisPtr basisForNodes = cellGeometry.basisForNodes();
     using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, DeviceType>;
@@ -153,7 +153,7 @@ namespace Intrepid2
   CellGeometry<PointScalar,spaceDim,DeviceType>::~CellGeometry()
   {
     // host-only deregistration with HostMemberLookup:
-#ifndef __CUDA_ARCH__
+#ifndef INTREPID2_COMPILE_DEVICE_CODE
     using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, DeviceType>;
     HostMemberLookup::destructorCalled(this);
 #endif
@@ -865,16 +865,19 @@ namespace Intrepid2
     {
       // then there are as many distinct orientations possible as there are there are cells per grid cell
       // fill cellNodesHost with sample nodes from grid cell 0
-      
       const int numSubdivisions = numCellsPerGridCell(subdivisionStrategy_); // can be up to 6
       const int gridCellOrdinal = 0;
+      
+#if defined(INTREPID2_COMPILE_DEVICE_CODE)
+      /// do not compile host only code with device
+#else
       auto hostPolicy = Kokkos::MDRangePolicy<HostExecSpace,Kokkos::Rank<2>>({0,0},{numSubdivisions,nodesPerCell});
       Kokkos::parallel_for("fill cellNodesHost", hostPolicy,
-      KOKKOS_LAMBDA (const int &subdivisionOrdinal, const int &nodeInCell) {
-        auto node = gridCellNodeForSubdivisionNode(gridCellOrdinal, subdivisionOrdinal, nodeInCell);
+                           [this,gridCellOrdinal,cellNodesHost] (const int &subdivisionOrdinal, const int &nodeInCell) {
+        auto node = this->gridCellNodeForSubdivisionNode(gridCellOrdinal, subdivisionOrdinal, nodeInCell);
         cellNodesHost(subdivisionOrdinal,nodeInCell) = node;
       });
-      
+#endif
       cellVariationType = (numSubdivisions == 1) ? CONSTANT : MODULAR;
     }
     else

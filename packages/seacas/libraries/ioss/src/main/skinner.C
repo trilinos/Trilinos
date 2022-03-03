@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,7 +43,7 @@ namespace {
   std::string                  codename;
   std::string                  version = "0.99";
 
-  void output_table(const Ioss::ElementBlockContainer &             ebs,
+  void output_table(const Ioss::ElementBlockContainer              &ebs,
                     std::map<std::string, std::vector<Ioss::Face>> &boundary_faces)
   {
     // Get maximum name and face_count length...
@@ -65,8 +65,8 @@ namespace {
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
     for (auto &eb : ebs) {
       const std::string &name = eb->name();
-      fmt::print("\t|{2:^{0}}|{3:{1}L}  |\n", max_name, max_face - 2, name,
-                 boundary_faces[name].size());
+      fmt::print("\t|{2:^{0}}|{3:{1}}  |\n", max_name, max_face - 2, name,
+                 fmt::group_digits(boundary_faces[name].size()));
     }
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
   }
@@ -74,12 +74,12 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-  int my_rank = 0;
 #ifdef SEACAS_HAVE_MPI
   MPI_Init(&argc, &argv);
   ON_BLOCK_EXIT(MPI_Finalize);
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
+  Ioss::ParallelUtils pu{};
+  int                 my_rank = pu.parallel_rank();
 
   codename = Ioss::FileInfo(argv[0]).basename();
 
@@ -112,10 +112,7 @@ int main(int argc, char *argv[])
     fmt::print(stderr, "\n{}\n\nskinner terminated due to exception\n", e.what());
     exit(EXIT_FAILURE);
   }
-#ifdef SEACAS_HAVE_MPI
-  Ioss::ParallelUtils parallel(MPI_COMM_WORLD);
-  parallel.barrier();
-#endif
+  pu.barrier();
   double end = Ioss::Utils::timer();
 
   if (my_rank == 0) {
@@ -140,7 +137,7 @@ namespace {
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
     //========================================================================
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
-                                                    (MPI_Comm)MPI_COMM_WORLD, properties);
+                                                    Ioss::ParallelUtils::comm_world(), properties);
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
@@ -164,11 +161,11 @@ namespace {
     // Get vector of all boundary faces which will be output as the skin...
 
     std::map<std::string, std::vector<Ioss::Face>> boundary_faces;
-    const Ioss::ElementBlockContainer &            ebs = region.get_element_blocks();
+    const Ioss::ElementBlockContainer             &ebs = region.get_element_blocks();
     for (auto &eb : ebs) {
       const std::string &name     = eb->name();
-      auto &             boundary = boundary_faces[name];
-      auto &             faces    = face_generator.faces(name);
+      auto              &boundary = boundary_faces[name];
+      auto              &faces    = face_generator.faces(name);
       for (auto &face : faces) {
         if (face.elementCount_ == 1) {
           boundary.push_back(face);
@@ -200,7 +197,7 @@ namespace {
     // Map ids from total mesh down to skin mesh...
     // Also get coordinates...
     std::vector<double> coord_in;
-    Ioss::NodeBlock *   nb = region.get_node_blocks()[0];
+    Ioss::NodeBlock    *nb = region.get_node_blocks()[0];
     nb->get_field_data("mesh_model_coordinates", coord_in);
 
     std::vector<INT> ids;
@@ -230,7 +227,7 @@ namespace {
     std::string       file = interFace.output_filename();
     std::string       type = interFace.output_type();
     Ioss::DatabaseIO *dbo  = Ioss::IOFactory::create(type, file, Ioss::WRITE_RESTART,
-                                                    (MPI_Comm)MPI_COMM_WORLD, properties);
+                                                     Ioss::ParallelUtils::comm_world(), properties);
     if (dbo == nullptr || !dbo->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
@@ -262,7 +259,7 @@ namespace {
     // Count faces per element block and create output element block...
     for (auto &eb : ebs) {
       const std::string &name      = eb->name();
-      auto &             boundary  = boundary_faces[name];
+      auto              &boundary  = boundary_faces[name];
       auto               face_topo = eb->topology()->face_type(0);
       std::string        topo      = "shell";
       if (face_topo == nullptr) {
@@ -294,8 +291,8 @@ namespace {
     INT  fid               = 0;
     for (auto &eb : ebs) {
       const std::string &name       = eb->name();
-      auto &             boundary   = boundary_faces[name];
-      auto *             block      = output_region.get_element_block(name);
+      auto              &boundary   = boundary_faces[name];
+      auto              *block      = output_region.get_element_block(name);
       size_t             node_count = block->topology()->number_corner_nodes();
 
       std::vector<INT> conn;

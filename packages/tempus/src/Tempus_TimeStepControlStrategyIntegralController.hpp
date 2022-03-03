@@ -289,7 +289,7 @@ createTimeStepControlStrategyIntegralController(
 {
   using Teuchos::rcp;
   auto tscs = rcp(new TimeStepControlStrategyIntegralController<Scalar>());
-  if (pList == Teuchos::null) return tscs;
+  if (pList == Teuchos::null || pList->numParams() == 0) return tscs;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     pList->get<std::string>("Strategy Type", "Integral Controller") !=

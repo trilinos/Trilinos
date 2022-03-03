@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo
-echo "Starting nightly Trilinos development testing on trappist: `date`"
+echo "Starting nightly Trilinos development testing on $HOSTNAME: `date`"
 echo
 
 #
@@ -34,16 +34,19 @@ export TDD_HTTPS_PROXY=$https_proxy
 
 . ~/.bashrc
 
+SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
+export MODULEPATH=$SCRIPT_DIR:$MODULEPATH
+# Trilinos source repo
+export TRILINOS_SOURCE=$SCRIPT_DIR/../../../..
+
 # If you update the list of modules, go to ~/code/trilinos-test/trilinos/ and
 # do "git pull". Otherwise, the tests could fail on the first night, as we
 # would first run old cron_driver.sh and only then pull
 
 # ===========================================================================
 export CTEST_CONFIGURATION="default"
-module load sems-cmake/3.17.1
-module load sems-gcc/5.3.0
-module load sems-openmpi/1.10.1
-module load sems-superlu/4.3/base
+module load muelu-gcc
+module list
 
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
@@ -53,22 +56,17 @@ export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
 echo "Configuration = $CTEST_CONFIGURATION"
 env
 
-export OMP_NUM_THREADS=2
+pushd $TRILINOS_SOURCE
+ctest -S $SCRIPT_DIR/ctest_linux_nightly_mpi_release_muelu_trappist.gcc.cmake
+ctest -S $SCRIPT_DIR/ctest_linux_nightly_mpi_release_muelu_no_int_no_serial_openmp_trappist.cmake
+ctest -S $SCRIPT_DIR/ctest_linux_nightly_mpi_experimental_openmp_refactor_muelu_trappist.gcc.cmake
+popd
 
-# Machine independent cron_driver:
-SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
-$SCRIPT_DIR/../cron_driver.py
-
-module unload sems-superlu/4.3/base
-module unload sems-openmpi/1.10.1
-module unload sems-gcc/5.3.0
-module unload sems-cmake/3.17.1
+module unload muelu-gcc
 # ===========================================================================
 export CTEST_CONFIGURATION="clang"
-module load sems-cmake/3.17.1
-module load sems-clang/10.0.0
-module load sems-openmpi/1.10.1
-module load sems-superlu/4.3/base
+module load muelu-clang
+module list
 
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
@@ -78,18 +76,13 @@ export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
 echo "Configuration = $CTEST_CONFIGURATION"
 env
 
-export OMP_NUM_THREADS=2
+pushd $TRILINOS_SOURCE
+ctest -S $SCRIPT_DIR/ctest_linux_nightly_mpi_release_muelu_trappist.clang.cmake
+popd
 
-# Machine independent cron_driver:
-SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
-$SCRIPT_DIR/../cron_driver.py
-
-module unload sems-superlu/4.3/base
-module unload sems-openmpi/1.10.1
-module unload sems-clang/10.0.0
-module unload sems-cmake/3.17.1
+module unload muelu-clang
 # ===========================================================================
 
 echo
-echo "Ending nightly Trilinos development testing on trappist: `date`"
+echo "Ending nightly Trilinos development testing on $HOSTNAME: `date`"
 echo

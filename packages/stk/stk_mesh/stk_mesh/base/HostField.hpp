@@ -57,7 +57,10 @@ namespace mesh {
 template<typename T, template <typename> class NgpDebugger>
 class HostField : public NgpFieldBase
 {
-public:
+ private:
+  using ExecSpace = stk::ngp::ExecSpace;
+
+ public:
   using value_type = T;
   using StkDebugger = typename NgpDebugger<T>::StkFieldSyncDebuggerType;
 
@@ -65,31 +68,17 @@ public:
     : NgpFieldBase(),
       hostBulk(nullptr),
       field(nullptr),
-      synchronizedCount(0),
-      asyncCopyState(impl::AsyncCopyState())
+      synchronizedCount(0)
   {
-    needSyncToHost = std::make_shared<bool>(false);
-    needSyncToDevice = std::make_shared<bool>(false);
   }
 
   HostField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f, bool isFromGetUpdatedNgpField = false)
     : NgpFieldBase(),
       hostBulk(&b),
       field(&f),
-      synchronizedCount(0),
-      asyncCopyState(impl::AsyncCopyState())
+      synchronizedCount(0)
   {
     field->template make_field_sync_debugger<StkDebugger>();
-    needSyncToHost = std::make_shared<bool>(false);
-    needSyncToDevice = std::make_shared<bool>(false);
-    update_field();
-  }
-
-  HostField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f,
-            const stk::ngp::ExecSpace& execSpace, bool isFromGetUpdatedNgpField = false)
-    : HostField(b, f, isFromGetUpdatedNgpField)
-  {
-    asyncCopyState.set_state(execSpace, impl::INVALID);
   }
 
   HostField(const HostField<T, NgpDebugger>&) = default;
@@ -97,17 +86,19 @@ public:
   HostField<T, NgpDebugger>& operator=(const HostField<T, NgpDebugger>&) = default;
   HostField<T, NgpDebugger>& operator=(HostField<T, NgpDebugger>&&) = default;
 
-  void update_field() override
+  void update_field(const ExecSpace& newExecSpace) override
   {
-    if (hostBulk->synchronized_count() != synchronizedCount) {
-      copy_host_to_device();
-    }
-    synchronizedCount = hostBulk->synchronized_count();
+    set_execution_space(newExecSpace);
+    update_field();
+  }
+
+  void update_field(ExecSpace&& newExecSpace) override
+  {
+    set_execution_space(std::forward<ExecSpace>(newExecSpace));
+    update_field();
   }
 
   void set_field_states(HostField<T, NgpDebugger>* fields[]) {}
-
-  void set_execution_space(const stk::ngp::ExecSpace& execSpace) override { asyncCopyState.set_execution_space(execSpace); }
 
   size_t num_syncs_to_host() const override { return field->num_syncs_to_host(); }
   size_t num_syncs_to_device() const override { return field->num_syncs_to_device(); }
@@ -183,28 +174,27 @@ public:
                              });
   }
 
-  void modify_on_host() override { set_modify_on_host(); }
+  void modify_on_host() override { field->modify_on_host(); }
 
-  void modify_on_device() override { set_modify_on_device(); }
+  void modify_on_device() override { field->modify_on_device(); }
 
   void clear_sync_state() override
   {
-    *needSyncToHost = false;
-    *needSyncToDevice = false;
+    field->clear_sync_state();
   }
 
-  void modify_on_host(const Selector& selector) override { set_modify_on_host(); }
+  void modify_on_host(const Selector& selector) override { field->modify_on_host(selector); }
 
-  void modify_on_device(const Selector& selector) override { set_modify_on_device(); }
+  void modify_on_device(const Selector& selector) override { field->modify_on_device(selector); }
 
   void clear_host_sync_state() override
   {
-    *needSyncToDevice = false;
+    field->clear_host_sync_state();
   }
 
   void clear_device_sync_state() override
   {
-    *needSyncToHost = false;
+    field->clear_device_sync_state();
   }
 
   void sync_to_host() override
@@ -213,10 +203,19 @@ public:
     Kokkos::fence();
   }
 
-  void sync_to_host(const stk::ngp::ExecSpace& execSpace) override
+  void sync_to_host(const ExecSpace& execSpace) override
   {
     if (need_sync_to_host()) {
       copy_device_to_host();
+      clear_device_sync_state();
+    }
+  }
+
+  void sync_to_host(ExecSpace&& execSpace) override
+  {
+    if (need_sync_to_host()) {
+      copy_device_to_host();
+      clear_device_sync_state();
     }
   }
 
@@ -226,17 +225,29 @@ public:
     Kokkos::fence();
   }
 
-  void sync_to_device(const stk::ngp::ExecSpace& execSpace) override
+  void sync_to_device(const ExecSpace& execSpace) override
   {
     if (need_sync_to_device()) {
       if (hostBulk->synchronized_count() != synchronizedCount) {
         update_field();
       }
       copy_host_to_device();
+      clear_host_sync_state();
     }
   }
 
-  size_t synchronized_count() const override { return field->mesh_meta_data().mesh_bulk_data().synchronized_count(); }
+  void sync_to_device(ExecSpace&& execSpace) override
+  {
+    if (need_sync_to_device()) {
+      if (hostBulk->synchronized_count() != synchronizedCount) {
+        update_field();
+      }
+      copy_host_to_device();
+      clear_host_sync_state();
+    }
+  }
+
+  size_t synchronized_count() const override { return synchronizedCount; }
 
   FieldState state() const { return field->state(); }
 
@@ -244,59 +255,61 @@ public:
 
   void update_bucket_pointer_view() override { }
 
-  void swap(HostField<T> &other) {
-    needSyncToHost.swap(other.needSyncToHost);
-    needSyncToDevice.swap(other.needSyncToDevice);
-  }
+  void swap(HostField<T> &other) { }
 
   stk::mesh::EntityRank get_rank() const { return field ? field->entity_rank() : stk::topology::INVALID_RANK; }
 
   unsigned get_ordinal() const { return field->mesh_meta_data_ordinal(); }
 
+  void debug_initialize_debug_views() override {}
   void debug_modification_begin() override {}
   void debug_modification_end(size_t) override {}
   void debug_detect_device_field_modification() override {}
 
-protected:
-  bool need_sync_to_host() const { return *needSyncToHost; }
+  bool need_sync_to_host() const override { return field->need_sync_to_host(); }
 
-  bool need_sync_to_device() const { return *needSyncToDevice; }
+  bool need_sync_to_device() const override { return field->need_sync_to_device(); }
 
-private:
-  void set_modify_on_host() {
-#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-    ThrowRequireMsg(*needSyncToHost == false, "field " << field->name());
-#endif
-    *needSyncToDevice = true;
+  void notify_sync_debugger_clear_sync_state() override {}
+  void notify_sync_debugger_clear_host_sync_state() override {}
+  void notify_sync_debugger_clear_device_sync_state() override {}
+
+ private:
+  ExecSpace& get_execution_space() const { return field->get_execution_space(); }
+
+  void set_execution_space(const ExecSpace& executionSpace) { field->set_execution_space(executionSpace); }
+
+  void set_execution_space(ExecSpace&& executionSpace)
+  {
+    field->set_execution_space(std::forward<ExecSpace>(executionSpace));
+  }
+
+  void reset_execution_space() { field->reset_execution_space(); }
+
+  void update_field()
+  {
+    field->increment_num_syncs_to_device();
+    synchronizedCount = hostBulk->synchronized_count();
   }
 
   void set_modify_on_device() {
-#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-    ThrowRequireMsg(*needSyncToDevice == false, "field " << field->name());
-#endif
-    *needSyncToHost = true;
+    field->modify_on_device();
   }
 
   void copy_host_to_device()
   {
     field->increment_num_syncs_to_device();
-    clear_sync_state();
   }
 
   void copy_device_to_host()
   {
     field->increment_num_syncs_to_host();
-    clear_sync_state();
   }
 
   const BulkData* hostBulk;
   const stk::mesh::FieldBase * field;
 
-  std::shared_ptr<bool> needSyncToHost;
-  std::shared_ptr<bool> needSyncToDevice;
-
   size_t synchronizedCount;
-  impl::AsyncCopyState asyncCopyState;
 };
 
 }

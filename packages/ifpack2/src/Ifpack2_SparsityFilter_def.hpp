@@ -68,12 +68,12 @@ SparsityFilter<MatrixType>::SparsityFilter(const Teuchos::RCP<const Tpetra::RowM
 
  // use this filter only on serial matrices
   TEUCHOS_TEST_FOR_EXCEPTION(
-    A_->getComm()->getSize() != 1 || A_->getNodeNumRows() != A_->getGlobalNumRows(),
+    A_->getComm()->getSize() != 1 || A_->getLocalNumRows() != A_->getGlobalNumRows(),
     std::runtime_error, "Ifpack2::SparsityFilter: "
     "This class may only be used when A.getComm()->getSize() == 1.");
 
   // localized matrix has all the local rows of Matrix
-  NumRows_ = A_->getNodeNumRows();
+  NumRows_ = A_->getLocalNumRows();
 
   // NodeNumEntries_ will contain the actual number of nonzeros
   // for each localized row (that is, without external nodes,
@@ -82,8 +82,8 @@ SparsityFilter<MatrixType>::SparsityFilter(const Teuchos::RCP<const Tpetra::RowM
 
   // tentative value for MaxNumEntries. This is the number of
   // nonzeros in the local matrix
-  MaxNumEntries_  = A_->getNodeMaxNumRowEntries();
-  MaxNumEntriesA_ = A_->getNodeMaxNumRowEntries();
+  MaxNumEntries_  = A_->getLocalMaxNumRowEntries();
+  MaxNumEntriesA_ = A_->getLocalMaxNumRowEntries();
 
   // ExtractMyRowCopy() will use these vectors
   Kokkos::resize(Indices_,MaxNumEntries_);
@@ -182,7 +182,7 @@ global_size_t SparsityFilter<MatrixType>::getGlobalNumCols() const
 
 //==========================================================================
 template<class MatrixType>
-size_t SparsityFilter<MatrixType>::getNodeNumRows() const
+size_t SparsityFilter<MatrixType>::getLocalNumRows() const
 {
   return NumRows_;
 }
@@ -190,7 +190,7 @@ size_t SparsityFilter<MatrixType>::getNodeNumRows() const
 //==========================================================================
 
 template<class MatrixType>
-size_t SparsityFilter<MatrixType>::getNodeNumCols() const
+size_t SparsityFilter<MatrixType>::getLocalNumCols() const
 {
   return NumRows_;
 }
@@ -211,7 +211,7 @@ global_size_t SparsityFilter<MatrixType>::getGlobalNumEntries() const
 
 //==========================================================================
 template<class MatrixType>
-size_t SparsityFilter<MatrixType>::getNodeNumEntries() const
+size_t SparsityFilter<MatrixType>::getLocalNumEntries() const
 {
   return NumNonzeros_;
 }
@@ -239,7 +239,7 @@ size_t SparsityFilter<MatrixType>::getGlobalMaxNumRowEntries() const
 
 //==========================================================================
 template<class MatrixType>
-size_t SparsityFilter<MatrixType>::getNodeMaxNumRowEntries() const
+size_t SparsityFilter<MatrixType>::getLocalMaxNumRowEntries() const
 {
   return MaxNumEntries_;
 }

@@ -34,66 +34,53 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <stk_util/environment/Env.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <Ionit_Initializer.h>                       // for Initializer
-#include <assert.h>                                  // for assert
-#include <stdlib.h>                                  // for exit, etc
-#include <string.h>                                  // for memcpy
-#include <cstdint>                                   // for int64_t
-#include <iostream>                                  // for operator<<, etc
-#include <iterator>
-#include <limits>                                    // for numeric_limits
-#include <map>
-#include <stdexcept>                                 // for runtime_error
-#include <stk_io/IOHelpers.hpp>                      // for InputFile
-#include <stk_io/IossBridge.hpp>                     // for FieldAndName, etc
-#include <stk_mesh/base/BulkData.hpp>                // for BulkData, etc
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>                   // for Field
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/util/ReportHandler.hpp>    // for ThrowErrorMsgIf, etc
-#include <utility>                                   // for pair, make_pair
-#include "Ioss_CodeTypes.h"                          // for NameList
-#include "Ioss_DBUsage.h"
-#include "Ioss_DatabaseIO.h"                         // for DatabaseIO
-#include "Ioss_ElementBlock.h"                       // for ElementBlock
-#include "Ioss_ElementTopology.h"                    // for ElementTopology
-#include "Ioss_EntityType.h"
-#include "Ioss_Field.h"
-#include "Ioss_GroupingEntity.h"                     // for GroupingEntity
-#include "Ioss_IOFactory.h"                          // for IOFactory
-#include "Ioss_NodeBlock.h"                          // for NodeBlock
-#include "Ioss_NodeSet.h"                            // for NodeSet
-#include "Ioss_ParallelUtils.h"                      // for ParallelUtils
-#include "Ioss_Property.h"                           // for Property
-#include "Ioss_PropertyManager.h"                    // for PropertyManager
-#include "Ioss_Region.h"                             // for Region, etc
-#include "Ioss_SideBlock.h"                          // for SideBlock
-#include "Ioss_SideSet.h"                            // for SideSet
-#include "Ioss_State.h"
-#include "Ioss_VariableType.h"                       // for VariableType
-#include "ProcessSetsOrBlocks.hpp"
-#include "SidesetTranslator.hpp"
-#include "StkIoUtils.hpp"
-#include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
-#include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
-#include "stk_io/MeshField.hpp"                      // for MeshField, etc
-#include "stk_mesh/base/Entity.hpp"                  // for Entity
-#include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
-#include "stk_mesh/base/FieldParallel.hpp"
-#include "stk_mesh/base/FieldState.hpp"              // for FieldState
-#include "stk_mesh/base/Part.hpp"                    // for Part
-#include "stk_mesh/base/Selector.hpp"                // for Selector, etc
-#include "stk_mesh/base/Types.hpp"                   // for FieldVector, etc
-#include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_util/parallel/Parallel.hpp"            // for ParallelMachine, etc
-#include "stk_util/util/ParameterList.hpp"           // for Type, etc
-#include "stk_util/diag/StringUtil.hpp"           // for Type, etc
-#include "stk_util/util/string_case_compare.hpp"
+#include <stk_io/IOHelpers.hpp>
+#include <cassert>                             // for assert
+#include <cstdint>                             // for int64_t
+#include <iostream>                            // for operator<<, basic_ostream
+#include <map>                                 // for _Rb_tree_iterator
+#include <memory>                              // for allocator_traits<>::va...
+#include <stdexcept>                           // for runtime_error
+#include <stk_io/IossBridge.hpp>               // for field_data_from_ioss
+#include <stk_mesh/base/BulkData.hpp>          // for BulkData
+#include <stk_mesh/base/FEMHelpers.hpp>        // for get_side_entity_for_el...
+#include <stk_mesh/base/Field.hpp>             // for Field
+#include <stk_mesh/base/GetEntities.hpp>       // for get_entities
+#include <stk_mesh/base/MetaData.hpp>          // for MetaData
+#include <stk_util/util/ReportHandler.hpp>     // for ThrowErrorMsgIf, Throw...
+#include <utility>                             // for pair
+#include "Ioss_DatabaseIO.h"                   // for DatabaseIO
+#include "Ioss_ElementBlock.h"                 // for ElementBlock
+#include "Ioss_ElementTopology.h"              // for ElementTopology
+#include "Ioss_EntityType.h"                   // for NODEBLOCK, SIDESET
+#include "Ioss_Field.h"                        // for Field, Field::ATTRIBUTE
+#include "Ioss_GroupingEntity.h"               // for GroupingEntity
+#include "Ioss_IOFactory.h"                    // for NameList
+#include "Ioss_NodeBlock.h"                    // for NodeBlock
+#include "Ioss_NodeSet.h"                      // for NodeSet
+#include "Ioss_Property.h"                     // for Property
+#include "Ioss_Region.h"                       // for Region, ElementBlockCo...
+#include "Ioss_SideBlock.h"                    // for SideBlock
+#include "Ioss_SideSet.h"                      // for SideSet
+#include "Ioss_State.h"                        // for STATE_TRANSIENT
+#include "Ioss_VariableType.h"                 // for VariableType
+#include "ProcessSetsOrBlocks.hpp"             // for get_part_for_grouping_...
+#include "StkIoUtils.hpp"                      // for part_primary_entity_rank
+#include "Teuchos_RCP.hpp"                     // for RCP::operator->, RCP::...
+#include "Teuchos_any.hpp"                     // for any
+#include "stk_io/OutputParams.hpp"             // for OutputParams
+#include "stk_mesh/base/Bucket.hpp"            // for Bucket
+#include "stk_mesh/base/Entity.hpp"            // for Entity
+#include "stk_mesh/base/EntityKey.hpp"         // for EntityKey, operator<<
+#include "stk_mesh/base/FieldBase.hpp"         // for FieldBase, field_bytes...
+#include "stk_mesh/base/FieldState.hpp"        // for FieldState
+#include "stk_mesh/base/Part.hpp"              // for Part
+#include "stk_mesh/base/Selector.hpp"          // for Selector, operator&
+#include "stk_mesh/base/Types.hpp"             // for EntityRank, PartVector
+#include "stk_topology/topology.hpp"           // for topology, topology::NO...
+#include "stk_util/parallel/CommSparse.hpp"    // for CommSparse, pack_and_c...
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
+#include "stk_util/util/ParameterList.hpp"     // for STK_ANY_NAMESPACE, Par...
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -505,7 +492,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
     const stk::mesh::MetaData &meta = bulk.mesh_meta_data();
 
     Ioss::Region *region = sset->get_database()->get_region();
-    const std::string universalAlias = region->get_alias("universal_sideset");
+    const std::string universalAlias = region->get_alias("universal_sideset", Ioss::SIDESET);
     if (sset->name() == universalAlias)
         return;
 

@@ -41,7 +41,8 @@ protected:
       1,1,0.5
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_mesh_non_spider_not_enough_legs()
@@ -73,7 +74,8 @@ protected:
       2,2,0.5
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_mesh_one_spider_no_body_element()
@@ -106,7 +108,8 @@ protected:
       2,2,0.5
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_mesh_one_spider_particle_body()
@@ -140,7 +143,8 @@ protected:
       2,2,0.5
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_mesh_one_spider_beam_body()
@@ -175,7 +179,8 @@ protected:
       2,3,0.5
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_mesh_compound_spider_beam_body()
@@ -216,7 +221,8 @@ protected:
       6,2,0.5
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void make_mesh_two_spiders_particle_body()
@@ -258,7 +264,8 @@ protected:
       6,2,0.5
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void fix_spider_elements()

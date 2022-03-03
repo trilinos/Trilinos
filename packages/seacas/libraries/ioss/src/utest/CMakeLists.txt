@@ -11,6 +11,18 @@ TRIBITS_ADD_TEST(
 )
 
 TRIBITS_ADD_EXECUTABLE(
+ Utst_iofx
+ SOURCES Utst_IofxDatabaseIO.C
+)
+
+TRIBITS_ADD_TEST(
+	Utst_iofx
+	NAME Utst_iofx
+	ARGS "--filename ${CMAKE_CURRENT_SOURCE_DIR}/ADeDA.e"
+	NUM_MPI_PROCS 1
+)
+
+TRIBITS_ADD_EXECUTABLE(
  Utst_ioel
  SOURCES Utst_ioel.C
 )

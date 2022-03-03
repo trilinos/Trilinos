@@ -426,6 +426,11 @@ public:
       const PARTVECTOR & add_parts ,
       const PARTVECTOR & remove_parts = PARTVECTOR());
 
+  void change_entity_parts(const Selector& selector,
+                           EntityRank rank,
+                           const PartVector& add_parts,
+                           const PartVector& remove_parts = PartVector());
+
   /** \brief Change part-membership of the specified entities by adding
    * and/or removing parts for each entity.
    *
@@ -654,7 +659,6 @@ public:
   // Comm-related convenience methods
 
   bool is_communicated_with_proc(Entity entity, int proc) const;
-  void comm_procs( EntityKey key, std::vector<int> & procs ) const; //shared and ghosted entities
   void comm_procs(Entity entity, std::vector<int> & procs ) const;
   void comm_procs( const Ghosting & ghost , EntityKey key, std::vector<int> & procs ) const;
   void comm_shared_procs( EntityKey key, std::vector<int> & procs ) const;
@@ -831,7 +835,8 @@ void get_entities(EntityRank rank, Selector const& selector, EntityVector& outpu
 
   const std::string & get_last_modification_description() const { return m_lastModificationDescription; }
 
-  void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer) const;
+  void register_observer(std::shared_ptr<stk::mesh::ModificationObserver> observer,
+                         stk::mesh::ModificationObserverPriority priority) const;
   void unregister_observer(std::shared_ptr<ModificationObserver> observer) const;
   template<typename ObserverType>
   bool has_observer_type() const { return notifier.has_observer_type<ObserverType>(); }

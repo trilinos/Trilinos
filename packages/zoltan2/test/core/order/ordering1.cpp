@@ -93,7 +93,7 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *iperm)
   z2TestLO bw_left = 0;
   z2TestLO bw_right = 0;
 
-  z2TestLO  n = A->getNodeNumRows();
+  z2TestLO  n = A->getLocalNumRows();
 
   // Loop over rows of matrix
   for (ii=0; ii<n; ii++) {

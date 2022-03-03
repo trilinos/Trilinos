@@ -660,7 +660,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("Build matrix graph: 0-Total", graph_total);
 
     // Construct Tpetra::CrsGraph objects.
-    overlappedGraph = rcp (new sparse_graph_type (overlappedMapG, 0));
+    overlappedGraph = rcp (new sparse_graph_type (overlappedMapG, 27));
     ownedGraph = rcp (new sparse_graph_type (globalMapG, 0));
 
     // Define desired workset size and count how many worksets
@@ -1118,7 +1118,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     // Zero the columns corresponding to Dirichlet BCs.
     typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indices", 1);
     typename sparse_matrix_type::nonconst_values_host_view_type values("values", 1);
-    for (LO i = 0; i < as<int> (gl_StiffMatrix->getNodeNumRows ()); ++i) {
+    for (LO i = 0; i < as<int> (gl_StiffMatrix->getLocalNumRows ()); ++i) {
       NumEntries = gl_StiffMatrix->getNumEntriesInLocalRow (i);
       Kokkos::resize(indices, NumEntries);
       Kokkos::resize(values, NumEntries);

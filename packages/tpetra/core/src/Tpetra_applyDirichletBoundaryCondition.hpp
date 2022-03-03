@@ -199,7 +199,7 @@ struct ApplyDirichletBoundaryConditionToLocalMatrixRows {
        "The matrix must have a column Map.");
     auto A_lcl = A.getLocalMatrixDevice ();
 
-    const LO lclNumRows = static_cast<LO> (rowMap->getNodeNumElements ());
+    const LO lclNumRows = static_cast<LO> (rowMap->getLocalNumElements ());
     TEUCHOS_TEST_FOR_EXCEPTION
       (lclNumRows != 0 && static_cast<LO>(A_lcl.graph.numRows ()) != lclNumRows,
        std::invalid_argument, "The matrix must have been either created "
@@ -289,7 +289,7 @@ struct ApplyDirichletBoundaryConditionToLocalMatrixColumns {
        "The matrix must have a column Map.");
     auto A_lcl = A.getLocalMatrixDevice ();
 
-    const LO lclNumRows = static_cast<LO> (rowMap->getNodeNumElements ());
+    const LO lclNumRows = static_cast<LO> (rowMap->getLocalNumElements ());
     TEUCHOS_TEST_FOR_EXCEPTION
       (lclNumRows != 0 && static_cast<LO>(A_lcl.graph.numRows ()) != lclNumRows,
        std::invalid_argument, "The matrix must have been either created "
@@ -307,7 +307,7 @@ struct ApplyDirichletBoundaryConditionToLocalMatrixColumns {
       A.resumeFill ();
     }
 
-    const LO numRows = (LO) A.getRowMap()->getNodeNumElements();
+    const LO numRows = (LO) A.getRowMap()->getLocalNumElements();
     if (! runOnHost) {
       using range_type = Kokkos::RangePolicy<execution_space, LO>;
       Kokkos::parallel_for
@@ -355,7 +355,7 @@ void localRowsToColumns(const typename ::Tpetra::CrsMatrix<SC, LO, GO, NT>::exec
   TEUCHOS_TEST_FOR_EXCEPTION(!A.getRowMap()->isSameAs(*A.getDomainMap()),std::invalid_argument, "localRowsToColumns: Row/Domain maps do not match");
 
   // Assume that the dirichletColFlags array is the correct size
-  TEUCHOS_TEST_FOR_EXCEPTION(A.getColMap()->getNodeNumElements() != dirichletColFlags.size(), std::invalid_argument,"localRowsToColumns: dirichletColFlags must be the correct size");
+  TEUCHOS_TEST_FOR_EXCEPTION(A.getColMap()->getLocalNumElements() != dirichletColFlags.size(), std::invalid_argument,"localRowsToColumns: dirichletColFlags must be the correct size");
 
   LO numDirichletRows = (LO) dirichletRowIds.size();
   LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
@@ -400,7 +400,7 @@ void localRowsToColumns(const typename ::Tpetra::CrsMatrix<SC, LO, GO, NT>::exec
         });  
     }
     colDirichlet.doImport(domainDirichlet,*Importer,::Tpetra::INSERT);
-    LO numCols = (LO) A.getColMap()->getNodeNumElements();
+    LO numCols = (LO) A.getColMap()->getLocalNumElements();
     {
       auto col_data = colDirichlet.template getLocalView<memory_space>(Access::ReadOnly);
       Kokkos::parallel_for
@@ -473,7 +473,7 @@ applyDirichletBoundaryConditionToLocalMatrixRows
     ApplyDirichletBoundaryConditionToLocalMatrixRows<SC, LO, GO, NT>;
 
   // Only run on host if we can access the data
-  const bool runOnHost = Kokkos::Impl::SpaceAccessibility<Kokkos::Serial,memory_space>::accessible;
+  const bool runOnHost = Kokkos::SpaceAccessibility<Kokkos::Serial,memory_space>::accessible;
   if(runOnHost) {
     using local_row_indices_type = Kokkos::View<const LO*, Kokkos::AnonymousSpace>;
     const local_row_indices_type lclRowInds_a (lclRowInds);
@@ -506,7 +506,7 @@ applyDirichletBoundaryConditionToLocalMatrixRowsAndColumns
   // Copy the Host array to device
   auto lclRowInds_d = Kokkos::create_mirror_view_and_copy(execution_space(),lclRowInds);
 
-  Kokkos::View<bool*,memory_space> dirichletColFlags("dirichletColFlags",A.getColMap()->getNodeNumElements());
+  Kokkos::View<bool*,memory_space> dirichletColFlags("dirichletColFlags",A.getColMap()->getLocalNumElements());
   Kokkos::View<bool*, Kokkos::AnonymousSpace> dirichletColFlags_a(dirichletColFlags);
   Details::localRowsToColumns<SC,LO,GO,NT>(execution_space(),A,lclRowInds_d,dirichletColFlags_a);
 
@@ -532,7 +532,7 @@ applyDirichletBoundaryConditionToLocalMatrixRowsAndColumns
 
   TEUCHOS_TEST_FOR_EXCEPTION(A.getColMap().get () == nullptr, std::invalid_argument,"The matrix must have a column Map.");
   
-  Kokkos::View<bool*,memory_space> dirichletColFlags("dirichletColFlags",A.getColMap()->getNodeNumElements());
+  Kokkos::View<bool*,memory_space> dirichletColFlags("dirichletColFlags",A.getColMap()->getLocalNumElements());
   Kokkos::View<bool*, Kokkos::AnonymousSpace> dirichletColFlags_a(dirichletColFlags);
   Details::localRowsToColumns<SC,LO,GO,NT>(execution_space(),A,lclRowInds_d,dirichletColFlags_a);
 
@@ -560,7 +560,7 @@ applyDirichletBoundaryConditionToLocalMatrixRowsAndColumns
 
   TEUCHOS_TEST_FOR_EXCEPTION(A.getColMap().get () == nullptr, std::invalid_argument,"The matrix must have a column Map.");
   
-  Kokkos::View<bool*,memory_space> dirichletColFlags("dirichletColFlags",A.getColMap()->getNodeNumElements());
+  Kokkos::View<bool*,memory_space> dirichletColFlags("dirichletColFlags",A.getColMap()->getLocalNumElements());
   Kokkos::View<bool*, Kokkos::AnonymousSpace> dirichletColFlags_a(dirichletColFlags);
   Details::localRowsToColumns<SC,LO,GO,NT>(execSpace,A,lclRowInds_d,dirichletColFlags_a);
 

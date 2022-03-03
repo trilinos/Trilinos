@@ -16,9 +16,9 @@
 #include <vector>
 
 #define ELB_VERSION "4.19"
-#define UTIL_NAME "nem_slice"
-#define ELB_FALSE 0
-#define ELB_TRUE 1
+#define UTIL_NAME   "nem_slice"
+#define ELB_FALSE   0
+#define ELB_TRUE    1
 
 /* Macro for maximum value */
 #ifndef MAX
@@ -30,10 +30,10 @@
  * values, the more memory-efficient the code will be. Larger values
  * will likely speed execution and prevent swap thrashing.
  */
-#define SURND_ALLOC 8
-#define ADJ_ALLOC 8
+#define SURND_ALLOC    8
+#define ADJ_ALLOC      8
 #define MEM_CHUNK_SIZE 16 /* Value MUST be >= 2 */
-#define MEM_GROWTH 1.5
+#define MEM_GROWTH     1.5
 
 #define MAX_INP_LINE 10240
 
@@ -121,7 +121,7 @@ struct Problem_Description
   int   no_sph{-1};
   int   fix_columns{0}; /* detect, fix vertical column partitioning */
   char *groups{nullptr};
-  int * group_no{nullptr};
+  int  *group_no{nullptr};
   int   num_groups{-1};
   int   int64db{0};  /* integer types for output mesh database */
   int   int64api{0}; /* integer types for exodus api calls */
@@ -184,9 +184,9 @@ template <typename INT> struct Mesh_Description
   size_t              max_np_elem{0};
   size_t              ns_list_len{0};
   char                title[MAX_LINE_LENGTH + 1]{};
-  float *             coords{nullptr};
-  E_Type *            elem_type{nullptr};
-  INT **              connect;
+  float              *coords{nullptr};
+  E_Type             *elem_type{nullptr};
+  INT               **connect;
 
   Mesh_Description() : connect(nullptr) {}
 };
@@ -195,9 +195,9 @@ template <typename INT> struct Mesh_Description
 struct Sphere_Info
 {
   size_t num{0};
-  int *  adjust{nullptr};
-  int *  begin{nullptr};
-  int *  end{nullptr};
+  int   *adjust{nullptr};
+  int   *begin{nullptr};
+  int   *end{nullptr};
 
   Sphere_Info() = default;
 };
@@ -214,45 +214,45 @@ template <typename INT> struct Graph_Description
 };
 
 /* Various constants */
-#define NODAL 0
+#define NODAL     0
 #define ELEMENTAL 1
 
 #define UTIL_NAME "nem_slice"
 
 /* Load balance types */
-#define MULTIKL 0
-#define SPECTRAL 1
-#define INERTIAL 2
-#define LINEAR 3
-#define RANDOM 4
-#define SCATTERED 5
-#define INFILE 6
-#define KL_REFINE 7
-#define NO_REFINE 8
-#define NUM_SECTS 9
-#define CNCT_DOM 10
-#define OUTFILE 11
-#define ZPINCH 12
-#define BRICK 13
-#define ZOLTAN_RCB 14
-#define ZOLTAN_RIB 15
+#define MULTIKL     0
+#define SPECTRAL    1
+#define INERTIAL    2
+#define LINEAR      3
+#define RANDOM      4
+#define SCATTERED   5
+#define INFILE      6
+#define KL_REFINE   7
+#define NO_REFINE   8
+#define NUM_SECTS   9
+#define CNCT_DOM    10
+#define OUTFILE     11
+#define ZPINCH      12
+#define BRICK       13
+#define ZOLTAN_RCB  14
+#define ZOLTAN_RIB  15
 #define ZOLTAN_HSFC 16
-#define IGNORE_Z 17
+#define IGNORE_Z    17
 
 /* Machine types */
-#define MESH 0
-#define HCUBE 1
+#define MESH      0
+#define HCUBE     1
 #define HYPERCUBE 2
-#define CLUSTER 3
+#define CLUSTER   3
 
 /* Solver options */
-#define TOLER 0
+#define TOLER   0
 #define USE_RQI 1
-#define VMAX 2
+#define VMAX    2
 
 /* ISSUES options */
 
-#define LOCAL_ISSUES 0
+#define LOCAL_ISSUES  0
 #define GLOBAL_ISSUES 1
 
 /* Weighting options */
@@ -265,11 +265,11 @@ template <typename INT> struct Graph_Description
  * on the command line.
  */
 #define NO_WEIGHT 0
-#define READ_EXO 1
-#define EL_BLK 2
-#define VAR_INDX 3
-#define EDGE_WGT 4
+#define READ_EXO  1
+#define EL_BLK    2
+#define VAR_INDX  3
+#define EDGE_WGT  4
 #define TIME_INDX 5
-#define VAR_NAME 6
+#define VAR_NAME  6
 
 #endif /* _EXOIILB_CONST_H_ */

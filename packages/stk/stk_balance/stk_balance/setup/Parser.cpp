@@ -33,7 +33,6 @@
 
 #include "Parser.hpp"
 #include "stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp"
-#include "stk_util/environment/Env.hpp"  // for deprecatedOutputDirectory warnings
 #include "stk_util/command_line/CommandLineParserUtils.hpp"
 #include "stk_util/util/string_utils.hpp"
 
@@ -42,23 +41,35 @@ namespace balance {
 
 std::string construct_output_file_name(const std::string& outputDirectory, const std::string& inputFile)
 {
-  std::size_t found = inputFile.find_last_of("/");
-  std::string filename = inputFile;
-  if (found != std::string::npos) {
-    filename = inputFile.substr(found + 1);
+  if (outputDirectory == DefaultSettings::outputDirectory) {
+    return inputFile;
   }
-  return outputDirectory + "/" + filename;
+  else {
+    std::size_t found = inputFile.find_last_of("/");
+    std::string filename = inputFile;
+    if (found != std::string::npos) {
+      filename = inputFile.substr(found + 1);
+    }
+    return outputDirectory + "/" + filename;
+  }
+}
+
+std::string construct_generic_parallel_file_name(const std::string& inputFile, unsigned numProcs)
+{
+  return (numProcs > 1) ? inputFile + "." + std::to_string(numProcs) + ".*" : inputFile;
 }
 
 std::string Examples::get_quick_example()
 {
-  std::string mpiCmd = "  > mpirun -n <numProcsDecomp> " + m_execName + " ";
+  std::string mpiCmd = "  > mpirun -n ";
   std::string usage = "Usage:\n"
-                    + mpiCmd + stk::angle_it(m_optionNames.infile) + " " + stk::bracket_it("output directory") + " "
-                             + stk::bracket_it("args") + "\n"
-                    + mpiCmd + stk::dash_it(m_optionNames.infile) + " " + stk::angle_it(m_optionNames.infile) + " "
-                             + stk::dash_it(m_optionNames.outputDirectory) + " " + stk::bracket_it("output directory") + " "
-                             + stk::bracket_it("args") + "\n"
+                    + mpiCmd + stk::angle_it("outProcs") + " " + m_execName + " " + stk::angle_it(m_optionNames.infile) + " "
+                             + stk::bracket_it("output directory") + " " + stk::bracket_it("args") + "\n"
+                    + mpiCmd + stk::angle_it("outProcs") + " " + m_execName + " " + stk::dash_it(m_optionNames.infile) + " "
+                             + stk::angle_it(m_optionNames.infile) + " " + stk::dash_it(m_optionNames.outputDirectory)
+                             + " " + stk::bracket_it("output directory") + " " + stk::bracket_it("args") + "\n"
+                    + mpiCmd + stk::angle_it("inProcs") + " " + m_execName + " " + stk::angle_it(m_optionNames.infile) + " "
+                             + stk::bracket_it("output directory") + " --rebalance-to=<outProcs> " + stk::bracket_it("args") + "\n"
                     + "\n";
   return usage;
 }
@@ -68,22 +79,22 @@ std::string Examples::get_long_examples()
   std::string examples = "Examples:\n\n";
   std::string tab = "  ";
   examples += tab + "To decompose for 16 processors:\n";
-  examples += tab + tab + "> mpirun -n 16 " + m_execName + " file.exo\n";
+  examples += tab + tab + "> mpirun -n 16 " + m_execName + " mesh.g\n";
   examples += "\n";
   examples += tab + "To decompose for 512 processors and put the decomposition into a directory named 'temp1':\n";
-  examples += tab + tab + "> mpirun -n 512 " + m_execName + " file.exo temp1\n";
-  examples += "\n";
-  examples += tab + "To decompose for 64 processors and use settings suitable for solving Solid Mechanics problems:\n";
-  examples += tab + tab + "> mpirun -n 64 " + m_execName + " file.exo " + stk::dash_it(m_optionNames.smDefaults) + "\n";
+  examples += tab + tab + "> mpirun -n 512 " + m_execName + " mesh.g temp1\n";
   examples += "\n";
   examples += tab + "To decompose for 16 processors and use the default relative contact search tolerance:\n";
-  examples += tab + tab + "> mpirun -n 16 " + m_execName + " file.exo " + stk::dash_it(m_optionNames.faceSearchRelTol) + "\n";
+  examples += tab + tab + "> mpirun -n 16 " + m_execName + " mesh.g " + stk::dash_it(m_optionNames.faceSearchRelTol) + "\n";
   examples += "\n";
   examples += tab + "To decompose for 16 processors and use a relative contact search tolerance of 0.05:\n";
-  examples += tab + tab + "> mpirun -n 16 " + m_execName + " file.exo " + stk::dash_it(m_optionNames.faceSearchRelTol) + "=0.05\n";
+  examples += tab + tab + "> mpirun -n 16 " + m_execName + " mesh.g " + stk::dash_it(m_optionNames.faceSearchRelTol) + "=0.05\n";
   examples += "\n";
   examples += tab + "To decompose for 16 processors with the RCB decomposition method:\n";
-  examples += tab + tab + "> mpirun -n 16 " + m_execName + " file.exo " + stk::dash_it(m_optionNames.decompMethod) + "=rcb\n";
+  examples += tab + tab + "> mpirun -n 16 " + m_execName + " mesh.g " + stk::dash_it(m_optionNames.decompMethod) + "=rcb\n";
+  examples += "\n";
+  examples += tab + "To rebalance a 16 processor mesh into 64 processors:\n";
+  examples += tab + tab + "> mpirun -n 16 " + m_execName + " mesh.g " + stk::dash_it(m_optionNames.rebalanceTo) + "=64\n";
   return examples;
 }
 
@@ -101,11 +112,14 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
   stk::parse_command_line(argc, argv, m_quickExample, m_longExamples, m_commandLineParser, m_comm);
 
   set_filenames(settings);
+  set_processors(settings);
   set_app_type_defaults(settings);
   set_contact_search(settings);
   set_contact_search_tolerance(settings);
   set_decomp_method(settings);
   set_vertex_weight_block_multiplier(settings);
+  set_use_nested_decomp(settings);
+  set_logfile(settings);
 }
 
 std::string Parser::get_quick_error() const
@@ -116,27 +130,33 @@ std::string Parser::get_quick_error() const
 void Parser::add_options_to_parser()
 {
   stk::CommandLineOption infile{m_optionNames.infile, "i",
-                                "undecomposed serial input mesh file"};
+                           "For balance: Undecomposed serial input mesh file\n"
+                           "For rebalance: Mesh file decomposed to number MPI ranks"};
+//                           "For rebalance: Mesh file that has been decomposed to the number of MPI ranks"};
   stk::CommandLineOption outputDirectory{m_optionNames.outputDirectory, "o",
-                                         "output directory for decomposition"};
-  stk::CommandLineOption deprecatedOutputDirectory{m_optionNames.deprecatedOutputDirectory, "",
-                                         "DEPRECATED: output directory for decomposition"};
+                           "Output directory for decomposition"};
+  stk::CommandLineOption logfile{m_optionNames.logfile, "l",
+                           "Output log file path, one of: 'cout', 'cerr', or a file path."};
+  stk::CommandLineOption rebalanceTo{m_optionNames.rebalanceTo, "r",
+                           "Rebalance the input mesh that is already decomposed for <inProcs> "
+                           "processors into this number of processors.  The decomposition size "
+                           "may be either increased or decreased."};
 
   std::ostringstream smStream;
   smStream << "Use settings suitable for solving Solid Mechanics problems. "
            << "This flag implies:" << std::endl
-           << "    " << stk::dash_it(m_optionNames.faceSearchRelTol) << "=" << m_defaults.faceSearchRelTol << std::endl
-           << "    Face search graph vertex weight multiplier = " << m_defaults.smFaceSearchVertexMultiplier << std::endl
-           << "    Face search graph edge weight = " << m_defaults.smFaceSearchEdgeWeight;
+           << "    " << stk::dash_it(m_optionNames.faceSearchRelTol) << "=" << DefaultSettings::faceSearchRelTol << std::endl
+           << "    Face search graph vertex weight multiplier = " << DefaultSettings::smFaceSearchVertexMultiplier << std::endl
+           << "    Face search graph edge weight = " << DefaultSettings::smFaceSearchEdgeWeight;
   stk::CommandLineOption smDefaults{m_optionNames.smDefaults, "", smStream.str()};
 
   std::ostringstream sdStream;
   sdStream << "Use settings suitable for solving Structural Dynamics problems. "
            << "This flag implies:" << std::endl
-           << "    " << stk::dash_it(m_optionNames.faceSearchAbsTol) << "=" << m_defaults.faceSearchAbsTol << std::endl
-           << "    Face search graph vertex weight multiplier = " << m_defaults.faceSearchVertexMultiplier << std::endl
-           << "    Face search graph edge weight = " << m_defaults.faceSearchEdgeWeight << std::endl
-           << "    Handle spider elements";
+           << "    " << stk::dash_it(m_optionNames.faceSearchAbsTol) << "=" << DefaultSettings::faceSearchAbsTol << std::endl
+           << "    Face search graph vertex weight multiplier = " << DefaultSettings::faceSearchVertexMultiplier << std::endl
+           << "    Face search graph edge weight = " << DefaultSettings::faceSearchEdgeWeight << std::endl
+           << "    Handle spider elements (currently for non-rebalance use-cases only)";
   stk::CommandLineOption sdDefaults{m_optionNames.sdDefaults, "", sdStream.str()};
 
   stk::CommandLineOption faceSearchAbsTol{m_optionNames.faceSearchAbsTol, "",
@@ -153,22 +173,30 @@ void Parser::add_options_to_parser()
                            "Note that geometric methods do not use contact search and "
                            "ignore all search-related options, as well as ignoring spider elements."};
   stk::CommandLineOption vertexWeightBlockMultiplier{m_optionNames.vertexWeightBlockMultiplier, "",
-                           "EXPERIMENTAL: Specify a list of vertex weight multipliers through "
+                           "Specify a list of vertex weight multipliers through "
                            "comma-separated block_name:weight pairs to use for each element in "
                            "the block.  A multiplier of 1.0 is used for each unspecified block.\n"
                            " Syntax example: block_1:1.5,block_2:3"};
+  stk::CommandLineOption useNested{m_optionNames.useNestedDecomp, "",
+                           "If doing a rebalance, nest the new decomposition completely "
+                           "within the boundaries of the input decomposition.  The new number "
+                           "of processors must be an integer multiple of the input processors."};
 
 
   m_commandLineParser.add_required_positional<std::string>(infile);
-  m_commandLineParser.add_optional_positional<std::string>(outputDirectory, ".");
-  m_commandLineParser.add_optional_positional<std::string>(deprecatedOutputDirectory, "");
+  m_commandLineParser.add_optional_positional<std::string>(outputDirectory, DefaultSettings::outputDirectory);
+  m_commandLineParser.add_optional<std::string>(logfile, "<mesh>.<inProcs>_to_<outProcs>.log");
+  m_commandLineParser.add_optional<unsigned>(rebalanceTo);
   m_commandLineParser.add_flag(smDefaults);
   m_commandLineParser.add_flag(sdDefaults);
-  m_commandLineParser.add_optional_implicit(faceSearchAbsTol, m_defaults.faceSearchAbsTol);
-  m_commandLineParser.add_optional_implicit(faceSearchRelTol, m_defaults.faceSearchRelTol);
-  m_commandLineParser.add_optional(contactSearch, m_defaults.contactSearch);
-  m_commandLineParser.add_optional(decompMethod, m_defaults.decompMethod);
-  m_commandLineParser.add_optional(vertexWeightBlockMultiplier, m_defaults.vertexWeightBlockMultiplier);
+  m_commandLineParser.add_optional_implicit(faceSearchAbsTol, DefaultSettings::faceSearchAbsTol);
+  m_commandLineParser.add_optional_implicit(faceSearchRelTol, DefaultSettings::faceSearchRelTol);
+  m_commandLineParser.add_optional(contactSearch, DefaultSettings::contactSearch);
+  m_commandLineParser.add_optional(decompMethod, DefaultSettings::decompMethod);
+  m_commandLineParser.add_optional(vertexWeightBlockMultiplier, DefaultSettings::vertexWeightBlockMultiplier);
+  m_commandLineParser.add_flag(useNested);
+
+  m_commandLineParser.disallow_unrecognized();
 }
 
 void Parser::setup_messages(const char** argv)
@@ -185,18 +213,42 @@ void Parser::setup_messages(const char** argv)
 void Parser::set_filenames(BalanceSettings& settings) const
 {
   std::string outputDirectory = m_commandLineParser.get_option_value<std::string>(m_optionNames.outputDirectory);
-  if (m_commandLineParser.is_option_parsed(m_optionNames.deprecatedOutputDirectory)) {
-    sierra::Env::outputP0() << "Warning:  The option " << stk::dash_it(m_optionNames.deprecatedOutputDirectory)
-                            << " has been deprecated in favor of " << stk::dash_it(m_optionNames.outputDirectory)
-                            << " and will be removed in a future release." << std::endl;
-    outputDirectory = m_commandLineParser.get_option_value<std::string>(m_optionNames.deprecatedOutputDirectory);
-  }
-
   const std::string inputFilename = m_commandLineParser.get_option_value<std::string>(m_optionNames.infile);
   const std::string outputFilename = construct_output_file_name(outputDirectory, inputFilename);
 
   settings.set_input_filename(inputFilename);
   settings.set_output_filename(outputFilename);
+}
+
+void Parser::set_processors(BalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.rebalanceTo)) {
+    const unsigned numOutputProcs = m_commandLineParser.get_option_value<unsigned>(m_optionNames.rebalanceTo);
+    ThrowRequireMsg(numOutputProcs > 0, "Must specify a positive output processor count");
+    settings.set_num_input_processors(stk::parallel_machine_size(m_comm));
+    settings.set_num_output_processors(numOutputProcs);
+    settings.set_is_rebalancing(true);
+  }
+  else {
+    settings.set_num_input_processors(1);
+    settings.set_num_output_processors(stk::parallel_machine_size(m_comm));
+    settings.set_is_rebalancing(false);
+  }
+}
+
+void Parser::set_logfile(BalanceSettings& settings) const
+{
+
+  if (m_commandLineParser.is_option_parsed(m_optionNames.logfile)) {
+    settings.set_log_filename(m_commandLineParser.get_option_value<std::string>(m_optionNames.logfile));
+  }
+  else {
+    const int inputRanks = settings.get_is_rebalancing() ? stk::parallel_machine_size(m_comm) : 1;
+    const int outputRanks = settings.get_is_rebalancing() ? settings.get_num_output_processors()
+                                                          : stk::parallel_machine_size(m_comm);
+    settings.set_log_filename(stk::basename(stk::tailname(settings.get_input_filename())) + "." + std::to_string(inputRanks) +
+                              "_to_" + std::to_string(outputRanks) + ".log");
+  }
 }
 
 void Parser::set_app_type_defaults(BalanceSettings& settings) const
@@ -207,12 +259,11 @@ void Parser::set_app_type_defaults(BalanceSettings& settings) const
   ThrowRequireMsg( !(useSM && useSD), "Can't set default settings for multiple apps at the same time");
 
   if (useSM) {
-    settings.setEdgeWeightForSearch(m_defaults.smFaceSearchEdgeWeight);
-    settings.setVertexWeightMultiplierForVertexInSearch(m_defaults.smFaceSearchVertexMultiplier);
+    settings.setEdgeWeightForSearch(DefaultSettings::smFaceSearchEdgeWeight);
+    settings.setVertexWeightMultiplierForVertexInSearch(DefaultSettings::smFaceSearchVertexMultiplier);
     settings.setToleranceFunctionForFaceSearch(
-        std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(
-          m_defaults.faceSearchRelTol
-          ));
+        std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(DefaultSettings::faceSearchRelTol)
+    );
   }
 
   if (useSD) {
@@ -247,7 +298,9 @@ void Parser::set_contact_search_tolerance(BalanceSettings& settings) const
   if (useRelTol) {
     settings.setToleranceFunctionForFaceSearch(
         std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>(
-          m_commandLineParser.get_option_value<double>(m_optionNames.faceSearchRelTol)));
+          m_commandLineParser.get_option_value<double>(m_optionNames.faceSearchRelTol)
+        )
+    );
   }
 }
 
@@ -276,4 +329,19 @@ void Parser::set_vertex_weight_block_multiplier(BalanceSettings& settings) const
   }
 }
 
-} }
+void Parser::set_use_nested_decomp(BalanceSettings& settings) const
+{
+  const bool useNestedDecomp = m_commandLineParser.is_option_provided(m_optionNames.useNestedDecomp);
+  settings.set_use_nested_decomp(useNestedDecomp);
+
+  if (useNestedDecomp) {
+    const int inputNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    const int outputNumProcs = settings.get_num_output_processors();
+    const bool isValidProcCount = (outputNumProcs % inputNumProcs) == 0;
+    ThrowRequireMsg(isValidProcCount, "Output number of processors (" << outputNumProcs << ") must be an integer "
+                    << "multiple of input processors (" << inputNumProcs << ") to use a nested decomposition.");
+  }
+}
+
+}
+}

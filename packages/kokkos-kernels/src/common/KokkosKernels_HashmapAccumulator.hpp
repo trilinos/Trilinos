@@ -259,9 +259,9 @@ struct HashmapAccumulator
       key_type key,
       value_type value,
       value_type *values2,
-      size_type *used_size_,
-      size_type *used_hash_size,
-      size_type *used_hashes)
+      size_type * /*used_size_*/,
+      size_type * /*used_hash_size*/,
+      size_type * /*used_hashes*/)
   {
     size_type hash, i;
 

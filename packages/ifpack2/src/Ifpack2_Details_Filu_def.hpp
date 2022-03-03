@@ -47,7 +47,7 @@
 
 #include "Ifpack2_Details_Filu_decl.hpp"
 #include "Ifpack2_Details_CrsArrays.hpp"
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <shylu_fastilu.hpp>
 
 namespace Ifpack2
@@ -92,7 +92,7 @@ template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typenam
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 initLocalPrec()
 {
-  auto nRows = this->mat_->getNodeNumRows();
+  auto nRows = this->mat_->getLocalNumRows();
   auto& p = this->params_;
   localPrec_ = Teuchos::rcp(new LocalFILU(this->localRowPtrs_, this->localColInds_, this->localValues_, nRows,
         p.nFact, p.nTrisol, p.level, p.omega,

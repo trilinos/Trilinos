@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_Quad16_h
-#define IOSS_Ioss_Quad16_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>       // for IntVector
 #include <Ioss_ElementTopology.h> // for ElementTopology
@@ -20,7 +19,7 @@ namespace Ioss {
     static const char *name;
 
     static void factory();
-    ~Quad16() override;
+    ~Quad16() override = default;
 
     ElementShape shape() const override { return ElementShape::QUAD; }
     int          spatial_dimension() const override;
@@ -53,4 +52,3 @@ namespace Ioss {
     Quad16(const Quad16 &) = delete;
   };
 } // namespace Ioss
-#endif

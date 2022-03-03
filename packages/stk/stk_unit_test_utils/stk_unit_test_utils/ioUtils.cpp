@@ -20,6 +20,7 @@
 #include "stk_mesh/base/Types.hpp"                   // for EntityRank, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"
+
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 

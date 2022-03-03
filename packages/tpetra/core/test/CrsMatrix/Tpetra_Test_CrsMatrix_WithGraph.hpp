@@ -130,11 +130,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   { \
     using Teuchos::outArg; \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
-    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getNodeElementList(); \
+    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getLocalElementList(); \
     ArrayView<const LO> loview; \
     ArrayView<const Scalar> sview; \
     size_t STMAX = 0; \
-    for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
+    for (size_t STR=0; STR < matrix.getLocalNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
       TEST_EQUALITY( numEntries, matrix.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
       matrix.getLocalRowView(STR,loview,sview); \
@@ -142,7 +142,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY( static_cast<size_t>( sview.size()), numEntries ); \
       STMAX = std::max( STMAX, numEntries ); \
     } \
-    TEST_EQUALITY( matrix.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
     global_size_t STGMAX; \
     reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
     TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
@@ -181,13 +181,13 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     const size_t numLocal = 10;
     RCP<const Tpetra::Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     {
-      Tpetra::CrsGraph<LO,GO,Node> diaggraph (map, 1, Tpetra::StaticProfile);
+      Tpetra::CrsGraph<LO,GO,Node> diaggraph (map, 1);
       // A pre-constructed graph must be fill complete before being used to construct a CrsMatrix
       TEST_THROW( MAT matrix(rcpFromRef(diaggraph)), std::runtime_error );
     }
     {
       // create a simple diagonal graph
-      Tpetra::CrsGraph<LO,GO,Node> diaggraph (map, 1, Tpetra::StaticProfile);
+      Tpetra::CrsGraph<LO,GO,Node> diaggraph (map, 1);
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         diaggraph.insertGlobalIndices(r,tuple(r));
       }
@@ -252,7 +252,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     {
       out << "Create tridiagonal CrsGraph with StaticProfile" << endl;
 
-      GRPH trigraph (map, 3, Tpetra::StaticProfile);
+      GRPH trigraph (map, 3);
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         if (r == map->getMinAllGlobalIndex()) {
           trigraph.insertGlobalIndices(r,tuple(r,r+1));
@@ -272,7 +272,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
         "and test allowed functionality" << endl;
 
       MAT matrix(rcpFromRef(trigraph));
-      TEST_EQUALITY_CONST( matrix.getProfileType() == Tpetra::StaticProfile, true );
       // insert throws exception: not allowed with static graph
       TEST_THROW( matrix.insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(map->getMinGlobalIndex()),tuple(ST::one())), std::runtime_error );
       // suminto and replace are allowed
@@ -321,7 +320,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     {
       out << "Create a diagonal CrsGraph" << endl;
-      GRPH diaggraph (map, 1, Tpetra::StaticProfile);
+      GRPH diaggraph (map, 1);
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         diaggraph.insertGlobalIndices(r,tuple(r));
       }
@@ -351,7 +350,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     {
       out << "Create a diagonal CrsGraph" << endl;
-      GRPH diaggraph (map, 1, Tpetra::StaticProfile);
+      GRPH diaggraph (map, 1);
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         diaggraph.insertGlobalIndices(r,tuple(r));
       }
@@ -376,7 +375,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     {
       out << "Create a diagonal CrsGraph" << endl;
-      GRPH diaggraph (map, 1, Tpetra::StaticProfile);
+      GRPH diaggraph (map, 1);
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         diaggraph.insertGlobalIndices(r,tuple(r));
       }
@@ -432,7 +431,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     {
       out << "Create a diagonal CrsGraph" << endl;
-      RCP<GRPH> diaggraph = rcp( new GRPH (map, 1, Tpetra::StaticProfile) );
+      RCP<GRPH> diaggraph = rcp( new GRPH (map, 1) );
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         diaggraph->insertGlobalIndices(r,tuple(r));
       }
@@ -489,7 +488,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // First test: use a constant upper bound (3) on the number of
     // entries in each row, and insert using global indices.
     {
-      MAT bdmat (rmap, cmap, 3, Tpetra::StaticProfile);
+      MAT bdmat (rmap, cmap, 3);
       TEST_EQUALITY(bdmat.getRowMap(), rmap);
       TEST_EQUALITY_CONST(bdmat.hasColMap(), true);
       TEST_EQUALITY(bdmat.getColMap(), cmap);
@@ -534,7 +533,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     {
       Teuchos::Array<size_t> nnzperrow (numLocal);
       std::fill(nnzperrow.begin(), nnzperrow.end(), 3);
-      MAT bdmat (rmap, cmap, nnzperrow (), Tpetra::StaticProfile);
+      MAT bdmat (rmap, cmap, nnzperrow ());
       TEST_EQUALITY(bdmat.getRowMap(), rmap);
       TEST_EQUALITY_CONST(bdmat.hasColMap(), true);
       TEST_EQUALITY(bdmat.getColMap(), cmap);
@@ -604,7 +603,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Tpetra::Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
 
     out << "Create a tridiagonal CrsGraph" << endl;
-    Tpetra::CrsGraph<LO,GO,Node> graph (map, 3, Tpetra::StaticProfile);
+    Tpetra::CrsGraph<LO,GO,Node> graph (map, 3);
     for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
       if (r == map->getMinAllGlobalIndex()) {
         graph.insertGlobalIndices(r,tuple(r,r+1));
@@ -623,7 +622,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     out << "Create a CrsMatrix using the tridiagonal CrsGraph" << endl;
     MAT matrix(rcpFromRef(graph));
 
-    TEST_ASSERT( matrix.getProfileType () == Tpetra::StaticProfile );
     TEST_ASSERT( matrix.isStaticGraph () );
 
     // Make sure that all processes finished and were successful.
@@ -796,7 +794,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
       out << "Call matrix.getLocalDiagOffsets (ArrayRCP version)" << endl;
       matrix.getLocalDiagOffsets (offsets);
-      TEST_EQUALITY( matrix.getNodeNumRows(), Teuchos::as<size_t>(offsets.size()) );
+      TEST_EQUALITY( matrix.getLocalNumRows(), Teuchos::as<size_t>(offsets.size()) );
 
       out << "Call matrix.getLocalDiagCopy (2-arg version with "
         "ArrayView offsets)" << endl;
@@ -832,7 +830,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     const size_t numLocal = 10;
     RCP<const Tpetra::Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
     {
-      MAT matrix(map, 1, Tpetra::StaticProfile);
+      MAT matrix(map, 1);
       // room for one on each row
       for (GO r=map->getMinGlobalIndex(); r<=map->getMaxGlobalIndex(); ++r)
       {

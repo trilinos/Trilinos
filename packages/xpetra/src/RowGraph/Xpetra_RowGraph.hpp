@@ -108,10 +108,10 @@ namespace Xpetra {
     virtual global_size_t getGlobalNumCols() const = 0;
 
     //! Returns the number of rows owned on the calling node.
-    virtual size_t getNodeNumRows() const = 0;
+    virtual size_t getLocalNumRows() const = 0;
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
-    virtual size_t getNodeNumCols() const = 0;
+    virtual size_t getLocalNumCols() const = 0;
 
     //! Returns the index base for global indices for this graph.
     virtual GlobalOrdinal getIndexBase() const = 0;
@@ -132,7 +132,7 @@ namespace Xpetra {
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    virtual size_t getLocalMaxNumRowEntries() const = 0;
 
     //! Indicates whether the graph has a well-defined column map.
     virtual bool hasColMap() const = 0;
@@ -156,6 +156,28 @@ namespace Xpetra {
 
     //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
     virtual void getLocalRowCopy(LocalOrdinal LocalRow, const Teuchos::ArrayView< LocalOrdinal > &Indices, size_t &NumIndices) const = 0;
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumRows() const {
+      return getLocalNumRows();
+    }
+#endif
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumCols() const {
+      return getLocalNumCols();
+    }
+#endif
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeMaxNumRowEntries() const {
+      return getLocalMaxNumRowEntries();
+    }
+#endif
+
 
     //@}
 

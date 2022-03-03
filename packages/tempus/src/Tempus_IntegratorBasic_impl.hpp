@@ -64,6 +64,23 @@ IntegratorBasic<Scalar>::IntegratorBasic(
 
 
 template<class Scalar>
+void IntegratorBasic<Scalar>::copy(Teuchos::RCP<IntegratorBasic<Scalar> > iB)
+{
+  this->setIntegratorType           (iB->getIntegratorType()           );
+  this->setIntegratorName           (iB->getIntegratorName()           );
+  this->setStepper                  (iB->getStepper()                  );
+  this->setSolutionHistory          (iB->getNonConstSolutionHistory()  );
+  this->setTimeStepControl          (iB->getNonConstTimeStepControl()  );
+  this->setObserver                 (iB->getObserver()                 );
+  this->setScreenOutputIndexList    (iB->getScreenOutputIndexList()    );
+  this->setScreenOutputIndexInterval(iB->getScreenOutputIndexInterval());
+  this->setStatus                   (iB->getStatus()                   );
+  integratorTimer_ = iB->getIntegratorTimer();
+  stepperTimer_    = iB->getStepperTimer();
+}
+
+
+template<class Scalar>
 void IntegratorBasic<Scalar>::setIntegratorType(std::string i)
 {
   TEUCHOS_TEST_FOR_EXCEPTION( i != "Integrator Basic", std::logic_error,
@@ -561,6 +578,9 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                     tempusPL,
   bool runInitialize)
 {
+  auto integrator = Teuchos::rcp(new IntegratorBasic<Scalar>());
+  if (tempusPL == Teuchos::null || tempusPL->numParams() == 0) return integrator;
+
   auto integratorName = tempusPL->get<std::string>("Integrator Name");
   auto integratorPL = Teuchos::sublist(tempusPL, integratorName, true);
 
@@ -571,7 +591,6 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
     << "'Integrator Basic'.\n"
     << "    Integrator Type = " << integratorType << "\n");
 
-  auto integrator = Teuchos::rcp(new IntegratorBasic<Scalar>());
   integrator->setIntegratorName(integratorName);
 
   // Set Stepper

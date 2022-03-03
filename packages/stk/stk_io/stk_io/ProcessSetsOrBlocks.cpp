@@ -3,33 +3,41 @@
 // clang-format off
 #include "ProcessSetsOrBlocks.hpp"
 #include <cstdint>                                 // for int64_t
-#include <map>                                     // for allocator, etc
+#include <map>                                     // for allocator, map<>::...
 #include <stk_mesh/base/BulkData.hpp>              // for BulkData
-#include <stk_mesh/base/MetaData.hpp>              // for MetaData, etc
+#include <stk_mesh/base/MetaData.hpp>              // for MetaData, put_fiel...
 #include <utility>                                 // for pair
-
-#include "stk_util/util/SortAndUnique.hpp"
-#include "IossBridge.hpp"                          // for include_entity, etc
+#include "IossBridge.hpp"                          // for default_part_proce...
+#include "Ioss_Assembly.h"                         // for Assembly, EntityCo...
+#include "Ioss_EdgeBlock.h"                        // for EdgeBlock
 #include "Ioss_ElementTopology.h"                  // for ElementTopology
-#include "Ioss_Field.h"                            // for Field, etc
+#include "Ioss_EntityType.h"                       // for SIDESET, EDGEBLOCK
+#include "Ioss_FaceBlock.h"                        // for FaceBlock
+#include "Ioss_Field.h"                            // for Field, Field::MESH
+#include "Ioss_GroupingEntity.h"                   // for GroupingEntity
 #include "Ioss_NodeBlock.h"                        // for NodeBlock
 #include "Ioss_SideBlock.h"                        // for SideBlock
-#include "Ioss_SideSet.h"                          // for SideSet, etc
-#include "Ioss_Assembly.h"
-#include "StkIoUtils.hpp"
-#include "StkMeshIoBroker.hpp"                     // for StkMeshIoBroker, etc
+#include "Ioss_SideSet.h"                          // for SideSet, SideBlock...
+#include "StkIoUtils.hpp"                          // for part_primary_entit...
+#include "StkMeshIoBroker.hpp"                     // for StkMeshIoBroker
 #include "stk_mesh/base/Bucket.hpp"                // for Bucket
 #include "stk_mesh/base/CoordinateSystems.hpp"     // for Cartesian
+#include "stk_mesh/base/EntityKey.hpp"             // for EntityKey
+#include "stk_mesh/base/FEMHelpers.hpp"            // for declare_element_edge
 #include "stk_mesh/base/Field.hpp"                 // for Field
+#include "stk_mesh/base/FieldTraits.hpp"           // for FieldTraits, Field...
+#include "stk_mesh/base/SideSetEntry.hpp"          // for SideSet
 #include "stk_mesh/base/TopologyDimensions.hpp"    // for ElementNode
-#include "stk_mesh/base/Types.hpp"                 // for OrdinalVector, etc
-#include "stk_mesh/baseImpl/ConnectEdgesImpl.hpp"
-#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "stk_topology/topology.hpp"               // for topology, etc
-#include "stk_util/util/ReportHandler.hpp"
-#include "stk_util/diag/StringUtil.hpp"
-#include "stk_util/parallel/CommSparse.hpp"        // for CommSparse, etc
+#include "stk_mesh/base/Types.hpp"                 // for EntityId, PartVector
+#include "stk_mesh/baseImpl/ConnectEdgesImpl.hpp"  // for connect_face_to_edges
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"     // for connect_edge_to_el...
+#include "stk_topology/topology.hpp"               // for topology, topology...
+#include "stk_util/diag/StringUtil.hpp"            // for case_strcmp
+#include "stk_util/parallel/CommSparse.hpp"        // for CommSparse, pack_a...
 #include "stk_util/parallel/ParallelComm.hpp"      // for CommBuffer
+#include "stk_util/util/ReportHandler.hpp"         // for ThrowRequireMsg
+#include "stk_util/util/SortAndUnique.hpp"         // for sort_and_unique
+
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -679,12 +687,12 @@ void populate_hidden_nodesets(Ioss::Region &io, const stk::mesh::MetaData & meta
     }
 }
 
-stk::mesh::Part* get_part_from_alias(const Ioss::Region &region, const stk::mesh::MetaData &meta, const std::string &name)
+stk::mesh::Part* get_part_from_alias(const Ioss::Region &region, const stk::mesh::MetaData &meta, const std::string &name, Ioss::EntityType type)
 {
     stk::mesh::Part* part = nullptr;
 
     std::vector<std::string> aliases;
-    region.get_aliases(name, aliases);
+    region.get_aliases(name, type, aliases);
 
     for(std::string &alias : aliases)
     {
@@ -704,10 +712,11 @@ stk::mesh::Part* get_part_from_alias(const Ioss::Region &region, const stk::mesh
 stk::mesh::Part* get_part_for_grouping_entity(const Ioss::Region &region, const stk::mesh::MetaData &meta, const Ioss::GroupingEntity *entity)
 {
     const std::string &name = entity->name();
+    auto type = entity->type();
     stk::mesh::Part* part = meta.get_part(name);
 
     if(nullptr == part) {
-        part = get_part_from_alias(region, meta, name);
+        part = get_part_from_alias(region, meta, name, type);
     }
     return part;
 }

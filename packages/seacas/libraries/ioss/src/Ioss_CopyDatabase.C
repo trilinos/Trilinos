@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,24 +11,18 @@
 #include <Ioss_MeshCopyOptions.h>
 #include <Ioss_SubSystem.h>
 
+#include <fmt/ostream.h>
 #include <limits>
 
-#include <fmt/ostream.h>
-
 // For Sleep...
-#if defined(__IOSS_WINDOWS__)
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#undef IN
-#undef OUT
-#endif
+#include <chrono>
+#include <thread>
 
 // For copy_database...
 namespace {
   std::vector<int> get_selected_steps(Ioss::Region &region, const Ioss::MeshCopyOptions &options);
   void show_step(int istep, double time, const Ioss::MeshCopyOptions &options, int rank);
-  std::vector<Ioss::Face> generate_boundary_faces(Ioss::Region &               region,
+  std::vector<Ioss::Face> generate_boundary_faces(Ioss::Region                &region,
                                                   const Ioss::MeshCopyOptions &options);
   void define_model(Ioss::Region &region, Ioss::Region &output_region, DataPool &data_pool,
                     const std::vector<Ioss::Face> &boundary, const Ioss::MeshCopyOptions &options,
@@ -95,14 +89,13 @@ namespace {
 
   template <typename T>
   std::pair<size_t, std::string>
-  calculate_maximum_field_size(const std::vector<T> &          entities,
+  calculate_maximum_field_size(const std::vector<T>           &entities,
                                std::pair<size_t, std::string> &max_field)
   {
     size_t      max_size = max_field.first;
     std::string max_name = max_field.second;
     for (const auto &entity : entities) {
-      Ioss::NameList fields;
-      entity->field_describe(&fields);
+      Ioss::NameList fields = entity->field_describe();
       for (const auto &field_name : fields) {
         Ioss::Field field = entity->get_field(field_name);
         if (field.get_size() > max_size) {
@@ -185,7 +178,8 @@ void Ioss::transfer_assemblies(Ioss::Region &region, Ioss::Region &output_region
     }
 
     if (options.verbose && rank == 0) {
-      fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n", "Assemblies", assem.size());
+      fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14}\n", "Assemblies",
+                 fmt::group_digits(assem.size()));
     }
     if (options.debug && rank == 0) {
       fmt::print(Ioss::DEBUG(), "\n");
@@ -211,9 +205,10 @@ void Ioss::transfer_blobs(Ioss::Region &region, Ioss::Region &output_region,
     }
 
     if (options.verbose && rank == 0) {
-      fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}", (*blobs.begin())->type_string() + "s",
-                 blobs.size());
-      fmt::print(Ioss::DEBUG(), "\tLength of entity list = {:14L}\n", total_entities);
+      fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14}", (*blobs.begin())->type_string() + "s",
+                 fmt::group_digits(blobs.size()));
+      fmt::print(Ioss::DEBUG(), "\tLength of entity list = {:14}\n",
+                 fmt::group_digits(total_entities));
     }
     if (options.debug && rank == 0) {
       fmt::print(Ioss::DEBUG(), "\n");
@@ -237,8 +232,8 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
       label = "GiB";
       size /= 1024.0;
     }
-    fmt::print(Ioss::DEBUG(), "\n Maximum Field size = {:L} bytes ({:.3} {}) for field '{}'.\n",
-               max_field.first, size, label, max_field.second);
+    fmt::print(Ioss::DEBUG(), "\n Maximum Field size = {} bytes ({:.3} {}) for field '{}'.\n",
+               fmt::group_digits(max_field.first), size, label, max_field.second);
   }
 
   DataPool data_pool;
@@ -374,7 +369,7 @@ namespace {
     transfer_fields(input, output, Ioss::Field::MESH_REDUCTION);
   }
 
-  std::vector<Ioss::Face> generate_boundary_faces(Ioss::Region &               region,
+  std::vector<Ioss::Face> generate_boundary_faces(Ioss::Region                &region,
                                                   const Ioss::MeshCopyOptions &options)
   {
     std::vector<Ioss::Face> boundary;
@@ -416,10 +411,6 @@ namespace {
       else {
         std::exit(EXIT_FAILURE);
       }
-    }
-
-    if (rank == 0) {
-      fmt::print(std::cout, "\n\n Input Region summary for rank 0:\n");
     }
 
     // Get all properties of input database...
@@ -679,7 +670,7 @@ namespace {
       for (const auto &isb : sbs) {
 
         // Find matching output structured block
-        const std::string &    name = isb->name();
+        const std::string     &name = isb->name();
         Ioss::StructuredBlock *osb  = output_region.get_structured_block(name);
         if (osb != nullptr) {
           transfer_fields(isb, osb, Ioss::Field::TRANSIENT);
@@ -790,14 +781,8 @@ namespace {
     output_region.end_state(ostep);
 
     if (options.delay > 0.0) {
-#ifndef _MSC_VER
-      struct timespec delay;
-      delay.tv_sec  = (int)options.delay;
-      delay.tv_nsec = (options.delay - delay.tv_sec) * 1'000'000'000L;
-      nanosleep(&delay, nullptr);
-#else
-      Sleep((int)(options.delay * 1'000));
-#endif
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(static_cast<int>(options.delay * 1'000)));
     }
   }
 
@@ -813,8 +798,10 @@ namespace {
       size_t num_nodes = inb->entity_count();
       size_t degree    = inb->get_property("component_degree").get_int();
       if (options.verbose && rank == 0) {
-        fmt::print(Ioss::DEBUG(), " Number of Coordinates per Node = {:14L}\n", degree);
-        fmt::print(Ioss::DEBUG(), " Number of Nodes                = {:14L}\n", num_nodes);
+        fmt::print(Ioss::DEBUG(), " Number of Coordinates per Node = {:14}\n",
+                   fmt::group_digits(degree));
+        fmt::print(Ioss::DEBUG(), " Number of Nodes                = {:14}\n",
+                   fmt::group_digits(num_nodes));
       }
       auto *nb = new Ioss::NodeBlock(*inb);
       output_region.add(nb);
@@ -897,10 +884,10 @@ namespace {
         output_region.add(block);
       }
       if (options.verbose && rank == 0) {
-        fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n",
-                   (*blocks.begin())->type_string() + "s", blocks.size());
-        fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n",
-                   (*blocks.begin())->contains_string() + "s", total_entities);
+        fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14}\n",
+                   (*blocks.begin())->type_string() + "s", fmt::group_digits(blocks.size()));
+        fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14}\n",
+                   (*blocks.begin())->contains_string() + "s", fmt::group_digits(total_entities));
       }
       if (options.debug && rank == 0) {
         fmt::print(Ioss::DEBUG(), "\n");
@@ -920,7 +907,7 @@ namespace {
         // testing to verify that we handle zone reordering
         // correctly.
         for (int i = blocks.size() - 1; i >= 0; i--) {
-          const auto &       iblock = blocks[i];
+          const auto        &iblock = blocks[i];
           const std::string &name   = iblock->name();
           if (options.debug && rank == 0) {
             fmt::print(Ioss::DEBUG(), "{}, ", name);
@@ -965,10 +952,10 @@ namespace {
       }
 
       if (options.verbose && rank == 0) {
-        fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n",
-                   (*blocks.begin())->type_string() + "s", blocks.size());
-        fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n",
-                   (*blocks.begin())->contains_string() + "s", total_entities);
+        fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14}\n",
+                   (*blocks.begin())->type_string() + "s", fmt::group_digits(blocks.size()));
+        fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14}\n",
+                   (*blocks.begin())->contains_string() + "s", fmt::group_digits(total_entities));
       }
       if (options.debug && rank == 0) {
         fmt::print(Ioss::DEBUG(), "\n");
@@ -1014,7 +1001,12 @@ namespace {
       for (const auto &ifb : fbs) {
         if (ifb->parent_block() != nullptr) {
           auto  fb_name = ifb->parent_block()->name();
-          auto *parent  = dynamic_cast<Ioss::EntityBlock *>(output_region.get_entity(fb_name));
+          auto *parent  = dynamic_cast<Ioss::EntityBlock *>(
+              output_region.get_entity(fb_name, Ioss::ELEMENTBLOCK));
+          if (parent == nullptr) {
+            parent = dynamic_cast<Ioss::EntityBlock *>(
+                output_region.get_entity(fb_name, Ioss::STRUCTUREDBLOCK));
+          }
 
           auto *ofb = surf->get_side_block(ifb->name());
           ofb->set_parent_block(parent);
@@ -1023,8 +1015,8 @@ namespace {
     }
 
     if (options.verbose && rank == 0 && !fss.empty()) {
-      fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n", (*fss.begin())->type_string() + "s",
-                 fss.size());
+      fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14}\n", (*fss.begin())->type_string() + "s",
+                 fmt::group_digits(fss.size()));
     }
     if (options.debug && rank == 0) {
       fmt::print(Ioss::DEBUG(), "\n");
@@ -1049,9 +1041,10 @@ namespace {
       }
 
       if (options.verbose && rank == 0) {
-        fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}",
-                   (*sets.begin())->type_string() + "s", sets.size());
-        fmt::print(Ioss::DEBUG(), "\tLength of entity list = {:14L}\n", total_entities);
+        fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14}", (*sets.begin())->type_string() + "s",
+                   fmt::group_digits(sets.size()));
+        fmt::print(Ioss::DEBUG(), "\tLength of entity list = {:14}\n",
+                   fmt::group_digits(total_entities));
       }
       if (options.debug && rank == 0) {
         fmt::print(Ioss::DEBUG(), "\n");
@@ -1108,8 +1101,7 @@ namespace {
                        Ioss::Field::RoleType role, const std::string &prefix)
   {
     // Check for transient fields...
-    Ioss::NameList fields;
-    ige->field_describe(role, &fields);
+    Ioss::NameList fields = ige->field_describe(role);
 
     // Iterate through results fields and transfer to output
     // database...  If a prefix is specified, only transfer fields
@@ -1130,8 +1122,7 @@ namespace {
   {
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.
-    Ioss::NameList state_fields;
-    ige->field_describe(role, &state_fields);
+    Ioss::NameList state_fields = ige->field_describe(role);
 
     // Complication here is that if the 'role' is 'Ioss::Field::MESH',
     // then the 'ids' field must be transferred first...
@@ -1420,8 +1411,7 @@ namespace {
 
   void transfer_properties(const Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge)
   {
-    Ioss::NameList properties;
-    ige->property_describe(&properties);
+    Ioss::NameList properties = ige->property_describe();
 
     // Iterate through properties and transfer to output database...
     for (const auto &property : properties) {

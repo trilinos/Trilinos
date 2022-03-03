@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,26 +30,24 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
+#include "stk_expreval/Function.hpp"
 #include <cmath>
 #include <ctime>
-
-#include <stk_expreval/Function.hpp>
-
 
 namespace stk {
 namespace expreval {
 
 int sRandomRangeHighValue = 3191613;
 int sRandomRangeLowValue  = 1739623;
-  typedef double (*CExtern0)();
-  typedef double (*CExtern1)(double);
-  typedef double (*CExtern2)(double, double);
-  typedef double (*CExtern3)(double, double, double);
-  typedef double (*CExtern4)(double, double, double, double);
-  typedef double (*CExtern5)(double, double, double, double, double);
-  typedef double (*CExtern8)(double, double, double, double, double, double, double, double);
+typedef double (*CExtern0)();
+typedef double (*CExtern1)(double);
+typedef double (*CExtern2)(double, double);
+typedef double (*CExtern3)(double, double, double);
+typedef double (*CExtern4)(double, double, double, double);
+typedef double (*CExtern5)(double, double, double, double, double);
+typedef double (*CExtern8)(double, double, double, double, double, double, double, double);
 
 template <>
 class CFunction<CExtern0> : public CFunctionBase
@@ -65,7 +63,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) 
+  virtual double operator()(int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 0 arguments"); }
@@ -92,7 +90,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) 
+  virtual double operator()(int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 1 argument"); }
@@ -119,7 +117,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) 
+  virtual double operator()(int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 2 arguments"); }
@@ -145,7 +143,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) 
+  virtual double operator()(int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 3 arguments"); }
@@ -171,7 +169,7 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) 
+  virtual double operator()(int argc, const double *argv)
   {
 #ifndef NDEBUG
     if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 4 arguments"); }
@@ -244,17 +242,11 @@ typedef CFunction<CExtern5> CFunction5;
 typedef CFunction<CExtern8> CFunction8;
 
 
-
-
-CFunctionMap::CFunctionMap() 
+CFunctionMap::CFunctionMap()
 {
-  /// These random number functions support calls to
-  /// the ANSI C random number generator.
   (*this).emplace("rand",         new CFunction0(real_rand));
   (*this).emplace("srand",        new CFunction1(real_srand));
 
-  /// These random number functions support a platform
-  /// independent random number function.
   (*this).emplace("random",          new CFunction0(random0));
   (*this).emplace("random",          new CFunction1(random1));
   (*this).emplace("time",            new CFunction0(current_time));
@@ -329,8 +321,7 @@ CFunctionMap::CFunctionMap()
 
 CFunctionMap::~CFunctionMap()
 {
-  for (CFunctionMap::iterator it = begin(); it != end(); ++it) 
-  {
+  for (CFunctionMap::iterator it = begin(); it != end(); ++it) {
     delete (*it).second;
   }
 }

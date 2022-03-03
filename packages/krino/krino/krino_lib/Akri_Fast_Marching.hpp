@@ -75,7 +75,7 @@ public:
   bool have_crossing(const stk::mesh::Entity & elem) const;
   void initialize_subelement(const SubElement & subelem, const int side, const double speed);
   void initialize_element(const stk::mesh::Entity & elem, const double speed);
-  double update_triangle(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed, int side_to_update=-1);
+  double update_triangle(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed);
   double update_tetrahedron(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed);
 
   void add_trial_node(Fast_Marching_Node & add_trial_node);

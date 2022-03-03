@@ -9,7 +9,7 @@
 #ifndef _PE_STR_UTIL_CONST_H_
 #define _PE_STR_UTIL_CONST_H_
 /* Function prototypes */
-extern int token_compare(char *      token, /* The input character string */
+extern int token_compare(char       *token, /* The input character string */
                          const char *key    /* The key to compare with token */
 );
 

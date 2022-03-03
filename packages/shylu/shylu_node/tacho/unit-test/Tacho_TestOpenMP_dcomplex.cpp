@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 static const std::string MM_TEST_FILE="test_dcomplex";
 

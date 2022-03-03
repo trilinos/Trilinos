@@ -299,7 +299,7 @@ namespace Intrepid2 {
         //them for comparison with old stored values
         double basisScalingFactor = 1.0/4.0;
 
-        std::string basedir = "../testdata";
+        std::string basedir = "./testdata";
         for (auto cid=0;cid<num_cells-1;++cid) {
           std::stringstream namestream;
           std::string filename;

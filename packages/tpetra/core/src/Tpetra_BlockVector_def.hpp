@@ -146,24 +146,37 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
+  TPETRA_DEPRECATED
   bool
-  // TPETRA_DEPRECATED
   BlockVector<Scalar, LO, GO, Node>::
   getLocalRowView (const LO localRowIndex, Scalar*& vals) {
-    return ((base_type*) this)->getLocalRowView (localRowIndex, 0, vals);
+    if (! this->meshMap_.isNodeLocalElement (localRowIndex)) {
+      return false;
+    } else {
+      auto X_ij = getLocalBlockHost (localRowIndex, Access::ReadWrite);
+      vals = reinterpret_cast<Scalar*> (X_ij.data ());
+      return true;
+    }
   }
 
   template<class Scalar, class LO, class GO, class Node>
+  TPETRA_DEPRECATED
   bool
-  // TPETRA_DEPRECATED
   BlockVector<Scalar, LO, GO, Node>::
   getGlobalRowView (const GO globalRowIndex, Scalar*& vals) {
-    return ((base_type*) this)->getGlobalRowView (globalRowIndex, 0, vals);
+    const LO localRowIndex = this->meshMap_.getLocalElement (globalRowIndex);
+    if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
+      return false;
+    } else {
+      auto X_ij = getLocalBlockHost (localRowIndex, Access::ReadWrite);
+      vals = reinterpret_cast<Scalar*> (X_ij.data ());
+      return true;
+    }
   }
 
   template<class Scalar, class LO, class GO, class Node>
+  TPETRA_DEPRECATED
   typename BlockVector<Scalar, LO, GO, Node>::little_host_vec_type
-  // TPETRA_DEPRECATED
   BlockVector<Scalar, LO, GO, Node>::
   getLocalBlock (const LO localRowIndex)
   {

@@ -88,8 +88,7 @@ createCrsMatrix (RCP<const map_type> rowAndColMap,
   //TM mon (*TM::getNewCounter ("CrsMatrix constructor"));
 
   return rcp (new crs_matrix_type (rowAndColMap, rowAndColMap,
-                                   maxNumEntPerRow,
-                                   Tpetra::StaticProfile));
+                                   maxNumEntPerRow));
 }
 
 RCP<crs_graph_type>
@@ -99,8 +98,7 @@ createCrsGraph (RCP<const map_type> rowAndColMap,
   //TM mon (*TM::getNewCounter ("CrsGraph constructor"));
 
   return rcp (new crs_graph_type (rowAndColMap, rowAndColMap,
-                                  maxNumEntPerRow,
-                                  Tpetra::StaticProfile));
+                                  maxNumEntPerRow));
 }
 
 void
@@ -111,7 +109,7 @@ populateCrsMatrix (crs_matrix_type& A,
 {
   //TM mon (*TM::getNewCounter ("CrsMatrix::insertLocalValues loop"));
 
-  const LO lclNumRows (A.getNodeNumRows ());
+  const LO lclNumRows (A.getLocalNumRows ());
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
     A.insertLocalValues (lclRow, numToInsert, vals, lclColInds);
   }
@@ -124,7 +122,7 @@ populateCrsGraph (crs_graph_type& G,
 {
   //TM mon (*TM::getNewCounter ("CrsGraph::insertLocalIndices loop"));
 
-  const LO lclNumRows (G.getNodeNumRows ());
+  const LO lclNumRows (G.getLocalNumRows ());
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
     G.insertLocalIndices (lclRow, numToInsert, lclColInds);
   }
@@ -153,7 +151,7 @@ doSumIntoLocalValues (const std::string& label,
   TM mon (*TM::getNewCounter (label));
   constexpr bool use_atomics = false;
 
-  const LO lclNumRows (A.getNodeNumRows ());
+  const LO lclNumRows (A.getLocalNumRows ());
 
   for (int trial = 0; trial < numTrials; ++trial) {
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -184,7 +182,7 @@ doKokkosSumIntoLocalValues (const std::string& label,
 
   TM mon2 (*TM::getNewCounter (label + ": after getLocalMatrix"));
 
-  const LO lclNumRows (A.getNodeNumRows ());
+  const LO lclNumRows (A.getLocalNumRows ());
   for (int trial = 0; trial < numTrials; ++trial) {
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       const LO numInserted =

@@ -82,12 +82,12 @@ typedef zscalar_t z2TestScalar;
 
 typedef Tpetra::CrsMatrix<z2TestScalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::CrsGraph<z2TestLO, z2TestGO> SparseGraph;
-typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> Vector;
-typedef Vector::node_type Node;
+typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> VectorT;
+typedef VectorT::node_type Node;
 
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 typedef Zoltan2::XpetraCrsGraphAdapter<SparseGraph> SparseGraphAdapter;
-typedef Zoltan2::XpetraMultiVectorAdapter<Vector> MultiVectorAdapter;
+typedef Zoltan2::XpetraMultiVectorAdapter<VectorT> MultiVectorAdapter;
 
 
 // Integer vector
@@ -206,10 +206,10 @@ int main(int narg, char** arg)
     std::cout << "NumRows     = " << origMatrix->getGlobalNumRows() << std::endl
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << std::endl
          << "NumProcs = " << comm->getSize() << std::endl
-         << "NumLocalRows (rank 0) = " << origMatrix->getNodeNumRows() << std::endl;
+         << "NumLocalRows (rank 0) = " << origMatrix->getLocalNumRows() << std::endl;
 
   ////// Create a vector to use with the matrix.
-  RCP<Vector> origVector, origProd;
+  RCP<VectorT> origVector, origProd;
   origProd   = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
   origVector = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
@@ -241,7 +241,7 @@ int main(int narg, char** arg)
   zscalar_t *vwgts = NULL;
   if (nVwgts) {
     // Test vertex weights with stride nVwgts.
-    size_t nrows = origMatrix->getNodeNumRows();
+    size_t nrows = origMatrix->getLocalNumRows();
     if (nrows) {
       vwgts = new zscalar_t[nVwgts * nrows];
       for (size_t i = 0; i < nrows; i++) {
@@ -303,7 +303,7 @@ int main(int narg, char** arg)
   ///// Not ordinarily done in application code; just doing it for testing here.
   size_t checkNparts = comm->getSize();
 
-  size_t  checkLength = origMatrix->getNodeNumRows();
+  size_t  checkLength = origMatrix->getLocalNumRows();
   const SparseGraphAdapter::part_t *checkParts = problem.getSolution().getPartListView();
 
   // Check for load balance
@@ -393,12 +393,12 @@ int main(int narg, char** arg)
   }
 
   if (me == 0) std::cout << "Redistributing vectors..." << std::endl;
-  Vector *redistribVector;
+  VectorT *redistribVector;
   MultiVectorAdapter adapterVector(origVector); //, weights, weightStrides);
   adapterVector.applyPartitioningSolution(*origVector, redistribVector,
                                           problem.getSolution());
 
-  RCP<Vector> redistribProd;
+  RCP<VectorT> redistribProd;
   redistribProd = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                        redistribMatrix->getRangeMap());
 

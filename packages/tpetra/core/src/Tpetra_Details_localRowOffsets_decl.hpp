@@ -44,10 +44,14 @@
 /// \brief Declaration of function for getting local row offsets from
 ///   a Tpetra::RowGraph.
 
+#include "TpetraCore_config.h"
 #include "Tpetra_CrsGraph_fwd.hpp"
 #include "Tpetra_RowGraph_fwd.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <utility> // pair
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE 
+// This file can be deleted when deprecated code is removed
 
 namespace Tpetra {
 namespace Details {
@@ -95,4 +99,5 @@ localRowOffsets (const RowGraph<LO, GO, NT>& G);
 } // namespace Details
 } // namespace Tpetra
 
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 #endif // TPETRA_DETAILS_LOCALROWOFFSETS_DECL_HPP

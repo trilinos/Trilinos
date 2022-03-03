@@ -52,7 +52,9 @@
 #ifndef KOKKOSSPARSE_SPTRSV_SUPERLU_HPP_
 #define KOKKOSSPARSE_SPTRSV_SUPERLU_HPP_
 
-#ifdef KOKKOSKERNELS_ENABLE_TPL_SUPERLU
+#if defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU) && \
+    defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
+
 #include "slu_ddefs.h"
 
 #include "KokkosSparse_sptrsv_supernode.hpp"
@@ -92,7 +94,7 @@ graph_t read_superlu_graphL(KernelHandle *kernelHandle, SuperMatrix *L) {
 /* ========================================================================================= */
 // read SuperLU U factor into CSR
 template <typename graph_t, typename KernelHandle>
-graph_t read_superlu_graphU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMatrix *U) {
+graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L,  SuperMatrix *U) {
 
   using   row_map_view_t = typename graph_t::row_map_type::non_const_type;
   using      cols_view_t = typename graph_t::entries_type::non_const_type;
@@ -131,6 +133,14 @@ graph_t read_superlu_graphU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMat
   row_map_view_t rowmap_view ("rowmap_view", n+1);
   auto hr = Kokkos::create_mirror_view (rowmap_view);
   Kokkos::deep_copy (hr, 0);
+
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  Kokkos::Timer timer;
+  double time1 = 0.0;
+  double time2 = 0.0;
+  double time3 = 0.0;
+  timer.reset();
+  #endif
 
   integer_view_host_t sup ("sup", nsuper);
   integer_view_host_t check ("check", nsuper);
@@ -178,6 +188,9 @@ graph_t read_superlu_graphU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMat
   for (int i = 1; i <= n; i++) {
     hr (i) += hr (i-1);
   }
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_count = timer.seconds ();
+  #endif
 
   /* Upper-triangular matrix */
   auto nnzA = hr (n);
@@ -187,6 +200,9 @@ graph_t read_superlu_graphU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMat
   for (int k = 0; k < nsuper; k++) {
     int j1 = nb[k];
     int nscol = nb[k+1] - j1;
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    timer.reset();
+    #endif
 
     /* the diagonal "dense" block */
     for (int i = 0; i < nscol; i++) {
@@ -195,6 +211,10 @@ graph_t read_superlu_graphU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMat
       }
       hr (j1 + i) += nscol;
     }
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time1 += timer.seconds ();
+    timer.reset();
+    #endif
 
     /* the off-diagonal "sparse" blocks */
     int nsup = 0;
@@ -209,6 +229,10 @@ graph_t read_superlu_graphU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMat
         }
       }
     }
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time2 += timer.seconds ();
+    timer.reset();
+    #endif
     if (u_in_csc) {
       for (int jcol = j1; jcol < j1 + nscol; jcol++) {
         // move up all the row pointers for all the supernodal blocks
@@ -237,6 +261,10 @@ graph_t read_superlu_graphU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMat
     for (int i = 0; i < nsup; i++) {
       check (sup (i)) = 0;
     }
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time3 += timer.seconds ();
+    timer.reset();
+    #endif
   }
 
   // fix hr
@@ -248,6 +276,7 @@ graph_t read_superlu_graphU(KernelHandle kernelHandle, SuperMatrix *L,  SuperMat
   std::cout << "    * Matrix size = " << n << std::endl;
   std::cout << "    * Total nnz   = " << hr (n) << std::endl;
   std::cout << "    * nnz / n     = " << hr (n)/n << std::endl;
+  std::cout << "    * time        = " << time_count << " + " << time1 << " + " << time2 << " + " << time3 << std::endl;
   #endif
 
   // deepcopy
@@ -292,10 +321,17 @@ void sptrsv_symbolic(
 
   tic.reset();
   graphL_host = read_superlu_graphL<host_graph_t> (kernelHandleL, &L);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_read_L = tic.seconds ();
+  tic.reset();
+  #endif
   graphU_host = read_superlu_graphU<host_graph_t> (kernelHandleU, &L, &U);
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-  double time_seconds = tic.seconds ();
-  std::cout << "   Conversion Time (from SuperLU to CSR): " << time_seconds << std::endl;
+  double time_read_U = tic.seconds ();
+  int nrows (graphL_host.row_map.extent(0));
+  std::cout << "   Conversion Time (from SuperLU to CSR): " << time_read_L << " + " << time_read_U
+            << ", nnz = " << graphL_host.row_map(nrows) << " + " << graphU_host.row_map(nrows)
+            << std::endl;
   tic.reset();
   #endif
 
@@ -315,7 +351,7 @@ void sptrsv_symbolic(
                               graphL_host, kernelHandleL,
                               graphU_host, kernelHandleU);
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
-  time_seconds = tic.seconds ();
+  double time_seconds = tic.seconds ();
   std::cout << "   SpTRSV Supernodal Symbolic Time      : " << time_seconds << std::endl;
   #endif
 }
@@ -326,7 +362,7 @@ void sptrsv_symbolic(
 
 /* ========================================================================================= */
 template <typename crsmat_t, typename graph_t, typename KernelHandle>
-crsmat_t read_superlu_valuesL(KernelHandle kernelHandle, SuperMatrix *L, graph_t &static_graph) {
+crsmat_t read_superlu_valuesL(KernelHandle *kernelHandle, SuperMatrix *L, graph_t &static_graph) {
 
   using values_view_t = typename crsmat_t::values_type::non_const_type;
   using scalar_t      = typename values_view_t::value_type;
@@ -345,9 +381,9 @@ crsmat_t read_superlu_valuesL(KernelHandle kernelHandle, SuperMatrix *L, graph_t
   int * rowind = Lstore->rowind;
 
   bool ptr_by_column = true;
-  return read_supernodal_valuesL<crsmat_t> (kernelHandle, n, nsuper, 
-                                            ptr_by_column, mb, nb,
-                                            colptr, rowind, Lx, static_graph);
+  return read_supernodal_values<crsmat_t> (kernelHandle, n, nsuper, 
+                                           ptr_by_column, mb, nb,
+                                           colptr, rowind, Lx, static_graph);
 }
 
 
@@ -357,7 +393,7 @@ template <typename crsmat_t,
           typename graph_t,
           typename KernelHandle>
 crsmat_t
-read_superlu_valuesU(KernelHandle kernelHandle,
+read_superlu_valuesU(KernelHandle *kernelHandle,
                      SuperMatrix *L,  SuperMatrix *U, graph_t &static_graph) {
 
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
@@ -674,6 +710,6 @@ void sptrsv_compute(
 } // namespace Experimental
 } // namespace KokkosSparse
 
-#endif // KOKKOSKERNELS_ENABLE_TPL_SUPERLU
+#endif // KOKKOSKERNELS_ENABLE_TPL_SUPERLU && KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 #endif // KOKKOSSPARSE_SPTRSV_SUPERLU_HPP_
 

@@ -67,7 +67,7 @@ Container<MatrixType>::Container(
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::Comm;
-  NumLocalRows_ = inputMatrix_->getNodeNumRows();
+  NumLocalRows_ = inputMatrix_->getLocalNumRows();
   NumGlobalRows_ = inputMatrix_->getGlobalNumRows();
   NumGlobalNonzeros_ = inputMatrix_->getGlobalNumEntries();
   IsParallel_ = inputMatrix_->getRowMap()->getComm()->getSize() != 1;
@@ -399,7 +399,7 @@ DoGaussSeidel(ConstHostView X, HostView Y, HostView Y2, SC dampingFactor) const
   }
   if(IsParallel_)
   {
-    auto numMyRows = inputMatrix_->getNodeNumRows();
+    auto numMyRows = inputMatrix_->getLocalNumRows();
     for (size_t m = 0; m < numVecs; ++m)
     {
       for (size_t i = 0; i < numMyRows * bcrsBlockSize_; ++i)
@@ -439,7 +439,7 @@ DoSGS(ConstHostView X, HostView Y, HostView Y2, SC dampingFactor) const
   }
   if(IsParallel_)
   {
-    auto numMyRows = inputMatrix_->getNodeNumRows();
+    auto numMyRows = inputMatrix_->getLocalNumRows();
     for (size_t m = 0; m < numVecs; ++m)
     {
       for (size_t i = 0; i < numMyRows * bcrsBlockSize_; ++i)
@@ -870,7 +870,7 @@ getInputRowView(LO row) const
   }
   else if(!this->inputMatrix_->supportsRowViews())
   {
-    size_t maxEntries = this->inputMatrix_->getNodeMaxNumRowEntries();
+    size_t maxEntries = this->inputMatrix_->getLocalMaxNumRowEntries();
     Teuchos::Array<LO> inds(maxEntries);
     Teuchos::Array<SC> vals(maxEntries);
     nonconst_local_inds_host_view_type inds_v(inds.data(),maxEntries);

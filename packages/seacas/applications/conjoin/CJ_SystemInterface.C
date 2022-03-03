@@ -278,7 +278,7 @@ void Excn::SystemInterface::show_version()
 {
   fmt::print(
       "{}\n"
-      "\t(A code for sequentially appending Exodus II databases. Supersedes conex and conex2.)\n"
+      "\t(A code for sequentially appending Exodus databases. Supersedes conex and conex2.)\n"
       "\t(Version: {}) Modified: {}\n",
       qainfo[0], qainfo[1], qainfo[2]);
 }

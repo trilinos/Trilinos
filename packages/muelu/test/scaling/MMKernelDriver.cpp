@@ -275,18 +275,17 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
     RCP<crs_matrix_type> Cnc = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
-    const KCRS & Amat = Au->getLocalMatrix();
-    const KCRS & Bmat = Bu->getLocalMatrix();
-    KCRS Cmat = Cu->getLocalMatrix();
+    const KCRS & Amat = Au->getLocalMatrixDevice();
+    const KCRS & Bmat = Bu->getLocalMatrixDevice();
 
     using no_init_view=Kokkos::ViewAllocateWithoutInitializing;
 
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
-    lno_view_t Crowptr(no_init_view("Crowptr"),C.getNodeNumRows()+1);
+    lno_view_t Crowptr(no_init_view("Crowptr"),C.getLocalNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
-    lno_nnz_view_t Ccolind = Cmat.graph.entries;
+    lno_nnz_view_t Ccolind;
     const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
-    scalar_view_t Cvals = Cmat.values;
+    scalar_view_t Cvals;
 
     // **********************************
     // Copy in the data for ViennaCL
@@ -306,9 +305,9 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
       copy_view(Bcolind,BcolindVCL);
   
       AVCL.set(ArowptrVCL.data(), AcolindVCL.data(), Avals.data(),
-               Au->getNodeNumRows(),Au->getNodeNumCols(),Au->getNodeNumEntries());
+               Au->getLocalNumRows(),Au->getLocalNumCols(),Au->getLocalNumEntries());
       BVCL.set(BrowptrVCL.data(), BcolindVCL.data(), Bvals.data(),
-               Bu->getNodeNumRows(),Bu->getNodeNumCols(),Bu->getNodeNumEntries());
+               Bu->getLocalNumRows(),Bu->getLocalNumCols(),Bu->getLocalNumEntries());
     }
     Au->getComm()->barrier();
 
@@ -335,8 +334,8 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     {
       Teuchos::TimeMonitor tm_copy (*TimeMonitor::getNewTimer("MM ViennaCL: Copy Out"));
       size_t cnnz = (size_t)CVCL.nnz();
-      Kokkos::resize(Ccolind,cnnz);
-      Kokkos::resize(Cvals,cnnz);
+      Ccolind = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("Ccolind"), cnnz);
+      Cvals = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("Cvals"), cnnz);
       #ifdef VIENNACL_WITH_CUDA
         const unsigned int * CrowptrVCL = viennacl::cuda_arg<unsigned int>(CVCL.handle1());
         const unsigned int * CcolindVCL = viennacl::cuda_arg<unsigned int>(CVCL.handle2());
@@ -446,17 +445,14 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
     RCP<crs_matrix_type> Cnc = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
-    const KCRS & Amat = Au->getLocalMatrix();
-    const KCRS & Bmat = Bu->getLocalMatrix();
-    KCRS Cmat = Cu->getLocalMatrix();
-    if(A.getNodeNumRows()!=C.getNodeNumRows())  throw std::runtime_error("C is not sized correctly");
+    const KCRS & Amat = Au->getLocalMatrixDevice();
+    const KCRS & Bmat = Bu->getLocalMatrixDevice();
+    if(A.getLocalNumRows()!=C.getLocalNumRows())  throw std::runtime_error("C is not sized correctly");
 
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
-    lno_view_t Crowptr(no_init_view("Crowptr"),C.getNodeNumRows()+1);
+    lno_view_t Crowptr(no_init_view("Crowptr"),C.getLocalNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
-    lno_nnz_view_t Ccolind = Cmat.graph.entries;
     const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
-    scalar_view_t Cvals = Cmat.values;
 
     sparse_matrix_t AMKL;
     sparse_matrix_t BMKL;
@@ -483,16 +479,16 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
   
       if(std::is_same<Scalar,double>::value) {
         mkl_rc = mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO,
-                                          Au->getNodeNumRows(),
-                                          Au->getNodeNumCols(),
+                                          Au->getLocalNumRows(),
+                                          Au->getLocalNumCols(),
                                           ArowptrMKL.data(),
                                           ArowptrMKL.data()+1,
                                           AcolindMKL.data(),
                                           (double*)Avals.data());
         MMKD_MKL_ERROR_CHECK(mkl_rc);
         mkl_rc = mkl_sparse_d_create_csr(&BMKL, SPARSE_INDEX_BASE_ZERO,
-                                         Bu->getNodeNumRows(),
-                                         Bu->getNodeNumCols(),
+                                         Bu->getLocalNumRows(),
+                                         Bu->getLocalNumCols(),
                                          BrowptrMKL.data(),
                                          BrowptrMKL.data()+1,
                                          BcolindMKL.data(),
@@ -536,9 +532,11 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     mkl_rc = mkl_sparse_d_export_csr(CMKL,&c_indexing, &c_rows, &c_cols, &rows_start, &rows_end, &columns, &values);
     MMKD_MKL_ERROR_CHECK(mkl_rc);
     size_t cnnz = rows_end[c_rows-1];
+    lno_nnz_view_t Ccolind = lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("Ccolind"), cnnz);
+    scalar_view_t Cvals = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("Cvals"), cnnz);
     Kokkos::resize(Ccolind,cnnz);
     Kokkos::resize(Cvals,cnnz);
-    if((size_t) c_rows != A.getNodeNumRows() || (size_t) c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
+    if((size_t) c_rows != A.getLocalNumRows() || (size_t) c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
     copy_view_n(c_rows,rows_start,Crowptr); Crowptr(c_rows) = rows_end[c_rows-1];
     copy_view_n(cnnz,columns,Ccolind);
     copy_view_n(cnnz,values,Cvals);
@@ -622,39 +620,38 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
   if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
-    typedef typename crs_matrix_type::local_matrix_type    KCRS;
-    typedef typename KCRS::StaticCrsGraphType              graph_t;
-    typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-    typedef typename graph_t::row_map_type::const_type     c_lno_view_t;
-    typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-    typedef typename graph_t::entries_type::const_type     c_lno_nnz_view_t;
-    typedef typename KCRS::values_type::non_const_type     scalar_view_t;
-    typedef typename KCRS::device_type device_t;
+    typedef typename crs_matrix_type::local_matrix_device_type  KCRS;
+    typedef typename KCRS::StaticCrsGraphType                   graph_t;
+    typedef typename graph_t::row_map_type::non_const_type      lno_view_t;
+    typedef typename graph_t::row_map_type::const_type          c_lno_view_t;
+    typedef typename graph_t::entries_type::non_const_type      lno_nnz_view_t;
+    typedef typename graph_t::entries_type::const_type          c_lno_nnz_view_t;
+    typedef typename KCRS::values_type::non_const_type          scalar_view_t;
+    typedef typename KCRS::device_type                          device_t;
 
     RCP<const crs_matrix_type> Au = Utilities::Op2TpetraCrs(rcp(&A,false));
     RCP<const crs_matrix_type> Bu = Utilities::Op2TpetraCrs(rcp(&B,false));
     RCP<const crs_matrix_type> Cu = Utilities::Op2TpetraCrs(rcp(&C,false));
     RCP<crs_matrix_type> Cnc = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
-    const KCRS & Amat = Au->getLocalMatrix();
-    const KCRS & Bmat = Bu->getLocalMatrix();
-    KCRS Cmat = Cu->getLocalMatrix();
+    const KCRS & Amat = Au->getLocalMatrixDevice();
+    const KCRS & Bmat = Bu->getLocalMatrixDevice();
 
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
-    lno_view_t Crowptr("Crowptr",A.getNodeNumRows()+1);
+    lno_view_t Crowptr("Crowptr",A.getLocalNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
-    lno_nnz_view_t Ccolind = Cmat.graph.entries;
     const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
-    scalar_view_t Cvals = Cmat.values;
+    lno_nnz_view_t Ccolind;
+    scalar_view_t Cvals;
 
     // KokkosKernelsHandle
     typedef KokkosKernels::Experimental::KokkosKernelsHandle<
     typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type,
       typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
     KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(algorithm_name);
-    typename KernelHandle::nnz_lno_t AnumRows = Au->getNodeNumRows();
-    typename KernelHandle::nnz_lno_t BnumRows = Bu->getNodeNumRows();
-    typename KernelHandle::nnz_lno_t BnumCols = Bu->getNodeNumCols();
+    typename KernelHandle::nnz_lno_t AnumRows = Au->getLocalNumRows();
+    typename KernelHandle::nnz_lno_t BnumRows = Bu->getLocalNumRows();
+    typename KernelHandle::nnz_lno_t BnumCols = Bu->getLocalNumCols();
 
     // **********************************
     // Multiply
@@ -821,7 +818,7 @@ struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpen
 #if defined(HAVE_MUELU_TPETRA)
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
     typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>          import_type;
-    typedef typename crs_matrix_type::local_matrix_type    KCRS;
+    typedef typename crs_matrix_type::local_matrix_device_type    KCRS;
     typedef typename KCRS::device_type device_t;
     typedef typename KCRS::StaticCrsGraphType graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -859,12 +856,12 @@ struct LTG_Tests<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpen
     Bview.domainMap    = Bu->getDomainMap();
     Bview.importColMap = Teuchos::null;
 
-    lo_view_t Bcol2Ccol(no_init_view("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
-    const LO colMapSize = static_cast<LO>(Bview.colMap->getNodeNumElements());
+    lo_view_t Bcol2Ccol(no_init_view("Bcol2Ccol"),Bview.colMap->getLocalNumElements()), Icol2Ccol;
+    const LO colMapSize = static_cast<LO>(Bview.colMap->getLocalNumElements());
 
     local_map_type Acolmap_local = Aview.colMap->getLocalMap();
     local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
-    lo_view_t targetMapToOrigRow(no_init_view("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
+    lo_view_t targetMapToOrigRow(no_init_view("targetMapToOrigRow"),Aview.colMap->getLocalNumElements());
     lo_view_t targetMapToImportRow;
 
     // Copy in work

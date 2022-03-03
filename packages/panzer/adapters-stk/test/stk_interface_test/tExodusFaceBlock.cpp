@@ -106,7 +106,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, face_count)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(yelems+1)*(xelems+1)*(zelems+1));
 
    std::vector<stk::mesh::Entity> all_faces;
-   mesh->getAllFaces(panzer_stk::STK_Interface::faceBlockString, all_faces);
+   mesh->getAllFaces("quad_4_"+panzer_stk::STK_Interface::faceBlockString, all_faces);
    TEST_EQUALITY(all_faces.size(),xelems*yelems*(zelems+1)
                                  +xelems*zelems*(yelems+1)
                                  +yelems*zelems*(xelems+1));
@@ -114,7 +114,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, face_count)
    std::vector<stk::mesh::Entity> my_faces;
    if (numprocs==1) {
      // all faces belong to rank0, so getMyFaces() is equivalent to getAllFaces()
-     mesh->getMyFaces(panzer_stk::STK_Interface::faceBlockString, my_faces);
+     mesh->getMyFaces("quad_4_"+panzer_stk::STK_Interface::faceBlockString, my_faces);
      TEST_EQUALITY(my_faces.size(),all_faces.size());
      TEST_EQUALITY(my_faces.size(),xelems*yelems*(zelems+1)
                                   +xelems*zelems*(yelems+1)
@@ -126,7 +126,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, face_count)
      std::size_t my_xelems=xelems/2;
      std::size_t my_yelems=yelems;
      std::size_t my_zelems=zelems;
-     mesh->getMyFaces(panzer_stk::STK_Interface::faceBlockString, my_faces);
+     mesh->getMyFaces("quad_4_"+panzer_stk::STK_Interface::faceBlockString, my_faces);
      TEST_EQUALITY(my_faces.size(),my_xelems*my_yelems*(my_zelems+1)
                                   +my_xelems*my_zelems*(my_yelems+1)
                                   +my_yelems*my_zelems*(my_xelems+1));
@@ -136,7 +136,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, face_count)
      std::size_t my_xelems=xelems/2;
      std::size_t my_yelems=yelems;
      std::size_t my_zelems=zelems;
-     mesh->getMyFaces(panzer_stk::STK_Interface::faceBlockString, my_faces);
+     mesh->getMyFaces("quad_4_"+panzer_stk::STK_Interface::faceBlockString, my_faces);
      TEST_EQUALITY(my_faces.size(),my_xelems*my_yelems*(my_zelems+1)
                                   +my_xelems*my_zelems*(my_yelems+1)
                                   +my_yelems*my_zelems*(my_xelems+1)
@@ -190,13 +190,13 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, is_face_local)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(yelems+1)*(xelems+1)*(zelems+1));
 
    std::vector<stk::mesh::Entity> my_faces;
-   mesh->getMyFaces(panzer_stk::STK_Interface::faceBlockString, my_faces);
+   mesh->getMyFaces("quad_4_"+panzer_stk::STK_Interface::faceBlockString, my_faces);
    for ( auto face : my_faces ) {
       TEST_ASSERT(mesh->isFaceLocal(face));
    }
 
    std::vector<stk::mesh::Entity> all_faces;
-   mesh->getAllFaces(panzer_stk::STK_Interface::faceBlockString, all_faces);
+   mesh->getAllFaces("quad_4_"+panzer_stk::STK_Interface::faceBlockString, all_faces);
    for ( auto face : all_faces ) {
       if (mesh->getBulkData()->parallel_owner_rank(face)==rank) {
         TEST_ASSERT(mesh->isFaceLocal(face));
@@ -233,7 +233,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, add_face_field)
    stk::mesh::Field<double> * face_field_2 = mesh->getFaceField("face_field_2", "eblock-0_0_0");
 
    std::vector<stk::mesh::Entity> faces;
-   mesh->getAllFaces(panzer_stk::STK_Interface::faceBlockString, faces);
+   mesh->getAllFaces("quad_4_"+panzer_stk::STK_Interface::faceBlockString, faces);
    for(auto face : faces) {
      double* data = stk::mesh::field_data(*face_field_1, face);
      // set the face's field value to face's entity ID
@@ -259,7 +259,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, add_face_field)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1)*(5+1));
 
-   mesh->getAllFaces(panzer_stk::STK_Interface::faceBlockString, faces);
+   mesh->getAllFaces("quad_4_"+panzer_stk::STK_Interface::faceBlockString, faces);
    TEST_EQUALITY(faces.size(),2*4*(5+1)+4*5*(2+1)+5*2*(4+1));
 }
 
@@ -287,7 +287,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, set_face_field_data)
    mesh->addFaceField("face_field_4", "eblock-0_0_0");
 
    std::vector<stk::mesh::Entity> faces;
-   mesh->getMyFaces(panzer_stk::STK_Interface::faceBlockString, faces);
+   mesh->getMyFaces("quad_4_"+panzer_stk::STK_Interface::faceBlockString, faces);
 
    Kokkos::DynRankView<double,PHX::Device> faceValues;
    faceValues = Kokkos::createDynRankView(faceValues,"faceValues",faces.size());
@@ -329,7 +329,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, set_face_field_data)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1)*(5+1));
 
-   mesh->getAllFaces(panzer_stk::STK_Interface::faceBlockString, faces);
+   mesh->getAllFaces("quad_4_"+panzer_stk::STK_Interface::faceBlockString, faces);
    TEST_EQUALITY(faces.size(),2*4*(5+1)+4*5*(2+1)+5*2*(4+1));
 }
 

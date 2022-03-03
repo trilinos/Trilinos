@@ -195,7 +195,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
   RCP<const crs_graph_type> graph;
   {
     // We have a good upper bound for the number of entries per row, so use static profile.
-    RCP<crs_graph_type> nonconstGraph (new crs_graph_type (rowMap, 2, Tpetra::StaticProfile));
+    RCP<crs_graph_type> nonconstGraph (new crs_graph_type (rowMap, 2));
 
     TEUCHOS_TEST_FOR_EXCEPTION(globalMinRow >= globalMaxRow, std::logic_error,
       "This test only works if globalMinRow < globalMaxRow.");

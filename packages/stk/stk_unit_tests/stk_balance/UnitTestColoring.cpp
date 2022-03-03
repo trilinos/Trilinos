@@ -195,7 +195,7 @@ TEST_F(Color2DMesh, colorHeterogeneousMeshWithQuadsSurroundingTriangles)
 {
     if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) return;
 
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     Vector2dFieldType & node_coord = get_meta().declare_field<Vector2dFieldType>(stk::topology::NODE_RANK, "coordinates");
     stk::mesh::put_field_on_mesh( node_coord , get_meta().universal_part() , 2, (stk::mesh::FieldTraits<Vector2dFieldType>::data_type*) nullptr);
 
@@ -217,7 +217,8 @@ TEST_F(Color2DMesh, colorHeterogeneousMeshWithQuadsSurroundingTriangles)
     std::vector<double> coordinates = { 0,3, 1,3, 2,3, 3,3, 0,2, 1,2, 2,2, 3,2,
                                         0,1, 1,1, 2,1, 3,1, 0,0, 1,0, 2,0, 3,0 };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
 
     ColorMeshWithColoringFieldsSettings coloringSettings;
     bool meshIsColored = stk::balance::colorStkMesh(coloringSettings, get_bulk());
@@ -228,38 +229,6 @@ TEST_F(Color2DMesh, colorHeterogeneousMeshWithQuadsSurroundingTriangles)
     goldTopologyCounts[stk::topology::TRIANGLE_3_2D] = 2;
 
     check_coloring_by_topology(get_meta(), goldTopologyCounts);
-}
-
-class ColorInputMesh : public stk::unit_test_util::MeshFixture {
-protected:
-
-    void setup_mixed_mesh(const std::string & filename, stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        setup_empty_mesh(auraOption);
-
-        stk::io::StkMeshIoBroker stkIo(get_comm());
-        stkIo.set_bulk_data(get_bulk());
-        stkIo.add_mesh_database(filename, stk::io::READ_MESH);
-        stkIo.create_input_mesh();
-        stkIo.add_all_mesh_fields_as_input_fields();
-
-        declare_color_fields(get_meta());
-        stkIo.populate_bulk_data();
-    }
-};
-
-TEST_F(ColorInputMesh, DISABLED_ColorNaluMixedMeshByTopology)
-{
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) return;
-
-    std::string filename = stk::unit_test_util::get_option("--filename", "hybrid.g");
-    setup_mixed_mesh(filename, stk::mesh::BulkData::NO_AUTO_AURA);
-
-    ColorMeshWithColoringFieldsSettings coloringSettings;
-    bool meshIsColored = stk::balance::colorStkMesh(coloringSettings, get_bulk());
-    EXPECT_TRUE(meshIsColored);
-
-    stk::io::write_mesh_with_fields("coloredHybrid.e", get_bulk(), 1, 0.0);
 }
 
 }

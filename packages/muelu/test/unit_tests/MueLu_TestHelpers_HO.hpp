@@ -129,7 +129,7 @@ namespace MueLuTests {
 
       // Count edges.   For shared edges, lower PID gets the owning nodes
       GO global_num_nodes       = p1_rowmap->getGlobalNumElements();
-      size_t local_num_nodes    = p1_rowmap->getNodeNumElements();
+      size_t local_num_nodes    = p1_rowmap->getLocalNumElements();
       GO global_num_elements    = global_num_nodes -1;
       size_t local_num_elements = local_num_nodes;
       if(p1_rowmap->getGlobalElement(local_num_elements-1) == global_num_nodes-1) local_num_elements--;
@@ -137,7 +137,7 @@ namespace MueLuTests {
       printf("[%d] P1 Problem Size: nodes=%d/%d elements=%d/%d\n",MyPID,(int)local_num_nodes,(int)global_num_nodes,(int)local_num_elements,(int)global_num_elements);
 
       int num_edge_dofs   = (degree-1)*local_num_elements;
-      size_t p1_num_ghost_col_dofs = p1_colmap->getNodeNumElements() - local_num_nodes;
+      size_t p1_num_ghost_col_dofs = p1_colmap->getLocalNumElements() - local_num_nodes;
 
       // Scansum owned edge counts
       int edge_start=0;
@@ -167,7 +167,7 @@ namespace MueLuTests {
       size_t idx=pn_owned_dofs.size();
       if(MyPID!=0) {
         // Left side nodal
-        pn_col_dofs[idx]=p1_colmap->getGlobalElement(p1_rowmap->getNodeNumElements());
+        pn_col_dofs[idx]=p1_colmap->getGlobalElement(p1_rowmap->getLocalNumElements());
         idx++;
         // Left side, edge
         for(size_t i=0; i<(size_t)(degree-1); i++) {
@@ -177,7 +177,7 @@ namespace MueLuTests {
       }
       if(MyPID!=Nproc-1) {
         // Right side nodal
-        pn_col_dofs[idx]=p1_colmap->getGlobalElement(p1_colmap->getNodeNumElements()-1);
+        pn_col_dofs[idx]=p1_colmap->getGlobalElement(p1_colmap->getLocalNumElements()-1);
         idx++;
       }
 
@@ -186,19 +186,19 @@ namespace MueLuTests {
 #if 0
       {
         printf("[%d] TH P1 RowMap = ",MyPID);
-        for(size_t i=0; i<p1_rowmap->getNodeNumElements(); i++)
+        for(size_t i=0; i<p1_rowmap->getLocalNumElements(); i++)
           printf("%d ",(int)p1_rowmap->getGlobalElement(i));
         printf("\n");
         printf("[%d] TH P1 ColMap = ",MyPID);
-        for(size_t i=0; i<p1_colmap->getNodeNumElements(); i++)
+        for(size_t i=0; i<p1_colmap->getLocalNumElements(); i++)
           printf("%d ",(int) p1_colmap->getGlobalElement(i));
         printf("\n");
         printf("[%d] TH Pn RowMap = ",MyPID);
-        for(size_t i=0; i<pn_rowmap->getNodeNumElements(); i++)
+        for(size_t i=0; i<pn_rowmap->getLocalNumElements(); i++)
           printf("%d ",(int) pn_rowmap->getGlobalElement(i));
         printf("\n");
         printf("[%d] TH Pn ColMap = ",MyPID);
-        for(size_t i=0; i<pn_colmap->getNodeNumElements(); i++)
+        for(size_t i=0; i<pn_colmap->getLocalNumElements(); i++)
           printf("%d ",(int) pn_colmap->getGlobalElement(i));
         printf("\n");
         fflush(stdout);

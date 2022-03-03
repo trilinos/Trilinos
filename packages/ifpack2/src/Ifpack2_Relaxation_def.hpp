@@ -327,6 +327,8 @@ Relaxation<MatrixType>::getValidParameters () const
     const int cluster_size = 1;
     pl->set("relaxation: mtgs cluster size", cluster_size);
 
+    pl->set("relaxation: mtgs coloring algorithm", "Default");
+
     const int long_row_threshold = 0;
     pl->set("relaxation: long row threshold", long_row_threshold);
 
@@ -373,6 +375,34 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   int long_row_threshold = 0;
   if(pl.isParameter ("relaxation: long row threshold")) //optional parameter
     long_row_threshold = pl.get<int> ("relaxation: long row threshold");
+  std::string color_algo_name = pl.get<std::string>("relaxation: mtgs coloring algorithm");
+  //convert to lowercase
+  for(char& c : color_algo_name)
+    c = tolower(c);
+  if(color_algo_name == "default")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_DEFAULT;
+  else if(color_algo_name == "serial")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_SERIAL;
+  else if(color_algo_name == "vb")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_VB;
+  else if(color_algo_name == "vbbit")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_VBBIT;
+  else if(color_algo_name == "vbcs")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_VBCS;
+  else if(color_algo_name == "vbd")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_VBD;
+  else if(color_algo_name == "vbdbit")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_VBDBIT;
+  else if(color_algo_name == "eb")
+    this->mtColoringAlgorithm_ = KokkosGraph::COLORING_EB;
+  else
+  {
+    std::ostringstream msg;
+    msg << "Ifpack2::Relaxation: 'relaxation: mtgs coloring algorithm' = '" << color_algo_name << "' is not valid.\n";
+    msg << "Choices (not case sensitive) are: Default, Serial, VB, VBBIT, VBCS, VBD, VBDBIT, EB.";
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument, msg.str());
+  }
 
   Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices = pl.get<Teuchos::ArrayRCP<local_ordinal_type> >("relaxation: local smoothing indices");
 
@@ -542,7 +572,7 @@ size_t Relaxation<MatrixType>::getNodeSmootherComplexity() const {
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
     "input matrix, then call compute(), before calling this method.");
   // Relaxation methods cost roughly one apply + one diagonal inverse per iteration
-  return A_->getNodeNumRows() + A_->getNodeNumEntries();
+  return A_->getLocalNumRows() + A_->getLocalNumEntries();
 }
 
 
@@ -746,11 +776,11 @@ void Relaxation<MatrixType>::initialize ()
         if (PrecType_ == Details::GS2 || PrecType_ == Details::SGS2)
           mtKernelHandle_->create_gs_handle (KokkosSparse::GS_TWOSTAGE);
         else if(this->clusterSize_ == 1) {
-          mtKernelHandle_->create_gs_handle ();
+          mtKernelHandle_->create_gs_handle (KokkosSparse::GS_DEFAULT, this->mtColoringAlgorithm_);
           mtKernelHandle_->get_point_gs_handle()->set_long_row_threshold(longRowThreshold_);
         }
         else
-          mtKernelHandle_->create_gs_handle (KokkosSparse::CLUSTER_DEFAULT, this->clusterSize_);
+          mtKernelHandle_->create_gs_handle (KokkosSparse::CLUSTER_DEFAULT, this->clusterSize_, this->mtColoringAlgorithm_);
       }
       local_matrix_device_type kcsr = crsMat->getLocalMatrixDevice ();
       if (PrecType_ == Details::GS2 || PrecType_ == Details::SGS2) {
@@ -758,7 +788,7 @@ void Relaxation<MatrixType>::initialize ()
         mtKernelHandle_->set_gs_set_num_inner_sweeps (NumInnerSweeps_);
         mtKernelHandle_->set_gs_set_num_outer_sweeps (NumOuterSweeps_);
         mtKernelHandle_->set_gs_set_inner_damp_factor (InnerDampingFactor_);
-        mtKernelHandle_->set_gs_twostage (!InnerSpTrsv_, A_->getNodeNumRows ());
+        mtKernelHandle_->set_gs_twostage (!InnerSpTrsv_, A_->getLocalNumRows ());
         mtKernelHandle_->set_gs_twostage_compact_form (CompactForm_);
       }
 
@@ -766,8 +796,8 @@ void Relaxation<MatrixType>::initialize ()
       gauss_seidel_symbolic<mt_kernel_handle_type,
                             lno_row_view_t,
                             lno_nonzero_view_t> (mtKernelHandle_.getRawPtr (),
-                                                 A_->getNodeNumRows (),
-                                                 A_->getNodeNumCols (),
+                                                 A_->getLocalNumRows (),
+                                                 A_->getLocalNumCols (),
                                                  kcsr.graph.row_map,
                                                  kcsr.graph.entries,
                                                  is_matrix_structurally_symmetric_);
@@ -880,7 +910,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
     IsComputed_ = false;
 
     const LO lclNumMeshRows =
-      blockCrsA->getCrsGraph ().getNodeNumRows ();
+      blockCrsA->getCrsGraph ().getLocalNumRows ();
     const LO blockSize = blockCrsA->getBlockSize ();
 
     if (! savedDiagOffsets_) {
@@ -914,7 +944,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
 
     if (DoL1Method_ && IsParallel_) {
       const scalar_type two = one + one;
-      const size_t maxLength = A_->getNodeMaxNumRowEntries ();
+      const size_t maxLength = A_->getLocalMaxNumRowEntries ();
       nonconst_local_inds_host_view_type indices ("indices",maxLength);
       nonconst_values_host_view_type values_ ("values",maxLength * blockSize * blockSize);
       size_t numEntries = 0;
@@ -1045,7 +1075,7 @@ void Relaxation<MatrixType>::compute ()
     // It's helpful not to have to recompute this magnitude each time.
     const magnitude_type minDiagValMag = STS::magnitude (MinDiagonalValue_);
 
-    const LO numMyRows = static_cast<LO> (A_->getNodeNumRows ());
+    const LO numMyRows = static_cast<LO> (A_->getLocalNumRows ());
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (NumSweeps_ < 0, std::logic_error, methodName
@@ -1245,7 +1275,7 @@ void Relaxation<MatrixType>::compute ()
         const row_matrix_type& A_row = *A_;
         auto diag = Diagonal->getLocalViewHost(Tpetra::Access::ReadWrite);
         const magnitude_type two = STM::one () + STM::one ();
-        const size_t maxLength = A_row.getNodeMaxNumRowEntries ();
+        const size_t maxLength = A_row.getLocalMaxNumRowEntries ();
         nonconst_local_inds_host_view_type indices("indices",maxLength);
         nonconst_values_host_view_type values("values",maxLength);
         size_t numEntries;
@@ -1335,8 +1365,8 @@ void Relaxation<MatrixType>::compute ()
                            lno_row_view_t,
                            lno_nonzero_view_t,
                            scalar_nonzero_view_t> (mtKernelHandle_.getRawPtr (),
-                                                   A_->getNodeNumRows (),
-                                                   A_->getNodeNumCols (),
+                                                   A_->getLocalNumRows (),
+                                                   A_->getLocalNumCols (),
                                                    kcsr.graph.row_map,
                                                    kcsr.graph.entries,
                                                    kcsr.values,
@@ -2113,7 +2143,7 @@ ApplyInverseMTGS_CrsMatrix(
 
     if (direction == Tpetra::Symmetric) {
       KokkosSparse::Experimental::symmetric_gauss_seidel_apply
-      (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+      (mtKernelHandle_.getRawPtr(), A_->getLocalNumRows(), A_->getLocalNumCols(),
           kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
           X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),
           B_in->getLocalViewDevice(Tpetra::Access::ReadOnly),
@@ -2121,7 +2151,7 @@ ApplyInverseMTGS_CrsMatrix(
     }
     else if (direction == Tpetra::Forward) {
       KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply
-      (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+      (mtKernelHandle_.getRawPtr(), A_->getLocalNumRows(), A_->getLocalNumCols(),
           kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
           X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),
           B_in->getLocalViewDevice(Tpetra::Access::ReadOnly),
@@ -2129,7 +2159,7 @@ ApplyInverseMTGS_CrsMatrix(
     }
     else if (direction == Tpetra::Backward) {
       KokkosSparse::Experimental::backward_sweep_gauss_seidel_apply
-      (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
+      (mtKernelHandle_.getRawPtr(), A_->getLocalNumRows(), A_->getLocalNumCols(),
           kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
           X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),
           B_in->getLocalViewDevice(Tpetra::Access::ReadOnly),
@@ -2205,6 +2235,35 @@ std::string Relaxation<MatrixType>::description () const
 
   os  << ", " << "sweeps: " << NumSweeps_ << ", "
       << "damping factor: " << DampingFactor_ << ", ";
+
+  if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
+    os << "\"relaxation: mtgs cluster size\": " << clusterSize_ << ", ";
+    os << "\"relaxation: long row threshold\": " << longRowThreshold_ << ", ";
+    os << "\"relaxation: symmetric matrix structure\": " << (is_matrix_structurally_symmetric_ ? "true" : "false") << ", ";
+    os << "\"relaxation: relaxation: mtgs coloring algorithm\": ";
+    switch(mtColoringAlgorithm_)
+    {
+      case KokkosGraph::COLORING_DEFAULT:
+        os << "DEFAULT"; break;
+      case KokkosGraph::COLORING_SERIAL:
+        os << "SERIAL"; break;
+      case KokkosGraph::COLORING_VB:
+        os << "VB"; break;
+      case KokkosGraph::COLORING_VBBIT:
+        os << "VBBIT"; break;
+      case KokkosGraph::COLORING_VBCS:
+        os << "VBCS"; break;
+      case KokkosGraph::COLORING_VBD:
+        os << "VBD"; break;
+      case KokkosGraph::COLORING_VBDBIT:
+        os << "VBDBIT"; break;
+      case KokkosGraph::COLORING_EB:
+        os << "EB"; break;
+      default:
+        os << "*Invalid*";
+    }
+    os << ", ";
+  }
 
   if (PrecType_ == Ifpack2::Details::GS2 ||
       PrecType_ == Ifpack2::Details::SGS2) {
@@ -2303,6 +2362,34 @@ describe (Teuchos::FancyOStream &out,
           << "\"relaxation: backward mode\": " << DoBackwardGS_ << endl
           << "\"relaxation: use l1\": " << DoL1Method_ << endl
           << "\"relaxation: l1 eta\": " << L1Eta_ << endl;
+      if (PrecType_ == Ifpack2::Details::MTGS || PrecType_ == Ifpack2::Details::MTSGS) {
+        out << "\"relaxation: mtgs cluster size\": " << clusterSize_ << endl;
+        out << "\"relaxation: long row threshold\": " << longRowThreshold_ << endl;
+        out << "\"relaxation: symmetric matrix structure\": " << (is_matrix_structurally_symmetric_ ? "true" : "false") << endl;
+        out << "\"relaxation: relaxation: mtgs coloring algorithm\": ";
+        switch(mtColoringAlgorithm_)
+        {
+          case KokkosGraph::COLORING_DEFAULT:
+            out << "DEFAULT"; break;
+          case KokkosGraph::COLORING_SERIAL:
+            out << "SERIAL"; break;
+          case KokkosGraph::COLORING_VB:
+            out << "VB"; break;
+          case KokkosGraph::COLORING_VBBIT:
+            out << "VBBIT"; break;
+          case KokkosGraph::COLORING_VBCS:
+            out << "VBCS"; break;
+          case KokkosGraph::COLORING_VBD:
+            out << "VBD"; break;
+          case KokkosGraph::COLORING_VBDBIT:
+            out << "VBDBIT"; break;
+          case KokkosGraph::COLORING_EB:
+            out << "EB"; break;
+          default:
+            out << "*Invalid*";
+        }
+        out << endl;
+      }
       if (PrecType_ == Ifpack2::Details::GS2 || PrecType_ == Ifpack2::Details::SGS2) {
         out << "\"relaxation: inner damping factor\": " << InnerDampingFactor_ << endl;
         out << "\"relaxation: outer sweeps\" : " << NumOuterSweeps_ << endl;

@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     // Construct a Map that puts approximately the same number of
     // equations on each processor.
     Teuchos::RCP<const Tpetra_Map> map = Teuchos::rcp (new Tpetra_Map (numGblIndices, 0, comm));
-    auto numMyElements = map->getNodeNumElements ();
+    auto numMyElements = map->getLocalNumElements ();
 
     // Create a Tpetra sparse matrix whose rows have distribution
     // given by the Map.  We expect at most three entries per row.

@@ -36,7 +36,7 @@
 #include "exodusII.h"
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
@@ -75,12 +75,12 @@ int main(int argc, char **argv)
     int            num_node_sets = 0;
     int            num_side_sets = 0;
     ex_init_params par           = {.num_dim       = num_dim,
-                          .num_nodes     = num_nodes,
-                          .num_elem      = num_elem,
-                          .num_elem_blk  = num_elem_blk,
-                          .num_node_sets = num_node_sets,
-                          .num_side_sets = num_side_sets,
-                          .num_assembly  = num_assembly};
+                                    .num_nodes     = num_nodes,
+                                    .num_elem      = num_elem,
+                                    .num_elem_blk  = num_elem_blk,
+                                    .num_node_sets = num_node_sets,
+                                    .num_side_sets = num_side_sets,
+                                    .num_assembly  = num_assembly};
 
     char *title = "This is a test";
     ex_copy_string(par.title, title, MAX_LINE_LENGTH + 1);
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
   {
     double scale     = 1.5;
     double offset[]  = {1.1, 2.2, 3.3};
-    char * dimension = "length";
+    char  *dimension = "length";
     int    units[]   = {1, 0, 0, -1};
 
     EXCHECK(ex_put_double_attribute(exoid, EX_ASSEMBLY, 100, "Scale", 1, &scale));

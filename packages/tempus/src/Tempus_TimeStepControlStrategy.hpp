@@ -45,6 +45,7 @@ public:
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Deprecated get the time step size.
+  TEMPUS_DEPRECATED
   virtual void getNextTimeStep(
     const TimeStepControl<Scalar> tsc,
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
@@ -52,8 +53,8 @@ public:
   {
     this->setNextTimeStep(tsc, sh, integratorStatus);
   }
-#endif
 
+#endif
   /// Set the time step size.
   virtual void setNextTimeStep(
     const TimeStepControl<Scalar> & /* tsc */,

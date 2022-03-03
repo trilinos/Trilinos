@@ -53,7 +53,7 @@ namespace Tacho {
   ///
   
   void GraphTools_Metis::reorder(const ordinal_type verbose) {
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
     double t_metis = 0; 
     
     int ierr = 0;

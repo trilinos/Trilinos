@@ -138,7 +138,7 @@ namespace MueLu {
     }
 
     //! Returns the maximum number of entries across all rows/columns on this node
-    KOKKOS_INLINE_FUNCTION size_type getNodeMaxNumRowEntries () const {
+    KOKKOS_INLINE_FUNCTION size_type getLocalMaxNumRowEntries () const {
       return maxNumRowEntries_;
     }
 
@@ -203,7 +203,7 @@ namespace MueLu {
     size_type maxNumRowEntries_;
 
     //! Name of this graph.
-    const std::string& objectLabel_;
+    const std::string objectLabel_;
   };
 
 }

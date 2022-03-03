@@ -155,7 +155,7 @@ struct CrsArrayReader
       return;
     }
     //Allocate host values and device values
-    LocalOrdinal nrows = A->getNodeNumRows();
+    LocalOrdinal nrows = A->getLocalNumRows();
     ScalarArrayHost valsHost("Values (host)", rowptrs[nrows]);
     vals = ScalarArray("Values", rowptrs[nrows]);
     GetValuesFunctor funct(A, rowptrs, valsHost);
@@ -179,7 +179,7 @@ struct CrsArrayReader
     //Need to allocate new array, then copy in one row at a time
     //note: actual rowptrs in the CrsMatrix implementation is size_t, but
     //FastILU needs them as LocalOrdinal so this function provides an OrdinalArray
-    LocalOrdinal nrows = A->getNodeNumRows();
+    LocalOrdinal nrows = A->getLocalNumRows();
     rowptrsHost = OrdinalArrayHost("RowPtrs (host)", nrows + 1);
     rowptrs = OrdinalArray("RowPtrs", nrows + 1);
     CountEntriesFunctor countFunct(A, rowptrsHost);
@@ -219,7 +219,7 @@ struct CrsArrayReader
     //rowptrs really have data type size_t, but need them as LocalOrdinal, so must convert manually
     auto rowmap = A->getLocalMatrix().graph.row_map;
     //allocate rowptrs, it's a deep copy (colinds is a shallow copy so not necessary for it)
-    rowptrs = OrdinalArray("RowPtrs", A->getNodeNumRows() + 1);
+    rowptrs = OrdinalArray("RowPtrs", A->getLocalNumRows() + 1);
     for(size_t i = 0; i < rowmap.extent(0); i++)
     {
       rowptrs[i] = rowmap[i];

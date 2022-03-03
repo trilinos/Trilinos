@@ -675,7 +675,7 @@ buildGhostedGraph() const
 
    // graph information about the mesh
    // Count number of entries per graph row; needed for graph constructor
-   std::vector<size_t> nEntriesPerRow(rMap->getNodeNumElements(), 0);
+   std::vector<size_t> nEntriesPerRow(rMap->getLocalNumElements(), 0);
 
    std::vector<std::string>::const_iterator blockItr;
    for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
@@ -712,8 +712,7 @@ buildGhostedGraph() const
 
    Teuchos::ArrayView<const size_t> nEntriesPerRowView(nEntriesPerRow);
    Teuchos::RCP<CrsGraphType> graph = Teuchos::rcp(new CrsGraphType(rMap,cMap,
-                                                          nEntriesPerRowView,
-                                                          Tpetra::StaticProfile));
+                                                          nEntriesPerRowView));
 
    // Now insert entries into the graph
    for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {

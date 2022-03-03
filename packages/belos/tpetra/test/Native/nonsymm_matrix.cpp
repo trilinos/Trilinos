@@ -94,10 +94,10 @@ createNonsymmTridiagMatrix (const Teuchos::RCP<const Tpetra::Map<> >& rowMap,
   //using mag_type = typename Tpetra::CrsMatrix<SC>::mag_type;
 
   const LO lclNumRows = rowMap.is_null () ? LO (0) :
-    LO (rowMap->getNodeNumElements ());
+    LO (rowMap->getLocalNumElements ());
   const GO gblMinGblInd = rowMap->getMinAllGlobalIndex ();
   const GO gblMaxGblInd = rowMap->getMaxAllGlobalIndex ();
-  auto A = rcp (new crs_matrix_type (rowMap, 3, Tpetra::StaticProfile));
+  auto A = rcp (new crs_matrix_type (rowMap, 3));
 
   const SC ONE = STS::one ();
   const SC TWO = ONE + ONE;
@@ -241,7 +241,7 @@ testSolver (Teuchos::FancyOStream& out,
     params->set ("CholeskyQR",  commandLineOptions.useCholQR);
     params->set ("CholeskyQR2", commandLineOptions.useCholQR2);
   }
-  if (solverName == "TPETRA GMRES S-STEP" || solverName == "TPETRA GMRES SINGLE REDUCE") {
+  if (solverName == "TPETRA GMRES S-STEP" || solverName == "TPETRA GMRES SINGLE REDUCE" || solverName == "TPETRA GMRES PIPELINE") {
     params->set ("Compute Ritz Values", commandLineOptions.computeRitzValues);
   }
   try {

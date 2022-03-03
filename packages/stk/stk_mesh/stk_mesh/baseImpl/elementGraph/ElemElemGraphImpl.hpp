@@ -297,7 +297,7 @@ struct GraphEdge
     {}
 
     GraphEdge(const GraphEdge&& rhs)
-    : vertex1(std::move(rhs.vertex1)), vertex2(std::move(rhs.vertex2))
+    : vertex1(rhs.vertex1), vertex2(rhs.vertex2)
     {}
 
     GraphEdge& operator=(const GraphEdge&) = default;
@@ -350,7 +350,45 @@ struct GraphEdge
     impl::LocalId vertex2;
 };
 
-typedef GraphEdge CoincidentElementConnection;
+using CoincidentElementConnection = GraphEdge;
+
+struct GraphEdgeLessByElem1 {
+    bool operator()(const GraphEdge& a, const GraphEdge& b) const
+    {
+        impl::LocalId a_elem1 = a.elem1();
+        impl::LocalId b_elem1 = b.elem1();
+
+        if (a_elem1 != b_elem1)
+        {
+            return a_elem1 < b_elem1;
+        }
+
+        impl::LocalId a_elem2 = std::abs(a.elem2());
+        impl::LocalId b_elem2 = std::abs(b.elem2());
+        if (a_elem2 != b_elem2)
+        {
+            return a_elem2 < b_elem2;
+        }
+
+        int a_side2 = a.side2();
+        int b_side2 = b.side2();
+        if (a_side2 != b_side2)
+        {
+            return a_side2 < b_side2;
+        }
+        else
+        {
+            return a.side1() < b.side1();
+        }
+    }
+};
+
+inline
+bool operator<(const GraphEdge& a, const GraphEdge& b)
+{
+  GraphEdgeLessByElem1 lessByElem1;
+  return lessByElem1(a, b);
+}
 
 struct GraphEdgeLessByElem2 {
     bool operator()(const GraphEdge& a, const GraphEdge& b) const
@@ -399,16 +437,39 @@ typedef std::vector<SerialElementData> SerialElementDataVector;
 typedef std::vector<GraphEdge> GraphEdgeVector;
 
 NAMED_PAIR( EntitySidePair , stk::mesh::Entity , entity , unsigned , side_id )
-NAMED_PAIR( ProcFaceIdPair , int , proc , stk::mesh::EntityId , side_id )
-NAMED_PAIR( ProcVecFaceIdPair , std::vector<int> , proc_vec , stk::mesh::EntityId , side_id )
 
-typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
+struct ElemSideProc{
+  ElemSideProc(stk::mesh::Entity elem, unsigned side, int procArg)
+  : elemSidePair(elem, side), proc(procArg)
+  {}
+
+  EntitySidePair elemSidePair;
+  int proc;
+
+  bool operator<(const EntitySidePair& rhs) const
+  {
+    return elemSidePair < rhs;
+  }
+
+  bool operator<(const ElemSideProc& rhs) const
+  {
+    return elemSidePair < rhs.elemSidePair;
+  }
+};
+
+inline
+bool operator<(const EntitySidePair& lhs, const ElemSideProc& rhs)
+{
+  return lhs < rhs.elemSidePair;
+}
+
+using ElemSideProcVector = std::vector<ElemSideProc>;
 
 unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData);
 
 bool fill_topologies(stk::mesh::ElemElemGraph& eeGraph, const stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
 
-ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
+ElemSideProcVector build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
 
 std::vector<GraphEdgeProc> get_elements_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);
@@ -452,7 +513,7 @@ stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData,
 bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity side);
 
 bool is_local_element(stk::mesh::impl::LocalId elemId);
-void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index, stk::mesh::EntityVector& side_nodes);
+void fill_element_side_nodes_from_topology(stk::topology elemTopo, const stk::mesh::Entity* elemNodes, unsigned side_index, stk::mesh::EntityVector& side_nodes);
 
 inline bool is_shell_or_beam2(stk::topology top)
 {

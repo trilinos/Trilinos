@@ -298,7 +298,7 @@ TEST_F(UpdateElemElemGraphTest, NewEntityNotification)
     if(bulk.parallel_size() == 2)
     {
         std::shared_ptr<ElemElemGraphUpdaterMock> observer = std::make_shared<ElemElemGraphUpdaterMock>();
-        bulk.register_observer(observer);
+        bulk.register_observer(observer, stk::mesh::ModificationObserverPriority::APPLICATION);
 
         MeshRefinementMock meshRefinement(bulk, activePart);
         meshRefinement.create_element_on_proc1();
@@ -315,9 +315,9 @@ TEST_F(UpdateElemElemGraphTest, MultipleObservers)
     if(bulk.parallel_size() == 2)
     {
         std::shared_ptr<ElemElemGraphUpdaterMock> observer1 = std::make_shared<ElemElemGraphUpdaterMock>();
-        bulk.register_observer(observer1);
+        bulk.register_observer(observer1, stk::mesh::ModificationObserverPriority::APPLICATION);
         std::shared_ptr<ElemElemGraphUpdaterMock> observer2 = std::make_shared<ElemElemGraphUpdaterMock>();
-        bulk.register_observer(observer2);
+        bulk.register_observer(observer2, stk::mesh::ModificationObserverPriority::APPLICATION);
 
         MeshRefinementMock meshRefinement(bulk, activePart);
         meshRefinement.create_element_on_proc1();

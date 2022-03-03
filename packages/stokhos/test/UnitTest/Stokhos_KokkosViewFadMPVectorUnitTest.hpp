@@ -43,6 +43,7 @@
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
+#include "Kokkos_View_Fad_Fwd.hpp"
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_Ensemble_Sizes.hpp"
 #include "Sacado.hpp"

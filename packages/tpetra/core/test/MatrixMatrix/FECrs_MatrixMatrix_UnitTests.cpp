@@ -166,7 +166,7 @@ generate_crs_graph (const MeshInfo<4,LO,GO,NT>& mesh)
 {
   using CG = Tpetra::CrsGraph<LO,GO,NT>;
 
-  Teuchos::RCP<CG> g(new CG(mesh.uniqueMap,9,Tpetra::StaticProfile));
+  Teuchos::RCP<CG> g(new CG(mesh.uniqueMap,9));
   for (const auto& elem_dofs : mesh.element2node) {
     for (const GO gid_i : elem_dofs) {
       for (const GO gid_j : elem_dofs) {
@@ -257,10 +257,10 @@ bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
   // We do not care about the order in which entries appear, only the "mathematical" object.
   const auto& gA = *A.getGraph();
   const auto& gB = *B.getGraph();
-  const LO num_my_rows = gA.getNodeNumRows();
-  if (num_my_rows!=static_cast<LO>(gB.getNodeNumRows())) {
+  const LO num_my_rows = gA.getLocalNumRows();
+  if (num_my_rows!=static_cast<LO>(gB.getLocalNumRows())) {
     out << "Compare: number of local rows differ on some MPI rank: "
-        << num_my_rows << " vs " << gB.getNodeNumRows() << ".\n";
+        << num_my_rows << " vs " << gB.getLocalNumRows() << ".\n";
     return false;
   }
 
@@ -366,8 +366,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL (Tpetra_MatMat, FECrsMatrix, SC, LO, GO, NT)
         auto C_row_map = transA ? feA.getDomainMap() : feA.getRangeMap();
 
         // For the test, use a ridicolously large upper bound for the nnz per row
-        MAT feC(C_row_map,feA.getGraph()->getGlobalNumEntries(),Tpetra::StaticProfile);
-        MAT   C(C_row_map,  A.getGraph()->getGlobalNumEntries(),Tpetra::StaticProfile);
+        MAT feC(C_row_map,feA.getGraph()->getGlobalNumEntries());
+        MAT   C(C_row_map,  A.getGraph()->getGlobalNumEntries());
 
         Tpetra::MatrixMatrix::Multiply(feA, transA, feB, transB, feC, true, "", params);
         Tpetra::MatrixMatrix::Multiply(  A, transA,   B, transB,   C, true, "", params);

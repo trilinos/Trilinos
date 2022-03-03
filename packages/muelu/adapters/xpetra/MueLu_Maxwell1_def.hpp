@@ -101,9 +101,47 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::ParameterList& list) {
-    
+
+    if (list.isType<std::string>("parameterlist: syntax") && list.get<std::string>("parameterlist: syntax") == "ml") {
+      list.remove("parameterlist: syntax");
+      Teuchos::ParameterList newList;
+
+      // interpret ML list
+      newList.sublist("maxwell1: 22list") = *Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(list,"Maxwell"));
+
+      newList.sublist("maxwell1: 22list").set("tentative: constant column sums", false);
+      newList.sublist("maxwell1: 22list").set("tentative: calculate qr", false);
+
+      newList.sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
+      newList.sublist("maxwell1: 11list").set("aggregation: type", "uncoupled");
+
+      newList.sublist("maxwell1: 22list").set("multigrid algorithm", "unsmoothed");
+      newList.sublist("maxwell1: 22list").set("aggregation: type", "uncoupled");
+
+      if (newList.sublist("maxwell1: 22list").isType<std::string>("verbosity"))
+        newList.set("verbosity", newList.sublist("maxwell1: 22list").get<std::string>("verbosity"));
+
+      // Move coarse solver and smoother stuff to 11list
+      std::vector<std::string> convert = {"coarse:", "smoother:", "smoother: pre", "smoother: post"};
+      for (auto it = convert.begin(); it != convert.end(); ++it) {
+        if (newList.sublist("maxwell1: 22list").isType<std::string>(*it + " type")) {
+          newList.sublist("maxwell1: 11list").set(*it+" type", newList.sublist("maxwell1: 22list").get<std::string>(*it+" type"));
+          newList.sublist("maxwell1: 22list").remove(*it+" type");
+        }
+        if (newList.sublist("maxwell1: 22list").isSublist(*it+" params")) {
+          newList.sublist("maxwell1: 11list").set(*it+" params", newList.sublist("maxwell1: 22list").sublist(*it+" params"));
+          newList.sublist("maxwell1: 22list").remove(*it+" params");
+        }
+      }
+
+      newList.sublist("maxwell1: 22list").set("smoother: type", "none");
+      newList.sublist("maxwell1: 22list").set("coarse: type", "none");
+
+      list = newList;
+    }
     std::string  mode_string   = list.get("maxwell1: mode",                  MasterList::getDefault<std::string>("maxwell1: mode"));
     applyBCsTo22_              = list.get("maxwell1: apply BCs to 22",       true);
+    dump_matrices_             = list.get("maxwell1: dump matrices",         MasterList::getDefault<bool>("maxwell1: dump matrices"));
 
     // Default smoother.  We'll copy this around.
     Teuchos::ParameterList defaultSmootherList;
@@ -140,7 +178,7 @@ namespace MueLu {
     precList22_.set("verbosity",precList22_.get("verbosity",verbosity));
     
 
-    // For the (1,1) hierarchy we'll use Hiptmair (STANDARD) or Chevyshev (EDGE_ONLY / REFMAXWELL) if
+    // For the (1,1) hierarchy we'll use Hiptmair (STANDARD) or Chebyshev (EDGE_ONLY / REFMAXWELL) if
     // the user doesn't specify things
     if(list.isSublist("maxwell1: 11list"))
       precList11_     =  list.sublist("maxwell1: 11list");   
@@ -243,16 +281,8 @@ namespace MueLu {
       GetOStream(Warnings0) << "All edges are detected as boundary edges!" << std::endl;
       mode_ = MODE_EDGE_ONLY;
 
-      // Switch smoother off of Hiptmair
-      if(precList11_.get<std::string>("smoother: type") == "HIPTMAIR") {        
-        precList11_.set("smoother: type",precList11_.get("hiptmair: smoother type 1","CHEBYSHEV"));
-        precList11_.sublist("smoother: sublist") = precList11_.sublist("hiptmair: smoother list 1");
-      }
-
       // Generate single level hierarchy for the edge
-      throw std::runtime_error("Maxwell1: Not yet supported");
-
-      return;
+      precList22_.set("max levels", 1);
     }
       
     if (allNodesBoundary_) {
@@ -260,16 +290,9 @@ namespace MueLu {
       // Do not attempt to construct sub-hierarchies, but just set up a single level preconditioner.
       GetOStream(Warnings0) << "All nodes are detected as boundary edges!" << std::endl;
       mode_ = MODE_EDGE_ONLY;
-      // Switch smoother off of Hiptmair
-      if(precList11_.get<std::string>("smoother: type") == "HIPTMAIR") {        
-        precList11_.set("smoother: type",precList11_.get("hiptmair: smoother type 1","CHEBYSHEV"));
-        precList11_.sublist("smoother: sublist") = precList11_.sublist("hiptmair: smoother list 1");
-      }
 
       // Generate single level hierarchy for the edge
-      throw std::runtime_error("Maxwell1: Not yet supported");
-
-      return;
+      precList22_.set("max levels", 1);
     }
                                               
 
@@ -299,6 +322,19 @@ namespace MueLu {
     // Generate Kn and apply BCs (if needed)
     if(Kn_Matrix_.is_null()) {
       Kn_Matrix_ = generate_kn();
+    }
+
+    if (parameterList_.get<bool>("rap: fix zero diagonals", true)) {
+      magnitudeType threshold;
+      if (parameterList_.isType<magnitudeType>("rap: fix zero diagonals threshold"))
+        threshold = parameterList_.get<magnitudeType>("rap: fix zero diagonals threshold",
+                                                      Teuchos::ScalarTraits<double>::eps());
+      else
+        threshold = Teuchos::as<magnitudeType>(parameterList_.get<double>("rap: fix zero diagonals threshold",
+                                                                          Teuchos::ScalarTraits<double>::eps()));
+      Scalar replacement = Teuchos::as<Scalar>(parameterList_.get<double>("rap: fix zero diagonals replacement",
+                                                                          MasterList::getDefault<double>("rap: fix zero diagonals replacement")));
+      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Kn_Matrix_, true, GetOStream(Warnings1), threshold, replacement);
     }
 
 
@@ -378,8 +414,6 @@ namespace MueLu {
     RCP<RAPFactory> rapFact = rcp(new RAPFactory());
     ParameterList rapList = *(rapFact->GetValidParameterList());
     rapList.set("transpose: use implicit", true);
-    rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
-    rapList.set("rap: fix zero diagonals threshold", parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps()));
     rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
     rapFact->SetParameterList(rapList);
     coarseLevel.Request("A", rapFact.get());

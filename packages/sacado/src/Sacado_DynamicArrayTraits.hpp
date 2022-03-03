@@ -125,8 +125,8 @@ namespace Sacado {
           max_block_alloc_size,
           min_superblock_size);
     Impl::SetMemoryPoolPtr f;
-    CUDA_SAFE_CALL( cudaMalloc( &f.pool_device, sizeof(pool_t) ) );
-    CUDA_SAFE_CALL( cudaMemcpy( f.pool_device, pool,
+    KOKKOS_IMPL_CUDA_SAFE_CALL( cudaMalloc( &f.pool_device, sizeof(pool_t) ) );
+    KOKKOS_IMPL_CUDA_SAFE_CALL( cudaMemcpy( f.pool_device, pool,
                                 sizeof(pool_t),
                                 cudaMemcpyHostToDevice ) );
     Kokkos::parallel_for(Kokkos::RangePolicy<Kokkos::Cuda>(0,1),f);
@@ -136,7 +136,7 @@ namespace Sacado {
 
   inline void destroyGlobalMemoryPool(const Kokkos::Cuda& space)
   {
-    CUDA_SAFE_CALL( cudaFree( (void*) Impl::global_sacado_cuda_memory_pool_device ) );
+    KOKKOS_IMPL_CUDA_SAFE_CALL( cudaFree( (void*) Impl::global_sacado_cuda_memory_pool_device ) );
     delete Impl::global_sacado_cuda_memory_pool_host;
   }
 
@@ -193,7 +193,7 @@ namespace Sacado {
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_ENABLE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
       T* m = 0;
       if (sz > 0)
-        CUDA_SAFE_CALL( cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal ) );
+        KOKKOS_IMPL_CUDA_SAFE_CALL( cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal ) );
 #elif defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
       // This code assumes all threads enter ds_alloc, even those with sz == 0
       T* m = 0;
@@ -235,7 +235,7 @@ namespace Sacado {
     static void ds_free(T* m, int sz) {
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_ENABLE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
       if (sz > 0)
-        CUDA_SAFE_CALL( cudaFree(m) );
+        KOKKOS_IMPL_CUDA_SAFE_CALL( cudaFree(m) );
 #elif defined(HAVE_SACADO_KOKKOSCORE) && defined(SACADO_KOKKOS_USE_MEMORY_POOL) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && defined(__CUDA_ARCH__)
       const int total_sz = warpReduce(sz);
       const int lane = warpLane();
@@ -683,7 +683,7 @@ namespace Sacado {
     SACADO_INLINE_FUNCTION
     static T* get_and_fill(int sz) {
       T* m = Impl::ds_alloc<T>(sz);
-#ifdef __CUDACC__
+#if defined(__CUDACC__ ) || defined(__HIPCC__ )
       for (int i=0; i<sz; ++i)
         m[i] = 0.0;
 #else
@@ -744,7 +744,7 @@ namespace Sacado {
     SACADO_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
       if (sz > 0 && dest != NULL)
-#ifdef __CUDACC__
+#if defined(__CUDACC__ ) || defined(__HIPCC__ )
         for (int i=0; i<sz; ++i)
           dest[i] = T(0.);
 #else

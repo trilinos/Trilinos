@@ -378,7 +378,7 @@ void
   sc.consecutive_chunk_size = block_size;
   sc.consecutive_all_color_chunk_size = sc.consecutive_chunk_size * num_multi_colors;
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   for (nnz_lno_t i = 0; i < num_used_colors; ){
     nnz_lno_t color_begin = color_xadj(i);
     nnz_lno_t lastcolor = i + 1;
@@ -470,7 +470,7 @@ void
   //first we need to transpose the C graph.
   //allocate memory for that.
   row_lno_temp_work_view_t transpose_col_xadj;// ("transpose_col_xadj", b_col_cnt + 1);
-  nnz_lno_temp_work_view_t transpose_col_adj;// (Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), c_nnz_size);
+  nnz_lno_temp_work_view_t transpose_col_adj;// (Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_row_view"), c_nnz_size);
 
 
   //KokkosKernels::Impl::ExecSpaceType my_exec_space = this->handle->get_handle_exec_space();
@@ -478,11 +478,11 @@ void
   int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
   nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, concurrency,a_row_cnt);
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   if (this->handle->get_spgemm_handle()->coloring_input_file == ""){
 
       transpose_col_xadj = row_lno_temp_work_view_t("transpose_col_xadj", b_col_cnt + 1);
-      transpose_col_adj = nnz_lno_temp_work_view_t (Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), c_nnz_size);
+      transpose_col_adj = nnz_lno_temp_work_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_row_view"), c_nnz_size);
 
     KokkosKernels::Impl::transpose_graph<
   c_row_view_t, c_nnz_view_t,
@@ -548,7 +548,7 @@ void
     num_colors_in_one_step = 1;
 
 
-    vertex_colors_to_store = nnz_lno_persistent_work_view_t(Kokkos::ViewAllocateWithoutInitializing("persistent_color_view"), a_row_cnt);
+    vertex_colors_to_store = nnz_lno_persistent_work_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "persistent_color_view"), a_row_cnt);
 
 
     if (KOKKOSKERNELS_VERBOSE){
@@ -569,8 +569,8 @@ void
       //if the algorithm is spgemm, then we will have multiple colors per iteration.
       if (spgemm_algorithm_ == SPGEMM_KK_MULTICOLOR){
 
-        //tmp_color_view = nnz_lno_temp_work_view_t( Kokkos::ViewAllocateWithoutInitializing("tmp_color_view"), a_row_cnt);
-        tmp_color_view = typename HandleType::GraphColoringHandleType::color_view_t ( Kokkos::ViewAllocateWithoutInitializing("tmp_color_view"), a_row_cnt);
+        //tmp_color_view = nnz_lno_temp_work_view_t( Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_color_view"), a_row_cnt);
+        tmp_color_view = typename HandleType::GraphColoringHandleType::color_view_t ( Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_color_view"), a_row_cnt);
 
         //upper bound is the output size for dense acumulators.
         num_colors_in_one_step = c_nnz_size / this->b_col_cnt;
@@ -622,10 +622,10 @@ void
 
       //allocate color xadj and adj arrays.
       color_xadj = nnz_lno_persistent_work_view_t(
-          Kokkos::ViewAllocateWithoutInitializing("Reverse xadj"),
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "Reverse xadj"),
           num_multi_color_steps + 1);
       color_adj = nnz_lno_persistent_work_view_t(
-          Kokkos::ViewAllocateWithoutInitializing("Reverse xadj"),
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "Reverse xadj"),
           a_row_cnt);
 
       //create reverse map from colors.

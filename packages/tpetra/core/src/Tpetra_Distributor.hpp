@@ -102,15 +102,22 @@ namespace Tpetra {
   ///
   /// Instances of Distributor take the following parameters that
   /// control communication and debug output:
-  /// - "Barrier between receives and sends" (<tt>bool</tt>):
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  /// - "Barrier between receives and sends" (<tt>bool</tt>): (DEPRECATED)
   ///   Whether to execute a barrier between receives and sends in
-  ///   do[Reverse]Posts().  A barrier is required for correctness
-  ///   when the "Send type" parameter is "Rsend".  Otherwise, a
-  ///   barrier is correct and may be useful for debugging, but not
+  ///   do[Reverse]Posts().  
+  ///   A barrier is required for correctness
+  ///   when the "Send type" parameter is "Rsend".  Otherwise, 
+  ///   A barrier is correct and may be useful for debugging, but not
   ///   recommended, since it introduces useless synchronization.
+#endif
   /// - "Send type" (<tt>std::string</tt>): When using MPI, the
   ///   variant of MPI_Send to use in do[Reverse]Posts().  Valid
-  ///   values include "Isend", "Rsend", "Send", and "Ssend".  The
+  ///   values include "Isend", 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  ///   "Rsend" (DEPRECATED), "Ssend" (DEPRECATED), 
+#endif
+  ///   and "Send".  The
   ///   default is "Send".  (The receive type is always MPI_Irecv, a
   ///   nonblocking receive.  Since we post receives first before
   ///   sends, this prevents deadlock, even if MPI_Send blocks and
@@ -390,6 +397,7 @@ namespace Tpetra {
     //! @name Methods for executing a communication plan
     //@{
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Execute the (forward) communication plan.
     ///
     /// Call this version of the method when you have the same number
@@ -411,6 +419,7 @@ namespace Tpetra {
     ///   accomodate the data exported (sent) to us.  On exit,
     ///   contains the values exported to us.
     template <class Packet>
+    TPETRA_DEPRECATED
     void
     doPostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
                      size_t numPackets,
@@ -438,6 +447,7 @@ namespace Tpetra {
     /// \param numImportPacketsPerLID [in] The number of packets for
     ///   each import LID (i.e., each LID to be received).
     template <class Packet>
+    TPETRA_DEPRECATED
     void
     doPostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
                      const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
@@ -469,6 +479,7 @@ namespace Tpetra {
     ///   completion of \c doWaits(), this buffer contains the values
     ///   exported to us.
     template <class Packet>
+    TPETRA_DEPRECATED
     void
     doPosts (const Teuchos::ArrayRCP<const Packet> &exports,
              size_t numPackets,
@@ -493,11 +504,13 @@ namespace Tpetra {
     /// \param numImportPacketsPerLID [in] Same as in the
     ///   four-argument version of doPostsAndWaits().
     template <class Packet>
+    TPETRA_DEPRECATED
     void
     doPosts (const Teuchos::ArrayRCP<const Packet> &exports,
              const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
              const Teuchos::ArrayRCP<Packet> &imports,
              const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+#endif
 
     /// Wait on any outstanding nonblocking message requests to complete.
     ///
@@ -507,11 +520,13 @@ namespace Tpetra {
     /// instead.
     void doWaits ();
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Execute the reverse communication plan.
     ///
     /// This method takes the same arguments as the three-argument
     /// version of doPostsAndWaits().
     template <class Packet>
+    TPETRA_DEPRECATED
     void
     doReversePostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
                             size_t numPackets,
@@ -522,6 +537,7 @@ namespace Tpetra {
     /// This method takes the same arguments as the four-argument
     /// version of doPostsAndWaits().
     template <class Packet>
+    TPETRA_DEPRECATED
     void
     doReversePostsAndWaits (const Teuchos::ArrayView<const Packet> &exports,
                             const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
@@ -533,6 +549,7 @@ namespace Tpetra {
     /// This method takes the same arguments as the three-argument
     /// version of doPosts().
     template <class Packet>
+    TPETRA_DEPRECATED
     void
     doReversePosts (const Teuchos::ArrayRCP<const Packet> &exports,
                     size_t numPackets,
@@ -543,11 +560,13 @@ namespace Tpetra {
     /// This method takes the same arguments as the four-argument
     /// version of doPosts().
     template <class Packet>
+    TPETRA_DEPRECATED
     void
     doReversePosts (const Teuchos::ArrayRCP<const Packet> &exports,
                     const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                     const Teuchos::ArrayRCP<Packet> &imports,
                     const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+#endif
 
     /// Wait on any outstanding nonblocking message requests to complete.
     ///
@@ -709,14 +728,6 @@ namespace Tpetra {
                     const ImpView &imports,
                     const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
-    /// \brief Information on the last call to do/doReverse
-    ///
-    /// Returns the amount of data sent & recv'd on this processor in bytes
-    void getLastDoStatistics(size_t & bytes_sent,  size_t & bytes_recvd) const{
-      bytes_sent  = lastRoundBytesSend_;
-      bytes_recvd = lastRoundBytesRecv_;
-    }
-
     //@}
     //! @name Implementation of Teuchos::Describable
     //@{
@@ -783,12 +794,6 @@ namespace Tpetra {
     /// later reuse.  This is why it is declared "mutable".
     mutable Teuchos::RCP<Distributor> reverseDistributor_;
 
-    /// \brief The number of bytes sent by this proc in the last call to do/doReverse
-    size_t lastRoundBytesSend_;
-
-    /// \brief The number of bytes received by this proc in the last call to do/doReverse
-    size_t lastRoundBytesRecv_;
-
     /// \brief Compute send (GID,PID) pairs from receive (GID,PID) pairs.
     ///
     /// GID means "global ID" and PID means "process ID" (rank, in MPI
@@ -820,6 +825,7 @@ namespace Tpetra {
   }; // class Distributor
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Packet>
   void Distributor::
   doPostsAndWaits (const Teuchos::ArrayView<const Packet>& exports,
@@ -859,9 +865,6 @@ namespace Tpetra {
              numPackets,
              arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false));
     doWaits ();
-
-    lastRoundBytesSend_ = exports.size () * sizeof (Packet);
-    lastRoundBytesRecv_ = imports.size () * sizeof (Packet);
   }
 
   template <class Packet>
@@ -898,9 +901,6 @@ namespace Tpetra {
              arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false),
              numImportPacketsPerLID);
     doWaits ();
-
-    lastRoundBytesSend_ = exports.size () * sizeof (Packet);
-    lastRoundBytesRecv_ = imports.size () * sizeof (Packet);
   }
 
 
@@ -958,9 +958,6 @@ namespace Tpetra {
                     numPackets,
                     arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false));
     doReverseWaits ();
-
-    lastRoundBytesSend_ = exports.size() * sizeof(Packet);
-    lastRoundBytesRecv_ = imports.size() * sizeof(Packet);
   }
 
   template <class Packet>
@@ -993,9 +990,6 @@ namespace Tpetra {
                     arcp<Packet> (imports.getRawPtr (), 0, imports.size (), false),
                     numImportPacketsPerLID);
     doReverseWaits ();
-
-    lastRoundBytesSend_ = exports.size() * sizeof(Packet);
-    lastRoundBytesRecv_ = imports.size() * sizeof(Packet);
   }
 
   template <class Packet>
@@ -1033,6 +1027,7 @@ namespace Tpetra {
     reverseDistributor_->doPosts (exports, numExportPacketsPerLID,
                                   imports, numImportPacketsPerLID);
   }
+#endif
 
   template <class ExpView, class ImpView>
   typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
@@ -1153,7 +1148,6 @@ namespace Tpetra {
     // OrdinalType elements of importGIDs (along with their
     // corresponding process IDs, as int) to size_t, and does a
     // doPostsAndWaits<size_t>() to send the packed data.
-    using Teuchos::Array;
     using Teuchos::ArrayView;
     using std::endl;
     using size_type = typename ArrayView<const OrdinalType>::size_type;
@@ -1170,7 +1164,7 @@ namespace Tpetra {
        << " != importGIDs.size()=" << importGIDs.size() << ".");
 
     const size_type numImports = importProcIDs.size();
-    Array<size_t> importObjs(2*numImports);
+    Kokkos::View<size_t*, Kokkos::HostSpace> importObjs("importObjs", 2*numImports);
     // Pack pairs (importGIDs[i], my process ID) to send into importObjs.
     for (size_type i = 0; i < numImports; ++i) {
       importObjs[2*i]   = static_cast<size_t>(importGIDs[i]);
@@ -1223,8 +1217,8 @@ namespace Tpetra {
        << tempPlan.getTotalReceiveLength() << " < numExports="
        << numExports << "." << suffix);
 
-    Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
-    tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
+    Kokkos::View<size_t*, Kokkos::HostSpace> exportObjs("exportObjs", tempPlan.getTotalReceiveLength() * 2);
+    tempPlan.doPostsAndWaits(importObjs, 2, exportObjs);
 
     // Unpack received (GID, PID) pairs into exportIDs resp. exportProcIDs.
     for (size_type i = 0; i < numExports; ++i) {

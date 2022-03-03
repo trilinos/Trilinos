@@ -1,12 +1,11 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 // -*- Mode: c++ -*-
-#ifndef IOSS_Ioex_BaseDatabaseIO_h
-#define IOSS_Ioex_BaseDatabaseIO_h
+#pragma once
 
 #include <Ioss_DBUsage.h>
 #include <Ioss_DatabaseIO.h>
@@ -73,7 +72,7 @@ namespace Ioex {
   {
   public:
     BaseDatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-                   MPI_Comm communicator, const Ioss::PropertyManager &props);
+                   Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
     BaseDatabaseIO(const BaseDatabaseIO &from) = delete;
     BaseDatabaseIO &operator=(const BaseDatabaseIO &from) = delete;
 
@@ -123,7 +122,7 @@ namespace Ioex {
                             Ioss::Map &entity_map, void *ids, size_t num_to_get,
                             size_t offset) const;
 
-    void compute_block_membership__(Ioss::SideBlock *         efblock,
+    void compute_block_membership__(Ioss::SideBlock          *efblock,
                                     std::vector<std::string> &block_membership) const override;
 
     int  int_byte_size_db() const override;
@@ -239,7 +238,7 @@ namespace Ioex {
 
     int64_t internal_add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity,
                                         int64_t position, int64_t block_count,
-                                        Ioss::IntVector &      truth_table,
+                                        Ioss::IntVector       &truth_table,
                                         Ioex::VariableNameMap &variables);
     int64_t add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity,
                                int64_t position = 0);
@@ -326,4 +325,3 @@ namespace Ioex {
                 // nodeConnectivityStatus has been calculated.
   };
 } // namespace Ioex
-#endif

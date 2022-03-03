@@ -1340,7 +1340,7 @@ namespace percept {
                 stk::mesh::Part *part = eMeshP->get_fem_meta_data()->get_part(bname);
 
                 if (!part) {
-                    const std::string alias = eMeshP->get_ioss_mesh_data()->get_input_io_region()->get_alias(bname);
+                  const std::string alias = eMeshP->get_ioss_mesh_data()->get_input_io_region()->get_alias(bname, Ioss::ELEMENTBLOCK);
 
                     if (debug && !eMeshP->get_rank())
                       std::cout << "block= " << bname << " replaced with alias=" << alias << std::endl;

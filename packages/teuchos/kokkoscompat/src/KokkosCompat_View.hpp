@@ -82,7 +82,7 @@ namespace Kokkos {
     getKokkosViewDeepCopy (const Teuchos::ArrayView<T>& a)
     {
       typedef typename Kokkos::Impl::if_c<
-        Impl::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
+        SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
       typedef Kokkos::View<T*, D> view_type;
@@ -102,7 +102,7 @@ namespace Kokkos {
     getKokkosViewDeepCopy(const Teuchos::ArrayView<const T>& a)
     {
       typedef typename Kokkos::Impl::if_c<
-        Impl::SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
+        SpaceAccessibility< D, Kokkos::HostSpace>::accessible,
         typename D::execution_space, Kokkos::HostSpace>::type
         HostDevice;
       typedef Kokkos::View<T*, D>  view_type;
@@ -265,7 +265,7 @@ namespace Kokkos {
         dst, std::make_pair (dst_offset, dst_end));
       SrcViewType src_sub = Kokkos::subview(
         src, std::make_pair (src_offset, src_end));
-      Kokkos::deep_copy(dst_sub, src_sub);
+      Kokkos::deep_copy(typename SrcViewType::execution_space(), dst_sub, src_sub);
     }
 
     template <class ViewType>

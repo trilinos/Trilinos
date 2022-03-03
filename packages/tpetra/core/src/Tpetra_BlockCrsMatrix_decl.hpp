@@ -127,6 +127,16 @@ namespace Tpetra {
 /// }
 /// \endcode
 ///
+
+namespace Impl {
+  /// give an option to use layoutleft
+#if defined(TPETRA_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT)
+  using BlockCrsMatrixLittleBlockArrayLayout = Kokkos::LayoutLeft;
+#else
+  using BlockCrsMatrixLittleBlockArrayLayout = Kokkos::LayoutRight;
+#endif
+}
+
 template<class Scalar,
          class LO,
          class GO,
@@ -185,7 +195,7 @@ public:
 
   //! The type used to access nonconst matrix blocks.
   typedef Kokkos::View<impl_scalar_type**,
-                       Kokkos::LayoutRight,
+                       Impl::BlockCrsMatrixLittleBlockArrayLayout,
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_block_type;
@@ -193,7 +203,7 @@ public:
 
   //! The type used to access const matrix blocks.
   typedef Kokkos::View<const impl_scalar_type**,
-                       Kokkos::LayoutRight,
+                       Impl::BlockCrsMatrixLittleBlockArrayLayout,
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           const_little_block_type;
@@ -280,9 +290,15 @@ public:
   global_size_t getGlobalNumRows() const override;
 
   //! get the local number of block rows
-  size_t getNodeNumRows() const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  TPETRA_DEPRECATED size_t getNodeNumRows() const override;
+#endif
+  size_t getLocalNumRows() const override;
 
-  size_t getNodeMaxNumRowEntries() const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  TPETRA_DEPRECATED size_t getNodeMaxNumRowEntries() const override;
+#endif
+  size_t getLocalMaxNumRowEntries() const override;
 
   /// \brief For this matrix A, compute <tt>Y := beta * Y + alpha * Op(A) * X</tt>.
   ///
@@ -635,7 +651,7 @@ public:
   ///   has a column Map).
   /// \pre All diagonal entries of the matrix's graph must be
   ///   populated on this process.  Results are undefined otherwise.
-  /// \post <tt>offsets.extent(0) == getNodeNumRows()</tt>
+  /// \post <tt>offsets.extent(0) == getLocalNumRows()</tt>
   ///
   /// This method creates an array of offsets of the local diagonal
   /// entries in the matrix.  This array is suitable for use in the
@@ -1148,7 +1164,10 @@ public:
   //! The global number of columns of this matrix.
   virtual global_size_t getGlobalNumCols() const override;
 
-  virtual size_t getNodeNumCols() const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  TPETRA_DEPRECATED virtual size_t getNodeNumCols() const override;
+#endif
+  virtual size_t getLocalNumCols() const override;
 
   virtual GO getIndexBase() const override;
 
@@ -1156,7 +1175,10 @@ public:
   virtual global_size_t getGlobalNumEntries() const override;
 
   //! The local number of stored (structurally nonzero) entries.
-  virtual size_t getNodeNumEntries() const override;
+  virtual size_t getLocalNumEntries() const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  TPETRA_DEPRECATED virtual size_t getNodeNumEntries() const override;
+#endif
 
   /// \brief The current number of entries on the calling process in the specified global row.
   ///

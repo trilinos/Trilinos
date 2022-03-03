@@ -35,10 +35,16 @@
 
 #include "stk_util/environment/Env.hpp"
 #include "stk_util/environment/EnvData.hpp"
+#include "stk_util/environment/OutputLog.hpp"
 
 #include "stk_balance/mesh/BalanceMesh.hpp"
 #include "stk_balance/io/BalanceIO.hpp"
 #include "stk_balance/internal/Balancer.hpp"
+#include "stk_balance/internal/LogUtils.hpp"
+#include "stk_balance/rebalance.hpp"
+#include "stk_balance/internal/privateDeclarations.hpp"
+
+#include <stk_io/FillMesh.hpp>
 
 namespace stk {
 namespace balance {
@@ -47,40 +53,54 @@ LifeCycle::LifeCycle(MPI_Comm c, int argc, const char** argv)
   : m_comm(c),
     m_argc(argc),
     m_argv(argv),
-    m_exitCode(0),
+    m_exitCode(LifeCycleStatus::SUCCESS),
     m_isProc0(stk::parallel_machine_rank(m_comm) == 0),
     m_validator(m_comm),
     m_parser(m_comm)
 {
-  set_output_streams();
-}
+  initialize_environment(m_comm, argv);
 
-void LifeCycle::run()
-{
   try {
     parse();
   }
   catch(const std::exception &e) {
     print_parse_error(e.what());
-    m_exitCode = 1;
+    m_exitCode = LifeCycleStatus::PARSE_ERROR;
     return;
   }
 
-  if (serial_no_op()) {
-    print_no_op_message();
+  set_output_streams();
+}
+
+void LifeCycle::run()
+{
+  if (m_exitCode != 0) {
+    return;
+  }
+
+  print_running_message();
+  print_banner(sierra::Env::outputP0());
+
+  if (is_serial_no_op()) {
+    print_serial_no_op_message();
     return;
   }
 
   try {
-    balance();
+    if (m_settings.get_is_rebalancing()) {
+      rebalance();
+    }
+    else {
+      balance();
+    }
   }
   catch(std::exception& e) {
     print_balance_error(e.what());
-    m_exitCode = 2;
+    m_exitCode = LifeCycleStatus::EXECUTION_ERROR;
   }
 }
 
-int LifeCycle::exit_code() const
+LifeCycleStatus LifeCycle::exit_code() const
 {
   return m_exitCode;
 }
@@ -88,17 +108,46 @@ int LifeCycle::exit_code() const
 void LifeCycle::parse()
 {
   m_parser.parse_command_line_options(m_argc, m_argv, m_settings);
-  m_validator.require_file_exists(m_settings.get_input_filename());
+  m_validator.require_file_exists(m_settings.get_input_filename(), m_settings.get_num_input_processors());
 }
 
-bool LifeCycle::serial_no_op() const
+bool LifeCycle::is_serial_no_op() const
 {
-  return m_validator.serial_input_equals_output(m_settings.get_input_filename(), m_settings.get_output_filename());
+  return m_validator.serial_input_equals_output(m_settings.get_input_filename(), m_settings.get_output_filename()) &&
+         (not m_settings.get_is_rebalancing());
+}
+
+bool LifeCycle::rebalance_will_corrupt_data(const stk::io::StkMeshIoBroker & ioBroker,
+                                            const stk::mesh::MetaData & meta) const
+{
+  const bool isRebalancing =  m_settings.get_is_rebalancing();
+  const bool sameInputAndOutputFile = m_validator.input_equals_output(m_settings.get_input_filename(), m_settings.get_output_filename());
+  const bool sameInputAndOutputProcCount = m_settings.get_num_input_processors() == m_settings.get_num_output_processors();
+  const bool hasTransientFieldData = (not stk::io::get_transient_fields(meta).empty());
+  const bool has64BitIds = (ioBroker.check_integer_size_requirements_serial() > 4);
+
+  bool willCorruptData = false;
+  if (isRebalancing && sameInputAndOutputFile && sameInputAndOutputProcCount) {
+    if (hasTransientFieldData) {
+      willCorruptData = true;
+      sierra::Env::outputP0()
+          << "Aborting rebalance: Overwriting input files that contain transient fields will" << std::endl
+          << "lead to data corruption.  Please specify a different outputDirectory." << std::endl;
+    }
+
+    if (has64BitIds) {
+      willCorruptData = true;
+      sierra::Env::outputP0()
+          << "Aborting rebalance: Overwriting input files that contain 64-bit IDs will" << std::endl
+          << "lead to data corruption.  Please specify a different outputDirectory." << std::endl;
+    }
+  }
+
+  return willCorruptData;
 }
 
 void LifeCycle::balance()
 {
-  print_running_message();
   stk::balance::BalanceIO io(m_comm, m_settings);
   const stk::balance::Balancer balancer(m_settings);
 
@@ -107,18 +156,47 @@ void LifeCycle::balance()
   io.write(mesh);
 }
 
+void LifeCycle::rebalance()
+{
+  stk::mesh::MetaData meta;
+  stk::mesh::BulkData bulk(meta, m_comm);
+  stk::io::StkMeshIoBroker ioBroker;
+
+  meta.set_coordinate_field_name(m_settings.getCoordinateFieldName());
+  stk::balance::internal::register_internal_fields(bulk, m_settings);
+  stk::io::fill_mesh_preexisting(ioBroker, m_settings.get_input_filename(), bulk);
+
+  if (rebalance_will_corrupt_data(ioBroker, meta)) {
+    m_exitCode = LifeCycleStatus::REBALANCE_CORRUPTION_ERROR;
+    return;
+  }
+
+  stk::balance::rebalance(ioBroker, m_settings);
+}
+
 void LifeCycle::set_output_streams()
 {
-  if (!m_isProc0) {
+  if (m_isProc0) {
+    const std::string & logName = m_settings.get_log_filename();
+    if (logName == "cout"  || logName == "cerr") {
+      stk::EnvData::instance().m_outputP0 = stk::get_log_ostream(logName);
+    }
+    else {
+      stk::bind_output_streams("log=\"" + logName + "\"");
+      stk::EnvData::instance().m_outputP0 = stk::get_log_ostream("log");
+    }
+  }
+  else {
     stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
   }
+
   Ioss::Utils::set_output_stream(sierra::Env::outputP0());
 }
 
 void LifeCycle::print_parse_error(const char* what) const
 {
   if (m_isProc0) {
-    std::cerr << what << m_parser.get_quick_error() << std::endl;
+    std::cerr << what << std::endl;
   }
 }
 
@@ -129,19 +207,46 @@ void LifeCycle::print_balance_error(const char* what) const
   }
 }
 
-void LifeCycle::print_no_op_message() const
+void LifeCycle::print_serial_no_op_message() const
 {
-  sierra::Env::outputP0() << "Running on 1 MPI rank and input-file (" << m_settings.get_input_filename()
-    << ") == output-file (" << m_settings.get_output_filename()
-    << "), doing nothing. Specify outputDirectory if you "
-    << "wish to copy the input-file to an output-file of the same name." << std::endl;
+  sierra::Env::outputP0()
+    << "Aborting balance: Rewriting the same input serial mesh file.  Please specify" << std::endl
+    << "a different outputDirectory if you wish to copy the input file to an output" << std::endl
+    << "file of the same name." << std::endl;
 }
 
 void LifeCycle::print_running_message() const
 {
-  sierra::Env::outputP0() << "Running stk_balance" << std::endl;
-  sierra::Env::outputP0() << "  Input file:  " << m_settings.get_input_filename() << std::endl;
-  sierra::Env::outputP0() << "  Output file: " << m_settings.get_output_filename() << std::endl;
+  if (m_isProc0) {
+    std::ostream diag_stream(std::cout.rdbuf());
+    stk::register_ostream(diag_stream, "diag_stream");
+
+    const std::string & logName = m_settings.get_log_filename();
+    const bool usingLogFile = not (logName == "cout" || logName == "cerr");
+    if (usingLogFile) {
+      stk::bind_output_streams("diag_stream>log");
+      stk::bind_output_streams("diag_stream>+cout");
+    }
+    else {
+      stk::bind_output_streams("diag_stream>" + logName);
+    }
+
+    const unsigned inputRanks = m_settings.get_num_input_processors();
+    const unsigned outputRanks = m_settings.get_num_output_processors();
+    diag_stream << "stk_balance converting from " << inputRanks << " to " << outputRanks << " MPI ranks" << std::endl;
+
+    if (usingLogFile) {
+      diag_stream << "        Log file: " << logName << std::endl;
+    }
+
+    diag_stream << "     Input files:  "
+                << construct_generic_parallel_file_name(m_settings.get_input_filename(), inputRanks) << std::endl;
+
+    diag_stream << "    Output files:  "
+                << construct_generic_parallel_file_name(m_settings.get_output_filename(), outputRanks) << std::endl;
+
+    stk::unregister_ostream(diag_stream);
+  }
 }
 
 } }

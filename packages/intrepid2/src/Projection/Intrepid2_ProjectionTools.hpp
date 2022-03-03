@@ -663,7 +663,7 @@ public:
     template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
     void solveParallel(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 taul,
         ViewType3 work,const  ViewType4 elemDof, ordinal_type n, ordinal_type m) {
-      using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+      using HostDeviceType = Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>;
 
       ordinal_type numCells = basisCoeffs.extent(0);
 
@@ -671,7 +671,7 @@ public:
         auto A0 = Kokkos::subview(elemMat, 0, Kokkos::ALL(), Kokkos::ALL());
         auto tau0 = Kokkos::subview(taul, 0, Kokkos::ALL());
 
-        Kokkos::DynRankView<typename ViewType2::value_type, HostSpaceType> A0_host("A0_host", A0.extent(0),A0.extent(1));
+        Kokkos::DynRankView<typename ViewType2::value_type, HostDeviceType> A0_host("A0_host", A0.extent(0),A0.extent(1));
         auto A0_device = Kokkos::create_mirror_view(typename DeviceType::memory_space(), A0_host);
         Kokkos::deep_copy(A0_device, A0);
         Kokkos::deep_copy(A0_host, A0_device);
@@ -680,7 +680,7 @@ public:
           for(ordinal_type j=0; j<n; ++j)
             A0_host(i,j) = A0_host(j,i);
 
-        Kokkos::DynRankView<typename ViewType2::value_type, HostSpaceType> tau0_host("A0_host", tau0.extent(0));
+        Kokkos::DynRankView<typename ViewType2::value_type, HostDeviceType> tau0_host("A0_host", tau0.extent(0));
         auto tau0_device = Kokkos::create_mirror_view(typename DeviceType::memory_space(), tau0_host);
         auto w0_host = Kokkos::create_mirror_view(Kokkos::subview(work, 0, Kokkos::ALL()));
 
@@ -773,28 +773,28 @@ public:
     void solveSerial(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 ,
         ViewType3, const  ViewType4 elemDof, ordinal_type n, ordinal_type m) {
       using valueType = typename ViewType2::value_type;
-      using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
-      Kokkos::View<valueType**,Kokkos::LayoutLeft,HostSpaceType>
+      using HostDeviceType = Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>;
+
+      Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType>
       serialElemMat("serialElemMat", n+m, n+m);
       Teuchos::LAPACK<ordinal_type,valueType> lapack_;
       ordinal_type numCells = basisCoeffs.extent(0);
 
       if(matrixIndependentOfCell_) {
         ViewType2 elemRhsTrans("transRhs", elemRhs.extent(1), elemRhs.extent(0));
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostSpaceType>
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType>
         pivVec("pivVec", m+n + std::max(m+n, numCells), 1);
 
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostSpaceType> serialElemRhs("serialElemRhs", n+m, numCells);
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType> serialElemRhs("serialElemRhs", n+m, numCells);
 
-        Kokkos::DynRankView<typename ViewType2::value_type, HostSpaceType> A_host("A0_host", elemMat.extent(1),elemMat.extent(2));
+        Kokkos::DynRankView<typename ViewType2::value_type, HostDeviceType> A_host("A0_host", elemMat.extent(1),elemMat.extent(2));
         auto A_device = Kokkos::create_mirror_view(typename DeviceType::memory_space(), A_host);
         Kokkos::deep_copy(A_device, Kokkos::subview(elemMat, 0, Kokkos::ALL(), Kokkos::ALL()));
         Kokkos::deep_copy(A_host, A_device);
 
-        auto b = Kokkos::create_mirror_view_and_copy(HostSpaceType(), elemRhs);
+        auto b = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), elemRhs);
 
-        auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(
-            HostSpaceType(), basisCoeffs);
+        auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffs);
 
         for(ordinal_type i=0; i<m+n; ++i) {
           for(ordinal_type ic=0; ic< numCells; ++ic)
@@ -820,15 +820,15 @@ public:
         }
       }
       else {
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostSpaceType> pivVec("pivVec", 2*(m+n), 1);
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostSpaceType> serialElemRhs("serialElemRhs", n+m, 1 );
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType> pivVec("pivVec", 2*(m+n), 1);
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType> serialElemRhs("serialElemRhs", n+m, 1 );
         for (ordinal_type ic = 0; ic < numCells; ic++) {
-          auto A = Kokkos::create_mirror_view_and_copy(HostSpaceType(),
+          auto A = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
               Kokkos::subview(elemMat, ic, Kokkos::ALL(), Kokkos::ALL()));
-          auto b = Kokkos::create_mirror_view_and_copy(HostSpaceType(),
+          auto b = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
               Kokkos::subview(elemRhs, ic, Kokkos::ALL()));
           auto basisCoeffs_ = Kokkos::subview(basisCoeffs, ic, Kokkos::ALL());
-          auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(HostSpaceType(),
+          auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
               basisCoeffs_);
 
           Kokkos::deep_copy(serialElemMat,valueType(0));  //LAPACK might overwrite the matrix

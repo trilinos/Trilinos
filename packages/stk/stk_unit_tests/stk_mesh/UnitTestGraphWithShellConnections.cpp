@@ -59,8 +59,8 @@ private:
     void add_two_edges(const stk::mesh::GraphEdge& graphEdge1, const stk::mesh::GraphEdge& graphEdge2)
     {
         graph.add_new_element();
-        graph.add_edge(graphEdge1);
-        graph.add_edge(graphEdge2);
+        std::vector<stk::mesh::GraphEdge> edges = {graphEdge1, graphEdge2};
+        graph.add_sorted_edges(edges);
     }
     void expect_graph_has_edges_for_element(ProcAndId procAndId, const std::vector<stk::mesh::GraphEdge> &expectedEdges)
     {

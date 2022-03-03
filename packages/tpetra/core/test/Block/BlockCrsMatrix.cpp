@@ -99,7 +99,7 @@ namespace {
     // We just want to check that the constructors of BlockCrsMatrix
     // work.
     out << "Creating mesh graph" << endl;
-    graph_type graph (meshRowMapPtr, 0, Tpetra::StaticProfile);
+    graph_type graph (meshRowMapPtr, 0);
     graph.fillComplete ();
 
     // Test the default constructor.  We can't wrap this in a
@@ -205,7 +205,7 @@ namespace {
     out << "Creating mesh graph" << endl;
 
     const size_t maxNumEntPerRow = 2;
-    graph_type graph (meshRowMapPtr, maxNumEntPerRow, Tpetra::StaticProfile);
+    graph_type graph (meshRowMapPtr, maxNumEntPerRow);
 
     // Fill the graph.
     gids_type gblColInds ("gblColIds",maxNumEntPerRow);
@@ -911,7 +911,7 @@ namespace {
     out << "Creating mesh graph" << endl;
 
     const size_t maxNumEntPerRow = 2;
-    graph_type graph (meshRowMapPtr, maxNumEntPerRow, Tpetra::StaticProfile);
+    graph_type graph (meshRowMapPtr, maxNumEntPerRow);
 
     // Fill the graph.
     Teuchos::Array<GO> gblColInds (maxNumEntPerRow);
@@ -1043,7 +1043,7 @@ namespace {
     out << "Creating mesh graph" << endl;
 
     const size_t maxNumEntPerRow = 2;
-    graph_type graph (meshRowMapPtr, maxNumEntPerRow, Tpetra::StaticProfile);
+    graph_type graph (meshRowMapPtr, maxNumEntPerRow);
 
     // Fill the graph.
     Teuchos::Array<GO> gblColInds (maxNumEntPerRow);
@@ -1276,9 +1276,9 @@ namespace {
 
     // Make a graph.  It happens to have two entries per row.
     out << "Creating mesh graph" << endl;
-    graph_type graph (meshRowMapPtr, 2, Tpetra::StaticProfile);
+    graph_type graph (meshRowMapPtr, 2);
 
-    if (meshRowMapPtr->getNodeNumElements () > 0) {
+    if (meshRowMapPtr->getLocalNumElements () > 0) {
       const GO myMinGblRow = meshRowMapPtr->getMinGlobalIndex ();
       const GO myMaxGblRow = meshRowMapPtr->getMaxGlobalIndex ();
       for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
@@ -1401,9 +1401,9 @@ namespace {
 
     // Make a graph.  It happens to have two entries per row.
     out << "Creating mesh graph" << endl;
-    graph_type graph (meshRowMapPtr, 2, Tpetra::StaticProfile);
+    graph_type graph (meshRowMapPtr, 2);
 
-    if (meshRowMapPtr->getNodeNumElements () > 0) {
+    if (meshRowMapPtr->getLocalNumElements () > 0) {
       const GO myMinGblRow = meshRowMapPtr->getMinGlobalIndex ();
       const GO myMaxGblRow = meshRowMapPtr->getMaxGlobalIndex ();
       for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
@@ -1584,8 +1584,8 @@ namespace {
 
     out << "Create graph with overlapping mesh row Map" << endl;
     // Make a graph.  It happens to have two entries per row.
-    graph_type overlapGraph (overlapMeshRowMapPtr, 2, Tpetra::StaticProfile);
-    if (overlapMeshRowMapPtr->getNodeNumElements () > 0) {
+    graph_type overlapGraph (overlapMeshRowMapPtr, 2);
+    if (overlapMeshRowMapPtr->getLocalNumElements () > 0) {
       const GO myMinGblRow = overlapMeshRowMapPtr->getMinGlobalIndex ();
       const GO myMaxGblRow = overlapMeshRowMapPtr->getMaxGlobalIndex ();
       for (GO gblRow = myMinGblRow; gblRow <= myMaxGblRow; ++gblRow) {
@@ -1599,12 +1599,12 @@ namespace {
     overlapGraph.fillComplete (meshDomainMapPtr, meshRangeMapPtr);
 
     {
-      const LO lclNumRowsOverlap = static_cast<LO> (overlapMeshRowMapPtr->getNodeNumElements ());
+      const LO lclNumRowsOverlap = static_cast<LO> (overlapMeshRowMapPtr->getLocalNumElements ());
       for (LO lclRow = 0; lclRow < lclNumRowsOverlap; ++lclRow) {
         const LO numEnt = static_cast<LO> (overlapGraph.getNumEntriesInLocalRow (lclRow));
         TEST_EQUALITY( numEnt, static_cast<LO> (2) );
       }
-      const LO maxNumRowEnt = static_cast<LO> (overlapGraph.getNodeMaxNumRowEntries ());
+      const LO maxNumRowEnt = static_cast<LO> (overlapGraph.getLocalMaxNumRowEntries ());
       TEST_EQUALITY( maxNumRowEnt, static_cast<LO> (2) );
     }
 
@@ -1618,7 +1618,7 @@ namespace {
     RCP<graph_type> graph;
     try {
       out << "Create empty graph with nonoverlapping mesh row Map" << endl;
-      graph = rcp (new graph_type (meshRowMapPtr, 0, Tpetra::StaticProfile));
+      graph = rcp (new graph_type (meshRowMapPtr, 0));
 
       out << "Create Export from overlap to nonoverlap mesh row Map" << endl;
       theExport = rcp (new export_type (overlapMeshRowMapPtr, meshRowMapPtr));
@@ -1636,12 +1636,12 @@ namespace {
     // Export can only add entries to each row, not remove them.
     {
       const LO lclNumRowsNonoverlap =
-        static_cast<LO> (meshRowMapPtr->getNodeNumElements ());
+        static_cast<LO> (meshRowMapPtr->getLocalNumElements ());
       for (LO lclRow = 0; lclRow < lclNumRowsNonoverlap; ++lclRow) {
         const LO numEnt = static_cast<LO> (graph->getNumEntriesInLocalRow (lclRow));
         TEST_ASSERT( numEnt >= static_cast<LO> (2) );
       }
-      const LO maxNumRowEnt = static_cast<LO> (graph->getNodeMaxNumRowEntries ());
+      const LO maxNumRowEnt = static_cast<LO> (graph->getLocalMaxNumRowEntries ());
       TEST_ASSERT( maxNumRowEnt >= static_cast<LO> (2) );
     }
 

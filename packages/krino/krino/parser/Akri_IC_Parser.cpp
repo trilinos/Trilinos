@@ -14,7 +14,7 @@
 #include <Akri_IC_Alg.hpp>
 #include <Akri_LevelSet.hpp>
 #include <Akri_MeshSurface.hpp>
-#include <Akri_YAML_Parser.hpp>
+#include <Akri_Parser.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
 
@@ -23,13 +23,13 @@ namespace krino {
 namespace {
 
 Sphere *
-parse_sphere(const YAML::Node & ic_node)
+parse_sphere(const Parser::Node & ic_node)
 {
   std::string name;
-  YAML_Parser::get_if_present(ic_node, "name", name);
+  ic_node.get_if_present("name", name);
 
   std::vector<double> center;
-  if (YAML_Parser::get_if_present(ic_node, "center", center))
+  if (ic_node.get_if_present("center", center))
   {
     if (center.size() != 3)
     {
@@ -42,7 +42,7 @@ parse_sphere(const YAML::Node & ic_node)
   }
 
   double sign = 1.0;
-  if (YAML_Parser::get_if_present(ic_node, "sign", sign))
+  if (ic_node.get_if_present("sign", sign))
   {
     if (sign != -1.0 && sign == 1.0)
     {
@@ -51,7 +51,7 @@ parse_sphere(const YAML::Node & ic_node)
   }
 
   double radius = 0.0;
-  if (!YAML_Parser::get_if_present(ic_node, "radius", radius))
+  if (!ic_node.get_if_present("radius", radius))
   {
     stk::RuntimeDoomedAdHoc() << "Missing radius for IC sphere.\n";
   }
@@ -60,13 +60,13 @@ parse_sphere(const YAML::Node & ic_node)
 }
 
 Ellipsoid *
-parse_ellipsoid(const YAML::Node & ic_node)
+parse_ellipsoid(const Parser::Node & ic_node)
 {
   std::string name;
-  YAML_Parser::get_if_present(ic_node, "name", name);
+  ic_node.get_if_present("name", name);
 
   std::vector<double> center;
-  if (YAML_Parser::get_if_present(ic_node, "center", center))
+  if (ic_node.get_if_present("center", center))
   {
     if (center.size() != 3)
     {
@@ -79,7 +79,7 @@ parse_ellipsoid(const YAML::Node & ic_node)
   }
 
   std::vector<double> semiaxes;
-  if (YAML_Parser::get_if_present(ic_node, "semiaxes", semiaxes))
+  if (ic_node.get_if_present("semiaxes", semiaxes))
   {
     if (semiaxes.size() != 3)
     {
@@ -92,7 +92,7 @@ parse_ellipsoid(const YAML::Node & ic_node)
   }
 
   double sign = 1.0;
-  if (YAML_Parser::get_if_present(ic_node, "sign", sign))
+  if (ic_node.get_if_present("sign", sign))
   {
     if (sign != -1.0 && sign == 1.0)
     {
@@ -101,7 +101,7 @@ parse_ellipsoid(const YAML::Node & ic_node)
   }
 
   std::vector<double> rotationVec;
-  if (YAML_Parser::get_if_present(ic_node, "rotation", rotationVec))
+  if (ic_node.get_if_present("rotation", rotationVec))
   {
     if (semiaxes.size() != 3)
     {
@@ -113,13 +113,13 @@ parse_ellipsoid(const YAML::Node & ic_node)
 }
 
 Plane *
-parse_plane(const YAML::Node & ic_node)
+parse_plane(const Parser::Node & ic_node)
 {
   std::string name;
-  YAML_Parser::get_if_present(ic_node, "name", name);
+  ic_node.get_if_present("name", name);
 
   std::vector<double> normal;
-  if (YAML_Parser::get_if_present(ic_node, "normal", normal))
+  if (ic_node.get_if_present("normal", normal))
   {
     if (normal.size() != 3)
     {
@@ -132,10 +132,10 @@ parse_plane(const YAML::Node & ic_node)
   }
 
   double multiplier = 1.0;
-  YAML_Parser::get_if_present(ic_node, "multiplier", multiplier);
+  ic_node.get_if_present("multiplier", multiplier);
 
   double sign = 1.0;
-  if (YAML_Parser::get_if_present(ic_node, "sign", sign))
+  if (ic_node.get_if_present("sign", sign))
   {
     if (sign != -1.0 && sign == 1.0)
     {
@@ -145,7 +145,7 @@ parse_plane(const YAML::Node & ic_node)
   multiplier *= sign;
 
   double offset = 0.0;
-  if (!YAML_Parser::get_if_present(ic_node, "offset", offset))
+  if (!ic_node.get_if_present("offset", offset))
   {
     stk::RuntimeDoomedAdHoc() << "Missing offset for IC plane.\n";
   }
@@ -154,13 +154,13 @@ parse_plane(const YAML::Node & ic_node)
 }
 
 Cylinder *
-parse_cylinder(const YAML::Node & ic_node)
+parse_cylinder(const Parser::Node & ic_node)
 {
   std::string name;
-  YAML_Parser::get_if_present(ic_node, "name", name);
+  ic_node.get_if_present("name", name);
 
   std::vector<double> p1;
-  if (YAML_Parser::get_if_present(ic_node, "p1", p1))
+  if (ic_node.get_if_present("p1", p1))
   {
     if (p1.size() != 3)
     {
@@ -173,7 +173,7 @@ parse_cylinder(const YAML::Node & ic_node)
   }
 
   std::vector<double> p2;
-  if (YAML_Parser::get_if_present(ic_node, "p2", p2))
+  if (ic_node.get_if_present("p2", p2))
   {
     if (p2.size() != 3)
     {
@@ -186,13 +186,13 @@ parse_cylinder(const YAML::Node & ic_node)
   }
 
   double radius = 0.0;
-  if (!YAML_Parser::get_if_present(ic_node, "radius", radius))
+  if (!ic_node.get_if_present("radius", radius))
   {
     stk::RuntimeDoomedAdHoc() << "Missing radius for IC cylinder.\n";
   }
 
   double sign = 1.0;
-  if (YAML_Parser::get_if_present(ic_node, "sign", sign))
+  if (ic_node.get_if_present("sign", sign))
   {
     if (sign != -1.0 && sign == 1.0)
     {
@@ -204,10 +204,10 @@ parse_cylinder(const YAML::Node & ic_node)
 }
 
 std::unique_ptr<IC_Binder>
-parse_binder(const YAML::Node & ic_node)
+parse_binder(const Parser::Node & ic_node)
 {
   std::string binder_type;
-  if (!YAML_Parser::get_if_present(ic_node, "type", binder_type))
+  if (!ic_node.get_if_present("type", binder_type))
   {
     stk::RuntimeDoomedAdHoc() << "Missing type for Binder IC.\n";
   }
@@ -222,7 +222,7 @@ parse_binder(const YAML::Node & ic_node)
   if (binder_type == "interface")
   {
     ibinder_type = 0;
-    if (!YAML_Parser::get_if_present(ic_node, "interface_size", interface_size))
+    if (!ic_node.get_if_present("interface_size", interface_size))
     {
       stk::RuntimeDoomedAdHoc() << "Missing interface_size for IC binder.\n";
     }
@@ -230,10 +230,10 @@ parse_binder(const YAML::Node & ic_node)
   else if (binder_type == "smooth_bridge")
   {
     ibinder_type = 1;
-    YAML_Parser::get_if_present(ic_node, "smooth_bridge_size", smooth_bridge_size);
-    YAML_Parser::get_if_present(ic_node, "smooth_bridge_offset", smooth_bridge_offset);
-    YAML_Parser::get_if_present(ic_node, "other_ls_scale_factor", other_ls_scale_factor);
-    YAML_Parser::get_if_present(ic_node, "root_smooth_bridge", root_smooth_bridge);
+    ic_node.get_if_present("smooth_bridge_size", smooth_bridge_size);
+    ic_node.get_if_present("smooth_bridge_offset", smooth_bridge_offset);
+    ic_node.get_if_present("other_ls_scale_factor", other_ls_scale_factor);
+    ic_node.get_if_present("root_smooth_bridge", root_smooth_bridge);
 
     if (smooth_bridge_size < 0.0)
     {
@@ -261,26 +261,26 @@ parse_binder(const YAML::Node & ic_node)
 }
 
 Faceted_Surface *
-parse_facets(const YAML::Node & ic_node, const stk::diag::Timer &parent_timer)
+parse_facets(const Parser::Node & ic_node, const stk::diag::Timer &parent_timer)
 {
   std::string surface_name;
-  YAML_Parser::get_if_present(ic_node, "name", surface_name);
+  ic_node.get_if_present("name", surface_name);
 
   std::string facet_filename;
-  if (!YAML_Parser::get_if_present(ic_node, "filename", facet_filename))
+  if (!ic_node.get_if_present("filename", facet_filename))
   {
     stk::RuntimeDoomedAdHoc() << "Missing filename for IC facets.\n";
   }
 
   std::string facet_format;
-  if (!YAML_Parser::get_if_present(ic_node, "format", facet_format))
+  if (!ic_node.get_if_present("format", facet_format))
   {
     stk::RuntimeDoomedAdHoc() << "Missing format for IC facets.\n";
   }
 
   bool scaleSpecified = false;
   double scale = 1.0;
-  if (YAML_Parser::get_if_present(ic_node, "scale", scale))
+  if (ic_node.get_if_present("scale", scale))
   {
     scaleSpecified = true;
     if (scale <= 0.0)
@@ -293,7 +293,7 @@ parse_facets(const YAML::Node & ic_node, const stk::diag::Timer &parent_timer)
   std::vector<std::string> scaleComponents = {"scaleX","scaleY","scaleZ"};
   for (int i=0; i<3; i++)
   {
-    if (YAML_Parser::get_if_present(ic_node, scaleComponents[i], scaleVec[i]))
+    if (ic_node.get_if_present(scaleComponents[i], scaleVec[i]))
     {
       if (scaleSpecified)
         stk::RuntimeDoomedAdHoc() << "Cannot specify both scale and " << scaleComponents[i] << "\n";
@@ -303,7 +303,7 @@ parse_facets(const YAML::Node & ic_node, const stk::diag::Timer &parent_timer)
   }
 
   double sign = 1.0;
-  if (YAML_Parser::get_if_present(ic_node, "sign", sign))
+  if (ic_node.get_if_present("sign", sign))
   {
     if (sign != -1.0 && sign == 1.0)
     {
@@ -329,13 +329,13 @@ parse_facets(const YAML::Node & ic_node, const stk::diag::Timer &parent_timer)
 }
 
 MeshSurface *
-parse_mesh_surface(const YAML::Node & ic_node, LevelSet & ls)
+parse_mesh_surface(const Parser::Node & ic_node, LevelSet & ls)
 {
   std::string surface_name;
-  ThrowRequire(YAML_Parser::get_if_present(ic_node, "mesh", surface_name));
+  ThrowRequire(ic_node.get_if_present("mesh", surface_name));
 
   double sign = 1.0;
-  if (YAML_Parser::get_if_present(ic_node, "sign", sign))
+  if (ic_node.get_if_present("sign", sign))
   {
     if (sign != -1.0 && sign == 1.0)
     {
@@ -354,11 +354,11 @@ parse_mesh_surface(const YAML::Node & ic_node, LevelSet & ls)
 }
 
 void
-parse_composition_method(const YAML::Node & ic_node, IC_Alg& ic_alg)
+parse_composition_method(const Parser::Node & ic_node, IC_Alg& ic_alg)
 {
   // This is a little strange because composition looks like an IC, but really sets a flag
   std::string composition_method;
-  ThrowRequire(YAML_Parser::get_if_present(ic_node, "composition_method", composition_method));
+  ThrowRequire(ic_node.get_if_present("composition_method", composition_method));
 
   std::transform(composition_method.begin(), composition_method.end(), composition_method.begin(), ::toupper);
 
@@ -371,9 +371,9 @@ parse_composition_method(const YAML::Node & ic_node, IC_Alg& ic_alg)
 }
 
 void
-parse_IC(const YAML::Node & ic_node, LevelSet &ls)
+parse_IC(const Parser::Node & ic_node, LevelSet &ls)
 {
-  if (ic_node.Type() == YAML::NodeType::Scalar)
+  if (ic_node.is_scalar())
   {
     // support random specified as Scalar (no :)
     std::string ic_type = ic_node.as<std::string>();
@@ -389,62 +389,62 @@ parse_IC(const YAML::Node & ic_node, LevelSet &ls)
     }
     else
     {
-      stk::RuntimeDoomedAdHoc() << "Unrecognized Levelset IC type: " << YAML_Parser::info(ic_node);
+      stk::RuntimeDoomedAdHoc() << "Unrecognized Levelset IC type: " << ic_node.info();
     }
     return;
   }
 
-  if ( YAML_Parser::get_null_if_present(ic_node, "sphere") )
+  if ( ic_node.get_null_if_present("sphere") )
   {
     ls.get_IC_alg().addSurface(parse_sphere(ic_node));
   }
-  else if ( YAML_Parser::get_null_if_present(ic_node, "ellipsoid") )
+  else if ( ic_node.get_null_if_present("ellipsoid") )
   {
     ls.get_IC_alg().addSurface(parse_ellipsoid(ic_node));
   }
-  else if ( YAML_Parser::get_null_if_present(ic_node, "plane") )
+  else if ( ic_node.get_null_if_present("plane") )
   {
     ls.get_IC_alg().addSurface(parse_plane(ic_node));
   }
-  else if ( YAML_Parser::get_null_if_present(ic_node, "cylinder") )
+  else if ( ic_node.get_null_if_present("cylinder") )
   {
     ls.get_IC_alg().addSurface(parse_cylinder(ic_node));
   }
-  else if ( YAML_Parser::get_null_if_present(ic_node, "facets") )
+  else if ( ic_node.get_null_if_present("facets") )
   {
     ls.get_IC_alg().addSurface(parse_facets(ic_node, ls.get_timer()));
   }
-  else if ( YAML_Parser::get_scalar_if_present(ic_node, "mesh") )
+  else if ( ic_node.get_scalar_if_present("mesh") )
   {
     ls.get_IC_alg().addSurface(parse_mesh_surface(ic_node, ls));
   }
-  else if ( YAML_Parser::get_null_if_present(ic_node, "random") )
+  else if ( ic_node.get_null_if_present("random") )
   {
     int seed = 0;
-    YAML_Parser::get_if_present(ic_node, "seed", seed);
+    ic_node.get_if_present("seed", seed);
     Random * random = new Random(seed);
     ls.get_IC_alg().addSurface(random);
   }
-  else if ( YAML_Parser::get_null_if_present(ic_node, "binder") )
+  else if ( ic_node.get_null_if_present("binder") )
   {
     ls.get_IC_alg().addCalculator(parse_binder(ic_node));
   }
-  else if ( YAML_Parser::get_scalar_if_present(ic_node, "composition_method") )
+  else if ( ic_node.get_scalar_if_present("composition_method") )
   {
     parse_composition_method(ic_node, ls.get_IC_alg());
   }
   else
   {
-    stk::RuntimeDoomedAdHoc() << "Unrecognized Levelset IC type: " << YAML_Parser::info(ic_node);
+    stk::RuntimeDoomedAdHoc() << "Unrecognized Levelset IC type: " << ic_node.info();
   }
 }
 
 }
 
 void
-IC_Parser::parse(const YAML::Node & node, LevelSet & ls)
+IC_Parser::parse(const Parser::Node & node, LevelSet & ls)
 {
-  const YAML::Node ic_nodes = YAML_Parser::get_sequence_if_present(node, "initial_conditions");
+  const Parser::Node ic_nodes = node.get_sequence_if_present("initial_conditions");
   if ( ic_nodes )
   {
     for ( auto && ic_node : ic_nodes )

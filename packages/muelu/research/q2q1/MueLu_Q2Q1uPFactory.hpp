@@ -85,7 +85,7 @@ namespace MueLu {
         list_[i] = &storage_[i*nnzPerRow];
     }
 
-    size_t                    getNodeNumRows()  const { return list_.size(); }
+    size_t                    getLocalNumRows()  const { return list_.size(); }
     int                       getNnzPerRow()    const { return nnzPerRow_;   }
     std::vector<short>&       getNumCpts()            { return numCpts_;     }
     Teuchos::Array<LO>&       getCList()              { return cptlist_;     }
@@ -639,7 +639,7 @@ namespace MueLu {
       RCP<CrsMatrix> amalgA_crs = rcp_dynamic_cast<CrsMatrixWrap>(amalgA)->getCrsMatrix();
 
       // FIXME: this should be written similar to CoalesceDropFactory Merge
-      for (LO row = 0; row < as<LO>(AForPat->getRowMap()->getNodeNumElements()); row += NDim) {
+      for (LO row = 0; row < as<LO>(AForPat->getRowMap()->getLocalNumElements()); row += NDim) {
         GO grid = AForPat->getRowMap()->getGlobalElement(row);
         GO currentId = grid/NDim;
 
@@ -894,7 +894,7 @@ namespace MueLu {
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   FindDist4Cpts(const Matrix& A, const MultiVector& coords, const Array<LO>& userCpts, std::vector<char>& status, MyCptList& myCpts, int levelID) const {
     int    NDim    = coords.getNumVectors();
-    size_t numRows = A.getNodeNumRows();
+    size_t numRows = A.getLocalNumRows();
 
     ArrayRCP<const size_t> ia;
     ArrayRCP<const LO>     ja;
@@ -1310,7 +1310,7 @@ namespace MueLu {
     GetOStream(Runtime0) << "Starting phase 2" << std::endl;
 
     int    NDim    = coords.getNumVectors();
-    size_t numRows = A.getNodeNumRows();
+    size_t numRows = A.getLocalNumRows();
 
     ArrayRCP<const size_t> ia;
     ArrayRCP<const LO>     ja;
@@ -1468,7 +1468,7 @@ namespace MueLu {
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   FindMidPoints(const Matrix& A, const MultiVector& coords, Array<LO>& Cptlist, const MyCptList& myCpts) const {
     int    NDim    = coords.getNumVectors();
-    size_t numRows = A.getNodeNumRows();
+    size_t numRows = A.getLocalNumRows();
 
     const ParameterList& pL = GetParameterList();
     double tau_2 = pL.get<double>("tau_2");
@@ -1703,7 +1703,7 @@ namespace MueLu {
   void Q2Q1uPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CptDepends2Pattern(const Matrix& A, const MyCptList& myCpts, RCP<Matrix>& P, LocalOrdinal offset) const {
     RCP<const Map> rowMap = A.getRowMap();
-    size_t numRows = myCpts.getNodeNumRows();
+    size_t numRows = myCpts.getLocalNumRows();
 
     // FIXME: how does offset play here?
     const Array<LO>& Cptlist = myCpts.getCList();

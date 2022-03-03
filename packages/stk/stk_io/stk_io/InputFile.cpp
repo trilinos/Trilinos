@@ -34,45 +34,45 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <stk_util/stk_config.h>
 #include <stk_io/InputFile.hpp>
-#include <math.h>                                  // for fmod
-#include <stddef.h>                                // for size_t
-#include <algorithm>                               // for sort, swap
-#include <limits>                                  // for numeric_limits
-#include <ostream>                                 // for operator<<, etc
-#include <stdexcept>                               // for runtime_error
-#include <stk_io/DbStepTimeInterval.hpp>
-#include <stk_io/IossBridge.hpp>                   // for get_field_role, etc
-#include <stk_io/MeshField.hpp>                    // for MeshField, etc
-#include <stk_mesh/base/FieldBase.hpp>             // for FieldBase, etc
-#include <stk_mesh/base/FindRestriction.hpp>       // for find_restriction
-#include <stk_mesh/base/MetaData.hpp>              // for MetaData
-#include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/util/ReportHandler.hpp>  // for ThrowErrorMsgIf
-#include <utility>                                 // for pair
-#include "Ioss_DBUsage.h"                          // for DatabaseUsage, etc
-#include "Ioss_DatabaseIO.h"                       // for DatabaseIO
-#include "Ioss_EntityType.h"                       // for EntityType, etc
-#include "Ioss_Field.h"                            // for Field, etc
-#include "Ioss_GroupingEntity.h"                   // for GroupingEntity
-#include "Ioss_IOFactory.h"                        // for IOFactory
-#include "Ioss_MeshType.h"                         // for MeshType, etc
-#include "Ioss_NodeBlock.h"                        // for NodeBlock
-#include "Ioss_NodeSet.h"                          // for NodeSet
-#include "Ioss_SideBlock.h"                          // for NodeSet
-#include "Ioss_SideSet.h"                          // for NodeSet
-#include "Ioss_Property.h"                         // for Property
-#include "Ioss_Region.h"                           // for Region, etc
-#include "StkIoUtils.hpp"
-#include "Teuchos_Ptr.hpp"                         // for Ptr::get
-#include "Teuchos_PtrDecl.hpp"                     // for Ptr
-#include "Teuchos_RCP.hpp"                         // for RCP::operator->, etc
-#include "stk_io/DatabasePurpose.hpp"
-#include "stk_mesh/base/FieldState.hpp"            // for FieldState
-#include "stk_mesh/base/Part.hpp"                  // for Part
-#include "stk_mesh/base/Types.hpp"                 // for FieldVector, etc
-#include "stk_topology/topology.hpp"               // for topology, etc
+#include <exception>                    // for exception
+#include <algorithm>                           // for copy, sort, max, find
+#include <cmath>                               // for fmod
+#include <cstddef>                             // for size_t
+#include <iostream>                            // for operator<<, basic_ostream
+#include <limits>                              // for numeric_limits
+#include <stdexcept>                           // for runtime_error
+#include <stk_io/DbStepTimeInterval.hpp>       // for DBStepTimeInterval
+#include <stk_io/IossBridge.hpp>               // for is_part_io_part, all_f...
+#include <stk_io/MeshField.hpp>                // for MeshField, MeshField::...
+#include <stk_mesh/base/FieldBase.hpp>         // for FieldBase, FieldBase::...
+#include <stk_mesh/base/FindRestriction.hpp>   // for find_restriction
+#include <stk_mesh/base/MetaData.hpp>          // for MetaData
+#include <stk_util/environment/FileUtils.hpp>  // for filename_substitution
+#include <stk_util/util/ReportHandler.hpp>     // for ThrowErrorMsgIf, Throw...
+#include <utility>                             // for move, pair
+#include "Ioss_DBUsage.h"                      // for DatabaseUsage, READ_MODEL
+#include "Ioss_DatabaseIO.h"                   // for DatabaseIO
+#include "Ioss_EntityType.h"                   // for SIDESET, EntityType
+#include "Ioss_Field.h"                        // for Field, Field::TRANSIENT
+#include "Ioss_GroupingEntity.h"               // for GroupingEntity
+#include "Ioss_IOFactory.h"                    // for IOFactory
+#include "Ioss_MeshType.h"                     // for MeshType, MeshType::UN...
+#include "Ioss_NodeBlock.h"                    // for NodeBlock
+#include "Ioss_NodeSet.h"                      // for NodeSet
+#include "Ioss_Property.h"                     // for Property
+#include "Ioss_Region.h"                       // for Region, NodeBlockConta...
+#include "Ioss_SideBlock.h"                    // for SideBlock
+#include "Ioss_SideSet.h"                      // for SideSet
+#include "StkIoUtils.hpp"                      // for part_primary_entity_rank
+#include "Teuchos_Ptr.hpp"                     // for Ptr::Ptr<T>
+#include "Teuchos_RCP.hpp"                     // for RCP::operator->, is_null
+#include "stk_io/DatabasePurpose.hpp"          // for READ_RESTART, Database...
+#include "stk_mesh/base/BulkData.hpp"          // for BulkData
+#include "stk_mesh/base/FieldState.hpp"        // for FieldState
+#include "stk_mesh/base/Part.hpp"              // for Part
+#include "stk_mesh/base/Types.hpp"             // for PartVector, EntityRank
+#include "stk_topology/topology.hpp"           // for topology, topology::NO...
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -191,9 +191,17 @@ namespace stk {
                         "There is no input mesh database associated with this StkMeshIoBroker. Please call open_mesh_database() first.");
         // The Ioss::Region takes control of the m_input_database pointer, so we need to make sure the
         // RCP doesn't retain ownership...
-        m_region = Teuchos::rcp(new Ioss::Region(m_database.release().get(), "input_model"));
+        Ioss::Region *region = nullptr;
+        try {
+          region = new Ioss::Region(m_database.get(), "input_model");
+        } catch (...) {
+          m_database.reset();
+          throw;
+        }
+        m_region = Teuchos::rcp(region);
+        m_database.release();
 
-	ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
+        ThrowErrorMsgIf(m_region->mesh_type() != Ioss::MeshType::UNSTRUCTURED,
 			"Mesh type is '" << m_region->mesh_type_string() << "' which is not supported. "
 			"Only 'Unstructured' mesh is currently supported.");
       }

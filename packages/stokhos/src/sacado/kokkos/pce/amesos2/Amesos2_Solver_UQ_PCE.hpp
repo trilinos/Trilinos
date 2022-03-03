@@ -58,13 +58,13 @@ namespace Amesos2 {
     const Teuchos::RCP<const Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
   {
     if (A != Teuchos::null) {
-      return Kokkos::cijk(A->getLocalValuesView());
+      return Kokkos::cijk(A->getLocalValuesDevice(Tpetra::Access::ReadOnly));
     }
     else if (X != Teuchos::null) {
-      return Kokkos::cijk(X->template getLocalView<D>());
+      return Kokkos::cijk(X->getLocalViewDevice(Tpetra::Access::ReadOnly));
     }
     else if (B != Teuchos::null) {
-      return Kokkos::cijk(B->template getLocalView<D>());
+      return Kokkos::cijk(B->getLocalViewDevice(Tpetra::Access::ReadOnly));
     }
     return typename Sacado::UQ::PCE<S>::cijk_type();
   }
@@ -120,7 +120,7 @@ namespace Amesos2 {
                                        flat_X_map,
                                        flat_B_map,
                                        cijk_graph,
-                                       Kokkos::dimension_scalar(A->getLocalMatrix().values));
+                                       Kokkos::dimension_scalar(A->getLocalMatrixDevice().values));
       if (A != Teuchos::null)
         flat_A = Stokhos::create_flat_matrix(*A, flat_graph, cijk_graph, cijk);
       if (X != Teuchos::null)
@@ -312,7 +312,7 @@ namespace Amesos2 {
                                          flat_X_map,
                                          flat_B_map,
                                          cijk_graph,
-                                         Kokkos::dimension_scalar(A->getLocalMatrix().values));
+                                         Kokkos::dimension_scalar(A->getLocalMatrixDevice().values));
       }
       if (keep_phase <= SYMBFACT) // should this by NUMFACT???
         flat_A = Stokhos::create_flat_matrix(*a, flat_graph, cijk_graph, cijk);

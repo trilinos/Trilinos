@@ -184,8 +184,16 @@ template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
+   using Teuchos::RCP;
+   using Teuchos::rcp_dynamic_cast;
+
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_),true);
+   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_));
+
+   if(blockedContainer_==Teuchos::null) {
+     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true);
+     blockedContainer_ = rcp_dynamic_cast<const ContainerType>(gdata->getGhostedLOC());
+   }
 }
 
 // **********************************************************************
@@ -301,7 +309,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   // we need the LIDs for all sub-blocks, not just the single
   // sub-block for the field residual scatter.
   int elementBlockGIDCount = 0;
-  for (const auto blockDOFMgr : globalIndexer_->getFieldDOFManagers())
+  for (const auto& blockDOFMgr : globalIndexer_->getFieldDOFManagers())
     elementBlockGIDCount += blockDOFMgr->getElementBlockGIDCount(blockId);
 
   worksetLIDs_ = Kokkos::View<LO**, Kokkos::LayoutRight, PHX::Device>(

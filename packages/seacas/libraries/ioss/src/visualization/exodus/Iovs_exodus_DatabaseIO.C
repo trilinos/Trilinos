@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,7 +34,7 @@ namespace Iovs_exodus {
                     const std::string &inout);
 
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
-                         Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                         Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
       : Ioss::DatabaseIO(region,
                          Iovs::Utils::getInstance().getDatabaseOutputFilePath(filename, props),
@@ -46,14 +46,14 @@ namespace Iovs_exodus {
     Iovs::Utils::DatabaseInfo dbinfo;
     dbinfo.databaseFilename   = this->DBFilename;
     dbinfo.separatorCharacter = std::string(1, this->get_field_separator());
-    dbinfo.myRank             = this->parallel_rank();
-    dbinfo.communicator       = communicator;
+    dbinfo.parallelUtils      = &this->util();
 
     Iovs::Utils::getInstance().checkDbUsage(db_usage);
     Iovs::Utils::getInstance().createDatabaseOutputFile(dbinfo);
     dbState                              = Ioss::STATE_UNKNOWN;
     this->globalNodeAndElementIDsCreated = false;
 
+    Iovs::Utils::getInstance().writeToCatalystLogFile(dbinfo, props);
     this->catExoMesh = Iovs::Utils::getInstance().createCatalystExodusMesh(dbinfo, props);
 
     if (props.exists("CATALYST_CREATE_NODE_SETS")) {
@@ -164,17 +164,16 @@ namespace Iovs_exodus {
     // 'globalVariables' array
     Ioss::SerializeIO serializeIO__(this);
 
-    size_t                    num_to_get = field.verify(data_size);
-    Ioss::Field::RoleType     role       = field.get_role();
-    const Ioss::VariableType *var_type   = field.transformed_storage();
+    size_t                num_to_get = field.verify(data_size);
+    Ioss::Field::RoleType role       = field.get_role();
     if ((role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) && num_to_get == 1) {
-      const char *           complex_suffix[] = {".re", ".im"};
+      const char            *complex_suffix[] = {".re", ".im"};
       Ioss::Field::BasicType ioss_type        = field.get_type();
-      auto *                 rvar             = static_cast<double *>(data);
-      int *                  ivar             = static_cast<int *>(data);
-      auto *                 ivar64           = static_cast<int64_t *>(data);
+      auto                  *rvar             = static_cast<double *>(data);
+      int                   *ivar             = static_cast<int *>(data);
+      auto                  *ivar64           = static_cast<int64_t *>(data);
 
-      int comp_count = var_type->component_count();
+      int comp_count = field.get_component_count(Ioss::Field::InOut::OUTPUT);
 
       int re_im = 1;
       if (field.get_type() == Ioss::Field::COMPLEX) {
@@ -188,9 +187,8 @@ namespace Iovs_exodus {
 
         std::vector<std::string> component_names;
         std::vector<double>      globalValues;
-        char                     field_suffix_separator = get_field_separator();
         for (int i = 0; i < comp_count; i++) {
-          std::string var_name = var_type->label_name(field_name, i + 1, field_suffix_separator);
+          std::string var_name = get_component_name(field, Ioss::Field::InOut::OUTPUT, i + 1);
           component_names.push_back(var_name);
 
           // Transfer from 'variables' array.
@@ -258,12 +256,11 @@ namespace Iovs_exodus {
         }
       }
       else if (role == Ioss::Field::TRANSIENT) {
-        const char *              complex_suffix[] = {".re", ".im"};
-        Ioss::Field::BasicType    ioss_type        = field.get_type();
-        const Ioss::VariableType *var_type         = field.transformed_storage();
-        std::vector<double>       temp(num_to_get);
-        int                       comp_count = var_type->component_count();
-        int                       re_im      = 1;
+        const char            *complex_suffix[] = {".re", ".im"};
+        Ioss::Field::BasicType ioss_type        = field.get_type();
+        std::vector<double>    temp(num_to_get);
+        int                    comp_count = field.get_component_count(Ioss::Field::InOut::OUTPUT);
+        int                    re_im      = 1;
         if (ioss_type == Ioss::Field::COMPLEX) {
           re_im = 2;
         }
@@ -275,9 +272,8 @@ namespace Iovs_exodus {
 
           std::vector<double>      interleaved_data(num_to_get * comp_count);
           std::vector<std::string> component_names;
-          char                     field_suffix_separator = get_field_separator();
           for (int i = 0; i < comp_count; i++) {
-            std::string var_name = var_type->label_name(field_name, i + 1, field_suffix_separator);
+            std::string var_name = get_component_name(field, Ioss::Field::InOut::OUTPUT, i + 1);
             component_names.push_back(var_name);
 
             size_t begin_offset = (re_im * i) + complex_comp;
@@ -369,13 +365,12 @@ namespace Iovs_exodus {
         /* TODO */
       }
       else if (role == Ioss::Field::TRANSIENT) {
-        const char *              complex_suffix[] = {".re", ".im"};
-        const Ioss::VariableType *var_type         = field.transformed_storage();
-        Ioss::Field::BasicType    ioss_type        = field.get_type();
-        std::vector<double>       temp(num_to_get);
-        ssize_t                   eb_offset  = eb->get_offset();
-        int                       comp_count = var_type->component_count();
-        int                       bid        = get_id(eb, &ids_);
+        const char            *complex_suffix[] = {".re", ".im"};
+        Ioss::Field::BasicType ioss_type        = field.get_type();
+        std::vector<double>    temp(num_to_get);
+        int64_t                eb_offset  = eb->get_offset();
+        int                    comp_count = field.get_component_count(Ioss::Field::InOut::OUTPUT);
+        int                    bid        = get_id(eb, &ids_);
 
         int re_im = 1;
         if (ioss_type == Ioss::Field::COMPLEX) {
@@ -389,13 +384,12 @@ namespace Iovs_exodus {
 
           std::vector<double>      interleaved_data(num_to_get * comp_count);
           std::vector<std::string> component_names;
-          char                     field_suffix_separator = get_field_separator();
           for (int i = 0; i < comp_count; i++) {
-            std::string var_name = var_type->label_name(field_name, i + 1, field_suffix_separator);
+            std::string var_name = get_component_name(field, Ioss::Field::InOut::OUTPUT, i + 1);
             component_names.push_back(var_name);
 
-            ssize_t begin_offset = (re_im * i) + complex_comp;
-            ssize_t stride       = re_im * comp_count;
+            int64_t begin_offset = (re_im * i) + complex_comp;
+            int64_t stride       = re_im * comp_count;
 
             if (ioss_type == Ioss::Field::REAL || ioss_type == Ioss::Field::COMPLEX) {
               this->elemMap.map_field_to_db_scalar_order(
@@ -435,7 +429,7 @@ namespace Iovs_exodus {
 
     // NodeSets ...
     {
-      const Ioss::NodeSetContainer &         nodesets = region->get_nodesets();
+      const Ioss::NodeSetContainer          &nodesets = region->get_nodesets();
       Ioss::NodeSetContainer::const_iterator I;
       for (I = nodesets.begin(); I != nodesets.end(); ++I) {
         set_id(*I, &ids_);
@@ -444,7 +438,7 @@ namespace Iovs_exodus {
 
     // SideSets ...
     {
-      const Ioss::SideSetContainer &         ssets = region->get_sidesets();
+      const Ioss::SideSetContainer          &ssets = region->get_sidesets();
       Ioss::SideSetContainer::const_iterator I;
 
       for (I = ssets.begin(); I != ssets.end(); ++I) {
@@ -454,7 +448,7 @@ namespace Iovs_exodus {
 
     // Element Blocks --
     {
-      const Ioss::ElementBlockContainer &         element_blocks = region->get_element_blocks();
+      const Ioss::ElementBlockContainer          &element_blocks = region->get_element_blocks();
       Ioss::ElementBlockContainer::const_iterator I;
       // Set ids of all entities that have "id" property...
       for (I = element_blocks.begin(); I != element_blocks.end(); ++I) {
@@ -712,7 +706,7 @@ namespace Iovs_exodus {
       if (field.get_type() == Ioss::Field::INTEGER) {
         Ioss::IntVector element(num_to_get);
         Ioss::IntVector side(num_to_get);
-        int *           el_side = static_cast<int *>(data);
+        int            *el_side = static_cast<int *>(data);
 
         for (unsigned int i = 0; i < num_to_get; i++) {
           element[i] = el_side[index++];
@@ -749,7 +743,7 @@ namespace Iovs_exodus {
       else {
         Ioss::Int64Vector element(num_to_get);
         Ioss::Int64Vector side(num_to_get);
-        auto *            el_side = static_cast<int64_t *>(data);
+        auto             *el_side = static_cast<int64_t *>(data);
 
         for (unsigned int i = 0; i < num_to_get; i++) {
           element[i] = el_side[index++];

@@ -341,7 +341,7 @@ class crsGraph_Swap_Tester
             }
         }
 
-        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row (), Tpetra::StaticProfile));
+        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row ()));
 
         for(auto& r: gbl_rows)
         {
@@ -412,7 +412,6 @@ using Teuchos::VERB_HIGH;
 using Teuchos::VERB_LOW;
 using Teuchos::VERB_MEDIUM;
 using Teuchos::VERB_NONE;
-using Tpetra::StaticProfile;
 using Tpetra::TestingUtilities::getDefaultComm;
 typedef Tpetra::global_size_t GST;
 
@@ -422,15 +421,15 @@ std::string filedir;
 #define STD_TESTS(graph)                                                                                        \
     {                                                                                                           \
         auto   STCOMM   = graph.getComm();                                                                      \
-        auto   STMYGIDS = graph.getRowMap()->getNodeElementList();                                              \
+        auto   STMYGIDS = graph.getRowMap()->getLocalElementList();                                              \
         size_t STMAX    = 0;                                                                                    \
                                                                                                                 \
-        for(size_t STR = 0; STR < graph.getNodeNumRows(); ++STR)                                                \
+        for(size_t STR = 0; STR < graph.getLocalNumRows(); ++STR)                                                \
         {                                                                                                       \
             TEST_EQUALITY(graph.getNumEntriesInLocalRow(STR), graph.getNumEntriesInGlobalRow(STMYGIDS[ STR ])); \
             STMAX = std::max(STMAX, graph.getNumEntriesInLocalRow(STR));                                        \
         }                                                                                                       \
-        TEST_EQUALITY(graph.getNodeMaxNumRowEntries(), STMAX);                                                  \
+        TEST_EQUALITY(graph.getLocalMaxNumRowEntries(), STMAX);                                                  \
         GST STGMAX;                                                                                             \
         Teuchos::reduceAll<int, GST>(*STCOMM, Teuchos::REDUCE_MAX, STMAX, Teuchos::outArg(STGMAX));             \
         TEST_EQUALITY(graph.getGlobalMaxNumRowEntries(), STGMAX);                                               \

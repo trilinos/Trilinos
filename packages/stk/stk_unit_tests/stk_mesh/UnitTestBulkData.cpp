@@ -5967,7 +5967,7 @@ TEST(BulkData, makeElementWithConflictingTopologies)
 
   mesh.modification_begin();
 
-  EXPECT_THROW(stk::mesh::declare_element(mesh, parts, element_ids[0], elem_node_ids[0]), std::runtime_error);
+  EXPECT_THROW(stk::mesh::declare_element(mesh, parts, element_ids[0], elem_node_ids[0]), std::logic_error);
 
   mesh.modification_end();
 }

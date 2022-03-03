@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <visualization/utils/Iovs_CatalystLogging.h>
 #include <visualization/utils/Iovs_Utils.h>
 
 #if defined(__IOSS_WINDOWS__)
@@ -134,7 +135,7 @@ namespace Iovs {
     else if (props.exists("PHACTORI_JSON_SCRIPT")) {
       bool        readOkay             = false;
       std::string phactoriJSONFilePath = props.get("PHACTORI_JSON_SCRIPT").get_string();
-      if (dbinfo.myRank == 0) {
+      if (dbinfo.parallelUtils->parallel_rank() == 0) {
         std::ifstream f(phactoriJSONFilePath);
         if (f) {
           std::ostringstream ss;
@@ -156,7 +157,7 @@ namespace Iovs {
     else if (props.exists("PHACTORI_INPUT_SYNTAX_SCRIPT")) {
       std::string phactoriFilePath = props.get("PHACTORI_INPUT_SYNTAX_SCRIPT").get_string();
       CatalystManagerBase::ParseResult pres;
-      if (dbinfo.myRank == 0) {
+      if (dbinfo.parallelUtils->parallel_rank() == 0) {
         this->getCatalystManager().parsePhactoriFile(phactoriFilePath, pres);
       }
       this->broadCastStatusCode(pres.parseFailed, dbinfo);
@@ -226,6 +227,16 @@ namespace Iovs {
       cmInit.catalystMultiInputPipelineName =
           props.get("CATALYST_MULTI_INPUT_PIPELINE_NAME").get_string();
     }
+  }
+
+  void Utils::writeToCatalystLogFile(const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props)
+  {
+    if(dbinfo.parallelUtils->parallel_rank() == 0) {
+      CatalystLogging catLog = CatalystLogging();
+      catLog.setProperties(&props);
+      catLog.writeToLogFile();
+    }
+    dbinfo.parallelUtils->barrier();
   }
 
   std::string Utils::getRestartTag(const std::string &databaseFilename)
@@ -476,7 +487,7 @@ namespace Iovs {
   void Utils::createDatabaseOutputFile(const DatabaseInfo &dbinfo)
   {
     std::ostringstream errmsg;
-    if (dbinfo.myRank == 0) {
+    if (dbinfo.parallelUtils->parallel_rank() == 0) {
       if (!Utils::fileExists(dbinfo.databaseFilename)) {
         std::ofstream output_file;
         output_file.open(dbinfo.databaseFilename.c_str(), std::ios::out | std::ios::trunc);
@@ -488,6 +499,7 @@ namespace Iovs {
         output_file.close();
       }
     }
+    dbinfo.parallelUtils->barrier();
   }
 
   void Utils::reportCatalystErrorMessages(const std::vector<int> &        error_codes,
@@ -520,11 +532,11 @@ namespace Iovs {
     PAR_UNUSED(dbinfo);
 #ifdef SEACAS_HAVE_MPI
     int size = s.size();
-    MPI_Bcast(&size, 1, MPI_INT, 0, dbinfo.communicator);
-    if (dbinfo.myRank != 0) {
+    dbinfo.parallelUtils->broadcast(size);
+    if (dbinfo.parallelUtils->parallel_rank() != 0) {
       s.resize(size);
     }
-    MPI_Bcast(const_cast<char *>(s.data()), size, MPI_CHAR, 0, dbinfo.communicator);
+    dbinfo.parallelUtils->broadcast(s);
 #endif
   }
 
@@ -535,7 +547,7 @@ namespace Iovs {
 #ifdef SEACAS_HAVE_MPI
 
     int code = statusCode;
-    MPI_Bcast(&code, 1, MPI_INT, 0, dbinfo.communicator);
+    dbinfo.parallelUtils->broadcast(code);
     statusCode = code;
 #endif
   }

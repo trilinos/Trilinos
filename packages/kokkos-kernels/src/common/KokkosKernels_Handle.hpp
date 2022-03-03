@@ -49,6 +49,7 @@
 #include "KokkosSparse_spadd_handle.hpp"
 #include "KokkosSparse_sptrsv_handle.hpp"
 #include "KokkosSparse_spiluk_handle.hpp"
+#include "KokkosKernels_default_types.hpp"
 
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
@@ -216,7 +217,7 @@ public:
   typedef typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t; //Host view type
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
   typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
-  typedef typename Kokkos::View<nnz_scalar_t **, Kokkos::LayoutLeft, HandlePersistentMemorySpace> scalar_persistent_work_view2d_t;
+  typedef typename Kokkos::View<nnz_scalar_t **, default_layout, HandlePersistentMemorySpace> scalar_persistent_work_view2d_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
   typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
@@ -561,7 +562,8 @@ public:
       throw std::runtime_error("GaussSeidelHandle exists but is not set up for cluster-coloring GS.");
     return cgs;
   }
-  void create_gs_handle(KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT) {
+  void create_gs_handle(KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT,
+      KokkosGraph::ColoringAlgorithm coloring_algorithm = KokkosGraph::COLORING_DEFAULT) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
     // ---------------------------------------- //
@@ -569,7 +571,7 @@ public:
     if (gs_algorithm == KokkosSparse::GS_TWOSTAGE)
       this->gsHandle = new TwoStageGaussSeidelHandleType();
     else
-      this->gsHandle = new PointGaussSeidelHandleType(gs_algorithm);
+      this->gsHandle = new PointGaussSeidelHandleType(gs_algorithm, coloring_algorithm);
   }
   // ---------------------------------------- //
   // Two-stage Gauss-Seidel handle
@@ -628,10 +630,13 @@ public:
   }
 
 
-  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t hint_verts_per_cluster) {
+  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo,
+      nnz_lno_t hint_verts_per_cluster,
+      KokkosGraph::ColoringAlgorithm coloring_algorithm =
+      KokkosGraph::COLORING_DEFAULT) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
-    this->gsHandle = new ClusterGaussSeidelHandleType(clusterAlgo, hint_verts_per_cluster);
+    this->gsHandle = new ClusterGaussSeidelHandleType(clusterAlgo, hint_verts_per_cluster, coloring_algorithm);
   }
   void destroy_gs_handle(){
     if (is_owner_of_the_gs_handle && this->gsHandle != NULL){
@@ -779,6 +784,10 @@ public:
   bool is_sptrsv_column_major () {
     return this->sptrsvHandle->is_column_major ();
   }
+
+  void set_sptrsv_trmm_on_device (bool trmm_on_device) {
+    this->sptrsvHandle->set_trmm_on_device (trmm_on_device);
+  }
 #endif
   void destroy_sptrsv_handle(){
     if (is_owner_of_the_sptrsv_handle && this->sptrsvHandle != nullptr)
@@ -807,7 +816,7 @@ public:
       this->spilukHandle = nullptr;
     }
   }
-  
+
 };    // end class KokkosKernelsHandle
 
 }

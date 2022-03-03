@@ -192,8 +192,8 @@ template<typename Scalar,
          typename Node>
 void
 reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & SourceMatrix,
-                         const Teuchos::ArrayRCP<const size_t> & rowptr,
-                         const Teuchos::ArrayRCP<const LocalOrdinal> & colind,
+                         const typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::row_ptrs_host_view_type & rowptr,
+                         const typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type & colind,
                          const Tpetra::Details::Transfer<LocalOrdinal,GlobalOrdinal,Node>& RowTransfer,
                          Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > MyImporter,
                          Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > MyDomainMap,
@@ -239,7 +239,7 @@ reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, No
 
     auto LengthsFrom                = Distor.getLengthsFrom();
     auto MyColMap                   = SourceMatrix.getColMap();
-    const size_t numCols            = MyColMap->getNodeNumElements ();
+    const size_t numCols            = MyColMap->getLocalNumElements ();
     RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > target = MyImporter->getTargetMap();
 
     // Get the owning pids in a special way,
@@ -737,7 +737,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   // Scan all column indices and sort into two groups:
   // Local:  those whose GID matches a GID of the domain map on this processor and
   // Remote: All others.
-  const size_t numDomainElements = domainMap.getNodeNumElements ();
+  const size_t numDomainElements = domainMap.getLocalNumElements ();
   Teuchos::Array<bool> LocalGIDs;
   if (numDomainElements > 0) {
     LocalGIDs.resize (numDomainElements, false); // Assume domain GIDs are not local
@@ -902,7 +902,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
   //     each domain GID is a column GID.  we want to do this to
   //     maintain a consistent ordering of GIDs between the columns
   //     and the domain.
-  Teuchos::ArrayView<const GO> domainGlobalElements = domainMap.getNodeElementList();
+  Teuchos::ArrayView<const GO> domainGlobalElements = domainMap.getLocalElementList();
   if (static_cast<size_t> (NumLocalColGIDs) == numDomainElements) {
     if (NumLocalColGIDs > 0) {
       // Load Global Indices into first numMyCols elements column GID list

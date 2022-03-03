@@ -38,24 +38,14 @@
 #pragma warning disable 1478
 #endif // __INTEL_COMPILER
 
+#undef OMPI_SKIP_MPICXX
 #include <boost/graph/use_mpi.hpp>
-#include <boost/config.hpp>
-#include <boost/throw_exception.hpp>
 #include <boost/graph/distributed/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
 #include <boost/graph/distributed/connected_components_parallel_search.hpp>
-#include <boost/graph/random.hpp>
 #include <boost/property_map/parallel/distributed_property_map.hpp>
 #include <boost/graph/distributed/mpi_process_group.hpp>
-#include <boost/graph/parallel/distribution.hpp>
-#include <boost/graph/erdos_renyi_generator.hpp>
 #include <boost/graph/distributed/graphviz.hpp>
-#include <boost/serialization/list.hpp>
-
-#include <boost/graph/distributed/compressed_sparse_row_graph.hpp>
-#include <boost/graph/rmat_graph_generator.hpp>
-
-#include <boost/random.hpp>
 
 #include <boost/version.hpp>
 #if (BOOST_VERSION / 100 % 1000) > 55

@@ -134,6 +134,10 @@ elif atdm_match_buildname_keyword intel-18.0.5; then
  export ATDM_CONFIG_COMPILER=INTEL-18.0.5
 elif atdm_match_buildname_keyword intel-18; then
  export ATDM_CONFIG_COMPILER=INTEL-18.0.5
+elif atdm_match_buildname_keyword intel-19.0.5; then
+ export ATDM_CONFIG_COMPILER=INTEL-19.0.5
+elif atdm_match_buildname_keyword intel-19; then
+ export ATDM_CONFIG_COMPILER=INTEL-19.0.5
 elif atdm_match_buildname_keyword intel; then
  export ATDM_CONFIG_COMPILER=INTEL
 elif atdm_match_buildname_keyword clang-3.9.0; then

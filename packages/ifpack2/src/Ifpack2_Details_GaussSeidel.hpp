@@ -77,7 +77,7 @@ namespace Details
     GaussSeidel(Teuchos::RCP<const crs_matrix_type> A_, Teuchos::RCP<vector_type>& inverseDiagVec_, Teuchos::ArrayRCP<LO>& applyRows_, Scalar omega_)
     {
       A = A_;
-      numRows = A_->getNodeNumRows();
+      numRows = A_->getLocalNumRows();
       haveRowMatrix = false;
       inverseDiagVec = inverseDiagVec_;
       applyRows = applyRows_;
@@ -88,7 +88,7 @@ namespace Details
     GaussSeidel(Teuchos::RCP<const row_matrix_type> A_, Teuchos::RCP<vector_type>& inverseDiagVec_, Teuchos::ArrayRCP<LO>& applyRows_, Scalar omega_)
     {
       A = A_;
-      numRows = A_->getNodeNumRows();
+      numRows = A_->getLocalNumRows();
       haveRowMatrix = true;
       inverseDiagVec = inverseDiagVec_;
       applyRows = applyRows_;
@@ -96,9 +96,9 @@ namespace Details
       omega = omega_;
       //Here, need to make a deep CRS copy to avoid slow access via getLocalRowCopy
       rowMatrixRowmap = rowmap_t(Kokkos::ViewAllocateWithoutInitializing("Arowmap"), numRows + 1);
-      rowMatrixEntries = entries_t(Kokkos::ViewAllocateWithoutInitializing("Aentries"), A_->getNodeNumEntries());
-      rowMatrixValues = values_t(Kokkos::ViewAllocateWithoutInitializing("Avalues"), A_->getNodeNumEntries());
-      size_t maxDegree = A_->getNodeMaxNumRowEntries();
+      rowMatrixEntries = entries_t(Kokkos::ViewAllocateWithoutInitializing("Aentries"), A_->getLocalNumEntries());
+      rowMatrixValues = values_t(Kokkos::ViewAllocateWithoutInitializing("Avalues"), A_->getLocalNumEntries());
+      size_t maxDegree = A_->getLocalMaxNumRowEntries();
       nonconst_values_host_view_type rowValues("rowValues", maxDegree);
       nonconst_local_inds_host_view_type rowEntries("rowEntries", maxDegree);
       size_t accum = 0;
@@ -122,7 +122,7 @@ namespace Details
     GaussSeidel(Teuchos::RCP<const bcrs_matrix_type> A_, const InverseBlocks& inverseBlockDiag_, Teuchos::ArrayRCP<LO>& applyRows_, Scalar omega_)
     {
       A = A_;
-      numRows = A_->getNodeNumRows();
+      numRows = A_->getLocalNumRows();
       haveRowMatrix = false;
       //note: next 2 lines are no-ops if inverseBlockDiag_ is already host-accessible
       inverseBlockDiag = Kokkos::create_mirror_view(inverseBlockDiag_);

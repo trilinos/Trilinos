@@ -59,7 +59,7 @@
 // Kokkos Includes
 #include <Kokkos_Core.hpp>
 #include <Kokkos_UniqueToken.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 // Kokkos Kernels Includes
 #include <KokkosKernels_HashmapAccumulator.hpp>
@@ -257,7 +257,7 @@ namespace Experiment {
             std::cout << std::endl;
         }
 
-        Kokkos::Impl::Timer timer;
+        Kokkos::Timer timer;
 
         // Deep copy initialized values to device memory.
         Kokkos::deep_copy(d_data, h_data);

@@ -74,6 +74,9 @@ template <class AMatrix, class BXMV, class IPIVV>
 void
 gesv (const AMatrix& A, const BXMV& B, const IPIVV& IPIV)
 {
+  // NOTE: Currently, KokkosBlas::gesv only supports for MAGMA TPL and BLAS TPL.
+  //       MAGMA TPL should be enabled to call the MAGMA GPU interface for device views 
+  //       BLAS TPL should be enabled to call the BLAS interface for host views 
 
   static_assert (Kokkos::Impl::is_view<AMatrix>::value,
                  "KokkosBlas::gesv: A must be a Kokkos::View.");
@@ -101,13 +104,27 @@ gesv (const AMatrix& A, const BXMV& B, const IPIVV& IPIV)
       "Valid options include zero-extent 1-D view (no pivoting), or 1-D View with size of "<< A0 << " (partial pivoting).";
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
-#ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
+
+  // Check for no pivoting case. Only MAGMA supports no pivoting interface
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MAGMA //have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //and have BLAS TPL
+  if((!std::is_same< typename AMatrix::device_type::memory_space, Kokkos::CudaSpace >::value) &&
+     (IPIV0 == 0) && (IPIV.data()==nullptr)) {
+    std::ostringstream os;
+    os << "KokkosBlas::gesv: IPIV: " << IPIV0 << ". " <<
+      "BLAS TPL does not support no pivoting.";
+    Kokkos::Impl::throw_runtime_exception (os.str ());
+  }
+  #endif
+#else //not have MAGMA TPL
+  #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS //but have BLAS TPL
   if((IPIV0 == 0) && (IPIV.data()==nullptr)) {
     std::ostringstream os;
     os << "KokkosBlas::gesv: IPIV: " << IPIV0 << ". " <<
-      "TPL BLAS does not support no pivoting.";
+      "BLAS TPL does not support no pivoting.";
     Kokkos::Impl::throw_runtime_exception (os.str ());
   }
+  #endif
 #endif
 
   // Check compatibility of dimensions at run time.

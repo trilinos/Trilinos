@@ -202,9 +202,6 @@ evaluateFields(
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 {
-  typedef Sacado::ScalarValue<typename EvalType::ScalarT> SV;
-
-
   // build global (or serial communicator)
   #ifdef HAVE_MPI
      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -391,8 +388,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   Kokkos::deep_copy(dofPointField1_h, dofPointField1.get_view());
   for(int cell=0;cell<refField.extent_int(0);cell++) {
     for(int pt=0;pt<refField.extent_int(1);pt++) {
-      TEST_FLOATING_EQUALITY(SV::eval(refField_h(cell,pt)),SV::eval(dofPointField0_h(cell,pt)),1e-15);
-      TEST_FLOATING_EQUALITY(SV::eval(refField_h(cell,pt)),SV::eval(dofPointField1_h(cell,pt)),1e-15);
+      TEST_FLOATING_EQUALITY(Sacado::scalarValue(refField_h(cell,pt)),Sacado::scalarValue(dofPointField0_h(cell,pt)),1e-15);
+      TEST_FLOATING_EQUALITY(Sacado::scalarValue(refField_h(cell,pt)),Sacado::scalarValue(dofPointField1_h(cell,pt)),1e-15);
       // TEST_EQUALITY(refField_h(cell,pt),dofPointField0_h(cell,pt));
       // TEST_EQUALITY(refField_h(cell,pt),dofPointField1_h(cell,pt));
     }

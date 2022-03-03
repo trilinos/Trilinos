@@ -42,17 +42,25 @@
 //@HEADER
 */
 
-//#include "Teuchos_UnitTestHarness.hpp"
+// Note: Luc Berger-Vergiat 04/14/21
+//       This test requires the use of UVM
+//       to run correctly. This is not supported
+//       by all backends so the following guard
+//       ensure that the test is not inclueded
+//       on these backends.
+#if !defined(TEST_HIP_SPARSE_CPP) \
+  && ( !defined(TEST_CUDA_SPARSE_CPP) \
+       || (defined(TEST_CUDA_SPARSE_CPP) && defined(KOKKOS_ENABLE_CUDA_UVM)) )
+
 #include "Kokkos_Core.hpp"
 #include <vector>
 #include <iostream>
 #include <gtest/gtest.h>
 #include "KokkosSparse_findRelOffset.hpp"
 #include "KokkosKernels_Utils.hpp"
-#ifndef kokkos_complex_double
-#define kokkos_complex_double Kokkos::complex<double>
-#define kokkos_complex_float Kokkos::complex<float>
-#endif
+
+typedef Kokkos::complex<double> kokkos_complex_double;
+typedef Kokkos::complex<float> kokkos_complex_float;
 
 namespace Test{ // (anonymous)
   using std::endl;
@@ -62,7 +70,7 @@ namespace Test{ // (anonymous)
   // This takes the same arguments as if it were declared via the
   // TEUCHOS_UNIT_TEST macro.
   template <typename lno_t, typename DT>
-  void generalTest (bool& success, std::ostream &out)
+  void generalTest (bool& /*success*/, std::ostream &out)
   {
     using KokkosSparse::findRelOffset;
     //typedef int lno_t;
@@ -349,7 +357,7 @@ namespace Test{ // (anonymous)
   // This takes the same arguments as if it were declared via the
   // TEUCHOS_UNIT_TEST macro.
   template <typename lno_t, typename device_t>
-  void testLongArray (bool& success, std::ostream &out)
+  void testLongArray (bool& /*success*/, std::ostream &out)
   {
     using KokkosSparse::findRelOffset;
     //typedef long lno_t; // just for a change
@@ -463,4 +471,6 @@ TEST_F( TestCategory, sparse ## _ ##findRelOffset ## _ ## SCALAR ## _ ## ORDINAL
  EXECUTE_TEST(double, int64_t, int, TestExecSpace)
 #endif
 
+#undef EXECUTE_TEST
 
+#endif // Backend/UVM check

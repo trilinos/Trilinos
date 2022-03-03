@@ -129,6 +129,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: drop scheme");
     SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
     SET_VALID_ENTRY("aggregation: distance laplacian directional weights");
+    SET_VALID_ENTRY("aggregation: dropping may create Dirichlet");
 
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
@@ -193,6 +194,7 @@ namespace MueLu {
 
     GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
     std::string algo = pL.get<std::string>("aggregation: drop scheme");
+    const bool aggregationMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
     
     RCP<RealValuedMultiVector> Coords;
     RCP<Matrix> A;
@@ -253,7 +255,7 @@ namespace MueLu {
       if(algo == "block diagonal distance laplacian") {  
         // We now need to expand the coordinates by the interleaved blocksize
         RCP<RealValuedMultiVector> OldCoords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
-        if (OldCoords->getLocalLength() != realA->getNodeNumRows()) {
+        if (OldCoords->getLocalLength() != realA->getLocalNumRows()) {
            LO dim = (LO) OldCoords->getNumVectors();
            Coords = RealValuedMultiVectorFactory::Build(realA->getRowMap(),dim);
            for(LO k=0; k<dim; k++){
@@ -424,7 +426,7 @@ namespace MueLu {
             Utilities::ApplyRowSumCriterion(*A, rowSumTol, boundaryNodes);
 
           graph->SetBoundaryNodeMap(boundaryNodes);
-          numTotal = A->getNodeNumEntries();
+          numTotal = A->getLocalNumEntries();
 
           if (GetVerbLevel() & Statistics1) {
             GO numLocalBoundaryNodes  = 0;
@@ -449,8 +451,8 @@ namespace MueLu {
           // OR a matrix without a CrsGraph
 
           // allocate space for the local graph
-          ArrayRCP<LO> rows   (A->getNodeNumRows()+1);
-          ArrayRCP<LO> columns(A->getNodeNumEntries());
+          ArrayRCP<LO> rows   (A->getLocalNumRows()+1);
+          ArrayRCP<LO> columns(A->getLocalNumEntries());
 
           using MT = typename STS::magnitudeType;
           RCP<Vector> ghostedDiag;
@@ -488,7 +490,7 @@ namespace MueLu {
 
           LO realnnz = 0;
           rows[0] = 0;
-          for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
+          for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getLocalNumElements()); ++row) {
             size_t nnz = A->getNumEntriesInLocalRow(row);
             bool rowIsDirichlet = boundaryNodes[row];
             ArrayView<const LO> indices;
@@ -668,12 +670,14 @@ namespace MueLu {
           }//end for row
 
           columns.resize(realnnz);
-          numTotal = A->getNodeNumEntries();
+          numTotal = A->getLocalNumEntries();
 
-          // If the only element remaining after filtering is diagonal, mark node as boundary
-          for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
-            if (rows[row+1]- rows[row] <= 1)
-              boundaryNodes[row] = true;
+          if (aggregationMayCreateDirichlet) {
+            // If the only element remaining after filtering is diagonal, mark node as boundary
+            for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getLocalNumElements()); ++row) {
+              if (rows[row+1]- rows[row] <= 1)
+                boundaryNodes[row] = true;
+            }
           }
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
@@ -734,11 +738,11 @@ namespace MueLu {
           Array<LO> colTranslation = *(amalInfo->getColTranslation());
 
           // get number of local nodes
-          LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
+          LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getLocalNumElements());
 
           // Allocate space for the local graph
           ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows+1);
-          ArrayRCP<LO> columns = ArrayRCP<LO>(A->getNodeNumEntries());
+          ArrayRCP<LO> columns = ArrayRCP<LO>(A->getLocalNumEntries());
 
           const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
 
@@ -865,11 +869,11 @@ namespace MueLu {
           Array<LO> colTranslation = *(amalInfo->getColTranslation());
 
           // get number of local nodes
-          LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
+          LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getLocalNumElements());
 
           // Allocate space for the local graph
           ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows+1);
-          ArrayRCP<LO> columns = ArrayRCP<LO>(A->getNodeNumEntries());
+          ArrayRCP<LO> columns = ArrayRCP<LO>(A->getLocalNumEntries());
 
           const ArrayRCP<bool> amalgBoundaryNodes(numRows, false);
 
@@ -1008,7 +1012,7 @@ namespace MueLu {
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
           graph->SetBoundaryNodeMap(pointBoundaryNodes);
           graphType="unamalgamated";
-          numTotal = A->getNodeNumEntries();
+          numTotal = A->getLocalNumEntries();
 
           if (GetVerbLevel() & Statistics1) {
             GO numLocalBoundaryNodes  = 0;
@@ -1037,8 +1041,8 @@ namespace MueLu {
           // [*1*]: see [*0*]
 
           // Check that the number of local coordinates is consistent with the #rows in A
-          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible,
-                                     "Coordinate vector length (" << Coords->getLocalLength() << ") is incompatible with number of rows in A (" << A->getRowMap()->getNodeNumElements() << ") by modulo block size ("<< blkSize <<").");
+          TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getLocalNumElements()/blkSize != Coords->getLocalLength(), Exceptions::Incompatible,
+                                     "Coordinate vector length (" << Coords->getLocalLength() << ") is incompatible with number of rows in A (" << A->getRowMap()->getLocalNumElements() << ") by modulo block size ("<< blkSize <<").");
 
           const RCP<const Map> colMap = A->getColMap();
           RCP<const Map> uniqueMap, nonUniqueMap;
@@ -1057,7 +1061,7 @@ namespace MueLu {
 
             graphType = "amalgamated";
           }
-          LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
+          LO numRows = Teuchos::as<LocalOrdinal>(uniqueMap->getLocalNumElements());
 
           RCP<RealValuedMultiVector> ghostedCoords;
           RCP<Vector>                ghostedLaplDiag;
@@ -1155,7 +1159,7 @@ namespace MueLu {
 
           // allocate space for the local graph
           ArrayRCP<LO> rows    = ArrayRCP<LO>(numRows+1);
-          ArrayRCP<LO> columns = ArrayRCP<LO>(A->getNodeNumEntries());
+          ArrayRCP<LO> columns = ArrayRCP<LO>(A->getLocalNumEntries());
 
 #ifdef HAVE_MUELU_DEBUG
 	  // DEBUGGING
@@ -1521,13 +1525,13 @@ namespace MueLu {
       // 2) get row map for amalgamated matrix (graph of A)
       //    with same distribution over all procs as row map of A
       RCP<const Map> nodeMap = amalInfo->getNodeRowMap();
-      GetOStream(Statistics1) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
+      GetOStream(Statistics1) << "CoalesceDropFactory: nodeMap " << nodeMap->getLocalNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
 
       // 3) create graph of amalgamated matrix
-      RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, A->getNodeMaxNumRowEntries()*blockdim);
+      RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, A->getLocalMaxNumRowEntries()*blockdim);
 
-      LO numRows = A->getRowMap()->getNodeNumElements();
-      LO numNodes = nodeMap->getNodeNumElements();
+      LO numRows = A->getRowMap()->getLocalNumElements();
+      LO numNodes = nodeMap->getLocalNumElements();
       const ArrayRCP<bool> amalgBoundaryNodes(numNodes, false);
       const ArrayRCP<int>  numberDirichletRowsPerNode(numNodes, 0); // helper array counting the number of Dirichlet nodes associated with node
       bool bIsDiagonalEntry = false;       // boolean flag stating that grid==gcid
@@ -1776,17 +1780,17 @@ namespace MueLu {
     
     if(generate_matrix) {
       crs_matrix_wrap = rcp(new CrsMatrixWrap(A->getRowMap(), A->getColMap(), 0));
-      crs_matrix_wrap->getCrsMatrix()->allocateAllValues(A->getNodeNumEntries(), rows_mat, columns, values);
+      crs_matrix_wrap->getCrsMatrix()->allocateAllValues(A->getLocalNumEntries(), rows_mat, columns, values);
     }
     else {
-      rows_graph.resize(A->getNodeNumRows()+1);
-      columns.resize(A->getNodeNumEntries());
-      values.resize(A->getNodeNumEntries());
+      rows_graph.resize(A->getLocalNumRows()+1);
+      columns.resize(A->getLocalNumEntries());
+      values.resize(A->getLocalNumEntries());
     }
       
     LO realnnz = 0;
     GO numDropped = 0, numTotal = 0;
-    for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
+    for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getLocalNumElements()); ++row) {
       LO row_block = row_block_number[row];
       size_t nnz = A->getNumEntriesInLocalRow(row);
       ArrayView<const LO> indices;
@@ -1819,7 +1823,7 @@ namespace MueLu {
       values.resize(realnnz);
       columns.resize(realnnz);
     }
-    numTotal = A->getNodeNumEntries();
+    numTotal = A->getLocalNumEntries();
 
     if (GetVerbLevel() & Statistics1) {
       GO numLocalBoundaryNodes  = 0;
@@ -1889,7 +1893,7 @@ namespace MueLu {
 
    LO realnnz = 0;
    GO numDropped = 0, numTotal = 0;
-   const LO numRows = Teuchos::as<LO>(inputGraph->GetDomainMap()->getNodeNumElements());
+   const LO numRows = Teuchos::as<LO>(inputGraph->GetDomainMap()->getLocalNumElements());
    if (localizeColoringGraph) {
 
      for (LO row = 0; row < numRows; ++row) {
@@ -1965,12 +1969,15 @@ namespace MueLu {
      auto sym = rcp(new Tpetra::CrsGraphTransposer<LocalOrdinal,GlobalOrdinal,Node>(tpGraph));
      auto tpGraphSym = sym->symmetrize();
 
-     auto rowsSym = tpGraphSym->getNodeRowPtrs();
+     auto colIndsSym =        // FIXME persistingView is temporary; better fix would be change to LWGraph constructor
+          Kokkos::Compat::persistingView(tpGraphSym->getLocalIndicesHost());
+          
+     auto rowsSym = tpGraphSym->getLocalRowPtrsHost();
      ArrayRCP<LO> rows_graphSym;
      rows_graphSym.resize(rowsSym.size());
-     for (LO row = 0; row < rowsSym.size(); row++)
+     for (size_t row = 0; row < rowsSym.size(); row++)
        rows_graphSym[row] = rowsSym[row];
-     outputGraph =  rcp(new LWGraph(rows_graphSym, tpGraphSym->getNodePackedIndices(), inputGraph->GetDomainMap(), Xpetra::toXpetra(tpGraphSym->getColMap()), "block-diagonalized graph of A"));
+     outputGraph =  rcp(new LWGraph(rows_graphSym, colIndsSym, inputGraph->GetDomainMap(), Xpetra::toXpetra(tpGraphSym->getColMap()), "block-diagonalized graph of A"));
      outputGraph->SetBoundaryNodeMap(inputGraph->GetBoundaryNodeMap());
 #endif
    }

@@ -76,6 +76,7 @@ void M2NParser::parse_command_line_options(int argc, const char** argv, M2NBalan
 
   set_filename(settings);
   set_num_procs(settings);
+  set_logfile(settings);
   set_use_nested_decomp(settings);
 }
 
@@ -88,6 +89,8 @@ void M2NParser::add_options_to_parser()
 {
   stk::CommandLineOption infile{m_optionNames.infile, "i", "input file decomposed for old number of processors"};
   stk::CommandLineOption nprocs{m_optionNames.nprocs, "n", "new number of processors"};
+  stk::CommandLineOption logfile{m_optionNames.logfile, "l",
+                                 "Output log file path, one of: 'cout', 'cerr', or a file path."};
   stk::CommandLineOption useNested{m_optionNames.useNestedDecomp, "",
         "Nest the new decomposition completely within the boundaries "
         "of the input decomposition.  The new number of processors "
@@ -95,6 +98,7 @@ void M2NParser::add_options_to_parser()
 
   m_commandLineParser.add_required_positional<std::string>(infile);
   m_commandLineParser.add_required_positional<int>(nprocs);
+  m_commandLineParser.add_optional<std::string>(logfile, "stk_balance_m2n.log");
   m_commandLineParser.add_flag(useNested);
 }
 
@@ -119,6 +123,20 @@ void M2NParser::set_num_procs(M2NBalanceSettings& settings) const
   const unsigned numOutputProcs = m_commandLineParser.get_option_value<unsigned>(m_optionNames.nprocs);
   ThrowRequireMsg(numOutputProcs > 0, "Please specify a valid target processor count.");
   settings.set_num_output_processors(numOutputProcs);
+}
+
+void M2NParser::set_logfile(M2NBalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.logfile)) {
+    settings.set_log_filename(m_commandLineParser.get_option_value<std::string>(m_optionNames.logfile));
+  }
+  else {
+    const int initialNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    const int finalNumProcs = settings.get_num_output_processors();
+    settings.set_log_filename(stk::basename(stk::tailname(settings.get_input_filename())) + "." + std::to_string(initialNumProcs) + "_to_" 
+                                                                                                + std::to_string(finalNumProcs) + ".log");
+  }
+
 }
 
 void M2NParser::set_use_nested_decomp(M2NBalanceSettings& settings) const

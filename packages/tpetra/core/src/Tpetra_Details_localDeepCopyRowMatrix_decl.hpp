@@ -40,8 +40,6 @@
 #ifndef TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
 #define TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-
 /// \file Tpetra_Details_localDeepCopyRowMatrix_decl.hpp
 /// \brief Declaration of function for making a deep copy of a
 ///   Tpetra::RowMatrix's local matrix.
@@ -50,10 +48,18 @@
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+// This file can be deleted when deprecated code is removed
+
 namespace Tpetra {
 namespace Details {
 
 //! Deep copy of A's local sparse matrix.
+// This function is deprecated, but users don't call it directly; it is a 
+// helper from createDeepCopy.  createDeepCopy is also deprecated.
+// We silence TPETRA_DEPRECATED warnings here to prevent noise from
+// compilation of createDeepCopy.
+// TPETRA_DEPRECATED
 template <class SC, class LO, class GO, class NT>
 KokkosSparse::CrsMatrix<
   typename Kokkos::ArithTraits<SC>::val_type,
@@ -61,7 +67,6 @@ KokkosSparse::CrsMatrix<
     typename NT::device_type,
     void,
     size_t>
-TPETRA_DEPRECATED
 localDeepCopyLocallyIndexedRowMatrix
   (const RowMatrix<SC, LO, GO, NT>& A,
    const char label[]);

@@ -43,7 +43,7 @@ public:
 
   std::string File_Name(const char * /*fname*/);
   virtual std::string
-              Open_File(const char * /*fname*/ = nullptr); // Default opens current file name.
+              Open_File(const char             */*fname*/ = nullptr); // Default opens current file name.
   std::string Close_File();
   std::string File_Name() const { return file_name; }
   int         Open() const { return (file_id >= 0); }
@@ -106,10 +106,10 @@ public:
   // Number maps:
   std::string Load_Node_Map();
   std::string Free_Node_Map();
-  const INT * Get_Node_Map() { return node_map; }
+  const INT  *Get_Node_Map() { return node_map; }
   std::string Load_Element_Map();
   std::string Free_Element_Map();
-  const INT * Get_Element_Map() { return elmt_map; }
+  const INT  *Get_Element_Map() { return elmt_map; }
   inline INT  Node_Map(size_t node_num) const;      // numbers are global, 1-offset
   inline INT  Element_Map(size_t elmt_num) const;   // numbers are global, 1-offset
   inline INT  Element_Order(size_t elmt_num) const; // numbers are global, 1-offset
@@ -205,9 +205,9 @@ protected:
   float                    api_version{0.0};
   int                      io_word_size{0}; // Note: The "compute word size" is always 8.
 
-  Exo_Block<INT> * eblocks{nullptr};     // Array.
-  Node_Set<INT> *  nsets{nullptr};       // Array.
-  Side_Set<INT> *  ssets{nullptr};       // Array.
+  Exo_Block<INT>  *eblocks{nullptr};     // Array.
+  Node_Set<INT>   *nsets{nullptr};       // Array.
+  Side_Set<INT>   *ssets{nullptr};       // Array.
   Edge_Block<INT> *edge_blocks{nullptr}; // Array.
   Face_Block<INT> *face_blocks{nullptr}; // Array.
 

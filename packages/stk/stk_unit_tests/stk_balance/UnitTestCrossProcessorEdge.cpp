@@ -35,7 +35,7 @@ TEST_F(GraphCrossProc, checkEdgeWithAura)
 
 TEST_F(GraphCrossProc, checkEdgeWithNoAura)
 {
-    setup_mesh("generated:1x1x4", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
     test_if_graph_has_cross_processor_edge(get_bulk());
 }
 

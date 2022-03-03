@@ -136,7 +136,7 @@ namespace MueLu {
     NOTE -- it's assumed that A has been fillComplete'd.
     */
     static Teuchos::ArrayRCP<Scalar> GetMatrixDiagonal(const Matrix& A) {
-      size_t numRows = A.getRowMap()->getNodeNumElements();
+      size_t numRows = A.getRowMap()->getLocalNumElements();
       Teuchos::ArrayRCP<Scalar> diag(numRows);
       Teuchos::ArrayView<const LocalOrdinal> cols;
       Teuchos::ArrayView<const Scalar> vals;
@@ -183,9 +183,10 @@ namespace MueLu {
     NOTE -- it's assumed that A has been fillComplete'd.
     */
     static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Matrix const & A, const bool doReciprocal = false,
-                                                        Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100,
+                                                        Magnitude tol = Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::zero()),
                                                         Scalar valReplacement = Teuchos::ScalarTraits<Scalar>::zero(),
-                                                        const bool replaceSingleEntryRowWithZero = false) {
+                                                        const bool replaceSingleEntryRowWithZero = false,
+                                                        const bool useAverageAbsDiagVal = false) {
 
       typedef Teuchos::ScalarTraits<Scalar> TST;
 
@@ -193,8 +194,6 @@ namespace MueLu {
       const Scalar zero = TST::zero();
       const Scalar one = TST::one();
       const Scalar two = one + one;
-
-tol = 0.;
 
       Teuchos::RCP<const Matrix> rcpA = Teuchos::rcpFromRef(A);
 
@@ -208,10 +207,15 @@ tol = 0.;
         Teuchos::ArrayView<const LocalOrdinal> cols;
         Teuchos::ArrayView<const Scalar> vals;
 
-        std::vector<int> nnzPerRow(rowMap->getNodeNumElements());
+        std::vector<int> nnzPerRow(rowMap->getLocalNumElements());
+
+        //FIXME 2021-10-22 JHU   If this is called with doReciprocal=false, what should the correct behavior be?  Currently,
+        //FIXME 2021-10-22 JHU   the diagonal entry is set to be the sum of the absolute values of the row entries.
 
         const Magnitude zeroMagn = TST::magnitude(zero);
-        for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+        Magnitude avgAbsDiagVal = TST::magnitude(zero);
+        int numDiagsEqualToOne = 0;
+        for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
           nnzPerRow[i] = 0;
           rcpA->getLocalRowView(i, cols, vals);
           diagVals[i] = zero;
@@ -221,14 +225,20 @@ tol = 0.;
             if (rowEntryMagn > zeroMagn)
               nnzPerRow[i]++;
             diagVals[i] += rowEntryMagn;
+            if (static_cast<size_t>(cols[j]) == i)
+              avgAbsDiagVal += rowEntryMagn;
           }
+          if (nnzPerRow[i] == 1 && TST::magnitude(diagVals[i])==1.)
+            numDiagsEqualToOne++;
         }
+        if (useAverageAbsDiagVal)
+          tol = TST::magnitude(100 * Teuchos::ScalarTraits<Scalar>::eps()) * (avgAbsDiagVal-numDiagsEqualToOne) / (rowMap->getLocalNumElements()-numDiagsEqualToOne);
         if (doReciprocal) {
-          for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+          for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
             if (replaceSingleEntryRowWithZero && nnzPerRow[i] <= static_cast<int>(1))
               diagVals[i] = zero;
-            else if (replaceSingleEntryRowWithZero && diagVals[i] != zero && TST::magnitude(diagVals[i]) < TST::magnitude(two*regSum[i]))
-              diagVals[i] = one / (two*regSum[i]);
+            else if ((diagVals[i] != zero) && (TST::magnitude(diagVals[i]) < TST::magnitude(two*regSum[i])))
+              diagVals[i] = one / TST::magnitude((two*regSum[i]));
             else {
               if(TST::magnitude(diagVals[i]) > tol)
                 diagVals[i] = one / diagVals[i];
@@ -268,7 +278,7 @@ tol = 0.;
     */
 
     static Teuchos::ArrayRCP<Magnitude> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) { 
-      size_t numRows = A.getRowMap()->getNodeNumElements();
+      size_t numRows = A.getRowMap()->getLocalNumElements();
       Magnitude ZERO = Teuchos::ScalarTraits<Magnitude>::zero();
       Teuchos::ArrayRCP<Magnitude> maxvec(numRows);
       Teuchos::ArrayView<const LocalOrdinal> cols;
@@ -291,7 +301,7 @@ tol = 0.;
       
       Teuchos::ArrayRCP<const LocalOrdinal> block_id = BlockNumber.getData(0);
 
-      size_t numRows = A.getRowMap()->getNodeNumElements();
+      size_t numRows = A.getRowMap()->getLocalNumElements();
       Magnitude ZERO = Teuchos::ScalarTraits<Magnitude>::zero();
       Teuchos::ArrayRCP<Magnitude> maxvec(numRows);
       Teuchos::ArrayView<const LocalOrdinal> cols;
@@ -340,7 +350,7 @@ tol = 0.;
       // v is an {Epetra,Tpetra}Vector: work with the underlying raw data
       ArrayRCP<Scalar> retVals = ret->getDataNonConst(0);
       ArrayRCP<const Scalar> inputVals = v->getData(0);
-      for (size_t i = 0; i < v->getMap()->getNodeNumElements(); ++i) {
+      for (size_t i = 0; i < v->getMap()->getLocalNumElements(); ++i) {
         if(Teuchos::ScalarTraits<Scalar>::magnitude(inputVals[i]) > tol)
           retVals[i] = Teuchos::ScalarTraits<Scalar>::one() / inputVals[i];
         else
@@ -414,7 +424,7 @@ tol = 0.;
       RCP<Vector> ghosted = Xpetra::VectorFactory<SC,LO,GO,Node>::Build(colMap,true);
       ArrayRCP<SC> localVals = local->getDataNonConst(0);
 
-      for (LO row = 0; row < static_cast<LO>(A.getRowMap()->getNodeNumElements()); ++row) {
+      for (LO row = 0; row < static_cast<LO>(A.getRowMap()->getLocalNumElements()); ++row) {
 	size_t nnz = A.getNumEntriesInLocalRow(row);
 	ArrayView<const LO> indices;
 	ArrayView<const SC> vals;
@@ -460,7 +470,7 @@ tol = 0.;
       RCP<RealValuedVector> ghosted   = Xpetra::VectorFactory<MT,LO,GO,Node>::Build(colMap,true);
       ArrayRCP<MT>          localVals = local->getDataNonConst(0);
 
-      for (LO rowIdx = 0; rowIdx < static_cast<LO>(A.getRowMap()->getNodeNumElements()); ++rowIdx) {
+      for (LO rowIdx = 0; rowIdx < static_cast<LO>(A.getRowMap()->getLocalNumElements()); ++rowIdx) {
         size_t nnz = A.getNumEntriesInLocalRow(rowIdx);
         ArrayView<const LO> indices;
         ArrayView<const SC> vals;
@@ -661,7 +671,7 @@ tol = 0.;
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletRows(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Magnitude& tol = Teuchos::ScalarTraits<Scalar>::zero(), bool count_twos_as_dirichlet=false) {
-      LocalOrdinal numRows = A.getNodeNumRows();
+      LocalOrdinal numRows = A.getLocalNumRows();
       typedef Teuchos::ScalarTraits<Scalar> STS;
       ArrayRCP<bool> boundaryNodes(numRows, true);
       if (count_twos_as_dirichlet) {
@@ -721,7 +731,7 @@ tol = 0.;
       A.getLocalDiagCopy(*diagVec);
       Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
 
-      LocalOrdinal numRows = A.getNodeNumRows();
+      LocalOrdinal numRows = A.getLocalNumRows();
       typedef Teuchos::ScalarTraits<Scalar> STS;
       ArrayRCP<bool> boundaryNodes(numRows, false);
       for (LocalOrdinal row = 0; row < numRows; row++) {
@@ -776,9 +786,9 @@ tol = 0.;
       RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A .getDomainMap();
       RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A.getRowMap();
       RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A.getColMap();
-      TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == rowMap->getNodeNumElements());
-      TEUCHOS_ASSERT(static_cast<size_t>(dirichletCols.size()) == colMap->getNodeNumElements());
-      TEUCHOS_ASSERT(static_cast<size_t>(dirichletDomain.size()) == domMap->getNodeNumElements());
+      TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == rowMap->getLocalNumElements());
+      TEUCHOS_ASSERT(static_cast<size_t>(dirichletCols.size()) == colMap->getLocalNumElements());
+      TEUCHOS_ASSERT(static_cast<size_t>(dirichletDomain.size()) == domMap->getLocalNumElements());
       RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap, 1, /*zeroOut=*/true);
       // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
       for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
@@ -825,7 +835,7 @@ tol = 0.;
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
       typedef Teuchos::ScalarTraits<MT> MTS;
       RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
-      for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
+      for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getLocalNumElements()); ++row) {
         size_t nnz = A.getNumEntriesInLocalRow(row);
         ArrayView<const LocalOrdinal> indices;
         ArrayView<const Scalar> vals;
@@ -857,7 +867,7 @@ tol = 0.;
       TEUCHOS_TEST_FOR_EXCEPTION(!A.getColMap()->isSameAs(*BlockNumber.getMap()),std::runtime_error,"ApplyRowSumCriterion: BlockNumber must match's A's column map.");
       
       Teuchos::ArrayRCP<const LocalOrdinal> block_id = BlockNumber.getData(0);
-      for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
+      for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getLocalNumElements()); ++row) {
         size_t nnz = A.getNumEntriesInLocalRow(row);
         ArrayView<const LocalOrdinal> indices;
         ArrayView<const Scalar> vals;
@@ -920,9 +930,9 @@ tol = 0.;
       // import to column map
       myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
       Teuchos::ArrayRCP<const Scalar> myCols = myColsToZero->getData(0);
-      Teuchos::ArrayRCP<bool> dirichletCols(colMap->getNodeNumElements(), true);
+      Teuchos::ArrayRCP<bool> dirichletCols(colMap->getLocalNumElements(), true);
       Magnitude eps = Teuchos::ScalarTraits<Magnitude>::eps();
-      for(size_t i=0; i<colMap->getNodeNumElements(); i++) {
+      for(size_t i=0; i<colMap->getLocalNumElements(); i++) {
         dirichletCols[i] = Teuchos::ScalarTraits<Scalar>::magnitude(myCols[i])>2.0*eps;
       }
       return dirichletCols;
@@ -958,11 +968,11 @@ tol = 0.;
       // that getLocalElement and getGlobalElement functions are reasonably effective. It
       // *is* possible that the costs are hidden in those functions, but if maps are close
       // to linear maps, we should be fine
-      Teuchos::Array<Scalar> valBAll(BColMap.getNodeNumElements());
+      Teuchos::Array<Scalar> valBAll(BColMap.getLocalNumElements());
 
       LocalOrdinal  invalid = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
       Scalar        zero    = Teuchos::ScalarTraits<Scalar>       ::zero(),    f = zero, gf;
-      size_t numRows = A.getNodeNumRows();
+      size_t numRows = A.getLocalNumRows();
       for (size_t i = 0; i < numRows; i++) {
         A.getLocalRowView(i, indA, valA);
         B.getLocalRowView(i, indB, valB);
@@ -1031,7 +1041,7 @@ tol = 0.;
                                   std::vector<LocalOrdinal>& dirichletRows, bool count_twos_as_dirichlet=false) {
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
       dirichletRows.resize(0);
-      for(size_t i=0; i<A->getNodeNumRows(); i++) {
+      for(size_t i=0; i<A->getLocalNumRows(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
         Teuchos::ArrayView<const Scalar> values;
         A->getLocalRowView(i,indices,values);
@@ -1082,7 +1092,7 @@ tol = 0.;
       RCP<const Map> ranMap = A->getRangeMap();
       RCP<const Map> Rmap = A->getRowMap();
       RCP<const Map> Cmap = A->getColMap();
-      TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == Rmap->getNodeNumElements());
+      TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == Rmap->getLocalNumElements());
       const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
       const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
       A->resumeFill();
@@ -1128,7 +1138,7 @@ tol = 0.;
     static void ZeroDirichletRows(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                                   const Teuchos::ArrayRCP<const bool>& dirichletRows,
                                   Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
-      TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == A->getRowMap()->getNodeNumElements());
+      TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == A->getRowMap()->getLocalNumElements());
       for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
         if (dirichletRows[i]) {
           Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -1147,7 +1157,7 @@ tol = 0.;
     static void ZeroDirichletRows(Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& X,
                                   const Teuchos::ArrayRCP<const bool>& dirichletRows,
                                   Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
-      TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == X->getMap()->getNodeNumElements());
+      TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == X->getMap()->getLocalNumElements());
       for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
         if (dirichletRows[i]) {
           for(size_t j=0; j<X->getNumVectors(); j++)
@@ -1161,8 +1171,8 @@ tol = 0.;
     static void ZeroDirichletCols(Teuchos::RCP<Matrix>& A,
                                   const Teuchos::ArrayRCP<const bool>& dirichletCols,
                                   Scalar replaceWith=Teuchos::ScalarTraits<Scalar>::zero()) {
-      TEUCHOS_ASSERT(static_cast<size_t>(dirichletCols.size()) == A->getColMap()->getNodeNumElements());
-      for(size_t i=0; i<A->getNodeNumRows(); i++) {
+      TEUCHOS_ASSERT(static_cast<size_t>(dirichletCols.size()) == A->getColMap()->getLocalNumElements());
+      for(size_t i=0; i<A->getLocalNumRows(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
         Teuchos::ArrayView<const Scalar> values;
         A->getLocalRowView(i,indices,values);
@@ -1239,7 +1249,7 @@ tol = 0.;
       for(size_t i=0; i<numSubMaps; i++) {
 	RCP<const Map> map = sourceBlockedMap.getMap(i);
 
-	for(size_t j=0; j<map->getNodeNumElements(); j++)  {
+	for(size_t j=0; j<map->getLocalNumElements(); j++)  {
 	  LocalOrdinal jj = fullMap->getLocalElement(map->getGlobalElement(j));
 	  block_ids->replaceLocalValue(jj,(int)i);
 	}
@@ -1255,7 +1265,7 @@ tol = 0.;
 
       // Get the GIDs for each subblock
       Teuchos::Array<Teuchos::Array<GlobalOrdinal> > elementsInSubMap(numSubMaps);
-      for(size_t i=0; i<targetMap->getNodeNumElements(); i++) {
+      for(size_t i=0; i<targetMap->getLocalNumElements(); i++) {
 	elementsInSubMap[data[i]].push_back(targetMap->getGlobalElement(i));
       }
 
@@ -1273,8 +1283,8 @@ tol = 0.;
     // Checks to see if the first chunk of the colMap is also the row map.  This simiplifies a bunch of
     // operation in coarsening
     static bool MapsAreNested(const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& rowMap, const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& colMap) {
-      ArrayView<const GlobalOrdinal> rowElements = rowMap.getNodeElementList();
-      ArrayView<const GlobalOrdinal> colElements = colMap.getNodeElementList();
+      ArrayView<const GlobalOrdinal> rowElements = rowMap.getLocalElementList();
+      ArrayView<const GlobalOrdinal> colElements = colMap.getLocalElementList();
       
       const size_t numElements = rowElements.size();
       

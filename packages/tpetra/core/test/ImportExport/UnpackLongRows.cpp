@@ -154,8 +154,8 @@ generate_graphs(
     shared_map = rcp(new map_type(invalid, indices(), 0, comm));
   }
 
-  owned = rcp(new graph_type(owned_map, rows_per_rank + dense_rows, Tpetra::StaticProfile));
-  shared = rcp(new graph_type(shared_map, rows_per_rank + dense_rows, Tpetra::StaticProfile));
+  owned = rcp(new graph_type(owned_map, rows_per_rank + dense_rows));
+  shared = rcp(new graph_type(shared_map, rows_per_rank + dense_rows));
 
   {
     using Teuchos::tuple;
@@ -248,7 +248,7 @@ generate_graphs(
           std::logic_error,
           "==> Error [" << rank << "/" << procs << "]: " <<
           "the global row " << row << " is not in this owned map\n" <<
-          owned_map->getNodeElementList()
+          owned_map->getLocalElementList()
         );
         owned->insertGlobalIndices(row, columns());
       }
@@ -259,7 +259,7 @@ generate_graphs(
           std::logic_error,
           "==> Error [" << rank << "/" << procs << "]: " <<
           "the global row " << row << " is not in this shared map\n" <<
-          shared_map->getNodeElementList()
+          shared_map->getLocalElementList()
         );
         shared->insertGlobalIndices(row, columns());
       }
@@ -474,7 +474,7 @@ generate_matrix(
           std::logic_error,
           "==> Error [" << rank << "/" << procs << "]: " <<
           "the global row " << row << " is not in this owned map\n" <<
-          owned_map->getNodeElementList()
+          owned_map->getLocalElementList()
         );
         auto local_row = owned_map->getLocalElement(row);
         auto colmap = mtx_owned->getColMap();
@@ -493,7 +493,7 @@ generate_matrix(
           std::logic_error,
           "==> Error [" << rank << "/" << procs << "]: " <<
           "the global row " << row << " is not in this shared map\n" <<
-          shared_map->getNodeElementList()
+          shared_map->getLocalElementList()
         );
         auto local_row = shared_map->getLocalElement(row);
         auto colmap = mtx_shared->getColMap();

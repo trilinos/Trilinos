@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,7 +32,7 @@
 #endif
 
 namespace {
-  const char *version_string = "6.02 (2021/09/30)";
+  const char *version_string = "6.05 (2022/01/10)";
 
   void output_copyright();
 
@@ -223,7 +223,7 @@ namespace SEAMS {
     }
 
     if (line_info) {
-      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
+      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno << ")";
     }
     ss << "\n";
 
@@ -254,7 +254,7 @@ namespace SEAMS {
     }
 
     if (line_info) {
-      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
+      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno << ")";
     }
     ss << "\n";
 
@@ -284,7 +284,7 @@ namespace SEAMS {
     }
 
     if (line_info) {
-      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno + 1 << ")";
+      ss << " (" << ap_file_list.top().name << ", line " << ap_file_list.top().lineno << ")";
     }
     ss << "\n";
 
@@ -586,6 +586,15 @@ namespace SEAMS {
     return ptr;
   }
 
+  void Aprepro::redefine_array(array *array)
+  {
+    // This data pointer from an array is being redefined.  Remove it
+    // from `array_allocations` to avoid double delete.
+    array_allocations.erase(std::remove(array_allocations.begin(), array_allocations.end(), array),
+                            array_allocations.end());
+    delete array;
+  }
+
   void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value,
                              bool immutable, bool internal)
   {
@@ -611,7 +620,7 @@ namespace SEAMS {
   {
     if (check_valid_var(sym_name.c_str())) {
       SYMBOL_TYPE type = immutable ? SYMBOL_TYPE::IMMUTABLE_VARIABLE : SYMBOL_TYPE::VARIABLE;
-      symrec *    var  = getsym(sym_name);
+      symrec     *var  = getsym(sym_name);
       if (var == nullptr) {
         var = putsym(sym_name, type, internal);
       }
@@ -629,7 +638,7 @@ namespace SEAMS {
   {
     if (check_valid_var(sym_name.c_str())) {
       SYMBOL_TYPE type = SYMBOL_TYPE::ARRAY_VARIABLE;
-      symrec *    var  = getsym(sym_name);
+      symrec     *var  = getsym(sym_name);
       if (var == nullptr) {
         var = putsym(sym_name, type, false);
       }
@@ -714,17 +723,19 @@ namespace SEAMS {
       const auto &ptr = sym.second;
 
       if (!ptr->isInternal) {
-        if (first) {
+        if (ptr->type == Parser::token::VAR || ptr->type == Parser::token::IMMVAR) {
+          (*infoStream) << (first ? "\"" : ",\n\"") << ptr->name << "\": " << std::setprecision(10)
+                        << ptr->value.var;
           first = false;
         }
-        else {
-          (*infoStream) << ",\n";
-        }
-        if (ptr->type == Parser::token::VAR || ptr->type == Parser::token::IMMVAR) {
-          (*infoStream) << "\"" << ptr->name << "\": " << std::setprecision(10) << ptr->value.var;
+        else if (ptr->type == Parser::token::UNDVAR) {
+          (*infoStream) << (first ? "\"" : ",\n\"") << ptr->name << "\": null";
+          first = false;
         }
         else if (ptr->type == Parser::token::SVAR || ptr->type == Parser::token::IMMSVAR) {
-          (*infoStream) << "\"" << ptr->name << "\": \"" << ptr->value.svar << "\"";
+          (*infoStream) << (first ? "\"" : ",\n\"") << ptr->name << "\": \"" << ptr->value.svar
+                        << "\"";
+          first = false;
         }
       }
     }
