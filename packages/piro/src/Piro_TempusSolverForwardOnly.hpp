@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_TEMPUSSOLVERMIMIC_H
-#define PIRO_TEMPUSSOLVERMIMIC_H
+#ifndef PIRO_TEMPUSSOLVERFORWARDONLY_H
+#define PIRO_TEMPUSSOLVERFORWARDONLY_H
 
 #include "Piro_ConfigDefs.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
@@ -65,7 +65,7 @@
 namespace Piro {
 
 /** \brief Thyra-based Model Evaluator for Tempus solves
- *  that mimics Piro_TempusSolverForwardOnly.hpp.
+ *  that mimics forward only in Piro_RythmosSolver.hpp.
  */
 template <typename Scalar>
 class TempusSolverForwardOnly
