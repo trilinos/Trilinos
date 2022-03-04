@@ -77,13 +77,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using Teuchos::rcp;
 
   using ST = Teuchos::ScalarTraits<Scalar>;
+  using GST = Teuchos::ScalarTraits<GO>;
+
+  //This test reads from real-valued MatrixMarket files, so it only works if Scalar is real
+  if(!std::is_same<Scalar, double>::value && !std::is_same<Scalar, float>::value)
+    return EXIT_SUCCESS;
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
 
-  GO numGlobalDofsPrimal = -ST::one(); clp.setOption("nPrimalDofs", &numGlobalDofsPrimal, "total number of primal DOFs");
-  GO numGlobalDofsDual = -ST::one(); clp.setOption("nDualDofs", &numGlobalDofsDual, "total number of dual DOFs");
+  GO numGlobalDofsPrimal = -GST::one(); clp.setOption("nPrimalDofs", &numGlobalDofsPrimal, "total number of primal DOFs");
+  GO numGlobalDofsDual = -GST::one(); clp.setOption("nDualDofs", &numGlobalDofsDual, "total number of dual DOFs");
   int numPrimalDofsPerNode = -1; clp.setOption("numPrimalDofsPerNode", &numPrimalDofsPerNode, "number of primal DOFs per mesh node");
   int numDualDofsPerNode = -1; clp.setOption("numDualDofsPerNode", &numDualDofsPerNode, "number of dual DOFs per interface node");
   std::string probName = ""; clp.setOption("probName", &probName, "short name of the problem to be done. Used to read-in the problem from files.");
@@ -98,8 +103,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(numGlobalDofsPrimal==-ST::one(), MueLu::Exceptions::InvalidArgument, "Please specify the global number of primal DOFs on the command line.");
-  TEUCHOS_TEST_FOR_EXCEPTION(numGlobalDofsDual==-ST::one(), MueLu::Exceptions::InvalidArgument, "Please specify the global number of dual DOFs on the command line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(numGlobalDofsPrimal==-GST::one(), MueLu::Exceptions::InvalidArgument, "Please specify the global number of primal DOFs on the command line.");
+  TEUCHOS_TEST_FOR_EXCEPTION(numGlobalDofsDual==-GST::one(), MueLu::Exceptions::InvalidArgument, "Please specify the global number of dual DOFs on the command line.");
   TEUCHOS_TEST_FOR_EXCEPTION(numPrimalDofsPerNode==-1, MueLu::Exceptions::InvalidArgument, "Please specify the number of primal DOFs per mesh node on the command line.");
   TEUCHOS_TEST_FOR_EXCEPTION(numDualDofsPerNode==-1, MueLu::Exceptions::InvalidArgument, "Please specify the number of dual DOFs per interface node on the command line.");
   TEUCHOS_TEST_FOR_EXCEPTION(probName=="", MueLu::Exceptions::InvalidArgument, "Please specify a valid problem name.");
