@@ -79,10 +79,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   using ST = Teuchos::ScalarTraits<Scalar>;
   using GST = Teuchos::ScalarTraits<GO>;
 
-  //This test reads from real-valued MatrixMarket files, so it only works if Scalar is real
-  if(!std::is_same<Scalar, double>::value && !std::is_same<Scalar, float>::value)
-    return EXIT_SUCCESS;
-
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   out->setOutputToRootOnly(0);
