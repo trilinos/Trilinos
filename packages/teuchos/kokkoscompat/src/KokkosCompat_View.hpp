@@ -128,7 +128,7 @@ namespace Kokkos {
     template <class ViewType>
     ViewType
     create_view (const std::string& label, size_t size) {
-      static_assert(Kokkos::Impl::is_view<ViewType>::value==true,"Kokkos::Compat::create_view() called with non-view argument.");
+      static_assert(Kokkos::is_view<ViewType>::value==true,"Kokkos::Compat::create_view() called with non-view argument.");
       static_assert(ViewType::Rank==1,"Kokkos::Compat::create_view() called with non-rank-1 view argument.");
       return ViewType (label, size);
     }
@@ -210,7 +210,7 @@ namespace Kokkos {
                    const Ordinal begin,
                    const Ordinal end)
     {
-      static_assert(Kokkos::Impl::is_view<ViewType>::value==true,"Kokkos::Compat::subview_range() called with non-view argument.");
+      static_assert(Kokkos::is_view<ViewType>::value==true,"Kokkos::Compat::subview_range() called with non-view argument.");
       static_assert(ViewType::Rank==1,"Kokkos::Compat::subview_range() called with non-rank-1 view argument.");
       return Kokkos::subview (view, std::make_pair (begin, end));
     }
@@ -221,7 +221,7 @@ namespace Kokkos {
                     const Ordinal offset,
                     const Ordinal size)
     {
-      static_assert(Kokkos::Impl::is_view<ViewType>::value==true,"Kokkos::Compat::subview_offset() called with non-view argument.");
+      static_assert(Kokkos::is_view<ViewType>::value==true,"Kokkos::Compat::subview_offset() called with non-view argument.");
       static_assert(ViewType::Rank==1,"Kokkos::Compat::subview_offset() called with non-rank-1 view argument.");
       return Kokkos::subview (view, std::make_pair (offset, offset+size));
     }
@@ -235,8 +235,8 @@ namespace Kokkos {
                      const Ordinal src_begin,
                      const Ordinal src_end)
     {
-      static_assert(Kokkos::Impl::is_view<DstViewType>::value==true,"Kokkos::Compat::deep_copy_range() called with non-view argument.");
-      static_assert(Kokkos::Impl::is_view<SrcViewType>::value==true,"Kokkos::Compat::deep_copy_range() called with non-view argument.");
+      static_assert(Kokkos::is_view<DstViewType>::value==true,"Kokkos::Compat::deep_copy_range() called with non-view argument.");
+      static_assert(Kokkos::is_view<SrcViewType>::value==true,"Kokkos::Compat::deep_copy_range() called with non-view argument.");
       static_assert(DstViewType::Rank==1 && SrcViewType::Rank==1,"Kokkos::Compat::deep_copy_range() called with non-rank-1 view argument.");
       const Ordinal size = src_end - src_begin;
       const Ordinal dst_end = dst_begin + size;
@@ -256,8 +256,8 @@ namespace Kokkos {
                       const Ordinal src_offset,
                       const Ordinal size)
     {
-      static_assert(Kokkos::Impl::is_view<DstViewType>::value==true,"Kokkos::Compat::deep_copy_offset() called with non-view argument.");
-      static_assert(Kokkos::Impl::is_view<SrcViewType>::value==true,"Kokkos::Compat::deep_copy_offset() called with non-view argument.");
+      static_assert(Kokkos::is_view<DstViewType>::value==true,"Kokkos::Compat::deep_copy_offset() called with non-view argument.");
+      static_assert(Kokkos::is_view<SrcViewType>::value==true,"Kokkos::Compat::deep_copy_offset() called with non-view argument.");
       static_assert(DstViewType::Rank==1 && SrcViewType::Rank==1,"Kokkos::Compat::deep_copy_offset() called with non-rank-1 view argument.");
       const Ordinal dst_end = dst_offset + size;
       const Ordinal src_end = src_offset + size;
@@ -271,7 +271,7 @@ namespace Kokkos {
     template <class ViewType>
     typename ViewType::const_type
     create_const_view(const ViewType& view) {
-      static_assert(Kokkos::Impl::is_view<ViewType>::value==true,"Kokkos::Compat::create_const_view() called with non-view argument.");
+      static_assert(Kokkos::is_view<ViewType>::value==true,"Kokkos::Compat::create_const_view() called with non-view argument.");
       return view;
     }
 
