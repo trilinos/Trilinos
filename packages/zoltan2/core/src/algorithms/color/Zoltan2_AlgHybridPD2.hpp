@@ -51,11 +51,12 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
     using map_t = Tpetra::Map<lno_t,gno_t>;
     using femv_scalar_t = int;
     using femv_t = Tpetra::FEMultiVector<femv_scalar_t, lno_t, gno_t>; 
-    using device_type = Tpetra::Map<>::device_type;
-    using execution_space = Tpetra::Map<>::execution_space;
-    using memory_space = Tpetra::Map<>::memory_space;
-    using host_exec = typename Kokkos::View<device_type>::HostMirror::execution_space;
-    using host_mem = typename Kokkos::View<device_type>::HostMirror::memory_space;      
+    using device_type = typename femv_t::device_type;
+    using execution_space = typename device_type::execution_space;
+    using memory_space = typename device_type::memory_space;
+    using host_exec = typename femv_t::host_view_type::device_type::execution_space;
+    using host_mem = typename femv_t::host_view_type::device_type::memory_space;
+
   private:
     //serial and parallel local partial distance-2 coloring function 
     template<class ExecutionSpace, typename MemorySpace>
