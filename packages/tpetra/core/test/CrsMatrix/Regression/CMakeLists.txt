@@ -3,7 +3,7 @@ IF (Tpetra_INST_DOUBLE)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Albany182
     SOURCES
-      Albany182
+      Albany182.cpp
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM mpi
     ARGS "--globally-reduce-test-result"
