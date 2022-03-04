@@ -291,7 +291,7 @@ struct FILL<ViewType, InputType, IndexType, true, rank> {
   run (const ViewType& x, const InputType& val)
   {
     const IndexType span = static_cast<IndexType> (x.span());
-    auto x_ptr(x.data());
+    auto x_ptr = x.data();
 #pragma unroll
     for (IndexType i = 0; i < span; ++i) 
       x_ptr[i] = val;
