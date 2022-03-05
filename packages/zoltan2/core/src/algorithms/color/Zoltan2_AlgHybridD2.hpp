@@ -411,7 +411,9 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
     Kokkos::deep_copy(boundary_verts, boundary_verts_host);
 
     //initialize the list of verts to send
-    Kokkos::parallel_for(n_local, KOKKOS_LAMBDA(const int& i){
+    Kokkos::parallel_for("init verts to send", 
+      Kokkos::RangePolicy<execution_space, int>(0,n_local),
+      KOKKOS_LAMBDA(const int& i){
       for(offset_t j = dist_offsets_dev(i); j < dist_offsets_dev(i+1); j++){
         if((size_t)dist_adjs_dev(j) >= n_local){
           verts_to_send_view(verts_to_send_size_atomic(0)++) = i;

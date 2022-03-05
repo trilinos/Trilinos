@@ -312,7 +312,9 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
                                                 device_type,
                                                 Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic){
 
-      Kokkos::parallel_for(n_local, KOKKOS_LAMBDA(const int& i){
+      Kokkos::parallel_for("constructBoundary",
+        Kokkos::RangePolicy<execution_space, int>(0,n_local), 
+        KOKKOS_LAMBDA(const int& i){
         for(offset_t j = dist_offsets_dev(i); j < dist_offsets_dev(i+1); j++){
           if((size_t)dist_adjs_dev(j) >= n_local){
             verts_to_send_view(verts_to_send_size_atomic(0)++) = i;

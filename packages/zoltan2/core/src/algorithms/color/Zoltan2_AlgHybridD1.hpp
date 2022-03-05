@@ -699,9 +699,11 @@ class AlgDistance1 : public Algorithm<Adapter>
       
       //list of vertices to send to remote processes
       Kokkos::View<lno_t*, device_type> verts_to_send_view("verts to send",boundary_size);
-      Kokkos::parallel_for(boundary_size, KOKKOS_LAMBDA(const int& i){
-        verts_to_send_view(i) = -1;
-      });
+      Kokkos::parallel_for("init verts_to_send_view", 
+        Kokkos::RangePolicy<execution_space, int>(0,boundary_size),
+        KOKKOS_LAMBDA(const int& i){
+          verts_to_send_view(i) = -1;
+        });
       
       //size information for the list of vertices to send. Also includes an atomic copy
       Kokkos::View<size_t*, device_type> verts_to_send_size("verts to send size",1);
@@ -715,14 +717,16 @@ class AlgDistance1 : public Algorithm<Adapter>
       if(verbose)std::cout<<comm->getRank()<<": Done creating send views, initializing...\n";
       if(verbose)std::cout<<comm->getRank()<<": boundary_size = "<<boundary_size<<" verts_to_send_size_atomic(0) = "<<verts_to_send_size_atomic(0)<<"\n";
       //initially the verts to send include all boundary vertices.
-      Kokkos::parallel_for("Initialize verts_to_send",nVtx, KOKKOS_LAMBDA(const int&i){
-        for(offset_t j = dist_offsets(i); j < dist_offsets(i+1); j++){
-	  if((size_t)dist_adjs(j) >= nVtx){
-	    verts_to_send_view(verts_to_send_size_atomic(0)++) = i;
-	    break;
-	  }
-	} 
-      });
+      Kokkos::parallel_for("Initialize verts_to_send",
+        Kokkos::RangePolicy<execution_space, int>(0,nVtx),
+        KOKKOS_LAMBDA(const int&i){
+          for(offset_t j = dist_offsets(i); j < dist_offsets(i+1); j++){
+	    if((size_t)dist_adjs(j) >= nVtx){
+	      verts_to_send_view(verts_to_send_size_atomic(0)++) = i;
+	      break;
+	    }
+	  } 
+        });
       Kokkos::fence();
       
       
@@ -776,9 +780,11 @@ class AlgDistance1 : public Algorithm<Adapter>
         Kokkos::View<int**, Kokkos::LayoutLeft, device_type> femvColors =
 	  femv->template getLocalView<device_type>(Tpetra::Access::ReadWrite); // Partial write
         Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
-        Kokkos::parallel_for(rand.size()-nVtx,KOKKOS_LAMBDA(const int& i){
-          ghost_colors(i) = femv_colors(i+nVtx);
-        });
+        Kokkos::parallel_for("get colors from femv",
+          Kokkos::RangePolicy<execution_space, int>(0,rand.size()-nVtx),
+          KOKKOS_LAMBDA(const int& i){
+            ghost_colors(i) = femv_colors(i+nVtx);
+          });
 	Kokkos::fence();
 	//detect conflicts on the device, uncolor conflicts consistently.
         double temp = timer();
@@ -867,9 +873,11 @@ class AlgDistance1 : public Algorithm<Adapter>
         recoloringSize_host(0) = 0;
         Kokkos::deep_copy(recoloringSize,recoloringSize_host);
 
-        Kokkos::parallel_for(rand.size()-nVtx, KOKKOS_LAMBDA(const int& i){
-          femv_colors(i+nVtx) = ghost_colors(i);
-        });
+        Kokkos::parallel_for("set femv colors",
+          Kokkos::RangePolicy<execution_space, int>(0,rand.size()-nVtx), 
+          KOKKOS_LAMBDA(const int& i){
+            femv_colors(i+nVtx) = ghost_colors(i);
+          });
         Kokkos::fence();
         //communicate
         Kokkos::deep_copy(verts_to_send_host, verts_to_send_view);
@@ -900,9 +908,11 @@ class AlgDistance1 : public Algorithm<Adapter>
 	
         femvColors = femv->getLocalViewDevice(Tpetra::Access::ReadWrite);
         femv_colors = subview(femvColors, Kokkos::ALL, 0);
-        Kokkos::parallel_for(rand.size()-nVtx, KOKKOS_LAMBDA(const int& i){
-          ghost_colors(i) = femv_colors(i+nVtx);
-        });
+        Kokkos::parallel_for("get femv colors 2",
+          Kokkos::RangePolicy<execution_space, int>(0,rand.size()-nVtx),
+          KOKKOS_LAMBDA(const int& i){
+            ghost_colors(i) = femv_colors(i+nVtx);
+          });
         Kokkos::fence();
 	verts_to_send_size_host(0) = 0;
 	deep_copy(verts_to_send_size, verts_to_send_size_host);
