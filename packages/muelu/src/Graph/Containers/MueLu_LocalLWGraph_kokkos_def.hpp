@@ -43,47 +43,58 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_LWGRAPH_KOKKOS_DEF_HPP
-#define MUELU_LWGRAPH_KOKKOS_DEF_HPP
+#ifndef MUELU_LOCALLWGRAPH_KOKKOS_DEF_HPP
+#define MUELU_LOCALLWGRAPH_KOKKOS_DEF_HPP
 
 #include <Kokkos_Core.hpp>
 
 #include <Teuchos_ArrayView.hpp>
 
-#include "MueLu_LWGraph_kokkos_decl.hpp"
+#include "MueLu_LocalLWGraph_kokkos_decl.hpp"
 
 namespace MueLu {
 
+  namespace { // anonymous
+
+    template<class LocalOrdinal, class RowType>
+    class MaxNumRowEntriesFunctor {
+    public:
+      MaxNumRowEntriesFunctor(RowType rowPointers) : rowPointers_(rowPointers) { }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LocalOrdinal i, size_t& maxLength) const {
+        size_t d = rowPointers_(i+1) - rowPointers_(i);
+
+        maxLength = (d > maxLength ? d : maxLength);
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void join(volatile size_t& dest, const volatile size_t& src) {
+        dest = (dest > src ? dest : src);
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void init(size_t& initValue) {
+        initValue = 0;
+      }
+
+    private:
+      RowType rowPointers_;
+    };
+
+  }
+
   template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
-  print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+  LocalLWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  LocalLWGraph_kokkos(const local_graph_type& graph,
+                      const RCP<const map_type>& domainMap)
+    : graph_(graph)
+  {
+    minLocalIndex_ = domainMap->getMinLocalIndex();
+    maxLocalIndex_ = domainMap->getMaxLocalIndex();
 
-    if (verbLevel & Debug) {
-      auto graph = lclLWGraph_.getGraph();
-      RCP<const Map> col_map = importMap_.is_null() ? domainMap_ : importMap_;
-      int mypid = col_map->getComm()->getRank();
-
-      {
-      std::ostringstream ss;
-      ss << "[pid " << mypid << "] num entries=" << graph.entries.size();
-      out << ss.str() << std::endl;
-      }
-
-      const size_t numRows = graph.numRows();
-      auto rowPtrs = graph.row_map;
-      auto columns = graph.entries;
-      for (size_t i=0; i < numRows; ++i) {
-        std::ostringstream ss;
-        ss << "[pid " << mypid << "] row " << domainMap_->getGlobalElement(i) << ":";
-        ss << " (numEntries=" << rowPtrs(i+1)-rowPtrs(i) << ")";
-
-        auto rowView = graph.rowConst(i);
-        for (LO j = 0; j < rowView.length; j++) {
-          ss << " " << col_map->getGlobalElement(rowView.colidx(j));
-        }
-        out << ss.str() << std::endl;
-      }
-    }
+    MaxNumRowEntriesFunctor<LO,typename local_graph_type::row_map_type> maxNumRowEntriesFunctor(graph_.row_map);
+    Kokkos::parallel_reduce("MueLu:LocalLWGraph:LWGraph:maxnonzeros", range_type(0,graph_.numRows()), maxNumRowEntriesFunctor, maxNumRowEntries_);
   }
 
 } //namespace MueLu

@@ -80,11 +80,13 @@ namespace MueLu {
       aggStat[idx] = aggstatHost(idx);
     }
 
+    auto lclLWGraph = graph.getLocalLWGraph();
+
     const LO  numRows = graph.GetNodeNumVertices();
 
     // Remove all isolated nodes
     for (LO i = 0; i < numRows; i++)
-      if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && graph.getNeighborVertices(i).length == 1) {
+      if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && lclLWGraph.getNeighborVertices(i).length == 1) {
         aggStat[i] = IGNORED;
         numNonAggregatedNodes--;
       }

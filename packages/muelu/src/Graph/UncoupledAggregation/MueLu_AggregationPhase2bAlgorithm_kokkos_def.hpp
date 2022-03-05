@@ -99,6 +99,8 @@ namespace MueLu {
     const LO numColors          = aggregates.GetGraphNumColors();
     const LO numLocalAggregates = aggregates.GetNumAggregates();
 
+    auto lclLWGraph = graph.getLocalLWGraph();
+
     const LO defaultConnectWeight = 100;
     const LO penaltyConnectWeight = 10;
 
@@ -131,13 +133,13 @@ namespace MueLu {
                                   if (aggStat(i) != READY || colors(i) != color)
                                     return;
 
-                                  auto neighOfINode = graph.getNeighborVertices(i);
+                                  auto neighOfINode = lclLWGraph.getNeighborVertices(i);
                                   for (int j = 0; j < neighOfINode.length; j++) {
                                     LO neigh = neighOfINode(j);
 
                                     // We don't check (neigh != i), as it is covered by checking
                                     // (aggStat[neigh] == AGGREGATED)
-                                    if (graph.isLocalNeighborVertex(neigh) &&
+                                    if (lclLWGraph.isLocalNeighborVertex(neigh) &&
                                         aggStat(neigh) == AGGREGATED)
                                       Kokkos::atomic_add(&aggWeight(vertex2AggId(neigh, 0)),
                                                          connectWeight(neigh));
@@ -150,7 +152,7 @@ namespace MueLu {
                                   for (int j = 0; j < neighOfINode.length; j++) {
                                     LO neigh = neighOfINode(j);
 
-                                    if (graph.isLocalNeighborVertex(neigh) &&
+                                    if (lclLWGraph.isLocalNeighborVertex(neigh) &&
                                         aggStat(neigh) == AGGREGATED) {
                                       auto aggId = vertex2AggId(neigh, 0);
                                       int score = aggWeight(aggId) - aggPenalties(aggId);
@@ -201,6 +203,8 @@ namespace MueLu {
     const LO numColors    = aggregates.GetGraphNumColors();
     LO numLocalAggregates = aggregates.GetNumAggregates();
 
+    auto lclLWGraph = graph.getLocalLWGraph();
+
     const int defaultConnectWeight = 100;
     const int penaltyConnectWeight = 10;
 
@@ -233,12 +237,12 @@ namespace MueLu {
           {
             if (aggStat(i) != READY || colors(i) != color)
               return;
-            auto neighOfINode = graph.getNeighborVertices(i);
+            auto neighOfINode = lclLWGraph.getNeighborVertices(i);
             for (int j = 0; j < neighOfINode.length; j++) {
               LO neigh = neighOfINode(j);
               // We don't check (neigh != i), as it is covered by checking
               // (aggStat[neigh] == AGGREGATED)
-              if (graph.isLocalNeighborVertex(neigh) &&
+              if (lclLWGraph.isLocalNeighborVertex(neigh) &&
                   aggStat(neigh) == AGGREGATED)
               Kokkos::atomic_add(&aggWeight(vertex2AggId(neigh, 0)),
                   connectWeight(neigh));
@@ -255,11 +259,11 @@ namespace MueLu {
             int bestAggId   = -1;
             int bestConnect = -1;
 
-            auto neighOfINode = graph.getNeighborVertices(i);
+            auto neighOfINode = lclLWGraph.getNeighborVertices(i);
             for (int j = 0; j < neighOfINode.length; j++) {
               LO neigh = neighOfINode(j);
 
-              if (graph.isLocalNeighborVertex(neigh) &&
+              if (lclLWGraph.isLocalNeighborVertex(neigh) &&
                   aggStat(neigh) == AGGREGATED) {
                 auto aggId = vertex2AggId(neigh, 0);
                 int score = aggWeight(aggId) - aggPenalties(aggId);
