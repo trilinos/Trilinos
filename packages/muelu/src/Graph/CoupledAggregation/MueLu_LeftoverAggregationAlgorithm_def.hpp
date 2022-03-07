@@ -72,7 +72,7 @@ namespace MueLu {
     Monitor m(*this, "AggregateLeftovers");
 
     my_size_t nVertices = graph.GetNodeNumVertices();
-    int exp_nRows    = aggregates.GetMap()->getNodeNumElements(); // Tentative fix... was previously exp_nRows = nVertices + graph.GetNodeNumGhost();
+    int exp_nRows    = aggregates.GetMap()->getLocalNumElements(); // Tentative fix... was previously exp_nRows = nVertices + graph.GetNodeNumGhost();
     int myPid        = graph.GetComm()->getRank();
     my_size_t nAggregates  = aggregates.GetNumAggregates();
 
@@ -94,7 +94,7 @@ namespace MueLu {
       ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
       ArrayRCP<double>    weights     = distWeights->getDataNonConst(0);
 
-      for (size_t i=0;i<nonUniqueMap->getNodeNumElements();i++) {
+      for (size_t i=0;i<nonUniqueMap->getLocalNumElements();i++) {
         if (procWinner[i] == MUELU_UNASSIGNED) {
           if (vertex2AggId[i] != MUELU_UNAGGREGATED) {
             weights[i] = 1.;
@@ -226,7 +226,7 @@ namespace MueLu {
     // local copies associated with each Gid. Thus, sums > 1 are shared.
 
     //         std::cout << "exp_nrows=" << exp_nRows << " (nVertices= " << nVertices << ", numGhost=" << graph.GetNodeNumGhost() << ")" << std::endl;
-    //         std::cout << "nonUniqueMap=" << nonUniqueMap->getNodeNumElements() << std::endl;
+    //         std::cout << "nonUniqueMap=" << nonUniqueMap->getLocalNumElements() << std::endl;
 
     RCP<Xpetra::Vector<double,LO,GO,NO> > temp_ = Xpetra::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap,false); //no need to zero out vector in ctor
     temp_->putScalar(1.);

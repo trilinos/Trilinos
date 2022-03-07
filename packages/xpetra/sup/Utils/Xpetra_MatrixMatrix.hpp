@@ -1380,9 +1380,9 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
             size_t numLocalRows = 0;
             if (A.isFillComplete() && B.isFillComplete()) {
 
-              maxNzInA     = A.getNodeMaxNumRowEntries();
-              maxNzInB     = B.getNodeMaxNumRowEntries();
-              numLocalRows = A.getNodeNumRows();
+              maxNzInA     = A.getLocalMaxNumRowEntries();
+              maxNzInB     = B.getLocalMaxNumRowEntries();
+              numLocalRows = A.getLocalNumRows();
             }
 
             if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
@@ -1405,7 +1405,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             } else {
               // general case
-              LO maxPossibleNNZ = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
+              LO maxPossibleNNZ = A.getLocalMaxNumRowEntries() + B.getLocalMaxNumRowEntries();
               C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), maxPossibleNNZ));
             }
             if (transposeB)
@@ -1961,9 +1961,9 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
             size_t numLocalRows = 0;
             if (A.isFillComplete() && B.isFillComplete()) {
 
-              maxNzInA     = A.getNodeMaxNumRowEntries();
-              maxNzInB     = B.getNodeMaxNumRowEntries();
-              numLocalRows = A.getNodeNumRows();
+              maxNzInA     = A.getLocalMaxNumRowEntries();
+              maxNzInB     = B.getLocalMaxNumRowEntries();
+              numLocalRows = A.getLocalNumRows();
             }
 
             if (maxNzInA == 1 || maxNzInB == 1 || AHasFixedNnzPerRow) {
@@ -1986,7 +1986,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             } else {
               // general case
-              LO maxPossibleNNZ = A.getNodeMaxNumRowEntries() + B.getNodeMaxNumRowEntries();
+              LO maxPossibleNNZ = A.getLocalMaxNumRowEntries() + B.getLocalMaxNumRowEntries();
               C = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(A.getRowMap(), maxPossibleNNZ));
             }
             if (transposeB)

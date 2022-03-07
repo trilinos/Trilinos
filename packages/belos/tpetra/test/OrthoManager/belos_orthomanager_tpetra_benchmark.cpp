@@ -250,14 +250,14 @@ main (int argc, char *argv[])
     }
     // Loading the sparse matrix may have changed numRows, so check
     // again that the number of rows per process is >= numCols.
-    // getNodeNumElements() returns a size_t, which is unsigned, and you
+    // getLocalNumElements() returns a size_t, which is unsigned, and you
     // shouldn't compare signed and unsigned values.
-    if (map->getNodeNumElements() < static_cast<size_t>(numCols))
+    if (map->getLocalNumElements() < static_cast<size_t>(numCols))
     {
       std::ostringstream os;
       os << "The number of elements on this process " << pComm->getRank()
         << " is too small for the number of columns that you want to test."
-        << "  There are " << map->getNodeNumElements() << " elements on "
+        << "  There are " << map->getLocalNumElements() << " elements on "
         "this process, but the normalize() method of the MatOrthoManager "
         "subclass will need to process a multivector with " << numCols
         << " columns.  Not all MatOrthoManager subclasses can handle a "

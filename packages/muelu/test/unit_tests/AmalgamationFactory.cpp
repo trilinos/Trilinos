@@ -85,7 +85,7 @@ namespace MueLuTests {
     RCP<const Map> dofMap = MapFactory::Build(lib, numGlobalNodes*numDofsPerNode, indexBase, comm);
 
     // Probe all nodes in the mesh
-    const LocalOrdinal numLocalDofs = dofMap->getNodeNumElements();
+    const LocalOrdinal numLocalDofs = dofMap->getLocalNumElements();
     LocalOrdinal localNodeID = Teuchos::ScalarTraits<LocalOrdinal>::zero();
     for (LocalOrdinal localDofID = 0; localDofID < numLocalDofs; ++localDofID)
     {

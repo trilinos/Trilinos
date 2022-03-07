@@ -355,8 +355,8 @@ public:
   }
 
   //! Returns the number of matrix rows owned on the calling node.
-  size_t getNodeNumRows() const {
-    return compositeMatrixData_->getNodeNumRows();
+  size_t getLocalNumRows() const {
+    return compositeMatrixData_->getLocalNumRows();
   }
 
   //! Returns the global number of entries in this matrix.
@@ -365,8 +365,8 @@ public:
   }
 
   //! Returns the local number of entries in this matrix.
-  size_t getNodeNumEntries() const {
-    return compositeMatrixData_->getNodeNumEntries();
+  size_t getLocalNumEntries() const {
+    return compositeMatrixData_->getLocalNumEntries();
   }
 
   //! Returns the current number of entries on this node in the specified local row.
@@ -385,8 +385,8 @@ public:
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
   /** Undefined if isFillActive().
    */
-  size_t getNodeMaxNumRowEntries() const {
-    return compositeMatrixData_->getNodeMaxNumRowEntries();
+  size_t getLocalMaxNumRowEntries() const {
+    return compositeMatrixData_->getLocalMaxNumRowEntries();
   }
 
   //! \brief Returns the number of regions in the composite domain.
@@ -725,7 +725,7 @@ private:
 
     //THIS IS THE CORE OF THE PROBLEM WHERE ONE NEEDS TO POPULATE THE REGIONAL MATRICES BY ACCESSING ENTRIES OF THE GLOBAL MATRIX
     //
-    ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getNodeElementList();
+    ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getLocalElementList();
     for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionElements.begin(); iter!=MyRegionElements.end(); ++iter )
     {
       //Nodes are saved in data structures with 1 as base index
@@ -788,7 +788,7 @@ private:
     //interfaceNodes contains nodes on an interface between any regions
     Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes = regionHandler_->GetInterfaceNodes();
 
-    ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getNodeElementList();
+    ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getLocalElementList();
     for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionElements.begin(); iter!=MyRegionElements.end(); ++iter )
     {
 
@@ -1138,7 +1138,7 @@ private:
     //interfaceNodes contains nodes on an interface between any regions
     Array<std::tuple<int, Array<GlobalOrdinal> > > interfaceNodes = regionHandler_->GetInterfaceNodes();
 
-    ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getNodeElementList();
+    ArrayView<const GlobalOrdinal> MyRegionElements =region_matrix->getRowMap()->getLocalElementList();
     for( typename ArrayView<const GlobalOrdinal>::iterator iter = MyRegionElements.begin(); iter!=MyRegionElements.end(); ++iter )
     {
 

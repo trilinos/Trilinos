@@ -118,23 +118,23 @@ public:
   static_assert (std::is_same<typename CountsViewType::device_type::execution_space,
                    typename device_type::execution_space>::value,
                  "OutputOffsetsViewType and CountsViewType must have the same execution space.");
-  static_assert (Kokkos::Impl::is_view<OutputOffsetsViewType>::value,
+  static_assert (Kokkos::is_view<OutputOffsetsViewType>::value,
                  "OutputOffsetsViewType must be a Kokkos::View.");
   static_assert (std::is_same<typename OutputOffsetsViewType::value_type, output_offset_type>::value,
                  "OutputOffsetsViewType must be a nonconst Kokkos::View.");
   static_assert (std::is_integral<output_offset_type>::value,
                  "The type of each entry of OutputOffsetsViewType must be a built-in integer type.");
-  static_assert (Kokkos::Impl::is_view<CountsViewType>::value,
+  static_assert (Kokkos::is_view<CountsViewType>::value,
                  "CountsViewType must be a Kokkos::View.");
   static_assert (std::is_same<typename CountsViewType::value_type, output_offset_type>::value,
                  "CountsViewType must be a nonconst Kokkos::View.");
   static_assert (std::is_integral<count_type>::value,
                  "The type of each entry of CountsViewType must be a built-in integer type.");
-  static_assert (Kokkos::Impl::is_view<InputOffsetsViewType>::value,
+  static_assert (Kokkos::is_view<InputOffsetsViewType>::value,
                  "InputOffsetsViewType must be a Kokkos::View.");
   static_assert (std::is_integral<input_offset_type>::value,
                  "The type of each entry of InputOffsetsViewType must be a built-in integer type.");
-  static_assert (Kokkos::Impl::is_view<InputLocalRowIndicesViewType>::value,
+  static_assert (Kokkos::is_view<InputLocalRowIndicesViewType>::value,
                  "InputLocalRowIndicesViewType must be a Kokkos::View.");
   static_assert (std::is_integral<local_row_index_type>::value,
                  "The type of each entry of InputLocalRowIndicesViewType must be a built-in integer type.");

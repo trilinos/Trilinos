@@ -138,7 +138,7 @@ namespace {
     RCP<const Map> map = MapFactory::Build(lib, numGlobalElements, numLocalElements, Teuchos::ScalarTraits<GO>::zero(), comm);
 
     TEST_INEQUALITY(map, Teuchos::null);
-    TEST_EQUALITY_CONST(map->getNodeNumElements(), numLocalElements);
+    TEST_EQUALITY_CONST(map->getLocalNumElements(), numLocalElements);
     TEST_EQUALITY_CONST(map->getGlobalNumElements(), numGlobalElements);
 
     // All procs fail if any proc fails
@@ -172,7 +172,7 @@ namespace {
     RCP<const Map> map = MapFactory::Build(lib, numGlobalElements, gidList, Teuchos::ScalarTraits<GO>::zero(), comm);
 
     TEST_INEQUALITY(map, Teuchos::null);
-    TEST_EQUALITY_CONST(map->getNodeNumElements(), numLocalElements);
+    TEST_EQUALITY_CONST(map->getLocalNumElements(), numLocalElements);
     TEST_EQUALITY_CONST(map->getGlobalNumElements(), numGlobalElements);
     TEST_EQUALITY_CONST(map->getMinGlobalIndex(), offsetPerRank);
     TEST_EQUALITY(map->getMaxGlobalIndex(), Teuchos::as<GO>(offsetPerRank + numLocalElements - 1));

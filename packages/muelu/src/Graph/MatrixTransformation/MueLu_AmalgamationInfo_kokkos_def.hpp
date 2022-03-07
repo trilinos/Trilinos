@@ -71,7 +71,7 @@ namespace MueLu {
                          Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const {
 
     int myPid = aggregates.GetMap()->getComm()->getRank();
-    Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getNodeElementList();
+    Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getLocalElementList();
     Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
     Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
     LO size = procWinner.size();
@@ -142,7 +142,7 @@ namespace MueLu {
                            Teuchos::ArrayRCP<LO>& aggToRowMap) const {
 
     int myPid = aggregates.GetMap()->getComm()->getRank();
-    Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getNodeElementList();
+    Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getLocalElementList();
 
     Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
     Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
@@ -214,8 +214,8 @@ namespace MueLu {
     Teuchos::RCP<const Map> nodeMap = aggregates.GetMap();
 
     Teuchos::RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);
-    Teuchos::ArrayView<const GO> gEltList = nodeMap->getNodeElementList();
-    LO nodeElements = Teuchos::as<LO>(nodeMap->getNodeNumElements());
+    Teuchos::ArrayView<const GO> gEltList = nodeMap->getLocalElementList();
+    LO nodeElements = Teuchos::as<LO>(nodeMap->getLocalNumElements());
     if (stridedblocksize_ == 1) {
       for (LO n = 0; n<nodeElements; n++) {
         GlobalOrdinal gDofIndex = ComputeGlobalDOF(gEltList[n]);

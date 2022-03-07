@@ -91,7 +91,7 @@ namespace MueLuTests {
     RCP<Matrix> A0 = aLevel.Get< RCP<Matrix> >("A",AfilterFactory0.get());
     aLevel.Release("A",AfilterFactory0.get());
     TEST_EQUALITY(aLevel.IsAvailable("A",AfilterFactory0.get()), false);
-    TEST_EQUALITY(A0->getNodeNumEntries(), A->getNodeNumEntries());
+    TEST_EQUALITY(A0->getLocalNumEntries(), A->getLocalNumEntries());
     TEST_EQUALITY(A0->getGlobalNumEntries(), A->getGlobalNumEntries());
 
     aLevel.Request("A",AfilterFactory1.get());

@@ -281,7 +281,7 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     using no_init_view=Kokkos::ViewAllocateWithoutInitializing;
 
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
-    lno_view_t Crowptr(no_init_view("Crowptr"),C.getNodeNumRows()+1);
+    lno_view_t Crowptr(no_init_view("Crowptr"),C.getLocalNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
     lno_nnz_view_t Ccolind;
     const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
@@ -305,9 +305,9 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
       copy_view(Bcolind,BcolindVCL);
   
       AVCL.set(ArowptrVCL.data(), AcolindVCL.data(), Avals.data(),
-               Au->getNodeNumRows(),Au->getNodeNumCols(),Au->getNodeNumEntries());
+               Au->getLocalNumRows(),Au->getLocalNumCols(),Au->getLocalNumEntries());
       BVCL.set(BrowptrVCL.data(), BcolindVCL.data(), Bvals.data(),
-               Bu->getNodeNumRows(),Bu->getNodeNumCols(),Bu->getNodeNumEntries());
+               Bu->getLocalNumRows(),Bu->getLocalNumCols(),Bu->getLocalNumEntries());
     }
     Au->getComm()->barrier();
 
@@ -447,10 +447,10 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
 
     const KCRS & Amat = Au->getLocalMatrixDevice();
     const KCRS & Bmat = Bu->getLocalMatrixDevice();
-    if(A.getNodeNumRows()!=C.getNodeNumRows())  throw std::runtime_error("C is not sized correctly");
+    if(A.getLocalNumRows()!=C.getLocalNumRows())  throw std::runtime_error("C is not sized correctly");
 
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
-    lno_view_t Crowptr(no_init_view("Crowptr"),C.getNodeNumRows()+1);
+    lno_view_t Crowptr(no_init_view("Crowptr"),C.getLocalNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
     const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
 
@@ -479,16 +479,16 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
   
       if(std::is_same<Scalar,double>::value) {
         mkl_rc = mkl_sparse_d_create_csr(&AMKL, SPARSE_INDEX_BASE_ZERO,
-                                          Au->getNodeNumRows(),
-                                          Au->getNodeNumCols(),
+                                          Au->getLocalNumRows(),
+                                          Au->getLocalNumCols(),
                                           ArowptrMKL.data(),
                                           ArowptrMKL.data()+1,
                                           AcolindMKL.data(),
                                           (double*)Avals.data());
         MMKD_MKL_ERROR_CHECK(mkl_rc);
         mkl_rc = mkl_sparse_d_create_csr(&BMKL, SPARSE_INDEX_BASE_ZERO,
-                                         Bu->getNodeNumRows(),
-                                         Bu->getNodeNumCols(),
+                                         Bu->getLocalNumRows(),
+                                         Bu->getLocalNumCols(),
                                          BrowptrMKL.data(),
                                          BrowptrMKL.data()+1,
                                          BcolindMKL.data(),
@@ -536,7 +536,7 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,No
     scalar_view_t Cvals = scalar_view_t(Kokkos::ViewAllocateWithoutInitializing("Cvals"), cnnz);
     Kokkos::resize(Ccolind,cnnz);
     Kokkos::resize(Cvals,cnnz);
-    if((size_t) c_rows != A.getNodeNumRows() || (size_t) c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
+    if((size_t) c_rows != A.getLocalNumRows() || (size_t) c_rows+1 != Crowptr.extent(0)) throw std::runtime_error("C row size mismatch");
     copy_view_n(c_rows,rows_start,Crowptr); Crowptr(c_rows) = rows_end[c_rows-1];
     copy_view_n(cnnz,columns,Ccolind);
     copy_view_n(cnnz,values,Cvals);
@@ -638,7 +638,7 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdin
     const KCRS & Bmat = Bu->getLocalMatrixDevice();
 
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
-    lno_view_t Crowptr("Crowptr",A.getNodeNumRows()+1);
+    lno_view_t Crowptr("Crowptr",A.getLocalNumRows()+1);
     c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
     const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
     lno_nnz_view_t Ccolind;

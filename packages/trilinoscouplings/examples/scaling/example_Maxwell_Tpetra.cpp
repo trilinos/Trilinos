@@ -2080,7 +2080,7 @@ int body(int argc, char *argv[]) {
   Tpetra_CrsMatrix MassMatrixGinv(MassMatrixG.getRowMap(),MassMatrixG.getRowMap(),1);
   {
     auto d_data = DiagG.getData(0);
-    for(int i=0;i<(int)MassMatrixGinv.getRowMap()->getNodeNumElements();i++) {
+    for(int i=0;i<(int)MassMatrixGinv.getRowMap()->getLocalNumElements();i++) {
       GO GCID=MassMatrixG.getColMap()->getGlobalElement(i);
       GO GRID=MassMatrixG.getRowMap()->getGlobalElement(i);
       MassMatrixGinv.insertGlobalValues(GRID,1,&(d_data[i]),&GCID);
@@ -2511,7 +2511,7 @@ void solution_test(string msg, const Tpetra_Operator &A,const Tpetra_MultiVector
   double d = 0.0, d_tot = 0.0;
   auto lhs_data    = lhs.getData(0);
   auto xexact_data = xexact.getData(0);
-  for(LO i=0 ; i<(LO)lhs.getMap()->getNodeNumElements() ; ++i )
+  for(LO i=0 ; i<(LO)lhs.getMap()->getLocalNumElements() ; ++i )
     d += (lhs_data[i] - xexact_data[i]) * (lhs_data[i] - xexact_data[i]);
 
   TC_sumAll(comm,d,d_tot);

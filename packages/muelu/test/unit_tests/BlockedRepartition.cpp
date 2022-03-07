@@ -112,7 +112,7 @@ namespace MueLuTests {
 #include "MueLu_UseShortNames.hpp"
     Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(rangemap, 3);
 
-    LocalOrdinal NumMyRowElements = rangemap->getNodeNumElements();
+    LocalOrdinal NumMyRowElements = rangemap->getLocalNumElements();
 
     GlobalOrdinal minGColId = domainmap->getMinAllGlobalIndex();  // minimum over all procs
     GlobalOrdinal maxGColId = domainmap->getMaxAllGlobalIndex();  // maximum over all procs
@@ -203,9 +203,9 @@ namespace MueLuTests {
     map2   = StridedMapFactory::Build(lib, numElements2, numElements1, stridingInfo, comm);
 
     std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
-    Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
+    Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getLocalElementList(); // append all local gids from map1 and map2
     localGids.insert(localGids.end(), map1eleList.begin(), map1eleList.end());
-    Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
+    Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getLocalElementList();
     localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
     Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
     bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)
@@ -289,7 +289,7 @@ namespace MueLuTests {
       // create dummy "Partition" array
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(Op11->getRowMap(), false);
       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-      for(size_t r=0; r<decomposition->getMap()->getNodeNumElements(); r++) {
+      for(size_t r=0; r<decomposition->getMap()->getLocalNumElements(); r++) {
         if(r%2 == 0) decompEntries[r] = 0;
         else decompEntries[r] = 1;
       }
@@ -301,7 +301,7 @@ namespace MueLuTests {
     // create dummy "Partition" array
     RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(Op11->getRowMap(), false);
     ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-    for(size_t r=0; r<decomposition->getMap()->getNodeNumElements(); r++) {
+    for(size_t r=0; r<decomposition->getMap()->getLocalNumElements(); r++) {
       if(r%2 == 0) decompEntries[r] = 0;
       else decompEntries[r] = 1;
     }
@@ -358,7 +358,7 @@ namespace MueLuTests {
     // get number of active processes used in rebalanced matrix
     std::vector<int> amActive  = std::vector<int>(comm->getSize(),0);
     std::vector<int> areActive = std::vector<int>(comm->getSize(),0);
-    if(rebA->getNodeNumEntries() > 0) amActive[comm->getRank()] = 1;
+    if(rebA->getLocalNumEntries() > 0) amActive[comm->getRank()] = 1;
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX,comm->getSize(),&amActive[0],&areActive[0]);
     int nNumProcsReb = 0;
     for(int p = 0; p < comm->getSize(); p++)
@@ -446,9 +446,9 @@ namespace MueLuTests {
     map2   = StridedMapFactory::Build(lib, numElements2, numElements1, stridingInfo, comm);
 
     std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
-    Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
+    Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getLocalElementList(); // append all local gids from map1 and map2
     localGids.insert(localGids.end(), map1eleList.begin(), map1eleList.end());
-    Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
+    Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getLocalElementList();
     localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
     Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
     bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)
@@ -536,7 +536,7 @@ namespace MueLuTests {
       // create dummy "Partition" array
       RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(Op11->getRowMap(), false);
       ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-      for(size_t r=0; r<decomposition->getMap()->getNodeNumElements(); r++) {
+      for(size_t r=0; r<decomposition->getMap()->getLocalNumElements(); r++) {
         if(r%2 == 0) decompEntries[r] = 0;
         else decompEntries[r] = 1;
       }
@@ -548,7 +548,7 @@ namespace MueLuTests {
     // create dummy "Partition" array
     RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(Op11->getRowMap(), false);
     ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-    for(size_t r=0; r<decomposition->getMap()->getNodeNumElements(); r++) {
+    for(size_t r=0; r<decomposition->getMap()->getLocalNumElements(); r++) {
       if(r%2 == 0) decompEntries[r] = 0;
       else decompEntries[r] = 1;
     }
@@ -686,9 +686,9 @@ namespace MueLuTests {
   map2   = StridedMapFactory::Build(lib, numElements2, 0, stridingInfo, comm, -1, numElements1);
 
   std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
-  Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
+  Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getLocalElementList(); // append all local gids from map1 and map2
   localGids.insert(localGids.end(), map1eleList.begin(), map1eleList.end());
-  Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
+  Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getLocalElementList();
   localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
   Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
   bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)
@@ -976,9 +976,9 @@ namespace MueLuTests {
   map2   = StridedMapFactory::Build(lib, numElements2, 0, stridingInfo, comm, -1, numElements1);
 
   std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
-  Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
+  Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getLocalElementList(); // append all local gids from map1 and map2
   localGids.insert(localGids.end(), map1eleList.begin(), map1eleList.end());
-  Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
+  Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getLocalElementList();
   localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
   Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
   bigMap = StridedMapFactory::Build(lib, numElements, eleList, 0, stridingInfo, comm); // create full big map (concatenation of map1 and map2)

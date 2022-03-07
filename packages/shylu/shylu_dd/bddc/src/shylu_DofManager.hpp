@@ -117,7 +117,7 @@ public:
     nodeGraph1to1->doExport(*nodeGraphSubdomain, exporter, Tpetra::ADD);
     RCP<const Map> domainMap = nodeGraphSubdomain->getDomainMap();
     nodeGraph1to1->fillComplete(domainMap, nodeMap1to1);
-    GO numDof = nodeGraph1to1->getNodeNumEntries();
+    GO numDof = nodeGraph1to1->getLocalNumEntries();
     GO numDofSS;
     Teuchos::scan<int, GO> (*Comm, Teuchos::REDUCE_SUM, 1, &numDof, &numDofSS);
     GO baseGID = numDofSS - numDof;
@@ -126,7 +126,7 @@ public:
     Teuchos::ArrayView<const LO> Indices;
     std::vector<GO> Values;
     CrsMatrixGO nodeMatrix1to1(nodeGraph1to1);
-    for (size_t i=0; i<nodeMap1to1->getNodeNumElements(); i++) {
+    for (size_t i=0; i<nodeMap1to1->getLocalNumElements(); i++) {
       nodeGraph1to1->getLocalRowView(i, Indices);
       Values.resize(Indices.size());
       for (LO j=0; j<Indices.size(); j++) Values[j] = baseGID++;
@@ -170,7 +170,7 @@ public:
     nodeGraph1to1->doExport(*nodeGraphSubdomain, exporter, Tpetra::ADD);
     RCP<const Map> domainMap = nodeGraphSubdomain->getDomainMap();
     nodeGraph1to1->fillComplete(domainMap, nodeMap1to1);
-    GO numDof = nodeGraph1to1->getNodeNumEntries();
+    GO numDof = nodeGraph1to1->getLocalNumEntries();
     GO numDofSS;
     Teuchos::scan<int, GO> (*Comm, Teuchos::REDUCE_SUM, 1, &numDof, &numDofSS);
     GO baseGID = numDofSS - numDof;
@@ -179,7 +179,7 @@ public:
     Teuchos::ArrayView<const LO> Indices;
     std::vector<GO> Values;
     nodeMatrix1to1 = rcp( new CrsMatrixGO(nodeGraph1to1) );
-    for (size_t i=0; i<nodeMap1to1->getNodeNumElements(); i++) {
+    for (size_t i=0; i<nodeMap1to1->getLocalNumElements(); i++) {
       nodeGraph1to1->getLocalRowView(i, Indices);
       Values.resize(Indices.size());
       for (LO j=0; j<Indices.size(); j++) Values[j] = baseGID++;
@@ -233,12 +233,12 @@ public:
     Tpetra::global_size_t IGO =
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     RCP<const Teuchos::Comm<int> > Comm = A.getRowMap()->getComm();
-    LO numDof = A.getNodeNumEntries();
+    LO numDof = A.getLocalNumEntries();
     std::vector<GO> globalIDs(numDof);
     Teuchos::ArrayView<const LO> Indices;
     Teuchos::ArrayView<const GO> Values;
     numDof = 0;
-    for (size_t i=0; i<A.getNodeNumRows(); i++) {
+    for (size_t i=0; i<A.getLocalNumRows(); i++) {
       A.getLocalRowView(i, Indices, Values);
       for (LO j=0; j<Indices.size(); j++) {
         globalIDs[numDof++] = Values[j];

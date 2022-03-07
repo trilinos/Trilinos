@@ -130,7 +130,7 @@ namespace {
       TEST_EQUALITY_CONST( map->getMinAllGlobalIndex(), indexBase + offset );
       TEST_EQUALITY_CONST( map->getMaxAllGlobalIndex(), indexBase + offset + Teuchos::as<GO>(numGlobalElements) - 1);
       TEST_EQUALITY_CONST( map->isContiguous(), false);
-      TEST_EQUALITY_CONST( map->getNodeNumElements() % 12 , 0);
+      TEST_EQUALITY_CONST( map->getLocalNumElements() % 12 , 0);
 
       //Teuchos::RCP<SM> emap2 = Teuchos::null;
       for(size_t k=0; k<stridedInfo.size(); k++) {
@@ -139,8 +139,8 @@ namespace {
         TEST_EQUALITY_CONST( map2->isStrided(), true );
         TEST_EQUALITY_CONST( map2->isBlocked(), true );
         TEST_EQUALITY_CONST( map2->isContiguous(), false);
-        TEST_EQUALITY_CONST( map2->getNodeNumElements() % stridedInfo[k] , 0);
-        TEST_EQUALITY_CONST( map2->getNodeNumElements(), numLocalElements / map2->getFixedBlockSize() * stridedInfo[k] );
+        TEST_EQUALITY_CONST( map2->getLocalNumElements() % stridedInfo[k] , 0);
+        TEST_EQUALITY_CONST( map2->getLocalNumElements(), numLocalElements / map2->getFixedBlockSize() * stridedInfo[k] );
       }
 
     }
@@ -178,7 +178,7 @@ namespace {
     TEST_EQUALITY_CONST( map->getMinAllGlobalIndex(), offset );
     TEST_EQUALITY_CONST( map->getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 1);
     TEST_EQUALITY_CONST( map->isContiguous(), false);
-    TEST_EQUALITY_CONST( map->getNodeNumElements() % 12 , 0);
+    TEST_EQUALITY_CONST( map->getLocalNumElements() % 12 , 0);
 
     Teuchos::RCP<SM> map2 = Xpetra::StridedMapFactory<LO,GO,N>::Build(map, 0);
     TEST_EQUALITY_CONST( map2->getFixedBlockSize(), 12 );
@@ -187,8 +187,8 @@ namespace {
     TEST_EQUALITY_CONST( map2->getMinAllGlobalIndex(), offset );
     TEST_EQUALITY_CONST( map2->getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 10 );
     TEST_EQUALITY_CONST( map2->isContiguous(), false);
-    TEST_EQUALITY_CONST( map2->getNodeNumElements() % 3 , 0);
-    TEST_EQUALITY_CONST( map2->getNodeNumElements(), numLocalElements / map2->getFixedBlockSize() * stridedInfo[0]);
+    TEST_EQUALITY_CONST( map2->getLocalNumElements() % 3 , 0);
+    TEST_EQUALITY_CONST( map2->getLocalNumElements(), numLocalElements / map2->getFixedBlockSize() * stridedInfo[0]);
 
     Teuchos::RCP<SM> map3 = Xpetra::StridedMapFactory<LO,GO,N>::Build(map, 1);
     TEST_EQUALITY_CONST( map3->getFixedBlockSize(), 12 );
@@ -197,8 +197,8 @@ namespace {
     TEST_EQUALITY_CONST( map3->getMinAllGlobalIndex(), offset + 3 );
     TEST_EQUALITY_CONST( map3->getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 6 );
     TEST_EQUALITY_CONST( map3->isContiguous(), false);
-    TEST_EQUALITY_CONST( map3->getNodeNumElements() % 4 , 0);
-    TEST_EQUALITY_CONST( map3->getNodeNumElements(), numLocalElements / map3->getFixedBlockSize() * stridedInfo[1]);
+    TEST_EQUALITY_CONST( map3->getLocalNumElements() % 4 , 0);
+    TEST_EQUALITY_CONST( map3->getLocalNumElements(), numLocalElements / map3->getFixedBlockSize() * stridedInfo[1]);
 
     Teuchos::RCP<SM> map4 = Xpetra::StridedMapFactory<LO,GO,N>::Build(map, 2);
     TEST_EQUALITY_CONST( map4->getFixedBlockSize(), 12 );
@@ -207,8 +207,8 @@ namespace {
     TEST_EQUALITY_CONST( map4->getMinAllGlobalIndex(), offset + 7 );
     TEST_EQUALITY_CONST( map4->getMaxAllGlobalIndex(), offset + Teuchos::as<GO>(numGlobalElements) - 1 );
     TEST_EQUALITY_CONST( map4->isContiguous(), false);
-    TEST_EQUALITY_CONST( map4->getNodeNumElements() % 5 , 0);
-    TEST_EQUALITY_CONST( map4->getNodeNumElements(), numLocalElements / map4->getFixedBlockSize() * stridedInfo[2]);
+    TEST_EQUALITY_CONST( map4->getLocalNumElements() % 5 , 0);
+    TEST_EQUALITY_CONST( map4->getLocalNumElements(), numLocalElements / map4->getFixedBlockSize() * stridedInfo[2]);
   }
 
   //
