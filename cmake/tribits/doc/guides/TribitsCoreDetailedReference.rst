@@ -79,6 +79,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`_
 * `${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES`_
 * `${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_
+* `${PROJECT_NAME}_IMPORTED_NO_SYSTEM`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
 * `${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE`_
 * `${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE`_
@@ -489,7 +490,40 @@ These options are described below.
   overridden to ``OFF``.  But if the user sets
   ``${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE=ON`` in the cache and ``git``
   can't be found, then an configure-time error will occur.
-  
+
+
+.. _${PROJECT_NAME}_IMPORTED_NO_SYSTEM:
+
+**${PROJECT_NAME}_IMPORTED_NO_SYSTEM**
+
+  By default, include directories from IMPORTED library targets from the
+  TriBITS project's installed ``<Package>Config.cmake`` files will be
+  considered ``SYSTEM`` headers and therefore be included on the compile lines
+  of downstream CMake projects with ``-isystem`` with most compilers.
+  However, if ``${PROJECT_NAME}_IMPORTED_NO_SYSTEM`` is set to ``ON`` (only
+  supported for CMake versions 3.23 or greater), then all of the IMPORTED
+  library targets exported into the set of installed ``<Package>Config.cmake``
+  files will have the ``IMPORTED_NO_SYSTEM`` property set.  This will cause
+  downstream customer CMake projects to apply the include directories from
+  these IMPORTED library targets as non-system include directories.  On most
+  compilers, that means that the include directories will be listed on the
+  compile lines with ``-I`` instead of with ``-isystem``.  (See more details
+  in the TriBITS Build Reference for ``<Project>_IMPORTED_NO_SYSTEM``.)
+
+  The default value set by TriBITS itself is ``OFF`` but a TriBITS project can
+  change the default value to ``ON`` by adding::
+
+    if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.23)
+      set(${PROJECT_NAME}_IMPORTED_NO_SYSTEM_DEFAULT ON)
+    endif()
+
+  in the `<projectDir>/ProjectName.cmake`_ file.  (NOTE: The above ``if()``
+  statement ensures that a configure error will not occur if a version of
+  CMake less than 3.23 is used.  But if the TriBITS project minimum CMake
+  version is 3.23 or greater, then the above ``if()`` statement guard can be
+  removed.)
+
+
 .. _${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS:
 
 **${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS**

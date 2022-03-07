@@ -1,8 +1,10 @@
 # TribitsExampleApp
 
 The example project `TribitsExampleApp` is a raw CMake project that pulls in
-libraries from packages from `TribitsExampleProject`.  To build against all of
-the installed packages from an upstream `TribitsExampleProject`, configure,
+libraries from packages from `TribitsExampleProject`. If `WithSubpackageC` 
+subpackage or the `MixedLang` packages are built, then a Fortran compiler 
+is required to build `TribitsExampleApp`. To build against all of the 
+installed packages from an upstream `TribitsExampleProject`, configure, 
 build, and run the tests with:
 
 ```
