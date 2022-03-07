@@ -53,6 +53,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
+#include <unordered_map>
 //#include <fenv.h>
 
 typedef double RealT;
@@ -84,7 +85,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::TypeU::Algorithm<RealT>> algo;
     ROL::Ptr<ROL::Vector<RealT>> e, x, x0;
 
-    std::unordered_map<ROL::ETrustRegionU,int> success;
+    std::unordered_map<ROL::ETrustRegionU, int, std::hash<int>> success;
     for ( ROL::ETrustRegionU desc = ROL::TRUSTREGION_U_CAUCHYPOINT;
           desc < ROL::TRUSTREGION_U_LAST; desc++ ) {
       success.insert({desc, 0});

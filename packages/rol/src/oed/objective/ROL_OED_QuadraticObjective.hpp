@@ -71,7 +71,7 @@ public:
   Ptr<BilinearConstraint<Real>> getM() const;
 
   void update( const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1 ) override;
-  Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol );
+  Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) override;
   void gradient_1( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) override;
   void gradient_2( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) override;
   void hessVec_11( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) override;

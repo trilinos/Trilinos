@@ -71,7 +71,7 @@ public:
                         bool useScale = true,
                         Real scale = Real(-1));
 
-  void value(Vector<Real> &c,const Vector<Real> &x,Real &tol);
+  void value(Vector<Real> &c,const Vector<Real> &x,Real &tol) override;
   void applyJacobian(Vector<Real> &jv,const Vector<Real> &v,
                      const Vector<Real> &x,Real &tol) override;
   void applyAdjointJacobian(Vector<Real> &ajv,const Vector<Real> &v,

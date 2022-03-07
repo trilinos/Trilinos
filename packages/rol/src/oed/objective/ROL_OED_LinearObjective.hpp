@@ -81,7 +81,7 @@ public:
   LinearObjective(const Ptr<Vector<Real>>  &theta,
                   const Ptr<TraceSampler<Real>> &traceSampler);
 
-  Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol );
+  Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) override;
   void gradient_1( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) override;
 
   void gradient_2( Vector<Real> &g, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) override;

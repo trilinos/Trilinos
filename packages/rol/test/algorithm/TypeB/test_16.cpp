@@ -54,6 +54,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
+#include <unordered_map>
 //#include <fenv.h>
 
 typedef double RealT;
@@ -86,7 +87,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
 
-    std::unordered_map<ROL::ETestOptProblem,int> iters;
+    std::unordered_map<ROL::ETestOptProblem, int, std::hash<int>> iters;
 
     int totProb = 0;
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_ROSENBROCK; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 

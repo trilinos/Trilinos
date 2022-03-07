@@ -69,7 +69,7 @@ public:
                const Ptr<Vector<Real>>           &state,
                bool storage = true);
 
-  Real value( const Vector<Real> &z, Real &tol );
+  Real value( const Vector<Real> &z, Real &tol ) override;
   void gradient( Vector<Real> &g, const Vector<Real> &z, Real &tol ) override;
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &z, Real &tol ) override;
 };

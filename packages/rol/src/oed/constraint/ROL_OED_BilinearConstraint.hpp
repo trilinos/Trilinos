@@ -83,7 +83,7 @@ public:
                      const Ptr<TraceSampler<Real>>   &traceSampler = nullPtr);
 
   void update_2(const Vector<Real> &z, UpdateType type, int iter = -1 ) override;
-  void value(Vector<Real> &c,const Vector<Real> &u,const Vector<Real> &z,Real &tol);
+  void value(Vector<Real> &c,const Vector<Real> &u,const Vector<Real> &z,Real &tol) override;
   void solve(Vector<Real> &c,Vector<Real> &u,const Vector<Real> &z,Real &tol) override;
   void applyJacobian_1(Vector<Real> &jv,const Vector<Real> &v,const Vector<Real> &u,
                        const Vector<Real> &z,Real &tol) override;
