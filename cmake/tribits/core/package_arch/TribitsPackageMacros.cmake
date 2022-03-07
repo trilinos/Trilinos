@@ -737,6 +737,9 @@ macro(tribits_package_create_all_libs_interface_library)
       INTERFACE ${packageLibsInAllLibsList} )
     set_target_properties(${PACKAGE_NAME}_all_libs PROPERTIES
       EXPORT_NAME all_libs)
+    if (${PROJECT_NAME}_IMPORTED_NO_SYSTEM)
+      set_target_properties(${PACKAGE_NAME}_all_libs PROPERTIES IMPORTED_NO_SYSTEM TRUE)
+    endif()
 
     # Install the interface target (makes sure it gets put in
     # <Package>Targets.cmake file)

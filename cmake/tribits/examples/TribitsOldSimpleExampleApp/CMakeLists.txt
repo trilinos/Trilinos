@@ -27,7 +27,7 @@ if (CMAKE_Fortran_COMPILER)
   enable_language(Fortran)
 endif()
 
-# Build a utility and link to libraries from SimpleCxx package
+# Build a utility and link to libraries from WithSubpackagesB
 add_executable(util util.cpp)
 if (${PROJECT_NAME}_USE_DEPRECATED_TARGETS)
   target_link_libraries(util PRIVATE pws_b)
@@ -58,12 +58,12 @@ else()
   set(simpleCxxDeps "headeronlytpl")
 endif()
 
-add_test(util_test util)
+add_test(NAME util_test COMMAND util)
 set_tests_properties(util_test PROPERTIES
   PASS_REGULAR_EXPRESSION "Util Deps: B A SimpleCxx ${simpleCxxDeps} SimpleCxx ${simpleCxxDeps}"
   )
 
-add_test(app_test app)
+add_test(NAME app_test COMMAND app)
 set_tests_properties(app_test PROPERTIES
   PASS_REGULAR_EXPRESSION "Full Deps: WithSubpackages:B A SimpleCxx ${simpleCxxDeps} SimpleCxx ${simpleCxxDeps} A SimpleCxx ${simpleCxxDeps}[;] MixedLang:Mixed Language[;] SimpleCxx:${simpleCxxDeps}"
   )

@@ -162,7 +162,7 @@ endfunction()
 
 # @FUNCTION: tribits_external_package_write_config_file_str()
 #
-# Create the text strig for a ``<tplName>Config.cmake`` file given the list of
+# Create the text string for a ``<tplName>Config.cmake`` file given the list of
 # include directories and libraries for an external package/TPL.
 #
 # Usage::
@@ -177,10 +177,10 @@ endfunction()
 #   ``<tplConfigFileStrOut>``: Name of variable that will contain the string
 #   for the config file on output.
 #
-# This function reads from the varaibles ``TPL_<tplName>_INCLUDE_DIRS`` and
+# This function reads from the variables ``TPL_<tplName>_INCLUDE_DIRS`` and
 # ``TPL_<tplName>_LIBRARIES`` (which must already be set) and uses that
 # information to produce the contents of the ``<tplName>Config.cmake`` which
-# is returned as a string variable that contains IMPORTED targets the
+# is returned as a string variable that contains IMPORTED targets to
 # represent these libraries and include directories.
 #
 # ToDo: Flesh out more documentation for behavior as more features are added
@@ -249,10 +249,10 @@ endfunction()
 #   the list of IMPORTED library targets generated from this list.
 #
 #   ``<libLinkFlagsListOut>``: [Out] Name of list variable that will be set
-#   with the list of ``-L<dir>`` library directoy paths.
+#   with the list of ``-L<dir>`` library directory paths.
 #
 #   ``<configFileFragStrInOut>``: [Inout] A string variable that will be
-#   appended with the IMPORTED library commands for the list of targts given
+#   appended with the IMPORTED library commands for the list of targets given
 #   in ``<libTargetsList>``.
 #
 function(tribits_external_package_process_libraries_list  tplName)

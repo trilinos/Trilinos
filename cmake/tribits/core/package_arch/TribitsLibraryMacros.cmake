@@ -988,11 +988,13 @@ function(tribits_add_library LIBRARY_NAME_IN)
     # rest of the include directories from upstream packages should come from
     # the targets that have their INTERFACE_INCLUDE_DIRECTORIES property set.
 
-    #
     # Add ALIAS library <PackageName>::<libname>
-    #
-
     add_library(${PACKAGE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
+
+    # Optionally Set IMPORTED_NO_SYSTEM
+    if (${PROJECT_NAME}_IMPORTED_NO_SYSTEM)
+      set_target_properties(${LIBRARY_NAME} PROPERTIES IMPORTED_NO_SYSTEM TRUE)
+    endif()
 
   endif() #if not in installation testing mode
 
