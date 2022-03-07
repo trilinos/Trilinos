@@ -3,10 +3,7 @@ ADD_SUBDIRECTORY(Shared)
 ADD_SUBDIRECTORY(Cell)
 ADD_SUBDIRECTORY(Orientation)
 ADD_SUBDIRECTORY(Projection)
-
-IF(NOT Kokkos_ENABLE_HIP)
-  ADD_SUBDIRECTORY(MonolithicExecutable)
-ENDIF()
+ADD_SUBDIRECTORY(MonolithicExecutable)
 
 ADD_SUBDIRECTORY(performance)
 
