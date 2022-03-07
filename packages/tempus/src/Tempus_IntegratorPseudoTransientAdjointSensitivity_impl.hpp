@@ -222,6 +222,22 @@ getStepper() const
   return state_integrator_->getStepper();
 }
 
+template<class Scalar>
+Teuchos::RCP<Stepper<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getStateStepper() const
+{
+  return state_integrator_->getStepper();
+}
+
+template<class Scalar>
+Teuchos::RCP<Stepper<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getSensStepper() const
+{
+  return sens_integrator_->getStepper();
+}
+
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>

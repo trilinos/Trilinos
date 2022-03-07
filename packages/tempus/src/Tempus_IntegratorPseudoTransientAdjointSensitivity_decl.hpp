@@ -163,6 +163,8 @@ public:
   virtual void setStatus(const Status st) override;
   /// Get the Stepper
   virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override;
+  Teuchos::RCP<Stepper<Scalar> > getStateStepper() const;
+  Teuchos::RCP<Stepper<Scalar> > getSensStepper() const;
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Return a copy of the Tempus ParameterList
   TEMPUS_DEPRECATED
