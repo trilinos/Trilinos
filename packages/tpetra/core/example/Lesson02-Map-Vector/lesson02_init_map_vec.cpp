@@ -302,7 +302,7 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   // with false for the second argument leaves the data uninitialized,
   // so that you can fill it later without paying the cost of
   // initially filling it with zeros.
-  vector_type z (contigMap, false);
+  vector_type z (cyclicMap, false);
 
   // Set the entries of z to (pseudo)random numbers.  Please don't
   // consider this a good parallel pseudorandom number generator.

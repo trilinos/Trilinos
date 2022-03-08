@@ -123,8 +123,8 @@ env
 
 pushd $TRILINOS_SOURCE
 ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_kokkos_refactor_cuda_geminga.cmake
-ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_amgx_cuda_geminga.cmake
-ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_cuda_no_uvm_geminga.cmake
+# ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_amgx_cuda_geminga.cmake
+# ctest -S $BUILDS_DIR/ctest_linux_nightly_mpi_release_muelu_cuda_no_uvm_geminga.cmake
 popd
 
 module unload muelu-gcc

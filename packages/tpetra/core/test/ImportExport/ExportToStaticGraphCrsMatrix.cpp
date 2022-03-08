@@ -391,8 +391,8 @@ namespace {
       TEUCHOS_TEST_FOR_EXCEPTION(! A_src->isLocallyIndexed() || ! A_tgt->isLocallyIndexed(),
         std::invalid_argument, "Both A_src and A_tgt must be locally indexed.");
 
-      // const size_t srcMaxNumRowEntries = A_src->getNodeMaxNumRowEntries ();
-      // const size_t tgtMaxNumRowEntries = A_tgt->getNodeMaxNumRowEntries ();
+      // const size_t srcMaxNumRowEntries = A_src->getLocalMaxNumRowEntries ();
+      // const size_t tgtMaxNumRowEntries = A_tgt->getLocalMaxNumRowEntries ();
       typename matrix_type::local_inds_host_view_type srcIndView, tgtIndView;
       typename matrix_type::values_host_view_type srcValView, tgtValView;
 

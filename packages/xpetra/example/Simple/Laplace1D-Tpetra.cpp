@@ -73,8 +73,8 @@ int main (int argc, char *argv[])
 
     crs_matrix_type A (map, 3);
 
-    Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
-    const size_t numMyElements = map->getNodeNumElements ();
+    Teuchos::ArrayView<const GO> myGlobalElements = map->getLocalElementList();
+    const size_t numMyElements = map->getLocalNumElements ();
     for (size_t i = 0; i < numMyElements; ++i) {
       if (myGlobalElements[i] == 0) {
         A.insertGlobalValues (myGlobalElements[i],

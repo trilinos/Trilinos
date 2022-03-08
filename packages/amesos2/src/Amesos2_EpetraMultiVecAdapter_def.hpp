@@ -224,7 +224,7 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
   const size_t num_vecs = getGlobalNumVectors();
   
 #ifdef HAVE_AMESOS2_DEBUG
-  const size_t requested_vector_length = distribution_map->getNodeNumElements();
+  const size_t requested_vector_length = distribution_map->getLocalNumElements();
   TEUCHOS_TEST_FOR_EXCEPTION( lda < requested_vector_length,
 		      std::invalid_argument,
 		      "Given stride is not large enough for local vector length" );
@@ -270,7 +270,7 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy_kokkos_view_host(
     const size_t num_vecs = getGlobalNumVectors();
 
   #ifdef HAVE_AMESOS2_DEBUG
-    const size_t requested_vector_length = distribution_map->getNodeNumElements();
+    const size_t requested_vector_length = distribution_map->getLocalNumElements();
     TEUCHOS_TEST_FOR_EXCEPTION( lda < requested_vector_length,
             std::invalid_argument,
             "Given stride is not large enough for local vector length" );
@@ -279,7 +279,7 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy_kokkos_view_host(
     // First make a host view
     host_view = Kokkos::View<scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace>(
       Kokkos::ViewAllocateWithoutInitializing("get1dCopy_kokkos_view"),
-      distribution_map->getNodeNumElements(), num_vecs);
+      distribution_map->getLocalNumElements(), num_vecs);
 
     // Optimization for ROOTED and single MPI process
     if ( num_vecs == 1 && this->mv_->Comm().MyPID() == 0 && this->mv_->Comm().NumProc() == 1 ) {
@@ -320,7 +320,7 @@ MultiVecAdapter<Epetra_MultiVector>::get1dViewNonConst(bool local)
     
   //   // localize();
   //   // /* Use the global element list returned by
-  //   //  * mv_->getMap()->getNodeElementList() to get a subCopy of mv_ which we
+  //   //  * mv_->getMap()->getLocalElementList() to get a subCopy of mv_ which we
   //   //  * assign to l_l_mv_, then return get1dViewNonConst() of l_l_mv_
   //   //  */
   //   // l_l_mv_ = Teuchos::null;

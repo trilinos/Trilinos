@@ -58,7 +58,7 @@ namespace Amesos2 {
     const Teuchos::RCP<const Tpetra::MultiVector<Sacado::UQ::PCE<S>, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<D> > >& B = Teuchos::null)
   {
     if (A != Teuchos::null) {
-      return Kokkos::cijk(A->getLocalValuesView());
+      return Kokkos::cijk(A->getLocalValuesDevice(Tpetra::Access::ReadOnly));
     }
     else if (X != Teuchos::null) {
       return Kokkos::cijk(X->getLocalViewDevice(Tpetra::Access::ReadOnly));

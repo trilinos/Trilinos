@@ -39,7 +39,7 @@
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"
-#include "stk_balance/m2n/SubdomainWriter.hpp"
+#include "stk_balance/m2n/M2NSubdomainWriter.hpp"
 #include "Ioss_Region.h"
 
 namespace stk {

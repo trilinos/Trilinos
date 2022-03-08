@@ -414,7 +414,7 @@ namespace MueLuTests {
      * and 3 rotations. Here, we're only interested in the translations, i.e. the first 3 unknowns per node.
      */
     {
-      ArrayView<const GO> domainMapGIDs = Ptent->getDomainMap()->getNodeElementList();
+      ArrayView<const GO> domainMapGIDs = Ptent->getDomainMap()->getLocalElementList();
       Array<GO> gidsOfTranslations;
       const GO lNumCoarseNodes = Teuchos::as<GO>(domainMapGIDs.size() / 6);
       const GO gNumCoarseTranslationalDOFs = Teuchos::as<GO>(Ptent->getDomainMap()->getGlobalNumElements() / 2);
@@ -535,7 +535,7 @@ namespace MueLuTests {
      * and 1 rotation. Here, we're only interested in the translations, i.e. the first 2 unknowns per node.
      */
     {
-      ArrayView<const GO> domainMapGIDs = Ptent->getDomainMap()->getNodeElementList();
+      ArrayView<const GO> domainMapGIDs = Ptent->getDomainMap()->getLocalElementList();
       Array<GO> gidsOfTranslations;
       const GO lNumCoarseNodes = Teuchos::as<GO>(domainMapGIDs.size() / 3);
       const GO gNumCoarseTranslationalDOFs = Teuchos::as<GO>(Ptent->getDomainMap()->getGlobalNumElements() * 2 / 3);
@@ -587,7 +587,7 @@ namespace MueLuTests {
     fineLevel->Set("A", A);
 
     // Extract a subset of A->getRowMap()'s GIDs to create the map to be transferred
-    ArrayView<const GO> allRowGIDs = A->getRowMap()->getNodeElementList();
+    ArrayView<const GO> allRowGIDs = A->getRowMap()->getLocalElementList();
     Array<GO> myMapGIDs;
     for (LO lid = 0; lid < Teuchos::as<LO>(nx); ++lid) {
       if (lid % 3 == 0)
@@ -701,7 +701,7 @@ namespace MueLuTests {
     fineLevel->Set("A", A);
 
     // Extract a subset of A->getRowMap()'s GIDs to create the map to be transferred
-    ArrayView<const GO> allRowGIDs = A->getRowMap()->getNodeElementList();
+    ArrayView<const GO> allRowGIDs = A->getRowMap()->getLocalElementList();
     Array<GO> myMapGIDs;
     for (LO lid = 0; lid < Teuchos::as<LO>(nx); ++lid) {
       if (lid % 3 == 0) {

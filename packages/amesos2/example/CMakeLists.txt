@@ -2,7 +2,7 @@
 IF (${PACKAGE_NAME}_ENABLE_KLU2 AND NOT ${PROJECT_NAME}_ENABLE_DEBUG AND NOT Kokkos_ENABLE_DEBUG)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SimpleSolveExampleNonContigMap
-  SOURCES SimpleSolveNonContigMap
+  SOURCES SimpleSolveNonContigMap.cpp
   ARGS
   COMM serial mpi
   NUM_MPI_PROCS 2
@@ -12,7 +12,7 @@ ENDIF()
 IF (Tpetra_INST_DOUBLE)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   GappedMtxGIDs-1proc
-  SOURCES GappedMtxGIDs-1proc
+  SOURCES GappedMtxGIDs-1proc.cpp
   ARGS
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -27,58 +27,58 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(GappedMtxGIDs_File
 
 TRIBITS_ADD_EXECUTABLE(
   SimpleSolveExample
-  SOURCES SimpleSolve
+  SOURCES SimpleSolve.cpp
   COMM serial mpi
   )
 
 TRIBITS_ADD_EXECUTABLE(
   SimpleSolveTransposeExample
-  SOURCES SimpleSolveTranspose
+  SOURCES SimpleSolveTranspose.cpp
   COMM serial mpi
   )
 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   MultipleSolvesFileExample
-#   SOURCES MultipleSolves_File
+#   SOURCES MultipleSolves_File.cpp
 #   ARGS
 #   COMM serial mpi
 # )
 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   SimpleSolveWithParameters
-#   SOURCES SimpleSolve_WithParameters
+#   SOURCES SimpleSolve_WithParameters.cpp
 #   ARGS
 #   COMM serial mpi
 # )
 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   ComplexSolveWithTranspose
-#   SOURCES ComplexSolve_WithTranspose
+#   SOURCES ComplexSolve_WithTranspose.cpp
 #   ARGS
 #   COMM serial mpi
 # )
 
 # TRIBITS_ADD_EXECUTABLE(
 #   TwoPartSolveExample
-#   SOURCES TwoPartSolve
+#   SOURCES TwoPartSolve.cpp
 #   )
 
 
 TRIBITS_ADD_EXECUTABLE(
   QuickSolve
-  SOURCES quick_solve
+  SOURCES quick_solve.cpp
   )
 
  TRIBITS_ADD_EXECUTABLE(
    SimpleSolveFileExample
-  SOURCES SimpleSolve_File
+  SOURCES SimpleSolve_File.cpp
  )
 
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
   TRIBITS_ADD_EXECUTABLE(
     QuickSolveEpetra
-    SOURCES quick_solve_epetra
+    SOURCES quick_solve_epetra.cpp
   )
 ENDIF()
 

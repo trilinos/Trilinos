@@ -167,14 +167,14 @@ namespace MueLu {
    testVecs->randomize();    
    for (size_t kk = 0; kk < testVecs->getNumVectors(); kk++ ) {
      Teuchos::ArrayRCP< Scalar > curVec = testVecs->getDataNonConst(kk);
-     for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getNodeNumElements()); ii++ ) curVec[ii] = Teuchos::ScalarTraits<SC>::magnitude(curVec[ii]);
+     for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getLocalNumElements()); ii++ ) curVec[ii] = Teuchos::ScalarTraits<SC>::magnitude(curVec[ii]);
    }
    nearNull = MultiVectorFactory::Build(A->getRowMap(), nPDEs, true);
 
    // initialize null space to constants 
    for (size_t kk = 0; kk < nearNull->getNumVectors(); kk++ ) {
      Teuchos::ArrayRCP< Scalar > curVec = nearNull->getDataNonConst(kk);
-     for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getNodeNumElements()); ii += nearNull->getNumVectors() ) curVec[ii] = Teuchos::ScalarTraits<Scalar>::one();
+     for (size_t ii = kk; ii < as<size_t>(A->getRowMap()->getLocalNumElements()); ii += nearNull->getNumVectors() ) curVec[ii] = Teuchos::ScalarTraits<Scalar>::one();
    }
 
    RCP< MultiVector > zeroVec_TVecs;
@@ -283,8 +283,8 @@ namespace MueLu {
    * applying a relaxation scheme to Au = 0 where u is initial random.
    */
   
-  GO     numMyNnz = Teuchos::as<GO>(Amat.getNodeNumEntries());
-  size_t nLoc     = Amat.getRowMap()->getNodeNumElements();
+  GO     numMyNnz = Teuchos::as<GO>(Amat.getLocalNumEntries());
+  size_t nLoc     = Amat.getRowMap()->getLocalNumElements();
 
   size_t nBlks    = nLoc/nPDEs;
   if (nBlks*nPDEs != nLoc ) 
@@ -398,7 +398,7 @@ namespace MueLu {
 
    RCP<const Map> rowMap = Amat.getRowMap(); // , colMap = Amat.getColMap();
 
-   LO nAmalgNodesOnProc = rowMap->getNodeNumElements()/nPDEs;
+   LO nAmalgNodesOnProc = rowMap->getLocalNumElements()/nPDEs;
    Teuchos::Array<GO> nodalGIDs(nAmalgNodesOnProc);
    typename Teuchos::ScalarTraits<Scalar>::coordinateType temp;
    for (size_t i = 0; i < as<size_t>(nAmalgNodesOnProc); i++ ) {

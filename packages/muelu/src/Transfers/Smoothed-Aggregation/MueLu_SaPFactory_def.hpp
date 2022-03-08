@@ -315,7 +315,7 @@ namespace MueLu {
     for (size_t k=0; k < (size_t) nPDEs; k++) nPositive[k] = 0;
 
 
-    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getNodeNumElements()); i++) {
+    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getLocalNumElements()); i++) {
 
       Teuchos::ArrayView<const LocalOrdinal> indices;
       Teuchos::ArrayView<const Scalar> vals1;
@@ -394,7 +394,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<Scalar> scalarData(3*maxEntriesPerRow);
     bool hasFeasible;
 
-    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getNodeNumElements()); i++) {
+    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getLocalNumElements()); i++) {
 
       Teuchos::ArrayView<const LocalOrdinal> indices;
       Teuchos::ArrayView<const Scalar> vals1;

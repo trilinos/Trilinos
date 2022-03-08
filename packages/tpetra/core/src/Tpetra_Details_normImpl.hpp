@@ -122,7 +122,7 @@ lclNormImpl (const RV& normsOut,
   static_assert (static_cast<int> (RV::Rank) == 1,
                  "Tpetra::MultiVector::lclNormImpl: "
                  "The first argument normsOut must have rank 1.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value,
+  static_assert (Kokkos::is_view<XMV>::value,
                  "Tpetra::MultiVector::lclNormImpl: "
                  "The second argument X is not a Kokkos::View.");
   static_assert (static_cast<int> (XMV::Rank) == 2,

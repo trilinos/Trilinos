@@ -127,8 +127,8 @@ namespace MueLu {
       coarseData[i] = LO_INVALID;
    
     // Fill in coarse TV
-    LO domMapNumElements = P->getDomainMap()->getNodeNumElements();
-    for (LO row=0; row<(LO)P->getNodeNumRows(); row++) {
+    LO domMapNumElements = P->getDomainMap()->getLocalNumElements();
+    for (LO row=0; row<(LO)P->getLocalNumRows(); row++) {
       LO fineNumber = fineData[row];
       ArrayView<const LO> indices;
       P->getLocalRowView(row,indices);
@@ -155,11 +155,11 @@ namespace MueLu {
         coarseTVghosted = coarseTV;
       }
       ArrayRCP<LO> coarseDataGhosted = coarseTVghosted->getDataNonConst(0);
-      for (LO col=0; col<(LO)P->getColMap()->getNodeNumElements(); col++) {
+      for (LO col=0; col<(LO)P->getColMap()->getLocalNumElements(); col++) {
         if (coarseDataGhosted[col] == LO_INVALID)
           error_count++;
       }
-      for (LO row=0; row<(LO)P->getNodeNumRows(); row++) {
+      for (LO row=0; row<(LO)P->getLocalNumRows(); row++) {
         LO fineNumber = fineData[row];
         ArrayView<const LO> indices;
         P->getLocalRowView(row,indices);
@@ -203,7 +203,7 @@ namespace MueLu {
     RCP<const Map>      coarseMap  = Get< RCP<const Map> >  (fineLevel, "CoarseMap");
     RCP<const Map>      uniqueMap  = fineTV->getMap();
 
-    ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
+    ArrayView<const GO> elementAList = coarseMap->getLocalElementList();
     
     coarseTV   = LocalOrdinalVectorFactory::Build(coarseMap,1);
     

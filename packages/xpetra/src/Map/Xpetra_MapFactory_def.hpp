@@ -164,9 +164,9 @@ Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node>>& nodeMap,
   }
 
 #ifdef HAVE_XPETRA_TPETRA
-  LocalOrdinal numLocalElements = nodeMap->getNodeNumElements();
-  Teuchos::ArrayView<const GlobalOrdinal> oldElements = nodeMap->getNodeElementList();
-  Teuchos::Array<GlobalOrdinal> newElements(nodeMap->getNodeNumElements() * numDofPerNode);
+  LocalOrdinal numLocalElements = nodeMap->getLocalNumElements();
+  Teuchos::ArrayView<const GlobalOrdinal> oldElements = nodeMap->getLocalElementList();
+  Teuchos::Array<GlobalOrdinal> newElements(nodeMap->getLocalNumElements() * numDofPerNode);
   for (LocalOrdinal i = 0; i < numLocalElements; i++)
   {
     for (LocalOrdinal j = 0; j < numDofPerNode; j++)

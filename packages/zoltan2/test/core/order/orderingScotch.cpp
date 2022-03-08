@@ -92,7 +92,7 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
   z2TestLO bw_left = 0;
   z2TestLO bw_right = 0;
 
-  z2TestLO  n = A->getNodeNumRows();
+  z2TestLO  n = A->getLocalNumRows();
 
   // Loop over rows of matrix
   for (ii=0; ii<n; ii++) {
@@ -129,9 +129,9 @@ void tempDebugTest(
   lno_t * perm = soln->getPermutationView();
   lno_t * iperm = soln->getPermutationView(true);
 
-  lno_t numRows = origMatrix->getNodeNumRows();
+  lno_t numRows = origMatrix->getLocalNumRows();
 
-  std::cout << "origMatrix->getNodeNumRows(): " << numRows << std::endl;
+  std::cout << "origMatrix->getLocalNumRows(): " << numRows << std::endl;
 
   if (numRows == 0) {
     std::cout << "Skipping analysis - matrix is empty" << std::endl;

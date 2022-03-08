@@ -222,7 +222,7 @@ namespace Tpetra {
 
       // construct identity on clusterCoeffMap_
       RCP<matrix_type> identity = rcp(new matrix_type(clusterCoeffMap_, 1));
-      Teuchos::ArrayView<const GlobalOrdinal> gblRows = clusterCoeffMap_->getNodeElementList ();
+      Teuchos::ArrayView<const GlobalOrdinal> gblRows = clusterCoeffMap_->getLocalElementList ();
       for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
         Teuchos::Array<GlobalOrdinal> col (1, *it);
         Teuchos::Array<Scalar> val (1, one);
@@ -284,12 +284,12 @@ namespace Tpetra {
       return nearField_->getGlobalNumCols();
     }
 
-    size_t getNodeNumRows() const {
-      return nearField_->getNodeNumRows();
+    size_t getLocalNumRows() const {
+      return nearField_->getLocalNumRows();
     }
 
-    size_t getNodeNumCols() const {
-      return nearField_->getNodeNumCols();
+    size_t getLocalNumCols() const {
+      return nearField_->getLocalNumCols();
     }
 
     GlobalOrdinal getIndexBase() const {
@@ -300,8 +300,8 @@ namespace Tpetra {
       return nearField_->getGlobalNumEntries();
     }
 
-    size_t getNodeNumEntries() const {
-      return nearField_->getNodeNumEntries();
+    size_t getLocalNumEntries() const {
+      return nearField_->getLocalNumEntries();
     }
 
     size_t getNumEntriesInGlobalRow (GlobalOrdinal globalRow) const {
@@ -316,7 +316,7 @@ namespace Tpetra {
       throw MueLu::Exceptions::RuntimeError("Not implemented.");
     }
 
-    size_t getNodeMaxNumRowEntries () const {
+    size_t getLocalMaxNumRowEntries () const {
       throw MueLu::Exceptions::RuntimeError("Not implemented.");
     }
 

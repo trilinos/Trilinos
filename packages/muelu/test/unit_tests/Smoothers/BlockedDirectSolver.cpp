@@ -88,8 +88,8 @@ namespace MueLuTests {
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Amap.getComm();
 
     GlobalOrdinal count=0;
-    Teuchos::Array<GlobalOrdinal> myaugids(Amap.getNodeNumElements());
-    for (size_t i=0; i<Amap.getNodeNumElements(); ++i) {
+    Teuchos::Array<GlobalOrdinal> myaugids(Amap.getLocalNumElements());
+    for (size_t i=0; i<Amap.getLocalNumElements(); ++i) {
       const GlobalOrdinal gid = Amap.getGlobalElement(i);
       if (Agiven.isNodeGlobalElement(gid)) continue;
       myaugids[Teuchos::as<GlobalOrdinal>(count)] = gid;
@@ -148,8 +148,8 @@ namespace MueLuTests {
       //std::cout << it << " " << maps[it]->getMinAllGlobalIndex() << " - " << maps[it]->getMaxAllGlobalIndex() << std::endl;
       blocks[it] = CrsMatrixFactory::Build(maps[it], 1);
 
-      LocalOrdinal NumMyElements = maps[it]->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = maps[it]->getNodeElementList();
+      LocalOrdinal NumMyElements = maps[it]->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = maps[it]->getLocalElementList();
 
       for (LocalOrdinal i = 0; i < NumMyElements; i++)
         blocks[it]->insertGlobalValues(MyGlobalElements[i],
@@ -201,8 +201,8 @@ namespace MueLuTests {
       //std::cout << it << " " << maps[it]->getMinAllGlobalIndex() << " - " << maps[it]->getMaxAllGlobalIndex() << std::endl;
       blocks[it] = CrsMatrixFactory::Build(maps[it], 1);
 
-      LocalOrdinal NumMyElements = maps[it]->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = maps[it]->getNodeElementList();
+      LocalOrdinal NumMyElements = maps[it]->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = maps[it]->getLocalElementList();
 
       for (LocalOrdinal i = 0; i < NumMyElements; i++)
         blocks[it]->insertGlobalValues(MyGlobalElements[i],

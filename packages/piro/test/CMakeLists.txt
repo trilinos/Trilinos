@@ -248,6 +248,17 @@ IF (Piro_ENABLE_Tempus)
     STANDARD_PASS_OUTPUT
   )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolverForwardOnly_UnitTests
+    SOURCES
+    Piro_TempusSolverForwardOnly_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    MockModelEval_A.hpp
+    MockModelEval_A.cpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TempusSolver_SensitivityUnitTests
     SOURCES
     Piro_TempusSolver_SensitivityUnitTests.cpp

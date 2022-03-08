@@ -239,8 +239,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test3, Scalar, LocalOrdinal
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), num_rows_per_proc);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), num_rows_per_proc);
+  TEST_EQUALITY(x.getMap()->getLocalNumElements(), num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getLocalNumElements(), num_rows_per_proc);
 
   TEST_NOTHROW(prec.apply(x, y));
 }
@@ -273,8 +273,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test4, Scalar, LocalOrdinal
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), 5);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), 5);
+  TEST_EQUALITY(x.getMap()->getLocalNumElements(), 5);
+  TEST_EQUALITY(y.getMap()->getLocalNumElements(), 5);
   TEST_NOTHROW(prec.apply(x, y));
 }
 
@@ -305,8 +305,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Richardson, Scalar, LocalOr
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), 5);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), 5);
+  TEST_EQUALITY(x.getMap()->getLocalNumElements(), 5);
+  TEST_EQUALITY(y.getMap()->getLocalNumElements(), 5);
   TEST_NOTHROW(prec.apply(x, y));
 }
 
@@ -435,8 +435,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, LocalSymGaussSeidelZeroRows
   ParameterList params;
   params.set ("relaxation: type", "Symmetric Gauss-Seidel");
 
-  Teuchos::ArrayRCP<LO> rowIndices(crsMatrix->getNodeNumRows());
-  for (size_t i = 0; i < crsMatrix->getNodeNumRows (); ++i) {
+  Teuchos::ArrayRCP<LO> rowIndices(crsMatrix->getLocalNumRows());
+  for (size_t i = 0; i < crsMatrix->getLocalNumRows (); ++i) {
     rowIndices[i] = static_cast<LO> (i);
   }
   params.set ("relaxation: local smoothing indices", rowIndices);
@@ -507,7 +507,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, SGS_mult_sweeps, Scalar, Lo
     rcp (new crs_matrix_type (rowMap, 6));
 
   {
-    const size_t lclNumRows = rowMap->getNodeNumElements ();
+    const size_t lclNumRows = rowMap->getLocalNumElements ();
     const Scalar ONE = STS::one ();
     const Scalar TWO = ONE + ONE;
     const Scalar FOUR = TWO + TWO;
@@ -807,8 +807,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, NotCrsMatrix, Scalar, LO, G
   MV y (rowmap, 2);
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY( x.getMap()->getNodeNumElements(), num_rows_per_proc );
-  TEST_EQUALITY( y.getMap()->getNodeNumElements(), num_rows_per_proc );
+  TEST_EQUALITY( x.getMap()->getLocalNumElements(), num_rows_per_proc );
+  TEST_EQUALITY( y.getMap()->getLocalNumElements(), num_rows_per_proc );
 
   try {
     prec->apply (x, y);
@@ -897,8 +897,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix,
   MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(x.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
 
   try {
     prec->apply (x, y);
@@ -1027,8 +1027,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrs
   MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY( x.getMap()->getNodeNumElements (), blockSize * num_rows_per_proc );
-  TEST_EQUALITY( y.getMap ()->getNodeNumElements (), blockSize * num_rows_per_proc );
+  TEST_EQUALITY( x.getMap()->getLocalNumElements (), blockSize * num_rows_per_proc );
+  TEST_EQUALITY( y.getMap ()->getLocalNumElements (), blockSize * num_rows_per_proc );
 
   try {
     prec->apply (x, y);
@@ -1086,8 +1086,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrs
   MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(x.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
   TEST_NOTHROW(prec.apply(x, y));
 
   Teuchos::Array<Scalar> exactSol(num_rows_per_proc);

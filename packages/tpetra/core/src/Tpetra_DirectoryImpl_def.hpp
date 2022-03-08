@@ -595,7 +595,7 @@ namespace Tpetra {
       // from the minimum to the maximum GID of the user Map, and a
       // minimum GID of minAllGID from the user Map.  It doesn't
       // actually have to store all those entries, though do beware of
-      // calling getNodeElementList on it (see Bug 5822).
+      // calling getLocalElementList on it (see Bug 5822).
       const global_size_t numGlobalEntries = maxAllGID - minAllGID + 1;
 
       // We can't afford to replicate the whole directory on each
@@ -609,7 +609,7 @@ namespace Tpetra {
       directoryMap_ = rcp (new map_type (numGlobalEntries, minAllGID, comm,
                                          GloballyDistributed));
       // The number of Directory elements that my process owns.
-      const size_t dir_numMyEntries = directoryMap_->getNodeNumElements ();
+      const size_t dir_numMyEntries = directoryMap_->getLocalNumElements ();
 
       // Fix for Bug 5822: If the input Map is "sparse," that is if
       // the difference between the global min and global max GID is
@@ -635,15 +635,15 @@ namespace Tpetra {
       // switch to a hash table - based implementation.
       const size_t inverseSparsityThreshold = 10;
       useHashTables_ =
-        (dir_numMyEntries >= inverseSparsityThreshold * map.getNodeNumElements());
+        (dir_numMyEntries >= inverseSparsityThreshold * map.getLocalNumElements());
 
       // Get list of process IDs that own the directory entries for the
       // Map GIDs.  These will be the targets of the sends that the
       // Distributor will do.
       const int myRank = comm->getRank ();
-      const size_t numMyEntries = map.getNodeNumElements ();
+      const size_t numMyEntries = map.getLocalNumElements ();
       Array<int> sendImageIDs (numMyEntries);
-      ArrayView<const GO> myGlobalEntries = map.getNodeElementList ();
+      ArrayView<const GO> myGlobalEntries = map.getLocalElementList ();
       // An ID not present in this lookup indicates that it lies outside
       // of the range [minAllGID,maxAllGID] (from map_).  this means
       // something is wrong with map_, our fault.
@@ -657,7 +657,7 @@ namespace Tpetra {
         << Teuchos::toString (sendImageIDs ()) << ".  The input Map itself has "
         "the following entries on the calling process " <<
         map.getComm ()->getRank () << ": " <<
-        Teuchos::toString (map.getNodeElementList ()) << ", and has "
+        Teuchos::toString (map.getLocalElementList ()) << ", and has "
         << map.getGlobalNumElements () << " total global indices in ["
         << map.getMinAllGlobalIndex () << "," << map.getMaxAllGlobalIndex ()
         << "].  The Directory Map has "

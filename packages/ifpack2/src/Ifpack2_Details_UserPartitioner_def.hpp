@@ -100,7 +100,7 @@ void UserPartitioner<GraphType>::computePartitions ()
     TEUCHOS_TEST_FOR_EXCEPTION(
       map_.is_null (), std::logic_error, "Ifpack2::UserPartitioner::"
       "computePartitions: map_ is null.");
-    const size_t localNumRows = this->Graph_->getNodeNumRows ();
+    const size_t localNumRows = this->Graph_->getLocalNumRows ();
     for (size_t ii = 0; ii < localNumRows; ++ii) {
       this->Partition_[ii] = map_[ii];
     }

@@ -379,7 +379,7 @@ CommGraphModel<Adapter>::CommGraphModel(
 
   for (int idx=0; idx < nWeightsPerVertex_; idx++){
     scalar_t *wgt = new scalar_t [nLocalVertices_];
-    wgt[0] = inGraph->getNodeNumEntries();
+    wgt[0] = inGraph->getLocalNumEntries();
     ArrayRCP<const scalar_t> wgtArray = arcp(wgt, 0, nLocalVertices_, true);
     weightInfo[idx] = input_t(wgtArray, 1);
   }

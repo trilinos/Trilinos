@@ -99,23 +99,23 @@ namespace MueLuTests {
     bool bCorrectGraph = false;
     int reduction_val=0;
     int comm_size=comm->getSize(), comm_rank=comm->getRank();
-    auto lgraph=*graph;
+    auto lclLWGraph = graph->getLocalLWGraph();
     Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
 			    KOKKOS_LAMBDA(const LO i, int &correct) { 
 			      if (comm_size == 1) {
-				auto v0 = lgraph.getNeighborVertices(0);
-				auto v1 = lgraph.getNeighborVertices(1);
-				auto v2 = lgraph.getNeighborVertices(2);
+				auto v0 = lclLWGraph.getNeighborVertices(0);
+				auto v1 = lclLWGraph.getNeighborVertices(1);
+				auto v2 = lclLWGraph.getNeighborVertices(2);
 				if (v0.length == 2 && ((v0(0) == 0 && v0(1) == 1) || (v0(0) == 1 && v0(1) == 0)) &&
 				    v1.length == 3 && v2.length == 3)
 				  correct = true;
 			      } else {
 				if (comm_rank == 0 ) {
-				  if (lgraph.getNeighborVertices(0).length == 2)
+				  if (lclLWGraph.getNeighborVertices(0).length == 2)
 				    correct = true;
 				  
 				} else {
-				  if (lgraph.getNeighborVertices(0).length == 3)
+				  if (lclLWGraph.getNeighborVertices(0).length == 3)
 				    correct = true;
 				}
 			      }
@@ -175,24 +175,24 @@ namespace MueLuTests {
     bool bCorrectGraph = false;
     int reduction_val=0;
     int comm_size=comm->getSize(), comm_rank=comm->getRank();
-    auto lgraph=*graph;
+    auto lclLWGraph = graph->getLocalLWGraph();
     Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
 			    KOKKOS_LAMBDA(const LO i, int &correct) { 
 			      if (comm_size == 1) {
-				auto v0 = lgraph.getNeighborVertices(0);
-				auto v1 = lgraph.getNeighborVertices(1);
-				auto v2 = lgraph.getNeighborVertices(2);
+				auto v0 = lclLWGraph.getNeighborVertices(0);
+				auto v1 = lclLWGraph.getNeighborVertices(1);
+				auto v2 = lclLWGraph.getNeighborVertices(2);
 				if (v0.length == 1 &&   v0(0) == 0 &&
 				    v1.length == 2 && ((v1(0) == 0 && v1(1) == 1) || (v1(0) == 1 && v1(1) == 0)) &&
 				    v2.length == 2 && ((v2(0) == 1 && v2(1) == 2) || (v2(0) == 2 && v2(1) == 1)))
 				  correct = true;
 			      } else {
 				if (comm_rank == 0 ) {
-				  if (lgraph.getNeighborVertices(0).length == 1)
+				  if (lclLWGraph.getNeighborVertices(0).length == 1)
 				    correct = true;
 				  
 				} else {
-				  if (lgraph.getNeighborVertices(0).length == 2)
+				  if (lclLWGraph.getNeighborVertices(0).length == 2)
 				    correct = true;
 				}
 			      }
@@ -212,7 +212,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(),  0);
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),      0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),  as<size_t>(3*comm->getSize()));
-    TEST_EQUALITY(myDomainMap->getNodeNumElements(),    3);
+    TEST_EQUALITY(myDomainMap->getLocalNumElements(),    3);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithoutFiltering, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -253,18 +253,18 @@ namespace MueLuTests {
     bool bCorrectGraph = false;
     int reduction_val=0;
     int comm_size=comm->getSize(), comm_rank=comm->getRank();
-    auto lgraph=*graph;
+    auto lclLWGraph = graph->getLocalLWGraph();
     Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
 			    KOKKOS_LAMBDA(const LO i, int &correct) { 
-			      if (comm_size == 1 && lgraph.getNeighborVertices(0).length == 1) {
+			      if (comm_size == 1 && lclLWGraph.getNeighborVertices(0).length == 1) {
 				correct = true;
 			      } else {
 				if (comm_rank == 0 || comm_rank == comm_size-1) {
-				  if (lgraph.getNeighborVertices(0).length == 2)
+				  if (lclLWGraph.getNeighborVertices(0).length == 2)
 				    correct = true;
 				  
 				} else {
-				  if (static_cast<int>(lgraph.getNeighborVertices(0).length) == blockSize)
+				  if (static_cast<int>(lclLWGraph.getNeighborVertices(0).length) == blockSize)
 				    correct = true;
 				}
 			      }
@@ -282,7 +282,7 @@ namespace MueLuTests {
 
     if (comm->getSize() > 1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(numLocalImportElts, numLocalRowMapElts+1);
       } else {
@@ -304,7 +304,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),     0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),     0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(), as<size_t>(comm->getSize()));
-    TEST_EQUALITY(myDomainMap->getNodeNumElements(),   1);
+    TEST_EQUALITY(myDomainMap->getLocalNumElements(),   1);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicBlockWithFiltering, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -353,7 +353,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(), as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize() > 1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(numLocalImportElts, numLocalRowMapElts+1);
       } else {
@@ -366,7 +366,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),     0);
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),     0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(), as<size_t>(comm->getSize()));
-    TEST_EQUALITY(myDomainMap->getNodeNumElements(),   1);
+    TEST_EQUALITY(myDomainMap->getLocalNumElements(),   1);
   }
 
 #if 0
@@ -513,7 +513,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -535,7 +535,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),as<size_t>(comm->getSize()));
-    TEST_EQUALITY(as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationStridedLW
 
   TEUCHOS_UNIT_TEST(CoalesceDropFactory, AmalgamationStrided2LW)
@@ -623,7 +623,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -645,7 +645,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getMaxLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),as<size_t>(comm->getSize()));
-    TEST_EQUALITY(as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationStrided2LW
 
 
@@ -734,7 +734,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
     if (comm->getSize()>1) {
       size_t numLocalRowMapElts = graph->GetNodeNumVertices();
-      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      size_t numLocalImportElts = myImportMap->getLocalNumElements();
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
         TEST_EQUALITY(as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
       } else {
@@ -745,7 +745,7 @@ namespace MueLuTests {
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myDomainMap->getGlobalNumElements(),as<size_t>(comm->getSize()));
-    TEST_EQUALITY(as<bool>(myDomainMap->getNodeNumElements()==1), true);
+    TEST_EQUALITY(as<bool>(myDomainMap->getLocalNumElements()==1), true);
   } // AmalgamationStridedOffsetDropping2LW
 #endif
 
@@ -783,7 +783,7 @@ namespace MueLuTests {
 
       RCP<LWGraph_kokkos> graph = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &dropFact);
 
-      auto boundaryNodes = graph->GetBoundaryNodeMap();
+      auto boundaryNodes = graph->getLocalLWGraph().GetBoundaryNodeMap();
       auto boundaryNodesHost = Kokkos::create_mirror_view(boundaryNodes);
       Kokkos::deep_copy(boundaryNodesHost, boundaryNodes);
       bool allNodesAreOnBoundary = true;

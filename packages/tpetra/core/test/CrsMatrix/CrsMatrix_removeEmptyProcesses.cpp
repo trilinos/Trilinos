@@ -109,8 +109,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, RemoveEmptyProcesses, Scalar, LO, 
 
 
     RCP<crs_matrix_type> matrix = rcp (new crs_matrix_type (map, 1));
-    const LO NumMyElements = map->getNodeNumElements ();
-    Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList ();
+    const LO NumMyElements = map->getLocalNumElements ();
+    Teuchos::ArrayView<const GO> MyGlobalElements = map->getLocalElementList ();
 
     // Make the matrix the identity matrix.
     if (myRank == 0) {

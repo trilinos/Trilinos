@@ -411,7 +411,7 @@ BulkData::BulkData(MetaData & mesh_meta_data,
 
   impl::check_size_of_types();
 
-  register_observer(m_meshDiagnosticObserver);
+  register_observer(m_meshDiagnosticObserver, ModificationObserverPriority::STK_INTERNAL);
 
   init_mesh_consistency_check_mode();
 
@@ -1087,7 +1087,7 @@ bool entity_is_purely_local(const BulkData& mesh, Entity entity)
 {
     const Bucket& bucket = mesh.bucket(entity);
     return bucket.owned() && !bucket.shared()
-            && !bucket.in_aura() && !mesh.in_send_ghost(mesh.entity_key(entity));
+            && !bucket.in_aura() && !mesh.in_send_ghost(entity);
 }
 
 void require_fmwk_or_entity_purely_local(const BulkData& mesh, Entity entity, const std::string& caller)
@@ -1614,25 +1614,6 @@ bool BulkData::is_communicated_with_proc(Entity entity, int proc) const
 
   return false;
 }
-#ifndef STK_HIDE_DEPRECATED_CODE //delete after January 2022
-  STK_DEPRECATED_MSG("BulkData::comm_procs(EntityKey, ...) has been deprecated. Use BulkData::comm_procs(Entity,...) instead.") 
-  void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
-{
-  ThrowAssertMsg(is_valid(get_entity(key)),
-                  "BulkData::comm_procs ERROR, input key "<<key<<" not a valid entity. Contact sierra-help@sandia.gov");
-
-#ifndef NDEBUG
-  EntityCommListInfoVector::const_iterator lb_itr = std::lower_bound(m_entity_comm_list.begin(),
-                                                                     m_entity_comm_list.end(),
-                                                                     key);
-  if (lb_itr != m_entity_comm_list.end() && lb_itr->key == key) {
-      ThrowAssertMsg( lb_itr->entity != Entity(),
-                      "comm-list contains invalid entity for key "<<key<<". Contact sierra-help@sandia.gov");
-  }
-#endif
-  impl::fill_sorted_procs(internal_entity_comm_map(key), procs);
-}
-#endif // STK_HIDE_DEPRECATED_CODE
 
 void BulkData::comm_procs(Entity entity, std::vector<int> & procs ) const
 {
@@ -1779,9 +1760,10 @@ void BulkData::reallocate_field_data(stk::mesh::FieldBase & field)
   }
 }
 
-void BulkData::register_observer(std::shared_ptr<ModificationObserver> observer) const
+void BulkData::register_observer(std::shared_ptr<ModificationObserver> observer,
+                                 ModificationObserverPriority priority) const
 {
-    notifier.register_observer(observer);
+    notifier.register_observer(observer, priority);
 }
 
 void BulkData::unregister_observer(std::shared_ptr<ModificationObserver> observer) const
@@ -4050,7 +4032,7 @@ EntityVector BulkData::get_upward_recv_ghost_relations(const Entity entity)
 {
   EntityVector ghosts;
   filter_upward_ghost_relations(entity, [&](Entity relation) {
-    if(in_receive_ghost(entity_key(relation))) {
+    if(in_receive_ghost(relation)) {
       ghosts.push_back(relation);
     }
   });
@@ -4062,7 +4044,7 @@ EntityVector BulkData::get_upward_send_ghost_relations(const Entity entity)
 {
   EntityVector ghosts;
   filter_upward_ghost_relations(entity, [&](Entity relation) {
-    if(in_send_ghost(entity_key(relation))) {
+    if(in_send_ghost(relation)) {
       ghosts.push_back(relation);
     }
   });
@@ -5262,28 +5244,36 @@ void BulkData::batch_change_entity_parts(const stk::mesh::EntityVector& entities
     internal_modification_end_for_change_parts(opt);
 }
 
+void BulkData::change_entity_parts(const Selector& selector,
+                                   EntityRank rank,
+                                   const PartVector& add_parts,
+                                   const PartVector& remove_parts)
+{
+    if(m_runConsistencyCheck) {
+      impl::check_matching_selectors_and_parts_across_procs(selector, add_parts, remove_parts, parallel());
+    }    
+
+    bool stkMeshRunningUnderFramework = m_add_fmwk_data;
+    if(!stkMeshRunningUnderFramework)
+    {    
+        internal_throw_error_if_manipulating_internal_part_memberships(add_parts);
+        internal_throw_error_if_manipulating_internal_part_memberships(remove_parts);
+    }    
+
+    internal_verify_and_change_entity_parts(selector, rank, add_parts, remove_parts);
+}
+
 void BulkData::batch_change_entity_parts(const Selector& selector,
                                          EntityRank rank,
                                          const PartVector& add_parts,
                                          const PartVector& remove_parts,
-                                         ModEndOptimizationFlag opt)
+                                         ModEndOptimizationFlag opt) 
 {
-    if(m_runConsistencyCheck) {
-      impl::check_matching_selectors_and_parts_across_procs(selector, add_parts, remove_parts, parallel());
-    }
-
-    bool stkMeshRunningUnderFramework = m_add_fmwk_data;
-    if(!stkMeshRunningUnderFramework)
-    {
-        internal_throw_error_if_manipulating_internal_part_memberships(add_parts);
-        internal_throw_error_if_manipulating_internal_part_memberships(remove_parts);
-    }
-
-    bool starting_modification = modification_begin();
+    const bool starting_modification = modification_begin();
     ThrowRequireMsg(starting_modification, "ERROR: BulkData already being modified,\n"
                     <<"BulkData::change_entity_parts(vector-of-entities) can not be called within an outer modification scope.");
 
-    internal_verify_and_change_entity_parts(selector, rank, add_parts, remove_parts);
+    change_entity_parts(selector, rank, add_parts, remove_parts);
 
     internal_modification_end_for_change_parts(opt);
 }
@@ -5625,7 +5615,7 @@ void BulkData::internal_propagate_induced_part_changes_to_downward_connected_ent
                 if (remote_changes_needed)
                 {
                     Bucket *bucket_old = bucket_ptr(e_to);
-                    if ( !m_meshModification.did_any_shared_entity_change_parts() && bucket_old && (bucket_old->shared()  || this->in_send_ghost(entity_key(entity)) || this->in_receive_ghost(entity_key(entity)) ))
+                    if ( !m_meshModification.did_any_shared_entity_change_parts() && bucket_old && (bucket_old->shared()  || this->in_send_ghost(entity) || this->in_receive_ghost(entity) ))
                     {
                         m_meshModification.set_shared_entity_changed_parts();
                     }
@@ -6388,7 +6378,7 @@ void BulkData::initialize_face_adjacent_element_graph()
     {
         m_elemElemGraph = new ElemElemGraph(*this);
         m_elemElemGraphUpdater = std::make_shared<ElemElemGraphUpdater>(*this,*m_elemElemGraph);
-        register_observer(m_elemElemGraphUpdater);
+        register_observer(m_elemElemGraphUpdater, ModificationObserverPriority::STK_INTERNAL);
     }
 }
 

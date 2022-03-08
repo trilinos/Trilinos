@@ -81,7 +81,7 @@ namespace {
     RowMatrixTransposer<Scalar, LO, GO, Node> at (matrix);
     RCP<MAT> calculated = at.createTranspose();
 
-    RCP<MAT> diffMatrix = rcp(new MAT(matrixT->getRowMap(), matrixT->getNodeMaxNumRowEntries()));
+    RCP<MAT> diffMatrix = rcp(new MAT(matrixT->getRowMap(), matrixT->getLocalMaxNumRowEntries()));
 
     Scalar sOne = ScalarTraits<Scalar>::one();
     Add(*calculated, false, -sOne, *matrixT, false, sOne, diffMatrix);

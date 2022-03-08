@@ -275,10 +275,10 @@ public:
   virtual global_size_t getGlobalNumCols() const;
 
   //! The number of rows owned on the calling process.
-  virtual size_t getNodeNumRows() const;
+  virtual size_t getLocalNumRows() const;
 
   //! The number of columns in the (locally filtered) matrix.
-  virtual size_t getNodeNumCols() const;
+  virtual size_t getLocalNumCols() const;
 
   //! Returns the index base for global indices for this matrix.
   virtual global_ordinal_type getIndexBase() const;
@@ -287,7 +287,7 @@ public:
   virtual global_size_t getGlobalNumEntries() const;
 
   //! Returns the local number of entries in this matrix.
-  virtual size_t getNodeNumEntries() const;
+  virtual size_t getLocalNumEntries() const;
 
   /// \brief The current number of entries on this node in the specified global row.
   ///
@@ -307,7 +307,7 @@ public:
   virtual size_t getGlobalMaxNumRowEntries() const;
 
   //! The maximum number of entries across all rows/columns on this process.
-  virtual size_t getNodeMaxNumRowEntries() const;
+  virtual size_t getLocalMaxNumRowEntries() const;
 
   //! Whether this matrix has a well-defined column Map.
   virtual bool hasColMap() const;

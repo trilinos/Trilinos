@@ -283,7 +283,11 @@ namespace panzer
        *  \brief The fields to which we'll contribute, or in which we'll store,
        *         the result of computing this integral.
        */
-      PHX::View<PHX::MDField<ScalarT, Cell, BASIS>*> fields_;
+      // PHX::View<PHX::View<ScalarT**>*> fields_;
+      using InnerView = PHX::View<ScalarT**>;
+      using OuterView = PHX::View<InnerView*>;
+      typename OuterView::HostMirror fields_host_;
+      OuterView             fields_;
 
       /**
        *  \brief A field representing the vector-valued function we're

@@ -34,18 +34,26 @@
 #ifndef STK_UNIT_TESTS_STK_IO_IOMeshFixture_hpp
 #define STK_UNIT_TESTS_STK_IO_IOMeshFixture_hpp
 
-#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <gtest/gtest.h>  // for AssertHelper, EXPECT_EQ, etc
+
+#include <algorithm>
 #include <stk_io/FillMesh.hpp>
+#include <stk_io/IossBridge.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>  // for StkMeshIoBroker
+#include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <algorithm>
 #include <string>
 #include <vector>
 
+namespace stk
+{
+namespace io
+{
+namespace unit_test
+{
 class IOMeshFixture : public stk::unit_test_util::MeshFixture
 {
 protected:
@@ -69,6 +77,28 @@ protected:
     get_bulk().batch_change_entity_parts({elem}, {&destPart}, {&sourcePart});
   }
 
+  void move_face(const stk::mesh::EntityId faceId, stk::mesh::Part& sourcePart, stk::mesh::Part& destPart)
+  {
+    stk::mesh::Entity face = get_bulk().get_entity(get_meta().side_rank(), faceId);
+    get_bulk().batch_change_entity_parts({face}, {&destPart}, {&sourcePart});
+  }
+
+  void add_nodes(const stk::mesh::EntityIdVector nodeIds, stk::mesh::Part& destPart)
+  {
+    stk::mesh::EntityVector nodes;
+    nodes.reserve(nodeIds.size());
+
+    for (stk::mesh::EntityId nodeId : nodeIds) {
+      stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, nodeId);
+      ThrowRequire(get_bulk().is_valid(node));
+      nodes.push_back(node);
+    }
+
+    get_bulk().batch_change_entity_parts(nodes, {&destPart}, {});
+  }
+
+  void add_node(const stk::mesh::EntityId nodeId, stk::mesh::Part& destPart) { add_nodes({nodeId}, destPart); }
+
   void create_side(const stk::mesh::EntityId elemId,
                    stk::mesh::ConnectivityOrdinal sideOrd,
                    stk::mesh::Part& sidePart)
@@ -80,7 +110,7 @@ protected:
     get_bulk().modification_end();
   }
 
-  stk::mesh::Selector create_subset_selector(const stk::mesh::PartVector& blocksToExclude)
+  stk::mesh::Selector create_block_subset_selector(const stk::mesh::PartVector& blocksToExclude)
   {
     stk::mesh::Selector meshSubsetSelector = get_meta().universal_part();
     if (!blocksToExclude.empty()) {
@@ -97,6 +127,10 @@ protected:
     return meshSubsetSelector;
   }
 };
+
+}  // namespace unit_test
+}  // namespace io
+}  // namespace stk
 
 #endif
 

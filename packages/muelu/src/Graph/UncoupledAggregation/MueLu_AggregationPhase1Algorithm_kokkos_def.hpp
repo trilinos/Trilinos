@@ -117,6 +117,8 @@ namespace MueLu {
     auto procWinner   = aggregates.GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadWrite);
     auto colors       = aggregates.GetGraphColors();
 
+    auto lclLWGraph = graph.getLocalLWGraph();
+
     LO numAggregatedNodes = 0;
     LO numLocalAggregates = aggregates.GetNumAggregates();
     Kokkos::View<LO, device_type> aggCount("aggCount");
@@ -165,10 +167,10 @@ namespace MueLu {
                                  && (aggStat(nodeIdx) == READY || aggStat(nodeIdx) == NOTSEL)) {
                                 // Get neighbors of vertex i and look for local, aggregated,
                                 // color 1 neighbor (valid root).
-                                auto neighbors = graph.getNeighborVertices(nodeIdx);
+                                auto neighbors = lclLWGraph.getNeighborVertices(nodeIdx);
                                 for(LO j = 0; j < neighbors.length; ++j) {
                                   auto nei = neighbors.colidx(j);
-                                  if(graph.isLocalNeighborVertex(nei) && colors(nei) == 1
+                                  if(lclLWGraph.isLocalNeighborVertex(nei) && colors(nei) == 1
                                      && aggStat(nei) == AGGREGATED) {
 
                                     // This atomic guarentees that any other node trying to
@@ -217,6 +219,8 @@ namespace MueLu {
     auto procWinner   = aggregates.GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadWrite);
     auto colors       = aggregates.GetGraphColors();
 
+    auto lclLWGraph = graph.getLocalLWGraph();
+
     LO numLocalAggregates = aggregates.GetNumAggregates();
     Kokkos::View<LO, device_type> numLocalAggregatesView("Num aggregates");
     {
@@ -254,11 +258,11 @@ namespace MueLu {
                               vertex2AggId(root, 0) = aggID;
                               procWinner(root, 0) = myRank;
                               aggStat(root) = AGGREGATED;
-                              auto neighOfRoot = graph.getNeighborVertices(root);
+                              auto neighOfRoot = lclLWGraph.getNeighborVertices(root);
                               for(LO n = 0; n < neighOfRoot.length; n++)
                                 {
                                   LO neigh = neighOfRoot(n);
-                                  if (graph.isLocalNeighborVertex(neigh) && aggStat(neigh) == READY)
+                                  if (lclLWGraph.isLocalNeighborVertex(neigh) && aggStat(neigh) == READY)
                                     {
                                       //add neigh to aggregate
                                       vertex2AggId(neigh, 0) = aggID;

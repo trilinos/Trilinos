@@ -3,6 +3,7 @@
 #include "stk_io/FillMesh.hpp"
 #include "Ioss_Property.h"             // for Property
 #include "stk_io/StkMeshIoBroker.hpp"  // for StkMeshIoBroker
+#include "stk_mesh/base/BulkData.hpp"  // for BulkData
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 

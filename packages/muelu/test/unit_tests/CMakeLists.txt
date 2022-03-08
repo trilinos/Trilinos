@@ -49,6 +49,7 @@ APPEND_SET(SOURCES
   ParameterList/FactoryFactory.cpp
   ParameterList/ParameterListInterpreter.cpp
   PermutedTransferFactory.cpp
+  AlgebraicPermutationStrategy.cpp
   PgPFactory.cpp
   RAPFactory.cpp
   RAPShiftFactory.cpp
@@ -69,6 +70,9 @@ APPEND_SET(SOURCES
   Utilities.cpp
   VariableContainer.cpp
   VariableDofLaplacianFactory.cpp
+  MueLu_CoupledRBMFactory.cpp
+  PermutationFactory.cpp
+  RigidBodyModeFactory.cpp
 )
 
 APPEND_SET(SOURCES_INTREPID2

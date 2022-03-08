@@ -255,7 +255,7 @@ struct BlockCrsMatrixMaker {
     const LO nrows = rowptr.size() - 1;
 
     // Accumulate into these arrays.
-    std::vector<Magnitude> rowsum(bs*a.getNodeNumRows(), 0);
+    std::vector<Magnitude> rowsum(bs*a.getLocalNumRows(), 0);
     const auto cpm = Teuchos::rcp(
       new Tpetra_Map(Tpetra_BlockMultiVector::makePointMap(*col_map, bs)));
     Tpetra_MultiVector_Magnitude colsum_mv(cpm, 1);

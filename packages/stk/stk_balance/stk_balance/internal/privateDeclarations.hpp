@@ -102,6 +102,7 @@ bool shouldOmitSpiderElement(const stk::mesh::BulkData & stkMeshBulkData,
                              const stk::balance::BalanceSettings & balanceSettings,
                              stk::mesh::Entity elem);
 
+void register_internal_fields(stk::mesh::BulkData & bulk, const stk::balance::BalanceSettings & balanceSettings);
 void fill_spider_connectivity_count_fields(stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings);
 void keep_spiders_on_original_proc(stk::mesh::BulkData &bulk, const stk::balance::BalanceSettings & balanceSettings, DecompositionChangeList &changeList);
 void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & stkMeshBulkData);
@@ -160,6 +161,17 @@ void print_solution_statistics(const ZoltanAdapter& stkMeshAdapter, const Zoltan
     Zoltan2::EvaluatePartition<ZoltanAdapter> ep(&stkMeshAdapter, &pl, teuchos_comm, &solution);
     print_zoltan_statistics(stkMeshAdapter, ep, parallel_rank);
 }
+
+class EnableAura
+{
+public:
+  EnableAura(stk::mesh::BulkData & bulk);
+  ~EnableAura();
+
+private:
+  stk::mesh::BulkData & m_bulk;
+  bool m_weTurnedOnAura;
+};
 
 }
 }

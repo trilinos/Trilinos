@@ -179,7 +179,7 @@ TEST_F( NgpMeshChangeElementPartMembership, TimingBatch )
 {
   if (get_parallel_size() != 1) { GTEST_SKIP(); }
 
-  const int NUM_RUNS = 200;
+  const int NUM_RUNS = 400;
 
   stk::performance_tests::Timer timer(get_comm());
   timer.start_timing();
@@ -213,15 +213,25 @@ TEST_F( NgpMeshGhosting, Timing )
 {
   if (get_parallel_size() != 2) return;
 
-  const int NUM_RUNS = 100;
+  const int NUM_OUTER_RUNS = 5;
+  const int NUM_INNER_RUNS = 100;
 
   stk::performance_tests::Timer timer(get_comm());
   timer.start_timing();
-  setup_host_mesh();
 
-  for (int i=0; i<NUM_RUNS; i++) {
-    ghost_element(i);
+  for(int outer=0; outer<NUM_OUTER_RUNS; ++outer) {
+    setup_host_mesh();
+
+    for (int i=0; i<NUM_INNER_RUNS; i++) {
+      ghost_element(i);
+    }
+
+    const bool lastIteration = outer == (NUM_OUTER_RUNS-1);
+    if (!lastIteration) {
+      reset_mesh();
+    }
   }
+
   timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  timer.print_timing(NUM_OUTER_RUNS * NUM_INNER_RUNS);
 }

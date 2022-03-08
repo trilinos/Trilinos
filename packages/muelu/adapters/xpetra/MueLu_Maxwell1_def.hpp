@@ -141,6 +141,7 @@ namespace MueLu {
     }
     std::string  mode_string   = list.get("maxwell1: mode",                  MasterList::getDefault<std::string>("maxwell1: mode"));
     applyBCsTo22_              = list.get("maxwell1: apply BCs to 22",       true);
+    dump_matrices_             = list.get("maxwell1: dump matrices",         MasterList::getDefault<bool>("maxwell1: dump matrices"));
 
     // Default smoother.  We'll copy this around.
     Teuchos::ParameterList defaultSmootherList;
@@ -280,16 +281,8 @@ namespace MueLu {
       GetOStream(Warnings0) << "All edges are detected as boundary edges!" << std::endl;
       mode_ = MODE_EDGE_ONLY;
 
-      // Switch smoother off of Hiptmair
-      if(precList11_.get<std::string>("smoother: type") == "HIPTMAIR") {        
-        precList11_.set("smoother: type",precList11_.get("hiptmair: smoother type 1","CHEBYSHEV"));
-        precList11_.sublist("smoother: sublist") = precList11_.sublist("hiptmair: smoother list 1");
-      }
-
       // Generate single level hierarchy for the edge
-      throw std::runtime_error("Maxwell1: Not yet supported");
-
-      return;
+      precList22_.set("max levels", 1);
     }
       
     if (allNodesBoundary_) {
@@ -297,16 +290,9 @@ namespace MueLu {
       // Do not attempt to construct sub-hierarchies, but just set up a single level preconditioner.
       GetOStream(Warnings0) << "All nodes are detected as boundary edges!" << std::endl;
       mode_ = MODE_EDGE_ONLY;
-      // Switch smoother off of Hiptmair
-      if(precList11_.get<std::string>("smoother: type") == "HIPTMAIR") {        
-        precList11_.set("smoother: type",precList11_.get("hiptmair: smoother type 1","CHEBYSHEV"));
-        precList11_.sublist("smoother: sublist") = precList11_.sublist("hiptmair: smoother list 1");
-      }
 
       // Generate single level hierarchy for the edge
-      throw std::runtime_error("Maxwell1: Not yet supported");
-
-      return;
+      precList22_.set("max levels", 1);
     }
                                               
 
@@ -336,6 +322,19 @@ namespace MueLu {
     // Generate Kn and apply BCs (if needed)
     if(Kn_Matrix_.is_null()) {
       Kn_Matrix_ = generate_kn();
+    }
+
+    if (parameterList_.get<bool>("rap: fix zero diagonals", true)) {
+      magnitudeType threshold;
+      if (parameterList_.isType<magnitudeType>("rap: fix zero diagonals threshold"))
+        threshold = parameterList_.get<magnitudeType>("rap: fix zero diagonals threshold",
+                                                      Teuchos::ScalarTraits<double>::eps());
+      else
+        threshold = Teuchos::as<magnitudeType>(parameterList_.get<double>("rap: fix zero diagonals threshold",
+                                                                          Teuchos::ScalarTraits<double>::eps()));
+      Scalar replacement = Teuchos::as<Scalar>(parameterList_.get<double>("rap: fix zero diagonals replacement",
+                                                                          MasterList::getDefault<double>("rap: fix zero diagonals replacement")));
+      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Kn_Matrix_, true, GetOStream(Warnings1), threshold, replacement);
     }
 
 
@@ -415,8 +414,6 @@ namespace MueLu {
     RCP<RAPFactory> rapFact = rcp(new RAPFactory());
     ParameterList rapList = *(rapFact->GetValidParameterList());
     rapList.set("transpose: use implicit", true);
-    rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
-    rapList.set("rap: fix zero diagonals threshold", parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps()));
     rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
     rapFact->SetParameterList(rapList);
     coarseLevel.Request("A", rapFact.get());

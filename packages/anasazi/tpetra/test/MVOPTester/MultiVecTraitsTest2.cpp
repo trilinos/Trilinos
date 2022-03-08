@@ -106,7 +106,7 @@ namespace {
       ArrayRCP<scalar_type> X_j = X.getDataNonConst (j);
 
       X_norms[j] = STN::zero ();
-      if (map->getNodeNumElements () != 0) {
+      if (map->getLocalNumElements () != 0) {
         const LO myLclRowMin = map->getMinLocalIndex ();
         const LO myLclRowMax = map->getMaxLocalIndex ();
 
@@ -228,7 +228,7 @@ namespace {
       ArrayRCP<scalar_type> X_j = X.getDataNonConst (j);
 
       X_norms[j] = STN::zero ();
-      if (map->getNodeNumElements () != 0) {
+      if (map->getLocalNumElements () != 0) {
         const LO myLclRowMin = map->getMinLocalIndex ();
         const LO myLclRowMax = map->getMaxLocalIndex ();
 
@@ -364,7 +364,7 @@ namespace {
       ArrayRCP<scalar_type> X_j = X.getDataNonConst (j);
 
       X_norms[j] = STN::zero ();
-      if (map->getNodeNumElements () != 0) {
+      if (map->getLocalNumElements () != 0) {
         const LO myLclRowMin = map->getMinLocalIndex ();
         const LO myLclRowMax = map->getMaxLocalIndex ();
 
@@ -456,7 +456,7 @@ namespace {
       ArrayRCP<scalar_type> X_j = X.getDataNonConst (j);
 
       X_norms[j] = STN::zero ();
-      if (map->getNodeNumElements () != 0) {
+      if (map->getLocalNumElements () != 0) {
         const LO myLclRowMin = map->getMinLocalIndex ();
         const LO myLclRowMax = map->getMaxLocalIndex ();
 

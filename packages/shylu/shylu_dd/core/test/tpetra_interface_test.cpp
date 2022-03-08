@@ -126,7 +126,7 @@ int main(int argc, char** argv)
        << x->getGlobalLength() << endl;
 
   cout << "A length" << A->getGlobalNumRows() << " " << A->getGlobalNumCols() << endl;
-  cout << "A local length" << A->getNodeNumRows() << " " << A->getNodeNumCols() << endl;
+  cout << "A local length" << A->getLocalNumRows() << " " << A->getLocalNumCols() << endl;
 
 
   /*-----------------have_interface-----------------*/
@@ -186,7 +186,7 @@ int main(int argc, char** argv)
        << x->getGlobalLength() << endl;
 
   cout << "A length" << A->getGlobalNumRows() << " " << A->getGlobalNumCols() << endl;
-  cout << "A local length" << A->getNodeNumRows() << " " << A->getNodeNumCols() << endl;
+  cout << "A local length" << A->getLocalNumRows() << " " << A->getLocalNumCols() << endl;
 
 
 

@@ -192,7 +192,7 @@ namespace { // (anonymous)
 template<class OneDViewType,
          class LocalOrdinal = typename OneDViewType::size_type>
 class PositivizeVector {
-  static_assert (Kokkos::Impl::is_view<OneDViewType>::value,
+  static_assert (Kokkos::is_view<OneDViewType>::value,
                  "OneDViewType must be a 1-D Kokkos::View.");
   static_assert (static_cast<int> (OneDViewType::rank) == 1,
                  "This functor only works with a 1-D View.");
@@ -848,7 +848,7 @@ Chebyshev<ScalarType, MV>::compute ()
     if (D_.is_null ()) { // We haven't computed D_ before
       if (! A_crsMat.is_null () && A_crsMat->isFillComplete ()) {
         // It's a CrsMatrix with a const graph; cache diagonal offsets.
-        const size_t lclNumRows = A_crsMat->getNodeNumRows ();
+        const size_t lclNumRows = A_crsMat->getLocalNumRows ();
         if (diagOffsets_.extent (0) < lclNumRows) {
           diagOffsets_ = offsets_type (); // clear first to save memory
           diagOffsets_ = offsets_type ("offsets", lclNumRows);
@@ -866,7 +866,7 @@ Chebyshev<ScalarType, MV>::compute ()
         // It's a CrsMatrix with a const graph; cache diagonal offsets
         // if we haven't already.
         if (! savedDiagOffsets_) {
-          const size_t lclNumRows = A_crsMat->getNodeNumRows ();
+          const size_t lclNumRows = A_crsMat->getLocalNumRows ();
           if (diagOffsets_.extent (0) < lclNumRows) {
             diagOffsets_ = offsets_type (); // clear first to save memory
             diagOffsets_ = offsets_type ("offsets", lclNumRows);

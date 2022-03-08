@@ -228,6 +228,9 @@ public:
   /** \brief  Get an existing part by its ordinal */
   Part & get_part( unsigned ord ) const ;
 
+  /** \brief  Query if ordinal is in bounds */
+  bool is_valid_part_ordinal(unsigned ord) const;
+
   /** \brief  Query all parts of the mesh ordered by the parts' ordinal. */
   const PartVector & get_parts() const { return m_part_repo.get_all_parts(); }
 
@@ -729,11 +732,18 @@ field_type & put_field_on_entire_mesh(field_type & field)
 
 namespace stk {
 namespace mesh {
+inline bool MetaData::is_valid_part_ordinal(unsigned ord) const
+{
+  return ord < m_part_repo.size();
+}
 
-// TODO: bounds check in debug!
 inline
 Part & MetaData::get_part( unsigned ord ) const
-{ return * m_part_repo.get_all_parts()[ord] ; }
+{
+  ThrowAssertMsg(is_valid_part_ordinal(ord), "Invalid ordinal: " << ord);
+
+  return *m_part_repo.get_all_parts()[ord];
+}
 
 template< class field_type >
 inline

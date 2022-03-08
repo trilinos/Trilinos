@@ -177,7 +177,7 @@ namespace MueLu {
       if (!A11.is_null()) {
         S = MatrixFactory::BuildCopy(A11);
       } else {
-        S = MatrixFactory::Build(A11->getRowMap(), 10 /*A11->getNodeMaxNumRowEntries()*/);
+        S = MatrixFactory::Build(A11->getRowMap(), 10 /*A11->getLocalMaxNumRowEntries()*/);
         S->fillComplete(A11->getDomainMap(),A11->getRangeMap());
       }
     }

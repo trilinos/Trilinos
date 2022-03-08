@@ -211,8 +211,6 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
   {
-    typedef Sacado::ScalarValue<ScalarT> Value;
-
     for (int pt=0; pt<numPoints; pt++) {
       for (int d=0; d<spaceDim; d++) {
         // first initialize to the right thing (prevents over writing with 0)
@@ -221,11 +219,11 @@ public:
         // This is a possible issue if you need sensitivity to coordinates (you will need to
         // change basis and then use the product rule!)
         dof_ip(cell,pt,d) = dof_basis(cell, 0).val() * basis(cell, 0, pt, d);
-        dof_ip(cell,pt,d).fastAccessDx(offsets(0)) = dof_basis(cell, 0).fastAccessDx(offsets(0)) * Value::eval(basis(cell, 0, pt, d));
+        dof_ip(cell,pt,d).fastAccessDx(offsets(0)) = dof_basis(cell, 0).fastAccessDx(offsets(0)) * Sacado::scalarValue(basis(cell, 0, pt, d));
 
         for (int bf=1; bf<numFields; bf++) {
-          dof_ip(cell,pt,d).val() += dof_basis(cell, bf).val() * Value::eval(basis(cell, bf, pt, d));
-          dof_ip(cell,pt,d).fastAccessDx(offsets(bf)) += dof_basis(cell, bf).fastAccessDx(offsets(bf)) * Value::eval(basis(cell, bf, pt, d));
+          dof_ip(cell,pt,d).val() += dof_basis(cell, bf).val() * Sacado::scalarValue(basis(cell, bf, pt, d));
+          dof_ip(cell,pt,d).fastAccessDx(offsets(bf)) += dof_basis(cell, bf).fastAccessDx(offsets(bf)) * Sacado::scalarValue(basis(cell, bf, pt, d));
         }
       }
     }
@@ -257,20 +255,18 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
   {
-    typedef Sacado::ScalarValue<ScalarT> Value;
-
     for (int pt=0; pt<numPoints; pt++) {
       // first initialize to the right thing (prevents over writing with 0)
       // then loop over one less basis function
 
       // This is a possible issue if you need sensitivity to coordinates (you will need to
       // change basis and then use the product rule!)
-      dof_ip(cell,pt) = dof_basis(cell, 0).val() * Value::eval(basis(cell, 0, pt));
-      dof_ip(cell,pt).fastAccessDx(offsets(0)) = dof_basis(cell, 0).fastAccessDx(offsets(0)) * Value::eval(basis(cell, 0, pt));
+      dof_ip(cell,pt) = dof_basis(cell, 0).val() * Sacado::scalarValue(basis(cell, 0, pt));
+      dof_ip(cell,pt).fastAccessDx(offsets(0)) = dof_basis(cell, 0).fastAccessDx(offsets(0)) * Sacado::scalarValue(basis(cell, 0, pt));
 
       for (int bf=1; bf<numFields; bf++) {
-        dof_ip(cell,pt).val() += dof_basis(cell, bf).val() * Value::eval(basis(cell, bf, pt));
-        dof_ip(cell,pt).fastAccessDx(offsets(bf)) += dof_basis(cell, bf).fastAccessDx(offsets(bf)) * Value::eval(basis(cell, bf, pt));
+        dof_ip(cell,pt).val() += dof_basis(cell, bf).val() * Sacado::scalarValue(basis(cell, bf, pt));
+        dof_ip(cell,pt).fastAccessDx(offsets(bf)) += dof_basis(cell, bf).fastAccessDx(offsets(bf)) * Sacado::scalarValue(basis(cell, bf, pt));
       }
     }
   }

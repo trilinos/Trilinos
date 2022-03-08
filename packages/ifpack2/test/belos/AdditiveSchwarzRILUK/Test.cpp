@@ -37,8 +37,8 @@ main (int argc, char **argv)
 
   // Create the matrix's row Map.
   RCP<const map_type> map (new map_type (numGlobalElements, 0, comm));
-  const size_t numMyElements = map->getNodeNumElements ();
-  ArrayView<const GO> myGlobalElements = map->getNodeElementList ();
+  const size_t numMyElements = map->getLocalNumElements ();
+  ArrayView<const GO> myGlobalElements = map->getLocalElementList ();
 
   // Create a Tpetra sparse matrix with the given row Map.
   sparse_mat_type A (map, 3);

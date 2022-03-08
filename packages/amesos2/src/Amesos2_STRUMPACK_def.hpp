@@ -206,7 +206,7 @@ namespace Amesos2 {
 #ifdef HAVE_MPI
     // local_len_rhs is how many of the multivector rows belong to
     // this processor
-    const size_t local_len_rhs = strumpack_rowmap_->getNodeNumElements();
+    const size_t local_len_rhs = strumpack_rowmap_->getLocalNumElements();
     const global_size_type nrhs = X->getGlobalNumVectors();
     
     // make sure our multivector storage is sized appropriately

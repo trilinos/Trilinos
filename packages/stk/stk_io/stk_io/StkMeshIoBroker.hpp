@@ -36,41 +36,45 @@
 #define STK_IO_STKMESHIOBROKER_HPP
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <Ioss_Field.h>                            // for Field, etc
-#include <Ioss_PropertyManager.h>                  // for PropertyManager
-#include <stddef.h>                                // for size_t
-#include <Teuchos_RCP.hpp>                         // for RCP::RCP<T>, etc
-#include <algorithm>                               // for swap
-#include <stk_util/stk_config.h>
-#include <stk_io/DatabasePurpose.hpp>              // for DatabasePurpose
-#include <stk_io/IossBridge.hpp>
-#include <stk_io/InputFile.hpp>
-#include <stk_io/OutputFile.hpp>
-#include <stk_io/Heartbeat.hpp>
-#include <stk_io/MeshField.hpp>                    // for MeshField, etc
-#include <stk_mesh/base/BulkData.hpp>              // for BulkData
-#include <stk_mesh/base/Selector.hpp>              // for Selector
-#include <stk_util/parallel/Parallel.hpp>          // for ParallelMachine
-#include <stk_util/util/ParameterList.hpp>         // for Type
-#include <string>                                  // for string
-#include <vector>                                  // for vector
-#include "Teuchos_RCPDecl.hpp"                     // for RCP
-#include "mpi.h"                                   // for MPI_Comm, etc
-#include "stk_mesh/base/Types.hpp"                 // for FieldVector
-#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
+#include <Ioss_Field.h>                     // for Field, Field::REDUCTION
+#include <Ioss_PropertyManager.h>           // for PropertyManager
+      // file exists and is readable and will throw an exception if not.
+#include <cstddef>                          // for size_t
+#include <Teuchos_RCP.hpp>                  // for RCP::operator->, RCP::RCP<T>
+#include <stk_io/DatabasePurpose.hpp>       // for DatabasePurpose
+#include <stk_io/Heartbeat.hpp>             // for Heartbeat, HeartbeatType
+#include <stk_io/IossBridge.hpp>            // for STKIORequire, FieldNameTo...
+#include <stk_io/MeshField.hpp>             // for MeshField, MeshField::CLO...
+#include <stk_io/OutputFile.hpp>            // for OutputFile
+#include <stk_mesh/base/BulkData.hpp>       // for BulkData
+#include <stk_mesh/base/Selector.hpp>       // for Selector
+#include <stk_util/parallel/Parallel.hpp>   // for ParallelMachine
+#include <stk_util/util/ParameterList.hpp>  // for Parameter, Type
+#include <string>                           // for string
+#include <utility>                          // for move, swap
+#include <vector>                           // for vector
+#include "Teuchos_RCPDecl.hpp"              // for RCP
+#include "mpi.h"                            // for ompi_communicator_t
+#include "stk_io/FieldAndName.hpp"          // for DataLocation
+#include "stk_io/OutputVariableParams.hpp"  // for OutputVariableParams
+#include "stk_mesh/base/FieldState.hpp"     // for FieldState
+#include "stk_mesh/base/Types.hpp"          // for EntityRank, FieldVector
+#include "stk_topology/topology.hpp"        // for topology, topology::rank_t
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, ThrowRequire...
+namespace Ioss { class DatabaseIO; }
 namespace Ioss { class Property; }
 namespace Ioss { class Region; }
 namespace stk { namespace io { class InputFile; } }
-namespace stk { namespace mesh { class SidesetUpdater; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { struct Entity; } }
+namespace stk { namespace mesh { class SidesetUpdater; } }
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 namespace stk { namespace mesh { class BulkData; } }
 
-namespace Ioss { class DatabaseIO; }
 
 namespace stk {
   namespace io {
