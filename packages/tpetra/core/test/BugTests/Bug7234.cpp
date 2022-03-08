@@ -99,11 +99,12 @@ namespace {
     using GST = Tpetra::global_size_t;
     using LO = int;
     using GO = Tpetra::Map<>::global_ordinal_type;
+    using SC = Tpetra::Vector<>::scalar_type;
     using NodeType = Tpetra::Map<>::node_type;
     using TpetraMap = Tpetra::Map<LO,GO,NodeType>;
     using TpetraImport = Tpetra::Import<LO,GO,NodeType>;
     using TpetraExport = Tpetra::Export<LO,GO,NodeType>;
-    using TpetraVec = Tpetra::Vector<double,LO,GO,NodeType>;
+    using TpetraVec = Tpetra::Vector<SC,LO,GO,NodeType>;
 
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
     const int rank = comm->getRank();
