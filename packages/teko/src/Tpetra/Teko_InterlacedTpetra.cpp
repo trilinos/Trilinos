@@ -74,7 +74,7 @@ void buildSubMaps(GO numGlobals,int numVars,const Teuchos::Comm<int> & comm,std:
 void buildSubMaps(const Tpetra::Map<LO,GO,NT> & globalMap,const std::vector<int> & vars,const Teuchos::Comm<int> & comm,
                   std::vector<std::pair<int,Teuchos::RCP<Tpetra::Map<LO,GO,NT> > > > & subMaps)
 {
-   buildSubMaps(globalMap.getGlobalNumElements(),globalMap.getNodeNumElements(),globalMap.getMinGlobalIndex(),
+   buildSubMaps(globalMap.getGlobalNumElements(),globalMap.getLocalNumElements(),globalMap.getMinGlobalIndex(),
                 vars,comm,subMaps);
 }
 
@@ -93,7 +93,7 @@ void buildSubMaps(GO numGlobals,const std::vector<int> & vars,const Teuchos::Com
 
    Tpetra::Map<LO,GO,NT> sampleMap(numGlobals/numGlobalVars,0,rcpFromRef(comm));
 
-   buildSubMaps(numGlobals,numGlobalVars*sampleMap.getNodeNumElements(),numGlobalVars*sampleMap.getMinGlobalIndex(),vars,comm,subMaps);
+   buildSubMaps(numGlobals,numGlobalVars*sampleMap.getLocalNumElements(),numGlobalVars*sampleMap.getMinGlobalIndex(),vars,comm,subMaps);
 }
 
 // build maps to make other conversions
@@ -240,7 +240,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
    localA.doImport(*A,import,Tpetra::INSERT);
 
    // get entry information
-   LO numMyRows = rowMap.getNodeNumElements();
+   LO numMyRows = rowMap.getLocalNumElements();
    LO maxNumEntries = A->getGlobalMaxNumRowEntries();
 
    // for extraction
@@ -379,7 +379,7 @@ void rebuildSubBlock(int i,int j,const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> 
    mat.setAllToScalar(0.0);
 
    // get entry information
-   LO numMyRows = rowMap.getNodeNumElements();
+   LO numMyRows = rowMap.getLocalNumElements();
    GO maxNumEntries = A->getGlobalMaxNumRowEntries();
 
    // for extraction

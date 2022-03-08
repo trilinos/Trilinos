@@ -163,7 +163,7 @@ namespace FROSch {
             dirichletBoundaryDofsVec.resize(repeatedMapVec.size());
             LOVecPtr counterSub(repeatedMapVec.size(),0);
             for (UN j=0; j<dirichletBoundaryDofsVec.size(); j++) {
-                dirichletBoundaryDofsVec[j] = GOVecPtr(repeatedMapVec[j]->getNodeNumElements());
+                dirichletBoundaryDofsVec[j] = GOVecPtr(repeatedMapVec[j]->getLocalNumElements());
             }
             #ifdef FindOneEntryOnlyRowsGlobal_Matrix
             GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),repeatedMap);
@@ -324,7 +324,7 @@ namespace FROSch {
             dirichletBoundaryDofsVec.resize(repeatedMapVec.size());
             LOVecPtr counterSub(repeatedMapVec.size(),0);
             for (UN j=0; j<dirichletBoundaryDofsVec.size(); j++) {
-                dirichletBoundaryDofsVec[j] = GOVecPtr(repeatedMapVec[j]->getNodeNumElements());
+                dirichletBoundaryDofsVec[j] = GOVecPtr(repeatedMapVec[j]->getLocalNumElements());
             }
 #ifdef FindOneEntryOnlyRowsGlobal_Matrix
             GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),repeatedMap);

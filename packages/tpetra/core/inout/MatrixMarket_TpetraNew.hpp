@@ -1116,23 +1116,23 @@ readSparseFile(
 
     if (verbose) {
       std::cout << "\nRank " << A->getComm()->getRank() 
-                << "  nRows " << A->getNodeNumRows()
+                << "  nRows " << A->getLocalNumRows()
                 << "  minRow " << A->getRowMap()->getMinGlobalIndex()
                 << "  maxRow " << A->getRowMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nCols " << A->getNodeNumCols()
+                << "  nCols " << A->getLocalNumCols()
                 << "  minCol " << A->getColMap()->getMinGlobalIndex()
                 << "  maxCol " << A->getColMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nDomain " << A->getDomainMap()->getNodeNumElements()
+                << "  nDomain " << A->getDomainMap()->getLocalNumElements()
                 << "  minDomain " << A->getDomainMap()->getMinGlobalIndex()
                 << "  maxDomain " << A->getDomainMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nRange " << A->getRangeMap()->getNodeNumElements()
+                << "  nRange " << A->getRangeMap()->getLocalNumElements()
                 << "  minRange " << A->getRangeMap()->getMinGlobalIndex()
                 << "  maxRange " << A->getRangeMap()->getMaxGlobalIndex()
                 << "\nRank " << A->getComm()->getRank() 
-                << "  nEntries " << A->getNodeNumEntries()
+                << "  nEntries " << A->getLocalNumEntries()
                 << std::endl;
     }
   }

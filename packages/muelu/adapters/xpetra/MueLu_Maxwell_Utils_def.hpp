@@ -112,8 +112,8 @@ namespace MueLu {
       if (rowSumTol > 0.)
         Utilities_kokkos::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrowsKokkos_);
 
-      BCcolsKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getColMap()->getNodeNumElements());
-      BCdomainKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletDomains"), D0_Matrix_->getDomainMap()->getNodeNumElements());
+      BCcolsKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getColMap()->getLocalNumElements());
+      BCdomainKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletDomains"), D0_Matrix_->getDomainMap()->getLocalNumElements());
       Utilities_kokkos::DetectDirichletColsAndDomains(*D0_Matrix_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_);
 
       auto BCrowsKokkos=BCrowsKokkos_;
@@ -135,8 +135,8 @@ namespace MueLu {
       if (rowSumTol > 0.)
         Utilities::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrows_);
 
-      BCcols_.resize(D0_Matrix_->getColMap()->getNodeNumElements());
-      BCdomain_.resize(D0_Matrix_->getDomainMap()->getNodeNumElements());
+      BCcols_.resize(D0_Matrix_->getColMap()->getLocalNumElements());
+      BCdomain_.resize(D0_Matrix_->getDomainMap()->getLocalNumElements());
       Utilities::DetectDirichletColsAndDomains(*D0_Matrix_,BCrows_,BCcols_,BCdomain_);
 
       for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
@@ -168,7 +168,7 @@ namespace MueLu {
     // Remove zero entries from D0 if necessary.
     // In the construction of the prolongator we use the graph of the
     // matrix, so zero entries mess it up.
-    if (parameterList_.get<bool>("refmaxwell: filter D0", true) && D0_Matrix_->getNodeMaxNumRowEntries()>2) {
+    if (parameterList_.get<bool>("refmaxwell: filter D0", true) && D0_Matrix_->getLocalMaxNumRowEntries()>2) {
       Level fineLevel;
       fineLevel.SetFactoryManager(null);
       fineLevel.SetLevelID(0);

@@ -294,7 +294,8 @@ TEST_F(ParallelGraphUpdate, deleteBothShellElementsOnParallelEdge)
           0,0,2, 1,0,2, 1,1,2, 0,1,2
         };
 
-        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+        stk::unit_test_util::setup_text_mesh(
+            get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
         get_bulk().initialize_face_adjacent_element_graph();
 
         stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1u);
@@ -350,7 +351,8 @@ TEST_F(ParallelGraphUpdate, createAefA_FromScratch)
           0,0,2, 1,0,2, 1,1,2, 0,1,2
         };
 
-        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+        stk::unit_test_util::setup_text_mesh(
+            get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
         get_bulk().initialize_face_adjacent_element_graph();
 
         const stk::mesh::ElemElemGraph &graph = get_bulk().get_face_adjacent_element_graph();
@@ -389,7 +391,8 @@ TEST_F(ParallelGraphUpdate, createAefA_FromAA)
           0,0,2, 1,0,2, 1,1,2, 0,1,2
         };
 
-        stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+        stk::unit_test_util::setup_text_mesh(
+            get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
         get_bulk().initialize_face_adjacent_element_graph();
 
         const stk::mesh::ElemElemGraph &graph = get_bulk().get_face_adjacent_element_graph();

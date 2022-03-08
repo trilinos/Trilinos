@@ -55,6 +55,8 @@ void addDiscreteGradientToRequestHandler(
   typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinalTpetra,GlobalOrdinalTpetra> tpetraBlockedLinObjFactory;
   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinalEpetra> epetraBlockedLinObjFactory;
 
+  typedef PHX::Device DeviceSpace;
+
   // use "AUXILIARY_EDGE" and "AUXILIARY_NODE" as the DOFs
   std::string edge_basis_name  = "AUXILIARY_EDGE";
   std::string nodal_basis_name = "AUXILIARY_NODE";
@@ -104,37 +106,33 @@ void addDiscreteGradientToRequestHandler(
     // loop over element blocks
     std::vector<std::string> elementBlockIds;
     blockedDOFMngr->getElementBlockIds(elementBlockIds);
-    std::vector<bool> insertedEdges(rowmap->getNodeNumElements(),false);
+    std::vector<bool> insertedEdges(rowmap->getLocalNumElements(),false);
+    auto eLIDs_k = eUgi->getLIDs();
+    auto nLIDs_k = nUgi->getLIDs();
+    auto eLIDs = Kokkos::create_mirror_view(eLIDs_k);
+    auto nLIDs = Kokkos::create_mirror_view(nLIDs_k);
+    Kokkos::deep_copy(DeviceSpace::execution_space(), eLIDs, eLIDs_k);
+    Kokkos::deep_copy(DeviceSpace::execution_space(), nLIDs, nLIDs_k);
+
     for(std::size_t blockIter = 0; blockIter < elementBlockIds.size(); ++blockIter) {
 
       // loop over elements
       std::vector<int> elementIds = blockedDOFMngr->getElementBlock(elementBlockIds[blockIter]);
       for(std::size_t elemIter = 0; elemIter < elementIds.size(); ++elemIter){
+
+        int element = elementIds[elemIter];
  
-        // get IDs for edges and nodes
-        std::vector<GlobalOrdinal> eGIDs;
-        eUgi->getElementGIDs(elementIds[elemIter],eGIDs);
-        std::vector<GlobalOrdinal> nGIDs;
-        nUgi->getElementGIDs(elementIds[elemIter],nGIDs);
-        auto eLIDs_k = eUgi->getElementLIDs(elementIds[elemIter]);
-        auto nLIDs_k = nUgi->getElementLIDs(elementIds[elemIter]);
-	auto eLIDs = Kokkos::create_mirror_view(eLIDs_k);
-	auto nLIDs = Kokkos::create_mirror_view(nLIDs_k);
-	Kokkos::deep_copy(eLIDs, eLIDs_k);
-	Kokkos::deep_copy(nLIDs, nLIDs_k);
-
-        std::vector<bool> isOwned;
-        eUgi->ownedIndices(eGIDs,isOwned);
-
         // get element orientations
         std::vector<int> eFieldOffsets = blockedDOFMngr->getGIDFieldOffsets(elementBlockIds[blockIter],eFieldNum);
         std::vector<int> ort(eFieldOffsets.size(),0);
-        orientations[elementIds[elemIter]].getEdgeOrientation(&ort[0], eFieldOffsets.size());
+        orientations[element].getEdgeOrientation(&ort[0], eFieldOffsets.size());
 
         // loop over edges
         for(std::size_t eIter = 0; eIter < eFieldOffsets.size(); ++eIter){
 
-          if(isOwned[eIter] && !insertedEdges[eLIDs[eIter]]){
+          const bool isOwned = rowmap->isNodeLocalElement(eLIDs(element,eIter));
+
+          if(isOwned && !insertedEdges[eLIDs(element, eIter)]){
 
             int headIndex = cell_topology.getNodeMap(1, eIter, 0);
             int tailIndex = cell_topology.getNodeMap(1, eIter, 1);
@@ -145,9 +143,9 @@ void addDiscreteGradientToRequestHandler(
               {values[0] *= -1.0; values[1] *= -1.0;}
  
             // get LIDs associated with nodes
-            int indices[2] = {nLIDs[tailIndex],nLIDs[headIndex]};
-            grad_matrix->insertLocalValues(eLIDs[eIter], 2, values, indices);
-            insertedEdges[eLIDs[eIter]] = true;
+            int indices[2] = {nLIDs(element,tailIndex),nLIDs(element,headIndex)};
+            grad_matrix->insertLocalValues(eLIDs(element,eIter), 2, values, indices);
+            insertedEdges[eLIDs(element,eIter)] = true;
           }//end if
         }//end edge loop
       }//end element loop

@@ -88,10 +88,10 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
     uinput = new UserInputForTests(xdim,ydim,zdim,string(""),comm, true, true);
 
   RCP<tcrsMatrix_t > M = uinput->getUITpetraCrsMatrix();
-  zlno_t nLocalIds = M->getNodeNumRows();
+  zlno_t nLocalIds = M->getLocalNumRows();
   zgno_t nGlobalIds =  M->getGlobalNumRows();
 
-  ArrayView<const zgno_t> idList = M->getRowMap()->getNodeElementList();
+  ArrayView<const zgno_t> idList = M->getRowMap()->getLocalElementList();
   std::set<zgno_t> idSet(idList.begin(), idList.end());
 
   //////////////////////////////////////////////////////////////

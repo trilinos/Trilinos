@@ -165,7 +165,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   const size_t myRank = operatorRangeMap->getComm()->getRank();
 
   LocalOrdinal globalNumDualNodes = operatorRangeMap->getGlobalNumElements() / numDofsPerDualNode;
-  LocalOrdinal localNumDualNodes = operatorRangeMap->getNodeNumElements() / numDofsPerDualNode;
+  LocalOrdinal localNumDualNodes = operatorRangeMap->getLocalNumElements() / numDofsPerDualNode;
 
   TEUCHOS_TEST_FOR_EXCEPTION(localNumDualNodes != Teuchos::as<LocalOrdinal>(mapNodesDualToPrimal->size()),
       std::runtime_error, prefix << " MueLu requires the range map and the DualNodeID2PrimalNodeID map to be compatible.");
@@ -179,12 +179,12 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     auto comm = operatorRangeMap->getComm();
     std::vector<GlobalOrdinal> myDualNodes = {};
 
-    for (size_t i = 0; i < operatorRangeMap->getNodeNumElements(); i += numDofsPerDualNode)
+    for (size_t i = 0; i < operatorRangeMap->getLocalNumElements(); i += numDofsPerDualNode)
       myDualNodes.push_back((operatorRangeMap->getGlobalElement(i) - indexBase) / numDofsPerDualNode + indexBase);
 
     dualNodeMap = MapFactory::Build(operatorRangeMap->lib(), globalNumDualNodes, myDualNodes, indexBase, comm);
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(localNumDualNodes != Teuchos::as<LocalOrdinal>(dualNodeMap->getNodeNumElements()),
+  TEUCHOS_TEST_FOR_EXCEPTION(localNumDualNodes != Teuchos::as<LocalOrdinal>(dualNodeMap->getLocalNumElements()),
       std::runtime_error, prefix << " Local number of dual nodes given by user is incompatible to the dual node map.");
 
   RCP<Aggregates> dualAggregates = rcp(new Aggregates(dualNodeMap));
@@ -333,7 +333,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   Array<GlobalOrdinal> local_dualDofId2primalDofId(primalInterfaceDofRowMap->getGlobalNumElements(), -GO_ONE);
 
   // Fill mapping of Lagrange Node IDs to displacement aggregate IDs
-  const size_t numMyPrimalInterfaceDOFs = primalInterfaceDofRowMap->getNodeNumElements();
+  const size_t numMyPrimalInterfaceDOFs = primalInterfaceDofRowMap->getLocalNumElements();
   for (size_t r = 0; r < numMyPrimalInterfaceDOFs; r += numDofsPerPrimalNode)
   {
     GlobalOrdinal gPrimalRowId = primalInterfaceDofRowMap->getGlobalElement(r);
@@ -371,7 +371,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   // generate "artificial nodes" for lagrange multipliers
   // the node map is also used for defining the Aggregates for the lagrange multipliers
   std::vector<GlobalOrdinal> dualNodes;
-  for (size_t r = 0; r < A01->getDomainMap()->getNodeNumElements(); r++)
+  for (size_t r = 0; r < A01->getDomainMap()->getLocalNumElements(); r++)
   {
     // determine global Lagrange multiplier row Dof
     // generate a node id using the grid, lagr_blockdim and lagr_offset // todo make sure, that
@@ -399,7 +399,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
   // loop over local lagrange multiplier node ids
   LocalOrdinal nLocalAggregates = 0;
   std::map<GlobalOrdinal, LocalOrdinal> primalAggId2localDualAggId;
-  for (size_t lDualNodeID = 0; lDualNodeID < dualNodeMap->getNodeNumElements(); ++lDualNodeID)
+  for (size_t lDualNodeID = 0; lDualNodeID < dualNodeMap->getLocalNumElements(); ++lDualNodeID)
   {
     const GlobalOrdinal gDualNodeId = dualNodeMap->getGlobalElement(lDualNodeID);
     const GlobalOrdinal primalAggId = dualNodeId2primalAggId[gDualNodeId - gMinDualNodeId];
@@ -417,7 +417,7 @@ void InterfaceAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
 
   RCP<Array<LO>> rowTranslation = rcp(new Array<LO>());
   RCP<Array<LO>> colTranslation = rcp(new Array<LO>());
-  const size_t numMyDualNodes = dualNodeMap->getNodeNumElements();
+  const size_t numMyDualNodes = dualNodeMap->getLocalNumElements();
   for (size_t lDualNodeID = 0; lDualNodeID < numMyDualNodes; ++lDualNodeID) {
     for (LocalOrdinal dof = 0; dof < numDofsPerDualNode; ++dof) {
       rowTranslation->push_back(lDualNodeID);

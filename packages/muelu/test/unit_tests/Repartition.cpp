@@ -983,7 +983,7 @@ namespace MueLuTests {
     //coordinate map.  This map will be used to build the "bad" coordinates.
     RCP<const Map> coordMap = coordinates->getMap();
     std::srand(Teuchos::as<unsigned int>(comm->getRank()*31415));
-    Teuchos::ArrayView<const GlobalOrdinal> correctLocalElts = coordMap->getNodeElementList();
+    Teuchos::ArrayView<const GlobalOrdinal> correctLocalElts = coordMap->getLocalElementList();
     std::vector<GlobalOrdinal> eltsToShuffle;
     for (size_t i=0; i < Teuchos::as<size_t>(correctLocalElts.size()); ++i)
       eltsToShuffle.push_back(correctLocalElts[i]);

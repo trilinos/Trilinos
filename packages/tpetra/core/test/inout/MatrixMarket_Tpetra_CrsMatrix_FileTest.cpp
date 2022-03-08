@@ -151,7 +151,7 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::
   size_t numEntriesOrig = 0;
   size_t numEntries = 0;
 
-  ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
+  ArrayView<const GO> localElts = A.getRowMap ()->getLocalElementList ();
   const size_type numLocalElts = localElts.size ();
   for (size_type i = 0; i < numLocalElts; ++i) {
     const GO globalRow = localElts[i];
@@ -216,7 +216,7 @@ compareCrsMatrixValues (const CrsMatrixType& A_orig,
   size_t numEntriesOrig = 0;
   size_t numEntries = 0;
 
-  ArrayView<const GO> localElts = A.getRowMap ()->getNodeElementList ();
+  ArrayView<const GO> localElts = A.getRowMap ()->getLocalElementList ();
   const size_type numLocalElts = localElts.size ();
   MT localDiff = STM::zero (); // \sum_{i,j} |A_orig(i,j) - A(i,j)| locally
   for (size_type i = 0; i < numLocalElts; ++i) {

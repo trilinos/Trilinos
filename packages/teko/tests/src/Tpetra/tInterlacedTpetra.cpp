@@ -194,7 +194,7 @@ bool tInterlacedTpetra::test_buildSubMaps_num(int verbosity,std::ostream & os)
             "\n   tInterlacedTpetra::test_buildSubMaps_num: " << toString(status) << ": "
          << "testing that first map has correct number of global elements ( "
          << subMaps[0].second->getGlobalNumElements() << " == " << 3 << " ?)");
-      gids = subMaps[0].second->getNodeElementList();
+      gids = subMaps[0].second->getLocalElementList();
       cur = (gids[0] == 0 && gids[1] == 3 && gids[2] == 6);
       TEST_ASSERT(cur,
             "\n   tInterlacedTpetra::test_buildSubMaps_num: " << toString(status) << ": "
@@ -205,7 +205,7 @@ bool tInterlacedTpetra::test_buildSubMaps_num(int verbosity,std::ostream & os)
             "\n   tInterlacedTpetra::test_buildSubMaps_num: " << toString(status) << ": "
          << "testing that second map has correct number of global elements ( "
          << subMaps[1].second->getGlobalNumElements() << " == " << 3 << " ?)");
-      gids = subMaps[1].second->getNodeElementList();
+      gids = subMaps[1].second->getLocalElementList();
       cur = (gids[0] == 1 && gids[1] == 4 && gids[2] == 7);
       TEST_ASSERT(cur,
             "\n   tInterlacedTpetra::test_buildSubMaps_num: " << toString(status) << ": "
@@ -216,7 +216,7 @@ bool tInterlacedTpetra::test_buildSubMaps_num(int verbosity,std::ostream & os)
             "\n   tInterlacedTpetra::test_buildSubMaps_num: " << toString(status) << ": "
          << "testing that the third map has correct number of global elements ( "
          << subMaps[2].second->getGlobalNumElements() << " == " << 3 << " ?)");
-      gids = subMaps[2].second->getNodeElementList();
+      gids = subMaps[2].second->getLocalElementList();
       cur = (gids[0] == 2 && gids[1] == 5 && gids[2] == 8);
       TEST_ASSERT(cur,
             "\n   tInterlacedTpetra::test_buildSubMaps_num: " << toString(status) << ": "
@@ -292,7 +292,7 @@ bool tInterlacedTpetra::test_buildSubMaps_vec(int verbosity,std::ostream & os)
             "\n   tInterlacedTpetra::test_buildSubMaps_vec: " << toString(status) << ": "
          << "testing that first map has correct number of global elements ( "
          << subMaps[0].second->getGlobalNumElements() << " == " << 6 << " ?)");
-      gids = subMaps[0].second->getNodeElementList();
+      gids = subMaps[0].second->getLocalElementList();
       cur = (gids[0] == 0 && gids[1] == 1 
           && gids[2] == 6 && gids[3] == 7
           && gids[4] ==12 && gids[5] ==13);
@@ -305,7 +305,7 @@ bool tInterlacedTpetra::test_buildSubMaps_vec(int verbosity,std::ostream & os)
             "\n   tInterlacedTpetra::test_buildSubMaps_vec: " << toString(status) << ": "
          << "testing that second map has correct number of global elements ( "
          << subMaps[1].second->getGlobalNumElements() << " == " << 3 << " ?)");
-      gids = subMaps[1].second->getNodeElementList();
+      gids = subMaps[1].second->getLocalElementList();
       cur = (gids[0] == 2 && gids[1] == 8 && gids[2] == 14);
       TEST_ASSERT(cur,
             "\n   tInterlacedTpetra::test_buildSubMaps_vec: " << toString(status) << ": "
@@ -316,7 +316,7 @@ bool tInterlacedTpetra::test_buildSubMaps_vec(int verbosity,std::ostream & os)
             "\n   tInterlacedTpetra::test_buildSubMaps_vec: " << toString(status) << ": "
          << "testing that the third map has correct number of global elements ( "
          << subMaps[2].second->getGlobalNumElements() << " == " << 9 << " ?)");
-      gids = subMaps[2].second->getNodeElementList();
+      gids = subMaps[2].second->getLocalElementList();
       cur = (gids[0] == 3 && gids[1] == 4 && gids[2]== 5
           && gids[3] == 9 && gids[4] ==10 && gids[5]==11
           && gids[6] ==15 && gids[7] ==16 && gids[8]==17);
@@ -387,10 +387,10 @@ bool tInterlacedTpetra::test_buildMaps(int verbosity,std::ostream & os)
          "   tInterlacedTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "checking number of global elements");
 
-   TEST_ASSERT(contigMaps[0]->getNodeNumElements()==globalMaps[0]->getNodeNumElements(),
+   TEST_ASSERT(contigMaps[0]->getLocalNumElements()==globalMaps[0]->getLocalNumElements(),
          "   tInterlacedTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "check for lineup of number of local elements");
-   TEST_ASSERT(contigMaps[1]->getNodeNumElements()==globalMaps[1]->getNodeNumElements(),
+   TEST_ASSERT(contigMaps[1]->getLocalNumElements()==globalMaps[1]->getLocalNumElements(),
          "   tInterlacedTpetra::test_buildMaps (" << Teko::Test::toString(status) << "): "
       << "check for lineup of number of local elements");
 
@@ -398,7 +398,7 @@ bool tInterlacedTpetra::test_buildMaps(int verbosity,std::ostream & os)
 
    // check contiguous and global maps
    test = true;
-   for(size_t i=0;i<globalMaps[0]->getNodeNumElements();i+=2) {
+   for(size_t i=0;i<globalMaps[0]->getLocalNumElements();i+=2) {
       int block;
       GO gid = globalMaps[0]->getGlobalElement(i); 
       GO cid = contigMaps[0]->getGlobalElement(i); 
@@ -417,7 +417,7 @@ bool tInterlacedTpetra::test_buildMaps(int verbosity,std::ostream & os)
       << "checked that block maps were internally consitent");
 
    test = true;
-   for(size_t i=0;i<globalMaps[1]->getNodeNumElements();i++) {
+   for(size_t i=0;i<globalMaps[1]->getLocalNumElements();i++) {
       int block;
       GO gid = globalMaps[1]->getGlobalElement(i); 
       GO cid = contigMaps[1]->getGlobalElement(i); 

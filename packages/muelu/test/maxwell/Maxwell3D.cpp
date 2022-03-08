@@ -728,6 +728,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
+  if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1" || precType == "ML-Maxwell") {
+    if (SM_file != "")
+      M1_file = "";
+    M0_file = "";
+  }
+
   if (xml == ""){
     if (precType == "MueLu-RefMaxwell")
       xml = "Maxwell.xml";
@@ -807,7 +813,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::ArrayRCP<LO> colInd;
     Teuchos::ArrayRCP<SC> values;
     Teuchos::ArrayRCP<const SC> diags = diag->getData(0);
-    size_t nodeNumElements = node_map->getNodeNumElements();
+    size_t nodeNumElements = node_map->getLocalNumElements();
     M0inv_CrsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
     SC ONE = Teuchos::ScalarTraits<Scalar>::one();
     for (size_t i = 0; i < nodeNumElements; i++) {

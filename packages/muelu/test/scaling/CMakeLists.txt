@@ -197,7 +197,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )
-    
+
 
     TRIBITS_ADD_TEST(
       Driver
@@ -431,7 +431,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
   MUELU_ADD_SERIAL_AND_MPI_TEST(
       Driver
       NAME "CalcRotations"
-      ARGS "--linAlgebra=Tpetra --xml=comp_rotations.xml  --matrixType=Elasticity3D --nx=40 --ny=40 --nz=4 --its=100 --belosType='gmres' --tol=1.0e-8  --muelu-computed-nullspace"  
+      ARGS "--linAlgebra=Tpetra --xml=comp_rotations.xml  --matrixType=Elasticity3D --nx=40 --ny=40 --nz=4 --its=100 --belosType='gmres' --tol=1.0e-8  --muelu-computed-nullspace"
       NUM_MPI_PROCS 4
       COMM serial mpi
       )
@@ -591,15 +591,11 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       COMM serial mpi
       )
 
-  ENDIF()
-ENDIF()
-
-
-# remove this from Experimental it requires Galeri + Tpetra
-IF (${PACKAGE_NAME}_ENABLE_Tpetra)
-  TRIBITS_ADD_EXECUTABLE(
-    MatvecKernelDriver
-    SOURCES MatvecKernelDriver.cpp
-    COMM serial mpi
+    TRIBITS_ADD_EXECUTABLE(
+      MatvecKernelDriver
+      SOURCES MatvecKernelDriver.cpp
+      COMM serial mpi
     )
+
+  ENDIF()
 ENDIF()

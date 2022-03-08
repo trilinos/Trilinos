@@ -91,7 +91,7 @@ MockModelEval_B_Tpetra::MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos:
     {
       std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices(vecLength);
       for (int i=0; i<vecLength; i++) indices[i]=i;
-      const int nodeNumElements = x_map->getNodeNumElements();
+      const int nodeNumElements = x_map->getLocalNumElements();
       for (int i=0; i<nodeNumElements; i++)
         crs_graph->insertGlobalIndices(x_map->getGlobalElement(i), vecLength, &indices[0]);
     }
@@ -103,7 +103,7 @@ MockModelEval_B_Tpetra::MockModelEval_B_Tpetra(const Teuchos::RCP<const Teuchos:
     {
       std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices(numParameters);
       for (int i=0; i<numParameters; i++) indices[i]=i;
-      const int nodeNumElements = p_map->getNodeNumElements();
+      const int nodeNumElements = p_map->getLocalNumElements();
       for (int i=0; i<nodeNumElements; i++)
         hess_crs_graph->insertGlobalIndices(p_map->getGlobalElement(i), numParameters, &indices[0]);
     }
@@ -176,7 +176,7 @@ RCP<const  Teuchos::Array<std::string> > MockModelEval_B_Tpetra::get_p_names(int
                      " supports 1 parameter vector.  Supplied index l = " <<
                      l << std::endl);
 
-  Teuchos::Ordinal num_p = p_map->getNodeNumElements();
+  Teuchos::Ordinal num_p = p_map->getLocalNumElements();
   RCP<Teuchos::Array<std::string> > p_names =
       rcp(new Teuchos::Array<std::string>(num_p) );
   for (int i=0; i<num_p; i++) {

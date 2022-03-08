@@ -194,7 +194,7 @@ namespace MueLu {
 
     } else {
 
-      filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
+      filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getLocalMaxNumRowEntries());
       BuildNew(*A, *G, (lumping != use_spread_lumping), dirichlet_threshold,*filteredA);
             // only lump inside BuildNew if lumping is true and use_spread_lumping is false
             // note: they use_spread_lumping cannot be true if lumping is false
@@ -210,7 +210,7 @@ namespace MueLu {
 
        //original filtered A  and actual A
        Xpetra::IO<SC,LO,GO,NO>::Write("A.dat", *A);
-       RCP<Matrix> origFilteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries());
+       RCP<Matrix> origFilteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getLocalMaxNumRowEntries());
        BuildNew(*A, *G, lumping, dirichlet_threshold,*origFilteredA);
        if (use_spread_lumping) ExperimentalLumping(*A, *origFilteredA, DdomAllowGrowthRate, DdomCap);
        origFilteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
@@ -263,8 +263,8 @@ namespace MueLu {
     Array<SC>           vals;
 #endif
 
-    Array<char> filter( std::max(blkSize*G.GetImportMap()->getNodeNumElements(),
-                                 A.getColMap()->getNodeNumElements()),
+    Array<char> filter( std::max(blkSize*G.GetImportMap()->getLocalNumElements(),
+                                 A.getColMap()->getLocalNumElements()),
                         0);
 
     size_t numGRows = G.GetNodeNumVertices();
@@ -371,7 +371,7 @@ namespace MueLu {
     Array<LO>           inds;
     Array<SC>           vals;
 
-    Array<char> filter(blkSize * G.GetImportMap()->getNodeNumElements(), 0);
+    Array<char> filter(blkSize * G.GetImportMap()->getLocalNumElements(), 0);
 
     size_t numGRows = G.GetNodeNumVertices();
     for (size_t i = 0; i < numGRows; i++) {
@@ -467,7 +467,7 @@ namespace MueLu {
 
     size_t numNodes = G.GetNodeNumVertices();
     size_t blkSize  = A.GetFixedBlockSize();
-    size_t numRows  = A.getMap()->getNodeNumElements();
+    size_t numRows  = A.getMap()->getLocalNumElements();
     ArrayView<const LO> indsA;
     ArrayView<const SC> valsA;
     ArrayRCP<const size_t> rowptr;
@@ -505,7 +505,7 @@ namespace MueLu {
       Array<LO> ptr,nodes, unaggregated;
     } nodesInAgg;
     aggregates->ComputeNodesInAggregate(nodesInAgg.ptr, nodesInAgg.nodes, nodesInAgg.unaggregated);
-    LO graphNumCols = G.GetImportMap()->getNodeNumElements();
+    LO graphNumCols = G.GetImportMap()->getLocalNumElements();
     Array<bool> filter(graphNumCols, false);
 
     // Loop over the unaggregated nodes. Blitz those rows. We don't want to smooth singletons.
@@ -536,8 +536,8 @@ namespace MueLu {
 
 
     // Loop over all the aggregates
-    std::vector<LO> goodAggNeighbors(G.getNodeMaxNumRowEntries());
-    std::vector<LO> badAggNeighbors(std::min(G.getNodeMaxNumRowEntries()*maxAggSize,numNodes));
+    std::vector<LO> goodAggNeighbors(G.getLocalMaxNumRowEntries());
+    std::vector<LO> badAggNeighbors(std::min(G.getLocalMaxNumRowEntries()*maxAggSize,numNodes));
 
     size_t numNewDrops=0;
     size_t numOldDrops=0;
@@ -598,7 +598,7 @@ namespace MueLu {
             (badCount[vertex2AggId[nodeNeighbors[kk]]])++;
         }
       }
-      std::vector<LO> reallyBadAggNeighbors(std::min(G.getNodeMaxNumRowEntries()*maxAggSize,numNodes));
+      std::vector<LO> reallyBadAggNeighbors(std::min(G.getLocalMaxNumRowEntries()*maxAggSize,numNodes));
       reallyBadAggNeighbors.resize(0);
       for (LO k=0; k < (LO) badAggNeighbors.size(); k++) {
         if (badCount[badAggNeighbors[k]] <= 1 ) reallyBadAggNeighbors.push_back(badAggNeighbors[k]);
@@ -797,7 +797,7 @@ namespace MueLu {
     SC rho  = as<Scalar>(irho);
     SC rho2 = as<Scalar>(irho2);
 
-    for (LO row = 0; row < (LO) A.getRowMap()->getNodeNumElements(); row++) {
+    for (LO row = 0; row < (LO) A.getRowMap()->getLocalNumElements(); row++) {
         noLumpDdom = as<Scalar>(10000.0);  // only used if diagonal is zero
                                            // the whole idea sort of breaks down
                                            // when the diagonal is zero. In particular,

@@ -1,7 +1,7 @@
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BlockMultiVector
   SOURCES
-    BlockMultiVector
+    BlockMultiVector.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -10,7 +10,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BlockMultiVector2
   SOURCES
-    BlockMultiVector2
+    BlockMultiVector2.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -20,7 +20,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BlockCrsMatrix
   SOURCES
-    BlockCrsMatrix
+    BlockCrsMatrix.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -34,7 +34,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCore_BlockCrsMatrix_cp
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BlockMap
   SOURCES
-    BlockMap
+    BlockMap.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -48,7 +48,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BlockView
   SOURCES
-    BlockView
+    BlockView.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -57,7 +57,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BlockOps
   SOURCES
-    BlockOps
+    BlockOps.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -67,7 +67,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   BlockExpNamespace
   SOURCES
-    BlockExpNamespace
+    BlockExpNamespace.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1

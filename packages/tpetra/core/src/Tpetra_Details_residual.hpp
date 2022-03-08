@@ -303,25 +303,25 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
        "R.getNumVectors() = " << R.getNumVectors () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
       (X_colmap.getLocalLength () !=
-       A.getColMap ()->getNodeNumElements (), std::runtime_error,
+       A.getColMap ()->getLocalNumElements (), std::runtime_error,
        "X has the wrong number of local rows.  "
        "X.getLocalLength() = " << X_colmap.getLocalLength () << " != "
-       "A.getColMap()->getNodeNumElements() = " <<
-       A.getColMap ()->getNodeNumElements () << ".");
+       "A.getColMap()->getLocalNumElements() = " <<
+       A.getColMap ()->getLocalNumElements () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
       (R.getLocalLength () !=
-       A.getRowMap ()->getNodeNumElements (), std::runtime_error,
+       A.getRowMap ()->getLocalNumElements (), std::runtime_error,
        "R has the wrong number of local rows.  "
        "R.getLocalLength() = " << R.getLocalLength () << " != "
-       "A.getRowMap()->getNodeNumElements() = " <<
-       A.getRowMap ()->getNodeNumElements () << ".");
+       "A.getRowMap()->getLocalNumElements() = " <<
+       A.getRowMap ()->getLocalNumElements () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
       (B.getLocalLength () !=
-       A.getRowMap ()->getNodeNumElements (), std::runtime_error,
+       A.getRowMap ()->getLocalNumElements (), std::runtime_error,
        "B has the wrong number of local rows.  "
        "B.getLocalLength() = " << B.getLocalLength () << " != "
-       "A.getRowMap()->getNodeNumElements() = " <<
-       A.getRowMap ()->getNodeNumElements () << ".");
+       "A.getRowMap()->getLocalNumElements() = " <<
+       A.getRowMap ()->getLocalNumElements () << ".");
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (! A.isFillComplete (), std::runtime_error, "The matrix A is not "
@@ -358,7 +358,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
   //use it and follow the reference residual code
   LO maxRowImbalance = 0;
   if(numLocalRows != 0)
-    maxRowImbalance = A.getNodeMaxNumRowEntries() - (myNnz / numLocalRows);
+    maxRowImbalance = A.getLocalMaxNumRowEntries() - (myNnz / numLocalRows);
   if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
   {
     //note: lclOp will be wrapped in shared_ptr
@@ -462,25 +462,25 @@ void localResidualWithCommCompOverlap(const CrsMatrix<SC,LO,GO,NO> &  A,
        "R.getNumVectors() = " << R.getNumVectors () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
       (X_colmap.getLocalLength () !=
-       A.getColMap ()->getNodeNumElements (), std::runtime_error,
+       A.getColMap ()->getLocalNumElements (), std::runtime_error,
        "X has the wrong number of local rows.  "
        "X.getLocalLength() = " << X_colmap.getLocalLength () << " != "
-       "A.getColMap()->getNodeNumElements() = " <<
-       A.getColMap ()->getNodeNumElements () << ".");
+       "A.getColMap()->getLocalNumElements() = " <<
+       A.getColMap ()->getLocalNumElements () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
       (R.getLocalLength () !=
-       A.getRowMap ()->getNodeNumElements (), std::runtime_error,
+       A.getRowMap ()->getLocalNumElements (), std::runtime_error,
        "R has the wrong number of local rows.  "
        "R.getLocalLength() = " << R.getLocalLength () << " != "
-       "A.getRowMap()->getNodeNumElements() = " <<
-       A.getRowMap ()->getNodeNumElements () << ".");
+       "A.getRowMap()->getLocalNumElements() = " <<
+       A.getRowMap ()->getLocalNumElements () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
       (B.getLocalLength () !=
-       A.getRowMap ()->getNodeNumElements (), std::runtime_error,
+       A.getRowMap ()->getLocalNumElements (), std::runtime_error,
        "B has the wrong number of local rows.  "
        "B.getLocalLength() = " << B.getLocalLength () << " != "
-       "A.getRowMap()->getNodeNumElements() = " <<
-       A.getRowMap ()->getNodeNumElements () << ".");
+       "A.getRowMap()->getLocalNumElements() = " <<
+       A.getRowMap ()->getLocalNumElements () << ".");
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (! A.isFillComplete (), std::runtime_error, "The matrix A is not "
@@ -509,7 +509,7 @@ void localResidualWithCommCompOverlap(const CrsMatrix<SC,LO,GO,NO> &  A,
   // //use it and follow the reference residual code
   // LO maxRowImbalance = 0;
   // if(numLocalRows != 0)
-  //   maxRowImbalance = A.getNodeMaxNumRowEntries() - (myNnz / numLocalRows);
+  //   maxRowImbalance = A.getLocalMaxNumRowEntries() - (myNnz / numLocalRows);
   // if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
   // {
   //   //note: lclOp will be wrapped in shared_ptr

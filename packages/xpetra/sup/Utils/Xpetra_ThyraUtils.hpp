@@ -127,10 +127,10 @@ public:
     Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = toXpetra(vectorSpace);
 
     if(stridedBlockId == -1) {
-      TEUCHOS_TEST_FOR_EXCEPT(map->getNodeNumElements() % stridingInfo.size() != 0);
+      TEUCHOS_TEST_FOR_EXCEPT(map->getLocalNumElements() % stridingInfo.size() != 0);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPT(map->getNodeNumElements() % stridingInfo[stridedBlockId] != 0);
+      TEUCHOS_TEST_FOR_EXCEPT(map->getLocalNumElements() % stridingInfo[stridedBlockId] != 0);
     }
 
     Teuchos::RCP<Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> > ret = Xpetra::StridedMapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, stridingInfo, stridedBlockId, offset);
@@ -748,10 +748,10 @@ public:
     Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toXpetra(vectorSpace,comm);
 
     if(stridedBlockId == -1) {
-      TEUCHOS_TEST_FOR_EXCEPT(map->getNodeNumElements() % stridingInfo.size() != 0);
+      TEUCHOS_TEST_FOR_EXCEPT(map->getLocalNumElements() % stridingInfo.size() != 0);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPT(map->getNodeNumElements() % stridingInfo[stridedBlockId] != 0);
+      TEUCHOS_TEST_FOR_EXCEPT(map->getLocalNumElements() % stridingInfo[stridedBlockId] != 0);
     }
 
     Teuchos::RCP<Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> > ret = Xpetra::StridedMapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, stridingInfo, stridedBlockId, offset);
@@ -1446,10 +1446,10 @@ public:
     Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map = ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toXpetra(vectorSpace,comm);
 
     if(stridedBlockId == -1) {
-      TEUCHOS_TEST_FOR_EXCEPT(map->getNodeNumElements() % stridingInfo.size() != 0);
+      TEUCHOS_TEST_FOR_EXCEPT(map->getLocalNumElements() % stridingInfo.size() != 0);
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPT(map->getNodeNumElements() % stridingInfo[stridedBlockId] != 0);
+      TEUCHOS_TEST_FOR_EXCEPT(map->getLocalNumElements() % stridingInfo[stridedBlockId] != 0);
     }
 
     Teuchos::RCP<Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> > ret = Xpetra::StridedMapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(map, stridingInfo, stridedBlockId, offset);

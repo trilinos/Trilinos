@@ -306,9 +306,8 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData_noSyncToDeviceAf
 
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
-#endif
 
-NGP_TEST_F(NgpParallelSum, DISABLED_DeviceMPIVersion)
+NGP_TEST_F(NgpParallelSum, DeviceMPIVersion)
 {
   const double initValue = 0.0;
   const int numStates = 1;
@@ -329,6 +328,7 @@ NGP_TEST_F(NgpParallelSum, DISABLED_DeviceMPIVersion)
 
   check_field_on_device<double>(ngpMesh, deviceUserField, deviceGoldValues);
 }
+#endif
 
 NGP_TEST_F(NgpParallelSum, Performance)
 {

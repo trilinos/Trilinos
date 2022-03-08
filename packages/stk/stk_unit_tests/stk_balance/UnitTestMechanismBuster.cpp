@@ -64,7 +64,7 @@ TEST_F(MechanismMesh2x2, detection_without_aura)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
     {
-        setup_mechanistic_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        setup_mechanistic_mesh(stk::mesh::BulkData::AUTO_AURA);
         stk::io::write_mesh("junk.g", get_bulk());
         stk::balance::GraphCreationSettings graphSettings;
         if(graphSettings.shouldFixMechanisms())
@@ -78,7 +78,7 @@ TEST_F(MechanismMesh2x2, move_components)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
     {
-        setup_mechanistic_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        setup_mechanistic_mesh(stk::mesh::BulkData::AUTO_AURA);
 
         std::vector<stk::mesh::EntityVector> elementsToMove;
         elementsToMove.resize(1);
@@ -162,7 +162,7 @@ TEST_F(LotsOfComponentsMesh, detection_without_aura)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
     {
-        setup_mechanistic_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        setup_mechanistic_mesh(stk::mesh::BulkData::AUTO_AURA);
         stk::io::write_mesh("junk.g", get_bulk());
         stk::balance::GraphCreationSettings graphSettings;
         if(graphSettings.shouldFixMechanisms())
@@ -217,7 +217,7 @@ TEST_F(GlobalMeshWithMechanism, detection_without_aura)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
     {
-        setup_mechanistic_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        setup_mechanistic_mesh(stk::mesh::BulkData::AUTO_AURA);
         stk::io::write_mesh("junk.g", get_bulk());
         stk::balance::GraphCreationSettings graphSettings;
         if(graphSettings.shouldFixMechanisms())

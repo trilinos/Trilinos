@@ -119,7 +119,7 @@ namespace { // (anonymous)
     }
     TPETRA_MV_TEST_REPORT_GLOBAL_ERR( "Map constructor threw exception" );
     TEST_EQUALITY( rowMap->getGlobalNumElements (), static_cast<GST> (0) );
-    TEST_EQUALITY( rowMap->getNodeNumElements (), static_cast<size_t> (0) );
+    TEST_EQUALITY( rowMap->getLocalNumElements (), static_cast<size_t> (0) );
 
     vec_type x (rowMap);
     TEST_EQUALITY( x.getNumVectors (), static_cast<size_t> (1) );

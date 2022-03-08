@@ -1300,33 +1300,6 @@ TEST_F(LateFieldFixture, addLateElementFieldToLatePart)
   setup_add_late_field_to_late_part<int>(stk::topology::ELEM_RANK);
 }
 
-TEST_F(LateFieldFixture, DISABLED_performanceOfEarlyField)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 16) return;
-
-  const double startTime = stk::wall_time();
-  setup_performance_of_early_field<int>(stk::topology::NODE_RANK, 64);
-  const double stopTime = stk::wall_time();
-  std::cout << "Time for early field registration: " << stopTime-startTime << " s" << std::endl;
-}
-
-TEST_F(LateFieldFixture, DISABLED_performanceOfLateField)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 16) return;
-
-  const double startTime = stk::wall_time();
-  setup_performance_of_late_field<int>(stk::topology::NODE_RANK, 64);
-  const double stopTime = stk::wall_time();
-  std::cout << "Time for late field registration: " << stopTime-startTime << " s" << std::endl;
-}
-
-TEST_F(LateFieldFixture, DISABLED_performanceOfSingleLateField)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 16) return;
-
-  setup_performance_of_single_late_field<int>(stk::topology::NODE_RANK, 64);
-}
-
 TEST_F(LateFieldFixture, addLateIntFirstElementFieldContiguous)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
@@ -1486,36 +1459,6 @@ TEST_F(LateFieldFixture, addLateElementFieldToLatePartContiguous)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
   fieldDataManager = new stk::mesh::ContiguousFieldDataManager;
   setup_add_late_field_to_late_part<int>(stk::topology::ELEM_RANK, fieldDataManager);
-}
-
-TEST_F(LateFieldFixture, DISABLED_performanceOfEarlyFieldContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 16) return;
-
-  fieldDataManager = new stk::mesh::ContiguousFieldDataManager;
-  const double startTime = stk::wall_time();
-  setup_performance_of_early_field<int>(stk::topology::NODE_RANK, 64, fieldDataManager);
-  const double stopTime = stk::wall_time();
-  std::cout << "Time for early field registration: " << stopTime-startTime << " s" << std::endl;
-}
-
-TEST_F(LateFieldFixture, DISABLED_performanceOfLateFieldContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 16) return;
-
-  fieldDataManager = new stk::mesh::ContiguousFieldDataManager;
-  const double startTime = stk::wall_time();
-  setup_performance_of_late_field<int>(stk::topology::NODE_RANK, 64, fieldDataManager);
-  const double stopTime = stk::wall_time();
-  std::cout << "Time for late field registration: " << stopTime-startTime << " s" << std::endl;
-}
-
-TEST_F(LateFieldFixture, DISABLED_performanceOfSingleLateFieldContiguous)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 16) return;
-
-  fieldDataManager = new stk::mesh::ContiguousFieldDataManager;
-  setup_performance_of_single_late_field<int>(stk::topology::NODE_RANK, 64, fieldDataManager);
 }
 
 TEST(SharedSidesetField, verifySidesetFieldAfterMeshRead) {

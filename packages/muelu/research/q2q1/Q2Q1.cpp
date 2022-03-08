@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
     // simply reading the data again. Normally, this would be supplied by Eric
     // Cyr and would be Teko operators.
 
-    int numElem = A12->getRangeMap()->getNodeNumElements() + A21->getRangeMap()->getNodeNumElements();
+    int numElem = A12->getRangeMap()->getLocalNumElements() + A21->getRangeMap()->getLocalNumElements();
     RCP<const tMap> fullMap = Utilities::Map2TpetraMap(*(MapFactory::createUniformContigMap(Xpetra::UseTpetra, numElem, comm)));
 
     RCP<tOperator> A;

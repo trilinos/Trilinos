@@ -94,7 +94,7 @@ public:
     m_diagBoundary(diagBoundary),
     m_Parameters(Parameters),
     m_numSub(Subdomain.size()),
-    m_numDofsB(m_dofMapB->getNodeNumElements())
+    m_numDofsB(m_dofMapB->getLocalNumElements())
   {
     determineEquivAndWeightTypes();
     std::vector< std::vector< std::vector<SX> > > deluxeWeights;
@@ -441,7 +441,7 @@ private:
 
   void checkBDDCWeights()
   {
-    const LO numProcDofB = m_dofMapB->getNodeNumElements();
+    const LO numProcDofB = m_dofMapB->getLocalNumElements();
     std::vector<SX> sumWeightsB(numProcDofB, 0);
     calculateSumWeights(sumWeightsB.data());
     MV SumWeightsB(m_dofMapB, 1);
@@ -452,7 +452,7 @@ private:
     SumWeightsB1to1.doExport(SumWeightsB, *m_exporterB, Tpetra::ADD);
     Teuchos::ArrayRCP<const SX> values = SumWeightsB1to1.getData(0);
     SM maxError = 0;
-    for (size_t i=0; i<m_dofMapB1to1->getNodeNumElements(); i++) {
+    for (size_t i=0; i<m_dofMapB1to1->getLocalNumElements(); i++) {
       SM error = std::abs(values[i]-1);
       if (error > maxError) maxError = error;
     }

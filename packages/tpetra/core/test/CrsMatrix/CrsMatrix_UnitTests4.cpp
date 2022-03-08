@@ -159,11 +159,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   { \
     using Teuchos::outArg; \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
-    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getNodeElementList(); \
+    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getLocalElementList(); \
     ArrayView<const LO> loview; \
     ArrayView<const Scalar> sview; \
     size_t STMAX = 0; \
-    for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
+    for (size_t STR=0; STR < matrix.getLocalNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
       TEST_EQUALITY( numEntries, matrix.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
       matrix.getLocalRowView(STR,loview,sview); \
@@ -171,7 +171,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY( static_cast<size_t>( sview.size()), numEntries ); \
       STMAX = std::max( STMAX, numEntries ); \
     } \
-    TEST_EQUALITY( matrix.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
     global_size_t STGMAX; \
     Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
     TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
@@ -231,14 +231,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
     // test the properties
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getLocalNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
-    TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumCols()          , numLocal);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getColMap())   , true);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getDomainMap()), true);
@@ -454,14 +454,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // test the properties
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getLocalNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
-    TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumCols()          , numLocal);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap()!=Teuchos::null, true);
     TEST_EQUALITY_CONST(eye->getColMap()!=Teuchos::null, true);
@@ -522,14 +522,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // test the properties
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getLocalNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
-    TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumCols()          , numLocal);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap()!=Teuchos::null, true);
     TEST_EQUALITY_CONST(eye->getColMap()!=Teuchos::null, true);

@@ -179,10 +179,10 @@ namespace MueLu {
                 // Create a nodal map, as coordinates have not been expanded to a DOF map yet.
                 RCP<const Map> dofMap       = mat->getRowMap();
                 GO             indexBase    = dofMap->getIndexBase();
-                size_t         numLocalDOFs = dofMap->getNodeNumElements();
+                size_t         numLocalDOFs = dofMap->getLocalNumElements();
                 TEUCHOS_TEST_FOR_EXCEPTION(numLocalDOFs % blkSize, Exceptions::RuntimeError,
                                            "HierarchyUtils: block size (" << blkSize << ") is incompatible with the number of local dofs in a row map (" << numLocalDOFs);
-                ArrayView<const GO> GIDs = dofMap->getNodeElementList();
+                ArrayView<const GO> GIDs = dofMap->getLocalElementList();
 
                 Array<GO> nodeGIDs(numLocalDOFs/blkSize);
                 for (size_t i = 0; i < numLocalDOFs; i += blkSize)

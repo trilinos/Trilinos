@@ -101,6 +101,37 @@ std::ostream& print_expr_impl(std::ostream & out, const MetaData* meta, Selector
   return out;
 }
 
+inline
+bool bucket_ranked_member_any_impl(Bucket const& bucket, const PartVector & parts )
+{
+  const PartVector::const_iterator ip_end = parts.end();
+        PartVector::const_iterator ip     = parts.begin() ;
+
+  bool result_none = true ;
+
+  for ( ; result_none && ip_end != ip ; ++ip ) {
+    if((*ip)->primary_entity_rank() != stk::topology::INVALID_RANK) {
+      const unsigned ord = (*ip)->mesh_meta_data_ordinal();
+      result_none = !bucket.member(ord);
+    }
+  }
+  return ! result_none ;
+}
+
+inline
+bool select_bucket_part_grouping_impl(Bucket const& bucket, PartOrdinal ord)
+{
+  const BulkData& bulk = bucket.mesh();
+  const MetaData& meta = bulk.mesh_meta_data();
+
+  if (meta.is_valid_part_ordinal(ord)) {
+    const stk::mesh::Part& part = meta.get_part(ord);
+    return (part.primary_entity_rank() == stk::topology::INVALID_RANK) && bucket_ranked_member_any_impl(bucket, part.subsets());
+  }
+
+  return false;
+}
+
 bool select_bucket_impl(Bucket const& bucket, SelectorNode const* root)
 {
   switch(root->m_type) {
@@ -112,8 +143,13 @@ bool select_bucket_impl(Bucket const& bucket, SelectorNode const* root)
     return !select_bucket_impl(bucket, root->rhs()) && select_bucket_impl(bucket, root->lhs());
   case SelectorNodeType::COMPLEMENT:
     return !select_bucket_impl(bucket, root->unary());
-  case SelectorNodeType::PART:
-    return bucket.member(root->part());
+  case SelectorNodeType::PART: {
+    if (bucket.member(root->part())) {
+      return true;
+    }
+
+    return select_bucket_part_grouping_impl(bucket, root->part());
+  } break;
   case SelectorNodeType::FIELD:
     if(root->field() == NULL) {
       return false;

@@ -230,10 +230,10 @@ setup(const Teuchos::RCP<const map_type>  & ownedRowMap,
    }
 
    // Make sure the ownedPlusSharedRowMap has at least as many entries at the ownedRowMap (due to our superset requriement)
-   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ownedRowsImporter_->getNumSameIDs() != ownedRowsImporter_->getSourceMap()->getNodeNumElements(),
+   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ownedRowsImporter_->getNumSameIDs() != ownedRowsImporter_->getSourceMap()->getLocalNumElements(),
                                           std::runtime_error,"ownedRowMap contains entries which are not in the ownedPlusSharedRowMap.");
 
-   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ownedRowMap->getNodeNumElements() > ownedPlusSharedRowMap->getNodeNumElements(),
+   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ownedRowMap->getLocalNumElements() > ownedPlusSharedRowMap->getLocalNumElements(),
                                           std::runtime_error,"ownedRowMap more entries than the ownedPlusSharedRowMap.");
 
    // The locallyFitted check is debug mode only since it is more expensive
@@ -279,10 +279,10 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
                   this->getMyNonconstParamList()->get("Check Col GIDs In At Least One Owned Row",true);
     if (debug && checkColGIDsInAtLeastOneOwnedRow) {
       Teuchos::RCP<const map_type> colmap = this->getColMap();
-      Teuchos::Array<bool> flag(colmap->getNodeNumElements(),false);
-      typename crs_graph_type::nonconst_local_inds_host_view_type indices("indices",this->getNodeMaxNumRowEntries());
+      Teuchos::Array<bool> flag(colmap->getLocalNumElements(),false);
+      typename crs_graph_type::nonconst_local_inds_host_view_type indices("indices",this->getLocalMaxNumRowEntries());
 
-      for(size_t i=0; i<ownedRowMap->getNodeNumElements(); i++)  {
+      for(size_t i=0; i<ownedRowMap->getLocalNumElements(); i++)  {
         size_t NumEntries=0;
         this->getLocalRowCopy(i,indices,NumEntries);
         for(size_t j=0; j<NumEntries; j++)

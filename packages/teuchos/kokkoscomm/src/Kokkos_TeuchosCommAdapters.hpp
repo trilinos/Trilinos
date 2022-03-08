@@ -61,7 +61,7 @@ namespace Teuchos {
 
 //! Variant of send() that takes a tag (and restores the correct order of arguments).
 template<typename Ordinal, class ViewType>
-typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value)>::type
+typename std::enable_if<(Kokkos::is_view<ViewType>::value)>::type
 send (const ViewType& sendBuffer,
       const Ordinal count,
       const int destRank,
@@ -73,7 +73,7 @@ send (const ViewType& sendBuffer,
 
 //! Variant of ssend() that takes a tag (and restores the correct order of arguments).
 template<typename Ordinal, class ViewType>
-typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value)>::type
+typename std::enable_if<(Kokkos::is_view<ViewType>::value)>::type
 ssend (const ViewType& sendBuffer,
        const Ordinal count,
        const int destRank,
@@ -85,7 +85,7 @@ ssend (const ViewType& sendBuffer,
 
 //! Variant of readySend() that accepts a message tag.
 template<typename Ordinal, class ViewType>
-typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value)>::type
+typename std::enable_if<(Kokkos::is_view<ViewType>::value)>::type
 readySend (const ViewType& sendBuffer,
            const Ordinal count,
            const int destRank,
@@ -97,7 +97,7 @@ readySend (const ViewType& sendBuffer,
 
 //! Variant of isend() that takes a tag (and restores the correct order of arguments).
 template<typename Ordinal, class ViewType>
-typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value),RCP<CommRequest<Ordinal> >>::type
+typename std::enable_if<(Kokkos::is_view<ViewType>::value),RCP<CommRequest<Ordinal> >>::type
 isend (const ViewType& sendBuffer,
        const int destRank,
        const int tag,
@@ -111,7 +111,7 @@ isend (const ViewType& sendBuffer,
 
 //! Variant of ireceive that takes a tag argument (and restores the correct order of arguments).
 template<typename Ordinal, class ViewType>
-typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value),RCP<CommRequest<Ordinal> >>::type
+typename std::enable_if<(Kokkos::is_view<ViewType>::value),RCP<CommRequest<Ordinal> >>::type
 ireceive (const ViewType& recvBuffer,
           const int sourceRank,
           const int tag,
@@ -123,7 +123,7 @@ ireceive (const ViewType& recvBuffer,
 
 
 template<typename Ordinal, typename SendViewType, typename RecvViewType>
-typename std::enable_if<(Kokkos::Impl::is_view<SendViewType>::value && Kokkos::Impl::is_view<RecvViewType>::value)>::type
+typename std::enable_if<(Kokkos::is_view<SendViewType>::value && Kokkos::is_view<RecvViewType>::value)>::type
 reduceAll (const SendViewType& sendBuf,
            const RecvViewType& recvBuf,
            const EReductionType reductionType,
@@ -169,7 +169,7 @@ reduceAll (const SendViewType& sendBuf,
 template<typename Ordinal, typename Serializer,
          class SendViewType,
          class RecvViewType>
-typename std::enable_if<(Kokkos::Impl::is_view<SendViewType>::value && Kokkos::Impl::is_view<RecvViewType>::value)>::type
+typename std::enable_if<(Kokkos::is_view<SendViewType>::value && Kokkos::is_view<RecvViewType>::value)>::type
 reduceAll(const Comm<Ordinal>& comm,
           const Serializer& serializer,
           const EReductionType reductType,
@@ -210,7 +210,7 @@ reduceAll(const Comm<Ordinal>& comm,
 
 template<typename Ordinal,
          class ViewType>
-typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value)>::type
+typename std::enable_if<(Kokkos::is_view<ViewType>::value)>::type
 broadcast(const Comm<Ordinal>& comm,
                const int rootRank,
                const Ordinal count,
@@ -222,7 +222,7 @@ broadcast(const Comm<Ordinal>& comm,
 template<typename Ordinal,
          class ViewType,
          typename Serializer>
-typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value)>::type
+typename std::enable_if<(Kokkos::is_view<ViewType>::value)>::type
 broadcast(const Comm<Ordinal>& comm,
                const Serializer& serializer,
                const int rootRank,

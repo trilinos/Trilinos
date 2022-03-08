@@ -70,7 +70,6 @@ template<typename T, template <typename> class NgpDebugger>
 class DeviceField : public NgpFieldBase
 {
 private:
-  using FieldDataDeviceUnmanagedViewType = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using StkDebugger = typename NgpDebugger<T>::StkFieldSyncDebuggerType;
   using ExecSpace = stk::ngp::ExecSpace;
 

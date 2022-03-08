@@ -136,8 +136,8 @@ namespace MueLuTests {
     using row_map_type = typename LWGraph_kokkos::local_graph_type::row_map_type;
     using entries_type = typename LWGraph_kokkos::local_graph_type::entries_type;
 
-    row_map_type rowPtrs = graph->getRowPtrs();
-    entries_type entries = graph->getEntries();
+    row_map_type rowPtrs = graph->getLocalLWGraph().getRowPtrs();
+    entries_type entries = graph->getLocalLWGraph().getEntries();
     typename row_map_type::HostMirror rowPtrsHost = Kokkos::create_mirror_view(rowPtrs);
     typename entries_type::HostMirror entriesHost = Kokkos::create_mirror_view(entries);
     Kokkos::deep_copy(rowPtrsHost, rowPtrs);
@@ -151,14 +151,14 @@ namespace MueLuTests {
     {
       // Since this is a scalar problem and no entries are dropped
       // we can simply compare the value from LWGraph with those in A
-      auto numrows=A->getNodeNumRows(), nument=A->getNodeNumEntries();
+      auto numrows=A->getLocalNumRows(), nument=A->getLocalNumEntries();
       int result=0;
-      auto lgraph = *graph;
+      auto lclLWGraph = graph->getLocalLWGraph();
       Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
 			      KOKKOS_LAMBDA(const LO i, int &incorrect) { 
-				if (lgraph.GetNodeNumVertices() != numrows)
+				if (lclLWGraph.GetNodeNumVertices() != numrows)
 				  incorrect++;
-				if (lgraph.GetNodeNumEdges() != nument)
+				if (lclLWGraph.GetNodeNumEdges() != nument)
 				  incorrect++;
 			      }, result);
       TEST_EQUALITY(result, 0);
@@ -171,7 +171,7 @@ namespace MueLuTests {
     size_t numEntries;
     bool chk_rowPtr = true;
     bool chk_colInd = true;
-    for(size_t rowIdx = 0; rowIdx < A->getNodeNumRows(); ++rowIdx) {
+    for(size_t rowIdx = 0; rowIdx < A->getLocalNumRows(); ++rowIdx) {
       A->getLocalRowCopy(rowIdx, indices(), values(), numEntries);
       if(rowPtrsHost(rowIdx + 1) - rowPtrsHost(rowIdx) != numEntries) {chk_rowPtr = false;}
       for(size_t entryIdx = 0; entryIdx < numEntries; ++entryIdx) {

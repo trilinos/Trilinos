@@ -17,7 +17,7 @@ void BAP1D(Teuchos::RCP<tpetra_matrix_type> BAP, Teuchos::RCP<tpetra_matrix_type
   //INPUT: BAP_shrunk = Tpetra:MultiVector contatining the shrunk version of B_DD * A_h * Ptentative resulting from domain decomposition with coloring
   //INPUT: comm = MPI communicator (MPI_COMM_WORLD)
   
- Teuchos::ArrayView<const int> myLocalElements = BAP->getRowMap()->getNodeElementList();
+ Teuchos::ArrayView<const int> myLocalElements = BAP->getRowMap()->getLocalElementList();
  int mypid = comm->getRank();
 
 	for(int color = 0; color<3; ++color)
@@ -63,7 +63,7 @@ void BAP2D(Teuchos::RCP<tpetra_matrix_type> BAP, Teuchos::RCP<tpetra_matrix_type
   //INPUT: comm = MPI communicator (MPI_COMM_WORLD)
   //INPUT: ndx = number of domains along x-direction
 
- Teuchos::ArrayView<const int> myLocalElements = BAP->getRowMap()->getNodeElementList();
+ Teuchos::ArrayView<const int> myLocalElements = BAP->getRowMap()->getLocalElementList();
  int mypid = comm->getRank();
  int brick_id = mypid;
  int shifted_id = brick_id-1;
@@ -142,7 +142,7 @@ void BAP3D(Teuchos::RCP<tpetra_matrix_type> BAP, Teuchos::RCP<tpetra_matrix_type
   //INPUT: ndx = number of domains along x-direction
   //INPUT: ndy = number of domains along y-direction 
 
-  Teuchos::ArrayView<const int> myLocalElements = BAP->getRowMap()->getNodeElementList();
+  Teuchos::ArrayView<const int> myLocalElements = BAP->getRowMap()->getLocalElementList();
   int mypid = comm->getRank();
   int brick_id = mypid;
   int shifted_id = brick_id - 1;

@@ -2404,12 +2404,20 @@ namespace Tpetra {
     /// in the row Map's communicator does not necessarily equal the
     /// global number of rows in the matrix, if the row Map is
     /// overlapping.
+    size_t getLocalNumRows() const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeNumRows() const override;
+#endif
 
     /// \brief The number of columns connected to the locally owned rows of this matrix.
     ///
     /// Throws std::runtime_error if <tt>! hasColMap ()</tt>.
+    size_t getLocalNumCols() const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeNumCols() const override;
+#endif
 
     //! The index base for global indices for this matrix.
     GlobalOrdinal getIndexBase() const override;
@@ -2418,7 +2426,11 @@ namespace Tpetra {
     global_size_t getGlobalNumEntries() const override;
 
     //! The local number of entries in this matrix.
+    size_t getLocalNumEntries() const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeNumEntries() const override;
+#endif
 
     /// \brief Number of entries in the sparse matrix in the given
     ///   global row, on the calling (MPI) process.
@@ -2452,7 +2464,11 @@ namespace Tpetra {
     ///
     /// This method only uses the matrix's graph.  Explicitly stored
     /// zeros count as "entries."
+    size_t getLocalMaxNumRowEntries () const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeMaxNumRowEntries () const override;
+#endif
 
     //! Whether the matrix has a well-defined column Map.
     bool hasColMap () const override;
@@ -2595,7 +2611,7 @@ protected:
     ///   This is allocated and populated lazily in getLocalMultiplyOperator(), only if all 4 conditions are met:
     ///     - node_type is KokkosCudaWrapperNode
     ///     - the cuSPARSE TPL is enabled
-    ///     - local_ordinal_type can represent getNodeNumEntries()
+    ///     - local_ordinal_type can represent getLocalNumEntries()
     mutable ordinal_rowptrs_type ordinalRowptrs;
 
 public:
@@ -2854,7 +2870,7 @@ public:
     ///   has a column Map).
     /// \pre All diagonal entries of the matrix's graph must be
     ///   populated on this process.  Results are undefined otherwise.
-    /// \post <tt>offsets.size() == getNodeNumRows()</tt>
+    /// \post <tt>offsets.size() == getLocalNumRows()</tt>
     ///
     /// This method creates an array of offsets of the local diagonal
     /// entries in the matrix.  This array is suitable for use in the

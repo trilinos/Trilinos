@@ -166,8 +166,8 @@ public:
     copy_view(Arowptr,Arowptr_int);
 
 
-    m   = static_cast<int>(A.getNodeNumRows());
-    n   = static_cast<int>(A.getNodeNumCols());
+    m   = static_cast<int>(A.getLocalNumRows());
+    n   = static_cast<int>(A.getLocalNumCols());
     nnz = static_cast<int>(Acolind.extent(0));
     vals   = reinterpret_cast<Scalar*>(Avals.data());
     cols   = const_cast<int*>(reinterpret_cast<const int*>(Acolind.data()));
@@ -319,8 +319,8 @@ public:
     copy_view(Acolind,Acolind_cusparse);
 
 
-    m   = static_cast<int>(A.getNodeNumRows());
-    n   = static_cast<int>(A.getNodeNumCols());
+    m   = static_cast<int>(A.getLocalNumRows());
+    n   = static_cast<int>(A.getLocalNumCols());
     nnz = static_cast<int>(Acolind_cusparse.extent(0));
     vals   = reinterpret_cast<Scalar*>(Avals.data());
     cols   = reinterpret_cast<int*>(Acolind_cusparse.data());
@@ -721,8 +721,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if(std::is_same<Scalar,double>::value) {
       mkl_sparse_d_create_csr(&mkl_A,
                               SPARSE_INDEX_BASE_ZERO,
-                              At->getNodeNumRows(),
-                              At->getNodeNumCols(),
+                              At->getLocalNumRows(),
+                              At->getLocalNumCols(),
                               ArowptrMKL.data(),
                               ArowptrMKL.data()+1,
                               AcolindMKL.data(),

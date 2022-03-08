@@ -316,14 +316,14 @@ bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     // override the number of rows specified on the command line (if
     // specified), and will also override the default number of rows.
     const size_t maxNormalizeNumCols = std::max (sizeS, std::max (sizeX1, sizeX2));
-    // getNodeNumElements() returns a size_t, which is unsigned, and
+    // getLocalNumElements() returns a size_t, which is unsigned, and
     // you shouldn't compare signed and unsigned values.  This is why
     // we make maxNormalizeNumCols a size_t as well.
-    if (map->getNodeNumElements () < maxNormalizeNumCols) {
+    if (map->getLocalNumElements () < maxNormalizeNumCols) {
       std::ostringstream os;
       os << "The number of elements on this process " << comm->getRank()
          << " is too small for the number of columns that you want to test."
-         << "  There are " << map->getNodeNumElements() << " elements on "
+         << "  There are " << map->getLocalNumElements() << " elements on "
         "this process, but the normalize() method of the MatOrthoManager "
         "subclass will need to process a multivector with "
          << maxNormalizeNumCols << " columns.  Not all MatOrthoManager "

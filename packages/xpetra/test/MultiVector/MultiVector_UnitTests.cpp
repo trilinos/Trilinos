@@ -359,7 +359,7 @@ namespace {
     // getDataNonConst(0).
     {
       Teuchos::ArrayRCP<Scalar> vcopy_data = vcopy->getDataNonConst (0);
-      if (map->getNodeNumElements () != 0) {
+      if (map->getLocalNumElements () != 0) {
         vcopy_data[0] += static_cast<magnitude_type> (10000.0);
       }
       // Destroy the view, so that the changes get written back to the Vector.

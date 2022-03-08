@@ -88,12 +88,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, UniformContig, LO, GO, NT )
 
   try {
     // Sanity check on the global Map.
-    TEST_EQUALITY( gblMap.getNodeNumElements (), static_cast<size_t> (numLclElts) );
+    TEST_EQUALITY( gblMap.getLocalNumElements (), static_cast<size_t> (numLclElts) );
     TEST_EQUALITY( gblMap.getMinLocalIndex (), static_cast<LO> (0) );
     TEST_EQUALITY( gblMap.getMaxLocalIndex (), static_cast<LO> (numLclElts - 1) );
 
     // Test constants.
-    TEST_EQUALITY( gblMap.getNodeNumElements (), static_cast<size_t> (lclMap.getNodeNumElements ()) );
+    TEST_EQUALITY( gblMap.getLocalNumElements (), static_cast<size_t> (lclMap.getLocalNumElements ()) );
     TEST_EQUALITY( gblMap.getIndexBase (), lclMap.getIndexBase () );
     TEST_EQUALITY( gblMap.isContiguous (), lclMap.isContiguous () );
     TEST_EQUALITY( gblMap.getMinLocalIndex (), lclMap.getMinLocalIndex () );
@@ -177,12 +177,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, NonuniformContig, LO, GO, NT )
 
   try {
     // Sanity check on the global Map.
-    TEST_EQUALITY( gblMap.getNodeNumElements (), static_cast<size_t> (numLclElts) );
+    TEST_EQUALITY( gblMap.getLocalNumElements (), static_cast<size_t> (numLclElts) );
     TEST_EQUALITY( gblMap.getMinLocalIndex (), static_cast<LO> (0) );
     TEST_EQUALITY( gblMap.getMaxLocalIndex (), static_cast<LO> (numLclElts - 1) );
 
     // Test constants.
-    TEST_EQUALITY( gblMap.getNodeNumElements (), static_cast<size_t> (lclMap.getNodeNumElements ()) );
+    TEST_EQUALITY( gblMap.getLocalNumElements (), static_cast<size_t> (lclMap.getLocalNumElements ()) );
     TEST_EQUALITY( gblMap.getIndexBase (), lclMap.getIndexBase () );
     TEST_EQUALITY( gblMap.isContiguous (), lclMap.isContiguous () );
     TEST_EQUALITY( gblMap.getMinLocalIndex (), lclMap.getMinLocalIndex () );
@@ -267,12 +267,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LocalMap, Noncontig, LO, GO, NT )
 
   try {
     // Sanity check on the global Map.
-    TEST_EQUALITY( gblMap.getNodeNumElements (), static_cast<size_t> (numLclElts) );
+    TEST_EQUALITY( gblMap.getLocalNumElements (), static_cast<size_t> (numLclElts) );
     TEST_EQUALITY( gblMap.getMinLocalIndex (), static_cast<LO> (0) );
     TEST_EQUALITY( gblMap.getMaxLocalIndex (), static_cast<LO> (numLclElts - 1) );
 
     // Test constants.
-    TEST_EQUALITY( gblMap.getNodeNumElements (), static_cast<size_t> (lclMap.getNodeNumElements ()) );
+    TEST_EQUALITY( gblMap.getLocalNumElements (), static_cast<size_t> (lclMap.getLocalNumElements ()) );
     TEST_EQUALITY( gblMap.getIndexBase (), lclMap.getIndexBase () );
     TEST_EQUALITY( gblMap.isContiguous (), lclMap.isContiguous () );
     TEST_EQUALITY( gblMap.getMinLocalIndex (), lclMap.getMinLocalIndex () );

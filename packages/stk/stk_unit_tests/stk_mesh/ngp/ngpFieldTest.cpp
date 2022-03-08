@@ -1034,7 +1034,7 @@ TEST_F(NgpFieldFixture, noFieldDataTest)
   std::vector<double> coordinates = stk::unit_test_util::get_many_block_coordinates(numBlocks);
 
   stk::mesh::Field<int>& field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::ELEM_RANK, "", 1);
-  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   EXPECT_NO_THROW(stk::mesh::get_updated_ngp_field<int>(field));
 }
 
@@ -1602,10 +1602,10 @@ TEST_F(OptimizedNgpFieldFixture, ChangeBucketContentsUsingLayoutModificationWith
 
 void construct_ngp_field(stk::mesh::Field<int>& stkIntField)
 {
-  EXPECT_NO_THROW(stk::mesh::NgpField<int> ngpField(stkIntField.get_mesh(), stkIntField));
+  EXPECT_NO_THROW(stk::mesh::get_updated_ngp_field<int>(stkIntField));
 }
 
-TEST_F(OptimizedNgpFieldFixture, DISABLED_CreateConsecutiveNgpFields)
+TEST_F(OptimizedNgpFieldFixture, CreateConsecutiveNgpFields)
 {
   if (get_parallel_size() != 1) return;
 

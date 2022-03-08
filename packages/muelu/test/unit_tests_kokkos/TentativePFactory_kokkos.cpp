@@ -469,8 +469,8 @@ namespace MueLuTests {
     const RCP<const Map> map = MapFactory::Build(lib, nEle, nIndexBase, comm);
     RCP<Matrix> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(map, 3);
 
-    LocalOrdinal NumMyElements = map->getNodeNumElements();
-    Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+    LocalOrdinal NumMyElements = map->getLocalNumElements();
+    Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
     GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
     assert(NumGlobalElements == nEle);
 

@@ -113,7 +113,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
   const GO indexBase = globalFirstGid;
   RCP<const map_type> map (new map_type (globalNumElts, myGids (), indexBase, comm));
 
-  ArrayView<const GO> myGidsFound = map->getNodeElementList ();
+  ArrayView<const GO> myGidsFound = map->getLocalElementList ();
   TEST_COMPARE_ARRAYS( myGidsExpected (), myGidsFound () );
 
   Array<GO> remoteGids (5);
