@@ -795,7 +795,7 @@ namespace Iotm {
 
         const std::vector<double> &operator[](const EntityId nodeId) const
         {
-          auto it(m_nodalCoords.find(nodeId));
+          auto it = m_nodalCoords.find(nodeId);
           return it->second;
         }
 
