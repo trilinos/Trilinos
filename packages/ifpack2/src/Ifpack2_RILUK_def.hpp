@@ -964,7 +964,7 @@ void RILUK<MatrixType>::compute ()
     U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
     
     L_solver_->setMatrix (L_);
-    L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothinig
+    L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
     U_solver_->setMatrix (U_);
     U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
   }
