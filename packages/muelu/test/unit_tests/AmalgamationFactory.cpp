@@ -99,10 +99,42 @@ namespace MueLuTests {
     }
   } // DOFGid2NodeId
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(AmalgamationFactory, AmalgamateMap, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    // Test static method AmalgamationFactory::AmalgamateMap().
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "Test static method AmalgamationFactory::AmalgamateMap()." << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+    const GlobalOrdinal nx = 32;
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx", nx);
+    matrixList.set("matrixType","Laplace1D");
+    RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::BuildMatrix(matrixList,TestHelpers::Parameters::getLib());
+    LO blkSize=2;
+    Op->SetFixedBlockSize(blkSize);
+    RCP<Array<LO> > theRowTranslation = rcp(new Array<LO>);
+    RCP<Array<LO> > theColTranslation = rcp(new Array<LO>);
+    RCP<const Map> uniqueMap, nonUniqueMap;
+
+    AmalgamationFactory::AmalgamateMap(*(Op->getRowMap()), *Op, uniqueMap, *theRowTranslation);
+
+    Teuchos::ArrayView<const GO> localEltList = uniqueMap->getLocalElementList();
+    for (int j=0; j<uniqueMap->getLocalNumElements(); j++) {
+      TEST_EQUALITY(uniqueMap->getLocalElement(localEltList[j]),j);
+    }
+
+  } // AmalgamateMap
+
 
   # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, Constructor, Scalar, LO, GO, Node) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, DOFGid2NodeId, Scalar, LO, GO, Node)
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, DOFGid2NodeId, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(AmalgamationFactory, AmalgamateMap, Scalar, LO, GO, Node)
 
 # include <MueLu_ETI_4arg.hpp>
 
