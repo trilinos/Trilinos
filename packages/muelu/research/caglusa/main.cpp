@@ -123,16 +123,32 @@ namespace Tpetra {
     {
       auto map = nearField_->getDomainMap();
       clusterCoeffMap_ = basisMatrix_->getDomainMap();
-      TEUCHOS_ASSERT(map->isSameAs(*nearField_->getRangeMap()));
-      TEUCHOS_ASSERT(map->isSameAs(*basisMatrix->getRangeMap()));
-      // TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*basisMatrix->getDomainMap()));
-      TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*kernelApproximations_->getDomainMap()));
-      TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*kernelApproximations_->getRangeMap()));
-      TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*kernelApproximations_->getRowMap()));
 
-      for (size_t i = 0; i<transferMatrices_.size(); i++) {
-        TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*transferMatrices_[i]->getDomainMap()));
-        TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*transferMatrices_[i]->getRangeMap()));
+      const bool doDebugChecks = true;
+
+      if (doDebugChecks) {
+        // near field matrix lives on map and is nonlocal
+        TEUCHOS_ASSERT(map->isSameAs(*nearField_->getRangeMap()));
+        TEUCHOS_ASSERT(map->isSameAs(*nearField_->getRowMap()));
+
+        // basis matrix is entirely local and maps from clusterCoeffMap_ to map.
+        TEUCHOS_ASSERT(map->isSameAs(*basisMatrix->getRangeMap()));
+        TEUCHOS_ASSERT(map->isSameAs(*basisMatrix->getRowMap()));
+        // TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*basisMatrix->getDomainMap()));
+        TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*basisMatrix->getColMap()));
+
+        // kernel approximations live on clusterCoeffMap and are nonlocal
+        TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*kernelApproximations_->getDomainMap()));
+        TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*kernelApproximations_->getRangeMap()));
+        TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*kernelApproximations_->getRowMap()));
+
+        for (size_t i = 0; i<transferMatrices_.size(); i++) {
+          // transfer matrices are entirely local, block diagonal on clusterCoeffMap
+          TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*transferMatrices_[i]->getDomainMap()));
+          TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*transferMatrices_[i]->getColMap()));
+          TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*transferMatrices_[i]->getRowMap()));
+          TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*transferMatrices_[i]->getRangeMap()));
+        }
       }
 
       RCP<Teuchos::ParameterList> distParams = rcp(new Teuchos::ParameterList());
@@ -515,6 +531,26 @@ namespace Tpetra {
       return 0.;
     }
 
+    void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+      using std::setw;
+      using std::endl;
+      const size_t numRows = nearField_->getRowMap()->getGlobalNumElements();
+      const size_t nnzNearField = nearField_->getGlobalNumEntries();
+      const double nnzNearPerRow = Teuchos::as<double>(nnzNearField)/numRows;
+      const size_t nnzKernelApprox = kernelApproximations_->getGlobalNumEntries();
+      const size_t nnzBasis = basisMatrix_->getGlobalNumEntries();
+      size_t nnzTransfer = 0;
+      for (size_t i = 0; i<transferMatrices_.size(); i++)
+        nnzTransfer += transferMatrices_[i]->getGlobalNumEntries();
+      const size_t nnzTotal = nnzNearField+nnzKernelApprox+nnzBasis+nnzTransfer;
+      const double nnzTotalPerRow = Teuchos::as<double>(nnzTotal)/numRows;
+      std::ostringstream oss;
+      oss << std::left;
+      oss << setw(9) << "rows"  << setw(12) << "nnz(near)"  << setw(14) << "nnz(near)/row" << setw(12) << "nnz(basis)" << setw(12) << "nnz(kernel)"    << setw(14) << "nnz(transfer)" << setw(12) << "nnz(total)" << setw(14) << "nnz(total)/row" << endl;
+      oss << setw(9) << numRows << setw(12) << nnzNearField << setw(14) << nnzNearPerRow   << setw(12) << nnzBasis      << setw(12) << nnzKernelApprox << setw(14) << nnzTransfer     << setw(12) << nnzTotal     << setw(14) << nnzTotalPerRow   << endl;
+      out << oss.str();
+    }
+
   private:
 
     void allocateMemory(size_t numVectors) const {
@@ -625,6 +661,10 @@ namespace Xpetra {
     RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator() { return op_; }
 
     RCP<const Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperatorConst() const { return op_; }
+
+    void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+      op_->describe(out, verbLevel);
+    }
 
   private:
     RCP<tHOp> op_;
@@ -874,6 +914,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       params.set("max levels", auxH->GetNumLevels());
       const std::string multigridAlgo = params.get("multigrid algorithm", "unsmoothed");
 
+      op->describe(out, Teuchos::VERB_EXTREME);
+
       H = rcp(new Hierarchy());
       RCP<Level> lvl = H->GetLevel(0);
       lvl->Set("A", rcp_dynamic_cast<Operator>(op));
@@ -912,6 +954,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
 
         auto coarseA = fineA->restrict(P);
+        coarseA->describe(out, Teuchos::VERB_EXTREME);
         if (lvlNo+1 == auxH->GetNumLevels())
           lvl->Set("A", coarseA->toMatrix());
         else
