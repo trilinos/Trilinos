@@ -765,9 +765,10 @@ namespace {
       std::copy(exports.begin()+myImageID*numImages, exports.begin()+(myImageID+1)*numImages, myExports.begin() );
     }
     // do posts, one Packet to each image
-    Array<Packet> imports(1*distributor.getTotalReceiveLength());
+    Kokkos::View<Packet*, Kokkos::HostSpace> imports("imports", 1*distributor.getTotalReceiveLength());
+    Kokkos::View<const Packet*, Kokkos::HostSpace> myExportsConst(myExports.data(), myExports.size());
     myOut << "Call doPostsAndWaits" << endl;
-    distributor.doPostsAndWaits(myExports().getConst(), 1, imports());
+    distributor.doPostsAndWaits(myExportsConst, 1, imports);
 
     myOut << "Test results" << endl;
     // imports[i] came from image i. it was element "myImageID" in his "myExports" vector.
@@ -875,8 +876,9 @@ namespace {
       std::copy(exports.begin()+myImageID*2*numImages, exports.begin()+(myImageID+1)*2*numImages, myExports.begin() );
     }
     // do posts, one Packet to each image
-    Array<Packet> imports(1*distributor.getTotalReceiveLength());
-    distributor.doPostsAndWaits(myExports().getConst(), 1, imports());
+    Kokkos::View<Packet*, Kokkos::HostSpace> imports("imports", 1*distributor.getTotalReceiveLength());
+    Kokkos::View<const Packet*, Kokkos::HostSpace> myExportsConst(myExports.data(), myExports.size());
+    distributor.doPostsAndWaits(myExportsConst, 1, imports);
     // imports[i] came from image i. it was element "myImageID" in his "myExports" vector.
     // it corresponds to element i*numImages+myImageID in the global export vector
     // make a copy of the corresponding entries in the global vector, then compare these against the

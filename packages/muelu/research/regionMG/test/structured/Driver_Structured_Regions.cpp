@@ -459,7 +459,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   Array<GO>  sendGIDs;
   Array<int> sendPIDs;
   Array<LO>  rNodesPerDim(3);
-  Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
+  Array<LO>  compositeToRegionLIDs(nodeMap->getLocalNumElements()*numDofsPerNode);
   Array<GO>  quasiRegionGIDs;
   Array<GO>  quasiRegionCoordGIDs;
   Array<GO>  interfaceGIDs;
@@ -730,32 +730,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Solve with V-cycle")));
 
-  {
-//    std::cout << myRank << " | Running V-cycle ..." << std::endl;
-
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(!(numLevels>0), "We require numLevel > 0. Probably, numLevel has not been set, yet.");
-
-    /* We first use the non-level container variables to setup the fine grid problem.
-     * This is ok since the initial setup just mimics the application and the outer
-     * Krylov method.
-     *
-     * We switch to using the level container variables as soon as we enter the
-     * recursive part of the algorithm.
-     */
-
-    // Composite residual vector
-    RCP<Vector> compRes = VectorFactory::Build(dofMap, true);
-
-    // transform composite vectors to regional layout
-    Teuchos::RCP<Vector> quasiRegX;
-    Teuchos::RCP<Vector> regX;
-    compositeToRegional(X, quasiRegX, regX,
-                        revisedRowMap, rowImport);
-
-    RCP<Vector> quasiRegB;
-    RCP<Vector> regB;
-    compositeToRegional(B, quasiRegB, regB,
-                        revisedRowMap, rowImport);
 #ifdef DUMP_LOCALX_AND_A
     FILE *fp;
     char str[80];
@@ -763,7 +737,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     fp = fopen(str,"w");
     fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
     LO numNzs = 0;
-    for (size_t kkk = 0; kkk < regionMats->getNodeNumRows(); kkk++) {
+    for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) {
       ArrayView<const LO> AAcols;
       ArrayView<const SC> AAvals;
       regionMats->getLocalRowView(kkk, AAcols, AAvals);
@@ -771,9 +745,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       const SC  *Avals = AAvals.getRawPtr();
       numNzs += AAvals.size();
     }
-    fprintf(fp, "%d %d %d\n",regionMats->getNodeNumRows(),regionMats->getNodeNumRows(),numNzs);
+    fprintf(fp, "%d %d %d\n",regionMats->getLocalNumRows(),regionMats->getLocalNumRows(),numNzs);
 
-    for (size_t kkk = 0; kkk < regionMats->getNodeNumRows(); kkk++) {
+    for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) {
       ArrayView<const LO> AAcols;
       ArrayView<const SC> AAvals;
       regionMats->getLocalRowView(kkk, AAcols, AAvals);
@@ -785,96 +759,17 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       }
     }
     fclose(fp);
-    sprintf(str,"theX.%d",myRank);
-    fp = fopen(str,"w");
-    ArrayRCP<SC> lX= regX->getDataNonConst(0);
-    for (size_t kkk = 0; kkk < regionMats->getNodeNumRows(); kkk++) fprintf(fp, "%22.16e\n",lX[kkk]);
-    fclose(fp);
+    // sprintf(str,"theX.%d",myRank);
+    // fp = fopen(str,"w");
+    // ArrayRCP<SC> lX= regX->getDataNonConst(0);
+    // for (size_t kkk = 0; kkk < regionMats->getLocalNumRows(); kkk++) fprintf(fp, "%22.16e\n",lX[kkk]);
+    // fclose(fp);
 #endif
 
-    RCP<Vector> regRes;
-    regRes = VectorFactory::Build(revisedRowMap, true);
-
-    /////////////////////////////////////////////////////////////////////////
-    // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
-    /////////////////////////////////////////////////////////////////////////
-
-    // Prepare output of residual norm to file
-    RCP<std::ofstream> log;
-    if (myRank == 0)
-    {
-      log = rcp(new std::ofstream(convergenceLog.c_str()));
-      (*log) << "# num procs = " << dofMap->getComm()->getSize() << "\n"
-             << "# iteration | res-norm (scaled=" << scaleResidualHist << ")\n"
-             << "#\n";
-      *log << std::setprecision(16) << std::scientific;
-    }
-
-    // Print type of residual norm to the screen
-    if (scaleResidualHist)
-      out << "Using scaled residual norm." << std::endl;
-    else
-      out << "Using unscaled residual norm." << std::endl;
-
-
-    // Richardson iterations
-    magnitude_type normResIni = Teuchos::ScalarTraits<magnitude_type>::zero();
-    const int old_precision = std::cout.precision();
-    std::cout << std::setprecision(8) << std::scientific;
-    int cycle = 0;
-
-    Teuchos::RCP<Vector> regCorrect;
-    regCorrect = VectorFactory::Build(revisedRowMap, true);
-    for (cycle = 0; cycle < maxIts; ++cycle)
-    {
-      const Scalar SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
-      regCorrect->putScalar(SC_ZERO);
-    // Get Stuff out of Hierarchy
-    RCP<MueLu::Level> level = regHierarchy->GetLevel(0);
-    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regInterfaceScalings = level->Get<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("regInterfaceScalings");
-      // check for convergence
-      {
-        ////////////////////////////////////////////////////////////////////////
-        // SWITCH BACK TO NON-LEVEL VARIABLES
-        ////////////////////////////////////////////////////////////////////////
-        computeResidual(regRes, regX, regB, regionMats, *smootherParams[0]);
-        scaleInterfaceDOFs(regRes, regInterfaceScalings, true);
-
-        compRes = VectorFactory::Build(dofMap, true);
-        regionalToComposite(regRes, compRes, rowImport);
-
-        typename Teuchos::ScalarTraits<Scalar>::magnitudeType normRes = compRes->norm2();
-        if(cycle == 0) { normResIni = normRes; }
-
-        if (scaleResidualHist)
-          normRes /= normResIni;
-
-        // Output current residual norm to screen (on proc 0 only)
-        out << cycle << "\t" << normRes << std::endl;
-        if (myRank == 0)
-          (*log) << cycle << "\t" << normRes << "\n";
-
-        if (normRes < tol)
-          break;
-        }
-
-        /////////////////////////////////////////////////////////////////////////
-        // SWITCH TO RECURSIVE STYLE --> USE LEVEL CONTAINER VARIABLES
-        /////////////////////////////////////////////////////////////////////////
-
-        bool zeroInitGuess = true;
-        scaleInterfaceDOFs(regRes, regInterfaceScalings, false);
-        vCycle(0, numLevels, cycleType, regHierarchy,
-               regCorrect, regRes,
-               smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
-
-        regX->update(one, *regCorrect, one);
-    }
-    out << "Number of iterations performed for this solve: " << cycle << std::endl;
-
-    std::cout << std::setprecision(old_precision);
-    std::cout.unsetf(std::ios::fixed | std::ios::scientific);
-  }
+  solveRegionProblem(tol, scaleResidualHist, maxIts,
+                     cycleType, convergenceLog,
+                     coarseSolverData, smootherParams, hierarchyData,
+                     regHierarchy, X, B);
 
   comm->barrier();
   tm = Teuchos::null;

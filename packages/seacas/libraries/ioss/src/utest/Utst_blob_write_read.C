@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -84,8 +84,9 @@ void write_blob()
   std::cout << "***** Writing Blob Example File...\n";
   Ioss::PropertyManager properties;
   properties.add(Ioss::Property("COMPOSE_RESTART", "YES"));
-  Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
-      "exodus", "ioss_blob_example.e", Ioss::WRITE_RESTART, (MPI_Comm)MPI_COMM_WORLD, properties);
+  Ioss::DatabaseIO *dbo =
+      Ioss::IOFactory::create("exodus", "ioss_blob_example.e", Ioss::WRITE_RESTART,
+                              Ioss::ParallelUtils::comm_world(), properties);
   if (dbo == NULL || !dbo->ok(true)) {
     std::exit(EXIT_FAILURE);
   }
@@ -210,8 +211,9 @@ bool read_blob()
   std::cout << "\n***** Reading Blob Example File...\n";
   Ioss::PropertyManager properties;
   properties.add(Ioss::Property("DECOMPOSITION_METHOD", "linear"));
-  Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(
-      "exodus", "ioss_blob_example.e", Ioss::READ_RESTART, (MPI_Comm)MPI_COMM_WORLD, properties);
+  Ioss::DatabaseIO *dbi =
+      Ioss::IOFactory::create("exodus", "ioss_blob_example.e", Ioss::READ_RESTART,
+                              Ioss::ParallelUtils::comm_world(), properties);
   if (dbi == NULL || !dbi->ok(true)) {
     std::exit(EXIT_FAILURE);
   }

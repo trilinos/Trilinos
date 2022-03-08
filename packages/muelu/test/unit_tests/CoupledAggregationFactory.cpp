@@ -66,7 +66,7 @@ namespace MueLuTests {
                ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
                ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
 
-               for (size_t i=0; i<aggregates.GetVertex2AggId()->getMap()->getNodeNumElements(); i++)
+               for (size_t i=0; i<aggregates.GetVertex2AggId()->getMap()->getLocalNumElements(); i++)
                  Final[i] = vertex2AggId[i] + procWinner[i]*1000;
 
                out << *Final_ << std::endl;

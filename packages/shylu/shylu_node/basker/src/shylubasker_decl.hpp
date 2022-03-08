@@ -167,6 +167,7 @@ namespace BaskerNS
 
     BASKER_INLINE
     void t_reset_BTF_factor(Int kid);
+    void t_reset_BTF_factor_top(Int start, Int end);
 
     void t_reset_ND_factor(Int kid);
 
@@ -563,6 +564,7 @@ namespace BaskerNS
     (
      BASKER_MATRIX &M,
      BASKER_SYMBOLIC_TREE &ST,
+     double fill_factor,
      Int option
     );
 
@@ -570,7 +572,8 @@ namespace BaskerNS
     void L_assign_nnz
     (
      BASKER_MATRIX &M,
-     BASKER_SYMBOLIC_TREE &ST, 
+     BASKER_SYMBOLIC_TREE &ST,
+     double fill_factor,
      Int option
     );
 
@@ -1049,7 +1052,7 @@ namespace BaskerNS
     void t_local_reach_short_btf(const Int, const Int, Int &);
 
     BASKER_INLINE
-    int t_local_reach_btf(Int, BASKER_MATRIX&,Int,Int&);
+    int t_local_reach_btf(Int, BASKER_MATRIX&,Int,Int&, Int,Int);
 
     void t_prune_btf(const Int, const BASKER_MATRIX &, const BASKER_MATRIX&, const Int, const Int);
 

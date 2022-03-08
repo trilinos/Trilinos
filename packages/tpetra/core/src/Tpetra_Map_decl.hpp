@@ -582,9 +582,15 @@ namespace Tpetra {
     /// \note This function should be thread safe and thread scalable,
     ///   assuming that you refer to the Map by value or reference,
     ///   not by Teuchos::RCP.
+    size_t getLocalNumElements () const {
+      return numLocalElements_;
+    }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     size_t getNodeNumElements () const {
       return numLocalElements_;
     }
+#endif
 
     /// \brief The index base for this Map.
     ///
@@ -607,7 +613,7 @@ namespace Tpetra {
     /// \brief The maximum local index on the calling process.
     ///
     /// If this process owns no elements, that is, if
-    /// <tt>getNodeNumElements() == 0</tt>, then this method returns
+    /// <tt>getLocalNumElements() == 0</tt>, then this method returns
     /// the same value as
     /// <tt>Teuchos::OrdinalTraits<local_ordinal_type>::invalid()</tt>.
     ///
@@ -615,10 +621,10 @@ namespace Tpetra {
     ///   assuming that you refer to the Map by value or reference,
     ///   not by Teuchos::RCP.
     local_ordinal_type getMaxLocalIndex () const {
-      if (this->getNodeNumElements () == 0) {
+      if (this->getLocalNumElements () == 0) {
         return Tpetra::Details::OrdinalTraits<local_ordinal_type>::invalid ();
       } else { // Local indices are always zero-based.
-        return static_cast<local_ordinal_type> (this->getNodeNumElements () - 1);
+        return static_cast<local_ordinal_type> (this->getLocalNumElements () - 1);
       }
     }
 
@@ -797,7 +803,10 @@ namespace Tpetra {
     /// and cache the list of global indices for later use.  Beware of
     /// calling this if the calling process owns a very large number
     /// of global indices.
-    Teuchos::ArrayView<const global_ordinal_type> getNodeElementList() const;
+    Teuchos::ArrayView<const global_ordinal_type> getLocalElementList() const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED Teuchos::ArrayView<const global_ordinal_type> getNodeElementList() const;
+#endif
 
     //@}
     //! @name Boolean tests
@@ -1207,13 +1216,13 @@ namespace Tpetra {
     /// <ol>
     /// <li> It is always created for a noncontiguous Map, in the
     ///    noncontiguous version of the Map constructor.</li>
-    /// <li> In getNodeElementList(), on demand (if it wasn't created
+    /// <li> In getLocalElementList(), on demand (if it wasn't created
     ///    before).</li>
     /// </ol>
     ///
     /// The potential for on-demand creation is why this member datum
     /// is declared "mutable".  Note that other methods, such as
-    /// describe(), may invoke getNodeElementList().
+    /// describe(), may invoke getLocalElementList().
     ///
     /// To clarify: If this is empty, then it could be either that the
     /// Map is contiguous (meaning that we don't need to store all the
@@ -1234,7 +1243,7 @@ namespace Tpetra {
     /// \brief Host View of lgMap_.
     ///
     /// This is allocated along with lgMap_, on demand (lazily), by
-    /// getNodeElementList() (which see).  It is also used by
+    /// getLocalElementList() (which see).  It is also used by
     /// getGlobalElement() (which is a host method, and therefore
     /// requires a host View) if necessary (only noncontiguous Maps
     /// need this).

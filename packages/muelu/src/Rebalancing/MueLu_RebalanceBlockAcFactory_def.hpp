@@ -252,7 +252,7 @@ namespace MueLu {
         Teuchos::RCP<const Map> stridedRgMap = Teuchos::null;
         if(orig_stridedRgMap != Teuchos::null) {
           std::vector<size_t> stridingData = orig_stridedRgMap->getStridingData();
-          Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = rebAii->getRangeMap()->getNodeElementList();
+          Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMapii = rebAii->getRangeMap()->getLocalElementList();
           stridedRgMap = StridedMapFactory::Build(
               bA->getRangeMap()->lib(),
               Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
@@ -267,7 +267,7 @@ namespace MueLu {
         Teuchos::RCP<const Map> stridedDoMap = Teuchos::null;
         if(orig_stridedDoMap != Teuchos::null) {
           std::vector<size_t> stridingData = orig_stridedDoMap->getStridingData();
-          Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = rebAii->getDomainMap()->getNodeElementList();
+          Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMapii = rebAii->getDomainMap()->getLocalElementList();
           stridedDoMap = StridedMapFactory::Build(
               bA->getDomainMap()->lib(),
               Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
@@ -292,14 +292,14 @@ namespace MueLu {
         rebAii->CreateView("stridedMaps", stridedRgMap, stridedDoMap);
         // collect Xpetra-based global row ids for map extractors
         subBlockARangeMaps.push_back(rebAii->getRowMap("stridedMaps"));
-        Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMap = rebAii->getRangeMap()->getNodeElementList();
+        Teuchos::ArrayView< const GlobalOrdinal > nodeRangeMap = rebAii->getRangeMap()->getLocalElementList();
         // append the GIDs in the end. Do not sort if we have Thyra style GIDs
         fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMap.begin(), nodeRangeMap.end());
         if(bThyraRangeGIDs == false)
           sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
 
         subBlockADomainMaps.push_back(rebAii->getColMap("stridedMaps"));
-        Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMap = rebAii->getDomainMap()->getNodeElementList();
+        Teuchos::ArrayView< const GlobalOrdinal > nodeDomainMap = rebAii->getDomainMap()->getLocalElementList();
         // append the GIDs in the end. Do not sort if we have Thyra style GIDs
         fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMap.begin(), nodeDomainMap.end());
         if(bThyraDomainGIDs == false)

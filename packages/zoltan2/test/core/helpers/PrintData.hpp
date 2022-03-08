@@ -60,7 +60,7 @@ template <typename lno_t, typename gno_t>
  void printTpetraGraph(const Tpetra::CrsGraph<lno_t, gno_t> &graph,
    std::ostream &os, size_t maxSize, string info)
 {
-  size_t nrows = graph.getNodeNumRows();
+  size_t nrows = graph.getLocalNumRows();
   if (nrows > maxSize)
     return;
 

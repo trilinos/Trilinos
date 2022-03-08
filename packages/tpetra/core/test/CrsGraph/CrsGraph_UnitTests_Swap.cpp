@@ -421,15 +421,15 @@ std::string filedir;
 #define STD_TESTS(graph)                                                                                        \
     {                                                                                                           \
         auto   STCOMM   = graph.getComm();                                                                      \
-        auto   STMYGIDS = graph.getRowMap()->getNodeElementList();                                              \
+        auto   STMYGIDS = graph.getRowMap()->getLocalElementList();                                              \
         size_t STMAX    = 0;                                                                                    \
                                                                                                                 \
-        for(size_t STR = 0; STR < graph.getNodeNumRows(); ++STR)                                                \
+        for(size_t STR = 0; STR < graph.getLocalNumRows(); ++STR)                                                \
         {                                                                                                       \
             TEST_EQUALITY(graph.getNumEntriesInLocalRow(STR), graph.getNumEntriesInGlobalRow(STMYGIDS[ STR ])); \
             STMAX = std::max(STMAX, graph.getNumEntriesInLocalRow(STR));                                        \
         }                                                                                                       \
-        TEST_EQUALITY(graph.getNodeMaxNumRowEntries(), STMAX);                                                  \
+        TEST_EQUALITY(graph.getLocalMaxNumRowEntries(), STMAX);                                                  \
         GST STGMAX;                                                                                             \
         Teuchos::reduceAll<int, GST>(*STCOMM, Teuchos::REDUCE_MAX, STMAX, Teuchos::outArg(STGMAX));             \
         TEST_EQUALITY(graph.getGlobalMaxNumRowEntries(), STGMAX);                                               \

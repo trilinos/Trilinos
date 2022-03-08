@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Set up env on a SEMS NFS mounted RHEL7 for ATMD builds of Trilinos
+# Set up env on a SEMS NFS mounted RHEL7 for ATDM builds of Trilinos
 #
 # This source script gets the settings from the ATDM_CONFIG_BUILD_NAME var.
 #
@@ -46,7 +46,8 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "INTEL" ]] ; then
     export ATDM_CONFIG_COMPILER=INTEL-18.0.5
   elif [[ "$ATDM_CONFIG_COMPILER" != "INTEL-17.0.1" ]] \
-    && [[ "$ATDM_CONFIG_COMPILER" != "INTEL-18.0.5" ]]; then
+    && [[ "$ATDM_CONFIG_COMPILER" != "INTEL-18.0.5" ]] \
+    && [[ "$ATDM_CONFIG_COMPILER" != "INTEL-19.0.5" ]]; then
     echo
     echo "***"
     echo "*** ERROR: INTEL COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
@@ -54,6 +55,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL"* ]]; then
     echo "***   intel (defaults to intel-18.0.5)"
     echo "***   intel-17.0.1"
     echo "***   intel-18.0.5"
+    echo "***   intel-19.0.5"
     echo "***"
     return
   fi
@@ -192,6 +194,21 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-17.0.1" ]] ; then
 elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.5" ]] ; then
   module load sems-archive-gcc/7.2.0
   module load sems-archive-intel/18.0.5
+  module load atdm-env
+  module load atdm-mkl/18.0.5
+  export ATDM_CONFIG_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
+  export OMPI_CXX=`which icpc`
+  export OMPI_CC=`which icc`
+  export OMPI_FC=`which ifort`
+  export ATDM_CONFIG_LAPACK_LIBS="-mkl"
+  export ATDM_CONFIG_BLAS_LIBS="-mkl"
+  export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
+  if [[ "${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}" != "" ]] ; then
+    export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
+  fi
+elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.5" ]] ; then
+  module load sems-archive-gcc/7.2.0
+  module load sems-archive-intel/19.0.5
   module load atdm-env
   module load atdm-mkl/18.0.5
   export ATDM_CONFIG_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"

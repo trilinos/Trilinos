@@ -168,7 +168,7 @@ void CommBroadcast::communicate()
 //  Determine the number of items each other process will send to the current processor
 //
 std::vector<int> ComputeReceiveList(std::vector<int>& sendSizeArray, MPI_Comm &mpi_communicator) {
-  const int msg_tag = 10240;
+  auto msg_tag = get_mpi_tag_manager().get_tag(mpi_communicator, 10240);
   int num_procs = sendSizeArray.size();
   int my_proc;
   MPI_Comm_rank(mpi_communicator, &my_proc);

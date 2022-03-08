@@ -137,7 +137,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
     RCP<const Thyra::SpmdVectorSpaceBase<double> > ghostedSpace 
         = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(ghostedVecT->space());
     
-    TEST_EQUALITY(ghostedMap->getNodeNumElements(),ghostedVecTp->getLocalLength());
+    TEST_EQUALITY(ghostedMap->getLocalNumElements(),ghostedVecTp->getLocalLength());
     TEST_EQUALITY(ghostedMap->getGlobalNumElements(),ghostedVecTp->getGlobalLength());
 
     TEST_EQUALITY(ghostedSpace->isLocallyReplicated(),false);
@@ -186,7 +186,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
     RCP<const Thyra::SpmdVectorSpaceBase<double> > ownedSpace 
         = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(ownedVecT->space());
     
-    TEST_EQUALITY(ownedMap->getNodeNumElements(),ownedVecTp.getLocalLength());
+    TEST_EQUALITY(ownedMap->getLocalNumElements(),ownedVecTp.getLocalLength());
     TEST_EQUALITY(ownedMap->getGlobalNumElements(),ownedVecTp.getGlobalLength());
 
     TEST_EQUALITY(ownedSpace->isLocallyReplicated(),false);

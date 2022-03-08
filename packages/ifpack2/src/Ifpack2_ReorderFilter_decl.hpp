@@ -150,10 +150,10 @@ public:
   virtual global_size_t getGlobalNumCols() const;
 
   //! Returns the number of rows owned on the calling node.
-  virtual size_t getNodeNumRows() const;
+  virtual size_t getLocalNumRows() const;
 
   //! Returns the number of columns needed to apply the forward operator on this node, i.e., the number of elements listed in the column map.
-  virtual size_t getNodeNumCols() const;
+  virtual size_t getLocalNumCols() const;
 
   //! Returns the index base for global indices for this matrix.
   virtual global_ordinal_type getIndexBase() const;
@@ -162,7 +162,7 @@ public:
   virtual global_size_t getGlobalNumEntries() const;
 
   //! Returns the local number of entries in this matrix.
-  virtual size_t getNodeNumEntries() const;
+  virtual size_t getLocalNumEntries() const;
 
   /// \brief The current number of entries in this matrix, stored on
   ///   the calling process, in the row whose global index is \c globalRow.
@@ -184,7 +184,7 @@ public:
   virtual size_t getGlobalMaxNumRowEntries() const;
 
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
-  virtual size_t getNodeMaxNumRowEntries() const;
+  virtual size_t getLocalMaxNumRowEntries() const;
 
   //! \brief Indicates whether this matrix has a well-defined column map.
   virtual bool hasColMap() const;

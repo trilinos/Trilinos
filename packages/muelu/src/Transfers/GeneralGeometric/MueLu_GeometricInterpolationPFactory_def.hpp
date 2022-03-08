@@ -182,7 +182,7 @@ namespace MueLu {
       RCP<const Map> prolongatorColMap = prolongatorGraph->getColMap();
 
       const size_t dofsPerNode = static_cast<size_t>(A->GetFixedBlockSize());
-      const size_t numColIndices = prolongatorColMap->getNodeNumElements();
+      const size_t numColIndices = prolongatorColMap->getLocalNumElements();
       TEUCHOS_TEST_FOR_EXCEPTION((numColIndices % dofsPerNode) != 0,
                                  Exceptions::RuntimeError,
                                  "Something went wrong, the number of columns in the prolongator is not a multiple of dofsPerNode!");
@@ -190,7 +190,7 @@ namespace MueLu {
       const GO indexBase = prolongatorColMap->getIndexBase();
       const GO coordIndexBase = fineCoordinates->getMap()->getIndexBase();
 
-      ArrayView<const GO> prolongatorColIndices = prolongatorColMap->getNodeElementList();
+      ArrayView<const GO> prolongatorColIndices = prolongatorColMap->getLocalElementList();
       Array<GO> ghostCoordIndices(numGhostCoords);
       for(size_t ghostCoordIdx = 0; ghostCoordIdx < numGhostCoords; ++ghostCoordIdx) {
         ghostCoordIndices[ghostCoordIdx]

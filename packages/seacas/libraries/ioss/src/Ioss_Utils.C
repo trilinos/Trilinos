@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -291,7 +291,7 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
   // nodes.  To fix this, check the block type name and see if it
   // ends with a number.  If it does, assume it is OK; if not, append
   // the 'nodes_per_element'.
-  if (isdigit(*(type.rbegin())) == 0) {
+  if (type.empty() || isdigit(*(type.rbegin())) == 0) {
     if (nodes_per_element > 1) {
       type += std::to_string(nodes_per_element);
     }
@@ -588,6 +588,9 @@ namespace {
         assert(type->component_count() == static_cast<int>(which_names.size()));
         Ioss::Field field(base_name.substr(0, bn_len - 1), Ioss::Field::REAL, type, fld_role,
                           count);
+        if (suffix_separator != '_') {
+          field.set_suffix_separator(suffix_separator);
+        }
         field.set_index(index);
         for (const auto &which_name : which_names) {
           names[which_name][0] = '\0';
@@ -610,7 +613,7 @@ namespace {
   bool define_field(size_t nmatch, size_t match_length, char **names,
                     std::vector<Ioss::Suffix> &suffices, size_t entity_count,
                     Ioss::Field::RoleType fld_role, std::vector<Ioss::Field> &fields,
-                    bool strip_trailing_)
+                    bool strip_trailing_, char suffix_separator)
   {
     // Try to define a field of size 'nmatch' with the suffices in 'suffices'.
     // If this doesn't define a known field, then assume it is a scalar instead
@@ -623,10 +626,17 @@ namespace {
       else {
         char *name         = names[0];
         name[match_length] = '\0';
+        auto suffix        = suffix_separator;
         if (strip_trailing_ && name[match_length - 1] == '_') {
           name[match_length - 1] = '\0';
+          suffix                 = '_';
         }
         Ioss::Field field(name, Ioss::Field::REAL, type, fld_role, entity_count);
+        if (suffix != suffix_separator) {
+          field.set_suffix_separator(suffix);
+        }
+        // Are suffices upper or lowercase...
+        field.set_suffices_uppercase(suffices[0].is_uppercase());
         if (field.is_valid()) {
           fields.push_back(field);
         }
@@ -650,11 +660,9 @@ namespace {
     return false; // Can't get here...  Quiet the compiler
   }
 } // namespace
+
 // Read scalar fields off an input database and determine whether
 // they are components of a higher order type (vector, tensor, ...).
-// This routine is used if there is no field component separator.  E.g.,
-// fieldx, fieldy, fieldz instead of field_x field_y field_z
-
 void Ioss::Utils::get_fields(int64_t entity_count, // The number of objects in this entity.
                              char  **names,        // Raw list of field names from exodus
                              int     num_names,    // Number of names in list
@@ -692,6 +700,8 @@ void Ioss::Utils::get_fields(int64_t entity_count, // The number of objects in t
     }
   }
   else {
+    // This routine is used if there is no field component separator.  E.g.,
+    // fieldx, fieldy, fieldz instead of field_x field_y field_z
     int                       nmatch = 1;
     int                       ibeg   = 0;
     int                       pmat   = 0;
@@ -736,7 +746,7 @@ void Ioss::Utils::get_fields(int64_t entity_count, // The number of objects in t
         else {
 
           bool multi_component = define_field(nmatch, pmat, &names[ibeg], suffices, entity_count,
-                                              fld_role, fields, strip_trailing_);
+                                              fld_role, fields, strip_trailing_, suffix_separator);
           if (!multi_component) {
             // Although we matched multiple suffices, it wasn't a
             // higher-order field, so we only used 1 name instead of
@@ -762,7 +772,7 @@ void Ioss::Utils::get_fields(int64_t entity_count, // The number of objects in t
     if (ibeg < num_names) {
       if (local_truth == nullptr || local_truth[ibeg] == 1) {
         bool multi_component = define_field(nmatch, pmat, &names[ibeg], suffices, entity_count,
-                                            fld_role, fields, strip_trailing_);
+                                            fld_role, fields, strip_trailing_, suffix_separator);
         clear(suffices);
         if (nmatch > 1 && !multi_component) {
           ibeg++;
@@ -909,25 +919,25 @@ bool Ioss::Utils::block_is_omitted(Ioss::GroupingEntity *block)
 }
 
 void Ioss::Utils::calculate_sideblock_membership(IntVector             &face_is_member,
-                                                 const Ioss::SideBlock *ef_blk,
+                                                 const Ioss::SideBlock *sd_blk,
                                                  size_t int_byte_size, const void *element,
                                                  const void *sides, int64_t number_sides,
                                                  const Ioss::Region *region)
 {
-  assert(ef_blk != nullptr);
+  assert(sd_blk != nullptr);
 
   face_is_member.reserve(number_sides);
 
   const ElementTopology *unknown = Ioss::ElementTopology::factory("unknown");
 
   // Topology of faces in this face block...
-  const ElementTopology *ftopo = ef_blk->topology();
+  const ElementTopology *ftopo = sd_blk->topology();
 
   // Topology of parent element for faces in this face block
-  const ElementTopology *parent_topo = ef_blk->parent_element_topology();
+  const ElementTopology *parent_topo = sd_blk->parent_element_topology();
 
   // If split by element block then parent_block will be non-nullptr
-  const ElementBlock *parent_block = ef_blk->parent_element_block();
+  const ElementBlock *parent_block = sd_blk->parent_element_block();
 
   // The element block containing the face we are working on...
   Ioss::ElementBlock *block = nullptr;

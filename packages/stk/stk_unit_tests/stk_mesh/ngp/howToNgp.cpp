@@ -693,8 +693,8 @@ void test_view_of_fields(const stk::mesh::BulkData& bulk,
                          new (&fields(i)) stk::mesh::NgpField<double>();
                        });
 
-  hostFields(0) = stk::mesh::NgpField<double>(bulk, field1);
-  hostFields(1) = stk::mesh::NgpField<double>(bulk, field2);
+  hostFields(0) = stk::mesh::get_updated_ngp_field<double>(field1); 
+  hostFields(1) = stk::mesh::get_updated_ngp_field<double>(field2);
 
   Kokkos::deep_copy(fields, hostFields);
 
@@ -714,11 +714,7 @@ void test_view_of_fields(const stk::mesh::BulkData& bulk,
   EXPECT_EQ(1, result.h_view(1));
 }
 
-// Disabled because stk::mesh::NgpField now contains a Kokkos::DualView, which is not
-// properly constructible on the device in the old version of Kokkos that we
-// currently have in Sierra.  Versions after at least 2018-12-10 work fine, so
-// this can be re-enabled after our next Trilinos pull.
-TEST_F(NgpHowTo, DISABLED_viewOfFields)
+TEST_F(NgpHowTo, viewOfFields)
 {
   auto &field1 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField1");
   auto &field2 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "myField2");
@@ -1335,177 +1331,5 @@ TEST(NgpMesh, meshIndices)
 
   ASSERT_EQ(fieldVal, data[0]);
 }
-
-//==============================================================================
-class FakeEntity {
-public:
-  KOKKOS_FUNCTION
-  FakeEntity()
-    : m_value(0)
-  {
-    printf("  FakeEntity: (%lu) Calling default constructor\n", m_value);
-  }
-
-  KOKKOS_FUNCTION
-  explicit FakeEntity(size_t value)
-    : m_value(value)
-  {
-    printf("  FakeEntity: (%lu) Calling constructor\n", m_value);
-  }
-
-  KOKKOS_FUNCTION
-  ~FakeEntity() {
-    printf("  FakeEntity: (%lu) Calling destructor\n", m_value);
-  }
-
-  KOKKOS_FUNCTION
-  FakeEntity(const FakeEntity& rhs) {
-    printf("  FakeEntity: (%lu) Calling copy constructor\n", rhs.m_value);
-    m_value = rhs.m_value;
-  }
-
-  KOKKOS_FUNCTION
-  size_t value() const { return m_value; }
-
-private:
-  size_t m_value;
-};
-
-using FakeEntityType = Kokkos::View<FakeEntity*, stk::ngp::MemSpace>;
-
-class FakeBucket {
-public:
-  KOKKOS_FUNCTION
-  FakeBucket()
-    : m_value(0)
-  {
-    printf("FakeBucket: (%lu) Calling default constructor\n", m_value);
-  }
-
-  KOKKOS_FUNCTION
-  explicit FakeBucket(size_t value)
-    : m_value(value)
-  {
-    printf("FakeBucket: (%lu) Calling constructor\n", m_value);
-  }
-
-  KOKKOS_FUNCTION
-  ~FakeBucket() {
-    printf("FakeBucket: (%lu) Calling destructor\n", m_value);
-  }
-
-  KOKKOS_FUNCTION
-  FakeBucket(const FakeBucket& rhs) {
-    printf("FakeBucket: (%lu) Calling copy constructor\n", rhs.m_value);
-    m_value = rhs.m_value;
-    m_innerView = rhs.m_innerView;
-  }
-
-  void initialize(size_t numValues) {
-    m_innerView = FakeEntityType("Data", numValues);
-  }
-
-  KOKKOS_FUNCTION
-  size_t value(size_t i) const { return m_innerView[i].value(); }
-
-private:
-  size_t m_value;
-  FakeEntityType m_innerView;
-};
-
-using FakeBuckets = Kokkos::View<FakeBucket*, stk::ngp::UVMMemSpace>;
-
-class FakeMesh
-{
-public:
-  KOKKOS_FUNCTION
-  FakeMesh()
-    : m_isInitialized(false),
-      m_numBuckets(1),
-      m_numEntities(2)
-  {
-    printf("FakeMesh: Calling default constructor\n");
-    update(0);
-  }
-
-  KOKKOS_FUNCTION
-  ~FakeMesh() {
-    printf("FakeMesh: Calling destructor\n");
-    if (m_fakeBuckets.use_count() == 1) {
-      clear();
-    }
-  }
-
-  KOKKOS_FUNCTION
-  FakeMesh(const FakeMesh & rhs) {
-    printf("FakeMesh: Calling copy constructor\n");
-    m_fakeBuckets = rhs.m_fakeBuckets;
-    m_isInitialized = rhs.m_isInitialized;
-    m_numBuckets = rhs.m_numBuckets;
-    m_numEntities = rhs.m_numEntities;
-  }
-
-  FakeMesh & operator=(const FakeMesh & rhs) = delete;
-
-  void clear() {
-    for (size_t i = 0; i < m_fakeBuckets.size(); ++i) {
-      m_fakeBuckets[i].~FakeBucket();
-    }
-  }
-
-  void fill(size_t iter) {
-    m_fakeBuckets = FakeBuckets(Kokkos::ViewAllocateWithoutInitializing("Outer"), m_numBuckets);
-    for (size_t i = 0; i < m_numBuckets; ++i) {
-      printf("\nFilling buckets: bucket = %lu (iter = %lu)\n", i+1, iter);
-      new (&m_fakeBuckets[i]) FakeBucket(i+1);
-      m_fakeBuckets[i].initialize(m_numEntities);
-    }
-
-  }
-
-  void update(size_t iter) {
-    if (m_isInitialized) {
-      clear();
-    }
-    fill(iter);
-    m_isInitialized = true;
-  }
-
-  KOKKOS_FUNCTION
-  void do_stuff() const {
-    for (size_t i = 0; i < m_numBuckets; ++i) {
-      for (size_t j = 0; j < m_numEntities; ++j) {
-        printf("Doing stuff: FakeBucket value = %lu\n", m_fakeBuckets[i].value(j));
-      }
-    }
-  }
-
-private:
-  FakeBuckets m_fakeBuckets;
-  bool m_isInitialized;
-  size_t m_numBuckets;
-  size_t m_numEntities;
-};
-
-void check_fake_mesh_on_device()
-{
-  FakeMesh fakeMesh;
-
-  const int numMeshMods = 3;
-  for (int i = 0; i < numMeshMods; ++i) {
-    fakeMesh.update(i+1);
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int idx) {
-                           fakeMesh.do_stuff();
-                         });
-  }
-
-}
-
-TEST(NgpExperiment, DISABLED_FakeMesh)
-{
-  check_fake_mesh_on_device();
-}
-
-//==============================================================================
 
 }

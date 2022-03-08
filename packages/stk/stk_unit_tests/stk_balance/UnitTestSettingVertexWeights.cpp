@@ -113,16 +113,7 @@ private:
 };
 
 
-TEST_F(VertexWeightSettings, checkVertexWeightsWithoutAura)
-{
-    if(stk::parallel_machine_size(get_comm()) == 2)
-    {
-        setup_mesh_with_global_element_count_set("generated:1x1x20", stk::mesh::BulkData::NO_AUTO_AURA);
-        test_setting_of_vertex_weights_via_field();
-    }
-}
-
-TEST_F(VertexWeightSettings, checkVertexWeightsWithAura)
+TEST_F(VertexWeightSettings, checkVertexWeights)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
     {

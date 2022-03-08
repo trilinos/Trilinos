@@ -231,7 +231,7 @@ namespace MueLu {
         finalP = Xpetra::IteratorOps<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP,
                     GetOStream(Statistics2), std::string("MueLu::SaP-")+levelIDs, APparams);
         if (enforceConstraints) {
-           if (A->GetFixedBlockSize() == 1) newSatisfyPConstraints( finalP);
+           if (A->GetFixedBlockSize() == 1) optimalSatisfyPConstraintsForScalarPDEs( finalP);
            else                             SatisfyPConstraints( A, finalP);
         }
       }
@@ -315,7 +315,7 @@ namespace MueLu {
     for (size_t k=0; k < (size_t) nPDEs; k++) nPositive[k] = 0;
 
 
-    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getNodeNumElements()); i++) {
+    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getLocalNumElements()); i++) {
 
       Teuchos::ArrayView<const LocalOrdinal> indices;
       Teuchos::ArrayView<const Scalar> vals1;
@@ -385,7 +385,7 @@ namespace MueLu {
   } //SatsifyPConstraints()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::newSatisfyPConstraints(RCP<Matrix>& P) const {
+  void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::optimalSatisfyPConstraintsForScalarPDEs(RCP<Matrix>& P) const {
 
     const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
     const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
@@ -394,7 +394,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<Scalar> scalarData(3*maxEntriesPerRow);
     bool hasFeasible;
 
-    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getNodeNumElements()); i++) {
+    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getLocalNumElements()); i++) {
 
       Teuchos::ArrayView<const LocalOrdinal> indices;
       Teuchos::ArrayView<const Scalar> vals1;

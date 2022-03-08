@@ -270,7 +270,7 @@ getTpetraCrsMatrix (Teuchos::FancyOStream& out,
   // columns, or asking the column Map for the number of entries,
   // won't give the correct number of columns in the graph.
   // const GO gblNumCols = graph->getDomainMap ()->getGlobalNumElements ();
-  const LO lclNumRows = meshRowMap.getNodeNumElements ();
+  const LO lclNumRows = meshRowMap.getLocalNumElements ();
 
   RCP<matrix_type> A = rcp (new matrix_type (graph));
 

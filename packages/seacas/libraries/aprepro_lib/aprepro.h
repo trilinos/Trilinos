@@ -1,4 +1,4 @@
-// Copyright(C) 1999-, 20212021 National Technology & Engineering Solutions
+// Copyright(C) 1999-, 20212021,  National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -212,6 +212,7 @@ namespace SEAMS {
 
     array *make_array(int r, int c);
     array *make_array(const array &from);
+    void   redefine_array(array *data);
 
   private:
     std::unique_ptr<Symtable> sym_table;

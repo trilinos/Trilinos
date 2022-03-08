@@ -171,7 +171,7 @@ namespace FROSch {
                 global += 1;
             }
 
-            local = (LO) max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
+            local = (LO) max((LO) this->OverlappingMap_->getLocalNumElements(),(LO) 0);
             reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
             avg = max(sum/double(this->MpiComm_->getSize()),0.0);
             reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&minVal));
@@ -230,7 +230,7 @@ namespace FROSch {
             }
             if (verbosity==All) {
                 FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
-                local = (LO) max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
+                local = (LO) max((LO) this->OverlappingMap_->getLocalNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
                 avg = max(sum/double(this->MpiComm_->getSize()),0.0);
                 reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&minVal));

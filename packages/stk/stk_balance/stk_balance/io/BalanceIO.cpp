@@ -48,24 +48,6 @@
 namespace stk {
 namespace balance {
 
-void register_internal_fields(stk::mesh::BulkData& bulkData, const stk::balance::BalanceSettings& balanceSettings)
-{
-    if (balanceSettings.shouldFixSpiders()) {
-        stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
-        const int initValue = 0;
-
-        stk::mesh::Field<int> & beamField =
-            meta.declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK,
-                                                      balanceSettings.getSpiderBeamConnectivityCountFieldName());
-        stk::mesh::put_field_on_mesh(beamField, meta.universal_part(), &initValue);
-
-        stk::mesh::Field<int> & volumeField =
-            meta.declare_field<stk::mesh::Field<int>>(stk::topology::ELEM_RANK,
-                                                      balanceSettings.getSpiderVolumeConnectivityCountFieldName());
-        stk::mesh::put_field_on_mesh(volumeField, meta.universal_part(), &initValue);
-    }
-}
-
 void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
                                 const std::string& meshSpec,
                                 stk::mesh::BulkData& bulkData,
@@ -76,7 +58,7 @@ void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
     stkIo.create_input_mesh();
     stkIo.add_all_mesh_fields_as_input_fields();
 
-    register_internal_fields(bulkData, balanceSettings);
+    internal::register_internal_fields(bulkData, balanceSettings);
 
     stkIo.populate_bulk_data();
 

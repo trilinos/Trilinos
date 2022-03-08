@@ -12,7 +12,9 @@
 
 using EntityId = stk::mesh::EntityId;
 using EntityIdVector = std::vector<EntityId>;
-using Topology = stk::topology;
+using Topology = stk::unit_test_util::StkTopologyMapEntry;
+using SideEntry = std::pair<EntityId, int>;
+using SideVector = std::vector<SideEntry>;
 
 namespace stk
 {
@@ -25,14 +27,25 @@ class TextMeshFixture : public stk::unit_test_util::MeshFixture
 
   void setup_text_mesh(const std::string& meshDesc);
 
-  void setup_text_mesh(const std::string& meshDesc, const std::vector<double>& coordinates);
-
   void verify_shared_nodes(const stk::mesh::EntityIdVector& nodeIds, int sharingProc);
 
   void verify_num_elements(size_t goldCount);
 
   void verify_single_element(
       stk::mesh::EntityId elemId, const std::string& textMeshTopologyName, const stk::mesh::EntityIdVector& nodeIds);
+
+  void verify_num_sidesets(size_t goldCount);
+
+  void verify_single_sideset(const std::string& name, const unsigned id, const SideVector& elemSidePairs);
+
+  void verify_single_sideset(const std::string& name,
+      const unsigned id,
+      const std::vector<std::string>& subsets,
+      const SideVector& elemSidePairs);
+
+  void verify_num_nodesets(size_t goldCount);
+
+  void verify_single_nodeset(const std::string& name, const unsigned id, const EntityIdVector& nodeIds);
 
   struct PartInfo {
     std::string blockName;
@@ -57,6 +70,10 @@ class TextMeshFixture : public stk::unit_test_util::MeshFixture
   void verify_part(stk::mesh::Part* blockPart);
 
   void verify_elements_on_part(stk::mesh::Part* blockPart, const std::set<stk::mesh::EntityId>& goldIds);
+
+  void verify_sideset_subset(stk::mesh::Part* sidesetPart, const unsigned id, const std::vector<std::string>& subsets);
+
+  bool element_has_side_on_ordinal(stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal ordinal);
 
   class CoordinateVerifier
   {

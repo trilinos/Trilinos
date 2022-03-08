@@ -58,7 +58,7 @@ namespace Xpetra {
 
     //! Set multi-vector values from an array using Teuchos memory management classes. (copy)
     TpetraVector(const Teuchos::RCP< const Map> &map, const Teuchos::ArrayView< const Scalar > &A)
-      : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(map,A,map->getNodeNumElements(),1) { }
+      : TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(map,A,map->getLocalNumElements(),1) { }
 
     //! Destructor.
     virtual ~TpetraVector() { }

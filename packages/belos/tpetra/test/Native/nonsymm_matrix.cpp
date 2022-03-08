@@ -94,7 +94,7 @@ createNonsymmTridiagMatrix (const Teuchos::RCP<const Tpetra::Map<> >& rowMap,
   //using mag_type = typename Tpetra::CrsMatrix<SC>::mag_type;
 
   const LO lclNumRows = rowMap.is_null () ? LO (0) :
-    LO (rowMap->getNodeNumElements ());
+    LO (rowMap->getLocalNumElements ());
   const GO gblMinGblInd = rowMap->getMinAllGlobalIndex ();
   const GO gblMaxGblInd = rowMap->getMaxAllGlobalIndex ();
   auto A = rcp (new crs_matrix_type (rowMap, 3));

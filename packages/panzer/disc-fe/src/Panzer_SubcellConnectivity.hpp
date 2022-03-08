@@ -215,6 +215,7 @@ public:
 // Inlined functions
 // **********************************
 
+PHALANX_HIP_HACK_KOKKOS_FUNCTION
 int
 SubcellConnectivity::
 numSubcellsOnCell(const int cell) const
@@ -235,6 +236,7 @@ numSubcellsOnCellHost(const int cell) const
   return _cell_to_subcells_adj_host(cell+1)-_cell_to_subcells_adj_host(cell);
 }
 
+PHALANX_HIP_HACK_KOKKOS_FUNCTION
 int
 SubcellConnectivity::
 numCellsOnSubcell(const int subcell) const
@@ -255,6 +257,7 @@ numCellsOnSubcellHost(const int subcell) const
   return _subcell_to_cells_adj_host(subcell+1)-_subcell_to_cells_adj_host(subcell);
 }
 
+PHALANX_HIP_HACK_KOKKOS_FUNCTION
 int
 SubcellConnectivity::
 subcellForCell(const int cell, const int local_subcell_index) const
@@ -279,6 +282,7 @@ subcellForCellHost(const int cell, const int local_subcell_index) const
   return _cell_to_subcells_host(index);
 }
 
+PHALANX_HIP_HACK_KOKKOS_FUNCTION
 int
 SubcellConnectivity::
 cellForSubcell(const int subcell, const int local_cell_index) const
@@ -303,6 +307,7 @@ cellForSubcellHost(const int subcell, const int local_cell_index) const
   return _subcell_to_cells_host(index);
 }
 
+PHALANX_HIP_HACK_KOKKOS_FUNCTION
 int
 SubcellConnectivity::
 localSubcellForSubcell(const int subcell, const int local_cell_index) const

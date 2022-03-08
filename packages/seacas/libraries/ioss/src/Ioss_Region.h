@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_Region_h
-#define IOSS_Ioss_Region_h
+#pragma once
 
 #include <Ioss_CoordinateFrame.h> // for CoordinateFrame
 #include <Ioss_DatabaseIO.h>      // for DatabaseIO
@@ -389,5 +388,3 @@ inline const std::vector<std::string> &Ioss::Region::get_qa_records() const
   IOSS_FUNC_ENTER(m_);
   return get_database()->get_qa_records();
 }
-
-#endif

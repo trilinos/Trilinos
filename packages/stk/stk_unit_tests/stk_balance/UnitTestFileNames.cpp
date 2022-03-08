@@ -53,6 +53,16 @@ TEST_F(InputSanity, verifyThrowIfInputFileEqualsOutputFile)
     std::string serialMeshName = "sixteen_hex_transient.e";
     std::string parallelOutputMeshName = "sixteen_hex_transient.e";
 
+    EXPECT_TRUE(validator.input_equals_output(serialMeshName, parallelOutputMeshName));
+  }
+}
+
+TEST_F(InputSanity, verifyThrowIfSerialInputFileEqualsOutputFile)
+{
+  if (get_parallel_size() == 1) {
+    std::string serialMeshName = "sixteen_hex_transient.e";
+    std::string parallelOutputMeshName = "sixteen_hex_transient.e";
+
     EXPECT_TRUE(validator.serial_input_equals_output(serialMeshName, parallelOutputMeshName));
   }
 }

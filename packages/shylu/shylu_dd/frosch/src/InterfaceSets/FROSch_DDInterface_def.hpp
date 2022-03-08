@@ -61,7 +61,7 @@ namespace FROSch {
     MpiComm_ (localToGlobalMap->getComm()),
     Dimension_ (dimension),
     DofsPerNode_ (dofsPerNode),
-    NumMyNodes_ (localToGlobalMap->getNodeNumElements()),
+    NumMyNodes_ (localToGlobalMap->getLocalNumElements()),
     NodesMap_ (localToGlobalMap),
     CommStrategy_ (commStrategy),
     Verbose_ (MpiComm_->getRank()==0),
@@ -342,7 +342,7 @@ namespace FROSch {
                     globalVec[0] += 1;
                 }
                 if (globalVec[0]<0) globalVec[0] = 0;
-                localVec[0] = (LO) max((LO) Vertices_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                localVec[0] = (LO) max((LO) Vertices_->getEntityMap()->getLocalNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[0],ptr(&sumVec[0]));
                 avgVec[0] = max(sumVec[0]/double(MpiComm_->getSize()),0.0);
                 reduceAll(*MpiComm_,REDUCE_MIN,localVec[0],ptr(&minVec[0]));
@@ -361,7 +361,7 @@ namespace FROSch {
                     globalVec[1] += 1;
                 }
                 if (globalVec[1]<0) globalVec[1] = 0;
-                localVec[1] = (LO) max((LO) ShortEdges_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                localVec[1] = (LO) max((LO) ShortEdges_->getEntityMap()->getLocalNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[1],ptr(&sumVec[1]));
                 avgVec[1] = max(sumVec[1]/double(MpiComm_->getSize()),0.0);
                 reduceAll(*MpiComm_,REDUCE_MIN,localVec[1],ptr(&minVec[1]));
@@ -380,7 +380,7 @@ namespace FROSch {
                     globalVec[2] += 1;
                 }
                 if (globalVec[2]<0) globalVec[2] = 0;
-                localVec[2] = (LO) max((LO) StraightEdges_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                localVec[2] = (LO) max((LO) StraightEdges_->getEntityMap()->getLocalNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[2],ptr(&sumVec[2]));
                 avgVec[2] = max(sumVec[2]/double(MpiComm_->getSize()),0.0);
                 reduceAll(*MpiComm_,REDUCE_MIN,localVec[2],ptr(&minVec[2]));
@@ -399,7 +399,7 @@ namespace FROSch {
                     globalVec[3] += 1;
                 }
                 if (globalVec[3]<0) globalVec[3] = 0;
-                localVec[3] = max((LO) Edges_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                localVec[3] = max((LO) Edges_->getEntityMap()->getLocalNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[3],ptr(&sumVec[3]));
                 avgVec[3] = max(sumVec[3]/double(MpiComm_->getSize()),0.0);
                 reduceAll(*MpiComm_,REDUCE_MIN,localVec[3],ptr(&minVec[3]));
@@ -418,7 +418,7 @@ namespace FROSch {
                     globalVec[4] += 1;
                 }
                 if (globalVec[4]<0) globalVec[4] = 0;
-                localVec[4] = max((LO) Faces_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                localVec[4] = max((LO) Faces_->getEntityMap()->getLocalNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[4],ptr(&sumVec[4]));
                 avgVec[4] = max(sumVec[4]/double(MpiComm_->getSize()),0.0);
                 reduceAll(*MpiComm_,REDUCE_MIN,localVec[4],ptr(&minVec[4]));
@@ -437,7 +437,7 @@ namespace FROSch {
                     globalVec[5] += 1;
                 }
                 if (globalVec[5]<0) globalVec[5] = 0;
-                localVec[5] = (LO) max((LO) Roots_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                localVec[5] = (LO) max((LO) Roots_->getEntityMap()->getLocalNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[5],ptr(&sumVec[5]));
                 avgVec[5] = max(sumVec[5]/double(MpiComm_->getSize()),0.0);
                 reduceAll(*MpiComm_,REDUCE_MIN,localVec[5],ptr(&minVec[5]));
@@ -456,7 +456,7 @@ namespace FROSch {
                     globalVec[6] += 1;
                 }
                 if (globalVec[6]<0) globalVec[6] = 0;
-                localVec[6] = (LO) max((LO) Leafs_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                localVec[6] = (LO) max((LO) Leafs_->getEntityMap()->getLocalNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[6],ptr(&sumVec[6]));
                 avgVec[6] = max(sumVec[6]/double(MpiComm_->getSize()),0.0);
                 reduceAll(*MpiComm_,REDUCE_MIN,localVec[6],ptr(&minVec[6]));

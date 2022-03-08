@@ -25,7 +25,7 @@ searchIt (bool& success, std::ostream& out, const map_type& myMap, const std::st
 
   // Print the map elements
   out << me << " " << myName << " MINE: ";
-  for (size_t i = 0; i < myMap.getNodeNumElements (); ++i) {
+  for (size_t i = 0; i < myMap.getLocalNumElements (); ++i) {
     out << myMap.getGlobalElement(i) << " ";
   }
   out << endl;

@@ -360,6 +360,209 @@ struct constraintKernel {
 
    }
 };
+
+template<typename local_matrix_type>
+struct optimalSatisfyConstraintsForScalarPDEsKernel {
+
+   using Scalar= typename local_matrix_type::non_const_value_type;
+   using SC=Scalar;
+   using LO=typename local_matrix_type::non_const_ordinal_type;
+   using Device= typename local_matrix_type::device_type;
+   using KAT = Kokkos::ArithTraits<SC>;
+   const Scalar zero = Kokkos::ArithTraits<SC>::zero();
+   const Scalar one  = Kokkos::ArithTraits<SC>::one();
+   LO     nPDEs;
+   local_matrix_type localP;
+   Kokkos::View<SC**, Device> origSorted;
+   Kokkos::View<SC**, Device> fixedSorted;
+   Kokkos::View<LO**, Device> inds;
+
+   optimalSatisfyConstraintsForScalarPDEsKernel(LO nPDEs_, LO maxRowEntries_, local_matrix_type localP_) : nPDEs(nPDEs_), localP(localP_)
+   {
+     origSorted  =  Kokkos::View<SC**, Device>("origSorted" , localP_.numRows(), maxRowEntries_);
+     fixedSorted =  Kokkos::View<SC**, Device>("fixedSorted", localP_.numRows(), maxRowEntries_);
+     inds        =  Kokkos::View<LO**, Device>("inds"       , localP_.numRows(), maxRowEntries_);
+   }
+
+   KOKKOS_INLINE_FUNCTION
+   void operator() (const size_t rowIdx) const {
+
+     auto rowPtr = localP.graph.row_map;
+     auto values = localP.values;
+
+     auto nnz = rowPtr(rowIdx+1) - rowPtr(rowIdx);
+
+     if (nnz != 0) {
+
+       Scalar rsumTarget = zero;
+       for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++) rsumTarget += values(entryIdx);
+
+       {
+         SC aBigNumber;
+         SC rowSumDeviation, temp, delta;
+         SC closestToLeftBoundDist, closestToRghtBoundDist;
+         LO closestToLeftBound, closestToRghtBound;
+         bool   flipped;
+
+         SC leftBound = zero;
+         SC rghtBound = one;
+         if ((KAT::real(rsumTarget) >= KAT::real(leftBound*(static_cast<SC>(nnz)))) && 
+             (KAT::real(rsumTarget) <= KAT::real(rghtBound*(static_cast<SC>(nnz))))){ // has Feasible solution
+
+           flipped    = false;
+           // compute aBigNumber to handle some corner cases where we need
+           // something large so that an if statement will be false
+           aBigNumber = KAT::zero();
+           for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++){
+             if ( KAT::magnitude( values(entryIdx) ) > KAT::magnitude(aBigNumber)) 
+               aBigNumber = KAT::magnitude( values(entryIdx) );
+           }
+           aBigNumber = aBigNumber+ (KAT::magnitude(leftBound) + KAT::magnitude(rghtBound))*(100*one);
+  
+           LO ind = 0;
+           for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++){
+               origSorted(rowIdx, ind) = values(entryIdx);
+               inds(rowIdx, ind) = ind;
+               ind++;
+           }
+  
+           auto sortVals = Kokkos::subview( origSorted, rowIdx, Kokkos::ALL() );
+           auto sortInds = Kokkos::subview( inds, rowIdx, Kokkos::make_pair(0,ind));
+           // Need permutation indices to sort row values from smallest to largest,
+           // and unsort once row constraints are applied.
+           // serial insertion sort workaround from https://github.com/kokkos/kokkos/issues/645
+           for (LO i = 1; i < static_cast<LO>(nnz); ++i){
+             ind = sortInds(i);
+             LO j = i;
+             
+             if ( KAT::real(sortVals(sortInds(i))) < KAT::real(sortVals(sortInds(0))) ){
+               for ( ; j > 0; --j) sortInds(j) = sortInds(j - 1);
+  
+               sortInds(0) = ind;
+             } else {
+               for ( ; KAT::real(sortVals(ind)) < KAT::real(sortVals(sortInds(j-1))); --j) sortInds(j) = sortInds(j-1);
+  
+               sortInds(j) = ind;
+             }
+           }
+  
+  
+           for (LO i = 0; i < static_cast<LO>(nnz); i++) origSorted(rowIdx, i) = values(rowPtr(rowIdx) + inds(rowIdx, i)); //values is no longer used
+           // find entry in origSorted just to the right of the leftBound
+           closestToLeftBound = 0;
+           while ((closestToLeftBound < static_cast<LO>(nnz)) && (KAT::real(origSorted(rowIdx, closestToLeftBound)) <= KAT::real(leftBound))) closestToLeftBound++;
+  
+           // find entry in origSorted just to the right of the rghtBound
+           closestToRghtBound = closestToLeftBound;
+           while ((closestToRghtBound < static_cast<LO>(nnz)) && (KAT::real(origSorted(rowIdx, closestToRghtBound)) <= KAT::real(rghtBound))) closestToRghtBound++;
+  
+           // compute distance between closestToLeftBound and the left bound and the 
+           // distance between closestToRghtBound and the right bound. 
+        
+           closestToLeftBoundDist = origSorted(rowIdx, closestToLeftBound) - leftBound;
+           if (closestToRghtBound == static_cast<LO>(nnz)) closestToRghtBoundDist= aBigNumber;
+           else                                closestToRghtBoundDist= origSorted(rowIdx, closestToRghtBound) - rghtBound;
+  
+           // compute how far the rowSum is off from the target row sum taking into account
+           // numbers that have been shifted to satisfy bound constraint
+  
+           rowSumDeviation = leftBound*(static_cast<SC>(closestToLeftBound)) + (static_cast<SC>(nnz-closestToRghtBound))*rghtBound - rsumTarget; 
+           for (LO i=closestToLeftBound; i < closestToRghtBound; i++) rowSumDeviation += origSorted(rowIdx, i);
+  
+           // the code that follow after this if statement assumes that rowSumDeviation is positive. If this
+           // is not the case, flip the signs of everything so that rowSumDeviation is now positive. 
+           // Later we will flip the data back to its original form.
+           if (KAT::real(rowSumDeviation) < KAT::real(KAT::zero())) {
+             flipped = true;
+             temp = leftBound; leftBound = -rghtBound; rghtBound = temp; 
+         
+             /* flip sign of origSorted and reverse ordering so that the negative version is sorted */
+         
+             //TODO: the following is bad for GPU performance. Switch to bit shifting if brave.
+             if ((nnz%2) == 1) origSorted(rowIdx, (nnz/2)  ) =  -origSorted(rowIdx, (nnz/2)  );
+             for (LO i=0; i < static_cast<LO>(nnz/2); i++) {
+               temp=origSorted(rowIdx, i);
+               origSorted(rowIdx, i) = -origSorted(rowIdx, nnz-1-i); 
+               origSorted(rowIdx, nnz-i-1) = -temp;
+             }
+           
+             /* reverse bounds */
+         
+             LO itemp = closestToLeftBound; 
+             closestToLeftBound = nnz-closestToRghtBound;
+             closestToRghtBound = nnz-itemp; 
+             closestToLeftBoundDist = origSorted(rowIdx, closestToLeftBound) - leftBound;
+             if (closestToRghtBound == static_cast<LO>(nnz)) closestToRghtBoundDist= aBigNumber;
+             else                                closestToRghtBoundDist= origSorted(rowIdx, closestToRghtBound) - rghtBound;
+         
+             rowSumDeviation = -rowSumDeviation;
+           }
+  
+           // initial fixedSorted so bounds are satisfied and interiors correspond to origSorted
+         
+           for (LO i =                  0; i < closestToLeftBound;   i++) fixedSorted(rowIdx, i) = leftBound;
+           for (LO i = closestToLeftBound; i < closestToRghtBound;   i++) fixedSorted(rowIdx, i) = origSorted(rowIdx, i);
+           for (LO i = closestToRghtBound; i < static_cast<LO>(nnz); i++) fixedSorted(rowIdx, i) = rghtBound;
+         
+           while ((KAT::magnitude(rowSumDeviation) > KAT::magnitude((one*1.e-10)*rsumTarget))){ // && ( (closestToLeftBound < nEntries ) || (closestToRghtBound < nEntries))) {
+            if (closestToRghtBound !=  closestToLeftBound)
+                 delta = rowSumDeviation/ static_cast<SC>(closestToRghtBound -  closestToLeftBound);
+            else delta = aBigNumber; 
+         
+            if (KAT::magnitude(closestToLeftBoundDist) <= KAT::magnitude(closestToRghtBoundDist)) {
+               if (KAT::magnitude(delta) <= KAT::magnitude(closestToLeftBoundDist)) {
+                 rowSumDeviation = zero;
+                 for (LO i = closestToLeftBound; i < closestToRghtBound ; i++) fixedSorted(rowIdx, i) = origSorted(rowIdx, i) - delta;
+               }
+               else {
+                 rowSumDeviation = rowSumDeviation - closestToLeftBoundDist; 
+                 fixedSorted(rowIdx, closestToLeftBound) = leftBound;
+                 closestToLeftBound++;
+                 if (closestToLeftBound < static_cast<LO>(nnz)) closestToLeftBoundDist = origSorted(rowIdx, closestToLeftBound) - leftBound;
+                 else                               closestToLeftBoundDist = aBigNumber;
+               }
+            }
+            else {
+               if (KAT::magnitude(delta) <= KAT::magnitude(closestToRghtBoundDist)) {
+                 rowSumDeviation = 0;
+                 for (LO i = closestToLeftBound; i < closestToRghtBound ; i++) fixedSorted(rowIdx, i) = origSorted(rowIdx, i) - delta;
+               }
+               else {
+                 rowSumDeviation = rowSumDeviation + closestToRghtBoundDist;
+         //        if (closestToRghtBound < nEntries) { 
+                   fixedSorted(rowIdx, closestToRghtBound) = origSorted(rowIdx, closestToRghtBound);
+                   closestToRghtBound++;
+          //       }
+                 if (closestToRghtBound >= static_cast<LO>(nnz)) closestToRghtBoundDist = aBigNumber;
+                 else                                closestToRghtBoundDist = origSorted(rowIdx, closestToRghtBound) - rghtBound;
+               }
+             }
+           }
+  
+           auto rowStart = rowPtr(rowIdx);
+           if (flipped) {
+             /* flip sign of fixedSorted and reverse ordering so that the positve version is sorted */
+  
+             if ((nnz%2) == 1) fixedSorted(rowIdx, (nnz/2)  ) =  -fixedSorted(rowIdx, (nnz/2)  );
+             for (LO i=0; i < static_cast<LO>(nnz/2); i++) {
+               temp=fixedSorted(rowIdx, i);
+               fixedSorted(rowIdx, i) = -fixedSorted(rowIdx, nnz-1-i); 
+               fixedSorted(rowIdx, nnz-i-1) = -temp;
+             }
+           }
+           // unsort and update row values with new values
+           for (LO i = 0; i < static_cast<LO>(nnz); i++)  values(rowStart + inds(rowIdx, i)) = fixedSorted(rowIdx, i);
+
+         } else { // row does not have feasible solution to match constraint
+           // just set all entries to the same value giving a row sum of 1
+           for (auto entryIdx = rowPtr(rowIdx); entryIdx < rowPtr(rowIdx + 1); entryIdx++) values(entryIdx) = one/( static_cast<SC>(nnz) );
+         }
+       }
+
+     }
+
+   }
+};
    
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -370,7 +573,20 @@ struct constraintKernel {
 
     using local_mat_type = typename Matrix::local_matrix_type;
     constraintKernel<local_mat_type> myKernel(nPDEs,P->getLocalMatrixDevice() );
-    Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getNodeNumElements() ),
+    Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getLocalNumElements() ),
+                        myKernel );
+
+  } //SatsifyPConstraints()
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::optimalSatisfyPConstraintsForScalarPDEs( RCP<Matrix>& P) const {
+
+    using Device = typename Matrix::local_matrix_type::device_type;
+    LO nPDEs = 1;//A->GetFixedBlockSize();
+
+    using local_mat_type = typename Matrix::local_matrix_type;
+    optimalSatisfyConstraintsForScalarPDEsKernel<local_mat_type> myKernel(nPDEs,P->getLocalMaxNumRowEntries(),P->getLocalMatrixDevice() );
+    Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getLocalNumRows() ),
                         myKernel );
 
   } //SatsifyPConstraints()

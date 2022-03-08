@@ -90,7 +90,7 @@ namespace panzer_test {
 
     for (int i=0; i < M; ++i) {
       for (int j=0; j < N; ++j) {
-        TEST_FLOATING_EQUALITY(Sacado::ScalarValue<Scalar>::eval(a_host(i,j)),3.0,tol);
+        TEST_FLOATING_EQUALITY(Sacado::scalarValue(a_host(i,j)),3.0,tol);
       }
     }
   }

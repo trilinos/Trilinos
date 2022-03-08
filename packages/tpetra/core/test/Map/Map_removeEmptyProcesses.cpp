@@ -132,11 +132,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Map, removeEmptyProcesses_MpiComm_noncontigMap
             << origMap->getGlobalNumElements() << "." << endl;
       }
 
-      if (newMap->getNodeNumElements() != origMap->getNodeNumElements()) {
+      if (newMap->getLocalNumElements() != origMap->getLocalNumElements()) {
         localSuccess = 0;
-        err << "New Map has " << newMap->getNodeNumElements() << " local "
+        err << "New Map has " << newMap->getLocalNumElements() << " local "
           "elements, which differs from the original number "
-          << origMap->getNodeNumElements() << "." << endl;
+          << origMap->getLocalNumElements() << "." << endl;
       }
 
       if (newMap->getIndexBase() != origMap->getIndexBase()) {
@@ -192,7 +192,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Map, removeEmptyProcesses_MpiComm_noncontigMap
             << origMap->getMaxAllGlobalIndex() << "." << endl;
       }
 
-      ArrayView<const GO> myNewGids = newMap->getNodeElementList();
+      ArrayView<const GO> myNewGids = newMap->getLocalElementList();
       if (myNewGids.size() != myGids.size() ||
           ! std::equal(myNewGids.begin(), myNewGids.end(), myGids.begin())) {
         localSuccess = 0;
@@ -277,11 +277,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Map, removeEmptyProcesses_MpiComm_contigMap, L
             << origMap->getGlobalNumElements() << "." << endl;
       }
 
-      if (newMap->getNodeNumElements() != origMap->getNodeNumElements()) {
+      if (newMap->getLocalNumElements() != origMap->getLocalNumElements()) {
         localSuccess = 0;
-        err << "New Map has " << newMap->getNodeNumElements() << " local "
+        err << "New Map has " << newMap->getLocalNumElements() << " local "
           "elements, which differs from the original number "
-          << origMap->getNodeNumElements() << "." << endl;
+          << origMap->getLocalNumElements() << "." << endl;
       }
 
       if (newMap->getIndexBase() != origMap->getIndexBase()) {
@@ -338,9 +338,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Map, removeEmptyProcesses_MpiComm_contigMap, L
       }
 
       ArrayView<const GO> myNewGids =
-        newMap->getNodeElementList();
+        newMap->getLocalElementList();
       ArrayView<const GO> myGids =
-        origMap->getNodeElementList();
+        origMap->getLocalElementList();
       if (myNewGids.size() != myGids.size() ||
           ! std::equal(myNewGids.begin(), myNewGids.end(), myGids.begin())) {
         localSuccess = 0;
@@ -423,11 +423,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, removeEmptyProcesses_SerialComm1, LO, GO
           << origMap->getGlobalNumElements() << "." << endl;
     }
 
-    if (newMap->getNodeNumElements() != origMap->getNodeNumElements()) {
+    if (newMap->getLocalNumElements() != origMap->getLocalNumElements()) {
       localSuccess = 0;
-      err << "New Map has " << newMap->getNodeNumElements() << " local "
+      err << "New Map has " << newMap->getLocalNumElements() << " local "
         "elements, which differs from the original number "
-          << origMap->getNodeNumElements() << "." << endl;
+          << origMap->getLocalNumElements() << "." << endl;
     }
 
     if (newMap->getIndexBase() != origMap->getIndexBase()) {
@@ -484,7 +484,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, removeEmptyProcesses_SerialComm1, LO, GO
     }
 
     ArrayView<const GO> myNewGids =
-      newMap->getNodeElementList();
+      newMap->getLocalElementList();
     if (myNewGids.size() != myGids.size() ||
         ! std::equal(myNewGids.begin(), myNewGids.end(), myGids.begin())) {
       localSuccess = 0;

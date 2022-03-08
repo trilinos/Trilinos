@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -155,7 +155,7 @@ namespace {
     Ioss::PropertyManager properties = set_properties(interFace);
 
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
-                                                    (MPI_Comm)MPI_COMM_WORLD, properties);
+                                                    Ioss::ParallelUtils::comm_world(), properties);
 
     Ioss::io_info_set_db_properties(interFace, dbi);
 
@@ -169,8 +169,8 @@ namespace {
   {
     int64_t num_nodes  = nb.entity_count();
     int64_t num_attrib = nb.get_property("attribute_count").get_int();
-    fmt::print("\n{}{} {:14L} nodes, {:3d} attributes.\n", prefix, name(&nb), num_nodes,
-               num_attrib);
+    fmt::print("\n{}{} {:14} nodes, {:3d} attributes.\n", prefix, name(&nb),
+               fmt::group_digits(num_nodes), num_attrib);
     if (interFace.check_node_status()) {
       std::vector<char>    node_status;
       std::vector<int64_t> ids;
@@ -226,7 +226,8 @@ namespace {
                    fmt::join(sb->get_ijk_offset(), ", "));
       }
 
-      fmt::print("  {:14L} cells, {:14L} nodes ", num_cell, num_node);
+      fmt::print("  {:14} cells, {:14} nodes ", fmt::group_digits(num_cell),
+                 fmt::group_digits(num_node));
 
       info_aliases(region, sb, true, false);
       Ioss::Utils::info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
@@ -309,8 +310,8 @@ namespace {
 
       std::string type       = eb->topology()->name();
       int64_t     num_attrib = eb->get_property("attribute_count").get_int();
-      fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14L} elements, {:3d} attributes.", name(eb),
-                 id(eb), type, num_elem, num_attrib);
+      fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14} elements, {:3d} attributes.", name(eb),
+                 id(eb), type, fmt::group_digits(num_elem), num_attrib);
 
       info_aliases(region, eb, true, false);
       fmt::print("\n");
@@ -318,8 +319,7 @@ namespace {
       Ioss::Utils::info_property(eb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
 
       if (interFace.adjacencies()) {
-        std::vector<std::string> blocks;
-        eb->get_block_adjacencies(blocks);
+        std::vector<std::string> blocks = eb->get_block_adjacencies();
         fmt::print("\n\tAdjacent to  {} element block(s):\t", blocks.size());
         for (const auto &block : blocks) {
           fmt::print("{}  ", block);
@@ -342,15 +342,14 @@ namespace {
 
       std::string type       = eb->topology()->name();
       int64_t     num_attrib = eb->get_property("attribute_count").get_int();
-      fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14L} edges, {:3d} attributes.\n", name(eb),
-                 id(eb), type, num_edge, num_attrib);
+      fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14} edges, {:3d} attributes.\n", name(eb),
+                 id(eb), type, fmt::group_digits(num_edge), num_attrib);
 
       info_aliases(region, eb, false, true);
       Ioss::Utils::info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
-        std::vector<std::string> blocks;
-        eb->get_block_adjacencies(blocks);
+        std::vector<std::string> blocks = eb->get_block_adjacencies();
         fmt::print("\tAdjacent to  {} edge block(s):\t", blocks.size());
         for (auto &block : blocks) {
           fmt::print("{}  ", block);
@@ -370,15 +369,14 @@ namespace {
 
       std::string type       = eb->topology()->name();
       int64_t     num_attrib = eb->get_property("attribute_count").get_int();
-      fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14L} faces, {:3d} attributes.\n", name(eb),
-                 id(eb), type, num_face, num_attrib);
+      fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14} faces, {:3d} attributes.\n", name(eb),
+                 id(eb), type, fmt::group_digits(num_face), num_attrib);
 
       info_aliases(region, eb, false, true);
       Ioss::Utils::info_fields(eb, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
 
 #if 0
-        std::vector<std::string> blocks;
-        eb->get_block_adjacencies(blocks);
+        std::vector<std::string> blocks = eb->get_block_adjacencies();
         fmt::print("\tAdjacent to  {} face block(s):\t", blocks.size());
         for (auto &block : blocks) {
           fmt::print("{}  ", block);
@@ -420,8 +418,8 @@ namespace {
         int64_t count      = fb->entity_count();
         int64_t num_attrib = fb->get_property("attribute_count").get_int();
         int64_t num_dist   = fb->get_property("distribution_factor_count").get_int();
-        fmt::print("\t{}, {:8L} sides, {:3d} attributes, {:8L} distribution factors.\n", name(fb),
-                   count, num_attrib, num_dist);
+        fmt::print("\t{}, {:8} sides, {:3d} attributes, {:8} distribution factors.\n", name(fb),
+                   fmt::group_digits(count), num_attrib, fmt::group_digits(num_dist));
         info_df(fb, "\t\t");
         Ioss::Utils::info_fields(fb, Ioss::Field::TRANSIENT, "\t\tTransient: ");
         Ioss::Utils::info_fields(fb, Ioss::Field::REDUCTION, "\t\tTransient (Reduction):  ");
@@ -436,8 +434,9 @@ namespace {
       int64_t count      = ns->entity_count();
       int64_t num_attrib = ns->get_property("attribute_count").get_int();
       int64_t num_dist   = ns->get_property("distribution_factor_count").get_int();
-      fmt::print("\n{} id: {:6d}, {:8L} nodes, {:3d} attributes, {:8L} distribution factors.\n",
-                 name(ns), id(ns), count, num_attrib, num_dist);
+      fmt::print("\n{} id: {:6d}, {:8} nodes, {:3d} attributes, {:8} distribution factors.\n",
+                 name(ns), id(ns), fmt::group_digits(count), num_attrib,
+                 fmt::group_digits(num_dist));
       info_aliases(region, ns, false, true);
       info_df(ns, "\t");
       Ioss::Utils::info_fields(ns, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
@@ -452,8 +451,8 @@ namespace {
     for (auto &ns : nss) {
       int64_t count      = ns->entity_count();
       int64_t num_attrib = ns->get_property("attribute_count").get_int();
-      fmt::print("\n{} id: {:6d}, {:8L} edges, {:3d} attributes.\n", name(ns), id(ns), count,
-                 num_attrib);
+      fmt::print("\n{} id: {:6d}, {:8} edges, {:3d} attributes.\n", name(ns), id(ns),
+                 fmt::group_digits(count), num_attrib);
       info_aliases(region, ns, false, true);
       info_df(ns, "\t");
       Ioss::Utils::info_fields(ns, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
@@ -468,8 +467,8 @@ namespace {
     for (auto &fs : fss) {
       int64_t count      = fs->entity_count();
       int64_t num_attrib = fs->get_property("attribute_count").get_int();
-      fmt::print("\n{} id: {:6d}, {:8L} faces, {:3d} attributes.\n", name(fs), id(fs), count,
-                 num_attrib);
+      fmt::print("\n{} id: {:6d}, {:8} faces, {:3d} attributes.\n", name(fs), id(fs),
+                 fmt::group_digits(count), num_attrib);
       info_aliases(region, fs, false, true);
       info_df(fs, "\t");
       Ioss::Utils::info_fields(fs, Ioss::Field::ATTRIBUTE, "\tAttributes: ");
@@ -483,7 +482,7 @@ namespace {
     const Ioss::ElementSetContainer &ess = region.get_elementsets();
     for (auto &es : ess) {
       int64_t count = es->entity_count();
-      fmt::print("\n{} id: {:6d}, {:8L} elements.\n", name(es), id(es), count);
+      fmt::print("\n{} id: {:6d}, {:8} elements.\n", name(es), id(es), fmt::group_digits(count));
       info_aliases(region, es, false, true);
       info_df(es, "\t");
       Ioss::Utils::info_fields(es, Ioss::Field::ATTRIBUTE, "\tAttributes: ");

@@ -74,7 +74,7 @@ protected:
   std::string get_output_file_name() { return "TemporaryOutputMesh.g"; }
 
   void read_serial_mesh_with_auto_decomp() {
-    allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
+    allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
     m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
     stk::io::fill_mesh_preexisting(m_ioBroker, get_input_file_name(), get_bulk());
   }
@@ -89,7 +89,7 @@ protected:
                                                      const std::vector<OriginalTopology>& originalTopologies)
   {
     if (get_parallel_rank() == 0) {
-      stk::unit_test_util::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
+      stk::unit_test_util::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
       tMesh.setup_mesh(inputMeshDesc, get_input_file_name());
 
       for (const OriginalTopology & ot : originalTopologies) {
@@ -106,7 +106,7 @@ protected:
                                                   const std::vector<AssemblyGrouping>& assemblies)
   {
     if (get_parallel_rank() == 0) {
-      stk::unit_test_util::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
+      stk::unit_test_util::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
       tMesh.setup_mesh(inputMeshDesc, get_input_file_name());
 
       for (const AssemblyGrouping & ag : assemblies) {
@@ -131,7 +131,7 @@ protected:
   {
     stk::unit_test_util::text_mesh_to_file_in_serial(inputMeshDesc, get_input_file_name());
 
-    allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
+    allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
     m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
     stk::io::fill_mesh_preexisting(m_ioBroker, get_input_file_name(), get_bulk());
   }
@@ -148,7 +148,7 @@ protected:
                                                                               m_transientTimeSteps,
                                                                               stk::unit_test_util::IdAndTimeFieldValueSetter());
 
-    allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
+    allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
     m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
     stk::io::fill_mesh_preexisting(m_ioBroker, get_input_file_name(), get_bulk());
   }

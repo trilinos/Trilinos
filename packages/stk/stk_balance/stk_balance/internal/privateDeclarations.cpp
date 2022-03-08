@@ -30,7 +30,6 @@
 #include <map>
 
 #include "stk_mesh/base/FieldParallel.hpp"
-#include "stk_tools/mesh_tools/CustomAura.hpp"
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
@@ -631,6 +630,26 @@ int num_volume_elements_connected_to_beam(const stk::mesh::BulkData& bulk, stk::
   return numVolumeElems;
 }
 
+
+
+void register_internal_fields(stk::mesh::BulkData & bulk, const stk::balance::BalanceSettings & balanceSettings)
+{
+  if (balanceSettings.shouldFixSpiders()) {
+    stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    const int initValue = 0;
+
+    stk::mesh::Field<int> & beamField =
+        meta.declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK,
+                                                  balanceSettings.getSpiderBeamConnectivityCountFieldName());
+    stk::mesh::put_field_on_mesh(beamField, meta.universal_part(), &initValue);
+
+    stk::mesh::Field<int> & volumeField =
+        meta.declare_field<stk::mesh::Field<int>>(stk::topology::ELEM_RANK,
+                                                  balanceSettings.getSpiderVolumeConnectivityCountFieldName());
+    stk::mesh::put_field_on_mesh(volumeField, meta.universal_part(), &initValue);
+  }
+}
+
 void fill_spider_connectivity_count_fields(stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings)
 {
   if (balanceSettings.shouldFixSpiders()) {
@@ -996,8 +1015,6 @@ stk::mesh::EntityProcMap determine_global_new_owner(const stk::mesh::BulkData & 
 
 void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & bulk)
 {
-  stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(bulk, bulk.mesh_meta_data().globally_shared_part(), "customAura");
-
   stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderBeamConnectivityCountField(bulk);
 
@@ -1064,7 +1081,6 @@ void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::Bul
     }
   }
 
-  stk::tools::destroy_custom_aura(bulk, customAura);
   bulk.change_entity_owner(entitiesToMove);
 }
 
@@ -1262,12 +1278,8 @@ void calculateGeometricOrGraphBasedDecomp(stk::mesh::BulkData & stkMeshBulkData,
                                          localIds, decomp);
     }
     else if (is_graph_based_method(balanceSettings.getDecompMethod())) {
-      stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(stkMeshBulkData,
-                                                                        stkMeshBulkData.mesh_meta_data().globally_shared_part(),
-                                                                        "customAura");
       internal::fill_spider_connectivity_count_fields(stkMeshBulkData, balanceSettings);
       fill_decomp_using_graph_based_method(stkMeshBulkData, selectors, decompCommunicator, numSubdomainsToCreate, balanceSettings, decomp);
-      stk::tools::destroy_custom_aura(stkMeshBulkData, customAura);
     }
   }
   else {
@@ -1363,6 +1375,25 @@ void print_rebalance_metrics(const size_t num_global_entity_migrations, const si
     oss.str("");
     oss << "Max/Avg global entity migrations = " << max_global_entity_migrations/avg_global_entity_migrations;
     stk::balance::internal::logMessage(stkMeshBulkData.parallel(),oss.str());
+}
+
+EnableAura::EnableAura(stk::mesh::BulkData & bulk)
+  : m_bulk(bulk),
+    m_weTurnedOnAura(false)
+{
+  if (not bulk.is_automatic_aura_on()) {
+    const bool applyImmediately = true;
+    m_bulk.set_automatic_aura_option(stk::mesh::BulkData::AUTO_AURA, applyImmediately);
+    m_weTurnedOnAura = true;
+  }
+}
+
+EnableAura::~EnableAura()
+{
+  if (m_weTurnedOnAura) {
+    const bool applyImmediately = true;
+    m_bulk.set_automatic_aura_option(stk::mesh::BulkData::NO_AUTO_AURA, applyImmediately);
+  }
 }
 
 } //internal

@@ -221,10 +221,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, OverlapToDefault, Scalar,LO,GO,Node)
 
     // Overlap map; some entries are stored on two procs
     int nMyEntries = 0;
-    for (size_t i = 0; i < defaultMap->getNodeNumElements()/2; i++) {
+    for (size_t i = 0; i < defaultMap->getLocalNumElements()/2; i++) {
       myEntries[nMyEntries++] = defaultMap->getGlobalElement(i);
     }
-    for (size_t i = 0; i < defaultMap->getNodeNumElements(); i++) {
+    for (size_t i = 0; i < defaultMap->getLocalNumElements(); i++) {
       myEntries[nMyEntries++] =
         (defaultMap->getMaxGlobalIndex() + 1 + i) % nGlobalEntries;
     }
@@ -377,10 +377,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, SupersetToDefault, Scalar,LO,GO,Node)
 
     // Superset map; some entries are stored on two procs
     int nMyEntries = 0;
-    for (size_t i = 0; i < defaultMap->getNodeNumElements(); i++) {
+    for (size_t i = 0; i < defaultMap->getLocalNumElements(); i++) {
       myEntries[nMyEntries++] = defaultMap->getGlobalElement(i);
     }
-    for (size_t i = 0; i < defaultMap->getNodeNumElements()/2; i++) {
+    for (size_t i = 0; i < defaultMap->getLocalNumElements()/2; i++) {
       myEntries[nMyEntries++] =
         (defaultMap->getMaxGlobalIndex() + 1 + i) % nGlobalEntries;
     }
@@ -450,7 +450,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug7758, NoSamesToDefault, Scalar,LO,GO,Node)
 
     // Map with no sames or permutes
     int nMyEntries = 0;
-    for (size_t i = 0; i < defaultMap->getNodeNumElements(); i++) {
+    for (size_t i = 0; i < defaultMap->getLocalNumElements(); i++) {
       myEntries[nMyEntries++] =
         (defaultMap->getMaxGlobalIndex() + 1 + i) % nGlobalEntries;
     }

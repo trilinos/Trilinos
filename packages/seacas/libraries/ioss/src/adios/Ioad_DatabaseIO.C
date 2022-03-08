@@ -44,7 +44,7 @@ namespace Ioss {
 namespace Ioad {
 
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
-                         Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                         Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                          const Ioss::PropertyManager &props)
       : Ioss::DatabaseIO(region, filename, db_usage, communicator, props), rank(RankInit()),
         adios_wrapper(communicator, filename, is_input(), rank, props)

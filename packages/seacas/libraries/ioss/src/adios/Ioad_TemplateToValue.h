@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioad_TemplateToValue_h
-#define IOSS_Ioad_TemplateToValue_h
+#pragma once
 
 namespace Ioad {
 
@@ -19,5 +18,3 @@ namespace Ioad {
 } // namespace Ioad
 
 #include "adios/Ioad_TemplateToValue.hpp"
-
-#endif

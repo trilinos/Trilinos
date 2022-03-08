@@ -157,7 +157,7 @@ namespace MueLu {
       Set<RCP<const Teuchos::Comm<int> > >(coarseLevel, "Node Comm", nodeComm);
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements() != fineNullspace->getMap()->getNodeNumElements(),
+    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getLocalNumElements() != fineNullspace->getMap()->getLocalNumElements(),
 			       Exceptions::RuntimeError,"MueLu::TentativePFactory::MakeTentative: Size mismatch between A and Nullspace");
 
     RCP<Matrix>                Ptentative;
@@ -167,7 +167,7 @@ namespace MueLu {
     if(bTransferCoordinates_) {
       //*** Create the coarse coordinates ***
       // First create the coarse map and coarse multivector
-      ArrayView<const GO> elementAList   = coarseMap->getNodeElementList();
+      ArrayView<const GO> elementAList   = coarseMap->getLocalElementList();
       LO                  blkSize        = 1;
       if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null) {
         blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
@@ -263,7 +263,7 @@ namespace MueLu {
     RCP<const Map> rowMap = A->getRowMap();
     RCP<const Map> colMap = A->getColMap();
 
-    const size_t numRows   = rowMap->getNodeNumElements();
+    const size_t numRows   = rowMap->getLocalNumElements();
 
     typedef Teuchos::ScalarTraits<SC> STS;
     typedef typename STS::magnitudeType Magnitude;
@@ -313,7 +313,7 @@ namespace MueLu {
     ArrayRCP<ArrayRCP<SC> >       coarseNS(NSDim);
     for (size_t i = 0; i < NSDim; i++) {
       fineNS[i] = fineNullspace->getData(i);
-      if (coarseMap->getNodeNumElements() > 0)
+      if (coarseMap->getLocalNumElements() > 0)
         coarseNS[i] = coarseNullspace->getDataNonConst(i);
     }
 
@@ -637,7 +637,7 @@ namespace MueLu {
 
     ArrayRCP< ArrayRCP<SC> > coarseNS(NSDim);
     for (size_t i=0; i<NSDim; ++i)
-      if (coarseMap->getNodeNumElements() > 0) coarseNS[i] = coarseNullspace->getDataNonConst(i);
+      if (coarseMap->getLocalNumElements() > 0) coarseNS[i] = coarseNullspace->getDataNonConst(i);
 
     //This makes the rowmap of Ptent the same as that of A->
     //This requires moving some parts of some local Q's to other processors

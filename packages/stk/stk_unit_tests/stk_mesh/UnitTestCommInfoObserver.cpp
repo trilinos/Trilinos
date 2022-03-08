@@ -54,7 +54,7 @@ protected:
         stk::io::fill_mesh("generated:1x1x4", bulk);
 
         observer = std::make_shared<MockCommInfoObserver>();
-        bulk.register_observer(observer);
+        bulk.register_observer(observer, stk::mesh::ModificationObserverPriority::APPLICATION);
 
         bulk.modification_begin();
         ghost = &bulk.create_ghosting("Clyde");

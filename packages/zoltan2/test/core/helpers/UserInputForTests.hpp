@@ -623,9 +623,9 @@ RCP<Epetra_CrsGraph> UserInputForTests::getUIEpetraCrsGraph()
   RCP<const Tpetra::Map<zlno_t, zgno_t> > tcolMap = tgraph->getColMap();
 
   int nElts = static_cast<int>(trowMap->getGlobalNumElements());
-  int nMyElts = static_cast<int>(trowMap->getNodeNumElements());
+  int nMyElts = static_cast<int>(trowMap->getLocalNumElements());
   int base = 0;
-  ArrayView<const int> gids = trowMap->getNodeElementList();
+  ArrayView<const int> gids = trowMap->getLocalElementList();
 
   Epetra_BlockMap erowMap(nElts, nMyElts,
                           gids.getRawPtr(), 1, base, *ecomm_);
@@ -635,7 +635,7 @@ RCP<Epetra_CrsGraph> UserInputForTests::getUIEpetraCrsGraph()
     rowSize[i] = static_cast<int>(M_->getNumEntriesInLocalRow(i));
   }
 
-  size_t maxRow = M_->getNodeMaxNumRowEntries();
+  size_t maxRow = M_->getLocalMaxNumRowEntries();
   Array<int> colGids(maxRow);
 
   typename tcrsGraph_t::local_inds_host_view_type colLid;
@@ -659,7 +659,7 @@ RCP<Epetra_CrsMatrix> UserInputForTests::getUIEpetraCrsMatrix()
   RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
   eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
 
-  size_t maxRow = M_->getNodeMaxNumRowEntries();
+  size_t maxRow = M_->getLocalMaxNumRowEntries();
   int nrows = egraph->NumMyRows();
   const Epetra_BlockMap &rowMap = egraph->RowMap();
   const Epetra_BlockMap &colMap = egraph->ColMap();
@@ -1037,7 +1037,7 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
   // the GIDs modified.
   RCP<const map_t> inMap = inMatrix->getRowMap();
 
-  size_t nRows = inMap->getNodeNumElements();
+  size_t nRows = inMap->getLocalNumElements();
   auto inRows = inMap->getMyGlobalIndices();
   Teuchos::Array<zgno_t> outRows(nRows);
   for (size_t i = 0; i < nRows; i++) {
@@ -1054,8 +1054,8 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
     std::cout << inMap->getComm()->getRank() << " KDDKDD "
               << "nGlobal " << inMap->getGlobalNumElements() << " "
                             << outMap->getGlobalNumElements() << "; "
-              << "nLocal  " << inMap->getNodeNumElements() << " "
-                            << outMap->getNodeNumElements() << "; "
+              << "nLocal  " << inMap->getLocalNumElements() << " "
+                            << outMap->getLocalNumElements() << "; "
               << std::endl;
     std::cout << inMap->getComm()->getRank() << " KDDKDD ";
     for (size_t i = 0; i < nRows; i++)
@@ -1067,7 +1067,7 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
 
   // Create a new matrix using the new map
   // Get the length of the longest row; allocate memory.
-  size_t rowLen = inMatrix->getNodeMaxNumRowEntries();
+  size_t rowLen = inMatrix->getLocalMaxNumRowEntries();
   RCP<tcrsMatrix_t> outMatrix = rcp(new tcrsMatrix_t(outMap, rowLen));
 
   typename tcrsMatrix_t::nonconst_global_inds_host_view_type  indices("Indices", rowLen);
@@ -1094,13 +1094,13 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
     std::cout << inMap->getComm()->getRank() << " KDDKDD Rows "
               << "nGlobal " << inMatrix->getGlobalNumRows() << " "
                             << outMatrix->getGlobalNumRows() << "; "
-              << "nLocal  " << inMatrix->getNodeNumRows() << " "
-                            << outMatrix->getNodeNumRows() << std::endl;
+              << "nLocal  " << inMatrix->getLocalNumRows() << " "
+                            << outMatrix->getLocalNumRows() << std::endl;
     std::cout << inMap->getComm()->getRank() << " KDDKDD NNZS "
               << "nGlobal " << inMatrix->getGlobalNumEntries() << " "
                             << outMatrix->getGlobalNumEntries() << "; "
-              << "nLocal  " << inMatrix->getNodeNumEntries() << " "
-                            << outMatrix->getNodeNumEntries() << std::endl;
+              << "nLocal  " << inMatrix->getLocalNumEntries() << " "
+                            << outMatrix->getLocalNumEntries() << std::endl;
 
     size_t nIn, nOut;
     Teuchos::Array<zgno_t> in(rowLen), out(rowLen);
@@ -1187,9 +1187,9 @@ void UserInputForTests::readMatrixMarketFile(
 
   M_ = toMatrix;
 #ifdef INCLUDE_LENGTHY_OUTPUT
-  std::cout << tcomm_->getRank() << " KDDKDD " << M_->getNodeNumRows()
+  std::cout << tcomm_->getRank() << " KDDKDD " << M_->getLocalNumRows()
             << " " << M_->getGlobalNumRows()
-            << " " << M_->getNodeNumEntries()
+            << " " << M_->getLocalNumEntries()
             << " " << M_->getGlobalNumEntries() << std::endl;
 #endif // INCLUDE_LENGTHY_OUTPUT
 
@@ -1215,7 +1215,7 @@ void UserInputForTests::readMatrixMarketFile(
     try{
       coordFile.open(fname.str().c_str());
     }
-    catch (std::exception &e){ // there is no coordinate file
+    catch (std::exception &){ // there is no coordinate file
       fail = 1;
     }
 
@@ -1416,7 +1416,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
     (params.GetMatrixType(), map, params.GetParameterList());
     M_ = Pr->BuildMatrix();
   }
-  catch (std::exception &e) {    // Probably not enough memory
+  catch (std::exception &) {    // Probably not enough memory
     aok = false;
   }
   TEST_FAIL_AND_THROW(*tcomm_, aok,
@@ -1431,7 +1431,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
     "UserInputForTests, Implied matrix row coordinates computed" <<
     std::endl;
 
-  ArrayView<const zgno_t> gids = map->getNodeElementList();
+  ArrayView<const zgno_t> gids = map->getLocalElementList();
   zlno_t count = static_cast<zlno_t>(gids.size());
   int dim = 3;
   size_t pos = problemType.find("2D");
@@ -1743,10 +1743,10 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
 
 #ifdef KDDKDDPRINT
   if (rank == 0) {
-    size_t sz = fromMatrix->getNodeMaxNumRowEntries();
+    size_t sz = fromMatrix->getLocalMaxNumRowEntries();
     Teuchos::Array<zgno_t> indices(sz);
     Teuchos::Array<zscalar_t> values(sz);
-    for (size_t i = 0; i < fromMatrix->getNodeNumRows(); i++) {
+    for (size_t i = 0; i < fromMatrix->getLocalNumRows(); i++) {
       zgno_t gid = fromMatrix->getRowMap()->getGlobalElement(i);
       size_t num;
       fromMatrix->getGlobalRowCopy(gid, indices(), values(), num);
@@ -1854,7 +1854,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     ArrayRCP<zscalar_t> weightBuf;
     ArrayView<const zscalar_t> *wgts = new ArrayView<const zscalar_t> [nEwgts];
 
-    toMap = rcp(new map_t(nedges, M_->getNodeNumEntries(), base, tcomm_));
+    toMap = rcp(new map_t(nedges, M_->getLocalNumEntries(), base, tcomm_));
 
     if (rank == 0){
       size_t len = nEwgts * nedges;
@@ -1897,15 +1897,15 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     edgWeights_ = toEdgeWeights;
     */
 
-    toMap = rcp(new map_t(nedges, M_->getNodeNumEntries(), base, tcomm_));
+    toMap = rcp(new map_t(nedges, M_->getLocalNumEntries(), base, tcomm_));
     edgWeights_ = rcp(new tMVector_t(toMap, nEwgts));
 
-    size_t maxSize = M_->getNodeMaxNumRowEntries();
+    size_t maxSize = M_->getLocalMaxNumRowEntries();
     tcrsMatrix_t::nonconst_local_inds_host_view_type colind("colind", maxSize);
     tcrsMatrix_t::nonconst_values_host_view_type vals("values", maxSize);
     size_t nEntries;
 
-    for (size_t i = 0, idx = 0; i < M_->getNodeNumRows(); i++) {
+    for (size_t i = 0, idx = 0; i < M_->getLocalNumRows(); i++) {
       M_->getLocalRowCopy(i, colind, vals, nEntries);
       for (size_t j = 0; j < nEntries; j++) {
         edgWeights_->replaceLocalValue(idx, 0, vals[j]); // Assuming nEwgts==1
@@ -2865,7 +2865,7 @@ void UserInputForTests::setPamgenAdjacencyGraph()
 
 //  if(rank == 0) std::cout << "\nSetting graph of connectivity..." << std::endl;
   Teuchos::ArrayView<const zgno_t> rowMapElementList =
-                                        rowMap->getNodeElementList();
+                                        rowMap->getLocalElementList();
   for (Teuchos_Ordinal ii = 0; ii < rowMapElementList.size(); ii++)
   {
     zgno_t gid = rowMapElementList[ii];

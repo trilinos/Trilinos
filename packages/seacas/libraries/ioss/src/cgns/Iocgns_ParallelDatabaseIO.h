@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iocgns_ParallelDatabaseIO_h
-#define IOSS_Iocgns_ParallelDatabaseIO_h
+#pragma once
 
 #include <cgnsconfig.h>
 #if CG_BUILD_PARALLEL
@@ -57,7 +56,7 @@ namespace Iocgns {
     enum class entity_type { NODE, ELEM };
 
     ParallelDatabaseIO(Ioss::Region *region, const std::string &filename,
-                       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                       Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                        const Ioss::PropertyManager &props);
 
     ~ParallelDatabaseIO() override;
@@ -231,5 +230,4 @@ namespace Iocgns {
         m_elemGlobalImplicitMap; // Position of this element in the global-implicit ordering
   };
 } // namespace Iocgns
-#endif
 #endif

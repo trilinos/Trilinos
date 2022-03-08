@@ -67,7 +67,7 @@ public:
 
     const LO lclNumRows = map_.is_null () ?
       static_cast<LO> (0) :
-      static_cast<LO> (map_->getNodeNumElements ());
+      static_cast<LO> (map_->getLocalNumElements ());
     dev_view_type diag_d ("diag", lclNumRows);
     host_view_type diag_h = Kokkos::create_mirror_view (diag_d);
 

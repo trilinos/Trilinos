@@ -725,6 +725,7 @@ namespace BaskerNS
     Int scol_top          = 0;      // starting column of the BTF_A bloc
     Int scol              = M.ncol; // starting column of the BTF_C blocks (end of BTF_A block)
     Int blk_idx           = nblks;  // start at lower right corner block, move left and up the diagonal
+    #if 0 // use Metis on a large block even with one thread
     if (num_threads == 1) {
       // Short circuit for single thread = no big block A
       scol = 0;
@@ -732,7 +733,9 @@ namespace BaskerNS
       if(Options.verbose == BASKER_TRUE) {
         printf("Basker: short-circuit for one thread\n");
       }
-    } else {
+    } else
+    #endif
+    {
       //Step 1.
       //Find total work estimate
       double total_work_estimate = 0;
@@ -754,12 +757,14 @@ namespace BaskerNS
       //Int break_size = 500000;
       printf( " > debug: break_size = %d\n",break_size );
       #else
-      double break_size = ceil(total_work_estimate*(
-            ((double)1.0/num_threads) + 
-            ((double)BASKER_BTF_IMBALANCE)));
+      // A block if it is larger than work esitimate assigned to one thread
+      double break_fact = 0.7;
+      double break_work_size = ceil(total_work_estimate*(break_fact * ((double)1.0/num_threads) + ((double)BASKER_BTF_IMBALANCE)));
+      double break_block_size = 0; //1000;
       #endif
       if(Options.verbose == BASKER_TRUE) {
-        printf("Basker: Break size for workspace: %d with %d threads\n", (int)break_size, (int)num_threads);
+        printf("Basker: Break size for workspace and size: %d and %d with %d threads (total work estimate = %f)\n",
+                (int)break_work_size, (int)break_block_size, (int)num_threads, total_work_estimate);
       }
 
       scol_top          = 0;      // starting column of the BTF_A bloc
@@ -790,23 +795,22 @@ namespace BaskerNS
         //  (blk_idx > 1))
 
         //Continue to be in btf
-        if( (Options.use_sequential_diag_facto || blk_work < break_size) && (blk_idx > 1) )
+        if( (Options.use_sequential_diag_facto || (blk_work < break_work_size || blk_size < break_block_size)) && (blk_idx > 1) )
         {
           #ifdef BASKER_DEBUG_ORDER_BTF
            printf("Basker(blk_idx=%d, blk_size=%d, blk_work=%d, break_size=%d): continue with fine structure btf blocks\n",
                    (int)blk_idx,(int)blk_size,(int)blk_work,(int)break_size);
           #endif
-
           t_size  = t_size+blk_size;
           blk_idx = blk_idx-1;
           scol    = _btf_tabs[blk_idx];
         }
         //break due to size i.e. entered non-trivial large BTF_A block
-        else if( blk_work >= break_size )
+        else if( blk_work >= break_work_size && blk_size >= break_block_size)
         {
-          #ifdef BASKER_DEBUG_ORDER_BTF
-           printf("Basker: break due to size (%d > %d)\n",(int)blk_work,(int)break_size);
-          #endif
+          if(Options.verbose == BASKER_TRUE) {
+            printf("Basker: blk=%d break due to size (work: %d > %d, size: %d > %d)\n",(int)blk_idx-1, (int)blk_work,(int)break_work_size, (int)blk_size,(int)break_block_size);
+          }
           move_fwd = BASKER_FALSE;
         }
         //break due to end i.e. no 'large' BTF_A block for ND; only fine BTF structure
@@ -824,6 +828,9 @@ namespace BaskerNS
         //should not be called
         else
         {
+          if(Options.verbose == BASKER_TRUE) {
+            printf("Basker: invalid blk=%d (work: %d vs %d, size: %d vs %d)\n",(int)blk_idx-1, (int)blk_work,(int)break_work_size, (int)blk_size,(int)break_block_size);
+          }
           BASKER_ASSERT(1==0, "btf order break");
           move_fwd = BASKER_FALSE;
         }
@@ -989,9 +996,9 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE) {
       printf( "\n > btf_tabs_offset = %d, btf_top_tabs_offset = %d\n", (int)btf_tabs_offset, (int)btf_top_tabs_offset );
-      for (blk_idx = 0; blk_idx < btf_top_tabs_offset; blk_idx++) printf( " x %d: %d\n", (int)blk_idx, (int)(btf_tabs[blk_idx+1]-btf_tabs[blk_idx]) );
-      for (blk_idx = btf_top_tabs_offset; blk_idx < btf_tabs_offset; blk_idx++) printf( " + %d: %d\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]) );
-      for (blk_idx = btf_tabs_offset; blk_idx < nblks; blk_idx++) printf( " - %d: %d\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]) );
+      for (blk_idx = 0; blk_idx < btf_top_tabs_offset; blk_idx++) printf( " x %d: %d (%d)\n", (int)blk_idx, (int)(btf_tabs[blk_idx+1]-btf_tabs[blk_idx]),(int)btf_blk_work(blk_idx) );
+      for (blk_idx = btf_top_tabs_offset; blk_idx < btf_tabs_offset; blk_idx++) printf( " + %d: %d (%d)\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]),(int)btf_blk_work(blk_idx) );
+      for (blk_idx = btf_tabs_offset; blk_idx < nblks; blk_idx++) printf( " - %d: %d (%d)\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]),(int)btf_blk_work(blk_idx) );
       printf( "\n" );
     }
 

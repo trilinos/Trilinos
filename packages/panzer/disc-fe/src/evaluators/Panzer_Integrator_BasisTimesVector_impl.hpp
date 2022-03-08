@@ -205,6 +205,13 @@ namespace panzer
       this->addDependentField(fieldMults_[i - 1]);
     } // end loop over the field multipliers
 
+    if (Sacado::IsADType<ScalarT>::value) {
+      const auto fadSize = Kokkos::dimension_scalar(field_.get_static_view());
+      tmp_ = PHX::View<ScalarT*>("panzer::Integrator::BasisTimesVector::tmp_",field_.extent(0),fadSize);
+    } else {
+      tmp_ = PHX::View<ScalarT*>("panzer::Integrator::BasisTimesVector::tmp_",field_.extent(0));
+    }
+
     // Set the name of this object.
     string n("Integrator_BasisTimesVector (");
     if (evalStyle == EvaluatorStyle::CONTRIBUTES)
@@ -300,7 +307,6 @@ namespace panzer
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.
-    ScalarT tmp;
     if (NUM_FIELD_MULT == 0)
     {
       // Loop over the quadrature points and dimensions of our vector fields,
@@ -310,9 +316,8 @@ namespace panzer
       {
         for (int dim(0); dim < numDim_; ++dim)
         {
-          tmp = multiplier_ * vector_(cell, qp, dim);
           for (int basis(0); basis < numBases; ++basis)
-            field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp;
+            field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim);
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     }
@@ -325,10 +330,8 @@ namespace panzer
       {
         for (int dim(0); dim < numDim_; ++dim)
         {
-          tmp = multiplier_ * vector_(cell, qp, dim) *
-            kokkosFieldMults_(0)(cell, qp);
           for (int basis(0); basis < numBases; ++basis)
-            field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp;
+            field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim) * kokkosFieldMults_(0)(cell, qp);
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     }
@@ -342,14 +345,13 @@ namespace panzer
       const int numFieldMults(kokkosFieldMults_.extent(0));
       for (int qp(0); qp < numQP_; ++qp)
       {
-        ScalarT fieldMultsTotal(1);
+        tmp_(cell) = 1.0;
         for (int fm(0); fm < numFieldMults; ++fm)
-          fieldMultsTotal *= kokkosFieldMults_(fm)(cell, qp);
+          tmp_(cell) *= kokkosFieldMults_(fm)(cell, qp);
         for (int dim(0); dim < numDim_; ++dim)
         {
-          tmp = multiplier_ * vector_(cell, qp, dim) * fieldMultsTotal;
           for (int basis(0); basis < numBases; ++basis)
-            field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp;
+            field_(cell, basis) += basis_(cell, basis, qp, dim) * multiplier_ * vector_(cell, qp, dim) * tmp_(cell);
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     } // end if (NUM_FIELD_MULT == something)

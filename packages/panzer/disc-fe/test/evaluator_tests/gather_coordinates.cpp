@@ -162,7 +162,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::BASIS,panzer::Dim> > fmCoordsPtr;
   Teuchos::RCP<PHX::DataLayout> dl_coords = basis->coordinates;
 
@@ -218,7 +217,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   Kokkos::parallel_reduce(fmCoords.extent_int(0), KOKKOS_LAMBDA (int cell, int &err) {
     for(int pt=0;pt<fmCoords.extent_int(1);++pt)
       for(int d=0;d<fmCoords.extent_int(2);++d)
-	err |= ScalarValue::eval(fmCoords(cell,pt,d))!=coords(cell,pt,d);
+	err |= Sacado::scalarValue(fmCoords(cell,pt,d))!=coords(cell,pt,d);
     },error);
   TEST_EQUALITY(error, false);
 }
@@ -304,7 +303,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
      = Teuchos::rcp(new PHX::FieldManager<panzer::Traits>); 
 
   // typedef panzer::Traits::Residual EvalType;
-  typedef Sacado::ScalarValue<typename EvalType::ScalarT> ScalarValue;
   Teuchos::RCP<PHX::MDField<typename EvalType::ScalarT,panzer::Cell,panzer::Point,panzer::Dim> > fmCoordsPtr;
   Teuchos::RCP<PHX::DataLayout> dl_coords = quadRule->dl_vector;
 
@@ -362,7 +360,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   Kokkos::parallel_reduce(fmCoords.extent_int(0), KOKKOS_LAMBDA (int cell, int &err) {
     for(int pt=0;pt<fmCoords.extent_int(1);++pt)
       for(int d=0;d<fmCoords.extent_int(2);++d)
-	err |= ScalarValue::eval(fmCoords(cell,pt,d)) != q_coords(cell,pt,d);
+	err |= Sacado::scalarValue(fmCoords(cell,pt,d)) != q_coords(cell,pt,d);
     },error);
   TEST_EQUALITY(error, false);
 

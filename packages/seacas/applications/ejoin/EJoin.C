@@ -1,8 +1,9 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
+#include <algorithm>
 #include <cctype>
 #include <cfloat>
 #include <cmath>
@@ -185,7 +186,7 @@ int main(int argc, char *argv[])
     std::vector<Ioss::DatabaseIO *> dbi(interFace.inputFiles_.size());
     for (size_t p = 0; p < interFace.inputFiles_.size(); p++) {
       dbi[p] = Ioss::IOFactory::create("exodusII", interFace.inputFiles_[p], Ioss::READ_RESTART,
-                                       (MPI_Comm)MPI_COMM_WORLD);
+                                       Ioss::ParallelUtils::comm_world());
       if (dbi[p] == nullptr || !dbi[p]->ok(true)) {
         std::exit(EXIT_FAILURE);
       }
@@ -294,10 +295,18 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
     }
   }
 
-  properties.add(Ioss::Property("FLUSH_INTERVAL", 0));
+  // Get maximum length of names used on any of the input files...
+  int max_name_length = 32;
+  for (const auto *mesh : part_mesh) {
+    int max_name_used = mesh->get_database()->maximum_symbol_length();
+    max_name_length   = std::max(max_name_length, max_name_used);
+  }
+  properties.add(Ioss::Property("MAXIMUM_NAME_LENGTH", max_name_length));
 
-  Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
-      "exodusII", interFace.outputName_, Ioss::WRITE_RESTART, (MPI_Comm)MPI_COMM_WORLD, properties);
+  properties.add(Ioss::Property("FLUSH_INTERVAL", 0));
+  Ioss::DatabaseIO *dbo =
+      Ioss::IOFactory::create("exodusII", interFace.outputName_, Ioss::WRITE_RESTART,
+                              Ioss::ParallelUtils::comm_world(), properties);
   if (dbo == nullptr || !dbo->ok(true)) {
     std::exit(EXIT_FAILURE);
   }
@@ -359,7 +368,7 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   node_count    = global_node_map.size();
   size_t merged = local_node_map.size() - global_node_map.size();
   if (merged > 0) {
-    fmt::print("*** {:L} Nodes were merged/omitted.\n", merged);
+    fmt::print("*** {} Nodes were merged/omitted.\n", fmt::group_digits(merged));
   }
 
 // Verify nodemap...

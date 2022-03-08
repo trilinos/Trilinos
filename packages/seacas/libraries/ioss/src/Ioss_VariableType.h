@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_VariableType_h
-#define IOSS_Ioss_VariableType_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
@@ -43,8 +42,10 @@ namespace Ioss {
   {
     explicit Suffix(const char *new_data) : m_data(new_data) {}
     explicit Suffix(const std::string &new_data) : m_data(new_data) {}
-    bool        operator==(const std::string &str) const { return Utils::str_equal(m_data, str); }
-    bool        operator!=(const std::string &str) const { return !Utils::str_equal(m_data, str); }
+    bool operator==(const std::string &str) const { return Utils::str_equal(m_data, str); }
+    bool operator!=(const std::string &str) const { return !Utils::str_equal(m_data, str); }
+    bool is_uppercase() const { return isalpha(m_data[0]) && isupper(m_data[0]); }
+
     std::string m_data{};
   };
 
@@ -74,8 +75,9 @@ namespace Ioss {
     std::string name() const;
 
     static std::string  numeric_label(int which, int ncomp, const std::string &name);
-    virtual std::string label(int which, char suffix_sep = '_') const = 0;
-    virtual std::string label_name(const std::string &base, int which, char suffix_sep = '_') const;
+    virtual std::string label(int which, const char suffix_sep = '_') const = 0;
+    virtual std::string label_name(const std::string &base, int which, char suffix_sep = '_',
+                                   bool suffices_uppercase = false) const;
     virtual bool        match(const std::vector<Suffix> &suffices) const;
 
     static const VariableType *factory(const std::string &raw_name, int copies = 1);
@@ -97,4 +99,3 @@ inline std::string Ioss::VariableType::name() const { return name_; }
 inline int Ioss::VariableType::component_count() const { return componentCount; }
 
 inline int Ioss::VariableType::suffix_count() const { return componentCount; }
-#endif

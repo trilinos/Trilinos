@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -166,10 +166,11 @@ namespace {
 
 namespace Ioss {
   DatabaseIO::DatabaseIO(Region *region, std::string filename, DatabaseUsage db_usage,
-                         MPI_Comm communicator, const PropertyManager &props)
+                         Ioss_MPI_Comm communicator, const PropertyManager &props)
       : properties(props), DBFilename(std::move(filename)), dbUsage(db_usage),
-        util_(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT ? MPI_COMM_SELF
-                                                                       : communicator),
+        util_(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT
+                  ? Ioss::ParallelUtils::comm_self()
+                  : communicator),
         region_(region), isInput(is_input_event(db_usage)),
         singleProcOnly(db_usage == WRITE_HISTORY || db_usage == WRITE_HEARTBEAT ||
                        SerializeIO::isEnabled())
@@ -188,8 +189,9 @@ namespace Ioss {
     Utils::check_set_bool_property(properties, "ENABLE_FIELD_RECOGNITION", enableFieldRecognition);
 
     if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
-      std::string tmp = properties.get("FIELD_SUFFIX_SEPARATOR").get_string();
-      fieldSeparator  = tmp[0];
+      std::string tmp         = properties.get("FIELD_SUFFIX_SEPARATOR").get_string();
+      fieldSeparator          = tmp[0];
+      fieldSeparatorSpecified = true;
     }
 
     // If `FIELD_SUFFIX_SEPARATOR` is empty and there are fields that
@@ -288,7 +290,19 @@ namespace Ioss {
     }
     char tmp[2] = {separator, '\0'};
     properties.add(Property("FIELD_SUFFIX_SEPARATOR", tmp));
-    fieldSeparator = separator;
+    fieldSeparator          = separator;
+    fieldSeparatorSpecified = true;
+  }
+
+  std::string DatabaseIO::get_component_name(const Ioss::Field &field, Ioss::Field::InOut in_out,
+                                             int component) const
+  {
+    // If the user has explicitly set the suffix separator for this database,
+    // then use it for all fields.
+    // If it was not explicity set, then use whatever the field has defined,
+    // of if field also has nothing explicitly set, use '_'
+    char suffix = fieldSeparatorSpecified ? get_field_separator() : 1;
+    return field.get_component_name(component, in_out, suffix);
   }
 
   /**

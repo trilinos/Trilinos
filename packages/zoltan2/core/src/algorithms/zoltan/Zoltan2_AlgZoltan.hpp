@@ -685,7 +685,7 @@ void AlgZoltan<Adapter>::partition(
       zz->Set_Param(zname.c_str(), zval.c_str());      
     }
   }
-  catch (std::exception &e) {
+  catch (std::exception &) {
     // No zoltan_parameters sublist found; no Zoltan parameters to register
   }
 
@@ -764,7 +764,7 @@ void AlgZoltan<Adapter>::partition(
     vector_t oneToOneVec(oneToOneMap);
 
     // Set values in oneToOneVec:  each entry == rank
-    assert(nObj == lno_t(oneToOneMap->getNodeNumElements()));
+    assert(nObj == lno_t(oneToOneMap->getLocalNumElements()));
     for (lno_t i = 0; i < nObj; i++)
       oneToOneVec.replaceLocalValue(i, oParts[i]);
     
@@ -774,7 +774,7 @@ void AlgZoltan<Adapter>::partition(
     vecWithCopies.doImport(oneToOneVec, *importer, Tpetra::REPLACE);
 
     // Should see copied vector values when print VEC WITH COPIES
-    lno_t nlocal = lno_t(mapWithCopies->getNodeNumElements());
+    lno_t nlocal = lno_t(mapWithCopies->getLocalNumElements());
     for (lno_t i = 0; i < nlocal; i++)
       partList[i] = vecWithCopies.getData()[i];
   }

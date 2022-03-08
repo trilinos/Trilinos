@@ -279,7 +279,7 @@ namespace MueLu {
       const RCP<const Tpetra::Map<LO,GO,NO> > domainMap = tpOp.getDomainMap();
       const RCP<const Tpetra::Map<LO,GO,NO> > rangeMap  = tpOp.getRangeMap();
 
-      size_t maxRowSize = tpOp.getNodeMaxNumRowEntries();
+      size_t maxRowSize = tpOp.getLocalMaxNumRowEntries();
       if (maxRowSize == Teuchos::as<size_t>(-1)) // hasn't been determined yet
         maxRowSize = 20;
 
@@ -290,7 +290,7 @@ namespace MueLu {
 	typename Tpetra::CrsMatrix<SC,LO,GO,NO>::local_inds_host_view_type cols;
 	typename Tpetra::CrsMatrix<SC,LO,GO,NO>::values_host_view_type vals;
 
-        for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+        for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
           tpOp.getLocalRowView(i, cols, vals);
           size_t nnz = tpOp.getNumEntriesInLocalRow(i);
 	  typename Tpetra::CrsMatrix<SC,LO,GO,NO>::nonconst_values_host_view_type scaledVals("scaledVals", nnz);
@@ -306,7 +306,7 @@ namespace MueLu {
 	typename Tpetra::CrsMatrix<SC,LO,GO,NO>::global_inds_host_view_type cols;
 	typename Tpetra::CrsMatrix<SC,LO,GO,NO>::values_host_view_type vals;
 
-        for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+        for (size_t i = 0; i < rowMap->getLocalNumElements(); ++i) {
           GO gid = rowMap->getGlobalElement(i);
           tpOp.getGlobalRowView(gid, cols, vals);
           size_t nnz = tpOp.getNumEntriesInGlobalRow(gid);
@@ -350,7 +350,7 @@ namespace MueLu {
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     auto localMatrix = A.getLocalMatrixDevice();
-    LO   numRows     = A.getNodeNumRows();
+    LO   numRows     = A.getLocalNumRows();
 
     Kokkos::View<bool*, typename NO::device_type> boundaryNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numRows);
     if (count_twos_as_dirichlet)
@@ -415,10 +415,9 @@ namespace MueLu {
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     SC zero = ATS::zero();
-    SC one = ATS::one();
 
     auto localMatrix = A.getLocalMatrixDevice();
-    LO   numRows     = A.getNodeNumRows();
+    LO   numRows     = A.getLocalNumRows();
 
     Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > domMap = A.getDomainMap();
     Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > colMap = A.getColMap();
@@ -433,7 +432,7 @@ namespace MueLu {
                              auto length  = rowView.length;
 
                              for (decltype(length) colID = 0; colID < length; colID++)
-                               myColsToZeroView(rowView.colidx(colID),0) = one;
+                               myColsToZeroView(rowView.colidx(colID),0) = impl_ATS::one();
                            }
                          });
 
@@ -445,8 +444,8 @@ namespace MueLu {
     // import to column map
     myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
 
-    auto myCols = myColsToZero->getDeviceLocalView(Xpetra::Access::ReadWrite);
-    size_t numColEntries = colMap->getNodeNumElements();
+    auto myCols = myColsToZero->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    size_t numColEntries = colMap->getLocalNumElements();
     Kokkos::View<bool*, typename NO::device_type> dirichletCols(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), numColEntries);
     const typename ATS::magnitudeType eps = 2.0*ATS::eps();
 
@@ -513,26 +512,27 @@ namespace MueLu {
                                      const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
                                      Kokkos::View<bool*, typename Node::device_type> dirichletCols,
                                      Kokkos::View<bool*, typename Node::device_type> dirichletDomain) {
+    using ATS        = Kokkos::ArithTraits<Scalar>;
+    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
-    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A.getDomainMap();
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A.getRowMap();
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A.getColMap();
-    TEUCHOS_ASSERT(dirichletRows.extent(0) == rowMap->getNodeNumElements());
-    TEUCHOS_ASSERT(dirichletCols.extent(0) == colMap->getNodeNumElements());
-    TEUCHOS_ASSERT(dirichletDomain.extent(0) == domMap->getNodeNumElements());
+    TEUCHOS_ASSERT(dirichletRows.extent(0) == rowMap->getLocalNumElements());
+    TEUCHOS_ASSERT(dirichletCols.extent(0) == colMap->getLocalNumElements());
+    TEUCHOS_ASSERT(dirichletDomain.extent(0) == domMap->getLocalNumElements());
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap, /*zeroOut=*/true);
     // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
     auto myColsToZeroView = myColsToZero->getDeviceLocalView(Xpetra::Access::ReadWrite);
     auto localMatrix = A.getLocalMatrixDevice();
-    Kokkos::parallel_for("MueLu:Maxwell1::DetectDirichletCols", range_type(0,rowMap->getNodeNumElements()),
+    Kokkos::parallel_for("MueLu:Maxwell1::DetectDirichletCols", range_type(0,rowMap->getLocalNumElements()),
                          KOKKOS_LAMBDA(const LocalOrdinal row) {
                            if (dirichletRows(row)) {
                              auto rowView = localMatrix.row(row);
                              auto length  = rowView.length;
 
                              for (decltype(length) colID = 0; colID < length; colID++)
-                               myColsToZeroView(rowView.colidx(colID),0) = one;
+                               myColsToZeroView(rowView.colidx(colID),0) = impl_ATS::one();
                            }
                          });
 
@@ -579,10 +579,13 @@ namespace MueLu {
   ZeroDirichletRows(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                     Scalar replaceWith) {
+    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
+    typename ATS::val_type impl_replaceWith = replaceWith;
+
     auto localMatrix = A->getLocalMatrixDevice();
-    LocalOrdinal numRows = A->getNodeNumRows();
+    LocalOrdinal numRows = A->getLocalNumRows();
 
     Kokkos::parallel_for("MueLu:Utils::ZeroDirichletRows", range_type(0,numRows),
                          KOKKOS_LAMBDA(const LocalOrdinal row) {
@@ -590,7 +593,7 @@ namespace MueLu {
                              auto rowView = localMatrix.row(row);
                              auto length  = rowView.length;
                              for (decltype(length) colID = 0; colID < length; colID++)
-                               rowView.value(colID) = replaceWith;
+                               rowView.value(colID) = impl_replaceWith;
                            }
                          });
   }
@@ -620,14 +623,18 @@ namespace MueLu {
   ZeroDirichletRows(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                     Scalar replaceWith) {
+    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+
+    typename ATS::val_type impl_replaceWith = replaceWith;
+
     auto myCols = X->getDeviceLocalView(Xpetra::Access::ReadWrite);
     size_t numVecs = X->getNumVectors();
     Kokkos::parallel_for("MueLu:Utils::ZeroDirichletRows_MV", range_type(0,dirichletRows.size()),
                          KOKKOS_LAMBDA(const size_t i) {
                            if (dirichletRows(i)) {
                              for(size_t j=0; j<numVecs; j++)
-                               myCols(i,j) = replaceWith;
+                               myCols(i,j) = impl_replaceWith;
                            }
                          });
   }
@@ -657,10 +664,13 @@ namespace MueLu {
   ZeroDirichletCols(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols,
                     Scalar replaceWith) {
+    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
+    typename ATS::val_type impl_replaceWith = replaceWith;
+
     auto localMatrix = A->getLocalMatrixDevice();
-    LocalOrdinal numRows = A->getNodeNumRows();
+    LocalOrdinal numRows = A->getLocalNumRows();
 
     Kokkos::parallel_for("MueLu:Utils::ZeroDirichletCols", range_type(0,numRows),
                          KOKKOS_LAMBDA(const LocalOrdinal row) {
@@ -668,7 +678,7 @@ namespace MueLu {
                            auto length  = rowView.length;
                            for (decltype(length) colID = 0; colID < length; colID++)
                              if (dirichletCols(rowView.colidx(colID))) {
-                               rowView.value(colID) = replaceWith;
+                               rowView.value(colID) = impl_replaceWith;
                              }
                          });
   }
@@ -703,7 +713,7 @@ namespace MueLu {
     auto dirichletRowsHost = Kokkos::create_mirror_view(dirichletRows);
     Kokkos::deep_copy(dirichletRowsHost, dirichletRows);
 
-    for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
+    for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getLocalNumElements()); ++row) {
       size_t nnz = A.getNumEntriesInLocalRow(row);
       ArrayView<const LocalOrdinal> indices;
       ArrayView<const Scalar> vals;
@@ -879,10 +889,7 @@ namespace MueLu {
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > Rmap = A->getRowMap();
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > Cmap = A->getColMap();
 
-    TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == Rmap->getNodeNumElements());
-
-    const Scalar one  = impl_ATS::one();
-    const Scalar zero = impl_ATS::zero();
+    TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == Rmap->getLocalNumElements());
 
     auto localMatrix = A->getLocalMatrixDevice();
     auto localRmap = Rmap->getLocalMap();
@@ -898,9 +905,9 @@ namespace MueLu {
 
                              for (decltype(length) colID = 0; colID < length; colID++)
                                if (rowView.colidx(colID) == row_lid)
-                                 rowView.value(colID) = one;
+                                 rowView.value(colID) = impl_ATS::one();
                                else
-                                 rowView.value(colID) = zero;
+                                 rowView.value(colID) = impl_ATS::zero();
                            }
                          });
   }

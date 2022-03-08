@@ -116,7 +116,7 @@ public:
     Teuchos::Array<GlobalOrdinal> ovlFoundStatusGids;
 
     // loop over global column map of A and find all GIDs where it is not sure, whether they are special or not
-    for(size_t i = 0; i<input.getColMap()->getNodeNumElements(); i++) {
+    for(size_t i = 0; i<input.getColMap()->getLocalNumElements(); i++) {
       GlobalOrdinal gcid = input.getColMap()->getGlobalElement(i);
       if(domainMap.isNodeGlobalElement(gcid) == false) {
         ovlUnknownStatusGids.push_back(gcid);
@@ -174,7 +174,7 @@ public:
       Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntFoundDofGIDs),&lFoundDofGIDs[0],&gFoundDofGIDs[0]);
 
     Teuchos::Array<GlobalOrdinal> ovlDomainMapArray;
-    for(size_t i = 0; i<input.getColMap()->getNodeNumElements(); i++) {
+    for(size_t i = 0; i<input.getColMap()->getLocalNumElements(); i++) {
       GlobalOrdinal gcid = input.getColMap()->getGlobalElement(i);
       if(domainMap.isNodeGlobalElement(gcid) == true ||
          std::find(gFoundDofGIDs.begin(), gFoundDofGIDs.end(), gcid) != gFoundDofGIDs.end()) {
@@ -213,15 +213,15 @@ public:
 
     TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getMaxAllGlobalIndex() != input.getRowMap()->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
     TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getGlobalNumElements() != input.getRowMap()->getGlobalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
-    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getNodeNumElements()   != input.getRowMap()->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getLocalNumElements()   != input.getRowMap()->getLocalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
     TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getMaxAllGlobalIndex() != input.getRangeMap()->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
     TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getGlobalNumElements() != input.getRangeMap()->getGlobalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
-    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getNodeNumElements()   != input.getRangeMap()->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullRangeMap->getLocalNumElements()   != input.getRangeMap()->getLocalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: RangeMapExtractor incompatible to row map of input matrix.")
 
     TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap->getMaxAllGlobalIndex() != input.getColMap()->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix. fullDomainMap->getMaxAllGlobalIndex() = " << fullDomainMap->getMaxAllGlobalIndex() << " vs. input.getColMap()->getMaxAllGlobalIndex() = " << input.getColMap()->getMaxAllGlobalIndex())
     TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap->getMaxAllGlobalIndex() != input.getDomainMap()->getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
     TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap->getGlobalNumElements() != input.getDomainMap()->getGlobalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
-    TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap->getNodeNumElements()   != input.getDomainMap()->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
+    TEUCHOS_TEST_FOR_EXCEPTION(fullDomainMap->getLocalNumElements()   != input.getDomainMap()->getLocalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: DomainMapExtractor incompatible to domain map of input matrix.")
 
     // check column map extractor
     Teuchos::RCP<const MapExtractor> myColumnMapExtractor = Teuchos::null;
@@ -261,7 +261,7 @@ public:
         } else {
           thyRgMapExtractorMaps[r] = shrinkedMap;
         }
-        TEUCHOS_TEST_FOR_EXCEPTION(thyRgMapExtractorMaps[r]->getNodeNumElements()  != rMap->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Thyra-style range map extractor contains faulty data.")
+        TEUCHOS_TEST_FOR_EXCEPTION(thyRgMapExtractorMaps[r]->getLocalNumElements()  != rMap->getLocalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Thyra-style range map extractor contains faulty data.")
       }
       RCP<const Map> fullThyRangeMap = MapUtils::concatenateMaps(thyRgMapExtractorMaps);
       thyRangeMapExtractor = MapExtractorFactory::Build(fullThyRangeMap,thyRgMapExtractorMaps,true);
@@ -294,8 +294,8 @@ public:
           thyColMapExtractorMaps[c]  = shrinkedColMap;
         }
 
-        TEUCHOS_TEST_FOR_EXCEPTION(thyColMapExtractorMaps[c]->getNodeNumElements() != colMap->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Thyra-style column map extractor contains faulty data.")
-        TEUCHOS_TEST_FOR_EXCEPTION(thyDoMapExtractorMaps[c]->getNodeNumElements()  != cMap->getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Thyra-style domain map extractor contains faulty data.")
+        TEUCHOS_TEST_FOR_EXCEPTION(thyColMapExtractorMaps[c]->getLocalNumElements() != colMap->getLocalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Thyra-style column map extractor contains faulty data.")
+        TEUCHOS_TEST_FOR_EXCEPTION(thyDoMapExtractorMaps[c]->getLocalNumElements()  != cMap->getLocalNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::Split: Thyra-style domain map extractor contains faulty data.")
       }
       RCP<const Map> fullThyDomainMap = MapUtils::concatenateMaps(thyDoMapExtractorMaps);
       RCP<const Map> fullThyColumnMap = MapUtils::concatenateMaps(thyColMapExtractorMaps);
@@ -310,9 +310,9 @@ public:
         // make sure that the submatrices are defined using the right row maps (either Thyra or xpetra style)
         // Note: we're reserving a little bit too much memory for the submatrices, but should be still reasonable
         if(bThyraMode == true)
-          subMatrices[r*numCols+c] = MatrixFactory::Build (thyRangeMapExtractor->getMap(r,true),input.getNodeMaxNumRowEntries());
+          subMatrices[r*numCols+c] = MatrixFactory::Build (thyRangeMapExtractor->getMap(r,true),input.getLocalMaxNumRowEntries());
         else
-          subMatrices[r*numCols+c] = MatrixFactory::Build (rangeMapExtractor->getMap(r),input.getNodeMaxNumRowEntries());
+          subMatrices[r*numCols+c] = MatrixFactory::Build (rangeMapExtractor->getMap(r),input.getLocalMaxNumRowEntries());
       }
     }
 
@@ -339,7 +339,7 @@ public:
     coCheck->putScalar(-1.0);
 
     Teuchos::ArrayRCP< Scalar > doCheckData = doCheck->getDataNonConst(0);
-    for (size_t rrr = 0; rrr < input.getDomainMap()->getNodeNumElements(); rrr++) {
+    for (size_t rrr = 0; rrr < input.getDomainMap()->getLocalNumElements(); rrr++) {
       // global row id to extract data from global monolithic matrix
       GlobalOrdinal id = input.getDomainMap()->getGlobalElement(rrr); // LID -> GID (column)
 
@@ -354,7 +354,7 @@ public:
     Teuchos::ArrayRCP< Scalar > coCheckData = coCheck->getDataNonConst(0);
 #endif
     // loop over all rows of input matrix
-    for (size_t rr = 0; rr < input.getRowMap()->getNodeNumElements(); rr++) {
+    for (size_t rr = 0; rr < input.getRowMap()->getLocalNumElements(); rr++) {
 
       // global row id to extract data from global monolithic matrix
       GlobalOrdinal growid = input.getRowMap()->getGlobalElement(rr); // LID -> GID (column)
@@ -420,14 +420,14 @@ public:
           subMatrices[r*numCols+c]->fillComplete(thyDomainMapExtractor->getMap(c,true), thyRangeMapExtractor->getMap(r,true));
         }
       }
-      bA = Teuchos::rcp(new BlockedCrsMatrix(thyRangeMapExtractor, thyDomainMapExtractor, 10 /*input.getRowMap()->getNodeMaxNumRowEntries()*/));
+      bA = Teuchos::rcp(new BlockedCrsMatrix(thyRangeMapExtractor, thyDomainMapExtractor, 10 /*input.getRowMap()->getLocalMaxNumRowEntries()*/));
     } else {
       for (size_t r = 0; r < numRows; r++) {
         for (size_t c = 0; c < numCols; c++) {
           subMatrices[r*numCols+c]->fillComplete(domainMapExtractor->getMap(c), rangeMapExtractor->getMap(r));
         }
       }
-      bA = Teuchos::rcp(new BlockedCrsMatrix(rangeMapExtractor, domainMapExtractor, 10 /*input.getRowMap()->getNodeMaxNumRowEntries()*/));
+      bA = Teuchos::rcp(new BlockedCrsMatrix(rangeMapExtractor, domainMapExtractor, 10 /*input.getRowMap()->getLocalMaxNumRowEntries()*/));
     }
 
     for (size_t r = 0; r < numRows; r++) {
@@ -459,7 +459,7 @@ public:
 
     if (!tpCrsAc.is_null()) {
       auto tpCrsGraph = tpCrsAc->getTpetra_CrsMatrix()->getCrsGraph();
-      size_t numRows = Ac->getRowMap()->getNodeNumElements();
+      size_t numRows = Ac->getRowMap()->getLocalNumElements();
       typedef typename Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::offset_device_view_type offset_type;
       using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
       auto offsets = offset_type(Kokkos::ViewAllocateWithoutInitializing("offsets"), numRows);
@@ -493,6 +493,7 @@ public:
           using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
 
           LO lZeroDiags = 0;
+          typename ATS::val_type impl_replacementValue = replacementValue;
 
           Kokkos::parallel_reduce("fixSmallDiagonalEntries",
                                   range_type(0, numRows),
@@ -500,7 +501,7 @@ public:
                                     const auto offset = offsets(i);
                                     auto curRow = lclA.row (i);
                                     if (impl_ATS::magnitude(curRow.value(offset)) <= threshold) {
-                                      curRow.value(offset) = replacementValue;
+                                      curRow.value(offset) = impl_replacementValue;
                                       fixed += 1;
                                     }
                                   }, lZeroDiags);
@@ -552,7 +553,7 @@ public:
       LocalOrdinal lZeroDiags = 0;
       Teuchos::ArrayRCP< const Scalar > diagVal = diagVec->getData(0);
 
-      for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
+      for (size_t i = 0; i < rowMap->getLocalNumElements(); i++) {
         if (TST::magnitude(diagVal[i]) <= threshold) {
           lZeroDiags++;
         }
@@ -579,7 +580,7 @@ public:
         RCP<Matrix> fixDiagMatrix = MatrixFactory::Build(rowMap, 1);
         Teuchos::Array<GlobalOrdinal> indout(1);
         Teuchos::Array<Scalar> valout(1);
-        for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
+        for (size_t r = 0; r < rowMap->getLocalNumElements(); r++) {
           if (TST::magnitude(diagVal[r]) <= threshold) {
             GlobalOrdinal grid = rowMap->getGlobalElement(r);
             indout[0] = grid;
@@ -624,7 +625,7 @@ public:
       Teuchos::ArrayRCP< const Scalar > diagVal;
       Ac->getLocalDiagCopy(*diagVec);
       diagVal = diagVec->getData(0);
-      for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
+      for (size_t r = 0; r < Ac->getRowMap()->getLocalNumElements(); r++) {
         if (TST::magnitude(diagVal[r]) <= threshold) {
           fos << "Error: there are too small entries left on diagonal after repair..." << std::endl;
           break;
@@ -659,7 +660,7 @@ public:
     RCP<Vector> diag = VectorFactory::Build(A->getRowMap());
     A->getLocalDiagCopy(*diag);
     Teuchos::ArrayRCP< const Scalar > dataVal = diag->getData(0);
-    size_t N = A->getRowMap()->getNodeNumElements();
+    size_t N = A->getRowMap()->getLocalNumElements();
 
     // Compute the diagonal maxes for each PDE
     std::vector<MT> l_diagMax(numPDEs), g_diagMax(numPDEs);
@@ -740,7 +741,7 @@ public:
     RCP<const Map> rowMap = A.getRowMap();
     RCP<const Map> colMap = A.getColMap();
     RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
-    LO numRows = Teuchos::as<LocalOrdinal>(rowMap->getNodeNumElements());
+    LO numRows = Teuchos::as<LocalOrdinal>(rowMap->getLocalNumElements());
     bool fail = false;
     for (LO rowLID = 0; rowLID < numRows; rowLID++) {
       GO rowGID = rowMap->getGlobalElement(rowLID);

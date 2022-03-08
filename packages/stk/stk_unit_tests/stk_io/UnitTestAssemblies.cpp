@@ -40,6 +40,12 @@
 #include <stk_io/IossBridge.hpp>
 #include "Assembly.hpp"
 
+namespace stk
+{
+namespace io
+{
+namespace unit_test
+{
 TEST_F(Assembly, ioPartIsNotAssembly)
 {
   stk::mesh::Part& part = create_io_part("myPart");
@@ -218,3 +224,6 @@ TEST_F(Assembly, deeperHierarchy_parts)
   EXPECT_EQ("block_3", leafParts[2]->name());
 }
 
+}  // namespace unit_test
+}  // namespace io
+}  // namespace stk

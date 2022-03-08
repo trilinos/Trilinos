@@ -61,10 +61,10 @@ namespace FROSch {
         subdomainMatrix->doImport(*globalMatrix,*scatter,ADD);
         //cout << *subdomainMatrix << endl;
         RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
-        RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(map->lib(),map->getNodeNumElements(),0,SerialComm);
+        RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(map->lib(),map->getLocalNumElements(),0,SerialComm);
         RCP<Matrix<SC,LO,GO,NO> > localSubdomainMatrix = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap,globalMatrix->getGlobalMaxNumRowEntries());
 
-        for (unsigned i=0; i<localSubdomainMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<localSubdomainMap->getLocalNumElements(); i++) {
             ArrayView<const GO> indices;
             ArrayView<const SC> values;
             subdomainMatrix->getGlobalRowView(map->getGlobalElement(i),indices,values);
@@ -98,10 +98,10 @@ namespace FROSch {
         subdomainMatrix->doImport(*globalMatrix,*scatter,ADD);
         //cout << *subdomainMatrix << endl;
         RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
-        RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(map->lib(),map->getNodeNumElements(),0,SerialComm);
+        RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(map->lib(),map->getLocalNumElements(),0,SerialComm);
         RCP<Matrix<SC,LO,GO,NO> > localSubdomainMatrix = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap,globalMatrix->getGlobalMaxNumRowEntries());
 
-        for (unsigned i=0; i<localSubdomainMap->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<localSubdomainMap->getLocalNumElements(); i++) {
             ArrayView<const GO> indices;
             ArrayView<const SC> values;
             subdomainMatrix->getGlobalRowView(map->getGlobalElement(i),indices,values);
@@ -135,7 +135,7 @@ namespace FROSch {
         subdomainMatrix->doImport(*globalMatrix,*scatter,ADD);
 
         localSubdomainMatrix->resumeFill();
-        for (unsigned i=0; i<map->getNodeNumElements(); i++) {
+        for (unsigned i=0; i<map->getLocalNumElements(); i++) {
             ArrayView<const GO> indices;
             ArrayView<const SC> values;
             subdomainMatrix->getGlobalRowView(map->getGlobalElement(i),indices,values);
@@ -173,7 +173,7 @@ namespace FROSch {
         RCP<Map<LO,GO,NO> > mapILocal = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),-1,indI.size(),0,k->getRowMap()->getComm());
 
         Array<GO> indJ;
-        for (unsigned i=0; i<k->getNodeNumRows(); i++) {
+        for (unsigned i=0; i<k->getLocalNumRows(); i++) {
             if (mapI->getLocalElement(i)<0) {
                 indJ.push_back(i);
             }
@@ -187,7 +187,7 @@ namespace FROSch {
         kJI = MatrixFactory<SC,LO,GO,NO>::Build(mapJLocal,min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
         kJJ = MatrixFactory<SC,LO,GO,NO>::Build(mapJLocal,min((LO) k->getGlobalMaxNumRowEntries(),(LO) indJ.size()));
 
-        for (unsigned i=0; i<k->getNodeNumRows(); i++) {
+        for (unsigned i=0; i<k->getLocalNumRows(); i++) {
             ArrayView<const LO> indices;
             ArrayView<const SC> values;
 
@@ -251,7 +251,7 @@ namespace FROSch {
         kII = MatrixFactory<SC,LO,GO,NO>::Build(mapI,min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
         GO maxGID = mapI->getMaxAllGlobalIndex();
         GO minGID = mapI->getMinAllGlobalIndex();
-        for (unsigned i=0; i<k->getNodeNumRows(); i++) {
+        for (unsigned i=0; i<k->getLocalNumRows(); i++) {
             ArrayView<const LO> indices;
             ArrayView<const SC> values;
 
@@ -291,7 +291,7 @@ namespace FROSch {
         kII = CrsGraphFactory<LO,GO,NO>::Build(mapI,min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
         GO maxGID = mapI->getMaxAllGlobalIndex();
         GO minGID = mapI->getMinAllGlobalIndex();
-        for (unsigned i=0; i<k->getNodeNumRows(); i++) {
+        for (unsigned i=0; i<k->getLocalNumRows(); i++) {
             ArrayView<const LO> indices;
 
             k->getLocalRowView(i,indices);

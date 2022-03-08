@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -102,7 +102,7 @@ namespace {
 
   // These are used for structured parallel decomposition...
   void create_zone_data(int cgns_file_ptr, std::vector<Iocgns::StructuredZoneData *> &zones,
-                        MPI_Comm comm)
+                        Ioss_MPI_Comm comm)
   {
     Ioss::ParallelUtils par_util(comm);
     int                 myProcessor = par_util.parallel_rank(); // To make error macro work...
@@ -184,13 +184,13 @@ namespace {
 
 namespace Iocgns {
   template DecompositionData<int>::DecompositionData(const Ioss::PropertyManager &props,
-                                                     MPI_Comm                     communicator);
+                                                     Ioss_MPI_Comm                communicator);
   template DecompositionData<int64_t>::DecompositionData(const Ioss::PropertyManager &props,
-                                                         MPI_Comm                     communicator);
+                                                         Ioss_MPI_Comm                communicator);
 
   template <typename INT>
   DecompositionData<INT>::DecompositionData(const Ioss::PropertyManager &props,
-                                            MPI_Comm                     communicator)
+                                            Ioss_MPI_Comm                communicator)
       : DecompositionDataBase(), m_decomposition(props, communicator)
   {
     rank = m_decomposition.m_processor;
@@ -328,11 +328,11 @@ namespace Iocgns {
 
       for (auto &zone : tmp_zone) {
         if (zone->is_active()) {
-          fmt::print(Ioss::OUTPUT(), "{:6d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:14L}\n", z++,
+          fmt::print(Ioss::OUTPUT(), "{:6d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:14}\n", z++,
                      zone->m_proc, zone->m_adam->m_zone, zone->m_offset[0] + 1,
                      zone->m_ordinal[0] + zone->m_offset[0] + 1, zone->m_offset[1] + 1,
                      zone->m_ordinal[1] + zone->m_offset[1] + 1, zone->m_offset[2] + 1,
-                     zone->m_ordinal[2] + zone->m_offset[2] + 1, zone->work());
+                     zone->m_ordinal[2] + zone->m_offset[2] + 1, fmt::group_digits(zone->work()));
         }
       }
     }
