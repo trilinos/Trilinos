@@ -225,8 +225,9 @@ namespace {
 
     ~MultiVectorGroupTransferFixture() { }
 
+    template <typename MapSetup>
     void setup(int collectRank) {
-      setupMaps(collectRank);
+      setupMaps<MapSetup>(collectRank);
       setupMultiVectors();
     }
 
@@ -244,16 +245,12 @@ namespace {
     }
 
   private:
+    template <typename MapSetup>
     void setupMaps(int collectRank) {
-      const GO indexBase = 0;
-      const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-
-      const size_t sourceNumLocalElements = 3;
-      const size_t totalElements = numProcs*sourceNumLocalElements;
-      const size_t targetNumLocalElements = (myRank == collectRank) ? totalElements : 0;
-
-      sourceMap = rcp(new map_type(INVALID, sourceNumLocalElements, indexBase, comm));
-      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
+      MapSetup maps(comm);
+      maps.setup(collectRank);
+      sourceMap = maps.getSourceMap();
+      targetMap = maps.getTargetMap();
     }
 
     void setupMultiVectors() {
@@ -1089,6 +1086,42 @@ namespace {
   }
 
 
+  template <typename LO, typename GO>
+  class ContiguousMaps {
+  private:
+    using map_type = Map<LO, GO>;
+
+  public:
+    ContiguousMaps(RCP<const Comm<int>> c)
+      : comm(c),
+        numProcs(comm->getSize()),
+        myRank(comm->getRank())
+    { }
+
+    void setup(int collectRank) {
+      const GO indexBase = 0;
+      const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+
+      const size_t sourceNumLocalElements = 3;
+      const size_t totalElements = numProcs*sourceNumLocalElements;
+      const size_t targetNumLocalElements = (myRank == collectRank) ? totalElements : 0;
+
+      sourceMap = rcp(new map_type(INVALID, sourceNumLocalElements, indexBase, comm));
+      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
+    }
+
+    RCP<const map_type> getSourceMap() { return sourceMap; }
+    RCP<const map_type> getTargetMap() { return targetMap; }
+
+  private:
+    RCP<const Comm<int>> comm;
+    const int numProcs;
+    const int myRank;
+
+    RCP<const map_type> sourceMap;
+    RCP<const map_type> targetMap;
+  };
+
   template <typename Packet, typename LO, typename GO>
   class ForwardImportGroup {
   private:
@@ -1117,11 +1150,11 @@ namespace {
     }
   };
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVectorGroup_rank0, Scalar, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVectorGroup_ContiguousMaps_rank0, Scalar, LO, GO )
   {
     MultiVectorGroupTransferFixture<Scalar, LO, GO> fixture(out, success);
 
-    fixture.setup(0);
+    fixture.template setup<ContiguousMaps<LO, GO>>(0);
     fixture.performTransfer(ForwardImportGroup<Scalar, LO, GO>());
     fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
   }
@@ -1164,7 +1197,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, CrsMatrix_forwardExportTrue, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardImportFalse, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardExportFalse, SC, LO, GO ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVectorGroup_rank0, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVectorGroup_ContiguousMaps_rank0, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVectorCyclicGroup_rank0, SC, LO, GO ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
