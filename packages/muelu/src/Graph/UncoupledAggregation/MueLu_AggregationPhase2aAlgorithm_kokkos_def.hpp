@@ -102,6 +102,8 @@ namespace MueLu {
     auto colors        = aggregates.GetGraphColors();
     const LO numColors = aggregates.GetGraphNumColors();
 
+    auto lclLWGraph = graph.getLocalLWGraph();
+
     LO numLocalNodes      = numRows;
     LO numLocalAggregated = numLocalNodes - numNonAggregatedNodes;
 
@@ -136,7 +138,7 @@ namespace MueLu {
                                     numNeighbors +=1;
                                   }
 
-                                  auto neighbors = graph.getNeighborVertices(rootCandidate);
+                                  auto neighbors = lclLWGraph.getNeighborVertices(rootCandidate);
 
                                   // Loop over neighbors to count how many nodes could join
                                   // the new aggregate
@@ -144,7 +146,7 @@ namespace MueLu {
                                   for(int j = 0; j < neighbors.length; ++j) {
                                     LO neigh = neighbors(j);
                                     if(neigh != rootCandidate) {
-                                      if(graph.isLocalNeighborVertex(neigh) &&
+                                      if(lclLWGraph.isLocalNeighborVertex(neigh) &&
                                          (aggStat(neigh) == READY) &&
                                          (aggSize < maxNodesPerAggregate)) {
                                         ++aggSize;
@@ -176,7 +178,7 @@ namespace MueLu {
                                     for(int neighIdx = 0; neighIdx < neighbors.length; ++neighIdx) {
                                       LO neigh = neighbors(neighIdx);
                                       if(neigh != rootCandidate) {
-                                        if(graph.isLocalNeighborVertex(neigh) &&
+                                        if(lclLWGraph.isLocalNeighborVertex(neigh) &&
                                            (aggStat(neigh) == READY) &&
                                            (numAggregated < aggSize)) {
                                           aggStat(neigh)         = AGGREGATED;
@@ -218,6 +220,8 @@ namespace MueLu {
     auto colors        = aggregates.GetGraphColors();
     const LO numColors = aggregates.GetGraphNumColors();
 
+    auto lclLWGraph = graph.getLocalLWGraph();
+
     LO numLocalNodes      = procWinner.size();
     LO numLocalAggregated = numLocalNodes - numNonAggregatedNodes;
 
@@ -256,7 +260,7 @@ namespace MueLu {
                              if(aggStat(rootCandidate) == READY &&
                                 colors(rootCandidate) == color) {
                                LO aggSize = 0;
-                               auto neighbors = graph.getNeighborVertices(rootCandidate);
+                               auto neighbors = lclLWGraph.getNeighborVertices(rootCandidate);
                                // Loop over neighbors to count how many nodes could join
                                // the new aggregate
                                LO numNeighbors = 0;
@@ -264,7 +268,7 @@ namespace MueLu {
                                  LO neigh = neighbors(j);
                                  if(neigh != rootCandidate)
                                    {
-                                     if(graph.isLocalNeighborVertex(neigh) &&
+                                     if(lclLWGraph.isLocalNeighborVertex(neigh) &&
                                         aggStat(neigh) == READY &&
                                         aggSize < maxNodesPerAggregate)
                                        {
@@ -294,7 +298,7 @@ namespace MueLu {
                                 KOKKOS_LAMBDA (const LO newRootIndex, LO& lNumNonAggregatedNodes) {
                                   LO root = newRoots(newRootIndex);
                                   LO newAggID = numLocalAggregates() + newRootIndex;
-                                  auto neighbors = graph.getNeighborVertices(root);
+                                  auto neighbors = lclLWGraph.getNeighborVertices(root);
                                   // Loop over neighbors and add them to new aggregate
                                   aggStat(root)      = AGGREGATED;
                                   vertex2AggId(root, 0) = newAggID;
@@ -302,7 +306,7 @@ namespace MueLu {
                                   for(int j = 0; j < neighbors.length; ++j) {
                                     LO neigh = neighbors(j);
                                     if(neigh != root) {
-                                      if(graph.isLocalNeighborVertex(neigh) &&
+                                      if(lclLWGraph.isLocalNeighborVertex(neigh) &&
                                          aggStat(neigh) == READY &&
                                          aggSize < maxNodesPerAggregate) {
                                         aggStat(neigh)      = AGGREGATED;

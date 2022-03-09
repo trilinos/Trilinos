@@ -77,12 +77,12 @@ lclDot (const RV& dotsOut,
   const char prefix[] = "Tpetra::MultiVector::lclDotImpl: ";
 #endif // HAVE_TPETRA_DEBUG
 
-  static_assert (Kokkos::Impl::is_view<RV>::value,
+  static_assert (Kokkos::is_view<RV>::value,
                  "Tpetra::MultiVector::lclDotImpl: "
                  "The first argument dotsOut is not a Kokkos::View.");
   static_assert (RV::rank == 1, "Tpetra::MultiVector::lclDotImpl: "
                  "The first argument dotsOut must have rank 1.");
-  static_assert (Kokkos::Impl::is_view<XMV>::value,
+  static_assert (Kokkos::is_view<XMV>::value,
                  "Tpetra::MultiVector::lclDotImpl: The type of the 2nd and "
                  "3rd arguments (X_lcl and Y_lcl) is not a Kokkos::View.");
   static_assert (XMV::rank == 2, "Tpetra::MultiVector::lclDotImpl: "

@@ -117,8 +117,8 @@ namespace MueLuTests {
     auto coloringHandle = kh.get_distance2_graph_coloring_handle();
 
     //Create device views for graph rowptrs/colinds
-    typename graph_t::row_map_type aRowptrs = graph->getRowPtrs();
-    typename graph_t::entries_type aColinds = graph->getEntries();
+    typename graph_t::row_map_type aRowptrs = graph->getLocalLWGraph().getRowPtrs();
+    typename graph_t::entries_type aColinds = graph->getLocalLWGraph().getEntries();
 
     //run d2 graph coloring
     //graph is symmetric so row map/entries and col map/entries are the same
@@ -194,6 +194,8 @@ namespace MueLuTests {
     auto vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadOnly);
     auto aggSizes     = aggregates.ComputeAggregateSizes(true);
 
+    auto lclLWGraph = graph.getLocalLWGraph();
+
     Kokkos::View<LO*, device_type> discontiguousAggs("discontiguous aggregates",
 						     aggregates.GetNumAggregates());
     Kokkos::parallel_for("Mark discontiguous aggregates",
@@ -208,7 +210,7 @@ namespace MueLuTests {
                              // Can't have a discontiguous singleton
                              return;
                            } else {
-                             auto neighbors = graph.getNeighborVertices(nodeIdx);
+                             auto neighbors = lclLWGraph.getNeighborVertices(nodeIdx);
                              for(LO neigh = 0; neigh < neighbors.length; ++neigh) {
                                const LO neighIdx   = neighbors(neigh);
                                const LO neighAggId = vertex2AggId(neighIdx, 0);
@@ -665,7 +667,7 @@ namespace MueLuTests {
     aggFact->Build(level);
     RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get());
     RCP<LWGraph_kokkos> graph = level.Get<RCP<LWGraph_kokkos>>("Graph",dropFact.get());
-    Kokkos::View<const bool*, device_type> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+    Kokkos::View<const bool*, device_type> dirichletBoundaryMap = graph->getLocalLWGraph().GetBoundaryNodeMap();
     int numDirichletRows=0;
     using execution_space   = typename LWGraph_kokkos::execution_space;
     LO numRows = graph->GetNodeNumVertices();
@@ -703,7 +705,7 @@ namespace MueLuTests {
     aggFact->Build(level);
     aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get());
     graph = level.Get<RCP<LWGraph_kokkos>>("Graph",dropFact.get());
-    dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+    dirichletBoundaryMap = graph->getLocalLWGraph().GetBoundaryNodeMap();
     numDirichletRows=0;
     Kokkos::parallel_reduce("Count Dirichlet rows",
                             Kokkos::RangePolicy<LO, execution_space>(0, numRows),

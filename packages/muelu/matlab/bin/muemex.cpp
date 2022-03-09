@@ -268,13 +268,10 @@ mxArray* TpetraSystem<Scalar>::solve(RCP<ParameterList> params, RCP<Tpetra::CrsM
     params->get("Output Frequency", 1);
     params->get("Output Style", Belos::Brief);
 
-    bool verbose;
 #ifdef VERBOSE_OUTPUT
     params->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
-    verbose = true;
 #else
     params->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::IterationDetails | Belos::Warnings | Belos::StatusTestDetails);
-    verbose = false;
 #endif
     //register all possible solvers
     auto problem = rcp(new Belos::LinearProblem<Scalar, Tpetra_MultiVector, Tpetra_Operator>(matrix, lhs, rhs));
@@ -320,6 +317,24 @@ mxArray* TpetraSystem<Scalar>::solve(RCP<ParameterList> params, RCP<Tpetra::CrsM
     output = mxCreateDoubleScalar(0);
   }
   return output;
+}
+
+template<typename Scalar>
+mxArray* TpetraSystem<Scalar>::apply(const mxArray* r)
+{
+  typedef Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_MultiVector;
+  RCP<Tpetra_MultiVector> rhs = loadDataFromMatlab<RCP<Tpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(r);
+  RCP<Tpetra_MultiVector> lhs = rcp(new Tpetra_MultiVector(rhs->getMap(), rhs->getNumVectors()));
+  try
+  {
+    this->prec->apply(*rhs, *lhs);
+  }
+  catch(exception& e)
+  {
+    mexPrintf("Error occurred while applying MueLu-Tpetra preconditioner:\n");
+    cout << e.what() << endl;
+  }
+  return saveDataToMatlab(lhs);
 }
 
 template<>
@@ -666,6 +681,24 @@ mxArray* EpetraSystem::solve(RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> matri
     output = mxCreateDoubleScalar(0);
   }
   return output;
+}
+
+mxArray* EpetraSystem::apply(const mxArray* r)
+{
+  RCP<Epetra_MultiVector> rhs = loadDataFromMatlab<RCP<Epetra_MultiVector>>(r);
+  Epetra_SerialComm Comm;
+  Epetra_Map map(rhs->GlobalLength(), 0, Comm);
+  RCP<Epetra_MultiVector> lhs = rcp(new Epetra_MultiVector(map, rhs->NumVectors(), true));
+  try
+  {
+    this->prec->Apply(*rhs, *lhs);
+  }
+  catch(exception& e)
+  {
+    mexPrintf("Error occurred while applying MueLu-Epetra preconditioner:\n");
+    cout << e.what() << endl;
+  }
+  return saveDataToMatlab(lhs);
 }
 
 RCP<Hierarchy_double> EpetraSystem::getHierarchy()
@@ -1076,6 +1109,13 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[])
         rv = MODE_SOLVE;
       else
         mexErrMsgTxt("Error: Invalid input for solve\n");
+      break;
+    case MODE_APPLY:
+      //problem ID and RHS must be numeric
+      if(nrhs == 3 && mxIsNumeric(prhs[1]) && mxIsNumeric(prhs[2]))
+        rv = MODE_APPLY;
+      else
+        mexErrMsgTxt("Error: Invalid input for apply\n");
       break;
     case MODE_CLEANUP:
       if(nrhs == 1 || nrhs == 2)
@@ -1576,6 +1616,54 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       catch(exception& e)
       {
         mexPrintf("An error occurred during the solve routine:\n");
+        cout << e.what() << endl;
+      }
+      break;
+    }
+    case MODE_APPLY:
+    {
+      try
+      {
+        //MODE_APPLY, probID, rhsVec
+        //prhs[0] holds the MODE_APPLY enum value
+        if(MuemexSystemList::size() == 0)
+          throw runtime_error("No linear systems are set up.");
+        int probID = loadDataFromMatlab<int>(prhs[1]);
+        RCP<MuemexSystem> dp = MuemexSystemList::find(probID);
+        if(dp.is_null())
+          throw runtime_error("Problem handle not allocated.");
+        //get pointer to MATLAB array that will be "B" or "rhs" multivector
+        const mxArray* rhs = prhs[2];
+        switch(dp->type)
+        {
+          case EPETRA:
+          {
+            RCP<EpetraSystem> esys = rcp_static_cast<EpetraSystem, MuemexSystem>(dp);
+            plhs[0] = esys->apply(rhs);
+            break;
+          }
+          case TPETRA:
+          {
+            RCP<TpetraSystem<double>> tsys = rcp_static_cast<TpetraSystem<double>, MuemexSystem>(dp);
+            plhs[0] = tsys->apply(rhs);
+            break;
+          }
+          case TPETRA_COMPLEX:
+          {
+#ifdef HAVE_COMPLEX_SCALARS
+            RCP<TpetraSystem<complex_t>> tsys = rcp_static_cast<TpetraSystem<complex_t>, MuemexSystem>(dp);
+            plhs[0] = tsys->apply(rhs);
+            break;
+#else
+            std::cerr << "Cannot solve complex-valued system because complex is not enabled in this build.\n";
+            throw std::invalid_argument("Complex not supported");
+#endif
+          }
+        }
+      }
+      catch(exception& e)
+      {
+        mexPrintf("An error occurred during the apply routine:\n");
         cout << e.what() << endl;
       }
       break;

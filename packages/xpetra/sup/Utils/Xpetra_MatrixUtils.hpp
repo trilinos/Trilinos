@@ -493,6 +493,7 @@ public:
           using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
 
           LO lZeroDiags = 0;
+          typename ATS::val_type impl_replacementValue = replacementValue;
 
           Kokkos::parallel_reduce("fixSmallDiagonalEntries",
                                   range_type(0, numRows),
@@ -500,7 +501,7 @@ public:
                                     const auto offset = offsets(i);
                                     auto curRow = lclA.row (i);
                                     if (impl_ATS::magnitude(curRow.value(offset)) <= threshold) {
-                                      curRow.value(offset) = replacementValue;
+                                      curRow.value(offset) = impl_replacementValue;
                                       fixed += 1;
                                     }
                                   }, lZeroDiags);

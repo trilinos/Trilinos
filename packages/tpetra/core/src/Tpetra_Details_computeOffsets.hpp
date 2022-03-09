@@ -246,9 +246,9 @@ computeOffsetsFromCounts (const ExecutionSpace& execSpace,
 {
   static_assert (Kokkos::is_execution_space<ExecutionSpace>::value,
                  "ExecutionSpace must be a Kokkos execution space.");
-  static_assert (Kokkos::Impl::is_view<OffsetsViewType>::value,
+  static_assert (Kokkos::is_view<OffsetsViewType>::value,
                  "OffsetsViewType (the type of ptr) must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<CountsViewType>::value,
+  static_assert (Kokkos::is_view<CountsViewType>::value,
                  "CountsViewType (the type of counts) must be a Kokkos::View.");
   static_assert (std::is_same<typename OffsetsViewType::value_type,
                    typename OffsetsViewType::non_const_value_type>::value,
@@ -359,7 +359,7 @@ typename OffsetsViewType::non_const_value_type
 computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
                                  const CountType count)
 {
-  static_assert (Kokkos::Impl::is_view<OffsetsViewType>::value,
+  static_assert (Kokkos::is_view<OffsetsViewType>::value,
                  "ptr must be a Kokkos::View.");
   static_assert (std::is_same<typename OffsetsViewType::value_type,
                    typename OffsetsViewType::non_const_value_type>::value,

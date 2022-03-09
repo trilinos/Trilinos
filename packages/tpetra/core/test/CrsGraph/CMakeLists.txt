@@ -5,7 +5,7 @@ SET(ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/")
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_UnitTests0
   SOURCES
-    CrsGraph_UnitTests0
+    CrsGraph_UnitTests0.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   ${MAXNP}
@@ -16,7 +16,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_UnitTests1
   SOURCES
-    CrsGraph_UnitTests1
+    CrsGraph_UnitTests1.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   ${MAXNP}
@@ -27,7 +27,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_UnitTests_Swap
   SOURCES
-  CrsGraph_UnitTests_Swap
+  CrsGraph_UnitTests_Swap.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS "${ARGS} --show-test-details=ALL --output-show-proc-rank"
   ${MAXNP}
@@ -40,7 +40,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_ReindexColumns
   SOURCES
-    CrsGraph_ReindexColumns
+    CrsGraph_ReindexColumns.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM serial mpi
@@ -98,7 +98,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_getNumDiags
   SOURCES
-    CrsGraph_getNumDiags
+    CrsGraph_getNumDiags.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -109,7 +109,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DetermineLocalTriangularStructure
   SOURCES
-    DetermineLocalTriangularStructure
+    DetermineLocalTriangularStructure.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -120,7 +120,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_UnpackIntoStaticGraph
   SOURCES
-    CrsGraph_UnpackIntoStaticGraph
+    CrsGraph_UnpackIntoStaticGraph.cpp
   ARGS ""
   COMM serial mpi
   NUM_MPI_PROCS 1-4
@@ -130,7 +130,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_StaticImportExport
   SOURCES
-    CrsGraph_StaticImportExport
+    CrsGraph_StaticImportExport.cpp
   ARGS ""
   COMM serial mpi
   NUM_MPI_PROCS 1-4
@@ -140,7 +140,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_UnpackMerge
   SOURCES
-    UnpackMerge
+    UnpackMerge.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2
@@ -151,7 +151,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsGraph_DetectNonlocals
   SOURCES
-  DetectNonlocals
+  DetectNonlocals.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS "--show-test-details=ALL --output-show-proc-rank"
   COMM mpi
