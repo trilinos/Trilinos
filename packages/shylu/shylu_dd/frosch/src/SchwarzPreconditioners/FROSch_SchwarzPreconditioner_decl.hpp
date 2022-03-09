@@ -45,8 +45,11 @@
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
-#include <FROSch_SchwarzOperators_fwd.hpp>
+#include <ShyLU_DDFROSch_config.h>
 
+#include <FROSch_Tools_def.hpp>
+
+#include <FROSch_SchwarzOperators_fwd.hpp>
 
 namespace FROSch {
 
