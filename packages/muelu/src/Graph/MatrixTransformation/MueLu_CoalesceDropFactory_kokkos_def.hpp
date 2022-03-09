@@ -495,7 +495,8 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     typedef Teuchos::ScalarTraits<SC> STS;
-    const SC zero    = STS::zero();
+    typedef typename STS::magnitudeType MT;
+    const MT zero = Teuchos::ScalarTraits<MT>::zero();
 
     auto A         = Get< RCP<Matrix> >(currentLevel, "A");
     LO   blkSize   = A->GetFixedBlockSize();
