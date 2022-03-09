@@ -158,7 +158,7 @@ getValidParameters () const
 
   validParams->set("partitioner: line detection threshold", 0.0);
   validParams->set("partitioner: PDE equations", 1);
-  Teuchos::RCP<Tpetra::MultiVector<double,
+  Teuchos::RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType,
                                    typename MatrixType::local_ordinal_type,
                                    typename MatrixType::global_ordinal_type,
                                    typename MatrixType::node_type> > dummy;

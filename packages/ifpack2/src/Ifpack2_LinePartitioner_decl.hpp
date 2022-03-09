@@ -45,6 +45,7 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_OverlappingPartitioner.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include "Tpetra_MultiVector.hpp"
 
 namespace Ifpack2 {
@@ -80,7 +81,8 @@ public:
   typedef typename GraphType::global_ordinal_type global_ordinal_type;
   typedef typename GraphType::node_type node_type;
   typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type>  row_graph_type;
-  typedef Tpetra::MultiVector<double,local_ordinal_type, global_ordinal_type, node_type>  multivector_type;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+  typedef Tpetra::MultiVector<magnitude_type,local_ordinal_type, global_ordinal_type, node_type>  multivector_type;
 
   typedef typename row_graph_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
   typedef typename row_graph_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
@@ -100,7 +102,7 @@ public:
 private:
     // Useful functions
   int Compute_Blocks_AutoLine(Teuchos::ArrayView<local_ordinal_type> blockIndices) const;
-  void local_automatic_line_search(int NumEqns, Teuchos::ArrayView <local_ordinal_type> blockIndices, local_ordinal_type last, local_ordinal_type next, local_ordinal_type LineID, double tol, Teuchos::Array<local_ordinal_type> itemp, Teuchos::Array<double> dtemp) const;
+  void local_automatic_line_search(int NumEqns, Teuchos::ArrayView <local_ordinal_type> blockIndices, local_ordinal_type last, local_ordinal_type next, local_ordinal_type LineID, double tol, Teuchos::Array<local_ordinal_type> itemp, Teuchos::Array<magnitude_type> dtemp) const;
 
 
 
