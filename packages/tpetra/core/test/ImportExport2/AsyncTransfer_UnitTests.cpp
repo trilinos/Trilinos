@@ -292,6 +292,98 @@ namespace {
     std::vector<RCP<mv_type>> targetMVs;
   };
 
+  template <typename Scalar, typename LO, typename GO>
+  class MultiVectorCyclicGroupTransferFixture {
+  private:
+    using map_type = Map<LO, GO>;
+    using mv_type = MultiVector<Scalar, LO, GO>;
+
+  public:
+    MultiVectorCyclicGroupTransferFixture(FancyOStream& o, bool& s)
+      : out(o),
+        success(s),
+        comm(getDefaultComm()),
+        numProcs(comm->getSize()),
+        myRank(comm->getRank()),
+        numMVs(4)
+    { }
+
+    ~MultiVectorCyclicGroupTransferFixture() { }
+
+    void setup(int collectRank) {
+      setupMaps(collectRank);
+      setupMultiVectors();
+    }
+
+    template <typename TransferMethod>
+    void performTransfer(const TransferMethod& transfer) {
+      transfer(sourceMVs, targetMVs);
+      for (int i=0; i<numMVs; i++) {
+        TEST_EQUALITY(targetMVs[i]->importsAreAliased(), false);
+      }
+    }
+
+    template <typename ReferenceSolution>
+    void checkResults(const ReferenceSolution& referenceSolution) {
+      for (int i=0; i<numMVs; i++) {
+        RCP<const mv_type> referenceMV = referenceSolution.generateWithClassicalCodePath(sourceMVs[i], targetMap);
+        compareMultiVectors(targetMVs[i], referenceMV);
+      }
+    }
+
+  private:
+    void setupMaps(int collectRank) {
+      const GO indexBase = 0;
+      const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+
+      const size_t sourceNumLocalElements = 3;
+      const size_t totalElements = numProcs*sourceNumLocalElements;
+      const size_t targetNumLocalElements = (myRank == collectRank) ? totalElements : 0;
+
+      Teuchos::Array<GO> sourceEntries(sourceNumLocalElements);
+      for (size_t i=0; i<sourceNumLocalElements; i++) {
+        sourceEntries[i] = i*numProcs + myRank;
+      }
+
+      sourceMap = rcp(new map_type(INVALID, sourceEntries, indexBase, comm));
+      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
+    }
+
+    void setupMultiVectors() {
+      for (int i=0; i<numMVs; i++) {
+        sourceMVs.push_back(rcp(new mv_type(sourceMap, 1)));
+        sourceMVs[i]->randomize();
+
+        targetMVs.push_back(rcp(new mv_type(targetMap, 1)));
+        targetMVs[i]->putScalar(ScalarTraits<Scalar>::zero());
+      }
+    }
+
+    void compareMultiVectors(RCP<const mv_type> resultMV, RCP<const mv_type> referenceMV) {
+      auto data = resultMV->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto referenceData = referenceMV->getLocalViewHost(Tpetra::Access::ReadOnly);
+
+      TEST_EQUALITY(data.size(), referenceData.size());
+      for (LO localRow = 0; localRow < as<LO>(data.size()); localRow++) {
+        TEST_EQUALITY(data(localRow, 0), referenceData(localRow, 0));
+      }
+    }
+
+    FancyOStream& out;
+    bool& success;
+
+    RCP<const Comm<int>> comm;
+    const int numProcs;
+    const int myRank;
+
+    const int numMVs;
+
+    RCP<const map_type> sourceMap;
+    RCP<const map_type> targetMap;
+
+    std::vector<RCP<mv_type>> sourceMVs;
+    std::vector<RCP<mv_type>> targetMVs;
+  };
 
   template <typename Scalar, typename LO, typename GO>
   class DiagonalCrsMatrixTransferFixture {
@@ -1034,6 +1126,15 @@ namespace {
     fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVectorCyclicGroup_rank0, Scalar, LO, GO )
+  {
+    MultiVectorCyclicGroupTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup(0);
+    fixture.performTransfer(ForwardImportGroup<Scalar, LO, GO>());
+    fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
+  }
+
   //
   // INSTANTIATIONS
   //
@@ -1064,6 +1165,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardImportFalse, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardExportFalse, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVectorGroup_rank0, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVectorCyclicGroup_rank0, SC, LO, GO ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
