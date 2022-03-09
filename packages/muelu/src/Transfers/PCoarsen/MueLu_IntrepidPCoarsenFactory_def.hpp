@@ -510,10 +510,12 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
 
   // NOTE: This assumes rowMap==colMap and [E|T]petra ordering of all the locals first in the colMap
   RCP<GOVector> dvec = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(hi_domainMap);
-  ArrayRCP<GO> dvec_data = dvec->getDataNonConst(0);
-  for(size_t i=0; i<hi_domainMap->getLocalNumElements(); i++) {
-    if(hi_to_lo_map[i]!=lo_invalid) dvec_data[i] = lo_domainMap.getGlobalElement(hi_to_lo_map[i]);
-    else dvec_data[i] = go_invalid;
+  {
+    ArrayRCP<GO> dvec_data = dvec->getDataNonConst(0);
+    for(size_t i=0; i<hi_domainMap->getLocalNumElements(); i++) {
+      if(hi_to_lo_map[i]!=lo_invalid) dvec_data[i] = lo_domainMap.getGlobalElement(hi_to_lo_map[i]);
+      else dvec_data[i] = go_invalid;
+    }
   }
 
 
@@ -523,11 +525,13 @@ void BuildLoElemToNode(const LOFieldContainer & hi_elemToNode,
   // Generate the lo_columnMap
   // HOW: We can use the local hi_to_lo_map from the GID's in cvec to generate the non-contiguous colmap ids.
   Array<GO> lo_col_data(lo_columnMapLength);
-  ArrayRCP<GO> cvec_data = cvec->getDataNonConst(0);
-  for(size_t i=0,idx=0; i<hi_columnMap->getLocalNumElements(); i++) {
-    if(hi_to_lo_map[i]!=lo_invalid) {
-      lo_col_data[idx] = cvec_data[i];
-      idx++;
+  {
+    ArrayRCP<GO> cvec_data = cvec->getDataNonConst(0);
+    for(size_t i=0,idx=0; i<hi_columnMap->getLocalNumElements(); i++) {
+      if(hi_to_lo_map[i]!=lo_invalid) {
+        lo_col_data[idx] = cvec_data[i];
+        idx++;
+      }
     }
   }
 
