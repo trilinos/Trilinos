@@ -385,8 +385,8 @@ namespace MueLu {
       KokkosGraph::Experimental::graph_color(&kh, 
                                              numRows, 
                                              numRows, // FIXME: This should be the number of columns
-                                             graphLWK->getRowPtrs(),
-                                             graphLWK->getEntries(),
+                                             graphLWK->getLocalLWGraph().getRowPtrs(),
+                                             graphLWK->getLocalLWGraph().getEntries(),
                                              true);
     }
     else if(graphLW) {

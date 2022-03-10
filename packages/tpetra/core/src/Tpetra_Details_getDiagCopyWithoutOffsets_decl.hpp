@@ -184,7 +184,7 @@ getDiagCopyWithoutOffsets (const DiagType& D,
                            const LocalMapType& colMap,
                            const CrsMatrixType& A)
 {
-  static_assert (Kokkos::Impl::is_view<DiagType>::value,
+  static_assert (Kokkos::is_view<DiagType>::value,
                  "DiagType must be a Kokkos::View.");
   static_assert (static_cast<int> (DiagType::rank) == 1,
                  "DiagType must be a 1-D Kokkos::View.");

@@ -543,14 +543,12 @@ template <typename Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 Piro::TempusSolverForwardOnly<Scalar>::getValidTempusParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> validPL;
-  if (fwdStateIntegrator != Teuchos::null) {
-    validPL = fwdStateIntegrator->getValidParameters();
-  } else {
-    auto integrator =Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>());
-    validPL = integrator->getValidParameters();
+  if (fwdStateIntegrator == Teuchos::null) {
+    auto integrator = Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>());
+    return integrator->getValidParameters();
   }
-  return validPL;
+
+  return fwdStateIntegrator->getValidParameters();
 }
 
 template <typename Scalar>

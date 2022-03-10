@@ -192,7 +192,7 @@ namespace { // (anonymous)
 template<class OneDViewType,
          class LocalOrdinal = typename OneDViewType::size_type>
 class PositivizeVector {
-  static_assert (Kokkos::Impl::is_view<OneDViewType>::value,
+  static_assert (Kokkos::is_view<OneDViewType>::value,
                  "OneDViewType must be a 1-D Kokkos::View.");
   static_assert (static_cast<int> (OneDViewType::rank) == 1,
                  "This functor only works with a 1-D View.");
