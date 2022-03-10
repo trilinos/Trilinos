@@ -248,7 +248,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     }
 
     // Compute the integral operator
-    typedef typename tpetra_vec::dual_view_type::t_dev view_type;
     typedef typename tpetra_vec::execution_space execution_space;
     typedef Kokkos::TeamPolicy<execution_space> team_policy;
 
@@ -388,7 +387,6 @@ apply(const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
   }
 
   // Apply the integral operator to the input multivector
-  typedef typename tpetra_vec::dual_view_type::t_dev view_type;
   typedef typename tpetra_vec::execution_space execution_space;
   typedef Kokkos::TeamPolicy<execution_space> team_policy;
 
