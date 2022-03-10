@@ -207,7 +207,7 @@ public:
   inline int getDimension() const {return getNumEntriesPerID();}
 
   inline void getCoordinatesView(const scalar_t *&elements, int &stride,
-                                 int idx = 0) const
+                                 int idx = 0) const override
   {
     getEntriesView(elements, stride, idx);
   }

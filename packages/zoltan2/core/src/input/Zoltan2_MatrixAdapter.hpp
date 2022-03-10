@@ -103,7 +103,7 @@ enum MatrixEntityType {
 */
 
 template <typename User, typename UserCoord=User>
-  class MatrixAdapter : public WrapperForCoords<User, UserCoord> {
+  class MatrixAdapter : public AdapterWithCoordsWrapper<User, UserCoord> {
 private:
   enum MatrixEntityType primaryEntityType_;
   VectorAdapter<UserCoord> *coordinateInput_;

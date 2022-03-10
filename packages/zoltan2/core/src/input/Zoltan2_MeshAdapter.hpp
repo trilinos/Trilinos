@@ -483,7 +483,7 @@ public:
   }
 
   void getCoordinatesView(const scalar_t *&coords, int &stride,
-                          int coordDim) const
+                          int coordDim) const override
   {
     getCoordinatesViewOf(getPrimaryEntityType(), coords, stride, coordDim);
   }

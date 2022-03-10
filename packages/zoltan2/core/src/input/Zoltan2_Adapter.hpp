@@ -252,6 +252,7 @@ template <typename User>
 class AdapterWithCoords : public BaseAdapter<User>
 {
 public:
+  virtual void getCoordinatesView(const typename BaseAdapter<User>::scalar_t *&coords, int &stride, int coordDim) const = 0;
   virtual void getCoordinatesKokkosView(
     Kokkos::View<typename BaseAdapter<User>::scalar_t **, Kokkos::LayoutLeft, typename BaseAdapter<User>::node_t::device_type> &elements) const = 0;
 };
@@ -261,7 +262,7 @@ template <typename User>
 class VectorAdapter;
 
 template <typename User, typename UserCoord=User>
-class WrapperForCoords : public BaseAdapter<User>
+class AdapterWithCoordsWrapper : public BaseAdapter<User>
 {
 public:
   virtual void setCoordinateInput(VectorAdapter<UserCoord> *coordData) = 0;

@@ -96,7 +96,7 @@ enum GraphEntityType {
 */
 
 template <typename User, typename UserCoord=User>
-  class GraphAdapter : public WrapperForCoords<User, UserCoord> {
+  class GraphAdapter : public AdapterWithCoordsWrapper<User, UserCoord> {
 private:
   enum GraphEntityType primaryEntityType; // Entity (vertex or edge) to
                                           // be partitioned, ordered,

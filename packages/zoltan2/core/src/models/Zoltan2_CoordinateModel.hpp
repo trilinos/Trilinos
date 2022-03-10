@@ -247,7 +247,7 @@ public:
     }
     else if (type == MatrixAdapterType or type == GraphAdapterType)
     {
-      auto wrapper = dynamic_cast<const WrapperForCoords<user_t, userCoord_t>*>(&(*ia));
+      auto wrapper = dynamic_cast<const AdapterWithCoordsWrapper<user_t, userCoord_t>*>(&(*ia));
       wrapper->getCoordinateInput()->getCoordinatesKokkosView(xyz);
     }
 
