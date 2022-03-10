@@ -1211,13 +1211,15 @@ namespace MueLu {
       isDirichletRow = Xpetra::VectorFactory<int,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRowMap(),true);
       isDirichletCol = Xpetra::VectorFactory<int,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getColMap(),true);
 
-      Teuchos::ArrayRCP<int> dr_rcp = isDirichletRow->getDataNonConst(0);
-      Teuchos::ArrayView<int> dr    = dr_rcp();
-      Teuchos::ArrayRCP<int> dc_rcp = isDirichletCol->getDataNonConst(0);
-      Teuchos::ArrayView<int> dc    = dc_rcp();
-      for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
-        dr[dirichletRows[i]] = 1;
-        if(!has_import) dc[dirichletRows[i]] = 1;
+      {
+        Teuchos::ArrayRCP<int> dr_rcp = isDirichletRow->getDataNonConst(0);
+        Teuchos::ArrayView<int> dr    = dr_rcp();
+        Teuchos::ArrayRCP<int> dc_rcp = isDirichletCol->getDataNonConst(0);
+        Teuchos::ArrayView<int> dc    = dc_rcp();
+        for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
+          dr[dirichletRows[i]] = 1;
+          if(!has_import) dc[dirichletRows[i]] = 1;
+        }
       }
 
       if(has_import)
