@@ -63,6 +63,8 @@ class OldSchoolVectorAdapterContig : public Zoltan2::VectorAdapter<User>
 public:
   typedef typename Zoltan2::InputTraits<User>::gno_t gno_t;
   typedef typename Zoltan2::InputTraits<User>::scalar_t scalar_t;
+  typedef typename Zoltan2::InputTraits<User>::node_t node_t;
+  typedef typename node_t::device_type device_t;
 
   OldSchoolVectorAdapterContig(
     const size_t nids_,
@@ -152,6 +154,7 @@ public:
   typedef typename Zoltan2::InputTraits<User>::gno_t gno_t;
   typedef typename Zoltan2::InputTraits<User>::scalar_t scalar_t;
   typedef Tpetra::Map<>::node_type node_t;
+  typedef typename node_t::device_type device_t;
 
   KokkosVectorAdapter(
     const size_t nids_,
@@ -163,7 +166,7 @@ public:
   {
     // create kokkos_gids in default memory space
     {
-      typedef Kokkos::DualView<gno_t *> view_ids_t;
+      typedef Kokkos::DualView<gno_t *, device_t> view_ids_t;
       kokkos_gids = view_ids_t(
         Kokkos::ViewAllocateWithoutInitializing("gids"), nids);
 
@@ -174,13 +177,13 @@ public:
 
       kokkos_gids.template modify<typename view_ids_t::host_mirror_space>();
       kokkos_gids.sync_host();
-      kokkos_gids.template sync<typename node_t::device_type>();
+      kokkos_gids.template sync<device_t>();
     }
 
     // create kokkos_weights in default memory space
     if(weights_ != NULL)
     {
-      typedef Kokkos::DualView<scalar_t **> view_weights_t;
+      typedef Kokkos::DualView<scalar_t **, device_t> view_weights_t;
       kokkos_weights = view_weights_t(
         Kokkos::ViewAllocateWithoutInitializing("weights"), nids, 0);
       auto host_kokkos_weights = kokkos_weights.h_view;
@@ -190,12 +193,12 @@ public:
 
       kokkos_weights.template modify<typename view_weights_t::host_mirror_space>();
       kokkos_weights.sync_host();
-      kokkos_weights.template sync<typename node_t::device_type>();
+      kokkos_weights.template sync<device_t>();
     }
 
     // create kokkos_coords in default memory space
     {
-      typedef Kokkos::DualView<scalar_t **, Kokkos::LayoutLeft> kokkos_coords_t;
+      typedef Kokkos::DualView<scalar_t **, Kokkos::LayoutLeft, device_t> kokkos_coords_t;
       kokkos_coords = kokkos_coords_t(
         Kokkos::ViewAllocateWithoutInitializing("coords"), nids, dim);
       auto host_kokkos_coords = kokkos_coords.h_view;
@@ -208,7 +211,7 @@ public:
 
       kokkos_coords.template modify<typename kokkos_coords_t::host_mirror_space>();
       kokkos_coords.sync_host();
-      kokkos_coords.template sync<typename node_t::device_type>();
+      kokkos_coords.template sync<device_t>();
     }
   }
 
@@ -219,9 +222,8 @@ public:
     ids = kokkosIds.data();
   }
 
-  virtual void getIDsKokkosView(Kokkos::View<const gno_t *,
-    typename node_t::device_type> &ids) const {
-    ids = kokkos_gids.template view<typename node_t::device_type>();;
+  virtual void getIDsKokkosView(Kokkos::View<const gno_t *, device_t> &ids) const {
+    ids = kokkos_gids.template view<device_t>();
   }
 
   int getNumWeightsPerID() const { return (kokkos_weights.h_view.size() != 0); }
@@ -235,9 +237,8 @@ public:
     stride = 1;
   }
 
-  virtual void getWeightsKokkosView(Kokkos::View<scalar_t **,
-    typename node_t::device_type> & wgt) const {
-    wgt = kokkos_weights.template view<typename node_t::device_type>();;
+  virtual void getWeightsKokkosView(Kokkos::View<scalar_t **, device_t> & wgt) const {
+    wgt = kokkos_weights.template view<device_t>();
   }
 
   int getNumEntriesPerID() const { return dim; }
@@ -249,16 +250,16 @@ public:
   }
 
   virtual void getEntriesKokkosView(Kokkos::View<scalar_t **,
-    Kokkos::LayoutLeft, typename node_t::device_type> & coo) const {
-    coo = kokkos_coords.template view<typename node_t::device_type>();
+    Kokkos::LayoutLeft, device_t> & coo) const {
+    coo = kokkos_coords.template view<device_t>();
   }
 
 private:
   const size_t nids;
-  Kokkos::DualView<gno_t *> kokkos_gids;
+  Kokkos::DualView<gno_t *, device_t> kokkos_gids;
   const int dim;
-  Kokkos::DualView<scalar_t **, Kokkos::LayoutLeft> kokkos_coords;
-  Kokkos::DualView<scalar_t **> kokkos_weights;
+  Kokkos::DualView<scalar_t **, Kokkos::LayoutLeft, device_t> kokkos_coords;
+  Kokkos::DualView<scalar_t **, device_t> kokkos_weights;
 };
 
 //////////////////////////////////////////////
