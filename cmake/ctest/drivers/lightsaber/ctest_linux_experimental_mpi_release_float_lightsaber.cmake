@@ -54,84 +54,43 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.lightsaber.gcc.cmake")
 
 #
-# Platform/compiler specific options for rocketman using gcc
+# Set the options specific to this build case
 #
 
-MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
+# The variable BUILD_DIR_NAME is based COMM_TYPE, BUILD_TYPE, and BUILD_NAME_DETAILS.
+# Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
+# details to BUILD_DIR_NAME.
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE RELEASE)
+SET(BUILD_NAME_DETAILS Float)
 
-  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
-
-  IF(COMM_TYPE STREQUAL MPI)
-    string(TOUPPER $ENV{LMOD_FAMILY_MPI} UC_MPI_NAME)
-    SET(BUILD_DIR_NAME ${UC_MPI_NAME}-$ENV{LMOD_FAMILY_MPI_VERSION}_${BUILD_TYPE}_${BUILD_NAME_DETAILS})
-  ELSE()
-    SET(BUILD_DIR_NAME ${COMM_TYPE}-${BUILD_TYPE}_${BUILD_NAME_DETAILS})
-  ENDIF()
-
-  SET(Trilinos_REPOSITORY_LOCATION_NIGHTLY_DEFAULT "https://github.com/muelu/Trilinos.git")
-
-  SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
-  SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  SET(CTEST_BUILD_FLAGS     "-j14 -i" )
-
-  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "14" )
-  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
-  SET(Trilinos_CTEST_DO_ALL_AT_ONCE FALSE)
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
-
-  SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DBUILD_SHARED_LIBS=ON"
-    "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
-    "-DCMAKE_VERBOSE_MAKEFILE=ON"
-
-  
-    "-DTrilinos_ENABLE_Fortran=OFF"
-
-    "-DSuperLU_INCLUDE_DIRS=$ENV{SUPERLU_INC}"
-    "-DSuperLU_LIBRARY_DIRS=$ENV{SUPERLU_LIB}"
-
-    "-DBoost_INCLUDE_DIRS:STRING=$ENV{BOOST_INC}"
-    "-DBoost_LIBRARY_DIRS:STRING=$ENV{BOOST_LIB}"
-    "-DBoostLib_INCLUDE_DIRS:STRING=$ENV{BOOST_INC}"
-    "-DBoostLib_LIBRARY_DIRS:STRING=$ENV{BOOST_LIB}"
-
-    "-DNetcdf_LIBRARY_DIRS:STRING=$ENV{NETCDF_C_LIB}"
-    "-DNetcdf_INCLUDE_DIRS:STRING=$ENV{NETCDF_C_INC}"
-
-    ### PACKAGE CONFIGURATION ###
-
-    ### MISC ###
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
-    )
-  SET_DEFAULT(COMPILER_VERSION "$ENV{LMOD_FAMILY_COMPILER}-$ENV{LMOD_FAMILY_COMPILER_VERSION}")
+SET(CTEST_PARALLEL_LEVEL 8)
+SET(CTEST_TEST_TYPE Experimental)
+SET(Trilinos_TRACK  Experimental)  # Set the CDash track to Nightly
+SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
+SET(CTEST_DO_MEMORY_TESTING FALSE)
+SET(Trilinos_PACKAGES MueLu Tpetra)
 
 
-  # Ensure that MPI is on for all parallel builds that might be run.
-  IF(COMM_TYPE STREQUAL MPI)
+SET(EXTRA_CONFIGURE_OPTIONS
+  "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
+  "-DTPL_ENABLE_SuperLU=ON"
+  "-DTeuchos_ENABLE_FLOAT=ON"
+  "-DTeuchos_ENABLE_COMPLEX=OFF"
+  "-DTpetra_INST_INT_INT=OFF"
+  "-DTpetra_INST_INT_LONG_LONG=ON"
+  "-DTpetra_INST_FLOAT=ON"
+  "-DTpetra_INST_COMPLEX_FLOAT=OFF"
+  "-DTpetra_INST_DOUBLE=OFF"
+)
 
-    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
-        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-        "-DTPL_ENABLE_MPI=ON"
-            "-DMPI_BASE_DIR:PATH=$ENV{OPENMPI_ROOT}"
-            "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;socket\\\;--map-by\\\;socket"
-       )
+#
+# Set the rest of the system-specific options and run the dashboard build/test
+#
 
-    SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
-        "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
-
-  ELSE()
-
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER=$ENV{GCC_ROOT}/bin/g++"
-      "-DCMAKE_C_COMPILER=$ENV{GCC_ROOT}/bin/gcc"
-      )
-
-  ENDIF()
-
-  TRILINOS_CTEST_DRIVER()
-
-ENDMACRO()
+TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
