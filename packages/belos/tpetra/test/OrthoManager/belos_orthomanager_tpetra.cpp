@@ -244,7 +244,7 @@ public:
     // modify numRows to be the number of rows in the sparse matrix.
     // Otherwise, it will leave numRows alone.
     std::pair<Teuchos::RCP<map_type>, Teuchos::RCP<matrix_type> > results =
-      Belos::Test::loadSparseMatrix<LocalOrdinalType,
+      Belos::Test::loadSparseMatrix<typename matrix_type::scalar_type,LocalOrdinalType,
       GlobalOrdinalType,
       NodeType> (comm, filename, numRows, debugOut);
     map = results.first;
