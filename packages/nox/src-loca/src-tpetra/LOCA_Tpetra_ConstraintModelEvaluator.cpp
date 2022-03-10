@@ -25,7 +25,7 @@ namespace LOCA {
       x_ = cloneVec.clone(NOX::ShapeCopy);
       dgdx_ = cloneVec.createMultiVector(constraintResponseNames.size(),NOX::ShapeCopy);
 
-      TEUCHOS_ASSERT(constraintResponseNames.size() == size_t(pVec_.length()));
+      TEUCHOS_ASSERT(constraintResponseNames.size() <= size_t(pVec_.length()));
 
       // Get the parameter indices
       meParameterIndices_.clear();
@@ -302,6 +302,10 @@ namespace LOCA {
     NOX::Abstract::MultiVector *
     ConstraintModelEvaluator::getDX () const
     {return dgdx_.get();}
+
+    const LOCA::ParameterVector
+    ConstraintModelEvaluator::getParams() const
+    {return pVec_;}
 
   } // namespace MultiContinuation
 } //  namespace LOCA
