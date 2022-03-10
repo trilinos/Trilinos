@@ -1155,12 +1155,12 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     if(modelAvail_[IdentifierModelType]==true)
     {
       this->env_->debug(DETAILED_STATUS, "    building identifier model");
-      this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-            this->baseInputAdapter_, this->envConst_, this->comm_,
-            idFlags_));
+      // this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
+      //       this->baseInputAdapter_, this->envConst_, this->comm_,
+      //       idFlags_));
 
-      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
-            this->identifierModel_);
+      // this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+      //       this->identifierModel_);
     }
 
     this->env_->memory("After creating Model");
