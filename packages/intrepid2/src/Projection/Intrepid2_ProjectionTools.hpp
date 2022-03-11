@@ -780,6 +780,17 @@ public:
       Teuchos::LAPACK<ordinal_type,valueType> lapack_;
       ordinal_type numCells = basisCoeffs.extent(0);
 
+      // due to the particular type of elemDof (possibly due either to layout or subviews having been
+      // taken), the usual pattern of create_mirror_view_and_copy() does not work "out of the box".
+      // So we do a manual copy on device, followed by the create_mirror_view_and_copy().
+      Kokkos::View<ordinal_type*> elemDofCopy("elemDofCopy", elemDof.extent(0));
+      Kokkos::parallel_for ("Intrepid2::ProjectionTools - copy elemDof",
+                            Kokkos::RangePolicy<ExecSpaceType, int> (0, elemDof.extent(0)),
+      KOKKOS_LAMBDA (const unsigned &i) {
+        elemDofCopy(i) = elemDof(i);
+      });
+      auto serialElemDof = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), elemDofCopy);
+
       if(matrixIndependentOfCell_) {
         ViewType2 elemRhsTrans("transRhs", elemRhs.extent(1), elemRhs.extent(0));
         Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType>
@@ -816,7 +827,7 @@ public:
 
         for(ordinal_type i=0; i<n; ++i) {
           for (ordinal_type ic = 0; ic < numCells; ic++)
-            serialBasisCoeffs(ic,elemDof(i)) = serialElemRhs(i,ic);
+            serialBasisCoeffs(ic,serialElemDof(i)) = serialElemRhs(i,ic);
         }
       }
       else {
@@ -860,7 +871,7 @@ public:
           }
 
           for(ordinal_type i=0; i<n; ++i) {
-            serialBasisCoeffs(elemDof(i)) = serialElemRhs(i,0);
+            serialBasisCoeffs(serialElemDof(i)) = serialElemRhs(i,0);
           }
           Kokkos::deep_copy(basisCoeffs_,serialBasisCoeffs);
         }

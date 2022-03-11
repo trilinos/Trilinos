@@ -556,10 +556,9 @@ ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs
     WorkArrayViewType w_("w",numCells, edgeCardinality);
 
     auto edgeDofs = Kokkos::subview(tagToOrdinal, edgeDim, ie, Kokkos::ALL());
-    auto edgeDofsHost = Kokkos::subview(cellBasis->getAllDofOrdinal(), edgeDim, ie, Kokkos::ALL());
 
     ElemSystem edgeSystem("edgeSystem", false);
-    edgeSystem.solve(basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDofsHost, edgeCardinality);
+    edgeSystem.solve(basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDofs, edgeCardinality);
 
     Kokkos::parallel_for("Compute Dofs ", Kokkos::RangePolicy<ExecSpaceType, int> (0, edgeCardinality),
         KOKKOS_LAMBDA (const size_t i) {
@@ -656,9 +655,9 @@ ProjectionTools<DeviceType>::getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs
     ScalarViewType t_("t",numCells, numElemDofs);
     WorkArrayViewType w_("w",numCells, numElemDofs);
 
-    auto cellDofsHost = Kokkos::subview(cellBasis->getAllDofOrdinal(), dim, 0, Kokkos::ALL());
+    auto cellDofs = Kokkos::subview(tagToOrdinal, dim, 0, Kokkos::ALL());
     ElemSystem cellSystem("cellSystem", true);
-    cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofsHost, numElemDofs);
+    cellSystem.solve(basisCoeffs, cellMassMat_, cellRhsMat_, t_, w_, cellDofs, numElemDofs);
   }
 }
 }
