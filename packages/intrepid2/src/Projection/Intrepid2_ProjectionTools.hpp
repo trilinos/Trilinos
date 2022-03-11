@@ -790,6 +790,9 @@ public:
         elemDofCopy(i) = elemDof(i);
       });
       auto serialElemDof = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), elemDofCopy);
+      
+      Kokkos::DynRankView<typename ViewType2::value_type, HostDeviceType> A_host("A0_host", elemMat.extent(1),elemMat.extent(2));
+      auto A_device = Kokkos::create_mirror_view(typename DeviceType::memory_space(), A_host);
 
       if(matrixIndependentOfCell_) {
         ViewType2 elemRhsTrans("transRhs", elemRhs.extent(1), elemRhs.extent(0));
@@ -798,8 +801,6 @@ public:
 
         Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType> serialElemRhs("serialElemRhs", n+m, numCells);
 
-        Kokkos::DynRankView<typename ViewType2::value_type, HostDeviceType> A_host("A0_host", elemMat.extent(1),elemMat.extent(2));
-        auto A_device = Kokkos::create_mirror_view(typename DeviceType::memory_space(), A_host);
         Kokkos::deep_copy(A_device, Kokkos::subview(elemMat, 0, Kokkos::ALL(), Kokkos::ALL()));
         Kokkos::deep_copy(A_host, A_device);
 
@@ -833,14 +834,21 @@ public:
       else {
         Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType> pivVec("pivVec", 2*(m+n), 1);
         Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType> serialElemRhs("serialElemRhs", n+m, 1 );
+        Kokkos::DynRankView<typename ViewType2::value_type, HostDeviceType> b_host("b_host",elemRhs.extent(1));
+        auto b_device = Kokkos::create_mirror_view(typename DeviceType::memory_space(), b_host);
+        Kokkos::DynRankView<typename ViewType2::value_type, HostDeviceType> basisCoeffsSubviewCopy_host("basisCoeffsSubviewCopy_host",basisCoeffs.extent(1));
+        auto basisCoeffsSubviewCopy_device = Kokkos::create_mirror_view(typename DeviceType::memory_space(), basisCoeffsSubviewCopy_host);
+
         for (ordinal_type ic = 0; ic < numCells; ic++) {
-          auto A = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-              Kokkos::subview(elemMat, ic, Kokkos::ALL(), Kokkos::ALL()));
-          auto b = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-              Kokkos::subview(elemRhs, ic, Kokkos::ALL()));
-          auto basisCoeffs_ = Kokkos::subview(basisCoeffs, ic, Kokkos::ALL());
-          auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-              basisCoeffs_);
+          Kokkos::deep_copy(A_device, Kokkos::subview(elemMat, ic, Kokkos::ALL(), Kokkos::ALL()));
+          Kokkos::deep_copy(A_host, A_device);
+          auto A = A_host;
+          Kokkos::deep_copy(b_device, Kokkos::subview(elemRhs, ic, Kokkos::ALL()));
+          Kokkos::deep_copy(b_host, b_device);
+          auto b = b_host;
+          auto basisCoeffsSubview = Kokkos::subview(basisCoeffs, ic, Kokkos::ALL());
+          Kokkos::deep_copy(basisCoeffsSubviewCopy_device, basisCoeffsSubview);
+          Kokkos::deep_copy(basisCoeffsSubviewCopy_host, basisCoeffsSubviewCopy_device);
 
           Kokkos::deep_copy(serialElemMat,valueType(0));  //LAPACK might overwrite the matrix
 
@@ -871,9 +879,10 @@ public:
           }
 
           for(ordinal_type i=0; i<n; ++i) {
-            serialBasisCoeffs(serialElemDof(i)) = serialElemRhs(i,0);
+            basisCoeffsSubviewCopy_host(serialElemDof(i)) = serialElemRhs(i,0);
           }
-          Kokkos::deep_copy(basisCoeffs_,serialBasisCoeffs);
+          Kokkos::deep_copy(basisCoeffsSubviewCopy_device, basisCoeffsSubviewCopy_host);
+          Kokkos::deep_copy(basisCoeffsSubview,basisCoeffsSubviewCopy_device);
         }
       }
     }
