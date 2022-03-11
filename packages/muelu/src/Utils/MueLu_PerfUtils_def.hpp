@@ -70,8 +70,6 @@ namespace MueLu {
     Type sumVal, sum2Val, v2 = v*v;
     using MT = typename Teuchos::ScalarTraits<Type>::magnitudeType;
     double zero = Teuchos::ScalarTraits<double>::zero();
-
-    MT avgVal_MT = Teuchos::as<MT>(avgVal);
     
     MueLu_sumAll(comm,  v, sumVal);
     MueLu_sumAll(comm, v2, sum2Val);
@@ -85,6 +83,7 @@ namespace MueLu {
     MueLu_maxAll(comm,   w, minProc);
 
     avgVal = (numActiveProcs > 0 ? (as<double>(Teuchos::ScalarTraits<Type>::real(sumVal)) / numActiveProcs) : zero);
+    MT avgVal_MT = Teuchos::as<MT>(avgVal);
     devVal = (numActiveProcs > 1 ? sqrt((as<double>(Teuchos::ScalarTraits<Type>::real(sum2Val - sumVal*avgVal_MT)))/(numActiveProcs-1)) : zero);
   }
 
