@@ -47,7 +47,7 @@
 
 #include <ShyLU_DDFROSch_config.h>
 
-#include <FROSch_Tools_def.hpp>
+#include <FROSch_Types.h>
 
 #include <FROSch_SchwarzOperators_fwd.hpp>
 
