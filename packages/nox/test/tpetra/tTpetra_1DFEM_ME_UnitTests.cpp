@@ -269,3 +269,34 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses_g6_p4)
   auto Dg6Dp4_host = Dg6Dp4->getLocalViewHost(Tpetra::Access::ReadOnly);
   TEST_FLOATING_EQUALITY(Dg6Dp4_host(0,0),0.0,tol);
 }
+
+TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM,get_index)
+{
+  // Get default Tpetra template types
+  using Scalar = NOX::Scalar;
+  using LO = NOX::LocalOrdinal;
+  using GO = NOX::GlobalOrdinal;
+  using Node = NOX::NodeType;
+
+  // Create the model evaluator object
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  const Tpetra::global_size_t numGlobalElements = 100;
+  Scalar x00 = 0.0;
+  Scalar x01 = 1.0;
+  Teuchos::RCP<EvaluatorTpetra1DFEM<Scalar,LO,GO,Node> > model =
+    evaluatorTpetra1DFEM<Scalar,LO,GO,Node>(comm, numGlobalElements, x00, x01);
+
+  TEST_EQUALITY(model->get_p_index("Dummy p(0)"),std::make_pair(0,0));
+  TEST_EQUALITY(model->get_p_index("Dummy p(1)"),std::make_pair(1,0));
+  TEST_EQUALITY(model->get_p_index("k"),std::make_pair(2,0));
+  TEST_EQUALITY(model->get_p_index("Dummy p(3)"),std::make_pair(3,0));
+  TEST_EQUALITY(model->get_p_index("T_left"),std::make_pair(4,0));
+
+  TEST_EQUALITY(model->get_g_index("Dummy g(0)"),std::make_pair(0,0));
+  TEST_EQUALITY(model->get_g_index("Dummy g(1)"),std::make_pair(1,0));
+  TEST_EQUALITY(model->get_g_index("Dummy g(2)"),std::make_pair(2,0));
+  TEST_EQUALITY(model->get_g_index("Dummy g(3)"),std::make_pair(3,0));
+  TEST_EQUALITY(model->get_g_index("Constraint: T_right=2"),std::make_pair(4,0));
+  TEST_EQUALITY(model->get_g_index("Dummy g(5)"),std::make_pair(5,0));
+  TEST_EQUALITY(model->get_g_index("Constraint: 2*T_left=T_right"),std::make_pair(6,0));
+}

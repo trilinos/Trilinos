@@ -50,11 +50,11 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
     using map_t = Tpetra::Map<lno_t,gno_t>;
     using femv_scalar_t = int;
     using femv_t = Tpetra::FEMultiVector<femv_scalar_t, lno_t, gno_t>; 
-    using device_type = Tpetra::Map<>::device_type;
-    using execution_space = Tpetra::Map<>::execution_space;
-    using memory_space = Tpetra::Map<>::memory_space;
-    using host_exec = typename Kokkos::View<device_type>::HostMirror::execution_space;
-    using host_mem = typename Kokkos::View<device_type>::HostMirror::memory_space;
+    using device_type = typename femv_t::device_type;
+    using execution_space = typename device_type::execution_space;
+    using memory_space = typename device_type::memory_space;
+    using host_exec = typename femv_t::host_view_type::device_type::execution_space;
+    using host_mem = typename femv_t::host_view_type::device_type::memory_space;
 
     double timer(){
       struct timeval tp;
@@ -1360,9 +1360,11 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //get the color view from the FEMultiVector
       auto femvColors = femv->getLocalViewDevice(Tpetra::Access::ReadWrite);
       auto femv_colors = subview(femvColors, Kokkos::ALL, 0);
-      Kokkos::parallel_for(n_ghosts, KOKKOS_LAMBDA(const int& i){
-        ghost_colors(i) = femv_colors(i+n_local);
-      });
+      Kokkos::parallel_for("get femv colors",
+        Kokkos::RangePolicy<execution_space, int>(0,n_ghosts),
+        KOKKOS_LAMBDA(const int& i){
+          ghost_colors(i) = femv_colors(i+n_local);
+        });
       Kokkos::fence();
       
       double temp = timer();
@@ -1455,9 +1457,11 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 	//the recoloring does not have enough information to color
 	//ghosts correctly, so we set the colors to what they were before
 	//to avoid consistency issues.
-	Kokkos::parallel_for(n_ghosts, KOKKOS_LAMBDA(const int& i){
-          femv_colors(i+n_local) = ghost_colors(i);
-        });
+        Kokkos::parallel_for("set femv colors",
+          Kokkos::RangePolicy<execution_space, int>(0,n_ghosts),
+          KOKKOS_LAMBDA(const int& i){
+            femv_colors(i+n_local) = ghost_colors(i);
+          });
         Kokkos::fence();
         
 	//send views are up-to-date, they were copied after conflict detection.
@@ -1482,9 +1486,11 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 	//remove consistency issues.
         femvColors = femv->getLocalViewDevice(Tpetra::Access::ReadWrite);
         femv_colors = subview(femvColors, Kokkos::ALL, 0);
-        Kokkos::parallel_for(n_ghosts, KOKKOS_LAMBDA(const int& i){
-          ghost_colors(i) = femv_colors(i+n_local);
-        });
+        Kokkos::parallel_for("get femv colors 2",
+          Kokkos::RangePolicy<execution_space, int>(0,n_ghosts),
+          KOKKOS_LAMBDA(const int& i){
+            ghost_colors(i) = femv_colors(i+n_local);
+          });
         Kokkos::fence();
         
 

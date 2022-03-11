@@ -475,6 +475,9 @@ namespace Tpetra {
                                             device_type>;
     using wrapped_dual_view_type = Details::WrappedDualView<dual_view_type>;
 
+    using host_view_type = typename dual_view_type::t_host;
+    using device_view_type = typename dual_view_type::t_dev;
+
     //@}
     //! @name Constructors and destructor
     //@{
