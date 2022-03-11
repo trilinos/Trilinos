@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     V z(z_ptr);
     V z_thresh(z_thresh_ptr);
 
-    LO numElements = static_cast<LO>( map->getNodeNumElements() );
+    LO numElements = static_cast<LO>( map->getLocalNumElements() );
  
     for( LO lclRow = 0; lclRow < numElements; ++lclRow ) {
       const GO gblRow = map->getGlobalElement(lclRow);

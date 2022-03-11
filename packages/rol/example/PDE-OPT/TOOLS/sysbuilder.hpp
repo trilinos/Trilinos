@@ -107,9 +107,9 @@ public:
     ROL::Ptr<const Tpetra::Map<> > mapRes = A->getRangeMap();
 
     // Get individual indices.
-    Teuchos::ArrayView<const GO> idxSim = mapSim->getNodeElementList(); 
-    Teuchos::ArrayView<const GO> idxOpt = mapOpt->getNodeElementList(); 
-    Teuchos::ArrayView<const GO> idxRes = mapRes->getNodeElementList();
+    Teuchos::ArrayView<const GO> idxSim = mapSim->getLocalElementList();
+    Teuchos::ArrayView<const GO> idxOpt = mapOpt->getLocalElementList();
+    Teuchos::ArrayView<const GO> idxRes = mapRes->getLocalElementList();
 
     // Get communicator.
     ROL::Ptr<const Teuchos::Comm<int> > comm = mapSim->getComm();
@@ -347,9 +347,9 @@ public:
     ROL::Ptr<const Tpetra::Map<> > mapRes = vecRes->getMap();
 
     // Get individual indices.
-    Teuchos::ArrayView<const GO> idxSim = mapSim->getNodeElementList(); 
-    Teuchos::ArrayView<const GO> idxOpt = mapOpt->getNodeElementList(); 
-    Teuchos::ArrayView<const GO> idxRes = mapRes->getNodeElementList();
+    Teuchos::ArrayView<const GO> idxSim = mapSim->getLocalElementList();
+    Teuchos::ArrayView<const GO> idxOpt = mapOpt->getLocalElementList();
+    Teuchos::ArrayView<const GO> idxRes = mapRes->getLocalElementList();
 
     // Get communicator.
     ROL::Ptr<const Teuchos::Comm<int> > comm = mapSim->getComm();
