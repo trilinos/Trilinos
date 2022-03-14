@@ -649,10 +649,11 @@ namespace MueLu {
     */
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType Distance2(const Teuchos::ArrayView<double> & weight,const Teuchos::Array<Teuchos::ArrayRCP<const Scalar>> &v, LocalOrdinal i0, LocalOrdinal i1) {
       const size_t numVectors = v.size();
+      using MT = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
 
       Scalar d = Teuchos::ScalarTraits<Scalar>::zero();
       for (size_t j = 0; j < numVectors; j++) {
-        d += weight[j]*(v[j][i0] - v[j][i1])*(v[j][i0] - v[j][i1]);
+        d += Teuchos::as<MT>(weight[j])*(v[j][i0] - v[j][i1])*(v[j][i0] - v[j][i1]);
       }
       return Teuchos::ScalarTraits<Scalar>::magnitude(d);
     }

@@ -72,8 +72,7 @@ using Teuchos::rcp;
 using Teuchos::ParameterList;
 
 int main(int argc, char *argv[]) {
-
-  typedef double                           ST;
+  typedef Tpetra::MultiVector<>::scalar_type ST;
   typedef Teuchos::ScalarTraits<ST>       SCT;
   typedef SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;
@@ -186,7 +185,7 @@ int main(int argc, char *argv[]) {
     innerBelosList.set( "Timer Label", "Belos Preconditioner Solve" );// Choose a different label for the inner solve
 
     // *****Construct linear problem for the inner iteration using A *****
-    Belos::LinearProblem<double,MV,OP> innerProblem;
+    Belos::LinearProblem<ST,MV,OP> innerProblem;
     innerProblem.setOperator( A );
     innerProblem.setLabel( "Belos Preconditioner Solve" );
 
