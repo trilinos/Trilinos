@@ -4,6 +4,9 @@ SCRIPTPATH=$(dirname $SCRIPTFILE)
 source ${SCRIPTPATH:?}/common.bash
 # set -x  # echo commands
 
+# Fetch out arguments
+on_cuda=$(echo "$@" | grep '\-\-on_weaver' && echo "1")
+on_ats2=$(echo "$@" | grep '\-\-on_ats2' && echo "1")
 
 
 # Load the right version of Git / Python based on a regex
@@ -11,28 +14,21 @@ source ${SCRIPTPATH:?}/common.bash
 function bootstrap_modules() {
     print_banner "Bootstrap environment modules start"
 
-    cuda_regex=".*(_cuda_).*"
-    ride_regex=".*(ride).*"
     vortex_regex=".*(vortex).*"
-    if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
-        if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
-            message_std "PRDriver> " "Job is CUDA"
-            execute_command_checked "module unload git"
-            execute_command_checked "module unload python"
-            execute_command_checked "module load git/2.10.1"
-            execute_command_checked "module load python/3.7.3"
-            get_python_packages pip3
-            envvar_set_or_create PYTHON_EXE python3
-        elif [[ ${NODE_NAME:?} =~ ${vortex_regex} ]]; then
-            echo -e "Job is CUDA node is vortex"
-            execute_command_checked "module load git/2.20.0"
-            execute_command_checked "module load python/3.7.2"
-            get_python_packages pip3
-            envvar_set_or_create PYTHON_EXE python3
-        else
-            message_std "PRDriver> " "ERROR: Unable to find matching environment for CUDA job not on Ride."
-            exit -1
-        fi
+    if [[ ${NODE_NAME:?} =~ ${vortex_regex} || ${on_ats2} == "1" ]]; then
+        message_std "PRDriver> " "Job is CUDA on ats2"
+        execute_command_checked "module load git/2.20.0"
+        execute_command_checked "module load python/3.7.2"
+        get_python_packages pip3
+        envvar_set_or_create PYTHON_EXE python3
+    elif [[ ${on_weaver} == "1" ]]; then
+        message_std "PRDriver> " "Job is CUDA on weaver"
+        module unload git
+        module unload python
+        module load git/2.10.1
+        module load python/3.7.3
+        get_python_packages pip3
+        export PYTHON_EXE=python3
     else
         execute_command_checked "module load apps/anaconda3.7"
         source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
