@@ -29,7 +29,6 @@ function bootstrap_modules() {
         get_python_packages pip3
         export PYTHON_EXE=python3
     else
-        execute_command_checked "module load apps/anaconda3.7"
         source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
         execute_command_checked "module unload sems-archive-git"
         execute_command_checked "module unload sems-archive-python"
