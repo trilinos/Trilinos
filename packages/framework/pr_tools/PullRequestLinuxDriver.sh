@@ -4,7 +4,7 @@ SCRIPTPATH=$(dirname $SCRIPTFILE)
 source ${SCRIPTPATH:?}/common.bash
 # set -x  # echo commands
 
-# Fetch out arguments
+# Fetch arguments
 on_cuda=$(echo "$@" | grep '\-\-on_weaver' && echo "1")
 on_ats2=$(echo "$@" | grep '\-\-on_ats2' && echo "1")
 
@@ -13,16 +13,15 @@ on_ats2=$(echo "$@" | grep '\-\-on_ats2' && echo "1")
 # match to the Jenkins job name.
 function bootstrap_modules() {
     print_banner "Bootstrap environment modules start"
+    message_std "PRDriver> " "Job is $JOB_BASE_NAME"
 
     vortex_regex=".*(vortex).*"
     if [[ ${NODE_NAME:?} =~ ${vortex_regex} || ${on_ats2} == "1" ]]; then
-        message_std "PRDriver> " "Job is CUDA on ats2"
         execute_command_checked "module load git/2.20.0"
         execute_command_checked "module load python/3.7.2"
         get_python_packages pip3
         envvar_set_or_create PYTHON_EXE python3
     elif [[ ${on_weaver} == "1" ]]; then
-        message_std "PRDriver> " "Job is CUDA on weaver"
         module unload git
         module unload python
         module load git/2.10.1

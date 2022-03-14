@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 import sys
 import subprocess
+import os
 
 # Packages are snapshotted via install_reqs.sh or these are in Python's site-packages
 try:                                                                                # pragma: no cover
@@ -74,6 +75,8 @@ def main(argv):
   """
   This python script determines what system it is running on and then launches
   the trilinos driver script appropriatly.
+
+  The script returns 0 upon success and non-zero otherwise.
   """
   parser = argparse.ArgumentParser(description='Launch a trilinos driver script on this system.')
   parser.add_argument('--build-name', required=True,
@@ -86,6 +89,12 @@ def main(argv):
                       help='The INI file containing supported systems')
   args = parser.parse_args()
 
+  if os.getenv("TRILINOS_DIR") == None:
+    print("LaunchDriver> ERROR: Please set TRILINOS_DIR.", flush=True)
+    sys.exit(1)
+
+  print("LaunchDriver> INFO: TRILINOS_DIR=\"" + os.environ["TRILINOS_DIR"] + "\"", flush=True)
+
   ds = DetermineSystem(args.build_name, args.supported_systems)
 
   launch_env = get_launch_env(args.build_name, ds.system_name)
@@ -94,7 +103,7 @@ def main(argv):
 
   cmd = launch_env + launch_cmd + args.driver + driver_args
 
-  print("LaunchDriver> exec: " + cmd, flush=True)
+  print("LaunchDriver> EXEC: " + cmd, flush=True)
 
   cmd_output = subprocess.run(cmd, shell=True)
 
