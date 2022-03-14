@@ -132,14 +132,14 @@ namespace ROL {
         //----------------------------------------------------------------------
         //
         // Project x onto the bounds
-        template<class Real, class V>
+        template<class Real, class V, class CV>
         struct Project {
             typedef typename V::execution_space execution_space;
             V X_; // Optimization variable
-            V L_; // Lower bounds
-            V U_; // Upper bounds
+            CV L_; // Lower bounds
+            CV U_; // Upper bounds
 
-            Project(V& X, const V& L, const V& U) : X_(X), L_(L), U_(U) {}
+            Project(V& X, const CV& L, const CV& U) : X_(X), L_(L), U_(U) {}
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
@@ -158,15 +158,15 @@ namespace ROL {
         //----------------------------------------------------------------------
         //
         // Set variables to zero if they correspond to the lower active set
-        template<class Real, class V>
+        template<class Real, class V, class CV>
         struct PruneLowerActive {
             typedef typename V::execution_space execution_space;
             V Y_; // Variable to be pruned
-            V X_; // Optimization variable
-            V L_; // Lower bounds
+            CV X_; // Optimization variable
+            CV L_; // Lower bounds
             Real eps_;
 
-            PruneLowerActive(V &Y, const V &X, const V &L,  Real eps) :
+            PruneLowerActive(V &Y, const CV &X, const CV &L,  Real eps) :
                 Y_(Y), X_(X), L_(L), eps_(eps) {}
 
             KOKKOS_INLINE_FUNCTION
@@ -184,15 +184,15 @@ namespace ROL {
         //----------------------------------------------------------------------
         //
         // Set variables to zero if they correspond to the upper active set
-        template<class Real, class V>
+        template<class Real, class V, class CV>
         struct PruneUpperActive {
             typedef typename V::execution_space execution_space;
             V Y_; // Variable to be pruned
-            V X_; // Optimization variable
-            V U_; // Upper bounds
+            CV X_; // Optimization variable
+            CV U_; // Upper bounds
             Real eps_;
 
-            PruneUpperActive(V &Y, const V &X, const V &U, Real eps) :
+            PruneUpperActive(V &Y, const CV &X, const CV &U, Real eps) :
                 Y_(Y), X_(X), U_(U), eps_(eps) {}
 
             KOKKOS_INLINE_FUNCTION
@@ -210,16 +210,16 @@ namespace ROL {
         //----------------------------------------------------------------------
         //
         // Set variables to zero if they correspond to the active set
-        template<class Real, class V>
+        template<class Real, class V, class CV>
         struct PruneActive {
             typedef typename V::execution_space execution_space;
             V Y_; // Variable to be pruned
-            V X_; // Optimization variable
-            V L_; // Lower bounds
-            V U_; // Upper bounds
+            CV X_; // Optimization variable
+            CV L_; // Lower bounds
+            CV U_; // Upper bounds
             Real eps_;
 
-            PruneActive(V &Y, const V &X, const V &L, const V &U, Real eps) :
+            PruneActive(V &Y, const CV &X, const CV &L, const CV &U, Real eps) :
                 Y_(Y), X_(X), L_(L), U_(U), eps_(eps) {}
 
             KOKKOS_INLINE_FUNCTION
@@ -240,17 +240,17 @@ namespace ROL {
         //----------------------------------------------------------------------
         //
         // Set variables to zero if they correspond to the lower active set and grad is positive
-        template<class Real, class V>
+        template<class Real, class V, class CV>
         struct GradPruneLowerActive {
             typedef typename V::execution_space execution_space;
             V Y_; // Variable to be pruned
-            V G_; // Gradient
-            V X_; // Optimization variable
-            V L_; // Lower bounds
+            CV G_; // Gradient
+            CV X_; // Optimization variable
+            CV L_; // Lower bounds
 
             Real xeps_, geps_;
 
-            GradPruneLowerActive(V &Y, const V &G, const V &X, const V &L,Real xeps, Real geps) :
+            GradPruneLowerActive(V &Y, const CV &G, const CV &X, const CV &L,Real xeps, Real geps) :
                 Y_(Y), G_(G), X_(X), L_(L), xeps_(xeps), geps_(geps) {}
 
             KOKKOS_INLINE_FUNCTION
@@ -268,17 +268,17 @@ namespace ROL {
         //----------------------------------------------------------------------
         //
         // Set variables to zero if they correspond to the upper active set and grad is negative
-        template<class Real, class V>
+        template<class Real, class V, class CV>
         struct GradPruneUpperActive {
             typedef typename V::execution_space execution_space;
             V Y_; // Variable to be pruned
-            V G_; // Gradient
-            V X_; // Optimization variable
-            V U_; // Upper bounds
+            CV G_; // Gradient
+            CV X_; // Optimization variable
+            CV U_; // Upper bounds
 
             Real xeps_, geps_;
 
-            GradPruneUpperActive(V &Y, const V &G, const V &X, const V &U, Real xeps, Real geps) :
+            GradPruneUpperActive(V &Y, const CV &G, const CV &X, const CV &U, Real xeps, Real geps) :
                 Y_(Y), G_(G), X_(X), U_(U), xeps_(xeps), geps_(geps) {}
 
             KOKKOS_INLINE_FUNCTION
@@ -296,17 +296,17 @@ namespace ROL {
         //----------------------------------------------------------------------
         //
         // Set variables to zero if they correspond to the active set
-        template<class Real, class V>
+        template<class Real, class V, class CV>
         struct GradPruneActive {
             typedef typename V::execution_space execution_space;
             V Y_; // Variable to be pruned
-            V G_; // Gradient
-            V X_; // Optimization variable
-            V L_; // Lower bounds
-            V U_; // Upper bounds
+            CV G_; // Gradient
+            CV X_; // Optimization variable
+            CV L_; // Lower bounds
+            CV U_; // Upper bounds
             Real xeps_, geps_;
 
-            GradPruneActive(V &Y, const V &G, const V &X, const V &L, const V &U, Real xeps, Real geps) :
+            GradPruneActive(V &Y, const CV &G, const CV &X, const CV &L, const CV &U, Real xeps, Real geps) :
                 Y_(Y), G_(G), X_(X), L_(L), U_(U), xeps_(xeps), geps_(geps) {}
 
             KOKKOS_INLINE_FUNCTION
@@ -335,20 +335,18 @@ namespace ROL {
 
 
         typedef Tpetra::MultiVector<Real,LO,GO,Node> MV;
+        typedef Tpetra::MultiVector<const Real,LO,GO,Node> CMV;
         typedef ROL::Ptr<MV> MVP;
-        typedef ROL::Ptr<const MV> CMVP;
         typedef TpetraMultiVector<Real,LO,GO,Node> TMV;
         typedef ROL::Ptr<TMV> TMVP;
         typedef typename MV::dual_view_type::t_dev ViewType;
+        typedef typename CMV::dual_view_type::t_dev ConstViewType;
 
         private:
             int gblDim_;
             int lclDim_;
-            MVP lp_;
-            MVP up_;
-
-            ViewType l_;           // Kokkos view of Lower bounds
-            ViewType u_;           // Kokkos view of Upper bounds
+            ConstViewType l_;           // Kokkos view of Lower bounds
+            ConstViewType u_;           // Kokkos view of Upper bounds
             Real min_diff_;
             Real scale_;
             ROL::Ptr<const Teuchos::Comm<int> > comm_;
@@ -366,14 +364,12 @@ namespace ROL {
             TpetraBoundConstraint(MVP lp, MVP up, Real scale = 1.0) :
                 gblDim_(lp->getGlobalLength()),
                 lclDim_(lp->getLocalLength()),
-                lp_(lp),
-                up_(up),
-                l_(lp->getLocalViewDevice()),
-                u_(up->getLocalViewDevice()),
+                l_(lp->getLocalViewDevice(Tpetra::Access::ReadOnly)),
+                u_(up->getLocalViewDevice(Tpetra::Access::ReadOnly)),
                 scale_(scale),
                 comm_(lp->getMap()->getComm()) {
 
-                KokkosStructs::MinGap<Real,ViewType> findmin(l_,u_);
+                KokkosStructs::MinGap<Real,ConstViewType> findmin(l_,u_);
                 Real lclMinGap = 0;
 
                 // Reduce for this MPI process
@@ -393,9 +389,9 @@ namespace ROL {
 
                 int lclFeasible = 1;
 
-                ViewType x_lcl = xp->getLocalViewDevice();
+                ConstViewType x_lcl = xp->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
-                KokkosStructs::Feasible<Real,ViewType> check(x_lcl, l_, u_);
+                KokkosStructs::Feasible<Real,ConstViewType> check(x_lcl, l_, u_);
 
                 Kokkos::parallel_reduce(lclDim_,check,lclFeasible);
 
@@ -410,9 +406,9 @@ namespace ROL {
 
                 auto xp = getVector(x);
 
-                ViewType x_lcl = xp->getLocalViewDevice();
+                ViewType x_lcl = xp->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-                KokkosStructs::Project<Real,ViewType> proj(x_lcl,l_,u_);
+                KokkosStructs::Project<Real,ViewType,ConstViewType> proj(x_lcl,l_,u_);
 
                 Kokkos::parallel_for(lclDim_,proj);
             }
@@ -424,10 +420,10 @@ namespace ROL {
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
-                ViewType x_lcl = xp->getLocalViewDevice();
-                ViewType v_lcl = vp->getLocalViewDevice();
+                ConstViewType x_lcl = xp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                ViewType v_lcl = vp->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-                KokkosStructs::PruneLowerActive<Real,ViewType> prune(v_lcl,x_lcl,l_,epsn);
+                KokkosStructs::PruneLowerActive<Real,ViewType,ConstViewType> prune(v_lcl,x_lcl,l_,epsn);
 
                 Kokkos::parallel_for(lclDim_,prune);
             }
@@ -438,10 +434,10 @@ namespace ROL {
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
-                ViewType x_lcl = xp->getLocalViewDevice();
-                ViewType v_lcl = vp->getLocalViewDevice();
+                ConstViewType x_lcl = xp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                ViewType v_lcl = vp->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-                KokkosStructs::PruneUpperActive<Real,ViewType> prune(v_lcl,x_lcl,u_,epsn);
+                KokkosStructs::PruneUpperActive<Real,ViewType,ConstViewType> prune(v_lcl,x_lcl,u_,epsn);
 
                 Kokkos::parallel_for(lclDim_,prune);
             }
@@ -452,10 +448,10 @@ namespace ROL {
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
-                ViewType x_lcl = xp->getLocalViewDevice();
-                ViewType v_lcl = vp->getLocalViewDevice();
+                ConstViewType x_lcl = xp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                ViewType v_lcl = vp->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-                KokkosStructs::PruneActive<Real,ViewType> prune(v_lcl,x_lcl,l_,u_,epsn);
+                KokkosStructs::PruneActive<Real,ViewType,ConstViewType> prune(v_lcl,x_lcl,l_,u_,epsn);
 
                 Kokkos::parallel_for(lclDim_,prune);
             }
@@ -466,11 +462,11 @@ namespace ROL {
                 auto vp = getVector(v);
                Real epsn = std::min(scale_*xeps,this->min_diff_);
 
-                ViewType x_lcl = xp->getLocalViewDevice();
-                ViewType g_lcl = gp->getLocalViewDevice();
-                ViewType v_lcl = vp->getLocalViewDevice();
+                ConstViewType x_lcl = xp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                ConstViewType g_lcl = gp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                ViewType v_lcl = vp->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-                KokkosStructs::GradPruneLowerActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,l_,epsn,geps);
+                KokkosStructs::GradPruneLowerActive<Real,ViewType,ConstViewType> prune(v_lcl,g_lcl,x_lcl,l_,epsn,geps);
 
                 Kokkos::parallel_for(lclDim_,prune);
             }
@@ -481,11 +477,11 @@ namespace ROL {
                 auto vp = getVector(v);
                 Real epsn = std::min(scale_*xeps,this->min_diff_);
 
-                ViewType x_lcl = xp->getLocalViewDevice();
-                ViewType g_lcl = gp->getLocalViewDevice();
-                ViewType v_lcl = vp->getLocalViewDevice();
+                ConstViewType x_lcl = xp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                ConstViewType g_lcl = gp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                ViewType v_lcl = vp->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-                KokkosStructs::GradPruneUpperActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,u_,epsn,geps);
+                KokkosStructs::GradPruneUpperActive<Real,ViewType,ConstViewType> prune(v_lcl,g_lcl,x_lcl,u_,epsn,geps);
 
                 Kokkos::parallel_for(lclDim_,prune);
             }
@@ -496,11 +492,11 @@ namespace ROL {
                 auto vp = getVector(v);
                 Real epsn = std::min(scale_*xeps,this->min_diff_);
 
-                ViewType x_lcl = xp->getLocalViewDevice();
-                ViewType g_lcl = gp->getLocalViewDevice();
-                ViewType v_lcl = vp->getLocalViewDevice();
+                ConstViewType x_lcl = xp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                ConstViewType g_lcl = gp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+                ViewType v_lcl = vp->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
-                KokkosStructs::GradPruneActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,l_,u_,epsn,geps);
+                KokkosStructs::GradPruneActive<Real,ViewType,ConstViewType> prune(v_lcl,g_lcl,x_lcl,l_,u_,epsn,geps);
 
                 Kokkos::parallel_for(lclDim_,prune);
             }
