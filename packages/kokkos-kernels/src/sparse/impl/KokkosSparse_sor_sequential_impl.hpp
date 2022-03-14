@@ -65,7 +65,7 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
-#include <vector> // temporarily
+#include <vector>  // temporarily
 
 namespace KokkosSparse {
 namespace Impl {
@@ -97,44 +97,31 @@ namespace Sequential {
 /// \param omega [in] Damping parameter.
 /// \param direction [in] Sweep direction: "F" for forward, "B" for
 ///   backward.
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
-void
-gaussSeidel (const LocalOrdinal numRows,
-             const LocalOrdinal numCols,
-             const OffsetType* const ptr,
-             const LocalOrdinal* const ind,
-             const MatrixScalar* const val,
-             const DomainScalar* const B,
-             const OffsetType b_stride,
-             RangeScalar* const X,
-             const OffsetType x_stride,
-             const MatrixScalar* const D,
-             const MatrixScalar omega,
-             const char direction[])
-{
+template <class LocalOrdinal, class OffsetType, class MatrixScalar,
+          class DomainScalar, class RangeScalar>
+void gaussSeidel(const LocalOrdinal numRows, const LocalOrdinal numCols,
+                 const OffsetType* const ptr, const LocalOrdinal* const ind,
+                 const MatrixScalar* const val, const DomainScalar* const B,
+                 const OffsetType b_stride, RangeScalar* const X,
+                 const OffsetType x_stride, const MatrixScalar* const D,
+                 const MatrixScalar omega, const char direction[]) {
   using Kokkos::Details::ArithTraits;
   typedef LocalOrdinal LO;
-  const OffsetType theNumRows = static_cast<OffsetType> (numRows);
-  const OffsetType theNumCols = static_cast<OffsetType> (numCols);
+  const OffsetType theNumRows = static_cast<OffsetType>(numRows);
+  const OffsetType theNumCols = static_cast<OffsetType>(numCols);
 
   if (numRows == 0 || numCols == 0) {
-    return; // Nothing to do.
-  }
-  else if (numRows > 0 && ptr[numRows] == 0) {
+    return;  // Nothing to do.
+  } else if (numRows > 0 && ptr[numRows] == 0) {
     // All the off-diagonal entries of A are zero, and all the
     // diagonal entries are (implicitly) 1.  Therefore compute: X :=
     // (1 - omega) X + omega B.  There's no need to care about the
     // direction, since there are no cross-row data dependencies in
     // this case.
-    const MatrixScalar oneMinusOmega =
-      ArithTraits<MatrixScalar>::one () - omega;
+    const MatrixScalar oneMinusOmega = ArithTraits<MatrixScalar>::one() - omega;
     for (OffsetType j = 0; j < theNumCols; ++j) {
-      RangeScalar* const x_j = X + j*x_stride;
-      const DomainScalar* const b_j = B + j*b_stride;
+      RangeScalar* const x_j        = X + j * x_stride;
+      const DomainScalar* const b_j = B + j * b_stride;
       for (OffsetType i = 0; i < theNumRows; ++i) {
         x_j[i] = oneMinusOmega * x_j[i] + omega * b_j[i];
       }
@@ -145,9 +132,9 @@ gaussSeidel (const LocalOrdinal numRows,
   if (numCols == 1) {
     if (direction[0] == 'F' || direction[0] == 'f') {
       for (LO i = 0; i < numRows; ++i) {
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+        RangeScalar x_temp = ArithTraits<RangeScalar>::zero();
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           x_temp += A_ij * X[j];
         }
@@ -158,91 +145,92 @@ gaussSeidel (const LocalOrdinal numRows,
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
       for (LO i = numRows - 1; i != 0; --i) {
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+        RangeScalar x_temp = ArithTraits<RangeScalar>::zero();
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           x_temp += A_ij * X[j];
         }
         X[i] += omega * D[i] * (B[i] - x_temp);
       }
-      { // last loop iteration
-        const LO i = 0;
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+      {  // last loop iteration
+        const LO i         = 0;
+        RangeScalar x_temp = ArithTraits<RangeScalar>::zero();
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           x_temp += A_ij * X[j];
         }
         X[i] += omega * D[i] * (B[i] - x_temp);
       }
     }
-  }
-  else { // numCols > 1
+  } else {  // numCols > 1
     // mfh 20 Dec 2012: If Gauss-Seidel for multivectors with
     // multiple columns becomes important, we can add unrolled
     // implementations.  The implementation below is not unrolled.
     // It may also be reasonable to parallelize over right-hand
     // sides, if there are enough of them, especially if the matrix
     // fits in cache.
-    std::vector<RangeScalar> temp (numCols);
+    std::vector<RangeScalar> temp(numCols);
     RangeScalar* const x_temp = numCols == 0 ? NULL : &temp[0];
 
     if (direction[0] == 'F' || direction[0] == 'f') {
       for (LO i = 0; i < numRows; ++i) {
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = ArithTraits<RangeScalar>::zero ();
+          x_temp[c] = ArithTraits<RangeScalar>::zero();
         }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
+            x_temp[c] += A_ij * X[j + x_stride * c];
           }
         }
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
+          X[i + x_stride * c] +=
+              omega * D[i] * (B[i + b_stride * c] - x_temp[c]);
         }
       }
-    } else if (direction[0] == 'B' || direction[0] == 'b') { // backward mode
+    } else if (direction[0] == 'B' || direction[0] == 'b') {  // backward mode
       // Split the loop so that it is correct even if LO is unsigned.
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
       for (LO i = numRows - 1; i != 0; --i) {
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = ArithTraits<RangeScalar>::zero ();
+          x_temp[c] = ArithTraits<RangeScalar>::zero();
         }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
+            x_temp[c] += A_ij * X[j + x_stride * c];
           }
         }
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
+          X[i + x_stride * c] +=
+              omega * D[i] * (B[i + b_stride * c] - x_temp[c]);
         }
       }
-      { // last loop iteration
+      {  // last loop iteration
         const LO i = 0;
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = ArithTraits<RangeScalar>::zero ();
+          x_temp[c] = ArithTraits<RangeScalar>::zero();
         }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
+            x_temp[c] += A_ij * X[j + x_stride * c];
           }
         }
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
+          X[i + x_stride * c] +=
+              omega * D[i] * (B[i + b_stride * c] - x_temp[c]);
         }
       }
     }
   }
 }
-
 
 /// \brief Implementation of reordered local Gauss-Seidel.
 ///
@@ -277,46 +265,33 @@ gaussSeidel (const LocalOrdinal numRows,
 /// \param omega [in] Damping parameter.
 /// \param direction [in] Sweep direction: "F" for forward, "B" for
 ///   backward.
-template<class LocalOrdinal,
-         class OffsetType,
-         class MatrixScalar,
-         class DomainScalar,
-         class RangeScalar>
-void
-reorderedGaussSeidel (const LocalOrdinal numRows,
-                      const LocalOrdinal numCols,
-                      const OffsetType* const ptr,
-                      const LocalOrdinal* const ind,
-                      const MatrixScalar* const val,
-                      const DomainScalar* const B,
-                      const OffsetType b_stride,
-                      RangeScalar* const X,
-                      const OffsetType x_stride,
-                      const MatrixScalar* const D,
-                      const LocalOrdinal* const rowInd,
-                      const LocalOrdinal numRowInds, // length of rowInd
-                      const MatrixScalar omega,
-                      const char direction[])
-{
+template <class LocalOrdinal, class OffsetType, class MatrixScalar,
+          class DomainScalar, class RangeScalar>
+void reorderedGaussSeidel(
+    const LocalOrdinal numRows, const LocalOrdinal numCols,
+    const OffsetType* const ptr, const LocalOrdinal* const ind,
+    const MatrixScalar* const val, const DomainScalar* const B,
+    const OffsetType b_stride, RangeScalar* const X, const OffsetType x_stride,
+    const MatrixScalar* const D, const LocalOrdinal* const rowInd,
+    const LocalOrdinal numRowInds,  // length of rowInd
+    const MatrixScalar omega, const char direction[]) {
   using Kokkos::Details::ArithTraits;
   typedef LocalOrdinal LO;
-  const OffsetType theNumRows = static_cast<OffsetType> (numRows);
-  const OffsetType theNumCols = static_cast<OffsetType> (numCols);
+  const OffsetType theNumRows = static_cast<OffsetType>(numRows);
+  const OffsetType theNumCols = static_cast<OffsetType>(numCols);
 
   if (numRows == 0 || numCols == 0) {
-    return; // Nothing to do.
-  }
-  else if (numRows > 0 && ptr[numRows] == 0) {
+    return;  // Nothing to do.
+  } else if (numRows > 0 && ptr[numRows] == 0) {
     // All the off-diagonal entries of A are zero, and all the
     // diagonal entries are (implicitly) 1.  Therefore compute: X :=
     // (1 - omega) X + omega B.  There's no need to care about the
     // direction or row ordering, since there are no cross-row data
     // dependencies in this case.
-    const MatrixScalar oneMinusOmega =
-      ArithTraits<MatrixScalar>::one () - omega;
+    const MatrixScalar oneMinusOmega = ArithTraits<MatrixScalar>::one() - omega;
     for (OffsetType j = 0; j < theNumCols; ++j) {
-      RangeScalar* const x_j = X + j*x_stride;
-      const DomainScalar* const b_j = B + j*b_stride;
+      RangeScalar* const x_j        = X + j * x_stride;
+      const DomainScalar* const b_j = B + j * b_stride;
       for (OffsetType i = 0; i < theNumRows; ++i) {
         x_j[i] = oneMinusOmega * x_j[i] + omega * b_j[i];
       }
@@ -327,10 +302,10 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
   if (numCols == 1) {
     if (direction[0] == 'F' || direction[0] == 'f') {
       for (LO ii = 0; ii < numRowInds; ++ii) {
-        LO i = rowInd[ii];
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+        LO i               = rowInd[ii];
+        RangeScalar x_temp = ArithTraits<RangeScalar>::zero();
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           x_temp += A_ij * X[j];
         }
@@ -341,98 +316,100 @@ reorderedGaussSeidel (const LocalOrdinal numRows,
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
       for (LO ii = numRowInds - 1; ii != 0; --ii) {
-        LO i = rowInd[ii];
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+        LO i               = rowInd[ii];
+        RangeScalar x_temp = ArithTraits<RangeScalar>::zero();
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           x_temp += A_ij * X[j];
         }
         X[i] += omega * D[i] * (B[i] - x_temp);
       }
-      { // last loop iteration
-        const LO ii = 0;
-        LO i = rowInd[ii];
-        RangeScalar x_temp = ArithTraits<RangeScalar>::zero ();
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+      {  // last loop iteration
+        const LO ii        = 0;
+        LO i               = rowInd[ii];
+        RangeScalar x_temp = ArithTraits<RangeScalar>::zero();
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           x_temp += A_ij * X[j];
         }
         X[i] += omega * D[i] * (B[i] - x_temp);
       }
     }
-  }
-  else { // numCols > 1
+  } else {  // numCols > 1
     // mfh 20 Dec 2012: If Gauss-Seidel for multivectors with
     // multiple columns becomes important, we can add unrolled
     // implementations.  The implementation below is not unrolled.
     // It may also be reasonable to parallelize over right-hand
     // sides, if there are enough of them, especially if the matrix
     // fits in cache.
-    std::vector<RangeScalar> temp (numCols);
+    std::vector<RangeScalar> temp(numCols);
     RangeScalar* const x_temp = numCols == 0 ? NULL : &temp[0];
 
     if (direction[0] == 'F' || direction[0] == 'f') {
       for (LO ii = 0; ii < numRowInds; ++ii) {
         LO i = rowInd[ii];
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
+          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero();
         }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
+            x_temp[c] += A_ij * X[j + x_stride * c];
           }
         }
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
+          X[i + x_stride * c] +=
+              omega * D[i] * (B[i + b_stride * c] - x_temp[c]);
         }
       }
-    } else if (direction[0] == 'B' || direction[0] == 'b') { // backward mode
+    } else if (direction[0] == 'B' || direction[0] == 'b') {  // backward mode
       // Split the loop so that it is correct even if LO is unsigned.
       // It's a bad idea for LO to be unsigned, but we want this to
       // work nevertheless.
       for (LO ii = numRowInds - 1; ii != 0; --ii) {
         LO i = rowInd[ii];
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
+          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero();
         }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
+            x_temp[c] += A_ij * X[j + x_stride * c];
           }
         }
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
+          X[i + x_stride * c] +=
+              omega * D[i] * (B[i + b_stride * c] - x_temp[c]);
         }
       }
-      { // last loop iteration
+      {  // last loop iteration
         const LO ii = 0;
-        LO i = rowInd[ii];
+        LO i        = rowInd[ii];
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero ();
+          x_temp[c] = Kokkos::Details::ArithTraits<RangeScalar>::zero();
         }
-        for (OffsetType k = ptr[i]; k < ptr[i+1]; ++k) {
-          const LO j = ind[k];
+        for (OffsetType k = ptr[i]; k < ptr[i + 1]; ++k) {
+          const LO j              = ind[k];
           const MatrixScalar A_ij = val[k];
           for (OffsetType c = 0; c < theNumCols; ++c) {
-            x_temp[c] += A_ij * X[j + x_stride*c];
+            x_temp[c] += A_ij * X[j + x_stride * c];
           }
         }
         for (OffsetType c = 0; c < theNumCols; ++c) {
-          X[i + x_stride*c] += omega * D[i] * (B[i + b_stride*c] - x_temp[c]);
+          X[i + x_stride * c] +=
+              omega * D[i] * (B[i + b_stride * c] - x_temp[c]);
         }
       }
     }
   }
 }
 
-} // namespace Sequential
-} // namespace Impl
-} // namespace KokkosSparse
+}  // namespace Sequential
+}  // namespace Impl
+}  // namespace KokkosSparse
 
-#endif // KOKKOSSPARSE_IMPL_SOR_HPP
+#endif  // KOKKOSSPARSE_IMPL_SOR_HPP

@@ -42,4 +42,7 @@
 #include "Test_Blas3_trmm.hpp"
 #include "Test_Blas3_trsm.hpp"
 
-#endif // TEST_BLAS_HPP
+// TPLs
+#include "Test_Blas_rocblas.hpp"
+
+#endif  // TEST_BLAS_HPP
