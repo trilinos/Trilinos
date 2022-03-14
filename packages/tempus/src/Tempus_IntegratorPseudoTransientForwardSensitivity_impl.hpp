@@ -153,6 +153,22 @@ getStepper() const
 }
 
 template<class Scalar>
+Teuchos::RCP<Stepper<Scalar> >
+IntegratorPseudoTransientForwardSensitivity<Scalar>::
+getStateStepper() const
+{
+  return state_integrator_->getStepper();
+}
+
+template<class Scalar>
+Teuchos::RCP<Stepper<Scalar> >
+IntegratorPseudoTransientForwardSensitivity<Scalar>::
+getSensStepper() const
+{
+  return sens_integrator_->getStepper();
+}
+
+template<class Scalar>
 Teuchos::RCP<const SolutionHistory<Scalar> >
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 getSolutionHistory() const
