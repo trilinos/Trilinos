@@ -5,7 +5,7 @@ source ${SCRIPTPATH:?}/common.bash
 # set -x  # echo commands
 
 # Fetch arguments
-on_cuda=$(echo "$@" | grep '\-\-on_weaver' && echo "1")
+on_weaver=$(echo "$@" | grep '\-\-on_weaver' && echo "1")
 on_ats2=$(echo "$@" | grep '\-\-on_ats2' && echo "1")
 
 

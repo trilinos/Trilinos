@@ -87,7 +87,7 @@ def main(argv):
   parser.add_argument('--supported-systems', required=False,
                       default='./LoadEnv/ini_files/supported-systems.ini',
                       help='The INI file containing supported systems')
-  args = parser.parse_args()
+  args = parser.parse_args(argv)
 
   if os.getenv("TRILINOS_DIR") == None:
     print("LaunchDriver> ERROR: Please set TRILINOS_DIR.", flush=True)
