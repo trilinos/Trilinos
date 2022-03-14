@@ -60,18 +60,19 @@ namespace { // (anonymous)
   template<class VectorType>
   void restoreVectorEntries (VectorType& x)
   {
-    using vector_type = VectorType;
-    using LO = typename vector_type::local_ordinal_type;
+    using LO = typename VectorType::local_ordinal_type;
 
     auto x_lcl_d_2d = x.getLocalViewDevice(Tpetra::Access::ReadWrite);
     auto x_lcl_d = Kokkos::subview (x_lcl_d_2d, Kokkos::ALL (), 0);
 
-    using execution_space = typename vector_type::execution_space;
+    using execution_space = typename VectorType::execution_space;
     using range_type = Kokkos::RangePolicy<execution_space, LO>;
+    using IST = typename VectorType::impl_scalar_type;
+    auto lclNumRows = x.getLocalLength();
     Kokkos::parallel_for
       ("Initial Vector fill", range_type (0, lclNumRows),
        KOKKOS_LAMBDA (const LO lclRow) {
-        x_lcl_d(lclRow) = toScalar<IST> (lclRow+1);
+        x_lcl_d(lclRow) = toScalar<IST> (lclRow);
       });
     execution_space().fence ();
   }
@@ -83,12 +84,10 @@ namespace { // (anonymous)
                       VectorType& x_offset,
                       const typename VectorType::local_ordinal_type rowOffset)
   {
-    using vector_type = VectorType;
-    using LO = typename vector_type::local_ordinal_type;
+    using LO = typename VectorType::local_ordinal_type;
+    using IST = typename VectorType::impl_scalar_type;
 
-    TEST_ASSERT( ! x_offset.need_sync_host () );
-
-    auto x_lcl_h_2d = x_offset.getLocalViewHost(Tpetra::Access::ReadWrite);
+    auto x_lcl_h_2d = x_offset.getLocalViewHost(Tpetra::Access::ReadOnly);
     auto x_lcl_h = Kokkos::subview (x_lcl_h_2d, Kokkos::ALL (), 0);
 
     const LO newLclNumRows = static_cast<LO> (x_offset.getLocalLength ());
@@ -130,7 +129,7 @@ namespace { // (anonymous)
 
     std::vector<GO> myGblRowInds (lclNumRows);
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-      myGblRowInds = originalMap->getGlobalElement (lclRow);
+      myGblRowInds[lclRow] = originalMap->getGlobalElement (lclRow);
     }
 
     const GST INV = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -140,9 +139,9 @@ namespace { // (anonymous)
       RCP<const map_type> map_offset =
         rcp (new map_type (INV, myGblRowInds.data () + rowOffset,
                            newLclNumRows, newIndexBase, comm));
-      vector_type x_offset (x, map_offset);
+      vector_type x_offset (x, map_offset, rowOffset);
 
-      const bool expectedMap = map_offset->isSameAs (* (x_offset->getMap ()));
+      const bool expectedMap = map_offset->isSameAs (* (x_offset.getMap ()));
       TEST_ASSERT( expectedMap );
       TEST_EQUALITY( static_cast<LO> (x_offset.getLocalLength ()),
                      newLclNumRows );
@@ -162,7 +161,7 @@ namespace { // (anonymous)
       // That is, is the new Vector a view of the original Vector?
       {
         x.putScalar (Teuchos::ScalarTraits<ST>::one ());
-        auto x_offset_lcl_h_2d = x_offset.getLocalViewDevice(Tpetra::Access::ReadWrite);
+        auto x_offset_lcl_h_2d = x_offset.getLocalViewHost(Tpetra::Access::ReadWrite);
         auto x_offset_lcl_h =
           Kokkos::subview (x_offset_lcl_h_2d, Kokkos::ALL (), 0);
         for (LO newLclRow = 0; newLclRow < newLclNumRows; ++newLclRow) {
@@ -187,7 +186,7 @@ namespace { // (anonymous)
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Vector, OffsetViewCtor, ST, LO, GO, NT )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( Vector, OffsetViewCtor, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
