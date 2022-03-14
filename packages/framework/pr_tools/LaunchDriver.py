@@ -94,7 +94,7 @@ def main(argv):
 
   cmd = launch_env + launch_cmd + args.driver + driver_args
 
-  print("LaunchDriver> exec: " + cmd)
+  print("LaunchDriver> exec: " + cmd, flush=True)
 
   cmd_output = subprocess.run(cmd, shell=True)
 
