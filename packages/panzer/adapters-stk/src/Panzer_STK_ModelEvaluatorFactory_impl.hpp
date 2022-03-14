@@ -90,7 +90,9 @@
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_STK_NOXObserverFactory.hpp"
 #include "Panzer_STK_RythmosObserverFactory.hpp"
+#ifdef PANZER_HAVE_TEMPUS
 #include "Panzer_STK_TempusObserverFactory.hpp"
+#endif
 #include "Panzer_STK_ParameterListCallback.hpp"
 #include "Panzer_STK_ParameterListCallbackBlocked.hpp"
 #include "Panzer_STK_IOClosureModel_Factory_TemplateBuilder.hpp"
@@ -108,7 +110,9 @@
 #include "Piro_NOXSolver.hpp"
 #include "Piro_LOCASolver.hpp"
 #include "Piro_RythmosSolver.hpp"
+#ifdef PANZER_HAVE_TEMPUS
 #include "Piro_TempusSolverForwardOnly.hpp"
+#endif
 
 #include <Panzer_NodeType.hpp>
 
@@ -1162,11 +1166,13 @@ namespace panzer_stk {
     m_rythmos_observer_factory = rythmos_observer_factory;
   }
 
+#ifdef PANZER_HAVE_TEMPUS
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::setTempusObserverFactory(const Teuchos::RCP<const panzer_stk::TempusObserverFactory>& tempus_observer_factory)
   {
     m_tempus_observer_factory = tempus_observer_factory;
   }
+#endif
 
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::setUserWorksetFactory(Teuchos::RCP<panzer_stk::WorksetFactory>& user_wkst_factory)
@@ -1188,10 +1194,14 @@ namespace panzer_stk {
   buildResponseOnlyModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<ScalarT> > & thyra_me,
                                   const Teuchos::RCP<panzer::GlobalData>& global_data,
                                   const Teuchos::RCP<Piro::RythmosSolver<ScalarT> > rythmosSolver,
+#ifdef PANZER_HAVE_TEMPUS
                                   const Teuchos::RCP<Piro::TempusSolverForwardOnly<ScalarT> > tempusSolver,
+#endif
                                   const Teuchos::Ptr<const panzer_stk::NOXObserverFactory> & in_nox_observer_factory,
-                                  const Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> & in_rythmos_observer_factory,
-                                  const Teuchos::Ptr<const panzer_stk::TempusObserverFactory> & in_tempus_observer_factory
+                                  const Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> & in_rythmos_observer_factory
+#ifdef PANZER_HAVE_TEMPUS
+                                  , const Teuchos::Ptr<const panzer_stk::TempusObserverFactory> & in_tempus_observer_factory
+#endif
                                   )
   {
     using Teuchos::is_null;
@@ -1207,8 +1217,10 @@ namespace panzer_stk {
         = is_null(in_nox_observer_factory) ? m_nox_observer_factory.ptr() : in_nox_observer_factory;
     Teuchos::Ptr<const panzer_stk::RythmosObserverFactory> rythmos_observer_factory
         = is_null(in_rythmos_observer_factory) ? m_rythmos_observer_factory.ptr() : in_rythmos_observer_factory;
+#ifdef PANZER_HAVE_TEMPUS
     Teuchos::Ptr<const panzer_stk::TempusObserverFactory> tempus_observer_factory
         = is_null(in_tempus_observer_factory) ? m_tempus_observer_factory.ptr() : in_tempus_observer_factory;
+#endif
 
     Teuchos::ParameterList& p = *this->getNonconstParameterList();
     Teuchos::ParameterList & solncntl_params = p.sublist("Solution Control");
@@ -1276,6 +1288,7 @@ namespace panzer_stk {
 
       piro = piro_rythmos;
     }
+#ifdef PANZER_HAVE_TEMPUS
     else if (solver=="Tempus") {
 
       TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::is_null(tempus_observer_factory), std::runtime_error,
@@ -1310,6 +1323,7 @@ namespace panzer_stk {
 
       piro = piro_tempus;
     }
+#endif
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                          "Error: Unknown Piro Solver : " << solver);
