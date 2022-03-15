@@ -925,7 +925,7 @@ public:
             INTREPID2_TEST_FOR_EXCEPTION
               (info != 0, std::runtime_error, "GELS return non-zero info code");          
 
-            /// scater back to system
+            /// scatter back to system
             for (ordinal_type i=0;i<numCols;++i) 
               basisCoeffs_host(ic,elemDof_host(i)) = c(i);
           });
