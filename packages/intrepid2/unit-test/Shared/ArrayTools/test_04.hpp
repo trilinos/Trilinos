@@ -91,7 +91,7 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-       using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+       using HostSpaceType = typename Kokkos::is_space<DeviceType>::host_mirror_space::execution_space;
        using DeviceSpaceType = typename DeviceType::execution_space;
 
       *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, false);

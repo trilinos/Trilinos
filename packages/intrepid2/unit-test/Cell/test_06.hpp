@@ -153,7 +153,7 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       typedef typename
-        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
 
       typedef typename ExecSpaceType::array_layout DeviceArrayLayout;
         

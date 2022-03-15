@@ -104,7 +104,7 @@ namespace Intrepid2 {
                                       const outStreamPtrType      outStreamPtr ) {
       using ct = CellTools<DeviceType>;
       using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
-      using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+      using HostSpaceType = typename Kokkos::is_space<DeviceType>::host_mirror_space::execution_space;
 
       // Get cell dimension and subcell count
       const auto cellDim   = parentCell.getDimension();
@@ -211,7 +211,7 @@ namespace Intrepid2 {
         Teuchos::oblackholestream oldFormatState;
         oldFormatState.copyfmt(std::cout);
 
-        using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+        using HostSpaceType = typename Kokkos::is_space<DeviceType>::host_mirror_space::execution_space;
 
         *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
         *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);

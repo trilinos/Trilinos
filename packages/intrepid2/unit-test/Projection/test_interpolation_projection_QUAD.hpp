@@ -129,7 +129,7 @@ int InterpolationProjectionQuad(const bool verbose) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
-  using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+  using HostSpaceType = typename Kokkos::is_space<DeviceType>::host_mirror_space::execution_space;
 
   using DynRankViewIntHost = Kokkos::DynRankView<ordinal_type,HostSpaceType>;
 
