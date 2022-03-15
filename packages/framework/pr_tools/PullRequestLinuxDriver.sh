@@ -5,8 +5,8 @@ source ${SCRIPTPATH:?}/common.bash
 # set -x  # echo commands
 
 # Fetch arguments
-on_weaver=$(echo "$@" | grep '\-\-on_weaver' && echo "1")
-on_ats2=$(echo "$@" | grep '\-\-on_ats2' && echo "1")
+on_weaver=$(echo "$@" | grep '\-\-on_weaver' &> /dev/null && echo "1")
+on_ats2=$(echo "$@" | grep '\-\-on_ats2' &> /dev/null && echo "1")
 
 
 # Load the right version of Git / Python based on a regex
