@@ -783,7 +783,8 @@ public:
       using matrix_device_type = Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type>;
       using view_rank_2d_host_type = Kokkos::View<value_type**,Kokkos::LayoutRight,host_device_type>;
       using do_not_init_tag = Kokkos::ViewAllocateWithoutInitializing;
-      using host_policy_type = Kokkos::TeamPolicy<host_exec_space>;
+      using host_team_policy_type = Kokkos::TeamPolicy<host_exec_space>;
+      using host_range_policy_type = Kokkos::RangePolicy<host_exec_space>;
 
       /// const values
       const ordinal_type numCells = basisCoeffs.extent(0);
@@ -796,6 +797,7 @@ public:
       auto elemRhs_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), elemRhs);
       auto elemDof_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), elemDof);
       auto elemMat_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), elemMat);
+      auto basisCoeffs_host = Kokkos::create_mirror_view(basisCoeffs);
 
       if (matrixIndependentOfCell_) {
         /// invert the first matrix and apply for all
@@ -809,123 +811,78 @@ public:
             for (ordinal_type i=numCols;i<numRows;++i)
               A(i, j) = A(j, i);
         }
-
+        
+        ordinal_type lwork(-1);
+        { /// workspace query
+          ordinal_type info(0);
+          value_type work[2];
+          lapack.GELS('N', 
+                      numRows, numRows, numCells,
+                      nullptr, numRows,
+                      nullptr, numRows,
+                      &work[0], lwork,
+                      &info);
+          lwork = work[0];
+        }
+        
         matrix_host_type C(do_not_init_tag("C"), numRows, numCells);
+
+        host_range_policy_type policy(0, numCells);
         {
           Kokkos::parallel_for
-            ("ProjectionTools::solveHost::matrixIndependentOfCell::true::pack",
-             Kokkos::RangePolicy<host_exec_space>(0, numCells), [=](const ordinal_type &ic) {
+            ("ProjectionTools::solveHost::matrixIndependentOfCell::pack",
+             policy, [=](const ordinal_type & ic) {
               for (ordinal_type i=0;i<numRows;++i)
                 C(i,ic) = elemRhs_host(ic, i);
             });
-        }        
+        }
         {
-          vector_host_type work(do_not_init_tag("work"), std::max(numCols+std::max(numCols,numCells)*numCols, 32));
-          ordinal_type lwork(work.extent(0)), info(0);
-          lapack.GELS('N', numRows, numRows, numCells, 
-                      A.data(), numRows, 
-                      C.data(), numRows, 
-                      work.data(), lwork, 
+          /// GELS does scaling and separating QR and apply Q is not stable
+          vector_host_type work(do_not_init_tag("work"), lwork);
+          ordinal_type info(0);
+          lapack.GELS('N', 
+                      numRows, numRows, numCells,
+                      A.data(), numRows,
+                      C.data(), numRows,
+                      work.data(), lwork,
                       &info);
           INTREPID2_TEST_FOR_EXCEPTION
             (info != 0, std::runtime_error, "GELS return non-zero info code");          
         }
         {
           Kokkos::parallel_for
-            ("ProjectionTools::solveHost::matrixIndependentOfCell::true::unpack",
-             Kokkos::RangePolicy<host_exec_space>(0, numCells), [=](const ordinal_type &ic) {
-              for (ordinal_type i=0;i<numRows;++i)
-                basisCoeffs(ic,elemDof_host(i)) = C(i,ic);
+            ("ProjectionTools::solveHost::matrixIndependentOfCell::unpack",
+             policy, [=](const ordinal_type & ic) {
+              for (ordinal_type i=0;i<numCols;++i)
+                basisCoeffs_host(ic,elemDof_host(i)) = C(i,ic);
             });
         }
-
-        // /// invert the first matrix and apply for all
-        // matrix_host_type A(do_not_init_tag("A"), numRows, numRows);
-        // vector_host_type tau(do_not_init_tag("tau"), numCols);
-
-        // auto A_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A);
-        // Kokkos::deep_copy(A_device, Kokkos::subview(elemMat, 0, Kokkos::ALL(), Kokkos::ALL()));
-        // Kokkos::deep_copy(A, A_device);
-        
-        // {
-        //   for (ordinal_type j=0;j<numCols;++j)
-        //     for (ordinal_type i=numCols;i<numRows;++i)
-        //       A(i, j) = A(j, i);
-        // }
-
-        // {
-        //   vector_host_type work(do_not_init_tag("work"), numRows*numCols);
-        //   ordinal_type info(0), lwork(work.span());
-        //   lapack.GEQRF(numRows, numCols, A.data(), numRows, tau.data(), work.data(), lwork, &info);
-        //   INTREPID2_TEST_FOR_EXCEPTION
-        //     (info != 0, std::runtime_error, "GEQRF return non-zero info code");          
-        // }
-        
-        // const ordinal_type 
-        //   chunkSize = 1, //64, 
-        //   numChunks = (numCells/chunkSize), 
-        //   isChunkRemaind = (numCells%chunkSize) > 0;
-
-        // const ordinal_type level(0);
-        // host_policy_type policy(numChunks + isChunkRemaind, 1, 1);
-
-        // const ordinal_type per_team_extent = numRows*chunkSize + std::max(numCols,2);
-        // const ordinal_type per_team_scratch = scratch_host_type::shmem_size(per_team_extent);
-        // policy.set_scratch_size(level, Kokkos::PerTeam(per_team_scratch));
-        
-        // Kokkos::parallel_for
-        //   ("ProjectionTools::solveHost::matrixIndependentOfCell::true",
-        //    policy, [=](const typename host_policy_type::member_type& member) {
-        //     const ordinal_type lrank = member.league_rank();
-        //     const ordinal_type 
-        //       icbeg = lrank*chunkSize, 
-        //       ictemp = icbeg+chunkSize, 
-        //       icend = (ictemp < numCells ? ictemp : numCells),
-        //       icrange = icend - icbeg;
-        //     scratch_host_type scratch(member.team_scratch(level), per_team_extent);
-        //     value_type * sptr = scratch.data();
-
-        //     matrix_host_type C(sptr, numRows, icrange); sptr += C.span();
-        //     for (ordinal_type ic=0;ic<icrange;++ic)
-        //       for (ordinal_type i=0;i<numRows;++i)
-        //         C(i,ic) = elemRhs_host(ic, i);
-
-        //     /// when numCols = 1, the unit workspace does not work
-        //     vector_host_type work(sptr, std::max(numCols,2)); sptr += work.span();
-        //     const ordinal_type lwork(work.span());
-
-        //     ordinal_type info(0);
-        //     lapack.ORMQR('L', 'T', numRows, icrange, numCols, 
-        //                  A.data(), numRows, tau.data(), 
-        //                  C.data(), numRows, work.data(), lwork, &info);
-        //     INTREPID2_TEST_FOR_EXCEPTION
-        //       (info != 0, std::runtime_error, "ORMQR return non-zero info code");          
-
-        //     /// compute the solution 
-        //     lapack.TRTRS('U', 'N', 'N', numCols, icrange, 
-        //                  A.data(), numRows, C.data(), numRows, &info);
-        //     INTREPID2_TEST_FOR_EXCEPTION
-        //       (info != 0, std::runtime_error, "TRTRS return non-zero info code");          
-
-        //     /// scater back to system
-        //     for (ordinal_type ic=0;ic<icrange;++ic)
-        //       for (ordinal_type i=0;i<numCols;++i)
-        //         basisCoeffs(ic,elemDof_host(i)) = C(i,ic);
-        //   });       
-
-
       } else {
         const ordinal_type level(0);
-        host_policy_type policy(numCells, 1, 1);
+        host_team_policy_type policy(numCells, 1, 1);
 
-        const ordinal_type per_team_extent = std::max(numCols+numCols*numCols, 32);
+        /// workspace query
+        ordinal_type lwork(-1);
+        {
+          ordinal_type info(0);
+          value_type work[2];
+          lapack.GELS('N', 
+                      numRows, numRows, 1,
+                      nullptr, numRows,
+                      nullptr, numRows,
+                      &work[0], lwork,
+                      &info);
+          lwork = work[0];
+        }
+
+        const ordinal_type per_team_extent = numRows*numRows + numRows + lwork;
         const ordinal_type per_team_scratch = scratch_host_type::shmem_size(per_team_extent);
         policy.set_scratch_size(level, Kokkos::PerTeam(per_team_scratch));
 
         /// solve for all
         Kokkos::parallel_for
-          ("ProjectionTools::solveHost::matrixIndependentOfCell::false",
-           policy, [=](const typename host_policy_type::member_type& member) {
+          ("ProjectionTools::solveHost::matrixDependentOfCell",
+           policy, [=](const typename host_team_policy_type::member_type& member) {
             const ordinal_type ic = member.league_rank();
             
             scratch_host_type scratch(member.team_scratch(level), per_team_extent);
@@ -944,25 +901,24 @@ public:
             vector_host_type c(sptr, numRows); sptr += c.span();
             for (ordinal_type i=0;i<numRows;++i)
               c(i) = elemRhs_host(ic, i);
-            
-            vector_host_type work(sptr, std::max(numCols+numCols*numCols, 32)); sptr += work.span();
-            ordinal_type info(0), lwork(work.span());
 
-            /// for this, lets simply use gels
-            lapack.GELS('N', numRows, numRows, 1, 
-                        A.data(), numRows, 
-                        c.data(), numRows, 
-                        work.data(), lwork, 
+            vector_host_type work(sptr, lwork); sptr += work.span();
+            ordinal_type info(0);
+            lapack.GELS('N', 
+                        numRows, numRows, 1,
+                        A.data(), numRows,
+                        c.data(), numRows,
+                        work.data(), lwork,
                         &info);
-
             INTREPID2_TEST_FOR_EXCEPTION
               (info != 0, std::runtime_error, "GELS return non-zero info code");          
 
             /// scater back to system
             for (ordinal_type i=0;i<numCols;++i) 
-              basisCoeffs(ic,elemDof_host(i)) = c(i);
+              basisCoeffs_host(ic,elemDof_host(i)) = c(i);
           });
       }      
+      Kokkos::deep_copy(basisCoeffs, basisCoeffs_host);
     }
   };
   
