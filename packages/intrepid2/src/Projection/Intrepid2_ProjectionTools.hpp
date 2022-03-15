@@ -648,10 +648,10 @@ public:
     void solve(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 tau,
         ViewType3 w,const  ViewType4 elemDof, ordinal_type n, ordinal_type m=0) {
 #ifdef HAVE_INTREPID2_KOKKOSKERNELS
-      solveParallel(basisCoeffs, elemMat, elemRhs, tau,
+      solveDevice(basisCoeffs, elemMat, elemRhs, tau,
           w, elemDof, n, m);
 #else
-      solveSerial(basisCoeffs, elemMat, elemRhs, tau,
+      solveHost(basisCoeffs, elemMat, elemRhs, tau,
           w, elemDof, n, m);
 #endif
 
@@ -661,7 +661,7 @@ public:
      */
 #ifdef HAVE_INTREPID2_KOKKOSKERNELS
     template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
-    void solveParallel(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 taul,
+    void solveDevice(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 taul,
         ViewType3 work,const  ViewType4 elemDof, ordinal_type n, ordinal_type m) {
       using HostDeviceType = Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>;
 
@@ -770,104 +770,202 @@ public:
      */
 
     template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
-    void solveSerial(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 ,
-        ViewType3, const  ViewType4 elemDof, ordinal_type n, ordinal_type m) {
-      using valueType = typename ViewType2::value_type;
-      using HostDeviceType = Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>;
+    void solveHost(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 ,
+                   ViewType3, const  ViewType4 elemDof, ordinal_type n, ordinal_type m) {
+      using value_type = typename ViewType2::value_type;
+      using device_type = DeviceType;
+      using host_exec_space = Kokkos::DefaultHostExecutionSpace;
+      using host_memory_space = Kokkos::HostSpace;
+      using host_device_type = Kokkos::Device<host_exec_space,host_memory_space>;
+      using vector_host_type = Kokkos::View<value_type*,host_device_type>;
+      using scratch_host_type = Kokkos::View<value_type*,host_exec_space::scratch_memory_space>;
+      using matrix_host_type = Kokkos::View<value_type**,Kokkos::LayoutLeft,host_device_type>;
+      using matrix_device_type = Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type>;
+      using view_rank_2d_host_type = Kokkos::View<value_type**,Kokkos::LayoutRight,host_device_type>;
+      using do_not_init_tag = Kokkos::ViewAllocateWithoutInitializing;
+      using host_policy_type = Kokkos::TeamPolicy<host_exec_space>;
 
-      Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType>
-      serialElemMat("serialElemMat", n+m, n+m);
-      Teuchos::LAPACK<ordinal_type,valueType> lapack_;
-      ordinal_type numCells = basisCoeffs.extent(0);
+      /// const values
+      const ordinal_type numCells = basisCoeffs.extent(0);
+      const ordinal_type numRows = m+n, numCols = n;
 
-      if(matrixIndependentOfCell_) {
-        ViewType2 elemRhsTrans("transRhs", elemRhs.extent(1), elemRhs.extent(0));
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType>
-        pivVec("pivVec", m+n + std::max(m+n, numCells), 1);
+      /// capture without this pointer
+      Teuchos::LAPACK<ordinal_type,value_type> lapack;
 
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType> serialElemRhs("serialElemRhs", n+m, numCells);
+      /// mirror view to host
+      auto elemRhs_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), elemRhs);
+      auto elemDof_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), elemDof);
+      auto elemMat_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), elemMat);
 
-        Kokkos::DynRankView<typename ViewType2::value_type, HostDeviceType> A_host("A0_host", elemMat.extent(1),elemMat.extent(2));
-        auto A_device = Kokkos::create_mirror_view(typename DeviceType::memory_space(), A_host);
-        Kokkos::deep_copy(A_device, Kokkos::subview(elemMat, 0, Kokkos::ALL(), Kokkos::ALL()));
-        Kokkos::deep_copy(A_host, A_device);
+      if (matrixIndependentOfCell_) {
+        /// invert the first matrix and apply for all
+        matrix_host_type A(do_not_init_tag("A"), numRows, numRows);
+        {
+          for (ordinal_type j=0;j<numRows;++j)
+            for (ordinal_type i=0;i<numRows;++i)
+              A(i, j) = elemMat_host(0, i, j);
 
-        auto b = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), elemRhs);
-
-        auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffs);
-
-        for(ordinal_type i=0; i<m+n; ++i) {
-          for(ordinal_type ic=0; ic< numCells; ++ic)
-            serialElemRhs(i,ic) = b(ic,i);
-          for(ordinal_type j=0; j<n; ++j)
-            serialElemMat(j,i) = A_host(j,i);
+          for (ordinal_type j=0;j<numCols;++j)
+            for (ordinal_type i=numCols;i<numRows;++i)
+              A(i, j) = A(j, i);
         }
 
-        for(ordinal_type i=n; i<n+m; ++i)
-          for(ordinal_type j=0; j<n; ++j)
-            serialElemMat(i,j) = serialElemMat(j,i);
-
-        ordinal_type info = 0;
-        lapack_.GELS('N', n+m, n+m, numCells,
-            serialElemMat.data(), serialElemMat.stride_1(),
-            serialElemRhs.data(), serialElemRhs.stride_1(),
-            pivVec.data(), pivVec.extent(0),
-            &info);
-
-        for(ordinal_type i=0; i<n; ++i) {
-          for (ordinal_type ic = 0; ic < numCells; ic++)
-            serialBasisCoeffs(ic,elemDof(i)) = serialElemRhs(i,ic);
+        matrix_host_type C(do_not_init_tag("C"), numRows, numCells);
+        {
+          Kokkos::parallel_for
+            ("ProjectionTools::solveHost::matrixIndependentOfCell::true::pack",
+             Kokkos::RangePolicy<host_exec_space>(0, numCells), [=](const ordinal_type &ic) {
+              for (ordinal_type i=0;i<numRows;++i)
+                C(i,ic) = elemRhs_host(ic, i);
+            });
+        }        
+        {
+          vector_host_type work(do_not_init_tag("work"), std::max(numCols+std::max(numCols,numCells)*numCols, 32));
+          ordinal_type lwork(work.extent(0)), info(0);
+          lapack.GELS('N', numRows, numRows, numCells, 
+                      A.data(), numRows, 
+                      C.data(), numRows, 
+                      work.data(), lwork, 
+                      &info);
+          INTREPID2_TEST_FOR_EXCEPTION
+            (info != 0, std::runtime_error, "GELS return non-zero info code");          
         }
-      }
-      else {
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType> pivVec("pivVec", 2*(m+n), 1);
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostDeviceType> serialElemRhs("serialElemRhs", n+m, 1 );
-        for (ordinal_type ic = 0; ic < numCells; ic++) {
-          auto A = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-              Kokkos::subview(elemMat, ic, Kokkos::ALL(), Kokkos::ALL()));
-          auto b = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-              Kokkos::subview(elemRhs, ic, Kokkos::ALL()));
-          auto basisCoeffs_ = Kokkos::subview(basisCoeffs, ic, Kokkos::ALL());
-          auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-              basisCoeffs_);
-
-          Kokkos::deep_copy(serialElemMat,valueType(0));  //LAPACK might overwrite the matrix
-
-          for(ordinal_type i=0; i<m+n; ++i) {
-            serialElemRhs(i,0) = b(i);
-            for(ordinal_type j=0; j<n; ++j)
-              serialElemMat(j,i) = A(j,i);
-          }
-
-          for(ordinal_type i=n; i<n+m; ++i)
-            for(ordinal_type j=0; j<n; ++j)
-              serialElemMat(i,j) = serialElemMat(j,i);
-
-          // Using GELS because the matrix can be close to singular.
-          ordinal_type info = 0;
-          lapack_.GELS('N', n+m, n+m, 1,
-              serialElemMat.data(), serialElemMat.stride_1(),
-              serialElemRhs.data(), serialElemRhs.stride_1(),
-              pivVec.data(), pivVec.extent(0),
-              &info);
-
-          if (info) {
-            std::stringstream ss;
-            ss << ">>> ERROR (Intrepid::ProjectionTools::getBasisCoeffs): "
-                << "LAPACK return with error code: "
-                << info;
-            INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
-          }
-
-          for(ordinal_type i=0; i<n; ++i) {
-            serialBasisCoeffs(elemDof(i)) = serialElemRhs(i,0);
-          }
-          Kokkos::deep_copy(basisCoeffs_,serialBasisCoeffs);
+        {
+          Kokkos::parallel_for
+            ("ProjectionTools::solveHost::matrixIndependentOfCell::true::unpack",
+             Kokkos::RangePolicy<host_exec_space>(0, numCells), [=](const ordinal_type &ic) {
+              for (ordinal_type i=0;i<numRows;++i)
+                basisCoeffs(ic,elemDof_host(i)) = C(i,ic);
+            });
         }
-      }
+
+        // /// invert the first matrix and apply for all
+        // matrix_host_type A(do_not_init_tag("A"), numRows, numRows);
+        // vector_host_type tau(do_not_init_tag("tau"), numCols);
+
+        // auto A_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A);
+        // Kokkos::deep_copy(A_device, Kokkos::subview(elemMat, 0, Kokkos::ALL(), Kokkos::ALL()));
+        // Kokkos::deep_copy(A, A_device);
+        
+        // {
+        //   for (ordinal_type j=0;j<numCols;++j)
+        //     for (ordinal_type i=numCols;i<numRows;++i)
+        //       A(i, j) = A(j, i);
+        // }
+
+        // {
+        //   vector_host_type work(do_not_init_tag("work"), numRows*numCols);
+        //   ordinal_type info(0), lwork(work.span());
+        //   lapack.GEQRF(numRows, numCols, A.data(), numRows, tau.data(), work.data(), lwork, &info);
+        //   INTREPID2_TEST_FOR_EXCEPTION
+        //     (info != 0, std::runtime_error, "GEQRF return non-zero info code");          
+        // }
+        
+        // const ordinal_type 
+        //   chunkSize = 1, //64, 
+        //   numChunks = (numCells/chunkSize), 
+        //   isChunkRemaind = (numCells%chunkSize) > 0;
+
+        // const ordinal_type level(0);
+        // host_policy_type policy(numChunks + isChunkRemaind, 1, 1);
+
+        // const ordinal_type per_team_extent = numRows*chunkSize + std::max(numCols,2);
+        // const ordinal_type per_team_scratch = scratch_host_type::shmem_size(per_team_extent);
+        // policy.set_scratch_size(level, Kokkos::PerTeam(per_team_scratch));
+        
+        // Kokkos::parallel_for
+        //   ("ProjectionTools::solveHost::matrixIndependentOfCell::true",
+        //    policy, [=](const typename host_policy_type::member_type& member) {
+        //     const ordinal_type lrank = member.league_rank();
+        //     const ordinal_type 
+        //       icbeg = lrank*chunkSize, 
+        //       ictemp = icbeg+chunkSize, 
+        //       icend = (ictemp < numCells ? ictemp : numCells),
+        //       icrange = icend - icbeg;
+        //     scratch_host_type scratch(member.team_scratch(level), per_team_extent);
+        //     value_type * sptr = scratch.data();
+
+        //     matrix_host_type C(sptr, numRows, icrange); sptr += C.span();
+        //     for (ordinal_type ic=0;ic<icrange;++ic)
+        //       for (ordinal_type i=0;i<numRows;++i)
+        //         C(i,ic) = elemRhs_host(ic, i);
+
+        //     /// when numCols = 1, the unit workspace does not work
+        //     vector_host_type work(sptr, std::max(numCols,2)); sptr += work.span();
+        //     const ordinal_type lwork(work.span());
+
+        //     ordinal_type info(0);
+        //     lapack.ORMQR('L', 'T', numRows, icrange, numCols, 
+        //                  A.data(), numRows, tau.data(), 
+        //                  C.data(), numRows, work.data(), lwork, &info);
+        //     INTREPID2_TEST_FOR_EXCEPTION
+        //       (info != 0, std::runtime_error, "ORMQR return non-zero info code");          
+
+        //     /// compute the solution 
+        //     lapack.TRTRS('U', 'N', 'N', numCols, icrange, 
+        //                  A.data(), numRows, C.data(), numRows, &info);
+        //     INTREPID2_TEST_FOR_EXCEPTION
+        //       (info != 0, std::runtime_error, "TRTRS return non-zero info code");          
+
+        //     /// scater back to system
+        //     for (ordinal_type ic=0;ic<icrange;++ic)
+        //       for (ordinal_type i=0;i<numCols;++i)
+        //         basisCoeffs(ic,elemDof_host(i)) = C(i,ic);
+        //   });       
+
+
+      } else {
+        const ordinal_type level(0);
+        host_policy_type policy(numCells, 1, 1);
+
+        const ordinal_type per_team_extent = std::max(numCols+numCols*numCols, 32);
+        const ordinal_type per_team_scratch = scratch_host_type::shmem_size(per_team_extent);
+        policy.set_scratch_size(level, Kokkos::PerTeam(per_team_scratch));
+
+        /// solve for all
+        Kokkos::parallel_for
+          ("ProjectionTools::solveHost::matrixIndependentOfCell::false",
+           policy, [=](const typename host_policy_type::member_type& member) {
+            const ordinal_type ic = member.league_rank();
+            
+            scratch_host_type scratch(member.team_scratch(level), per_team_extent);
+            value_type * sptr = scratch.data();
+            
+            /// either A comes from host or device it is not column major; it needs repack
+            matrix_host_type A(sptr, numRows, numRows); sptr += A.span();
+            for (ordinal_type j=0;j<numRows;++j)
+              for (ordinal_type i=0;i<numRows;++i)
+                A(i, j) = elemMat_host(ic, i, j);
+
+            for (ordinal_type j=0;j<numCols;++j)
+              for (ordinal_type i=numCols;i<numRows;++i)
+                A(i, j) = A(j, i);
+
+            vector_host_type c(sptr, numRows); sptr += c.span();
+            for (ordinal_type i=0;i<numRows;++i)
+              c(i) = elemRhs_host(ic, i);
+            
+            vector_host_type work(sptr, std::max(numCols+numCols*numCols, 32)); sptr += work.span();
+            ordinal_type info(0), lwork(work.span());
+
+            /// for this, lets simply use gels
+            lapack.GELS('N', numRows, numRows, 1, 
+                        A.data(), numRows, 
+                        c.data(), numRows, 
+                        work.data(), lwork, 
+                        &info);
+
+            INTREPID2_TEST_FOR_EXCEPTION
+              (info != 0, std::runtime_error, "GELS return non-zero info code");          
+
+            /// scater back to system
+            for (ordinal_type i=0;i<numCols;++i) 
+              basisCoeffs(ic,elemDof_host(i)) = c(i);
+          });
+      }      
     }
   };
-
+  
 };
 
 } //Experimental
