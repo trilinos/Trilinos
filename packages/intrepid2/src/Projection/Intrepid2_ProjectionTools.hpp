@@ -649,7 +649,7 @@ public:
         ViewType3 w,const  ViewType4 elemDof, ordinal_type n, ordinal_type m=0) {
 #ifdef HAVE_INTREPID2_KOKKOSKERNELS
       solveDevice(basisCoeffs, elemMat, elemRhs, tau,
-          w, elemDof, n, m);
+                  w, elemDof, n, m);
 #else
       solveHost(basisCoeffs, elemMat, elemRhs, tau,
           w, elemDof, n, m);
@@ -786,6 +786,9 @@ public:
       using host_team_policy_type = Kokkos::TeamPolicy<host_exec_space>;
       using host_range_policy_type = Kokkos::RangePolicy<host_exec_space>;
 
+      /// make sure all on-going kernels are done
+      Kokkos::fence();
+
       /// const values
       const ordinal_type numCells = basisCoeffs.extent(0);
       const ordinal_type numRows = m+n, numCols = n;
@@ -797,14 +800,16 @@ public:
       Kokkos::View<ordinal_type*,host_device_type> elemDof_host(do_not_init_tag("elemDof_host"), elemDof.extent(0));
       {
         auto elemDof_device = Kokkos::create_mirror_view(typename device_type::memory_space(), elemDof_host);
-        Kokkos::deep_copy(elemDof_device, elemDof);
+        Kokkos::deep_copy(elemDof_device, elemDof); Kokkos::fence();
         Kokkos::deep_copy(elemDof_host, elemDof_device);
       }
 
       /// mirror view to host
       auto elemRhs_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), elemRhs);
       auto elemMat_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), elemMat);
-      auto basisCoeffs_host = Kokkos::create_mirror_view(basisCoeffs);
+
+      /// this in-out variable
+      auto basisCoeffs_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), basisCoeffs);
 
       if (matrixIndependentOfCell_) {
         /// invert the first matrix and apply for all
