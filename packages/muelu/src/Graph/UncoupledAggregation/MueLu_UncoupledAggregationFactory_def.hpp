@@ -299,7 +299,7 @@ namespace MueLu {
     Set(currentLevel, "Aggregates", aggregates);
 
     if (pL.get<bool>("aggregation: compute aggregate qualities")) {
-	RCP<Xpetra::MultiVector<double,LO,GO,Node>> aggQualities = Get<RCP<Xpetra::MultiVector<double,LO,GO,Node>>>(currentLevel, "AggregateQualities");
+      RCP<Xpetra::MultiVector<DefaultScalar,LO,GO,Node>> aggQualities = Get<RCP<Xpetra::MultiVector<DefaultScalar,LO,GO,Node>>>(currentLevel, "AggregateQualities");
     }
 
     if (IsPrint(Statistics1))

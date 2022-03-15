@@ -112,9 +112,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
 
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  EXEDEPS tif_belos
+  #EXEDEPS tif_belos
 )
 
+IF (Tpetra_INST_DOUBLE)
 TRIBITS_ADD_TEST(
   tif_belos
   NAME small_gmres_belos
@@ -123,6 +124,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
 )
+ENDIF()
 
 IF (Tpetra_INST_LONG_DOUBLE)
 TRIBITS_ADD_TEST(
@@ -146,6 +148,8 @@ TRIBITS_ADD_TEST(
 )
 ENDIF()
 
+
+IF (Tpetra_INST_DOUBLE)
 TRIBITS_ADD_TEST(
   tif_belos
   NAME small_pseudoblkcg_belos
@@ -307,8 +311,10 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
 )
+ENDIF()
 
-IF(Ifpack2_ENABLE_ShyLU_NodeHTS)
+
+IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeHTS)
   TRIBITS_ADD_TEST(
     tif_belos
     NAME RILUK_HTS_hb_belos
@@ -383,6 +389,7 @@ IF(Ifpack2_ENABLE_QD)
   )
 ENDIF()
 
+IF (Tpetra_INST_DOUBLE)
 TRIBITS_ADD_TEST(
   tif_belos
   NAME ILUT_5w_2
@@ -400,8 +407,9 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
 )
+ENDIF()
 
-IF(Ifpack2_ENABLE_ShyLU_NodeFastILU)
+IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
   #calore1
   TRIBITS_ADD_TEST(
     tif_belos Ifpack2BelosCopyFiles
@@ -529,6 +537,7 @@ ENDIF()
 #   STANDARD_PASS_OUTPUT
 # )
 
+IF (Tpetra_INST_DOUBLE)
 TRIBITS_ADD_TEST(
   tif_belos
   NAME Cheby_belos
@@ -647,6 +656,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
 )
+ENDIF()
 
 TRIBITS_ADD_TEST(
   tif_tpetra_native

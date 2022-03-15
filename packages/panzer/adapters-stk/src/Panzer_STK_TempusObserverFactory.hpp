@@ -1,9 +1,9 @@
 // @HEADER
-//
 // ***********************************************************************
 //
-//        MueLu: A package for multigrid based preconditioning
-//                  Copyright 2012 Sandia Corporation
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,47 +35,42 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact
-//                    Jonathan Hu       (jhu@sandia.gov)
-//                    Andrey Prokopenko (aprokop@sandia.gov)
-//                    Ray Tuminaro      (rstumin@sandia.gov)
-//
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
 // ***********************************************************************
-//
 // @HEADER
 
-#ifndef MUELU_USEDEFAULTTYPES_HPP
-#define MUELU_USEDEFAULTTYPES_HPP
+#ifndef PANZER_STK_TEMPUS_OBSERVER_FACTORY_HPP
+#define PANZER_STK_TEMPUS_OBSERVER_FACTORY_HPP
 
-#include <Kokkos_DefaultNode.hpp>
-#include "MueLu_config.hpp"
+#include "Tempus_IntegratorObserver.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
-#include <Tpetra_Details_DefaultTypes.hpp>
-#endif
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_Assert.hpp"
 
-namespace MueLu
-{
+#include "Panzer_STK_Interface.hpp"
+#include "Panzer_GlobalIndexer.hpp"
+#include "Panzer_LinearObjFactory.hpp"
 
-#ifdef HAVE_MUELU_TPETRA
-    typedef Tpetra::Details::DefaultTypes::scalar_type DefaultScalar;
-#else
-    typedef double DefaultScalar;
-#endif
+#include "Panzer_STK_Utilities.hpp"
 
+namespace panzer_stk {
 
+  class TempusObserverFactory {
 
-  typedef int DefaultLocalOrdinal;
+  public:
 
-  #if defined HAVE_MUELU_DEFAULT_GO_LONG
-  typedef long DefaultGlobalOrdinal;
-  #elif defined HAVE_MUELU_DEFAULT_GO_LONGLONG
-  typedef long long DefaultGlobalOrdinal;
-  #else
-  typedef int DefaultGlobalOrdinal;
-  #endif
+    virtual ~TempusObserverFactory() {}
 
-  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNode;
+    //! Use the NOX observer as well?
+    virtual bool useNOXObserver() const = 0;
+
+    virtual Teuchos::RCP<Tempus::IntegratorObserver<double> >
+    buildTempusObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
+                        const Teuchos::RCP<const panzer::GlobalIndexer> & dof_manager,
+                        const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof) const = 0;
+  };
+
 }
 
 #endif

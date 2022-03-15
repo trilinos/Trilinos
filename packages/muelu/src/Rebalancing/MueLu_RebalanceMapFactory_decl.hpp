@@ -70,7 +70,7 @@ namespace MueLu {
             class GlobalOrdinal = DefaultGlobalOrdinal,
             class Node = DefaultNode>
   class RebalanceMapFactory : public SingleLevelFactoryBase {
-    typedef double Scalar; // FIXME this is just a dummy scalar for being able to access Xpetra::Matrix
+    typedef DefaultScalar Scalar; // FIXME this is just a dummy scalar for being able to access Xpetra::Matrix
 
 #undef MUELU_REBALANCEMAPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"

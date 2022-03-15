@@ -119,6 +119,8 @@ namespace MueLu {
     const std::string prefix = "MueLu::SaPFactory(" + levelIDs + "): ";
 
     typedef typename Teuchos::ScalarTraits<SC>::coordinateType Coordinate;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+
 
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
@@ -162,7 +164,7 @@ namespace MueLu {
     const bool useAbsValueRowSum=        pL.get<bool>  ("sa: use rowsumabs diagonal scaling");
     const bool doQRStep         =        pL.get<bool>("tentative: calculate qr");
     const bool enforceConstraints=       pL.get<bool>("sa: enforce constraints");
-    const SC   userDefinedMaxEigen =  as<SC>(pL.get<double>("sa: max eigenvalue"));
+    const MT   userDefinedMaxEigen =  as<MT>(pL.get<double>("sa: max eigenvalue"));
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
     double dTol = pL.get<double>("sa: rowsumabs diagonal replacement tolerance");
     const Magnitude diagonalReplacementTolerance = (dTol == as<double>(-1) ? Teuchos::ScalarTraits<Scalar>::eps()*100 : as<Magnitude>(pL.get<double>("sa: rowsumabs diagonal replacement tolerance")));

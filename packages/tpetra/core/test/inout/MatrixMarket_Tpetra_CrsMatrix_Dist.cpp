@@ -424,7 +424,8 @@ private:
     const Teuchos::RCP<vector_t> &y_test
   )
   {
-    const scalar_t epsilon = 0.0000001;
+    const scalar_t epsilon = 10*Teuchos::ScalarTraits<scalar_t>::squareroot(Teuchos::ScalarTraits<scalar_t>::eps());
+
     int ierr = 0;
 
     // First compare the norms of the result vector to the baseline
