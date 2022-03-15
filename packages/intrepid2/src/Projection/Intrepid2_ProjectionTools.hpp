@@ -793,9 +793,16 @@ public:
       /// capture without this pointer
       Teuchos::LAPACK<ordinal_type,value_type> lapack;
 
+      /// stride view copy
+      Kokkos::View<ordinal_type*,host_device_type> elemDof_host(do_not_init_tag("elemDof_host"), elemDof.extent(0));
+      {
+        auto elemDof_device = Kokkos::create_mirror_view(typename device_type::memory_space(), elemDof_host);
+        Kokkos::deep_copy(elemDof_device, elemDof);
+        Kokkos::deep_copy(elemDof_host, elemDof_device);
+      }
+
       /// mirror view to host
       auto elemRhs_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), elemRhs);
-      auto elemDof_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), elemDof);
       auto elemMat_host = Kokkos::create_mirror_view_and_copy(host_memory_space(), elemMat);
       auto basisCoeffs_host = Kokkos::create_mirror_view(basisCoeffs);
 
