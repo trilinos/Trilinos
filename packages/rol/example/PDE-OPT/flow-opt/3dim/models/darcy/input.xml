@@ -1,8 +1,8 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Check derivatives"              type="bool"    value="false"    />
-    <Parameter name="Solve Optimization Problem"     type="bool"    value="true"     />
+    <Parameter name="Check derivatives"              type="bool"    value="false"     />
+    <Parameter name="Solve Optimization Problem"     type="bool"    value="false"     />
     <Parameter name="Use Full Space"                 type="bool"    value="false"    />
     <!-- PROBLEM INFORMATION -->
     <Parameter name="Use Volume Constraint"          type="bool"    value="false"    />
@@ -32,7 +32,7 @@
     <Parameter name="Cubature Degree"                type="int"     value="6"        />
     <Parameter name="Density Basis Degree"           type="int"     value="1"        />
     <Parameter name="Pressure Basis Degree"          type="int"     value="2"        />
-    <Parameter name="Element Type"                   type="string"  value="TRI"      />
+    <Parameter name="Element Type"                   type="string"  value="TET"      />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
@@ -42,20 +42,20 @@
 
   <!-- ===========  MESH INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Mesh">
-    <Parameter name="File Name" type="string" value="../../mesh/axi-diffuser-tri-clip.txt" />
+    <Parameter name="File Name" type="string" value="../../mesh/diffuser-tet-clip.txt" />
   </ParameterList>
 
   <ParameterList name="Solver">
-    <Parameter name="Use Direct Solver"           type="bool"    value="true"    />
+    <Parameter name="Use Direct Solver"           type="bool"    value="false"    />
     <ParameterList name="Direct">
       <Parameter name="Solver Type"               type="string"  value="KLU2" />
       <!--Parameter name="Solver Type"               type="string"  value="PARDISOMKL" /-->
     </ParameterList>
-    <Parameter name="Preconditioner"              type="string"  value="Ifpack2" />
+    <Parameter name="Preconditioner"              type="string"  value="MueLu" />
     <ParameterList name="MueLu">
       <Parameter name="verbosity"                 type="string"  value="medium"  />
-      <Parameter name="number of equations"       type="int"     value="3"       />
-      <Parameter name="problem: symmetric"        type="bool"    value="false"   />
+      <Parameter name="number of equations"       type="int"     value="1"       />
+      <Parameter name="problem: symmetric"        type="bool"    value="true"   />
       <Parameter name="multigrid algorithm"       type="string"  value="sa"      />
       <Parameter name="coarse: type"              type="string"  value="KLU2"    />
     </ParameterList>
@@ -71,10 +71,12 @@
     </ParameterList>
     <ParameterList name="Belos">
       <Parameter name="Block Size"                type="int"     value="1"    />
+      <Parameter name="Num Blocks"                type="int"     value="40"   />
       <Parameter name="Maximum Iterations"        type="int"     value="400"  />
-      <Parameter name="Convergence Tolerance"     type="double"  value="1e-8" />
+      <Parameter name="Convergence Tolerance"     type="double"  value="1e-12" />
       <Parameter name="Output Style"              type="int"     value="1"    />
       <Parameter name="Output Frequency"          type="int"     value="20"   />
+      <!--Parameter name="Verbosity"                 type="int"     value="33"   /-->
       <Parameter name="Verbosity"                 type="int"     value="33"   />
     </ParameterList>
   </ParameterList>

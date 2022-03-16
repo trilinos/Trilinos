@@ -1,1 +1,2 @@
 ADD_SUBDIRECTORY(axisymmetric)
+ADD_SUBDIRECTORY(3dim)

@@ -1,0 +1,85 @@
+reset
+reset aprepro
+
+#{iRadius  = 0.6875} # inlet radius
+#{oRadius  = 0.6875} # outlet radius
+#{dRadius  = 10}     # diffuser radius
+#{inthemi  = 40}     # hemisphere intervals:         40 or   20 or   12
+#{biashemi = 0.96}   # hemisphere intervals bias:  0.96 or 0.94 or 1.00
+#{refInout = 0}      # in/outlet refinement level:    3 or    1 or    0
+#{hexmesh  = 0}      # generate hex mesh based on THex (divide tet into 4 hexes)
+
+create vertex 0 0 0
+create vertex 0 {-dRadius*sin(acos(oRadius/dRadius))} 0
+create vertex {oRadius} {-dRadius*sin(acos(oRadius/dRadius))} 0
+create vertex {dRadius} 0 0
+create vertex {iRadius} {dRadius*sin(acos(iRadius/dRadius))} 0
+create vertex 0 {dRadius*sin(acos(iRadius/dRadius))} 0
+
+create curve 1 2
+create curve 2 3
+create curve arc center vertex 1 3 4
+create curve arc center vertex 1 4 5
+create curve 5 6
+create curve 6 1
+create curve 1 4
+
+create surface curve 1 2 3 7
+create surface curve 4 5 6 7
+
+imprint all
+merge all
+
+sweep surface 1,2 yaxis angle 360 merge
+
+surface 7 scheme tridelaunay
+mesh surface 7
+#{if(refInout>0)}
+  refine surface 7 numsplit {refInout} bias 1.0 depth 1 smooth
+#{endif}
+
+curve 14 interval {inthemi}
+curve 14 scheme bias factor {biashemi}
+mesh curve 14
+
+volume 2  Scheme Tetmesh proximity layers off geometry approximation angle 15
+volume 2  tetmesh growth_factor 1.0
+Trimesher surface gradation 1.3
+Trimesher volume gradation 1.3
+mesh volume 2
+
+imprint all
+merge all
+
+surface 3 scheme tridelaunay
+mesh surface 3
+#{if(refInout>0)}
+  refine surface 3 numsplit {refInout} bias 1.0 depth 1 smooth
+#{endif}
+
+curve 11 interval {inthemi}
+curve 11 scheme bias factor {1/biashemi}
+mesh curve 11
+
+volume 1  Scheme Tetmesh proximity layers off geometry approximation angle 15
+volume 1  tetmesh growth_factor 1.0
+Trimesher surface gradation 1.3
+Trimesher volume gradation 1.3
+mesh volume 1
+
+#{if(hexmesh)}
+  THex vol all
+#{endif}
+
+#refine volume 1,2 numsplit 1 bias 1.0 depth 1 smooth
+
+sideset 1 add surface 3
+sideset 2 add surface 7
+sideset 3 add surface 4 6
+sideset 4 add surface 5
+
+
+block 1 vol all
+block 1 element type TETRA4
+
+export mesh "diffuser-tet-clip.exo" overwrite

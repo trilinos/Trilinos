@@ -49,7 +49,8 @@
   <ParameterList name="Solver">
     <Parameter name="Use Direct Solver"           type="bool"    value="true"    />
     <ParameterList name="Direct">
-      <Parameter name="Solver Type"               type="string"  value="PARDISOMKL" />
+      <Parameter name="Solver Type"               type="string"  value="KLU2" />
+      <!--Parameter name="Solver Type"               type="string"  value="PARDISOMKL" /-->
     </ParameterList>
     <Parameter name="Preconditioner"              type="string"  value="Ifpack2" />
     <ParameterList name="MueLu">
