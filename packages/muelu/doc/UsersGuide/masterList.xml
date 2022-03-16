@@ -1042,6 +1042,14 @@
     </parameter>
 
     <parameter>
+      <name>transfers: half precision</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Replace transfer operators P and R (if explicitely constructed) with half precision versions for the solve phase..</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>nullspace: calculate rotations</name>
       <type>bool</type>
       <default>false</default>
