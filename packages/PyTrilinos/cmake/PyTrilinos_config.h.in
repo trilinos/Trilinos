@@ -123,7 +123,12 @@
 
 /* PyTrilinos ordinal types */
 
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
 #define PYTRILINOS_GLOBAL_ORD long long
+#else
+#define PYTRILINOS_GLOBAL_ORD int
+#endif
+
 #define PYTRILINOS_LOCAL_ORD  int
 
 /**********************************************************************/
