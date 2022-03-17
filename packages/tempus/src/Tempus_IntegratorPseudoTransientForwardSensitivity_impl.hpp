@@ -83,11 +83,17 @@ bool
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 advanceTime(const Scalar timeFinal)
 {
+  TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::IntegratorPseudoTransientForwardSensitivity::advanceTime()", TEMPUS_PTFS_AT);
+
   using Teuchos::RCP;
   using Thyra::VectorBase;
 
   // Run state integrator and get solution
-  bool state_status = state_integrator_->advanceTime(timeFinal);
+  bool state_status = true;
+  {
+    TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::IntegratorPseudoTransientForwardSensitivity::advanceTime::state", TEMPUS_PTFS_AT_FWD);
+    state_status = state_integrator_->advanceTime(timeFinal);
+  }
 
   // Set solution in sensitivity ME
   sens_model_->setForwardSolutionState(state_integrator_->getCurrentState());
@@ -100,7 +106,11 @@ advanceTime(const Scalar timeFinal)
   }
 
   // Run sensitivity integrator
-  bool sens_status = sens_integrator_->advanceTime(timeFinal);
+  bool sens_status = true;
+  {
+    TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::IntegratorPseudoTransientForwardSensitivity::advanceTime::sensitivity", TEMPUS_PTFS_AT_SEN);
+    sens_status = sens_integrator_->advanceTime(timeFinal);
+  }
 
   buildSolutionHistory();
 
