@@ -524,17 +524,12 @@ computeResidual(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >&
   const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = params.get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
   const RCP<Import> regionInterfaceImporter = params.get<RCP<Import>>("Fast MatVec: interface importer");
 
-  // Todo: would it be faster to store this in regRes:
-  //       regRes = A*x
-  //       regRes->update(one, regB, -one);
-  // and avoid allocating and de-allocating memory for y vector?
-
-  // Step 1: Compute region version of y = Ax
-  RCP<Vector> aTimesX = VectorFactory::Build(regionMats->getRangeMap(), true);
-  regionMats->apply(*regX, *aTimesX, Teuchos::NO_TRANS, TST::one(), TST::zero(), true, regionInterfaceImporter, regionInterfaceLIDs);
+  // Step 1: Compute region version of y = Ax and store it in regRes
+  // RCP<Vector> aTimesX = VectorFactory::Build(regionMats->getRangeMap(), true);
+  regionMats->apply(*regX, *regRes, Teuchos::NO_TRANS, TST::one(), TST::zero(), true, regionInterfaceImporter, regionInterfaceLIDs);
 
   // Step 2: Compute region version of r = b - y
-  regRes->update(TST::one(), *regB, -TST::one(), *aTimesX, TST::zero());
+  regRes->update(TST::one(), *regB, -TST::one(), *regRes, TST::zero());
 
   tm = Teuchos::null;
 } // computeResidual
