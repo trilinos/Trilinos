@@ -591,7 +591,7 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseStandard(const MultiVector& RHS, MultiVector& X) const {
-    Hierarchy11_->Iterate(RHS,X);
+    Hierarchy11_->Iterate(RHS,X,1,true);
   }
  
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
