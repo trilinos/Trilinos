@@ -1,6 +1,11 @@
 TRIBITS_SUBPACKAGE(Core)
 
-SET(PANZER_HAVE_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra} )
+# Consider 'Panzer_ENABLE_Epetra' only if 'Trilinos_ENABLE_Epetra=ON'
+IF(Trilinos_ENABLE_Epetra AND DEFINED Panzer_ENABLE_Epetra)
+   SET(PANZER_HAVE_EPETRA ${Panzer_ENABLE_Epetra})
+ELSE()
+   SET(PANZER_HAVE_EPETRA ${Trilinos_ENABLE_Epetra})
+ENDIF()
 
 IF(PANZER_HAVE_EPETRA)
    MESSAGE(STATUS "Global Indexer Epetra Utilities On")
