@@ -347,13 +347,11 @@ void vCycleAdapter(const int numLevels, ///< Total number of levels
   RCP<Vector> regB;
   compositeToRegional(B, quasiRegB, regB,
                       revisedRowMap, rowImport);
-  // scaleInterfaceDOFs(regB, regInterfaceScalings, true);
 
   RCP<Vector> quasiRegX;
   RCP<Vector> regX;
   compositeToRegional(X, quasiRegX, regX,
                       revisedRowMap, rowImport);
-  // scaleInterfaceDOFs(regX, regInterfaceScalings, true);
 
   vCycle(0, numLevels, cycleType, regHierarchy,
          regX, regB,
@@ -418,7 +416,7 @@ void solveRegionProblem(const double tol, const bool scaleResidualHist, const in
     }
 
   // Print type of residual norm to the screen
-  out << "using region solver" << std::endl;
+  out << "Using region solver" << std::endl;
   if (scaleResidualHist)
     out << "Using scaled residual norm." << std::endl;
   else
@@ -625,8 +623,6 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
     // check for convergence
     {
       normRes = Res->norm2();
-
-      // if(cycle == 0) { normResIni = normRes; }// out << "NormResIni = " << normResIni << std::endl;}
       if(scaleResidualHist) { normRes /= normResIni; }
 
       // Output current residual norm to screen (on proc 0 only)

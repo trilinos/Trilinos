@@ -431,8 +431,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     procsPerDim[2] = galeriList.get<GO>("mz");
   }
 
-  // const LO numLocalCompositeNodes = lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2];
-
   // Rule for boundary duplication
   // For any two ranks that share an interface:
   // the lowest rank owns the interface and the highest rank gets extra nodes
@@ -472,8 +470,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                    sendGIDs, sendPIDs, numInterfaces, rNodesPerDim,
                    quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs,
                    interfaceGIDs, interfaceLIDsData);
-
-  // const LO numSend = static_cast<LO>(sendGIDs.size());
 
   // std::cout << "p=" << myRank << " | numSend=" << numSend << std::endl;
             // << ", numReceive=" << numReceive << std::endl;
@@ -598,10 +594,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                      revisedRowMap, revisedColMap,
                      rowImport, quasiRegionMats, regionMats);
 
-  // Actually for now we are keeping it so we can implement
-  // iterative solvers using composite operator and vectors.
-  // // We don't need the composite operator on the fine level anymore. Free it!
-  // A = Teuchos::null;
+  // If we don't need the composite operator on the fine level anymore, free it!
+  if(solverType == "region") A = Teuchos::null;
 
   comm->barrier();
   tmLocal = Teuchos::null;
