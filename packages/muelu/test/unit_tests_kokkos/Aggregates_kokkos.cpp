@@ -651,7 +651,7 @@ namespace MueLuTests {
 
     RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetParameter("aggregation: dropping may create Dirichlet",Teuchos::ParameterEntry(false));
-    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(-100*TST::eps()));
+    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(Teuchos::as<double>(-100*TST::eps())));
     RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     level.Request("Graph",dropFact.get());
@@ -690,7 +690,7 @@ namespace MueLuTests {
     amalgFact = rcp(new AmalgamationFactory_kokkos());
     dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetParameter("aggregation: dropping may create Dirichlet",Teuchos::ParameterEntry(true));
-    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(-100*TST::eps()));
+    dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(Teuchos::as<double>(-100*TST::eps())));
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
     level.Request("Graph",dropFact.get());
 
