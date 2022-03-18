@@ -68,6 +68,7 @@
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
+#include <MueLu_HierarchyUtils.hpp>
 
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 #include "MueLu_Utilities_kokkos.hpp"
@@ -368,9 +369,14 @@ namespace MueLu {
       precList11_.set("coarse: max size",1);
       precList11_.set("max levels",Hierarchy22_->GetNumLevels());      
       //    Hierarchy11_ = MueLu::CreateXpetraPreconditioner(SM_Matrix_, precList11_);
-      RCP<HierarchyManager<SC,LO,GO,NO> > mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(precList11_,SM_Matrix_->getDomainMap()->getComm()));
+      // Rip off non-serializable data before validation
+      Teuchos::ParameterList nonSerialList11, processedPrecList11;
+      MueLu::ExtractNonSerializableData(precList11_, processedPrecList11, nonSerialList11);
+      RCP<HierarchyManager<SC,LO,GO,NO> > mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(processedPrecList11,SM_Matrix_->getDomainMap()->getComm()));
       Hierarchy11_->setlib(SM_Matrix_->getDomainMap()->lib());
       Hierarchy11_->SetProcRankVerbose(SM_Matrix_->getDomainMap()->getComm()->getRank());
+      // Stick the non-serializible data on the hierarchy.
+      HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*Hierarchy11_, nonSerialList11);
       mueLuFactory->SetupHierarchy(*Hierarchy11_);
       
       if(mode_ == MODE_REFMAXWELL) {
