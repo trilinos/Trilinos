@@ -292,7 +292,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       TEST_0
         EXEC StructuredRegionDriver
         ARGS --linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --convergence-log=Star2D_GS_4.log --smootherType=Gauss
-      NUM_MPI_PROCS 4
+        NUM_MPI_PROCS 4
       TEST_1
         CMND ${PYTHON_EXECUTABLE}
         ARGS compare_residual_history.py gold_files/Star2D_GS_4.log.gold Star2D_GS_4.log 1.0e-12
@@ -307,7 +307,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       TEST_0
         EXEC StructuredRegionDriver
         ARGS --linAlgebra=Tpetra --xml=structured_linear_1dof.xml --matrixType=Brick3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_4.log
-      NUM_MPI_PROCS 4
+        NUM_MPI_PROCS 4
       TEST_1
         CMND ${PYTHON_EXECUTABLE}
         ARGS compare_residual_history.py gold_files/Brick3D_linear_4.log.gold Brick3D_linear_4.log 1.0e-12
@@ -322,7 +322,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       TEST_0
         EXEC StructuredRegionDriver
         ARGS --linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_linear_4.log --solverType=region
-      NUM_MPI_PROCS 4
+        NUM_MPI_PROCS 4
       TEST_1
         CMND ${PYTHON_EXECUTABLE}
         ARGS compare_residual_history.py gold_files/Elasticity3D_linear_4.log.gold Elasticity3D_linear_4.log 1.0e-12
@@ -337,7 +337,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       TEST_0
         EXEC StructuredRegionDriver
         ARGS --linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_CG_linear_4.log --solverType=CG
-      NUM_MPI_PROCS 4
+        NUM_MPI_PROCS 4
       TEST_1
         CMND ${PYTHON_EXECUTABLE}
         ARGS compare_residual_history.py gold_files/Elasticity3D_CG_linear_4.log.gold Elasticity3D_CG_linear_4.log 1.0e-12
@@ -352,7 +352,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       TEST_0
         EXEC StructuredRegionDriver
         ARGS --linAlgebra=Tpetra --xml=structured_linear_3dof.xml --matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --smootherIts=2 --convergence-log=Elasticity3D_Richardson_linear_4.log --solverType=Richardson
-      NUM_MPI_PROCS 4
+        NUM_MPI_PROCS 4
       TEST_1
         CMND ${PYTHON_EXECUTABLE}
         ARGS compare_residual_history.py gold_files/Elasticity3D_Richardson_linear_4.log.gold Elasticity3D_Richardson_linear_4.log 1.0e-12
@@ -367,11 +367,11 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       TEST_0
         EXEC StructuredRegionDriver
         ARGS --linAlgebra=Tpetra --xml=structured_linear_1dof_comp.xml --matrixType=Brick3D --nx=19 --ny=19 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_4_comp.log
-      NUM_MPI_PROCS 4
+        NUM_MPI_PROCS 4
       TEST_1
         EXEC StructuredRegionDriver
         ARGS --linAlgebra=Tpetra --xml=structured_linear_R_1dof.xml --matrixType=Brick3D --nx=19 --ny=19 --nz=10 --smootherIts=2 --convergence-log=Brick3D_linear_R_4_comp.log
-      NUM_MPI_PROCS 4
+        NUM_MPI_PROCS 4
       TEST_2
         CMND ${PYTHON_EXECUTABLE}
         ARGS compare_residual_history.py Brick3D_linear_4_comp.log Brick3D_linear_R_4_comp.log 1.0e-12
