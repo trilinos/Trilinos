@@ -51,8 +51,6 @@
 #include <string>
 #include <vector>
 
-// Epetra
-#include "Epetra_MpiComm.h"
 // Kokkos
 #include "Kokkos_View_Fad.hpp"
 
@@ -133,13 +131,13 @@ namespace panzer {
   {
 
    #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+      Teuchos::RCP<const Teuchos::MpiComm<int> > eComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      Teuchos::RCP<const Teuchos::SerialComm<int> > eComm = Teuchos::rcp(new Teuchos::SerialComm<int>(MPI_COMM_WORLD));
    #endif
 
-    int myRank = eComm->MyPID();
-    int numProcs = eComm->NumProc();
+    int myRank = eComm->getRank();
+    int numProcs = eComm->getSize();
 
     const std::size_t workset_size = 4/numProcs;
     const std::string fieldName1_q1 = "U";
