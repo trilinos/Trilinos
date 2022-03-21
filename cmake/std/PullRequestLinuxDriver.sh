@@ -34,10 +34,17 @@ function bootstrap_modules() {
             exit -1
         fi
     else
-        source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
-        module unload sems-archive-git
-        module unload sems-archive-python
-        module load sems-archive-git/2.10.1
+        if [[ ${JOB_BASE_NAME:?} == "Trilinos_pullrequest_gcc_8.3.0" ]]; then
+            print_banner "Using SEMS spack-cm TPLs"
+            source /projects/sems/modulefiles/utils/sems-modules-init.sh
+            module load sems-git/2.11.1
+        else
+            print_banner "Using SEMS Archive TPLs"
+            source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
+            module unload sems-archive-git
+            module unload sems-archive-python
+            module load sems-archive-git/2.10.1
+        fi
 
 #        module load sems-python/3.5.2      # Currently not on cloud nodes
 #        #pip3 install --user configparser
