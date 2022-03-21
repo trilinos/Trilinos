@@ -280,7 +280,6 @@ struct SacadoViewFill
     const size_t n4 = output.extent(4);
     const size_t n5 = output.extent(5);
     const size_t n6 = output.extent(6);
-    const size_t n7 = output.extent(7);
 
     for ( size_t i1 = 0 ; i1 < n1 ; ++i1 ) {
     for ( size_t i2 = 0 ; i2 < n2 ; ++i2 ) {
@@ -288,9 +287,8 @@ struct SacadoViewFill
     for ( size_t i4 = 0 ; i4 < n4 ; ++i4 ) {
     for ( size_t i5 = 0 ; i5 < n5 ; ++i5 ) {
     for ( size_t i6 = 0 ; i6 < n6 ; ++i6 ) {
-    for ( size_t i7 = 0 ; i7 < n7 ; ++i7 ) {
-      output.access(i0,i1,i2,i3,i4,i5,i6,i7) = input ;
-    }}}}}}}
+      output.access(i0,i1,i2,i3,i4,i5,i6) = input ;
+    }}}}}}
   }
 
   SacadoViewFill( const OutputView & arg_out , const_value_type & arg_in )
