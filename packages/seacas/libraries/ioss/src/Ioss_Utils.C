@@ -1106,7 +1106,7 @@ bool Ioss::Utils::substr_equal(const std::string &prefix, const std::string &str
 
 std::string Ioss::Utils::capitalize(std::string name)
 {
-  std::toupper(name[0]);
+  name[0] = std::toupper(name[0]);
   return name;
 }
 
