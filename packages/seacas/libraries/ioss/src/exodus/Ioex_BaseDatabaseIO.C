@@ -806,8 +806,8 @@ namespace Ioex {
       }
 
       if (!assemblyInclusions.empty()) {
-        const auto &assemblies = get_region()->get_assemblies();
-        for (auto &assembly : assemblies) {
+        const auto &all_assemblies = get_region()->get_assemblies();
+        for (auto &assembly : all_assemblies) {
           assembly->property_add(Ioss::Property(std::string("omitted"), 1));
         }
 
