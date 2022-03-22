@@ -543,9 +543,6 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
 
   // we start by extracting some basic data from the hierarchy
   RCP<Level> level0 = regHierarchy->GetLevel(0);
-  RCP<Matrix> regMat  = level0->Get<RCP<Matrix> >("A");
-  RCP<const Map> revisedRowMap  = regMat->getRowMap();
-  RCP<Import> rowImport = level0->Get<RCP<Import> >("rowImport");
   RCP<const Map> dofMap = X->getMap();
   const int myRank = dofMap->getComm()->getRank();
 
@@ -677,9 +674,6 @@ void solveCompositeProblemRichardson(const double tol, const bool scaleResidualH
 
   // we start by extracting some basic data from the hierarchy
   RCP<Level> level0 = regHierarchy->GetLevel(0);
-  RCP<Matrix> regMat  = level0->Get<RCP<Matrix> >("A");
-  RCP<const Map> revisedRowMap  = regMat->getRowMap();
-  RCP<Import> rowImport = level0->Get<RCP<Import> >("rowImport");
   RCP<const Map> dofMap = X->getMap();
   const int myRank = dofMap->getComm()->getRank();
 
