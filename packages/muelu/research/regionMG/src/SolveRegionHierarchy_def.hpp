@@ -54,7 +54,6 @@ using Teuchos::Array;
 //! Recursive V-cycle in region fashion
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void vCycle(const int l, ///< ID of current level
-            const int numLevels, ///< Total number of levels
             const std::string cycleType,
             RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & regHierarchy,
             RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& fineRegX, ///< solution
@@ -78,7 +77,7 @@ void vCycle(const int l, ///< ID of current level
   int cycleCount = 1;
   if(cycleType == "W" && l > 0) // W cycle and not on finest level
     cycleCount=2;
-  if (l < numLevels - 1) { // fine or intermediate levels
+  if (l < regHierarchy->GetNumLevels() - 1) { // fine or intermediate levels
     for(int cycle=0; cycle < cycleCount; cycle++){
 
 //    std::cout << "level: " << l << std::endl;
@@ -143,7 +142,7 @@ void vCycle(const int l, ///< ID of current level
       bool coarseZeroInitGuess = true;
 
       // Call V-cycle recursively
-      vCycle(l+1, numLevels, cycleType, regHierarchy,
+      vCycle(l+1, cycleType, regHierarchy,
              coarseRegX, coarseRegB,
              smootherParams, coarseZeroInitGuess, coarseSolverData, hierarchyData);
 
@@ -312,15 +311,15 @@ void vCycle(const int l, ///< ID of current level
 //! Adapter that uses composite vectors and a region hierarchy
 //  and performs a region vCycle on them.
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RegionMgCycleAdapter(const int numLevels, ///< Total number of levels
-                   const std::string cycleType,
-                   RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & regHierarchy,
-                   RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X, ///< solution
-                   RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > B, ///< right hand side
-                   Array<RCP<Teuchos::ParameterList> > smootherParams, ///< region smoother parameter list
-                   bool& zeroInitGuess,
-                   RCP<ParameterList> coarseSolverData = Teuchos::null,
-                   RCP<ParameterList> hierarchyData = Teuchos::null) {
+void RegionMgCycleAdapter(const std::string cycleType,
+    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & regHierarchy,
+    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X, ///< solution
+    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > B, ///< right hand side
+    Array<RCP<Teuchos::ParameterList> > smootherParams, ///< region smoother parameter list
+    bool& zeroInitGuess,
+    RCP<ParameterList> coarseSolverData = Teuchos::null,
+    RCP<ParameterList> hierarchyData = Teuchos::null)
+{
 
   using LO = LocalOrdinal;
   using GO = GlobalOrdinal;
@@ -353,7 +352,7 @@ void RegionMgCycleAdapter(const int numLevels, ///< Total number of levels
   compositeToRegional(X, quasiRegX, regX,
                       revisedRowMap, rowImport);
 
-  vCycle(0, numLevels, cycleType, regHierarchy,
+  vCycle(0, cycleType, regHierarchy,
          regX, regB,
          smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
 
@@ -391,7 +390,6 @@ void solveRegionProblem(const double tol, const bool scaleResidualHist, const in
   const Scalar SC_one  = STS::one();
 
   // we start by extracting some basic data from the hierarchy
-  const int numLevels = regHierarchy->GetNumLevels();
   RCP<Level> level0 = regHierarchy->GetLevel(0);
   RCP<Matrix> regMat  = level0->Get<RCP<Matrix> >("A");
   RCP<const Map> revisedRowMap  = regMat->getRowMap();
@@ -422,7 +420,7 @@ void solveRegionProblem(const double tol, const bool scaleResidualHist, const in
   else
     out << "Using unscaled residual norm." << std::endl;
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(!(numLevels>0), "We require numLevel > 0. Probably, numLevel has not been set, yet.");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(!(regHierarchy->GetNumLevels()>0), "We require numLevel > 0. Probably, numLevel has not been set, yet.");
 
   // We first use the non-level container variables to setup the fine grid problem.
   // This is ok since the initial setup just mimics the application and the outer
@@ -499,7 +497,7 @@ void solveRegionProblem(const double tol, const bool scaleResidualHist, const in
     scaleInterfaceDOFs(regRes, regInterfaceScalings, false);
 
     // std::cout << "regB->norm2() " << regRes->norm2() << std::endl;
-    vCycle(0, numLevels, cycleType, regHierarchy,
+    vCycle(0, cycleType, regHierarchy,
            regCorrect, regRes,
            smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
 
@@ -544,7 +542,6 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
   const Scalar SC_one  = STS::one();
 
   // we start by extracting some basic data from the hierarchy
-  const int numLevels = regHierarchy->GetNumLevels();
   RCP<Level> level0 = regHierarchy->GetLevel(0);
   RCP<Matrix> regMat  = level0->Get<RCP<Matrix> >("A");
   RCP<const Map> revisedRowMap  = regMat->getRowMap();
@@ -575,7 +572,7 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
   else
     out << "Using unscaled residual norm." << std::endl;
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(!(numLevels>0), "We require numLevel > 0. Probably, numLevel has not been set, yet.");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(!(regHierarchy->GetNumLevels()>0), "We require numLevel > 0. Probably, numLevel has not been set, yet.");
 
   // PCG iterations
   const int old_precision = std::cout.precision();
@@ -600,7 +597,7 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
   normResIni = Res->norm2();
   Z->putScalar(SC_zero);
 
-  RegionMgCycleAdapter(numLevels, cycleType, regHierarchy,
+  RegionMgCycleAdapter(cycleType, regHierarchy,
                 Z, Res,
                 smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
   P->update(SC_one, *Z, SC_zero); // deep copy values of Z into P
@@ -635,7 +632,7 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
     }
 
     Z->putScalar(SC_zero);
-    RegionMgCycleAdapter(numLevels, cycleType, regHierarchy,
+    RegionMgCycleAdapter(cycleType, regHierarchy,
                   Z, Res,
                   smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
 
@@ -679,7 +676,6 @@ void solveCompositeProblemRichardson(const double tol, const bool scaleResidualH
   const Scalar SC_one  = STS::one();
 
   // we start by extracting some basic data from the hierarchy
-  const int numLevels = regHierarchy->GetNumLevels();
   RCP<Level> level0 = regHierarchy->GetLevel(0);
   RCP<Matrix> regMat  = level0->Get<RCP<Matrix> >("A");
   RCP<const Map> revisedRowMap  = regMat->getRowMap();
@@ -710,7 +706,7 @@ void solveCompositeProblemRichardson(const double tol, const bool scaleResidualH
   else
     out << "Using unscaled residual norm." << std::endl;
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(!(numLevels>0), "We require numLevel > 0. Probably, numLevel has not been set, yet.");
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(!(regHierarchy->GetNumLevels()>0), "We require numLevel > 0. Probably, numLevel has not been set, yet.");
 
   // Richardson iterations
   const int old_precision = std::cout.precision();
@@ -749,7 +745,7 @@ void solveCompositeProblemRichardson(const double tol, const bool scaleResidualH
         break;
     }
 
-    RegionMgCycleAdapter(numLevels, cycleType, regHierarchy,
+    RegionMgCycleAdapter(cycleType, regHierarchy,
                   Correct, Res,
                   smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
 
