@@ -691,13 +691,13 @@ void solveCompositeProblemRichardson(const double tol, const bool scaleResidualH
   // Prepare output of residual norm to file
   RCP<std::ofstream> log;
   if (myRank == 0)
-    {
-      log = rcp(new std::ofstream(convergenceLog.c_str()));
-      (*log) << "# num procs = " << dofMap->getComm()->getSize() << "\n"
-             << "# iteration | res-norm (scaled=" << scaleResidualHist << ")\n"
-             << "#\n";
-      *log << std::setprecision(16) << std::scientific;
-    }
+  {
+    log = rcp(new std::ofstream(convergenceLog.c_str()));
+    (*log) << "# num procs = " << dofMap->getComm()->getSize() << "\n"
+           << "# iteration | res-norm (scaled=" << scaleResidualHist << ")\n"
+           << "#\n";
+    *log << std::setprecision(16) << std::scientific;
+  }
 
   // Print type of residual norm to the screen
   out << "Using Richardson solver" << std::endl;
