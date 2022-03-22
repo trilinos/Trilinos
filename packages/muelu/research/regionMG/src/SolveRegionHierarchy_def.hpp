@@ -51,9 +51,9 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Array;
 
-//! Recursive V-cycle in region fashion
+//! Recursive multigrid cycle (V or W) in region fashion
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void vCycle(const int l, ///< ID of current level
+void MgCycle(const int l, ///< ID of current level
             const std::string cycleType,
             RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & regHierarchy,
             RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& fineRegX, ///< solution
@@ -93,14 +93,14 @@ void vCycle(const int l, ///< ID of current level
       //   }
       // }
 
-      RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 1 - pre-smoother")));
+      RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MgCycle: 1 - pre-smoother")));
 
       // pre-smoothing
       smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrix,
                     regRowMap, regRowImporter, zeroInitGuess);
 
       tm = Teuchos::null;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 2 - compute residual")));
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MgCycle: 2 - compute residual")));
 
       RCP<Vector> regRes;
       if(useCachedVectors) {
@@ -111,12 +111,12 @@ void vCycle(const int l, ///< ID of current level
       computeResidual(regRes, fineRegX, fineRegB, regMatrix, *smootherParams[l]);
 
       tm = Teuchos::null;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 3 - scale interface")));
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MgCycle: 3 - scale interface")));
 
       scaleInterfaceDOFs(regRes, regInterfaceScalings, true);
 
       tm = Teuchos::null;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 4 - create coarse vectors")));
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MgCycle: 4 - create coarse vectors")));
 
       // Transfer to coarse level
       RCP<Vector> coarseRegX;
@@ -142,11 +142,11 @@ void vCycle(const int l, ///< ID of current level
       bool coarseZeroInitGuess = true;
 
       // Call V-cycle recursively
-      vCycle(l+1, cycleType, regHierarchy,
+      MgCycle(l+1, cycleType, regHierarchy,
              coarseRegX, coarseRegB,
              smootherParams, coarseZeroInitGuess, coarseSolverData, hierarchyData);
 
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 6 - transfer coarse to fine")));
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MgCycle: 6 - transfer coarse to fine")));
 
       // Transfer coarse level correction to fine level
       RCP<Vector> regCorrection;
@@ -164,7 +164,7 @@ void vCycle(const int l, ///< ID of current level
       }
 
       tm = Teuchos::null;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 7 - add coarse grid correction")));
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MgCycle: 7 - add coarse grid correction")));
 
       // apply coarse grid correction
       fineRegX->update(SC_ONE, *regCorrection, SC_ONE);
@@ -173,7 +173,7 @@ void vCycle(const int l, ///< ID of current level
 //    std::cout << "level: " << l << std::endl;
 
       tm = Teuchos::null;
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: 8 - post-smoother")));
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MgCycle: 8 - post-smoother")));
 
       // post-smoothing
       smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrix,
@@ -189,7 +189,7 @@ void vCycle(const int l, ///< ID of current level
     RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     fos->setOutputToRootOnly(0);
 
-    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("vCycle: * - coarsest grid solve")));
+    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MgCycle: * - coarsest grid solve")));
 
     // std::cout << "Applying coarse colver" << std::endl;
 
@@ -306,10 +306,10 @@ void vCycle(const int l, ///< ID of current level
   }
 
   return;
-} // vCycle
+} // MgCycle
 
 //! Adapter that uses composite vectors and a region hierarchy
-//  and performs a region vCycle on them.
+//  and performs a region MG cycle on them.
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RegionMgCycleAdapter(const std::string cycleType,
     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & regHierarchy,
@@ -352,7 +352,7 @@ void RegionMgCycleAdapter(const std::string cycleType,
   compositeToRegional(X, quasiRegX, regX,
                       revisedRowMap, rowImport);
 
-  vCycle(0, cycleType, regHierarchy,
+  MgCycle(0, cycleType, regHierarchy,
          regX, regB,
          smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
 
@@ -497,7 +497,7 @@ void solveRegionProblem(const double tol, const bool scaleResidualHist, const in
     scaleInterfaceDOFs(regRes, regInterfaceScalings, false);
 
     // std::cout << "regB->norm2() " << regRes->norm2() << std::endl;
-    vCycle(0, cycleType, regHierarchy,
+    MgCycle(0, cycleType, regHierarchy,
            regCorrect, regRes,
            smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
 
