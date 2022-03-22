@@ -312,7 +312,7 @@ void vCycle(const int l, ///< ID of current level
 //! Adapter that uses composite vectors and a region hierarchy
 //  and performs a region vCycle on them.
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void vCycleAdapter(const int numLevels, ///< Total number of levels
+void RegionMgCycleAdapter(const int numLevels, ///< Total number of levels
                    const std::string cycleType,
                    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & regHierarchy,
                    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X, ///< solution
@@ -360,7 +360,7 @@ void vCycleAdapter(const int numLevels, ///< Total number of levels
   // Bring solution back to composite format
   scaleInterfaceDOFs(regX, regInterfaceScalings, true);
   regionalToComposite(regX, X, rowImport);
-} // vCycleAdapter
+} // RegionMgCycleAdapter
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void solveRegionProblem(const double tol, const bool scaleResidualHist, const int maxIts,
@@ -600,7 +600,7 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
   normResIni = Res->norm2();
   Z->putScalar(SC_zero);
 
-  vCycleAdapter(numLevels, cycleType, regHierarchy,
+  RegionMgCycleAdapter(numLevels, cycleType, regHierarchy,
                 Z, Res,
                 smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
   P->update(SC_one, *Z, SC_zero); // deep copy values of Z into P
@@ -635,7 +635,7 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
     }
 
     Z->putScalar(SC_zero);
-    vCycleAdapter(numLevels, cycleType, regHierarchy,
+    RegionMgCycleAdapter(numLevels, cycleType, regHierarchy,
                   Z, Res,
                   smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
 
@@ -749,7 +749,7 @@ void solveCompositeProblemRichardson(const double tol, const bool scaleResidualH
         break;
     }
 
-    vCycleAdapter(numLevels, cycleType, regHierarchy,
+    RegionMgCycleAdapter(numLevels, cycleType, regHierarchy,
                   Correct, Res,
                   smootherParams, zeroInitGuess, coarseSolverData, hierarchyData);
 
