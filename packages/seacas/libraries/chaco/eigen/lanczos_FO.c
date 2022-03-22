@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -66,17 +66,17 @@
 void lanczos_FO(struct vtx_data **A,      /* graph data structure */
                 int               n,      /* number of rows/columns in matrix */
                 int               d,      /* problem dimension = # evecs to find */
-                double **         y,      /* columns of y are eigenvectors of A  */
-                double *          lambda, /* ritz approximation to eigenvals of A */
-                double *          bound,  /* on ritz pair approximations to eig pairs of A */
+                double          **y,      /* columns of y are eigenvectors of A  */
+                double           *lambda, /* ritz approximation to eigenvals of A */
+                double           *bound,  /* on ritz pair approximations to eig pairs of A */
                 double            eigtol, /* tolerance on eigenvectors */
-                double *          vwsqrt, /* square root of vertex weights */
+                double           *vwsqrt, /* square root of vertex weights */
                 double            maxdeg, /* maximum degree of graph */
                 int               version /* 1 = standard mode, 2 = inverse operator mode */
 )
 
 {
-  extern FILE *    Output_File;         /* output file or NULL */
+  extern FILE     *Output_File;         /* output file or NULL */
   extern int       DEBUG_EVECS;         /* print debugging output? */
   extern int       DEBUG_TRACE;         /* trace main execution path */
   extern int       WARNING_EVECS;       /* print warning messages? */
@@ -95,28 +95,28 @@ void lanczos_FO(struct vtx_data **A,      /* graph data structure */
   extern double    debug_time;          /* time for debug computations and output */
   int              i, j;                /* indices */
   int              maxj;                /* maximum number of Lanczos iterations */
-  double *         u, *r;               /* Lanczos vectors */
-  double *         Aq;                  /* sparse matrix-vector product vector */
-  double *         alpha, *beta;        /* the Lanczos scalars from each step */
-  double *         ritz;                /* copy of alpha for tqli */
-  double *         workj;               /* work vector (eg. for tqli) */
-  double *         workn;               /* work vector (eg. for checkeig) */
-  double *         s;                   /* eigenvector of T */
-  double **        q;                   /* columns of q = Lanczos basis vectors */
-  double *         bj;                  /* beta(j)*(last element of evecs of T) */
+  double          *u, *r;               /* Lanczos vectors */
+  double          *Aq;                  /* sparse matrix-vector product vector */
+  double          *alpha, *beta;        /* the Lanczos scalars from each step */
+  double          *ritz;                /* copy of alpha for tqli */
+  double          *workj;               /* work vector (eg. for tqli) */
+  double          *workn;               /* work vector (eg. for checkeig) */
+  double          *s;                   /* eigenvector of T */
+  double         **q;                   /* columns of q = Lanczos basis vectors */
+  double          *bj;                  /* beta(j)*(last element of evecs of T) */
   double           bis_safety;          /* real safety factor for bisection algorithm */
   double           Sres;                /* how well Tevec calculated eigvecs */
   double           Sres_max;            /* Maximum value of Sres */
   int              inc_bis_safety;      /* need to increase bisection safety */
-  double *         Ares;                /* how well Lanczos calculated each eigpair */
-  double *         inv_lambda;          /* eigenvalues of inverse operator */
-  int *            index;               /* the Ritz index of an eigenpair */
+  double          *Ares;                /* how well Lanczos calculated each eigpair */
+  double          *inv_lambda;          /* eigenvalues of inverse operator */
+  int             *index;               /* the Ritz index of an eigenpair */
   struct orthlink *orthlist  = NULL;    /* vectors to orthogonalize against in Lanczos */
   struct orthlink *orthlist2 = NULL;    /* vectors to orthogonalize against in Symmlq */
   struct orthlink *temp;                /* for expanding orthogonalization list */
-  double *         ritzvec = NULL;      /* ritz vector for current iteration */
-  double *         zeros   = NULL;      /* vector of all zeros */
-  double *         ones    = NULL;      /* vector of all ones */
+  double          *ritzvec = NULL;      /* ritz vector for current iteration */
+  double          *zeros   = NULL;      /* vector of all zeros */
+  double          *ones    = NULL;      /* vector of all ones */
   struct scanlink *scanlist;            /* list of fields for min ritz vals */
   struct scanlink *curlnk;              /* for traversing the scanlist */
   double           bji_tol;             /* tol on bji estimate of A e-residual */
@@ -132,26 +132,28 @@ void lanczos_FO(struct vtx_data **A,      /* graph data structure */
   double           normxlim;            /* a stopping criteria for symmlq */
   long             itnmin;              /* enforce minimum number of iterations */
   int              symmlqitns = 0;      /* # symmlq itns */
-  double *         wv1 = NULL, *wv2 = NULL, *wv3 = NULL; /* Symmlq work space */
-  double *         wv4 = NULL, *wv5 = NULL, *wv6 = NULL; /* Symmlq work space */
+  double          *wv1 = NULL, *wv2 = NULL, *wv3 = NULL; /* Symmlq work space */
+  double          *wv4 = NULL, *wv5 = NULL, *wv6 = NULL; /* Symmlq work space */
   long             long_n;                               /* long int copy of n for symmlq */
   int              ritzval_flag = 0;                     /* status flag for ql() */
   double           Anorm;                                /* Norm estimate of the Laplacian matrix */
   int              left, right;                          /* ranges on the search for ritzvals */
   int              memory_ok; /* TRUE as long as don't run out of memory */
 
-  double *         mkvec();        /* allocates space for a vector */
-  double *         mkvec_ret();    /* mkvec() which returns error code */
-  double           dot();          /* standard dot product routine */
-  struct orthlink *makeorthlnk();  /* make space for entry in orthog. set */
-  double           ch_norm();      /* vector norm */
-  double           Tevec();        /* calc evec of T by linear recurrence */
-  struct scanlink *mkscanlist();   /* make scan list for min ritz vecs */
-  double           lanc_seconds(); /* current clock timer */
+  double *mkvec(int nl, int nh);     /* allocates space for a vector */
+  double *mkvec_ret(int nl, int nh); /* mkvec(int nl, int nh) which returns error code */
+  double  dot(double *vec1, int beg, int end, double *vec2); /* standard dot product routine */
+  struct orthlink *makeorthlnk();                          /* make space for entry in orthog. set */
+  double           ch_norm(double *vec, int beg, int end); /* vector norm */
+  double Tevec(double *, double *, int, double, double *); /* calc evec of T by linear recurrence */
+  struct scanlink *mkscanlist();                           /* make scan list for min ritz vecs */
+  double           lanc_seconds(void);                     /* current clock timer */
   int              symmlq(), get_ritzvals();
-  void             setvec(), vecscale(), update(), vecran(), strout();
-  void             splarax(), scanmin(), scanmax(), frvec(), orthogonalize();
-  void             orthog1(), orthogvec(), bail(), warnings(), mkeigvecs();
+  void             setvec(), vecscale(),
+      update(double *vec1, int beg, int end, double *vec2, double fac, double *vec3), vecran(),
+      strout(char *msg);
+  void splarax(), scanmin(), scanmax(), frvec(double *v, int nl), orthogonalize();
+  void orthog1(), orthogvec(), bail(), warnings(), mkeigvecs();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering lanczos_FO>\n");

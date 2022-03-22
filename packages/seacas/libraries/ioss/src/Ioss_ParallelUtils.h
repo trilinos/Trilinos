@@ -40,9 +40,9 @@ namespace Ioss {
     static Ioss_MPI_Comm comm_self() { return (Ioss_MPI_Comm)MPI_COMM_SELF; }
     static Ioss_MPI_Comm comm_null() { return (Ioss_MPI_Comm)MPI_COMM_NULL; }
 #else
-    static constexpr Ioss_MPI_Comm comm_world() { return (Ioss_MPI_Comm)0; }
-    static constexpr Ioss_MPI_Comm comm_self() { return (Ioss_MPI_Comm)0; }
-    static constexpr Ioss_MPI_Comm comm_null() { return (Ioss_MPI_Comm)0; }
+    static constexpr Ioss_MPI_Comm comm_world() { return 0; }
+    static constexpr Ioss_MPI_Comm comm_self() { return 0; }
+    static constexpr Ioss_MPI_Comm comm_null() { return 0; }
 #endif
 
     /*!
@@ -81,8 +81,8 @@ namespace Ioss {
     std::string decode_filename(const std::string &filename, bool is_parallel) const;
 
     Ioss_MPI_Comm communicator() const { return communicator_; }
-    int      parallel_size() const;
-    int      parallel_rank() const;
+    int           parallel_size() const;
+    int           parallel_rank() const;
 
     void barrier() const;
 

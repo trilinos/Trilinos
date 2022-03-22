@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -23,19 +23,19 @@ static void free_kl();
 
 void klspiff(struct vtx_data **graph, /* list of graph info for each vertex */
              int               nvtxs, /* number of vertices in graph */
-             int *             sets,  /* local partitioning of vtxs */
+             int              *sets,  /* local partitioning of vtxs */
              int               nsets, /* number of sets at each level */
              int (*hops)[MAXSETS],    /* hop cost between sets */
              double *goal,            /* desired set sizes */
-             float * term_wgts[],     /* weights for terminal propagation */
+             float  *term_wgts[],     /* weights for terminal propagation */
              int     max_dev,         /* largest deviation from balance allowed */
              double  maxdeg,          /* largest weighted vertex degree */
              int     using_ewgts,     /* are edge weights being used? */
-             int **  bndy_list,       /* list of vertices on boundary (0 ends) */
+             int   **bndy_list,       /* list of vertices on boundary (0 ends) */
              double *weights          /* vertex weights in each set */
 )
 {
-  extern FILE *     Output_File;     /* output file or null */
+  extern FILE      *Output_File;     /* output file or null */
   extern double     CUT_TO_HOP_COST; /* relative importance of cuts/hops */
   extern int        DEBUG_TRACE;     /* debug flag for Kernighan-Lin */
   extern int        DEBUG_KL;        /* debug flag for Kernighan-Lin */
@@ -43,10 +43,10 @@ void klspiff(struct vtx_data **graph, /* list of graph info for each vertex */
   extern double     kl_init_time;
   extern double     nway_kl_time;
   struct bilist ****buckets;     /* space for bucket sorts */
-  struct bilist **  listspace;   /* space for all bidirectional elements */
-  float *           twptr;       /* loops through term_wgts */
-  int **            dvals;       /* change in penalty for each possible move */
-  int **            tops;        /* starting dval for each type of move */
+  struct bilist   **listspace;   /* space for all bidirectional elements */
+  float            *twptr;       /* loops through term_wgts */
+  int             **dvals;       /* change in penalty for each possible move */
+  int             **tops;        /* starting dval for each type of move */
   double            time, time1; /* timing variables */
   float             maxterm;     /* largest terminal propagation preference */
   int               maxhop;      /* maximum hops between sets */
@@ -55,7 +55,7 @@ void klspiff(struct vtx_data **graph, /* list of graph info for each vertex */
   double            hop_cost;    /* relative importance of hops/cuts */
   int               error;       /* out of space? */
   int               i, j;        /* loop counters */
-  double            seconds();
+  double            seconds(void);
   int               kl_init(), nway_kl();
   void              count();
 
@@ -140,9 +140,9 @@ void klspiff(struct vtx_data **graph, /* list of graph info for each vertex */
 static void free_kl(
     /* Free everything malloc'd for KL. */
     struct bilist ****buckets,   /* space for bucket sorts */
-    struct bilist **  listspace, /* space for all bidirectional elements */
-    int **            dvals,     /* change in penalty for each possible move */
-    int **            tops       /* starting dval for each type of move */
+    struct bilist   **listspace, /* space for all bidirectional elements */
+    int             **dvals,     /* change in penalty for each possible move */
+    int             **tops       /* starting dval for each type of move */
 )
 {
 

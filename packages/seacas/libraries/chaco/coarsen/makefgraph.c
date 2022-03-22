@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,17 +12,17 @@
 
 static void makecv2v();
 
-void makefgraph(struct vtx_data ** graph,       /* array of vtx data for graph */
+void makefgraph(struct vtx_data  **graph,       /* array of vtx data for graph */
                 int                nvtxs,       /* number of vertices in graph */
                 int                nedges,      /* number of edges in graph */
                 struct vtx_data ***pcgraph,     /* coarsened version of graph */
                 int                cnvtxs,      /* number of vtxs in coarsened graph */
-                int *              pcnedges,    /* number of edges in coarsened graph */
-                int *              v2cv,        /* mapping from vtxs to coarsened vtxs */
+                int               *pcnedges,    /* number of edges in coarsened graph */
+                int               *v2cv,        /* mapping from vtxs to coarsened vtxs */
                 int                using_ewgts, /* are edge weights being used? */
                 int                igeom,       /* dimensions of geometric data */
-                float **           coords,      /* coordinates for vertices */
-                float **           ccoords      /* coordinates for coarsened vertices */
+                float            **coords,      /* coordinates for vertices */
+                float            **ccoords      /* coordinates for coarsened vertices */
 )
 {
   extern double     make_cgraph_time;
@@ -30,17 +30,17 @@ void makefgraph(struct vtx_data ** graph,       /* array of vtx data for graph *
   extern int        COARSEN_VWGTS;    /* turn off vertex weights in coarse graph? */
   extern int        COARSEN_EWGTS;    /* turn off edge weights in coarse graph? */
   struct vtx_data **cgraph    = NULL; /* coarsened version of graph */
-  struct vtx_data * links     = NULL; /* space for all the vertex data */
+  struct vtx_data  *links     = NULL; /* space for all the vertex data */
   struct vtx_data **gptr      = NULL; /* loops through cgraph */
-  struct vtx_data * cgptr     = NULL; /* loops through cgraph */
-  int *             iptr      = NULL; /* loops through integer arrays */
-  int *             seenflag  = NULL; /* flags for vtxs already put in edge list */
-  int *             sptr      = NULL; /* loops through seenflags */
-  int *             cv2v_vals = NULL; /* vtxs corresponding to each cvtx */
-  int *             cv2v_ptrs = NULL; /* indices into cv2v_vals */
-  float *           eweights  = NULL; /* space for edge weights in coarsened graph */
-  float *           ewptr     = NULL; /* loops through eweights */
-  float *           fptr      = NULL; /* loops through eweights */
+  struct vtx_data  *cgptr     = NULL; /* loops through cgraph */
+  int              *iptr      = NULL; /* loops through integer arrays */
+  int              *seenflag  = NULL; /* flags for vtxs already put in edge list */
+  int              *sptr      = NULL; /* loops through seenflags */
+  int              *cv2v_vals = NULL; /* vtxs corresponding to each cvtx */
+  int              *cv2v_ptrs = NULL; /* indices into cv2v_vals */
+  float            *eweights  = NULL; /* space for edge weights in coarsened graph */
+  float            *ewptr     = NULL; /* loops through eweights */
+  float            *fptr      = NULL; /* loops through eweights */
   float             ewgt;             /* edge weight */
   double            ewgt_sum;         /* sum of edge weights */
   double            time;             /* timing parameters */
@@ -50,11 +50,11 @@ void makefgraph(struct vtx_data ** graph,       /* array of vtx data for graph *
   int               cnedges;          /* twice number of edges in coarsened graph */
   int               neighbor;         /* neighboring vertex */
   int               size;             /* space needed for coarsened graph */
-  int *             edges = NULL;     /* space for edges in coarsened graph */
-  int *             eptr  = NULL;     /* loops through edges data structure */
+  int              *edges = NULL;     /* space for edges in coarsened graph */
+  int              *eptr  = NULL;     /* loops through edges data structure */
   int               cneighbor;        /* neighboring vertex number in coarsened graph */
   int               i, j;             /* loop counters */
-  double            seconds();
+  double            seconds(void);
   void              makeccoords();
 
   /* Compute the number of vertices and edges in the coarsened graph, */
