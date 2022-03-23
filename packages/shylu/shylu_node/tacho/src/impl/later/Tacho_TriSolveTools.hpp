@@ -6,13 +6,13 @@
 
 #include "Tacho_Util.hpp"
 
-#include "Tacho_Trsm.hpp"
+//#include "Tacho_Trsm.hpp"
 #include "Tacho_Trsm_OnDevice.hpp"
 
-#include "Tacho_Trsv.hpp"
+//#include "Tacho_Trsv.hpp"
 #include "Tacho_Trsv_OnDevice.hpp"
 
-#include "Tacho_Gemv.hpp"
+//#include "Tacho_Gemv.hpp"
 #include "Tacho_Gemv_OnDevice.hpp"
 
 #include "Tacho_SupernodeInfo.hpp"

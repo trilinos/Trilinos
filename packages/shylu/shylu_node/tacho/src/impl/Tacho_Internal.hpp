@@ -23,7 +23,6 @@
 #include "Tacho_Graph.hpp"
 #include "Tacho_GraphTools.hpp"       
 #include "Tacho_GraphTools_Metis.hpp"       
-#include "Tacho_GraphTools_Scotch.hpp"      
 
 #include "Tacho_SupernodeInfo.hpp"
 #include "Tacho_SymbolicTools.hpp"
@@ -52,7 +51,7 @@
 #include "Tacho_Chol.hpp"
 #include "Tacho_Chol_External.hpp"
 #include "Tacho_Chol_Internal.hpp"
-#include "Tacho_Chol_ByBlocks.hpp"
+// #include "Tacho_Chol_ByBlocks.hpp"
 
 #include "Tacho_LDL.hpp"
 #include "Tacho_LDL_External.hpp"
@@ -62,17 +61,17 @@
 #include "Tacho_Trsm.hpp"
 #include "Tacho_Trsm_External.hpp"
 #include "Tacho_Trsm_Internal.hpp"
-#include "Tacho_Trsm_ByBlocks.hpp"
+// #include "Tacho_Trsm_ByBlocks.hpp"
 
 #include "Tacho_Herk.hpp"
 #include "Tacho_Herk_External.hpp"
 #include "Tacho_Herk_Internal.hpp"
-#include "Tacho_Herk_ByBlocks.hpp"          
+// #include "Tacho_Herk_ByBlocks.hpp"          
 
 #include "Tacho_Gemm.hpp"
 #include "Tacho_Gemm_External.hpp"
 #include "Tacho_Gemm_Internal.hpp"
-#include "Tacho_Gemm_ByBlocks.hpp"
+// #include "Tacho_Gemm_ByBlocks.hpp"
 
 #include "Tacho_GemmTriangular.hpp"
 #include "Tacho_GemmTriangular_External.hpp"
@@ -91,22 +90,24 @@
 #include "Tacho_CholSupernodes_Serial.hpp"
 #include "Tacho_CholSupernodes_SerialPanel.hpp"
 
-#include "Tacho_TaskFunctor_FactorizeChol.hpp"
-#include "Tacho_TaskFunctor_FactorizeCholPanel.hpp"
-#include "Tacho_TaskFunctor_FactorizeCholByBlocks.hpp"
-#include "Tacho_TaskFunctor_FactorizeCholByBlocksPanel.hpp"
+// #include "Tacho_TaskFunctor_FactorizeChol.hpp"
+// #include "Tacho_TaskFunctor_FactorizeCholPanel.hpp"
+// #include "Tacho_TaskFunctor_FactorizeCholByBlocks.hpp"
+// #include "Tacho_TaskFunctor_FactorizeCholByBlocksPanel.hpp"
 
-#include "Tacho_TaskFunctor_SolveLowerChol.hpp"
-#include "Tacho_TaskFunctor_SolveUpperChol.hpp"
+// #include "Tacho_TaskFunctor_SolveLowerChol.hpp"
+// #include "Tacho_TaskFunctor_SolveUpperChol.hpp"
 
-#include "Tacho_NumericTools.hpp"
-#include "Tacho_LevelSetTools.hpp"
-#include "Tacho_TriSolveTools.hpp"
+// #include "Tacho_NumericTools.hpp"
+// #include "Tacho_LevelSetTools.hpp"
+// #include "Tacho_TriSolveTools.hpp"
 
 // refactoring
 #include "Tacho_NumericTools_Base.hpp"
 #include "Tacho_NumericTools_Serial.hpp"
 #include "Tacho_NumericTools_LevelSet.hpp"
+
+#include "Tacho_NumericTools_Factory.hpp"
 
 // Do not include this. 
 // In a gcc (4.9.x), this causes some multiple definition link error with gcc headers.

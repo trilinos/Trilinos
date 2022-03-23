@@ -13,19 +13,19 @@
 #include "Tacho_SetIdentity.hpp"
 #include "Tacho_SetIdentity_OnDevice.hpp"
 
-#include "Tacho_Chol.hpp"
+//#include "Tacho_Chol.hpp"
 #include "Tacho_Chol_OnDevice.hpp"
 
-#include "Tacho_Trsm.hpp"
+//#include "Tacho_Trsm.hpp"
 #include "Tacho_Trsm_OnDevice.hpp"
 
-#include "Tacho_Herk.hpp"
+//#include "Tacho_Herk.hpp"
 #include "Tacho_Herk_OnDevice.hpp"
 
-#include "Tacho_Trsv.hpp"
+//#include "Tacho_Trsv.hpp"
 #include "Tacho_Trsv_OnDevice.hpp"
 
-#include "Tacho_Gemv.hpp"
+//#include "Tacho_Gemv.hpp"
 #include "Tacho_Gemv_OnDevice.hpp"
 
 #include "Tacho_SupernodeInfo.hpp"

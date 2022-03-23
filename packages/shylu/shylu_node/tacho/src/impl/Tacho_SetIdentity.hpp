@@ -9,14 +9,14 @@
 
 namespace Tacho {
 
-    ///
-    /// SetIdentity
-    ///
-
-    /// various implementation for different uplo and algo parameters
-    template<typename ArgAlgo>
-    struct SetIdentity;
-
+  ///
+  /// SetIdentity
+  ///
+  
+  /// various implementation for different uplo and algo parameters
+  template<typename ArgAlgo>
+  struct SetIdentity;
+  
 }
 
 #endif

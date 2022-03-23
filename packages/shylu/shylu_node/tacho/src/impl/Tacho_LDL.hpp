@@ -9,16 +9,16 @@
 
 namespace Tacho {
   
-    ///
-    /// LDL:
-    /// 
-    /// 
-
-    /// various implementation for different uplo and algo parameters
-    template<typename ArgUplo, 
-             typename ArgAlgo>
-    struct LDL;
-    
+  ///
+  /// LDL:
+  /// 
+  /// 
+  
+  /// various implementation for different uplo and algo parameters
+  template<typename ArgUplo, 
+           typename ArgAlgo>
+  struct LDL;
+  
 }
 
 #endif

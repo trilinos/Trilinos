@@ -9,14 +9,14 @@
 
 namespace Tacho {
 
-    ///
-    /// ModifyDiagonals
-    ///
-
-    /// various implementation for different uplo and algo parameters
-    template<typename ArgAlgo>
-    struct ModifyDiagonals;
-
+  ///
+  /// ModifyDiagonals
+  ///
+  
+  /// various implementation for different uplo and algo parameters
+  template<typename ArgAlgo>
+  struct ModifyDiagonals;
+  
 }
 
 #endif
