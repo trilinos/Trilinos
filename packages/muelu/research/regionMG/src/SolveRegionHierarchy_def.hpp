@@ -53,7 +53,7 @@ using Teuchos::Array;
 
 //! Recursive multigrid cycle (V or W) in region fashion
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MgCycle(const int l, ///< ID of current level
+void MgCycle(const int levelID, ///< ID of current level
             const std::string cycleType,
             RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & regHierarchy,
             RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& fineRegX, ///< solution
@@ -68,22 +68,26 @@ void MgCycle(const int l, ///< ID of current level
   const Scalar SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
   const Scalar SC_ONE = Teuchos::ScalarTraits<Scalar>::one();
 
-  RCP<Level> level = regHierarchy->GetLevel(l);
-  RCP<Matrix>    regMatrix      = level->Get<RCP<Matrix> >("A", MueLu::NoFactory::get());
-  RCP<const Map> regRowMap      = regMatrix->getRowMap();
+  RCP<Level> level = regHierarchy->GetLevel(levelID);
+  RCP<Matrix> regMatrix = level->Get<RCP<Matrix> >("A", MueLu::NoFactory::get());
+  RCP<const Map> regRowMap = regMatrix->getRowMap();
   RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > regRowImporter = level->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport");
   RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regInterfaceScalings = level->Get<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("regInterfaceScalings");
 
+  // Setup recursive cycling to represent either V- or W-cycles
   int cycleCount = 1;
-  if(cycleType == "W" && l > 0) // W cycle and not on finest level
-    cycleCount=2;
-  if (l < regHierarchy->GetNumLevels() - 1) { // fine or intermediate levels
-    for(int cycle=0; cycle < cycleCount; cycle++){
+  if (cycleType == "W" && levelID > 0) // W cycle and not on finest level
+    cycleCount = 2;
+
+  if (levelID < regHierarchy->GetNumLevels() - 1) // fine or intermediate levels
+  {
+    for(int cycle = 0; cycle < cycleCount; cycle++)
+    {
 
 //    std::cout << "level: " << l << std::endl;
 
       // extract data from hierarchy parameterlist
-      std::string levelName("level" + std::to_string(l));
+      std::string levelName("level" + std::to_string(levelID));
       ParameterList levelList;
       bool useCachedVectors = false;
       // if(Teuchos::nonnull(hierarchyData) &&  hierarchyData->isSublist(levelName)) {
@@ -96,7 +100,7 @@ void MgCycle(const int l, ///< ID of current level
       RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MgCycle: 1 - pre-smoother")));
 
       // pre-smoothing
-      smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrix,
+      smootherApply(smootherParams[levelID], fineRegX, fineRegB, regMatrix,
                     regRowMap, regRowImporter, zeroInitGuess);
 
       tm = Teuchos::null;
@@ -108,7 +112,7 @@ void MgCycle(const int l, ///< ID of current level
       } else {
         regRes = VectorFactory::Build(regRowMap, true);
       }
-      computeResidual(regRes, fineRegX, fineRegB, regMatrix, *smootherParams[l]);
+      computeResidual(regRes, fineRegX, fineRegB, regMatrix, *smootherParams[levelID]);
 
       tm = Teuchos::null;
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MgCycle: 3 - scale interface")));
@@ -123,12 +127,12 @@ void MgCycle(const int l, ///< ID of current level
       RCP<Vector> coarseRegB;
 
       {
-        RCP<Level> levelCoarse = regHierarchy->GetLevel(l+1);
+        RCP<Level> levelCoarse = regHierarchy->GetLevel(levelID+1);
         RCP<Matrix> regProlongCoarse = levelCoarse->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
         RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > regRowMapCoarse = regProlongCoarse->getColMap();
         // Get pre-communicated communication patterns for the fast MatVec
-        const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = smootherParams[l+1]->get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
-        const RCP<Import>        regionInterfaceImporter = smootherParams[l+1]->get<RCP<Import>>("Fast MatVec: interface importer");
+        const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = smootherParams[levelID+1]->get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
+        const RCP<Import> regionInterfaceImporter = smootherParams[levelID+1]->get<RCP<Import>>("Fast MatVec: interface importer");
 
         coarseRegX = VectorFactory::Build(regRowMapCoarse, true);
         coarseRegB = VectorFactory::Build(regRowMapCoarse, true);
@@ -142,7 +146,7 @@ void MgCycle(const int l, ///< ID of current level
       bool coarseZeroInitGuess = true;
 
       // Call V-cycle recursively
-      MgCycle(l+1, cycleType, regHierarchy,
+      MgCycle(levelID+1, cycleType, regHierarchy,
              coarseRegX, coarseRegB,
              smootherParams, coarseZeroInitGuess, coarseSolverData, hierarchyData);
 
@@ -151,11 +155,11 @@ void MgCycle(const int l, ///< ID of current level
       // Transfer coarse level correction to fine level
       RCP<Vector> regCorrection;
       {
-        RCP<Level> levelCoarse = regHierarchy->GetLevel(l+1);
-        RCP<Matrix>                                             regProlongCoarse     = levelCoarse->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
+        RCP<Level> levelCoarse = regHierarchy->GetLevel(levelID+1);
+        RCP<Matrix> regProlongCoarse = levelCoarse->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
         // Get pre-communicated communication patterns for the fast MatVec
-        const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = smootherParams[l]->get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
-        const RCP<Import>        regionInterfaceImporter = smootherParams[l]->get<RCP<Import>>("Fast MatVec: interface importer");
+        const ArrayRCP<LocalOrdinal> regionInterfaceLIDs = smootherParams[levelID]->get<ArrayRCP<LO>>("Fast MatVec: interface LIDs");
+        const RCP<Import> regionInterfaceImporter = smootherParams[levelID]->get<RCP<Import>>("Fast MatVec: interface importer");
 
         regCorrection = VectorFactory::Build(regRowMap, true);
         regProlongCoarse->apply(*coarseRegX, *regCorrection, Teuchos::NO_TRANS, SC_ONE, SC_ZERO, false, regionInterfaceImporter, regionInterfaceLIDs);
@@ -176,7 +180,7 @@ void MgCycle(const int l, ///< ID of current level
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MgCycle: 8 - post-smoother")));
 
       // post-smoothing
-      smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrix,
+      smootherApply(smootherParams[levelID], fineRegX, fineRegB, regMatrix,
                     regRowMap, regRowImporter, zeroInitGuess);
 
       tm = Teuchos::null;
@@ -195,7 +199,7 @@ void MgCycle(const int l, ///< ID of current level
 
     const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
     if (coarseSolverType == "smoother") {
-      smootherApply(smootherParams[l], fineRegX, fineRegB, regMatrix,
+      smootherApply(smootherParams[levelID], fineRegX, fineRegB, regMatrix,
                   regRowMap, regRowImporter, zeroInitGuess);
     } else {
       zeroInitGuess = false;
