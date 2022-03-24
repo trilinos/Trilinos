@@ -10,6 +10,9 @@
 #if defined(KOKKOS_ENABLE_CUDA) 
 #include "cublas_v2.h"
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+#include "hipblas.h"
+#endif 
 
 namespace Tacho {
 
