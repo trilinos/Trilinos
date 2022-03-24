@@ -38,28 +38,67 @@ namespace Tacho {
 #endif
 
   ///
-  /// default device type used in tacho
+  /// default Kokkos types (non-specialized code path is error)
   ///
   template<typename ExecSpace>
-  struct UseThisDevice {
-    using exec_space = ExecSpace;
-    using memory_space = typename exec_space::memory_space;
-    using type = Kokkos::Device<exec_space,memory_space>;
-    using device_type = type;
-  };
+  struct UseThisDevice;
 
   template<typename ExecSpace>
-  struct UseThisScheduler {
-    using type = Kokkos::TaskSchedulerMultiple<ExecSpace>;
-    using scheduler_type = type;
+  struct UseThisScheduler;
+
+  template<typename T, typename ExecSpace>
+  struct UseThisFuture;
+
+  ///
+  /// dummy objects when kokkos tasking is not used
+  ///
+  template<typename ExecSpace>
+  struct DummyTaskScheduler {
+    static_assert(Kokkos::is_execution_space<ExecSpace>::value, "Error: ExecSpace is not an execution space");
+    using execution_space = ExecSpace;
   };
 
+  template<typename T, typename ExecSpace>
+  struct DummyFuture {
+    DummyFuture() = default;
+    DummyFuture(const DummyFuture<T,ExecSpace> &b) = default;
+    
+    void clear() {}
+  };
+  
   /// until kokkos dual view issue is resolved, we follow the default space in Trilinos (uvm)
 #if defined(KOKKOS_ENABLE_CUDA)
   template<>
   struct UseThisDevice<Kokkos::Cuda> { 
     using type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>; 
     using device_type = type;
+  };
+  template<>
+  struct UseThisScheduler<Kokkos::Cuda> { 
+    using type = DummyTaskScheduler<Kokkos::Cuda>; 
+    using scheduler_type = type;
+  };
+  template<typename T>
+  struct UseThisFuture<T,Kokkos::Cuda> { 
+    using type = DummyFuture<T,Kokkos::Cuda>; 
+    using future_type = type;
+  };
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+  template<>
+  struct UseThisDevice<Kokkos::HIP> { 
+    using type = Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>;
+    using device_type = type;
+  };
+  template<>
+  struct UseThisScheduler<Kokkos::Experimental::HIP> { 
+    using type = DummyTaskScheduler<Kokkos::Experimental::HIP>; 
+    using scheduler_type = type;
+  };
+  template<typename T>
+  struct UseThisFuture<T,Kokkos::Experimental::HIP> { 
+    using type = DummyFuture<T,Kokkos::Experimental::HIP>; 
+    using future_type = type;
   };
 #endif
 #if defined(KOKKOS_ENABLE_OPENMP)
@@ -68,12 +107,32 @@ namespace Tacho {
     using type = Kokkos::Device<Kokkos::OpenMP,Kokkos::HostSpace>; 
     using device_type = type; 
   };
+  template<>
+  struct UseThisScheduler<Kokkos::OpenMP> { 
+    using type = Kokkos::TaskSchedulerMultiple<Kokkos::OpenMP>; 
+    using scheduler_type = type;
+  };
+  template<typename T>
+  struct UseThisFuture<T,Kokkos::OpenMP> { 
+    using type = Kokkos::BasicFuture<T,Kokkos::OpenMP>; 
+    using future_type = type;
+  };
 #endif
 #if defined(KOKKOS_ENABLE_SERIAL)
   template<>
   struct UseThisDevice<Kokkos::Serial> { 
     using type = Kokkos::Device<Kokkos::Serial,Kokkos::HostSpace>;
     using device_type = type;
+  };
+  template<>
+  struct UseThisScheduler<Kokkos::Serial> { 
+    using type = DummyTaskScheduler<Kokkos::Serial>;
+    using scheduler_type = type; 
+  };
+  template<typename T>
+  struct UseThisFuture<T,Kokkos::Serial> { 
+    using type = DummyFuture<T,Kokkos::Serial>; 
+    using future_type = type;
   };
 #endif
 
@@ -89,7 +148,7 @@ namespace Tacho {
       throw std::logic_error(msg.c_str());
     }
     std::cout << std::setw(16) << name << "::  ";
-    SpT::print_configuration(std::cout, detail);
+    SpT().print_configuration(std::cout, detail);
   }
 
   template<typename T>

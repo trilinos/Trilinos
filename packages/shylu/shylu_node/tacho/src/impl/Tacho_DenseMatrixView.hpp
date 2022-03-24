@@ -19,7 +19,8 @@ namespace Tacho {
     typedef SchedulerType scheduler_type;
     typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;
 
-    typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
+    using exec_space = typename scheduler_type::execution_space;
+    using future_type = typename UseThisFuture<int,exec_space>::type;
 
   private:
     ordinal_type _offm, _offn, _m, _n, _rs, _cs;

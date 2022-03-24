@@ -90,7 +90,7 @@ namespace Tacho {
       typedef DenseMatrixView<value_type,scheduler_type> dense_block_type;
       typedef DenseMatrixView<dense_block_type,scheduler_type> dense_matrix_of_blocks_type;
       
-      typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
+      using future_type = typename UseThisFuture<int,exec_space>::type;
 
       struct Supernode {
         mutable int32_t lock;
