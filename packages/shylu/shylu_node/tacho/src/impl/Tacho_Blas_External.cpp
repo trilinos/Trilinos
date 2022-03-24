@@ -199,7 +199,7 @@ namespace Tacho {
                    c, &ldc);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<float>::gemv(cublasHandle_t handle,
@@ -221,7 +221,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<float>::gemv(hipblasHandle_t handle,
@@ -256,7 +256,7 @@ namespace Tacho {
                    b, &ldb);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<float>::trsv(cublasHandle_t handle, 
@@ -274,7 +274,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<float>::trsv(hipblasHandle_t handle, 
@@ -311,7 +311,7 @@ namespace Tacho {
                    c, &ldc);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<float>::gemm(cublasHandle_t handle, 
@@ -334,7 +334,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<float>::gemm(hipblasHandle_t handle, 
@@ -374,7 +374,7 @@ namespace Tacho {
                    c, &ldc);
     return 0;
   }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(TACHO_ENABLE_CUBLAS)
   template<>
   int 
   Blas<float>::herk(cublasHandle_t handle,
@@ -394,7 +394,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined(KOKKOS_ENABLE_HIP)
+#if defined(TACHO_ENABLE_HIPBLAS)
   template<>
   int 
   Blas<float>::herk(hipblasHandle_t handle,
@@ -429,7 +429,7 @@ namespace Tacho {
                    b, &ldb);
     return 0;
   }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(TACHO_ENABLE_CUBLAS)
   template<>
   int 
   Blas<float>::trsm(cublasHandle_t handle,
@@ -448,7 +448,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined(KOKKOS_ENABLE_HIP)
+#if defined(TACHO_ENABLE_HIPBLAS)
   template<>
   int 
   Blas<float>::trsm(hipblasHandle_t handle,
@@ -490,7 +490,7 @@ namespace Tacho {
                    c, &ldc);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<double>::gemv(cublasHandle_t handle,
@@ -512,7 +512,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<double>::gemv(hipblasHandle_t handle,
@@ -547,7 +547,7 @@ namespace Tacho {
                    b, &ldb);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<double>::trsv(cublasHandle_t handle, 
@@ -565,7 +565,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<double>::trsv(hipblasHandle_t handle, 
@@ -602,7 +602,7 @@ namespace Tacho {
                    c, &ldc);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<double>::gemm(cublasHandle_t handle, 
@@ -625,7 +625,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<double>::gemm(hipblasHandle_t handle, 
@@ -665,7 +665,7 @@ namespace Tacho {
                    c, &ldc);
     return 0;
   }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(TACHO_ENABLE_CUBLAS)
   template<>
   int 
   Blas<double>::herk(cublasHandle_t handle,
@@ -685,7 +685,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined(KOKKOS_ENABLE_HIP)
+#if defined(TACHO_ENABLE_HIPBLAS)
   template<>
   int 
   Blas<double>::herk(hipblasHandle_t handle,
@@ -720,7 +720,7 @@ namespace Tacho {
                    b, &ldb);
     return 0;
   }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(TACHO_ENABLE_CUBLAS)
   template<>
   int 
   Blas<double>::trsm(cublasHandle_t handle,
@@ -739,7 +739,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined(KOKKOS_ENABLE_HIP)
+#if defined(TACHO_ENABLE_HIPBLAS)
   template<>
   int 
   Blas<double>::trsm(hipblasHandle_t handle,
@@ -781,7 +781,7 @@ namespace Tacho {
                    (      Kokkos::complex<float>*)c, &ldc);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<Kokkos::complex<float> >::gemv(cublasHandle_t handle,
@@ -803,7 +803,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<Kokkos::complex<float> >::gemv(hipblasHandle_t handle,
@@ -838,7 +838,7 @@ namespace Tacho {
                    (      Kokkos::complex<float>*)b, &ldb);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<Kokkos::complex<float> >::trsv(cublasHandle_t handle, 
@@ -856,7 +856,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<Kokkos::complex<float> >::trsv(hipblasHandle_t handle, 
@@ -893,7 +893,7 @@ namespace Tacho {
                    (      Kokkos::complex<float>*)c, &ldc);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<Kokkos::complex<float> >::gemm(cublasHandle_t handle, 
@@ -916,7 +916,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<Kokkos::complex<float> >::gemm(hipblasHandle_t handle, 
@@ -956,7 +956,7 @@ namespace Tacho {
                    (      Kokkos::complex<float>*)c, &ldc);
     return 0;
   }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(TACHO_ENABLE_CUBLAS)
   template<>
   int 
   Blas<Kokkos::complex<float> >::herk(cublasHandle_t handle,
@@ -976,7 +976,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined(KOKKOS_ENABLE_HIP)
+#if defined(TACHO_ENABLE_HIPBLAS)
   template<>
   int 
   Blas<Kokkos::complex<float> >::herk(hipblasHandle_t handle,
@@ -1011,7 +1011,7 @@ namespace Tacho {
                    (      Kokkos::complex<float>*)b, &ldb);
     return 0;
   }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(TACHO_ENABLE_CUBLAS)
   template<>
   int 
   Blas<Kokkos::complex<float> >::trsm(cublasHandle_t handle,
@@ -1030,7 +1030,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined(KOKKOS_ENABLE_HIP)
+#if defined(TACHO_ENABLE_HIPBLAS)
   template<>
   int 
   Blas<Kokkos::complex<float> >::trsm(hipblasHandle_t handle,
@@ -1072,7 +1072,7 @@ namespace Tacho {
                    (      Kokkos::complex<double>*)c, &ldc);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<Kokkos::complex<double> >::gemv(cublasHandle_t handle,
@@ -1094,7 +1094,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<Kokkos::complex<double> >::gemv(hipblasHandle_t handle,
@@ -1129,7 +1129,7 @@ namespace Tacho {
                    (      Kokkos::complex<double>*)b, &ldb);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<Kokkos::complex<double> >::trsv(cublasHandle_t handle, 
@@ -1147,7 +1147,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<Kokkos::complex<double> >::trsv(hipblasHandle_t handle, 
@@ -1184,7 +1184,7 @@ namespace Tacho {
                    (      Kokkos::complex<double>*)c, &ldc);
     return 0;
   }
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
   template<>
   int
   Blas<Kokkos::complex<double> >::gemm(cublasHandle_t handle, 
@@ -1207,7 +1207,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
   template<>
   int
   Blas<Kokkos::complex<double> >::gemm(hipblasHandle_t handle, 
@@ -1247,7 +1247,7 @@ namespace Tacho {
                    (      Kokkos::complex<double>*)c, &ldc);
     return 0;
   }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(TACHO_ENABLE_CUBLAS)
   template<>
   int 
   Blas<Kokkos::complex<double> >::herk(cublasHandle_t handle,
@@ -1267,7 +1267,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined(KOKKOS_ENABLE_HIP)
+#if defined(TACHO_ENABLE_HIPBLAS)
   template<>
   int 
   Blas<Kokkos::complex<double> >::herk(hipblasHandle_t handle,
@@ -1302,7 +1302,7 @@ namespace Tacho {
                    (      Kokkos::complex<double>*)b, &ldb);
     return 0;
   }
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(TACHO_ENABLE_CUBLAS)
   template<>
   int 
   Blas<Kokkos::complex<double> >::trsm(cublasHandle_t handle,
@@ -1321,7 +1321,7 @@ namespace Tacho {
     return r_val;
   }
 #endif
-#if defined(KOKKOS_ENABLE_HIP)
+#if defined(TACHO_ENABLE_HIPBLAS)
   template<>
   int 
   Blas<Kokkos::complex<double> >::trsm(hipblasHandle_t handle,

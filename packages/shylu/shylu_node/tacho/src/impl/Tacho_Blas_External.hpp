@@ -5,12 +5,21 @@
 /// \brief BLAS wrapper
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "Kokkos_Core.hpp" // CUDA specialization
+#include "Kokkos_Core.hpp"
 
-#if defined(KOKKOS_ENABLE_CUDA) 
+#if defined(KOKKOS_ENABLE_CUDA)
+#define TACHO_ENABLE_CUBLAS
+#endif
+
+#if defined(KOKKOS_ENABLE_HIP)
+// todo: enable hipblas interface after checking on AMD machine
+//#define TACHO_ENABLE_HIPBLAS
+#endif
+
+#if defined(TACHO_ENABLE_CUBLAS) 
 #include "cublas_v2.h"
 #endif
-#if defined(KOKKOS_ENABLE_HIP)
+#if defined(TACHO_ENABLE_HIPBLAS)
 #include "hipblas.h"
 #endif 
 
@@ -26,7 +35,7 @@ namespace Tacho {
              const T *b, int ldb,
              const T beta,
              /* */ T *c, int ldc);
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
     static 
     int gemv(cublasHandle_t handle,
              const cublasOperation_t trans,
@@ -37,7 +46,7 @@ namespace Tacho {
              const T beta,
              /* */ T *c, int ldc);
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
     static 
     int gemv(hipblasHandle_t handle,
              const hipblasOperation_t trans,
@@ -54,7 +63,7 @@ namespace Tacho {
              int m, 
              const T *a, int lda,
              /* */ T *b, int ldb);
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
     static 
     int trsv(cublasHandle_t handle,
              const cublasFillMode_t uplo, const cublasOperation_t transa, const cublasDiagType_t diag,
@@ -62,7 +71,7 @@ namespace Tacho {
              const T *a, int lda,
              /* */ T *b, int ldb);
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
     static 
     int trsv(hipblasHandle_t handle,
              const hipblasFillMode_t uplo, const hipblasOperation_t transa, const hipblasDiagType_t diag,
@@ -79,7 +88,7 @@ namespace Tacho {
              const T *b, int ldb,
              const T beta,
              /* */ T *c, int ldc);
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
     static 
     int gemm(const cublasHandle_t handle, 
              const cublasOperation_t transa, const cublasOperation_t transb, 
@@ -90,7 +99,7 @@ namespace Tacho {
              const T beta,
              /* */ T *c, int ldc);
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
     static 
     int gemm(const hipblasHandle_t handle, 
              const hipblasOperation_t transa, const hipblasOperation_t transb, 
@@ -109,7 +118,7 @@ namespace Tacho {
              const T *a, int lda,
              const T beta,
              /* */ T *c, int ldc);
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
     static 
     int herk(cublasHandle_t handle,
              const cublasFillMode_t uplo, const cublasOperation_t trans,
@@ -119,7 +128,7 @@ namespace Tacho {
              const T beta,
              /* */ T *c, int ldc);
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
     static 
     int herk(hipblasHandle_t handle,
              const hipblasFillMode_t uplo, const hipblasOperation_t trans,
@@ -136,7 +145,7 @@ namespace Tacho {
              const T alpha, 
              const T *a, int lda,
              /* */ T *b, int ldb);
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined (TACHO_ENABLE_CUBLAS)
     static 
     int trsm(cublasHandle_t handle,
              const cublasSideMode_t side, const cublasFillMode_t uplo,
@@ -146,7 +155,7 @@ namespace Tacho {
              const T *a, int lda,
              /* */ T *b, int ldb);
 #endif
-#if defined (KOKKOS_ENABLE_HIP)
+#if defined (TACHO_ENABLE_HIPBLAS)
     static 
     int trsm(hipblasHandle_t handle,
              const hipblasSideMode_t side, const hipblasFillMode_t uplo,
