@@ -74,10 +74,21 @@ SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_MEMORY_TESTING FALSE)
 SET(Trilinos_PACKAGES MueLu Tpetra)
 
+# Disable the Epetra stack
+set (Trilinos_ENABLE_Amesos OFF CACHE BOOL "We do not want Amesos" FORCE)
+set (Trilinos_ENABLE_AztecOO OFF CACHE BOOL "We do not want AztecOO" FORCE)
+set (Trilinos_ENABLE_Epetra OFF CACHE BOOL "We do not want Epetra" FORCE)
+set (Trilinos_ENABLE_EpetraExt OFF CACHE BOOL "We do not want EpetraExt" FORCE)
+set (Trilinos_ENABLE_Ifpack OFF CACHE BOOL "We do not want Ifpack" FORCE)
+set (Trilinos_ENABLE_ML OFF CACHE BOOL "We do not want ML" FORCE)
+set (Trilinos_ENABLE_Teko OFF CACHE BOOL "We do not want Teko" FORCE)
+set (Trilinos_ENABLE_Zoltan OFF CACHE BOOL "We do not want Zoltan" FORCE)
+
+
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_EPETRA=OFF"
-  "-DTrilinos_ENABLE_EPETRAEXT=OFF"
+  "-DTrilinos_ENABLE_Epetra=OFF"
+  "-DTrilinos_ENABLE_EpetraExt=OFF"
   "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
   "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
