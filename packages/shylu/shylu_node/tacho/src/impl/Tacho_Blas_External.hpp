@@ -34,6 +34,17 @@ namespace Tacho {
              const T beta,
              /* */ T *c, int ldc);
 #endif
+#if defined (KOKKOS_ENABLE_HIP)
+    static 
+    int gemv(hipblasHandle_t handle,
+             const hipblasOperation_t trans,
+             int m, int n, 
+             const T alpha, 
+             const T *a, int lda,
+             const T *b, int ldb,
+             const T beta,
+             /* */ T *c, int ldc);
+#endif
 
     static 
     int trsv(const char uplo, const char transa, const char diag, 
@@ -44,6 +55,14 @@ namespace Tacho {
     static 
     int trsv(cublasHandle_t handle,
              const cublasFillMode_t uplo, const cublasOperation_t transa, const cublasDiagType_t diag,
+             int m, 
+             const T *a, int lda,
+             /* */ T *b, int ldb);
+#endif
+#if defined (KOKKOS_ENABLE_HIP)
+    static 
+    int trsv(hipblasHandle_t handle,
+             const hipblasFillMode_t uplo, const hipblasOperation_t transa, const hipblasDiagType_t diag,
              int m, 
              const T *a, int lda,
              /* */ T *b, int ldb);
@@ -61,6 +80,17 @@ namespace Tacho {
     static 
     int gemm(const cublasHandle_t handle, 
              const cublasOperation_t transa, const cublasOperation_t transb, 
+             int m, int n, int k,
+             const T alpha, 
+             const T *a, int lda,
+             const T *b, int ldb,
+             const T beta,
+             /* */ T *c, int ldc);
+#endif
+#if defined (KOKKOS_ENABLE_HIP)
+    static 
+    int gemm(const hipblasHandle_t handle, 
+             const hipblasOperation_t transa, const hipblasOperation_t transb, 
              int m, int n, int k,
              const T alpha, 
              const T *a, int lda,
@@ -86,6 +116,16 @@ namespace Tacho {
              const T beta,
              /* */ T *c, int ldc);
 #endif
+#if defined (KOKKOS_ENABLE_HIP)
+    static 
+    int herk(hipblasHandle_t handle,
+             const hipblasFillMode_t uplo, const hipblasOperation_t trans,
+             int n, int k,
+             const T alpha, 
+             const T *a, int lda,
+             const T beta,
+             /* */ T *c, int ldc);
+#endif
 
     static 
     int trsm(const char side, const char uplo, const char transa, const char diag,
@@ -98,6 +138,16 @@ namespace Tacho {
     int trsm(cublasHandle_t handle,
              const cublasSideMode_t side, const cublasFillMode_t uplo,
              const cublasOperation_t trans, const cublasDiagType_t diag,
+             int m, int n, 
+             const T alpha, 
+             const T *a, int lda,
+             /* */ T *b, int ldb);
+#endif
+#if defined (KOKKOS_ENABLE_HIP)
+    static 
+    int trsm(hipblasHandle_t handle,
+             const hipblasSideMode_t side, const hipblasFillMode_t uplo,
+             const hipblasOperation_t trans, const hipblasDiagType_t diag,
              int m, int n, 
              const T alpha, 
              const T *a, int lda,
