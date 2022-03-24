@@ -8,19 +8,16 @@
 
 namespace Tacho {
 
-  template<typename ValueType, typename SchedulerType>
+  template<typename ValueType, typename DeviceType>
   struct DenseMatrixView {
   public:
     enum : ordinal_type { rank = 2 };
 
-    typedef ValueType value_type;
-    typedef value_type non_const_value_type;
+    using value_type = ValueType;
+    using non_const_value_type = typename std::remove_const<value_type>::type;
+    using device_type = DeviceType;
 
-    typedef SchedulerType scheduler_type;
-    typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;
-
-    using exec_space = typename scheduler_type::execution_space;
-    using future_type = typename UseThisFuture<int,exec_space>::type;
+    using future_type = typename UseThisFuture<int,typename device_type::execution_space>::type;
 
   private:
     ordinal_type _offm, _offn, _m, _n, _rs, _cs;

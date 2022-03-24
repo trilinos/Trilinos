@@ -9,16 +9,16 @@
 namespace Tacho {
 
     struct SuperNodeInfoInitReducer {
-      typedef SuperNodeInfoInitReducer reducer;
+      using reducer = SuperNodeInfoInitReducer;
       struct ValueType {
         ordinal_type max_nchildren;
         ordinal_type max_supernode_size;
         ordinal_type max_schur_size;
         size_type nnz;
       };
-      typedef struct ValueType value_type;
+      using value_type = struct ValueType;
         
-      typedef Kokkos::View<value_type,Kokkos::HostSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged> > result_view_type;
+      using result_view_type = Kokkos::View<value_type,Kokkos::HostSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
         
       value_type *value;
         
@@ -64,34 +64,29 @@ namespace Tacho {
       }
     };
 
-    template<typename ValueType, typename SchedulerType>
+    template<typename ValueType, typename DeviceType>
     struct SupernodeInfo {
-      typedef ValueType value_type;
-      typedef SchedulerType scheduler_type;
+      using value_type = ValueType;
 
-      typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;
-      typedef typename device_type::execution_space exec_space;
-      typedef typename device_type::memory_space exec_memory_space;
+      using device_type = DeviceType;
+      using exec_space = typename device_type::execution_space;
 
-      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
-      typedef typename host_device_type::execution_space host_space;
-      typedef typename host_device_type::memory_space host_memory_space;
+      using host_device_type = typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
+      using host_memory_space = typename host_device_type::memory_space;
 
-      typedef CrsMatrixBase<value_type,device_type> crs_matrix_type;
+      using crs_matrix_type = CrsMatrixBase<value_type,device_type>;
 
-      typedef Kokkos::View<ordinal_type*,device_type> ordinal_type_array;
-      typedef Kokkos::View<size_type*,device_type> size_type_array;
-      typedef Kokkos::View<value_type*,device_type> value_type_array;
+      using ordinal_type_array = Kokkos::View<ordinal_type*,device_type>;
+      using size_type_array = Kokkos::View<size_type*,device_type>;
+      using value_type_array = Kokkos::View<value_type*,device_type>;
 
-      typedef Kokkos::pair<ordinal_type,ordinal_type> ordinal_pair_type;
-      typedef Kokkos::View<ordinal_pair_type*,device_type> ordinal_pair_type_array;
-      typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type> value_type_matrix;
+      using ordinal_pair_type = Kokkos::pair<ordinal_type,ordinal_type>;
+      using ordinal_pair_type_array = Kokkos::View<ordinal_pair_type*,device_type>;
+      using value_type_matrix = Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type>;
 
-      typedef DenseMatrixView<value_type,scheduler_type> dense_block_type;
-      typedef DenseMatrixView<dense_block_type,scheduler_type> dense_matrix_of_blocks_type;
+      using dense_block_type = DenseMatrixView<value_type,device_type>;
+      using dense_matrix_of_blocks_type = DenseMatrixView<dense_block_type,device_type>;
       
-      using future_type = typename UseThisFuture<int,exec_space>::type;
-
       struct Supernode {
         mutable int32_t lock;
 
@@ -134,8 +129,8 @@ namespace Tacho {
         KOKKOS_INLINE_FUNCTION
         ~Supernode()  {}        
       };
-      typedef struct Supernode supernode_type;
-      typedef Kokkos::View<supernode_type*,device_type> supernode_type_array;
+      using supernode_type = struct Supernode;
+      using supernode_type_array = Kokkos::View<supernode_type*,device_type>;
 
       ///
       /// info for symbolic
@@ -388,8 +383,8 @@ namespace Tacho {
         Kokkos::TeamPolicy<exec_space,Kokkos::Schedule<Kokkos::Static> > 
           policy(nsupernodes, Kokkos::AUTO()); // team and vector sizes are AUTO selected.
 
-        typedef typename exec_space::scratch_memory_space shmem_space;        
-        typedef Kokkos::View<ordinal_type*,shmem_space,Kokkos::MemoryUnmanaged> team_shared_memory_view_type;
+        using shmem_space = typename exec_space::scratch_memory_space;
+        using team_shared_memory_view_type = Kokkos::View<ordinal_type*,shmem_space,Kokkos::MemoryUnmanaged>;
         const ordinal_type lvl = 0, per_team_scratch = team_shared_memory_view_type::shmem_size(m);
         
         Kokkos::parallel_for

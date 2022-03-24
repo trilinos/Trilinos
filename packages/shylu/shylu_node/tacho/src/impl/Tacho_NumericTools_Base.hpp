@@ -23,8 +23,7 @@ namespace Tacho {
     
     using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
     
-    using scheduler_type = typename UseThisScheduler<exec_space>::type;
-    using supernode_info_type = SupernodeInfo<value_type,scheduler_type>;
+    using supernode_info_type = SupernodeInfo<value_type,device_type>;
     using crs_matrix_type = typename supernode_info_type::crs_matrix_type;
     
     using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
