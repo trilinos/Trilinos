@@ -1,8 +1,9 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
+
 
 #include <string>
 #include <vector>
@@ -1356,6 +1357,255 @@ TEST_F(TestTextMesh, twoHexesWithSpanningNodeset_Parallel)
     verify_single_element(2u, "HEX_8", EntityIdVector{5, 6, 7, 8, 9, 10, 11, 12});
     verify_single_nodeset("nodelist_1", 1, EntityIdVector{5, 6, 9, 10});
   }
+}
+
+
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_standardName)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1|assembly:name=assembly_1; type=block; member=block_1";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(1);
+  verify_single_assembly("assembly_1", 1, {"block_1"});
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_nonStandardName)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1|assembly:name=my_assembly; type=block; member=block_1";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(1);
+  verify_single_assembly("my_assembly", 1, {"block_1"});
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_noName)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1|assembly:type=block; member=block_1";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(1);
+  verify_single_assembly("assembly_1", 1, {"block_1"});
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_noData)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8|assembly:";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(0);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_noDataMixedCase)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8|aSsEmBlY:";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(0);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_mustSpecifyTypeWithName)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1|assembly:name=my_assembly;";
+  EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_invalidName)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8|assembly:name=block_1;";
+  EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_invalidName2)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8|assembly:name=surface_1;";
+  EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_invalidName3)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8|assembly:name=nodelist_1;";
+  EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_nameCollisionWithElementBlock)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,my_part|assembly:name=my_part; type=block";
+  EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_nameCollisionWithSideset)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8|sideset:name=my_part;data=1,2|assembly:name=my_part; type=block";
+  EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_nameCollisionWithNodeset)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8|nodeset:name=my_part;data=1,2|assembly:name=my_part; type=block";
+  EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_nameCollisionWithNodeset_MixedCase)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8|nodeset:name=my_part;data=1,2|assembly:name=MY_PART; type=block";
+  EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_standardNameWithInvalidId)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8|assembly:name=assembly_0; type=block";
+  EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_nonStandardNamesPreserveIdOrder)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8|assembly:name=first; type=block|assembly:name=second; type=block";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(2);
+  verify_single_assembly("first", 1, {});
+  verify_single_assembly("second", 2, {});
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_nonStandardNameDoesNotAffectAssignedId)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1|assembly:name=ass_5; type=block; member=block_1";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(1);
+  verify_single_assembly("ass_5", 1, {"block_1"});
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_standardNameHasPrecedenceForIdAssignment)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8|assembly:name=my_assembly; type=block|assembly:name=assembly_1; type=block";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(2);
+  verify_single_assembly("assembly_1", 1, {});
+  verify_single_assembly("my_assembly", 2, {});
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_standardNamesPreserveIds)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc =
+      "0,1,HEX_8,1,2,3,4,5,6,7,8|assembly:name=assembly_5; type=block|assembly:name=assembly_1; type=block";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(2);
+  verify_single_assembly("assembly_1", 1, {});
+  verify_single_assembly("assembly_5", 5, {});
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_idAssignmentOrderIsStandardThenEmptyThenNonStandardName)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc =
+      "0,1,HEX_8,1,2,3,4,5,6,7,8"
+      "|assembly:name=my_assembly; type=block|assembly:name=assembly_1; type=block|assembly:type=block";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(3);
+  verify_single_assembly("assembly_1", 1, {});
+  verify_single_assembly("assembly_2", 2, {});
+  verify_single_assembly("my_assembly", 3, {});
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_referenceToInvalidBlock)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1|assembly:name=assembly_1; type=block; member=block_2";
+  EXPECT_THROW(setup_text_mesh(meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_deeplyNestedHomogeneous)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8, 1, 2, 3, 4, 5, 6, 7, 8,block_1\n"
+                         "0,2,HEX_8, 9,10,11,12,13,14,15,16,block_2\n"
+                         "0,3,HEX_8,17,18,19,20,21,22,23,24,block_3\n"
+                         "0,4,HEX_8,25,26,27,28,29,30,31,32,block_4"
+                         "|assembly:name=assembly_9000; type=assembly; member=assembly_9001,assembly_9002"
+                         "|assembly:name=assembly_9001; type=assembly; member=assembly_9003"
+                         "|assembly:name=assembly_9002; type=block   ; member=block_3"
+                         "|assembly:name=assembly_9003; type=assembly; member=assembly_9004,assembly_9005"
+                         "|assembly:name=assembly_9004; type=block   ; member=block_1,block_2"
+                         "|assembly:name=assembly_9005; type=block   ; member=block_4";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(6);
+  verify_single_assembly("assembly_9000", 9000, {"block_1","block_2","block_3","block_4"});
+  verify_single_assembly("assembly_9001", 9001, {"block_1","block_2","block_4"});
+  verify_single_assembly("assembly_9002", 9002, {"block_3"});
+  verify_single_assembly("assembly_9003", 9003, {"block_1","block_2","block_4"});
+  verify_single_assembly("assembly_9004", 9004, {"block_1","block_2"});
+  verify_single_assembly("assembly_9005", 9005, {"block_4"});
+}
+
+
+TEST_F(TestTextMesh, hexWithBlockAssembly_deeplyNestedNonHomogeneous)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1"
+                         "|sideset:name=surface_1; data=1,3"
+                         "|sideset:name=surface_2; data=1,5"
+                         "|nodeset:name=nodelist_1; data=1,2,3,4"
+                         "|assembly:name=assembly_9000; type=assembly; member=assembly_9001,assembly_9002"
+                         "|assembly:name=assembly_9001; type=assembly; member=assembly_9003"
+                         "|assembly:name=assembly_9002; type=nodeset ; member=nodelist_1"
+                         "|assembly:name=assembly_9003; type=assembly; member=assembly_9004,assembly_9005"
+                         "|assembly:name=assembly_9004; type=sideset ; member=surface_1,surface_2"
+                         "|assembly:name=assembly_9005; type=block   ; member=block_1";
+  EXPECT_NO_THROW(setup_text_mesh(meshDesc));
+
+  verify_num_assemblies(6);
+  verify_single_assembly("assembly_9000", 9000, {"block_1","nodelist_1","surface_1","surface_2"});
+  verify_single_assembly("assembly_9001", 9001, {"block_1","surface_1","surface_2"});
+  verify_single_assembly("assembly_9002", 9002, {"nodelist_1"});
+  verify_single_assembly("assembly_9003", 9003, {"block_1","surface_1","surface_2"});
+  verify_single_assembly("assembly_9004", 9004, {"surface_1","surface_2"});
+  verify_single_assembly("assembly_9005", 9005, {"block_1"});
 }
 
 TEST_F(TestTextMesh2d, singleQuad)

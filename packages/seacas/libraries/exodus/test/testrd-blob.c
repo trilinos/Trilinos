@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -160,13 +160,13 @@ int main(int argc, char **argv)
     }
 
     { /* Global attributes (includes exodus-internal attributes) */
-      ex_attribute attr[10];
-      int          att_count = ex_get_attribute_count(exoid, EX_GLOBAL, 0);
-      printf("GLOBAL contains %d attributes:\n", att_count);
-      for (int j = 0; j < att_count; j++) {
-        ex_get_attribute_param(exoid, EX_GLOBAL, 0, attr);
-        printf("\tName: '%s', Type = %d, Value Count = %d\n", attr[j].name, attr[j].type,
-               (int)attr[j].value_count);
+      ex_attribute g_attr[10];
+      int          g_att_count = ex_get_attribute_count(exoid, EX_GLOBAL, 0);
+      printf("GLOBAL contains %d attributes:\n", g_att_count);
+      for (int j = 0; j < g_att_count; j++) {
+        ex_get_attribute_param(exoid, EX_GLOBAL, 0, g_attr);
+        printf("\tName: '%s', Type = %d, Value Count = %d\n", g_attr[j].name, attr[j].type,
+               (int)g_attr[j].value_count);
       }
     }
 

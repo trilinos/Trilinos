@@ -8,7 +8,8 @@
 
 #include <Ioss_CodeTypes.h> // for Int64Vector, IntVector
 #include <Ioss_SideBlock.h> // for SideBlock
-#include <Ioss_Utils.h>     // for Utils, IOSS_ERROR
+#include <Ioss_SmartAssert.h>
+#include <Ioss_Utils.h> // for Utils, IOSS_ERROR
 #include <fmt/ostream.h>
 
 #include <algorithm> // for copy
@@ -18,6 +19,7 @@
 #include <string>    // for string, operator==, etc
 #include <utility>   // for pair
 
+#include "Ioss_Assembly.h"     // for Assembly
 #include "Ioss_CommSet.h"      // for CommSet
 #include "Ioss_DBUsage.h"      // for DatabaseUsage
 #include "Ioss_DatabaseIO.h"   // for DatabaseIO
@@ -35,9 +37,11 @@
 #include "Ioss_Property.h"        // for Property
 #include "Ioss_PropertyManager.h" // for PropertyManager
 #include "Ioss_Region.h"          // for Region
-#include "Ioss_SideSet.h"         // for SideSet
-#include "Ioss_VariableType.h"    // for VariableType
-#include "Iotm_TextMesh.h"        // for TextMesh
+#include "Ioss_SerializeIO.h"
+#include "Ioss_SideSet.h" // for SideSet
+#include "Ioss_Utils.h"
+#include "Ioss_VariableType.h" // for VariableType
+#include "Iotm_TextMesh.h"     // for TextMesh
 
 namespace {
   template <typename INT>
@@ -174,6 +178,7 @@ namespace Iotm {
     elementBlockCount = m_textMesh->block_count();
     nodesetCount      = m_textMesh->nodeset_count();
     sidesetCount      = m_textMesh->sideset_count();
+    assemblyCount     = m_textMesh->assembly_count();
 
     get_step_times__();
 
@@ -183,6 +188,7 @@ namespace Iotm {
     get_nodesets();
     get_sidesets();
     get_commsets();
+    get_assemblies();
 
     this_region->property_add(
         Ioss::Property(std::string("title"), std::string("TextMesh: ") += get_filename()));
@@ -586,6 +592,56 @@ namespace Iotm {
     return num_to_get;
   }
 
+  int64_t DatabaseIO::get_field_internal(const Ioss::Assembly *assembly, const Ioss::Field &field,
+                                         void *data, size_t data_size) const
+  {
+    {
+      Ioss::SerializeIO serializeIO__(this);
+
+      size_t num_to_get = field.verify(data_size);
+      if (num_to_get > 0) {
+
+        Ioss::Field::RoleType role = field.get_role();
+        if (role == Ioss::Field::MESH) {
+          if (field.get_name() == "ids") {
+            // Map the local ids in this node block
+            // (1...node_count) to global node ids.
+            //          get_map(EX_ASSEMBLY).map_implicit_data(data, field, num_to_get, 0);
+          }
+
+          else if (field.get_name() == "connectivity") {
+            // Do nothing, just handles an idiosyncrasy of the GroupingEntity
+          }
+          else if (field.get_name() == "connectivity_raw") {
+            // Do nothing, just handles an idiosyncrasy of the GroupingEntity
+          }
+          else {
+            num_to_get = Ioss::Utils::field_warning(assembly, field, "input");
+          }
+        }
+        else if (role == Ioss::Field::TRANSIENT) {
+          // Check if the specified field exists on this assembly.
+          // Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+          // exist on the database as scalars with the appropriate
+          // extensions.
+
+          // Read in each component of the variable and transfer into
+          // 'data'.  Need temporary storage area of size 'number of
+          // items in this assembly.
+          // num_to_get =
+          //    read_transient_field(EX_ASSEMBLY, m_variables[EX_ASSEMBLY], field, assembly, data);
+        }
+        else if (role == Ioss::Field::REDUCTION) {
+          // get_reduction_field(EX_ASSEMBLY, field, assembly, data);
+        }
+        else if (role == Ioss::Field::ATTRIBUTE) {
+          // num_to_get = read_attribute_field(EX_ASSEMBLY, field, assembly, data);
+        }
+      }
+      return num_to_get;
+    }
+  }
+
   // Input only database -- these will never be called...
   int64_t DatabaseIO::put_field_internal(const Ioss::Region * /*reg*/,
                                          const Ioss::Field & /*field*/, void * /*data*/,
@@ -828,9 +884,47 @@ namespace Iotm {
     }
   }
 
+  void DatabaseIO::get_assemblies()
+  {
+    // Get assembly metadata
+    std::vector<std::string> assemblyNames = m_textMesh->get_assembly_names();
+    for (const std::string &name : assemblyNames) {
+      int64_t id = m_textMesh->get_assembly_id(name);
+
+      auto assembly = new Ioss::Assembly(this, name);
+      assembly->property_add(Ioss::Property("id", id));
+      assembly->property_add(Ioss::Property("guid", util().generate_guid(id)));
+      get_region()->add(assembly);
+    }
+
+    // Now iterate again and populate member lists...
+    for (const std::string &name : assemblyNames) {
+      Ioss::Assembly *assem = get_region()->get_assembly(name);
+      assert(assem != nullptr);
+      Ioss::EntityType               type    = m_textMesh->get_assembly_type(name);
+      const std::vector<std::string> members = m_textMesh->get_assembly_members(name);
+
+      for (size_t j = 0; j < members.size(); j++) {
+        auto *ge = get_region()->get_entity(members[j], type);
+        if (ge != nullptr) {
+          assem->add(ge);
+        }
+        else {
+          std::ostringstream errmsg;
+          fmt::print(errmsg,
+                     "Error: Failed to find entity of type {} with name {} for Assembly {}.\n",
+                     type, members[j], assem->name());
+          IOSS_ERROR(errmsg);
+        }
+      }
+      SMART_ASSERT(assem->member_count() == members.size())(assem->member_count())(members.size());
+    }
+  }
+
   unsigned DatabaseIO::entity_field_support() const
   {
-    return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::REGION | Ioss::NODESET | Ioss::SIDESET;
+    return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::REGION | Ioss::NODESET | Ioss::SIDESET |
+           Ioss::ASSEMBLY;
   }
 
   void DatabaseIO::add_transient_fields(Ioss::GroupingEntity *entity)

@@ -234,8 +234,8 @@ int main(int argc, char **argv)
     elem_map[i - 1] = i;
   }
 
-  error = ex_put_map(exoid, elem_map);
-  printf("after ex_put_map, error = %d\n", error);
+  error = ex_put_id_map(exoid, EX_ELEM_MAP, elem_map);
+  printf("after ex_put_id_map, error = %d\n", error);
 
   free(elem_map);
 
@@ -245,8 +245,8 @@ int main(int argc, char **argv)
     elem_map2[i - 1] = i;
   }
 
-  error = ex_put_map(exoid2, elem_map2);
-  printf("after ex_put_map (2), error = %d\n", error);
+  error = ex_put_id_map(exoid2, EX_ELEM_MAP, elem_map2);
+  printf("after ex_put_id_map (2), error = %d\n", error);
 
   free(elem_map2);
 

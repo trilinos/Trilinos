@@ -48,6 +48,11 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
 
 Other options:
 --help             Print this message (-h)
+--launch <cmd>     Prefix nem_slice call with this command to run it.
+                   The cmd argument must be quoted if it contains options
+                   for cmd.
+--nolaunch         Prevent decomp from searching for launch script.
+--noop             Only echo the nem_slice and nem_spread commands.
 --nodal            Nodal Decomposition (-N)
 --elemental        Elemental Decomposition (default, -E)
 --input            Optional nem_slice input file (-i)
@@ -171,14 +176,14 @@ function execute_loadbalance {
         echo "Executing:"
         echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
         echo ${txtrst}
-        ($LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis)
+        (${NOOP:+echo }$LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis)
         load_rc=$?
     else
         echo ${txtblu}
         echo "Executing:"
         echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis"
         echo ${txtrst}
-        ($LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis)
+        (${NOOP:+echo }$LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors $genesis)
         load_rc=$?
     fi
     return $load_rc
@@ -244,7 +249,7 @@ function execute_spread {
     echo "Executing:"
     echo "   $NEM_SPREAD $use64 $pexsh"
     echo ${txtrst}
-    $NEM_SPREAD $use64 $pexsh
+    ${NOOP:+echo }$NEM_SPREAD $use64 $pexsh
 }
 
 ########################################################################
@@ -283,6 +288,7 @@ ACCESSBIN="`dirname \"$0\"`"
 ACCESSBIN="`( cd \"${ACCESSBIN}\" && pwd )`"
 NEM_SLICE=${ACCESSBIN}/nem_slice
 NEM_SPREAD=${ACCESSBIN}/nem_spread
+NOOP=
 
 ########################################################################
 # Test that the getopt being used will handle the long options...
@@ -301,12 +307,39 @@ fi
 ########################################################################
 # decomp options:
 if [ $OLDGETOPT -eq 1 ] ; then
-   TEMP=`getopt Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: $*`
+   TEMP=$(getopt Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: $*)
 else
-   TEMP=`getopt -o Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: -a \
-       --long input:,help,nem_slice_flag,64,processors:,rootdir:,subdir:,spread_suffix:,spheres_linear,viz_mesh,verbose,debug:,nodal,elemental \
-       --long multikl,rcb,rcb_ignore_z,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
-       -n 'decomp' -- "$@"`
+   TEMP=$(getopt -o Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: -a \
+       --long input: \
+       --long launch: \
+       --long nolaunch \
+       --long noop \
+       --long help \
+       --long nem_slice_flag \
+       --long 64 \
+       --long processors: \
+       --long rootdir: \
+       --long subdir: \
+       --long spread_suffix: \
+       --long spheres_linear \
+       --long viz_mesh \
+       --long verbose \
+       --long debug: \
+       --long nodal \
+       --long elemental \
+       --long multikl \
+       --long rcb \
+       --long rcb_ignore_z \
+       --long rib \
+       --long hsfc \
+       --long spectral \
+       --long inertial \
+       --long linear \
+       --long random \
+       --long scattered \
+       --long brick \
+       --long zpinch \
+       -n 'decomp' -- "$@")
 fi
 
 if [ $? != 0 ] ; then usage ; exit 1 ; fi
@@ -345,6 +378,10 @@ while true ; do
         spheres="" ; shift ;;
     (-6|--64)
         use64="-64" ; shift ;;
+    (--noop)
+        NOOP="--noop" ; shift ;;
+    (--launch)
+        LAUNCH="$2" ; shift 2 ;;
     (--nolaunch)
         LAUNCH="nolaunch" ; shift ;;
     (-l)
@@ -374,15 +411,22 @@ then
     # Ensure launch is NOT used --nolaunch was passed.
     LAUNCH=
 else
-    # If Sierra launch command is in path and runs on the node we are on
-    # we will try to use that.  If not we will run nem_slice directly
-    # (ie, w/o launch).
-    LAUNCH=$(command -v launch)
+    # If a specific launch script was passed and runs on the node we are on, use it.
+    # If not, if Sierra launch command is in path and runs on the node we are on
+    # we will try to use that.
+    # If not we will run nem_slice directly (ie, w/o launch).
+    if [ -z "${LAUNCH:-}" ]
+    then
+        LAUNCH=$(command -v launch) 
+    fi
     if [ -n "${LAUNCH}" ]
     then
-        # Here if launch is in PATH.
-        # Always run nem_slice with -n 1
-        LAUNCH="$LAUNCH -n 1"
+        if [ $(basename $LAUNCH) == launch ]
+        then
+            # If 'launch' was found or passed,
+            # Always run nem_slice with -n 1
+            LAUNCH="$LAUNCH -n 1"
+        fi
         # If the launch script doesn't work to run something simple, don't use it.
         $LAUNCH >/dev/null 2>&1 true || LAUNCH=
 

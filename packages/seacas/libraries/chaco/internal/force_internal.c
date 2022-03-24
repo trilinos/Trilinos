@@ -16,8 +16,8 @@
 void force_internal(struct vtx_data **graph,       /* graph data structure */
                     int               nvtxs,       /* number of vertices in graph */
                     int               using_ewgts, /* are edge weights being used? */
-                    int *             assign,      /* current assignment */
-                    double *          goal,        /* desired set sizes */
+                    int              *assign,      /* current assignment */
+                    double           *goal,        /* desired set sizes */
                     int               nsets_tot,   /* total number of sets */
                     int               npasses_max  /* number of passes to make */
 )
@@ -28,12 +28,12 @@ void force_internal(struct vtx_data **graph,       /* graph data structure */
   struct bidint *int_list      = NULL; /* internal vwgt in each set */
   struct bidint *vtx_elems     = NULL; /* linked lists of vtxs in each set */
   struct bidint *set_list      = NULL; /* headers for vtx_elems lists */
-  double *       internal_vwgt = NULL; /* total internal vwgt in each set */
-  int *          total_vwgt    = NULL; /* total vertex weight in each set */
-  int *          indices       = NULL; /* orders sets by internal vwgt */
-  int *          locked        = NULL; /* is vertex allowed to switch sets? */
+  double        *internal_vwgt = NULL; /* total internal vwgt in each set */
+  int           *total_vwgt    = NULL; /* total vertex weight in each set */
+  int           *indices       = NULL; /* orders sets by internal vwgt */
+  int           *locked        = NULL; /* is vertex allowed to switch sets? */
   int            internal;             /* is a vertex internal or not? */
-  int *          space = NULL;         /* space for mergesort */
+  int           *space = NULL;         /* space for mergesort */
   int            npasses;              /* number of callse to improve_internal */
   int            nlocked;              /* number of vertices that can't move */
   int            set, set2;            /* sets two vertices belong to */
@@ -46,7 +46,7 @@ void force_internal(struct vtx_data **graph,       /* graph data structure */
   int            i, j;                 /* loop counters */
   int            improve_internal();
   void           ch_mergesort(double *vals, int nvals, int *indices, int *space);
-  void           check_internal(), strout();
+  void           check_internal(), strout(char *msg);
 
   error = 1;
 

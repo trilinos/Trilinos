@@ -64,6 +64,6 @@ namespace Info {
 
     char fieldSuffixSeparator_{'_'};
 
-    int surfaceSplitScheme_{1};
+    int surfaceSplitScheme_{-1};
   };
 } // namespace Info

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-, 20212021,  National Technology & Engineering Solutions
+// Copyright(C) 1999-2022,  National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -20,7 +20,8 @@
 #include <string>
 #include <vector>
 
-#if defined(_MSC_VER)
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
 #include <io.h>
 #define isatty _isatty
 #endif
@@ -90,6 +91,8 @@ namespace SEAMS {
     /// construct a new parser aprepro context
     Aprepro();
     ~Aprepro();
+    Aprepro(const Aprepro &) = delete;
+    Aprepro &operator=(const Aprepro &) = delete;
 
     enum class SYMBOL_TYPE {
       VARIABLE                  = 1,

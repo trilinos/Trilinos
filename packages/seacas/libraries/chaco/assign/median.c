@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,11 +10,11 @@
 #include "structs.h" // for vtx_data
 
 void median_assign(struct vtx_data **graph,       /* data structure with vertex weights */
-                   double *          vals,        /* values of which to find median */
+                   double           *vals,        /* values of which to find median */
                    int               nvtxs,       /* number of values I own */
-                   double *          goal,        /* desired sizes for sets */
+                   double           *goal,        /* desired sizes for sets */
                    int               using_vwgts, /* are vertex weights being used? */
-                   int *             sets,        /* assigned set for each vertex */
+                   int              *sets,        /* assigned set for each vertex */
                    double            wlow,        /* sum of weights below guess */
                    double            whigh,       /* sum of weights above guess */
                    double            guess        /* median value */
@@ -58,38 +58,38 @@ void median_assign(struct vtx_data **graph,       /* data structure with vertex 
 /* values which are on the wrong side of the guess. */
 
 void median(struct vtx_data **graph,       /* data structure with vertex weights */
-            double *          vals,        /* values of which to find median */
+            double           *vals,        /* values of which to find median */
             int               nvtxs,       /* number of values I own */
-            int *             active,      /* space for list of nvtxs ints */
-            double *          goal,        /* desired sizes for sets */
+            int              *active,      /* space for list of nvtxs ints */
+            double           *goal,        /* desired sizes for sets */
             int               using_vwgts, /* are vertex weights being used? */
-            int *             sets         /* set each vertex gets assigned to */
+            int              *sets         /* set each vertex gets assigned to */
 )
 {
-  double *vptr;      /* loops through vals array */
-  double  val;       /* value in vals array */
-  double  maxval;    /* largest active value */
-  double  minval;    /* smallest active value */
-  double  guess;     /* approximate median value */
-  double  nearup;    /* lowest guy above guess */
-  double  neardown;  /* highest guy below guess */
-  double  whigh;     /* total weight of values above maxval */
-  double  wlow;      /* total weight of values below minval */
-  double  wabove;    /* total weight of active values above guess */
-  double  wbelow;    /* total weight of active values below guess */
-  double  wexact;    /* weight of vertices exactly at guess */
-  double  lweight;   /* desired weight of lower values in set */
-  double  uweight;   /* desired weight of upper values in set */
-  double  frac;      /* fraction of values I want less than guess */
-  int *   aptr;      /* loops through active array */
-  int *   aptr2;     /* helps update active array */
-  int     myactive;  /* number of active values I own */
-  double  wfree;     /* weight of vtxs not yet divided */
-  int     removed;   /* number of my values eliminated */
-  /*int npass = 0;*/ /* counts passes required to find median */
-  int done;          /* check for termination criteria */
-  int vtx;           /* vertex being considered */
-  int i;             /* loop counters */
+  double *vptr;        /* loops through vals array */
+  double  val;         /* value in vals array */
+  double  maxval;      /* largest active value */
+  double  minval;      /* smallest active value */
+  double  guess = 0.0; /* approximate median value */
+  double  nearup;      /* lowest guy above guess */
+  double  neardown;    /* highest guy below guess */
+  double  whigh;       /* total weight of values above maxval */
+  double  wlow;        /* total weight of values below minval */
+  double  wabove;      /* total weight of active values above guess */
+  double  wbelow;      /* total weight of active values below guess */
+  double  wexact;      /* weight of vertices exactly at guess */
+  double  lweight;     /* desired weight of lower values in set */
+  double  uweight;     /* desired weight of upper values in set */
+  double  frac;        /* fraction of values I want less than guess */
+  int    *aptr;        /* loops through active array */
+  int    *aptr2;       /* helps update active array */
+  int     myactive;    /* number of active values I own */
+  double  wfree;       /* weight of vtxs not yet divided */
+  int     removed;     /* number of my values eliminated */
+  /*int npass = 0;*/   /* counts passes required to find median */
+  int done;            /* check for termination criteria */
+  int vtx;             /* vertex being considered */
+  int i;               /* loop counters */
 
   /* Initialize. */
 
