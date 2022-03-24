@@ -36,7 +36,6 @@ namespace Tacho {
     using device_type = DeviceType;
     using exec_space = typename device_type::execution_space;
     using exec_memory_space = typename device_type::memory_space;
-    using scheduler_type = typename UseThisScheduler<exec_space>::type;    
 
     using host_device_type = typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
     using host_space = typename host_device_type::execution_space;

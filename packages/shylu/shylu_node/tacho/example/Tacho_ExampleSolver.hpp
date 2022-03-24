@@ -7,9 +7,6 @@
 
 using ordinal_type = Tacho::ordinal_type;
 
-template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
-static const char * scheduler_name = "TaskSchedulerMultiple";
-
 template<typename value_type>
 int driver (int argc, char *argv[]) {
   int nthreads = 1;
@@ -68,11 +65,8 @@ int driver (int argc, char *argv[]) {
   typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type device_type;
   typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
 
-  typedef TaskSchedulerType<typename device_type::execution_space> scheduler_type;
-  
   Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace",   detail);
-  printf("Scheduler Type = %s\n", scheduler_name);
 
   int r_val = 0;
   
@@ -165,7 +159,7 @@ int driver (int argc, char *argv[]) {
     ///   CrsMatrixBaseType A;
     ///   A.setExternalMatrix(nrows, ncols, nnzm ap, aj, ax);
     ///  
-    Tacho::Solver<value_type,scheduler_type> solver;
+    Tacho::Solver<value_type,device_type> solver;
 
     /// common options
     solver.setMatrixType(sym, posdef);

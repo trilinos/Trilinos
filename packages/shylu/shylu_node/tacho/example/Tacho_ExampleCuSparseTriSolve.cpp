@@ -55,8 +55,6 @@ int main (int argc, char *argv[]) {
   Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace",   detail);
 
-  typedef Kokkos::TaskSchedulerMultiple<typename device_type::execution_space> scheduler_type;
-
   Kokkos::Timer timer;
   int r_val = 0;
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -90,7 +88,7 @@ int main (int argc, char *argv[]) {
     ///
     /// Tacho Solver (factorization)
     ///
-    Tacho::Solver<value_type,scheduler_type> solver;
+    Tacho::Solver<value_type,device_type> solver;
     {
       solver.setMatrixType(sym, posdef);
       solver.setVerbose(verbose);
