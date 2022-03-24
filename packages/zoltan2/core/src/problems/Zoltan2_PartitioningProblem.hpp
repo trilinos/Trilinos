@@ -298,14 +298,14 @@ public:
     AlgPTScotch<Adapter>::getValidParameters(pl);
     AlgSerialGreedy<Adapter>::getValidParameters(pl);
     AlgForTestingOnly<Adapter>::getValidParameters(pl);
-    getSphynxValidParameters(pl); // MPL NOT THE GOOD PLACE !!!
+//    getSphynxValidParameters(pl); // MPL NOT THE GOOD PLACE !!!
 
     // This set up does not use tuple because we didn't have constructors
     // that took that many elements - Tuple will need to be modified and I
     // didn't want to have low level changes with this particular refactor
     // TO DO: Add more Tuple constructors and then redo this code to be
     //  Teuchos::tuple<std::string> algorithm_names( "rcb", "multijagged" ... );
-    Array<std::string> algorithm_names(20);
+    Array<std::string> algorithm_names(19);
     algorithm_names[0] = "rcb";
     algorithm_names[1] = "multijagged";
     algorithm_names[2] = "rib";
@@ -325,7 +325,6 @@ public:
     algorithm_names[16] = "random";
     algorithm_names[17] = "zoltan";
     algorithm_names[18] = "forTestingOnly";
-    algorithm_names[19] = "sphynx";
     RCP<Teuchos::StringValidator> algorithm_Validator = Teuchos::rcp(
       new Teuchos::StringValidator( algorithm_names ));
     pl.set("algorithm", "random", "partitioning algorithm",
@@ -565,7 +564,6 @@ template <typename Adapter>
   template <typename Adapter>
   void PartitioningProblem<Adapter>::createAlgorithm()
   {
-      std::cout << "PartitioningProblem<Adapter>::createAlgorithm" << std::endl;
       // Create the algorithm
         if (algName_ == std::string("multijagged")) {
           this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,

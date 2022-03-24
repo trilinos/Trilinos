@@ -219,17 +219,18 @@ int main(int narg, char** arg)
   ////// Specify the Sphynx parameters
   Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
   params->set("num_global_parts", commsize);
-  params->set("sphynx_skip_preprocessing", true);   // Preprocessing has not been implemented yet.
-  params->set("sphynx_preconditioner_type", precType);
-  params->set("sphynx_verbosity", verbose ? 1 : 0);
-  params->set("sphynx_initial_guess", initialGuess);
-  params->set("sphynx_use_full_ortho", useFullOrtho);
+  Teuchos::RCP<Teuchos::ParameterList> sphynxParams(new Teuchos::ParameterList);
+  sphynxParams->set("sphynx_skip_preprocessing", true);   // Preprocessing has not been implemented yet.
+  sphynxParams->set("sphynx_preconditioner_type", precType);
+  sphynxParams->set("sphynx_verbosity", verbose ? 1 : 0);
+  sphynxParams->set("sphynx_initial_guess", initialGuess);
+  sphynxParams->set("sphynx_use_full_ortho", useFullOrtho);
   std::string problemType = "combinatorial";
   if(isNormalized)
     problemType = "normalized";
   else if(isGeneralized)
     problemType = "generalized";
-  params->set("sphynx_problem_type", problemType); // Type of the eigenvalue problem.
+  sphynxParams->set("sphynx_problem_type", problemType); // Type of the eigenvalue problem.
 
   ////// Create an input adapter for the graph of the Tpetra matrix.
   Teuchos::RCP<SparseGraphAdapter> adapter = Teuchos::rcp( new SparseGraphAdapter(origMatrix->getCrsGraph(), nVwgts));
@@ -257,7 +258,7 @@ int main(int narg, char** arg)
   }
 
   ////// Create and solve partitioning problem
-  Zoltan2::SphynxRefactoredProblem<SparseGraphAdapter> problem(adapter.get(), params.get());
+  Zoltan2::SphynxRefactoredProblem<SparseGraphAdapter> problem(adapter.get(), params.get(), sphynxParams);
 
   try {
     if (me == 0) std::cout << "Calling solve() " << std::endl;

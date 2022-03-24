@@ -115,50 +115,32 @@ static void getSphynxValidParameters(ParameterList & pl)
     // Constructor where Teuchos communicator is specified
     SphynxRefactoredProblem(Adapter *A,
                   Teuchos::ParameterList *p,
+                            RCP<Teuchos::ParameterList> sphynxParams,
           const RCP<const Teuchos::Comm<int> > &comm):
-      PartitioningProblem<Adapter>(A, p, comm)
+      PartitioningProblem<Adapter>(A, p, comm), sphynxParams_(sphynxParams)
     {
-//      this->numberOfWeights_ = this->inputAdapter_->getNumWeightsPerID();
-//      this->numberOfCriteria_ = (this->numberOfWeights_ > 1) ? this->numberOfWeights_ : 1;
+        int nparts = -1;
+        const Teuchos::ParameterEntry *pe = this->params_->getEntryPtr("num_global_parts");
+        if(pe)
+          nparts = pe->getValue<int>(&nparts);
 
-//      Teuchos::ArrayRCP<part_t> *noIds =
-//        new Teuchos::ArrayRCP<part_t> [this->numberOfCriteria_];
-//      Teuchos::ArrayRCP<weight_t> *noSizes =
-//        new Teuchos::ArrayRCP<weight_t> [this->numberOfCriteria_];
-
-//      this->partIds_ = Teuchos::arcp(noIds, 0, this->numberOfCriteria_, true);
-//      this->partSizes_ = Teuchos::arcp(noSizes, 0, this->numberOfCriteria_, true);
-
-//        int nparts = -1;
-//        const Teuchos::ParameterEntry *pe = params_->getEntryPtr("num_global_parts");
-//        if(pe)
-//          nparts = pe->getValue<int>(&nparts);
-
-//        if(nparts == -1)
-//          throw std::runtime_error("\nUser did not set num_global_parts"
-//                                   "in the parameter list!n");
-
-
-//        envParams_ = Teuchos::rcp(new Teuchos::ParameterList());
-//        envParams_->set("num_global_parts", nparts);
-
-//        env_ = Teuchos::rcp(new Environment(*envParams_, comm_));
-//        envConst_ = Teuchos::rcp_const_cast<const Environment>(env_);
-
+        if(nparts == -1)
+          throw std::runtime_error("\nUser did not set num_global_parts"
+                                   "in the parameter list!n");
     }
 
 #ifdef HAVE_ZOLTAN2_MPI
     // Constructor where MPI communicator can be specified
-    SphynxRefactoredProblem(Adapter *A, ParameterList *p, MPI_Comm mpicomm):
-      SphynxRefactoredProblem(A, p,
+    SphynxRefactoredProblem(Adapter *A, ParameterList *p, RCP<Teuchos::ParameterList> sphynxParams, MPI_Comm mpicomm):
+      SphynxRefactoredProblem(A, p,sphynxParams,
                               rcp<const Comm<int> >(new Teuchos::MpiComm<int>(
                                                     Teuchos::opaqueWrapper(mpicomm))))
     {}
 #endif
 
     // Constructor where communicator is the Teuchos default.
-    SphynxRefactoredProblem(Adapter *A, ParameterList *p):
-      SphynxRefactoredProblem(A, p, Tpetra::getDefaultComm())
+    SphynxRefactoredProblem(Adapter *A, ParameterList *p, RCP<Teuchos::ParameterList> sphynxParams):
+      SphynxRefactoredProblem(A, p,sphynxParams, Tpetra::getDefaultComm())
     {}
 
     // Destructor
@@ -167,27 +149,6 @@ static void getSphynxValidParameters(ParameterList & pl)
     ///////////////////////////////////////////////////////////////////////////
     ///////////////////// FORWARD DECLARATIONS  ///////////////////////////////
     ///////////////////////////////////////////////////////////////////////////
-
-//    void solve();
-    //!  \brief Direct the problem to create a solution.
-    //
-    //    \param updateInputData   If true this indicates that either
-    //          this is the first attempt at solution, or that we
-    //          are computing a new solution and the input data has
-    //          changed since the previous solution was computed.
-    //          By input data we mean coordinates, topology, or weights.
-    //          If false, this indicates that we are computing a
-    //          new solution using the same input data was used for
-    //          the previous solution, even though the parameters
-    //          may have been changed.
-    //
-    //  For the sake of performance, we ask the caller to set \c updateInputData
-    //  to false if he/she is computing a new solution using the same input data,
-    //  but different problem parameters, than that which was used to compute
-    //  the most recent solution.
-
-//    void solve(bool updateInputData=true) override;
-
 
     void createAlgorithm() override;
     void processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
@@ -208,6 +169,8 @@ static void getSphynxValidParameters(ParameterList & pl)
 
   private:
     Teuchos::RCP<Teuchos::ParameterList> envParams_;
+    RCP<ParameterList> sphynxParams_;
+
 
   };
 
@@ -220,17 +183,16 @@ static void getSphynxValidParameters(ParameterList & pl)
   void SphynxRefactoredProblem<Adapter>::processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
                                                      Environment &env, bool& removeSelfEdges, bool& needConsecutiveGlobalIds) {
       this->algName_ = std::string("sphynx");
-      std::cout << "SphynxRefactoredProblem::createAlgorithm " << std::endl;
 }
 
   template <typename Adapter>
   void SphynxRefactoredProblem<Adapter>::createAlgorithm()
   {
-      std::cout << "SphynxRefactoredProblem<Adapter>::createAlgorithm" << std::endl;
       // Create the algorithm
       if (this->algName_ == std::string("sphynx")) {
           this->algorithm_ = Teuchos::rcp(new Zoltan2::Sphynx<Adapter>(this->envConst_,
                                                                        this->params_,
+                                                                       this->sphynxParams_,
                                                                        this->comm_,
                                                                        this->inputAdapter_));
       }
