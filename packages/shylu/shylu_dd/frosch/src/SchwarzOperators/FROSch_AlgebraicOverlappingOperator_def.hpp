@@ -292,9 +292,13 @@ namespace FROSch {
         if (this->IsComputed_) { // already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
             this->OverlappingMatrix_ = this->K_;
         }
-        ExtractLocalSubdomainMatrix_Compute(this->OverlappingMatrix_,
-                                            this->subdomainMatrix_,this->localSubdomainMatrix_);
-        this->OverlappingMatrix_ = this->localSubdomainMatrix_.getConst();
+        if (this->ExtractLocalSubdomainMatrix_Symbolic_Done_) {
+            ExtractLocalSubdomainMatrix_Compute(this->OverlappingMatrix_,
+                                                this->subdomainMatrix_,this->localSubdomainMatrix_);
+            this->OverlappingMatrix_ = this->localSubdomainMatrix_.getConst();
+        } else {
+            this->OverlappingMatrix_ = ExtractLocalSubdomainMatrix(this->OverlappingMatrix_,this->OverlappingMap_);
+        }
         return 0;
     }
 
@@ -324,9 +328,12 @@ namespace FROSch {
         RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(this->OverlappingMap_->lib(), this->OverlappingMap_->getLocalNumElements(), 0, SerialComm);
         this->localSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
 
-        // allocate local submatrix and fill in column indexes
+        // fill in column indexes
         ExtractLocalSubdomainMatrix_Symbolic(this->OverlappingMatrix_, // input
                                              this->subdomainMatrix_, this->localSubdomainMatrix_);   // output
+
+        // turn flag on
+        this->ExtractLocalSubdomainMatrix_Symbolic_Done_ = true;
     }
 }
 

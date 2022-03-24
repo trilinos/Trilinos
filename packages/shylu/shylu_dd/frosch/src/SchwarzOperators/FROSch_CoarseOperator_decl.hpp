@@ -203,6 +203,7 @@ namespace FROSch {
         XMatrixPtr CoarseMatrix_;
 
         // result of ExtractLocalSubdomainMatrix_Symbolic
+        bool coarseExtractLocalSubdomainMatrix_Symbolic_Done_ = false;
         XMatrixPtr coarseSubdomainMatrix_;
         XMatrixPtr coarseLocalSubdomainMatrix_;
 

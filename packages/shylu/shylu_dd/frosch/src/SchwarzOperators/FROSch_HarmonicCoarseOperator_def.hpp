@@ -67,10 +67,15 @@ namespace FROSch {
         XMapPtr repeatedMap = AssembleSubdomainMap(NumberOfBlocks_,DofsMaps_,DofsPerNode_);
 
         // Build local saddle point problem
-        ExtractLocalSubdomainMatrix_Compute(this->K_.getConst(),
-                                            this->coarseSubdomainMatrix_,
-                                            this->coarseLocalSubdomainMatrix_);
-        ConstXMatrixPtr repeatedMatrix = this->coarseLocalSubdomainMatrix_.getConst();
+        ConstXMatrixPtr repeatedMatrix;
+        if (this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_) {
+            ExtractLocalSubdomainMatrix_Compute(this->K_.getConst(),
+                                                this->coarseSubdomainMatrix_,
+                                                this->coarseLocalSubdomainMatrix_);
+            repeatedMatrix = this->coarseLocalSubdomainMatrix_.getConst();
+        } else {
+            repeatedMatrix = ExtractLocalSubdomainMatrix(this->K_.getConst(),repeatedMap.getConst());
+        }
 
         // Remove coupling blocks
         if (this->ParameterList_->get("Extensions: Remove Coupling",false)) {
@@ -1068,9 +1073,12 @@ namespace FROSch {
         RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(repeatedMap->lib(), repeatedMap->getLocalNumElements(), 0, SerialComm);
         this->coarseLocalSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, this->K_->getGlobalMaxNumRowEntries());
 
-        // allocate local submatrix and fill in column indexes
+        // fill in column indexes
         ExtractLocalSubdomainMatrix_Symbolic(this->K_.getConst(), // input
                                              this->coarseSubdomainMatrix_, this->coarseLocalSubdomainMatrix_);
+
+        // turn flag on
+        this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_ = true;
     }
     
 }
