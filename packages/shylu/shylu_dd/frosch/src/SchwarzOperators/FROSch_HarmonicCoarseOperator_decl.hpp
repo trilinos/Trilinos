@@ -198,6 +198,7 @@ namespace FROSch {
 
         virtual int buildCoarseGraph();
 
+        virtual void extractLocalSubdomainMatrix_Symbolic();
 
         SolverPtr ExtensionSolver_;
 

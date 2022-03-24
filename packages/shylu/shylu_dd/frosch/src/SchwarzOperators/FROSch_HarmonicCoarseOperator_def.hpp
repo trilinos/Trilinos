@@ -67,7 +67,10 @@ namespace FROSch {
         XMapPtr repeatedMap = AssembleSubdomainMap(NumberOfBlocks_,DofsMaps_,DofsPerNode_);
 
         // Build local saddle point problem
-        ConstXMatrixPtr repeatedMatrix = ExtractLocalSubdomainMatrix(this->K_.getConst(),repeatedMap.getConst()); // AH 12/11/2018: Should this be in initalize?
+        ExtractLocalSubdomainMatrix_Compute(this->K_.getConst(),
+                                            this->coarseSubdomainMatrix_,
+                                            this->coarseLocalSubdomainMatrix_);
+        ConstXMatrixPtr repeatedMatrix = this->coarseLocalSubdomainMatrix_.getConst();
 
         // Remove coupling blocks
         if (this->ParameterList_->get("Extensions: Remove Coupling",false)) {
@@ -1048,6 +1051,28 @@ namespace FROSch {
         }
         return 0;
     }
+
+    template <class SC,class LO,class GO,class NO>
+    void HarmonicCoarseOperator<SC,LO,GO,NO>::extractLocalSubdomainMatrix_Symbolic()
+    {
+        FROSCH_DETAILTIMER_START_LEVELID(extractLocalSubdomainMatrix_SymbolicTime,"HarmonicCoarseOperatorCoarseOperator::extractLocalSubdomainMatrix_Symbolic");
+        XMapPtr repeatedMap = AssembleSubdomainMap(this->NumberOfBlocks_, this->DofsMaps_, this->DofsPerNode_);
+
+        // buid sudomain matrix
+        this->coarseSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap, this->K_->getGlobalMaxNumRowEntries());
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->K_->getRowMap(), repeatedMap);
+        this->coarseSubdomainMatrix_->doImport(*(this->K_.getConst()), *scatter,ADD);
+
+        // build local subdomain matrix
+        RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
+        RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(repeatedMap->lib(), repeatedMap->getLocalNumElements(), 0, SerialComm);
+        this->coarseLocalSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, this->K_->getGlobalMaxNumRowEntries());
+
+        // allocate local submatrix and fill in column indexes
+        ExtractLocalSubdomainMatrix_Symbolic(this->K_.getConst(), // input
+                                             this->coarseSubdomainMatrix_, this->coarseLocalSubdomainMatrix_);
+    }
+    
 }
 
 #endif

@@ -87,6 +87,91 @@ namespace FROSch {
         return localSubdomainMatrix.getConst();
     }
 
+    // this version just read indices without building submatrices, which is done in extractLocalSubdomainMatrix_Symbolic
+    template <class SC,class LO,class GO,class NO>
+    void ExtractLocalSubdomainMatrix_Symbolic(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,    // input
+                                              RCP<Matrix<SC,LO,GO,NO> > subdomainMatrix,       // output : globalMatrix, re-distributed with map
+                                              RCP<Matrix<SC,LO,GO,NO> > localSubdomainMatrix)  // output : local submatrix
+    {
+        FROSCH_DETAILTIMER_START(extractLocalSubdomainMatrixTime_symbolic, "ExtractLocalSubdomainMatrix_Symbolic");
+        auto localSubdomainMap = localSubdomainMatrix->getRowMap();
+        auto subdomainMap = subdomainMatrix->getRowMap();
+        //RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),subdomainMap);
+
+        const SC zero = ScalarTraits<SC>::zero();
+        for (unsigned i=0; i<localSubdomainMap->getLocalNumElements(); i++) {
+            ArrayView<const GO> indices;
+            ArrayView<const SC> values;
+            subdomainMatrix->getGlobalRowView(subdomainMap->getGlobalElement(i),indices,values);
+
+            LO size = indices.size();
+            if (size>0) {
+                Array<GO> indicesLocal;
+                Array<SC> valuesLocal;
+                for (LO j=0; j<size; j++) {
+                    GO localIndex = subdomainMap->getLocalElement(indices[j]);
+                    if (localIndex>=0) {
+                        indicesLocal.push_back(localIndex);
+                        valuesLocal.push_back(zero);
+                    }
+                }
+                localSubdomainMatrix->insertGlobalValues(i,indicesLocal(),valuesLocal());
+            }
+        }
+        localSubdomainMatrix->fillComplete();
+        return;
+    }
+
+    template <class SC,class LO,class GO,class NO>
+    void ExtractLocalSubdomainMatrix_Compute(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
+                                             RCP<      Matrix<SC,LO,GO,NO> > subdomainMatrix,
+                                             RCP<      Matrix<SC,LO,GO,NO> > localSubdomainMatrix)
+    {
+        FROSCH_DETAILTIMER_START(extractLocalSubdomainMatrixTime_compute, "ExtractLocalSubdomainMatrix_Compute");
+        const SC zero = ScalarTraits<SC>::zero();
+        auto subdomainMap = subdomainMatrix->getRowMap();
+        auto localSubdomainMap = localSubdomainMatrix->getRowMap();
+
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),subdomainMap);
+        subdomainMatrix->setAllToScalar(zero);
+        subdomainMatrix->doImport(*globalMatrix, *scatter, ADD);
+        localSubdomainMatrix->resumeFill();
+
+        for (unsigned i=0; i<localSubdomainMap->getLocalNumElements(); i++) {
+            ArrayView<const GO> global_indices;
+            ArrayView<const SC> global_values;
+            subdomainMatrix->getGlobalRowView(subdomainMap->getGlobalElement(i),global_indices,global_values);
+
+            LO size = global_indices.size();
+            if (size>0) {
+                ArrayView<const LO> const_cols;
+                ArrayView<const SC> const_vals;
+                ArrayView<LO>       local_cols;
+                ArrayView<SC>       local_vals;
+                localSubdomainMatrix->getLocalRowView(i, const_cols, const_vals);
+
+                size_t nnz = const_vals.size();
+                local_cols = ArrayView<LO>(const_cast<LO*>(const_cols.getRawPtr()), nnz);
+                local_vals = ArrayView<SC>(const_cast<SC*>(const_vals.getRawPtr()), nnz);
+
+                nnz = 0;
+                for (LO j=0; j<size; j++) {
+                    GO localIndex = subdomainMap->getLocalElement(global_indices[j]);
+                    if (localIndex>=0) {
+                        local_cols[nnz] = localIndex;
+                        local_vals[nnz] = global_values[j];
+                        nnz ++;
+                    }
+                }
+                localSubdomainMatrix->replaceLocalValues(i, local_cols, local_vals);
+            }
+        }
+        RCP<ParameterList> fillCompleteParams(new ParameterList);
+        fillCompleteParams->set("No Nonlocal Changes", true);
+        localSubdomainMatrix->fillComplete(fillCompleteParams);
+        return;
+    }
+
     template <class SC,class LO,class GO,class NO>
     RCP<const Matrix<SC,LO,GO,NO> > ExtractLocalSubdomainMatrix(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
                                                                 RCP<const Map<LO,GO,NO> > map,
@@ -210,7 +295,6 @@ namespace FROSch {
                         valuesJ.push_back(values[j]);
                     }
                 }
-                //cout << k->getRowMap().Comm().getRank() << " " << tmp1 << " numEntries " << numEntries << " indicesI.size() " << indicesI.size() << " indicesJ.size() " << indicesJ.size() << endl;
                 kII->insertGlobalValues(tmp1,indicesI(),valuesI());
                 kIJ->insertGlobalValues(tmp1,indicesJ(),valuesJ());
             } else  {
@@ -270,7 +354,6 @@ namespace FROSch {
                         valuesI.push_back(values[j]);
                     }
                 }
-                //cout << k->getRowMap().Comm().getRank() << " " << tmp1 << " numEntries " << numEntries << " indicesI.size() " << indicesI.size() << " indicesJ.size() " << indicesJ.size() << endl;
                 kII->insertGlobalValues(mapI->getGlobalElement(tmp1),indicesI(),valuesI());
             }
         }
@@ -307,7 +390,6 @@ namespace FROSch {
                         indicesI.push_back(tmp2);
                     }
                 }
-                //cout << k->getRowMap().Comm().getRank() << " " << tmp1 << " numEntries " << numEntries << " indicesI.size() " << indicesI.size() << " indicesJ.size() " << indicesJ.size() << endl;
                 kII->insertGlobalValues(mapI->getGlobalElement(tmp1),indicesI());
             }
         }

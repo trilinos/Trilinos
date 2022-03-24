@@ -572,7 +572,8 @@ namespace FROSch {
             TripleMatrixMultiply<SC,LO,GO,NO>::MultiplyRAP(*Phi_,true,*this->K_,false,*Phi_,false,*k0);
         } else {
             RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); //Phi_->describe(*fancy,VERB_EXTREME);
-            XMatrixPtr tmp = MatrixMatrix<SC,LO,GO,NO>::Multiply(*this->K_,false,*Phi_,false,*fancy);
+            XMatrixPtr tmp;
+            tmp = MatrixMatrix<SC,LO,GO,NO>::Multiply(*this->K_,false,*Phi_,false,*fancy);
             k0 = MatrixMatrix<SC,LO,GO,NO>::Multiply(*Phi_,true,*tmp,false,*fancy); //k0->describe(*fancy,VERB_EXTREME);
         }
         return k0;
@@ -982,6 +983,26 @@ namespace FROSch {
         return 0;
     }
 
+
+    template <class SC,class LO,class GO,class NO>
+    void CoarseOperator<SC,LO,GO,NO>::extractLocalSubdomainMatrix_Symbolic(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
+                                                                           RCP<const Map<LO,GO,NO> > map)
+    {
+        FROSCH_DETAILTIMER_START_LEVELID(extractLocalSubdomainMatrix_SymbolicTime,"CoarseOperator::extractLocalSubdomainMatrix_Symbolic");
+
+        // create subdomain
+        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(), map);
+        this->coarseSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(map, globalMatrix->getGlobalMaxNumRowEntries());
+        this->coarseSubdomainMatrix_->doImport(*globalMatrix, *scatter,ADD);
+
+        // create local subdomain
+        RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
+        RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(map->lib(), map->getLocalNumElements(), 0, SerialComm);
+        this->coarseLocalSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, globalMatrix->getGlobalMaxNumRowEntries());
+
+        ExtractLocalSubdomainMatrix_Symbolic(globalMatrix, map.getConst(),                                      // inputs
+                                             this->coarseSubdomainMatrix_, this->coarseLocalSubdomainMatrix_);  // outputs
+    }
 }
 
 #endif
