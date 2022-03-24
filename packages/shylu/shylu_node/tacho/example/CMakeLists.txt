@@ -128,12 +128,12 @@ IF(Kokkos_ENABLE_CUDA)
     SOURCES Tacho_ExampleCholCuSolver.cpp
     COMM serial mpi
   )
-  TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleCuSparseTriSolve
-    NOEXEPREFIX
-    SOURCES Tacho_ExampleCuSparseTriSolve.cpp
-    COMM serial mpi
-  )
+  # TRIBITS_ADD_EXECUTABLE(
+  #   Tacho_ExampleCuSparseTriSolve
+  #   NOEXEPREFIX
+  #   SOURCES Tacho_ExampleCuSparseTriSolve.cpp
+  #   COMM serial mpi
+  # )
 ENDIF()
 
 #
