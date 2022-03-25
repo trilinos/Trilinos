@@ -47,6 +47,7 @@
 #include "Tpetra_Core.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tpetra_Details_determineLocalTriangularStructure.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 #include "KokkosSparse_trsv.hpp"
 
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
@@ -889,15 +890,14 @@ description () const
     os << "Matrix: null";
   }
   else {
-    os << "Matrix: not null"
-       << ", Global matrix dimensions: ["
+    os << "Matrix dimensions: ["
        << A_->getGlobalNumRows () << ", "
-       << A_->getGlobalNumCols () << "]";
+       << A_->getGlobalNumCols () << "]"
+       << ", Number of nonzeros: " << A_->getGlobalNumEntries();
   }
 
   if (Teuchos::nonnull (htsImpl_))
     os << ", HTS computed: " << (htsImpl_->isComputed () ? "true" : "false");
-
   os << "}";
   return os.str ();
 }
