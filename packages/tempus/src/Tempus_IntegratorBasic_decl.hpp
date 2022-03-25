@@ -31,7 +31,7 @@ class IntegratorBasic : virtual public Tempus::Integrator<Scalar>
 {
 public:
 
-  /// Default constructor that requires a subsequent, ??? , setStepper, and initialize calls.
+  /// Default constructor (requires calls to setModel and setSolutionHistory for initial conditions before calling initialize() to be fully constructed).
   IntegratorBasic();
 
   /// Full constructor
