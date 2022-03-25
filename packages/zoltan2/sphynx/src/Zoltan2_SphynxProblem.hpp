@@ -97,6 +97,30 @@ static void getSphynxValidParameters(ParameterList & pl)
   pl.set("sphynx_use_full_ortho", true, "Sphynx use full ortho.", Environment::getBoolValidator());
 }
 
+static void setSphynxValidatorsInList(
+  const Teuchos::ParameterList &plSome,   // in: user's parameters
+  const Teuchos::ParameterList &plAll,    // in: validators for all params
+  Teuchos::ParameterList &plVal)          // out: validators for user's params
+{
+  ParameterList::ConstIterator next = plSome.begin();
+
+  while (next != plSome.end()){
+
+    const std::string &name = next->first;
+    const ParameterEntry &entrySome = plSome.getEntry(name);
+    const ParameterEntry &entryAll = plAll.getEntry(name);
+
+    if (entrySome.isList()){
+      plVal.sublist(name);     // create & get
+      // Don't set validators for sublists; sublists are for TPL's parameters
+    }
+    else{
+      plVal.setEntry(name, entryAll);
+    }
+
+    ++next;
+  }
+}
 
   template <typename Adapter>
   class SphynxProblem : public PartitioningProblem<Adapter>
@@ -119,6 +143,19 @@ static void getSphynxValidParameters(ParameterList & pl)
           const RCP<const Teuchos::Comm<int> > &comm):
       PartitioningProblem<Adapter>(A, p, comm), sphynxParams_(sphynxParams)
     {
+        // Validation of SphynxParameter
+        ParameterList validParams;
+        try{
+            ParameterList allParameters;
+            getSphynxValidParameters(allParameters);
+
+            setSphynxValidatorsInList(*(sphynxParams_.get()), allParameters, validParams);
+        }
+        Z2_FORWARD_EXCEPTIONS
+
+        sphynxParams_->validateParametersAndSetDefaults(validParams, 0);
+        this->env_->convertStringToInt(*sphynxParams_.get());
+
         int nparts = -1;
         const Teuchos::ParameterEntry *pe = this->params_->getEntryPtr("num_global_parts");
         if(pe)

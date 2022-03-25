@@ -256,36 +256,6 @@ public:
   void setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine);
 */
 
-  /*! \brief Set up validators specific to this algorithm
-   */
-  static void getSphynxValidParameters(ParameterList & pl)
-  {
-
-    RCP<Teuchos::StringValidator> sphynx_preconditionner_type_method_Validator =
-      Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "muelu", "jacobi", "polynomial")));
-
-    pl.set("sphynx_preconditioner_type", "polynomial", "Sphynx preconditioner type", sphynx_preconditionner_type_method_Validator);
-
-
-    RCP<Teuchos::StringValidator> sphynx_initial_guess_method_Validator =
-      Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "random", "constants")));
-
-    pl.set("sphynx_initial_guess", "random", "Sphynx initial guess", sphynx_initial_guess_method_Validator);
-
-    RCP<Teuchos::StringValidator> sphynx_problem_type_method_Validator =
-      Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "combinatorial", "normalized", "generalized")));
-
-    pl.set("sphynx_problem_type", "combinatorial", "Sphynx problem type", sphynx_problem_type_method_Validator);
-
-    RCP<Teuchos::EnhancedNumberValidator<int>> sphynx_verbosity_validator =
-      Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1) );
-    pl.set("sphynx_verbosity", 0, "Sphynx verbosity.", sphynx_verbosity_validator);
-
-    // bool parameter
-    pl.set("sphynx_skip_preprocessing", false, "Sphynx skip preprocessing.", Environment::getBoolValidator());
-    pl.set("sphynx_use_full_ortho", true, "Sphynx use full ortho.", Environment::getBoolValidator());
-  }
-
   /*! \brief Set up validators specific to this Problem
   */
   static void getValidParameters(ParameterList & pl)
@@ -298,7 +268,6 @@ public:
     AlgPTScotch<Adapter>::getValidParameters(pl);
     AlgSerialGreedy<Adapter>::getValidParameters(pl);
     AlgForTestingOnly<Adapter>::getValidParameters(pl);
-//    getSphynxValidParameters(pl); // MPL NOT THE GOOD PLACE !!!
 
     // This set up does not use tuple because we didn't have constructors
     // that took that many elements - Tuple will need to be modified and I
