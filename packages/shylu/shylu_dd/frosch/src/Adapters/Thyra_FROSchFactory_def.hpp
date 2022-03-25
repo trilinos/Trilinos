@@ -114,13 +114,8 @@ namespace Thyra {
         TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra != bIsTpetra) && bIsBlocked == true);
 
         // Retrieve Matrix
-        ConstXCrsMatrixPtr xpetraFwdCrsMat = ThyraUtils<SC,LO,GO,NO>::toXpetra(fwdOp);
-        TEUCHOS_TEST_FOR_EXCEPT(is_null(xpetraFwdCrsMat));
-
-        // AH 08/07/2019: Going from const to non-const to const. One should be able to improve this.
-        XCrsMatrixPtr xpetraFwdCrsMatNonConst = rcp_const_cast<XCrsMatrix>(xpetraFwdCrsMat);
-        XMatrixPtr ANonConst = rcp(new CrsMatrixWrap<SC,LO,GO,NO>(xpetraFwdCrsMatNonConst));
-        ConstXMatrixPtr A = ANonConst.getConst();
+        ConstXMatrixPtr A = ThyraUtils<SC,LO,GO,NO>::toXpetra(fwdOp);
+        TEUCHOS_TEST_FOR_EXCEPT(is_null(A));
 
         CommPtr comm = A->getMap()->getComm();
         UnderlyingLib underlyingLib = A->getMap()->lib();
