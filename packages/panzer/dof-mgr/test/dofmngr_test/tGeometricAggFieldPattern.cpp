@@ -54,11 +54,11 @@
 // include some intrepid basis functions
 // 2D basis 
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_Cn_FEM.hpp"
 #include "Intrepid2_HDIV_TRI_I1_FEM.hpp"
 
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 #include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 
 #include "TestFieldPattern.hpp"
@@ -88,7 +88,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
 
    // basis to build patterns from
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_TRI_Cn_FEM<PHX::exec_space,double,double>(2));
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
@@ -180,7 +180,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test3d)
 
    // basis to build patterns from
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::exec_space,double,double>(2));
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));

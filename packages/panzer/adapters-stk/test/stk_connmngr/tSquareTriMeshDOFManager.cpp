@@ -55,7 +55,6 @@
 #include "Panzer_STKConnManager.hpp"
 
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
 
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"

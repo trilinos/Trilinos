@@ -57,22 +57,22 @@
 // include some intrepid basis functions
 // 2D basis 
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_TRI_I1_FEM.hpp"
 #include "Intrepid2_HDIV_TRI_I1_FEM.hpp"
 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
 #include "Intrepid2_HDIV_QUAD_I1_FEM.hpp"
 
 #include "Intrepid2_HDIV_TET_I1_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_TET_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TET_Cn_FEM.hpp"
 
 #include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 
 #include "Shards_BasicTopologies.hpp"
 
@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
    // basis to build patterns from
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HCURL_TRI_I1_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>); // used further down
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_Cn_FEM<PHX::exec_space,double,double>(2)); // used further down
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
@@ -209,7 +209,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
    // basis to build patterns from
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HCURL_QUAD_I1_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double>); // used further down
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::exec_space,double,double>(2)); // used further down
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
@@ -327,7 +327,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
    // basis to build patterns from
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<PHX::exec_space,double,double>);
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HDIV_TRI_I1_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>); // used further down
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TRI_Cn_FEM<PHX::exec_space,double,double>(2)); // used further down
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
@@ -436,7 +436,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
    // basis to build patterns from
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HDIV_QUAD_I1_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double>); // used further down
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::exec_space,double,double>(2)); // used further down
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
@@ -597,7 +597,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tet)
    // basis to build patterns from
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<PHX::exec_space,double,double>);
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HDIV_TET_I1_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TET_C2_FEM<PHX::exec_space,double,double>); // used further down
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_TET_Cn_FEM<PHX::exec_space,double,double>(2)); // used further down
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
@@ -650,7 +650,7 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_hex)
    // basis to build patterns from
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisB = rcp(new Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::exec_space,double,double>);
-   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>); // used further down
+   RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::exec_space,double,double>(2)); // used further down
 
    RCP<const FieldPattern> patternA = rcp(new Intrepid2FieldPattern(basisA));
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));

@@ -55,7 +55,6 @@
 #include "Panzer_STKConnManager.hpp"
 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
 
 #ifdef HAVE_MPI

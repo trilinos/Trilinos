@@ -63,7 +63,6 @@
 
 // Intrepid2 includes
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
 #include "Intrepid2_HCURL_TET_I1_FEM.hpp"
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"

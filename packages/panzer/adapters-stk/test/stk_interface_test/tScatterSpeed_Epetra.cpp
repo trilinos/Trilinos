@@ -13,9 +13,7 @@
 
 // Intrepid2 includes
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 
 // Panzer includes
 #include "Panzer_ConnManager.hpp"

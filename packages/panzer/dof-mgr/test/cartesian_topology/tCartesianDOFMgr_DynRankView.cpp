@@ -52,7 +52,7 @@
 
 #include "Intrepid2_config.h"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 #include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 #include "Intrepid2_HCURL_HEX_I1_FEM.hpp"
 
@@ -113,7 +113,9 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DynRankView, threed)
   int bx =  1, by = 2, bz = 1;
 
   // build velocity, temperature and pressure fields
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device,double,double> >();
+
+  auto basis_C2 = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device,double,double>(2));
+  RCP<const panzer::FieldPattern> pattern_U = rcp(new panzer::Intrepid2FieldPattern(basis_C2));
   RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device,double,double> >();
   RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device,double,double> >();
   RCP<const panzer::FieldPattern> pattern_B = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::Device,double,double> >();

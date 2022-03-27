@@ -54,13 +54,13 @@
 // include some intrepid basis functions
 // 2D basis 
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 
 // 3D basis 
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -101,12 +101,12 @@ TEUCHOS_UNIT_TEST(tFieldPattern, test_equals)
    TEST_ASSERT(intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
    basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::exec_space,double,double>);
-   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
+   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::exec_space,double,double>(2));
    TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(not intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
-   basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
-   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
+   basisA = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::exec_space,double,double>(2));
+   basisB = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::exec_space,double,double>(2));
    TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
@@ -120,13 +120,13 @@ TEUCHOS_UNIT_TEST(tFieldPattern, test_equals)
    TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
-   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double>);
+   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::exec_space,double,double>(2));
    basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
    TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(not intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 
-   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double>);
-   basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double>);
+   basisA = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::exec_space,double,double>(2));
+   basisB = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::exec_space,double,double>(2));
    TEST_ASSERT(intrepid_same_geom(basisA,basisB,__FILE__,__LINE__));
    TEST_ASSERT(intrepid_equals(basisA,basisB,__FILE__,__LINE__));
 }

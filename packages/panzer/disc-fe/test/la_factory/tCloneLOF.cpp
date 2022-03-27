@@ -71,7 +71,7 @@
 
 #include "Kokkos_DynRankView.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -160,8 +160,8 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
 
    RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double> >();
-   RCP<const FieldPattern> patternC2
-         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<PHX::exec_space,double,double> >();
+   auto basis2 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::exec_space,double,double>(2));
+   RCP<const FieldPattern> patternC2 = rcp(new panzer::Intrepid2FieldPattern(basis2));
 
    RCP<panzer::BlockedDOFManager> indexer = rcp(new panzer::BlockedDOFManager());
    {

@@ -10,7 +10,7 @@
 #include "Panzer_DOFManager.hpp"
 
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 #include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 #include "Intrepid2_HCURL_HEX_I1_FEM.hpp"
 
@@ -58,7 +58,8 @@ int main(int argc,char * argv[])
   } 
 
   // build velocity, temperature and pressure fields
-  RCP<const panzer::FieldPattern> pattern_U = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::Device::execution_space,double,double>>();
+  auto basis_U = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::Device::execution_space,double,double>(2));
+  RCP<const panzer::FieldPattern> pattern_U = rcp(new panzer::Intrepid2FieldPattern(basis_U));
   RCP<const panzer::FieldPattern> pattern_P = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::execution_space,double,double>>();
   RCP<const panzer::FieldPattern> pattern_T = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<PHX::Device::execution_space,double,double>>();
   RCP<const panzer::FieldPattern> pattern_B = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<PHX::Device::execution_space,double,double>>();

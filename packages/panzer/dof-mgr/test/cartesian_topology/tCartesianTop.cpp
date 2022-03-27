@@ -47,9 +47,9 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 #include "Kokkos_DynRankView.hpp"
 
 #include "PanzerCore_config.hpp"
@@ -204,8 +204,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart_helpers)
   int rank = comm.getRank();
 
   // field pattern for basis required
-  RCP<const panzer::FieldPattern> fp
-        = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+  auto basis_C2 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer> >(2));
+  RCP<const panzer::FieldPattern> fp = rcp(new panzer::Intrepid2FieldPattern(basis_C2));
 
   // mesh description
   panzer::GlobalOrdinal nx = 10, ny = 7;
@@ -361,7 +361,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_2d_1dpart)
     panzer::GlobalOrdinal totalEdges = (bx*nx+1)*(by*ny)+(bx*nx)*(by*ny+1);
 
     // field pattern for basis required
-    RCP<const panzer::FieldPattern> fp = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
+    auto basis_C2 = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer> >(2));
+    RCP<const panzer::FieldPattern> fp = rcp(new panzer::Intrepid2FieldPattern(basis_C2));
 
     // build the topology
     RCP<CartesianConnManager<int,panzer::GlobalOrdinal> > connManager = rcp(new CartesianConnManager<int,panzer::GlobalOrdinal>);
@@ -417,8 +418,8 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart_helpers)
   int rank = comm.getRank();
 
   // field pattern for basis required
-  RCP<const panzer::FieldPattern> fp
-        = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer> >();
+  auto basis_C2 = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<double,FieldContainer> >(2));
+  RCP<const panzer::FieldPattern> fp = rcp(new panzer::Intrepid2FieldPattern(basis_C2));
 
   // mesh description
   panzer::GlobalOrdinal nx = 10, ny = 7, nz = 4;
