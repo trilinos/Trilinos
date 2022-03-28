@@ -32,6 +32,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
       gold_files/Elasticity3D_linear_4.log.gold
       gold_files/Elasticity3D_CG_linear_4.log.gold
       gold_files/Elasticity3D_Richardson_linear_4.log.gold
+      gold_files/Star2D_W.log.gold
     )
 
   ## These are some completion tests
@@ -275,15 +276,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
     NUM_MPI_PROCS 1
     )
 
-  TRIBITS_ADD_TEST(
-    StructuredRegionDriver
-    NAME "Structured_Region_Star2D_Tpetra_Wcycle"
-    ARGS "--linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --cycleType=W"
-    COMM mpi
-    NUM_MPI_PROCS 4
-    )
-
-  ## These are very few regression tests, that also compare residual convergence history
+  ## These are regression tests, that also compare residual convergence history
   ASSERT_DEFINED(PYTHONINTERP_FOUND)
   IF (PYTHONINTERP_FOUND)
 
@@ -399,6 +392,22 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
         COMM serial mpi
         OVERALL_NUM_MPI_PROCS 4
         )
+
+
+    TRIBITS_ADD_ADVANCED_TEST(
+      Structured_Region_Star2D_Tpetra_Wcycle
+      TEST_0
+        EXEC StructuredRegionDriver
+        ARGS --linAlgebra=Tpetra --xml=structured_1dof.xml --matrixType=Star2D --nx=10 --ny=10 --smootherIts=2 --cycleType=W --convergence-log=Star2D_W.log
+        NUM_MPI_PROCS 4
+      TEST_1
+        CMND ${PYTHON_EXECUTABLE}
+        ARGS compare_residual_history.py gold_files/Star2D_W.log.gold Star2D_W.log 1.0e-12
+        STANDARD_PASS_OUTPUT
+      FAIL_FAST
+      COMM serial mpi
+      OVERALL_NUM_MPI_PROCS 4
+      )
 
   ENDIF()
 
