@@ -49,6 +49,7 @@
 #include "ROL_PinTVectorCommunication.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_TpetraMultiVector.hpp"
+#include "Tpetra_Access.hpp"
 
 /** @ingroup la_group
     \class ROL::PinTVector
@@ -66,9 +67,7 @@ public:
   void send(MPI_Comm comm,int rank,Vector<Real> & source,int tag=0) const override
   {
     auto & tp_source = *dynamic_cast<TpetraMultiVector<Real>&>(source).getVector();
-    tp_source.sync_host();
-
-    auto view = tp_source.getLocalViewHost();
+    auto view = tp_source.getLocalViewHost(Tpetra::Access::ReadOnly);
 
     // int myRank = -1;
     // MPI_Comm_rank(comm, &myRank);
@@ -82,7 +81,7 @@ public:
   void recv(MPI_Comm comm,int rank,Vector<Real> & dest,int tag=0) const override
   {
     auto & tp_dest = *dynamic_cast<TpetraMultiVector<Real>&>(dest).getVector();
-    auto view = tp_dest.getLocalViewHost();
+    auto view = tp_dest.getLocalViewHost(Tpetra::Access::ReadWrite);
 
     // int myRank = -1;
     // MPI_Comm_rank(comm, &myRank);
@@ -98,7 +97,7 @@ public:
   void recvSumInto(MPI_Comm comm,int rank,Vector<Real> & dest,int tag=0) const override
   {
     auto & tp_dest = *dynamic_cast<TpetraMultiVector<Real>&>(dest).getVector();
-    auto view = tp_dest.getLocalViewHost();
+    auto view = tp_dest.getLocalViewHost(Tpetra::Access::ReadWrite);
 
     int myRank = -1;
     MPI_Comm_rank(comm, &myRank);
