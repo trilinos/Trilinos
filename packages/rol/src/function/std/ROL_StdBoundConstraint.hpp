@@ -66,12 +66,26 @@ private:
   using BoundConstraint<Real>::lower_;
   using BoundConstraint<Real>::upper_;
 
+  inline Real buildC(int i) const {
+    const Real zeta(0.5), kappa(1);
+    return std::min(zeta*(x_up_[i] - x_lo_[i]), kappa);
+  }
+
+  inline Real sgn(Real x) const {
+    const Real zero(0), one(1);
+    return x > zero ? one : (x < zero ? -one : zero);
+  }
+
+  void buildScalingFunction(Vector<Real> &d, const Vector<Real> &x, const Vector<Real> &g) const;
+
 public:
   StdBoundConstraint(std::vector<Real> &x, bool isLower = false, Real scale = Real(1));
 
   StdBoundConstraint(std::vector<Real> &l, std::vector<Real> &u, Real scale = Real(1));
 
-  bool isFeasible( const Vector<Real> &x ) override;
+  bool isFeasible( const Vector<Real> &v ) override;
+
+  bool isInterior( const Vector<Real> &v ) const override;
 
   void project( Vector<Real> &x ) override;
 
@@ -84,6 +98,12 @@ public:
   void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) override;
 
   void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) override;
+
+  void applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override;
+
+  void applyInverseScalingFunction( Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override;
+
+  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override;
 };
 
 }// End ROL Namespace

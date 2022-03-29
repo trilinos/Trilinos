@@ -64,7 +64,7 @@ private:
   using BoundConstraint<Real>::lower_;
   using BoundConstraint<Real>::upper_;
 
-  Ptr<Vector<Real>> mask_, pvec_;
+  Ptr<Vector<Real>> mask_;
 
   Real min_diff_;
 
@@ -115,13 +115,6 @@ private:
       }
   } buildC_;
 
-  class MinAbs : public Elementwise::BinaryFunction<Real> {
-    public:
-      Real apply(const Real &x, const Real &y) const {
-        return std::min(std::abs(x),std::abs(y));
-      }
-  } minAbs_;
-
   class SetZeroEntry : public Elementwise::BinaryFunction<Real> {
     public:
       Real apply(const Real &x, const Real &y) const {
@@ -130,21 +123,7 @@ private:
       }
   } setZeroEntry_;
 
-  class Sgn : public Elementwise::BinaryFunction<Real> {
-    public:
-      Real apply(const Real &x, const Real &y) const {
-        const Real zero(0), one(1);
-        return (y < zero ? -one : (y > zero ? one : zero));
-      }
-  } sgn_;
-
-  class SgnPlus : public Elementwise::BinaryFunction<Real> {
-    public:
-      Real apply(const Real &x, const Real &y) const {
-        const Real zero(0), one(1);
-        return (x==zero ? (y < zero ? -one : one) : x);
-      }
-  } sgnPlus_;
+  void buildScalingFunction(Vector<Real> &d, const Vector<Real> &x, const Vector<Real> &g) const;
 
 public:
 

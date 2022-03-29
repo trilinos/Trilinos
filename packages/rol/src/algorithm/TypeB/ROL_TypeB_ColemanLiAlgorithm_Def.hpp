@@ -113,17 +113,17 @@ void ColemanLiAlgorithm<Real>::initialize(Vector<Real>          &x,
   TypeB::Algorithm<Real>::initialize(x,g);
   nhess_ = 0;
   // Update approximate gradient and approximate objective function.
-  Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
-  proj_->getBoundConstraint()->projectInterior(x); state_->nproj++;
+  Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>();
+  proj_->projectInterior(x,outStream); state_->nproj++;
   state_->iterateVec->set(x);
   obj.update(x,UpdateType::Initial,state_->iter);
-  state_->value = obj.value(x,ftol); 
+  state_->value = obj.value(x,ftol);
   state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol);
   state_->ngrad++;
   state_->stepVec->set(x);
   state_->stepVec->axpy(-one,state_->gradientVec->dual());
-  proj_->project(*state_->stepVec,outStream); state_->nproj++;
+  proj_->projectInterior(*state_->stepVec,outStream); state_->nproj++;
   state_->stepVec->axpy(-one,x);
   state_->gnorm = state_->stepVec->norm();
   state_->snorm = ROL_INF<Real>();
@@ -143,7 +143,7 @@ void ColemanLiAlgorithm<Real>::initialize(Vector<Real>          &x,
 
 template<typename Real>
 void ColemanLiAlgorithm<Real>::run(Vector<Real>          &x,
-                                   const Vector<Real>    &g, 
+                                   const Vector<Real>    &g,
                                    Objective<Real>       &obj,
                                    BoundConstraint<Real> &bnd,
                                    std::ostream          &outStream ) {
@@ -166,7 +166,7 @@ void ColemanLiAlgorithm<Real>::run(Vector<Real>          &x,
   if (verbosity_ > 0) writeOutput(outStream,true);
 
   while (status_->check(*state_)) {
-    // Build trust-region model (use only to encapsulate Hessia/secant
+    // Build trust-region model (use only to encapsulate Hessian/secant)
     model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
 
     // Run Truncated CG
@@ -269,8 +269,7 @@ Real ColemanLiAlgorithm<Real>::dgpstep(Vector<Real> &s, const Vector<Real> &w,
                                  const Vector<Real> &x, const Real alpha,
                                  std::ostream &outStream) const {
   s.set(x); s.axpy(alpha,w);
-  //proj_->getBoundConstraint()->projectInterior(s); state_->nproj++;
-  proj_->project(s,outStream); state_->nproj++;
+  proj_->projectInterior(s,outStream); state_->nproj++;
   s.axpy(static_cast<Real>(-1),x);
   return s.norm();
 }
@@ -373,7 +372,7 @@ Real ColemanLiAlgorithm<Real>::dtrpcg(Vector<Real> &w, int &iflag, int &iter,
   if (iter == maxit_) {
     iflag = 1;
   }
-  if (iflag != 1) { 
+  if (iflag != 1) {
     iter++;
   }
   return std::sqrt(sMs); // w.norm();
@@ -425,7 +424,7 @@ void ColemanLiAlgorithm<Real>::writeHeader( std::ostream& os ) const {
     hist << std::string(114,'-') << std::endl;
     hist << " Coleman-Li affine-scaling trust-region method status output definitions" << std::endl << std::endl;
     hist << "  iter    - Number of iterates (steps taken)" << std::endl;
-    hist << "  value   - Objective function value" << std::endl; 
+    hist << "  value   - Objective function value" << std::endl;
     hist << "  gnorm   - Norm of the gradient" << std::endl;
     hist << "  snorm   - Norm of the step (update to optimization vector)" << std::endl;
     hist << "  delta   - Trust-Region radius" << std::endl;

@@ -140,14 +140,15 @@ void StdBoundConstraint<Real>::projectInterior( Vector<Real> &x ) {
   if ( BoundConstraint<Real>::isActivated() ) {
     Ptr<std::vector<Real>> ex =
         dynamic_cast<StdVector<Real>&>(x).getVector();
-    const Real eps(1e-1), tol(100.0*ROL_EPSILON<Real>()), one(1);
+    const Real eps(std::sqrt(ROL_EPSILON<Real>())),
+               tol(100.0*ROL_EPSILON<Real>()), one(1);
     if ( BoundConstraint<Real>::isLowerActivated() ) {
       for ( int i = 0; i < dim_; ++i ) {
         Real val = ((x_lo_[i] < -tol) ? (one-eps)*x_lo_[i]
                  : ((x_lo_[i] >  tol) ? (one+eps)*x_lo_[i]
                  : x_lo_[i]+eps));
         val = std::min(x_lo_[i]+eps*min_diff_, val);
-        (*ex)[i] = ((*ex)[i] < x_lo_[i]+tol) ? val : (*ex)[i];
+        (*ex)[i] = ((*ex)[i] < val) ? val : (*ex)[i];
       }
     }
     if ( BoundConstraint<Real>::isUpperActivated() ) {
@@ -156,7 +157,7 @@ void StdBoundConstraint<Real>::projectInterior( Vector<Real> &x ) {
                  : ((x_up_[i] >  tol) ? (one-eps)*x_up_[i]
                  : x_up_[i]-eps));
         val = std::max(x_up_[i]-eps*min_diff_, val);
-        (*ex)[i] = ((*ex)[i] > x_up_[i]-tol) ? val : (*ex)[i];
+        (*ex)[i] = ((*ex)[i] > val) ? val : (*ex)[i];
       }
     }
   }
@@ -215,7 +216,7 @@ void StdBoundConstraint<Real>::pruneLowerActive(Vector<Real> &v, const Vector<Re
 template<class Real>
 void StdBoundConstraint<Real>::pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps) {
   if ( BoundConstraint<Real>::isUpperActivated() ) {
-    Ptr<const std::vector<Real>> ex = 
+    Ptr<const std::vector<Real>> ex =
       dynamic_cast<const StdVector<Real>&>(x).getVector();
     Ptr<const std::vector<Real>> eg =
       dynamic_cast<const StdVector<Real>&>(g).getVector();
@@ -227,6 +228,123 @@ void StdBoundConstraint<Real>::pruneUpperActive(Vector<Real> &v, const Vector<Re
         (*ev)[i] = static_cast<Real>(0);
       }
     }
+  }
+}
+
+template<class Real>
+bool StdBoundConstraint<Real>::isInterior(const Vector<Real> &v) const {
+  Ptr<const std::vector<Real>> ev =
+    dynamic_cast<const StdVector<Real>&>(v).getVector();
+
+  Real zero(0);
+
+  if (BoundConstraint<Real>::isUpperActivated()) {
+    for ( int i = 0; i < dim_; ++i ) {
+      if (x_up_[i] - (*ev)[i] <= zero)
+        return false;
+    }
+  }
+  if (BoundConstraint<Real>::isLowerActivated()) {
+    for ( int i = 0; i < dim_; ++i ) {
+      if ((*ev)[i] - x_lo_[i] <= zero)
+        return false;
+    }
+  }
+  return true;
+}
+
+template<class Real>
+void StdBoundConstraint<Real>::buildScalingFunction(Vector<Real> &d, const Vector<Real> &x, const Vector<Real> &g) const {
+  Ptr<std::vector<Real>> ed =
+    dynamic_cast<StdVector<Real>&>(d).getVector();
+  Ptr<const std::vector<Real>> ex =
+    dynamic_cast<const StdVector<Real>&>(x).getVector();
+  Ptr<const std::vector<Real>> eg =
+    dynamic_cast<const StdVector<Real>&>(g).getVector();
+
+  Real grad, xlodiff, upxdiff, c;
+
+  for ( int i = 0; i < dim_; ++i ) {
+    grad = (*eg)[i];
+    xlodiff = (*ex)[i] - x_lo_[i];
+    upxdiff = x_up_[i] - (*ex)[i];
+    c = buildC(i);
+    if (-grad > xlodiff) {
+      if (xlodiff <= upxdiff) {
+        (*ed)[i] = std::min(std::abs(grad), c);
+        continue;
+      }
+    }
+    if (+grad > upxdiff) {
+      if (upxdiff <= xlodiff) {
+        (*ed)[i] = std::min(std::abs(grad), c);
+        continue;
+      }
+    }
+    (*ed)[i] = std::min({xlodiff, upxdiff, c});
+  }
+}
+
+template<class Real>
+void StdBoundConstraint<Real>::applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+  buildScalingFunction(dv, x, g);
+
+  Ptr<std::vector<Real>> edv =
+    dynamic_cast<StdVector<Real>&>(dv).getVector();
+  Ptr<const std::vector<Real>> ev =
+    dynamic_cast<const StdVector<Real>&>(v).getVector();
+
+  for ( int i = 0; i < dim_; ++i ) {
+    (*edv)[i] = (*ev)[i]*(*edv)[i];
+  }
+}
+
+template<class Real>
+void StdBoundConstraint<Real>::applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+  buildScalingFunction(dv, x, g);
+
+  Ptr<std::vector<Real>> edv =
+    dynamic_cast<StdVector<Real>&>(dv).getVector();
+  Ptr<const std::vector<Real>> ev =
+    dynamic_cast<const StdVector<Real>&>(v).getVector();
+
+  for ( int i = 0; i < dim_; ++i ) {
+    (*edv)[i] = (*ev)[i]/(*edv)[i];
+  }
+}
+
+template<class Real>
+void StdBoundConstraint<Real>::applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+  buildScalingFunction(dv, x, g);
+
+  Ptr<std::vector<Real>> edv =
+    dynamic_cast<StdVector<Real>&>(dv).getVector();
+  Ptr<const std::vector<Real>> ev =
+    dynamic_cast<const StdVector<Real>&>(v).getVector();
+  Ptr<const std::vector<Real>> ex =
+    dynamic_cast<const StdVector<Real>&>(x).getVector();
+  Ptr<const std::vector<Real>> eg =
+    dynamic_cast<const StdVector<Real>&>(g).getVector();
+
+  Real zero(0), one(1), chi, d1prime;
+
+  for ( int i = 0; i < dim_; ++i ) {
+    chi = (*edv)[i] < buildC(i) ? one : zero;
+
+    if (chi == zero) {
+      (*edv)[i] = zero;
+      continue;
+    }
+
+    // When chi is not zero...
+
+    d1prime = sgn((*eg)[i]);
+    if (d1prime == zero) {
+      d1prime = one;
+      if (x_up_[i] - (*ex)[i] < (*ex)[i] - x_lo_[i])
+        d1prime = -one;
+    }
+    (*edv)[i] = d1prime*(*eg)[i]*(*ev)[i];
   }
 }
 
