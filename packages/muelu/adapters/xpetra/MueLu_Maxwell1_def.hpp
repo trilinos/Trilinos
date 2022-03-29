@@ -343,17 +343,26 @@ namespace MueLu {
     ////////////////////////////////////////////////////////////////////////////////
     // Generate the (2,2) Hierarchy
     Kn_Matrix_->setObjectLabel("Maxwell1 (2,2)");
+    precList22_.sublist("user data").set("Coordinates",Coords_);
     Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
 
 
     ////////////////////////////////////////////////////////////////////////////////
     // Copy the relevant (2,2) data to the (1,1) hierarchy
+    std::cout<<"CMS: Copying over Hierarchy"<<std::endl;
     Hierarchy11_ = rcp(new Hierarchy("Maxwell1 (1,1)"));
     for(int i=0; i<Hierarchy22_->GetNumLevels(); i++) {
       Hierarchy11_->AddNewLevel();
       RCP<Level> NodeL = Hierarchy22_->GetLevel(i);
       RCP<Level> EdgeL = Hierarchy11_->GetLevel(i);
-      EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
+      auto EdgeOp      = NodeL->Get<RCP<Operator> >("A");
+      auto EdgeMatrix  = rcp_dynamic_cast<Matrix>(EdgeOp);
+
+      // If we repartition a processor away, a RCP<Operator> is stuck
+      // on the level instead of an RCP<Matrix>
+      if(EdgeMatrix) EdgeL->Set("NodeMatrix",EdgeMatrix);
+      else           EdgeL->Set("NodeMatrix",EdgeOp);
+
       if(i==0) {
         EdgeL->Set("A", SM_Matrix_);
         EdgeL->Set("D0", D0_Matrix_);
@@ -363,7 +372,6 @@ namespace MueLu {
       }
     }
     
-
     ////////////////////////////////////////////////////////////////////////////////
     // Generating the (1,1) Hierarchy
     {
