@@ -66,10 +66,10 @@ template <typename Adapter, typename Model=GraphModel<typename Adapter::base_ada
 class AlgParMETIS : public Algorithm<Adapter>
 {
 public:
-  AlgParMETIS(const RCP<const Environment> &/* env */,
-              const RCP<const Comm<int> > &/* problemComm */,
-              const RCP<Adapter> &/* adapter */
-  )
+    AlgParMETIS(const RCP<const Environment> &,
+                const RCP<const Comm<int> > &,
+                const RCP<const typename Adapter::base_adapter_t> &,
+                const modelFlag_t& graphFlags_ = modelFlag_t())
   {
     throw std::runtime_error(
           "BUILD ERROR:  ParMETIS requested but not compiled into Zoltan2.\n"

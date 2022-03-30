@@ -95,7 +95,7 @@ public:
                   coordinateDim_(), gids_(),
                   xyz_(), userNumWeights_(0), weights_()
   {
-    this->ia = ia;
+    this->ia_ = ia;
     typedef VectorAdapter<user_t> adapterWithCoords_t;
     sharedConstructor<adapterWithCoords_t>(&(*ia), env, comm, flags);
   }
@@ -112,7 +112,7 @@ public:
     if (!(ia->coordinatesAvailable()))
       throw std::logic_error("No coordinate info provided to MatrixAdapter.");
     else {
-      this->ia = ia;
+      this->ia_ = ia;
       typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
       adapterWithCoords_t *va = ia->getCoordinateInput();
       // this->ia = va;
@@ -132,7 +132,7 @@ public:
     if (!(ia->coordinatesAvailable()))
       throw std::logic_error("No coordinate info provided to GraphAdapter.");
     else {
-      this->ia = ia;
+      this->ia_ = ia;
       typedef VectorAdapter<userCoord_t> adapterWithCoords_t;
       adapterWithCoords_t *va = ia->getCoordinateInput();
 
@@ -149,7 +149,7 @@ public:
                   coordinateDim_(), gids_(),
                   xyz_(), userNumWeights_(0), weights_()
   {
-    this->ia = ia;
+    this->ia_ = ia;
     typedef MeshAdapter<user_t> adapterWithCoords_t;
     sharedConstructor<adapterWithCoords_t>(&(*ia), env, comm, flags);
   }
@@ -238,23 +238,23 @@ public:
       Kokkos::LayoutLeft, typename node_t::device_type> &xyz,
     Kokkos::View<scalar_t **, typename node_t::device_type> &wgts) const
   {
-    const auto type = ia->adapterType();
+    const auto type = ia_->adapterType();
 
     if (type == VectorAdapterType or type == MeshAdapterType)
     {
-      auto adapterWithCoords = dynamic_cast<const AdapterWithCoords<user_t>*>(&(*ia));
+      auto adapterWithCoords = dynamic_cast<const AdapterWithCoords<user_t>*>(&(*ia_));
       adapterWithCoords->getCoordinatesKokkosView(xyz);
     }
     else if (type == MatrixAdapterType or type == GraphAdapterType)
     {
-      auto wrapper = dynamic_cast<const AdapterWithCoordsWrapper<user_t, userCoord_t>*>(&(*ia));
+      auto wrapper = dynamic_cast<const AdapterWithCoordsWrapper<user_t, userCoord_t>*>(&(*ia_));
       wrapper->getCoordinateInput()->getCoordinatesKokkosView(xyz);
     }
 
-    ia->getIDsKokkosView(Ids);
+    ia_->getIDsKokkosView(Ids);
 
     if(userNumWeights_ > 0) {
-      ia->getWeightsKokkosView(wgts);
+      ia_->getWeightsKokkosView(wgts);
     }
 
     return getLocalNumCoordinates();
@@ -275,7 +275,7 @@ public:
   }
 
 private:
-  RCP<const BaseAdapter<user_t>> ia;
+  RCP<const BaseAdapter<user_t>> ia_;
 
   size_t numGlobalCoordinates_;
   const RCP<const Environment> env_;
@@ -311,7 +311,7 @@ private:
 template <typename Adapter>
 template <typename AdapterWithCoords_>
 void CoordinateModel<Adapter>::sharedConstructor(
-    const AdapterWithCoords_ *ia_,
+    const AdapterWithCoords_ *ia,
     const RCP<const Environment> &/* env */,
     const RCP<const Comm<int> > &comm,
     modelFlag_t &/* flags */)
@@ -321,8 +321,8 @@ void CoordinateModel<Adapter>::sharedConstructor(
   // Get coordinates and weights (if any)
 
   int tmp[2], gtmp[2];
-  tmp[0] = ia_->getDimension();
-  tmp[1] = ia_->getNumWeightsPerID();
+  tmp[0] = ia->getDimension();
+  tmp[1] = ia->getNumWeightsPerID();
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 2, tmp, gtmp);
   coordinateDim_ = gtmp[0];
   userNumWeights_ = gtmp[1];
@@ -342,14 +342,14 @@ void CoordinateModel<Adapter>::sharedConstructor(
   if (nLocalIds){
     const gno_t *gids=NULL;
 
-    ia_->getIDsView(gids);
+    ia->getIDsView(gids);
     gids_ = arcp(gids, 0, nLocalIds, false);
 
     for (int dim=0; dim < coordinateDim_; dim++){
       int stride;
       const scalar_t *coords=NULL;
       try{
-        ia_->getCoordinatesView(coords, stride, dim);
+        ia->getCoordinatesView(coords, stride, dim);
       }
       Z2_FORWARD_EXCEPTIONS;
 
@@ -361,7 +361,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
       int stride;
       const scalar_t *weights;
       try{
-        ia_->getWeightsView(weights, stride, idx);
+        ia->getWeightsView(weights, stride, idx);
       }
       Z2_FORWARD_EXCEPTIONS;
 
@@ -377,19 +377,19 @@ void CoordinateModel<Adapter>::sharedConstructor(
 
   // These are deep copies so we don't hold on to refs of the device views causing problems without UVM
   // Kokkos::View<const gno_t *, typename node_t::device_type> kokkos_gids;
-  // ia_->getIDsKokkosView(kokkos_gids);
+  // ia->getIDsKokkosView(kokkos_gids);
   // kokkos_gids_ =   Kokkos::View<gno_t *, typename node_t::device_type>("kokkos_gids_",kokkos_gids.extent(0));
   // Kokkos::deep_copy(kokkos_gids_, kokkos_gids);
-  // ia_->getIDsKokkosView(kokkos_gids_);
+  // ia->getIDsKokkosView(kokkos_gids_);
 
   // Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> kokkos_xyz;
-  // ia_->getCoordinatesKokkosView(kokkos_xyz_);
+  // ia->getCoordinatesKokkosView(kokkos_xyz_);
   // kokkos_xyz_ =   Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type>("kokkos_xyz", kokkos_xyz.extent(0), kokkos_xyz.extent(1));
   // Kokkos::deep_copy(kokkos_xyz_, kokkos_xyz);
 
   if(userNumWeights_ > 0) {
     // Kokkos::View<scalar_t **, typename node_t::device_type> kokkos_weights;
-    // ia_->getWeightsKokkosView(kokkos_weights);
+    // ia->getWeightsKokkosView(kokkos_weights);
     // kokkos_weights_ = Kokkos::View<scalar_t **, typename node_t::device_type>("kokkos_weights_",kokkos_weights.extent(0), kokkos_weights.extent(1));
     // Kokkos::deep_copy(kokkos_weights_, kokkos_weights);
   }
