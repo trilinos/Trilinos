@@ -81,6 +81,7 @@ void forward(ZView& Z, RHSView& RHS)
   value_type ck;   // rhs corresponding to current column of the backsubstitution
   ViewVectorType piv_col( "piv_col", my_rows ); // portion of pivot column I am sending
 
+  MPI_Request msgrequest;
   MPI_Status msgstatus;
 
 #ifdef PRINT_STATUS
@@ -105,11 +106,14 @@ void forward(ZView& Z, RHSView& RHS)
       count_row++;
     }
     if (mycol == rhs_col && myrow == k_row) ck = RHS(k/nprocs_col,0);
+    if (mycol == rhs_col) {
+      MPI_Irecv(reinterpret_cast<char *>(piv_col.data()), count_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, 0, row_comm, &msgrequest);
+    }
     if (mycol == k_col) {
-      MPI_Send((char *)piv_col.data(),count_row*sizeof(ADELUS_DATA_TYPE),MPI_CHAR,rhs_col,0,row_comm);
+      MPI_Send(reinterpret_cast<char *>(piv_col.data()), count_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, rhs_col, 0, row_comm);
     }
     if (mycol == rhs_col) {
-      MPI_Recv((char *)piv_col.data(),count_row*sizeof(ADELUS_DATA_TYPE),MPI_CHAR,k_col,0,row_comm,&msgstatus);
+      MPI_Wait(&msgrequest,&msgstatus);
     }
     if (mycol == rhs_col) {
       MPI_Bcast((char *)(&ck),sizeof(ADELUS_DATA_TYPE),MPI_CHAR,k_row,col_comm);
