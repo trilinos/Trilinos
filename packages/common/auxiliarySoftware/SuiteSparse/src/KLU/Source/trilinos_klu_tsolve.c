@@ -9,6 +9,7 @@
  * Numeric->Iwork).
  */
 
+#include "TrilinosSS_config.h"
 #include "trilinos_klu_internal.h"
 
 Int TRILINOS_KLU_tsolve
@@ -37,7 +38,7 @@ Int TRILINOS_KLU_tsolve
     Int *Q, *R, *Pnum, *Offp, *Offi, *Lip, *Uip, *Llen, *Ulen ;
     Unit **LUbx ;
     Int k1, k2, nk, k, block, pend, n, p, nblocks, chunk, nr, i ;
-#ifdef KLU_ENABLE_OPENMP
+#ifdef TRILINOSSS_HAVE_OMP
     Entry *X1 ;
     int tid ;
 #endif
@@ -86,7 +87,7 @@ Int TRILINOS_KLU_tsolve
     Udiag = (double*) Numeric->Udiag ;
 
     Rs = Numeric->Rs ;
-#ifdef KLU_ENABLE_OPENMP
+#ifdef TRILINOSSS_HAVE_OMP
     X1 = (Entry *) Numeric->Xwork ;
 #else
     X = (Entry *) Numeric->Xwork ;
@@ -97,12 +98,12 @@ Int TRILINOS_KLU_tsolve
     /* solve in chunks of 4 columns at a time */
     /* ---------------------------------------------------------------------- */
 
-#ifdef KLU_ENABLE_OPENMP
+#ifdef TRILINOSSS_HAVE_OMP
 #pragma omp parallel for schedule(guided) private(tid, nr, k, block, k1, k2, nk, pend, p, s, i, Bz, X, x, offik, rs) 
 #endif
     for (chunk = 0 ; chunk < nrhs ; chunk += 4)
     {
-#ifdef KLU_ENABLE_OPENMP
+#ifdef TRILINOSSS_HAVE_OMP
         Bz  = ((Entry *) B) + d*chunk ;
         tid = omp_get_thread_num();
         X = X1 + (tid * n * 4);
@@ -476,7 +477,7 @@ Int TRILINOS_KLU_tsolve
 	/* go to the next chunk of B */
 	/* ------------------------------------------------------------------ */
 
-#ifndef KLU_ENABLE_OPENMP
+#ifndef TRILINOSSS_HAVE_OMP
 	Bz  += d*4 ;
 #endif
     }
