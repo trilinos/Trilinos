@@ -344,6 +344,8 @@ namespace MueLu {
     // Generate the (2,2) Hierarchy
     Kn_Matrix_->setObjectLabel("Maxwell1 (2,2)");
     precList22_.sublist("user data").set("Coordinates",Coords_);
+    // If we're repartitioning, we need to save the importer
+    precList22_.set("save data","{Importer}");
     Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
 
 
@@ -351,26 +353,34 @@ namespace MueLu {
     // Copy the relevant (2,2) data to the (1,1) hierarchy
     std::cout<<"CMS: Copying over Hierarchy"<<std::endl;
     Hierarchy11_ = rcp(new Hierarchy("Maxwell1 (1,1)"));
+
+    std::cout<<"CMS # levels = "<<Hierarchy22_->GetNumLevels() <<std::endl;
     for(int i=0; i<Hierarchy22_->GetNumLevels(); i++) {
       Hierarchy11_->AddNewLevel();
       RCP<Level> NodeL = Hierarchy22_->GetLevel(i);
       RCP<Level> EdgeL = Hierarchy11_->GetLevel(i);
-      auto EdgeOp      = NodeL->Get<RCP<Operator> >("A");
-      auto EdgeMatrix  = rcp_dynamic_cast<Matrix>(EdgeOp);
+      auto NodeOp      = NodeL->Get<RCP<Operator> >("A");
+      auto NodeMatrix  = rcp_dynamic_cast<Matrix>(NodeOp);
 
       // If we repartition a processor away, a RCP<Operator> is stuck
       // on the level instead of an RCP<Matrix>
-      if(EdgeMatrix) EdgeL->Set("NodeMatrix",EdgeMatrix);
-      else           EdgeL->Set("NodeMatrix",EdgeOp);
+      if(!NodeMatrix.is_null()) EdgeL->Set("NodeMatrix",NodeMatrix);
+      else                      EdgeL->Set("NodeMatrix",NodeOp);
 
       if(i==0) {
         EdgeL->Set("A", SM_Matrix_);
         EdgeL->Set("D0", D0_Matrix_);
+        // FIXME:  If we rebalance on level 1 (and we rebalance P & R), then we also need to rebalance D0.
+        // Moreover, if we rebalance later on, we need to rebalance *that* D0 in ReitzingerPFactory.  So
+        // we need to fix code there too.  This means we need (a) Have (2,2) save the Importer and (b) copy the Importer to (1,1) 
+        // as NodeImporter or something
+
       }
       else {
         EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
       }
     }
+
     
     ////////////////////////////////////////////////////////////////////////////////
     // Generating the (1,1) Hierarchy

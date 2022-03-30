@@ -272,6 +272,7 @@ namespace MueLu {
   "<Parameter name=\"aggregate qualities: percentiles\" type=\"Array(double)\" value=\"{}\"/>"
   "<Parameter name=\"aggregate qualities: mode\" type=\"string\" value=\"eigenvalue\"/>"
   "<ParameterList name=\"export data\"/>"
+  "<ParameterList name=\"save data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
@@ -756,6 +757,8 @@ namespace MueLu {
          ("aggregate qualities: mode","aggregate qualities: mode")
       
          ("export data","export data")
+      
+         ("save data","save data")
       
          ("ML print initial list","print initial parameters")
       

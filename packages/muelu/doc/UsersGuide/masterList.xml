@@ -1013,6 +1013,16 @@
     </parameter>
 
     <parameter>
+      <name>save data</name>
+      <type>string</type>
+      <description>Save a subset of the hierarchy data after the
+      hierarchy is constructed.  Use comma-seperated array in braces</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+
+    <parameter>
       <name>print initial parameters</name>
       <type>bool</type>
       <default>true</default>

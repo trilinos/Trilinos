@@ -144,6 +144,7 @@ namespace MueLu {
     {
       RCP<Matrix> dummy;
       SubFactoryMonitor m2(*this, "Generate D0*Pn", coarseLevel);
+      // NTS: I betcha this dies if you rebalance P & R
       D0_Pn = XMM::Multiply(*D0,false,*Pn,false,dummy,out0,true,true,"D0*Pn",mm_params);
 
       // Save this so we don't need to do the multiplication again later
