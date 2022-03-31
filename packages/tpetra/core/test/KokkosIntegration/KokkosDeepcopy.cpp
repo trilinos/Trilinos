@@ -41,6 +41,9 @@
 // @HEADER
 */
 
+#include "Tpetra_ConfigDefs.hpp"
+#include "Teuchos_LocalTestingHelpers.hpp"
+#include "Teuchos_FancyOStream.hpp"
 #include <stdio.h>
 #include <mpi.h>
 #include <Kokkos_Core.hpp>
@@ -51,10 +54,12 @@
 #include <list>
 #include "ApiTest.h"
 
+
+
 class DeepCopyTester {
 public:
   DeepCopyTester() {}
-  void run(int argc, char *argv[]) {
+  void run(int argc, char *argv[])  {
     log("Tpetra Kokkos DeepCopy Regression test start");
 
     std::string cudaSync("cudaDeviceSynchronize");
@@ -62,7 +67,9 @@ public:
     std::string cudaMemcpyAsync("cudaMemcpyAsync");
     ApiTest *counter = ApiTest::getInstance();
     //initialize
+#ifdef HAVE_TPETRACORE_MPI
     MPI_Init(&argc, &argv);
+#endif
     Kokkos::initialize(argc, argv);
     {
       isConsistent = true;
@@ -139,9 +146,10 @@ public:
       }
     }
     Kokkos::finalize();
+#ifdef HAVE_TPETRACORE_MPI
     MPI_Finalize();
-
-    return 0;
+#endif
+    return;
   }
 
   bool getConsistency() {
@@ -246,11 +254,21 @@ private:
 };
 
 int main(int argc, char *argv[]) {
+  bool success=true;
+
+  std::ostream &out = std::cout; 
+
+  
   DeepCopyTester tester;
   tester.run(argc,argv);
+  TEST_EQUALITY_CONST(tester.getConsistency(),true);
 
-  if (!tester.getConsistency())
-    return -1;
-  return 0;
+  if (success)
+    out << "\nEnd Result: TEST PASSED" << std::endl;
+  else
+    out << "\nEnd Result: TEST FAILED" << std::endl;
+
+
+  return (success ? 0 : 1);
 }
 
