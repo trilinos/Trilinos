@@ -1,7 +1,7 @@
 
 ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
 
-IF (Tpetra_ENABLE_CUDA)
+IF (Tpetra_ENABLE_CUDA AND BUILD_SHARED_LIBS)
   MESSAGE(STATUS "Tpetra: Enabling KokkosIntegration Tests")
 
   TRIBITS_ADD_LIBRARY(
