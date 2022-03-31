@@ -466,7 +466,11 @@ buildResponseEvaluators(
      }
 
      // we must find at least one physics block
-     // TEUCHOS_ASSERT(!failure);
+     TEUCHOS_TEST_FOR_EXCEPTION(
+        failure, std::runtime_error,
+        "panzer::ResponseLibrary::buildResponseEvaluators: "
+        << "No physics blocks found for element block '" << wd.getElementBlock() << "'!"
+    )
      if(!failure)
        requiredWorksetDesc.push_back(wd);
    }
