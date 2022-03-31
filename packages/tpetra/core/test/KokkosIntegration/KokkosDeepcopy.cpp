@@ -248,7 +248,7 @@ public:
 
 private:
   bool isConsistent;
-  void log(const std::string& msg, ApiTest *counter=0) {
+  void log(const std::string& msg, ApiTest *counter=nullptr) {
     std::cout << msg << std::endl;
     if(counter) counter->printAll();
   }
