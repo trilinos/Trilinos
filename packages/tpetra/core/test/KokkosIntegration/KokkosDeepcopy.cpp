@@ -83,7 +83,7 @@ public:
       counter->setExpectation(cudaSync, 2);
       OnHost2Arg(a, b);
       if (!counter->testExpectations()) {
-	log("OnHost2Arg()");
+        log("OnHost2Arg()",counter);
 	isConsistent = false;
       }
 
@@ -92,7 +92,7 @@ public:
       counter->setExpectation(cudaMemcpy, 1);
       OnDevice2Arg(c, d);
       if (!counter->testExpectations()) {
-	log("OnDevice2Arg()");
+        log("OnDevice2Arg()",counter);
 	isConsistent = false;
       }
 
@@ -101,7 +101,7 @@ public:
       counter->setExpectation(cudaMemcpy, 1);
       HostToDevice2Arg(a, c);
       if (!counter->testExpectations()) {
-	log("HostToDevice2Arg()");
+        log("HostToDevice2Arg()",counter);
 	isConsistent = false;
       }
 
@@ -110,14 +110,14 @@ public:
       counter->setExpectation(cudaMemcpy, 1);
       DeviceToHost2Arg(c, a);
       if (!counter->testExpectations()) {
-	log("DeviceToHost2Arg()");
+	log("DeviceToHost2Arg()",counter);
 	isConsistent = false;
       }
 
       counter->map_zero();
       OnHost3Arg(a, b);
       if (!counter->testExpectations()) {
-	log("OnHost3Arg()");
+	log("OnHost3Arg()",counter);
 	isConsistent = false;
       }
 
@@ -125,7 +125,7 @@ public:
       counter->setExpectation(cudaMemcpyAsync, 1);
       OnDevice3Arg(c, d);
       if (!counter->testExpectations()) {
-	log("OnDevice3Arg()");
+	log("OnDevice3Arg()",counter);
 	isConsistent = false;
       }
 
@@ -133,7 +133,7 @@ public:
       counter->setExpectation(cudaMemcpyAsync, 1);
       HostToDevice3Arg(a, c);
       if (!counter->testExpectations()) {
-	log("HostToDevice3Arg()");
+	log("HostToDevice3Arg()",counter);
 	isConsistent = false;
       }
 
@@ -141,7 +141,7 @@ public:
       counter->setExpectation(cudaMemcpyAsync, 1);
       DeviceToHost3Arg(c, a);
       if (!counter->testExpectations()) {
-	log("DeviceToHost3Arg()");
+	log("DeviceToHost3Arg()",counter);
 	isConsistent = false;
       }
     }
@@ -248,8 +248,9 @@ public:
 
 private:
   bool isConsistent;
-  void log(const std::string& msg) {
+  void log(const std::string& msg, ApiTest *counter=0) {
     std::cout << msg << std::endl;
+    if(counter) counter->printAll();
   }
 };
 
