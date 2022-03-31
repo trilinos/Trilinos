@@ -76,6 +76,25 @@
 
 namespace MueLu {
 
+  
+  template<class Matrix>
+  void print_two_matrix(int MyPID,const char * l1, Teuchos::RCP<Matrix> D0,const char * l2, Teuchos::RCP<Matrix>Pn)
+    {
+      int D0_r = (int) D0->getRangeMap()->getLocalNumElements();
+      int D0_d = (int) D0->getDomainMap()->getLocalNumElements();
+      int D0_c = (int) D0->getColMap()->getLocalNumElements();
+      int D0_o = (int) D0->getRowMap()->getLocalNumElements();
+
+      int Pn_r = (int) Pn->getRangeMap()->getLocalNumElements();
+      int Pn_o = (int) Pn->getRowMap()->getLocalNumElements();
+      int Pn_c = (int) Pn->getColMap()->getLocalNumElements();
+      int Pn_d = (int) Pn->getDomainMap()->getLocalNumElements();    
+      
+      printf("[%d] Local: %s = %d(%d) x (%d)%d, %s = %d(%d) x (%d)%d\n",MyPID,l1,D0_r,D0_o,D0_c,D0_d,l2,Pn_r,Pn_o,Pn_c,Pn_d);
+      fflush(stdout);
+    }
+  
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
@@ -89,6 +108,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("D0",                 Teuchos::null, "Generating factory of the matrix D0");
     validParamList->set< RCP<const FactoryBase> >("NodeMatrix",         Teuchos::null, "Generating factory of the matrix NodeMatrix");
     validParamList->set< RCP<const FactoryBase> >("Pnodal",             Teuchos::null, "Generating factory of the matrix P");
+    validParamList->set< RCP<const FactoryBase> >("NodeImporter",       Teuchos::null, "Generating factory of the matrix NodeImporter");
 
     // Make sure we don't recursively validate options for the matrixmatrix kernels
     ParameterList norecurse;
@@ -104,6 +124,7 @@ namespace MueLu {
     Input(fineLevel,   "D0");
     Input(fineLevel,   "NodeMatrix");
     Input(coarseLevel, "Pnodal");
+    //    Input(coarseLevel, "NodeImporter");
 
   }
 
@@ -120,13 +141,88 @@ namespace MueLu {
     Teuchos::FancyOStream& out0=GetBlackHole();
     const ParameterList& pL = GetParameterList();
 
+    printf("ReitzingerPFactory::BuildP start\n");fflush(stdout);
+
     RCP<Matrix>                EdgeMatrix    = Get< RCP<Matrix> >               (fineLevel, "A");
-    RCP<Matrix>                D0            = Get< RCP<Matrix> >               (fineLevel, "D0");
+    RCP<Matrix>                D0orig        = Get< RCP<Matrix> >               (fineLevel, "D0");
     RCP<Matrix>                NodeMatrix    = Get< RCP<Matrix> >               (fineLevel, "NodeMatrix");
     RCP<Matrix>                Pn            = Get< RCP<Matrix> >               (coarseLevel, "Pnodal");
+    RCP<Matrix> D0;
     const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
     const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
-    int MyPID = D0->getRowMap()->getComm()->getRank();
+
+#if 0
+    // Short-circuit for repartitioning
+    if(EdgeMatrix.is_null())  {
+      RCP<Matrix> dummy;
+      Set(coarseLevel,"Ptent",dummy);
+      Set(coarseLevel,"P",dummy);      
+      Set(coarseLevel,"D0",dummy);
+      coarseLevel.Set("D0",dummy,NoFactory::get());
+      coarseLevel.AddKeepFlag("D0",NoFactory::get(), MueLu::Final);
+      coarseLevel.RemoveKeepFlag("D0",NoFactory::get(), MueLu::UserData);
+      return;
+    }
+#endif
+    int MyPID  = EdgeMatrix.is_null()? -1 : EdgeMatrix->getRowMap()->getComm()->getRank();
+    int MySize = EdgeMatrix.is_null()? -1 : EdgeMatrix->getRowMap()->getComm()->getSize();
+
+    printf("[%d/%d] ReitzingerPFactory::BuildP after gets\n",MyPID,MySize);
+
+
+#ifdef REBALANCE
+   
+    // Import the D0 matrix if we need to.  
+    if(!D0orig.is_null() && fineLevel.IsAvailable("NodeImporter")) {
+      SubFactoryMonitor m2(*this, "Importing D0", coarseLevel);
+      RCP<const Import> NodeImporter = Get< RCP<const Import> >(fineLevel,"NodeImporter");
+      if(!NodeImporter.is_null()) {
+        RCP<Teuchos::ParameterList> dummy;
+
+        
+        RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        Teuchos::FancyOStream& out = *fancy;        
+        std::cout<<"*** Source Map ***"<<std::endl;
+        NodeImporter->getSourceMap()->describe(out,VERB_EXTREME);
+        std::cout<<"*** Target Map ***"<<std::endl;
+        NodeImporter->getTargetMap()->describe(out,VERB_EXTREME);
+        std::cout<<"*** D0orig RowMap ***"<<std::endl;
+        D0orig->getRowMap()->describe(out,VERB_EXTREME);
+        
+
+        D0 = MatrixFactory::Build(D0orig, *NodeImporter, *NodeImporter, EdgeMatrix->getDomainMap(),Pn->getRangeMap(),dummy);
+      }
+      else
+        D0 = D0orig;
+    }
+    else
+#endif
+      D0 = D0orig;
+
+    // CMS
+    {
+      int D0_r = (int) D0->getRangeMap()->getGlobalNumElements();
+      int D0_d = (int) D0->getDomainMap()->getGlobalNumElements();
+      int Pn_r = (int) Pn->getRangeMap()->getGlobalNumElements();
+      int Pn_d = (int) Pn->getDomainMap()->getGlobalNumElements();    
+      
+      if(MyPID==0) {
+        printf("Global: D0 = %d x %d, Pn = %d x %d\n",D0_r,D0_d,Pn_r,Pn_d);
+      fflush(stdout);
+      }
+    }
+
+    {
+      int D0_r = (int) D0->getRangeMap()->getLocalNumElements();
+      int D0_d = (int) D0->getDomainMap()->getLocalNumElements();
+      int Pn_r = (int) Pn->getRangeMap()->getLocalNumElements();
+      int Pn_d = (int) Pn->getDomainMap()->getLocalNumElements();    
+      int N_r = (int) NodeMatrix->getRangeMap()->getLocalNumElements();
+      int N_d = (int) NodeMatrix->getDomainMap()->getLocalNumElements();    
+      
+      printf("[%d] Local: D0 = %d x %d, Pn = %d x %d NodeMat = %d x %d \n",MyPID,D0_r,D0_d,Pn_r,Pn_d,N_r,N_d);
+      fflush(stdout);
+    }
 
     // Matrix matrix params
     RCP<ParameterList> mm_params = rcp(new ParameterList);;
@@ -138,14 +234,16 @@ namespace MueLu {
 
     // TODO: We need to look through and see which of these really need importers and which ones don't
 
-    /* Generate the Pn * D0 matrix and its transpose */
+    /* Generate the D0 * Pn matrix and its transpose */
     RCP<Matrix> D0_Pn, PnT_D0T, D0_Pn_nonghosted;
     Teuchos::Array<int> D0_Pn_col_pids;
     {
       RCP<Matrix> dummy;
       SubFactoryMonitor m2(*this, "Generate D0*Pn", coarseLevel);
-      // NTS: I betcha this dies if you rebalance P & R
       D0_Pn = XMM::Multiply(*D0,false,*Pn,false,dummy,out0,true,true,"D0*Pn",mm_params);
+
+      // We don't want this guy getting accidently used later
+      if(!mm_params.is_null()) mm_params->remove("importer",false);
 
       // Save this so we don't need to do the multiplication again later
       D0_Pn_nonghosted = D0_Pn;
@@ -166,6 +264,8 @@ namespace MueLu {
       SubFactoryMonitor m2(*this, "Transpose D0*Pn", coarseLevel);
       PnT_D0T = Utilities::Transpose(*D0_Pn, true);
     }
+
+    print_two_matrix(MyPID,"D0_Pn",D0_Pn,"PnT_D0T",PnT_D0T);//CMS
 
     // We really need a ghosted version of D0_Pn here.
     // The reason is that if there's only one fine edge between two coarse nodes, somebody is going
@@ -350,8 +450,6 @@ namespace MueLu {
         
       }
 #endif
-      fflush(stdout);
-
       D0_coarse->expertStaticFillComplete(ownedCoarseNodeMap,ownedCoarseEdgeMap);
     }
     RCP<Matrix> D0_coarse_m = rcp(new CrsMatrixWrap(D0_coarse));
@@ -367,9 +465,15 @@ namespace MueLu {
     RCP<Matrix> Pe;
     {
       SubFactoryMonitor m2(*this, "Generate Pe (pre-fix)", coarseLevel);
+    print_two_matrix(MyPID,"Pn",Pn,"D0_coarse_m",D0_coarse_m);//CMS
+
       RCP<Matrix> dummy;
 
       RCP<Matrix> Pn_D0cT = XMM::Multiply(*Pn,false,*D0_coarse_m,true,dummy,out0,true,true,"Pn*D0c'",mm_params);
+
+      // We don't want this guy getting accidently used later
+      if(!mm_params.is_null()) mm_params->remove("importer",false);
+
       Pe = XMM::Multiply(*D0,false,*Pn_D0cT,false,dummy,out0,true,true,"D0*(Pn*D0c')",mm_params);
 
       // TODO: Something like this *might* work.  But this specifically, doesn;'t
@@ -402,6 +506,8 @@ namespace MueLu {
 
     /* Check commuting property */
     CheckCommutingProperty(*Pe,*D0_coarse_m,*D0,*Pn);
+
+    print_two_matrix(MyPID,"D0_coarse",D0_coarse_m,"Pe",Pe);//CMS
     
     /* Set output on the level */
     Set(coarseLevel,"P",Pe);
