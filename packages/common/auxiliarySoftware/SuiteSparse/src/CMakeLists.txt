@@ -1,6 +1,25 @@
+######################################################################
+## Define the header and source files (and directories)
+######################################################################
+
 SET(HEADERS "")
 SET(SOURCES "")
 SET(IMPORTEDLIBS "")
+
+######################################################################
+## Package-specific configuration options
+######################################################################
+
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_OpenMP
+  TRILINOSSS_HAVE_OMP
+  "Enable OpenMP support in TrilinosSS."
+  ${${PROJECT_NAME}_ENABLE_OpenMP})
+
+TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+
+SET(HEADERS ${HEADERS}
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/AMD/Include)
@@ -25,14 +44,13 @@ file(GLOB CCOLAMD_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/CCOLAMD/Source/*.c)
 file(GLOB COLAMD_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/COLAMD/Source/*.c)
 file(GLOB KLU_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/KLU/Source/*.c)
 
-SET(HEADERS ${AMD_HEADERS}
+APPEND_SET(HEADERS ${AMD_HEADERS}
    ${BTF_HEADERS}
    ${CAMD_HEADERS}
    ${CCOLAMD_HEADERS}
    ${COLAMD_HEADERS}
    ${KLU_HEADERS}
    ${CMAKE_CURRENT_SOURCE_DIR}/UFconfig/trilinos_UFconfig.h
-   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
    )
 
 SET(SOURCES ${AMD_SOURCES}
