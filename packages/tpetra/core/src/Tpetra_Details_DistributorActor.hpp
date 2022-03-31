@@ -48,6 +48,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Time.hpp"
 
+#include "Kokkos_TeuchosCommAdapters.hpp"
+
 namespace Tpetra {
 namespace Details {
 
