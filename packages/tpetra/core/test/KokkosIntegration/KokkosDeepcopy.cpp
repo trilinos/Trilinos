@@ -54,7 +54,7 @@
 class DeepCopyTester {
 public:
   DeepCopyTester() {}
-  void run() {
+  void run(int argc, char *argv[]) {
     log("Tpetra Kokkos DeepCopy Regression test start");
 
     std::string cudaSync("cudaDeviceSynchronize");
@@ -247,7 +247,7 @@ private:
 
 int main(int argc, char *argv[]) {
   DeepCopyTester tester;
-  tester.run();
+  tester.run(argc,argv);
 
   if (!tester.getConsistency())
     return -1;
