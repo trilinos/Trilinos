@@ -7,6 +7,7 @@ ADD_SUBDIRECTORY(AdditiveSchwarzRILUK)
 IF (Tpetra_INST_DOUBLE)
   TRIBITS_ADD_EXECUTABLE(
     tif_belos
+    CATEGORIES BASIC PERFORMANCE
     SOURCES belos_solve.cpp
     )
 ENDIF()
