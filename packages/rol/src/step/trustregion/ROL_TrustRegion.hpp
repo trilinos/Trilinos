@@ -51,7 +51,6 @@
 #include "ROL_Types.hpp"
 #include "ROL_TrustRegionTypes.hpp"
 #include "ROL_TrustRegionModel.hpp"
-#include "ROL_ColemanLiModel.hpp"
 #include "ROL_KelleySachsModel.hpp"
 
 namespace ROL {

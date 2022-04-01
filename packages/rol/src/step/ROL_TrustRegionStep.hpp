@@ -161,11 +161,6 @@ private:
   Real mu_;         ///< Post-Smoothing tolerance for projected methods.
   Real beta_;       ///< Post-Smoothing rate for projected methods.
 
-  // COLEMAN-LI PARAMETERS
-  Real stepBackMax_;
-  Real stepBackScale_;
-  bool singleReflect_;
-
   // INEXACT COMPUTATION PARAMETERS
   std::vector<bool> useInexact_; ///< Flags for inexact (0) objective function, (1) gradient, (2) Hessian.
   Real              scale0_;     ///< Scale for inexact gradient computation.
@@ -210,10 +205,6 @@ private:
     alpha_init_  = list.sublist("Post-Smoothing").get("Initial Step Size", static_cast<Real>(1));
     mu_          = list.sublist("Post-Smoothing").get("Tolerance",         static_cast<Real>(0.9999));
     beta_        = list.sublist("Post-Smoothing").get("Rate",              static_cast<Real>(0.01));
-    // Coleman-Li parameters
-    stepBackMax_   = list.sublist("Coleman-Li").get("Maximum Step Back",  static_cast<Real>(0.9999));
-    stepBackScale_ = list.sublist("Coleman-Li").get("Maximum Step Scale", static_cast<Real>(1));
-    singleReflect_ = list.sublist("Coleman-Li").get("Single Reflection",  true);
   }
 
   /** \brief Update gradient to iteratively satisfy inexactness condition.
@@ -321,7 +312,6 @@ public:
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
       alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
-      stepBackMax_(0.9999), stepBackScale_(1), singleReflect_(true),
       scale0_(1), scale1_(1),
       verbosity_(0) {
     // Parse input parameterlist
@@ -354,7 +344,6 @@ public:
       useSecantHessVec_(false), useSecantPrecond_(false),
       scaleEps_(1), useProjectedGrad_(false),
       alpha_init_(1), max_fval_(20), mu_(0.9999), beta_(0.01),
-      stepBackMax_(0.9999), stepBackScale_(1), singleReflect_(true),
       scale0_(1), scale1_(1),
       verbosity_(0) {
     // Parse input parameterlist
@@ -399,12 +388,7 @@ public:
 
     if ( bnd.isActivated() ) {
       // Make initial guess feasible
-      if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
-        bnd.projectInterior(x);
-      }
-      else {
-        bnd.project(x);
-      }
+      bnd.project(x);
       xnew_ = x.clone();
       xold_ = x.clone();
     }
@@ -503,18 +487,6 @@ public:
                                                  useSecantPrecond_,
                                                  useSecantHessVec_);
       }
-      else if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
-        model_ = makePtr<ColemanLiModel<Real>>(obj,
-                                               bnd,
-                                               x,
-                                               *(step_state->gradientVec),
-                                               stepBackMax_,
-                                               stepBackScale_,
-                                               singleReflect_,
-                                               secant_,
-                                               useSecantPrecond_,
-                                               useSecantHessVec_);
-      } 
       else if ( TRmodel_ == TRUSTREGION_MODEL_LINMORE ) {
         model_ = makePtr<LinMoreModel<Real>>(obj,
                                              bnd,
@@ -563,9 +535,6 @@ public:
         Real eps = scaleEps_ * std::min(std::pow(algo_state.gnorm,static_cast<Real>(0.75)),
                                         static_cast<Real>(0.001));
         dynamicPtrCast<KelleySachsModel<Real>>(model_)->setEpsilon(eps);
-      }
-      else if ( TRmodel_ == TRUSTREGION_MODEL_COLEMANLI ) {
-        dynamicPtrCast<ColemanLiModel<Real>>(model_)->setRadius(step_state->searchSize);
       }
     }
     // Minimize trust-region model over trust-region constraint
