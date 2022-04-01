@@ -1625,7 +1625,7 @@ void Iocgns::Utils::add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db)
       }
       if (id == 0) {
         id = Ioss::Utils::extract_id(ss_name);
-        if (id == 0) {
+        if (id == 0 && ss_name != "Unspecified") {
           // Assign a fake_id to this sideset.  No checking to make
           // sure there are no duplicates...
           id = fake_id--;
