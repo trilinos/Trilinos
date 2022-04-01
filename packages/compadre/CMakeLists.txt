@@ -70,16 +70,19 @@ else() # Raw CMake Project
   bob_begin_package()
 
   # Set to OFF for significantly faster performance and ON for error tracking
-  bob_option(Compadre_DEBUG "Run Compadre Toolkit in DEBUG mode" ON)
   bob_option(Compadre_EXTREME_DEBUG "Run Compadre Toolkit in EXTREME DEBUG mode" OFF)
+  bob_option(Compadre_DEBUG "Run Compadre Toolkit in DEBUG mode" ON)
+  if (Compadre_EXTREME_DEBUG)
+    set(Compadre_DEBUG ON)
+    message(STATUS "Compadre_DEBUG: ON (because Compadre_EXTREME_DEBUG is ON)")
+  endif()
 
   # RPATH related settings
   # https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling
-  SET(CMAKE_CXX_STANDARD 11)
   SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
   SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
   SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-  SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_LIBDIR} ${CMAKE_INSTALL_RPATH})
+  SET(CMAKE_INSTALL_RPATH "../${CMAKE_INSTALL_LIBDIR}")
 
   # RPATH should always include the folder it is called from
   bob_option(PYTHON_CALLING_BUILD "Python setuptools calling build" OFF)
@@ -87,27 +90,27 @@ else() # Raw CMake Project
   bob_option(Compadre_USE_MATLAB "Use MATLAB interface for PYTHON" OFF)
   bob_option(Compadre_USE_MPI "Use MPI (not needed for Compadre toolkit)" OFF)
   set(PYTHON_LIBRARY_PREFIX "..") # relative to examples folder
+  bob_input(PYTHON_EXECUTABLE "" PATH "Python executable location")
+  IF(NOT(PYTHON_EXECUTABLE))
+    MESSAGE(STATUS "Python executable location PYTHON_EXECUTABLE not given. Search made using 'which python'")
+    EXECUTE_PROCESS(
+      COMMAND which "python"
+      OUTPUT_VARIABLE PYTHON_EXECUTABLE
+      OUTPUT_STRIP_TRAILING_WHITESPACE )
+  ENDIF()
+  MESSAGE(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
   if (Compadre_USE_PYTHON)
-    bob_input(PYTHON_EXECUTABLE "" PATH "Python executable location")
-    IF(NOT(PYTHON_EXECUTABLE))
-      MESSAGE(STATUS "Python executable location PYTHON_EXECUTABLE not given. Search made using 'which python'")
-      EXECUTE_PROCESS(
-        COMMAND which "python"
-        OUTPUT_VARIABLE PYTHON_EXECUTABLE
-        OUTPUT_STRIP_TRAILING_WHITESPACE )
-    ENDIF()
-    MESSAGE(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
-    if (APPLE)
-      SET(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} "@loader_path/")
-      SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH} "@loader_path/")
-      if (NOT(PYTHON_CALLING_BUILD))
-        # If python is calling the build, it will provide these flags
-        SET(CMAKE_PYTHON_SHARED_LINKER_FLAGS "-undefined dynamic_lookup -nodefaultlibs")
+    # change RPATH for a flat directory structure
+    # when installing pycompadre as Python package
+    if (PYTHON_CALLING_BUILD)
+      if (APPLE)
+        SET(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} "@loader_path/")
+        SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH} "@loader_path/")
+      else()
+        SET(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} "$ORIGIN/")
+        SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH} "$ORIGIN/")
+        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,origin")
       endif()
-    else()
-      SET(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} "$ORIGIN/")
-      SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH} "$ORIGIN/")
-      SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,origin")
     endif()
   endif()
 
@@ -267,11 +270,11 @@ else() # Raw CMake Project
         bob_option(Kokkos_ENABLE_PTHREAD "Whether to use PTHREAD" OFF)
       endif()
       option(Kokkos_ENABLE_DEBUG "" "${Compadre_DEBUG}")
+      option(Kokkos_ENABLE_CUDA_UVM "" OFF)
       option(Kokkos_ENABLE_DEBUG_BOUNDS_CHECK "" "${Compadre_EXTREME_DEBUG}")
       option(Kokkos_ENABLE_CUDA_LAMBDA "" "${Kokkos_ENABLE_CUDA}")
       option(Kokkos_ENABLE_TESTS "" OFF)
       option(Kokkos_ENABLE_EXAMPLES "" OFF)
-      add_subdirectory(kokkos)
       if (NOT(KokkosKernels_PREFIX STREQUAL ""))
           MESSAGE(FATAL_ERROR "KokkosKernels_PREFIX specified but KokkosCore_PREFIX not specified. \
           Either provide KokkosCore_PREFIX as well, or remove KokkosKernels_PREFIX specification.")
@@ -303,6 +306,17 @@ else() # Raw CMake Project
   endif()
   message(STATUS "Compadre_USE_CUDA: ${Compadre_USE_CUDA}")
 
+  if(Compadre_USE_CUDA)
+    SET(CMAKE_CXX_STANDARD 11)
+    option(Kokkos_CXX_STANDARD "" "11")
+  else()
+    SET(CMAKE_CXX_STANDARD 11)
+    option(Kokkos_CXX_STANDARD "" "11")
+  endif()
+  if (NOT(KOKKOS_IN_TRILINOS) AND (KokkosCore_PREFIX STREQUAL ""))
+      add_subdirectory(kokkos)
+  endif()
+
   if (KOKKOSKERNELS_IN_TRILINOS)
     if (Compadre_US_CUDA)
       list(FIND Trilinos_TPL_LIST "CUDA" CUDAID)
@@ -332,6 +346,16 @@ else() # Raw CMake Project
       SET(KokkosKernels_INST_DOUBLE OFF)
       OPTION(KokkosKernels_INST_ORDINAL_INT "" OFF)
       SET(KokkosKernels_INST_ORDINAL_INT OFF)
+      OPTION(KokkosKernels_ENABLE_TPL_CUBLAS "" OFF)
+      SET(KokkosKernels_ENABLE_TPL_CUBLAS OFF)
+      OPTION(KokkosKernels_ENABLE_TPL_CUSPARSE "" OFF)
+      SET(KokkosKernels_ENABLE_TPL_CUSPARSE OFF)
+      OPTION(KokkosKernels_INST_MEMSPACE_CUDAUVMSPACE "" OFF)
+      SET(KokkosKernels_INST_MEMSPACE_CUDAUVMSPACE OFF)
+      OPTION(KokkosKernels_INST_EXECSPACE_THREADS "" ${Kokkos_ENABLE_PTHREAD})
+      SET(KokkosKernels_INST_EXECSPACE_THREADS ${Kokkos_ENABLE_PTHREAD})
+      OPTION(KokkosKernels_INST_EXECSPACE_OPENMP "" ${Kokkos_ENABLE_OPENMP})
+      SET(KokkosKernels_INST_EXECSPACE_OPENMP ${Kokkos_ENABLE_OPENMP})
       add_subdirectory(kokkos-kernels)
       if (NOT(KokkosCore_PREFIX STREQUAL ""))
           MESSAGE(FATAL_ERROR "KokkosCore_PREFIX specified but KokkosKernels_PREFIX not specified. \
@@ -378,6 +402,7 @@ else() # Raw CMake Project
 
   bob_option(Compadre_TESTS "Compile Compadre tests" ON)
   bob_option(Compadre_EXAMPLES "Compile Compadre examples" "${Compadre_TESTS}")
+  bob_option(Compadre_COVERAGE "Use code coverage" OFF)
 
 
 endif() 
@@ -400,6 +425,7 @@ set(Compadre_KEY_BOOLS
     Compadre_USE_CUDA
     Compadre_USE_MPI
     Compadre_USE_PYTHON
+    PYTHON_CALLING_BUILD
    )
 
 set(Compadre_KEY_INTS
@@ -413,7 +439,6 @@ set(Compadre_KEY_STRINGS
     Compadre_COMMIT
     Compadre_CXX_FLAGS
     Compadre_CMAKE_ARGS
-    GMLS_Module_DEST
     Compadre_INSTALL_PREFIX
 )
 
@@ -439,7 +464,6 @@ else() # Raw CMake Project
     bob_get_semver()
   endif()
 
-
   ##########
   #
   #
@@ -447,6 +471,18 @@ else() # Raw CMake Project
   #
   #
   ##########
+
+  if (Compadre_COVERAGE)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+    include(CodeCoverage)
+    append_coverage_compiler_flags()
+    setup_target_for_coverage_lcov(
+      NAME coverage
+      EXECUTABLE ctest
+      EXCLUDE "/Library/*" "${PROJECT_SOURCE_DIR}/kokkos/*" 
+              "${PROJECT_SOURCE_DIR}/kokkos-kernels/*" 
+              "${PROJECT_SOURCE_DIR}/pycompadre/*")
+  endif()
 
 
   # compadre library
@@ -467,9 +503,26 @@ else() # Raw CMake Project
   endif()
 
   if(Compadre_USE_PYTHON)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "XL")
+        MESSAGE(FATAL_ERROR "
+        IBM XL compiler not supported for pybind11.
+        Set Compadre_USE_PYTHON:BOOL=OFF or switch compilers.
+        ")
+    endif()
     add_subdirectory(pycompadre/pybind11)
-    pybind11_add_module(pycompadre pycompadre/pycompadre.cpp)
-    target_link_libraries(pycompadre PUBLIC compadre)
+    if (${PYTHON_VERSION} LESS 3)
+        MESSAGE(FATAL_ERROR "
+        Compadre_USE_PYTHON:BOOL=ON but Python version <3 is not supported.
+        ")
+    endif()
+    pybind11_add_module(_pycompadre pycompadre/pycompadre.cpp)
+    target_link_libraries(_pycompadre PUBLIC compadre)
+    if (PYTHON_CALLING_BUILD)
+      configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pycompadre/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/__init__.py" COPYONLY)
+    else()
+      set_target_properties(_pycompadre PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pycompadre")
+      configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pycompadre/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/pycompadre/__init__.py" COPYONLY)
+    endif()
   endif()
 
 
