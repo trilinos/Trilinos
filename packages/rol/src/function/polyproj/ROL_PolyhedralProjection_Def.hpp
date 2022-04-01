@@ -76,18 +76,13 @@ void PolyhedralProjection<Real>::project(Vector<Real> &x, std::ostream &stream) 
 }
 
 template<typename Real>
-void PolyhedralProjection<Real>::projectInterior(Vector<Real> &x, std::ostream &stream) {
-  if (con_ == nullPtr) {
-    bnd_->projectInterior(x);
-  }
-  else {
-    throw Exception::NotImplemented(">>> ROL::PolyhedralProjection::projectInterior : No interior projection implemented!");
-  }
+const Ptr<Constraint<Real>> PolyhedralProjection<Real>::getLinearConstraint(void) const {
+  return con_;
 }
 
 template<typename Real>
-const Ptr<Constraint<Real>> PolyhedralProjection<Real>::getLinearConstraint(void) const {
-  return con_;
+const Ptr<BoundConstraint<Real>> PolyhedralProjection<Real>::getBoundConstraint(void) const {
+  return bnd_;
 }
 
 template<typename Real>

@@ -72,9 +72,9 @@ public:
 
   virtual void project(Vector<Real> &x, std::ostream &stream = std::cout);
 
-  virtual void projectInterior(Vector<Real> &x, std::ostream &stream = std::cout);
-
   const Ptr<Constraint<Real>> getLinearConstraint(void) const;
+  
+  const Ptr<BoundConstraint<Real>> getBoundConstraint(void) const;
 
   const Ptr<Vector<Real>> getMultiplier(void) const;
 

@@ -114,7 +114,7 @@ void ColemanLiAlgorithm<Real>::initialize(Vector<Real>          &x,
   nhess_ = 0;
   // Update approximate gradient and approximate objective function.
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>();
-  proj_->projectInterior(x,outStream); state_->nproj++;
+  proj_->getBoundConstraint()->projectInterior(x); state_->nproj++;
   state_->iterateVec->set(x);
   obj.update(x,UpdateType::Initial,state_->iter);
   state_->value = obj.value(x,ftol);
@@ -123,7 +123,7 @@ void ColemanLiAlgorithm<Real>::initialize(Vector<Real>          &x,
   state_->ngrad++;
   state_->stepVec->set(x);
   state_->stepVec->axpy(-one,state_->gradientVec->dual());
-  proj_->projectInterior(*state_->stepVec,outStream); state_->nproj++;
+  proj_->project(*state_->stepVec,outStream); state_->nproj++;
   state_->stepVec->axpy(-one,x);
   state_->gnorm = state_->stepVec->norm();
   state_->snorm = ROL_INF<Real>();
@@ -269,7 +269,7 @@ Real ColemanLiAlgorithm<Real>::dgpstep(Vector<Real> &s, const Vector<Real> &w,
                                  const Vector<Real> &x, const Real alpha,
                                  std::ostream &outStream) const {
   s.set(x); s.axpy(alpha,w);
-  proj_->projectInterior(s,outStream); state_->nproj++;
+  proj_->getBoundConstraint()->projectInterior(s); state_->nproj++;
   s.axpy(static_cast<Real>(-1),x);
   return s.norm();
 }
