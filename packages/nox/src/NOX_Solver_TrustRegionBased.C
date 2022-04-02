@@ -95,7 +95,8 @@ void TrustRegionBased::init()
   nIter = 0;
   dx = 0;
   status = StatusTest::Unconverged;
-
+  radius = 0.;
+  
   // Print out initialization information
   if (utilsPtr->isPrintType(NOX::Utils::Parameters)) {
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
