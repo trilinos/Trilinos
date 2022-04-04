@@ -346,8 +346,6 @@ namespace MueLu {
     
     /* Critical ParameterList changes */
     precList22_.sublist("user data").set("Coordinates",Coords_);
-    // If we're repartitioning, we need to save the importer
-    precList22_.set("keep data","{Importer}");
 
     /* Repartitioning *must* be in sync between hierarchies, but the
      only thing we need to watch here is the subcomms, since ReitzingerPFactory

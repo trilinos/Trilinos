@@ -123,95 +123,19 @@ namespace MueLu {
     Teuchos::FancyOStream& out0=GetBlackHole();
     const ParameterList& pL = GetParameterList();
 
-
     bool update_communicators = pL.get<bool>("repartition: enable") && pL.get<bool>("repartition: use subcommunicators");
-    printf("ReitzingerPFactory::BuildP start update comms = %s\n",update_communicators? "YES" : "NO");fflush(stdout);
 
     RCP<Matrix>                EdgeMatrix    = Get< RCP<Matrix> >               (fineLevel, "A");
-    RCP<Matrix>                D0orig        = Get< RCP<Matrix> >               (fineLevel, "D0");
+    RCP<Matrix>                D0            = Get< RCP<Matrix> >               (fineLevel, "D0");
     RCP<Matrix>                NodeMatrix    = Get< RCP<Matrix> >               (fineLevel, "NodeMatrix");
     RCP<Matrix>                Pn            = Get< RCP<Matrix> >               (coarseLevel, "Pnodal");
-    RCP<Matrix> D0;
+
     const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
     const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
-
     // This needs to be an Operator because if NodeMatrix gets repartitioned away, we get an Operator on the level
     RCP<Operator> CoarseNodeMatrix = Get< RCP<Operator> >(coarseLevel, "NodeMatrix");
-
-#if 0
-    // Short-circuit for repartitioning
-    if(EdgeMatrix.is_null())  {
-      RCP<Matrix> dummy;
-      Set(coarseLevel,"Ptent",dummy);
-      Set(coarseLevel,"P",dummy);      
-      Set(coarseLevel,"D0",dummy);
-      coarseLevel.Set("D0",dummy,NoFactory::get());
-      coarseLevel.AddKeepFlag("D0",NoFactory::get(), MueLu::Final);
-      coarseLevel.RemoveKeepFlag("D0",NoFactory::get(), MueLu::UserData);
-      return;
-    }
-#endif
     int MyPID  = EdgeMatrix.is_null()? -1 : EdgeMatrix->getRowMap()->getComm()->getRank();
-    int MySize = EdgeMatrix.is_null()? -1 : EdgeMatrix->getRowMap()->getComm()->getSize();
-
-    printf("[%d/%d] ReitzingerPFactory::BuildP after gets\n",MyPID,MySize);
-
-
-#ifdef REBALANCE
-   
-    // Import the D0 matrix if we need to.  
-    if(!D0orig.is_null() && fineLevel.IsAvailable("NodeImporter")) {
-      SubFactoryMonitor m2(*this, "Importing D0", coarseLevel);
-      RCP<const Import> NodeImporter = Get< RCP<const Import> >(fineLevel,"NodeImporter");
-      if(!NodeImporter.is_null()) {
-        RCP<Teuchos::ParameterList> dummy;
-
-        
-        RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-        Teuchos::FancyOStream& out = *fancy;        
-        std::cout<<"*** Source Map ***"<<std::endl;
-        NodeImporter->getSourceMap()->describe(out,VERB_EXTREME);
-        std::cout<<"*** Target Map ***"<<std::endl;
-        NodeImporter->getTargetMap()->describe(out,VERB_EXTREME);
-        std::cout<<"*** D0orig RowMap ***"<<std::endl;
-        D0orig->getRowMap()->describe(out,VERB_EXTREME);
-        
-
-        D0 = MatrixFactory::Build(D0orig, *NodeImporter, *NodeImporter, EdgeMatrix->getDomainMap(),Pn->getRangeMap(),dummy);
-      }
-      else
-        D0 = D0orig;
-    }
-    else
-#endif
-      D0 = D0orig;
-
-    // CMS
-    {
-      int D0_r = (int) D0->getRangeMap()->getGlobalNumElements();
-      int D0_d = (int) D0->getDomainMap()->getGlobalNumElements();
-      int Pn_r = (int) Pn->getRangeMap()->getGlobalNumElements();
-      int Pn_d = (int) Pn->getDomainMap()->getGlobalNumElements();    
-      
-      if(MyPID==0) {
-        printf("Global: D0 = %d x %d, Pn = %d x %d\n",D0_r,D0_d,Pn_r,Pn_d);
-      fflush(stdout);
-      }
-    }
-
-    {
-      int D0_r = (int) D0->getRangeMap()->getLocalNumElements();
-      int D0_d = (int) D0->getDomainMap()->getLocalNumElements();
-      int Pn_r = (int) Pn->getRangeMap()->getLocalNumElements();
-      int Pn_d = (int) Pn->getDomainMap()->getLocalNumElements();    
-      int N_r = (int) NodeMatrix->getRangeMap()->getLocalNumElements();
-      int N_d = (int) NodeMatrix->getDomainMap()->getLocalNumElements();    
-      
-      printf("[%d] Local: D0 = %d x %d, Pn = %d x %d NodeMat = %d x %d \n",MyPID,D0_r,D0_d,Pn_r,Pn_d,N_r,N_d);
-      fflush(stdout);
-      
-    }
 
     // Matrix matrix params
     RCP<ParameterList> mm_params = rcp(new ParameterList);;
@@ -380,12 +304,6 @@ namespace MueLu {
     D0_rowptr.resize(num_coarse_edges+1);
     D0_colind.resize(current);
     D0_values.resize(current);
-
-
-    printf("[%d] CoarseNodeMatrix %d, num_coarse_edges = %d\n",
-           EdgeMatrix->getRowMap()->getComm()->getRank(), 
-           CoarseNodeMatrix.is_null() ? -1 : (int)CoarseNodeMatrix->getRangeMap()->getLocalNumElements(),
-           num_coarse_edges);
 
     // We're assuming that if the coarse NodeMatrix has no nodes on a rank, the coarse edge guy won't either.
     // We check that here.
