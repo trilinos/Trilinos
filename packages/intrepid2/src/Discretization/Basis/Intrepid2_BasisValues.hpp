@@ -190,7 +190,7 @@ namespace Intrepid2
     }
     
     //! TensorData accessor for multi-family scalar data
-    TensorDataType & tensorData(const int &familyOrdinal)
+    const TensorDataType & tensorData(const int &familyOrdinal) const
     {
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(familyOrdinal >= numTensorDataFamilies_, std::invalid_argument, "familyOrdinal too large");
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(familyOrdinal < 0, std::invalid_argument, "familyOrdinal may not be less than 0");

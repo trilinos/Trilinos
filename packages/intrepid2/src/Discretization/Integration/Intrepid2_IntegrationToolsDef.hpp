@@ -1861,10 +1861,6 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
   
   INTREPID2_TEST_FOR_EXCEPTION(basisValuesLeft.spaceDim() != basisValuesRight.spaceDim(), std::invalid_argument, "vectorDataLeft and vectorDataRight must agree on the space dimension");
   
-  // TODO: fix this to eliminate assumption that {left|right}BasisValues is vector-valued; may be scalar-valued.
-  
-  // TODO: add more checks against validity of inputs
-  
   const int leftFamilyCount  =  basisValuesLeft.basisValues().numFamilies();
   const int rightFamilyCount = basisValuesRight.basisValues().numFamilies();
   
@@ -2211,7 +2207,6 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
     else
     {
       // both left and right transforms are identity
-      const int rank = 4;
       Kokkos::Array<ordinal_type,4> extents {basisValuesLeft.numCells(),basisValuesLeft.numPoints(),spaceDim,spaceDim};
       Kokkos::Array<DataVariationType,4> variationTypes {CONSTANT,CONSTANT,BLOCK_PLUS_DIAGONAL,BLOCK_PLUS_DIAGONAL};
       
@@ -2238,8 +2233,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
       bool haveLaunchedContributionToCurrentFamilyLeft = false; // helps to track whether we need a Kokkos::fence before launching a kernel.
       for (int leftComponentOrdinal=0; leftComponentOrdinal<leftComponentCount; leftComponentOrdinal++)
       {
-        const TensorData<Scalar,DeviceType> & leftComponent = isVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal)
-                                                                             : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
+        TensorData<Scalar,DeviceType> leftComponent = isVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal)
+                                                                     : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
         if (!leftComponent.isValid())
         {
            // represents zero
@@ -2256,8 +2251,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
           int b_offset = 0;
           for (int rightComponentOrdinal=0; rightComponentOrdinal<rightComponentCount; rightComponentOrdinal++)
           {
-            const TensorData<Scalar,DeviceType> & rightComponent = isVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightComponentOrdinal)
-                                                                                  : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
+            TensorData<Scalar,DeviceType> rightComponent = isVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightComponentOrdinal)
+                                                                          : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
             if (!rightComponent.isValid())
             {
                // represents zero

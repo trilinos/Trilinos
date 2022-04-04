@@ -1,7 +1,7 @@
 #ifndef HAVE_CONFIG_H
 #define HAVE_CONFIG_H
 #endif
-#include <stdlib.h>
+#include <malloc.h>
 #include <cstdio>
 #include "ml_config.h"
 

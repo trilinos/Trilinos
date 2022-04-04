@@ -127,31 +127,16 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadratureHCURL(Intrep
     // compute the jacobian divided by its determinant
     jacobianDividedByJacobianDet.storeInPlaceProduct(jacobian,jacobianDetInverseExtended);
     
-//    {
-//      // DEBUGGING
-//      std::cout << "structured, Jacobian det inverse: "              << jacobianDetInverse(0,0)               << std::endl;
-//      std::cout << "structured, jacobian(0,0): "                     << jacobian(0,0,0,0)                     << std::endl;
-//      std::cout << "structured, jacobian(0,1): "                     << jacobian(0,0,0,1)                     << std::endl;
-//      std::cout << "structured, jacobian(0,2): "                     << jacobian(0,0,0,2)                     << std::endl;
-//      std::cout << "structured, jacobian(1,0): "                     << jacobian(0,0,1,0)                     << std::endl;
-//      std::cout << "structured, jacobian(1,1): "                     << jacobian(0,0,1,1)                     << std::endl;
-//      std::cout << "structured, jacobian(1,2): "                     << jacobian(0,0,1,2)                     << std::endl;
-//      std::cout << "structured, jacobian(2,0): "                     << jacobian(0,0,2,0)                     << std::endl;
-//      std::cout << "structured, jacobian(2,1): "                     << jacobian(0,0,2,1)                     << std::endl;
-//      std::cout << "structured, jacobian(2,2): "                     << jacobian(0,0,2,2)                     << std::endl;
-//      std::cout << "structured, jacobianDividedByJacobianDet(0,0): " << jacobianDividedByJacobianDet(0,0,0,0) << std::endl;
-//      std::cout << "structured, jacobianDividedByJacobianDet(0,1): " << jacobianDividedByJacobianDet(0,0,0,1) << std::endl;
-//      std::cout << "structured, jacobianDividedByJacobianDet(0,2): " << jacobianDividedByJacobianDet(0,0,0,2) << std::endl;
-//      std::cout << "structured, jacobianDividedByJacobianDet(1,0): " << jacobianDividedByJacobianDet(0,0,1,0) << std::endl;
-//      std::cout << "structured, jacobianDividedByJacobianDet(1,1): " << jacobianDividedByJacobianDet(0,0,1,1) << std::endl;
-//      std::cout << "structured, jacobianDividedByJacobianDet(1,2): " << jacobianDividedByJacobianDet(0,0,1,2) << std::endl;
-//      std::cout << "structured, jacobianDividedByJacobianDet(2,0): " << jacobianDividedByJacobianDet(0,0,2,0) << std::endl;
-//      std::cout << "structured, jacobianDividedByJacobianDet(2,1): " << jacobianDividedByJacobianDet(0,0,2,1) << std::endl;
-//      std::cout << "structured, jacobianDividedByJacobianDet(2,2): " << jacobianDividedByJacobianDet(0,0,2,2) << std::endl;
-//    }
-    
     // lazily-evaluated transformed curl, values:
-    auto transformedCurlValues  = FunctionSpaceTools::getHCURLtransformCURL(jacobianDividedByJacobianDet, curlValues);
+    TransformedBasisValues<Scalar,DeviceType> transformedCurlValues;
+    if (spaceDim == 2)
+    {
+      transformedCurlValues = FunctionSpaceTools::getHCURLtransformCURL(jacobianDetInverse, curlValues);
+    }
+    else
+    {
+      transformedCurlValues = FunctionSpaceTools::getHCURLtransformCURL(jacobianDividedByJacobianDet, curlValues);
+    }
     auto transformedBasisValues = FunctionSpaceTools::getHCURLtransformVALUE(jacobianInv, basisValues);
     
     geometry.computeCellMeasure(cellMeasures, jacobianDet, tensorCubatureWeights);

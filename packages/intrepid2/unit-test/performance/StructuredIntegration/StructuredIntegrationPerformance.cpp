@@ -841,7 +841,7 @@ int main( int argc, char* argv[] )
           WorksetForAlgorithmChoice worksetForAlgorithmChoice;
           worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
           worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
-          worksetForAlgorithmChoice[AffineTensor]    = nonAffineTensorWorksetForPolyOrder[polyOrder];
+          worksetForAlgorithmChoice[AffineTensor]    = affineTensorWorksetForPolyOrder[polyOrder];
           worksetForAlgorithmChoice[Uniform]         = cellCountForPolyOrder[polyOrder];
           
           const auto & gridDims = gridCellCountsForPolyOrder[polyOrder];
@@ -1028,13 +1028,15 @@ int main( int argc, char* argv[] )
         }
         
         // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
-        // 1 is best, we think, for polyOrder 8, so it'll be the best for the rest.
-        int worksetSize = 1;
+        // Standard: 1 is best for polyOrder 8, so it'll be the best for the rest.
+        // NonAffineTensor, AffineTensor: we seem to bottom out at the number of OpenMP threads: here, 16.
+        int standardWorksetSize = 1;
+        int tensorWorksetSize = 16;
         for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
         {
-          nonAffineTensorWorksetForPolyOrder[polyOrder] = worksetSize;
-          affineTensorWorksetForPolyOrder[polyOrder]    = worksetSize;
-          standardWorksetForPolyOrder[polyOrder]        = worksetSize;
+          nonAffineTensorWorksetForPolyOrder[polyOrder] = tensorWorksetSize;
+          affineTensorWorksetForPolyOrder[polyOrder]    = tensorWorksetSize;
+          standardWorksetForPolyOrder[polyOrder]        = standardWorksetSize;
         }
         
         for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
@@ -1042,7 +1044,7 @@ int main( int argc, char* argv[] )
           WorksetForAlgorithmChoice worksetForAlgorithmChoice;
           worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
           worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
-          worksetForAlgorithmChoice[AffineTensor]    = nonAffineTensorWorksetForPolyOrder[polyOrder];
+          worksetForAlgorithmChoice[AffineTensor]    = affineTensorWorksetForPolyOrder[polyOrder];
           worksetForAlgorithmChoice[Uniform]         = cellCountForPolyOrder[polyOrder];
           const auto & gridDims = gridCellCountsForPolyOrder[polyOrder];
           
@@ -1224,15 +1226,13 @@ int main( int argc, char* argv[] )
               break;
           }
           
-        
-          
           // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
-          int nonAffineWorksetSize = 256; // divide by 2 for each polyOrder beyond 8
-          int standardWorksetSize  = 1;  // 1 is best, we think, for polyOrder 8, so it'll be the best for the rest.
+          int standardWorksetSize  = 1;  // 1 is best for polyOrder 8, so it'll be the best for the rest.
+          // for the rest under CUDA, we observe that in most cases, the optimal workset size for non-affine tensor is the cell count.  For affine, it's lower by a factor of 2 or 4 in most cases.
           for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
           {
-            nonAffineTensorWorksetForPolyOrder[polyOrder] = nonAffineWorksetSize;
-            nonAffineWorksetSize = (nonAffineWorksetSize > 1) ? nonAffineWorksetSize / 2 : 1;
+            nonAffineTensorWorksetForPolyOrder[polyOrder] = cellCountForPolyOrder[polyOrder];
+            affineTensorWorksetForPolyOrder[polyOrder]    = cellCountForPolyOrder[polyOrder] / 2;
             standardWorksetForPolyOrder[polyOrder] = standardWorksetSize;
           }
           
@@ -1241,7 +1241,7 @@ int main( int argc, char* argv[] )
             WorksetForAlgorithmChoice worksetForAlgorithmChoice;
             worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
             worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
-            worksetForAlgorithmChoice[AffineTensor]    = nonAffineTensorWorksetForPolyOrder[polyOrder];
+            worksetForAlgorithmChoice[AffineTensor]    = affineTensorWorksetForPolyOrder[polyOrder];
             worksetForAlgorithmChoice[Uniform]         = cellCountForPolyOrder[polyOrder];
             
             const auto & gridDims = gridCellCountsForPolyOrder[polyOrder];

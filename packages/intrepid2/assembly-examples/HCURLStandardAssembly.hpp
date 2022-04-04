@@ -62,10 +62,23 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHCURL(Intrepid
   
   // Allocate some intermediate containers
   ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints, spaceDim );
-  ScalarView<Scalar,DeviceType> basisCurlValues("basis curl values", numFields, numPoints, spaceDim);
-
-  ScalarView<Scalar,DeviceType> transformedCurlValues("transformed curl values", worksetSize, numFields, numPoints, spaceDim);
-  ScalarView<Scalar,DeviceType> transformedWeightedCurlValues("transformed weighted curl values", worksetSize, numFields, numPoints, spaceDim);
+  
+  ScalarView<Scalar,DeviceType> basisCurlValues, transformedCurlValues, transformedWeightedCurlValues;
+  if (spaceDim == 2)
+  {
+    // curl in 2D is a scalar:
+    basisCurlValues = ScalarView<Scalar,DeviceType>("basis curl values", numFields, numPoints);
+    transformedCurlValues = ScalarView<Scalar,DeviceType> ("transformed curl values", worksetSize, numFields, numPoints);
+    transformedWeightedCurlValues = ScalarView<Scalar,DeviceType> ("transformed weighted curl values", worksetSize, numFields, numPoints);
+    
+  }
+  else
+  {
+    // curl in 3D is a vector
+    basisCurlValues = ScalarView<Scalar,DeviceType>("basis curl values", numFields, numPoints, spaceDim);
+    transformedCurlValues = ScalarView<Scalar,DeviceType> ("transformed curl values", worksetSize, numFields, numPoints, spaceDim);
+    transformedWeightedCurlValues = ScalarView<Scalar,DeviceType> ("transformed weighted curl values", worksetSize, numFields, numPoints, spaceDim);
+  }
   
   ScalarView<Scalar,DeviceType> transformedBasisValues("transformed basis values", worksetSize, numFields, numPoints, spaceDim);
   ScalarView<Scalar,DeviceType> transformedWeightedBasisValues("transformed weighted basis values", worksetSize, numFields, numPoints, spaceDim);
@@ -115,9 +128,17 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHCURL(Intrepid
       Kokkos::resize(jacobianDeterminant,            numCellsInWorkset, numPoints);
       Kokkos::resize(cellMeasures,                   numCellsInWorkset, numPoints);
       Kokkos::resize(transformedBasisValues,         numCellsInWorkset, numFields, numPoints, spaceDim);
-      Kokkos::resize(transformedCurlValues,          numCellsInWorkset, numFields, numPoints, spaceDim);
       Kokkos::resize(transformedWeightedBasisValues, numCellsInWorkset, numFields, numPoints, spaceDim);
-      Kokkos::resize(transformedWeightedCurlValues,  numCellsInWorkset, numFields, numPoints, spaceDim);
+      if (spaceDim == 2)
+      {
+        Kokkos::resize(transformedCurlValues,          numCellsInWorkset, numFields, numPoints);
+        Kokkos::resize(transformedWeightedCurlValues,  numCellsInWorkset, numFields, numPoints);
+      }
+      else
+      {
+        Kokkos::resize(transformedCurlValues,          numCellsInWorkset, numFields, numPoints, spaceDim);
+        Kokkos::resize(transformedWeightedCurlValues,  numCellsInWorkset, numFields, numPoints, spaceDim);
+      }
     }
     jacobianAndCellMeasureTimer->start();
     CellTools::setJacobian(jacobian, cubaturePoints, cellWorkset, cellTopo); // accounted for outside loop, as numCells * flopsPerJacobianPerCell.
@@ -127,21 +148,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHCURL(Intrepid
     FunctionSpaceTools::computeCellMeasure(cellMeasures, jacobianDeterminant, cubatureWeights);
     ExecutionSpace().fence();
     jacobianAndCellMeasureTimer->stop();
-    
-//    {
-//      // DEBUGGING
-//      std::cout << "standard, Jacobian det inverse: "   << 1.0 / jacobianDeterminant(0,0) << std::endl;
-//      std::cout << "standard, Jacobian(0,0): "          << jacobian(0,0,0,0)              << std::endl;
-//      std::cout << "standard, Jacobian(0,1): "          << jacobian(0,0,0,1)              << std::endl;
-//      std::cout << "standard, Jacobian(0,2): "          << jacobian(0,0,0,2)              << std::endl;
-//      std::cout << "standard, Jacobian(1,0): "          << jacobian(0,0,1,0)              << std::endl;
-//      std::cout << "standard, Jacobian(1,1): "          << jacobian(0,0,1,1)              << std::endl;
-//      std::cout << "standard, Jacobian(1,2): "          << jacobian(0,0,1,2)              << std::endl;
-//      std::cout << "standard, Jacobian(2,0): "          << jacobian(0,0,2,0)              << std::endl;
-//      std::cout << "standard, Jacobian(2,1): "          << jacobian(0,0,2,1)              << std::endl;
-//      std::cout << "standard, Jacobian(2,2): "          << jacobian(0,0,2,2)              << std::endl;
-//    }
-    
+        
     // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
     fstIntegrateCall->start();
     FunctionSpaceTools::HCURLtransformCURL(transformedCurlValues, jacobian, jacobianDeterminant, basisCurlValues);

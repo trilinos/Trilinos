@@ -70,7 +70,7 @@
 #include "Intrepid2_Data.hpp"
 #include "Intrepid2_TensorData.hpp"
 #include "Intrepid2_TensorPoints.hpp"
-#include "Intrepid2_TransformedVectorData.hpp"
+#include "Intrepid2_TransformedBasisValues.hpp"
 #include "Intrepid2_VectorData.hpp"
 
 #include "Intrepid2_ScalarView.hpp"
@@ -116,32 +116,92 @@ namespace
     Serendipity
   };
 
-  std::string to_string(AlgorithmChoice choice)
+  // tags to allow us to use templated Teuchos tests
+  class PoissonFormulation {
+  public:
+    static const FormulationChoice formulation = Poisson;
+  };
+  class HgradFormulation {
+  public:
+    static const FormulationChoice formulation = Hgrad;
+  };
+  class HdivFormulation {
+  public:
+    static const FormulationChoice formulation = Hdiv;
+  };
+  class HcurlFormulation {
+  public:
+    static const FormulationChoice formulation = Hcurl;
+  };
+  class L2Formulation {
+  public:
+    static const FormulationChoice formulation = L2;
+  };
+  class StandardAlgorithm
   {
-    switch (choice) {
-      case Standard:         return "Standard";
-      case AffineNonTensor:  return "AffineNonTensor";
-      case NonAffineTensor:  return "NonAffineTensor";
-      case AffineTensor:     return "AffineTensor";
-      case DiagonalJacobian: return "DiagonalJacobian";
-      case Uniform:          return "Uniform";
-      
-      default:               return "Unknown AlgorithmChoice";
-    }
-  }
-
-  std::string to_string(FormulationChoice choice)
+  public:
+    static const AlgorithmChoice algorithm = Standard;
+  };
+  class AffineNonTensorAlgorithm
   {
-    switch (choice) {
-      case Poisson: return "Poisson";
-      case Hgrad:   return "Hgrad";
-      case Hdiv:    return "Hdiv";
-      case Hcurl:   return "Hcurl";
-      case L2:      return "L2";
-      
-      default:      return "Unknown FormulationChoice";
-    }
-  }
+  public:
+    static const AlgorithmChoice algorithm = AffineNonTensor;
+  };
+  class NonAffineTensorAlgorithm
+  {
+  public:
+    static const AlgorithmChoice algorithm = NonAffineTensor;
+  };
+  class AffineTensorAlgorithm
+  {
+  public:
+    static const AlgorithmChoice algorithm = AffineTensor;
+  };
+  class UniformAlgorithm
+  {
+  public:
+    static const AlgorithmChoice algorithm = Uniform;
+  };
+  class DiagonalJacobianAlgorithm // note that DiagonalJacobian is not yet supported by getMesh()
+  {
+  public:
+    static const AlgorithmChoice algorithm = DiagonalJacobian;
+  };
+  class D1
+  {
+  public:
+    static const int spaceDim = 1;
+  };
+  class D2
+  {
+  public:
+    static const int spaceDim = 2;
+  };
+  class D3
+  {
+  public:
+    static const int spaceDim = 3;
+  };
+  class P1
+  {
+  public:
+    static const int polyOrder = 1;
+  };
+  class P2
+  {
+  public:
+    static const int polyOrder = 2;
+  };
+  class P3
+  {
+  public:
+    static const int polyOrder = 3;
+  };
+  class P4
+  {
+  public:
+    static const int polyOrder = 4;
+  };
 
   using namespace Intrepid2;
 
@@ -283,116 +343,7 @@ void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedBasi
       integralView(fieldOrdinalLeft,fieldOrdinalRight) = integral;
     }
   });
-//  const int numFieldsLeft  = vectorDataLeft.numFields();
-//  const int numFieldsRight = vectorDataRight.numFields();
-//  int approximateFlopCount = (spaceDim*2 + 2) * numPoints * numFieldsLeft * numFieldsRight * cellDataExtent;
-//  printView(integralView, std::cout, "stiffness in " + std::to_string(spaceDim) + "D");
-//  std::cout << "\n\nApproximate flop count (baseline): " << approximateFlopCount << std::endl;
 }
-
-////! version that uses the classic Intrepid2 paths
-//template<class Scalar, class PointScalar, int spaceDim, typename DeviceType>
-//ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, int polyOrder, int worksetSize)
-//{
-//  using ExecutionSpace = typename DeviceType::execution_space;
-//  using CellTools = Intrepid2::CellTools<DeviceType>;
-//  using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<DeviceType>;
-//
-//  using namespace std;
-//  // dimensions of the returned view are (C,F,F)
-//  auto fs = Intrepid2::FUNCTION_SPACE_HGRAD;
-//
-//  shards::CellTopology lineTopo = shards::getCellTopologyData< shards::Line<> >();
-//  shards::CellTopology cellTopo;
-//  if      (spaceDim == 1) cellTopo = shards::getCellTopologyData< shards::Line<>          >();
-//  else if (spaceDim == 2) cellTopo = shards::getCellTopologyData< shards::Quadrilateral<> >();
-//  else if (spaceDim == 3) cellTopo = shards::getCellTopologyData< shards::Hexahedron<>    >();
-//
-//  auto basis = Intrepid2::getBasis< Intrepid2::NodalBasisFamily<DeviceType> >(cellTopo, fs, polyOrder);
-//
-//  int numFields = basis->getCardinality();
-//  int numHypercubes = 1;
-//  for (int d=0; d<spaceDim; d++)
-//  {
-//    numHypercubes *= meshWidth;
-//  }
-//  int numCells = numHypercubes;
-//
-//  if (worksetSize > numCells) worksetSize = numCells;
-//
-//  // local stiffness matrix:
-//  ScalarView<Scalar,DeviceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
-//
-//  auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
-//  int numPoints = cubature->getNumPoints();
-//  ScalarView<PointScalar,DeviceType> cubaturePoints("cubature points",numPoints,spaceDim);
-//  ScalarView<double,DeviceType> cubatureWeights("cubature weights", numPoints);
-//
-//  cubature->getCubature(cubaturePoints, cubatureWeights);
-//
-//  // Allocate some intermediate containers
-//  ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints );
-//  ScalarView<Scalar,DeviceType> basisGradValues("basis grad values", numFields, numPoints, spaceDim);
-//
-//  ScalarView<Scalar,DeviceType> transformedGradValues("transformed grad values", worksetSize, numFields, numPoints, spaceDim);
-//  ScalarView<Scalar,DeviceType> transformedWeightedGradValues("transformed weighted grad values", worksetSize, numFields, numPoints, spaceDim);
-//
-//  basis->getValues(basisValues,     cubaturePoints, Intrepid2::OPERATOR_VALUE );
-//  basis->getValues(basisGradValues, cubaturePoints, Intrepid2::OPERATOR_GRAD  );
-//
-//  CellGeometry<PointScalar,spaceDim,DeviceType> cellNodes = uniformCartesianMesh<PointScalar,spaceDim,DeviceType>(1.0, meshWidth);
-//
-//  const int numNodesPerCell = cellNodes.numNodesPerCell();
-//  ScalarView<PointScalar,DeviceType> expandedCellNodes("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
-//  using ExecutionSpace = typename DeviceType::execution_space;
-//  auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerCell});
-//  Kokkos::parallel_for("fill expanded cell nodes", policy,
-//  KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinal)
-//  {
-//    for (int d=0; d<spaceDim; d++)
-//    {
-//      expandedCellNodes(cellOrdinal,nodeOrdinal,d) = cellNodes(cellOrdinal,nodeOrdinal,d);
-//    }
-//  });
-//
-//  // goal here is to do a weighted Poisson; i.e. (f grad u, grad v) on each cell
-//
-//  ScalarView<Scalar,DeviceType> cellMeasures("cell measures", worksetSize, numPoints);
-//  ScalarView<Scalar,DeviceType> jacobianDeterminant("jacobian determinant", worksetSize, numPoints);
-//  ScalarView<Scalar,DeviceType> jacobian("jacobian", worksetSize, numPoints, spaceDim, spaceDim);
-//  ScalarView<Scalar,DeviceType> jacobianInverse("jacobian inverse", worksetSize, numPoints, spaceDim, spaceDim);
-//
-//  int cellOffset = 0;
-//  while (cellOffset < numCells)
-//  {
-//    int startCell         = cellOffset;
-//    int numCellsInWorkset = (cellOffset + worksetSize - 1 < numCells) ? worksetSize : numCells - startCell;
-//
-//    std::pair<int,int> cellRange = {startCell, startCell+numCellsInWorkset};
-//    auto cellWorkset = Kokkos::subview(expandedCellNodes, cellRange, Kokkos::ALL(), Kokkos::ALL());
-//
-//    // note that the following will not work if numCellsInWorkset != worksetSize
-//    // (we would need to take an appropriate subview of jacobian, etc. containers)
-//    INTREPID2_TEST_FOR_EXCEPTION(numCellsInWorkset != worksetSize, std::invalid_argument, "workset size must evenly divide the number of cells!");
-//    CellTools::setJacobian(jacobian, cubaturePoints, cellWorkset, cellTopo);
-//    CellTools::setJacobianInv(jacobianInverse, jacobian);
-//    CellTools::setJacobianDet(jacobianDeterminant, jacobian);
-//
-//    FunctionSpaceTools::computeCellMeasure(cellMeasures, jacobianDeterminant, cubatureWeights);
-//    FunctionSpaceTools::HGRADtransformGRAD(transformedGradValues, jacobianInverse, basisGradValues);
-//    FunctionSpaceTools::multiplyMeasure(transformedWeightedGradValues, cellMeasures, transformedGradValues);
-//
-////    printView(transformedGradValues, std::cout, "transformedGradValues");
-////    printView(cellMeasures, std::cout, "cellMeasures");
-//
-//    auto cellStiffnessSubview = Kokkos::subview(cellStiffness, cellRange, Kokkos::ALL(), Kokkos::ALL());
-//
-//    FunctionSpaceTools::integrate(cellStiffnessSubview, transformedGradValues, transformedWeightedGradValues);
-//
-//    cellOffset += worksetSize;
-//  }
-//  return cellStiffness;
-//}
 
   template<class Scalar, typename DeviceType>
   void testIntegrateMatchesBaseline(const TransformedBasisValues<Scalar,DeviceType> vectorDataLeft,
@@ -456,21 +407,20 @@ void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedBasi
     testFloatingEquality3(standardIntegrals, structuredIntegrals, relTol, absTol, out, success, "standard Intrepid2 integral", "reduced data integral - baseline");
   }
 
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_1D_p1_AffinePath
-  TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_1D_p1_AffinePath )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredIntegration, QuadratureUniformMesh, FormulationTag, AlgorithmTag, DimTag, PolyOrderTag)
   {
     using DataScalar  = double;
     using PointScalar = double;
     const int meshWidth = 1;
-    const int polyOrder = 1;
-    const int spaceDim = 1;
+    const int spaceDim = DimTag::spaceDim;
+    const int polyOrder = PolyOrderTag::polyOrder;
     const int worksetSize = meshWidth;
 
     using DeviceType = DefaultTestDeviceType;
     using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
     
-    const AlgorithmChoice algorithm = AffineTensor;
-    const FormulationChoice formulation = Poisson;
+    const AlgorithmChoice algorithm = AlgorithmTag::algorithm;
+    const FormulationChoice formulation = FormulationTag::formulation;
     
     double relTol = 1e-12;
     double absTol = 1e-12;
@@ -479,305 +429,153 @@ void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedBasi
                                                                                         relTol, absTol, out, success);
   }
 
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_1D_p1_GeneralPath
-  TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_1D_p1_GeneralPath )
-  {
-    using DataScalar  = double;
-    using PointScalar = double;
-    const int meshWidth = 4;
-    const int polyOrder = 1;
-    const int spaceDim = 1;
-    const int worksetSize = meshWidth;
-    
-    using DeviceType = DefaultTestDeviceType;
-    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-    
-    const AlgorithmChoice algorithm = NonAffineTensor;
-    const FormulationChoice formulation = Poisson;
-    
-    double relTol = 1e-12;
-    double absTol = 1e-12;
-    
-    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                        relTol, absTol, out, success);
-  }
+  // comparisons are to Standard algorithm, so we don't instantiate with Standard:
+  // 1D, p=1 tests:
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineTensorAlgorithm,    D1, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, NonAffineTensorAlgorithm, D1, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineNonTensorAlgorithm, D1, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, UniformAlgorithm,         D1, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineTensorAlgorithm,    D1, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   NonAffineTensorAlgorithm, D1, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineNonTensorAlgorithm, D1, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   UniformAlgorithm,         D1, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineTensorAlgorithm,    D1, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      NonAffineTensorAlgorithm, D1, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineNonTensorAlgorithm, D1, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      UniformAlgorithm,         D1, P1)
+  // 1D, p=2 tests:
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineTensorAlgorithm,    D1, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, NonAffineTensorAlgorithm, D1, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineNonTensorAlgorithm, D1, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, UniformAlgorithm,         D1, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineTensorAlgorithm,    D1, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   NonAffineTensorAlgorithm, D1, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineNonTensorAlgorithm, D1, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   UniformAlgorithm,         D1, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineTensorAlgorithm,    D1, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      NonAffineTensorAlgorithm, D1, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineNonTensorAlgorithm, D1, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      UniformAlgorithm,         D1, P2)
+  // 1D, p=4 tests:
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineTensorAlgorithm,    D1, P4)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, NonAffineTensorAlgorithm, D1, P4)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineNonTensorAlgorithm, D1, P4)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, UniformAlgorithm,         D1, P4)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineTensorAlgorithm,    D1, P4)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   NonAffineTensorAlgorithm, D1, P4)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineNonTensorAlgorithm, D1, P4)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   UniformAlgorithm,         D1, P4)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineTensorAlgorithm,    D1, P4)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      NonAffineTensorAlgorithm, D1, P4)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineNonTensorAlgorithm, D1, P4)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      UniformAlgorithm,         D1, P4)
 
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_1D_p4_GeneralPath
-TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_1D_p4_GeneralPath )
-{
-  using DataScalar  = double;
-  using PointScalar = double;
-  const int meshWidth = 4;
-  const int polyOrder = 4;
-  const int spaceDim = 1;
-  const int worksetSize = meshWidth;
-  
-  using DeviceType = DefaultTestDeviceType;
-  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-  
-  const AlgorithmChoice algorithm = NonAffineTensor;
-  const FormulationChoice formulation = Poisson;
-  
-  double relTol = 1e-12;
-  double absTol = 1e-12;
-  
-  testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                      relTol, absTol, out, success);
-}
+  // 2D, p=1 tests:
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineTensorAlgorithm,    D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, NonAffineTensorAlgorithm, D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineNonTensorAlgorithm, D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, UniformAlgorithm,         D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineTensorAlgorithm,    D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   NonAffineTensorAlgorithm, D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineNonTensorAlgorithm, D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   UniformAlgorithm,         D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineTensorAlgorithm,    D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    NonAffineTensorAlgorithm, D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineNonTensorAlgorithm, D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    UniformAlgorithm,         D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineTensorAlgorithm,    D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   NonAffineTensorAlgorithm, D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineNonTensorAlgorithm, D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   UniformAlgorithm,         D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineTensorAlgorithm,    D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      NonAffineTensorAlgorithm, D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineNonTensorAlgorithm, D2, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      UniformAlgorithm,         D2, P1)
+  // 2D, p=2 tests:
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineTensorAlgorithm,    D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, NonAffineTensorAlgorithm, D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineNonTensorAlgorithm, D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, UniformAlgorithm,         D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineTensorAlgorithm,    D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   NonAffineTensorAlgorithm, D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineNonTensorAlgorithm, D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   UniformAlgorithm,         D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineTensorAlgorithm,    D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    NonAffineTensorAlgorithm, D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineNonTensorAlgorithm, D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    UniformAlgorithm,         D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineTensorAlgorithm,    D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   NonAffineTensorAlgorithm, D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineNonTensorAlgorithm, D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   UniformAlgorithm,         D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineTensorAlgorithm,    D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      NonAffineTensorAlgorithm, D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineNonTensorAlgorithm, D2, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      UniformAlgorithm,         D2, P2)
 
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_1D_p2
-  TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_1D_p2 )
-  {
-    using DataScalar  = double;
-    using PointScalar = double;
-    const int meshWidth = 1;
-    const int polyOrder = 2;
-    const int spaceDim = 1;
-    const int worksetSize = meshWidth;
-    
-    using DeviceType = DefaultTestDeviceType;
-    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-    
-    const AlgorithmChoice algorithm = AffineTensor;
-    const FormulationChoice formulation = Poisson;
-    
-    double relTol = 1e-12;
-    double absTol = 1e-12;
-    
-    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                        relTol, absTol, out, success);
-  }
-
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_2D_p1
-  TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_2D_p1 )
-  {
-    using DataScalar  = double;
-    using PointScalar = double;
-    const int meshWidth = 3;
-    const int polyOrder = 1;
-    const int spaceDim = 2;
-    const int worksetSize = meshWidth * meshWidth;
-    
-    using DeviceType = DefaultTestDeviceType;
-    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-    
-    const AlgorithmChoice algorithm = AffineTensor;
-    const FormulationChoice formulation = Poisson;
-    
-    double relTol = 1e-12;
-    double absTol = 1e-12;
-    
-    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                        relTol, absTol, out, success);
-  }
-
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_2D_p1_GeneralPath
-  TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_2D_p1_GeneralPath )
-  {
-    using DataScalar  = double;
-    using PointScalar = double;
-    const int meshWidth = 2;
-    const int polyOrder = 1;
-    const int spaceDim = 2;
-    const int worksetSize = meshWidth * meshWidth;
-    
-    using DeviceType = DefaultTestDeviceType;
-    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-    
-    const AlgorithmChoice algorithm = NonAffineTensor;
-    const FormulationChoice formulation = Poisson;
-    
-    double relTol = 1e-12;
-    double absTol = 1e-12;
-    
-    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                        relTol, absTol, out, success);
-  }
-
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_2D_p2_GeneralPath
-TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_2D_p2_GeneralPath )
-{
-  using DataScalar  = double;
-  using PointScalar = double;
-  const int meshWidth = 2;
-  const int polyOrder = 2;
-  const int spaceDim = 2;
-  const int worksetSize = meshWidth * meshWidth;
-  
-  using DeviceType = DefaultTestDeviceType;
-  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-  
-  const AlgorithmChoice algorithm = NonAffineTensor;
-  const FormulationChoice formulation = Poisson;
-  
-  double relTol = 1e-12;
-  double absTol = 1e-12;
-  
-  testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                      relTol, absTol, out, success);
-}
-
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_2D_p2
-  TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_2D_p2 )
-  {
-    using DataScalar  = double;
-    using PointScalar = double;
-    const int meshWidth = 3;
-    const int polyOrder = 2;
-    const int spaceDim = 2;
-    const int worksetSize = meshWidth * meshWidth;
-    const bool affinePath = true;
-    
-    using DeviceType = DefaultTestDeviceType;
-    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-    
-    const AlgorithmChoice algorithm = AffineTensor;
-    const FormulationChoice formulation = Poisson;
-    
-    double relTol = 1e-12;
-    double absTol = 1e-12;
-    
-    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                        relTol, absTol, out, success);
-  }
-
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p1
-  TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_3D_p1 )
-  {
-    using DataScalar  = double;
-    using PointScalar = double;
-    const int meshWidth = 2;
-    const int polyOrder = 1;
-    const int spaceDim = 3;
-    const int worksetSize = meshWidth * meshWidth * meshWidth;
-    
-    using DeviceType = DefaultTestDeviceType;
-    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-    
-    const AlgorithmChoice algorithm = AffineTensor;
-    const FormulationChoice formulation = Poisson;
-    
-    double relTol = 1e-12;
-    double absTol = 1e-12;
-    
-    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                        relTol, absTol, out, success);
-  }
-
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p1_GeneralPath
-TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_3D_p1_GeneralPath )
-{
-  using DataScalar  = double;
-  using PointScalar = double;
-  const int meshWidth = 2;
-  const int polyOrder = 1;
-  const int spaceDim = 3;
-  const int worksetSize = meshWidth * meshWidth * meshWidth;
-  
-  using DeviceType = DefaultTestDeviceType;
-  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-  
-  const AlgorithmChoice algorithm = NonAffineTensor;
-  const FormulationChoice formulation = Poisson;
-  
-  double relTol = 1e-12;
-  double absTol = 1e-12;
-  
-  testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                      relTol, absTol, out, success);
-}
-
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p2
-  TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_3D_p2 )
-  {
-    using DataScalar  = double;
-    using PointScalar = double;
-    const int meshWidth = 2;
-    const int polyOrder = 2;
-    const int spaceDim = 3;
-    const int worksetSize = meshWidth * meshWidth * meshWidth;
-    
-    using DeviceType = DefaultTestDeviceType;
-    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-    
-    const AlgorithmChoice algorithm = AffineTensor;
-    const FormulationChoice formulation = Poisson;
-    
-    double relTol = 1e-12;
-    double absTol = 1e-12;
-    
-    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                        relTol, absTol, out, success);
-  }
-
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p2_GeneralPath
-TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_3D_p2_GeneralPath )
-{
-  using DataScalar  = double;
-  using PointScalar = double;
-  const int meshWidth = 1;
-  const int polyOrder = 2;
-  const int spaceDim = 3;
-  const int worksetSize = meshWidth * meshWidth * meshWidth;
-  
-  using DeviceType = DefaultTestDeviceType;
-  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-  
-  const AlgorithmChoice algorithm = NonAffineTensor;
-  const FormulationChoice formulation = Poisson;
-  
-  double relTol = 1e-12;
-  double absTol = 1e-12;
-  
-  testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                      relTol, absTol, out, success);
-}
-
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p3
-  TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_3D_p3 )
-  {
-    using DataScalar  = double;
-    using PointScalar = double;
-    const int meshWidth = 2;
-    const int polyOrder = 3;
-    const int spaceDim = 3;
-    const int worksetSize = meshWidth * meshWidth * meshWidth;
-    
-    using DeviceType = DefaultTestDeviceType;
-    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-    
-    const AlgorithmChoice algorithm = AffineTensor;
-    const FormulationChoice formulation = Poisson;
-    
-    double relTol = 1e-12;
-    double absTol = 1e-12;
-    
-    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                        relTol, absTol, out, success);
-  }
-
-// #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p3_GeneralPath
-  TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_3D_p3_GeneralPath )
-  {
-    using DataScalar  = double;
-    using PointScalar = double;
-    const int meshWidth = 1;
-    const int polyOrder = 3;
-    const int spaceDim = 3;
-    const int worksetSize = meshWidth * meshWidth * meshWidth;
-    
-    using DeviceType = DefaultTestDeviceType;
-    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
-    
-    const AlgorithmChoice algorithm = NonAffineTensor;
-    const FormulationChoice formulation = Poisson;
-    
-    double relTol = 1e-12;
-    double absTol = 1e-12;
-    
-    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
-                                                                                        relTol, absTol, out, success);
-  }
+  // 3D, p=1 tests:
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineTensorAlgorithm,    D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, NonAffineTensorAlgorithm, D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineNonTensorAlgorithm, D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, UniformAlgorithm,         D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineTensorAlgorithm,    D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   NonAffineTensorAlgorithm, D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineNonTensorAlgorithm, D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   UniformAlgorithm,         D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineTensorAlgorithm,    D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    NonAffineTensorAlgorithm, D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineNonTensorAlgorithm, D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    UniformAlgorithm,         D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineTensorAlgorithm,    D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   NonAffineTensorAlgorithm, D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineNonTensorAlgorithm, D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   UniformAlgorithm,         D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineTensorAlgorithm,    D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      NonAffineTensorAlgorithm, D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineNonTensorAlgorithm, D3, P1)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      UniformAlgorithm,         D3, P1)
+  // 3D, p=2 tests:
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineTensorAlgorithm,    D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, NonAffineTensorAlgorithm, D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineNonTensorAlgorithm, D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, UniformAlgorithm,         D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineTensorAlgorithm,    D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   NonAffineTensorAlgorithm, D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineNonTensorAlgorithm, D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   UniformAlgorithm,         D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineTensorAlgorithm,    D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    NonAffineTensorAlgorithm, D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineNonTensorAlgorithm, D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    UniformAlgorithm,         D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineTensorAlgorithm,    D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   NonAffineTensorAlgorithm, D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineNonTensorAlgorithm, D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   UniformAlgorithm,         D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineTensorAlgorithm,    D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      NonAffineTensorAlgorithm, D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineNonTensorAlgorithm, D3, P2)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      UniformAlgorithm,         D3, P2)
+  // 3D, p=3 tests:
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineTensorAlgorithm,    D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, NonAffineTensorAlgorithm, D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, AffineNonTensorAlgorithm, D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, PoissonFormulation, UniformAlgorithm,         D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineTensorAlgorithm,    D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   NonAffineTensorAlgorithm, D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   AffineNonTensorAlgorithm, D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HgradFormulation,   UniformAlgorithm,         D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineTensorAlgorithm,    D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    NonAffineTensorAlgorithm, D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    AffineNonTensorAlgorithm, D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HdivFormulation,    UniformAlgorithm,         D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineTensorAlgorithm,    D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   NonAffineTensorAlgorithm, D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   AffineNonTensorAlgorithm, D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, HcurlFormulation,   UniformAlgorithm,         D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineTensorAlgorithm,    D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      NonAffineTensorAlgorithm, D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      AffineNonTensorAlgorithm, D3, P3)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, QuadratureUniformMesh, L2Formulation,      UniformAlgorithm,         D3, P3)
 
 // #pragma mark StructuredIntegration: QuadratureSynthetic_AxisAlignedPath_Case1
 TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_AxisAlignedPath_Case1 )

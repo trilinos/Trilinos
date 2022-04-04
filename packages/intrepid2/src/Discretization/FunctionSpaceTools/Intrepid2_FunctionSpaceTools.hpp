@@ -64,7 +64,7 @@
 #include "Intrepid2_CellTools.hpp"
 
 #include "Intrepid2_Data.hpp"
-#include "Intrepid2_TransformedVectorData.hpp"
+#include "Intrepid2_TransformedBasisValues.hpp"
 #include "Intrepid2_VectorData.hpp"
 
 #include "Kokkos_Core.hpp"
@@ -272,6 +272,56 @@ namespace Intrepid2 {
                           const BasisValues<Scalar,DeviceType> &refBasisValues )
     {
       return TransformedBasisValues<Scalar,DeviceType>(jacobianDividedByJacobianDet,refBasisValues);
+    }
+    
+    /** \brief Transformation of a 2D curl field in the H-curl space, defined at points on a
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
+        and indexed by (F,P,D), into the output container <var><b>outputVals</b></var>,
+        defined on cells in physical space and indexed by (C,F,P).
+
+        Computes pullback of curls of \e HCURL functions
+        \f$\Phi^*(\widehat{\bf u}_f) = \left(J^{-1}_{c}\nabla\times\widehat{\bf u}_{f}\right) \circ F^{-1}_{c} \f$
+        for points in one or more physical cells that are images of a given set of points in the reference cell:
+        \f[
+        \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+        \f]
+        In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+        should contain the 2d curls of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the
+        reference points:
+        \f[
+        inputVals(f,p) = \nabla\times\widehat{\bf u}_f(\widehat{x}_p) \,.
+        \f]
+        The method returns
+        \f[
+        outputVals(c,f,p,*)
+        = \left(J^{-1}_{c}\nabla\times\widehat{\bf u}_{f}\right) \circ F^{-1}_{c} (x_{c,p})
+        = J^{-1}_{c}(\widehat{x}_p) \nabla\times\widehat{\bf u}_{f} (\widehat{x}_p)
+        \qquad 0\le c < C \,.
+        \f]
+        See Section \ref sec_pullbacks for more details about pullbacks.
+
+        \code
+        |------|----------------------|--------------------------------------------------|
+        |      |         Index        |                   Dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        |   C  |         cell         |  0 <= C < num. integration domains               |
+        |   F  |         field        |  0 <= F < dim. of the basis                      |
+        |   P  |         point        |  0 <= P < num. integration points                |
+        |   D  |         space dim    |  0 <= D < spatial dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        \endcode
+
+        \param  outputVals   [out] - Output array with transformed values
+        \param  jacobianDetInverse  [in]  - Reciprocals of input cell Jacobian determinants.
+        \param  inputVals    [in]  - Input array of reference HCURL curls.
+    */
+
+    template<class Scalar>
+    static TransformedBasisValues<Scalar,DeviceType>
+    getHCURLtransformCURL2D(const Data<Scalar,DeviceType> &jacobianDetInverse,
+                            const BasisValues<Scalar,DeviceType> &refBasisValues )
+    {
+      return TransformedBasisValues<Scalar,DeviceType>(jacobianDetInverse,refBasisValues);
     }
 
     /** \brief Transformation of a (vector) value field in the H-div space, defined at points on a

@@ -127,21 +127,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHDIV(Intrepid2
     FunctionSpaceTools::computeCellMeasure(cellMeasures, jacobianDeterminant, cubatureWeights);
     ExecutionSpace().fence();
     jacobianAndCellMeasureTimer->stop();
-    
-//    {
-//      // DEBUGGING
-//      std::cout << "standard, Jacobian det inverse: "   << 1.0 / jacobianDeterminant(0,0) << std::endl;
-//      std::cout << "standard, Jacobian(0,0): "          << jacobian(0,0,0,0)              << std::endl;
-//      std::cout << "standard, Jacobian(0,1): "          << jacobian(0,0,0,1)              << std::endl;
-//      std::cout << "standard, Jacobian(0,2): "          << jacobian(0,0,0,2)              << std::endl;
-//      std::cout << "standard, Jacobian(1,0): "          << jacobian(0,0,1,0)              << std::endl;
-//      std::cout << "standard, Jacobian(1,1): "          << jacobian(0,0,1,1)              << std::endl;
-//      std::cout << "standard, Jacobian(1,2): "          << jacobian(0,0,1,2)              << std::endl;
-//      std::cout << "standard, Jacobian(2,0): "          << jacobian(0,0,2,0)              << std::endl;
-//      std::cout << "standard, Jacobian(2,1): "          << jacobian(0,0,2,1)              << std::endl;
-//      std::cout << "standard, Jacobian(2,2): "          << jacobian(0,0,2,2)              << std::endl;
-//    }
-    
+        
     // because structured integration performs transformations within integrate(), to get a fairer comparison here we include the transformation calls.
     fstIntegrateCall->start();
     FunctionSpaceTools::HDIVtransformDIV(transformedDivValues, jacobianDeterminant, basisDivValues);

@@ -53,7 +53,7 @@
 #include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Intrepid2_TensorData.hpp"
 #include "Intrepid2_TensorPoints.hpp"
-#include "Intrepid2_TransformedVectorData.hpp"
+#include "Intrepid2_TransformedBasisValues.hpp"
 #include "Intrepid2_VectorData.hpp"
 #include "Intrepid2_ScalarView.hpp"
 #include "Intrepid2_Types.hpp"
@@ -220,8 +220,7 @@ namespace
     
     TransformedBasisValues<Scalar,DeviceType> transformedVectorData(transform,vectorData);
     
-    using HostExecSpace = Kokkos::HostSpace::execution_space;
-    TransformedBasisValues<Scalar,HostExecSpace> transformedVectorDataHost(transformedVectorData);
+    TransformedBasisValues<Scalar,Kokkos::HostSpace> transformedVectorDataHost(transformedVectorData);
 
     TEST_EQUALITY(transformedVectorData.rank(), transformedVectorDataHost.rank());
     TEST_EQUALITY(transformedVectorData.extent_int(0), transformedVectorDataHost.extent_int(0));

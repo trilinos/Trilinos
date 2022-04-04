@@ -65,7 +65,7 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_TensorData.hpp"
 #include "Intrepid2_TensorPoints.hpp"
-#include "Intrepid2_TransformedVectorData.hpp"
+#include "Intrepid2_TransformedBasisValues.hpp"
 #include "Intrepid2_VectorData.hpp"
 
 #include "Intrepid2_ScalarView.hpp"

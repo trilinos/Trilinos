@@ -100,8 +100,17 @@ namespace Intrepid2 {
     template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<DeviceType, OtherDeviceType>::value>::type>
     TransformedBasisValues(const TransformedBasisValues<Scalar,OtherDeviceType> &transformedVectorData)
     :
+    numCells_(transformedVectorData.numCells()),
     transform_(transformedVectorData.transform()),
     basisValues_(transformedVectorData.basisValues())
+    {}
+    
+    /**
+     \brief Default constructor; an invalid container.  Will return -1 for numCells().
+     */
+    TransformedBasisValues()
+    :
+    numCells_(-1)
     {}
     
     //! Returns true if the transformation matrix is diagonal.

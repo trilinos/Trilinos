@@ -63,7 +63,7 @@
 #include "Intrepid2_CellTools.hpp"
 
 #include "Intrepid2_Data.hpp"
-#include "Intrepid2_TransformedVectorData.hpp"
+#include "Intrepid2_TransformedBasisValues.hpp"
 #include "Intrepid2_VectorData.hpp"
 
 #include "Kokkos_Core.hpp"

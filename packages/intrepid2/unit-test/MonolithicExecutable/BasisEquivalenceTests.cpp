@@ -167,8 +167,8 @@ namespace
   
   //! Computes C := A*B or C := A^T*B
   //! B is allowed to be either a (rank-2) matrix, or a higher-rank object.  Either way, B's first (row) index should match A's column count.
-  template<class Rank2View, class BFunctor, int rankB = 2>
-  void deviceGeneralizedMatrixMultiply(Rank2View &A, bool transposeA, BFunctor &B, Rank2View &C)
+  template<class Rank2View>
+  void deviceGeneralizedMatrixMultiply(Rank2View &A, bool transposeA, Rank2View &B, Rank2View &C)
   {
     using DeviceType = DefaultTestDeviceType;
     using Scalar = typename Rank2View::value_type;
@@ -185,13 +185,11 @@ namespace
     {
       TEUCHOS_TEST_FOR_EXCEPTION(B.extent_int(dim) != C.extent_int(dim), std::invalid_argument, "B and C must agree in all dimensions beyond the first two");
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(getFunctorRank(B) != rankB, std::invalid_argument, "run-time rank of B does not match compile-time rank");
-    using  ViewIteratorScalar = ViewIterator<Rank2View, Scalar>;
-    using     BIteratorScalar = FunctorIterator<BFunctor, Scalar, rankB>;
+    using ViewIteratorScalar = ViewIterator<ViewType<Scalar,DeviceType>, Scalar>;
     Kokkos::parallel_for(N0, KOKKOS_LAMBDA(const int A_row_ordinal)
     {
-      BIteratorScalar     B_viewIterator(B);
-      ViewIteratorScalar  C_viewIterator(C);
+      ViewIteratorScalar B_viewIterator(B);
+      ViewIteratorScalar C_viewIterator(C);
       
       for (int B_col_ordinal=0; B_col_ordinal<N2; B_col_ordinal++)
       {
@@ -433,11 +431,7 @@ namespace
     using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
     using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
     
-    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
-    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
-    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
-    //       avoid using UVM.)
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)

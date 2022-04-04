@@ -187,6 +187,7 @@ namespace Intrepid2 {
     numComponents_(numComponents)
     {
       static_assert(numFamilies <= Parameters::MaxTensorComponents,   "numFamilies must be less than Parameters::MaxTensorComponents");
+      static_assert(numComponents <= Parameters::MaxVectorComponents, "numComponents must be less than Parameters::MaxVectorComponents");
       for (unsigned i=0; i<numFamilies; i++)
       {
         for (unsigned j=0; j<numComponents; j++)
@@ -214,7 +215,6 @@ namespace Intrepid2 {
       }
       
       INTREPID2_TEST_FOR_EXCEPTION(numFamilies_ > Parameters::MaxTensorComponents,   std::invalid_argument, "numFamilies must be at most Parameters::MaxTensorComponents");
-      
       INTREPID2_TEST_FOR_EXCEPTION(numComponents_ > Parameters::MaxVectorComponents,   std::invalid_argument, "numComponents must be at most Parameters::MaxVectorComponents");
       for (unsigned i=0; i<numFamilies_; i++)
       {

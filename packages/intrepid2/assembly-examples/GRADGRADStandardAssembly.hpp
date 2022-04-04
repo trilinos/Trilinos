@@ -39,7 +39,7 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureGRADGRAD(Intre
 
   shards::CellTopology cellTopo = geometry.cellTopology();
   
-  auto basis = getBasis< NodalBasisFamily<DeviceType> >(cellTopo, fs, polyOrder);
+  auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);
   
   int numFields = basis->getCardinality();
   int numCells = geometry.numCells();
