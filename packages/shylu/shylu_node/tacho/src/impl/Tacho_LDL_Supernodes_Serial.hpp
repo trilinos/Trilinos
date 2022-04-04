@@ -59,7 +59,7 @@ namespace Tacho {
         const auto &s = info.supernodes(sid);
 
         // get panel pointer
-        value_type *ptr = s.buf;
+        value_type *ptr = s.u_buf;
 
         // panel (s.m x s.n) is divided into ATL (m x m) and ATR (m x n)
         const ordinal_type m = s.m, n = s.n - s.m;
@@ -123,7 +123,7 @@ namespace Tacho {
         using GemvAlgoType = MainAlgoType;
 
         // get panel pointer
-        value_type *ptr = s.buf; 
+        value_type *ptr = s.u_buf; 
 
         // panel is divided into diagonal and interface block
         const ordinal_type m = s.m, n = s.n - s.m; //, nrhs = info.x.extent(1);
@@ -179,7 +179,7 @@ namespace Tacho {
         const auto &s = info.supernodes(sid);
 
         // get supernode panel pointer
-        value_type *ptr = s.buf;
+        value_type *ptr = s.u_buf;
 
         // panel is divided into diagonal and interface block
         const ordinal_type m = s.m, n = s.n - s.m;//, nrhs = info.x.extent(1);

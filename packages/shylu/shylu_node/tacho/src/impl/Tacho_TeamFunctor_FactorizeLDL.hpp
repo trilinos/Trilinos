@@ -90,7 +90,7 @@ namespace Tacho {
                    const value_type_matrix &ABR) const {
       const ordinal_type m = s.m, n = s.n, n_m = n-m;
       if (m > 0) {
-        value_type *aptr = s.buf;
+        value_type *aptr = s.u_buf;
         UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
         Symmetrize<Uplo::Upper,Algo::Internal>::invoke(member, ATL);
         member.team_barrier();
@@ -147,7 +147,7 @@ namespace Tacho {
           tgtsize = tgtend - tgtbeg;
         
         if (srcsize == tgtsize) {
-          /* */ value_type *tgt = s.buf;
+          /* */ value_type *tgt = s.u_buf;
           const value_type *src = (value_type*)ABR.data();
           
           Kokkos::parallel_for
@@ -194,7 +194,7 @@ namespace Tacho {
           {
             dense_block_type A;
             A.set_view(s.m, s.n);
-            A.attach_buffer(1, s.m, s.buf);
+            A.attach_buffer(1, s.m, s.u_buf);
             
             ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
 

@@ -70,7 +70,7 @@ namespace Tacho {
         const auto &s = info.supernodes(sid);
 
         // get panel pointer
-        value_type *ptr = s.buf;
+        value_type *ptr = s.u_buf;
 
         // panel (s.m x s.n) is divided into ATL (m x m) and ATR (m x n)
         const ordinal_type m = s.m, n = s.n - s.m;
@@ -131,7 +131,7 @@ namespace Tacho {
             tgtsize = tgtend - tgtbeg;
           
           if (srcsize == tgtsize) {
-            /* */ value_type *tgt = s.buf;
+            /* */ value_type *tgt = s.u_buf;
             const value_type *src = (value_type*)ABR.data();
 
 #if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
@@ -198,7 +198,7 @@ namespace Tacho {
           {
             dense_block_type A;
             A.set_view(s.m, s.n);
-            A.attach_buffer(1, s.m, s.buf);
+            A.attach_buffer(1, s.m, s.u_buf);
             
             ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
 
@@ -250,7 +250,7 @@ namespace Tacho {
               {
                 dense_block_type A;
                 A.set_view(s.m, s.n);
-                A.attach_buffer(1, s.m, s.buf);
+                A.attach_buffer(1, s.m, s.u_buf);
                 
                 ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
                 
@@ -298,7 +298,7 @@ namespace Tacho {
             {
               dense_block_type A;
               A.set_view(s.m, s.n);
-              A.attach_buffer(1, s.m, s.buf);
+              A.attach_buffer(1, s.m, s.u_buf);
               
               ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
       
@@ -363,7 +363,7 @@ namespace Tacho {
            Algo::External,Algo::Internal>::type GemmAlgoType;
 
         // get panel pointer
-        value_type *ptr = s.buf; 
+        value_type *ptr = s.u_buf; 
 
         // panel is divided into diagonal and interface block
         const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.extent(1);
@@ -480,7 +480,7 @@ namespace Tacho {
         const auto &s = info.supernodes(sid);
 
         // get supernode panel pointer
-        value_type *ptr = s.buf;
+        value_type *ptr = s.u_buf;
 
         // panel is divided into diagonal and interface block
         const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.extent(1);

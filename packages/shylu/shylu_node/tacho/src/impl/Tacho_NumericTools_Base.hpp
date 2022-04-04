@@ -50,7 +50,7 @@ namespace Tacho {
     ///
 
     // solution method
-    ordinal_type _method; // 1 - cholesky, 2 - LDL
+    ordinal_type _method; // 1 - cholesky, 2 - LDL, 3 - LU
     
     // matrix input
     ordinal_type _m;
@@ -205,9 +205,11 @@ namespace Tacho {
       ///
       /// symbolic input
       ///
+      const bool allocate_l_buf = (_method == 3);  /// for LU
       _info.initialize(_supernodes,      
                        _sid_block_colidx,
                        _superpanel_buf,
+                       allocate_l_buf,
                        supernodes,
                        gid_ptr,
                        gid_colidx,

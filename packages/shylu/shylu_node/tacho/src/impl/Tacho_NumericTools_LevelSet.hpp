@@ -658,7 +658,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf;
+              value_type *aptr = s.u_buf;
               UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
               _status = Chol<Uplo::Upper,Algo::OnDevice>
                 ::invoke(_handle_lapack, ATL, W); checkDeviceLapackStatus("chol");
@@ -712,7 +712,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf;
+              value_type *aptr = s.u_buf;
               UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
               _status = Chol<Uplo::Upper,Algo::OnDevice>
                 ::invoke(_handle_lapack, ATL, W); checkDeviceLapackStatus("chol");
@@ -778,7 +778,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf;
+              value_type *aptr = s.u_buf;
               UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
               _status = Chol<Uplo::Upper,Algo::OnDevice>
                 ::invoke(_handle_lapack, ATL, W); checkDeviceLapackStatus("chol");
@@ -874,7 +874,7 @@ namespace Tacho {
           {
             const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf;
+              value_type *aptr = s.u_buf;
               UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
 
               _status = Symmetrize<Uplo::Upper,Algo::OnDevice>::invoke(exec_instance, ATL); 
@@ -953,7 +953,8 @@ namespace Tacho {
       timer.reset();
       {
         _ax = ax; // matrix values
-        _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
+        const bool copy_to_l_buf(false);
+        _info.copySparseToSuperpanels(copy_to_l_buf,_ap, _aj, _ax, _perm, _peri);
       }
       stat.t_copy = timer.seconds();
 
@@ -1068,7 +1069,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf;
+              value_type *aptr = s.u_buf;
               UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
 
               const ordinal_type offm = s.row_begin;
@@ -1112,7 +1113,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf;
+              value_type *aptr = s.u_buf;
               UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
 
               value_type *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);
@@ -1160,7 +1161,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n;
             if (m > 0) {
-              value_type *aptr = s.buf;
+              value_type *aptr = s.u_buf;
               UnmanagedViewType<value_type_matrix> A(aptr, m, n); 
 
               value_type *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);
@@ -1221,7 +1222,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf, *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);; 
+              value_type *aptr = s.u_buf, *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);; 
               const UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
               const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs); 
 
@@ -1268,7 +1269,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf, *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);; 
+              value_type *aptr = s.u_buf, *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);; 
               const UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
               const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs); bptr += m*nrhs; 
 
@@ -1319,7 +1320,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n;
             if (m > 0 && n > 0) {
-              value_type *aptr = s.buf, *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);; 
+              value_type *aptr = s.u_buf, *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);; 
               const UnmanagedViewType<value_type_matrix> A(aptr, m, n); 
               const UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs); 
                
@@ -1378,7 +1379,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf;
+              value_type *aptr = s.u_buf;
               UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
 
               const ordinal_type offm = s.row_begin;
@@ -1433,7 +1434,7 @@ namespace Tacho {
           {
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             if (m > 0) {
-              value_type *aptr = s.buf, *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);; 
+              value_type *aptr = s.u_buf, *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);; 
               const UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
               const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs); 
 
@@ -1715,7 +1716,8 @@ namespace Tacho {
       timer.reset();
       {
         _ax = ax; // matrix values
-        _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
+        const bool copy_to_l_buf(false);
+        _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
       }
       stat.t_copy = timer.seconds();
 

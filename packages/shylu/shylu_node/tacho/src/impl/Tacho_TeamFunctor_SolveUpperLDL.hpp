@@ -94,7 +94,7 @@ namespace Tacho {
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
-          value_type *aptr = s.buf;
+          value_type *aptr = s.u_buf;
           // solve
           const UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
           const ordinal_type offm = s.row_begin;

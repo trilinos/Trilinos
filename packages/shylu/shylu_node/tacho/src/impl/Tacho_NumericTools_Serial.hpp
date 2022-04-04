@@ -118,7 +118,8 @@ namespace Tacho {
           _ax = ax;
             
           /// copy the input matrix into super panels
-          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
+          const bool copy_to_l_buf(false);
+          _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
         }
         stat.t_copy = timer.seconds();
       }
@@ -163,7 +164,8 @@ namespace Tacho {
           _ax = ax;
             
           /// copy the input matrix into super panels
-          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
+          const bool copy_to_l_buf(false);
+          _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
         }
         stat.t_copy = timer.seconds();
       }
@@ -264,7 +266,8 @@ namespace Tacho {
           _ax = ax;
             
           /// copy the input matrix into super panels
-          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
+          const bool copy_to_l_buf(false);
+          _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
         }
         stat.t_copy = timer.seconds();
       }

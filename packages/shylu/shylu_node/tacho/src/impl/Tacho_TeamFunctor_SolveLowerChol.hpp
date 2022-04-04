@@ -92,7 +92,7 @@ namespace Tacho {
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
-          value_type *aptr = s.buf;
+          value_type *aptr = s.u_buf;
           // solve
           UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
 
@@ -155,7 +155,7 @@ namespace Tacho {
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
-          value_type *aptr = s.buf;
+          value_type *aptr = s.u_buf;
 
           UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
           UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs); bptr += m*_nrhs;
@@ -237,7 +237,7 @@ namespace Tacho {
       {
         const ordinal_type m = s.m, n = s.n;
         if (m > 0 && n > 0) {
-          value_type *aptr = s.buf;
+          value_type *aptr = s.u_buf;
 
           UnmanagedViewType<value_type_matrix> A(aptr, m, n);
           UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs); 
