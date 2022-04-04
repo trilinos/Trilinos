@@ -71,6 +71,7 @@
 namespace Intrepid2
 {
   template<ordinal_type spaceDim>
+  KOKKOS_INLINE_FUNCTION
   ordinal_type getDkEnumeration(Kokkos::Array<int,spaceDim> &entries);
 
   template<ordinal_type spaceDim>
@@ -159,17 +160,19 @@ namespace Intrepid2
         return;
       }
     }
-    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "entries corresponding to dkEnum not found");
+    INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "entries corresponding to dkEnum not found");
   }
   
   template<>
-  inline ordinal_type getDkEnumeration<1>(Kokkos::Array<int,1> &entries)
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type getDkEnumeration<1>(Kokkos::Array<int,1> &entries)
   {
     return getDkEnumeration<1>(entries[0]);
   }
   
   template<ordinal_type spaceDim>
-  inline ordinal_type getDkEnumeration(Kokkos::Array<int,spaceDim> &entries)
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type getDkEnumeration(Kokkos::Array<int,spaceDim> &entries)
   {
     ordinal_type k_minus_k0 = 0; // sum of all the entries but the first
     
@@ -197,8 +200,9 @@ namespace Intrepid2
   }
   
   template<ordinal_type spaceDim1, ordinal_type spaceDim2>
-  inline ordinal_type getDkTensorIndex(const ordinal_type dkEnum1, const ordinal_type operatorOrder1,
-                                       const ordinal_type dkEnum2, const ordinal_type operatorOrder2)
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type getDkTensorIndex(const ordinal_type dkEnum1, const ordinal_type operatorOrder1,
+                                const ordinal_type dkEnum2, const ordinal_type operatorOrder2)
   {
     Kokkos::Array<int,spaceDim1> entries1;
     getDkEnumerationInverse<spaceDim1>(entries1, dkEnum1, operatorOrder1);
@@ -1023,7 +1027,6 @@ struct OperatorTensorDecomposition
       const int spaceDim2 = basis2_->getDomainDimension();
       
       const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
-      const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
       
       std::vector< std::vector<EOperator> > opsVALUE{{VALUE, VALUE}};
       
