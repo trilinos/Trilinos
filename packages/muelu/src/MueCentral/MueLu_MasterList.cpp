@@ -151,6 +151,7 @@ namespace MueLu {
     if (name == "repartition: enable") { ss << "<Parameter name=\"repartition: enable\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: use map") { ss << "<Parameter name=\"repartition: use map\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "repartition: use subcommunicators in place") { ss << "<Parameter name=\"repartition: use subcommunicators in place\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: node repartition level") { ss << "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: node id") { ss << "<Parameter name=\"repartition: node id\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
@@ -331,6 +332,7 @@ namespace MueLu {
   "<ParameterList name=\"repartition: params\"/>"
   "<Parameter name=\"repartition: start level\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"repartition: use map\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"repartition: use subcommunicators in place\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: node repartition level\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"repartition: node id\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=\"800\"/>"
@@ -875,6 +877,8 @@ namespace MueLu {
          ("repartition: start level","repartition: start level")
       
          ("repartition: use map","repartition: use map")
+      
+         ("repartition: use subcommunicators in place","repartition: use subcommunicators in place")
       
          ("repartition: node repartition level","repartition: node repartition level")
       

@@ -343,9 +343,34 @@ namespace MueLu {
     ////////////////////////////////////////////////////////////////////////////////
     // Generate the (2,2) Hierarchy
     Kn_Matrix_->setObjectLabel("Maxwell1 (2,2)");
+    
+    /* Critical ParameterList changes */
     precList22_.sublist("user data").set("Coordinates",Coords_);
     // If we're repartitioning, we need to save the importer
     precList22_.set("keep data","{Importer}");
+
+    /* Repartitioning *must* be in sync between hierarchies, but the
+     only thing we need to watch here is the subcomms, since ReitzingerPFactory
+     won't look at all the other stuff */    
+    if(precList22_.isParameter("repartition: enable")) {
+      bool repartition = precList22_.get<bool>("repartition: enable");
+      precList11_.set("repartition: enable",repartition);
+      if (precList22_.isParameter("repartition: use subcommunicators")) {
+        precList11_.set("repartition: use subcommunicators", precList22_.get<bool>("repartition: use subcommunicators"));
+        
+        // We do not want (1,1) and (2,2) blocks being repartitioned seperately, so we specify the map that
+        // is going to be used (this is generated in ReitzingerPFactory)
+        if(precList11_.get<bool>("repartition: use subcommunicators")==true) 
+          precList11_.set("repartition: use subcommunicators in place",true);
+      }
+      else
+        precList11_.remove("repartition: use subcommunicators",false);
+        
+    }
+    else
+      precList11_.remove("repartition: enable", false);
+   
+
     Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
 
 
@@ -377,13 +402,13 @@ namespace MueLu {
       }
       else {
         EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
-        auto P = NodeL->Get<RCP<Matrix> >("P");
+        /*
+        auto P = NodeL->Get<RCP<Matrix> >("P");        
         int Pn_r = P.is_null() ? 0 : (int) P->getRangeMap()->getLocalNumElements();
-        int Pn_d = P.is_null() ? 0 : (int) P->getDomainMap()->getLocalNumElements();    
-      
+        int Pn_d = P.is_null() ? 0 : (int) P->getDomainMap()->getLocalNumElements();          
         printf("[%d] Local Level %d: Pn = %d x %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,Pn_r,Pn_d);
         fflush(stdout);
-
+        */
 
       }
     }

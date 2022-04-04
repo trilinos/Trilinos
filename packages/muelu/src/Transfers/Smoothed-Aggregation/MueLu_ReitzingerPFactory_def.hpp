@@ -100,8 +100,8 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-
-
+    SET_VALID_ENTRY("repartition: enable");
+    SET_VALID_ENTRY("repartition: use subcommunicators");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -123,6 +123,7 @@ namespace MueLu {
     Input(fineLevel,   "A");
     Input(fineLevel,   "D0");
     Input(fineLevel,   "NodeMatrix");
+    Input(coarseLevel,   "NodeMatrix");
     Input(coarseLevel, "Pnodal");
     //    Input(coarseLevel, "NodeImporter");
 
@@ -141,7 +142,9 @@ namespace MueLu {
     Teuchos::FancyOStream& out0=GetBlackHole();
     const ParameterList& pL = GetParameterList();
 
-    printf("ReitzingerPFactory::BuildP start\n");fflush(stdout);
+
+    bool update_communicators = pL.get<bool>("repartition: enable") && pL.get<bool>("repartition: use subcommunicators");
+    printf("ReitzingerPFactory::BuildP start update comms = %s\n",update_communicators? "YES" : "NO");fflush(stdout);
 
     RCP<Matrix>                EdgeMatrix    = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Matrix>                D0orig        = Get< RCP<Matrix> >               (fineLevel, "D0");
@@ -150,6 +153,10 @@ namespace MueLu {
     RCP<Matrix> D0;
     const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
     const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+
+    // This needs to be an Operator because if NodeMatrix gets repartitioned away, we get an Operator on the level
+    RCP<Operator> CoarseNodeMatrix = Get< RCP<Operator> >(coarseLevel, "NodeMatrix");
 
 #if 0
     // Short-circuit for repartitioning
@@ -222,6 +229,7 @@ namespace MueLu {
       
       printf("[%d] Local: D0 = %d x %d, Pn = %d x %d NodeMat = %d x %d \n",MyPID,D0_r,D0_d,Pn_r,Pn_d,N_r,N_d);
       fflush(stdout);
+      
     }
 
     // Matrix matrix params
@@ -393,6 +401,18 @@ namespace MueLu {
     D0_colind.resize(current);
     D0_values.resize(current);
 
+
+    printf("[%d] CoarseNodeMatrix %d, num_coarse_edges = %d\n",
+           EdgeMatrix->getRowMap()->getComm()->getRank(), 
+           CoarseNodeMatrix.is_null() ? -1 : (int)CoarseNodeMatrix->getRangeMap()->getLocalNumElements(),
+           num_coarse_edges);
+
+    // We're assuming that if the coarse NodeMatrix has no nodes on a rank, the coarse edge guy won't either.
+    // We check that here.
+    TEUCHOS_TEST_FOR_EXCEPTION( (num_coarse_edges > 0  && CoarseNodeMatrix.is_null()) ||
+                                (num_coarse_edges == 0 && !CoarseNodeMatrix.is_null()) 
+                                , Exceptions::RuntimeError, "MueLu::ReitzingerPFactory: Mismatched num_coarse_edges and NodeMatrix repartition.");
+
     // Count the total number of edges
     // NOTE: Since we solve the ownership issue above, this should do what we want
     RCP<const Map> ownedCoarseEdgeMap = Xpetra::MapFactory<LO,GO,NO>::Build(EdgeMatrix->getRowMap()->lib(), GO_INVALID, num_coarse_edges,EdgeMatrix->getRowMap()->getIndexBase(),EdgeMatrix->getRowMap()->getComm());
@@ -506,8 +526,23 @@ namespace MueLu {
 
     /* Check commuting property */
     CheckCommutingProperty(*Pe,*D0_coarse_m,*D0,*Pn);
-
     print_two_matrix(MyPID,"D0_coarse",D0_coarse_m,"Pe",Pe);//CMS
+
+    /*  If we're repartitioning here, we need to cut down the communicators */
+    // NOTE: We need to do this *after* checking the commuting property, since
+    // that's going to need to fineLevel's communicators, not the repartitioned ones
+    if(update_communicators) {
+      //NOTE: We can only do D0 here.  We have to do Ke_coarse=(Re Ke_fine Pe) later
+      RCP<const Teuchos::Comm<int> > newComm;
+      if(!CoarseNodeMatrix.is_null()) newComm = CoarseNodeMatrix->getDomainMap()->getComm();
+      RCP<const Map>  newMap  = MapFactory::copyMapWithNewComm(D0_coarse_m->getRowMap(),newComm);
+      D0_coarse_m->removeEmptyProcessesInPlace(newMap);
+
+      // The "in place" still leaves a dummy matrix here.  That needs to go
+      if(newMap.is_null()) D0_coarse_m = Teuchos::null;
+
+      Set(coarseLevel,"InPlaceMap",newMap);
+    }
     
     /* Set output on the level */
     Set(coarseLevel,"P",Pe);
