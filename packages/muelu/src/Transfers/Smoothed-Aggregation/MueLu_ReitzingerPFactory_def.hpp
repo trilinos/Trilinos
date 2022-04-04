@@ -76,26 +76,7 @@
 
 namespace MueLu {
 
-  
-  template<class Matrix>
-  void print_two_matrix(int MyPID,const char * l1, Teuchos::RCP<Matrix> D0,const char * l2, Teuchos::RCP<Matrix>Pn)
-    {
-      int D0_r = (int) D0->getRangeMap()->getLocalNumElements();
-      int D0_d = (int) D0->getDomainMap()->getLocalNumElements();
-      int D0_c = (int) D0->getColMap()->getLocalNumElements();
-      int D0_o = (int) D0->getRowMap()->getLocalNumElements();
-
-      int Pn_r = (int) Pn->getRangeMap()->getLocalNumElements();
-      int Pn_o = (int) Pn->getRowMap()->getLocalNumElements();
-      int Pn_c = (int) Pn->getColMap()->getLocalNumElements();
-      int Pn_d = (int) Pn->getDomainMap()->getLocalNumElements();    
-      
-      printf("[%d] Local: %s = %d(%d) x (%d)%d, %s = %d(%d) x (%d)%d\n",MyPID,l1,D0_r,D0_o,D0_c,D0_d,l2,Pn_r,Pn_o,Pn_c,Pn_d);
-      fflush(stdout);
-    }
-  
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
@@ -273,7 +254,6 @@ namespace MueLu {
       PnT_D0T = Utilities::Transpose(*D0_Pn, true);
     }
 
-    print_two_matrix(MyPID,"D0_Pn",D0_Pn,"PnT_D0T",PnT_D0T);//CMS
 
     // We really need a ghosted version of D0_Pn here.
     // The reason is that if there's only one fine edge between two coarse nodes, somebody is going
@@ -485,10 +465,8 @@ namespace MueLu {
     RCP<Matrix> Pe;
     {
       SubFactoryMonitor m2(*this, "Generate Pe (pre-fix)", coarseLevel);
-    print_two_matrix(MyPID,"Pn",Pn,"D0_coarse_m",D0_coarse_m);//CMS
 
       RCP<Matrix> dummy;
-
       RCP<Matrix> Pn_D0cT = XMM::Multiply(*Pn,false,*D0_coarse_m,true,dummy,out0,true,true,"Pn*D0c'",mm_params);
 
       // We don't want this guy getting accidently used later
@@ -526,13 +504,12 @@ namespace MueLu {
 
     /* Check commuting property */
     CheckCommutingProperty(*Pe,*D0_coarse_m,*D0,*Pn);
-    print_two_matrix(MyPID,"D0_coarse",D0_coarse_m,"Pe",Pe);//CMS
 
     /*  If we're repartitioning here, we need to cut down the communicators */
     // NOTE: We need to do this *after* checking the commuting property, since
     // that's going to need to fineLevel's communicators, not the repartitioned ones
     if(update_communicators) {
-      //NOTE: We can only do D0 here.  We have to do Ke_coarse=(Re Ke_fine Pe) later
+      //NOTE: We can only do D0 here.  We have to do Ke_coarse=(Re Ke_fine Pe) in RebalanceAcFactory
       RCP<const Teuchos::Comm<int> > newComm;
       if(!CoarseNodeMatrix.is_null()) newComm = CoarseNodeMatrix->getDomainMap()->getComm();
       RCP<const Map>  newMap  = MapFactory::copyMapWithNewComm(D0_coarse_m->getRowMap(),newComm);
