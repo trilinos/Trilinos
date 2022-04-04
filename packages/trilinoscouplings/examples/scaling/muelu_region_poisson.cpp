@@ -218,7 +218,6 @@ int main(int argc, char *argv[]) {
     bool profileSetup = false;                               clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
     bool profileSolve = false;                               clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
 #endif
-
     // debug options
     bool print_percept_mesh           = false;               clp.setOption("print-percept-mesh", "no-print-percept-mesh", &print_percept_mesh, "Calls perceptMesh's print_info routine");
     bool print_debug_info             = false;               clp.setOption("print-debug-info", "no-print-debug-info", &print_debug_info, "Print more debugging information");
@@ -238,8 +237,7 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName != "" && yamlFileName != "", std::runtime_error,
-                               "Cannot provide both xml and yaml input files");
+    TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName != "" && yamlFileName != "", std::runtime_error, "Cannot provide both xml and yaml input files");
 
     // get xml file from command line if provided, otherwise use default
     std::string  xmlSolverInFileName(xmlFileName);
@@ -248,8 +246,8 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList inputSolverList;
 
     if(xmlSolverInFileName.length()) {
-        out << "\nReading parameter list from the XML file \""<<xmlSolverInFileName<<"\" ...\n" << std::endl;
-      Teuchos::updateParametersFromXmlFile (xmlSolverInFileName, Teuchos::ptr(&inputSolverList));
+      out << "\nReading parameter list from the XML file \"" << xmlSolverInFileName << "\" ...\n" << std::endl;
+      Teuchos::updateParametersFromXmlFile(xmlSolverInFileName, Teuchos::ptr(&inputSolverList));
     }
     else {
       out << "Using default solver values ..." << std::endl;
