@@ -1,17 +1,15 @@
 #ifndef __TACHO_TEST_HPP__
 #define __TACHO_TEST_HPP__
 
-template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
-
 #include "Tacho_TestCrsMatrixBase.hpp"
-#include "Tacho_TestGraph.hpp"
-#include "Tacho_TestSymbolic.hpp"
-//#include "Tacho_TestNumeric.hpp"
-//#include "Tacho_TestTaskFunctor.hpp"
+#include "Tacho_TestGraphTools.hpp"
+#include "Tacho_TestSymbolicTools.hpp"
+// //#include "Tacho_TestNumeric.hpp"
+// //#include "Tacho_TestTaskFunctor.hpp"
 
-#include "Tacho_TestDenseMatrixView.hpp"
-#include "Tacho_TestDenseByBlocks.hpp"
+// #include "Tacho_TestDenseMatrixView.hpp"
+// #include "Tacho_TestDenseByBlocks.hpp"
 
-#include "Tacho_TestDenseLinearAlgebra.hpp"
+// #include "Tacho_TestDenseLinearAlgebra.hpp"
 
 #endif

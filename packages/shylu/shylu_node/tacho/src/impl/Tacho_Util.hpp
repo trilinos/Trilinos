@@ -243,6 +243,11 @@ namespace Tacho {
                  BottomLeft,
                  BottomRight };
   };
+  template<int T> struct is_valid_partition_tag {
+    enum : bool { value = (T == Partition::TopLeft    || T == Partition::Top    || T == Partition::TopRight || 
+                           T == Partition::Left       ||                           T == Partition::Right || 
+                           T == Partition::BottomLeft || T == Partition::Bottom || T == Partition::BottomRight) };
+  };
 
   struct Uplo {
     enum : int { tag = 400 };

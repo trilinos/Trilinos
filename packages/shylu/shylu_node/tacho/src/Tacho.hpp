@@ -147,8 +147,38 @@ namespace Tacho {
       fprintf(stderr, "   %s\n", msg.c_str());
       throw std::logic_error(msg.c_str());
     }
-    std::cout << std::setw(16) << name << "::  ";
-    SpT().print_configuration(std::cout, detail);
+    bool is_printed(false);
+#if defined(KOKKOS_ENABLE_SERIAL)
+    if (std::is_same<SpT,Kokkos::Serial>::value) {
+      is_printed = true;
+      std::cout << std::setw(16) << name << ":: Serial \n";
+    }
+#endif
+#if defined(KOKKOS_ENABLE_OPENMP)
+    if (std::is_same<SpT,Kokkos::OpenMP>::value) {
+      is_printed = true;
+      std::cout << std::setw(16) << name << ":: OpenMP \n";
+    }
+#endif
+#if defined(KOKKOS_ENABLE_CUDA)
+    if (std::is_same<SpT,Kokkos::Cuda>::value) {
+    is_printed = true;
+    std::cout << std::setw(16) << name << ":: Cuda \n";
+  }
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+    if (std::is_same<SpT,Kokkos::Experimental::HIP>::value) {
+      is_printed = true;
+      std::cout << std::setw(16) << name << ":: HIP \n";
+    }
+#endif
+    if (!is_printed) {
+      std::cout << std::setw(16) << name << ":: not supported Kokkos execution space\n";
+      SpT().print_configuration(std::cout, detail);
+      throw std::logic_error("Error: not supported Kokkos execution space");
+    } 
+    if (detail) 
+      SpT().print_configuration(std::cout, true);
   }
 
   template<typename T>

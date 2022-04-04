@@ -14,11 +14,24 @@ IF (Kokkos_ENABLE_PTHREAD)
 ENDIF()
 
 ADD_SUBDIRECTORY(src)
-IF (Trilinos_ENABLE_Gtest)
+
+IF (NOT DEFINED Tacho_ENABLE_EXAMPLES)
+  SET(Tacho_ENABLE_EXAMPLES ${Trilinos_ENABLE_EXAMPLES})
+ENDIF()
+IF (NOT DEFINED Tacho_ENABLE_TESTS)
+  SET(Tacho_ENABLE_TESTS ${Trilinos_ENABLE_TESTS})
+ENDIF()
+
+IF (Tacho_ENABLE_EXAMPLES)
   TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
-  #TRIBITS_ADD_TEST_DIRECTORIES(unit-test)
-ELSE()
-  MESSAGE(STATUS "Tacho disables examples and tests as Trilinos disables Gtest")
+ENDIF()
+
+IF (Tacho_ENABLE_TESTS)
+  IF (Trilinos_ENABLE_Gtest)
+    TRIBITS_ADD_TEST_DIRECTORIES(unit-test)
+  ELSE()
+    MESSAGE(STATUS "Tacho tests are disabled as Gtest is disabled")
+  ENDIF()
 ENDIF()
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
