@@ -709,6 +709,12 @@ namespace BaskerNS
         Options.run_nd_on_leaves = BASKER_FALSE;
       }
       #endif
+      if (Options.replace_tiny_pivot == BASKER_TRUE) {
+        if(Options.verbose == BASKER_TRUE) {
+          printf("Basker: turning off replace-tiny-pivot option since one block (to identify singular matrix)\n");
+        }
+        Options.replace_tiny_pivot = BASKER_FALSE;
+      }
       return 0;
     }
 
