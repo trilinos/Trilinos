@@ -31,7 +31,7 @@ namespace Tacho {
                            "P should be 4*A.extent(0) .");
       
       int r_val(0);
-      const ordinal_type m = A.extent(0), A.extent(1);
+      const ordinal_type m = A.extent(0), n = A.extent(1);
       if (m > 0 && n > 0) {
         /// factorize LU
         LapackTeam<value_type>::getrf(member, 
@@ -49,25 +49,20 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     static int
     modify(MemberType &member,
-           const ViewTypeA &A,
-           const ViewTypeP &P>
-      typedef typename ViewTypeA::non_const_value_type value_type;
-        
-      static_assert(ViewTypeA::rank == 2,"A is not rank 2 view.");
+           ordinal_type m,
+           const ViewTypeP &P) {
       static_assert(ViewTypeP::rank == 1,"P is not rank 1 view.");
 
-      TACHO_TEST_FOR_ABORT(P.extent(0) < 4*A.extent(0), 
-                           "P should be 4*A.extent(0) .");
+      TACHO_TEST_FOR_ABORT(P.extent(0) < 4*m,
+                           "P should be 4*m .");
 
       int r_val = 0;      
-      const ordinal_type m = A.extent(0);
       if (m > 0) {
         ordinal_type 
           *__restrict__ ipiv = P.data(),
           *__restrict__ fpiv = ipiv + m, 
           *__restrict__ perm = fpiv + m, 
           *__restrict__ peri = perm + m;
-        const value_type one(1);
         Kokkos::parallel_for
           (Kokkos::TeamVectorRange(member, m),
            [&](const int &i) {

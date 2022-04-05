@@ -47,40 +47,32 @@ namespace Tacho {
 
     template<typename MemberType,
              typename ViewTypeA,
-             typename ViewTypeP,
-             typename ViewTypeW>
+             typename ViewTypeP>
     inline
     static int
     invoke(MemberType &member,
            const ViewTypeA &A,
-           const ViewTypeP &P,
-           const ViewTypeW &W) {
+           const ViewTypeP &P) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       int r_val = 0;
-      r_val = invoke(A, P, W);
+      r_val = invoke(A, P);
       return r_val;
 #else
       TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space." );
 #endif
     }
 
-    template<typename ViewTypeA,
-             typename ViewTypeP>
+    template<typename ViewTypeP>
     inline
     static int
-    modify(const ViewTypeA &A,
-           const ViewTypeP &P) {
+    modify(const ordinal_type m, const ViewTypeP &P) {
       int r_val = 0;      
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-      typedef typename ViewTypeA::non_const_value_type value_type;
-        
-      static_assert(ViewTypeA::rank == 2,"A is not rank 2 view.");
       static_assert(ViewTypeP::rank == 1,"P is not rank 1 view.");
 
-      TACHO_TEST_FOR_EXCEPTION(P.extent(0) < 4*A.extent(0), std::runtime_error,
-                               "P should be 4*A.extent(0) .");
+      TACHO_TEST_FOR_EXCEPTION(P.extent(0) < 4*m, std::runtime_error,
+                               "P should be 4*m.");
 
-      const ordinal_type m = A.extent(0);
       if (m > 0) {
         ordinal_type 
           *__restrict__ ipiv = P.data(),
@@ -88,7 +80,6 @@ namespace Tacho {
           *__restrict__ perm = fpiv + m, 
           *__restrict__ peri = perm + m;
 
-        const value_type one(1), zero(0);
         for (ordinal_type i=0;i<m;++i) perm[i] = i;
         for (ordinal_type i=0;i<m;++i) {
           const ordinal_type fla_pivot = ipiv[i]-i-1;
@@ -110,16 +101,15 @@ namespace Tacho {
     
     
     template<typename MemberType,
-             typename ViewTypeA,
              typename ViewTypeP>
     inline
     static int
     modify(MemberType &member,
-           const ViewTypeA &A,
-           const ViewTypeP &P>
+           ordinal_type m,
+           const ViewTypeP &P) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       int r_val = 0;
-      r_val = modify(A, P);
+      r_val = modify(m, P);
       return r_val;
 #else
       TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space." );
