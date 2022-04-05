@@ -185,13 +185,6 @@ public:
   */
   virtual bool isFeasible( const Vector<Real> &v );
 
-  /** \brief Check if the vector, v, is in the interior of the bounds.
-
-      This function returns true if \f$a < v < b\f$.
-      @param[in]    v   is the vector to be checked.
-  */
-  virtual bool isInterior( const Vector<Real> &v ) const;
-
   /** \brief Apply scaling function.
 
       This function applies the scaling function \f$d(x,g)\f$ to

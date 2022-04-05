@@ -85,8 +85,6 @@ public:
 
   bool isFeasible( const Vector<Real> &v ) override;
 
-  bool isInterior( const Vector<Real> &v ) const override;
-
   void project( Vector<Real> &x ) override;
 
   void projectInterior( Vector<Real> &x ) override;

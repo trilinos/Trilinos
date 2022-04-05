@@ -232,28 +232,6 @@ void StdBoundConstraint<Real>::pruneUpperActive(Vector<Real> &v, const Vector<Re
 }
 
 template<class Real>
-bool StdBoundConstraint<Real>::isInterior(const Vector<Real> &v) const {
-  Ptr<const std::vector<Real>> ev =
-    dynamic_cast<const StdVector<Real>&>(v).getVector();
-
-  Real zero(0);
-
-  if (BoundConstraint<Real>::isUpperActivated()) {
-    for ( int i = 0; i < dim_; ++i ) {
-      if (x_up_[i] - (*ev)[i] <= zero)
-        return false;
-    }
-  }
-  if (BoundConstraint<Real>::isLowerActivated()) {
-    for ( int i = 0; i < dim_; ++i ) {
-      if ((*ev)[i] - x_lo_[i] <= zero)
-        return false;
-    }
-  }
-  return true;
-}
-
-template<class Real>
 void StdBoundConstraint<Real>::buildScalingFunction(Vector<Real> &d, const Vector<Real> &x, const Vector<Real> &g) const {
   Ptr<std::vector<Real>> ed =
     dynamic_cast<StdVector<Real>&>(d).getVector();
@@ -262,26 +240,26 @@ void StdBoundConstraint<Real>::buildScalingFunction(Vector<Real> &d, const Vecto
   Ptr<const std::vector<Real>> eg =
     dynamic_cast<const StdVector<Real>&>(g).getVector();
 
-  Real grad, xlodiff, upxdiff, c;
+  Real grad, lodiff, updiff, c;
 
   for ( int i = 0; i < dim_; ++i ) {
     grad = (*eg)[i];
-    xlodiff = (*ex)[i] - x_lo_[i];
-    upxdiff = x_up_[i] - (*ex)[i];
+    lodiff = (*ex)[i] - x_lo_[i];
+    updiff = x_up_[i] - (*ex)[i];
     c = buildC(i);
-    if (-grad > xlodiff) {
-      if (xlodiff <= upxdiff) {
+    if (-grad > lodiff) {
+      if (lodiff <= updiff) {
         (*ed)[i] = std::min(std::abs(grad), c);
         continue;
       }
     }
-    if (+grad > upxdiff) {
-      if (upxdiff <= xlodiff) {
+    if (+grad > updiff) {
+      if (updiff <= lodiff) {
         (*ed)[i] = std::min(std::abs(grad), c);
         continue;
       }
     }
-    (*ed)[i] = std::min({xlodiff, upxdiff, c});
+    (*ed)[i] = std::min({lodiff, updiff, c});
   }
 }
 
@@ -326,12 +304,12 @@ void StdBoundConstraint<Real>::applyScalingFunctionJacobian(Vector<Real> &dv, co
   Ptr<const std::vector<Real>> eg =
     dynamic_cast<const StdVector<Real>&>(g).getVector();
 
-  Real zero(0), one(1), chi, d1prime;
+  Real zero(0), one(1), indicator, d1prime;
 
   for ( int i = 0; i < dim_; ++i ) {
-    chi = (*edv)[i] < buildC(i) ? one : zero;
+    indicator = (*edv)[i] < buildC(i) ? one : zero;
 
-    if (chi == zero) {
+    if (indicator == zero) {
       (*edv)[i] = zero;
       continue;
     }

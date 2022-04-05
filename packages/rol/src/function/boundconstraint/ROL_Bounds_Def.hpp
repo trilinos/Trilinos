@@ -229,26 +229,6 @@ bool Bounds<Real>::isFeasible( const Vector<Real> &v ) {
 }
 
 template<typename Real>
-bool Bounds<Real>::isInterior( const Vector<Real> &v ) const {
-  const Real one(1);
-  bool flagU = true, flagL = true;
-  if (BoundConstraint<Real>::isUpperActivated()) {
-    mask_->set(*upper_);
-    mask_->axpy(-one,v);
-    Real uminusv = mask_->reduce(minimum_);
-    flagU = ((uminusv>0) ? true : false);
-  }
-  if (BoundConstraint<Real>::isLowerActivated()) {
-    mask_->set(v);
-    mask_->axpy(-one,*lower_);
-    Real vminusl = mask_->reduce(minimum_);
-
-    flagL = ((vminusl>0) ? true : false);
-  }
-  return (flagU && flagL);
-}
-
-template<typename Real>
 void Bounds<Real>::buildScalingFunction(Vector<Real> &d, const Vector<Real> &x, const Vector<Real> &g) const {
   // TODO: Cache values?
 
