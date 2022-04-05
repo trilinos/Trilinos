@@ -445,35 +445,6 @@ public:
     return (flagstat && flagcon && flagvec);
   }
 
-  void applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
-    if ( augmentedObj_ && activatedObj_ ) {
-      Ptr<StdVector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getStatisticVector(0);
-      Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(0);
-      Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
-      Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(0);
-      statObj_bc_->applyScalingFunction(*dvs,*vs,*xs,*gs);
-    }
-    if (augmentedCon_) {
-      int size = statCon_bc_.size();
-      for (int i = 0; i < size; ++i) {
-        if (activatedCon_[i]) {
-          Ptr<StdVector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getStatisticVector(1,i);
-          Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(1,i);
-          Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
-          Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(1,i);
-          statCon_bc_[i]->applyScalingFunction(*dvs,*vs,*xs,*gs);
-        }
-      }
-    }
-    if ( bc_ != nullPtr && bc_->isActivated() ) {
-      Ptr<Vector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getVector();
-      Ptr<const Vector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getVector();
-      Ptr<const Vector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-      Ptr<const Vector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getVector();
-      bc_->applyScalingFunction(*dvs,*vs,*xs,*gs);
-    }
-  }
-
   void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<StdVector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getStatisticVector(0);

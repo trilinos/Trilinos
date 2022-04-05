@@ -349,32 +349,6 @@ public:
     return (bnd1_->isFeasible(*(vs.get_1()))) && (bnd2_->isFeasible(*(vs.get_2())));
   }
 
-  /** \brief Apply scaling function.
-
-      This function applies the scaling function \f$d(x,g)\f$ to
-      a vector \f$v\f$, i.e., the output is \f$\mathrm{diag}(d(x,g))v\f$.
-      The scaling function must satisfy:
-      (i) \f$d(x,g)_i = 0\f$ if \f$x_i = a_i\f$ and \f$g_i \ge 0\f$;
-      (ii) \f$d(x,g)_i = 0\f$ if \f$x_i = b_i\f$ and \f$g_i \le 0\f$; and
-      (iii) \f$d(x,g)_i > 0\f$ otherwise.
-      @param[out] dv   is the scaling function applied to v.
-      @param[in]   v   is the vector being scaled.
-      @param[in]   x   is the primal vector at which the scaling function is evaluated.
-      @param[in]   g   is the dual vector at which the scaling function is evaluated.
-  */
-  void applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
-    Vector_SimOpt<Real> &dvs = dynamic_cast<Vector_SimOpt<Real>&>(dv);
-    const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(v);
-    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-    const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
-    if ( bnd1_->isActivated() ) {
-      bnd1_->applyScalingFunction(*(dvs.get_1()),*(vs.get_1()),*(xs.get_1()),*(gs.get_1()));
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->applyScalingFunction(*(dvs.get_2()),*(vs.get_2()),*(xs.get_2()),*(gs.get_2()));
-    }
-  }
-
   /** \brief Apply inverse scaling function.
 
       This function applies the inverse scaling function \f$d(x,g)\f$ to

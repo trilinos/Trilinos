@@ -264,20 +264,6 @@ void StdBoundConstraint<Real>::buildScalingFunction(Vector<Real> &d, const Vecto
 }
 
 template<class Real>
-void StdBoundConstraint<Real>::applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
-  buildScalingFunction(dv, x, g);
-
-  Ptr<std::vector<Real>> edv =
-    dynamic_cast<StdVector<Real>&>(dv).getVector();
-  Ptr<const std::vector<Real>> ev =
-    dynamic_cast<const StdVector<Real>&>(v).getVector();
-
-  for ( int i = 0; i < dim_; ++i ) {
-    (*edv)[i] = (*ev)[i]*(*edv)[i];
-  }
-}
-
-template<class Real>
 void StdBoundConstraint<Real>::applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
   buildScalingFunction(dv, x, g);
 

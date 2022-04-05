@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  test_17.cpp
+/*! \file  test_11.cpp
     \brief Checks that Coleman-Li BoundConstraint functions agree across implementations.
 
 */
@@ -64,7 +64,7 @@ RealT calcError(ROL::Vector<RealT> &a, const ROL::Vector<RealT> &b) {
 
 int testRandomInputs(int numPoints, RealT tol, ROL::Ptr<std::ostream> outStream) {
 
-  RealT funInftyNorm, invInftyNorm, jacInftyNorm;
+  RealT invInftyNorm, jacInftyNorm;
 
   // Generate standard vectors that hold data.
   ROL::Ptr<std::vector<RealT>> vp = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
@@ -99,10 +99,6 @@ int testRandomInputs(int numPoints, RealT tol, ROL::Ptr<std::ostream> outStream)
   ROL::StdBoundConstraint<RealT> standardVecBC(*lp,*up);
   ROL::Bounds<RealT>             elementwiseBC( l,  u );
 
-  standardVecBC.applyScalingFunction(result1, v, x, g);
-  elementwiseBC.applyScalingFunction(result2, v, x, g);
-  funInftyNorm = calcError(result1, result2);
-
   standardVecBC.applyInverseScalingFunction(result1, v, x, g);
   elementwiseBC.applyInverseScalingFunction(result2, v, x, g);
   invInftyNorm = calcError(result1, result2);
@@ -114,12 +110,11 @@ int testRandomInputs(int numPoints, RealT tol, ROL::Ptr<std::ostream> outStream)
   *outStream << std::endl;
   *outStream << "|StdBoundConstraint - Bounds| at " << numPoints
              << " Randomly Sampled Points (Infinity Norm): " << std::endl
-             << "  Scaling Function = " << funInftyNorm << std::endl
              << "  Inverse          = " << invInftyNorm << std::endl
              << "  Jacobian         = " << jacInftyNorm << std::endl;
   *outStream << std::endl;
 
-  return (funInftyNorm + invInftyNorm + jacInftyNorm) > tol;
+  return (invInftyNorm + jacInftyNorm) > tol;
 }
 
 int testCases(RealT tol, ROL::Ptr<std::ostream> outStream) {
@@ -174,13 +169,10 @@ int testCases(RealT tol, ROL::Ptr<std::ostream> outStream) {
   ROL::StdBoundConstraint<RealT> standardVecBC(*lp,*up);
   ROL::Bounds<RealT>             elementwiseBC( l,  u );
 
+  // Expected results when applying the scaling function to v.
   (*targetp)[0] = (*vp)[0]*(*gp)[0];
   (*targetp)[1] = (*vp)[1]*1.0;
   (*targetp)[2] = (*vp)[2]*1.0;
-  standardVecBC.applyScalingFunction(result, v, x, g);
-  svErrors.push_back(calcError(result, target));
-  elementwiseBC.applyScalingFunction(result, v, x, g);
-  ewErrors.push_back(calcError(result, target));
 
   for (unsigned long i = 0; i < targetp->size(); i++) {
     (*targetp)[i] = (*vp)[i]*(*vp)[i]/(*targetp)[i];
@@ -199,11 +191,9 @@ int testCases(RealT tol, ROL::Ptr<std::ostream> outStream) {
   ewErrors.push_back(calcError(result, target));
 
   *outStream << "StdBoundConstraint Test Case Errors (Infinity Norm):" << std::endl
-    << "  Scaling Function = " << svErrors[0] << std::endl
     << "  Inverse          = " << svErrors[1] << std::endl
     << "  Jacobian         = " << svErrors[2] << std::endl;
   *outStream << "Bounds             Test Case Errors (Infinity Norm):" << std::endl
-    << "  Scaling Function = " << ewErrors[0] << std::endl
     << "  Inverse          = " << ewErrors[1] << std::endl
     << "  Jacobian         = " << ewErrors[2] << std::endl;
   *outStream << std::endl;

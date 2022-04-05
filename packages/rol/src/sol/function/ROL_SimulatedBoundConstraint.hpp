@@ -165,13 +165,6 @@ public:
     return feasible;
   }
 
-  void applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
-    if( bnd_->isActivated() ) {
-      for( int k=0; k<sampler_->numMySamples(); ++k ) {
-        bnd_->applyScalingFunction(getVector(dv,k),getVector(v,k),getVector(x,k),getVector(g,k));
-      }
-    }
-  }
   void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
     if( bnd_->isActivated() ) {
       for( int k=0; k<sampler_->numMySamples(); ++k ) {

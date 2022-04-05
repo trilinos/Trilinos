@@ -289,12 +289,6 @@ void Bounds<Real>::buildScalingFunction(Vector<Real> &d, const Vector<Real> &x, 
 }
 
 template<typename Real>
-void Bounds<Real>::applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
-  Bounds<Real>::buildScalingFunction(dv, x, g);
-  dv.applyBinary(Elementwise::Multiply<Real>(),v);
-}
-
-template<typename Real>
 void Bounds<Real>::applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
   Bounds<Real>::buildScalingFunction(dv, x, g);
   dv.applyBinary(Elementwise::DivideAndInvert<Real>(),v);

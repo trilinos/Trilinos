@@ -220,18 +220,6 @@ public:
     return feasible;
   }
 
-  void applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
-          PV &dvpv = dynamic_cast<PV&>(dv);
-    const PV &vpv  = dynamic_cast<const PV&>(v);
-    const PV &xpv  = dynamic_cast<const PV&>(x);
-    const PV &gpv  = dynamic_cast<const PV&>(g);
-    for( uint k=0; k<dim_; ++k ) {
-      if( bnd_[k]->isActivated() ) {
-        bnd_[k]->applyScalingFunction(*(dvpv.get(k)),*(vpv.get(k)),*(xpv.get(k)),*(gpv.get(k)));
-      }
-    }
-  }
-
   void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
           PV &dvpv = dynamic_cast<PV&>(dv);
     const PV &vpv  = dynamic_cast<const PV&>(v);
