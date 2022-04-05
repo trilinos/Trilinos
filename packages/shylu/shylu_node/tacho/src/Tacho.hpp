@@ -109,12 +109,20 @@ namespace Tacho {
   };
   template<>
   struct UseThisScheduler<Kokkos::OpenMP> { 
+#if defined(KOKKOS_ENABLE_TASKDAG)
     using type = Kokkos::TaskSchedulerMultiple<Kokkos::OpenMP>; 
+#else
+    using type = DummyTaskScheduler<Kokkos::OpenMP>; 
+#endif
     using scheduler_type = type;
   };
   template<typename T>
   struct UseThisFuture<T,Kokkos::OpenMP> { 
+#if defined(KOKKOS_ENABLE_TASKDAG)
     using type = Kokkos::BasicFuture<T,Kokkos::OpenMP>; 
+#else
+    using type = DummyFuture<T,Kokkos::OpenMP>; 
+#endif
     using future_type = type;
   };
 #endif
