@@ -27,11 +27,7 @@ IF (Tacho_ENABLE_EXAMPLES)
 ENDIF()
 
 IF (Tacho_ENABLE_TESTS)
-  IF (Trilinos_ENABLE_Gtest)
-    TRIBITS_ADD_TEST_DIRECTORIES(unit-test)
-  ELSE()
-    MESSAGE(STATUS "Tacho tests are disabled as Gtest is disabled")
-  ENDIF()
+  TRIBITS_ADD_TEST_DIRECTORIES(unit-test)
 ENDIF()
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
