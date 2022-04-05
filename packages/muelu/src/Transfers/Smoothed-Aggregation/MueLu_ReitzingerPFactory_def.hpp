@@ -430,7 +430,7 @@ namespace MueLu {
       //NOTE: We can only do D0 here.  We have to do Ke_coarse=(Re Ke_fine Pe) in RebalanceAcFactory
       RCP<const Teuchos::Comm<int> > newComm;
       if(!CoarseNodeMatrix.is_null()) newComm = CoarseNodeMatrix->getDomainMap()->getComm();
-      RCP<const Map>  newMap  = MapFactory::copyMapWithNewComm(D0_coarse_m->getRowMap(),newComm);
+      RCP<const Map>  newMap  = Xpetra::MapFactory<LO,GO,NO>::copyMapWithNewComm(D0_coarse_m->getRowMap(),newComm);
       D0_coarse_m->removeEmptyProcessesInPlace(newMap);
 
       // The "in place" still leaves a dummy matrix here.  That needs to go
