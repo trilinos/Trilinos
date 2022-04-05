@@ -42,9 +42,10 @@ namespace GMLS_LinearAlgebra {
         \param N                    [in] - number of columns containing data in each matrix in A
         \param NRHS                 [in] - number of columns containing data in each matrix in B
         \param num_matrices         [in] - number of problems
+        \param implicit_RHS         [in] - determines whether RHS will be stored implicitly. If true, instead of RHS storing the full sqrt(W) explicitly, only the diagonal entries of sqrt(W) will be stored as a 1D array beginning at entry with matrix coordinate (0,0).
     */
     template <typename A_layout=layout_right, typename B_layout=layout_right, typename X_layout=layout_right>
-    void batchQRPivotingSolve(ParallelManager pm, double *A, int lda, int nda, double *B, int ldb, int ndb, int M, int N, int NRHS, const int num_matrices);
+    void batchQRPivotingSolve(ParallelManager pm, double *A, int lda, int nda, double *B, int ldb, int ndb, int M, int N, int NRHS, const int num_matrices, const bool implicit_RHS = true);
 
 } // GMLS_LinearAlgebra
 } // Compadre

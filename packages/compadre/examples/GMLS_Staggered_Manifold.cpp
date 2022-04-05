@@ -252,13 +252,13 @@ Kokkos::initialize(argc, args);
     my_GMLS_vector_1.setCurvatureWeightingType(WeightingFunctionType::Power);
     
     // power to use in the weighting kernel function for curvature coefficients
-    my_GMLS_vector_1.setCurvatureWeightingPower(2);
+    my_GMLS_vector_1.setCurvatureWeightingParameter(2);
     
     // sets the weighting kernel function from WeightingFunctionType
     my_GMLS_vector_1.setWeightingType(WeightingFunctionType::Power);
     
     // power to use in that weighting kernel function
-    my_GMLS_vector_1.setWeightingPower(2);
+    my_GMLS_vector_1.setWeightingParameter(2);
 
     // setup quadrature for StaggeredEdgeIntegralSample
     my_GMLS_vector_1.setOrderOfQuadraturePoints(2);
@@ -283,9 +283,9 @@ Kokkos::initialize(argc, args);
     //lro_vector_2[2] = GradientOfScalarPointEvaluation;
     my_GMLS_vector_2.addTargets(lro_vector_2);
     my_GMLS_vector_2.setCurvatureWeightingType(WeightingFunctionType::Power);
-    my_GMLS_vector_2.setCurvatureWeightingPower(2);
+    my_GMLS_vector_2.setCurvatureWeightingParameter(2);
     my_GMLS_vector_2.setWeightingType(WeightingFunctionType::Power);
-    my_GMLS_vector_2.setWeightingPower(2);
+    my_GMLS_vector_2.setWeightingParameter(2);
     my_GMLS_vector_2.setOrderOfQuadraturePoints(2);
     my_GMLS_vector_2.setDimensionOfQuadraturePoints(1);
     my_GMLS_vector_2.setQuadratureType("LINE");
@@ -305,9 +305,9 @@ Kokkos::initialize(argc, args);
     //lro_scalar[1] = GradientOfScalarPointEvaluation;
     my_GMLS_scalar.addTargets(lro_scalar);
     my_GMLS_scalar.setCurvatureWeightingType(WeightingFunctionType::Power);
-    my_GMLS_scalar.setCurvatureWeightingPower(2);
+    my_GMLS_scalar.setCurvatureWeightingParameter(2);
     my_GMLS_scalar.setWeightingType(WeightingFunctionType::Power);
-    my_GMLS_scalar.setWeightingPower(2);
+    my_GMLS_scalar.setWeightingParameter(2);
     my_GMLS_scalar.generateAlphas();
 
 
