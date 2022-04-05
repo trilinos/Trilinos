@@ -312,7 +312,7 @@ class MapFactory
                             size_t localNumElements,
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
-    static Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>
+    static Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
     copyMapWithNewComm(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> & oldmap,
                        const Teuchos::RCP<const Teuchos::Comm<int>>& newComm);
 

@@ -59,17 +59,6 @@
 
 namespace Xpetra {
 
-#if 0
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
-MapFactory()
-{
-}
-#endif
-
-
-
-
 
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -356,6 +345,7 @@ createContigMapWithNode(UnderlyingLib                                 lib,
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+MapFactory<LocalOrdinal, GlobalOrdinal, Node>::
 copyMapWithNewComm(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>> & oldmap,
                    const Teuchos::RCP<const Teuchos::Comm<int>>& newComm) {
     XPETRA_MONITOR("MapFactory::Build");
