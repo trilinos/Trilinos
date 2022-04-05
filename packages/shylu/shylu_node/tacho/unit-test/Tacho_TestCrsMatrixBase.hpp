@@ -1,19 +1,10 @@
 #ifndef __TACHO_TEST_CRS_MATRIX_BASE_HPP__
 #define __TACHO_TEST_CRS_MATRIX_BASE_HPP__
 
-#include <gtest/gtest.h>
-
-#include <Kokkos_Core.hpp>
-#include <Kokkos_Timer.hpp>
-
 #include "Tacho_Util.hpp"
-#include "Tacho_CrsMatrixBase.hpp"
 #include "Tacho_MatrixMarket.hpp"
 
-namespace {
-  using namespace Tacho;
-  using crs_matrix_base_host_type = CrsMatrixBase<value_type,host_device_type>;
-  using crs_matrix_base_type = CrsMatrixBase<value_type,device_type>;
+namespace Test {
 
   TEST( CrsMatrixBase, coo ) {
     {
@@ -39,32 +30,32 @@ namespace {
     ///
     /// host space crs matrix base
     ///
-    const ordinal_type 
+    const int 
       m = 4,
       n = 4,
       nnz = 16;
 
-    crs_matrix_base_host_type Ah(m, n, nnz);
+    crs_matrix_base_type_host Ah(m, n, nnz);
     EXPECT_EQ(Ah.NumRows(), m);
     EXPECT_EQ(Ah.NumCols(), n);
     EXPECT_EQ(size_t(Ah.NumNonZeros()), size_t(nnz));
 
-    ordinal_type cnt = 0;
-    for (ordinal_type i=0;i<m;++i) {
+    int cnt = 0;
+    for (int i=0;i<m;++i) {
       Ah.RowPtrBegin(i) = cnt;
-      for (ordinal_type j=0;j<n;++j,++cnt) {
+      for (int j=0;j<n;++j,++cnt) {
         Ah.Col(cnt) = j;
         Ah.Value(cnt) = i*n+j;
       }
       Ah.RowPtrEnd(i) = cnt;
     }
 
-    for (ordinal_type i=0;i<m;++i) {
+    for (int i=0;i<m;++i) {
       EXPECT_EQ(size_t(Ah.RowPtrBegin(i)), size_t(i*n));
       EXPECT_EQ(size_t(Ah.RowPtrEnd(i)), size_t(i*n + n));
     }
 
-    for (ordinal_type k=0;k<nnz;++k) {
+    for (int k=0;k<nnz;++k) {
       EXPECT_EQ(Ah.Col(k), k%n);
       EXPECT_EQ(Ah.Value(k), k);
     }
@@ -79,16 +70,16 @@ namespace {
     ///
     /// for checking copy back to host
     ///
-    crs_matrix_base_host_type Bh;
+    crs_matrix_base_type_host Bh;
     Bh.createConfTo(Ad);
     Bh.copy(Ad);
   
-    for (ordinal_type i=0;i<m;++i) {
+    for (int i=0;i<m;++i) {
       EXPECT_EQ(Ah.RowPtrBegin(i), Bh.RowPtrBegin(i)); 
       EXPECT_EQ(Ah.RowPtrEnd(i), Bh.RowPtrEnd(i));
     }
 
-    for (ordinal_type k=0;k<nnz;++k) {
+    for (int k=0;k<nnz;++k) {
       EXPECT_EQ(Ah.Col(k), Bh.Col(k));
       EXPECT_EQ(Ah.Value(k), Bh.Value(k));
     }
@@ -118,7 +109,7 @@ namespace {
     ///
     /// host crs matrix read from matrix market
     ///
-    crs_matrix_base_host_type Ah, Bh;
+    crs_matrix_base_type_host Ah, Bh;
     MatrixMarket<value_type>::read(filename, Bh);
     Ah.createConfTo(Bh);
 
@@ -133,11 +124,10 @@ namespace {
     ///
     /// random permutation vector
     ///
-    const ordinal_type m = Ad.NumRows();
-    using ordinal_type_array_host = Kokkos::View<ordinal_type*,host_device_type>;
-    ordinal_type_array_host perm("perm", m), peri("peri", m);
+    const int m = Ad.NumRows();
+    ordinal_type_array_type_host perm("perm", m), peri("peri", m);
 
-    for (ordinal_type i=0;i<m;++i)
+    for (int i=0;i<m;++i)
       perm(i) = i;
 
     {
@@ -146,7 +136,7 @@ namespace {
       std::shuffle(perm.data(), perm.data()+m, g);
     }
 
-    for (ordinal_type i=0;i<m;++i)
+    for (int i=0;i<m;++i)
       peri(perm(i)) = i;
 
     ///
@@ -158,12 +148,12 @@ namespace {
     /// check on host
     ///
     Ah.copy(Ad);
-    for (ordinal_type i=0;i<m;++i) {
-      const ordinal_type row = perm(i);
-      const ordinal_type jcnt = Bh.RowPtrEnd(row) - Bh.RowPtrBegin(row);
-      const ordinal_type boff = Bh.RowPtrBegin(row);
-      const ordinal_type aoff = Ah.RowPtrBegin(i);
-      for (ordinal_type j=0;j<jcnt;++j) {
+    for (int i=0;i<m;++i) {
+      const int row = perm(i);
+      const int jcnt = Bh.RowPtrEnd(row) - Bh.RowPtrBegin(row);
+      const int boff = Bh.RowPtrBegin(row);
+      const int aoff = Ah.RowPtrBegin(i);
+      for (int j=0;j<jcnt;++j) {
         EXPECT_EQ(Ah.Col(aoff+j), peri(Bh.Col(boff+j)));
         EXPECT_EQ(Ah.Value(aoff+j), Bh.Value(boff+j));
       }

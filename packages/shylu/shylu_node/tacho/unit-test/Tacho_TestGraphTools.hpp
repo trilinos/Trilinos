@@ -16,10 +16,7 @@
 #include "Tacho_GraphTools_Metis.hpp"
 #endif
 
-namespace {
-  using namespace Tacho;
-
-  using crs_matrix_base_host_type = CrsMatrixBase<value_type,host_device_type>;
+namespace Test {
 
   TEST( Graph, constructor ) {  
     
@@ -31,7 +28,7 @@ namespace {
       n = 4,
       nnz = 16;
 
-    crs_matrix_base_host_type Ah(m, n, nnz);
+    crs_matrix_base_type_host Ah(m, n, nnz);
 
     ordinal_type cnt = 0;
     for (ordinal_type i=0;i<m;++i) {
@@ -63,7 +60,7 @@ namespace {
   TEST( Graph, metis ) {
     
     std::string filename = MM_TEST_FILE;
-    crs_matrix_base_host_type Ah;
+    crs_matrix_base_type_host Ah;
     MatrixMarket<value_type>::read(filename, Ah);
 
     Graph G(Ah);

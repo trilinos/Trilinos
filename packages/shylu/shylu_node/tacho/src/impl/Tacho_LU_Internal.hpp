@@ -48,8 +48,8 @@ namespace Tacho {
              typename ViewTypeP>
     KOKKOS_INLINE_FUNCTION
     static int
-    modify(MemberType &member,
-           ordinal_type m,
+    modify(const MemberType &member,
+           const ordinal_type m,
            const ViewTypeP &P) {
       static_assert(ViewTypeP::rank == 1,"P is not rank 1 view.");
 

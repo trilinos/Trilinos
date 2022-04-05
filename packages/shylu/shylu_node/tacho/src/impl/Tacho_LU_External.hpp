@@ -65,7 +65,8 @@ namespace Tacho {
     template<typename ViewTypeP>
     inline
     static int
-    modify(const ordinal_type m, const ViewTypeP &P) {
+    modify(const ordinal_type m, 
+           const ViewTypeP &P) {
       int r_val = 0;      
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       static_assert(ViewTypeP::rank == 1,"P is not rank 1 view.");

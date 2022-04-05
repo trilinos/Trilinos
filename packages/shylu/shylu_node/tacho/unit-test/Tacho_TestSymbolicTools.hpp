@@ -19,10 +19,7 @@
 #include "Tacho_GraphTools_Metis.hpp"
 #endif
 
-namespace {
-  using namespace Tacho;
-
-  using crs_matrix_base_host_type = CrsMatrixBase<value_type,host_device_type>;
+namespace Test {
 
   TEST( Symbolic, constructor ) {
     const ordinal_type
@@ -30,7 +27,7 @@ namespace {
       n = 4,
       nnz = 16;
 
-    crs_matrix_base_host_type A(m, n, nnz);
+    crs_matrix_base_type_host A(m, n, nnz);
 
     ordinal_type cnt = 0;
     for (ordinal_type i=0;i<m;++i) {
@@ -42,9 +39,7 @@ namespace {
       A.RowPtrEnd(i) = cnt;
     }
 
-    using  ordinal_type_array = Kokkos::View<ordinal_type*,host_device_type>;
-
-    ordinal_type_array idx("idx", m);
+    ordinal_type_array_type_host idx("idx", m);
     for (ordinal_type i=0;i<m;++i) idx(i) = i;
 
     ///
@@ -56,7 +51,7 @@ namespace {
 
   TEST( Symbolic, functions ) {
     std::string filename = MM_TEST_FILE;
-    crs_matrix_base_host_type A;
+    crs_matrix_base_type_host A;
     MatrixMarket<value_type>::read(filename, A);
 
     Graph G(A);
@@ -68,12 +63,9 @@ namespace {
 #endif
     T.reorder();
 
-    using ordinal_type_array = Kokkos::View<ordinal_type*,host_device_type>;
-    using size_type_array = Kokkos::View<size_type*,host_device_type>;
-
     ordinal_type m = A.NumRows();
-    size_type_array ap = A.RowPtr();
-    ordinal_type_array
+    size_type_array_type_host ap = A.RowPtr();
+    ordinal_type_array_type_host
       aj = A.Cols(),
       perm = T.PermVector(),
       peri = T.InvPermVector(),
@@ -82,23 +74,23 @@ namespace {
 
     SymbolicTools::computeEliminationTree(m, ap, aj, perm, peri, parent, ancestor);
 
-    ordinal_type_array work("work", m*4);
+    ordinal_type_array_type_host work("work", m*4);
 
     using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
     auto post = Kokkos::subview(work, range_type(0*m, 1*m));
     auto w    = Kokkos::subview(work, range_type(1*m, 4*m));
     SymbolicTools::computePostOrdering(m, parent, post, w);
 
-    size_type_array up;
-    ordinal_type_array uj;
+    size_type_array_type_host up;
+    ordinal_type_array_type_host uj;
     SymbolicTools::computeFillPatternUpper(m, ap, aj, perm, peri, up, uj, work);
 
-    ordinal_type_array supernodes;
+    ordinal_type_array_type_host supernodes;
     SymbolicTools::computeSupernodes(m, ap, aj, perm, peri, parent, supernodes, work);
 
     // allocate supernodes
-    size_type_array gid_super_panel_ptr, sid_super_panel_ptr;
-    ordinal_type_array gid_super_panel_colidx, sid_super_panel_colidx, blk_super_panel_colidx;
+    size_type_array_type_host gid_super_panel_ptr, sid_super_panel_ptr;
+    ordinal_type_array_type_host gid_super_panel_colidx, sid_super_panel_colidx, blk_super_panel_colidx;
     SymbolicTools::allocateSupernodes(m, up, uj, supernodes, work,
                                       gid_super_panel_ptr,
                                       gid_super_panel_colidx,
@@ -106,8 +98,8 @@ namespace {
                                       sid_super_panel_colidx,
                                       blk_super_panel_colidx);
 
-    size_type_array stree_ptr;
-    ordinal_type_array stree_level, stree_parent, stree_children, stree_roots;
+    size_type_array_type_host stree_ptr;
+    ordinal_type_array_type_host stree_level, stree_parent, stree_children, stree_roots;
     SymbolicTools::computeSupernodesAssemblyTree(parent,
                                                  supernodes,
                                                  stree_level,
@@ -140,7 +132,7 @@ namespace {
   TEST( Symbolic, interface ) {
     std::string filename = MM_TEST_FILE;
 
-    crs_matrix_base_host_type A;
+    crs_matrix_base_type_host A;
     MatrixMarket<value_type>::read(filename, A);
 
     Graph G(A);

@@ -15,7 +15,7 @@ namespace Tacho {
       template<typename MemberType>
       static 
       KOKKOS_INLINE_FUNCTION
-      void potrf_upper(MemberType &member, 
+      void potrf_upper(const MemberType &member, 
                        const int m, 
                        T *__restrict__ A, const int as0, const int as1,
                        int *info) {
@@ -53,7 +53,7 @@ namespace Tacho {
       template<typename MemberType>
       static 
       KOKKOS_INLINE_FUNCTION
-      void sytrf_lower(MemberType &member, 
+      void sytrf_lower(const MemberType &member, 
                        const int m, 
                        T *__restrict__ A, const int as0, const int as1,
                        int *__restrict__ ipiv, 
@@ -147,7 +147,7 @@ namespace Tacho {
       template<typename MemberType>
       static 
       KOKKOS_INLINE_FUNCTION
-      void sytrf_lower_nopiv(MemberType &member, 
+      void sytrf_lower_nopiv(const MemberType &member, 
                              const int m, 
                              T *__restrict__ A, const int as0, const int as1,
                              int *info) {
@@ -182,7 +182,7 @@ namespace Tacho {
     template<typename MemberType>
     static 
     KOKKOS_INLINE_FUNCTION
-    void potrf(MemberType &member,
+    void potrf(const MemberType &member,
                const char uplo,
                const int m, 
                /* */ T *__restrict__ A, const int lda,
@@ -210,7 +210,7 @@ namespace Tacho {
     template<typename MemberType>
     static 
     KOKKOS_INLINE_FUNCTION
-    void sytrf(MemberType &member,
+    void sytrf(const MemberType &member,
                const char uplo,
                const int m, 
                /* */ T *__restrict__ A, const int lda,
@@ -240,7 +240,7 @@ namespace Tacho {
     template<typename MemberType>
     static 
     KOKKOS_INLINE_FUNCTION
-    void getrf(MemberType &member, 
+    void getrf(const MemberType &member, 
                const int m, const int n,
                T *__restrict__ A, const int as0, const int as1,
                int *__restrict__ ipiv, 
