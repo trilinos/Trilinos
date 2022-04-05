@@ -46,7 +46,7 @@ namespace Test {
     /// construction of symbolic tools
     ///
     SymbolicTools S(m, A.RowPtr(), A.Cols(), idx, idx);
-    std::cout << "num supernodes = " << S.NumSupernodes() << std::endl;
+    //std::cout << "num supernodes = " << S.NumSupernodes() << std::endl;
   }
 
   TEST( Symbolic, functions ) {

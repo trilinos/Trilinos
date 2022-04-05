@@ -242,16 +242,15 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void getrf(const MemberType &member, 
                const int m, const int n,
-               T *__restrict__ A, const int as0, const int as1,
+               T *__restrict__ A, const int as1,
                int *__restrict__ ipiv, 
                int *info) {
       if (m <= 0 || n <= 0) return;
-        
+      
       using arith_traits = ArithTraits<T>;
       using mag_type = typename arith_traits::mag_type;
         
-      const int as = as0+as1;
-      const mag_type mu = 0.6404;
+      const int as0 = 1;
       for (int p=0;p<m;++p) {
         const int iend = m-p-1, jend = n-p-1;
         T

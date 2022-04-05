@@ -5,6 +5,12 @@
 #include "Tacho_CrsMatrixBase.hpp"
 
 namespace Test {
+
+  /// std cout capture
+  ///testing::internal::CaptureStdout();
+  ///std::string output = testing::internal::GetCapturedStdout();
+  ///printf("%s\n", output.c_str());
+
   using namespace Tacho;
 
   using atsv = ArithTraits<value_type>;
@@ -52,7 +58,12 @@ namespace Test {
     fill_random_matrix(A);
     symmetrize_with_upper(A);
   }
+  void copy_matrix(const value_type_matrix_type_host A, 
+                   const value_type_matrix_type_host B) {
+    Kokkos::deep_copy(A, B);     
+  }
   void copy_lower_triangular(const value_type_matrix_type_host A, 
+                             const bool transL,
                              const value_type diag, const value_type_matrix_type_host L) {
     const int m = L.extent(0), n = L.extent(1);
     {
@@ -64,9 +75,81 @@ namespace Test {
     for (int j=0;j<n;++j)
       for (int i=j;i<m;++i) {
         if (i == j && replace_diag) A(i,j) = diag;
-        else A(i,j) = L(i,j);
+        else A(i,j) = (transL ? L(j,i) : L(i,j));
       }
   } 
+  void copy_upper_triangular(const value_type_matrix_type_host A, 
+                             const bool transU,
+                             const value_type diag, const value_type_matrix_type_host U) {
+    const int m = U.extent(0), n = U.extent(1);
+    {
+      const int mA = A.extent(0), nA = A.extent(1);
+      EXPECT_TRUE(m == mA);
+      EXPECT_TRUE(n == nA);
+    }
+    const bool replace_diag = diag != value_type(0);
+    for (int i=0;i<m;++i) 
+      for (int j=i;j<n;++j) {
+        if (i == j && replace_diag) A(i,j) = diag;
+        else A(i,j) = (transU ? U(j,i) : U(i,j));
+      }
+  } 
+  void show_matrix(std::string label, const value_type_matrix_type_host A) {
+    const int m = A.extent(0), n = A.extent(1);
+    std::cout << label << "(" << m << " x " << n << ")\n";
+    for (int i=0;i<m;++i) {
+      for (int j=0;j<n;++j)
+        std::cout << A(i,j) << " ";
+      std::cout << "\n";
+    }
+    std::cout << "\n";
+  }
+  void compute_A(const value_type_matrix_type_host A,
+                 const value_type_matrix_type_host L,
+                 const value_type_matrix_type_host U) {
+    const int m = A.extent(0), n = A.extent(1), k = L.extent(1);
+    {
+      const int mL = L.extent(0), nU = U.extent(1), kU = U.extent(0);
+      EXPECT_TRUE(m == mL);
+      EXPECT_TRUE(n == nU);
+      EXPECT_TRUE(k == kU);
+    }
+    for (int i=0;i<m;++i)
+      for (int j=0;j<n;++j) {
+        A(i,j) = 0;
+        for (int l=0;l<k;++l) 
+          A(i,j) += L(i,l)*U(l,j);
+      }
+  }
+  void apply_lapack_pivots_left_no_trans(const value_type_matrix_type_host A,
+                                         const ordinal_type_array_type_host p) {
+    const int m = A.extent(0), n = A.extent(1);
+    {
+      const int mp = p.extent(0);
+      EXPECT_TRUE(m <= mp);
+    }
+    for (int i=0;i<m;++i) {
+      const int idx = p(i)-1;
+      if (idx != i) 
+        for (int j=0;j<n;++j) 
+          std::swap(A(i,j), A(idx,j));
+    }
+  }
+  void check_same_matrix(const value_type_matrix_type_host A,  
+                         const value_type_matrix_type_host B) {
+    const int m = A.extent(0), n = A.extent(1);
+    {
+      const int mB = B.extent(0), nB = B.extent(1);
+      EXPECT_TRUE(m == mB);
+      EXPECT_TRUE(n == nB);
+    }
+    const magnitude_type eps = atsv::epsilon()*100; 
+    for (int i=0;i<m;++i) 
+      for (int j=0;j<m;++j) {
+        EXPECT_NEAR(atsv::real(A(i,j)), atsv::real(B(i,j)), eps);
+        EXPECT_NEAR(atsv::imag(A(i,j)), atsv::imag(B(i,j)), eps);
+      }
+  }
 }
 
 
