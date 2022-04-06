@@ -56,6 +56,7 @@
 #include "MiniEM_AddFieldsToMesh.hpp"
 #include "MiniEM_OperatorRequestCallback.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory.hpp"
+#include "MiniEM_HigherOrderMaxwellPreconditionerFactory.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory_Augmentation.hpp"
 #include "MiniEM_DiscreteGradient.hpp"
 #include "MiniEM_DiscreteCurl.hpp"
@@ -118,6 +119,7 @@ void updateParams(const std::string & xml,
 enum solverType {
   AUGMENTATION,
   MUELU_REFMAXWELL,
+  MUELU_MAXWELL_HO,
   ML_REFMAXWELL,
   CG,
   GMRES
@@ -157,8 +159,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     bool matrix_output = false;
     std::string input_file = "maxwell.xml";
     std::string xml = "";
-    solverType solverValues[5] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL, CG, GMRES};
-    const char * solverNames[5] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell", "CG", "GMRES"};
+    solverType solverValues[6] = {AUGMENTATION, MUELU_REFMAXWELL, MUELU_MAXWELL_HO, ML_REFMAXWELL, CG, GMRES};
+    const char * solverNames[6] = {"Augmentation", "MueLu-RefMaxwell", "MueLu-Maxwell-HO", "ML-RefMaxwell", "CG", "GMRES"};
     solverType solver = MUELU_REFMAXWELL;
     int numTimeSteps = 1;
     bool resetSolver = false;
@@ -180,7 +182,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("matrix-output","no-matrix-output",&matrix_output);
     clp.setOption("inputFile",&input_file,"XML file with the problem definitions");
     clp.setOption("solverFile",&xml,"XML file with the solver params");
-    clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
+    clp.setOption<solverType>("solver",&solver,6,solverValues,solverNames,"Solver that is used");
     clp.setOption("numTimeSteps",&numTimeSteps);
     clp.setOption("resetSolver","no-resetSolver",&resetSolver,"update the solver in every timestep");
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
@@ -362,7 +364,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           return EXIT_FAILURE;
       else if (solver == ML_REFMAXWELL) {
         updateParams("solverMLRefMaxwell.xml", lin_solver_pl, comm, out);
-      } else if (solver == MUELU_REFMAXWELL) {
+      } else if (solver == MUELU_REFMAXWELL || solver == MUELU_MAXWELL_HO) {
         if (linAlgebra == linAlgTpetra) {
           updateParams("solverMueLuRefMaxwell.xml", lin_solver_pl, comm, out);
 
@@ -391,6 +393,14 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
           if (dim == 2)
             updateParams("solverMueLuRefMaxwell2D.xml", lin_solver_pl, comm, out);
+        }
+        if (solver == MUELU_MAXWELL_HO) {
+          RCP<Teuchos::ParameterList> lin_solver_pl_lo = lin_solver_pl;
+          lin_solver_pl = rcp(new Teuchos::ParameterList("Linear Solver"));
+          updateParams("solverMueLuMaxwellHO.xml", lin_solver_pl, comm, out);
+          Teuchos::ParameterList& maxwell1list11 = lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").sublist("S_E Preconditioner").sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 11list");
+          if (maxwell1list11.isParameter("coarse: type") && maxwell1list11.get<std::string>("coarse: type") == "RefMaxwell")
+            maxwell1list11.set("coarse: params", lin_solver_pl_lo->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").sublist("S_E Preconditioner").sublist("Preconditioner Types").sublist("MueLuRefMaxwell"));
         }
       }
     } else
@@ -539,10 +549,15 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     mini_em::ClosureModelFactory_TemplateBuilder cm_builder;
     cm_factory.buildObjects(cm_builder);
 
-    // add full maxwell solver to teko
+    // add full maxwell preconditioner to teko
     RCP<Teko::Cloneable> clone = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory>());
     Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner",clone);
 
+    // add higher-order maxwell preconditioner to teko
+    RCP<Teko::Cloneable> cloneHO = rcp(new Teko::AutoClone<mini_em::HigherOrderMaxwellPreconditionerFactory>());
+    Teko::PreconditionerFactory::addPreconditionerFactory("Higher Order Maxwell Preconditioner",cloneHO);
+
+    // add augmentation preconditioner to teko
     RCP<Teko::Cloneable> cloneAug = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory_Augmentation>());
     Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner: Augmentation",cloneAug);
 
@@ -828,10 +843,10 @@ int main(int argc,char * argv[]){
   const char * linAlgebraNames[2] = {"Tpetra", "Epetra"};
   linearAlgebraType linAlgebra = linAlgTpetra;
   clp.setOption<linearAlgebraType>("linAlgebra",&linAlgebra,2,linAlgebraValues,linAlgebraNames);
-  solverType solverValues[5] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL, CG, GMRES};
-  const char * solverNames[5] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell", "CG", "GMRES"};
+  solverType solverValues[6] = {AUGMENTATION, MUELU_REFMAXWELL, MUELU_MAXWELL_HO, ML_REFMAXWELL, CG, GMRES};
+  const char * solverNames[6] = {"Augmentation", "MueLu-RefMaxwell", "MueLu-Maxwell-HO", "ML-RefMaxwell", "CG", "GMRES"};
   solverType solver = MUELU_REFMAXWELL;
-  clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
+  clp.setOption<solverType>("solver",&solver,6,solverValues,solverNames,"Solver that is used");
   // bool useComplex = false;
   // clp.setOption("complex","real",&useComplex);
   clp.recogniseAllOptions(false);

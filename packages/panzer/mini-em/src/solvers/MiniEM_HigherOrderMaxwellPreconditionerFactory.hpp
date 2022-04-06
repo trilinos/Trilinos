@@ -1,5 +1,5 @@
-#ifndef _MiniEM_FullMaxwellPreconditionerFactory_hpp_
-#define _MiniEM_FullMaxwellPreconditionerFactory_hpp_
+#ifndef _MiniEM_HigherOrderMaxwellPreconditionerFactory_hpp_
+#define _MiniEM_HigherOrderMaxwellPreconditionerFactory_hpp_
 
 #include "Teuchos_RCP.hpp"
 
@@ -9,23 +9,22 @@
 
 namespace mini_em {
 
-class FullMaxwellPreconditionerFactory : public Teko::BlockPreconditionerFactory {
+class HigherOrderMaxwellPreconditionerFactory : public Teko::BlockPreconditionerFactory {
 public:
-  
-   FullMaxwellPreconditionerFactory() {}
-   virtual ~FullMaxwellPreconditionerFactory() {}
+
+   HigherOrderMaxwellPreconditionerFactory() {}
+   virtual ~HigherOrderMaxwellPreconditionerFactory() {}
 
    Teko::LinearOp buildPreconditionerOperator(Teko::BlockedLinearOp & blo, Teko::BlockPreconditionerState & state) const;
 
    //! Initialize from a parameter list
    virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 
-private: 
+private:
 
    // Holds all inverse factories
    Teko::InverseLibrary invLib;
 
-   bool use_discrete_curl_;
    bool simplifyFaraday_;
    bool dump;
    bool doDebug;
