@@ -20,6 +20,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   solverAugmentation.xml solverAugmentationEpetra.xml
   solverCG.xml solverGMRES.xml
   solverMueLuRefMaxwell.xml solverMueLuRefMaxwell2D.xml solverMueLuRefMaxwellEpetra.xml
+  solverMueLuMaxwellHO.xml
   solverMueLuRefMaxwellOpenMP.xml solverMueLuRefMaxwellCuda.xml
   solverAugmentationUseILU.xml
   solverMLRefMaxwell.xml
@@ -208,6 +209,16 @@ IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra A
  #   )
 
 ENDIF()
+
+TRIBITS_ADD_TEST(
+   BlockPrec
+   NAME "MiniEM-BlockPrec_MueLu_highOrder"
+   ARGS
+   "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2"
+   "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3"
+   COMM serial mpi
+   NUM_MPI_PROCS 4
+   )
 
 #################################################
 # ML RefMaxwell solver
