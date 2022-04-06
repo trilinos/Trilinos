@@ -48,6 +48,8 @@
 
 namespace Tpetra {
 
+
+
 template<class MultiVectorScalar, class MatrixScalar, class Device>
 LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
 LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_device_type>& A)
@@ -181,6 +183,27 @@ applyImbalancedRows (
     KokkosSparse::spmv (op, alpha, *A_, X, beta, Y);
   }
 }
+
+// cwp 06 Apr 2022 would prefer to do this here
+#if 0
+template<class MultiVectorScalar, class MatrixScalar, class Device>
+template<typename OffsetDeviceViewType>
+void
+LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
+applyLocalColumns (Kokkos::View<const mv_scalar_type**, array_layout,
+         device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > X,
+       Kokkos::View<mv_scalar_type**, array_layout,
+         device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > Y,
+       const Teuchos::ETransp mode,
+       const mv_scalar_type alpha,
+       const mv_scalar_type beta,
+       const OffsetDeviceViewType &offRankOffsets) const
+{
+
+}
+#endif
+
+
 
 template<class MultiVectorScalar, class MatrixScalar, class Device>
 const typename LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::local_matrix_device_type&

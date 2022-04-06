@@ -2853,6 +2853,37 @@ public:
                 const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one (),
                 const Scalar& beta = Teuchos::ScalarTraits<Scalar>::zero ()) const;
 
+    /*! \brief cwp 06 Apr 2022
+
+    Like \c localApply, except do only the contributions from on-rank columns
+    Should be coupled with localApplyOffRank after import for a full SpMV
+    \c localApplyOnRank needs to finish executing before \c localApplyOffRank starts
+
+    This does Y = alpha A_l X + beta Y, where A_l contains the entries of A corresponding
+    to the on-rank X entries (i.e., X entries that do not need to be imported)
+    Therefore, this can be used concurrently with import to overlap SpMV computation
+    with communication.
+    */
+    void
+    localApplyOnRank (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+                MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&Y,
+                const Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one (),
+                const Scalar& beta = Teuchos::ScalarTraits<Scalar>::zero ()) const;
+
+    /*! \brief cwp 06 Apr 2022
+
+        \c localApplyOnRank() must be called first!
+
+        This does an additional Y = alpha A_r X + Y, where A_r contains the entries
+        of A corresponding to off-rank X entries (X entries that will be imported).
+    */
+    void
+    localApplyOffRank (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+                MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>&Y,
+                const Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one ()) const;
+
     /// \brief Return another CrsMatrix with the same entries, but
     ///   converted to a different Scalar type \c T.
     template <class T>

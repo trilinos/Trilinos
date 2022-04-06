@@ -88,6 +88,192 @@ namespace Tpetra {
                               local_ordinal_type>;
     using local_graph_device_type = typename local_matrix_device_type::StaticCrsGraphType;
 
+    // cwp 05 Apr 2022
+    // A functor that does the on-rank part of a local SpMV
+    // KokkosKernels does not currently have a 4-array CSR
+    template<typename OffsetDeviceViewType>
+    class OnRankSpmvFunctor {
+
+    public:
+
+      // different SpMV execution modes
+      struct TagNonTrans{};
+      struct TagTrans{};
+      struct TagConjTrans{};
+
+      typedef LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device> local_crs_matrix_operator_type;
+      typedef typename local_crs_matrix_operator_type::local_matrix_device_type local_matrix_device_type;
+      typedef typename local_crs_matrix_operator_type::array_layout array_layout;
+      
+      typedef Kokkos::View<const MultiVectorScalar**, array_layout,
+            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged> > x_type;
+      typedef Kokkos::View<MultiVectorScalar**, array_layout,
+            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged> > y_type;
+
+    
+    
+    private:
+      MultiVectorScalar alpha_;
+      local_matrix_device_type A_;
+      x_type X_;
+      MultiVectorScalar beta_;
+      y_type Y_;
+      OffsetDeviceViewType offRankOffsets_;
+
+      typedef typename local_matrix_device_type::non_const_value_type value_type;
+      typedef typename local_matrix_device_type::non_const_ordinal_type ordinal_type; 
+      typedef typename local_matrix_device_type::non_const_size_type size_type; 
+
+    public:
+      OnRankSpmvFunctor(const MultiVectorScalar &alpha, 
+      const local_matrix_device_type &A, 
+      x_type &X, 
+      const MultiVectorScalar &beta, 
+      y_type &Y,
+      const OffsetDeviceViewType &offRankOffsets) 
+        : alpha_(alpha), A_(A), X_(X), beta_(beta), Y_(Y), offRankOffsets_(offRankOffsets) {}
+
+      /*! \brief contribution of row i
+
+          This is only the local offsets, so the offsets we want are between
+          rowPtr(i) and offRankOffsets_(i)
+      */
+      KOKKOS_INLINE_FUNCTION void operator()(TagNonTrans, const size_t i) const {
+
+        // beta * Y
+        for (size_t k = 0; k < Y_.extent(1); ++k) {
+          Y_(i,k) = beta_ * Y_(i,k); 
+        }       
+
+        // + alpha A X
+        for (size_type ji = A_.graph.row_map(i); ji < offRankOffsets_(i); ++ji) {
+          value_type A_ij = A_.values(ji);
+          ordinal_type j = A_.graph.entries(ji);
+          for (size_t k = 0; k < Y_.extent(1); ++k) {
+            Y_(i,k) += alpha_ * A_ij * X_(j, k); 
+          }
+        }
+      }
+
+      KOKKOS_INLINE_FUNCTION void operator()(TagTrans, const size_t i) const {
+        #warning trans unimplemented
+      }
+
+      KOKKOS_INLINE_FUNCTION void operator()(TagConjTrans, const size_t i) const {
+        // typedef Kokkos::Details::ArithTraits<value_type> KAT; 
+        #warning conj trans unimplemented
+      }
+
+      /// \brief Kokkos dispatch of non-transpose
+      void launch(TagNonTrans) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans>(0, A_.numRows()), *this);
+      }
+
+      /// \brief Kokkos dispatch of transpose
+      void launch(TagTrans) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagTrans>(0, A_.numRows()), *this);
+      }
+
+      /// \brief Kokkos dispatch of conjugate transpose
+      void launch(TagConjTrans) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagConjTrans>(0, A_.numRows()), *this);
+      }
+    };
+
+    // cwp 06 Apr 2022
+    // A functor that does the off-rank part of a local SpMV
+    // KokkosKernels does not currently have a 4-array CSR
+    template<typename OffsetDeviceViewType>
+    class OffRankSpmvFunctor {
+
+    public:
+
+      // different SpMV execution modes
+      struct TagNonTrans{};
+      struct TagTrans{};
+      struct TagConjTrans{};
+
+      typedef LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device> local_crs_matrix_operator_type;
+      typedef typename local_crs_matrix_operator_type::local_matrix_device_type local_matrix_device_type;
+      typedef typename local_crs_matrix_operator_type::array_layout array_layout;
+      
+      typedef Kokkos::View<const MultiVectorScalar**, array_layout,
+            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged> > x_type;
+      typedef Kokkos::View<MultiVectorScalar**, array_layout,
+            Device, Kokkos::MemoryTraits<Kokkos::Unmanaged> > y_type;
+
+    
+    
+    private:
+      MultiVectorScalar alpha_;
+      local_matrix_device_type A_;
+      x_type X_;
+      MultiVectorScalar beta_;
+      y_type Y_;
+      OffsetDeviceViewType offRankOffsets_;
+
+      typedef typename local_matrix_device_type::non_const_value_type value_type;
+      typedef typename local_matrix_device_type::non_const_ordinal_type ordinal_type; 
+      typedef typename local_matrix_device_type::non_const_size_type size_type; 
+
+    public:
+      OffRankSpmvFunctor(const MultiVectorScalar &alpha, 
+      const local_matrix_device_type &A, 
+      x_type &X, 
+      const MultiVectorScalar &beta, 
+      y_type &Y,
+      const OffsetDeviceViewType &offRankOffsets) 
+        : alpha_(alpha), A_(A), X_(X), beta_(beta), Y_(Y), offRankOffsets_(offRankOffsets) {}
+
+      /*! \brief contribution of row i
+
+          This is only the remote offsets, so the offsets we want are between
+          offRankOffsets_(i) and entries(i+1)
+      */
+      KOKKOS_INLINE_FUNCTION void operator()(TagNonTrans, const size_t i) const {
+
+        // beta * Y
+        for (size_t k = 0; k < Y_.extent(1); ++k) {
+          Y_(i,k) = beta_ * Y_(i,k); 
+        }       
+
+        // + alpha A x
+        for (size_type ji = offRankOffsets_(i); ji < A_.graph.row_map(i+1); ++ji) {
+          value_type A_ij = A_.values(ji);
+          ordinal_type j = A_.graph.entries(ji);
+          for (size_t k = 0; k < Y_.extent(1); ++k) {
+            Y_(i,k) += alpha_ * A_ij * X_(j, k); 
+          }
+        }
+      }
+
+      KOKKOS_INLINE_FUNCTION void operator()(TagTrans, const size_t i) const {
+        #warning trans unimplemented
+      }
+
+      KOKKOS_INLINE_FUNCTION void operator()(TagConjTrans, const size_t i) const {
+        // typedef Kokkos::Details::ArithTraits<value_type> KAT; 
+        #warning conj trans unimplemented
+      }
+
+      /// \brief Kokkos dispatch of non-transpose
+      void launch(TagNonTrans) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans>(0, A_.numRows()), *this);
+      }
+
+      /// \brief Kokkos dispatch of transpose
+      void launch(TagTrans) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagTrans>(0, A_.numRows()), *this);
+      }
+
+      /// \brief Kokkos dispatch of conjugate transpose
+      void launch(TagConjTrans) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagConjTrans>(0, A_.numRows()), *this);
+      }
+    };
+
+
+
   public:
     using ordinal_view_type = typename local_graph_device_type::entries_type::non_const_type;
 
@@ -113,6 +299,90 @@ namespace Tpetra {
            const Teuchos::ETransp mode,
            const mv_scalar_type alpha,
            const mv_scalar_type beta) const;
+
+    /*! \brief
+        \c apply() but only contribute entries specified in offRankOffsets,
+        which should be populated by \c CrsGraph::getLocalOffRankOffsets.
+        Complement of \c applyLocalColumns
+
+        \tparam OffsetDeviceViewType should be the CrsMatrix::crs_graph_type::offset_device_view_type of the \c Tpetra::CrsMatrix that owns this LocalCrsMatrixOperator
+    
+        cwp 05 Apr 2022
+        applyRemoteColumns() with applyLocalColumns() shall have the same effect as apply()
+    */ 
+    template<typename OffsetDeviceViewType>
+    void
+    applyRemoteColumns (Kokkos::View<const mv_scalar_type**, array_layout,
+             device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > X,
+           Kokkos::View<mv_scalar_type**, array_layout,
+             device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > Y,
+           const Teuchos::ETransp mode,
+           const mv_scalar_type alpha,
+           const mv_scalar_type beta,
+           const OffsetDeviceViewType &offRankOffsets) const {
+
+      typedef OffRankSpmvFunctor<OffsetDeviceViewType> ORSF;
+      ORSF orsf(alpha, *A_, X, beta, Y, offRankOffsets);
+      switch(mode) {
+        case Teuchos::ETransp::TRANS: {
+          orsf.launch(typename ORSF::TagTrans{});
+          return;
+        }
+        case Teuchos::ETransp::NO_TRANS: {
+          orsf.launch(typename ORSF::TagNonTrans{});
+          return;
+        }
+        case Teuchos::ETransp::CONJ_TRANS: {
+          orsf.launch(typename ORSF::TagConjTrans{});
+          return;
+        }
+        default:
+          throw std::runtime_error("unexpected Teuchos::ETransp mode in off-rank SpMV");
+      }
+    }
+
+    /*! \brief
+        Complement of \c applyRemoteColumns(). Only contribute matrix entries NOT specified in offRankOffsets,
+        which should be populated by \c CrsGraph::getLocalOffRankOffsets
+
+        \tparam OffsetDeviceViewType should be the CrsMatrix::crs_graph_type::offset_device_view_type of the \c Tpetra::CrsMatrix that owns this LocalCrsMatrixOperator
+    
+        cwp 05 Apr 2022
+        applyRemoteColumns() with applyLocalColumns() shall have the same effect as apply()
+    */ 
+    template<typename OffsetDeviceViewType>
+    void
+    applyLocalColumns (Kokkos::View<const mv_scalar_type**, array_layout,
+             device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > X,
+           Kokkos::View<mv_scalar_type**, array_layout,
+             device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > Y,
+           const Teuchos::ETransp mode,
+           const mv_scalar_type alpha,
+           const mv_scalar_type beta,
+           const OffsetDeviceViewType &offRankOffsets) const {
+
+      typedef OnRankSpmvFunctor<OffsetDeviceViewType> ORSF;
+      ORSF orsf(alpha, *A_, X, beta, Y, offRankOffsets);
+      switch(mode) {
+        case Teuchos::ETransp::TRANS: {
+          orsf.launch(typename ORSF::TagTrans{});
+          return;
+        }
+        case Teuchos::ETransp::NO_TRANS: {
+          orsf.launch(typename ORSF::TagNonTrans{});
+          return;
+        }
+        case Teuchos::ETransp::CONJ_TRANS: {
+          orsf.launch(typename ORSF::TagConjTrans{});
+          return;
+        }
+        default:
+          throw std::runtime_error("unexpected Teuchos::ETransp mode in on-rank SpMV");
+      }
+    }
+
+
+           
 
     bool hasTransposeApply () const override;
 
