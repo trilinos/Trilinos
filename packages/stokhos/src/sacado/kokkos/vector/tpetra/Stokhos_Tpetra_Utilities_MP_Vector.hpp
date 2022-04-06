@@ -66,10 +66,10 @@ namespace Stokhos {
 
     // Get map info
     const global_size_t num_global_entries = map.getGlobalNumElements();
-    const size_t num_local_entries = map.getNodeNumElements();
+    const size_t num_local_entries = map.getLocalNumElements();
     const GlobalOrdinal index_base = map.getIndexBase();
     ArrayView<const GlobalOrdinal> element_list =
-      map.getNodeElementList();
+      map.getLocalElementList();
 
     // Create new elements
     const global_size_t flat_num_global_entries = num_global_entries*block_size;
@@ -130,7 +130,7 @@ namespace Stokhos {
     // Build flattened row offsets and column indices
     auto row_offsets = graph.getLocalRowPtrsHost();
     auto col_indices = graph.getLocalIndicesHost();
-    const size_t num_row = graph.getNodeNumRows();
+    const size_t num_row = graph.getLocalNumRows();
     const size_t num_col_indices = col_indices.size();
     ArrayRCP<size_t> flat_row_offsets(num_row*block_size+1);
     ArrayRCP<LocalOrdinal> flat_col_indices(num_col_indices * block_size);
@@ -208,7 +208,7 @@ namespace Stokhos {
     // Build flattened row offsets and column indices
     auto row_offsets = graph.getLocalRowPtrsHost();
     auto col_indices = graph.getLocalIndicesHost();
-    const size_t num_row = graph.getNodeNumRows();
+    const size_t num_row = graph.getLocalNumRows();
     const size_t num_col_indices = col_indices.size();
     RowPtrs flat_row_offsets("row_ptrs", num_row*block_size+1);
     LocalIndices flat_col_indices("col_indices", num_col_indices * block_size);
@@ -541,8 +541,8 @@ namespace Stokhos {
     RCP<FlatMatrix> flat_mat = rcp(new FlatMatrix(flat_graph));
 
     // Set values
-    const size_t num_rows = mat.getNodeNumRows();
-    const size_t max_cols = mat.getNodeMaxNumRowEntries();
+    const size_t num_rows = mat.getLocalNumRows();
+    const size_t max_cols = mat.getLocalMaxNumRowEntries();
     typename Matrix::local_inds_host_view_type indices, flat_indices;
     typename Matrix::values_host_view_type values;
     Array<BaseScalar> flat_values(max_cols);

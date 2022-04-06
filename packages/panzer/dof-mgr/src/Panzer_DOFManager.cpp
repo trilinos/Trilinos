@@ -1389,7 +1389,7 @@ DOFManager<panzer::LocalOrdinal,panzer::GlobalOrdinal>::runLocalRCMReordering(co
     size_t checkLength = soln->getPermutationSize();
     panzer::LocalOrdinal * checkPerm = soln->getPermutation(&dummy);
 
-    Teuchos::ArrayView<const panzer::GlobalOrdinal > oldOrder = map->getNodeElementList();
+    Teuchos::ArrayView<const panzer::GlobalOrdinal > oldOrder = map->getLocalElementList();
     TEUCHOS_ASSERT(checkLength==oldOrder.size());
     TEUCHOS_ASSERT(checkLength==newOrder.size());
 
