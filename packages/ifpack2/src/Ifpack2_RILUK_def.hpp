@@ -129,7 +129,9 @@ template<class MatrixType>
 void RILUK<MatrixType>::allocateSolvers ()
 {
   L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  L_solver_->setObjectLabel("lower");
   U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  U_solver_->setObjectLabel("upper");
 }
 
 template<class MatrixType>
@@ -545,8 +547,10 @@ void RILUK<MatrixType>::initialize ()
     checkOrderingConsistency (*A_local_);
     L_solver_->setMatrix (L_);
     L_solver_->initialize ();
+    L_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
     U_solver_->setMatrix (U_);
     U_solver_->initialize ();
+    U_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
 
     // Do not call initAllValues. compute() always calls initAllValues to
     // fill L and U with possibly new numbers. initialize() is concerned
@@ -897,9 +901,9 @@ void RILUK<MatrixType>::compute ()
 
     // If L_solver_ or U_solver store modified factors internally, we need to reset those
     L_solver_->setMatrix (L_);
-    L_solver_->compute ();
+    L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
     U_solver_->setMatrix (U_);
-    U_solver_->compute ();
+    U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
   }
   else {
     {//Make sure values in A is picked up even in case of pattern reuse
@@ -962,9 +966,9 @@ void RILUK<MatrixType>::compute ()
     U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
     
     L_solver_->setMatrix (L_);
-    L_solver_->compute ();
+    L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
     U_solver_->setMatrix (U_);
-    U_solver_->compute ();
+    U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
   }
 
   isComputed_ = true;

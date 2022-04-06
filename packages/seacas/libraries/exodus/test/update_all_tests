@@ -11,8 +11,8 @@
 
 #set PREFIX = "valgrind --tool=memcheck"
 set PREFIX = ""
-set SRCDIR = /Users/gdsjaar/src/seacas/build/packages/seacas/libraries/exodus/test
-set NCDUMP = /Users/gdsjaar/src/seacas/bin/ncdump
+SRCDIR=/Users/gdsjaar/src/seacas/build/packages/seacas/libraries/exodus/test
+NCDUMP=/Users/gdsjaar/src/seacas/bin/ncdump
 echo "************************************************************************"
 echo "************************************************************************"
 rm -f test.output
@@ -20,7 +20,7 @@ echo "testwt - single precision write test..."
 echo "begin testwt" > test.output
 ${PREFIX} ${SRCDIR}/testwt >> test.output
 echo "end testwt" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version > ${SRCDIR}/test.dmp
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue |grep -v maximum_name_length  > ${SRCDIR}/test.dmp
 
 echo "testrd - single precision read test..."
 echo "begin testrd" >> test.output
@@ -36,37 +36,37 @@ echo "testcp_ss - single-to-single precision copy test..."
 echo "begin testcp_ss" >> test.output
 ${PREFIX} ${SRCDIR}/testcp >> test.output
 echo "end testcp_ss" >> test.output
-${NCDUMP} -d5,5 testcp.exo | grep -v version > ${SRCDIR}/testcp_ss.dmp
+${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testcp_ss.dmp
 
 echo "testcp_sd - single-to-double precision copy test..."
 echo "begin testcp_sd" >> test.output
 ${PREFIX} ${SRCDIR}/testcpd >> test.output
 echo "end testcp_sd" >> test.output
-${NCDUMP} -d5,5 testcpd.exo | grep -v version > ${SRCDIR}/testcp_sd.dmp
+${NCDUMP} -d5,5 testcpd.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testcp_sd.dmp
 
 echo "testcp_ln - large model to normal model single precision copy test..."
 echo "begin testcp_ln" >> test.output
 ${PREFIX} ${SRCDIR}/testcp_ln >> test.output
 echo "end testcp_ln" >> test.output
-${NCDUMP} -d5,5 testcp.exo | grep -v version > ${SRCDIR}/testcp_ln.dmp
+${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testcp_ln.dmp
 
 echo "testcp_nl - normal_model to large_model single precision copy test..."
 echo "begin testcp_nl" >> test.output
 ${PREFIX} ${SRCDIR}/testcp_nl >> test.output
 echo "end testcp_nl" >> test.output
-${NCDUMP} -d5,5 testcp_nl.exo | grep -v version > ${SRCDIR}/testcp_nl.dmp 
+${NCDUMP} -d5,5 testcp_nl.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testcp_nl.dmp 
 
 echo "testwt_clb - single precision write test using concatenated puts..."
 echo "begin testwt_clb" >> test.output
 ${PREFIX} ${SRCDIR}/testwt_clb >> test.output
 echo "end testwt_clb" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version > ${SRCDIR}/test_clb.dmp
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/test_clb.dmp
 
 echo "testwtd - double precision write test..."
 echo "begin testwtd" >> test.output
 ${PREFIX} ${SRCDIR}/testwtd >> test.output
 echo "end testwtd" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version > ${SRCDIR}/testd.dmp
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testd.dmp
 
 echo "testrdd - double precision read test..."
 echo "begin testrdd" >> test.output
@@ -77,20 +77,20 @@ echo "testcp_dd - double-to-double precision copy test..."
 echo "begin testcp_dd" >> test.output
 ${PREFIX} ${SRCDIR}/testcpd >> test.output
 echo "end testcp_dd" >> test.output
-${NCDUMP} -d5,5 testcpd.exo | grep -v version > ${SRCDIR}/testcp_dd.dmp
+${NCDUMP} -d5,5 testcpd.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testcp_dd.dmp
 
 echo "testcp_ds - double-to-single precision copy test..."
 echo "begin testcp_ds" >> test.output
 ${PREFIX} ${SRCDIR}/testcp >> test.output
 echo "end testcp_ds" >> test.output
-${NCDUMP} -d5,5 testcp.exo | grep -v version > ${SRCDIR}/testcp_ds.dmp
+${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testcp_ds.dmp
 
 echo "testwt1 - single precision write files with several side sets..."
 echo "testwt1 ... [Expect WEDGE6 warning from this test]"
 echo "begin testwt1" >> test.output
 ${PREFIX} ${SRCDIR}/testwt1 >> test.output
 echo "end testwt1" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version > ${SRCDIR}/test1.dmp 
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/test1.dmp 
 
 echo "testrd1 - single precision read test of a file with several side sets..."
 echo "testrd1 ... [Expect file create failure error, NOCLOBBER]"
@@ -104,7 +104,7 @@ echo "testwt_ss ... [Expect WEDGE6 warning from this test]"
 echo "begin testwt_ss" >> test.output
 ${PREFIX} ${SRCDIR}/testwt_ss >> test.output
 echo "end testwt_ss" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version > ${SRCDIR}/testwt_ss.dmp
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testwt_ss.dmp
 
 echo "testrd_ss - read test of a file with several side sets..."
 echo "testrd_ss ... [Expect warning for NULL sidesets 30 and 31]"
@@ -116,20 +116,20 @@ echo "testwt2 - single precision write 2 files (simultaneously open) test..."
 echo "begin testwt2" >> test.output
 ${PREFIX} ${SRCDIR}/testwt2 >> test.output
 echo "end testwt2" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version > ${SRCDIR}/test2-1.dmp
-${NCDUMP} -d5,5 test2.exo | grep -v version > ${SRCDIR}/test2-2.dmp
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/test2-1.dmp
+${NCDUMP} -d5,5 test2.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/test2-2.dmp
 
 echo "testrdwt - read from one and write to another (simultaneously open) file..."
 echo "begin testrdwt" >> test.output
 ${PREFIX} ${SRCDIR}/testrdwt >> test.output
 echo "end testrdwt" >> test.output
-${NCDUMP} -d5,5 test2.exo | grep -v version > ${SRCDIR}/test2.dmp
+${NCDUMP} -d5,5 test2.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/test2.dmp
 
 echo "testwt_nc - write x y z components of coordinates separately..."
 echo "begin testwt_nc" >> test.output
 ${PREFIX} ${SRCDIR}/testwt_nc >> test.output
 echo "end testwt_nc" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version > ${SRCDIR}/test.dmp
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/test.dmp
 
 echo "testrd_nc - read x y z components of coordinates separately..."
 echo "begin testrd_nc" >> test.output
@@ -140,7 +140,7 @@ echo "testwt-zeron - write file with zero nodes and elements..."
 echo "begin testwt-zeron" >> test.output
 ${PREFIX} ${SRCDIR}/testwt-zeron >> test.output
 echo "end testwt-zeron" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version > ${SRCDIR}/testwt-zeron.dmp
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testwt-zeron.dmp
 
 echo "testrd - read test of file with zero nodes and elements..."
 echo "begin testrd zero nodes" >> test.output
@@ -151,7 +151,7 @@ echo "testwt-zeroe - write file with zero elements..."
 echo "begin testwt-zeroe" >> test.output
 ${PREFIX} ${SRCDIR}/testwt-zeroe >> test.output
 echo "end testwt-zeroe" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version > ${SRCDIR}/testwt-zeroe.dmp
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testwt-zeroe.dmp
 
 echo "testrd - read test of file with zero elements..."
 echo "begin testrd zero elements" >> test.output
@@ -167,7 +167,7 @@ echo "testwt-nsided - write file with nsided elements..."
 echo "begin testwt-nsided" >> test.output
 ${PREFIX} ${SRCDIR}/testwt-nsided >> test.output
 echo "end testwt-nsided" >> test.output
-${NCDUMP} -d5,5 test-nsided.exo | grep -v version > ${SRCDIR}/testwt-nsided.dmp
+${NCDUMP} -d5,5 test-nsided.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testwt-nsided.dmp
 
 echo "testrd-nsided - read file with nsided elements..."
 echo "begin testrd-nsided" >> test.output
@@ -178,7 +178,7 @@ echo "testwt-nfaced - write file with nfaced elements..."
 echo "begin testwt-nfaced" >> test.output
 ${PREFIX} ${SRCDIR}/testwt-nfaced >> test.output
 echo "end testwt-nfaced" >> test.output
-${NCDUMP} -d5,5 test-nfaced.exo | grep -v version > ${SRCDIR}/testwt-nfaced.dmp
+${NCDUMP} -d5,5 test-nfaced.exo | grep -v version | grep -v int64_status| grep -v _FillValue > ${SRCDIR}/testwt-nfaced.dmp
 
 echo "testrd-nfaced - read file with nfaced elements..."
 echo "begin testrd-nfaced" >> test.output
@@ -189,7 +189,7 @@ echo "testwt-long-name - write file with long (64-character) names..."
 echo "begin testwt-long-name" >> test.output
 ${PREFIX} ${SRCDIR}/testwt-long-name >> test.output
 echo "end testwt-long-name" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version > ${SRCDIR}/testwt-long-name.dmp
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue  ${SRCDIR}/testwt-long-name.dmp
 
 echo "testrd - read long name file truncating to 32 characters on read..."
 echo "begin testrd (truncate)" >> test.output

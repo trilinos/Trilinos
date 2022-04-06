@@ -13,6 +13,7 @@
 
     <!-- reduces setup cost for symmetric problems -->
     <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
+    <Parameter        name="transfers: half precision"            type="bool"     value="false"/>
 
     <!-- start of default values for general options (can be omitted) -->
     <Parameter        name="max levels"                	          type="int"      value="10"/>

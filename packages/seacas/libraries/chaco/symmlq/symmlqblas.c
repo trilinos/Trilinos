@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -274,9 +274,6 @@ double chdnrm2(long int *n, double *dx, long int *incx)
   /* System generated locals */
   long int i__1, i__2;
   double   ret_val, d__1;
-
-  /* Builtin functions */
-  double sqrt();
 
   /* Local variables */
   static double   xmax;

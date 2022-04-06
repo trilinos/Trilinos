@@ -61,9 +61,9 @@ build_precond (Teuchos::ParameterList& test_params,
   using std::cout;
   using std::endl;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
-  Teuchos::Time timer_init("init");
-  Teuchos::Time timer("precond");
-  Teuchos::Time timer2("precond_reuse");
+  Teuchos::Time timer_init("Init preconditioner");
+  Teuchos::Time timer("Compute preconditioner");
+  Teuchos::Time timer2("Compute preconditioner (reuse)");
   const int myRank = A->getRowMap ()->getComm ()->getRank ();
 
   RCP<FancyOStream> out = getFancyOStream (rcpFromRef (cout));

@@ -529,9 +529,9 @@ template<class OutputViewType, class InputViewType>
 void
 copyOffsets (const OutputViewType& dst, const InputViewType& src)
 {
-  static_assert (Kokkos::Impl::is_view<OutputViewType>::value,
+  static_assert (Kokkos::is_view<OutputViewType>::value,
                  "OutputViewType (the type of dst) must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<InputViewType>::value,
+  static_assert (Kokkos::is_view<InputViewType>::value,
                  "InputViewType (the type of src) must be a Kokkos::View.");
   static_assert (std::is_same<typename OutputViewType::value_type,
                    typename OutputViewType::non_const_value_type>::value,

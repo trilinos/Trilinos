@@ -415,7 +415,6 @@ namespace MueLu {
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     SC zero = ATS::zero();
-    SC one = ATS::one();
 
     auto localMatrix = A.getLocalMatrixDevice();
     LO   numRows     = A.getLocalNumRows();
@@ -433,7 +432,7 @@ namespace MueLu {
                              auto length  = rowView.length;
 
                              for (decltype(length) colID = 0; colID < length; colID++)
-                               myColsToZeroView(rowView.colidx(colID),0) = one;
+                               myColsToZeroView(rowView.colidx(colID),0) = impl_ATS::one();
                            }
                          });
 
@@ -445,7 +444,7 @@ namespace MueLu {
     // import to column map
     myColsToZero->doImport(*globalColsToZero,*exporter,Xpetra::INSERT);
 
-    auto myCols = myColsToZero->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    auto myCols = myColsToZero->getDeviceLocalView(Xpetra::Access::ReadOnly);
     size_t numColEntries = colMap->getLocalNumElements();
     Kokkos::View<bool*, typename NO::device_type> dirichletCols(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), numColEntries);
     const typename ATS::magnitudeType eps = 2.0*ATS::eps();
@@ -513,8 +512,9 @@ namespace MueLu {
                                      const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
                                      Kokkos::View<bool*, typename Node::device_type> dirichletCols,
                                      Kokkos::View<bool*, typename Node::device_type> dirichletDomain) {
+    using ATS        = Kokkos::ArithTraits<Scalar>;
+    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
-    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A.getDomainMap();
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A.getRowMap();
     RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A.getColMap();
@@ -532,7 +532,7 @@ namespace MueLu {
                              auto length  = rowView.length;
 
                              for (decltype(length) colID = 0; colID < length; colID++)
-                               myColsToZeroView(rowView.colidx(colID),0) = one;
+                               myColsToZeroView(rowView.colidx(colID),0) = impl_ATS::one();
                            }
                          });
 
@@ -579,7 +579,10 @@ namespace MueLu {
   ZeroDirichletRows(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                     Scalar replaceWith) {
+    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+
+    typename ATS::val_type impl_replaceWith = replaceWith;
 
     auto localMatrix = A->getLocalMatrixDevice();
     LocalOrdinal numRows = A->getLocalNumRows();
@@ -590,7 +593,7 @@ namespace MueLu {
                              auto rowView = localMatrix.row(row);
                              auto length  = rowView.length;
                              for (decltype(length) colID = 0; colID < length; colID++)
-                               rowView.value(colID) = replaceWith;
+                               rowView.value(colID) = impl_replaceWith;
                            }
                          });
   }
@@ -620,14 +623,18 @@ namespace MueLu {
   ZeroDirichletRows(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                     Scalar replaceWith) {
+    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+
+    typename ATS::val_type impl_replaceWith = replaceWith;
+
     auto myCols = X->getDeviceLocalView(Xpetra::Access::ReadWrite);
     size_t numVecs = X->getNumVectors();
     Kokkos::parallel_for("MueLu:Utils::ZeroDirichletRows_MV", range_type(0,dirichletRows.size()),
                          KOKKOS_LAMBDA(const size_t i) {
                            if (dirichletRows(i)) {
                              for(size_t j=0; j<numVecs; j++)
-                               myCols(i,j) = replaceWith;
+                               myCols(i,j) = impl_replaceWith;
                            }
                          });
   }
@@ -657,7 +664,10 @@ namespace MueLu {
   ZeroDirichletCols(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                     const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols,
                     Scalar replaceWith) {
+    using ATS        = Kokkos::ArithTraits<Scalar>;
     using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+
+    typename ATS::val_type impl_replaceWith = replaceWith;
 
     auto localMatrix = A->getLocalMatrixDevice();
     LocalOrdinal numRows = A->getLocalNumRows();
@@ -668,7 +678,7 @@ namespace MueLu {
                            auto length  = rowView.length;
                            for (decltype(length) colID = 0; colID < length; colID++)
                              if (dirichletCols(rowView.colidx(colID))) {
-                               rowView.value(colID) = replaceWith;
+                               rowView.value(colID) = impl_replaceWith;
                              }
                          });
   }
@@ -881,9 +891,6 @@ namespace MueLu {
 
     TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == Rmap->getLocalNumElements());
 
-    const Scalar one  = impl_ATS::one();
-    const Scalar zero = impl_ATS::zero();
-
     auto localMatrix = A->getLocalMatrixDevice();
     auto localRmap = Rmap->getLocalMap();
     auto localCmap = Cmap->getLocalMap();
@@ -898,9 +905,9 @@ namespace MueLu {
 
                              for (decltype(length) colID = 0; colID < length; colID++)
                                if (rowView.colidx(colID) == row_lid)
-                                 rowView.value(colID) = one;
+                                 rowView.value(colID) = impl_ATS::one();
                                else
-                                 rowView.value(colID) = zero;
+                                 rowView.value(colID) = impl_ATS::zero();
                            }
                          });
   }

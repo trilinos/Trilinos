@@ -205,13 +205,6 @@ namespace panzer
       this->addDependentField(fieldMults_[i - 1]);
     } // end loop over the field multipliers
 
-    if (Sacado::IsADType<ScalarT>::value) {
-      const auto fadSize = Kokkos::dimension_scalar(field_.get_static_view());
-      tmp_ = PHX::View<ScalarT*>("panzer::Integrator::BasisTimesVector::tmp_",field_.extent(0),fadSize);
-    } else {
-      tmp_ = PHX::View<ScalarT*>("panzer::Integrator::BasisTimesVector::tmp_",field_.extent(0));
-    }
-
     // Set the name of this object.
     string n("Integrator_BasisTimesVector (");
     if (evalStyle == EvaluatorStyle::CONTRIBUTES)
@@ -281,6 +274,15 @@ namespace panzer
     // Determine the index in the Workset bases for our particular basis name.
     if (not useDescriptors_)
       basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
+
+    // Allocate temporary memory
+    if (Sacado::IsADType<ScalarT>::value) {
+      const auto fadSize = Kokkos::dimension_scalar(field_.get_static_view());
+      tmp_ = PHX::View<ScalarT*>("panzer::Integrator::BasisTimesVector::tmp_",field_.extent(0),fadSize);
+    } else {
+      tmp_ = PHX::View<ScalarT*>("panzer::Integrator::BasisTimesVector::tmp_",field_.extent(0));
+    }
+
   } // end of postRegistrationSetup()
 
   /////////////////////////////////////////////////////////////////////////////

@@ -384,16 +384,16 @@ namespace MueLu {
      */
     int    NLayers, NVertLines, MaxNnz, NCLayers, MyLine, MyLayer;
     int    *InvLineLayer=NULL, *CptLayers=NULL, StartLayer, NStencilNodes;
-    int    BlkRow, dof_j, node_k, *Sub2FullMap=NULL, RowLeng;
+    int    BlkRow=-1, dof_j, node_k, *Sub2FullMap=NULL, RowLeng;
     int    i, j, iii, col, count, index, loc, PtRow, PtCol;
     SC     *BandSol=NULL, *BandMat=NULL, TheSum, *RestrictBandMat=NULL, *RestrictBandSol=NULL;
     int    *IPIV=NULL, KL, KU, KLU, N, NRHS, LDAB,INFO;
     int    *Pcols;
     size_t *Pptr;
     SC     *Pvals;
-    LO     *Rcols;
-    size_t *Rptr;
-    SC     *Rvals;
+    LO     *Rcols=NULL;
+    size_t *Rptr=NULL;
+    SC     *Rvals=NULL;
     int    MaxStencilSize, MaxNnzPerRow;
     LO     *LayDiff=NULL;
     int    CurRow, LastGuy = -1, NewPtr, RLastGuy = -1;
@@ -568,7 +568,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<SC> TRvals;
     Teuchos::ArrayRCP<size_t> TRptr;
     Teuchos::ArrayRCP<LO>     TRcols;
-    LO RmaxNnz, RmaxPerRow;
+    LO RmaxNnz=-1, RmaxPerRow=-1;
     if (buildRestriction) {
       RmaxPerRow = ((LO) ceil(((double) (MaxNnz+7))/((double) (coarseMap->getLocalNumElements()))));
       RmaxNnz = RmaxPerRow*coarseMap->getLocalNumElements();

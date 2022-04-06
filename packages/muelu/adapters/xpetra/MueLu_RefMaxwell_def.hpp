@@ -1385,7 +1385,8 @@ namespace MueLu {
     if (useKokkos_) {
 
       using ATS        = Kokkos::ArithTraits<SC>;
-      using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
+      using impl_Scalar = typename ATS::val_type;
+      using impl_ATS = Kokkos::ArithTraits<impl_Scalar>;
       using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
       typedef typename Matrix::local_matrix_type KCRS;
@@ -1394,6 +1395,10 @@ namespace MueLu {
       typedef typename graph_t::row_map_type::non_const_type lno_view_t;
       typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
       typedef typename KCRS::values_type::non_const_type scalar_view_t;
+
+      const impl_Scalar impl_SC_ZERO = impl_ATS::zero();
+      const impl_Scalar impl_SC_ONE = impl_ATS::one();
+      const impl_Scalar impl_half = impl_SC_ONE / (impl_SC_ONE + impl_SC_ONE);
 
 
       // Which algorithm should we use for the construction of the special prolongator?
@@ -1436,7 +1441,7 @@ namespace MueLu {
                                KOKKOS_LAMBDA(const size_t jj) {
                                  for (size_t k = 0; k < dim; k++) {
                                    P11colind(dim*jj+k) = dim*localD0P.graph.entries(jj)+k;
-                                   P11vals(dim*jj+k) = SC_ZERO;
+                                   P11vals(dim*jj+k) = impl_SC_ZERO;
                                  }
                                });
 
@@ -1457,15 +1462,15 @@ namespace MueLu {
                                  KOKKOS_LAMBDA(const size_t i) {
                                    for (size_t ll = localD0.graph.row_map(i); ll < localD0.graph.row_map(i+1); ll++) {
                                      LO l = localD0.graph.entries(ll);
-                                     SC p = localD0.values(ll);
+                                     impl_Scalar p = localD0.values(ll);
                                      if (impl_ATS::magnitude(p) < tol)
                                        continue;
                                      for (size_t jj = localP.graph.row_map(l); jj < localP.graph.row_map(l+1); jj++) {
                                        LO j = localP.graph.entries(jj);
-                                       SC v = localP.values(jj);
+                                       impl_Scalar v = localP.values(jj);
                                        for (size_t k = 0; k < dim; k++) {
                                          LO jNew = dim*j+k;
-                                         SC n = localNullspace(i,k);
+                                         impl_Scalar n = localNullspace(i,k);
                                          size_t m;
                                          for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                            if (P11colind(m) == jNew)
@@ -1473,7 +1478,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
                                          TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
-                                         P11vals(m) += half * v * n;
+                                         P11vals(m) += impl_half * v * n;
                                        }
                                      }
                                    }
@@ -1488,10 +1493,10 @@ namespace MueLu {
                                      LO l = localD0.graph.entries(ll);
                                      for (size_t jj = localP.graph.row_map(l); jj < localP.graph.row_map(l+1); jj++) {
                                        LO j = localP.graph.entries(jj);
-                                       SC v = localP.values(jj);
+                                       impl_Scalar v = localP.values(jj);
                                        for (size_t k = 0; k < dim; k++) {
                                          LO jNew = dim*j+k;
-                                         SC n = localNullspace(i,k);
+                                         impl_Scalar n = localNullspace(i,k);
                                          size_t m;
                                          for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                            if (P11colind(m) == jNew)
@@ -1499,7 +1504,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
                                          TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
-                                         P11vals(m) += half * v * n;
+                                         P11vals(m) += impl_half * v * n;
                                        }
                                      }
                                    }
@@ -1520,7 +1525,7 @@ namespace MueLu {
         auto localNullspaceH = NullspaceH_->getDeviceLocalView(Xpetra::Access::ReadWrite);
         Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_nullspace", range_type(0,Nullspace_nodal->getLocalLength()),
                              KOKKOS_LAMBDA(const size_t i) {
-                               Scalar val = localNullspace_nodal(i,0);
+                               impl_Scalar val = localNullspace_nodal(i,0);
                                for (size_t j = 0; j < dim; j++)
                                  localNullspaceH(dim*i+j, j) = val;
                              });
@@ -1553,7 +1558,7 @@ namespace MueLu {
                                KOKKOS_LAMBDA(const size_t jj) {
                                  for (size_t k = 0; k < dim; k++) {
                                    P11colind(dim*jj+k) = dim*localD0.graph.entries(jj)+k;
-                                   P11vals(dim*jj+k) = SC_ZERO;
+                                   P11vals(dim*jj+k) = impl_SC_ZERO;
                                  }
                                });
 
@@ -1572,12 +1577,12 @@ namespace MueLu {
                                  KOKKOS_LAMBDA(const size_t i) {
                                    for (size_t jj = localD0.graph.row_map(i); jj < localD0.graph.row_map(i+1); jj++) {
                                      LO j = localD0.graph.entries(jj);
-                                     SC p = localD0.values(jj);
+                                     impl_Scalar p = localD0.values(jj);
                                      if (impl_ATS::magnitude(p) < tol)
                                        continue;
                                      for (size_t k = 0; k < dim; k++) {
                                        LO jNew = dim*j+k;
-                                       SC n = localNullspace(i,k);
+                                       impl_Scalar n = localNullspace(i,k);
                                        size_t m;
                                        for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                          if (P11colind(m) == jNew)
@@ -1585,7 +1590,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
                                        TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
-                                       P11vals(m) += half * n;
+                                       P11vals(m) += impl_half * n;
                                      }
                                    }
                                  });
@@ -1597,7 +1602,7 @@ namespace MueLu {
                                      LO j = localD0.graph.entries(jj);
                                      for (size_t k = 0; k < dim; k++) {
                                        LO jNew = dim*j+k;
-                                       SC n = localNullspace(i,k);
+                                       impl_Scalar n = localNullspace(i,k);
                                        size_t m;
                                        for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                          if (P11colind(m) == jNew)
@@ -1605,7 +1610,7 @@ namespace MueLu {
 #if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
                                        TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
-                                       P11vals(m) += half * n;
+                                       P11vals(m) += impl_half * n;
                                      }
                                    }
                                  });

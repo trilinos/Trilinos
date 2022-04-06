@@ -145,11 +145,11 @@ namespace Impl {
            bool  IsBuiltInType>
   class BcrsApplyNoTransFunctor {
   private:
-    static_assert (Kokkos::Impl::is_view<MatrixValuesType>::value,
+    static_assert (Kokkos::is_view<MatrixValuesType>::value,
                    "MatrixValuesType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<OutVecType>::value,
+    static_assert (Kokkos::is_view<OutVecType>::value,
                    "OutVecType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<InVecType>::value,
+    static_assert (Kokkos::is_view<InVecType>::value,
                    "InVecType must be a Kokkos::View.");
     static_assert (std::is_same<MatrixValuesType,
                    typename MatrixValuesType::const_type>::value,
@@ -297,11 +297,11 @@ namespace Impl {
                                 OutVecType,
                                 true> {
   private:
-    static_assert (Kokkos::Impl::is_view<MatrixValuesType>::value,
+    static_assert (Kokkos::is_view<MatrixValuesType>::value,
                    "MatrixValuesType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<OutVecType>::value,
+    static_assert (Kokkos::is_view<OutVecType>::value,
                    "OutVecType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<InVecType>::value,
+    static_assert (Kokkos::is_view<InVecType>::value,
                    "InVecType must be a Kokkos::View.");
     static_assert (std::is_same<MatrixValuesType,
                    typename MatrixValuesType::const_type>::value,
@@ -475,11 +475,11 @@ namespace Impl {
                          const OutMultiVecType& Y
                          )
   {
-    static_assert (Kokkos::Impl::is_view<MatrixValuesType>::value,
+    static_assert (Kokkos::is_view<MatrixValuesType>::value,
                    "MatrixValuesType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<OutMultiVecType>::value,
+    static_assert (Kokkos::is_view<OutMultiVecType>::value,
                    "OutMultiVecType must be a Kokkos::View.");
-    static_assert (Kokkos::Impl::is_view<InMultiVecType>::value,
+    static_assert (Kokkos::is_view<InMultiVecType>::value,
                    "InMultiVecType must be a Kokkos::View.");
     static_assert (static_cast<int> (MatrixValuesType::rank) == 1,
                    "MatrixValuesType must be a rank-1 Kokkos::View.");

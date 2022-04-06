@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -276,7 +276,7 @@ private:
 
   // the handler
   typedef std::map<int, assert_func> handlers_collection;
-  static handlers_collection &       handlers()
+  static handlers_collection        &handlers()
   {
     static handlers_collection inst;
     return inst;
@@ -294,8 +294,8 @@ private:
   }
 
 private:
-  assert_context context_;
-  mutable bool   needs_handling_;
+  assert_context context_{};
+  mutable bool   needs_handling_{true};
 };
 
 namespace smart_assert {

@@ -99,7 +99,7 @@ after ex_get_coord_names, error =   0
 x coord name = 'xcoor'
 y coord name = 'ycoor'
 
-after ex_get_map, error =   0
+after ex_get_id_map, error =   0
 elem_map(0) = 1 
 elem_map(1) = 2 
 elem_map(2) = 3 

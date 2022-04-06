@@ -133,11 +133,11 @@ getGraphDiagOffsets (const DiagOffsetsType& diagOffsets,
                      const LclColIndsType& ind,
                      const bool isSorted)
 {
-  static_assert (Kokkos::Impl::is_view<DiagOffsetsType>::value,
+  static_assert (Kokkos::is_view<DiagOffsetsType>::value,
                  "DiagOffsetsType (the type of diagOffsets) must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<RowOffsetsType>::value,
+  static_assert (Kokkos::is_view<RowOffsetsType>::value,
                  "RowOffsetsType (the type of ptr) must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<LclColIndsType>::value,
+  static_assert (Kokkos::is_view<LclColIndsType>::value,
                  "LclColIndsType (the type of ind) must be a Kokkos::View.");
   static_assert (static_cast<int> (DiagOffsetsType::rank) == 1,
                  "DiagOffsetsType (the type of diagOffsets) must be a rank-1 Kokkos::View.");

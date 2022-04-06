@@ -165,8 +165,10 @@ namespace Ioss {
     return valid_methods;
   }
 
-  template Decomposition<int>::Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm);
-  template Decomposition<int64_t>::Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm);
+  template Decomposition<int>::Decomposition(const Ioss::PropertyManager &props,
+                                             Ioss_MPI_Comm                comm);
+  template Decomposition<int64_t>::Decomposition(const Ioss::PropertyManager &props,
+                                                 Ioss_MPI_Comm                comm);
 
   template <typename INT>
   Decomposition<INT>::Decomposition(const Ioss::PropertyManager &props, Ioss_MPI_Comm comm)

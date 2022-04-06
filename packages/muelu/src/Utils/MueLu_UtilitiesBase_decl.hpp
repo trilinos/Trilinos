@@ -649,10 +649,11 @@ namespace MueLu {
     */
     static typename Teuchos::ScalarTraits<Scalar>::magnitudeType Distance2(const Teuchos::ArrayView<double> & weight,const Teuchos::Array<Teuchos::ArrayRCP<const Scalar>> &v, LocalOrdinal i0, LocalOrdinal i1) {
       const size_t numVectors = v.size();
+      using MT = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
 
       Scalar d = Teuchos::ScalarTraits<Scalar>::zero();
       for (size_t j = 0; j < numVectors; j++) {
-        d += weight[j]*(v[j][i0] - v[j][i1])*(v[j][i0] - v[j][i1]);
+        d += Teuchos::as<MT>(weight[j])*(v[j][i0] - v[j][i1])*(v[j][i0] - v[j][i1]);
       }
       return Teuchos::ScalarTraits<Scalar>::magnitude(d);
     }
@@ -1211,13 +1212,15 @@ namespace MueLu {
       isDirichletRow = Xpetra::VectorFactory<int,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getRowMap(),true);
       isDirichletCol = Xpetra::VectorFactory<int,LocalOrdinal,GlobalOrdinal,Node>::Build(A->getColMap(),true);
 
-      Teuchos::ArrayRCP<int> dr_rcp = isDirichletRow->getDataNonConst(0);
-      Teuchos::ArrayView<int> dr    = dr_rcp();
-      Teuchos::ArrayRCP<int> dc_rcp = isDirichletCol->getDataNonConst(0);
-      Teuchos::ArrayView<int> dc    = dc_rcp();
-      for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
-        dr[dirichletRows[i]] = 1;
-        if(!has_import) dc[dirichletRows[i]] = 1;
+      {
+        Teuchos::ArrayRCP<int> dr_rcp = isDirichletRow->getDataNonConst(0);
+        Teuchos::ArrayView<int> dr    = dr_rcp();
+        Teuchos::ArrayRCP<int> dc_rcp = isDirichletCol->getDataNonConst(0);
+        Teuchos::ArrayView<int> dc    = dc_rcp();
+        for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
+          dr[dirichletRows[i]] = 1;
+          if(!has_import) dc[dirichletRows[i]] = 1;
+        }
       }
 
       if(has_import)

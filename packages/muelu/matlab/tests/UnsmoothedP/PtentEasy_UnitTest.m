@@ -39,6 +39,7 @@ try
   end
 
 catch me
-  fprintf('Test failed with exception "%s"\n', me.message);
+  disp('Test failed, on exception:');
+  disp(getReport(me));
   exit(-2)
 end

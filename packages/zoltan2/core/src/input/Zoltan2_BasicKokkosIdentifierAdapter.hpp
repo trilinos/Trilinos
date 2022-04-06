@@ -89,6 +89,7 @@ public:
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
+  typedef typename node_t::device_type         device_t;
   typedef User user_t;
 
   /*! \brief Constructor
@@ -105,8 +106,8 @@ public:
    *  lifetime of this Adapter.
    */
   BasicKokkosIdentifierAdapter(
-    Kokkos::View<gno_t*, typename node_t::device_type> &ids,
-    Kokkos::View<scalar_t**, typename node_t::device_type> &weights);
+    Kokkos::View<gno_t*, device_t> &ids,
+    Kokkos::View<scalar_t**, device_t> &weights);
 
   ////////////////////////////////////////////////////////////////
   // The Adapter interface.
@@ -121,9 +122,8 @@ public:
     ids = kokkosIds.data();
   }
 
-  void getIDsKokkosView(Kokkos::View<const gno_t *,
-    typename node_t::device_type> &ids) const override {
-    ids = idsView_.template view<typename node_t::device_type>();
+  void getIDsKokkosView(Kokkos::View<const gno_t *, device_t> &ids) const override {
+    ids = idsView_.view_device();
   }
 
   int getNumWeightsPerID() const override {
@@ -139,14 +139,13 @@ public:
     stride = 1;
   }
 
-  void getWeightsKokkosView(Kokkos::View<scalar_t **,
-    typename node_t::device_type> &wgts) const override {
-    wgts = weightsView_.template view<typename node_t::device_type>();
+  void getWeightsKokkosView(Kokkos::View<scalar_t **, device_t> &wgts) const override {
+    wgts = weightsView_.template view<device_t>();
   }
 
 private:
-  Kokkos::DualView<gno_t *> idsView_;
-  Kokkos::DualView<scalar_t **> weightsView_;
+  Kokkos::DualView<gno_t *, device_t> idsView_;
+  Kokkos::DualView<scalar_t **, device_t> weightsView_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -155,22 +154,24 @@ private:
 
 template <typename User>
 BasicKokkosIdentifierAdapter<User>::BasicKokkosIdentifierAdapter(
-    Kokkos::View<gno_t *, typename node_t::device_type> &ids,
-    Kokkos::View<scalar_t **, typename node_t::device_type> &weights)
+    Kokkos::View<gno_t *, device_t> &ids,
+    Kokkos::View<scalar_t **, device_t> &weights)
 {
-  idsView_ = Kokkos::DualView<gno_t *>("idsView_", ids.extent(0));
+  idsView_ = Kokkos::DualView<gno_t *, device_t>("idsView_", ids.extent(0));
   Kokkos::deep_copy(idsView_.h_view, ids);
 
-  weightsView_ = Kokkos::DualView<scalar_t **>("weightsView_", weights.extent(0), weights.extent(1));
+  weightsView_ = Kokkos::DualView<scalar_t **, device_t>("weightsView_",
+                                                         weights.extent(0),
+                                                         weights.extent(1));
   Kokkos::deep_copy(weightsView_.h_view, weights);
 
   weightsView_.modify_host();
   weightsView_.sync_host();
-  weightsView_.template sync<typename node_t::device_type>();
+  weightsView_.template sync<device_t>();
 
   idsView_.modify_host();
   idsView_.sync_host();
-  idsView_.template sync<typename node_t::device_type>();
+  idsView_.template sync<device_t>();
 }
 
 } //namespace Zoltan2

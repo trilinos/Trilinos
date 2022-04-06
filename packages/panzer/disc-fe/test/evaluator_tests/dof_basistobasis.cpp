@@ -234,26 +234,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   auto t_h = Kokkos::create_mirror_view(t.get_view());
   Kokkos::deep_copy(t_h, t.get_view());
   TEST_FLOATING_EQUALITY(ScalarT(t_h(0,0)),ScalarT(s_h(0,0)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,1)),ScalarT(s_h(0,1)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,2)),ScalarT(s_h(0,2)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,3)),ScalarT(s_h(0,3)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,2)),ScalarT(s_h(0,1)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,8)),ScalarT(s_h(0,2)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,6)),ScalarT(s_h(0,3)),tol);
 
   TEST_FLOATING_EQUALITY(ScalarT(t_h(1,0)),ScalarT(s_h(1,0)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,1)),ScalarT(s_h(1,1)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,2)),ScalarT(s_h(1,2)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,3)),ScalarT(s_h(1,3)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,2)),ScalarT(s_h(1,1)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,8)),ScalarT(s_h(1,2)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,6)),ScalarT(s_h(1,3)),tol);
 
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,4)),ScalarT(1.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,1)),ScalarT(1.5),tol);
   TEST_FLOATING_EQUALITY(ScalarT(t_h(0,5)),ScalarT(2.0),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,6)),ScalarT(1.5),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,7)),ScalarT(1.0),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,8)),ScalarT(1.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,4)),ScalarT(1.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,3)),ScalarT(1.0),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,7)),ScalarT(1.5),tol);
 
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,4)),ScalarT(2.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,1)),ScalarT(2.5),tol);
   TEST_FLOATING_EQUALITY(ScalarT(t_h(1,5)),ScalarT(3.0),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,6)),ScalarT(2.5),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,7)),ScalarT(2.0),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,8)),ScalarT(2.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,4)),ScalarT(2.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,3)),ScalarT(2.0),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,7)),ScalarT(2.5),tol);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

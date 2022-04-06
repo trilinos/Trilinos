@@ -176,8 +176,7 @@ namespace {
     int    min_proc = -1;
     for (int i = 0; i < static_cast<int>(work.size()); i++) {
       if (work[i] < min_work &&
-          proc_adam_map.find(std::make_pair(zone->m_adam->m_zone, static_cast<int>(i))) ==
-              proc_adam_map.end()) {
+          proc_adam_map.find(std::make_pair(zone->m_adam->m_zone, i)) == proc_adam_map.end()) {
         min_work = work[i];
         min_proc = i;
         if (min_work == 0) {
@@ -1580,6 +1579,9 @@ int Iocgns::Utils::find_solution_index(int cgns_file_ptr, int base, int zone, in
 
 void Iocgns::Utils::add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db)
 {
+  static int fake_id =
+      std::numeric_limits<int>::max(); // Used in case CGNS file does not specify an id.
+
   int base         = 1;
   int num_families = 0;
   CGCHECKNP(cg_nfamilies(cgns_file_ptr, base, &num_families));
@@ -1623,6 +1625,11 @@ void Iocgns::Utils::add_sidesets(int cgns_file_ptr, Ioss::DatabaseIO *db)
       }
       if (id == 0) {
         id = Ioss::Utils::extract_id(ss_name);
+        if (id == 0) {
+          // Assign a fake_id to this sideset.  No checking to make
+          // sure there are no duplicates...
+          id = fake_id--;
+        }
       }
       if (id != 0) {
         auto *ss = new Ioss::SideSet(db, ss_name);
@@ -2394,6 +2401,12 @@ void Iocgns::Utils::set_line_decomposition(int cgns_file_ptr, const std::string 
           if (verbose && rank == 0) {
             fmt::print(Ioss::DEBUG(), "Setting line ordinal to {} on {} for surface: {}\n",
                        zone->m_lineOrdinal, zone->m_name, boconame);
+            if (zone->m_lineOrdinal == 7) {
+              fmt::print(Ioss::DEBUG(),
+                         "NOTE: Zone {} with work {} will not be decomposed due to line ordinal "
+                         "setting.\n",
+                         zone->m_name, fmt::group_digits(zone->work()));
+            }
           }
         }
       }
@@ -2624,16 +2637,18 @@ int Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones, d
   std::vector<int> splits(zones.size());
 
   for (size_t i = 0; i < zones.size(); i++) {
-    auto   zone = zones[i];
-    double work = zone->work();
-    total_work += work;
-    if (load_balance <= 1.2) {
-      splits[i] = int(std::ceil(work / avg_work));
+    auto zone = zones[i];
+    if (zone->m_lineOrdinal != 7) {
+      double work = zone->work();
+      total_work += work;
+      if (load_balance <= 1.2) {
+        splits[i] = int(std::ceil(work / avg_work));
+      }
+      else {
+        splits[i] = int(std::round(work / avg_work + 0.2));
+      }
+      splits[i] = splits[i] == 0 ? 1 : splits[i];
     }
-    else {
-      splits[i] = int(std::round(work / avg_work + 0.2));
-    }
-    splits[i] = splits[i] == 0 ? 1 : splits[i];
   }
 
   int  num_splits        = std::accumulate(splits.begin(), splits.end(), 0);

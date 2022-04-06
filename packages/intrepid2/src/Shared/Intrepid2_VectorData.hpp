@@ -50,8 +50,6 @@
 #ifndef Intrepid2_VectorData_h
 #define Intrepid2_VectorData_h
 
-#include <Kokkos_Vector.hpp>
-
 namespace Intrepid2 {
 /** \class Intrepid2::VectorData
     \brief Reference-space field values for a basis, designed to support typical vector-valued bases.
@@ -67,16 +65,16 @@ namespace Intrepid2 {
   class VectorData
   {
   public:
-    using VectorArray = Kokkos::vector< TensorData<Scalar,DeviceType> >; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
+    using VectorArray = Kokkos::Array< TensorData<Scalar,DeviceType>, Parameters::MaxVectorComponents >; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
     using FamilyVectorArray = Kokkos::Array< VectorArray, Parameters::MaxTensorComponents>;
 
     FamilyVectorArray vectorComponents_; // outer: family ordinal; inner: component/spatial dimension ordinal
     bool axialComponents_; // if true, each entry in vectorComponents_ is an axial component vector; for 3D: (f1,0,0); (0,f2,0); (0,0,f3).  The 0s are represented by trivial/invalid TensorData objects.  In this case, numComponents_ == numFamilies_.
      
     int totalDimension_;
-    Kokkos::vector<int> dimToComponent_;
-    Kokkos::vector<int> dimToComponentDim_;
-    Kokkos::vector<int> numDimsForComponent_;
+    Kokkos::Array<int, Parameters::MaxVectorComponents> dimToComponent_;
+    Kokkos::Array<int, Parameters::MaxVectorComponents> dimToComponentDim_;
+    Kokkos::Array<int, Parameters::MaxVectorComponents> numDimsForComponent_;
     
     Kokkos::Array<int,Parameters::MaxTensorComponents> familyFieldUpperBound_; // one higher than the end of family indicated
     
@@ -130,7 +128,6 @@ namespace Intrepid2 {
       }
 
       // do a pass through components to determine total component dim (totalDimension_) and size lookups appropriately
-      numDimsForComponent_ = Kokkos::vector<int>(numComponents_);
       int currentDim = 0;
       for (unsigned j=0; j<numComponents_; j++)
       {
@@ -163,12 +160,9 @@ namespace Intrepid2 {
       }
       totalDimension_ = currentDim;
       
-      dimToComponent_    = Kokkos::vector<int>(totalDimension_);
-      dimToComponentDim_ = Kokkos::vector<int>(totalDimension_);
       currentDim = 0;
       for (unsigned j=0; j<numComponents_; j++)
       {
-        bool validEntryFoundForComponent = false;
         int numDimsForComponent = numDimsForComponent_[j];
         for (int dim=0; dim<numDimsForComponent; dim++)
         {
@@ -193,6 +187,7 @@ namespace Intrepid2 {
     numComponents_(numComponents)
     {
       static_assert(numFamilies <= Parameters::MaxTensorComponents,   "numFamilies must be less than Parameters::MaxTensorComponents");
+      static_assert(numComponents <= Parameters::MaxVectorComponents, "numComponents must be less than Parameters::MaxVectorComponents");
       for (unsigned i=0; i<numFamilies; i++)
       {
         vectorComponents_[i] = VectorArray(numComponents);
@@ -220,7 +215,8 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION(vectorComponents[i].size() != numComponents_, std::invalid_argument, "each family must have the same number of components");
       }
       
-      INTREPID2_TEST_FOR_EXCEPTION(numFamilies_ > Parameters::MaxTensorComponents,   std::invalid_argument, "numFamilies must be less than Parameters::MaxTensorComponents");
+      INTREPID2_TEST_FOR_EXCEPTION(numFamilies_ > Parameters::MaxTensorComponents,   std::invalid_argument, "numFamilies must be at most Parameters::MaxTensorComponents");
+      INTREPID2_TEST_FOR_EXCEPTION(numComponents_ > Parameters::MaxVectorComponents,   std::invalid_argument, "numComponents must be at most Parameters::MaxVectorComponents");
       for (unsigned i=0; i<numFamilies_; i++)
       {
         vectorComponents_[i] = VectorArray(numComponents_);

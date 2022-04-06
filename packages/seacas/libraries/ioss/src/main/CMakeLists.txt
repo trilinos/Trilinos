@@ -522,6 +522,15 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_embedded_nodeblock_fields
   COMM mpi serial
   )
 
+TRIBITS_ADD_ADVANCED_TEST(unstructured_2d_cgns
+   TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/circle-square-2d.cgns 2d-out.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/circle-square-2d.cgns 2d-out.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi serial
+  )
+
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_fpp_vertex_cell_fields
    TEST_0 EXEC io_shell ARGS --compose external ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc_fields.cgns sparc_fields.cgns
      NUM_MPI_PROCS 1-4

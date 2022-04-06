@@ -372,6 +372,24 @@ namespace Xpetra {
      */
     virtual size_t getLocalMaxNumRowEntries() const =0;
 
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumRows() const {
+      return getLocalNumRows();
+    }
+
+    XPETRA_DEPRECATED
+    size_t getNodeNumEntries() const {
+      return getLocalNumEntries();
+    }
+
+    XPETRA_DEPRECATED
+    size_t getNodeMaxNumRowEntries() const {
+      return getLocalMaxNumRowEntries();
+    }
+#endif
+
+
     //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
     virtual bool isLocallyIndexed() const =0;
 

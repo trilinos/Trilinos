@@ -125,17 +125,19 @@ void Piro::TempusSolverForwardOnly<Scalar>::initialize(
   *out << "\nA) Get the base parameter list ...\n";
   //
 
-  TEUCHOS_TEST_FOR_EXCEPTION(appParams->isSublist("Tempus"),
+  TEUCHOS_TEST_FOR_EXCEPTION(!appParams->isSublist("Tempus"),
       Teuchos::Exceptions::InvalidParameter, std::endl <<
       "Error! Piro::TempusSolverForwardOnly: must have Tempus sublist ");
 
   RCP<Teuchos::ParameterList> tempusPL = sublist(appParams, "Tempus", true);
-  tempusPL->validateParameters(*getValidTempusParameters(),0);
 
   //
   *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
   //
 
+  // Validation of Parameters in tempusPL is done through each objects
+  // "create" function, e.g., createIntegratorBasic, createStepper,
+  // and createTimeStepControl.
   fwdStateIntegrator = Tempus::createIntegratorBasic(tempusPL, in_model);
 
 
@@ -475,10 +477,8 @@ void Piro::TempusSolverForwardOnly<Scalar>::evalModelImpl(
     fwdStateIntegrator->initialize();
 
     Scalar t_final = get_t_final();
-    *out << "T final requested: " << t_final << " \n";
     fwdStateIntegrator->advanceTime(t_final);
     double time = fwdStateIntegrator->getTime();
-    *out << "T final actual: " << time << "\n";
 
     Scalar diff = 0.0;
     if (abs(t_final) == 0) diff = abs(time-t_final);
@@ -543,14 +543,12 @@ template <typename Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 Piro::TempusSolverForwardOnly<Scalar>::getValidTempusParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> validPL;
-  if (fwdStateIntegrator != Teuchos::null) {
-    validPL = fwdStateIntegrator->getValidParameters();
-  } else {
-    auto integrator =Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>());
-    validPL = integrator->getValidParameters();
+  if (fwdStateIntegrator == Teuchos::null) {
+    auto integrator = Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>());
+    return integrator->getValidParameters();
   }
-  return validPL;
+
+  return fwdStateIntegrator->getValidParameters();
 }
 
 template <typename Scalar>

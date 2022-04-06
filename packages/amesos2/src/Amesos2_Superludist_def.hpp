@@ -460,7 +460,8 @@ namespace Amesos2 {
       }
 
       // Retrieve the normI of A (required by gstrf).
-      double anorm = function_map::plangs((char *)"I", &(data_.A), &(data_.grid));
+      bool notran = (data_.options.Trans == SLUD::NOTRANS);
+      double anorm = function_map::plangs((notran ? (char *)"1" : (char *)"I"), &(data_.A), &(data_.grid));
 
       int info = 0;
       {

@@ -83,11 +83,11 @@ namespace TpetraTest {
       checkInputIndices_ (checkInputIndices),
       result_ ("result")
     {
-      static_assert (Kokkos::Impl::is_view<VectorViewType>::value,
+      static_assert (Kokkos::is_view<VectorViewType>::value,
                      "VectorViewType must be a Kokkos::View specialization.");
-      static_assert (Kokkos::Impl::is_view<RhsViewType>::value,
+      static_assert (Kokkos::is_view<RhsViewType>::value,
                      "RhsViewType must be a Kokkos::View specialization.");
-      static_assert (Kokkos::Impl::is_view<LhsViewType>::value,
+      static_assert (Kokkos::is_view<LhsViewType>::value,
                      "LhsViewType must be a Kokkos::View specialization.");
       static_assert (static_cast<int> (RhsViewType::rank) == 1,
                      "RhsViewType must be a rank-1 Kokkos::View.");
@@ -161,11 +161,11 @@ namespace { // (anonymous)
 #endif // KOKKOS_ENABLE_SERIAL
                                             const bool checkInputIndices = true)
   {
-    static_assert (Kokkos::Impl::is_view<VectorViewType>::value,
+    static_assert (Kokkos::is_view<VectorViewType>::value,
                    "VectorViewType must be a Kokkos::View specialization.");
-    static_assert (Kokkos::Impl::is_view<RhsViewType>::value,
+    static_assert (Kokkos::is_view<RhsViewType>::value,
                    "RhsViewType must be a Kokkos::View specialization.");
-    static_assert (Kokkos::Impl::is_view<LhsViewType>::value,
+    static_assert (Kokkos::is_view<LhsViewType>::value,
                    "LhsViewType must be a Kokkos::View specialization.");
     static_assert (static_cast<int> (RhsViewType::rank) == 1,
                    "RhsViewType must be a rank-1 Kokkos::View.");

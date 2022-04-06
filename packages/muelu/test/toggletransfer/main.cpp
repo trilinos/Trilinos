@@ -150,21 +150,19 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::ParameterList paramList;
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
-    if (TYPE_EQUAL(Scalar, std::complex<double>)) {
-      if (paramList.isSublist("Factories")) {
-        Teuchos::ParameterList smootherParams = paramList.sublist("Factories").sublist("myJacobi").sublist("ParameterList");
-        double damping = smootherParams.get<double>("relaxation: damping factor");
-        smootherParams.remove("relaxation: damping factor");
-        smootherParams.set<Scalar>("relaxation: damping factor",damping);
-        paramList.sublist("Factories").sublist("myJacobi").set("ParameterList",smootherParams);
-      }
-      if (paramList.isSublist("smoother: params")) {
-        Teuchos::ParameterList smootherParams = paramList.sublist("smoother: params");
-        double damping = smootherParams.get<double>("relaxation: damping factor");
-        smootherParams.remove("relaxation: damping factor");
-        smootherParams.set<Scalar>("relaxation: damping factor",damping);
-        paramList.set("smoother: params",smootherParams);
-      }
+    if (paramList.isSublist("Factories")) {
+      Teuchos::ParameterList smootherParams = paramList.sublist("Factories").sublist("myJacobi").sublist("ParameterList");
+      double damping = smootherParams.get<double>("relaxation: damping factor");
+      smootherParams.remove("relaxation: damping factor");
+      smootherParams.set<Scalar>("relaxation: damping factor",damping);
+      paramList.sublist("Factories").sublist("myJacobi").set("ParameterList",smootherParams);
+    }
+    if (paramList.isSublist("smoother: params")) {
+      Teuchos::ParameterList smootherParams = paramList.sublist("smoother: params");
+      double damping = smootherParams.get<double>("relaxation: damping factor");
+      smootherParams.remove("relaxation: damping factor");
+      smootherParams.set<Scalar>("relaxation: damping factor",damping);
+      paramList.set("smoother: params",smootherParams);
     }
 
     // create parameter list interpreter
