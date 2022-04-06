@@ -704,7 +704,7 @@ namespace BaskerNS
       #if !defined (HAVE_SHYLU_NODEBASKER_METIS) & !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
       if (Options.run_nd_on_leaves == BASKER_TRUE) {
         if(Options.verbose == BASKER_TRUE) {
-          printf("Basker: turning ND on leaves since no METIS nor SCOTCH (hence sequential)\n");
+          printf("Basker: turning off ND-on-leaves option since no METIS nor SCOTCH (hence sequential)\n");
         }
         Options.run_nd_on_leaves = BASKER_FALSE;
       }
