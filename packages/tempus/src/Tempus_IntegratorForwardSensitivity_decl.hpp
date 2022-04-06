@@ -241,6 +241,11 @@ public:
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const;
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDotDp() const;
 
+  /// Return response function g
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getG() const;
+  /// Return forward sensitivity stored in Jacobian format
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;
+
   /// Get current state
   virtual Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
     {return integrator_->getCurrentState();}
@@ -260,6 +265,7 @@ public:
   SensitivityStepMode getStepMode() const;
 
 protected:
+
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> model_;
   Teuchos::RCP<IntegratorBasic<Scalar>> integrator_;
   Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar>> sens_model_;

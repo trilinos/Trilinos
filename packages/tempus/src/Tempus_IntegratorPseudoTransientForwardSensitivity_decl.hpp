@@ -179,6 +179,11 @@ public:
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const;
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDotDp() const;
 
+  /// Return response function g
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getG() const;
+  /// Return forward sensitivity stored in Jacobian format
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;
+
   /// \name Overridden from Teuchos::Describable
   //@{
     std::string description() const override;

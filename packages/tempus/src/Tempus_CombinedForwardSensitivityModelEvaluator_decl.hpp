@@ -13,6 +13,7 @@
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
+#include "Thyra_DefaultMultiVectorProductVector.hpp"
 
 namespace Tempus {
 
@@ -53,6 +54,9 @@ public:
    *        evalModel().
    *   <li> "Sensitivity Parameter Index" (default: 0) Model evaluator
    *        parameter index for which sensitivities will be computed.
+   *   <li> "Response Function Index", (default: 0) The model evaluator
+   *        response index for which sensitivities will be computed if
+   *        requested.
    *   <li> "Sensitivity X Tangent Index" (default: 1) If "Use DfDp as Tangent"
    *        is true, the model evaluator parameter index for passing dx/dp
    *        as a Thyra::DefaultMultiVectorProductVector.
@@ -121,6 +125,8 @@ public:
 
 private:
 
+  typedef Thyra::DefaultMultiVectorProductVectorSpace<Scalar> DMVPVS;
+
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
 
   void evalModelImpl(
@@ -136,20 +142,27 @@ private:
   Teuchos::RCP<MultiVector> dx_dotdp_init_;
   Teuchos::RCP<MultiVector> dx_dotdotdp_init_;
   int p_index_;
+  int g_index_;
   int x_tangent_index_;
   int xdot_tangent_index_;
   int xdotdot_tangent_index_;
   bool use_dfdp_as_tangent_;
+  bool use_dgdp_as_tangent_;
 
   int num_param_;
-  Teuchos::RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > dxdp_space_;
-  Teuchos::RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > x_dxdp_space_;
-  Teuchos::RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > dfdp_space_;
-  Teuchos::RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > f_dfdp_space_;
+  int num_response_;
+  int g_offset_;
+  Teuchos::RCP<const DMVPVS> dxdp_space_;
+  Teuchos::RCP<const DMVPVS> x_dxdp_space_;
+  Teuchos::RCP<const DMVPVS> dfdp_space_;
+  Teuchos::RCP<const DMVPVS> f_dfdp_space_;
+  Teuchos::RCP<const DMVPVS> dgdp_space_;
 
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdx_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdot_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdotdot_;
+  mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dgdx_;
+  mutable Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > my_dgdx_mv_;
 };
 
 } // namespace Tempus

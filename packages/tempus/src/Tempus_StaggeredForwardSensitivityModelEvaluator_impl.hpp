@@ -31,10 +31,15 @@ StaggeredForwardSensitivityModelEvaluator(
   dx_dotdp_init_(dx_dotdp_init),
   dx_dotdotdp_init_(dx_dotdotdp_init),
   p_index_(0),
+  g_index_(-1),
   x_tangent_index_(1),
   xdot_tangent_index_(2),
   xdotdot_tangent_index_(3),
   use_dfdp_as_tangent_(false),
+  use_dgdp_as_tangent_(false),
+  num_param_(0),
+  num_response_(0),
+  g_offset_(0),
   t_interp_(Teuchos::ScalarTraits<Scalar>::rmax())
 {
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -46,16 +51,26 @@ StaggeredForwardSensitivityModelEvaluator(
     *pl = *pList;
   pl->validateParametersAndSetDefaults(*this->getValidParameters());
   use_dfdp_as_tangent_ = pl->get<bool>("Use DfDp as Tangent");
+  use_dgdp_as_tangent_ = pl->get<bool>("Use DgDp as Tangent");
   p_index_ = pl->get<int>("Sensitivity Parameter Index");
+  g_index_ = pl->get<int>("Response Function Index", -1);
   x_tangent_index_ = pl->get<int>("Sensitivity X Tangent Index");
   xdot_tangent_index_ = pl->get<int>("Sensitivity X-Dot Tangent Index");
   xdotdot_tangent_index_ = pl->get<int>("Sensitivity X-Dot-Dot Tangent Index");
 
   num_param_ = model_->get_p_space(p_index_)->dim();
+  if (g_index_ >= 0) {
+    num_response_ = model_->get_g_space(g_index_)->dim();
+    g_offset_ = 2;
+  }
   dxdp_space_ =
     Thyra::multiVectorProductVectorSpace(model_->get_x_space(), num_param_);
   dfdp_space_ =
     Thyra::multiVectorProductVectorSpace(model_->get_f_space(), num_param_);
+  if (g_index_ >= 0)
+    dgdp_space_ =
+      Thyra::multiVectorProductVectorSpace(model_->get_g_space(g_index_),
+                                           num_param_);
 
   MEB::InArgs<Scalar> me_inArgs = model_->createInArgs();
   MEB::InArgsSetup<Scalar> inArgs;
@@ -79,16 +94,19 @@ StaggeredForwardSensitivityModelEvaluator(
   MEB::OutArgs<Scalar> me_outArgs = model_->createOutArgs();
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(me_inArgs.Np(),me_outArgs.Ng());
+  outArgs.set_Np_Ng(me_inArgs.Np(),me_outArgs.Ng()+g_offset_);
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
+
+  // Response 0 is the reduced dg/dp (no sensitivities supported)
+  // Response 1 is the reduced g (no sensitivities supported)
   for (int j=0; j<me_outArgs.Ng(); ++j) {
-    outArgs.setSupports(MEB::OUT_ARG_DgDx_dot, j,
+    outArgs.setSupports(MEB::OUT_ARG_DgDx_dot, j+g_offset_,
                         me_outArgs.supports(MEB::OUT_ARG_DgDx_dot, j));
-    outArgs.setSupports(MEB::OUT_ARG_DgDx, j,
+    outArgs.setSupports(MEB::OUT_ARG_DgDx, j+g_offset_,
                         me_outArgs.supports(MEB::OUT_ARG_DgDx, j));
     for (int l=0; l<me_outArgs.Np(); ++l) {
-      outArgs.setSupports(MEB::OUT_ARG_DgDp, j, l,
+      outArgs.setSupports(MEB::OUT_ARG_DgDp, j+g_offset_, l,
                           me_outArgs.supports(MEB::OUT_ARG_DgDp, j, l));
     }
   }
@@ -158,7 +176,13 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 StaggeredForwardSensitivityModelEvaluator<Scalar>::
 get_g_space(int j) const
 {
-  return model_->get_g_space(j);
+  if (g_index_ >= 0) {
+    if (j == 0)
+      return dgdp_space_;
+    else if (j == 1)
+      return model_->get_g_space(g_index_);
+  }
+  return model_->get_g_space(j-g_offset_);
 }
 
 template <typename Scalar>
@@ -166,7 +190,17 @@ Teuchos::ArrayView<const std::string>
 StaggeredForwardSensitivityModelEvaluator<Scalar>::
 get_g_names(int j) const
 {
-  return model_->get_g_names(j);
+  if (g_index_ >= 0) {
+    if (j == 0) {
+      Teuchos::Array<std::string> names = model_->get_g_names(g_index_);
+      for (int i=0; i<names.size(); ++i)
+        names[i] = names[i] + "_reduced sensitivity";
+      return names();
+    }
+    else if (j == 1)
+      return model_->get_g_names(g_index_);
+  }
+  return model_->get_g_names(j-g_offset_);
 }
 
 template <typename Scalar>
@@ -187,7 +221,7 @@ Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 StaggeredForwardSensitivityModelEvaluator<Scalar>::
 create_DgDx_dot_op(int j) const
 {
-  return model_->create_DgDx_dot_op(j);
+  return model_->create_DgDx_dot_op(j-g_offset_);
 }
 
 template <typename Scalar>
@@ -195,7 +229,7 @@ Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 StaggeredForwardSensitivityModelEvaluator<Scalar>::
 create_DgDx_op(int j) const
 {
-  return model_->create_DgDx_op(j);
+  return model_->create_DgDx_op(j-g_offset_);
 }
 
 template <typename Scalar>
@@ -203,7 +237,7 @@ Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 StaggeredForwardSensitivityModelEvaluator<Scalar>::
 create_DgDp_op(int j, int l) const
 {
-  return model_->create_DgDp_op(j,l);
+  return model_->create_DgDp_op(j-g_offset_,l);
 }
 
 template <typename Scalar>
@@ -306,8 +340,8 @@ StaggeredForwardSensitivityModelEvaluator<Scalar>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
-  typedef Thyra::ModelEvaluatorBase MEB;
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  typedef Thyra::ModelEvaluatorBase MEB;
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
@@ -329,6 +363,8 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     TEUCHOS_ASSERT(forward_state_ != Teuchos::null);
     forward_t = forward_state_->getTime();
   }
+
+  const bool use_tangent = use_dfdp_as_tangent_ || use_dgdp_as_tangent_;
 
   // setup input arguments for model
   RCP< const Thyra::MultiVectorBase<Scalar> > dxdp, dxdotdp, dxdotdotdp;
@@ -377,10 +413,10 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   const int np = me_inArgs.Np();
   for (int i=0; i<np; ++i) {
     if (inArgs.get_p(i) != Teuchos::null)
-      if (!use_dfdp_as_tangent_ ||
-          (use_dfdp_as_tangent_ && i != x_tangent_index_ &&
-                                   i != xdot_tangent_index_ &&
-                                   i != xdotdot_tangent_index_ ))
+      if (!use_tangent ||
+          (use_tangent && i != x_tangent_index_ &&
+                          i != xdot_tangent_index_ &&
+                          i != xdotdot_tangent_index_ ))
         me_inArgs.set_p(i, inArgs.get_p(i));
   }
 
@@ -397,15 +433,18 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       rcp_dynamic_cast<Thyra::MultiVectorLinearOp<Scalar> >(op,true);
     me_outArgs.set_W_op(mv_op->getNonconstLinearOp());
   }
-  for (int j=0; j<outArgs.Ng(); ++j) {
-    if (!me_outArgs.supports(MEB::OUT_ARG_DgDx_dot,j).none())
-      me_outArgs.set_DgDx_dot(j, outArgs.get_DgDx_dot(j));
-    if (!me_outArgs.supports(MEB::OUT_ARG_DgDx,j).none())
-      me_outArgs.set_DgDx(j, outArgs.get_DgDx(j));
+  for (int j=g_offset_; j<outArgs.Ng(); ++j) {
+    me_outArgs.set_g(j-g_offset_, outArgs.get_g(j));
+    if (!me_outArgs.supports(MEB::OUT_ARG_DgDx_dot,j-g_offset_).none())
+      me_outArgs.set_DgDx_dot(j-g_offset_, outArgs.get_DgDx_dot(j));
+    if (!me_outArgs.supports(MEB::OUT_ARG_DgDx,j-g_offset_).none())
+      me_outArgs.set_DgDx(j-g_offset_, outArgs.get_DgDx(j));
     for (int l=0; l<outArgs.Np(); ++l)
-      if (!me_outArgs.supports(MEB::OUT_ARG_DgDp,j,l).none())
-        me_outArgs.set_DgDp(j, l, outArgs.get_DgDp(j,l));
+      if (!me_outArgs.supports(MEB::OUT_ARG_DgDp,j-g_offset_,l).none())
+        me_outArgs.set_DgDp(j-g_offset_, l, outArgs.get_DgDp(j,l));
   }
+  if (g_index_ >= 0  && outArgs.get_g(1) != Teuchos::null)
+    me_outArgs.set_g(g_index_, outArgs.get_g(1));
 
   // build residual and jacobian
   model_->evalModel(me_inArgs, me_outArgs);
@@ -459,6 +498,102 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       my_dfdxdotdot_->apply(Thyra::NOTRANS, *dxdotdotdp, dfdp.ptr(), Scalar(1.0), Scalar(1.0));
     }
   }
+
+  if (g_index_ >= 0 && outArgs.get_g(0) != Teuchos::null) {
+    MEB::OutArgs<Scalar> meo = model_->createOutArgs();
+    RCP<Thyra::MultiVectorBase<Scalar> > dgdp =
+      rcp_dynamic_cast<DMVPV>(outArgs.get_g(0),true)->getNonconstMultiVector();
+    RCP<Thyra::MultiVectorBase<Scalar> > dgdp_trans;
+    MEB::DerivativeSupport dgdp_support =
+      meo.supports(MEB::OUT_ARG_DgDp, g_index_, p_index_);
+    if (dgdp_support.supports(MEB::DERIV_MV_JACOBIAN_FORM))
+      meo.set_DgDp(g_index_, p_index_,
+                   MEB::Derivative<Scalar>(dgdp, MEB::DERIV_MV_JACOBIAN_FORM));
+    else if (dgdp_support.supports(MEB::DERIV_MV_GRADIENT_FORM)) {
+      dgdp_trans = createMembers(model_->get_p_space(p_index_),
+                                 num_response_);
+      meo.set_DgDp(g_index_, p_index_,
+                   MEB::Derivative<Scalar>(dgdp_trans, MEB::DERIV_MV_GRADIENT_FORM));
+    }
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error,
+        "Operator form of dg/dp not supported for reduced sensitivity");
+
+    if (!use_dgdp_as_tangent_ || dxdp == Teuchos::null) {
+      MEB::DerivativeSupport dgdx_support =
+        meo.supports(MEB::OUT_ARG_DgDx, g_index_);
+      if (dgdx_support.supports(MEB::DERIV_LINEAR_OP)) {
+        if (my_dgdx_ == Teuchos::null)
+          my_dgdx_ = model_->create_DgDx_op(g_index_);
+        meo.set_DgDx(g_index_, my_dgdx_);
+      }
+      else if (dgdx_support.supports(MEB::DERIV_MV_GRADIENT_FORM)) {
+        if (my_dgdx_mv_ == Teuchos::null)
+          my_dgdx_mv_ = createMembers(model_->get_g_space(g_index_), num_param_);
+        meo.set_DgDx(g_index_,
+                     MEB::Derivative<Scalar>(my_dgdx_mv_,
+                                             MEB::DERIV_MV_GRADIENT_FORM));
+      }
+      else
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error,
+          "Jacobian form of dg/dx not supported for reduced sensitivity");
+    }
+
+    // Clear dx/dp, dxdot/dp, dxdotdot/dp from inArgs if set and we are not
+    // using dg/dp as the tangent.  Note, even though dxdp, dxdotdp, and
+    // dxdotdotdp are not used here, they are non-null if x/xdot/xdotdot are
+    // supported and supplied.
+    if (!use_dgdp_as_tangent_ && use_dfdp_as_tangent_ &&
+        dxdp != Teuchos::null)
+      me_inArgs.set_p(x_tangent_index_, Teuchos::null);
+    if (!use_dgdp_as_tangent_ && use_dfdp_as_tangent_ &&
+        dxdotdp != Teuchos::null)
+      me_inArgs.set_p(xdot_tangent_index_, Teuchos::null);
+    if (!use_dgdp_as_tangent_ && use_dfdp_as_tangent_ &&
+        dxdotdotdp != Teuchos::null)
+      me_inArgs.set_p(xdotdot_tangent_index_, Teuchos::null);
+
+    // Set dx/dp, dxdot/dp, dxdodot/dp if necessary
+    if (use_dgdp_as_tangent_ && !use_dfdp_as_tangent_ &&
+        dxdp != Teuchos::null)
+      me_inArgs.set_p(x_tangent_index_, inArgs.get_x());
+    if (use_dgdp_as_tangent_ && !use_dfdp_as_tangent_ &&
+        dxdotdp != Teuchos::null)
+      me_inArgs.set_p(xdot_tangent_index_, inArgs.get_x_dot());
+    if (use_dgdp_as_tangent_ && !use_dfdp_as_tangent_ &&
+        dxdotdotdp != Teuchos::null)
+      me_inArgs.set_p(xdotdot_tangent_index_, inArgs.get_x_dot_dot());
+
+    model_->evalModel(me_inArgs, meo);
+
+    // transpose reduced dg/dp if necessary
+    if (dgdp_trans != Teuchos::null) {
+      Thyra::DetachedMultiVectorView<Scalar> dgdp_view(*dgdp);
+      Thyra::DetachedMultiVectorView<Scalar> dgdp_trans_view(*dgdp_trans);
+      for (int i=0; i<num_param_; ++i)
+        for (int j=0; j<num_response_; ++j)
+          dgdp_view(j,i) = dgdp_trans_view(i,j);
+    }
+
+    // Compute (dg/dx) * (dx/dp) + (dg/dp) if the underlying ME doesn't already
+    // do this.
+    if (!use_dgdp_as_tangent_ && dxdp != Teuchos::null) {
+      MEB::DerivativeSupport dgdx_support =
+        me_outArgs.supports(MEB::OUT_ARG_DgDx, g_index_);
+      if (dgdx_support.supports(MEB::DERIV_LINEAR_OP)) {
+        my_dgdx_->apply(Thyra::NOTRANS, *dxdp, dgdp.ptr(), Scalar(1.0), Scalar(1.0));
+      }
+      else if (dgdx_support.supports(MEB::DERIV_MV_GRADIENT_FORM)) {
+        my_dgdx_mv_->apply(Thyra::TRANS, *dxdp, dgdp.ptr(), Scalar(1.0), Scalar(1.0));
+      }
+      else
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error,
+          "Jacobian form of dg/dx not supported for reduced sensitivity");
+    }
+  }
 }
 
 template<class Scalar>
@@ -468,7 +603,9 @@ getValidParameters()
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->set<bool>("Use DfDp as Tangent", false);
+  pl->set<bool>("Use DgDp as Tangent", false);
   pl->set<int>("Sensitivity Parameter Index", 0);
+  pl->set<int>("Response Function Index", -1);
   pl->set<int>("Sensitivity X Tangent Index", 1);
   pl->set<int>("Sensitivity X-Dot Tangent Index", 2);
   pl->set<int>("Sensitivity X-Dot-Dot Tangent Index", 3);
