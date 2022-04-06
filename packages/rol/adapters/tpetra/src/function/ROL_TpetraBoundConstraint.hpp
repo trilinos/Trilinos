@@ -549,7 +549,7 @@ namespace ROL {
                 min_diff_ = 0.5*gblMinGap;
             }
 
-            bool isFeasible( const Vector<Real> &x ) {
+            bool isFeasible( const Vector<Real> &x ) const override {
                 auto xp = getVector(x);
 
                 int lclFeasible = 1;
@@ -567,7 +567,7 @@ namespace ROL {
                 return gblFeasible == 1 ? true : false;
             }
 
-            void project( Vector<Real> &x ) {
+            void project( Vector<Real> &x ) const override {
                 auto xp = getVector(x);
 
                 ViewType x_lcl = xp->getLocalViewDevice();
@@ -577,7 +577,7 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,proj);
             }
 
-            void projectInterior( Vector<Real> &x ) {
+            void projectInterior( Vector<Real> &x ) const override {
                 auto xp = getVector(x);
 
                 ViewType x_lcl = xp->getLocalViewDevice();
@@ -590,7 +590,7 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,projInterior);
             }
 
-            void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) {
+            void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) const override {
                 auto xp = getVector(x);
                 auto vp = getVector(v);
 
@@ -604,7 +604,7 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,prune);
             }
 
-            void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) {
+            void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) const override {
                 auto xp = getVector(x);
                 auto vp = getVector(v);
 
@@ -618,7 +618,7 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,prune);
             }
 
-            void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) {
+            void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) const {
                 auto xp = getVector(x);
                 auto vp = getVector(v);
 
@@ -632,7 +632,7 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,prune);
             }
 
-            void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
+            void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const override {
                 auto xp = getVector(x);
                 auto gp = getVector(g);
                 auto vp = getVector(v);
@@ -647,7 +647,7 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,prune);
             }
 
-             void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
+             void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const override {
                 auto xp = getVector(x);
                 auto gp = getVector(g);
                 auto vp = getVector(v);
@@ -662,7 +662,7 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,prune);
             }
 
-            void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
+            void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const {
                 auto xp = getVector(x);
                 auto gp = getVector(g);
                 auto vp = getVector(v);
@@ -677,7 +677,7 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,prune);
             }
 
-            void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+            void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override {
                 auto dvp = getVector(dv);
                 auto vp  = getVector(v);
                 auto xp  = getVector(x);
@@ -695,7 +695,7 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,inverseScaling);
             }
 
-            void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+            void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override {
                 auto dvp = getVector(dv);
                 auto vp  = getVector(v);
                 auto xp  = getVector(x);

@@ -61,7 +61,8 @@ private:
   std::vector<Real> x_lo_;
   std::vector<Real> x_up_;
   Real min_diff_;
-  Real scale_;
+  const Real scale_;
+  // const Real feasTol_;
 
   using BoundConstraint<Real>::lower_;
   using BoundConstraint<Real>::upper_;
@@ -83,19 +84,19 @@ public:
 
   StdBoundConstraint(std::vector<Real> &l, std::vector<Real> &u, Real scale = Real(1));
 
-  bool isFeasible( const Vector<Real> &v ) override;
+  bool isFeasible( const Vector<Real> &v ) const override;
 
-  void project( Vector<Real> &x ) override;
+  void project( Vector<Real> &x ) const override;
 
-  void projectInterior( Vector<Real> &x ) override;
+  void projectInterior( Vector<Real> &x ) const override;
 
-  void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) override;
+  void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) const override;
 
-  void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) override;
+  void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) const override;
 
-  void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) override;
+  void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const override;
 
-  void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) override;
+  void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const override;
 
   void applyInverseScalingFunction( Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override;
 

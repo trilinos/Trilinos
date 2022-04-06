@@ -88,7 +88,7 @@ Bounds<Real>::Bounds(const Ptr<Vector<Real>> &x_lo, const Ptr<Vector<Real>> &x_u
 }
 
 template<typename Real>
-void Bounds<Real>::project( Vector<Real> &x ) {
+void Bounds<Real>::project( Vector<Real> &x ) const {
   struct Lesser : public Elementwise::BinaryFunction<Real> {
     Real apply(const Real &xc, const Real &yc) const { return xc<yc ? xc : yc; }
   } lesser;
@@ -106,7 +106,7 @@ void Bounds<Real>::project( Vector<Real> &x ) {
 }
 
 template<typename Real>
-void Bounds<Real>::projectInterior( Vector<Real> &x ) {
+void Bounds<Real>::projectInterior( Vector<Real> &x ) const {
   // Make vector strictly feasible
   // Lower feasibility
   if (BoundConstraint<Real>::isLowerActivated()) {
@@ -153,7 +153,7 @@ void Bounds<Real>::projectInterior( Vector<Real> &x ) {
 }
 
 template<typename Real>
-void Bounds<Real>::pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps ) {
+void Bounds<Real>::pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps ) const {
   if (BoundConstraint<Real>::isUpperActivated()) {
     Real one(1), epsn(std::min(scale_*eps,static_cast<Real>(0.1)*min_diff_));
 
@@ -166,7 +166,7 @@ void Bounds<Real>::pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Rea
 }
 
 template<typename Real>
-void Bounds<Real>::pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) {
+void Bounds<Real>::pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) const {
   if (BoundConstraint<Real>::isUpperActivated()) {
     Real one(1), epsn(std::min(scale_*xeps,static_cast<Real>(0.1)*min_diff_));
 
@@ -181,7 +181,7 @@ void Bounds<Real>::pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, con
 }
 
 template<typename Real>
-void Bounds<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps ) {
+void Bounds<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps ) const {
   if (BoundConstraint<Real>::isLowerActivated()) {
     Real one(1), epsn(std::min(scale_*eps,static_cast<Real>(0.1)*min_diff_));
 
@@ -194,7 +194,7 @@ void Bounds<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Rea
 }
 
 template<typename Real>
-void Bounds<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) {
+void Bounds<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) const {
   if (BoundConstraint<Real>::isLowerActivated()) {
     Real one(1), epsn(std::min(scale_*xeps,static_cast<Real>(0.1)*min_diff_));
 
@@ -209,7 +209,7 @@ void Bounds<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, con
 }
 
 template<typename Real>
-bool Bounds<Real>::isFeasible( const Vector<Real> &v ) {
+bool Bounds<Real>::isFeasible( const Vector<Real> &v ) const {
   const Real one(1);
   bool flagU = false, flagL = false;
   if (BoundConstraint<Real>::isUpperActivated()) {

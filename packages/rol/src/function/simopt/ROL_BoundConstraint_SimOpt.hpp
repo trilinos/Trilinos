@@ -119,7 +119,7 @@ public:
       \f]
        @param[in,out]      x is the optimization variable.
   */
-  void project( Vector<Real> &x ) {
+  void project( Vector<Real> &x ) const override {
     Vector_SimOpt<Real> &xs = dynamic_cast<Vector_SimOpt<Real>&>(
       dynamic_cast<Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
@@ -140,7 +140,7 @@ public:
       \f]
        @param[in,out]      x is the optimization variable.
   */
-  void projectInterior( Vector<Real> &x ) {
+  void projectInterior( Vector<Real> &x ) const override {
     Vector_SimOpt<Real> &xs = dynamic_cast<Vector_SimOpt<Real>&>(
       dynamic_cast<Vector<Real>&>(x));
     if ( bnd1_->isActivated() ) {
@@ -157,7 +157,7 @@ public:
       that are active at the upper bound are nonpositive or the components of \f$l\f$ corresponding
       to the components of \f$x\f$ that are active at the lower bound are nonnegative.
   */
-  bool checkMultipliers( const Vector<Real> &l, const Vector<Real> &x ) {
+  bool checkMultipliers( const Vector<Real> &l, const Vector<Real> &x ) const {
     const Vector_SimOpt<Real> &ls = dynamic_cast<const Vector_SimOpt<Real>&>(
       dynamic_cast<const Vector<Real>&>(l));
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
@@ -184,7 +184,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const override {
     Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
       dynamic_cast<Vector<Real>&>(v));
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
@@ -210,7 +210,7 @@ public:
       @param[in]       g   is the negative search direction.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const override {
     Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
       dynamic_cast<Vector<Real>&>(v));
     const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(
@@ -236,7 +236,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const override {
     Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
       dynamic_cast<Vector<Real>&>(v));
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
@@ -262,7 +262,7 @@ public:
       @param[in]       g   is the negative search direction.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const override {
     Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
       dynamic_cast<Vector<Real>&>(v));
     const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(
@@ -277,14 +277,14 @@ public:
     }
   }
 
-  const Ptr<const Vector<Real>> getLowerBound( void ) const {
+  const Ptr<const Vector<Real>> getLowerBound( void ) const override{
     const Ptr<const Vector<Real>> l1 = bnd1_->getLowerBound();
     const Ptr<const Vector<Real>> l2 = bnd2_->getLowerBound();
     return makePtr<Vector_SimOpt<Real>>( constPtrCast<Vector<Real>>(l1),
                                                  constPtrCast<Vector<Real>>(l2) );
   }
 
-  const Ptr<const Vector<Real>> getUpperBound(void) const {
+  const Ptr<const Vector<Real>> getUpperBound(void) const override {
     const Ptr<const Vector<Real>> u1 = bnd1_->getUpperBound();
     const Ptr<const Vector<Real>> u2 = bnd2_->getUpperBound();
     return makePtr<Vector_SimOpt<Real>>( constPtrCast<Vector<Real>>(u1),
@@ -302,7 +302,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
+  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const {
     Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(
       dynamic_cast<Vector<Real>&>(v));
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
@@ -327,7 +327,7 @@ public:
       @param[in]       g   is the negative search direction.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
+  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const {
     Vector_SimOpt<Real> &vs = dynamic_cast<Vector_SimOpt<Real>&>(v);
     const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
@@ -344,7 +344,7 @@ public:
       This function returns true if \f$v = P_{[a,b]}(v)\f$.
       @param[in]    v   is the vector to be checked.
   */
-  bool isFeasible( const Vector<Real> &v ) {
+  bool isFeasible( const Vector<Real> &v ) const override {
     const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(v);
     return (bnd1_->isFeasible(*(vs.get_1()))) && (bnd2_->isFeasible(*(vs.get_2())));
   }
@@ -362,7 +362,7 @@ public:
       @param[in]   x   is the primal vector at which the scaling function is evaluated.
       @param[in]   g   is the dual vector at which the scaling function is evaluated.
   */
-  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const{
+  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override {
     Vector_SimOpt<Real> &dvs = dynamic_cast<Vector_SimOpt<Real>&>(dv);
     const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(v);
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
@@ -388,7 +388,7 @@ public:
       @param[in]   x   is the primal vector at which the scaling function is evaluated.
       @param[in]   g   is the dual vector at which the scaling function is evaluated.
   */
-  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override {
     Vector_SimOpt<Real> &dvs = dynamic_cast<Vector_SimOpt<Real>&>(dv);
     const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(v);
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);

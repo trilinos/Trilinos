@@ -137,21 +137,22 @@ public:
          const Real scale = 1,
          const Real feasTol = std::sqrt(ROL_EPSILON<Real>()));
 
-  void project( Vector<Real> &x ) override;
+  void project( Vector<Real> &x ) const override;
 
-  void projectInterior( Vector<Real> &x ) override;
+  void projectInterior( Vector<Real> &x ) const override;
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) override;
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const override;
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) override;
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const override;
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) override;
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const override;
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) override;
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const override;
 
-  bool isFeasible( const Vector<Real> &v ) override;
+  bool isFeasible( const Vector<Real> &v ) const override;
 
   void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override;
+
   void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override;
 
 }; // class Bounds

@@ -92,7 +92,7 @@ StdBoundConstraint<Real>::StdBoundConstraint(std::vector<Real> &l, std::vector<R
 }
 
 template<class Real>
-bool StdBoundConstraint<Real>::isFeasible( const Vector<Real> &x ) {
+bool StdBoundConstraint<Real>::isFeasible( const Vector<Real> &x ) const {
   bool lflag = true, uflag = true;
   if ( BoundConstraint<Real>::isActivated() ) {
     Ptr<const std::vector<Real>> ex =
@@ -118,7 +118,7 @@ bool StdBoundConstraint<Real>::isFeasible( const Vector<Real> &x ) {
 }
 
 template<class Real>
-void StdBoundConstraint<Real>::project( Vector<Real> &x ) {
+void StdBoundConstraint<Real>::project( Vector<Real> &x ) const {
   if ( BoundConstraint<Real>::isActivated() ) {
     Ptr<std::vector<Real>> ex =
       dynamic_cast<StdVector<Real>&>(x).getVector();
@@ -136,7 +136,7 @@ void StdBoundConstraint<Real>::project( Vector<Real> &x ) {
 }
 
 template<class Real>
-void StdBoundConstraint<Real>::projectInterior( Vector<Real> &x ) {
+void StdBoundConstraint<Real>::projectInterior( Vector<Real> &x ) const {
   if ( BoundConstraint<Real>::isActivated() ) {
     Ptr<std::vector<Real>> ex =
         dynamic_cast<StdVector<Real>&>(x).getVector();
@@ -164,7 +164,7 @@ void StdBoundConstraint<Real>::projectInterior( Vector<Real> &x ) {
 }
 
 template<class Real>
-void StdBoundConstraint<Real>::pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
+void StdBoundConstraint<Real>::pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps) const {
   if ( BoundConstraint<Real>::isLowerActivated() ) {
     Ptr<const std::vector<Real>> ex =
       dynamic_cast<const StdVector<Real>&>(x).getVector();
@@ -180,7 +180,7 @@ void StdBoundConstraint<Real>::pruneLowerActive(Vector<Real> &v, const Vector<Re
 }
 
 template<class Real>
-void StdBoundConstraint<Real>::pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
+void StdBoundConstraint<Real>::pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps) const {
   if ( BoundConstraint<Real>::isUpperActivated() ) {
     Ptr<const std::vector<Real>> ex =
       dynamic_cast<const StdVector<Real>&>(x).getVector();
@@ -196,7 +196,7 @@ void StdBoundConstraint<Real>::pruneUpperActive(Vector<Real> &v, const Vector<Re
 }
 
 template<class Real>
-void StdBoundConstraint<Real>::pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps) {
+void StdBoundConstraint<Real>::pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps) const {
   if ( BoundConstraint<Real>::isLowerActivated() ) {
     Ptr<const std::vector<Real>> ex =
       dynamic_cast<const StdVector<Real>&>(x).getVector();
@@ -214,7 +214,7 @@ void StdBoundConstraint<Real>::pruneLowerActive(Vector<Real> &v, const Vector<Re
 }
 
 template<class Real>
-void StdBoundConstraint<Real>::pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps) {
+void StdBoundConstraint<Real>::pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps) const {
   if ( BoundConstraint<Real>::isUpperActivated() ) {
     Ptr<const std::vector<Real>> ex =
       dynamic_cast<const StdVector<Real>&>(x).getVector();
@@ -300,7 +300,7 @@ void StdBoundConstraint<Real>::applyScalingFunctionJacobian(Vector<Real> &dv, co
       continue;
     }
 
-    // When chi is not zero...
+    // When indicator is not zero...
 
     d1prime = sgn((*eg)[i]);
     if (d1prime == zero) {

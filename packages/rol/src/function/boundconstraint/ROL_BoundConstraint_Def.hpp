@@ -71,42 +71,42 @@ BoundConstraint<Real>::BoundConstraint(const Vector<Real> &x)
 }
 
 template<typename Real>
-void BoundConstraint<Real>::project( Vector<Real> &x ) {
+void BoundConstraint<Real>::project( Vector<Real> &x ) const {
   if (isActivated()) {
     throw Exception::NotImplemented(">>> ROL::BoundConstraint::project: Not Implemented!");
   }
 }
 
 template<typename Real>
-void BoundConstraint<Real>::projectInterior( Vector<Real> &x ) {
+void BoundConstraint<Real>::projectInterior( Vector<Real> &x ) const {
   if (isActivated()) {
     throw Exception::NotImplemented(">>> ROL::BoundConstraint::projectInterior: Not Implemented!");
   }
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps ) {
+void BoundConstraint<Real>::pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps ) const {
   if (isUpperActivated()) {
     throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneUpperActive: Not Implemented!");
   }
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) {
+void BoundConstraint<Real>::pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) const {
   if (isUpperActivated()) {
     throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneUpperActive: Not Implemented!");
   }
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps ) {
+void BoundConstraint<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps ) const {
   if (isLowerActivated()) {
     throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneLowerActive: Not Implemented!");
   }
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) {
+void BoundConstraint<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) const {
   if (isLowerActivated()) {
     throw Exception::NotImplemented(">>> ROL::BoundConstraint::pruneLowerActive: Not Implemented!");
   }
@@ -129,7 +129,7 @@ const Ptr<const Vector<Real>> BoundConstraint<Real>::getUpperBound( void ) const
 }
 
 template<typename Real>
-bool BoundConstraint<Real>::isFeasible( const Vector<Real> &v ) { 
+bool BoundConstraint<Real>::isFeasible( const Vector<Real> &v ) const { 
   if (isActivated()) {
     Ptr<Vector<Real>> Pv = v.clone();
     Pv->set(v);
@@ -199,7 +199,7 @@ bool BoundConstraint<Real>::isActivated(void) const {
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps ) {
+void BoundConstraint<Real>::pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps ) const {
   if (isActivated()) {
     pruneUpperActive(v,x,eps);
     pruneLowerActive(v,x,eps);
@@ -207,7 +207,7 @@ void BoundConstraint<Real>::pruneActive( Vector<Real> &v, const Vector<Real> &x,
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) {
+void BoundConstraint<Real>::pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) const {
   if (isActivated()) {
     pruneUpperActive(v,g,x,xeps,geps);
     pruneLowerActive(v,g,x,xeps,geps);
@@ -215,7 +215,7 @@ void BoundConstraint<Real>::pruneActive( Vector<Real> &v, const Vector<Real> &g,
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps ) {
+void BoundConstraint<Real>::pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps ) const {
   if (isLowerActivated()) {
     const Real one(1);
     Ptr<Vector<Real>> tmp = v.clone(); 
@@ -226,7 +226,7 @@ void BoundConstraint<Real>::pruneLowerInactive( Vector<Real> &v, const Vector<Re
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps ) { 
+void BoundConstraint<Real>::pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps ) const { 
   if (isUpperActivated()) {
     const Real one(1);
     Ptr<Vector<Real>> tmp = v.clone(); 
@@ -237,7 +237,7 @@ void BoundConstraint<Real>::pruneUpperInactive( Vector<Real> &v, const Vector<Re
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) { 
+void BoundConstraint<Real>::pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) const { 
   if (isLowerActivated()) {
     const Real one(1);
     Ptr<Vector<Real>> tmp = v.clone(); 
@@ -248,7 +248,7 @@ void BoundConstraint<Real>::pruneLowerInactive( Vector<Real> &v, const Vector<Re
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) { 
+void BoundConstraint<Real>::pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) const { 
   if (isUpperActivated()) {
     const Real one(1);
     Ptr<Vector<Real>> tmp = v.clone(); 
@@ -259,7 +259,7 @@ void BoundConstraint<Real>::pruneUpperInactive( Vector<Real> &v, const Vector<Re
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps ) { 
+void BoundConstraint<Real>::pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps ) const { 
   if (isActivated()) {
     const Real one(1);
     Ptr<Vector<Real>> tmp = v.clone(); 
@@ -270,7 +270,7 @@ void BoundConstraint<Real>::pruneInactive( Vector<Real> &v, const Vector<Real> &
 }
 
 template<typename Real>
-void BoundConstraint<Real>::pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) { 
+void BoundConstraint<Real>::pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps, Real geps ) const { 
   if (isActivated()) {
     const Real one(1);
     Ptr<Vector<Real>> tmp = v.clone(); 
@@ -281,7 +281,7 @@ void BoundConstraint<Real>::pruneInactive( Vector<Real> &v, const Vector<Real> &
 }
 
 template<typename Real>
-void BoundConstraint<Real>::computeProjectedGradient( Vector<Real> &g, const Vector<Real> &x ) {
+void BoundConstraint<Real>::computeProjectedGradient( Vector<Real> &g, const Vector<Real> &x ) const {
   if (isActivated()) {
     Ptr<Vector<Real>> tmp = g.clone();
     tmp->set(g);
@@ -290,7 +290,7 @@ void BoundConstraint<Real>::computeProjectedGradient( Vector<Real> &g, const Vec
 }
 
 template<typename Real>
-void BoundConstraint<Real>::computeProjectedStep( Vector<Real> &v, const Vector<Real> &x ) { 
+void BoundConstraint<Real>::computeProjectedStep( Vector<Real> &v, const Vector<Real> &x ) const { 
   if (isActivated()) {
     const Real one(1);
     v.plus(x);

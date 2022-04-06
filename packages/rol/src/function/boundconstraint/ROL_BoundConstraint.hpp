@@ -97,7 +97,7 @@ public:
       \f]
        @param[in,out]      x is the optimization variable.
   */
-  virtual void project( Vector<Real> &x );
+  virtual void project( Vector<Real> &x ) const;
 
   /** \brief Project optimization variables into the interior of the feasible set.
 
@@ -109,7 +109,7 @@ public:
       \f]
        @param[in,out]      x is the optimization variable.
   */
-  virtual void projectInterior( Vector<Real> &x );
+  virtual void projectInterior( Vector<Real> &x ) const;
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-active set.
 
@@ -122,7 +122,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const;
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-binding set.
 
@@ -138,7 +138,7 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const;
 
   /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-active set.
 
@@ -151,7 +151,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const;
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-binding set.
 
@@ -167,7 +167,7 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const;
 
 
   // QUERY FUNCTIONS (VIRTUAL AND NONVIRTUAL)
@@ -183,7 +183,7 @@ public:
       This function returns true if \f$v = P_{[a,b]}(v)\f$.
       @param[in]    v   is the vector to be checked.
   */
-  virtual bool isFeasible( const Vector<Real> &v );
+  virtual bool isFeasible( const Vector<Real> &v ) const;
 
   /** \brief Apply inverse scaling function.
 
@@ -283,7 +283,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
+  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const;
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-binding set.
   
@@ -298,7 +298,7 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
+  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const;
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-inactive set.
   
@@ -307,7 +307,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
+  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const;
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-inactive set.
   
@@ -316,7 +316,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
+  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const;
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
   
@@ -327,7 +327,7 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
+  void pruneLowerInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const;
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
   
@@ -338,7 +338,7 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
+  void pruneUpperInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const;
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-inactive set.
   
@@ -347,7 +347,7 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) );
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const;
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
   
@@ -358,7 +358,7 @@ public:
       @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
       @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) );
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const;
  
   /** \brief Compute projected gradient.
 
@@ -366,7 +366,7 @@ public:
            @param[in,out]    g  is the gradient of the objective function at x.
            @param[in]        x  is the optimization variable
   */
-  void computeProjectedGradient( Vector<Real> &g, const Vector<Real> &x );
+  void computeProjectedGradient( Vector<Real> &g, const Vector<Real> &x ) const;
  
   /** \brief Compute projected step.
 
@@ -374,7 +374,7 @@ public:
       @param[in,out]         v  is the step variable.
       @param[in]             x is the optimization variable.
   */
-  void computeProjectedStep( Vector<Real> &v, const Vector<Real> &x );
+  void computeProjectedStep( Vector<Real> &v, const Vector<Real> &x ) const;
 
 }; // class BoundConstraint
 

@@ -1072,7 +1072,7 @@ private:
     }
   }
 
-  void projection(std::vector<Real> &x) {
+  void projection(std::vector<Real> &x) const {
     for ( int i = 0; i < dim_; i++ ) {
       x[i] = std::max(x_lo_[i],std::min(x_up_[i],x[i]));
     }
@@ -1098,7 +1098,7 @@ public:
          ROL::makePtr<std::vector<Real>>(u), fem);
   }
 
-  bool isFeasible( const ROL::Vector<Real> &x ) {
+  bool isFeasible( const ROL::Vector<Real> &x ) const override {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     bool val = true;
     int  cnt = 1;
@@ -1110,12 +1110,12 @@ public:
     return val;
   }
 
-  void project( ROL::Vector<Real> &x ) {
+  void project( ROL::Vector<Real> &x ) const override {
     ROL::Ptr<std::vector<Real> > ex; cast_vector(ex,x);
     projection(*ex);
   }
 
-  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) {
+  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) const override {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
@@ -1126,7 +1126,7 @@ public:
     }
   }
 
-  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) {
+  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) const override{
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
@@ -1137,7 +1137,7 @@ public:
     }
   }
 
-  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) {
+  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) const {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
@@ -1149,7 +1149,7 @@ public:
     }
   }
 
-  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
+  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const override {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
@@ -1161,7 +1161,7 @@ public:
     }
   }
 
-  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
+  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const override {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
@@ -1173,7 +1173,7 @@ public:
     }
   }
 
-  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
+  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
@@ -1186,11 +1186,11 @@ public:
     }
   }
 
-  const ROL::Ptr<const ROL::Vector<Real> > getLowerBound(void) const {
+  const ROL::Ptr<const ROL::Vector<Real> > getLowerBound(void) const override {
     return l_;
   }
 
-  const ROL::Ptr<const ROL::Vector<Real> > getUpperBound(void) const {
+  const ROL::Ptr<const ROL::Vector<Real> > getUpperBound(void) const override {
     return u_;
   }
 };
@@ -1237,7 +1237,7 @@ private:
     }
   }
 
-  void projection(std::vector<Real> &x) {
+  void projection(std::vector<Real> &x) const {
     for ( int i = 0; i < dim_; i++ ) {
       x[i] = std::max(x_lo_[i],std::min(x_up_[i],x[i]));
     }
@@ -1263,7 +1263,7 @@ public:
          ROL::makePtr<std::vector<Real>>(u), fem);
   }
 
-  bool isFeasible( const ROL::Vector<Real> &x ) {
+  bool isFeasible( const ROL::Vector<Real> &x ) const override {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     bool val = true;
     int  cnt = 1;
@@ -1275,12 +1275,12 @@ public:
     return val;
   }
 
-  void project( ROL::Vector<Real> &x ) {
+  void project( ROL::Vector<Real> &x ) const override {
     ROL::Ptr<std::vector<Real> > ex; cast_vector(ex,x);
     projection(*ex);
   }
 
-  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) {
+  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) const override {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
@@ -1291,7 +1291,7 @@ public:
     }
   }
 
-  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) {
+  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) const override {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
@@ -1302,7 +1302,7 @@ public:
     }
   }
 
-  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) {
+  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) const {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
@@ -1314,7 +1314,7 @@ public:
     }
   }
 
-  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
+  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const override {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
@@ -1326,7 +1326,7 @@ public:
     }
   }
 
-  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
+  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const override {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
@@ -1338,7 +1338,7 @@ public:
     }
   }
 
-  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
+  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const {
     ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
     ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
@@ -1351,11 +1351,11 @@ public:
     }
   }
 
-  const ROL::Ptr<const ROL::Vector<Real> > getLowerBound(void) const {
+  const ROL::Ptr<const ROL::Vector<Real> > getLowerBound(void) const override {
     return l_;
   }
 
-  const ROL::Ptr<const ROL::Vector<Real> > getUpperBound(void) const {
+  const ROL::Ptr<const ROL::Vector<Real> > getUpperBound(void) const override {
     return u_;
   }
 };
