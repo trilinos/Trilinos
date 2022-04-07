@@ -131,74 +131,63 @@ namespace ROL {
 
         //----------------------------------------------------------------------
         //
-        // Project x onto the bounds
+        // Helper functions
         template<class Real, class V>
-        struct Project {
-            typedef typename V::execution_space execution_space;
-            V X_; // Optimization variable
-            V L_; // Lower bounds
-            V U_; // Upper bounds
-
-            Project(V& X, const V& L, const V& U) : X_(X), L_(L), U_(U) {}
-
+        struct MinFunction {
             KOKKOS_INLINE_FUNCTION
-            void operator() (const int i) const {
-                const int M = L_.extent(1);
-                for(int j=0;j<M;++j) {
-                    if( X_(i,j)<L_(i,j) ) {
-                        X_(i,j) = L_(i,j);
-                    }
-                    else if( X_(i,j)>U_(i,j) ) {
-                        X_(i,j) = U_(i,j);
-                    }
-                }
+            Real min(Real a,  Real b) const {
+                return (a < b) ? a : b;
             }
-        };   // End struct Project
+        };   // End helper functions
 
         //----------------------------------------------------------------------
         //
-        // Project x into the interior of the bounds
+        // Project x to the bounds
         template<class Real, class V>
-        struct ProjectInterior {
+        struct Project : MinFunction<Real, V> {
             typedef typename V::execution_space execution_space;
             V X_; // Optimization variable
             V L_; // Lower bounds
             V U_; // Upper bounds
             Real eps_, tol_, min_diff_;
 
-            ProjectInterior(V& X, const V& L, const V& U, Real eps, Real tol,
-                            Real min_diff) :
+            Project(V& X, const V& L, const V& U, Real eps = 0, Real tol = 0,
+                                                  Real min_diff = 0) :
                 X_(X), L_(L), U_(U), eps_(eps), tol_(tol), min_diff_(min_diff) {}
 
             KOKKOS_INLINE_FUNCTION
-            Real min(Real a,  Real b) const {
-                return (a < b) ? a : b;
-            }
-            KOKKOS_INLINE_FUNCTION
             Real max(Real a, Real b) const {
-                return (a < b) ? b : a;
+                return -this->min(-a, -b);
             }
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
-                const Real one(1);
+                const Real zero(0), one(1);
                 Real val1, val2;
                 const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
-                    val1 = ((L_(i,j) < -tol_) ? (one-eps_)*L_(i,j)
-                         : ((L_(i,j) > +tol_) ? (one+eps_)*L_(i,j)
-                         :   L_(i,j)+eps_));
-                    val2 = L_(i,j)+eps_*min_diff_;
-                    X_(i,j) = max(X_(i,j), min(val1,val2));
+                    val1 = L_(i,j);
+                    if (eps_ != zero) {
+                        val1 = ((L_(i,j) < -tol_) ? (one-eps_)*L_(i,j)
+                             : ((L_(i,j) > +tol_) ? (one+eps_)*L_(i,j)
+                             :   L_(i,j)+eps_));
+                        val2 = L_(i,j)+eps_*min_diff_;
+                        val1 = this->min(val1,val2);
+                    }
+                    X_(i,j) = max(X_(i,j), val1);
 
-                    val1 = ((U_(i,j) < -tol_) ? (one+eps_)*U_(i,j)
-                         : ((U_(i,j) > +tol_) ? (one-eps_)*U_(i,j)
-                         :   U_(i,j)-eps_));
-                    val2 = U_(i,j)-eps_*min_diff_;
-                    X_(i,j) = min(X_(i,j), max(val1,val2));
+                    val1 = U_(i,j);
+                    if (eps_ != zero) {
+                        val1 = ((U_(i,j) < -tol_) ? (one+eps_)*U_(i,j)
+                             : ((U_(i,j) > +tol_) ? (one-eps_)*U_(i,j)
+                             :   U_(i,j)-eps_));
+                        val2 = U_(i,j)-eps_*min_diff_;
+                        val1 = max(val1,val2);
+                    }
+                    X_(i,j) = this->min(X_(i,j), val1);
                 }
             }
-        };   // End struct ProjectInterior
+        };   // End struct Project
 
         //----------------------------------------------------------------------
         //
@@ -373,7 +362,7 @@ namespace ROL {
         //
         // Build the scaling function for Coleman-Li.
         template<class Real, class V>
-        struct BuildScalingFunction {
+        struct BuildScalingFunction : MinFunction<Real,V> {
             typedef typename V::execution_space execution_space;
             V D_; // Scaling function
             V X_; // Optimization variable
@@ -390,15 +379,11 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             Real abs(Real a) const {
-                return (a < 0) ? -a : a;
+                return sgn(a)*a;
             }
             KOKKOS_INLINE_FUNCTION
             Real buildC(int i, int j) const {
-                return min(zeta_*(U_(i,j) - L_(i,j)), kappa_);
-            }
-            KOKKOS_INLINE_FUNCTION
-            Real min(Real a,  Real b) const {
-                return (a < b) ? a : b;
+                return this->min(zeta_*(U_(i,j) - L_(i,j)), kappa_);
             }
             KOKKOS_INLINE_FUNCTION
             Real sgn(Real a) const {
@@ -415,17 +400,17 @@ namespace ROL {
                     updiff = U_(i,j) - X_(i,j);
                     if (-G_(i,j) > lodiff) {
                         if (lodiff <= updiff) {
-                            D_(i,j) = min(abs(G_(i,j)),c);
+                            D_(i,j) = this->min(abs(G_(i,j)),c);
                             continue;
                         }
                     }
                     if (+G_(i,j) > updiff) {
                         if (updiff <= lodiff) {
-                            D_(i,j) = min(abs(G_(i,j)),c);
+                            D_(i,j) = this->min(abs(G_(i,j)),c);
                             continue;
                         }
                     }
-                    D_(i,j) = min(lodiff, min(updiff, c));
+                    D_(i,j) = this->min(lodiff, this->min(updiff, c));
                 }
             }
         }; // End struct BuildScalingFunction
@@ -434,7 +419,7 @@ namespace ROL {
         //
         // Apply the inverse of the scaling function for Coleman-Li.
         template<class Real, class V>
-        struct ApplyInverseScalingFunction : public BuildScalingFunction<Real,V> {
+        struct ApplyInverseScalingFunction : BuildScalingFunction<Real,V> {
             V W_; // Primal vector being scaled
 
             ApplyInverseScalingFunction(V &D, const V &W, const V &X, const V &G,
@@ -456,7 +441,7 @@ namespace ROL {
         //
         // Apply the Jacobian of the scaling function for Coleman-Li.
         template<class Real, class V>
-        struct ApplyScalingFunctionJacobian : public BuildScalingFunction<Real,V> {
+        struct ApplyScalingFunctionJacobian : BuildScalingFunction<Real,V> {
             V W_; // Primal vector being scaled
 
             ApplyScalingFunctionJacobian(V &D, const V &W, const V &X, const V &G,
@@ -511,9 +496,10 @@ namespace ROL {
 
             ViewType l_;           // Kokkos view of Lower bounds
             ViewType u_;           // Kokkos view of Upper bounds
-            Real min_diff_;
             Real scale_;
+            Real feasTol_;
             ROL::Ptr<const Teuchos::Comm<int> > comm_;
+            Real min_diff_;
 
         ROL::Ptr<const MV> getVector( const ROL::Vector<Real>& x ) const {
           return dynamic_cast<const TMV&>(x).getVector();
@@ -525,7 +511,8 @@ namespace ROL {
 
         public:
 
-            TpetraBoundConstraint(MVP lp, MVP up, Real scale = 1.0) :
+            TpetraBoundConstraint(MVP lp, MVP up, Real scale = 1.0, 
+                                  Real feasTol = std::sqrt(ROL_EPSILON<Real>())) :
                 gblDim_(lp->getGlobalLength()),
                 lclDim_(lp->getLocalLength()),
                 lp_(lp),
@@ -533,6 +520,7 @@ namespace ROL {
                 l_(lp->getLocalViewDevice()),
                 u_(up->getLocalViewDevice()),
                 scale_(scale),
+                feasTol_(feasTol),
                 comm_(lp->getMap()->getComm()) {
 
                 KokkosStructs::MinGap<Real,ViewType> findmin(l_,u_);
@@ -582,10 +570,9 @@ namespace ROL {
 
                 ViewType x_lcl = xp->getLocalViewDevice();
 
-                Real eps = std::sqrt(ROL_EPSILON<Real>());
                 Real tol = 100.0*ROL_EPSILON<Real>();
 
-                KokkosStructs::ProjectInterior<Real,ViewType> projInterior(x_lcl,l_,u_,eps,tol,min_diff_);
+                KokkosStructs::Project<Real,ViewType> projInterior(x_lcl,l_,u_,feasTol_,tol,min_diff_);
 
                 Kokkos::parallel_for(lclDim_,projInterior);
             }

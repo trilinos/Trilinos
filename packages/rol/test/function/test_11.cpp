@@ -23,7 +23,7 @@
 // this software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// ExsvRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
 // PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
 // CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
@@ -50,8 +50,10 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "ROL_Bounds.hpp"
+#include "ROL_Constraint.hpp"
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_StdVector.hpp"
+#include "ROL_UnaryFunctions.hpp"
 
 typedef double RealT;
 
@@ -62,73 +64,166 @@ RealT calcError(ROL::Vector<RealT> &a, const ROL::Vector<RealT> &b) {
   return a.reduce(ROL::Elementwise::ReductionMax<RealT>());
 }
 
-int testRandomInputs(int numPoints, RealT tol, ROL::Ptr<std::ostream> outStream) {
+int testRandomInputs(int numPoints, RealT tol,
+                     ROL::Ptr<std::ostream> outStream) {
 
-  RealT invInftyNorm, jacInftyNorm;
+  int   errorFlag = 0;
+  RealT errorInftyNorm;
 
   // Generate standard vectors that hold data.
-  ROL::Ptr<std::vector<RealT>> vp = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
-  ROL::Ptr<std::vector<RealT>> xp = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
-  ROL::Ptr<std::vector<RealT>> gp = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
-  ROL::Ptr<std::vector<RealT>> lp = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
-  ROL::Ptr<std::vector<RealT>> up = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
-  // Include space for storing results.
-  ROL::Ptr<std::vector<RealT>> result1p
+  ROL::Ptr<std::vector<RealT>> vsv
     = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
-  ROL::Ptr<std::vector<RealT>> result2p
+  ROL::Ptr<std::vector<RealT>> xsv
+    = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
+  ROL::Ptr<std::vector<RealT>> gsv
+    = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
+  ROL::Ptr<std::vector<RealT>> lsv
+    = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
+  ROL::Ptr<std::vector<RealT>> usv
+    = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
+  // Include space for storing results.
+  ROL::Ptr<std::vector<RealT>> out1sv
+    = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
+  ROL::Ptr<std::vector<RealT>> out2sv
     = ROL::makePtr<std::vector<RealT>>(numPoints, 0.0);
 
-  // Use the standard vectors above to define ROL::StdVectors (or, in the
-  // case of l and u, pointers to ROL::Vectors).
-  ROL::StdVector<RealT> v(vp);
-  ROL::StdVector<RealT> x(xp);
-  ROL::StdVector<RealT> g(gp);
-  ROL::Ptr<ROL::Vector<RealT>> l = ROL::makePtr<ROL::StdVector<RealT>>(lp);
-  ROL::Ptr<ROL::Vector<RealT>> u = ROL::makePtr<ROL::StdVector<RealT>>(up);
-  ROL::StdVector<RealT> result1(result1p);
-  ROL::StdVector<RealT> result2(result2p);
+  // Use these standard vectors to define ROL::StdVectors (or, in the case of lp
+  // and up, pointers to ROL::Vectors).
+  ROL::StdVector<RealT> v(vsv);
+  ROL::StdVector<RealT> x(xsv);
+  ROL::StdVector<RealT> g(gsv);
+  ROL::Ptr<ROL::Vector<RealT>> lp = ROL::makePtr<ROL::StdVector<RealT>>(lsv);
+  ROL::Ptr<ROL::Vector<RealT>> up = ROL::makePtr<ROL::StdVector<RealT>>(usv);
+  ROL::StdVector<RealT> out1(out1sv);
+  ROL::StdVector<RealT> out2(out2sv);
 
   // Initialize.
-  v.setScalar(  2.0);
+  lp->randomize(-10.0, 10.0);
+  up->randomize(  0.0, 10.0);
+  up->plus(*lp);
+  x.randomize(-20.0, 20.0);
+  v.randomize(- 3.0,  3.0);
   g.randomize(-20.0, 20.0);
-  x.randomize(  0.0, 10.0);
-  l->setScalar( 0.0);
-  u->randomize( 0.0, 10.0);
-  u->plus(x);
 
-  ROL::StdBoundConstraint<RealT> standardVecBC(*lp,*up);
-  ROL::Bounds<RealT>             elementwiseBC( l,  u );
+  ROL::Bounds<RealT>             boundsBC( lp , up );
+  ROL::StdBoundConstraint<RealT> stdvecBC(*lsv,*usv);
+  boundsBC.projectInterior(x);
 
-  standardVecBC.applyInverseScalingFunction(result1, v, x, g);
-  elementwiseBC.applyInverseScalingFunction(result2, v, x, g);
-  invInftyNorm = calcError(result1, result2);
+  // Test 1 - Check that the Elementwise applyInverseScalingFunction does
+  //          indeed apply a scale factor to the vector v.
 
-  standardVecBC.applyScalingFunctionJacobian(result1, v, x, g);
-  elementwiseBC.applyScalingFunctionJacobian(result2, v, x, g);
-  jacInftyNorm = calcError(result1, result2);
+  boundsBC.applyInverseScalingFunction(out1, v, x, g);
+  out1.applyUnary(ROL::Elementwise::Reciprocal<RealT>());
+  boundsBC.applyInverseScalingFunction(out2, out1, x, g);
+  out2.applyUnary(ROL::Elementwise::Reciprocal<RealT>());
+  errorInftyNorm = calcError(out2, v);
+  errorFlag += errorInftyNorm > tol;
 
   *outStream << std::endl;
-  *outStream << "|StdBoundConstraint - Bounds| at " << numPoints
-             << " Randomly Sampled Points (Infinity Norm): " << std::endl
-             << "  Inverse          = " << invInftyNorm << std::endl
-             << "  Jacobian         = " << jacInftyNorm << std::endl;
+  *outStream << "Scaling Check at " << numPoints
+             << " Randomly Sampled Points -- " << std::endl
+             << " Infinity Norm of | v - 1/f(1/f(v)) | = "
+             << errorInftyNorm << std::endl;
   *outStream << std::endl;
 
-  return (invInftyNorm + jacInftyNorm) > tol;
+  // Test 2 - Use finite differences to check that the Elementwise
+  //          applyScalingFunctionJacobian and applyInverseScalingFunction are
+  //          consistent with each other.
+  //          This test is meant to be visually inspected; it cannot cause the
+  //          cpp file to fail.
+
+  class TestWrapper : public ROL::Constraint<RealT> {
+   private:
+    ROL::Bounds<RealT> boundsBC_;
+    ROL::StdVector<RealT> g_;
+    ROL::StdVector<RealT> v_;
+
+   public:
+    TestWrapper(ROL::Bounds<RealT>& boundsBC, ROL::StdVector<RealT>& g)
+      : boundsBC_(boundsBC), g_(g), v_(g) {
+        RealT one(1);
+        v_.setScalar(one);
+      }
+
+    void value(ROL::Vector<RealT>& c, const ROL::Vector<RealT>& x,
+               RealT& tol) override {
+      boundsBC_.applyInverseScalingFunction(c, v_, x, g_);
+      c.applyUnary( ROL::Elementwise::Reciprocal<RealT>());
+      c.applyBinary(ROL::Elementwise::Multiply<RealT>(), g_);
+    }
+
+    void applyJacobian(ROL::Vector<RealT>& jv, const ROL::Vector<RealT>& v,
+                       const ROL::Vector<RealT>& x, RealT& tol) override {
+      boundsBC_.applyScalingFunctionJacobian(jv, v, x, g_);
+    }
+  } testWrapper(boundsBC, g);
+
+  // Use out1 and and out2 as working arrays to build a point comfortably
+  // within our bounds (so that the finite difference increments don't all step
+  // out). Larger values of gamma => larger separation between this point
+  // and our bounds.
+  RealT gamma = 1e-8;
+  out1.randomize(-1.0, 1.0);
+  out2.set(*up);
+  out2.axpy(-1,*lp);
+  out2.scale(1 - gamma);
+  out1.applyBinary(ROL::Elementwise::Multiply<RealT>(), out2);
+  out1.plus(*lp);
+  out1.plus(*up);
+  out1.scale(0.5);  // the point at which we check the Jacobian
+
+  *outStream << "Elementwise Jacobian Check:" << std::endl;
+  testWrapper.checkApplyJacobian(out1, v, out2, true, *outStream, 15);
+  *outStream << std::endl;
+
+  // Test 3 - Check that applyInverseScalingFunction and
+  //          applyScalingFunctionJacobian agree between the Elementwise and
+  //          StdVector implementations.
+
+  boundsBC.applyInverseScalingFunction(out1, v, x, g);
+  stdvecBC.applyInverseScalingFunction(out2, v, x, g);
+  errorInftyNorm = 100;
+  errorInftyNorm = calcError(out1, out2);
+  errorFlag += errorInftyNorm > tol;
+
+  *outStream << "Consistency Check at " << numPoints
+             << " Randomly Sampled Points -- " << std::endl
+             << " Infinity Norm of | StdBoundConstraint - Elementwise |:"
+             << std::endl
+             << "  Inverse  = " << errorInftyNorm << std::endl;
+
+  boundsBC.applyScalingFunctionJacobian(out1, v, x, g);
+  stdvecBC.applyScalingFunctionJacobian(out2, v, x, g);
+  errorInftyNorm = calcError(out1, out2);
+  errorFlag += errorInftyNorm > tol;
+
+  *outStream << "  Jacobian = " << errorInftyNorm << std::endl;
+  *outStream << std::endl;
+
+  return errorFlag;
 }
 
 int testCases(RealT tol, ROL::Ptr<std::ostream> outStream) {
+
+  // Test 4 - Check the Elementwise and StdVector implementations of
+  //          applyInverseScalingFunction and applyScalingFunctionJacobian on
+  //          specific test cases.
 
   int numCases = 3;
 
   std::vector<RealT> ewErrors, svErrors;
 
   // Generate standard vectors that hold data.
-  ROL::Ptr<std::vector<RealT>> vp = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
-  ROL::Ptr<std::vector<RealT>> xp = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
-  ROL::Ptr<std::vector<RealT>> gp = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
-  ROL::Ptr<std::vector<RealT>> lp = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
-  ROL::Ptr<std::vector<RealT>> up = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
+  ROL::Ptr<std::vector<RealT>> vsv
+    = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
+  ROL::Ptr<std::vector<RealT>> xsv
+    = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
+  ROL::Ptr<std::vector<RealT>> gsv
+    = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
+  ROL::Ptr<std::vector<RealT>> lsv
+    = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
+  ROL::Ptr<std::vector<RealT>> usv
+    = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
   // Include space for storing results.
   ROL::Ptr<std::vector<RealT>> resultp
     = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
@@ -136,66 +231,66 @@ int testCases(RealT tol, ROL::Ptr<std::ostream> outStream) {
     = ROL::makePtr<std::vector<RealT>>(numCases, 0.0);
 
   // Use the standard vectors above to define ROL::StdVectors (or, in the
-  // case of l and u, pointers to ROL::Vectors).
-  ROL::StdVector<RealT> v(vp);
-  ROL::StdVector<RealT> x(xp);
-  ROL::StdVector<RealT> g(gp);
-  ROL::Ptr<ROL::Vector<RealT>> l = ROL::makePtr<ROL::StdVector<RealT>>(lp);
-  ROL::Ptr<ROL::Vector<RealT>> u = ROL::makePtr<ROL::StdVector<RealT>>(up);
+  // case of lp and up, pointers to ROL::Vectors).
+  ROL::StdVector<RealT> v(vsv);
+  ROL::StdVector<RealT> x(xsv);
+  ROL::StdVector<RealT> g(gsv);
+  ROL::Ptr<ROL::Vector<RealT>> lp = ROL::makePtr<ROL::StdVector<RealT>>(lsv);
+  ROL::Ptr<ROL::Vector<RealT>> up = ROL::makePtr<ROL::StdVector<RealT>>(usv);
   ROL::StdVector<RealT> result(resultp);
   ROL::StdVector<RealT> target(targetp);
 
   // Problem 1
-  (*vp)[0] =  4.0;
-  (*xp)[0] =  1.9;
-  (*gp)[0] =  0.5;
-  (*lp)[0] =  0.0;
-  (*up)[0] =  2.0;
+  (*vsv)[0] =  4.0;
+  (*xsv)[0] =  1.9;
+  (*gsv)[0] =  0.5;
+  (*lsv)[0] =  0.0;
+  (*usv)[0] =  2.0;
 
   // Problem 2
-  (*vp)[1] = -1.0;
-  (*xp)[1] = 10.0;
-  (*gp)[1] =  0.0002;
-  (*lp)[1] = ROL::ROL_NINF<RealT>();
-  (*up)[1] = ROL::ROL_INF<RealT>();
+  (*vsv)[1] = -1.0;
+  (*xsv)[1] = 10.0;
+  (*gsv)[1] =  0.0002;
+  (*lsv)[1] = ROL::ROL_NINF<RealT>();
+  (*usv)[1] = ROL::ROL_INF<RealT>();
 
   // Problem 3
-  (*vp)[2] = -0.0002;
-  (*xp)[2] =  1.0;
-  (*gp)[2] =  0.5;
-  (*lp)[2] =  0.0;
-  (*up)[2] = ROL::ROL_INF<RealT>();
+  (*vsv)[2] = -0.0002;
+  (*xsv)[2] =  1.0;
+  (*gsv)[2] =  0.5;
+  (*lsv)[2] =  0.0;
+  (*usv)[2] = ROL::ROL_INF<RealT>();
 
-  ROL::StdBoundConstraint<RealT> standardVecBC(*lp,*up);
-  ROL::Bounds<RealT>             elementwiseBC( l,  u );
+  ROL::Bounds<RealT>             boundsBC( lp,  up );
+  ROL::StdBoundConstraint<RealT> stdvecBC(*lsv,*usv);
 
   // Expected results when applying the scaling function to v.
-  (*targetp)[0] = (*vp)[0]*(*gp)[0];
-  (*targetp)[1] = (*vp)[1]*1.0;
-  (*targetp)[2] = (*vp)[2]*1.0;
+  (*targetp)[0] = (*vsv)[0]*(*gsv)[0];
+  (*targetp)[1] = (*vsv)[1]*1.0;
+  (*targetp)[2] = (*vsv)[2]*1.0;
 
-  for (unsigned long i = 0; i < targetp->size(); i++) {
-    (*targetp)[i] = (*vp)[i]*(*vp)[i]/(*targetp)[i];
-  }
-  standardVecBC.applyInverseScalingFunction(result, v, x, g);
-  svErrors.push_back(calcError(result, target));
-  elementwiseBC.applyInverseScalingFunction(result, v, x, g);
+  target.applyBinary(ROL::Elementwise::DivideAndInvert<RealT>(), v);
+  target.applyBinary(ROL::Elementwise::Multiply<RealT>(), v);
+  boundsBC.applyInverseScalingFunction(result, v, x, g);
   ewErrors.push_back(calcError(result, target));
+  stdvecBC.applyInverseScalingFunction(result, v, x, g);
+  svErrors.push_back(calcError(result, target));
 
-  (*targetp)[0] = (*vp)[0]*(*gp)[0];
+  // Expected results when applying the Jacobian to v.
+  (*targetp)[0] = (*vsv)[0]*(*gsv)[0];
   (*targetp)[1] = 0.0;
   (*targetp)[2] = 0.0;
-  standardVecBC.applyScalingFunctionJacobian(result, v, x, g);
-  svErrors.push_back(calcError(result, target));
-  elementwiseBC.applyScalingFunctionJacobian(result, v, x, g);
+  boundsBC.applyScalingFunctionJacobian(result, v, x, g);
   ewErrors.push_back(calcError(result, target));
+  stdvecBC.applyScalingFunctionJacobian(result, v, x, g);
+  svErrors.push_back(calcError(result, target));
 
+  *outStream << "Elementwise Test Case Errors (Infinity Norm):" << std::endl
+    << "  Inverse  = " << ewErrors[1] << std::endl
+    << "  Jacobian = " << ewErrors[2] << std::endl;
   *outStream << "StdBoundConstraint Test Case Errors (Infinity Norm):" << std::endl
-    << "  Inverse          = " << svErrors[1] << std::endl
-    << "  Jacobian         = " << svErrors[2] << std::endl;
-  *outStream << "Bounds             Test Case Errors (Infinity Norm):" << std::endl
-    << "  Inverse          = " << ewErrors[1] << std::endl
-    << "  Jacobian         = " << ewErrors[2] << std::endl;
+    << "  Inverse  = " << svErrors[1] << std::endl
+    << "  Jacobian = " << svErrors[2] << std::endl;
   *outStream << std::endl;
 
   RealT maxError = std::max(*std::max_element(svErrors.begin(), svErrors.end()),

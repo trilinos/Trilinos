@@ -8,6 +8,15 @@ IF(${PROJECT_NAME}_ENABLE_Tpetra)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TpetraBoundConstraintScaling
+    SOURCES test_02.cpp
+    ARGS PrintItAll
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
 ENDIF()
 
 
