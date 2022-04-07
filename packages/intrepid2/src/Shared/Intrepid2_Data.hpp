@@ -928,7 +928,7 @@ public:
         // extract the type of the first argument; use that for the arrays below
         using int_type = std::tuple_element_t<0, std::tuple<IntArgs...>>;
         
-        const Kokkos::Array<int_type, numArgs> args {intArgs...};
+        const Kokkos::Array<int_type, numArgs+1> args {intArgs...,0}; // we pad with one extra entry (0) to avoid gcc compiler warnings about references beyond the bounds of the array (the [d+1]'s below)
         Kokkos::Array<int_type, 7> refEntry;
         for (int d=0; d<numArgs; d++)
         {
