@@ -122,7 +122,6 @@ public:
       algName_(), numberOfWeights_(), partIds_(), partSizes_(),
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
   {
-    for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
   }
 
@@ -391,9 +390,6 @@ protected:
 #endif
 
   BaseAdapterType inputType_;
-
-  //ModelType modelType_;
-  bool modelAvail_[MAX_NUM_MODEL_TYPES];
 
   modelFlag_t graphFlags_;
   modelFlag_t idFlags_;
@@ -919,29 +915,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   using Teuchos::ParameterList;
 
-  // A Problem object may be reused.  The input data may have changed and
-  // new parameters or part sizes may have been set.
-  //
-  // Save these values in order to determine if we need to create a new model.
-
-  //ModelType previousModel = modelType_;
-  bool prevModelAvail[MAX_NUM_MODEL_TYPES];
-  for(int i=0;i<MAX_NUM_MODEL_TYPES;i++)
-  {
-    prevModelAvail[i] = modelAvail_[i];
-  }
-
-
-  modelFlag_t previousGraphModelFlags = graphFlags_;
-  modelFlag_t previousIdentifierModelFlags = idFlags_;
-  modelFlag_t previousCoordinateModelFlags = coordFlags_;
-
-  //modelType_ = InvalidModel;
-  for(int i=0;i<MAX_NUM_MODEL_TYPES;i++)
-  {
-    modelAvail_[i] = false;
-  }
-
   graphFlags_.reset();
   idFlags_.reset();
   coordFlags_.reset();
@@ -989,6 +962,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   bool needConsecutiveGlobalIds = false;
   bool removeSelfEdges= false;
+  bool isGraphModel = false;
 
   ///////////////////////////////////////////////////////////////////
   // Determine algorithm, model, and algorithm requirements.  This
@@ -1036,8 +1010,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   // Set model creation flags, if any.
 
   this->env_->debug(DETAILED_STATUS, "    models");
-  //  if (modelType_ == GraphModelType)
-  if (modelAvail_[GraphModelType]==true)
+
+  if (isGraphModel == true)
   {
 
     // Any parameters in the graph sublist?
@@ -1087,84 +1061,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       else if (objectOfInterest == std::string("mesh_elements"))
         graphFlags_.set(VERTICES_ARE_MESH_ELEMENTS);
     }
-  }
-  //MMW is it ok to remove else?
-  //  else if (modelType_ == IdentifierModelType)
-  if (modelAvail_[IdentifierModelType]==true)
-  {
-
-    // Any special behaviors required by the algorithm?
-
-  }
-  //  else if (modelType_ == CoordinateModelType)
-  if (modelAvail_[CoordinateModelType]==true)
-  {
-
-    // Any special behaviors required by the algorithm?
-
-  }
-
-
-  if (newData ||
-      (modelAvail_[GraphModelType]!=prevModelAvail[GraphModelType]) ||
-      (modelAvail_[HypergraphModelType]!=prevModelAvail[HypergraphModelType])||
-      (modelAvail_[CoordinateModelType]!=prevModelAvail[CoordinateModelType])||
-      (modelAvail_[IdentifierModelType]!=prevModelAvail[IdentifierModelType])||
-      // (modelType_ != previousModel) ||
-      (graphFlags_ != previousGraphModelFlags) ||
-      (coordFlags_ != previousCoordinateModelFlags) ||
-      (idFlags_    != previousIdentifierModelFlags))
-  {
-    // Create the computational model.
-    // Models are instantiated for base input adapter types (mesh,
-    // matrix, graph, and so on).  We pass a pointer to the input
-    // adapter, cast as the base input type.
-
-    //KDD Not sure why this shadow declaration is needed
-    //KDD Comment out for now; revisit later if problems.
-    //KDD const Teuchos::ParameterList pl = this->envConst_->getParameters();
-    //bool exceptionThrow = true;
-
-    if(modelAvail_[GraphModelType]==true)
-    {
-      this->env_->debug(DETAILED_STATUS, "    building graph model");
-      // this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-      //       this->baseInputAdapter_, this->envConst_, this->comm_,
-      //       graphFlags_));
-
-      // this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
-      //       this->graphModel_);
-    }
-    if(modelAvail_[HypergraphModelType]==true)
-    {
-      //KDD USING ZOLTAN FOR HYPERGRAPH FOR NOW
-      //KDD std::cout << "Hypergraph model not implemented yet..." << std::endl;
-    }
-
-    if(modelAvail_[CoordinateModelType]==true)
-    {
-      this->env_->debug(DETAILED_STATUS, "    building coordinate model");
-      // this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
-      //       this->baseInputAdapter_, this->envConst_, this->comm_,
-      //       coordFlags_));
-
-      // this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
-      //       this->coordinateModel_);
-    }
-
-    if(modelAvail_[IdentifierModelType]==true)
-    {
-      this->env_->debug(DETAILED_STATUS, "    building identifier model");
-      // this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-      //       this->baseInputAdapter_, this->envConst_, this->comm_,
-      //       idFlags_));
-
-      // this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
-      //       this->identifierModel_);
-    }
-
-    this->env_->memory("After creating Model");
-    this->env_->debug(DETAILED_STATUS, "createPartitioningProblem done");
   }
 }
 

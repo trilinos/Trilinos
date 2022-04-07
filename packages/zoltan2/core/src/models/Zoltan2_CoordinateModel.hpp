@@ -375,26 +375,6 @@ void CoordinateModel<Adapter>::sharedConstructor(
   if (userNumWeights_)
     weights_ = arcp(weightArray, 0, userNumWeights_);
 
-  // These are deep copies so we don't hold on to refs of the device views causing problems without UVM
-  // Kokkos::View<const gno_t *, typename node_t::device_type> kokkos_gids;
-  // ia->getIDsKokkosView(kokkos_gids);
-  // kokkos_gids_ =   Kokkos::View<gno_t *, typename node_t::device_type>("kokkos_gids_",kokkos_gids.extent(0));
-  // Kokkos::deep_copy(kokkos_gids_, kokkos_gids);
-  // ia->getIDsKokkosView(kokkos_gids_);
-
-  // Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> kokkos_xyz;
-  // ia->getCoordinatesKokkosView(kokkos_xyz_);
-  // kokkos_xyz_ =   Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type>("kokkos_xyz", kokkos_xyz.extent(0), kokkos_xyz.extent(1));
-  // Kokkos::deep_copy(kokkos_xyz_, kokkos_xyz);
-
-  if(userNumWeights_ > 0) {
-    // Kokkos::View<scalar_t **, typename node_t::device_type> kokkos_weights;
-    // ia->getWeightsKokkosView(kokkos_weights);
-    // kokkos_weights_ = Kokkos::View<scalar_t **, typename node_t::device_type>("kokkos_weights_",kokkos_weights.extent(0), kokkos_weights.extent(1));
-    // Kokkos::deep_copy(kokkos_weights_, kokkos_weights);
-  }
-
-
   Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, 1,
                                   &nLocalIds, &numGlobalCoordinates_);
 
