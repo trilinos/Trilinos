@@ -22,6 +22,7 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   typedef panzer::GlobalOrdinal GlobalOrdinal;
 
   using STS = Teuchos::ScalarTraits<Scalar>;
+  using OT  = Teuchos::OrdinalTraits<GlobalOrdinal>;
 
   typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,Scalar,LocalOrdinal,GlobalOrdinal> tpetraBlockedLinObjFactory;
   typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,LocalOrdinal> epetraBlockedLinObjFactory;
@@ -37,7 +38,6 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
   RCP<const tpetraBlockedLinObjFactory > tblof = rcp_dynamic_cast<const tpetraBlockedLinObjFactory >(linObjFactory);
   RCP<const epetraBlockedLinObjFactory > eblof = rcp_dynamic_cast<const epetraBlockedLinObjFactory >(linObjFactory);
 
-  typedef typename panzer::BlockedTpetraLinearObjContainer<Scalar,LocalOrdinal,GlobalOrdinal> tp_linObjContainer;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal> tp_matrix;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal> tp_map;
   typedef typename panzer::BlockedEpetraLinearObjContainer ep_linObjContainer;
@@ -89,32 +89,28 @@ Teko::LinearOp buildInterpolation(const Teuchos::RCP<const panzer::LinearObjFact
 
   RCP<Thyra::LinearOpBase<Scalar> > thyra_interp;
   if (tblof != Teuchos::null) {
-    RCP<panzer::GlobalEvaluationData> dataObject
-      = rcp(new panzer::LOCPair_GlobalEvaluationData(tblof,panzer::LinearObjContainer::Mat));
-    RCP<panzer::LinearObjContainer> global_loc
-      = rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(dataObject,true)->getGlobalLOC();
-    RCP<panzer::LinearObjContainer> ghosted_loc
-      = rcp_dynamic_cast<panzer::LOCPair_GlobalEvaluationData>(dataObject,true)->getGhostedLOC();
-
-    RCP<tp_linObjContainer> global_tloc = rcp_dynamic_cast<tp_linObjContainer>(global_loc,true);
-    RCP<tp_linObjContainer> ghosted_tloc = rcp_dynamic_cast<tp_linObjContainer>(ghosted_loc,true);
-
-    tp_rangemap  = global_tloc ->getMapForBlock(hoBlockIndex);
-    tp_domainmap = global_tloc ->getMapForBlock(loBlockIndex);
-    tp_rowmap    = global_tloc ->getMapForBlock(hoBlockIndex);
-    tp_colmap    = ghosted_tloc->getMapForBlock(loBlockIndex);
+    // build maps
+    std::vector<GlobalOrdinal> gids;
+    ho_ugi->getOwnedIndices(gids);
+    tp_rowmap = rcp(new tp_map(OT::invalid(), gids.data(), gids.size(), OT::zero(), ho_ugi->getComm()));
+    tp_rangemap = tp_rowmap;
+    lo_ugi->getOwnedIndices(gids);
+    tp_domainmap = rcp(new tp_map(OT::invalid(), gids.data(), gids.size(), OT::zero(), lo_ugi->getComm()));
+    lo_ugi->getOwnedAndGhostedIndices(gids);
+    tp_colmap = rcp(new tp_map(OT::invalid(), gids.data(), gids.size(), OT::zero(), lo_ugi->getComm()));
 
     // estimate number of entries per row
+    // This is an upper bound, as we are counting dofs that are on shared nodes, edges, faces more than once.
     Kokkos::View<size_t*,HostSpace> numEntriesPerRow("numEntriesPerRow", tp_rowmap->getLocalNumElements());
     {
       // loop over element blocks
       std::vector<std::string> elementBlockIds;
       blockedDOFMngr->getElementBlockIds(elementBlockIds);
-      maxNumElementsPerBlock = std::max(maxNumElementsPerBlock, elementBlockIds.size());
       for(std::size_t blockIter = 0; blockIter < elementBlockIds.size(); ++blockIter) {
 
         // loop over elements
         std::vector<int> elementIds = ho_ugi->getElementBlock(elementBlockIds[blockIter]);
+        maxNumElementsPerBlock = std::max(maxNumElementsPerBlock, elementIds.size());
         for(std::size_t elemIter = 0; elemIter < elementIds.size(); ++elemIter) {
           auto elemId = elementIds[elemIter];
 
