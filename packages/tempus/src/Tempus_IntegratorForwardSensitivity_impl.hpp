@@ -306,7 +306,9 @@ template<class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 createIntegratorForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      sens_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      sens_solve_model)
 {
 
 
@@ -345,12 +347,13 @@ createIntegratorForwardSensitivity(
     if (use_combined_method)
     {
       sens_pl->remove("Reuse State Linear Solver");
-      sens_model     = wrapCombinedFSAModelEvaluator(model, sens_pl);
+      sens_model     = wrapCombinedFSAModelEvaluator(
+        model, sens_residual_model, sens_solve_model, sens_pl);
       fwd_integrator = createIntegratorBasic<Scalar>(pList, sens_model);
     }
     else
     {
-      sens_stepper          = Teuchos::rcp(new StepperStaggeredForwardSensitivity<Scalar>(model, stepper_pl, sens_pl));
+      sens_stepper          = Teuchos::rcp(new StepperStaggeredForwardSensitivity<Scalar>(model, sens_residual_model, sens_solve_model, stepper_pl, sens_pl));
       auto fsa_staggered_me = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>>(sens_stepper->getModel());
       fwd_integrator        = createIntegratorBasic<Scalar>(pList, fsa_staggered_me);
       fwd_integrator->setStepper(sens_stepper);

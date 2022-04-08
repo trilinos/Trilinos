@@ -22,11 +22,15 @@ template <typename Scalar>
 CombinedForwardSensitivityModelEvaluator<Scalar>::
 CombinedForwardSensitivityModelEvaluator(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & sens_residual_model,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & sens_solve_model,
   const Teuchos::RCP<const Teuchos::ParameterList>& pList,
   const Teuchos::RCP<MultiVector>& dxdp_init,
   const Teuchos::RCP<MultiVector>& dx_dotdp_init,
   const Teuchos::RCP<MultiVector>& dx_dotdotdp_init) :
   model_(model),
+  sens_residual_model_(sens_residual_model),
+  sens_solve_model_(sens_solve_model),
   dxdp_init_(dxdp_init),
   dx_dotdp_init_(dx_dotdp_init),
   dx_dotdotdp_init_(dx_dotdotdp_init),
@@ -75,7 +79,11 @@ CombinedForwardSensitivityModelEvaluator(
       Thyra::multiVectorProductVectorSpace(model_->get_g_space(g_index_),
                                            num_param_);
 
+  // forward and sensitivity models must support same InArgs
   MEB::InArgs<Scalar> me_inArgs = model_->createInArgs();
+  me_inArgs.assertSameSupport(sens_residual_model_->createInArgs());
+  me_inArgs.assertSameSupport(sens_solve_model_->createInArgs());
+
   MEB::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_x);
@@ -95,11 +103,14 @@ CombinedForwardSensitivityModelEvaluator(
   prototypeInArgs_ = inArgs;
 
   MEB::OutArgs<Scalar> me_outArgs = model_->createOutArgs();
+  MEB::OutArgs<Scalar> sens_mer_outArgs = sens_residual_model_->createOutArgs();
+  MEB::OutArgs<Scalar> sens_mes_outArgs = sens_solve_model_->createOutArgs();
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
   outArgs.set_Np_Ng(me_outArgs.Np(),me_outArgs.Ng()+g_offset_);
   outArgs.setSupports(MEB::OUT_ARG_f);
-  if (me_outArgs.supports(MEB::OUT_ARG_W_op))
+  if (sens_mer_outArgs.supports(MEB::OUT_ARG_W_op) ||
+      sens_mes_outArgs.supports(MEB::OUT_ARG_W_op))
     outArgs.setSupports(MEB::OUT_ARG_W_op);
 
   // Response 0 is the reduced dg/dp (no sensitivities supported)
@@ -116,9 +127,16 @@ CombinedForwardSensitivityModelEvaluator(
   }
   prototypeOutArgs_ = outArgs;
 
-  TEUCHOS_ASSERT(me_outArgs.supports(MEB::OUT_ARG_DfDp, p_index_).supports(MEB::DERIV_MV_JACOBIAN_FORM));
+  // Sensitivity residual ME must support W_op to define adjoint ODE/DAE.
+  // Must support alpha, beta if it suports x_dot
+  TEUCHOS_ASSERT(me_inArgs.supports(MEB::IN_ARG_x));
   if (!use_dfdp_as_tangent_)
-    TEUCHOS_ASSERT(me_outArgs.supports(MEB::OUT_ARG_W_op));
+    TEUCHOS_ASSERT(sens_mer_outArgs.supports(MEB::OUT_ARG_W_op));
+  if (me_inArgs.supports(MEB::IN_ARG_x_dot)) {
+    TEUCHOS_ASSERT(me_inArgs.supports(MEB::IN_ARG_alpha));
+    TEUCHOS_ASSERT(me_inArgs.supports(MEB::IN_ARG_beta));
+  }
+  TEUCHOS_ASSERT(me_outArgs.supports(MEB::OUT_ARG_DfDp, p_index_).supports(MEB::DERIV_MV_JACOBIAN_FORM));
 }
 
 template <typename Scalar>
@@ -190,7 +208,8 @@ Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 CombinedForwardSensitivityModelEvaluator<Scalar>::
 create_W_op() const
 {
-  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > op = model_->create_W_op();
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > op =
+    sens_solve_model_->create_W_op();
   return Thyra::nonconstMultiVectorLinearOp(op, num_param_+1);
 }
 
@@ -224,7 +243,7 @@ CombinedForwardSensitivityModelEvaluator<Scalar>::
 get_W_factory() const
 {
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > factory =
-    model_->get_W_factory();
+    sens_solve_model_->get_W_factory();
   if (factory == Teuchos::null)
     return Teuchos::null; // model_ doesn't support W_factory
 
@@ -417,7 +436,9 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     me_outArgs.set_f(f);
     me_outArgs.set_DfDp(p_index_, dfdp);
   }
-  if (outArgs.get_W_op() != Teuchos::null) {
+  if (outArgs.supports(MEB::OUT_ARG_W_op) &&
+      outArgs.get_W_op() != Teuchos::null &&
+      model_.ptr() == sens_solve_model_.ptr()) {
     RCP< Thyra::LinearOpBase<Scalar> > op = outArgs.get_W_op();
     RCP< Thyra::MultiVectorLinearOp<Scalar> > mv_op =
       rcp_dynamic_cast< Thyra::MultiVectorLinearOp<Scalar> >(op,true);
@@ -438,14 +459,26 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // build residual and jacobian
   model_->evalModel(me_inArgs, me_outArgs);
 
+  // Compute W_op separately if we have a separate sensitivity solve ME
+  if (outArgs.supports(MEB::OUT_ARG_W_op) &&
+      outArgs.get_W_op() != Teuchos::null &&
+      model_.ptr() != sens_solve_model_.ptr()) {
+    MEB::OutArgs<Scalar> sens_me_outArgs = sens_solve_model_->createOutArgs();
+    RCP< Thyra::LinearOpBase<Scalar> > op = outArgs.get_W_op();
+    RCP< Thyra::MultiVectorLinearOp<Scalar> > mv_op =
+      rcp_dynamic_cast< Thyra::MultiVectorLinearOp<Scalar> >(op,true);
+    sens_me_outArgs.set_W_op(mv_op->getNonconstLinearOp());
+    sens_solve_model_->evalModel(me_inArgs, sens_me_outArgs);
+  }
+
   // Compute (df/dx) * (dx/dp) + (df/dxdot) * (dxdot/dp) + (df/dxdotdot) * (dxdotdot/dp) + (df/dp)
   // if the underlying ME doesn't already do this.  This requires computing
   // df/dx, df/dxdot, df/dxdotdot as separate operators
   if (!use_dfdp_as_tangent_) {
     if (dxdp != Teuchos::null && dfdp != Teuchos::null) {
       if (my_dfdx_ == Teuchos::null)
-        my_dfdx_ = model_->create_W_op();
-      MEB::OutArgs<Scalar> meo = model_->createOutArgs();
+        my_dfdx_ = sens_residual_model_->create_W_op();
+      MEB::OutArgs<Scalar> meo = sens_residual_model_->createOutArgs();
       meo.set_W_op(my_dfdx_);
       if (me_inArgs.supports(MEB::IN_ARG_alpha))
         me_inArgs.set_alpha(0.0);
@@ -453,13 +486,13 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
         me_inArgs.set_beta(1.0);
       if (me_inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff))
         me_inArgs.set_W_x_dot_dot_coeff(0.0);
-      model_->evalModel(me_inArgs, meo);
+      sens_residual_model_->evalModel(me_inArgs, meo);
       my_dfdx_->apply(Thyra::NOTRANS, *dxdp, dfdp.ptr(), Scalar(1.0), Scalar(1.0));
     }
     if (dxdotdp != Teuchos::null && dfdp != Teuchos::null) {
       if (my_dfdxdot_ == Teuchos::null)
-        my_dfdxdot_ = model_->create_W_op();
-      MEB::OutArgs<Scalar> meo = model_->createOutArgs();
+        my_dfdxdot_ = sens_residual_model_->create_W_op();
+      MEB::OutArgs<Scalar> meo = sens_residual_model_->createOutArgs();
       meo.set_W_op(my_dfdxdot_);
       if (me_inArgs.supports(MEB::IN_ARG_alpha))
         me_inArgs.set_alpha(1.0);
@@ -467,13 +500,13 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
         me_inArgs.set_beta(0.0);
       if (me_inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff))
         me_inArgs.set_W_x_dot_dot_coeff(0.0);
-      model_->evalModel(me_inArgs, meo);
+      sens_residual_model_->evalModel(me_inArgs, meo);
       my_dfdxdot_->apply(Thyra::NOTRANS, *dxdotdp, dfdp.ptr(), Scalar(1.0), Scalar(1.0));
     }
     if (dxdotdotdp != Teuchos::null && dfdp != Teuchos::null) {
       if (my_dfdxdotdot_ == Teuchos::null)
-        my_dfdxdotdot_ = model_->create_W_op();
-      MEB::OutArgs<Scalar> meo = model_->createOutArgs();
+        my_dfdxdotdot_ = sens_residual_model_->create_W_op();
+      MEB::OutArgs<Scalar> meo = sens_residual_model_->createOutArgs();
       meo.set_W_op(my_dfdxdotdot_);
       if (me_inArgs.supports(MEB::IN_ARG_alpha))
         me_inArgs.set_alpha(0.0);
@@ -481,7 +514,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
         me_inArgs.set_beta(0.0);
       if (me_inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff))
         me_inArgs.set_W_x_dot_dot_coeff(1.0);
-      model_->evalModel(me_inArgs, meo);
+      sens_residual_model_->evalModel(me_inArgs, meo);
       my_dfdxdotdot_->apply(Thyra::NOTRANS, *dxdotdotdp, dfdp.ptr(), Scalar(1.0), Scalar(1.0));
     }
   }

@@ -72,6 +72,8 @@ public:
    */
   CombinedForwardSensitivityModelEvaluator(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & sens_residual_model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & sens_solve_model,
     const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null,
     const Teuchos::RCP<MultiVector>& dxdp_init = Teuchos::null,
     const Teuchos::RCP<MultiVector>& dx_dotdp_init = Teuchos::null,
@@ -138,6 +140,8 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > sens_residual_model_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > sens_solve_model_;
   Teuchos::RCP<MultiVector> dxdp_init_;
   Teuchos::RCP<MultiVector> dx_dotdp_init_;
   Teuchos::RCP<MultiVector> dx_dotdotdp_init_;

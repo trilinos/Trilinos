@@ -82,6 +82,9 @@ public:
    */
   StaggeredForwardSensitivityModelEvaluator(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & sens_residual_model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & sens_solve_model,
+    const bool is_pseudotransient,
     const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null,
     const Teuchos::RCP<MultiVector>& dxdp_init = Teuchos::null,
     const Teuchos::RCP<MultiVector>& dx_dotdp_init = Teuchos::null,
@@ -163,6 +166,8 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > sens_residual_model_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > sens_solve_model_;
   Teuchos::RCP<MultiVector> dxdp_init_;
   Teuchos::RCP<MultiVector> dx_dotdp_init_;
   Teuchos::RCP<MultiVector> dx_dotdotdp_init_;
@@ -185,9 +190,15 @@ private:
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > lo_;
   Teuchos::RCP<Thyra::PreconditionerBase<Scalar> > po_;
 
+  bool is_pseudotransient_;
+  mutable bool mass_matrix_is_computed_;
+  mutable bool jacobian_matrix_is_computed_;
+  mutable bool acceleration_matrix_is_computed_;
+  mutable bool residual_sensitivity_is_computed_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdx_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdot_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdotdot_;
+  mutable Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > my_dfdp_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dgdx_;
   mutable Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > my_dgdx_mv_;
   mutable Teuchos::RCP<const Tempus::SolutionState<Scalar> > forward_state_;

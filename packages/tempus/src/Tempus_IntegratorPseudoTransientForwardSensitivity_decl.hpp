@@ -96,7 +96,7 @@ public:
    */
   IntegratorPseudoTransientForwardSensitivity(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    const  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >&sens_model,
+    const Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >&sens_model,
     const Teuchos::RCP<IntegratorBasic<Scalar> > &fwd_integrator,
     const Teuchos::RCP<IntegratorBasic<Scalar> > &sens_integrator,
     const bool reuse_solver, const bool force_W_update);
@@ -215,6 +215,8 @@ protected:
  * @param pList ParameterList to construct the Tempus state integrator, the
  *              sensitivity model evaluator, and the sensisitivity integrator
  * @param model Physics model
+ * @param sens_residual_model Model evaluator for sensitivity residual
+ * @param sens_solve_model Model evaluator for sensitivity solve
  *
  * @return
  */
@@ -222,7 +224,51 @@ template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
 createIntegratorPseudoTransientForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& sens_residual_model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& sens_solve_model);
+
+/// Nonmember constructor
+/**
+ * @brief Nonmember constructor
+ *
+ * @param pList ParameterList to construct the Tempus state integrator, the
+ *              sensitivity model evaluator, and the sensisitivity integrator
+ * @param model Physics model
+ * @param sens_residual_model Model evaluator for sensitivity residual
+ *
+ * @return
+ */
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
+createIntegratorPseudoTransientForwardSensitivity(
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& sens_residual_model)
+{
+  return createIntegratorPseudoTransientForwardSensitivity(
+    pList, model, sens_residual_model, sens_residual_model);
+}
+
+/// Nonmember constructor
+/**
+ * @brief Nonmember constructor
+ *
+ * @param pList ParameterList to construct the Tempus state integrator, the
+ *              sensitivity model evaluator, and the sensisitivity integrator
+ * @param model Physics model
+ *
+ * @return
+ */
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
+createIntegratorPseudoTransientForwardSensitivity(
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model)
+{
+  return createIntegratorPseudoTransientForwardSensitivity(
+    pList, model, model, model);
+}
 
 /// Nonmember constructor
 /**
