@@ -143,7 +143,7 @@ namespace FROSch {
 
         virtual int compute();
 
-        virtual XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace) = 0;
+        virtual ConstXMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace) = 0;
 
         virtual int clearCoarseSpace();
 

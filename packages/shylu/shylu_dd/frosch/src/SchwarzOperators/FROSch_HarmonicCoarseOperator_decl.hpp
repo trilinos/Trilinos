@@ -129,7 +129,7 @@ namespace FROSch {
 
         XMapPtr assembleCoarseMap();
 
-        XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
+        ConstXMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
 
         #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
         template<class GOIndView>

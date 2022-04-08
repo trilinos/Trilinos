@@ -50,6 +50,7 @@
 #include <Xpetra_MatrixFactory_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
 
+#include <KokkosKernels_Utils.hpp>
 
 namespace FROSch {
 
@@ -64,13 +65,11 @@ namespace FROSch {
     // ----------------------------------------------------------- //
     // split ExtractLocalSubdomainMatrix into symbolic / compute
     template <class SC,class LO,class GO,class NO>
-    void ExtractLocalSubdomainMatrix_Symbolic(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,     // input
-                                              RCP<Matrix<SC,LO,GO,NO> > subdomainMatrix,        // output : globalMatrix, re-distributed with map
+    void ExtractLocalSubdomainMatrix_Symbolic(RCP<Matrix<SC,LO,GO,NO> > subdomainMatrix,        // input  : globalMatrix, re-distributed with map
                                               RCP<Matrix<SC,LO,GO,NO> > localSubdomainMatrix);  // output : local submatrix
 
     template <class SC,class LO,class GO,class NO>
     void ExtractLocalSubdomainMatrix_Compute(RCP<const Matrix<SC,LO,GO,NO> > globalMatrix,
-                                             RCP<const Map<LO,GO,NO> > map,
                                              RCP<      Matrix<SC,LO,GO,NO> > subdomainMatrix,
                                              RCP<      Matrix<SC,LO,GO,NO> > repeatedMatrix);
     // ----------------------------------------------------------- //

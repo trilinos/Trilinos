@@ -61,19 +61,21 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    typename HarmonicCoarseOperator<SC,LO,GO,NO>::XMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeCoarseSpace(CoarseSpacePtr coarseSpace)
+    typename HarmonicCoarseOperator<SC,LO,GO,NO>::ConstXMapPtr HarmonicCoarseOperator<SC,LO,GO,NO>::computeCoarseSpace(CoarseSpacePtr coarseSpace)
     {
         FROSCH_DETAILTIMER_START_LEVELID(computeCoarseSpaceTime,"HarmonicCoarseOperator::computeCoarseSpace");
-        XMapPtr repeatedMap = AssembleSubdomainMap(NumberOfBlocks_,DofsMaps_,DofsPerNode_);
 
         // Build local saddle point problem
+        ConstXMapPtr repeatedMap;
         ConstXMatrixPtr repeatedMatrix;
         if (this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_) {
             ExtractLocalSubdomainMatrix_Compute(this->K_.getConst(),
                                                 this->coarseSubdomainMatrix_,
                                                 this->coarseLocalSubdomainMatrix_);
-            repeatedMatrix = this->coarseLocalSubdomainMatrix_.getConst();
+            repeatedMap = this->coarseSubdomainMatrix_->getRowMap();
+            repeatedMatrix = this->coarseLocalSubdomainMatrix_;
         } else {
+            repeatedMap = AssembleSubdomainMap(NumberOfBlocks_,DofsMaps_,DofsPerNode_);
             repeatedMatrix = ExtractLocalSubdomainMatrix(this->K_.getConst(),repeatedMap.getConst());
         }
 
@@ -106,7 +108,7 @@ namespace FROSch {
         XMatrixPtr kGammaI;
         XMatrixPtr kGammaGamma;
 
-        BuildSubmatrices(repeatedMatrix,indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
+        BuildSubmatrices(repeatedMatrix.getConst(),indicesIDofsAll(),kII,kIGamma,kGammaI,kGammaGamma);
 
         //Detect linear dependencies
         if (!this->ParameterList_->get("Skip DetectLinearDependencies",false)) {
@@ -1064,18 +1066,18 @@ namespace FROSch {
         XMapPtr repeatedMap = AssembleSubdomainMap(this->NumberOfBlocks_, this->DofsMaps_, this->DofsPerNode_);
 
         // buid sudomain matrix
-        this->coarseSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap, this->K_->getGlobalMaxNumRowEntries());
+        this->coarseSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap, repeatedMap, this->K_->getGlobalMaxNumRowEntries());
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->K_->getRowMap(), repeatedMap);
         this->coarseSubdomainMatrix_->doImport(*(this->K_.getConst()), *scatter,ADD);
 
         // build local subdomain matrix
         RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
         RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(repeatedMap->lib(), repeatedMap->getLocalNumElements(), 0, SerialComm);
-        this->coarseLocalSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, this->K_->getGlobalMaxNumRowEntries());
+        this->coarseLocalSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, localSubdomainMap, this->K_->getGlobalMaxNumRowEntries());
 
         // fill in column indexes
-        ExtractLocalSubdomainMatrix_Symbolic(this->K_.getConst(), // input
-                                             this->coarseSubdomainMatrix_, this->coarseLocalSubdomainMatrix_);
+        ExtractLocalSubdomainMatrix_Symbolic(this->coarseSubdomainMatrix_, // input
+                                             this->coarseLocalSubdomainMatrix_); // output
 
         // turn flag on
         this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_ = true;

@@ -294,10 +294,10 @@ namespace FROSch {
         }
         if (this->ExtractLocalSubdomainMatrix_Symbolic_Done_) {
             ExtractLocalSubdomainMatrix_Compute(this->OverlappingMatrix_,
-                                                this->subdomainMatrix_,this->localSubdomainMatrix_);
+                                                this->subdomainMatrix_, this->localSubdomainMatrix_);
             this->OverlappingMatrix_ = this->localSubdomainMatrix_.getConst();
         } else {
-            this->OverlappingMatrix_ = ExtractLocalSubdomainMatrix(this->OverlappingMatrix_,this->OverlappingMap_);
+            this->OverlappingMatrix_ = ExtractLocalSubdomainMatrix(this->OverlappingMatrix_, this->OverlappingMap_);
         }
         return 0;
     }
@@ -321,16 +321,16 @@ namespace FROSch {
         // buid sudomain matrix
         this->subdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(this->OverlappingMap_, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->OverlappingMatrix_->getRowMap(), this->OverlappingMap_);
-        this->subdomainMatrix_->doImport(*(this->OverlappingMatrix_), *scatter,ADD);
+        this->subdomainMatrix_->doImport(*(this->OverlappingMatrix_), *scatter, ADD);
 
         // build local subdomain matrix
         RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
         RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(this->OverlappingMap_->lib(), this->OverlappingMap_->getLocalNumElements(), 0, SerialComm);
-        this->localSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
+        this->localSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, localSubdomainMap, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
 
         // fill in column indexes
-        ExtractLocalSubdomainMatrix_Symbolic(this->OverlappingMatrix_, // input
-                                             this->subdomainMatrix_, this->localSubdomainMatrix_);   // output
+        ExtractLocalSubdomainMatrix_Symbolic(this->subdomainMatrix_, // input
+                                             this->localSubdomainMatrix_);   // output
 
         // turn flag on
         this->ExtractLocalSubdomainMatrix_Symbolic_Done_ = true;
