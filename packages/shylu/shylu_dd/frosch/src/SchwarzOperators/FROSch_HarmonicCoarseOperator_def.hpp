@@ -1062,25 +1062,27 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     void HarmonicCoarseOperator<SC,LO,GO,NO>::extractLocalSubdomainMatrix_Symbolic()
     {
-        FROSCH_DETAILTIMER_START_LEVELID(extractLocalSubdomainMatrix_SymbolicTime,"HarmonicCoarseOperatorCoarseOperator::extractLocalSubdomainMatrix_Symbolic");
-        XMapPtr repeatedMap = AssembleSubdomainMap(this->NumberOfBlocks_, this->DofsMaps_, this->DofsPerNode_);
+        if (this->K_->getRowMap()->lib() == UseTpetra) {
+            FROSCH_DETAILTIMER_START_LEVELID(extractLocalSubdomainMatrix_SymbolicTime,"HarmonicCoarseOperatorCoarseOperator::extractLocalSubdomainMatrix_Symbolic");
+            XMapPtr repeatedMap = AssembleSubdomainMap(this->NumberOfBlocks_, this->DofsMaps_, this->DofsPerNode_);
 
-        // buid sudomain matrix
-        this->coarseSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap, repeatedMap, this->K_->getGlobalMaxNumRowEntries());
-        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->K_->getRowMap(), repeatedMap);
-        this->coarseSubdomainMatrix_->doImport(*(this->K_.getConst()), *scatter,ADD);
+            // buid sudomain matrix
+            this->coarseSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap, repeatedMap, this->K_->getGlobalMaxNumRowEntries());
+            RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->K_->getRowMap(), repeatedMap);
+            this->coarseSubdomainMatrix_->doImport(*(this->K_.getConst()), *scatter,ADD);
 
-        // build local subdomain matrix
-        RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
-        RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(repeatedMap->lib(), repeatedMap->getLocalNumElements(), 0, SerialComm);
-        this->coarseLocalSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, localSubdomainMap, this->K_->getGlobalMaxNumRowEntries());
+            // build local subdomain matrix
+            RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
+            RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(repeatedMap->lib(), repeatedMap->getLocalNumElements(), 0, SerialComm);
+            this->coarseLocalSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, localSubdomainMap, this->K_->getGlobalMaxNumRowEntries());
 
-        // fill in column indexes
-        ExtractLocalSubdomainMatrix_Symbolic(this->coarseSubdomainMatrix_, // input
-                                             this->coarseLocalSubdomainMatrix_); // output
+            // fill in column indexes
+            ExtractLocalSubdomainMatrix_Symbolic(this->coarseSubdomainMatrix_, // input
+                                                 this->coarseLocalSubdomainMatrix_); // output
 
-        // turn flag on
-        this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_ = true;
+            // turn flag on
+            this->coarseExtractLocalSubdomainMatrix_Symbolic_Done_ = true;
+        }
     }
     
 }

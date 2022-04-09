@@ -161,7 +161,7 @@ namespace FROSch {
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
 
-        GO global,sum;
+        GO global = 0, sum = 0;
         LO local,minVal,maxVal;
         SC avg;
         if (verbosity==All) {
@@ -317,23 +317,25 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     void AlgebraicOverlappingOperator<SC,LO,GO,NO>::extractLocalSubdomainMatrix_Symbolic()
     {
-        FROSCH_DETAILTIMER_START_LEVELID(AlgebraicOverlappin_extractLocalSubdomainMatrix_SymbolicTime,"AlgebraicOverlappinOperator::extractLocalSubdomainMatrix_Symbolic");
-        // buid sudomain matrix
-        this->subdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(this->OverlappingMap_, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
-        RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->OverlappingMatrix_->getRowMap(), this->OverlappingMap_);
-        this->subdomainMatrix_->doImport(*(this->OverlappingMatrix_), *scatter, ADD);
+        if (this->OverlappingMap_->lib() == UseTpetra) {
+            FROSCH_DETAILTIMER_START_LEVELID(AlgebraicOverlappin_extractLocalSubdomainMatrix_SymbolicTime,"AlgebraicOverlappinOperator::extractLocalSubdomainMatrix_Symbolic");
+            // buid sudomain matrix
+            this->subdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(this->OverlappingMap_, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
+            RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(this->OverlappingMatrix_->getRowMap(), this->OverlappingMap_);
+            this->subdomainMatrix_->doImport(*(this->OverlappingMatrix_), *scatter, ADD);
 
-        // build local subdomain matrix
-        RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
-        RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(this->OverlappingMap_->lib(), this->OverlappingMap_->getLocalNumElements(), 0, SerialComm);
-        this->localSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, localSubdomainMap, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
+            // build local subdomain matrix
+            RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
+            RCP<Map<LO,GO,NO> > localSubdomainMap = MapFactory<LO,GO,NO>::Build(this->OverlappingMap_->lib(), this->OverlappingMap_->getLocalNumElements(), 0, SerialComm);
+            this->localSubdomainMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(localSubdomainMap, localSubdomainMap, this->OverlappingMatrix_->getGlobalMaxNumRowEntries());
 
-        // fill in column indexes
-        ExtractLocalSubdomainMatrix_Symbolic(this->subdomainMatrix_, // input
-                                             this->localSubdomainMatrix_);   // output
+            // fill in column indexes
+            ExtractLocalSubdomainMatrix_Symbolic(this->subdomainMatrix_, // input
+                                                 this->localSubdomainMatrix_);   // output
 
-        // turn flag on
-        this->ExtractLocalSubdomainMatrix_Symbolic_Done_ = true;
+            // turn flag on
+            this->ExtractLocalSubdomainMatrix_Symbolic_Done_ = true;
+        }
     }
 }
 
