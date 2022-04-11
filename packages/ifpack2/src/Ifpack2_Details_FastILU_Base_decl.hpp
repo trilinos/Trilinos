@@ -84,10 +84,20 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef Kokkos::View<LocalOrdinal *, execution_space> OrdinalArray;
     //! Array of LocalOrdinal on host
     typedef Kokkos::View<LocalOrdinal *, Kokkos::HostSpace> OrdinalArrayHost;
+#if 1
     //! Array of Scalar on device
-    typedef Kokkos::View<Scalar *, execution_space> ScalarArray;
+    typedef Kokkos::View<      Scalar *, execution_space>      ScalarArray;
+    typedef Kokkos::View<const Scalar *, execution_space> ConstScalarArray;
     //! Array of Scalar on host
     typedef Kokkos::View<Scalar *, Kokkos::HostSpace> ScalarArrayHost;
+#else
+    //! Array of Scalar on device
+    typedef Kokkos::DualView<Scalar *, Kokkos::LayoutLeft, device_type> dual_view_type;
+    typedef typename dual_view_type::t_dev ScalarArray;
+    typedef typename ScalarArray::const_type ConstScalarArray;
+    //! Array of Scalar on host
+    typedef typename dual_view_type::t_host ScalarArrayHost;
+#endif
 
     //! Constructor
     FastILU_Base(Teuchos::RCP<const TRowMatrix> mat_);

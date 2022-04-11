@@ -444,10 +444,9 @@ class FastILUPrec
             aVal = ScalarArray("aVal", aColIdx.extent(0));
             //Copy the host matrix into the initialized a;
             Ordinal aHostPtr = 0;
-            Ordinal check = 0;
             for (Ordinal i = 0; i < nRows; i++)
             {
-                check = aHostPtr;
+                Ordinal check = aHostPtr;
                 for(Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
                 {
                     Ordinal col = aColIdx[k];
@@ -542,7 +541,6 @@ class FastILUPrec
                 ScalarArray gD;
                 Ordinal lGPtr = 0;
                 Ordinal check = 0;
-                Ordinal rowLen;
 
                 initGuessPrec->getL(lGRowMap, lGColIdx, lGVal);
                 initGuessPrec->getD(gD);
@@ -565,7 +563,7 @@ class FastILUPrec
                             lGPtr++;
                         }
                     }
-                    rowLen = lGPtr - check;
+                    Ordinal rowLen = lGPtr - check;
                     assert(rowLen == lGRowMap[i+1] - lGRowMap[i]);
                 }
             }
@@ -629,8 +627,6 @@ class FastILUPrec
                 ScalarArray uGVal;
                 ScalarArray gD;
                 Ordinal uGPtr = 0;
-                Ordinal check = 0;
-                Ordinal rowLen;
 
                 initGuessPrec->getU(uGRowMap, uGColIdx, uGVal);
                 initGuessPrec->getD(gD);
@@ -641,7 +637,7 @@ class FastILUPrec
                 }
                 for (Ordinal i = 0; i < nRows; i++) 
                 {
-                    check = uGPtr;
+                    Ordinal check = uGPtr;
                     for (Ordinal k = uRowMap[i]; k < uRowMap[i+1]; k++)
                     {
                         //unused: Ordinal row = i;
@@ -653,8 +649,7 @@ class FastILUPrec
                             uGPtr++;
                         }
                     }
-                    rowLen = uGPtr - check;
-                    assert(rowLen == uGRowMap[i+1] - uGRowMap[i]);
+                    assert((uGPtr - check) == (uGRowMap[i+1] - uGRowMap[i]));
                 }
             }
 
@@ -1493,7 +1488,6 @@ class ParCopyFunctor
 {
     public:
         typedef ExecSpace execution_space;
-        typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
 
         ParCopyFunctor (Ordinal n, scalar_array_type xDestination, scalar_array_type xSource)
