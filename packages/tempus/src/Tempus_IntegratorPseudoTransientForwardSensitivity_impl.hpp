@@ -609,11 +609,13 @@ createIntegratorPseudoTransientForwardSensitivity(
     pl->sublist("Sensitivities").setParameters(*sensitivity_pl);
     pl->sublist("Sensitivities").set("Reuse State Linear Solver", false);
     pl->sublist("Sensitivities").set("Force W Update", false);
+    pl->sublist("Sensitivities").set("Cache Matrices", false);
     pList->setParametersNotAlreadySet(*pl);
   }
 
   bool reuse_solver   = pList->sublist("Sensitivities").get("Reuse State Linear Solver", false);
   bool force_W_update = pList->sublist("Sensitivities").get("Force W Update", false);
+  bool cache_matrices = pList->sublist("Sensitivities").get("Cache Matrices", false);
 
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
@@ -623,8 +625,9 @@ createIntegratorPseudoTransientForwardSensitivity(
     }
     pl->remove("Reuse State Linear Solver");
     pl->remove("Force W Update");
+    pl->remove("Cache Matrices");
     sens_model = wrapStaggeredFSAModelEvaluator(
-      model, sens_residual_model, sens_solve_model, true, pl);
+      model, sens_residual_model, sens_solve_model, cache_matrices, pl);
     sens_integrator = createIntegratorBasic<Scalar>(pList, sens_model);
   }
 
