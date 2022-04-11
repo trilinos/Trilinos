@@ -56,7 +56,11 @@ namespace PHX {
       : view_host_(name,extents...),
         view_device_(name,extents...),
         device_view_is_synced_(false)
-    {}
+    {
+      // Inner view must be unmanaged if the outerview is not using UVM!
+      static_assert(InnerViewType::memory_traits::is_unmanaged,
+                    "ERROR: PHX::ViewOfViews - Inner view must be unmanaged!");
+    }
 
     ~ViewOfViews()
     {
