@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iopg_DatabaseIO_h
-#define IOSS_Iopg_DatabaseIO_h
+#pragma once
 
 #include "Ioss_State.h" // for State
 #include <Ioss_CodeTypes.h>
@@ -51,14 +50,14 @@ namespace Iopg {
   private:
     IOFactory();
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              MPI_Comm communicator, const Ioss::PropertyManager &properties) const;
+                              Ioss_MPI_Comm communicator, const Ioss::PropertyManager &properties) const;
   };
 
   class DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &properties);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &properties);
     DatabaseIO(const DatabaseIO &from) = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
@@ -79,7 +78,7 @@ namespace Iopg {
     std::string title() const { return databaseTitle; }
     int         maximum_symbol_length() const override { return 32; }
 
-    void compute_block_membership__(Ioss::SideBlock *         efblock,
+    void compute_block_membership__(Ioss::SideBlock          *efblock,
                                     std::vector<std::string> &block_membership) const override;
 
   private:
@@ -236,4 +235,3 @@ namespace Iopg {
     int             commsetElemCount{0};
   };
 } // namespace Iopg
-#endif // IOSS_Iopg_DatabaseIO_h

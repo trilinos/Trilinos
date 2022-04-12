@@ -562,7 +562,8 @@ public:
       throw std::runtime_error("GaussSeidelHandle exists but is not set up for cluster-coloring GS.");
     return cgs;
   }
-  void create_gs_handle(KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT) {
+  void create_gs_handle(KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT,
+      KokkosGraph::ColoringAlgorithm coloring_algorithm = KokkosGraph::COLORING_DEFAULT) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
     // ---------------------------------------- //
@@ -570,7 +571,7 @@ public:
     if (gs_algorithm == KokkosSparse::GS_TWOSTAGE)
       this->gsHandle = new TwoStageGaussSeidelHandleType();
     else
-      this->gsHandle = new PointGaussSeidelHandleType(gs_algorithm);
+      this->gsHandle = new PointGaussSeidelHandleType(gs_algorithm, coloring_algorithm);
   }
   // ---------------------------------------- //
   // Two-stage Gauss-Seidel handle
@@ -629,10 +630,13 @@ public:
   }
 
 
-  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t hint_verts_per_cluster) {
+  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo,
+      nnz_lno_t hint_verts_per_cluster,
+      KokkosGraph::ColoringAlgorithm coloring_algorithm =
+      KokkosGraph::COLORING_DEFAULT) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
-    this->gsHandle = new ClusterGaussSeidelHandleType(clusterAlgo, hint_verts_per_cluster);
+    this->gsHandle = new ClusterGaussSeidelHandleType(clusterAlgo, hint_verts_per_cluster, coloring_algorithm);
   }
   void destroy_gs_handle(){
     if (is_owner_of_the_gs_handle && this->gsHandle != NULL){

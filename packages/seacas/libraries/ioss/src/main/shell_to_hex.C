@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -208,11 +208,10 @@ namespace {
 
     std::cerr << "...or: " << prog << " command_file\n";
     std::cerr << "       version: " << version << "\n";
-    Ioss::NameList db_types;
-    Ioss::IOFactory::describe(&db_types);
+    Ioss::NameList db_types = Ioss::IOFactory::describe();
     std::cerr << "\nSupports database types:\n\t";
-    for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
-      std::cerr << *IF << "  ";
+    for (const auto &db : db_types) {
+      std::cerr << db << "  ";
     }
     std::cerr << "\n\n";
   }
@@ -224,8 +223,8 @@ namespace {
     // INPUT ...
     // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
     //========================================================================
-    Ioss::DatabaseIO *dbi =
-        Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART, (MPI_Comm)MPI_COMM_WORLD);
+    Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
+                                                    Ioss::ParallelUtils::comm_world());
     if (dbi == nullptr || !dbi->ok()) {
       std::cerr << "ERROR: Could not open database '" << inpfile << "' of type '" << input_type
                 << "'\n";
@@ -239,7 +238,7 @@ namespace {
     // OUTPUT ...
     //========================================================================
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(output_type, outfile, Ioss::WRITE_RESTART,
-                                                    (MPI_Comm)MPI_COMM_WORLD);
+                                                    Ioss::ParallelUtils::comm_world());
     if (dbo == nullptr || !dbo->ok()) {
       std::cerr << "ERROR: Could not create output database '" << outfile << "' of type '"
                 << output_type << "'\n";
@@ -282,7 +281,7 @@ namespace {
 
   void transfer_nodeblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::NodeBlockContainer &         nbs = region.get_node_blocks();
+    const Ioss::NodeBlockContainer          &nbs = region.get_node_blocks();
     Ioss::NodeBlockContainer::const_iterator i   = nbs.begin();
     while (i != nbs.end()) {
       const std::string &name = (*i)->name();
@@ -307,7 +306,7 @@ namespace {
 
   void transfer_elementblock(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const Ioss::ElementBlockContainer &         ebs            = region.get_element_blocks();
+    const Ioss::ElementBlockContainer          &ebs            = region.get_element_blocks();
     Ioss::ElementBlockContainer::const_iterator i              = ebs.begin();
     size_t                                      total_elements = 0;
     while (i != ebs.end()) {

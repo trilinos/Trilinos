@@ -258,7 +258,7 @@ int main(int argc,char * argv[])
      // finish building mesh, set required field variables and mesh bulk data
      ////////////////////////////////////////////////////////////////////////
 
-     for (const auto pb : physicsBlocks) {
+     for (const auto& pb : physicsBlocks) {
         const std::vector<StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
 
         // insert all fields into a set

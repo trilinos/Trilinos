@@ -284,7 +284,7 @@ namespace tsl {
         tsl_rh_assert(!empty());
       }
 
-      void swap_with_value_in_bucket(distance_type &      dist_from_ideal_bucket,
+      void swap_with_value_in_bucket(distance_type       &dist_from_ideal_bucket,
                                      truncated_hash_type &my_hash, value_type &value)
       {
         tsl_rh_assert(!empty());
@@ -607,7 +607,7 @@ namespace tsl {
       robin_hash(robin_hash &&other) noexcept(
           std::is_nothrow_move_constructible<Hash>::value &&std::is_nothrow_move_constructible<
               KeyEqual>::value &&std::is_nothrow_move_constructible<GrowthPolicy>::value
-              &&                 std::is_nothrow_move_constructible<buckets_container_type>::value)
+                               &&std::is_nothrow_move_constructible<buckets_container_type>::value)
           : Hash(std::move(static_cast<Hash &>(other))),
             KeyEqual(std::move(static_cast<KeyEqual &>(other))),
             GrowthPolicy(std::move(static_cast<GrowthPolicy &>(other))),

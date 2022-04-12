@@ -987,8 +987,10 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //--------------------------------------------------------------
     //5. Constrained symamd on A
     //Init for Constrained symamd on A
+    bool run_nd_on_leaves  = Options.run_nd_on_leaves;
+    bool run_amd_on_leaves = false; //Options.run_amd_on_leaves;
     //if (Options.amd_dom && Options.static_delayed_pivot == 0)
-    if (Options.amd_dom) // still compute csymamd in symbolic for delayed pivot (to reduce cost of setup in numeric)
+    if (Options.amd_dom && (!run_nd_on_leaves && !run_amd_on_leaves)) // still compute csymamd in symbolic for delayed pivot (to reduce cost of setup in numeric)
     {
       if (Options.symmetric != BASKER_TRUE) { // TODO: replace with parameter, e.g., use_csymamd
         // flag for permute_composition_for_solve
@@ -1051,6 +1053,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
           #endif
         }
 #endif
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " ++ Basker AMD_functor on A ++ " << std::endl << std::endl;
+        }
         #ifdef BASKER_TIMER
         csymamd_time += scotch_amd_timer.seconds();
         std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_time
@@ -1079,6 +1084,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         csymamd_time = scotch_amd_timer.seconds();
         #endif
 
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " ++ Basker CSYMAMD_functor on A ++ " << std::endl << std::endl;
+        }
         #ifdef BASKER_TIMER
         double csymamd_tot_time = scotch_timer.seconds();
         std::cout << " ++ Basker apply_scotch : constrained symm amd time : " << csymamd_tot_time
@@ -1092,6 +1100,10 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         order_csym_array(i) = i;
       }
       #endif
+    } else {
+      if(Options.verbose == BASKER_TRUE) {
+        std::cout << " ++ Basker no AMD on A ++ " << std::endl << std::endl;
+      }
     }
     //sort_matrix(BTF_A); // unnecessary?
 

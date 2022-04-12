@@ -29,8 +29,8 @@ int ex_get_partial_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, 
   int    entry_list_id, extra_list_id, set_id_ndx;
   size_t start[1], count[1];
   char   errmsg[MAX_ERR_LENGTH];
-  char * entryptr = NULL;
-  char * extraptr = NULL;
+  char  *entryptr = NULL;
+  char  *extraptr = NULL;
 
   EX_FUNC_ENTER();
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {

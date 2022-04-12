@@ -117,16 +117,18 @@ namespace MueLuTests {
     size_t nullDim = 6;
     RCP<MultiVector> handCompNullSpace = MultiVectorFactory::Build(Op->getRowMap(), nullDim);
     handCompNullSpace->putScalar(0.0);
-    ArrayRCP<Scalar> nsValues;
-    nsValues = handCompNullSpace->getDataNonConst(0); for (int j = 0; j < nsValues.size(); j +=3) nsValues[j] = 1.; 
-    nsValues = handCompNullSpace->getDataNonConst(1); for (int j = 1; j < nsValues.size(); j +=3) nsValues[j] = 1.; 
-    nsValues = handCompNullSpace->getDataNonConst(2); for (int j = 2; j < nsValues.size(); j +=3) nsValues[j] = 1.; 
-    nsValues = handCompNullSpace->getDataNonConst(3); for (int j = 0; j < nsValues.size(); j +=3) nsValues[j] = -(yvals[j/3]-.5);
-                                                      for (int j = 1; j < nsValues.size(); j +=3) nsValues[j] =  (xvals[j/3]-.5);
-    nsValues = handCompNullSpace->getDataNonConst(4); for (int j = 1; j < nsValues.size(); j +=3) nsValues[j] = -(zvals[j/3]-.5);
-                                                      for (int j = 2; j < nsValues.size(); j +=3) nsValues[j] =  (yvals[j/3]-.5);
-    nsValues = handCompNullSpace->getDataNonConst(5); for (int j = 0; j < nsValues.size(); j +=3) nsValues[j] = -(zvals[j/3]-.5);
-                                                      for (int j = 2; j < nsValues.size(); j +=3) nsValues[j] =  (xvals[j/3]-.5);
+    {
+      ArrayRCP<Scalar> nsValues;
+      nsValues = handCompNullSpace->getDataNonConst(0); for (int j = 0; j < nsValues.size(); j +=3) nsValues[j] = 1.; 
+      nsValues = handCompNullSpace->getDataNonConst(1); for (int j = 1; j < nsValues.size(); j +=3) nsValues[j] = 1.; 
+      nsValues = handCompNullSpace->getDataNonConst(2); for (int j = 2; j < nsValues.size(); j +=3) nsValues[j] = 1.; 
+      nsValues = handCompNullSpace->getDataNonConst(3); for (int j = 0; j < nsValues.size(); j +=3) nsValues[j] = -(yvals[j/3]-.5);
+                                                        for (int j = 1; j < nsValues.size(); j +=3) nsValues[j] =  (xvals[j/3]-.5);
+      nsValues = handCompNullSpace->getDataNonConst(4); for (int j = 1; j < nsValues.size(); j +=3) nsValues[j] = -(zvals[j/3]-.5);
+                                                        for (int j = 2; j < nsValues.size(); j +=3) nsValues[j] =  (yvals[j/3]-.5);
+      nsValues = handCompNullSpace->getDataNonConst(5); for (int j = 0; j < nsValues.size(); j +=3) nsValues[j] = -(zvals[j/3]-.5);
+                                                        for (int j = 2; j < nsValues.size(); j +=3) nsValues[j] =  (xvals[j/3]-.5);
+    }
 
     RCP<MultiVector> diff = MultiVectorFactory::Build(Op->getRowMap(),6);
     diff->putScalar(0.0);

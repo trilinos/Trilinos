@@ -122,7 +122,7 @@ namespace tsl {
     bhopscotch_map() : bhopscotch_map(ht::DEFAULT_INIT_BUCKETS_SIZE) {}
 
     explicit bhopscotch_map(size_type bucket_count, const Hash &hash = Hash(),
-                            const KeyEqual & equal = KeyEqual(),
+                            const KeyEqual  &equal = KeyEqual(),
                             const Allocator &alloc = Allocator(), const Compare &comp = Compare())
         : m_ht(bucket_count, hash, equal, alloc, ht::DEFAULT_MAX_LOAD_FACTOR, comp)
     {
@@ -615,7 +615,7 @@ namespace tsl {
     /**
      * @copydoc equal_range(const Key& key, std::size_t precalculated_hash)
      */
-    std::pair<const_iterator, const_iterator> equal_range(const Key & key,
+    std::pair<const_iterator, const_iterator> equal_range(const Key  &key,
                                                           std::size_t precalculated_hash) const
     {
       return m_ht.equal_range(key, precalculated_hash);
@@ -666,7 +666,7 @@ namespace tsl {
     template <class K, class KE = KeyEqual, class CP = Compare,
               typename std::enable_if<has_is_transparent<KE>::value &&
                                       has_is_transparent<CP>::value>::type * = nullptr>
-    std::pair<const_iterator, const_iterator> equal_range(const K &   key,
+    std::pair<const_iterator, const_iterator> equal_range(const K    &key,
                                                           std::size_t precalculated_hash) const
     {
       return m_ht.equal_range(key, precalculated_hash);

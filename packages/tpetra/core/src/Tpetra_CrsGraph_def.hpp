@@ -1470,6 +1470,9 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // Deprecated but protected; 
+  // not emitting warnings prevents Tpetra from emitting deprecation warnings
+  // TPETRA_DEPRECATED
   Teuchos::ArrayView<const LocalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalView (const RowInfo& rowinfo) const
@@ -1506,6 +1509,9 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // Deprecated but protected; 
+  // not emitting warnings prevents Tpetra from emitting deprecation warnings
+  // TPETRA_DEPRECATED
   Teuchos::ArrayView<const GlobalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalView (const RowInfo& rowinfo) const
@@ -2323,7 +2329,9 @@ namespace Tpetra {
   }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::ArrayRCP<const size_t>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNodeRowPtrs () const
@@ -2392,9 +2400,27 @@ namespace Tpetra {
     }
     return retval;
   }
-
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::row_ptrs_host_view_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalRowPtrsHost () const
+  {
+    return rowPtrsPacked_host_;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::row_ptrs_device_view_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalRowPtrsDevice () const
+  {
+    return rowPtrsPacked_dev_;
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   Teuchos::ArrayRCP<const LocalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getNodePackedIndices () const
@@ -2409,7 +2435,23 @@ namespace Tpetra {
     return Kokkos::Compat::persistingView (
                            lclIndsPacked_wdv.getHostView(Access::ReadOnly));
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalIndicesHost () const
+  {
+    return lclIndsPacked_wdv.getHostView(Access::ReadOnly);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_inds_device_view_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalIndicesDevice () const
+  {
+    return lclIndsPacked_wdv.getDeviceView(Access::ReadOnly);
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -2458,6 +2500,7 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowCopy (LocalOrdinal localRow,
@@ -2543,6 +2586,7 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalRowCopy (GlobalOrdinal globalRow,
@@ -2658,8 +2702,8 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
-//  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowView (const LocalOrdinal localRow,
                    Teuchos::ArrayView<const LocalOrdinal>& indices) const
@@ -2700,8 +2744,8 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
-//  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalRowView (const GlobalOrdinal globalRow,
                     Teuchos::ArrayView<const GlobalOrdinal>& indices) const
@@ -3177,6 +3221,7 @@ namespace Tpetra {
   }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   TPETRA_DEPRECATED
   void
@@ -3281,6 +3326,7 @@ namespace Tpetra {
     boundForAllLocalRows = numEntriesForAll;
     boundSameForAllLocalRows = allRowsSame;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4536,6 +4582,7 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalGraph () const
@@ -7455,8 +7502,9 @@ namespace Tpetra {
           destGraph->numImportPacketsPerLID_.sync_host();
           Teuchos::ArrayView<size_t> numImportPacketsPerLID =
             getArrayViewFromDualView(destGraph->numImportPacketsPerLID_);
-          Distor.doReversePostsAndWaits(numExportPacketsPerLID, 1,
-                                         numImportPacketsPerLID);
+
+          Distor.doReversePostsAndWaits(destGraph->numExportPacketsPerLID_.view_host(), 1,
+                                            destGraph->numImportPacketsPerLID_.view_host());
           size_t totalImportPackets = 0;
           for (Array_size_type i = 0; i < numImportPacketsPerLID.size(); ++i) {
             totalImportPackets += numImportPacketsPerLID[i];
@@ -7466,13 +7514,11 @@ namespace Tpetra {
           // because it may clear out the flags.
           destGraph->reallocImportsIfNeeded(totalImportPackets, false, nullptr);
           destGraph->imports_.modify_host();
-          Teuchos::ArrayView<packet_type> hostImports =
-            getArrayViewFromDualView(destGraph->imports_);
+          auto hostImports = destGraph->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
-          Teuchos::ArrayView<const packet_type> hostExports =
-            getArrayViewFromDualView(destGraph->exports_);
+          auto hostExports = destGraph->exports_.view_host();
           Distor.doReversePostsAndWaits(hostExports,
                                          numExportPacketsPerLID,
                                          hostImports,
@@ -7480,13 +7526,11 @@ namespace Tpetra {
         }
         else { // constant number of packets per LI
           destGraph->imports_.modify_host();
-          Teuchos::ArrayView<packet_type> hostImports =
-            getArrayViewFromDualView(destGraph->imports_);
+          auto hostImports = destGraph->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
-          Teuchos::ArrayView<const packet_type> hostExports =
-            getArrayViewFromDualView(destGraph->exports_);
+          auto hostExports = destGraph->exports_.view_host();
           Distor.doReversePostsAndWaits(hostExports,
                                          constantNumPackets,
                                          hostImports);
@@ -7498,13 +7542,12 @@ namespace Tpetra {
           // using the version on host.  If host has the latest
           // version, syncing to host does nothing.
           destGraph->numExportPacketsPerLID_.sync_host();
-          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
-            getArrayViewFromDualView(destGraph->numExportPacketsPerLID_);
           destGraph->numImportPacketsPerLID_.sync_host();
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
+          Distor.doPostsAndWaits(destGraph->numExportPacketsPerLID_.view_host(), 1,
+                                      destGraph->numImportPacketsPerLID_.view_host());
+
+          Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
             getArrayViewFromDualView(destGraph->numImportPacketsPerLID_);
-          Distor.doPostsAndWaits(numExportPacketsPerLID, 1,
-                                  numImportPacketsPerLID);
           size_t totalImportPackets = 0;
           for (Array_size_type i = 0; i < numImportPacketsPerLID.size(); ++i) {
             totalImportPackets += numImportPacketsPerLID[i];
@@ -7514,30 +7557,23 @@ namespace Tpetra {
           // because it may clear out the flags.
           destGraph->reallocImportsIfNeeded(totalImportPackets, false, nullptr);
           destGraph->imports_.modify_host();
-          Teuchos::ArrayView<packet_type> hostImports =
-            getArrayViewFromDualView(destGraph->imports_);
+          auto hostImports = destGraph->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
-          Teuchos::ArrayView<const packet_type> hostExports =
-            getArrayViewFromDualView(destGraph->exports_);
-          Distor.doPostsAndWaits(hostExports,
-                                  numExportPacketsPerLID,
-                                  hostImports,
-                                  numImportPacketsPerLID);
+          auto hostExports = destGraph->exports_.view_host();
+          Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
+            getArrayViewFromDualView(destGraph->numExportPacketsPerLID_);
+          Distor.doPostsAndWaits(hostExports, numExportPacketsPerLID, hostImports, numImportPacketsPerLID);
         }
         else { // constant number of packets per LID
           destGraph->imports_.modify_host();
-          Teuchos::ArrayView<packet_type> hostImports =
-            getArrayViewFromDualView(destGraph->imports_);
+          auto hostImports = destGraph->imports_.view_host();
           // This is a legacy host pack/unpack path, so use the host
           // version of exports_.
           destGraph->exports_.sync_host();
-          Teuchos::ArrayView<const packet_type> hostExports =
-            getArrayViewFromDualView(destGraph->exports_);
-          Distor.doPostsAndWaits(hostExports,
-                                  constantNumPackets,
-                                  hostImports);
+          auto hostExports = destGraph->exports_.view_host();
+          Distor.doPostsAndWaits(hostExports, constantNumPackets, hostImports);
         }
       }
     }

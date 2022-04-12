@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,6 +7,7 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch.hpp>
 
+#include "Ioss_CodeTypes.h"
 #include "Ioss_CommSet.h"      // for CommSet
 #include "Ioss_EdgeBlock.h"    // for EdgeBlock
 #include "Ioss_EdgeSet.h"      // for EdgeSet
@@ -31,14 +32,6 @@
 #include "adios/Ioad_Constants.h"
 #include "adios/Ioad_Helper.h"
 #include "adios/Ioad_TemplateToValue.h"
-
-#ifdef SEACAS_HAVE_MPI
-#include "mpi.h"
-#else
-#ifndef MPI_COMM_WORLD
-#define MPI_COMM_WORLD 1
-#endif
-#endif
 
 #include <algorithm>
 #include <iostream>
@@ -201,10 +194,8 @@ void CompareFieldData(const T entity_block1, const T entity_block2, const std::s
 
 template <typename T> void CompareAllProperties(const T &obj1, const T &obj2)
 {
-  std::vector<std::string> block1_property_list;
-  obj1->property_describe(&block1_property_list);
-  std::vector<std::string> block2_property_list;
-  obj2->property_describe(&block2_property_list);
+  auto block1_property_list = obj1->property_describe();
+  auto block2_property_list = obj2->property_describe();
   for (auto property_name1 : block1_property_list) {
     if (std::find(ignored_properties.begin(), ignored_properties.end(), property_name1) !=
         std::end(ignored_properties)) {
@@ -236,10 +227,8 @@ void CompareContainers(const T &entity_blocks1, const T &entity_blocks2, Ioss::S
         std::find_if(entity_blocks2.begin(), entity_blocks2.end(),
                      [=](typename T::value_type e) { return e->name() == entity_block1->name(); });
     if (entity_block2 != entity_blocks2.end()) {
-      Ioss::NameList block1_field_names;
-      entity_block1->field_describe(&block1_field_names);
-      Ioss::NameList block2_field_names;
-      (*entity_block2)->field_describe(&block2_field_names);
+      auto block1_field_names = entity_block1->field_describe();
+      auto block2_field_names = (*entity_block2)->field_describe();
       // Sorts vectors before comparing them
       std::sort(block1_field_names.begin(), block1_field_names.end());
       std::sort(block2_field_names.begin(), block2_field_names.end());
@@ -312,10 +301,7 @@ void put_field_data(std::string field_name, int local_size, size_t component_cou
   data.reserve(data_size);
   for (size_t i = 0; i < data_size; ++i) {
     if (field_name == "owning_processor") {
-      int rank = 0;
-#ifdef SEACAS_HAVE_MPI
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
+      int rank = e->get_database()->parallel_rank();
       data.push_back(rank);
     }
     else {
@@ -340,8 +326,7 @@ void put_field_data(std::string field_name, int local_size, size_t component_cou
 
 template <typename Entity> void write_fields(Entity *e, Ioss::Field::RoleType role)
 {
-  std::vector<std::string> field_names;
-  e->field_describe(&field_names);
+  auto field_names = e->field_describe();
   for (auto field_name : field_names) {
     Ioss::Field field = e->get_field(field_name);
     if (field.get_role() != role) {
@@ -431,8 +416,8 @@ void create_phantom(Ioss::DatabaseIO *db)
 
 void create_database(std::string type, std::string file_name)
 {
-  std::shared_ptr<Ioss::DatabaseIO> db(
-      Ioss::IOFactory::create(type, file_name, Ioss::WRITE_RESULTS, MPI_COMM_WORLD));
+  std::shared_ptr<Ioss::DatabaseIO> db(Ioss::IOFactory::create(type, file_name, Ioss::WRITE_RESULTS,
+                                                               Ioss::ParallelUtils::comm_world()));
   create_phantom(db.get());
   db->closeDatabase();
 }
@@ -446,11 +431,11 @@ TEST_CASE("Ioad", "[Ioad]")
   create_database("exodus", exodus_db_name);
   create_database("adios", adios_db_name);
   // Database pointers are deleted by their respective region destructors.
-  Ioss::DatabaseIO *read_exodus_db =
-      Ioss::IOFactory::create("exodus", exodus_db_name, Ioss::READ_MODEL, MPI_COMM_WORLD);
+  Ioss::DatabaseIO *read_exodus_db = Ioss::IOFactory::create(
+      "exodus", exodus_db_name, Ioss::READ_MODEL, Ioss::ParallelUtils::comm_world());
   read_exodus_db->set_int_byte_size_api(Ioss::USE_INT64_API);
-  Ioss::DatabaseIO *read_adios_db =
-      Ioss::IOFactory::create("adios", adios_db_name, Ioss::READ_MODEL, MPI_COMM_WORLD);
+  Ioss::DatabaseIO *read_adios_db = Ioss::IOFactory::create(
+      "adios", adios_db_name, Ioss::READ_MODEL, Ioss::ParallelUtils::comm_world());
   CompareDB(read_exodus_db, read_adios_db);
 }
 

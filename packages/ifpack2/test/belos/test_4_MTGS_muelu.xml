@@ -1,5 +1,6 @@
 <ParameterList name="test_params">
-  <Parameter name="mm_file" type="string" value="mueluMatrix.mtx"/>
+  <Parameter name="mm_file"     type="string" value="mueluMatrix.mtx"/>
+  <Parameter name="rhs_mm_file" type="string" value="mueluMatrix_rhs.mtx"/>
 
   <Parameter name="solver_type" type="string" value="Block Gmres"/>
   <ParameterList name="Belos">
@@ -11,10 +12,11 @@
 
   <Parameter name="Ifpack2::Preconditioner" type="string" value="RELAXATION"/>
   <ParameterList name="Ifpack2">
-    <Parameter name="relaxation: type"           type="string" value="MT Gauss-Seidel"/>
-    <Parameter name="relaxation: damping factor" type="double" value="1.1"/>
-    <Parameter name="relaxation: use l1"         type="bool"   value="true"/>
+    <Parameter name="relaxation: type"                    type="string" value="MT Gauss-Seidel"/>
+    <Parameter name="relaxation: mtgs coloring algorithm" type="string" value="vbdbit"/>
+    <Parameter name="relaxation: damping factor"          type="double" value="1.1"/>
+    <Parameter name="relaxation: use l1"                  type="bool"   value="true"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="37"/>
+  <Parameter name="expectNumIters" type="int" value="33"/>
 </ParameterList>

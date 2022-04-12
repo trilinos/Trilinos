@@ -339,14 +339,27 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         COMM mpi # HAVE_MPI required
         )
 
-        TRIBITS_ADD_TEST(
-          Driver
-          NAME "DriverEnforceConstaints"
-          ARGS "--xml=sa_enforce_constraints.xml --stretchx=3. --matrixType=Laplace2D --nx=43 --ny=40"
-          NUM_MPI_PROCS 1
-          COMM mpi # HAVE_MPI required
-          RUN_SERIAL
-          )
+      TRIBITS_ADD_TEST(
+        Driver
+        NAME "DriverEnforceConstaints"
+        ARGS "--xml=sa_enforce_constraints.xml --stretchx=3. --matrixType=Laplace2D --nx=43 --ny=40"
+        NUM_MPI_PROCS 1
+        COMM mpi # HAVE_MPI required
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_TEST(
+        Driver
+        NAME "DriverDiagonalModifications"
+        ARGS "--matrix=A5submatrix.mm --rhs=rhs5sub.mm --xml=spe10.xml"
+        NUM_MPI_PROCS 1
+        COMM mpi # HAVE_MPI required
+        RUN_SERIAL
+        )
+
+      TRIBITS_COPY_FILES_TO_BINARY_DIR(DriverDiagonalModifications_cp
+        SOURCE_FILES spe10.xml A5submatrix.mm rhs5sub.mm
+        )
 
       IF(${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
         TRIBITS_ADD_TEST(

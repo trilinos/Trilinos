@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -36,15 +36,14 @@ namespace {
   {
     Ioss::Init::Initializer init_db;
 
-    Ioss::DatabaseUsage   db_usage     = Ioss::READ_MODEL;
-    MPI_Comm              communicator = MPI_COMM_WORLD;
+    Ioss::DatabaseUsage   db_usage = Ioss::READ_MODEL;
     Ioss::PropertyManager properties;
 
     properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
     properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
 
-    Ioex::DatabaseIO *db_io =
-        new Ioex::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
+    Ioex::DatabaseIO *db_io = new Ioex::DatabaseIO(nullptr, filename, db_usage,
+                                                   Ioss::ParallelUtils::comm_world(), properties);
     return db_io;
   }
 
@@ -52,22 +51,21 @@ namespace {
   Ioex::DatabaseIO *create_output_db_io(const std::string &filename)
   {
     Ioss::Init::Initializer init_db;
-
-    Ioss::DatabaseUsage   db_usage     = Ioss::WRITE_RESULTS;
-    MPI_Comm              communicator = MPI_COMM_WORLD;
+    Ioss::DatabaseUsage   db_usage = Ioss::WRITE_RESULTS;
     Ioss::PropertyManager properties;
 
     properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
     properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
 
-    Ioex::DatabaseIO *db_io =
-        new Ioex::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
+    Ioex::DatabaseIO *db_io = new Ioex::DatabaseIO(nullptr, filename, db_usage,
+                                                   Ioss::ParallelUtils::comm_world(), properties);
     return db_io;
   }
 
   TEST_CASE("Ioex::constructor", "[Ioex::constructor]")
   {
     Ioex::DatabaseIO *db_io = create_input_db_io(input_filename);
+    db_io->set_surface_split_type(Ioss::SPLIT_BY_ELEMENT_BLOCK);
 
     Ioss::Region region(db_io);
 
@@ -97,8 +95,7 @@ namespace {
     // element block testing
 
     for (size_t i = 0; i < element_blocks.size(); ++i) {
-      std::vector<std::string> empty;
-      db_io->get_block_adjacencies(element_blocks[i], empty);
+      std::vector<std::string> empty = element_blocks[i]->get_block_adjacencies();
       CHECK(!empty.empty());
       CHECK(gold_strings[i] == empty[0]);
 
@@ -139,7 +136,7 @@ namespace {
                                          0.5,  0.5,  -0.5, -0.5, 0.5,  0.5, 0.5,  -0.5, -0.5,
                                          0.5,  0.5,  -0.5, -0.5, 0.5,  0.5, -0.5, -0.5, 0.5};
 
-    Ioss::NodeBlock *   nb = region.get_node_blocks()[0];
+    Ioss::NodeBlock    *nb = region.get_node_blocks()[0];
     std::vector<double> coordinates;
     nb->get_field_data("mesh_model_coordinates", coordinates);
     int64_t num_nodes   = nb->entity_count();
@@ -181,7 +178,7 @@ namespace {
       std::vector<int64_t> connectivity;
 
       for (size_t j = 0; j < sidesets[i]->block_count(); ++j) {
-        Ioss::SideBlock *    block = sidesets[i]->get_block(j);
+        Ioss::SideBlock     *block = sidesets[i]->get_block(j);
         std::vector<int64_t> side_ids_per_block;
         std::vector<int64_t> connectivity_per_block;
 
@@ -325,7 +322,7 @@ namespace {
         int64_t            side_count       = side_blocks[k]->entity_count();
         const std::string &parent_topo_name = side_blocks[k]->parent_element_topology()->name();
         const std::string &side_block_name  = side_blocks[k]->name();
-        Ioss::SideBlock *  side_block =
+        Ioss::SideBlock   *side_block =
             new Ioss::SideBlock(db_out, side_block_name, topo_name, parent_topo_name, side_count);
 
         sideset_output->add(side_block);
@@ -414,8 +411,8 @@ int main(int argc, char **argv)
   ON_BLOCK_EXIT(MPI_Finalize);
 #endif
 
-  auto cli =
-      session.cli() | Opt(input_filename, "filename")["-F"]["--filename"]("The filename path to ADeDA.e");
+  auto cli = session.cli() |
+             Opt(input_filename, "filename")["-F"]["--filename"]("The filename path to ADeDA.e");
 
   session.cli(cli);
 

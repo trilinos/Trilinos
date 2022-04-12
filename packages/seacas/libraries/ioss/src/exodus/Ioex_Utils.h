@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef IOEX_UTILS_H
-#define IOEX_UTILS_H
+#pragma once
 #include <Ioss_CoordinateFrame.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_ElementTopology.h>
@@ -104,7 +103,7 @@ namespace Ioex {
   void filter_element_list(Ioss::Region *region, Ioss::Int64Vector &elements,
                            Ioss::Int64Vector &sides, bool remove_omitted_elements);
 
-  bool filter_node_list(Ioss::Int64Vector &               nodes,
+  bool filter_node_list(Ioss::Int64Vector                &nodes,
                         const std::vector<unsigned char> &node_connectivity_status);
 
   template <typename T>
@@ -121,9 +120,9 @@ namespace Ioex {
 
   void separate_surface_element_sides(Ioss::Int64Vector &element, Ioss::Int64Vector &sides,
                                       Ioss::Region *region, Ioex::TopologyMap &topo_map,
-                                      Ioex::TopologyMap &    side_map,
+                                      Ioex::TopologyMap     &side_map,
                                       Ioss::SurfaceSplitType split_type,
-                                      const std::string &    surface_name);
+                                      const std::string     &surface_name);
 
   void                       write_reduction_attributes(int exoid, const Ioss::GroupingEntity *ge);
   template <typename T> void write_reduction_attributes(int exoid, const std::vector<T *> &entities)
@@ -134,4 +133,3 @@ namespace Ioex {
     }
   }
 } // namespace Ioex
-#endif

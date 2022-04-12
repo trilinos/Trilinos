@@ -113,7 +113,9 @@ namespace {
   bool testMpi = true;
   double errorTolSlack = 1e+1;
   std::string distributorSendType ("Send");
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   bool barrierBetween = true;
+#endif
   bool verbose = false;
 
   TEUCHOS_STATIC_SETUP()
@@ -133,10 +135,12 @@ namespace {
     clp.setOption ("distributor-send-type", &distributorSendType,
                    "In MPI tests, the type of send operation that the Tpetra::"
                    "Distributor will use.  Valid values include \"Isend\", "
-                   "\"Rsend\", \"Send\", and \"Ssend\".");
+                   "and \"Send\".");
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     clp.setOption ("barrier-between", "no-barrier-between", &barrierBetween,
                    "In MPI tests, whether Tpetra::Distributor will execute a "
                    "barrier between posting receives and posting sends.");
+#endif
     clp.setOption ("verbose", "quiet", &verbose, "Whether to print verbose "
                    "output.");
   }
@@ -159,7 +163,9 @@ namespace {
     if (plist.is_null ()) {
       plist = parameterList ("Tpetra::Distributor");
       plist->set ("Send type", distributorSendType);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
       plist->set ("Barrier between receives and sends", barrierBetween);
+#endif
 
       if (verbose && getDefaultComm()->getRank() == 0) {
         cout << "ParameterList for Distributor: " << *plist << endl;
@@ -2214,7 +2220,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   typedef Tpetra::Map<LO, GO> map_type;
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
-  using packet_type = typename Tpetra::CrsMatrix<Scalar, LO, GO>::packet_type;
   using GST = Tpetra::global_size_t;
   using IST = typename CrsMatrixType::impl_scalar_type;
   using buffer_device_type = typename CrsMatrixType::buffer_device_type;
@@ -2320,13 +2325,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       std::cerr << os.str ();
     }
     exports.sync_host ();
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Getting Teuchos::ArrayView" << std::endl;
-      std::cerr << os.str ();
-    }
-    Teuchos::ArrayView<char> exports_av =
-      Tpetra::Details::getArrayViewFromDualView (exports);
     if (debug) {
       Comm->barrier ();
     }
@@ -2337,7 +2335,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       os << *prefix << "Calling 3-arg doPostsAndWaits" << std::endl;
       std::cerr << os.str ();
     }
-    distor.doPostsAndWaits<size_t>(numExportPackets().getConst(), 1,numImportPackets());
+    Kokkos::View<const size_t*, Kokkos::HostSpace> numExportPacketsView(numExportPackets.data(), numExportPackets.size());
+    Kokkos::View<size_t*, Kokkos::HostSpace> numImportPacketsView(numImportPackets.data(), numImportPackets.size());
+    distor.doPostsAndWaits(numExportPacketsView, 1, numImportPacketsView);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done with 3-arg doPostsAndWaits" << std::endl;
@@ -2354,7 +2354,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       os << *prefix << "Calling 4-arg doPostsAndWaits" << std::endl;
       std::cerr << os.str ();
     }
-    distor.doPostsAndWaits<packet_type>(exports_av,numExportPackets(),imports(),numImportPackets());
+    Kokkos::View<char*, Kokkos::HostSpace> importsView(imports.data(), imports.size());
+    distor.doPostsAndWaits(exports.view_host(),numExportPackets(),importsView,numImportPackets());
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done with 4-arg doPostsAndWaits" << std::endl;
@@ -2424,13 +2425,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     }
 
     // Do the comparison
-    Teuchos::ArrayRCP<const size_t>  Browptr;
-    Teuchos::ArrayRCP<const LO>      Bcolind;
-    Teuchos::ArrayRCP<const Scalar>  Bvals;
-    B->getAllValues (Browptr, Bcolind, Bvals);
+    auto Browptr = B->getLocalRowPtrsHost();
+    auto Bcolind = B->getLocalIndicesHost();
+    auto Bvals = B->getLocalValuesHost(Tpetra::Access::ReadOnly);
 
     // Check the rowptrs
-    if(Browptr.size()!= rowptr.size()) test_err++;
+    if(Browptr.size()!= as<size_t>(rowptr.size())) test_err++;
     if(!test_err) {
       for(size_t i=0; i < as<size_t>(rowptr.size()); i++) {
         if(Browptr[i]!=rowptr[i]) {
@@ -2440,8 +2440,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       }
     }
     // Check the indices / values... but sort first
-    if(Bcolind.size()!=colind.size()) {test_err++; std::cout<<"--colind mismatch"<<std::endl;}
-    if(Bvals.size()  !=vals.size())   {test_err++; std::cout<<"--vals mismatch"<<std::endl;}
+    if(Bcolind.size()!= as<size_t>(colind.size())) {test_err++; std::cout<<"--colind mismatch"<<std::endl;}
+    if(Bvals.size()  != as<size_t>(vals.size()))   {test_err++; std::cout<<"--vals mismatch"<<std::endl;}
     if(!test_err) {
 
       // Reindex colind to local indices
@@ -2502,10 +2502,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,LowCommunicationMakeColMapAndRein
   build_test_matrix_wideband<CrsMatrixType>(Comm,A);
 
   // Get the matrix pointers / map
-  ArrayRCP<const size_t> rowptr;
-  ArrayRCP<const LO> colind;
-  ArrayRCP<const Scalar> values;
-  A->getAllValues(rowptr,colind,values);
+  // Conversion to Teuchos::ArrayRCP (via persistingView) is needed
+  // only to satisfy the interface of lowCommunicationMakeColMapAndReindex.
+  // Ideally, that function would take Kokkos::Views (and perhaps someday
+  // it will), in which case we can remove the persistingView call.
+  auto rowptr = Kokkos::Compat::persistingView(A->getLocalRowPtrsHost());
+  auto colind = Kokkos::Compat::persistingView(A->getLocalIndicesHost());
+  
   Acolmap = A->getColMap();
   Adomainmap = A->getDomainMap();
 

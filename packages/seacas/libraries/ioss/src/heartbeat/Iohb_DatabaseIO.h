@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Iohb_DatabaseIO_h
-#define IOSS_Iohb_DatabaseIO_h
+#pragma once
 
 #include "Iohb_Layout.h"
 #include "Ioss_State.h" // for State
@@ -55,7 +54,7 @@ namespace Iohb {
   private:
     IOFactory();
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
-                              MPI_Comm                     communicator,
+                              Ioss_MPI_Comm                communicator,
                               const Ioss::PropertyManager &props) const override;
   };
 
@@ -63,7 +62,7 @@ namespace Iohb {
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
     DatabaseIO(const DatabaseIO &from) = delete;
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
 
@@ -177,7 +176,7 @@ namespace Iohb {
     time_t timeLastFlush_{0};
     time_t flushInterval_{10};
 
-    std::ostream *          logStream{nullptr};
+    std::ostream           *logStream{nullptr};
     std::unique_ptr<Layout> layout_{};
     std::unique_ptr<Layout> legend_{};
 
@@ -196,4 +195,3 @@ namespace Iohb {
     Format fileFormat{Format::DEFAULT};
   };
 } // namespace Iohb
-#endif // IOSS_Iohb_DatabaseIO_h

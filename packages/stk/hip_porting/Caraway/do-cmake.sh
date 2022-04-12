@@ -1,0 +1,21 @@
+cmake ../ \
+-DTPL_ENABLE_MPI:BOOL=ON \
+-DTrilinos_ENABLE_STK:STRING="On" \
+-DTrilinos_ENABLE_STKMesh:String="On" \
+-DTPL_ENABLE_BLAS=ON \
+-DTPL_ENABLE_Netcdf=OFF \
+-DSTK_ENABLE_TESTS:STRING="Off" \
+-DKokkos_ENABLE_ROCM:BOOL=OFF \
+-DKokkos_ENABLE_HIP:BOOL=ON \
+-DKokkos_ARCH_VEGA908=ON \
+-DTPL_BLAS_LIBRARIES="/home/projects/x86-64-rocm/netlib-lapack/3.8.0/lib64/libblas.a" \
+-DTPL_LAPACK_LIBRARIES="/home/projects/x86-64-rocm/netlib-lapack/3.8.0/lib64/liblapack.a" \
+-DTrilinos_ENABLE_STKUnit_tests:STRING="On" \
+-DSTKMesh_ENABLE_TESTS:STRING="Off" \
+-DTrilinos_ENABLE_TESTS:STRING="On" \
+-DCMAKE_INSTALL_PREFIX:PATH=ascldap/users/dcdemen/install \
+-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-DTrilinos_ENABLE_KOKKOS:BOOL=ON \
+-DTrilinos_ENABLE_STKBalance:BOOL=OFF \
+-DBOOST_INCLUDE_DIRS="/home/dcdemen/spack/opt/spack/linux-rhel7-zen/gcc-8.2.0/boost-1.77.0-jm7nxb2rcqinynvabopzuimp4iqdzhef/include" \
+-DBOOST_LIBRARY_DIRS="/home/dcdemen/spack/opt/spack/linux-rhel7-zen/gcc-8.2.0/boost-1.77.0-jm7nxb2rcqinynvabopzuimp4iqdzhef/lib"

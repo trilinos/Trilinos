@@ -13,14 +13,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#if defined(_MSC_VER)
-#ifdef _WIN64
-#define ssize_t __int64
-#else
-#define ssize_t long
-#endif
-#endif
-
 /*
    Keep guys moved in and guys moving out of separator.
 
@@ -36,18 +28,18 @@
 
 int nway_klv(struct vtx_data **graph,      /* data structure for graph */
              int               nvtxs,      /* number of vtxs in graph */
-             struct bilist **  lbuckets,   /* array of lists for bucket sort */
-             struct bilist **  rbuckets,   /* array of lists for bucket sort */
-             struct bilist *   llistspace, /* list data structure for each vertex */
-             struct bilist *   rlistspace, /* list data structure for each vertex */
-             int *             ldvals,     /* d-values for each transition */
-             int *             rdvals,     /* d-values for each transition */
-             int *             sets,       /* processor each vertex is assigned to */
+             struct bilist   **lbuckets,   /* array of lists for bucket sort */
+             struct bilist   **rbuckets,   /* array of lists for bucket sort */
+             struct bilist    *llistspace, /* list data structure for each vertex */
+             struct bilist    *rlistspace, /* list data structure for each vertex */
+             int              *ldvals,     /* d-values for each transition */
+             int              *rdvals,     /* d-values for each transition */
+             int              *sets,       /* processor each vertex is assigned to */
              int               maxdval,    /* maximum d-value for a vertex */
-             double *          goal,       /* desired set sizes */
+             double           *goal,       /* desired set sizes */
              int               max_dev,    /* largest allowed deviation from balance */
-             int **            bndy_list,  /* list of vertices on boundary (0 ends) */
-             double *          weightsum   /* sum of vweights in each set (in and out) */
+             int             **bndy_list,  /* list of vertices on boundary (0 ends) */
+             double           *weightsum   /* sum of vweights in each set (in and out) */
 )
 {
   extern double kl_bucket_time; /* time spent in KL bucketsort */
@@ -143,7 +135,7 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
       /* But only consider moves from large to small sets, or moves */
       /* in which balance is preserved. */
       /* Break ties in some nonarbitrary manner. */
-      ssize_t bestval = -maxdval - 1;
+      int bestval = -maxdval - 1;
 
       partial_weight    = weightsum[0] + weightsum[1];
       ratio             = partial_weight / total_weight;
@@ -154,22 +146,22 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         --ltop;
       }
 
-      int     to         = -1; /* sets moving into / out of */
-      ssize_t bestvtx    = -1; /* best vertex to move */
-      int     weightfrom = 0;
+      int to         = -1; /* sets moving into / out of */
+      int bestvtx    = -1; /* best vertex to move */
+      int weightfrom = 0;
 
       double left_imbalance = 0.0; /* imbalance if I move to the left */
       if (ltop >= 0 && !left_too_big) {
-        ssize_t lvtx    = ((size_t)lbuckets[ltop] - (size_t)llistspace) / sizeof(struct bilist);
-        int     lweight = graph[lvtx]->vwgt;
-        int     rweight = lweight - (ltop - maxdval);
-        weightfrom      = rweight;
-        to              = 0;
-        bestvtx         = lvtx;
-        bestval         = ltop - maxdval;
-        partial_weight  = weightsum[0] + lweight + weightsum[1] - rweight;
-        ratio           = partial_weight / total_weight;
-        left_imbalance  = max(fabs(weightsum[0] + lweight - goal[0] * ratio),
+        int lvtx       = ((size_t)lbuckets[ltop] - (size_t)llistspace) / sizeof(struct bilist);
+        int lweight    = graph[lvtx]->vwgt;
+        int rweight    = lweight - (ltop - maxdval);
+        weightfrom     = rweight;
+        to             = 0;
+        bestvtx        = lvtx;
+        bestval        = ltop - maxdval;
+        partial_weight = weightsum[0] + lweight + weightsum[1] - rweight;
+        ratio          = partial_weight / total_weight;
+        left_imbalance = max(fabs(weightsum[0] + lweight - goal[0] * ratio),
                              fabs(weightsum[1] - rweight - goal[1] * ratio));
       }
 
@@ -177,11 +169,11 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         --rtop;
       }
       if (rtop >= 0 && !right_too_big) {
-        ssize_t rvtx    = ((size_t)rbuckets[rtop] - (size_t)rlistspace) / sizeof(struct bilist);
-        int     rweight = graph[rvtx]->vwgt;
-        int     lweight = rweight - (rtop - maxdval);
-        partial_weight  = weightsum[0] - lweight + weightsum[1] + rweight;
-        ratio           = partial_weight / total_weight;
+        int rvtx       = ((size_t)rbuckets[rtop] - (size_t)rlistspace) / sizeof(struct bilist);
+        int rweight    = graph[rvtx]->vwgt;
+        int lweight    = rweight - (rtop - maxdval);
+        partial_weight = weightsum[0] - lweight + weightsum[1] + rweight;
+        ratio          = partial_weight / total_weight;
         double right_imbalance = max(fabs(weightsum[0] - lweight - goal[0] * ratio),
                                      fabs(weightsum[1] + rweight - goal[1] * ratio));
         if (rtop - maxdval > bestval || (rtop - maxdval == bestval &&
@@ -201,11 +193,11 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         break;
       }
 
-      int *           to_dvals;       /* d-values I'm moving to */
-      int *           from_dvals;     /* d-values I'm moving from */
-      int *           to_top;         /* ptr to top of set moving to */
-      struct bilist * to_listspace;   /* list structure I'm moving to */
-      struct bilist * from_listspace; /* list structure I'm moving from */
+      int            *to_dvals;       /* d-values I'm moving to */
+      int            *from_dvals;     /* d-values I'm moving from */
+      int            *to_top;         /* ptr to top of set moving to */
+      struct bilist  *to_listspace;   /* list structure I'm moving to */
+      struct bilist  *from_listspace; /* list structure I'm moving from */
       struct bilist **to_buckets;     /* buckets I'm moving to */
       struct bilist **from_buckets;   /* buckets I'm moving from */
       int             from;

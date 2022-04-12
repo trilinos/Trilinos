@@ -180,16 +180,21 @@ void Part_Decomposition_Fixture::performDecomposition(const stk::mesh::PartVecto
 {
   Phase_Support & phase_support = Phase_Support::get(get_meta_data());
   phase_support.set_input_block_surface_connectivity(input_block_surface_info);
+  std::vector<std::tuple<stk::mesh::PartVector, 
+      std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
   if(cdfem_death)
   {
-    phase_support.decompose_blocks(used_blocks,
-        Part_Decomposition_Fixture::death_phases(), Part_Decomposition_Fixture::death_name_generator());
+
+    auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new Death_Name_Generator("test"));
+    ls_sets.push_back(std::make_tuple(used_blocks,interface_name_gen,Part_Decomposition_Fixture::death_phases()));
+    phase_support.decompose_blocks(ls_sets);
     phase_support.build_decomposed_block_surface_connectivity();
   }
   else
   {
-    phase_support.decompose_blocks(used_blocks,
-        Part_Decomposition_Fixture::ls_phases(num_ls, one_ls_per_phase), Part_Decomposition_Fixture::ls_name_generator());
+    auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
+    ls_sets.push_back(std::make_tuple(used_blocks,interface_name_gen,Part_Decomposition_Fixture::ls_phases(num_ls, one_ls_per_phase)));
+    phase_support.decompose_blocks(ls_sets);
     phase_support.build_decomposed_block_surface_connectivity();
   }
 }

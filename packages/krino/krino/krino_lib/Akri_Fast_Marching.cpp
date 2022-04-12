@@ -18,6 +18,7 @@
 #include <Akri_ParallelErrorMessage.hpp>
 #include <math.h>
 
+#include "Akri_Eikonal_Calc.hpp"
 namespace krino{
 
 Fast_Marching::Fast_Marching(LevelSet & ls, const stk::mesh::Selector & selector, stk::diag::Timer & parent_timer)
@@ -323,53 +324,6 @@ static std::function<const Vector3d &(stk::mesh::Entity)> build_get_fm_node_coor
     };
 }
 
-static double calculate_gradient_magnitude(const int npe,
-    const stk::mesh::Entity * elem_nodes,
-    const FieldRef dRef,
-    const std::function<const Vector3d &(stk::mesh::Entity)> & get_coordinates)
-{
-  double mag_grad = 1.0;
-
-  if (3 == npe)
-  {
-    const double d0 = *field_data<double>(dRef, elem_nodes[0]);
-    const double d10 = *field_data<double>(dRef, elem_nodes[1])-d0;
-    const double d20 = *field_data<double>(dRef, elem_nodes[2])-d0;
-
-    const Vector3d x0 = get_coordinates(elem_nodes[0]);
-    const Vector3d x10 = get_coordinates(elem_nodes[1]) - x0;
-    const Vector3d x20 = get_coordinates(elem_nodes[2]) - x0;
-
-    const double detJ = (x10[0]*x20[1]-x20[0]*x10[1]);
-    const Vector3d grad = d10*Vector3d(x20[1],-x20[0],0.0) + d20*Vector3d(-x10[1],x10[0],0.0);
-    mag_grad = grad.length()/detJ;
-  }
-  else
-  {
-    ThrowAssert(4 == npe);
-
-    const double d0 = *field_data<double>(dRef, elem_nodes[0]);
-    const double d10 = *field_data<double>(dRef, elem_nodes[1])-d0;
-    const double d20 = *field_data<double>(dRef, elem_nodes[2])-d0;
-    const double d30 = *field_data<double>(dRef, elem_nodes[3])-d0;
-
-    const Vector3d x0 = get_coordinates(elem_nodes[0]);
-    const Vector3d x10 = get_coordinates(elem_nodes[1]) - x0;
-    const Vector3d x20 = get_coordinates(elem_nodes[2]) - x0;
-    const Vector3d x30 = get_coordinates(elem_nodes[3]) - x0;
-
-    const Vector3d x10_x_x20 = Cross(x10,x20);
-    const Vector3d x20_x_x30 = Cross(x20,x30);
-    const Vector3d x30_x_x10 = Cross(x30,x10);
-
-    const double detJ = Dot(x30,x10_x_x20);
-    const Vector3d grad = d10*x20_x_x30 + d20*x30_x_x10 + d30*x10_x_x20;
-    mag_grad = grad.length()/detJ;
-  }
-
-  return mag_grad;
-}
-
 void
 Fast_Marching::initialize_element(const stk::mesh::Entity & elem, const double speed)
 {
@@ -512,215 +466,29 @@ Fast_Marching::update_node(std::vector<Fast_Marching_Node *> & elem_nodes, int n
 }
 
 double
-Fast_Marching::update_triangle(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed, int side_to_update)
+Fast_Marching::update_triangle(std::vector<Fast_Marching_Node *> & elemNodes, int nodeToUpdate, const double speed)
 {
   stk::diag::TimeBlock timer__(my_tri_timer);
   const int dim = mesh().mesh_meta_data().spatial_dimension();
   ThrowAssert(2 == dim || 3 == dim);
 
-  int lnn[3];
-  if (2 == dim)
-  {
-    ThrowAssert(-1 == side_to_update);
-    lnn[0] = (node_to_update + 1) % 3;
-    lnn[1] = (node_to_update + 2) % 3;
-    lnn[2] = node_to_update;
-  }
-  else // (3 == dim)
-  {
-    const stk::topology tet4_topology = stk::topology::TETRAHEDRON_4;
-    const unsigned * side_node_ordinals = get_side_node_ordinals(tet4_topology, side_to_update);
-    lnn[0] = side_node_ordinals[(node_to_update + 1) % 3];
-    lnn[1] = side_node_ordinals[(node_to_update + 2) % 3];
-    lnn[2] = side_node_ordinals[node_to_update];
-  }
-
-  const double dist_0 = elem_nodes[lnn[0]]->signed_dist();
-  const double dist_1 = elem_nodes[lnn[1]]->signed_dist();
-  double dist_2 = elem_nodes[lnn[2]]->signed_dist();
-
-  const int sign = elem_nodes[lnn[2]]->sign();
-  if (sign*(dist_2-dist_0) < 0 || sign*(dist_2-dist_1) < 0)
-  {
-    return dist_2;
-  }
-
-  const Vector3d & coords_0 = elem_nodes[lnn[0]]->coords();
-  const Vector3d & coords_1 = elem_nodes[lnn[1]]->coords();
-  const Vector3d & coords_2 = elem_nodes[lnn[2]]->coords();
-
-  const double sqr_speed = speed*speed;
-  const double d10 = dist_1 - dist_0;
-  const Vector3d x10 = coords_1 - coords_0;
-  const Vector3d x20 = coords_2 - coords_0;
-  const double h10 = x10.length();
-  const double h20 = x20.length();
-
-  double detJ = 0;
-  if (2 == dim)
-  {
-    detJ = (x10[0]*x20[1]-x20[0]*x10[1]);
-  }
-  else // (3 == dim)
-  {
-    detJ = Cross(x10,x20).length();
-  }
-  ThrowAssert(detJ > 0.0);
-
-  const double a = h10*h10;
-  const double b = -2.0 * sign*d10 * Dot(x10,x20);
-  const double c = d10*d10 * h20*h20 - detJ*detJ/sqr_speed;
-
-  bool elem_is_defining = false;
-
-  const double det = b*b-4.0*a*c;
-  if (det > 0.0)
-  {
-    // solve quadratic equation, roots are q/a and c/q
-    const int sign_b = ( b < 0.0 ) ? -1 : 1;
-    const double q = -0.5*(b + sign_b*std::sqrt(det));
-
-    const double d20 = sign*std::max(c/q,q/a);
-
-    const bool causal = (sign*d20 > 0.0 && sign*(d20-d10) > 0.0);
-
-    if (causal)
-    {
-      const double loc = (Dot(x10,x20) - sqr_speed*d10*d20) / (h10*h10 - sqr_speed*d10*d10);
-      elem_is_defining = (loc > 0.0 && loc < 1.0);
-
-      if (elem_is_defining)
-      {
-        dist_2 = sign * std::min(sign*dist_2,sign*(dist_0 + d20));
-      }
-    }
-  }
-
-  if (!elem_is_defining)
-  {
-    const double h21 = (coords_2 - coords_1).length();
-    dist_2 = sign * std::min(sign*dist_2,std::min(sign*dist_0+h20/speed,sign*dist_1+h21/speed));
-    // Enforce causality - This is to catch the corner case (literally) where the characteristic is marching along the edges of the element
-    dist_2 = sign * std::max(sign*dist_2,std::max(sign*dist_0,sign*dist_1));
-  }
-
-  ThrowAssert(sign*(dist_2-dist_0)>=0 && sign*(dist_2-dist_1)>=0);
-
-  return dist_2;
+  const std::array<int,3> lnn = get_oriented_nodes_triangle(nodeToUpdate);
+  const std::array<Vector3d,3> x{elemNodes[lnn[0]]->coords(), elemNodes[lnn[1]]->coords(), elemNodes[lnn[2]]->coords()};
+  const std::array<double,3> d{elemNodes[lnn[0]]->signed_dist(), elemNodes[lnn[1]]->signed_dist(), elemNodes[lnn[2]]->signed_dist()};
+  const int sign = elemNodes[lnn[2]]->sign();
+  return eikonal_solve_triangle(x, d, sign, dim, speed);
 }
 
 double
-Fast_Marching::update_tetrahedron(std::vector<Fast_Marching_Node *> & elem_nodes, int node_to_update, const double speed)
+Fast_Marching::update_tetrahedron(std::vector<Fast_Marching_Node *> & elemNodes, int nodeToUpdate, const double speed)
 {
   stk::diag::TimeBlock timer__(my_tet_timer);
-  static const unsigned node_permute_0[] = { 1,3,2,0 };
-  static const unsigned node_permute_1[] = { 0,2,3,1 };
-  static const unsigned node_permute_2[] = { 0,3,1,2 };
-  static const unsigned node_permute_3[] = { 0,1,2,3 };
-  static const unsigned * node_permute_table[] = { node_permute_0, node_permute_1, node_permute_2, node_permute_3 };
 
-  int lnn[4];
-  lnn[0] = node_permute_table[node_to_update][0];
-  lnn[1] = node_permute_table[node_to_update][1];
-  lnn[2] = node_permute_table[node_to_update][2];
-  lnn[3] = node_permute_table[node_to_update][3];
-
-  const double dist_0 = elem_nodes[lnn[0]]->signed_dist();
-  const double dist_1 = elem_nodes[lnn[1]]->signed_dist();
-  const double dist_2 = elem_nodes[lnn[2]]->signed_dist();
-  double dist_3 = elem_nodes[lnn[3]]->signed_dist();
-
-  const int sign = elem_nodes[lnn[3]]->sign();
-  if (sign*(dist_3-dist_0) < 0 || sign*(dist_3-dist_1) < 0 || sign*(dist_3-dist_2) < 0)
-  {
-    return dist_3;
-  }
-
-  const Vector3d & coords_0 = elem_nodes[lnn[0]]->coords();
-  const Vector3d & coords_1 = elem_nodes[lnn[1]]->coords();
-  const Vector3d & coords_2 = elem_nodes[lnn[2]]->coords();
-  const Vector3d & coords_3 = elem_nodes[lnn[3]]->coords();
-
-  const double sqr_speed = speed*speed;
-  const double d10 = dist_1-dist_0;
-  const double d20 = dist_2-dist_0;
-
-  const Vector3d x10 = coords_1 - coords_0;
-  const Vector3d x20 = coords_2 - coords_0;
-  const Vector3d x30 = coords_3 - coords_0;
-
-  const Vector3d x10_x_x20 = Cross(x10,x20);
-  const Vector3d x20_x_x30 = Cross(x20,x30);
-  const Vector3d x30_x_x10 = Cross(x30,x10);
-
-  const double detJ = Dot(x30,x10_x_x20);
-  ThrowAssert(detJ > 0);
-
-  const Vector3d contrib12 = sign * (d10*x20_x_x30 + d20*x30_x_x10);
-
-  const double a = x10_x_x20.length_squared();
-  const double b = 2.0 * Dot(x10_x_x20,contrib12);
-  const double c = contrib12.length_squared() - detJ*detJ/sqr_speed;
-
-  bool elem_is_defining = false;
-
-  const double det = b*b-4.0*a*c;
-  if (det > 0.0)
-  {
-    // solve quadratic equation, roots are q/a and c/q
-    const int sign_b = ( b < 0.0 ) ? -1 : 1;
-    const double q = -0.5*(b + sign_b*std::sqrt(det));
-
-    const double d30 = sign*std::max(c/q,q/a);
-
-    const bool causal = (sign*d30 > 0.0 && sign*(d30-d10) > 0.0 && sign*(d30-d20) > 0.0);
-
-    if (causal)
-    {
-      // Solve 2x2 system for parametric coords of intersection of gradient and 0-1-2
-      // A1 r + B1 s == C1
-      // A2 r + B2 s == C2
-      const double A1 = x10.length_squared() - sqr_speed*d10*d10;
-      const double B1 = Dot(x10,x20) - sqr_speed*d10*d20;
-      const double C1 = Dot(x10,x30) - sqr_speed*d10*d30;
-      const double A2 = B1;
-      const double B2 = x20.length_squared() - sqr_speed*d20*d20;
-      const double C2 = Dot(x20,x30) - sqr_speed*d20*d30;
-      const double denom = A2*B1 - A1*B2;
-      const double loc_r = (C2*B1 - C1*B2)/denom;
-      const double loc_s = (A2*C1 - A1*C2)/denom;
-      const double loc_t = 1.0 - loc_r - loc_s;
-      elem_is_defining = (loc_r > 0.0 && loc_s > 0.0 && loc_t > 0.0);
-
-      if (elem_is_defining)
-      {
-        dist_3 = sign * std::min(sign*dist_3,sign*(dist_0 + d30));
-      }
-    }
-  }
-
-  if (!elem_is_defining)
-  {
-    const stk::topology tet4_topology = stk::topology::TETRAHEDRON_4;
-    for (int iside=0; iside<4; ++iside)
-    {
-      const unsigned * side_node_lnn = get_side_node_ordinals(tet4_topology, iside);
-      for (int inode=0; inode<3; ++inode)
-      {
-        if (node_to_update == (int)side_node_lnn[inode])
-        {
-          dist_3 = sign * std::min(sign*dist_3, sign*update_triangle(elem_nodes,inode,speed,iside));
-        }
-      }
-    }
-    // Enforce causality - This is to catch the corner case (literally) where the characteristic is marching along the edges of the element
-    // This is not completely covered by the 2d check because 1 face might still predict a value that is less than the neighbors.
-    dist_3 = sign * std::max(sign*dist_3,std::max(sign*dist_2,std::max(sign*dist_1,sign*dist_0)));
-  }
-
-  ThrowAssert(sign*(dist_3-dist_0)>=0 && sign*(dist_3-dist_1)>=0 && sign*(dist_3-dist_2)>=0);
-
-  return dist_3;
+  const std::array<int,4> lnn = get_oriented_nodes_tetrahedron(nodeToUpdate);
+  const std::array<Vector3d,4> x{elemNodes[lnn[0]]->coords(), elemNodes[lnn[1]]->coords(), elemNodes[lnn[2]]->coords(), elemNodes[lnn[3]]->coords()};
+  const std::array<double,4> d{elemNodes[lnn[0]]->signed_dist(), elemNodes[lnn[1]]->signed_dist(), elemNodes[lnn[2]]->signed_dist(), elemNodes[lnn[3]]->signed_dist()};
+  const int sign = elemNodes[lnn[3]]->sign();
+  return eikonal_solve_tetrahedron(x, d, sign, speed);
 }
 
 } // namespace krino

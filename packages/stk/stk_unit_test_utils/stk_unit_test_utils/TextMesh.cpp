@@ -1,7 +1,11 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include "TextMesh.hpp"
+#include "stk_util/util/ReportHandler.hpp"           // for ThrowRequireMsg
+
 #include "TextMeshUtils.hpp"
+#include "TextMesh.hpp"
+#include "TextMeshStkTopologyMapping.hpp"
+
 #include <ctype.h>                                   // for toupper
 #include <stddef.h>                                  // for size_t
 #include <algorithm>                                 // for remove, etc
@@ -9,15 +13,16 @@
 #include <map>
 #include <set>                                       // for set
 #include <sstream>                                   // for operator<<, etc
+#include <string>                                    // for basic_string, etc
+#include <utility>                                   // for pair
+#include <vector>                                    // for vector
+
 #include <stk_io/IossBridge.hpp>                     // for is_part_io_part, etc
 #include <stk_mesh/base/BulkData.hpp>                // for BulkData
 #include <stk_mesh/base/FEMHelpers.hpp>              // for declare_element
 #include <stk_mesh/base/Field.hpp>                   // for Field
 #include <stk_mesh/base/GetEntities.hpp>             // for get_entities
 #include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#include <string>                                    // for basic_string, etc
-#include <utility>                                   // for pair
-#include <vector>                                    // for vector
 
 #include "stk_mesh/base/FieldParallel.hpp"
 #include "stk_mesh/base/CoordinateSystems.hpp"       // for Cartesian
@@ -25,7 +30,6 @@
 #include "stk_mesh/base/FieldBase.hpp"               // for field_data
 #include "stk_mesh/base/Types.hpp"                   // for EntityId, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_util/util/ReportHandler.hpp"           // for ThrowRequireMsg
 
 namespace stk { namespace mesh { class Part; } }
 // clang-format on
@@ -35,6 +39,11 @@ namespace stk
 {
 namespace unit_test_util
 {
+using TextMeshData = text_mesh::TextMeshData<stk::mesh::EntityId, stk::topology>;
+using ElementData = text_mesh::ElementData<stk::mesh::EntityId, stk::topology>;
+using Coordinates = text_mesh::Coordinates<stk::mesh::EntityId, stk::topology>;
+using TextMeshParser = text_mesh::TextMeshParser<stk::mesh::EntityId, StkTopologyMapping>;
+
 class MetaDataInitializer
 {
 public:
@@ -148,7 +157,8 @@ public:
 
   void setup(const std::vector<double>& coordinates)
   {
-    Coordinates coords(m_data, coordinates);
+    Coordinates coords;
+    coords.set_coordinate_data(m_data, coordinates);
     fill_node_list();
     fill_coordinate_field(coords);
     communicate_coordinate_field();

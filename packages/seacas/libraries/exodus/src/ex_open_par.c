@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -253,7 +253,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
       snprintf(errmsg, MAX_ERR_LENGTH,
                "EXODUS: ERROR: Attempting to open the classic NetCDF "
                "file:\n\t'%s'\n\tfailed. The netcdf library supports "
-               "PNetCDF files as required for parallel readinf of this "
+               "PNetCDF files as required for parallel reading of this "
                "file type, so there must be a filesystem or some other "
                "issue \n",
                path);

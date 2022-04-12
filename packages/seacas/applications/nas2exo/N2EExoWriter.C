@@ -133,8 +133,8 @@ namespace ExoModules {
 
     auto tmp = this->modelTitle.substr(0, MAX_LINE_LENGTH - 1);
     int  ret = ex_put_init(this->exoFileID, tmp.c_str(), 3 /* 3D models only*/,
-                          this->gridList.size(), this->elementList.size(), this->sections.size(), 0,
-                          0); // Make your fancy pants nodes and side sets elsewherem, laddy.
+                           this->gridList.size(), this->elementList.size(), this->sections.size(), 0,
+                           0); // Make your fancy pants nodes and side sets elsewherem, laddy.
 
     if (ret != 0) {
       std::cerr << "Problem initializing model params in N2EExoWriter::writeFile(). punching out\n";

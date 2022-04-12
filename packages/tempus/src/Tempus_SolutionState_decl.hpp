@@ -67,6 +67,7 @@ public:
   SolutionState();
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  TEMPUS_DEPRECATED
   SolutionState(
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot    = Teuchos::null,
@@ -74,14 +75,15 @@ public:
     const Teuchos::RCP<StepperState<Scalar> >& stepperState = Teuchos::null,
     const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
 
+  TEMPUS_DEPRECATED
   SolutionState(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot = Teuchos::null,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xddot= Teuchos::null,
     const Teuchos::RCP<const StepperState<Scalar> >& stepperSt = Teuchos::null,
     const Teuchos::RCP<const PhysicsState<Scalar> >& physicsSt = Teuchos::null);
-#endif
 
+#endif
   SolutionState(
     const Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
@@ -99,12 +101,13 @@ public:
     const Teuchos::RCP<const PhysicsState<Scalar> >& physicsState);
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  TEMPUS_DEPRECATED
   SolutionState(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
     const Teuchos::RCP<StepperState<Scalar> >& stepperState = Teuchos::null,
     const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
-#endif
 
+#endif
   /// This is a shallow copy constructor, use clone for a deep copy constructor
   SolutionState(const SolutionState<Scalar>& ss);
 

@@ -353,6 +353,9 @@ typedef MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraOper
 #ifdef MUELU_TRANSPFACTORY_SHORT
 typedef MueLu::TransPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TransPFactory;
 #endif
+#ifdef MUELU_RFROMP_OR_TRANSP_SHORT
+typedef MueLu::RfromP_Or_TransP<Scalar,LocalOrdinal,GlobalOrdinal,Node> RfromP_Or_TransP;
+#endif
 #ifdef MUELU_TRILINOSSMOOTHER_SHORT
 typedef MueLu::TrilinosSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> TrilinosSmoother;
 #endif

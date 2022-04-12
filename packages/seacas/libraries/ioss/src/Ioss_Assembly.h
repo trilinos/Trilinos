@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_Assembly_h
-#define IOSS_Ioss_Assembly_h
+#pragma once
 
 #include "Ioss_EntityType.h" // for EntityType, etc
 #include "Ioss_Property.h"   // for Property
@@ -46,7 +45,7 @@ namespace Ioss {
     bool                   add(const GroupingEntity *member);
     bool                   remove(const GroupingEntity *member);
     const EntityContainer &get_members() const;
-    const GroupingEntity * get_member(const std::string &my_name) const;
+    const GroupingEntity  *get_member(const std::string &my_name) const;
     void                   remove_members();
     size_t                 member_count() const { return m_members.size(); }
 
@@ -67,4 +66,3 @@ namespace Ioss {
     EntityType      m_type{INVALID_TYPE};
   };
 } // namespace Ioss
-#endif

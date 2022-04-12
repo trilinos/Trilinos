@@ -357,7 +357,11 @@ struct SingleLSPolicy
     phase_support.set_input_block_surface_connectivity(block_surface_info);
     LevelSet * ls_ptr = nullptr;
     phase_support.register_blocks_for_level_set(ls_ptr, blocks);
-    phase_support.decompose_blocks(blocks, named_phases, LS_Name_Generator());
+    std::vector<std::tuple<stk::mesh::PartVector, 
+      std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
+    auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
+    ls_sets.push_back(std::make_tuple(blocks,interface_name_gen,named_phases));
+    phase_support.decompose_blocks(ls_sets);
 
     for(auto && b : blocks)
     {
@@ -417,7 +421,11 @@ struct LSPerPhasePolicy
     phase_support.set_input_block_surface_connectivity(block_surface_info);
     LevelSet * ls_ptr = nullptr;
     phase_support.register_blocks_for_level_set(ls_ptr, blocks);
-    phase_support.decompose_blocks(blocks, named_phases, LS_Name_Generator());
+    std::vector<std::tuple<stk::mesh::PartVector, 
+      std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
+    auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
+    ls_sets.push_back(std::make_tuple(blocks,interface_name_gen,named_phases));
+    phase_support.decompose_blocks(ls_sets);
 
     for(auto && b : blocks)
     {
@@ -488,7 +496,11 @@ struct LSPerInterfacePolicy
     phase_support.set_input_block_surface_connectivity(block_surface_info);
     LevelSet * ls_ptr = nullptr;
     phase_support.register_blocks_for_level_set(ls_ptr, blocks);
-    phase_support.decompose_blocks(blocks, named_phases, LS_Name_Generator());
+    std::vector<std::tuple<stk::mesh::PartVector, 
+      std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
+    auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
+    ls_sets.push_back(std::make_tuple(blocks,interface_name_gen,named_phases));
+    phase_support.decompose_blocks(ls_sets);
 
     if(register_fields)
     {

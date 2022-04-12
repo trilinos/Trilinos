@@ -50,6 +50,7 @@ struct OptionNames
   const std::string infile = "infile";
   const std::string outputDirectory = "output-directory";
   const std::string deprecatedOutputDirectory = "outputDirectory";
+  const std::string logfile = "logfile";
   const std::string smDefaults = "sm";
   const std::string sdDefaults = "sd";
   const std::string faceSearchAbsTol = "face-search-abs-tol";
@@ -87,6 +88,7 @@ private:
   void setup_messages(const char** argv);
 
   void set_filenames(BalanceSettings& settings) const;
+  void set_logfile(BalanceSettings& settings) const;
   void set_app_type_defaults(BalanceSettings& settings) const;
   void set_contact_search(BalanceSettings& settings) const;
   void set_contact_search_tolerance(BalanceSettings& settings) const;
@@ -95,7 +97,6 @@ private:
 
   const MPI_Comm m_comm;
   const OptionNames m_optionNames;
-  const DefaultSettings m_defaults;
   stk::CommandLineParserParallel m_commandLineParser;
   Examples m_examples;
 

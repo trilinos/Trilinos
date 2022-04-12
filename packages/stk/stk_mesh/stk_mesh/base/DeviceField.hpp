@@ -34,6 +34,8 @@
 #ifndef STK_MESH_DEVICE_FIELD_HPP
 #define STK_MESH_DEVICE_FIELD_HPP
 
+#include <cmath>
+
 #include "stk_util/stk_config.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_DualView.hpp"
@@ -54,6 +56,15 @@ namespace stk {
 namespace mesh {
 
 constexpr unsigned INVALID_ORDINAL = 9999999;
+
+namespace impl {
+  constexpr double OVERALLOCATION_FACTOR = 1.1;
+
+  inline long allocation_size(const double size_requested)
+  {
+    return std::lround(size_requested*OVERALLOCATION_FACTOR);
+  }
+}
 
 template<typename T, template <typename> class NgpDebugger>
 class DeviceField : public NgpFieldBase
@@ -193,9 +204,10 @@ private:
   void sync_to_host() override
   {
     reset_execution_space();
-    internal_sync_to_host();
-    Kokkos::fence();
-    reset_execution_space();
+    if (internal_sync_to_host()) {
+      Kokkos::fence();
+      reset_execution_space();
+    }
   }
 
   void sync_to_host(const ExecSpace& newExecSpace) override
@@ -213,9 +225,10 @@ private:
   void sync_to_device() override
   {
     reset_execution_space();
-    internal_sync_to_device();
-    Kokkos::fence();
-    reset_execution_space();
+    if (internal_sync_to_device()) {
+      Kokkos::fence();
+      reset_execution_space();
+    }
   }
 
   void sync_to_device(const ExecSpace& newExecSpace) override
@@ -478,8 +491,8 @@ private:
   void construct_bool_bucket_views(const BucketVector & buckets, const std::string& suffix,
                                    typename BoolViewType::HostMirror& hostView, BoolViewType& deviceView)
   {
-    if (deviceView.extent(0) != buckets.size()) {
-      deviceView = BoolViewType(Kokkos::ViewAllocateWithoutInitializing(hostField->name() + suffix), buckets.size());
+    if (buckets.size() > deviceView.extent(0)) {
+      deviceView = BoolViewType(Kokkos::ViewAllocateWithoutInitializing(hostField->name() + suffix), impl::allocation_size(buckets.size()));
       hostView = Kokkos::create_mirror_view(deviceView);
     }
   }
@@ -487,8 +500,8 @@ private:
   void construct_unsigned_bucket_views(const BucketVector & buckets, const std::string& suffix,
                                        typename UnsignedViewType::HostMirror& hostView, UnsignedViewType& deviceView)
   {
-    if (deviceView.extent(0) != buckets.size()) {
-      deviceView = UnsignedViewType(Kokkos::ViewAllocateWithoutInitializing(hostField->name() + suffix), buckets.size());
+    if (buckets.size() > deviceView.extent(0)) {
+      deviceView = UnsignedViewType(Kokkos::ViewAllocateWithoutInitializing(hostField->name() + suffix), impl::allocation_size(buckets.size()));
       hostView = Kokkos::create_mirror_view(deviceView);
     }
   }
@@ -517,8 +530,10 @@ private:
 
   void construct_field_buckets_pointer_view(const BucketVector& buckets)
   {
-    hostBucketPtrData = FieldDataPointerHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostBucketPtrDataView"), buckets.size());
-    deviceBucketPtrData = FieldDataPointerDeviceViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketPtrDataView"), buckets.size());
+    if (buckets.size() > hostBucketPtrData.extent(0)) {
+      hostBucketPtrData = FieldDataPointerHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostBucketPtrDataView"), impl::allocation_size(buckets.size()));
+      deviceBucketPtrData = FieldDataPointerDeviceViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketPtrDataView"), impl::allocation_size(buckets.size()));
+    }
 
     set_field_buckets_pointer_view(buckets);
   }
@@ -545,6 +560,10 @@ private:
       cudaError_t status = cudaHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
 
       ThrowRequireMsg(status == cudaSuccess, "Something went wrong during cudaHostGetDevicePointer: " + std::string(cudaGetErrorString(status)));
+#elif defined(KOKKOS_ENABLE_HIP) 
+      hipError_t status = hipHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
+
+      ThrowRequireMsg(status == hipSuccess, "Something went wrong during hipHostGetDevicePointer: " + std::string(hipGetErrorString(status)));
 #endif
 
       hostBucketPtrData(i) = reinterpret_cast<uintptr_t>(deviceBucketPtr);
@@ -649,38 +668,41 @@ private:
 
     Kokkos::deep_copy(get_execution_space(), deviceFieldBucketsMarkedModified, hostFieldBucketsMarkedModified);
 
-    impl::transpose_new_and_modified_buckets_to_device(get_execution_space(), *hostField, deviceBucketPtrData, deviceData,
+    impl::transpose_new_and_modified_buckets_to_device(get_execution_space(), deviceBucketPtrData, deviceData,
                                                        deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity, deviceFieldBucketsMarkedModified);
   }
 
   void copy_device_to_host()
   {
     if (hostField) {
-      impl::transpose_to_pinned_and_mapped_memory(get_execution_space(), *hostField, deviceBucketPtrData, deviceData, deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity);
+      impl::transpose_to_pinned_and_mapped_memory(get_execution_space(), deviceBucketPtrData, deviceData, deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity);
       clear_device_sync_state();
       hostField->increment_num_syncs_to_host();
     }
   }
 
-  void internal_sync_to_host()
+  bool internal_sync_to_host()
   {
     if (need_sync_to_host()) {
       ProfilingBlock prof("copy_to_host for " + hostField->name());
       copy_device_to_host();
       fieldSyncDebugger.sync_to_host(this);
+      return true;
     }
+
+    return false;
   }
 
   void copy_host_to_device()
   {
     if (hostField) {
-      impl::transpose_from_pinned_and_mapped_memory(get_execution_space(), *hostField, deviceBucketPtrData, deviceData, deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity);
+      impl::transpose_from_pinned_and_mapped_memory(get_execution_space(), deviceBucketPtrData, deviceData, deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity);
       clear_host_sync_state();
       hostField->increment_num_syncs_to_device();
     }
   }
 
-  void internal_sync_to_device()
+  bool internal_sync_to_device()
   {
     if (need_sync_to_device()) {
       ProfilingBlock prof("copy_to_device for " + hostField->name());
@@ -689,7 +711,11 @@ private:
       }
       copy_host_to_device();
       fieldSyncDebugger.sync_to_device(this);
+
+      return true;
     }
+
+    return false;
   }
 
   template <typename ViewType>

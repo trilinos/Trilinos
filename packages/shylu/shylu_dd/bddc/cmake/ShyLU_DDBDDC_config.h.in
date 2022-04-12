@@ -4,6 +4,15 @@
     ShyLU BDDC configuration.
 */
 
+
+/* Deprecation notice */
+#if !defined(TRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS)
+#ifdef __GNUC__
+#  warning "The package BDDC is deprecated in February 2022; it will be removed from Trilinos by next release."
+#endif
+#endif
+@BDDC_DEPRECATED_DECLARATIONS@
+
 #cmakedefine HAVE_SHYLU_DDBDDC_PARMETIS
 
 #cmakedefine HAVE_SHYLU_DDBDDC_METIS

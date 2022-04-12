@@ -507,6 +507,33 @@ namespace Tpetra {
                              scalar_type,
                              device_type>;
 
+    using row_ptrs_device_view_type = 
+          typename row_matrix_type::row_ptrs_device_view_type;
+    using row_ptrs_host_view_type = 
+          typename row_matrix_type::row_ptrs_host_view_type;
+
+
+    using local_inds_device_view_type = 
+          typename row_matrix_type::local_inds_device_view_type;
+    using local_inds_host_view_type = 
+          typename row_matrix_type::local_inds_host_view_type;
+    using nonconst_local_inds_host_view_type = 
+          typename row_matrix_type::nonconst_local_inds_host_view_type;
+
+    using global_inds_device_view_type = 
+          typename row_matrix_type::global_inds_device_view_type;
+    using global_inds_host_view_type = 
+          typename row_matrix_type::global_inds_host_view_type;
+    using nonconst_global_inds_host_view_type = 
+          typename row_matrix_type::nonconst_global_inds_host_view_type;
+
+    using values_device_view_type = 
+          typename row_matrix_type::values_device_view_type;
+    using values_host_view_type = 
+          typename row_matrix_type::values_host_view_type;
+    using nonconst_values_host_view_type = 
+          typename row_matrix_type::nonconst_values_host_view_type;
+
     //@}
     //! @name Constructors and destructor
     //@{
@@ -1031,11 +1058,17 @@ namespace Tpetra {
     ///   insert the entries.  All of the column indices must be owned
     ///   by the column Map on the calling process.
     /// \param vals [in] Values to insert into the above columns.
+    /// \param CM [in] How values should be inserted. Valid options
+    ///   are: ADD (default) inserts values that are not yet in the
+    ///   matrix graph, and sums values that are already present. INSERT
+    ///   inserts values that are not yet in the matrix graph, and
+    ///   replaces values that are already present.
     ///
     /// For all k in 0, ..., <tt>cols.size()-1</tt>, insert the value
     /// <tt>values[k]</tt> into entry <tt>(globalRow, cols[k])</tt> of
     /// the matrix.  If that entry already exists, add the new value
-    /// to the old value.
+    /// to the old value, if <tt>CM=ADD</tt>, otherwise replace
+    /// the old value.
     ///
     /// In order to call this method, the matrix must be locally
     /// indexed, and it must have a column Map.
@@ -1060,7 +1093,8 @@ namespace Tpetra {
     void
     insertLocalValues (const LocalOrdinal localRow,
                        const Teuchos::ArrayView<const LocalOrdinal> &cols,
-                       const Teuchos::ArrayView<const Scalar> &vals);
+                       const Teuchos::ArrayView<const Scalar> &vals,
+                       const CombineMode CM=ADD);
 
     /// \brief Epetra compatibility version of insertLocalValues (see
     ///   above) that takes arguments as raw pointers, rather than
@@ -1076,11 +1110,17 @@ namespace Tpetra {
     /// \param vals [in] Values to insert.
     /// \param cols [in] Global indices of the columns into which
     ///   to insert the entries.
+    /// \param CM [in] How values should be inserted. Valid options
+    ///   are: ADD (default) inserts values that are not yet in the
+    ///   matrix graph, and sums values that are already present. INSERT
+    ///   inserts values that are not yet in the matrix graph, and
+    ///   replaces values that are already present.
     void
     insertLocalValues (const LocalOrdinal localRow,
                        const LocalOrdinal numEnt,
                        const Scalar vals[],
-                       const LocalOrdinal cols[]);
+                       const LocalOrdinal cols[],
+                       const CombineMode CM=ADD);
 
   protected:
     /// \brief Implementation detail of replaceGlobalValues.
@@ -1883,18 +1923,40 @@ namespace Tpetra {
                   const Teuchos::ArrayRCP<LocalOrdinal>& ind,
                   const Teuchos::ArrayRCP<Scalar>& val);
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     void
     getAllValues (Teuchos::ArrayRCP<const size_t>& rowPointers,
                   Teuchos::ArrayRCP<const LocalOrdinal>& columnIndices,
                   Teuchos::ArrayRCP<const Scalar>& values) const;
+#endif
 
+    /// \brief Get a host view of the CRS packed row pointers
+    row_ptrs_host_view_type getLocalRowPtrsHost () const
+    { return getCrsGraph()->getLocalRowPtrsHost(); }
+
+    /// \brief Get a device view of the CRS packed row pointers
+    row_ptrs_device_view_type getLocalRowPtrsDevice () const
+    { return getCrsGraph()->getLocalRowPtrsDevice(); }
+
+    /// \brief Get a host view of the CRS packed column indicies
+    local_inds_host_view_type getLocalIndicesHost () const
+    { return getCrsGraph()->getLocalIndicesHost(); }
+
+    /// \brief Get a device_view of the CRS packed column indicies
+    local_inds_device_view_type getLocalIndicesDevice () const
+    { return getCrsGraph()->getLocalIndicesDevice(); }
+
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// Gets just the values array.  This *will* be a shallow copy
     /// of the array (at least on the host memory space.  This
     /// is not a const function, since the user can change these
     /// values.
     ///
     /// \param values [out] Array of values. 
-    void getAllValues(Teuchos::ArrayRCP<Scalar>& values);
+    TPETRA_DEPRECATED void getAllValues(Teuchos::ArrayRCP<Scalar>& values);
+#endif
 
     //@}
     //! @name Transformational methods
@@ -2295,6 +2357,7 @@ namespace Tpetra {
     ///   are responsible for knowing when it is safe to call this
     ///   method.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     local_matrix_type getLocalMatrix () const;
 #endif
     local_matrix_device_type getLocalMatrixDevice () const;
@@ -2537,54 +2600,6 @@ protected:
 
 public:
 
-    using row_ptrs_device_view_type = 
-          typename row_matrix_type::row_ptrs_device_view_type;
-    using row_ptrs_host_view_type = 
-          typename row_matrix_type::row_ptrs_host_view_type;
-
-
-    using local_inds_device_view_type = 
-          typename row_matrix_type::local_inds_device_view_type;
-    using local_inds_host_view_type = 
-          typename row_matrix_type::local_inds_host_view_type;
-    using nonconst_local_inds_host_view_type = 
-          typename row_matrix_type::nonconst_local_inds_host_view_type;
-
-    using global_inds_device_view_type = 
-          typename row_matrix_type::global_inds_device_view_type;
-    using global_inds_host_view_type = 
-          typename row_matrix_type::global_inds_host_view_type;
-    using nonconst_global_inds_host_view_type = 
-          typename row_matrix_type::nonconst_global_inds_host_view_type;
-
-    using values_device_view_type = 
-          typename row_matrix_type::values_device_view_type;
-    using values_host_view_type = 
-          typename row_matrix_type::values_host_view_type;
-    using nonconst_values_host_view_type = 
-          typename row_matrix_type::nonconst_values_host_view_type;
-
-//KDDKDD INROW    using values_host_view_type = 
-//KDDKDD INROW          typename values_dualv_type::t_host::const_type;
-//KDDKDD INROW    using values_device_view_type = 
-//KDDKDD INROW          typename values_dualv_type::t_dev::const_type;
-
-//KDDKDD INROW    using local_inds_host_view_type =
-//KDDKDD INROW          typename crs_graph_type::local_inds_host_view_type;
-//KDDKDD INROW    using local_inds_device_view_type =
-//KDDKDD INROW          typename crs_graph_type::local_inds_device_view_type;
-
-//KDDKDD INROW    using global_inds_host_view_type =
-//KDDKDD INROW          typename crs_graph_type::global_inds_host_view_type;
-//KDDKDD INROW    using global_inds_device_view_type =
-//KDDKDD INROW          typename crs_graph_type::global_inds_device_view_type;
-
-//KDDKDD INROW    using row_ptrs_host_view_type =
-//KDDKDD INROW          typename crs_graph_type::row_ptrs_host_view_type;
-//KDDKDD INROW    using row_ptrs_device_view_type =
-//KDDKDD INROW          typename crs_graph_type::row_ptrs_device_view_type;
-
-
     /// \brief Fill given arrays with a deep copy of the locally owned
     ///   entries of the matrix in a given row, using global column
     ///   indices.
@@ -2666,6 +2681,7 @@ public:
                      nonconst_values_host_view_type &Values,
                      size_t& NumEntries) const override;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     void
     getLocalRowCopy (LocalOrdinal localRow,
                      const Teuchos::ArrayView<LocalOrdinal>& colInds,
@@ -2708,6 +2724,7 @@ public:
     /// If \c LocalRow is not a valid local row index on the calling
     /// process, then \c indices is set to null.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     void
     getLocalRowView (LocalOrdinal LocalRow,
                      Teuchos::ArrayView<const LocalOrdinal>& indices,
@@ -2744,6 +2761,7 @@ public:
     /// \param vals       [out] Matrix values.
     ///
     /// \return Error code; zero on no error.
+    TPETRA_DEPRECATED
     LocalOrdinal
     getLocalRowViewRaw (const LocalOrdinal lclRow,
                         LocalOrdinal& numEnt,
@@ -2775,6 +2793,7 @@ public:
     /// contain too many duplicate entries, the number of column
     /// indices can always fit in \c LocalOrdinal.  Otherwise, the
     /// column Map would be incorrect.
+    TPETRA_DEPRECATED
     LocalOrdinal
     getLocalRowView (const LocalOrdinal lclRow,
                      LocalOrdinal& numEnt,
@@ -2791,6 +2810,7 @@ public:
     /// pointer.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class OutputScalarType>
+    TPETRA_DEPRECATED
     typename std::enable_if<! std::is_same<OutputScalarType, impl_scalar_type>::value &&
                             std::is_convertible<impl_scalar_type, OutputScalarType>::value,
                             LocalOrdinal>::type
@@ -3425,10 +3445,54 @@ public:
     //@}
 
   public:
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Get the Kokkos local values
     typename local_matrix_device_type::values_type getLocalValuesView () const {
-// KDDKDD UVM SHOULD ADD ACCESS TAGS; SAFEST TO ASSUME ReadWrite FOR NOW
+      // TODO:  UVM SHOULD ADD ACCESS TAGS; SAFEST TO ASSUME ReadWrite FOR NOW
       return valuesPacked_wdv.getDeviceView(Access::ReadWrite);
+    }
+#endif
+
+    //! Get the Kokkos local values on host, read only
+    typename local_matrix_host_type::values_type::const_type
+    getLocalValuesHost (Access::ReadOnlyStruct s) const
+    {
+      return valuesPacked_wdv.getHostView(s);
+    }
+
+    //! Get the Kokkos local values on host, read write
+    typename local_matrix_host_type::values_type
+    getLocalValuesHost (Access::ReadWriteStruct s)
+    {
+      return valuesPacked_wdv.getHostView(s);
+    }
+
+    //! Get the Kokkos local values on host, overwrite all
+    typename local_matrix_host_type::values_type
+    getLocalValuesHost (Access::OverwriteAllStruct s)
+    {
+      return valuesPacked_wdv.getHostView(s);
+    }
+
+    //! Get the Kokkos local values on device, read only
+    typename local_matrix_device_type::values_type::const_type
+    getLocalValuesDevice (Access::ReadOnlyStruct s) const
+    {
+      return valuesPacked_wdv.getDeviceView(s);
+    }
+
+    //! Get the Kokkos local values on device, read write
+    typename local_matrix_device_type::values_type
+    getLocalValuesDevice (Access::ReadWriteStruct s)
+    {
+      return valuesPacked_wdv.getDeviceView(s);
+    }
+
+    //! Get the Kokkos local values on device, overwrite all
+    typename local_matrix_device_type::values_type
+    getLocalValuesDevice (Access::OverwriteAllStruct s)
+    {
+      return valuesPacked_wdv.getDeviceView(s);
     }
 
   private:
@@ -4018,7 +4082,12 @@ public:
     /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
     /// this method is <i>not</i> part of the public interface of
     /// CrsMatrix.
-    Teuchos::ArrayView<const impl_scalar_type> getView (RowInfo rowinfo) const;
+    ///
+    /// Deprecated but protected; 
+    /// not emitting warnings prevents Tpetra from emitting deprecation warnings
+    /// TPETRA_DEPRECATED
+    Teuchos::ArrayView<const impl_scalar_type> 
+    getView (RowInfo rowinfo) const;
 #endif
 
   protected:

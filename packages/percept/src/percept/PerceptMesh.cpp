@@ -2492,7 +2492,8 @@
 
     int PerceptMesh::get_ioss_aliases(const std::string &my_name, std::vector<std::string> &aliases)
     {
-      return m_iossMeshData->get_input_io_region()->get_aliases(my_name, aliases);
+      auto *ge = m_iossMeshData->get_input_io_region()->get_entity(my_name);
+      return ge != nullptr ? m_iossMeshData->get_input_io_region()->get_aliases(my_name, ge->type(), aliases) : 0;
     }
 
     bool PerceptMesh::checkForPartNameWithAliases(stk::mesh::Part& part, const std::string& bname)
@@ -2797,7 +2798,7 @@
           if (!Teuchos::is_null(mesh_data->get_input_io_region()))
             {
               {
-                const Ioss::AliasMap& aliases = mesh_data->get_input_io_region()->get_alias_map();
+                const Ioss::AliasMap& aliases = mesh_data->get_input_io_region()->get_alias_map(Ioss::ELEMENTBLOCK);
                 Ioss::AliasMap::const_iterator I  = aliases.begin();
                 Ioss::AliasMap::const_iterator IE = aliases.end();
 

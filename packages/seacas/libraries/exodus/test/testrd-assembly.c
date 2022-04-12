@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,7 +33,7 @@
 #include <string.h>
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
@@ -57,10 +57,10 @@ int main(int argc, char **argv)
   int   IO_word_size  = 0; /* use what is stored in file */
   float version;
   int   exoid = ex_open("test-assembly.exo", /* filename path */
-                      EX_READ,             /* access mode = READ */
-                      &CPU_word_size,      /* CPU word size */
-                      &IO_word_size,       /* IO word size */
-                      &version);           /* ExodusII library version */
+                        EX_READ,             /* access mode = READ */
+                        &CPU_word_size,      /* CPU word size */
+                        &IO_word_size,       /* IO word size */
+                        &version);           /* ExodusII library version */
 
   printf("\nafter ex_open\n");
   if (exoid < 0) {
@@ -256,8 +256,7 @@ int main(int argc, char **argv)
     }
 
     { /* Global attributes (includes exodus-internal attributes) */
-      ex_attribute attr[10];
-      int          att_count = ex_get_attribute_count(exoid, EX_GLOBAL, 0);
+      int att_count = ex_get_attribute_count(exoid, EX_GLOBAL, 0);
       printf("GLOBAL contains %d attributes:\n", att_count);
       for (int j = 0; j < att_count; j++) {
         ex_get_attribute_param(exoid, EX_GLOBAL, 0, attr);

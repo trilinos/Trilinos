@@ -806,7 +806,7 @@ namespace KokkosSparse{
         color_t numColors;
         {
           HandleType coloringHandle;
-          coloringHandle.create_graph_coloring_handle();
+          coloringHandle.create_graph_coloring_handle(gsHandle->get_coloring_algorithm());
           auto gchandle = coloringHandle.get_graph_coloring_handle();
           if (!is_symmetric) {
             if (gchandle->get_coloring_algo_type() == KokkosGraph::COLORING_EB) {

@@ -1079,7 +1079,8 @@ namespace BaskerNS
       return BASKER_ERROR;
     }
     if(Options.verbose == BASKER_TRUE) {
-      std::cout << "Basker Factor: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds();
+      std::cout << "Basker Factor: Time to permute and copy from input vals to new vals and blocks: "
+                << copyperm_timer.seconds() << std::endl;
     }
     //end sfactor_copy2 replacement stuff
 

@@ -679,12 +679,12 @@ void populate_hidden_nodesets(Ioss::Region &io, const stk::mesh::MetaData & meta
     }
 }
 
-stk::mesh::Part* get_part_from_alias(const Ioss::Region &region, const stk::mesh::MetaData &meta, const std::string &name)
+stk::mesh::Part* get_part_from_alias(const Ioss::Region &region, const stk::mesh::MetaData &meta, const std::string &name, Ioss::EntityType type)
 {
     stk::mesh::Part* part = nullptr;
 
     std::vector<std::string> aliases;
-    region.get_aliases(name, aliases);
+    region.get_aliases(name, type, aliases);
 
     for(std::string &alias : aliases)
     {
@@ -704,10 +704,11 @@ stk::mesh::Part* get_part_from_alias(const Ioss::Region &region, const stk::mesh
 stk::mesh::Part* get_part_for_grouping_entity(const Ioss::Region &region, const stk::mesh::MetaData &meta, const Ioss::GroupingEntity *entity)
 {
     const std::string &name = entity->name();
+    auto type = entity->type();
     stk::mesh::Part* part = meta.get_part(name);
 
     if(nullptr == part) {
-        part = get_part_from_alias(region, meta, name);
+        part = get_part_from_alias(region, meta, name, type);
     }
     return part;
 }

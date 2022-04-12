@@ -1,6 +1,6 @@
 
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -22,7 +22,7 @@
 #define sleep(a) Sleep(a * 1000)
 #ifndef write
 #define write _write
-#define read _read
+#define read  _read
 #endif
 #else
 
@@ -134,16 +134,16 @@ static void gl_char_cleanup(void) /* undo effects of gl_char_init */
 
 #if defined(MSDOS) || defined(__windows__)
 
-#define K_UP 0x48
-#define K_DOWN 0x50
-#define K_LEFT 0x4B
-#define K_RIGHT 0x4D
+#define K_UP     0x48
+#define K_DOWN   0x50
+#define K_LEFT   0x4B
+#define K_RIGHT  0x4D
 #define K_DELETE 0x53
 #define K_INSERT 0x52
-#define K_HOME 0x47
-#define K_END 0x4F
-#define K_PGUP 0x49
-#define K_PGDN 0x51
+#define K_HOME   0x47
+#define K_END    0x4F
+#define K_PGUP   0x49
+#define K_PGDN   0x51
 
 int pc_keymap(int c)
 {
@@ -257,7 +257,7 @@ static void gl_init(void)
   if (gl_init_done < 0) { /* -1 only on startup */
     const char *cp = (const char *)getenv("COLUMNS");
     if (cp != NULL) {
-      int w = atoi(cp);
+      int w = strtol(cp, NULL, 10);
       if (w > 20)
         gl_setwidth(w);
     }
@@ -688,7 +688,7 @@ static void hist_init(void)
 void gl_histadd(char *buf)
 {
   static char *prev = NULL;
-  char *       p    = buf;
+  char        *p    = buf;
 
   /* in case we call gl_histadd() before we call getline() */
   if (gl_init_done < 0) { /* -1 only on startup */
@@ -751,9 +751,9 @@ static char *hist_save(char *p)
 
 /* makes a copy of the string */
 {
-  char * s   = NULL;
+  char  *s   = NULL;
   size_t len = strlen(p);
-  char * nl  = strpbrk(p, "\n\r");
+  char  *nl  = strpbrk(p, "\n\r");
 
   if (nl) {
     if ((s = (char *)malloc(len)) != NULL) {
