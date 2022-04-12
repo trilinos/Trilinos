@@ -55,6 +55,7 @@ InitialBlockNumberFactory
 IntrepidPCoarsenFactory - #ifdef HAVE_MUELU_INTREPID2
 LineDetectionFactory
 LocalPermutationStrategy
+LowPrecisionFactory
 MapTransferFactory
 MatrixAnalysisFactory
 MergedBlockedMatrixFactory

@@ -89,7 +89,7 @@ OverlappingPartitioner<GraphType>::
 operator () (const local_ordinal_type MyRow) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    MyRow < 0 || Teuchos::as<size_t> (MyRow) > Graph_->getNodeNumRows (), 
+    MyRow < 0 || Teuchos::as<size_t> (MyRow) > Graph_->getLocalNumRows (), 
     std::runtime_error, 
     "Ifpack2::OverlappingPartitioner::operator(): "
     "Invalid local row index " << MyRow << ".");
@@ -150,7 +150,7 @@ template<class GraphType>
 Teuchos::ArrayView<const typename GraphType::local_ordinal_type>
 OverlappingPartitioner<GraphType>::nonOverlappingPartition () const
 {
-  return Partition_.view (0, Graph_->getNodeNumRows ());
+  return Partition_.view (0, Graph_->getLocalNumRows ());
 }
 
 //==============================================================================
@@ -165,7 +165,7 @@ setParameters (Teuchos::ParameterList& List)
   maintainSparsity_ = List.get("partitioner: maintain sparsity", false);
 
   if (NumLocalParts_ < 0) {
-    NumLocalParts_ = Graph_->getNodeNumRows() / (-NumLocalParts_);
+    NumLocalParts_ = Graph_->getLocalNumRows() / (-NumLocalParts_);
   }
   if (NumLocalParts_ == 0) {
     NumLocalParts_ = 1;
@@ -174,7 +174,7 @@ setParameters (Teuchos::ParameterList& List)
   // Sanity checking
   TEUCHOS_TEST_FOR_EXCEPTION(
     NumLocalParts_ < 0 || 
-    Teuchos::as<size_t> (NumLocalParts_) > Graph_->getNodeNumRows(),
+    Teuchos::as<size_t> (NumLocalParts_) > Graph_->getLocalNumRows(),
     std::runtime_error, 
     "Ifpack2::OverlappingPartitioner::setParameters: "
     "Invalid NumLocalParts_ = " << NumLocalParts_ << ".");
@@ -213,7 +213,7 @@ void OverlappingPartitioner<GraphType>::compute()
   }
 
   // 1.- allocate memory 
-  Partition_.resize (Graph_->getNodeNumRows ());
+  Partition_.resize (Graph_->getLocalNumRows ());
   //Parts_ is allocated in computeOverlappingPartitions_, where it is used
 
   // 2.- sanity checks on input graph
@@ -262,7 +262,7 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     sizes[i] = 0;
   }
 
-  for (size_t i = 0; i < Graph_->getNodeNumRows (); ++i) {
+  for (size_t i = 0; i < Graph_->getLocalNumRows (); ++i) {
     TEUCHOS_TEST_FOR_EXCEPTION(
       Partition_[i] >= NumLocalParts_, std::runtime_error, 
       "Ifpack2::OverlappingPartitioner::computeOverlappingPartitions: "
@@ -285,7 +285,7 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     sizes[i] = 0;
   }
 
-  for (size_t i = 0; i < Graph_->getNodeNumRows (); ++i) {
+  for (size_t i = 0; i < Graph_->getLocalNumRows (); ++i) {
     const local_ordinal_type part = Partition_[i];
     if (part != invalid) {
       const size_t count = sizes[part];
@@ -308,13 +308,13 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     // graph). For each row, all columns will belong to the subgraph
     // of row `i'.
 
-    int MaxNumEntries_tmp = Graph_->getNodeMaxNumRowEntries();
+    int MaxNumEntries_tmp = Graph_->getLocalMaxNumRowEntries();
     nonconst_local_inds_host_view_type Indices("Indices",MaxNumEntries_tmp);
     nonconst_local_inds_host_view_type newIndices("newIndices",MaxNumEntries_tmp);
     
     if (!maintainSparsity_) {
 
-      local_ordinal_type numLocalRows = Graph_->getNodeNumRows();
+      local_ordinal_type numLocalRows = Graph_->getLocalNumRows();
       for (int part = 0; part < NumLocalParts_ ; ++part) {
         for (size_t i = 0; i < Teuchos::as<size_t> (Parts_[part].size ()); ++i) {
           const local_ordinal_type LRID = Parts_[part][i];
@@ -374,7 +374,7 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
           for (size_t j = 0; j < numIndices; ++j) {
             // use *local* indices only
             const local_ordinal_type col = Indices[j];
-            if (Teuchos::as<size_t> (col) >= Graph_->getNodeNumRows ()) {
+            if (Teuchos::as<size_t> (col) >= Graph_->getLocalNumRows ()) {
               continue;
             }
 
@@ -472,7 +472,7 @@ void  OverlappingPartitioner<GraphType>::describe(Teuchos::FancyOStream &os, con
 
   os << "================================================================================" << endl;
   os << "Ifpack2::OverlappingPartitioner" << endl;
-  os << "Number of local rows  = " << Graph_->getNodeNumRows() << endl;
+  os << "Number of local rows  = " << Graph_->getLocalNumRows() << endl;
   os << "Number of global rows = " << Graph_->getGlobalNumRows() << endl;
   os << "Number of local parts = " << NumLocalParts_ << endl;
   os << "Overlapping level     = " << OverlappingLevel_ << endl;

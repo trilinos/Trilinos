@@ -145,10 +145,20 @@ namespace Tpetra {
     virtual global_size_t getGlobalNumCols() const = 0;
 
     //! Returns the number of rows owned on the calling node.
-    virtual size_t getNodeNumRows() const = 0;
+    virtual size_t getLocalNumRows() const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeNumRows() const {
+      return this->getLocalNumRows();
+    }
+#endif
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
-    virtual size_t getNodeNumCols() const = 0;
+    virtual size_t getLocalNumCols() const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeNumCols() const {
+      return this->getLocalNumCols();
+    }
+#endif
 
     //! Returns the index base for global indices for this graph.
     virtual GlobalOrdinal getIndexBase() const = 0;
@@ -157,7 +167,12 @@ namespace Tpetra {
     virtual global_size_t getGlobalNumEntries() const = 0;
 
     //! Returns the local number of entries in the graph.
-    virtual size_t getNodeNumEntries() const = 0;
+    virtual size_t getLocalNumEntries() const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeNumEntries() const {
+      return this->getLocalNumEntries();
+    }
+#endif
 
     //! \brief Returns the current number of entries on this node in the specified global row.
     /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
@@ -171,7 +186,12 @@ namespace Tpetra {
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
     //! \brief Returns the maximum number of entries across all rows/columns on this node.
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    virtual size_t getLocalMaxNumRowEntries() const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED virtual size_t getNodeMaxNumRowEntries() const {
+      return this->getLocalMaxNumRowEntries();
+    }
+#endif
 
     //! Whether the graph has a well-defined column Map.
     virtual bool hasColMap() const = 0;

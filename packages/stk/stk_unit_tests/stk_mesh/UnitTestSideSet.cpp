@@ -340,7 +340,8 @@ void create_sideset_observer(stk::mesh::BulkData& bulk, stk::mesh::Selector acti
       if (activeSelector == stk::mesh::Selector()) {
           activeSelector = bulk.mesh_meta_data().universal_part();
       }
-      bulk.register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk, activeSelector));
+      bulk.register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk, activeSelector),
+                             stk::mesh::ModificationObserverPriority::STK_INTERNAL);
   }
 }
 }
@@ -391,7 +392,7 @@ protected:
     ASSERT_EQ(meta.side_rank(), get_bulk().entity_rank(side));
 
     stk::mesh::EntityVector sideNodes;
-    stk::mesh::impl::fill_element_side_nodes_from_topology(get_bulk(), elem, ordinal, sideNodes);
+    stk::mesh::impl::fill_element_side_nodes_from_topology(get_bulk().bucket(elem).topology(), get_bulk().begin_nodes(elem), ordinal, sideNodes);
 
     stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
     stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
@@ -1002,7 +1003,8 @@ protected:
 
     get_meta().declare_part(sidesetName, stk::topology::FACE_RANK);
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     create_sideset(get_bulk(), sidesetName, "block_1");
 
     std::vector<stk::mesh::SideSet*> sidesets = get_bulk().get_sidesets();
@@ -1115,7 +1117,8 @@ protected:
                                        0,0,1,  1,0,1,   1,1,1,   0,1,1,
                                        0,0,2,  1,0,2,   1,1,2,   0,1,2};
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void setup_non_coincident_mesh()
@@ -1129,7 +1132,8 @@ protected:
                                        0,0,1,  1,0,1,   1,1,1,   0,1,1,
                                        0,0,2,  1,0,2,   1,1,2,   0,1,2};
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void test_parallel_coincidence(const std::vector<ParallelCoincidenceEntry>& expectedValues)

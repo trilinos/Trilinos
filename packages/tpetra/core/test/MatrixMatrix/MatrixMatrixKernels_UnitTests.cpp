@@ -119,7 +119,7 @@ getIdentityMatrix (Teuchos::FancyOStream& out,
     Tpetra::createCrsMatrix<SC, LO, GO, NT> (identityRowMap, 1);
 
   out << "Fill CrsMatrix" << endl;
-  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getNodeElementList ();
+  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getLocalElementList ();
   for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
     Teuchos::Array<GO> col (1, *it);
     Teuchos::Array<SC> val (1, Teuchos::ScalarTraits<SC>::one ());
@@ -152,7 +152,7 @@ getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
     Tpetra::createCrsMatrix<SC, LO, GO, NT> (identityRowMap, 1);
 
   out << "Fill CrsMatrix" << endl;
-  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getNodeElementList ();
+  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getLocalElementList ();
   for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
     Teuchos::Array<GO> col (1, *it);
     Teuchos::Array<SC> val (1, Teuchos::ScalarTraits<SC>::one ());
@@ -371,9 +371,9 @@ mult_test_results multiply_test_kernel(
     RCP<const Map_t> Be2_rowmap = Aeff->getGraph()->getColMap();
 
     // Do rowptr
-    Teuchos::ArrayRCP<size_t> Be2_rowptr(Be2_rowmap->getNodeNumElements()+1);
+    Teuchos::ArrayRCP<size_t> Be2_rowptr(Be2_rowmap->getLocalNumElements()+1);
     Be2_rowptr[0]=0;
-    for(size_t i=0; i<Be2_rowmap->getNodeNumElements(); i++) {
+    for(size_t i=0; i<Be2_rowmap->getLocalNumElements(); i++) {
       LO lrid_1 = Be1_rowmap->getLocalElement(Be2_rowmap->getGlobalElement(i));
       if(lrid_1 == LO_INVALID)
 	Be2_rowptr[i+1] = Be2_rowptr[i];
@@ -381,13 +381,13 @@ mult_test_results multiply_test_kernel(
 	Be2_rowptr[i+1] = Be2_rowptr[i] + Be1_rowptr[lrid_1+1] - Be1_rowptr[lrid_1];
       }
     }
-    int nnz_2 =  Be2_rowptr[Be2_rowmap->getNodeNumElements()];
+    int nnz_2 =  Be2_rowptr[Be2_rowmap->getLocalNumElements()];
 
     Teuchos::ArrayRCP<LO> Be2_colind(nnz_2);
     Teuchos::ArrayRCP<SC> Be2_vals(nnz_2);
 
     // Copy colind/vals
-    for(size_t i=0; i<Be2_rowmap->getNodeNumElements(); i++) {
+    for(size_t i=0; i<Be2_rowmap->getLocalNumElements(); i++) {
       LO lrid_1 = Be1_rowmap->getLocalElement(Be2_rowmap->getGlobalElement(i));      
       // NOTE: Invalid rows will be length zero, so this will always work
       for(size_t j=Be2_rowptr[i]; j<Be2_rowptr[i+1]; j++) {
@@ -479,11 +479,11 @@ mult_test_results multiply_test_kernel(
       }
 
       printf("Real rowgids = ");
-      for(size_t i=0; i<(size_t) C->getGraph()->getRowMap()->getNodeNumElements(); i++) 
+      for(size_t i=0; i<(size_t) C->getGraph()->getRowMap()->getLocalNumElements(); i++) 
 	printf("%d ",(int)C->getGraph()->getRowMap()->getGlobalElement(i));
       printf("\n");
       printf("Aeff rowgids = ");
-      for(size_t i=0; i<(size_t) Aeff->getGraph()->getRowMap()->getNodeNumElements(); i++) 
+      for(size_t i=0; i<(size_t) Aeff->getGraph()->getRowMap()->getLocalNumElements(); i++) 
 	printf("%d ",(int)Aeff->getGraph()->getRowMap()->getGlobalElement(i));
       printf("\n");
 
@@ -532,11 +532,11 @@ mult_test_results multiply_test_kernel(
     if(has_mismatch) {
 #if 0     
       printf("Real colmap = ");
-      for(size_t i=0; i<(size_t) C->getGraph()->getColMap()->getNodeNumElements(); i++) 
+      for(size_t i=0; i<(size_t) C->getGraph()->getColMap()->getLocalNumElements(); i++) 
 	printf("%d ",(int)C->getGraph()->getColMap()->getGlobalElement(i));
       printf("\n");
       printf("   B colmap = ");
-      for(size_t i=0; i<(size_t) Beff->getGraph()->getColMap()->getNodeNumElements(); i++) 
+      for(size_t i=0; i<(size_t) Beff->getGraph()->getColMap()->getLocalNumElements(); i++) 
 	printf("%d ",(int)Beff->getGraph()->getColMap()->getGlobalElement(i));
       printf("\n");
  

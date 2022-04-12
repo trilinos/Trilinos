@@ -212,7 +212,7 @@ bool all_passed = true;
     my_GMLS.setWeightingType(WeightingFunctionType::Power);
     
     // power to use in that weighting kernel function
-    my_GMLS.setWeightingPower(2);
+    my_GMLS.setWeightingParameter(2);
 
     // set source sites once for all targets
     my_GMLS.setSourceSites(source_coords_device);

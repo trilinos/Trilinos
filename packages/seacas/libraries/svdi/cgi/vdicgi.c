@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -90,11 +90,11 @@ static float get_devid_num(char *string)
 #define vdstla_ vdstla
 #define vdloge_ vdloge
 #define vdmoni_ vdmoni
-#define vbpkg _vbpkg
+#define vbpkg   _vbpkg
 #define vberrh_ vberrh
 #define vbiqpk_ vbiqpk
 #define vbiqdv_ vbiqdv
-#define vbdev _vbdev
+#define vbdev   _vbdev
 #define cdrofs_ cdrofs
 #define cdrrfs_ cdrrfs
 #define cdrwfs_ cdrwfs
@@ -137,11 +137,11 @@ static float get_devid_num(char *string)
 #define vdstla_ VDSTLA
 #define vdloge_ VDLOGE
 #define vdmoni_ VDMONI
-#define vbpkg_ VBPKG
+#define vbpkg_  VBPKG
 #define vberrh_ VBERRH
 #define vbiqpk_ VBIQPK
 #define vbiqdv_ VBIQDV
-#define vbdev_ VBDEV
+#define vbdev_  VBDEV
 #define cdrofs_ CDROFS
 #define cdrrfs_ CDRRFS
 #define cdrwfs_ CDRWFS
@@ -230,142 +230,142 @@ static float get_devid_num(char *string)
 #if defined(ADDC_)
 #endif
 #if !defined(CRA) && !defined(ADDC_) && !defined(COUGAR)
-#define ci_ ci
-#define ct_ ct
+#define ci_     ci
+#define ct_     ct
 #define cxdfac_ cxdfac
-#define cpds_ cpds
+#define cpds_   cpds
 #define cendpg_ cendpg
-#define cbc_ cbc
-#define cvdcx_ cvdcx
-#define cv_ cv
-#define ccl_ ccl
+#define cbc_    cbc
+#define cvdcx_  cvdcx
+#define cv_     cv
+#define ccl_    ccl
 #define cdqerr_ cdqerr
 #define cerhct_ cerhct
-#define ccixp_ ccixp
-#define cesc1_ cesc1
-#define cesc2_ cesc2
-#define cqid_ cqid
-#define cqd_ cqd
-#define clf_ clf
-#define clpr_ clpr
-#define cqsp_ cqsp
-#define clesc_ clesc
-#define cqp_ cqp
-#define cpl_ cpl
-#define cdjpl_ cdjpl
-#define cdscl_ cdscl
-#define cqcl_ cqcl
-#define cpm_ cpm
-#define ctx1_ ctx1
-#define ctx2_ ctx2
-#define cpg_ cpg
-#define cca_ cca
-#define clnt_ clnt
-#define clnw_ clnw
-#define clnc_ clnc
-#define cmkt_ cmkt
-#define cmkc_ cmkc
-#define ctxp_ ctxp
-#define ctxc_ ctxc
-#define cchh_ cchh
-#define ccho_ ccho
-#define cis_ cis
-#define cflc_ cflc
-#define ccsm_ ccsm
-#define cct_ cct
+#define ccixp_  ccixp
+#define cesc1_  cesc1
+#define cesc2_  cesc2
+#define cqid_   cqid
+#define cqd_    cqd
+#define clf_    clf
+#define clpr_   clpr
+#define cqsp_   cqsp
+#define clesc_  clesc
+#define cqp_    cqp
+#define cpl_    cpl
+#define cdjpl_  cdjpl
+#define cdscl_  cdscl
+#define cqcl_   cqcl
+#define cpm_    cpm
+#define ctx1_   ctx1
+#define ctx2_   ctx2
+#define cpg_    cpg
+#define cca_    cca
+#define clnt_   clnt
+#define clnw_   clnw
+#define clnc_   clnc
+#define cmkt_   cmkt
+#define cmkc_   cmkc
+#define ctxp_   ctxp
+#define ctxc_   ctxc
+#define cchh_   cchh
+#define ccho_   ccho
+#define cis_    cis
+#define cflc_   cflc
+#define ccsm_   ccsm
+#define cct_    cct
 #define cgtxx1_ cgtxx1
 #define cgtxx2_ cgtxx2
-#define cqprl_ cqprl
-#define cqln_ cqln
-#define cqlnt_ cqlnt
+#define cqprl_  cqprl
+#define cqln_   cqln
+#define cqlnt_  cqlnt
 #define cqchh1_ cqchh1
 #define cqchh2_ cqchh2
-#define cqfl_ cqfl
-#define cqc_ cqc
-#define cqlna_ cqlna
-#define cqtxa_ cqtxa
-#define cqcte_ cqcte
-#define cili_ cili
-#define crqlc_ crqlc
-#define cpxa_ cpxa
+#define cqfl_   cqfl
+#define cqc_    cqc
+#define cqlna_  cqlna
+#define cqtxa_  cqtxa
+#define cqcte_  cqcte
+#define cili_   cili
+#define crqlc_  crqlc
+#define cpxa_   cpxa
 #endif
 #if defined(CRA)
-#define ci_ CI
-#define ct_ CT
+#define ci_     CI
+#define ct_     CT
 #define cxdfac_ CXDFAC
-#define cpds_ CPDS
+#define cpds_   CPDS
 #define cendpg_ CENDPG
-#define cbc_ CBC
-#define cvdcx_ CVDCX
-#define cv_ CV
-#define ccl_ CCL
+#define cbc_    CBC
+#define cvdcx_  CVDCX
+#define cv_     CV
+#define ccl_    CCL
 #define cdqerr_ CDQERR
 #define cerhct_ CERHCT
-#define ccixp_ CCIXP
-#define cesc1_ CESC1
-#define cesc2_ CESC2
-#define cqid_ CQID
-#define cqd_ CQD
-#define clf_ CLF
-#define clpr_ CLPR
-#define cqsp_ CQSP
-#define clesc_ CLESC
-#define cqp_ CQP
-#define cpl_ CPL
-#define cdjpl_ CDJPL
-#define cdscl_ CDSCL
-#define cqcl_ CQCL
-#define cpm_ CPM
-#define ctx1_ CTX1
-#define ctx2_ CTX2
-#define cpg_ CPG
-#define cca_ CCA
-#define clnt_ CLNT
-#define clnw_ CLNW
-#define clnc_ CLNC
-#define cmkt_ CMKT
-#define cmkc_ CMKC
-#define ctxp_ CTXP
-#define ctxc_ CTXC
-#define cchh_ CCHH
-#define ccho_ CCHO
-#define cis_ CIS
-#define cflc_ CFLC
-#define ccsm_ CCSM
-#define cct_ CCT
+#define ccixp_  CCIXP
+#define cesc1_  CESC1
+#define cesc2_  CESC2
+#define cqid_   CQID
+#define cqd_    CQD
+#define clf_    CLF
+#define clpr_   CLPR
+#define cqsp_   CQSP
+#define clesc_  CLESC
+#define cqp_    CQP
+#define cpl_    CPL
+#define cdjpl_  CDJPL
+#define cdscl_  CDSCL
+#define cqcl_   CQCL
+#define cpm_    CPM
+#define ctx1_   CTX1
+#define ctx2_   CTX2
+#define cpg_    CPG
+#define cca_    CCA
+#define clnt_   CLNT
+#define clnw_   CLNW
+#define clnc_   CLNC
+#define cmkt_   CMKT
+#define cmkc_   CMKC
+#define ctxp_   CTXP
+#define ctxc_   CTXC
+#define cchh_   CCHH
+#define ccho_   CCHO
+#define cis_    CIS
+#define cflc_   CFLC
+#define ccsm_   CCSM
+#define cct_    CCT
 #define cgtxx1_ CGTXX1
 #define cgtxx2_ CGTXX2
-#define cqprl_ CQPRL
-#define cqln_ CQLN
-#define cqlnt_ CQLNT
+#define cqprl_  CQPRL
+#define cqln_   CQLN
+#define cqlnt_  CQLNT
 #define cqchh1_ CQCHH1
 #define cqchh2_ CQCHH2
-#define cqfl_ CQFL
-#define cqc_ CQC
-#define cqlna_ CQLNA
-#define cqtxa_ CQTXA
-#define cqcte_ CQCTE
-#define cili_ CILI
-#define crqlc_ CRQLC
-#define cpxa_ CPXA
+#define cqfl_   CQFL
+#define cqc_    CQC
+#define cqlna_  CQLNA
+#define cqtxa_  CQTXA
+#define cqcte_  CQCTE
+#define cili_   CILI
+#define crqlc_  CRQLC
+#define cpxa_   CPXA
 #endif
 #ifdef Build64
 #if !defined(ADDC_)
-#define cesc cesc4
-#define ctx ctx4
-#define cgtxx cgtxx4
-#define cqchh cqchh4
-#define cesc2 cesc24
-#define ctx2 ctx24
+#define cesc   cesc4
+#define ctx    ctx4
+#define cgtxx  cgtxx4
+#define cqchh  cqchh4
+#define cesc2  cesc24
+#define ctx2   ctx24
 #define cgtxx2 cgtxx24
 #define cqchh2 cqchh24
 #else
-#define cesc_ cesc4_
-#define ctx_ ctx4_
-#define cgtxx_ cgtxx4_
-#define cqchh_ cqchh4_
-#define cesc2_ cesc24_
-#define ctx2_ ctx24_
+#define cesc_   cesc4_
+#define ctx_    ctx4_
+#define cgtxx_  cgtxx4_
+#define cqchh_  cqchh4_
+#define cesc2_  cesc24_
+#define ctx2_   ctx24_
 #define cgtxx2_ cgtxx24_
 #define cqchh2_ cqchh24_
 #endif
@@ -416,7 +416,7 @@ static int init_colors[24] = {0, 0, 0,   255, 0, 0,   0, 255, 0,   255, 255, 0,
                               0, 0, 255, 255, 0, 255, 0, 255, 255, 255, 255, 255};
 
 #ifndef TRUE
-#define TRUE 1
+#define TRUE  1
 #define FALSE 0
 #endif
 
@@ -523,7 +523,7 @@ void vbinq(void)
     linewidth_nominal = (nomwid == 0) /* Nominal line width */
                             ? .001
                             : (float)nomwid / dev_cap[14];
-    dev_cap[30] = (float)maxwid; /* Maximum line width */
+    dev_cap[30]       = (float)maxwid; /* Maximum line width */
 
     /* Could inquire marker capability, but this will be close enough*/
     dev_cap[19] = dev_cap[18]; /* Minimum pointsize  */
@@ -605,7 +605,7 @@ void vdinit_(float *aspect, int *justif)
   x4          = 0.0;
   y4          = 0.0;
 
-  asp  = *aspect;
+  asp = *aspect;
 
   if (asp < 0.) {
     vdicgi_errh(" SVDI Shell (VDINIT) Error Number 721 Severity 5: ");
@@ -703,7 +703,7 @@ void vflush(void)
   }
 }
 
-void vdterm_()
+void vdterm_(void)
 {
   vflush();
   ct_();
@@ -720,7 +720,7 @@ void vdiqdc_(int *index, float *value)
   }
 }
 
-void vdnwpg_()
+void vdnwpg_(void)
 {
   int temp, nreq, first, vstat, ntotal, colors[3], nlist;
 
@@ -750,9 +750,9 @@ void vdnwpg_()
   cpds_(&temp);
 }
 
-void vdbell_() {}
+void vdbell_(void) {}
 
-void vdwait_()
+void vdwait_(void)
 {
   int   temp, vstat, rstat, mvalid, trigger;
   float xpos, ypos, timeout;
@@ -773,7 +773,7 @@ void vdwait_()
   }
 }
 
-void vdbufl_()
+void vdbufl_(void)
 {
   int   temp1, temp2;
   float temp3;
@@ -1370,5 +1370,5 @@ void vdstos_(float attr_array[])
 
 void vdfram_(int itype) {}
 
-void vbiqpk_() {}
-void vberrh_() {}
+void vbiqpk_(void) {}
+void vberrh_(void) {}

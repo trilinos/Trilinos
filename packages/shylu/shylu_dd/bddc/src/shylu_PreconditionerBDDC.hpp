@@ -430,13 +430,13 @@ public:
 	return;
       }
       Teuchos::ArrayRCP<SX> sourceValues = m_rhsVecAll->getDataNonConst();
-      for (size_t i=0; i<m_dofMap->getNodeNumElements(); i++) {
+      for (size_t i=0; i<m_dofMap->getLocalNumElements(); i++) {
 	sourceValues[i] = sourceVals[i];
       }
       m_rhsVecAll1to1->putScalar(0);
       m_rhsVecAll1to1->doExport(*m_rhsVecAll, *m_exporterAll, Tpetra::ADD);
       Teuchos::ArrayRCP<const SX> targetValues = m_rhsVecAll1to1->getData();
-      for (size_t i=0; i<m_dofMap1to1->getNodeNumElements(); i++) {
+      for (size_t i=0; i<m_dofMap1to1->getLocalNumElements(); i++) {
 	targetVals[i] = targetValues[i];
       }
     }
@@ -460,12 +460,12 @@ public:
 	return;
       }
       Teuchos::ArrayRCP<SX> sourceValues = m_rhsVecAll1to1->getDataNonConst();
-      for (size_t i=0; i<m_dofMap1to1->getNodeNumElements(); i++) {
+      for (size_t i=0; i<m_dofMap1to1->getLocalNumElements(); i++) {
 	sourceValues[i] = sourceVals[i];
       }
       m_rhsVecAll->doImport(*m_rhsVecAll1to1, *m_exporterAll, Tpetra::INSERT);
       Teuchos::ArrayRCP<const SX> targetValues = m_rhsVecAll->getData();
-      for (size_t i=0; i<m_dofMap->getNodeNumElements(); i++) {
+      for (size_t i=0; i<m_dofMap->getLocalNumElements(); i++) {
 	targetVals[i] = targetValues[i];
       }
     }
@@ -1194,7 +1194,7 @@ public:
     }
     else {
       Teuchos::ArrayRCP<SX> xValues1to1 = m_xVecAll1to1->getDataNonConst();
-      LO numDofs1to1 = m_dofMap1to1->getNodeNumElements();
+      LO numDofs1to1 = m_dofMap1to1->getLocalNumElements();
       for (LO i=0; i<numDofs1to1; i++) xValues1to1[i] = x[i];
       m_xVecAll->doImport(*m_xVecAll1to1, *m_exporterAll, Tpetra::INSERT);
       xValues = m_xVecAll->getDataNonConst().get();
@@ -1237,7 +1237,7 @@ public:
       m_AxVecAll1to1->putScalar(0);
       m_AxVecAll1to1->doExport(*m_AxVecAll, *m_exporterAll, Tpetra::ADD);
       Teuchos::ArrayRCP<SX> AxValuesAll1to1 = m_AxVecAll1to1->getDataNonConst();
-      LO numDofs1to1 = m_dofMap1to1->getNodeNumElements();
+      LO numDofs1to1 = m_dofMap1to1->getLocalNumElements();
       for (LO i=0; i<numDofs1to1; i++) Ax[i] = AxValuesAll1to1[i];
     }
   }
@@ -1531,7 +1531,7 @@ private:
 			      RCP<const Map> & dofMap1to1) const
   {
     const size_t numDof = nodeBegin[numNodes];
-    BDDC_TEST_FOR_EXCEPTION(numDof != dofMap->getNodeNumElements(), 
+    BDDC_TEST_FOR_EXCEPTION(numDof != dofMap->getLocalNumElements(), 
 			    std::runtime_error, "inconsistent numDof");
     LO row(0);
     std::vector<GO> globalIDs1to1;
@@ -1780,7 +1780,7 @@ private:
   void determineNewMap(RCP<const Map> dofMap, 
 		       RCP<const Map> & dofMap_dis)
   {
-    LO numRows = dofMap->getNodeNumElements();
+    LO numRows = dofMap->getLocalNumElements();
     std::vector<GO> globalIDs(numRows);
     for (LO i=0; i<numRows; i++) {
       globalIDs[i] = dofMap->getGlobalElement(i);
@@ -1936,7 +1936,7 @@ private:
 				   RCP<const Map> map1to1)
   {
     std::vector<GO> globalIDs;
-    LO numRows = map->getNodeNumElements();
+    LO numRows = map->getLocalNumElements();
     for (LO i=0; i<numRows; i++) {
       GO globalID = map->getGlobalElement(i);
       LO localID = map1to1->getLocalElement(globalID);
@@ -2014,7 +2014,7 @@ private:
       m_dofMapB = generateMap(globalIDs);
       m_dofMapB1to1 = constructOneToOne(m_dofMapB, m_dofMap1to1);
       m_exporterB = rcp( new Export(m_dofMapB, m_dofMapB1to1) );
-      m_numDofsB1to1 = m_dofMapB1to1->getNodeNumElements();
+      m_numDofsB1to1 = m_dofMapB1to1->getLocalNumElements();
       m_exporterAll = rcp( new Export(m_dofMap, m_dofMap1to1) );
       m_boundaryToAll1to1.resize(m_numDofsB1to1);
       for (LO i=0; i<m_numDofsB1to1; i++) {
@@ -2617,7 +2617,7 @@ private:
     fineVector1to1->doExport(*fineVector, *exporter, Tpetra::ADD);
     */
     Teuchos::ArrayRCP<SX> fineValues1to1 = fineVector1to1->getDataNonConst();
-    LO numRows = fineVector1to1->getMap()->getNodeNumElements();
+    LO numRows = fineVector1to1->getMap()->getLocalNumElements();
     m_fine1to1Work.resize(numRows);
     for (LO i=0; i<numRows; i++) {
       m_fine1to1Work[i] = beta*fineValues1to1[i];
@@ -3655,7 +3655,7 @@ private:
 	(dofMapCoarse, nodeGlobalIDsCoarse.size(), nodeBeginCoarse.data(),
 	 m_nodeSendCoarse, dofMapCoarse1to1);
 
-      const LO numRows = dofMapCoarse1to1->getNodeNumElements();
+      const LO numRows = dofMapCoarse1to1->getLocalNumElements();
       globalIDs1to1.resize(numRows);
       for (LO i=0; i<numRows; i++) {
 	globalIDs1to1[i] = dofMapCoarse1to1->getGlobalElement(i);

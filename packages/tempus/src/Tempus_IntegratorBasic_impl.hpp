@@ -34,6 +34,9 @@ IntegratorBasic<Scalar>::IntegratorBasic()
   integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
   stepperTimer_    = rcp(new Teuchos::Time("Stepper Timer"));
 
+  // integrator is not initialized.  Still requires calls to setModel
+  // and setSolutionHistory for initial conditions before calling
+  // initialize() to be fully constructed.
 }
 
 
@@ -575,11 +578,11 @@ IntegratorBasic<Scalar>::getValidParameters() const
 // ------------------------------------------------------------------------
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
-  Teuchos::RCP<Teuchos::ParameterList>                     tempusPL,
-  bool runInitialize)
+  Teuchos::RCP<Teuchos::ParameterList> tempusPL, bool runInitialize)
 {
   auto integrator = Teuchos::rcp(new IntegratorBasic<Scalar>());
-  if (tempusPL == Teuchos::null || tempusPL->numParams() == 0) return integrator;
+  if (tempusPL == Teuchos::null || tempusPL->numParams() == 0)
+    return integrator;  // integrator is not initialized (missing model and IC).
 
   auto integratorName = tempusPL->get<std::string>("Integrator Name");
   auto integratorPL = Teuchos::sublist(tempusPL, integratorName, true);
@@ -592,6 +595,13 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
     << "    Integrator Type = " << integratorType << "\n");
 
   integrator->setIntegratorName(integratorName);
+
+  // Validate the Integrator ParameterList
+  auto validPL =
+    Teuchos::rcp_const_cast<Teuchos::ParameterList>(integrator->getValidParameters());
+  auto vIntegratorName = validPL->template get<std::string>("Integrator Name");
+  auto vIntegratorPL = Teuchos::sublist(validPL, vIntegratorName, true);
+  integratorPL->validateParametersAndSetDefaults(*vIntegratorPL,1);
 
   // Set Stepper
   if (integratorPL->isParameter("Stepper Name")) {
@@ -640,20 +650,6 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   auto str = integratorPL->get<std::string>("Screen Output Index List", "");
   integrator->setScreenOutputIndexList(str);
 
-  auto validPL = Teuchos::rcp_const_cast<Teuchos::ParameterList>(integrator->getValidParameters());
-
-  // Validate the Integrator ParameterList
-  auto vIntegratorName = validPL->template get<std::string>("Integrator Name");
-  auto vIntegratorPL = Teuchos::sublist(validPL, vIntegratorName, true);
-  integratorPL->validateParametersAndSetDefaults(*vIntegratorPL,1);
-
-  // Validate the Stepper ParameterList
-  auto stepperName = integratorPL->get<std::string>("Stepper Name");
-  auto stepperPL   = Teuchos::sublist(tempusPL, stepperName, true);
-  auto vStepperName = vIntegratorPL->template get<std::string>("Stepper Name");
-  auto vStepperPL   = Teuchos::sublist(validPL, vStepperName, true);
-  stepperPL->validateParametersAndSetDefaults(*vStepperPL);
-
   return integrator;  // integrator is not initialized (missing model and IC).
 }
 
@@ -688,7 +684,7 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   sh->addState(newState);
   integrator->getStepper()->setInitialConditions(sh);
 
-  if(runInitialize) integrator->initialize();
+  if (runInitialize) integrator->initialize();
 
   return integrator;
 }

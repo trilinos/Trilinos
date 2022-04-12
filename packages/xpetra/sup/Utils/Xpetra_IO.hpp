@@ -343,7 +343,7 @@ namespace Xpetra {
       Teuchos::MatrixMarket::Raw::Writer<Scalar,LocalOrdinal> writer;
       writer.writeFile(fileName + "." + std::to_string(Op.getRowMap()->getComm()->getSize()) + "." + std::to_string(Op.getRowMap()->getComm()->getRank()),
                        rowptr2,colind,vals,
-                       rowptr.size()-1,Op.getColMap()->getNodeNumElements());
+                       rowptr.size()-1,Op.getColMap()->getLocalNumElements());
     } //WriteLocal
 
 
@@ -639,8 +639,8 @@ namespace Xpetra {
         params->set("Parse tolerantly", tolerant);
         params->set("Debug mode", debug);
 
-        LocalOrdinal numRows = rowMap->getNodeNumElements();
-        LocalOrdinal numCols = colMap->getNodeNumElements();
+        LocalOrdinal numRows = rowMap->getLocalNumElements();
+        LocalOrdinal numCols = colMap->getLocalNumElements();
 
         ArrayRCP<LocalOrdinal> rowptr2_RCP;
         ArrayRCP<LocalOrdinal> colind2_RCP;
@@ -674,7 +674,7 @@ namespace Xpetra {
         ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
         ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
 
-        TEUCHOS_ASSERT_EQUALITY(Teuchos::as<int>(rowMap->getNodeNumElements()), m);
+        TEUCHOS_ASSERT_EQUALITY(Teuchos::as<int>(rowMap->getLocalNumElements()), m);
 
         Teuchos::ArrayRCP<size_t>       rowptrRCP;
         Teuchos::ArrayRCP<LocalOrdinal> indicesRCP;
@@ -1107,7 +1107,7 @@ namespace Xpetra {
       Teuchos::MatrixMarket::Raw::Writer<Scalar,LocalOrdinal> writer;
       writer.writeFile(fileName + "." + std::to_string(Op.getRowMap()->getComm()->getSize()) + "." + std::to_string(Op.getRowMap()->getComm()->getRank()),
                        rowptr2,colind,vals,
-                       rowptr.size()-1,Op.getColMap()->getNodeNumElements());
+                       rowptr.size()-1,Op.getColMap()->getLocalNumElements());
     } //WriteLocal
 
     /*! @brief Save block matrix to one file per block in Matrix Market format.
@@ -1419,8 +1419,8 @@ namespace Xpetra {
         params->set("Parse tolerantly", tolerant);
         params->set("Debug mode", debug);
 
-        LocalOrdinal numRows = rowMap->getNodeNumElements();
-        LocalOrdinal numCols = colMap->getNodeNumElements();
+        LocalOrdinal numRows = rowMap->getLocalNumElements();
+        LocalOrdinal numCols = colMap->getLocalNumElements();
 
         ArrayRCP<LocalOrdinal> rowptr2_RCP;
         ArrayRCP<LocalOrdinal> colind2_RCP;
@@ -1454,7 +1454,7 @@ namespace Xpetra {
         ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
         ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
 
-        TEUCHOS_ASSERT_EQUALITY(Teuchos::as<int>(rowMap->getNodeNumElements()), m);
+        TEUCHOS_ASSERT_EQUALITY(Teuchos::as<int>(rowMap->getLocalNumElements()), m);
 
         Teuchos::ArrayRCP<size_t>       rowptrRCP;
         Teuchos::ArrayRCP<LocalOrdinal> indicesRCP;

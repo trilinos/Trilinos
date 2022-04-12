@@ -70,6 +70,14 @@ namespace Details {
     }
   }
 
+  bool DistributorActor::isReady() const {
+    bool result = true;
+    for (auto& request : requests_) {
+      result &= request->isReady();
+    }
+    return result;
+  }
+
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   void DistributorActor::makeTimers () {
     timer_doWaits_ = Teuchos::TimeMonitor::getNewTimer (

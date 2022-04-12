@@ -35,14 +35,17 @@
 #ifndef stk_io_util_Gmesh_STKmesh_Fixture_hpp
 #define stk_io_util_Gmesh_STKmesh_Fixture_hpp
 
-#include <stddef.h>                     // for
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_mesh/base/Types.hpp>      // for PartVector
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <stk_io/StkMeshIoBroker.hpp>      // for StkMeshIoBroker
+#include <stk_mesh/base/Types.hpp>         // for PartVector
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <string>                       // for string
-#include <vector>                       // for vector
+#include <string>                          // for string
+#include <vector>                          // for vector
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
 namespace io {

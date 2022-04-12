@@ -68,8 +68,10 @@ namespace Intrepid2
   constexpr int MAX_FAD_DERIVATIVES_FOR_TESTS = 3;
 
   //! Default Kokkos::Device to use for tests; depends on platform
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA)
   using DefaultTestDeviceType = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>;
+#elif defined(KOKKOS_ENABLE_HIP)
+  using DefaultTestDeviceType = Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>;
 #else
   using DefaultTestDeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
 #endif

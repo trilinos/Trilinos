@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -46,7 +46,7 @@
 
 #if defined(Build64) && !defined(DEFAULT_REAL_INT)
 /* 64-bit */
-#define real double
+#define real      double
 #define entity_id ex_entity_id
 
 #ifdef ADDC_
@@ -61,7 +61,7 @@
 
 #else
 /* 32-bit */
-#define real float
+#define real      float
 #define entity_id int
 #ifdef ADDC_
 #define F2C(name, NAME) name##_
@@ -2421,7 +2421,7 @@ void F2C(expfrm, EXPFRM)(int *idexo, int *nframe, void_int *cfids, real *coord, 
  *  Routine to return floating point word size
  * \sa ex__get_cpu_ws()
  */
-int F2C(excpws, EXCPWS)() { return (ex__get_cpu_ws()); }
+int F2C(excpws, EXCPWS)(void) { return (ex__get_cpu_ws()); }
 
 /*!
  *  Routine to return large model setting

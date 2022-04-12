@@ -37,7 +37,7 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_balance/m2n/m2nRebalance.hpp>
 #include <stk_balance/balanceUtils.hpp>
-#include <stk_balance/m2n/Decomposer.hpp>
+#include <stk_balance/m2n/M2NDecomposer.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/environment/EnvData.hpp>
@@ -58,7 +58,7 @@ protected:
 
   void setup_initial_mesh(const std::string & inputMeshFile)
   {
-    setup_mesh(inputMeshFile, stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh(inputMeshFile, stk::mesh::BulkData::AUTO_AURA);
   }
 
   virtual void setup_m2n_decomposer(int numFinalProcs) = 0;

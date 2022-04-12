@@ -145,7 +145,7 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
       params->get (sortParamName, sortDefault);
   } ();
 
-  const LO lclNumRows (origMatrix_->getNodeNumRows ());
+  const LO lclNumRows (origMatrix_->getLocalNumRows ());
 
   RCP<const crs_matrix_type> crsMatrix =
     rcp_dynamic_cast<const crs_matrix_type> (origMatrix_);

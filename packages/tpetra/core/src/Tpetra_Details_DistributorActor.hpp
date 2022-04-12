@@ -52,7 +52,7 @@ namespace Tpetra {
 namespace Details {
 
 template <class View1, class View2>
-constexpr bool areKokkosViews = Kokkos::Impl::is_view<View1>::value && Kokkos::Impl::is_view<View2>::value;
+constexpr bool areKokkosViews = Kokkos::is_view<View1>::value && Kokkos::is_view<View2>::value;
 
 class DistributorActor {
 
@@ -87,6 +87,8 @@ public:
                const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
   void doWaits(const DistributorPlan& plan);
+
+  bool isReady() const;
 
 private:
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;

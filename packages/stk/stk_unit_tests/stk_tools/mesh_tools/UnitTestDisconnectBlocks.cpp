@@ -710,21 +710,6 @@ TEST_F(TestDisconnectBlocks, disconnect_2block_2hex)
   }
 }
 
-TEST_F(TestDisconnectBlocks, DISABLED_disconnect_2block_2hex_with_internal_sides)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_2block_2hex_with_internal_sides(get_bulk());
-
-    stk::tools::disconnect_all_blocks(get_bulk());
-
-    EXPECT_EQ(0u,  get_num_intersecting_nodes(get_bulk(), blocks));
-    EXPECT_EQ(16u, get_num_total_nodes(get_bulk()));
-    EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
-
-    output_mesh(get_bulk(), "disconnect_2block_2hex_with_internal_sides.g");
-  }
-}
-
 TEST_F(TestDisconnectBlocks, disconnect_2block_2hex_with_external_sides)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
@@ -776,21 +761,6 @@ TEST_F(TestDisconnectBlocks, disconnect_2block_2cubeOfTet)
   }
 }
 
-TEST_F(TestDisconnectBlocks, DISABLED_disconnect_2block_2cubeOfTet_with_internal_sides)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_2block_2cubeOfTet_with_internal_sides(get_bulk());
-
-    stk::tools::disconnect_all_blocks(get_bulk());
-
-    EXPECT_EQ(0u,  get_num_intersecting_nodes(get_bulk(), blocks));
-    EXPECT_EQ(16u, get_num_total_nodes(get_bulk()));
-    EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
-
-    output_mesh(get_bulk(), "disconnect_2block_2cubeOfTet_with_internal_sides.g");
-  }
-}
-
 TEST_F(TestDisconnectBlocks, disconnect_3block_4hex)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
@@ -808,21 +778,6 @@ TEST_F(TestDisconnectBlocks, disconnect_3block_4hex)
   }
 }
 
-TEST_F(TestDisconnectBlocks, DISABLED_disconnect_3block_4hex_with_internal_sides)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_3block_4hex_with_internal_sides(get_bulk());
-
-    stk::tools::disconnect_all_blocks(get_bulk());
-
-    EXPECT_EQ(0u,  get_num_intersecting_nodes(get_bulk(), blocks));
-    EXPECT_EQ(28u, get_num_total_nodes(get_bulk()));
-    EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
-
-    output_mesh(get_bulk(), "disconnect_3block_4hex_with_internal_sides.g");
-  }
-}
-
 TEST_F(TestDisconnectBlocks, disconnect_3block_4cubeOfTet)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
@@ -835,21 +790,6 @@ TEST_F(TestDisconnectBlocks, disconnect_3block_4cubeOfTet)
     EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
 
     output_mesh(get_bulk(), "disconnect_3block_4cubeOfTet.g");
-  }
-}
-
-TEST_F(TestDisconnectBlocks, DISABLED_disconnect_3block_4cubeOfTet_with_internal_sides)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_3block_4cubeOfTet_with_internal_sides(get_bulk());
-
-    stk::tools::disconnect_all_blocks(get_bulk());
-
-    EXPECT_EQ(0u,  get_num_intersecting_nodes(get_bulk(), blocks));
-    EXPECT_EQ(28u, get_num_total_nodes(get_bulk()));
-    EXPECT_FALSE(check_orphaned_nodes(get_bulk()));
-
-    output_mesh(get_bulk(), "disconnect_3block_4cubeOfTet_with_internal_sides.g");
   }
 }
 
@@ -1459,21 +1399,6 @@ TEST_F(TestReconnectBlocks, reconnect_4block_8hex_cube_v3)
     stk::mesh::PartVector blocks = setup_mesh_4block_8hex_cube(get_bulk());
     BlockConnectionVector reconnectPairs{ BlockConnection("block_2","block_3",3), BlockConnection("block_3","block_4",6) };
     test_reconnect_block_pairs(get_bulk(), blocks, reconnectPairs, 15, 6);
-  }
-}
-
-TEST_F(TestReconnectBlocks, DISABLED_reconnect_8block_8hex_cube)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) <= 2) {
-    stk::mesh::PartVector blocks = setup_mesh_8block_8hex_cube(get_bulk());
-    BlockConnectionVector reconnectPairs{ BlockConnection("block_1","block_3",4),
-                                          BlockConnection("block_3","block_4",4),
-                                          BlockConnection("block_4","block_8",4),
-                                          BlockConnection("block_8","block_7",4),
-                                          BlockConnection("block_7","block_5",4),
-                                          BlockConnection("block_5","block_6",4)
-                                        };
-    test_reconnect_block_pairs(get_bulk(), blocks, reconnectPairs, 19, 16);
   }
 }
 

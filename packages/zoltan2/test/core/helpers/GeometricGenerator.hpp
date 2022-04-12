@@ -176,7 +176,7 @@ void getObjList(void *data, int numGid, int numLid,
 
   size_t localLen = dots_->coordinates->getLocalLength();
   const gno_t *ids =
-               dots_->coordinates->getMap()->getNodeElementList().getRawPtr();
+               dots_->coordinates->getMap()->getLocalElementList().getRawPtr();
 
   if (sizeof(ZOLTAN_ID_TYPE) == sizeof(gno_t))
     memcpy(gids, ids, sizeof(ZOLTAN_ID_TYPE) * localLen);

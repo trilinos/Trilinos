@@ -158,7 +158,7 @@ getValidParameters () const
 
   validParams->set("partitioner: line detection threshold", 0.0);
   validParams->set("partitioner: PDE equations", 1);
-  Teuchos::RCP<Tpetra::MultiVector<double,
+  Teuchos::RCP<Tpetra::MultiVector<typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType,
                                    typename MatrixType::local_ordinal_type,
                                    typename MatrixType::global_ordinal_type,
                                    typename MatrixType::node_type> > dummy;
@@ -302,7 +302,7 @@ setParameters (const Teuchos::ParameterList& List)
     OverlapLevel_ = 0;
   }
   if (NumLocalBlocks_ < static_cast<local_ordinal_type> (0)) {
-    NumLocalBlocks_ = A_->getNodeNumRows() / (-NumLocalBlocks_);
+    NumLocalBlocks_ = A_->getLocalNumRows() / (-NumLocalBlocks_);
   }
 
   decouple_ = false;
@@ -437,7 +437,7 @@ size_t BlockRelaxation<MatrixType,ContainerType>::getNodeSmootherComplexity() co
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i)
     block_nnz += Partitioner_->numRowsInPart(i) *Partitioner_->numRowsInPart(i);
 
-  return block_nnz + A_->getNodeNumEntries();
+  return block_nnz + A_->getLocalNumEntries();
 }
 
 template<class MatrixType,class ContainerType>
@@ -586,7 +586,7 @@ initialize ()
       hasBlockCrsMatrix_ = true;
     }
 
-    NumLocalRows_      = A_->getNodeNumRows ();
+    NumLocalRows_      = A_->getLocalNumRows ();
     NumGlobalRows_     = A_->getGlobalNumRows ();
     NumGlobalNonzeros_ = A_->getGlobalNumEntries ();
 
@@ -961,7 +961,7 @@ void BlockRelaxation<MatrixType,ContainerType>::computeImporter () const
       global_size_t numGlobalElements = oldColMap->getGlobalNumElements() * bs_;
       global_ordinal_type indexBase = oldColMap->getIndexBase();
       RCP<const Comm<int>> comm = oldColMap->getComm();
-      ArrayView<const global_ordinal_type> oldColElements = oldColMap->getNodeElementList();
+      ArrayView<const global_ordinal_type> oldColElements = oldColMap->getLocalElementList();
       Array<global_ordinal_type> newColElements(bs_ * oldColElements.size());
       for(int i = 0; i < oldColElements.size(); i++)
       {
@@ -1023,7 +1023,7 @@ description () const
     out << "INVALID";
   }
   // Print the approximate # rows per part
-  int approx_rows_per_part = A_->getNodeNumRows()/Partitioner_->numLocalParts();
+  int approx_rows_per_part = A_->getLocalNumRows()/Partitioner_->numLocalParts();
   out <<", blocksize: "<<approx_rows_per_part;
 
   out << ", overlap: " << OverlapLevel_;

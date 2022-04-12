@@ -123,14 +123,14 @@ namespace {
       readMatrix = A;
     }
     // test that *readMatrix == *testMatrix
-    TEST_EQUALITY( testMatrix->getNodeNumRows(), readMatrix->getNodeNumRows() );
-    TEST_EQUALITY( testMatrix->getNodeNumCols(), readMatrix->getNodeNumCols() );
-    TEST_EQUALITY( testMatrix->getNodeNumEntries(), readMatrix->getNodeNumEntries() );
+    TEST_EQUALITY( testMatrix->getLocalNumRows(), readMatrix->getLocalNumRows() );
+    TEST_EQUALITY( testMatrix->getLocalNumCols(), readMatrix->getLocalNumCols() );
+    TEST_EQUALITY( testMatrix->getLocalNumEntries(), readMatrix->getLocalNumEntries() );
     if (success) {
       typename crs_matrix_type::local_inds_host_view_type rowinds1, rowinds2;
       typename crs_matrix_type::values_host_view_type rowvals1, rowvals2;
 
-      const LO lclNumRows = testMatrix->getNodeNumRows ();
+      const LO lclNumRows = testMatrix->getLocalNumRows ();
       for (LO r = 0; r < lclNumRows; ++r) {
         testMatrix->getLocalRowView(r, rowinds1, rowvals1);
         readMatrix->getLocalRowView(r, rowinds2, rowvals2);

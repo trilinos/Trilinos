@@ -1719,7 +1719,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   // ======================================================= //
   double d = 0.0, d_tot = 0.0 , s =0.0, s_tot=0.0;
   //for( int i=0 ; i<lhs->Map().NumMyElements() ; ++i ) {
-  for( size_t i=0 ; i<lhs->getMap()->getNodeNumElements() ; ++i ) {
+  for( size_t i=0 ; i<lhs->getMap()->getLocalNumElements() ; ++i ) {
     d += (lhsdata[i] - xexactdata[i]) * (lhsdata[i] - xexactdata[i]);
     s +=  xexactdata[i]* xexactdata[i];
   }

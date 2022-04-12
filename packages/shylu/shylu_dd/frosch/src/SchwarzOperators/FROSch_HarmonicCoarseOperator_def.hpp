@@ -109,7 +109,7 @@ namespace FROSch {
 
         // Build the saddle point harmonic extensions
         XMultiVectorPtr localCoarseSpaceBasis;
-        if (AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()) {
+        if (AssembledInterfaceCoarseSpace_->getBasisMap()->getLocalNumElements()) {
             localCoarseSpaceBasis = computeExtensions(repeatedMatrix->getRowMap(),indicesGammaDofsAll(),indicesIDofsAll(),kII,kIGamma);
 
             coarseSpace->addSubspace(AssembledInterfaceCoarseSpace_->getBasisMap(),AssembledInterfaceCoarseSpace_->getBasisMapUnique(),localCoarseSpaceBasis);
@@ -170,11 +170,11 @@ namespace FROSch {
             InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
             //Epetra_SerialComm serialComm;
-            XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(dofsMap->lib(),dofsMap->getNodeNumElements(),0,this->SerialComm_);
-            mVPhiGamma = MultiVectorFactory<LO,GO,NO>::Build(serialGammaMap,dofsMap->getNodeNumElements());
+            XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(dofsMap->lib(),dofsMap->getLocalNumElements(),0,this->SerialComm_);
+            mVPhiGamma = MultiVectorFactory<LO,GO,NO>::Build(serialGammaMap,dofsMap->getLocalNumElements());
         }
 
-        for (int i=0; i<dofsMap->getNodeNumElements(); i++) {
+        for (int i=0; i<dofsMap->getLocalNumElements(); i++) {
             GammaDofs_[blockId]->push_back(i);
 
             if (useForCoarseSpace) {
@@ -312,7 +312,7 @@ namespace FROSch {
         for (UN i=0; i<NumberOfBlocks_; i++) {
             if (!InterfaceCoarseSpaces_[i].is_null()) {
                 if (InterfaceCoarseSpaces_[i]->hasBasisMap()) {
-                    for (UN j=0; j<InterfaceCoarseSpaces_[i]->getBasisMap()->getNodeNumElements(); j++) {
+                    for (UN j=0; j<InterfaceCoarseSpaces_[i]->getBasisMap()->getLocalNumElements(); j++) {
                         mapVector.push_back(InterfaceCoarseSpaces_[i]->getBasisMap()->getGlobalElement(j)+tmp);
                     }
                     if (InterfaceCoarseSpaces_[i]->getBasisMap()->getMaxAllGlobalIndex()>=0) {
@@ -495,10 +495,10 @@ namespace FROSch {
                                                                                                                          SC tresholdOrthogonalization)
     {
         FROSCH_DETAILTIMER_START_LEVELID(detectLinearDependenciesTime,"HarmonicCoarseOperator::detectLinearDependencies");
-        LOVecPtr linearDependentVectors(AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()); //if (this->Verbose_) cout << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors() << " " << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength() << " " << indicesGammaDofsAll.size() << endl;
+        LOVecPtr linearDependentVectors(AssembledInterfaceCoarseSpace_->getBasisMap()->getLocalNumElements()); //if (this->Verbose_) cout << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors() << " " << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength() << " " << indicesGammaDofsAll.size() << endl;
         if (AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors()>0 && AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength()>0) {
             //Construct matrix phiGamma
-            XMatrixPtr phiGamma = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
+            XMatrixPtr phiGamma = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getLocalNumElements());
 
             // Array for scaling the columns of PhiGamma (1/norm(PhiGamma(:,i)))
             SCVec scale(AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(),0.0);
@@ -541,8 +541,8 @@ namespace FROSch {
             // XExportPtr exporter = ExportFactory<LO,GO,NO>::Build(rowMap,repeatedMap);
             // repeatedPhiTPhi->doExport(*phiTPhi,*exporter,INSERT);
 
-            UN numRows = repeatedPhiTPhi->getRowMap()->getNodeNumElements();
-            TSerialDenseMatrixPtr denseRepeatedPhiTPhi(new SerialDenseMatrix<LO,SC>(numRows,repeatedPhiTPhi->getColMap()->getNodeNumElements()));
+            UN numRows = repeatedPhiTPhi->getRowMap()->getLocalNumElements();
+            TSerialDenseMatrixPtr denseRepeatedPhiTPhi(new SerialDenseMatrix<LO,SC>(numRows,repeatedPhiTPhi->getColMap()->getLocalNumElements()));
             for (UN i=0; i<numRows; i++) {
                 ConstLOVecView indices;
                 ConstSCVecView values;
@@ -601,7 +601,7 @@ namespace FROSch {
         LOVec minVec(3);
         LOVec maxVec(3);
 
-        LO numLocalBasisFunctions = AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements();
+        LO numLocalBasisFunctions = AssembledInterfaceCoarseSpace_->getBasisMap()->getLocalNumElements();
         LO numLocalLinearDependencies = linearDependentVectors.size();
         LO numLocalLinearIndependencies = numLocalBasisFunctions-numLocalLinearDependencies;
 
@@ -705,13 +705,13 @@ namespace FROSch {
             << endl;
         }
 
-        //this->Phi_ = MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),AssembledInterfaceCoarseSpace_->getBasisMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
-        XMultiVectorPtr mVPhi = MultiVectorFactory<SC,LO,GO,NO>::Build(localMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
-        XMultiVectorPtr mVtmp = MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
-        XMultiVectorPtr mVPhiI = MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
+        //this->Phi_ = MatrixFactory<SC,LO,GO,NO>::Build(this->K_->getRangeMap(),AssembledInterfaceCoarseSpace_->getBasisMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getLocalNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+        XMultiVectorPtr mVPhi = MultiVectorFactory<SC,LO,GO,NO>::Build(localMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getLocalNumElements());
+        XMultiVectorPtr mVtmp = MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getLocalNumElements());
+        XMultiVectorPtr mVPhiI = MultiVectorFactory<SC,LO,GO,NO>::Build(kII->getRowMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getLocalNumElements());
 
         //Build mVPhiGamma
-        XMultiVectorPtr mVPhiGamma = MultiVectorFactory<SC,LO,GO,NO>::Build(kIGamma->getDomainMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
+        XMultiVectorPtr mVPhiGamma = MultiVectorFactory<SC,LO,GO,NO>::Build(kIGamma->getDomainMap(),AssembledInterfaceCoarseSpace_->getBasisMap()->getLocalNumElements());
         if (AssembledInterfaceCoarseSpace_->hasAssembledBasis()) {
             for (UN i=0; i<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); i++) {
                 ConstSCVecPtr assembledInterfaceCoarseSpaceData = AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(i);
@@ -847,7 +847,7 @@ namespace FROSch {
         // }
         Array<Array<bool> > mask(NumberOfBlocks_);
         for (UN i=0; i<NumberOfBlocks_; i++) {
-            mask[i] = Array<bool>(DofsPerNode_[i]*map->getNodeNumElements(),false);
+            mask[i] = Array<bool>(DofsPerNode_[i]*map->getLocalNumElements(),false);
         }
 
         FROSCH_ASSERT(couplingIDsToRemove.getNumCols()==4,"FROSch::HarmonicCoarseOperator: couplingIDsToRemove.getNumCols()!=4");
@@ -864,22 +864,22 @@ namespace FROSch {
             int dofID2 = couplingIDsToRemove[i][3];
 
             Array<bool>& tmpMask = mask[blockID1];
-            for (UN j=0; j<DofsMaps_[blockID2][dofID2]->getNodeNumElements(); j++) {
+            for (UN j=0; j<DofsMaps_[blockID2][dofID2]->getLocalNumElements(); j++) {
                 GO globalIndex = DofsMaps_[blockID2][dofID2]->getGlobalElement(j);
                 FROSCH_ASSERT(globalIndex>=0,"FROSch::HarmonicCoarseOperator: globalIndex<0");
                 LO localIndex = map->getLocalElement(globalIndex);
                 FROSCH_ASSERT(localIndex>=0,"FROSch::HarmonicCoarseOperator: localIndex<0");
                 //mask[blockID1]->replaceLocalValue(localIndex,dofID1,true);
-                tmpMask[dofID1*map->getNodeNumElements()+localIndex] = true;
+                tmpMask[dofID1*map->getLocalNumElements()+localIndex] = true;
             }
         }
 
-        XMatrixPtr reducedMatrix = MatrixFactory<SC,LO,GO,NO>::Build(matrix->getRowMap(),matrix->getNodeMaxNumRowEntries());
+        XMatrixPtr reducedMatrix = MatrixFactory<SC,LO,GO,NO>::Build(matrix->getRowMap(),matrix->getLocalMaxNumRowEntries());
         for (UN i=0; i<NumberOfBlocks_; i++) {
             Array<bool>& tmpMask = mask[i];
             for (UN j=0; j<DofsPerNode_[i]; j++) {
                 //ConstBoolVecPtr maskData = mask[i]->getData(j);
-                for (UN k=0; k<DofsMaps_[i][j]->getNodeNumElements(); k++) {
+                for (UN k=0; k<DofsMaps_[i][j]->getLocalNumElements(); k++) {
                     GO globalIndex = DofsMaps_[i][j]->getGlobalElement(k);
                     FROSCH_ASSERT(globalIndex>=0,"FROSch::HarmonicCoarseOperator: globalIndex<0");
                     LO localIndex = map->getLocalElement(globalIndex);
@@ -895,7 +895,7 @@ namespace FROSch {
                         Array<SC> valuesGlobal;
                         for (LO l=0; l<size; l++) {
                             //if (!maskData[indices[l]]) {
-                            if (!tmpMask[j*map->getNodeNumElements()+indices[l]]) {
+                            if (!tmpMask[j*map->getLocalNumElements()+indices[l]]) {
                                 indicesGlobal.push_back(matrix->getRowMap()->getGlobalElement(indices[l]));
                                 valuesGlobal.push_back(values[l]);
                             }
@@ -921,7 +921,7 @@ namespace FROSch {
         //get elements belonging to one subdomain
         FROSCH_DETAILTIMER_START_LEVELID(buildElementNodeListTime,"CoarseOperator::buildElementNodeList");
 
-        Teuchos::ArrayView<const GO> elements =  KRowMap_->getNodeElementList();
+        Teuchos::ArrayView<const GO> elements =  KRowMap_->getLocalElementList();
         UN maxNumElements = -1;
         UN numElementsLocal = elements.size();
 
@@ -929,9 +929,9 @@ namespace FROSch {
 
 
         GraphPtr elemGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLGatheringMaps_[0],maxNumElements);
-        Teuchos::ArrayView<const GO> myGlobals = this->SubdomainConnectGraph_->getRowMap()->getNodeElementList();
+        Teuchos::ArrayView<const GO> myGlobals = this->SubdomainConnectGraph_->getRowMap()->getLocalElementList();
 
-        for (size_t i = 0; i < this->SubdomainConnectGraph_->getRowMap()->getNodeNumElements(); i++) {
+        for (size_t i = 0; i < this->SubdomainConnectGraph_->getRowMap()->getLocalNumElements(); i++) {
             elemGraph->insertGlobalIndices(myGlobals[i],elements);
         }
         elemGraph->fillComplete();
@@ -957,7 +957,7 @@ namespace FROSch {
         this->ElementNodeList_ =Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLCoarseMap_,maxNumElements);
 
         if (this->OnCoarseSolveComm_) {
-            const size_t numMyElementS = elemSGraph->getMap()->getNodeNumElements();
+            const size_t numMyElementS = elemSGraph->getMap()->getLocalNumElements();
             Teuchos::ArrayView<const GO> va;
             for (UN i = 0; i < numMyElementS; i++) {
                 GO kg = this->MLGatheringMaps_[this->MLGatheringMaps_.size()-1]->getGlobalElement(i);
@@ -1032,7 +1032,7 @@ namespace FROSch {
             tmpGraph = Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLGatheringMaps_[i],MaxNumNeigh_);
             tmpGraph->doExport(*tmpGraphGathering,*this->MLCoarseSolveExporters_[i],Xpetra::INSERT);
         }
-        const size_t numMyElementS = this->MLGatheringMaps_[this->MLGatheringMaps_.size()-1]->getNodeNumElements();
+        const size_t numMyElementS = this->MLGatheringMaps_[this->MLGatheringMaps_.size()-1]->getLocalNumElements();
         this->SubdomainConnectGraph_= Xpetra::CrsGraphFactory<LO,GO,NO>::Build(this->MLCoarseMap_,MaxNumNeigh_);
 
         if (this->OnCoarseSolveComm_) {

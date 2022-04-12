@@ -78,7 +78,11 @@ public:
 
     virtual void finished_modification_end_notification()
     {
-        if (maxNumAdded > 0) {
+        if (changeEntityOwnerInProgress) {
+            elemGraph.fill_from_mesh();
+            changeEntityOwnerInProgress = false;
+        }
+        else if (maxNumAdded > 0) {
             elemGraph.add_elements(elementsAdded);
             elementsAdded.clear();
         }
@@ -112,11 +116,6 @@ public:
         changeEntityOwnerInProgress = true;
     }
 
-    virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
-    {
-        elemGraph.fill_from_mesh();
-        changeEntityOwnerInProgress = false;
-    }
 private:
     bool any_added_elements_are_owned(stk::mesh::EntityVector& elems)
     {

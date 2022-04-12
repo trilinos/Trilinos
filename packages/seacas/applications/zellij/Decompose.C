@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -18,6 +18,7 @@
 #include "Cell.h"
 #include "Grid.h"
 #include "Ioss_ElementBlock.h"
+#include "Ioss_ParallelUtils.h"
 #include "Ioss_Sort.h"
 
 extern unsigned int debug_level;
@@ -189,7 +190,7 @@ void decompose_grid(Grid &grid, int ranks, const std::string &method)
   int   ierr = 0;
   float ver  = 0.0;
   Zoltan_Initialize(argc, argv, &ver);
-  struct Zoltan_Struct *zz = Zoltan_Create(MPI_COMM_WORLD);
+  struct Zoltan_Struct *zz = Zoltan_Create(Ioss::ParallelUtils::comm_world());
 
   /* Register Callback functions */
   /* Using global Zoltan_Data; could register it here instead as data field. */

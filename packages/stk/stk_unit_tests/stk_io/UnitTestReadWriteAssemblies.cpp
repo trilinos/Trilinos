@@ -37,7 +37,13 @@
 #include <fstream>
 #include "Assembly.hpp"
 
-TEST_F(Assembly, readWriteAssembly_simple)
+namespace stk
+{
+namespace io
+{
+namespace unit_test
+{
+TEST_F(Assembly, readWriteAssembly_simple_blocks)
 {
   if(stk::parallel_machine_size(get_comm()) != 1) { return; }
 
@@ -52,7 +58,61 @@ TEST_F(Assembly, readWriteAssembly_simple)
   stk::io::fill_mesh("generated:2x2x2", get_bulk());
   move_element(1, block1Part, block2Part);
 
-  test_write_then_read_assemblies(1);
+  test_write_then_read_block_assemblies(1);
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_surfaces)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) {
+    return;
+  }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames{"surface_1", "surface_2"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& surface1Part = create_io_part(partNames[0], 1, stk::topology::QUAD_4);
+  stk::mesh::Part& surface2Part = create_io_part(partNames[1], 2, stk::topology::QUAD_4);
+  declare_subsets(assemblyPart, {&surface1Part, &surface2Part});
+  stk::io::fill_mesh("generated:2x2x2|sideset:xX", get_bulk());
+
+  EXPECT_EQ(4u, stk::mesh::count_selected_entities(surface1Part, get_bulk().buckets(get_meta().side_rank())));
+  EXPECT_EQ(4u, stk::mesh::count_selected_entities(surface2Part, get_bulk().buckets(get_meta().side_rank())));
+
+  stk::mesh::PartVector inputSideBlocksToIgnore;
+  inputSideBlocksToIgnore.push_back(get_meta().get_part("surface_1_quad4"));
+  inputSideBlocksToIgnore.push_back(get_meta().get_part("surface_2_quad4"));
+  test_for_null_parts(inputSideBlocksToIgnore);
+
+  stk::mesh::PartVector outputPartsToIgnore;
+
+  test_write_then_read_surface_assemblies(1, outputPartsToIgnore, inputSideBlocksToIgnore);
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_nodesets)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) {
+    return;
+  }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames{"nodelist_1", "nodelist_2"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& nodeset1Part = create_io_part(partNames[0], 1, stk::topology::NODE);
+  stk::mesh::Part& nodeset2Part = create_io_part(partNames[1], 2, stk::topology::NODE);
+  declare_subsets(assemblyPart, {&nodeset1Part, &nodeset2Part});
+  stk::io::fill_mesh("generated:2x2x2|nodeset:xX", get_bulk());
+
+  EXPECT_EQ(9u, stk::mesh::count_selected_entities(nodeset1Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+  EXPECT_EQ(9u, stk::mesh::count_selected_entities(nodeset2Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+
+  stk::mesh::PartVector inputPartsToIgnore;
+  stk::mesh::PartVector outputPartsToIgnore;
+
+  test_write_then_read_nodeset_assemblies(1, outputPartsToIgnore, inputPartsToIgnore);
 }
 
 TEST_F(Assembly, readWriteAssembly_simple_emptyblock)
@@ -69,7 +129,60 @@ TEST_F(Assembly, readWriteAssembly_simple_emptyblock)
   declare_subsets(assemblyPart, {&block1Part, &block2Part});
   stk::io::fill_mesh("generated:2x2x2", get_bulk());
 
-  test_write_then_read_assemblies(1);
+  test_write_then_read_block_assemblies(1);
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_emptysurface)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) {
+    return;
+  }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames{"surface_1", "surface_2"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& surface1Part = create_io_part(partNames[0], 1, stk::topology::QUAD_4);
+  stk::mesh::Part& surface2Part = create_io_part(partNames[1], 2, stk::topology::QUAD_4);
+  declare_subsets(assemblyPart, {&surface1Part, &surface2Part});
+  stk::io::fill_mesh("generated:2x2x2|sideset:x", get_bulk());
+
+  EXPECT_EQ(4u, stk::mesh::count_selected_entities(surface1Part, get_bulk().buckets(get_meta().side_rank())));
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(surface2Part, get_bulk().buckets(get_meta().side_rank())));
+
+  stk::mesh::PartVector inputSideBlocksToIgnore;
+  inputSideBlocksToIgnore.push_back(get_meta().get_part("surface_1_quad4"));
+  test_for_null_parts(inputSideBlocksToIgnore);
+
+  stk::mesh::PartVector outputPartsToIgnore;
+
+  test_write_then_read_surface_assemblies(1, outputPartsToIgnore, inputSideBlocksToIgnore);
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_emptynodeset)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) {
+    return;
+  }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames{"nodelist_1", "nodelist_2"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& nodeset1Part = create_io_part(partNames[0], 1, stk::topology::NODE);
+  stk::mesh::Part& nodeset2Part = create_io_part(partNames[1], 2, stk::topology::NODE);
+  declare_subsets(assemblyPart, {&nodeset1Part, &nodeset2Part});
+  stk::io::fill_mesh("generated:2x2x2|nodeset:x", get_bulk());
+
+  EXPECT_EQ(9u, stk::mesh::count_selected_entities(nodeset1Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+  EXPECT_EQ(0u, stk::mesh::count_selected_entities(nodeset2Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+
+  stk::mesh::PartVector inputPartsToIgnore;
+  stk::mesh::PartVector outputPartsToIgnore;
+
+  test_write_then_read_nodeset_assemblies(1, outputPartsToIgnore, inputPartsToIgnore);
 }
 
 TEST_F(Assembly, readWriteAssembly_simple_excludeBlock2)
@@ -87,7 +200,69 @@ TEST_F(Assembly, readWriteAssembly_simple_excludeBlock2)
   stk::io::fill_mesh("generated:2x2x2", get_bulk());
   move_element(1, block1Part, block2Part);
 
-  test_write_then_read_assemblies(1, {&block2Part});
+  test_write_then_read_block_assemblies(1, {&block2Part});
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_excludeSurface2)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) {
+    return;
+  }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames{"surface_1", "surface_2"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& surface1Part = create_io_part(partNames[0], 1, stk::topology::QUAD_4);
+  stk::mesh::Part& surface2Part = create_io_part(partNames[1], 2, stk::topology::QUAD_4);
+  declare_subsets(assemblyPart, {&surface1Part, &surface2Part});
+  stk::io::fill_mesh("generated:2x2x2|sideset:xX", get_bulk());
+
+  EXPECT_EQ(4u, stk::mesh::count_selected_entities(surface1Part, get_bulk().buckets(get_meta().side_rank())));
+  EXPECT_EQ(4u, stk::mesh::count_selected_entities(surface2Part, get_bulk().buckets(get_meta().side_rank())));
+
+  stk::mesh::PartVector outputPartsToIgnore;
+  outputPartsToIgnore.push_back(get_meta().get_part("surface_2"));
+  test_for_null_parts(outputPartsToIgnore);
+
+  stk::mesh::PartVector inputPartsToIgnore;
+  inputPartsToIgnore.push_back(get_meta().get_part("surface_1_quad4"));
+  inputPartsToIgnore.push_back(get_meta().get_part("surface_2_quad4"));
+  inputPartsToIgnore.push_back(get_meta().get_part("surface_2"));
+  test_for_null_parts(inputPartsToIgnore);
+
+  test_write_then_read_surface_assemblies(1, outputPartsToIgnore, inputPartsToIgnore);
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_excludeNodeset2)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) {
+    return;
+  }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames{"nodelist_1", "nodelist_2"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& nodeset1Part = create_io_part(partNames[0], 1, stk::topology::NODE);
+  stk::mesh::Part& nodeset2Part = create_io_part(partNames[1], 2, stk::topology::NODE);
+  declare_subsets(assemblyPart, {&nodeset1Part, &nodeset2Part});
+  stk::io::fill_mesh("generated:2x2x2|nodeset:xX", get_bulk());
+
+  EXPECT_EQ(9u, stk::mesh::count_selected_entities(nodeset1Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+  EXPECT_EQ(9u, stk::mesh::count_selected_entities(nodeset2Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+
+  stk::mesh::PartVector inputPartsToIgnore;
+  inputPartsToIgnore.push_back(get_meta().get_part("nodelist_2"));
+  test_for_null_parts(inputPartsToIgnore);
+
+  stk::mesh::PartVector outputPartsToIgnore;
+  outputPartsToIgnore.push_back(get_meta().get_part("nodelist_2"));
+  test_for_null_parts(outputPartsToIgnore);
+
+  test_write_then_read_nodeset_assemblies(1, outputPartsToIgnore, inputPartsToIgnore);
 }
 
 TEST_F(Assembly, readWriteAssembly_simple_excludeBothAssemblyBlocks)
@@ -107,7 +282,135 @@ TEST_F(Assembly, readWriteAssembly_simple_excludeBothAssemblyBlocks)
   move_element(1, block1Part, block2Part);
   move_element(2, block1Part, block3Part);
 
-  test_write_then_read_assemblies(0, {&block2Part, &block3Part});
+  test_write_then_read_block_assemblies(0, {&block2Part, &block3Part});
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_excludeBothAssemblySurfaces)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) {
+    return;
+  }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames{"surface_1", "surface_2", "surface_3"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& surface1Part = create_io_part(partNames[0], 1, stk::topology::QUAD_4);
+  stk::mesh::Part& surface2Part = create_io_part(partNames[1], 2, stk::topology::QUAD_4);
+  stk::mesh::Part& surface3Part = create_io_part(partNames[2], 3, stk::topology::QUAD_4);
+  declare_subsets(assemblyPart, {&surface2Part, &surface3Part});
+  stk::io::fill_mesh("generated:2x2x2|sideset:xyz", get_bulk());
+
+  EXPECT_EQ(4u, stk::mesh::count_selected_entities(surface1Part, get_bulk().buckets(get_meta().side_rank())));
+  EXPECT_EQ(4u, stk::mesh::count_selected_entities(surface2Part, get_bulk().buckets(get_meta().side_rank())));
+  EXPECT_EQ(4u, stk::mesh::count_selected_entities(surface3Part, get_bulk().buckets(get_meta().side_rank())));
+
+  stk::mesh::PartVector outputPartsToIgnore;
+  outputPartsToIgnore.push_back(get_meta().get_part("surface_2"));
+  outputPartsToIgnore.push_back(get_meta().get_part("surface_3"));
+  test_for_null_parts(outputPartsToIgnore);
+
+  stk::mesh::PartVector inputPartsToIgnore;
+  inputPartsToIgnore.push_back(get_meta().get_part("surface_1_quad4"));
+  inputPartsToIgnore.push_back(get_meta().get_part("surface_2_quad4"));
+  inputPartsToIgnore.push_back(get_meta().get_part("surface_3_quad4"));
+  inputPartsToIgnore.push_back(get_meta().get_part("surface_2"));
+  inputPartsToIgnore.push_back(get_meta().get_part("surface_3"));
+  test_for_null_parts(inputPartsToIgnore);
+
+  test_write_then_read_surface_assemblies(0, outputPartsToIgnore, inputPartsToIgnore);
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_excludeBothAssemblyNodesets)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) {
+    return;
+  }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames{"nodelist_1", "nodelist_2", "nodelist_3"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& nodeset1Part = create_io_part(partNames[0], 1, stk::topology::NODE);
+  stk::mesh::Part& nodeset2Part = create_io_part(partNames[1], 2, stk::topology::NODE);
+  stk::mesh::Part& nodeset3Part = create_io_part(partNames[2], 3, stk::topology::NODE);
+  declare_subsets(assemblyPart, {&nodeset2Part, &nodeset3Part});
+  stk::io::fill_mesh("generated:2x2x2|nodeset:xyz", get_bulk());
+
+  EXPECT_EQ(9u, stk::mesh::count_selected_entities(nodeset1Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+  EXPECT_EQ(9u, stk::mesh::count_selected_entities(nodeset2Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+  EXPECT_EQ(9u, stk::mesh::count_selected_entities(nodeset3Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+
+  stk::mesh::PartVector inputPartsToIgnore;
+  inputPartsToIgnore.push_back(get_meta().get_part("nodelist_2"));
+  inputPartsToIgnore.push_back(get_meta().get_part("nodelist_3"));
+  test_for_null_parts(inputPartsToIgnore);
+
+  stk::mesh::PartVector outputPartsToIgnore;
+  outputPartsToIgnore.push_back(get_meta().get_part("nodelist_2"));
+  outputPartsToIgnore.push_back(get_meta().get_part("nodelist_3"));
+  test_for_null_parts(outputPartsToIgnore);
+
+  test_write_then_read_nodeset_assemblies(0, outputPartsToIgnore, inputPartsToIgnore);
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_includeBothAssemblySurfaces)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) {
+    return;
+  }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames{"surface_1", "surface_2", "surface_3"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& surface1Part = create_io_part(partNames[0], 1, stk::topology::QUAD_4);
+  stk::mesh::Part& surface2Part = create_io_part(partNames[1], 2, stk::topology::QUAD_4);
+  stk::mesh::Part& surface3Part = create_io_part(partNames[2], 3, stk::topology::QUAD_4);
+  declare_subsets(assemblyPart, {&surface2Part, &surface3Part});
+  stk::io::fill_mesh("generated:2x2x2|sideset:xyz", get_bulk());
+
+  EXPECT_EQ(4u, stk::mesh::count_selected_entities(surface1Part, get_bulk().buckets(get_meta().side_rank())));
+  EXPECT_EQ(4u, stk::mesh::count_selected_entities(surface2Part, get_bulk().buckets(get_meta().side_rank())));
+  EXPECT_EQ(4u, stk::mesh::count_selected_entities(surface3Part, get_bulk().buckets(get_meta().side_rank())));
+
+  stk::mesh::PartVector outputPartsToIgnore;
+  stk::mesh::PartVector inputPartsToIgnore;
+  inputPartsToIgnore.push_back(get_meta().get_part("surface_2_quad4"));
+  inputPartsToIgnore.push_back(get_meta().get_part("surface_3_quad4"));
+  test_for_null_parts(inputPartsToIgnore);
+
+  test_write_then_read_surface_assemblies(1, outputPartsToIgnore, inputPartsToIgnore);
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_includeBothAssemblyNodesets)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) {
+    return;
+  }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames{"nodelist_1", "nodelist_2", "nodelist_3"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& nodeset1Part = create_io_part(partNames[0], 1, stk::topology::NODE);
+  stk::mesh::Part& nodeset2Part = create_io_part(partNames[1], 2, stk::topology::NODE);
+  stk::mesh::Part& nodeset3Part = create_io_part(partNames[2], 3, stk::topology::NODE);
+  declare_subsets(assemblyPart, {&nodeset2Part, &nodeset3Part});
+  stk::io::fill_mesh("generated:2x2x2|nodeset:xyz", get_bulk());
+
+  EXPECT_EQ(9u, stk::mesh::count_selected_entities(nodeset1Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+  EXPECT_EQ(9u, stk::mesh::count_selected_entities(nodeset2Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+  EXPECT_EQ(9u, stk::mesh::count_selected_entities(nodeset3Part, get_bulk().buckets(stk::topology::NODE_RANK)));
+
+  stk::mesh::PartVector inputPartsToIgnore;
+  stk::mesh::PartVector outputPartsToIgnore;
+
+  test_write_then_read_nodeset_assemblies(1, outputPartsToIgnore, inputPartsToIgnore);
 }
 
 TEST_F(Assembly, readWriteAssembly_multiple)
@@ -128,7 +431,7 @@ TEST_F(Assembly, readWriteAssembly_multiple)
   stk::io::fill_mesh("generated:2x2x2", get_bulk());
   move_element(1, block1Part, block2Part);
 
-  test_write_then_read_assemblies(2);
+  test_write_then_read_block_assemblies(2);
 }
 
 TEST_F(Assembly, readWriteAssembly_hierarchy)
@@ -160,7 +463,7 @@ TEST_F(Assembly, readWriteAssembly_hierarchy)
   move_element(1, block1Part, block2Part);
   move_element(2, block1Part, block3Part);
 
-  test_write_then_read_assemblies(3);
+  test_write_then_read_block_assemblies(3);
 }
 
 TEST_F(Assembly, readWriteAssembly_deeperHierarchy)
@@ -180,6 +483,9 @@ TEST_F(Assembly, readWriteAssembly_deeperHierarchy)
   move_element(1, block1Part, block2Part);
   move_element(2, block1Part, block3Part);
 
-  test_write_then_read_assemblies(6);
+  test_write_then_read_block_assemblies(6);
 }
 
+}  // namespace unit_test
+}  // namespace io
+}  // namespace stk

@@ -69,7 +69,7 @@ SET(BUILD_NAME_DETAILS UVM_DEPRECATED_CRS)
 
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
-SET(Trilinos_TRACK Experimental)    # Set the CDash track
+SET(Trilinos_TRACK Nightly)    # Set the CDash track
 SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES Amesos2 Belos Tpetra Ifpack2 MueLu Xpetra Zoltan2)

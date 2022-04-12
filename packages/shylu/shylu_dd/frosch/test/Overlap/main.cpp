@@ -208,8 +208,8 @@ int main(int argc, char *argv[])
             RCP<Map<LO,GO,NO> > UniqueMap;
 
             if (DOFOrdering == 0) {
-                Array<GO> uniqueMapArray(dofsPerNodeVector[block]*UniqueMapTmp->getNodeNumElements());
-                for (LO i=0; i<(LO) UniqueMapTmp->getNodeNumElements(); i++) {
+                Array<GO> uniqueMapArray(dofsPerNodeVector[block]*UniqueMapTmp->getLocalNumElements());
+                for (LO i=0; i<(LO) UniqueMapTmp->getLocalNumElements(); i++) {
                     for (UN j=0; j<dofsPerNodeVector[block]; j++) {
                         uniqueMapArray[dofsPerNodeVector[block]*i+j] = dofsPerNodeVector[block]*UniqueMapTmp->getGlobalElement(i)+j;
                     }
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
 
                 UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
                 K[block] = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KTmp->getGlobalMaxNumRowEntries());
-                for (LO i=0; i<(LO) UniqueMapTmp->getNodeNumElements(); i++) {
+                for (LO i=0; i<(LO) UniqueMapTmp->getLocalNumElements(); i++) {
                     ArrayView<const LO> indices;
                     ArrayView<const SC> values;
                     KTmp->getLocalRowView(i,indices,values);
@@ -232,16 +232,16 @@ int main(int argc, char *argv[])
                 }
                 K[block]->fillComplete();
             } else if (DOFOrdering == 1) {
-                Array<GO> uniqueMapArray(dofsPerNodeVector[block]*UniqueMapTmp->getNodeNumElements());
-                for (LO i=0; i<(LO) UniqueMapTmp->getNodeNumElements(); i++) {
+                Array<GO> uniqueMapArray(dofsPerNodeVector[block]*UniqueMapTmp->getLocalNumElements());
+                for (LO i=0; i<(LO) UniqueMapTmp->getLocalNumElements(); i++) {
                     for (UN j=0; j<dofsPerNodeVector[block]; j++) {
-                        uniqueMapArray[i+UniqueMapTmp->getNodeNumElements()*j] = UniqueMapTmp->getGlobalElement(i)+(UniqueMapTmp->getMaxAllGlobalIndex()+1)*j;
+                        uniqueMapArray[i+UniqueMapTmp->getLocalNumElements()*j] = UniqueMapTmp->getGlobalElement(i)+(UniqueMapTmp->getMaxAllGlobalIndex()+1)*j;
                     }
                 }
 
                 UniqueMap = MapFactory<LO,GO,NO>::Build(xpetraLib,-1,uniqueMapArray(),0,Comm);
                 K[block] = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMap,KTmp->getGlobalMaxNumRowEntries());
-                for (LO i=0; i<(LO) UniqueMapTmp->getNodeNumElements(); i++) {
+                for (LO i=0; i<(LO) UniqueMapTmp->getLocalNumElements(); i++) {
                     ArrayView<const LO> indices;
                     ArrayView<const SC> values;
                     KTmp->getLocalRowView(i,indices,values);
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
             Array<GO> uniqueMapArray(0);
             GO tmpOffset = 0;
             for (UN block=0; block<(UN) NumberOfBlocks; block++) {
-                ArrayView<const GO> tmpgetGlobalElements = K[block]->getMap()->getNodeElementList();
+                ArrayView<const GO> tmpgetGlobalElements = K[block]->getMap()->getLocalElementList();
                 for (LO i=0; i<tmpgetGlobalElements.size(); i++) {
                     uniqueMapArray.push_back(tmpgetGlobalElements[i]+tmpOffset);
                 }
@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
             tmpOffset = 0;
             KMonolithic = MatrixFactory<SC,LO,GO,NO>::Build(UniqueMapMonolithic,K[0]->getGlobalMaxNumRowEntries());
             for (UN block=0; block<(UN) NumberOfBlocks; block++) {
-                for (LO i=0; i<(LO) K[block]->getNodeNumRows(); i++) {
+                for (LO i=0; i<(LO) K[block]->getLocalNumRows(); i++) {
                     ArrayView<const LO> indices;
                     ArrayView<const SC> values;
                     K[block]->getLocalRowView(i,indices,values);

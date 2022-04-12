@@ -40,7 +40,6 @@
 #ifndef TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DEF_HPP
 #define TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DEF_HPP
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 /// \file Tpetra_Details_localDeepCopyRowMatrix_def.hpp
 /// \brief Definition of function for making a deep copy of a
 ///   Tpetra::RowMatrix's local matrix.
@@ -53,6 +52,9 @@
 #include "Kokkos_Core.hpp"
 #include <algorithm>
 #include <stdexcept>
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+// This file can be deleted when deprecated code is removed
 
 namespace Tpetra {
 namespace Details {
@@ -122,7 +124,7 @@ localDeepCopyLocallyIndexedRowMatrix
     Kokkos::resize(inputValsBuf,maxNumEnt);
   }
 
-  const LO lclNumRows (A.getNodeNumRows ());
+  const LO lclNumRows (A.getLocalNumRows ());
   offset_type curPos = 0;
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
     h_lids_type_const inputInds_av;
@@ -150,7 +152,7 @@ localDeepCopyLocallyIndexedRowMatrix
   Kokkos::deep_copy (val, val_h);
 
   local_graph_device_type lclGraph (ind, ptr);
-  const size_t numCols = A.getColMap ()->getNodeNumElements ();
+  const size_t numCols = A.getColMap ()->getLocalNumElements ();
   return local_matrix_device_type (label, numCols, val, lclGraph);
 }
 

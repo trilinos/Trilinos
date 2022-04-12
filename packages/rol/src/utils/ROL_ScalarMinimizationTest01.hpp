@@ -128,7 +128,7 @@ public:
       A = (Real)((i+1)*(i+1));
       B = (Real)((i+2)*(i+2));
       ScalarMinimizationTest<Real>::run(fx,x,nfval,ngrad,*f,A,B);
-      flag *= std::abs(x-xvector_[i]) < 10.0*std::sqrt(ROL_EPSILON<Real>())*xvector_[i];
+      flag &= std::abs(x-xvector_[i]) < 10.0*std::sqrt(ROL_EPSILON<Real>())*xvector_[i];
 
       stream << "  ";
       stream << std::setw(10) << std::left << (int)A;

@@ -567,7 +567,7 @@ getThyraDomainVector() const
    Teuchos::RCP<Thyra::ProductVectorBase<ScalarT> > p_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<ScalarT> >(vec);
    for(std::size_t i=0;i<gidProviders_.size();i++) {
       TEUCHOS_ASSERT(Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<ScalarT> >(p_vec->getNonconstVectorBlock(i))->spmdSpace()->localSubDim()==
-                     Teuchos::as<int>(getMap(i)->getNodeNumElements()));
+                     Teuchos::as<int>(getMap(i)->getLocalNumElements()));
    }
 
    return vec;
@@ -1012,7 +1012,7 @@ buildTpetraGhostedGraph(int i,int j) const
                                                           // same element blocks
 
    // Count number of entries in each row of graph; needed for graph constructor
-   std::vector<size_t> nEntriesPerRow(map_i->getNodeNumElements(), 0);
+   std::vector<size_t> nEntriesPerRow(map_i->getLocalNumElements(), 0);
    std::vector<std::string>::const_iterator blockItr;
    for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
       std::string blockId = *blockItr;

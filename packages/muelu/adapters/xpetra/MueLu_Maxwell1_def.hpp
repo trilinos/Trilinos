@@ -68,16 +68,15 @@
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
-
+#include <MueLu_HierarchyUtils.hpp>
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-#include "MueLu_Utilities_kokkos.hpp"
+# include "MueLu_Utilities_kokkos.hpp"
 #endif
-
-
 #include "MueLu_VerbosityLevel.hpp"
-
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
+#include <MueLu_OperatorSmoother_decl.hpp>
+#include <MueLu_OperatorSmoother_def.hpp>
 
 #ifdef HAVE_MUELU_CUDA
 #include "cuda_profiler_api.h"
@@ -141,6 +140,7 @@ namespace MueLu {
     }
     std::string  mode_string   = list.get("maxwell1: mode",                  MasterList::getDefault<std::string>("maxwell1: mode"));
     applyBCsTo22_              = list.get("maxwell1: apply BCs to 22",       true);
+    dump_matrices_             = list.get("maxwell1: dump matrices",         MasterList::getDefault<bool>("maxwell1: dump matrices"));
 
     // Default smoother.  We'll copy this around.
     Teuchos::ParameterList defaultSmootherList;
@@ -151,6 +151,7 @@ namespace MueLu {
 
     // Make sure verbosity gets passed to the sublists
     std::string verbosity = list.get("verbosity","high");
+    VerboseObject::SetDefaultVerbLevel(toVerbLevel(verbosity));
 
     // Check the validity of the run mode
     if(mode_string == "standard")          mode_ = MODE_STANDARD;
@@ -230,6 +231,8 @@ namespace MueLu {
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);
 #endif
 
+    parameterList_ = list;
+
   }
 
 
@@ -280,16 +283,8 @@ namespace MueLu {
       GetOStream(Warnings0) << "All edges are detected as boundary edges!" << std::endl;
       mode_ = MODE_EDGE_ONLY;
 
-      // Switch smoother off of Hiptmair
-      if(precList11_.get<std::string>("smoother: type") == "HIPTMAIR") {        
-        precList11_.set("smoother: type",precList11_.get("hiptmair: smoother type 1","CHEBYSHEV"));
-        precList11_.sublist("smoother: sublist") = precList11_.sublist("hiptmair: smoother list 1");
-      }
-
       // Generate single level hierarchy for the edge
-      throw std::runtime_error("Maxwell1: Not yet supported");
-
-      return;
+      precList22_.set("max levels", 1);
     }
       
     if (allNodesBoundary_) {
@@ -297,16 +292,9 @@ namespace MueLu {
       // Do not attempt to construct sub-hierarchies, but just set up a single level preconditioner.
       GetOStream(Warnings0) << "All nodes are detected as boundary edges!" << std::endl;
       mode_ = MODE_EDGE_ONLY;
-      // Switch smoother off of Hiptmair
-      if(precList11_.get<std::string>("smoother: type") == "HIPTMAIR") {        
-        precList11_.set("smoother: type",precList11_.get("hiptmair: smoother type 1","CHEBYSHEV"));
-        precList11_.sublist("smoother: sublist") = precList11_.sublist("hiptmair: smoother list 1");
-      }
 
       // Generate single level hierarchy for the edge
-      throw std::runtime_error("Maxwell1: Not yet supported");
-
-      return;
+      precList22_.set("max levels", 1);
     }
                                               
 
@@ -338,16 +326,30 @@ namespace MueLu {
       Kn_Matrix_ = generate_kn();
     }
 
+    if (parameterList_.get<bool>("rap: fix zero diagonals", true)) {
+      magnitudeType threshold;
+      if (parameterList_.isType<magnitudeType>("rap: fix zero diagonals threshold"))
+        threshold = parameterList_.get<magnitudeType>("rap: fix zero diagonals threshold",
+                                                      Teuchos::ScalarTraits<double>::eps());
+      else
+        threshold = Teuchos::as<magnitudeType>(parameterList_.get<double>("rap: fix zero diagonals threshold",
+                                                                          Teuchos::ScalarTraits<double>::eps()));
+      Scalar replacement = Teuchos::as<Scalar>(parameterList_.get<double>("rap: fix zero diagonals replacement",
+                                                                          MasterList::getDefault<double>("rap: fix zero diagonals replacement")));
+      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(Kn_Matrix_, true, GetOStream(Warnings1), threshold, replacement);
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////
     // Generate the (2,2) Hierarchy
+    Kn_Matrix_->setObjectLabel("Maxwell1 (2,2)");
     Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
 
 
     ////////////////////////////////////////////////////////////////////////////////
     // Copy the relevant (2,2) data to the (1,1) hierarchy
-    Hierarchy11_ = rcp(new Hierarchy());
-    for(int i=0; i<Hierarchy22_->GetNumLevels(); i++) {  
+    Hierarchy11_ = rcp(new Hierarchy("Maxwell1 (1,1)"));
+    for(int i=0; i<Hierarchy22_->GetNumLevels(); i++) {
       Hierarchy11_->AddNewLevel();
       RCP<Level> NodeL = Hierarchy22_->GetLevel(i);
       RCP<Level> EdgeL = Hierarchy11_->GetLevel(i);
@@ -367,12 +369,35 @@ namespace MueLu {
     {
       SM_Matrix_->setObjectLabel("A(1,1)");
       precList11_.set("coarse: max size",1);
-      precList11_.set("max levels",Hierarchy22_->GetNumLevels());      
+      precList11_.set("max levels",Hierarchy22_->GetNumLevels());
+
+      const bool refmaxwellCoarseSolve = (precList11_.get<std::string>("coarse: type",
+                                                                       MasterList::getDefault<std::string>("coarse: type")) == "RefMaxwell");
+      if (refmaxwellCoarseSolve) {
+        GetOStream(Runtime0) << "Maxwell1::compute(): Will set up RefMaxwell coarse solver" << std::endl;
+        precList11_.set("coarse: type", "none");
+      }
+
       //    Hierarchy11_ = MueLu::CreateXpetraPreconditioner(SM_Matrix_, precList11_);
-      RCP<HierarchyManager<SC,LO,GO,NO> > mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(precList11_,SM_Matrix_->getDomainMap()->getComm()));
+      // Rip off non-serializable data before validation
+      Teuchos::ParameterList nonSerialList11, processedPrecList11;
+      MueLu::ExtractNonSerializableData(precList11_, processedPrecList11, nonSerialList11);
+      RCP<HierarchyManager<SC,LO,GO,NO> > mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(processedPrecList11,SM_Matrix_->getDomainMap()->getComm()));
       Hierarchy11_->setlib(SM_Matrix_->getDomainMap()->lib());
       Hierarchy11_->SetProcRankVerbose(SM_Matrix_->getDomainMap()->getComm()->getRank());
+      // Stick the non-serializible data on the hierarchy.
+      HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*Hierarchy11_, nonSerialList11);
       mueLuFactory->SetupHierarchy(*Hierarchy11_);
+
+      if (refmaxwellCoarseSolve) {
+        GetOStream(Runtime0) << "Maxwell1::compute(): Setting up RefMaxwell coarse solver" << std::endl;
+        auto coarseLvl = Hierarchy11_->GetLevel(Hierarchy11_->GetNumLevels()-1);
+        auto coarseSolver = rcp(new MueLu::OperatorSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>("RefMaxwell",
+                                                                                                    precList11_.sublist("coarse: params")));
+        coarseSolver->Setup(*coarseLvl);
+        coarseLvl->Set("PreSmoother",
+                       rcp_dynamic_cast<SmootherBase>(coarseSolver, true));
+      }
       
       if(mode_ == MODE_REFMAXWELL) {
         if(Hierarchy11_->GetNumLevels() > 1) {
@@ -385,6 +410,8 @@ namespace MueLu {
     ////////////////////////////////////////////////////////////////////////////////
     // Allocate temporary MultiVectors for solve (only needed for RefMaxwell style)
     allocateMemory(1);
+
+    describe(GetOStream(Runtime0));
 
   }
 
@@ -415,8 +442,6 @@ namespace MueLu {
     RCP<RAPFactory> rapFact = rcp(new RAPFactory());
     ParameterList rapList = *(rapFact->GetValidParameterList());
     rapList.set("transpose: use implicit", true);
-    rapList.set("rap: fix zero diagonals", parameterList_.get<bool>("rap: fix zero diagonals", true));
-    rapList.set("rap: fix zero diagonals threshold", parameterList_.get<double>("rap: fix zero diagonals threshold", Teuchos::ScalarTraits<double>::eps()));
     rapList.set("rap: triple product", parameterList_.get<bool>("rap: triple product", false));
     rapFact->SetParameterList(rapList);
     coarseLevel.Request("A", rapFact.get());
@@ -594,7 +619,7 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseStandard(const MultiVector& RHS, MultiVector& X) const {
-    Hierarchy11_->Iterate(RHS,X);
+    Hierarchy11_->Iterate(RHS,X,1,true);
   }
  
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

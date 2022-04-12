@@ -56,8 +56,8 @@ using std::endl;
 
 //
 // These typedefs make main() as generic as possible.
-//
-typedef double scalar_type;
+// 
+typedef Tpetra::MultiVector<>::scalar_type scalar_type;
 typedef Tpetra::Map<>::local_ordinal_type local_ordinal_type;
 typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
 typedef Tpetra::Map<>::node_type node_type;
@@ -234,7 +234,7 @@ main (int argc, char *argv[])
       // modify numRows to be the total number of rows in the sparse
       // matrix.  Otherwise, it will leave numRows alone.
       std::pair<RCP<map_type>, RCP<sparse_matrix_type> > results =
-        loadSparseMatrix<local_ordinal_type, global_ordinal_type, node_type> (pComm, filename, numRows, debugOut);
+        loadSparseMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> (pComm, filename, numRows, debugOut);
       map = results.first;
       M = results.second;
     }
@@ -250,14 +250,14 @@ main (int argc, char *argv[])
     }
     // Loading the sparse matrix may have changed numRows, so check
     // again that the number of rows per process is >= numCols.
-    // getNodeNumElements() returns a size_t, which is unsigned, and you
+    // getLocalNumElements() returns a size_t, which is unsigned, and you
     // shouldn't compare signed and unsigned values.
-    if (map->getNodeNumElements() < static_cast<size_t>(numCols))
+    if (map->getLocalNumElements() < static_cast<size_t>(numCols))
     {
       std::ostringstream os;
       os << "The number of elements on this process " << pComm->getRank()
         << " is too small for the number of columns that you want to test."
-        << "  There are " << map->getNodeNumElements() << " elements on "
+        << "  There are " << map->getLocalNumElements() << " elements on "
         "this process, but the normalize() method of the MatOrthoManager "
         "subclass will need to process a multivector with " << numCols
         << " columns.  Not all MatOrthoManager subclasses can handle a "

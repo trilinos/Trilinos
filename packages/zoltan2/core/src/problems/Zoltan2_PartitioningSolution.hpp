@@ -1602,7 +1602,7 @@ template <typename Adapter>
     try{
       procDist_.resize(nprocs+1);
     }
-    catch (std::exception &e){
+    catch (std::exception &){
       throw(std::bad_alloc());
     }
 
@@ -1631,7 +1631,7 @@ template <typename Adapter>
       try{
         partDist_.resize(size_t(fParts+1));
       }
-      catch (std::exception &e){
+      catch (std::exception &){
         throw(std::bad_alloc());
       }
 
@@ -1659,7 +1659,7 @@ template <typename Adapter>
       try{
         procDist_.resize(size_t(fProcs+1));
       }
-      catch (std::exception &e){
+      catch (std::exception &){
         throw(std::bad_alloc());
       }
 

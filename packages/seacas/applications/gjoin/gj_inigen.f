@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C Copyright(C) 1999-2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -49,13 +49,14 @@ C   --   kltsss - OUT - index of LTSESS; the sides for all sets
 C   --   kltsnc - OUT - index of LTSSNC; the index of the first dist factor for each face.
 C   --   KFACSS - OUT - index of FACESS; the distribution factors for all sets
 
+      include 'exodusII.inc'
       include 'gj_namlen.blk'
 
       DIMENSION A(*)
       LOGICAL FIRST
 
       if (FIRST) THEN
-         namlen = 0
+         namlen = MXNAME
       end if
 
       IF (FIRST) THEN

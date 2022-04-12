@@ -26,7 +26,7 @@ int searchIt(const map_t &myMap, const std::string &myName)
 
   // Print the map elements
   std::cout << me << " " << myName << " MINE: ";
-  for (size_t i = 0; i < myMap.getNodeNumElements(); i++)
+  for (size_t i = 0; i < myMap.getLocalNumElements(); i++)
     std::cout << myMap.getGlobalElement(i) << " ";
   std::cout << std::endl;
 

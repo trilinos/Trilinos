@@ -85,7 +85,7 @@ namespace MueLu {
     RCP<const Map> colmap = Ain->getColMap();
     RCP<CrsOMatrix> Aout = rcp(new CrsOMatrix(rowmap, expectedNNZperRow_ <= 0 ? Ain->getGlobalMaxNumRowEntries() : expectedNNZperRow_));
     // loop over local rows
-    for(size_t row=0; row<Ain->getNodeNumRows(); row++)
+    for(size_t row=0; row<Ain->getLocalNumRows(); row++)
       {
         size_t nnz = Ain->getNumEntriesInLocalRow(row);
 

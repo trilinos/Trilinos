@@ -173,6 +173,9 @@ typedef MueLu::LineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Line
 #ifdef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::LocalPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> LocalPermutationStrategy;
 #endif
+#ifdef MUELU_LOWPRECISIONFACTORY_SHORT
+typedef MueLu::LowPrecisionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> LowPrecisionFactory;
+#endif
 #ifdef MUELU_MAPTRANSFERFACTORY_SHORT
 typedef MueLu::MapTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapTransferFactory;
 #endif

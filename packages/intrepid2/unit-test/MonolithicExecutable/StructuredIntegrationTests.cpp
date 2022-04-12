@@ -98,8 +98,8 @@ void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedVect
   
   INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(vectorDataRight.extent_int(2) != vectorDataLeft.extent_int(2), std::invalid_argument, "vectorData point dimensions must match");
   INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(cellMeasures.extent_int(1) != vectorDataLeft.extent_int(2), std::invalid_argument,
-                                           "cellMeasures point dimension (" + std::to_string(cellMeasures.extent_int(1)) +
-                                           ") must match vectorData point dimension (" + std::to_string(vectorDataLeft.extent_int(2)) + ")");
+                                           std::string("cellMeasures point dimension (" + std::to_string(cellMeasures.extent_int(1)) +
+                                                       ") must match vectorData point dimension (" + std::to_string(vectorDataLeft.extent_int(2)) + ")").c_str());
   
 //  printFunctor4(vectorDataLeft, std::cout, "vectorDataLeft");
 //  printFunctor2(cellMeasures, std::cout, "cellMeasures");

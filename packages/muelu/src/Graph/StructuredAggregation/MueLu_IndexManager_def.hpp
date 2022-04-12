@@ -267,7 +267,6 @@ namespace MueLu {
     *out << "lCoarseNodesPerDir: " << lCoarseNodesPerDir << std::endl;
     *out << "gCoarseNodesPerDir: " << gCoarseNodesPerDir << std::endl;
     *out << "ghostedNodesPerDir: " << ghostedNodesPerDir << std::endl;
-    *out << "gNumCoarseNodes=" << gNumCoarseNodes << std::endl;
     *out << "lNumCoarseNodes=" << lNumCoarseNodes << std::endl;
     *out << "numGhostedNodes=" << numGhostedNodes << std::endl;
   }

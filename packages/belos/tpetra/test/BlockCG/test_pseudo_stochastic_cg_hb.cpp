@@ -70,8 +70,7 @@ main (int argc, char *argv[])
   using Teuchos::rcpFromRef;
   using std::endl;
   using std::cout;
-
-  typedef double                           ST;
+  typedef Tpetra::MultiVector<>::scalar_type ST;
   typedef Teuchos::ScalarTraits<ST>       STS;
   typedef STS::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;

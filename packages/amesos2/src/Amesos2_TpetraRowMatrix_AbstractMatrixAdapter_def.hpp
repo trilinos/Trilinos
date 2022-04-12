@@ -165,7 +165,7 @@ namespace Amesos2 {
     Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
     DerivedMat>::getLocalNNZ_impl() const
   {
-    return this->mat_->getNodeNumEntries();
+    return this->mat_->getLocalNumEntries();
   }
 
   template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node, class DerivedMat>

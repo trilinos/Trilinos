@@ -86,7 +86,7 @@ namespace Ioss {
   {
     PAR_UNUSED(communicator);
     PAR_UNUSED(where);
-    int                 sum = exists_ ? 1 : 0;
+    int sum = exists_ ? 1 : 0;
 
 #ifdef SEACAS_HAVE_MPI
     Ioss::ParallelUtils pu(communicator);
@@ -98,13 +98,13 @@ namespace Ioss {
       pu.all_gather(sum, result);
       sum = std::accumulate(result.begin(), result.end(), 0);
       if (my_rank == 0 && sum < my_size) {
-	std::vector<size_t> procs;
-	for (int i = 0; i < my_size; i++) {
-	  if (result[i] == 0) {
-	    procs.push_back(i);
-	  }
-	}
-	where = Ioss::Utils::format_id_list(procs, "--");
+        std::vector<size_t> procs;
+        for (int i = 0; i < my_size; i++) {
+          if (result[i] == 0) {
+            procs.push_back(i);
+          }
+        }
+        where = Ioss::Utils::format_id_list(procs, "--");
       }
     }
 #endif

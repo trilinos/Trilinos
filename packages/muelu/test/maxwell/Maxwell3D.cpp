@@ -582,6 +582,8 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
           sublist->set(*key_it, M1_Matrix);
         else if (value == "Ms")
           sublist->set(*key_it, Ms_Matrix);
+        else if (value == "Kn")
+          sublist->set(*key_it, Kn_Matrix);
         else if (value == "Coordinates")
           sublist->set(*key_it, coords);
         // else if (*key_it == "Nullspace")
@@ -613,6 +615,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     // Build Stratimikos solver
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
     Stratimikos::enableMueLuRefMaxwell<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+    Stratimikos::enableMueLuMaxwell1<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
 #ifdef HAVE_MUELU_IFPACK2
     typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
@@ -728,6 +731,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
+  if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1" || precType == "ML-Maxwell") {
+    if (SM_file != "")
+      M1_file = "";
+    M0_file = "";
+  }
+
   if (xml == ""){
     if (precType == "MueLu-RefMaxwell")
       xml = "Maxwell.xml";
@@ -807,7 +816,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::ArrayRCP<LO> colInd;
     Teuchos::ArrayRCP<SC> values;
     Teuchos::ArrayRCP<const SC> diags = diag->getData(0);
-    size_t nodeNumElements = node_map->getNodeNumElements();
+    size_t nodeNumElements = node_map->getLocalNumElements();
     M0inv_CrsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
     SC ONE = Teuchos::ScalarTraits<Scalar>::one();
     for (size_t i = 0; i < nodeNumElements; i++) {

@@ -9,6 +9,7 @@ try
   disp('Custom aggregation test passed by running to completion.');
   exit(0);
 catch me
-  disp('Test failed, on exception.');
+  disp('Test failed, on exception:');
+  disp(getReport(me));
   exit(-2);
 end

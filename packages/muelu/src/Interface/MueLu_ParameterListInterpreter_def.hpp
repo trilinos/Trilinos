@@ -106,6 +106,7 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_NodePartitionInterface.hpp"
+#include "MueLu_LowPrecisionFactory.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
@@ -699,6 +700,9 @@ namespace MueLu {
 
     // === Repartitioning ===
     UpdateFactoryManager_Repartition(paramList, defaultList, manager, levelID, keeps, nullSpaceFactory);
+
+    // === Lower precision transfers ===
+    UpdateFactoryManager_LowPrecision(paramList, defaultList, manager, levelID, keeps);
 
     // === Final Keeps for Reuse ===
     if ((reuseType == "RAP" || reuseType == "full") && levelID) {
@@ -1766,6 +1770,37 @@ namespace MueLu {
       paramList.set("repartition: enable",false);
       this->GetOStream(Warnings0) << "No repartitioning available for a serial run\n";
 #endif
+    }
+  }
+
+  // =====================================================================================================
+  // ========================================= Low precision transfers ===================================
+  // =====================================================================================================
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  UpdateFactoryManager_LowPrecision(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
+                                    int levelID, std::vector<keep_pair>& keeps) const
+  {
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "transfers: half precision", bool, enableLowPrecision);
+
+    if (enableLowPrecision) {
+      // Low precision P
+      auto newP = rcp(new LowPrecisionFactory());
+      ParameterList newPparams;
+      newPparams.set("matrix key", "P");
+      newP->  SetParameterList(newPparams);
+      newP->  SetFactory("P", manager.GetFactory("P"));
+      manager.SetFactory("P", newP);
+
+      if (!this->implicitTranspose_) {
+        // Low precision R
+        auto newR = rcp(new LowPrecisionFactory());
+        ParameterList newRparams;
+        newRparams.set("matrix key", "R");
+        newR->  SetParameterList(newRparams);
+        newR->  SetFactory("R", manager.GetFactory("R"));
+        manager.SetFactory("R", newR);
+      }
     }
   }
 
