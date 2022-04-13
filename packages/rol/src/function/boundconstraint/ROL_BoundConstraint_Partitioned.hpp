@@ -149,7 +149,7 @@ public:
     }
   }
 
-  void project( Vector<Real> &x ) const override {
+  void project( Vector<Real> &x ) {
     PV &xpv = dynamic_cast<PV&>(x);
     for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
@@ -158,7 +158,7 @@ public:
     }
   }
 
-  void projectInterior( Vector<Real> &x ) const override {
+  void projectInterior( Vector<Real> &x ) {
     PV &xpv = dynamic_cast<PV&>(x);
     for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
@@ -167,7 +167,7 @@ public:
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const override {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
           PV &vpv = dynamic_cast<PV&>(v);
     const PV &xpv = dynamic_cast<const PV&>(x);
     for( uint k=0; k<dim_; ++k ) {
@@ -177,7 +177,7 @@ public:
     }
  }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) const override {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
           PV &vpv = dynamic_cast<PV&>(v);
     const PV &gpv = dynamic_cast<const PV&>(g);
     const PV &xpv = dynamic_cast<const PV&>(x);
@@ -188,7 +188,7 @@ public:
     }
   }
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const override {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
           PV &vpv = dynamic_cast<PV&>(v);
     const PV &xpv = dynamic_cast<const PV&>(x);
    for( uint k=0; k<dim_; ++k ) {
@@ -198,7 +198,7 @@ public:
     }
   }
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const override {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
           PV &vpv = dynamic_cast<PV&>(v);
     const PV &gpv = dynamic_cast<const PV&>(g);
     const PV &xpv = dynamic_cast<const PV&>(x);
@@ -209,7 +209,7 @@ public:
     }
   }
 
-  bool isFeasible( const Vector<Real> &v ) const override {
+  bool isFeasible( const Vector<Real> &v ) {
     bool feasible = true;
     const PV &vs = dynamic_cast<const PV&>(v);
     for( uint k=0; k<dim_; ++k ) {
@@ -220,7 +220,7 @@ public:
     return feasible;
   }
 
-  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override {
+  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
           PV &dvpv = dynamic_cast<PV&>(dv);
     const PV &vpv  = dynamic_cast<const PV&>(v);
     const PV &xpv  = dynamic_cast<const PV&>(x);
@@ -232,7 +232,7 @@ public:
     }
   }
 
-  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override {
+  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
           PV &dvpv = dynamic_cast<PV&>(dv);
     const PV &vpv  = dynamic_cast<const PV&>(v);
     const PV &xpv  = dynamic_cast<const PV&>(x);

@@ -253,7 +253,7 @@ public:
     }
   }
 
-  void project( Vector<Real> &x ) const override {
+  void project( Vector<Real> &x ) {
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<StdVector<Real>> xs = dynamic_cast<RiskVector<Real>&>(x).getStatisticVector(0);
       statObj_bc_->project(*xs);
@@ -273,7 +273,7 @@ public:
     }
   }
 
-  void projectInterior( Vector<Real> &x ) const override {
+  void projectInterior( Vector<Real> &x ) {
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<StdVector<Real>> xs = dynamic_cast<RiskVector<Real>&>(x).getStatisticVector(0);
       statObj_bc_->projectInterior(*xs);
@@ -293,7 +293,7 @@ public:
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const override {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
       Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
@@ -316,7 +316,7 @@ public:
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const override {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
       Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(0);
@@ -342,7 +342,7 @@ public:
     }
   }
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const override {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
       Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
@@ -365,7 +365,7 @@ public:
     }
   }
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const override {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
       Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(0);
@@ -391,7 +391,7 @@ public:
     }
   }
 
-  const Ptr<const Vector<Real>> getLowerBound(void) const override {
+  const Ptr<const Vector<Real>> getLowerBound(void) const {
     if (!isLOinitialized_) {
       const Ptr<const Vector<Real>> vlo = bc_->getLowerBound();
       Ptr<std::vector<Real>> lowerObj = makePtr<std::vector<Real>>(lowerObj_);
@@ -407,7 +407,7 @@ public:
     return lo_;
   }
 
-  const Ptr<const Vector<Real>> getUpperBound(void) const override {
+  const Ptr<const Vector<Real>> getUpperBound(void) const {
     if (!isHIinitialized_) {
       const Ptr<const Vector<Real>> vhi = bc_->getUpperBound();
       Ptr<std::vector<Real>> upperObj = makePtr<std::vector<Real>>(upperObj_);
@@ -423,7 +423,7 @@ public:
     return hi_;
   }
 
-  bool isFeasible( const Vector<Real> &v ) const override {
+  bool isFeasible( const Vector<Real> &v ) {
     bool flagstat = true, flagcon = true, flagvec = true;
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(0);
@@ -445,7 +445,7 @@ public:
     return (flagstat && flagcon && flagvec);
   }
 
-  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override {
+  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<StdVector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getStatisticVector(0);
       Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(0);
@@ -474,7 +474,7 @@ public:
     }
   }
 
-  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override {
+  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
     if ( augmentedObj_ && activatedObj_ ) {
       Ptr<StdVector<Real>>      dvs = dynamic_cast<RiskVector<Real>&>(dv).getStatisticVector(0);
       Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(0);

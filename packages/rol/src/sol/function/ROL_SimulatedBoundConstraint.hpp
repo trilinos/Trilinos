@@ -99,7 +99,7 @@ public:
     u_ = makePtr<SimulatedVector<Real>>(uvec,sampler_->getBatchManager());
   }
 
-  void project( Vector<Real> &x ) const override {
+  void project( Vector<Real> &x ) {
     for( int k=0; k<sampler_->numMySamples(); ++k ) {
       if( bnd_->isActivated() ) {
         bnd_->project(getVector(x,k));
@@ -107,7 +107,7 @@ public:
     }
   }
 
-  void projectInterior( Vector<Real> &x ) const override {
+  void projectInterior( Vector<Real> &x ) {
     for( int k=0; k<sampler_->numMySamples(); ++k ) {
       if( bnd_->isActivated() ) {
         bnd_->projectInterior(getVector(x,k));
@@ -115,7 +115,7 @@ public:
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const override {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if( bnd_->isActivated() ) {
       for( int k=0; k<sampler_->numMySamples(); ++k ) {
         bnd_->pruneUpperActive(getVector(v,k),getVector(x,k),eps);
@@ -123,7 +123,7 @@ public:
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const override {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if( bnd_->isActivated() ) {
       for( int k=0; k<sampler_->numMySamples(); ++k ) {
         bnd_->pruneUpperActive(getVector(v,k),getVector(g,k),getVector(x,k),xeps,geps);
@@ -131,7 +131,7 @@ public:
     }
   }
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) const override {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
    if( bnd_->isActivated() ) {
      for( int k=0; k<sampler_->numMySamples(); ++k ) {
         bnd_->pruneLowerActive(getVector(v,k),getVector(x,k),eps);
@@ -139,7 +139,7 @@ public:
     }
   }
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) const override {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if( bnd_->isActivated() ) {
       for( int k=0; k<sampler_->numMySamples(); ++k ) {
         bnd_->pruneLowerActive(getVector(v,k),getVector(g,k),getVector(x,k),xeps,geps);
@@ -147,15 +147,15 @@ public:
     }
   }
 
-  const Ptr<const Vector<Real>> getLowerBound( void ) const override{
+  const Ptr<const Vector<Real>> getLowerBound( void ) const {
     return l_;
   }
 
-  const Ptr<const Vector<Real>> getUpperBound( void ) const override {
+  const Ptr<const Vector<Real>> getUpperBound( void ) const {
     return u_;
   }
 
-  bool isFeasible( const Vector<Real> &v ) const override {
+  bool isFeasible( const Vector<Real> &v ) {
     bool feasible = true;
     if(bnd_->isActivated()) {
       for( int k=0; k<sampler_->numMySamples(); ++k ) {
@@ -165,7 +165,7 @@ public:
     return feasible;
   }
 
-  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override {
+  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
     if( bnd_->isActivated() ) {
       for( int k=0; k<sampler_->numMySamples(); ++k ) {
         bnd_->applyInverseScalingFunction(getVector(dv,k),getVector(v,k),getVector(x,k),getVector(g,k));
@@ -173,7 +173,7 @@ public:
     }
   }
 
-  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const override {
+  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
     if( bnd_->isActivated() ) {
       for( int k=0; k<sampler_->numMySamples(); ++k ) {
         bnd_->applyScalingFunctionJacobian(getVector(dv,k),getVector(v,k),getVector(x,k),getVector(g,k));
