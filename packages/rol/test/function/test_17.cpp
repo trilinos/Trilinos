@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  test_11.cpp
+/*! \file  test_17.cpp
     \brief Checks that Coleman-Li BoundConstraint functions agree across implementations.
 
 */
