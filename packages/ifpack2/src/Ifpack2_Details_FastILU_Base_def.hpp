@@ -155,7 +155,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 initialize()
 {
-
   const std::string timerName ("Ifpack2::FastILU::initialize");
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {
