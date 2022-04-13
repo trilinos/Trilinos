@@ -840,7 +840,7 @@ void AZ_free_memory(int label)
 *******************************************************************************/
 
 {
-  (void) AZ_manage_memory((unsigned int) 0, AZ_CLEAR, label, (char *) NULL,
+  (void) AZ_manage_memory((size_t) 0, AZ_CLEAR, label, (char *) NULL,
                           (int *) NULL);
 }
 
@@ -848,7 +848,7 @@ void AZ_free_memory(int label)
 /******************************************************************************/
 /******************************************************************************/
 
-double *AZ_manage_memory(unsigned int input_size, int action, int type,
+double *AZ_manage_memory(size_t input_size, int action, int type,
                          char *name, int *status)
 
 /*******************************************************************************
@@ -933,20 +933,20 @@ double *AZ_manage_memory(unsigned int input_size, int action, int type,
     char   *name;
     double *address;
     int     type;
-    int     size;
+    size_t  size;
     char    special;
     struct mem_ptr *next;
   };
 
-  long int size;
+  size_t                size, aligned_size;
   static struct mem_ptr *head = NULL;
   struct mem_ptr        *current, *temp,*prev, *thenext;
   int                   found = 0, i,j, n2, nn;
-  long int aligned_str_mem, aligned_j, aligned_size;
-double *dtmp;
+  unsigned int          aligned_str_mem, aligned_j;
+  double *dtmp;
 
   /**************************** execution begins ******************************/
-  size = (long int) input_size;
+  size = input_size;
   current = head;
 
   if (action == -43) {
@@ -994,8 +994,7 @@ double *dtmp;
       aligned_j       +=  (sizeof(double) - (aligned_j%sizeof(double)));
       aligned_size    +=  (sizeof(double) - (aligned_size%sizeof(double)));
 
-      dtmp = (double *) AZ_allocate((unsigned int) (aligned_str_mem+aligned_j+
-                                                aligned_size) );
+      dtmp = (double *) AZ_allocate(aligned_str_mem+aligned_j+aligned_size);
 
       if (dtmp== NULL) {
         (void) AZ_printf_err( "Error: Not enough space to allocate\n");
@@ -1180,8 +1179,7 @@ double *dtmp;
 
     thenext = current->next;
     dtmp    = current->address;
-    dtmp    = (double *) AZ_realloc((char *) dtmp,(unsigned int)
-                                    aligned_str_mem+aligned_j+aligned_size);
+    dtmp    = (double *) AZ_realloc((char *) dtmp, aligned_str_mem+aligned_j+aligned_size);
     if (dtmp == NULL) {
       (void) AZ_printf_err( "Error:Not enough memory for '%s'\n", name);
       (void) AZ_printf_err( "      Asked for %ld bytes. Perhaps\n", size);
@@ -1869,7 +1867,7 @@ int allo_count = 0, free_count = 0;
 
 struct widget {                  /* widget is used to maintain a linked   */
    int order;                    /* list of all memory that was allocated */
-   int size;
+   size_t size;
    char *address;
    struct widget *next;
 };
@@ -1899,7 +1897,7 @@ extern void AZ_print_it();
 /***************************************************************************/
 /***************************************************************************/
 
-char *AZ_allocate(unsigned int isize) {
+char *AZ_allocate(size_t isize) {
 
 /*
  *  Allocate memory and record the event by placing an entry in the
@@ -1914,8 +1912,9 @@ char *AZ_allocate(unsigned int isize) {
 
     char *ptr, *header_start, *header_end;
     struct widget *widget;
-    int *size_ptr, i;
-    unsigned int size;
+    int i;
+    size_t size;
+    size_t *size_ptr; 
     double *dptr;
 
     size = isize;
@@ -1949,7 +1948,7 @@ AZ_printf_out("allocating 0 space %u (%d)\n",ptr,size);
     widget_head   = widget;
     widget->address = ptr;
 
-    size_ptr = (int *) ptr;
+    size_ptr = (size_t *) ptr;
     size_ptr[0] = size - 7*sizeof(double);
     dptr     = (double *) ptr;
 
@@ -1989,8 +1988,10 @@ void AZ_free(void *vptr) {
 
    struct widget *current, *prev;
    double *dptr;
-   int *iptr, size, i;
+   int i;
    char *header_start, *header_end, *ptr;
+   size_t size;
+   size_t* iptr;
 
     ptr = (char *) vptr;
     free_count++;
@@ -2020,7 +2021,7 @@ widget_head = NULL;
        }
        else {
            /* check to see if the header is corrupted */
-           iptr = (int *) ptr;
+           iptr = (size_t *) ptr;
            header_start = (char *) &(dptr[1]);
 
            for (i = 0 ; i < 3*sizeof(double)/sizeof(char) ; i++ ) {
@@ -2070,14 +2071,15 @@ widget_head = NULL;
 
 }
 
-char *AZ_realloc(void *vptr, unsigned int new_size) {
+char *AZ_realloc(void *vptr, size_t new_size) {
 
    struct widget *current, *prev;
-   int i, *iptr, size, *new_size_ptr;
+   int i;
    char *header_start, *header_end, *ptr;
    char *data1, *data2, *new_ptr, *new_header_start, *new_header_end;
-   int newmsize, smaller;
    double *dptr, *new_dptr;
+   size_t size, newmsize, smaller;
+   size_t *iptr, *new_size_ptr; 
 
     ptr = (char *) vptr;
     if (ptr == NULL) {
@@ -2105,7 +2107,7 @@ data1 = ptr;
        }
        else {
            /* check to see if the header is corrupted */
-           iptr = (int *) ptr;
+           iptr = (size_t *) ptr;
            header_start = (char *) &(dptr[1]);
 
            for (i = 0 ; i < 3*sizeof(double)/sizeof(char) ; i++ ) {
@@ -2125,7 +2127,7 @@ data1 = ptr;
     if (new_ptr == NULL) return(NULL);
 
 
-    new_size_ptr = (int *) new_ptr;
+    new_size_ptr = (size_t *) new_ptr;
     new_size_ptr[0] = new_size;
     new_dptr     = (double *) new_ptr;
 data2 = (char *) &(new_dptr[4]);
@@ -2172,7 +2174,7 @@ AZ_print_it();
 #else
 /* Simple wrappers for malloc */
 
-char *AZ_allocate(unsigned int size) {
+char *AZ_allocate(size_t size) {
 char *temp;
 temp = malloc (size);
 if (temp != NULL) allo_count++;
@@ -2182,7 +2184,7 @@ return ( temp );
 void AZ_free(void *ptr) {
 free_count++; free(ptr); }
 
-char *AZ_realloc(void *ptr, unsigned int size) {
+char *AZ_realloc(void *ptr, size_t size) {
    return( realloc(ptr, size) );
 }
 extern void spit_it_out(void);
