@@ -57,7 +57,7 @@ namespace ROL {
 
 template<typename Real>
 Bounds<Real>::Bounds(const Vector<Real> &x, bool isLower, Real scale, Real feasTol)
-  : scale_(scale), feasTol_(feasTol), mask_(x.clone()), pvec_(x.clone()), min_diff_(ROL_INF<Real>()) {
+  : scale_(scale), feasTol_(feasTol), mask_(x.clone()), min_diff_(ROL_INF<Real>()) {
   lower_ = x.clone();
   upper_ = x.clone();
   if (isLower) {
@@ -75,7 +75,7 @@ Bounds<Real>::Bounds(const Vector<Real> &x, bool isLower, Real scale, Real feasT
 template<typename Real>
 Bounds<Real>::Bounds(const Ptr<Vector<Real>> &x_lo, const Ptr<Vector<Real>> &x_up,
                      const Real scale, const Real feasTol)
-  : scale_(scale), feasTol_(feasTol), mask_(x_lo->clone()), pvec_(x_lo->clone()) {
+  : scale_(scale), feasTol_(feasTol), mask_(x_lo->clone()) {
   lower_ = x_lo;
   upper_ = x_up;
   const Real half(0.5), one(1);
@@ -209,7 +209,7 @@ void Bounds<Real>::pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, con
 }
 
 template<typename Real>
-bool Bounds<Real>::isFeasible( const Vector<Real> &v ) { 
+bool Bounds<Real>::isFeasible( const Vector<Real> &v ) {
   const Real one(1);
   bool flagU = false, flagL = false;
   if (BoundConstraint<Real>::isUpperActivated()) {
@@ -229,130 +229,113 @@ bool Bounds<Real>::isFeasible( const Vector<Real> &v ) {
 }
 
 template<typename Real>
-bool Bounds<Real>::isInterior( const Vector<Real> &v ) const {
-  const Real one(1);
-  bool flagU = true, flagL = true;
-  if (BoundConstraint<Real>::isUpperActivated()) {
-    mask_->set(*upper_);
-    mask_->axpy(-one,v);
-    Real uminusv = mask_->reduce(minimum_);
-    flagU = ((uminusv>0) ? true : false);
-  }
-  if (BoundConstraint<Real>::isLowerActivated()) {
-    mask_->set(v);
-    mask_->axpy(-one,*lower_);
-    Real vminusl = mask_->reduce(minimum_);
+void Bounds<Real>::buildScalingFunction(Vector<Real> &d, const Vector<Real> &x, const Vector<Real> &g) const {
+  // TODO: Cache values?
 
-    flagL = ((vminusl>0) ? true : false);
-  }
-  return (flagU && flagL);
-}
+  const Real zero(0), one(1);
 
-template<typename Real>
-void Bounds<Real>::applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
-  const Real one(1), two(2);
+  // This implementation handles -l and/or u = infinity properly.
+
+  /*
+  The first if statement defining d_II (Equation 4.4 of [Ulbrich et al. 1999])
+  is equivalent to x - l <= min(u - x, -g) = - max(g, x - u).
+    * Our x, l, u represent u, a, b in the paper.
+    * Indeed, if x - l = -g < u - x, then min{|g|,c} = min{x - l, u - x, c}.
+  */
+
+  d.set(x);
+  d.axpy(-one,*upper_);
+  d.applyBinary(Elementwise::Max<Real>(),g);
+  d.plus(x);
+  d.axpy(-one,*lower_);  // = x - l + max(g, x - u)
+
+  mask_->set(x);
+  mask_->axpy(-one,*lower_);
+  mask_->applyBinary(Elementwise::Min<Real>(),g);
+  mask_->plus(x);
+  mask_->axpy(-one,*upper_);
+  mask_->scale(-one);   // = u - x - min(g, x - l)
+
+  mask_->applyBinary(Elementwise::Min<Real>(),d);
+
+  d.setScalar(-one);
+  d.applyBinary(Active(zero),*mask_);
+  mask_->setScalar(one);
+  d.plus(*mask_);
+  // d[i] =   1    when one of the if conditions in (4.4) are true else 0
+
+  mask_->set(g);
+  mask_->applyUnary(Elementwise::AbsoluteValue<Real>());
+  d.applyBinary(Elementwise::Multiply<Real>(),*mask_);
+  // d[i] = |g[i]| when one of the if conditions in (4.4) are true else 0
+
+  // Compute min(x - l, u - x).
+  // * We use the identity min(p, q) = min(p + r, q + r) - r to handle the case
+  //   where -l or u = infinity.
+  mask_->set(x);
+  mask_->axpy(-one,*lower_);
+  mask_->plus(x);
+  mask_->applyBinary(Elementwise::Min<Real>(),*upper_);
+  mask_->axpy(-one,x);  // = min(x - l, u - x)
+
+  // When one of the if conditions in (4.4) are true |g|[i] >= (*mask_)[i].
+  // Thus by taking
+  d.applyBinary(Elementwise::Max<Real>(),*mask_);
+  // d_II follows as min(d, c), i.e.,
   mask_->set(*upper_);
   mask_->axpy(-one,*lower_);
   mask_->applyUnary(buildC_);
-  dv.set(g);
-  dv.applyBinary(minAbs_, *mask_);
-
-  pvec_->set(*lower_);
-  pvec_->axpy(-one,x);
-  pvec_->axpy(-one,g);
-  dv.applyBinary(Active(0),*pvec_); 
-
-  pvec_->set(g);
-  pvec_->plus(x);
-  pvec_->axpy(-one,*upper_);
-  dv.applyBinary(Active(0),*pvec_); 
-
-  pvec_->set(*upper_);
-  pvec_->plus(*lower_);
-  pvec_->axpy(-two, x);
-  dv.applyBinary(Active(0),*pvec_); 
-
-  pvec_->scale(-one);
-  dv.applyBinary(Active(0),*pvec_); 
-
-  pvec_->set(*upper_);
-  pvec_->axpy(-one,x);
-  mask_->applyBinary(minAbs_, *pvec_);
-  pvec_->set(x);
-  pvec_->axpy(-one,*lower_);
-  mask_->applyBinary(minAbs_, *pvec_);
-  dv.applyBinary(setZeroEntry_, *mask_);
-  dv.applyBinary(Elementwise::Multiply<Real>(),v);
+  d.applyBinary(Elementwise::Min<Real>(),*mask_);
 }
 
 template<typename Real>
 void Bounds<Real>::applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
-  const Real one(1), two(2);
-  mask_->set(*upper_);
-  mask_->axpy(-one,*lower_);
-  mask_->applyUnary(buildC_);
-  dv.set(g);
-  dv.applyBinary(minAbs_, *mask_);
-
-  pvec_->set(*lower_);
-  pvec_->axpy(-one,x);
-  pvec_->axpy(-one,g);
-  dv.applyBinary(Active(0),*pvec_); 
-
-  pvec_->set(g);
-  pvec_->plus(x);
-  pvec_->axpy(-one,*upper_);
-  dv.applyBinary(Active(0),*pvec_); 
-
-  pvec_->set(*upper_);
-  pvec_->plus(*lower_);
-  pvec_->axpy(-two, x);
-  dv.applyBinary(Active(0),*pvec_); 
-
-  pvec_->scale(-one);
-  dv.applyBinary(Active(0),*pvec_); 
-
-  pvec_->set(*upper_);
-  pvec_->axpy(-one,x);
-  mask_->applyBinary(minAbs_, *pvec_);
-  pvec_->set(x);
-  pvec_->axpy(-one,*lower_);
-  mask_->applyBinary(minAbs_, *pvec_);
-  dv.applyBinary(setZeroEntry_, *mask_);
+  Bounds<Real>::buildScalingFunction(dv, x, g);
   dv.applyBinary(Elementwise::DivideAndInvert<Real>(),v);
 }
 
 template<typename Real>
 void Bounds<Real>::applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
-  const Real one(1), two(2);
+  const Real one(1), two(2), three(3);
 
-  dv.applyBinary(sgn_, g);
+  // This implementation builds Equation (5.1) of [Ulbrich et al. 1999].
 
-  pvec_->set(*upper_);
-  pvec_->plus(*lower_);
-  pvec_->axpy(-two, x);
-  dv.applyBinary(sgnPlus_, *pvec_);
+  Bounds<Real>::buildScalingFunction(dv, x, g);  // dv = d_II
 
-  // Builds d(x,g)
-  mask_->setScalar(one);
-  Bounds<Real>::applyScalingFunction(*pvec_, *mask_, x, g);
-
-  // Builds c
   mask_->set(*upper_);
   mask_->axpy(-one,*lower_);
-  mask_->applyUnary(buildC_);
+  mask_->applyUnary(buildC_);        // = c
+  mask_->axpy(-one,dv);              // = c - d_II
+  dv.setScalar(one);
+  dv.applyBinary(Active(0),*mask_);  // = \chi
 
-  // Compute c-d
-  mask_->axpy(-one, *pvec_);
-  
-  pvec_->setScalar(one);
-  pvec_->applyBinary(Active(0), *mask_);
+  mask_->setScalar(three);
+  dv.applyBinary(Elementwise::Multiply<Real>(),*mask_);
+  dv.axpy(-one,*mask_);
+  // dv[i] = 0 if \chi[i] = 1 else -3
 
-  dv.applyBinary(Elementwise::Multiply<Real>(), *pvec_);
+  mask_->set(g);
+  mask_->applyUnary(Elementwise::Sign<Real>());
+  dv.plus(*mask_);  // dv[i] = sgn(g[i]) if \chi[i] = 1 else dv[i] <= -2
+
+  // Set the dv elements that = 0 to sgn(u + l - 2x).
+  mask_->set(*upper_);
+  mask_->plus(*lower_);
+  mask_->axpy(-two,x);
+  mask_->applyUnary(Elementwise::Sign<Real>());
+  dv.applyBinary(setZeroEntry_,*mask_);
+
+  // Set the dv elements that = 0 to 1.
+  mask_->setScalar(one);
+  dv.applyBinary(setZeroEntry_,*mask_);
+
+  // Set the dv elements that are <= -2 to 0.
+  mask_->set(dv);
+  dv.applyBinary(Active(-two),*mask_);
+
   dv.applyBinary(Elementwise::Multiply<Real>(), g);
   dv.applyBinary(Elementwise::Multiply<Real>(), v);
 }
-
 
 } // namespace ROL
 

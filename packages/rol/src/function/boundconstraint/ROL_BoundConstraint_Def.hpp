@@ -142,16 +142,6 @@ bool BoundConstraint<Real>::isFeasible( const Vector<Real> &v ) {
 }
 
 template<typename Real>
-bool BoundConstraint<Real>::isInterior( const Vector<Real> &v ) const { 
-  throw Exception::NotImplemented(">>> BoundConstraint::isInterior : This function has not been implemeted!");
-}
-
-template<typename Real>
-void BoundConstraint<Real>::applyScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
-  throw Exception::NotImplemented(">>> BoundConstraint::applyScalingFunction : This function has not been implemeted!");
-}
-
-template<typename Real>
 void BoundConstraint<Real>::applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
   throw Exception::NotImplemented(">>> BoundConstraint::applyInverseScalingFunction : This function has not been implemeted!");
 }
