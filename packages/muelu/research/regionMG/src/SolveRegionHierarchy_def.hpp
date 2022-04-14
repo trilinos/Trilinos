@@ -76,8 +76,13 @@ void MgCycle(const int levelID, ///< ID of current level
 
   // Setup recursive cycling to represent either V- or W-cycles
   int cycleCount = 1;
-  if (cycleType == "W" && levelID > 0) // W cycle and not on finest level
-    cycleCount = 2;
+  if (cycleType == "W" && levelID > 0 ){ // W cycle and not on finest level.
+    const std::string coarseSolverType = coarseSolverData->get<std::string>("coarse solver type");
+    if (coarseSolverType == "direct" && levelID == regHierarchy->GetNumLevels()-2 ) // Only call coarse level solve once if direct solve
+      cycleCount = 1;
+    else
+      cycleCount = 2;
+  }
 
   if (levelID < regHierarchy->GetNumLevels() - 1) // fine or intermediate levels
   {
