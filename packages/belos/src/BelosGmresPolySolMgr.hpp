@@ -433,6 +433,8 @@ GmresPolySolMgr<ScalarType,MV,OP>::getValidParameters() const
       "The maximum degree allowed for any GMRES polynomial.");
     pl->set("Outer Solver", static_cast<const char *>(outerSolverType_default_),
       "The outer solver that this polynomial is used to precondition.");
+    pl->set("Outer Solver Params", Teuchos::ParameterList(),
+      "Parameter list for the outer solver.");
     pl->set("Verbosity", static_cast<int>(verbosity_default_),
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
@@ -464,7 +466,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     params_ = Teuchos::parameterList (*getValidParameters ());
   }
   else {
-    params->validateParameters (*getValidParameters ());
+    params->validateParameters (*getValidParameters (),0);
   }
 
   // Check which Gmres polynomial to use
