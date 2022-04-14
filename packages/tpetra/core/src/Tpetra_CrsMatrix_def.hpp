@@ -4763,8 +4763,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       beta = ZERO;
     }
 
-    std::cerr << "CWP: here 1\n";
-
     // Temporary MV for Import operation.  After the block of code
     // below, this will be an (Imported if necessary) column Map MV
     // ready to give to localApply(...).
@@ -4795,35 +4793,27 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         X_colMap = rcpFromRef (X_in);
       }
     } else { // need to Import source (multi)vector
-
-      const char *regionImportName = 
-        Details::Behavior::overlapCommunicationAndComputation() ? 
-          "Tpetra::CrsMatrix::applyNonTranspose: beginImport" :
-          "Tpetra::CrsMatrix::applyNonTranspose: Import";
-      ProfilingRegion regionImport (regionImportName);
-
       // We're doing an Import anyway, which will copy the relevant
       // elements of the domain Map MV X_in into a separate column Map
       // MV.  Thus, we don't have to worry whether X_in is constant
       // stride.
       X_colMapNonConst = getColumnMapMultiVector (X_in);
 
-      std::cerr << "CWP: here 2\n";
-
       // Import from the domain Map MV to the column Map MV.
       if (Details::Behavior::overlapCommunicationAndComputation()) {
+        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport");
         X_colMapNonConst->beginImport (X_in, *importer, INSERT);
       } else {
+        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: doImport");
         X_colMapNonConst->doImport (X_in, *importer, INSERT);
         X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
       }
     }
-    std::cerr << "CWP: here 3\n";
 
-    /* Cases we can't operate directly on Y input
+    /* Cases we can't operate directly on input Y
     1. Must do an export
     2. Non-constant stride multivector.
-    3. X and Y alias.
+    3. aliases with X
 
     If Y_in does not have constant stride, or if the column Map
     MV aliases Y_in, then we can't let the kernel write directly
@@ -4890,14 +4880,18 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     */
     if (mustExport || !Y_in.isConstantStride () || xyDefinitelyAlias) {
       if (Details::Behavior::overlapCommunicationAndComputation()) {
+        ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
         this->localApplyOffRank(*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha);
       } else {
+        ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApply");
         this->localApply (*X_colMap, *Y_rowMap, Teuchos::NO_TRANS, alpha, beta);
       }
     } else {
       if (Details::Behavior::overlapCommunicationAndComputation()) {
+        ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApplyOffRank");
         this->localApplyOffRank(*X_colMap, Y_in, Teuchos::NO_TRANS, alpha);
       } else {
+        ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: localApply");
         this->localApply (*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
       }
     }
