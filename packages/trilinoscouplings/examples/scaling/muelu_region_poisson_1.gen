@@ -1,0 +1,26 @@
+mesh
+  rectilinear
+    nx 1
+    ny 1
+    nz 1
+    bx 1
+    by 1
+    bz 1
+    gmin = 0.0 0.0 0.0
+    gmax = 1.0 1.0 1.0
+  end
+  set assign
+    sideset,jlo,1
+    sideset,ihi,2
+    sideset,jhi,3
+    sideset,ilo,4
+    sideset,klo,5
+    sideset,khi,6
+    nodeset,jlo,1
+    nodeset,ihi,2
+    nodeset,jhi,3
+    nodeset,ilo,4
+    nodeset,klo,5
+    nodeset,khi,6
+  end
+end
