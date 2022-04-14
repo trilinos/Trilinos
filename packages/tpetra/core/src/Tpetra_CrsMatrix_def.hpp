@@ -4871,7 +4871,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (mustImport && Details::Behavior::overlapCommunicationAndComputation()) {
       ProfilingRegion region("Tpetra::CrsMatrix::applyNonTranspose: endImport");
       X_colMapNonConst->endImport(X_in, *importer, INSERT);
-      std::cerr << "CWP: ended import\n";
+      // std::cerr << "CWP: ended import\n";
       X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
     }
 
@@ -5190,7 +5190,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     typedef typename crs_graph_type::offset_device_view_type OffsetDeviceViewType;
     OffsetDeviceViewType offRankOffsets;
     getCrsGraph()->getLocalOffRankOffsets(offRankOffsets);
-    std::cerr << "CWP: applyRemoteColumns()" << std::endl;
+    // std::cerr << "CWP: applyRemoteColumns()" << std::endl;
     matrix_lcl->applyRemoteColumns (X_lcl, Y_lcl, mode, alpha, Scalar(1), offRankOffsets);
   }
 
@@ -5207,13 +5207,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using Teuchos::NO_TRANS;
     ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localApplyOnRank");
 
-    std::cerr << "CWP: get X view..." << std::endl;
+    // std::cerr << "CWP: get X view..." << std::endl;
     auto X_lcl = X.getLocalViewDevice(Access::ReadOnly);
-    std::cerr << "CWP: get Y view..." << std::endl;
+    // std::cerr << "CWP: get Y view..." << std::endl;
     auto Y_lcl = Y.getLocalViewDevice(Access::ReadWrite);
-    std::cerr << "CWP: get multiply op..." << std::endl;
+    // std::cerr << "CWP: get multiply op..." << std::endl;
     auto matrix_lcl = getLocalMultiplyOperator();
-    std::cerr << "CWP: got local operators and views" << std::endl;
+    // std::cerr << "CWP: got local operators and views" << std::endl;
 
     const bool debug = ::Tpetra::Details::Behavior::debug ();
     if (debug) {
@@ -5223,7 +5223,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     typedef typename crs_graph_type::offset_device_view_type OffsetDeviceViewType;
     OffsetDeviceViewType offRankOffsets;
     getCrsGraph()->getLocalOffRankOffsets(offRankOffsets);
-    std::cerr << "CWP: applyLocalColumns()" << std::endl;
+    // std::cerr << "CWP: applyLocalColumns()" << std::endl;
     matrix_lcl->applyLocalColumns (X_lcl, Y_lcl, mode, alpha, beta, offRankOffsets);
   }
 

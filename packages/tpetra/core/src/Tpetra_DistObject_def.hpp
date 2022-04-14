@@ -135,6 +135,22 @@ namespace Tpetra {
     }
     doPostsAndWaitsTimer_ = doPostsAndWaitsTimer;
 
+    RCP<Time> doPostsTimer =
+      TimeMonitor::lookupCounter ("Tpetra::DistObject::doPosts");
+    if (doPostsTimer.is_null ()) {
+      doPostsTimer =
+        TimeMonitor::getNewCounter ("Tpetra::DistObject::doPosts");
+    }
+    doPostsTimer_ = doPostsTimer;
+
+    RCP<Time> doWaitsTimer =
+      TimeMonitor::lookupCounter ("Tpetra::DistObject::doWaits");
+    if (doWaitsTimer.is_null ()) {
+      doWaitsTimer =
+        TimeMonitor::getNewCounter ("Tpetra::DistObject::doWaits");
+    }
+    doWaitsTimer_ = doWaitsTimer;
+
     RCP<Time> unpackAndCombineTimer =
       TimeMonitor::lookupCounter ("Tpetra::DistObject::unpackAndCombine");
     if (unpackAndCombineTimer.is_null ()) {
@@ -800,14 +816,14 @@ namespace Tpetra {
     using std::endl;
     using Details::getDualViewCopyFromArrayView;
     using Details::ProfilingRegion;
-    const char funcName[] = "Tpetra::DistObject::doTransfer";
+    const char funcName[] = "Tpetra::DistObject::beginTransfer";
 
-    ProfilingRegion region_doTransfer(funcName);
+    ProfilingRegion region_beginTransfer(funcName);
     const bool verbose = Behavior::verbose("DistObject");
     std::shared_ptr<std::string> prefix;
     if (verbose) {
       std::ostringstream os;
-      prefix = this->createPrefix("DistObject", "doTransfer");
+      prefix = this->createPrefix("DistObject", "beginTransfer");
       os << *prefix << "Source type: " << Teuchos::typeName(src)
          << ", Target type: " << Teuchos::typeName(*this) << endl;
       std::cerr << os.str();
@@ -908,7 +924,7 @@ namespace Tpetra {
     const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "doTransfer: Use new interface; "
+      os << *prefix << "beginTransfer: Use new interface; "
         "commOnHost=" << (commOnHost ? "true" : "false") << endl;
       std::cerr << os.str ();
     }
@@ -958,7 +974,7 @@ namespace Tpetra {
     }
 
     {
-      ProfilingRegion region_cs ("Tpetra::DistObject::doTransferNew::checkSizes");
+      ProfilingRegion region_cs ("Tpetra::DistObject::beginTransfer::checkSizes");
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "1. checkSizes" << endl;
@@ -967,7 +983,7 @@ namespace Tpetra {
       const bool checkSizesResult = this->checkSizes (src);
       TEUCHOS_TEST_FOR_EXCEPTION
         (! checkSizesResult, std::invalid_argument,
-         "Tpetra::DistObject::doTransfer: checkSizes() indicates that the "
+         "Tpetra::DistObject::beginTransfer: checkSizes() indicates that the "
          "destination object is not a legal target for redistribution from the "
          "source object.  This probably means that they do not have the same "
          "dimensions.  For example, MultiVectors must have the same number of "
@@ -986,7 +1002,7 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
       ProfilingRegion region_cp
-        ("Tpetra::DistObject::doTransferNew::copyAndPermute");
+        ("Tpetra::DistObject::beginTransfer::copyAndPermute");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
       // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in favor
       // of Kokkos profiling.
@@ -1114,12 +1130,12 @@ namespace Tpetra {
         }
       }
       else {
-        ProfilingRegion region_dpw
-          ("Tpetra::DistObject::doTransferNew::doPostsAndWaits");
+        ProfilingRegion region_dp
+          ("Tpetra::DistObject::beginTransfer::doPosts");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
         // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
         // favor of Kokkos profiling.
-        Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
+        Teuchos::TimeMonitor doPostsMon (*doPostsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
         if (verbose) {
@@ -1156,14 +1172,14 @@ namespace Tpetra {
     using std::endl;
     using Details::getDualViewCopyFromArrayView;
     using Details::ProfilingRegion;
-    const char funcName[] = "Tpetra::DistObject::doTransfer";
+    const char funcName[] = "Tpetra::DistObject::endTransfer";
 
-    ProfilingRegion region_doTransfer(funcName);
+    ProfilingRegion region_endTransfer(funcName);
     const bool verbose = Behavior::verbose("DistObject");
     std::shared_ptr<std::string> prefix;
     if (verbose) {
       std::ostringstream os;
-      prefix = this->createPrefix("DistObject", "doTransfer");
+      prefix = this->createPrefix("DistObject", "endTransfer");
       os << *prefix << "Source type: " << Teuchos::typeName(src)
          << ", Target type: " << Teuchos::typeName(*this) << endl;
       std::cerr << os.str();
@@ -1263,7 +1279,7 @@ namespace Tpetra {
     const bool commOnHost = ! Behavior::assumeMpiIsGPUAware ();
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "doTransfer: Use new interface; "
+      os << *prefix << "endTransfer: Use new interface; "
         "commOnHost=" << (commOnHost ? "true" : "false") << endl;
       std::cerr << os.str ();
     }
@@ -1347,7 +1363,7 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::doTransfer: Done!" << endl;
+      os << *prefix << "Tpetra::DistObject::endTransfer: Done!" << endl;
       std::cerr << os.str ();
     }
   }
@@ -1558,7 +1574,7 @@ namespace Tpetra {
     const bool debug = Details::Behavior::debug("DistObject");
 
     ProfilingRegion region_pp
-      ("Tpetra::DistObject::doTransferNew::packAndPrepare");
+      ("Tpetra::DistObject::doPackAndPrepare");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
     // favor of Kokkos profiling.
@@ -1625,7 +1641,7 @@ namespace Tpetra {
     const bool debug = Details::Behavior::debug("DistObject");
 
     ProfilingRegion region_uc
-      ("Tpetra::DistObject::doTransferNew::unpackAndCombine");
+      ("Tpetra::DistObject::doUnpackAndCombine");
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
     // favor of Kokkos profiling.
