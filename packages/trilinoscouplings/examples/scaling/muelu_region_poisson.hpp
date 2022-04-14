@@ -143,7 +143,6 @@ std::vector<size_t> renumberPerceptCellsToLexicographic(const unsigned int num_l
   percept_view(0,1,1) = 7;
   percept_view(1,1,1) = 6;
 
-  // scope in case I decide to copypasta
   {
     // initialize to 0
     Kokkos::View<unsigned int***,Kokkos::HostSpace> outputorder("Multi-level re-numbering indices",cells_per_dim,cells_per_dim,cells_per_dim);

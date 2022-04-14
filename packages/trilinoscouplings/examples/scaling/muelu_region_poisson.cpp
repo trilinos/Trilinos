@@ -578,7 +578,7 @@ int main(int argc, char *argv[]) {
           const unsigned int i_elem = region_cells_per_dim*region_cells_per_dim*k + region_cells_per_dim*j + i;
 
           // the bottom-left corner of a cell is always inside the region when following lexicographic ordering
-          quasiRegionGIDs[i_node] = LIDs(i_elem,0);
+          quasiRegionGIDs[i_node] = LIDs(region_cells_lexicographic_order[i_elem],0);
           x_coords[i_node] = vertices(i_elem,0,0);
           y_coords[i_node] = vertices(i_elem,0,1);
           z_coords[i_node] = vertices(i_elem,0,2);
@@ -586,30 +586,30 @@ int main(int argc, char *argv[]) {
           // if we're on the +z side of a region
           if(k==region_cells_per_dim-1)
           {
-            quasiRegionGIDs[i_node+plane_offset] = LIDs(i_elem,4);
+            quasiRegionGIDs[i_node+plane_offset] = LIDs(region_cells_lexicographic_order[i_elem],4);
             x_coords[i_node+plane_offset] = vertices(i_elem,4,0);
             y_coords[i_node+plane_offset] = vertices(i_elem,4,1);
             z_coords[i_node+plane_offset] = vertices(i_elem,4,2);
             // if we're on a +yz edge
             if(j==region_cells_per_dim-1)
             {
-              quasiRegionGIDs[i_node+plane_offset+line_offset] = LIDs(i_elem,6);
-              x_coords[i_node+plane_offset+line_offset] = vertices(i_elem,6,0);
-              y_coords[i_node+plane_offset+line_offset] = vertices(i_elem,6,1);
-              z_coords[i_node+plane_offset+line_offset] = vertices(i_elem,6,2);
+              quasiRegionGIDs[i_node+plane_offset+line_offset] = LIDs(region_cells_lexicographic_order[i_elem],7);
+              x_coords[i_node+plane_offset+line_offset] = vertices(i_elem,7,0);
+              y_coords[i_node+plane_offset+line_offset] = vertices(i_elem,7,1);
+              z_coords[i_node+plane_offset+line_offset] = vertices(i_elem,7,2);
               // if we're on an +xyz corner
               if(i==region_cells_per_dim-1)
               {
-                quasiRegionGIDs[i_node+plane_offset+line_offset+1] = LIDs(i_elem,7);
-                x_coords[i_node+plane_offset+line_offset+1] = vertices(i_elem,7,0);
-                y_coords[i_node+plane_offset+line_offset+1] = vertices(i_elem,7,1);
-                z_coords[i_node+plane_offset+line_offset+1] = vertices(i_elem,7,2);
+                quasiRegionGIDs[i_node+plane_offset+line_offset+1] = LIDs(region_cells_lexicographic_order[i_elem],6);
+                x_coords[i_node+plane_offset+line_offset+1] = vertices(i_elem,6,0);
+                y_coords[i_node+plane_offset+line_offset+1] = vertices(i_elem,6,1);
+                z_coords[i_node+plane_offset+line_offset+1] = vertices(i_elem,6,2);
               }
             }
-            // if we're on the +xz edge (and not +xyz corner)
-            if(i==region_cells_per_dim-1 && j!=region_cells_per_dim-1)
+            // if we're on the +xz edge
+            if(i==region_cells_per_dim-1)
             {
-              quasiRegionGIDs[i_node+plane_offset+1] = LIDs(i_elem,5);
+              quasiRegionGIDs[i_node+plane_offset+1] = LIDs(region_cells_lexicographic_order[i_elem],5);
               x_coords[i_node+plane_offset+1] = vertices(i_elem,5,0);
               y_coords[i_node+plane_offset+1] = vertices(i_elem,5,1);
               z_coords[i_node+plane_offset+1] = vertices(i_elem,5,2);
@@ -618,14 +618,14 @@ int main(int argc, char *argv[]) {
           // if we're on the +y side of a region
           if(j==region_cells_per_dim-1)
           {
-            quasiRegionGIDs[i_node+line_offset] = LIDs(i_elem,3);
+            quasiRegionGIDs[i_node+line_offset] = LIDs(region_cells_lexicographic_order[i_elem],3);
             x_coords[i_node+line_offset] = vertices(i_elem,3,0);
             y_coords[i_node+line_offset] = vertices(i_elem,3,1);
             z_coords[i_node+line_offset] = vertices(i_elem,3,2);
             // if we're on a +xy edge
             if(i==region_cells_per_dim-1)
             {
-              quasiRegionGIDs[i_node+line_offset+1] = LIDs(i_elem,2);
+              quasiRegionGIDs[i_node+line_offset+1] = LIDs(region_cells_lexicographic_order[i_elem],2);
               x_coords[i_node+line_offset+1] = vertices(i_elem,2,0);
               y_coords[i_node+line_offset+1] = vertices(i_elem,2,1);
               z_coords[i_node+line_offset+1] = vertices(i_elem,2,2);
@@ -634,7 +634,7 @@ int main(int argc, char *argv[]) {
           // if we're on the +x side of a region
           if(i==region_cells_per_dim-1)
           {
-            quasiRegionGIDs[i_node+1] = LIDs(i_elem,1);
+            quasiRegionGIDs[i_node+1] = LIDs(region_cells_lexicographic_order[i_elem],1);
             x_coords[i_node+1] = vertices(i_elem,1,0);
             y_coords[i_node+1] = vertices(i_elem,1,1);
             z_coords[i_node+1] = vertices(i_elem,1,2);
@@ -646,6 +646,8 @@ int main(int argc, char *argv[]) {
     DUMPSTDVECTOR(x_coords, std::cout)
     DUMPSTDVECTOR(y_coords, std::cout)
     DUMPSTDVECTOR(z_coords, std::cout)
+    PRINT_VIEW2(LIDs)
+    DUMPSTDVECTOR(quasiRegionGIDs, std::cout)
     
 
 //     // if we use Percept, this is the strategy to follow.
