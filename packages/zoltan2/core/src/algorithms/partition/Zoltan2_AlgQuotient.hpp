@@ -128,10 +128,8 @@ public:
           const RCP<const GraphAdapter<user_t,userCoord_t> > &adapter__) :
     env(env__), problemComm(problemComm__), adapter(adapter__)
   {
-    buildModel();
-    this->innerAlgorithm = rcp(new AlgParMETIS<Adapter, graphModel_t>(env,
-								      problemComm,
-								      adapter));
+    this->innerAlgorithm =
+        rcp(new AlgParMETIS<Adapter, graphModel_t>(env, problemComm, adapter));
   }
 
   /*! \brief Set up validators specific to this algorithm
@@ -147,12 +145,9 @@ public:
 
 private:
 
-  void buildModel();
-
   const RCP<const Environment> env;
   const RCP<const Comm<int> > problemComm;
   const RCP<const base_adapter_t> adapter;
-  RCP<graphModel_t> model;
 
   RCP<Algorithm<Adapter>> innerAlgorithm;               // algorithm to partition the quotient graph
   RCP<PartitioningSolution<Adapter>> quotientSolution;  // the solution stored on the active ranks
@@ -161,16 +156,6 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-template <typename Adapter>
-void AlgQuotient<Adapter>::buildModel()
-{
-  this->env->debug(DETAILED_STATUS, "    building communication graph model");
-  this->model = rcp(new CommGraphModel<base_adapter_t>(
-	this->adapter, this->env, this->problemComm));
-  this->env->debug(DETAILED_STATUS, "    communication graph model built");
-}
-
-
 template <typename Adapter>
 void AlgQuotient<Adapter>::partition(
   const RCP<PartitioningSolution<Adapter> > &solution
@@ -210,25 +195,27 @@ void AlgQuotient<Adapter>::migrateBack(
   const RCP<PartitioningSolution<Adapter> > &solution
 )
 {
-    int me = problemComm->getRank();
-    int nActiveRanks = model->getNumActiveRanks();
-    int dRank = model->getDestinationRank();
+  const auto model = rcp(new CommGraphModel<base_adapter_t>(
+      this->adapter, this->env, this->problemComm));
+  int me = problemComm->getRank();
+  int nActiveRanks = model->getNumActiveRanks();
+  int dRank = model->getDestinationRank();
 
-    // Receive the (single entry) partitioning solution for this MPI rank
-    Teuchos::ArrayRCP<part_t> parts(1);
-    RCP<CommRequest<int>> *requests = new RCP<CommRequest<int>>[1];
-    requests[0] = Teuchos::ireceive<int, part_t>(*problemComm, parts, dRank);
-    if(me < nActiveRanks){
+  // Receive the (single entry) partitioning solution for this MPI rank
+  Teuchos::ArrayRCP<part_t> parts(1);
+  RCP<CommRequest<int>> *requests = new RCP<CommRequest<int>>[1];
+  requests[0] = Teuchos::ireceive<int, part_t>(*problemComm, parts, dRank);
+  if (me < nActiveRanks) {
 
-      const part_t *qtntSlnView = quotientSolution->getPartListView();
+    const part_t *qtntSlnView = quotientSolution->getPartListView();
 
-      int sRank = model->getStartRank();
-      int eRank = model->getEndRank();
+    int sRank = model->getStartRank();
+    int eRank = model->getEndRank();
 
-      ArrayView<size_t> vtxdist;
-      model->getVertexDist(vtxdist);
-      for(int i = sRank; i < eRank; i++)
-	Teuchos::send<int, part_t>(*problemComm, 1, &qtntSlnView[i-sRank], i);
+    ArrayView<size_t> vtxdist;
+    model->getVertexDist(vtxdist);
+    for (int i = sRank; i < eRank; i++)
+      Teuchos::send<int, part_t>(*problemComm, 1, &qtntSlnView[i - sRank], i);
     }
     Teuchos::waitAll<int>(*problemComm, Teuchos::arrayView(requests, 1));
 
