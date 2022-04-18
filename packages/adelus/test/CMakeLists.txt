@@ -1,5 +1,6 @@
 IF(Adelus_ENABLE_ZCPLX OR Adelus_ENABLE_DREAL)
   ADD_SUBDIRECTORY(vector_random)
+  ADD_SUBDIRECTORY(vector_random_fs)
 ENDIF()
 
 IF(Adelus_ENABLE_Teuchos AND (Adelus_ENABLE_ZCPLX OR Adelus_ENABLE_DREAL))
