@@ -4,4 +4,4 @@
 #include "Test_HIP.hpp"
 #include "Test_Batched_Dense.hpp"
 
-#endif // TEST_HIP_BATCHED_DENSE_CPP
+#endif  // TEST_HIP_BATCHED_DENSE_CPP

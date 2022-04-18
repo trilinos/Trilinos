@@ -54,31 +54,33 @@ namespace KokkosBlas {
 namespace Experimental {
 namespace Impl {
 
-template<class RV, class XV>
+template <class RV, class XV>
 struct team_scal_tpl_spec_avail {
   constexpr static bool value = false;
 };
 
-
 // Unification and Specialization layer
-template<class TeamType, class RV, class XV, bool tpl_spec_avail = team_scal_tpl_spec_avail<RV,XV>::value>
+template <class TeamType, class RV, class XV,
+          bool tpl_spec_avail = team_scal_tpl_spec_avail<RV, XV>::value>
 struct TeamScal {
-  static KOKKOS_INLINE_FUNCTION void team_scal (const TeamType& team, const RV& R, const typename XV::non_const_value_type& a, const XV& X);
+  static KOKKOS_INLINE_FUNCTION void team_scal(
+      const TeamType& team, const RV& R,
+      const typename XV::non_const_value_type& a, const XV& X);
 };
 
-template<class TeamType, class RV, class XV>
-struct TeamScal<TeamType, RV, XV, false>
-{
-  static KOKKOS_INLINE_FUNCTION void team_scal (const TeamType& team, const RV& R, const typename XV::non_const_value_type& a, const XV& X) {
+template <class TeamType, class RV, class XV>
+struct TeamScal<TeamType, RV, XV, false> {
+  static KOKKOS_INLINE_FUNCTION void team_scal(
+      const TeamType& team, const RV& R,
+      const typename XV::non_const_value_type& a, const XV& X) {
     const int N = X.extent(0);
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team,N), [&] (const int& i) {
-      R(i) = a*X(i);
-    });
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N),
+                         [&](const int& i) { R(i) = a * X(i); });
   }
 };
 
-}
-}
-}
+}  // namespace Impl
+}  // namespace Experimental
+}  // namespace KokkosBlas
 
 #endif
