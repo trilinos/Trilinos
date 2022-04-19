@@ -361,14 +361,23 @@ namespace MueLu {
         if(precList11_.get<bool>("repartition: use subcommunicators")==true) 
           precList11_.set("repartition: use subcommunicators in place",true);
       }
-      else
-        precList11_.remove("repartition: use subcommunicators",false);
+      else {
+        // We'll have Maxwell1 default to using subcommunicators if you don't specify
+        precList11_.set("repartition: use subcommunicators", true);
+        precList22_.set("repartition: use subcommunicators", true);
+        
+        // We do not want (1,1) and (2,2) blocks being repartitioned seperately, so we specify the map that
+        // is going to be used (this is generated in ReitzingerPFactory)
+        precList11_.set("repartition: use subcommunicators in place",true);
+      }        
+
         
     }
     else
       precList11_.remove("repartition: enable", false);
    
 
+    std::cout<<"**** CMS: precList22_ ****"<<std::endl <<precList22_ << std::endl;
     Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
 
 
@@ -425,6 +434,8 @@ namespace MueLu {
         GetOStream(Runtime0) << "Maxwell1::compute(): Will set up RefMaxwell coarse solver" << std::endl;
         precList11_.set("coarse: type", "none");
       }
+
+      std::cout<<"**** CMS: precList11_ ****"<<std::endl <<precList11_ << std::endl;
 
       //    Hierarchy11_ = MueLu::CreateXpetraPreconditioner(SM_Matrix_, precList11_);
       // Rip off non-serializable data before validation
