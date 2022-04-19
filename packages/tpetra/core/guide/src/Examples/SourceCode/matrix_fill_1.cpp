@@ -100,7 +100,7 @@ main(int argc, char *argv[])
   using Teuchos::rcp;
   using Teuchos::RCP;
   using GST = Tpetra::global_size_t;
-  using scalar_type = double;
+  using scalar_type = Tpetra::CrsMatrix<>::scalar_type;
   using crs_matrix_type = Tpetra::CrsMatrix<scalar_type>;
   using map_type = Tpetra::Map<>;
   using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;

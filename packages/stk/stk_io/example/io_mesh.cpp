@@ -30,33 +30,52 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
-#include <string>
-#include <iostream>
-
-#include <stk_util/Version.hpp>
-#include <stk_util/command_line/CommandLineParserParallel.hpp>
-#include <stk_util/environment/LogWithTimeAndMemory.hpp>
-#include <stk_util/environment/Env.hpp>
-#include <stk_util/environment/EnvData.hpp>
-#include <stk_util/environment/memory_util.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/util/ParameterList.hpp>
-#include <stk_util/util/human_bytes.hpp>
-
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-
-#include <stk_io/IossBridge.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
-
-#include <Ionit_Initializer.h>
-#include <Ioss_SubSystem.h>
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <string.h>                                             // for size_t
+#include <algorithm>                                            // for copy
+#include <iostream>                                             // for opera...
+#include <map>                                                  // for _Rb_t...
+#include <stk_io/IossBridge.hpp>                                // for get_f...
+#include <stk_io/StkMeshIoBroker.hpp>                           // for StkMe...
+#include <stk_mesh/base/Comm.hpp>                               // for comm_...
+#include <stk_mesh/base/GetEntities.hpp>                        // for count...
+#include <stk_mesh/base/MetaData.hpp>                           // for MetaData
+#include <stk_util/Version.hpp>                                 // for versi...
+#include <stk_util/command_line/CommandLineParserParallel.hpp>  // for Comma...
+#include <stk_util/environment/Env.hpp>                         // for outputP0
+#include <stk_util/environment/EnvData.hpp>                     // for EnvData
+#include <stk_util/environment/LogWithTimeAndMemory.hpp>        // for log_w...
+#include <stk_util/environment/memory_util.hpp>                 // for get_c...
+#include <stk_util/parallel/Parallel.hpp>                       // for paral...
+#include <stk_util/parallel/ParallelReduce.hpp>                 // for Reduc...
+#include <stk_util/util/ParameterList.hpp>                      // for Param...
+#include <stk_util/util/human_bytes.hpp>                        // for human...
+#include <string>                                               // for string
+#include <utility>                                              // for pair
+#include <vector>                                               // for vector
+#include "Ioss_Field.h"                                         // for Field
+#include "Ioss_Property.h"                                      // for Property
+#include "Ioss_Region.h"                                        // for Region
+#include "Ioss_Utils.h"                                         // for Utils
+#include "Ioss_VariableType.h"                                  // for Varia...
+#include "Teuchos_RCP.hpp"                                      // for RCP::...
+#include "Teuchos_RCPDecl.hpp"                                  // for RCP
+#include "mpi.h"                                                // for MPI_Comm
+#include "stk_io/DatabasePurpose.hpp"                           // for READ_...
+#include "stk_io/Heartbeat.hpp"                                 // for NONE
+#include "stk_io/MeshField.hpp"                                 // for MeshF...
+#include "stk_mesh/base/BulkData.hpp"                           // for BulkData
+#include "stk_mesh/base/Part.hpp"                               // for Part
+#include "stk_mesh/base/Selector.hpp"                           // for Selector
+#include "stk_mesh/base/Types.hpp"                              // for Field...
+#include "stk_topology/topology.hpp"                            // for topology
+#include "stk_util/command_line/CommandLineParser.hpp"          // for Comma...
+#include "stk_util/util/SimpleArrayOps.hpp"                     // for Sum
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 class IoMeshDriver
 {

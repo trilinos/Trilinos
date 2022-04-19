@@ -93,6 +93,7 @@ namespace MueLu {
         for (ParameterList::ConstIterator levelListEntry = levelList.begin(); levelListEntry != levelList.end(); levelListEntry++) {
           const std::string& name = levelListEntry->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" && name != "K"  && name != "M" && name != "Mdiag" &&
+                                     name != "D0" && name != "M1" && name != "Ms" && name != "M0inv" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                      name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
                                      !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
@@ -130,7 +131,7 @@ namespace MueLu {
                                                       //      However, A is accessible through NoFactory anyway, so it should
                                                       //      be fine here.
           }
-          else if(name == "P" || name == "R" || name == "K" || name == "M") {
+          else if(name == "P" || name == "R" || name == "K" || name == "M" || name == "D0" ) {
             RCP<Matrix> mat;
             if (levelListEntry->second.isType<std::string>())
               // We might also want to read maps here.
@@ -144,6 +145,10 @@ namespace MueLu {
 
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, mat, NoFactory::get());
+          }
+          else if (name == "M1" || name == "Ms" || name == "M0inv") {
+            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+            level->Set(name, Teuchos::getValue<RCP<Matrix> >     (levelListEntry->second), NoFactory::get());
           }
           else if (name == "Mdiag")
           {
@@ -179,10 +184,10 @@ namespace MueLu {
                 // Create a nodal map, as coordinates have not been expanded to a DOF map yet.
                 RCP<const Map> dofMap       = mat->getRowMap();
                 GO             indexBase    = dofMap->getIndexBase();
-                size_t         numLocalDOFs = dofMap->getNodeNumElements();
+                size_t         numLocalDOFs = dofMap->getLocalNumElements();
                 TEUCHOS_TEST_FOR_EXCEPTION(numLocalDOFs % blkSize, Exceptions::RuntimeError,
                                            "HierarchyUtils: block size (" << blkSize << ") is incompatible with the number of local dofs in a row map (" << numLocalDOFs);
-                ArrayView<const GO> GIDs = dofMap->getNodeElementList();
+                ArrayView<const GO> GIDs = dofMap->getLocalElementList();
 
                 Array<GO> nodeGIDs(numLocalDOFs/blkSize);
                 for (size_t i = 0; i < numLocalDOFs; i += blkSize)
@@ -267,12 +272,13 @@ namespace MueLu {
         for (ParameterList::ConstIterator userListEntry = userList.begin(); userListEntry != userList.end(); userListEntry++) {
           const std::string& name = userListEntry->first;
           TEUCHOS_TEST_FOR_EXCEPTION(name != "P" && name != "R"  && name != "K"  && name != "M" && name != "Mdiag" &&
+                                     name != "D0" && name != "M1" && name != "Ms" && name != "M0inv" &&
                                      name != "Nullspace" && name != "Coordinates" && name != "pcoarsen: element to node map" &&
                                      name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
                                      name != "output stream" &&
                                      !IsParamValidVariable(name), Exceptions::InvalidArgument,
                                      std::string("MueLu::Utils::AddNonSerializableDataToHierarchy: user data parameter list contains unknown data type (") + name + ")");
-          if( name == "P" || name == "R" || name == "K" || name == "M") {
+          if( name == "P" || name == "R" || name == "K" || name == "M" || name == "D0" || name == "M1" || name == "Ms" || name == "M0inv" ) {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<Matrix > >     (userListEntry->second), NoFactory::get());
           } else if (name == "Mdiag") {

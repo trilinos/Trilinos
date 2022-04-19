@@ -180,7 +180,7 @@ namespace MueLuTests {
  Teuchos::Array<typename TST::magnitudeType> norms(1);
  diff->norm2(norms);
  out << "||diff" << "||_2 = " << norms[0] << std::endl;
- TEST_EQUALITY(norms[0] < 100*TMT::eps(), true);
+ TEST_EQUALITY(norms[0] < 1000*TMT::eps(), true);
 
   } // NullSpace test
 

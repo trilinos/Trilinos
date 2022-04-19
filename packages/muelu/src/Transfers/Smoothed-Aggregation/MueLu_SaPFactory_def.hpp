@@ -119,6 +119,8 @@ namespace MueLu {
     const std::string prefix = "MueLu::SaPFactory(" + levelIDs + "): ";
 
     typedef typename Teuchos::ScalarTraits<SC>::coordinateType Coordinate;
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+
 
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
@@ -162,7 +164,7 @@ namespace MueLu {
     const bool useAbsValueRowSum=        pL.get<bool>  ("sa: use rowsumabs diagonal scaling");
     const bool doQRStep         =        pL.get<bool>("tentative: calculate qr");
     const bool enforceConstraints=       pL.get<bool>("sa: enforce constraints");
-    const SC   userDefinedMaxEigen =  as<SC>(pL.get<double>("sa: max eigenvalue"));
+    const MT   userDefinedMaxEigen =  as<MT>(pL.get<double>("sa: max eigenvalue"));
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
     double dTol = pL.get<double>("sa: rowsumabs diagonal replacement tolerance");
     const Magnitude diagonalReplacementTolerance = (dTol == as<double>(-1) ? Teuchos::ScalarTraits<Scalar>::eps()*100 : as<Magnitude>(pL.get<double>("sa: rowsumabs diagonal replacement tolerance")));
@@ -315,7 +317,7 @@ namespace MueLu {
     for (size_t k=0; k < (size_t) nPDEs; k++) nPositive[k] = 0;
 
 
-    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getNodeNumElements()); i++) {
+    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getLocalNumElements()); i++) {
 
       Teuchos::ArrayView<const LocalOrdinal> indices;
       Teuchos::ArrayView<const Scalar> vals1;
@@ -394,7 +396,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<Scalar> scalarData(3*maxEntriesPerRow);
     bool hasFeasible;
 
-    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getNodeNumElements()); i++) {
+    for (size_t i = 0; i < as<size_t>(P->getRowMap()->getLocalNumElements()); i++) {
 
       Teuchos::ArrayView<const LocalOrdinal> indices;
       Teuchos::ArrayView<const Scalar> vals1;
@@ -687,17 +689,19 @@ namespace MueLu {
   bool lowerViolation = false;
   bool upperViolation = false;
   bool sumViolation = false;
-  temp = Teuchos::ScalarTraits<SC>::zero(); 
+  using TST = Teuchos::ScalarTraits<SC>;
+  temp = TST::zero();
   for (LocalOrdinal i = 0; i < nEntries; i++)  { 
-    if (Teuchos::ScalarTraits<SC>::real(fixedUnsorted[i]) < Teuchos::ScalarTraits<SC>::real(notFlippedLeftBound)) lowerViolation = true;
-    if (Teuchos::ScalarTraits<SC>::real(fixedUnsorted[i]) > Teuchos::ScalarTraits<SC>::real(notFlippedRghtBound)) upperViolation = true;
+    if (TST::real(fixedUnsorted[i]) < TST::real(notFlippedLeftBound)) lowerViolation = true;
+    if (TST::real(fixedUnsorted[i]) > TST::real(notFlippedRghtBound)) upperViolation = true;
     temp += fixedUnsorted[i];
   }
-  if (Teuchos::ScalarTraits<SC>::magnitude(temp - rsumTarget) > Teuchos::ScalarTraits<SC>::magnitude(as<Scalar>(1.0e-8)*rsumTarget)) sumViolation = true;
+  SC tol = as<Scalar>(std::max(1.0e-8, as<double>(100*TST::eps())));
+  if (TST::magnitude(temp - rsumTarget) > TST::magnitude(tol*rsumTarget)) sumViolation = true;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(lowerViolation, Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in a lower bound violation??? ");
-    TEUCHOS_TEST_FOR_EXCEPTION(upperViolation, Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in an upper bound violation??? ");
-    TEUCHOS_TEST_FOR_EXCEPTION(sumViolation,   Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in a row sum violation??? ");
+  TEUCHOS_TEST_FOR_EXCEPTION(lowerViolation, Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in a lower bound violation??? ");
+  TEUCHOS_TEST_FOR_EXCEPTION(upperViolation, Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in an upper bound violation??? ");
+  TEUCHOS_TEST_FOR_EXCEPTION(sumViolation,   Exceptions::RuntimeError, "MueLu::SaPFactory::constrainRow: feasible solution but computation resulted in a row sum violation??? ");
 
   return hasFeasibleSol;
 }

@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C Copyright(C) 1999-2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -102,6 +102,9 @@ C     Create the netcdf file
          call exerr('gjoin2', 'Error from excre', exlmsg)
          go to 150
       endif
+
+C   -- Set output name length
+      call exmxnm(idexo, namlen, ierr)
 
 C   --Write the QA records
 

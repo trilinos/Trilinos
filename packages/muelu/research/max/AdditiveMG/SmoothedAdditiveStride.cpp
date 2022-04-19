@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
 
   // We have to transform P into a condensed multivector
   RCP<multivector_type> identity_shrunk = rcp( new multivector_type(tpetra_prolong->getDomainMap(), 3) );
-  Teuchos::ArrayView<const global_ordinal_type> myIdentityGlobalElements = tpetra_prolong->getDomainMap()->getNodeElementList();
+  Teuchos::ArrayView<const global_ordinal_type> myIdentityGlobalElements = tpetra_prolong->getDomainMap()->getLocalElementList();
   typedef typename Teuchos::ArrayView<const global_ordinal_type>::const_iterator iter_type;
 
 for(int trial = 1; trial<=number_runs; ++trial)
@@ -343,7 +343,7 @@ for(int trial = 1; trial<=number_runs; ++trial)
   Teuchos::RCP< Tpetra::Map< local_ordinal_type, global_ordinal_type, node_type > > BAPcolMap = rcp( new Tpetra::Map< local_ordinal_type, global_ordinal_type, node_type >( static_cast<size_t>(tpetra_prolong->getGlobalNumCols()), elementListBAP, indexBase, comm ) );
 
    RCP<crs_matrix_type> BAP = rcp( new crs_matrix_type( tpetra_prolong->getRowMap(), BAPcolMap, tpetra_prolong->getGlobalNumCols() ) ); 
-   Teuchos::ArrayView<const global_ordinal_type> myLocalElements = BAP->getRowMap()->getNodeElementList();
+   Teuchos::ArrayView<const global_ordinal_type> myLocalElements = BAP->getRowMap()->getLocalElementList();
 
   for(int color = 0; color<3; ++color)
   {

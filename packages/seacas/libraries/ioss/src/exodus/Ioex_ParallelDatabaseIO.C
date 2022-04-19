@@ -884,21 +884,12 @@ namespace Ioex {
     // One use case is that job is restarting at a time prior to what has been
     // written to the results file, so want to start appending after
     // restart time instead of at end time on database.
-    int max_step = timestep_count;
-    if (properties.exists("APPEND_OUTPUT_AFTER_STEP")) {
-      max_step = properties.get("APPEND_OUTPUT_AFTER_STEP").get_int();
-    }
-    if (max_step > timestep_count) {
-      max_step = timestep_count;
-    }
+    int max_step = properties.get_optional("APPEND_OUTPUT_AFTER_STEP", timestep_count);
+    max_step     = std::min(max_step, timestep_count);
 
-    double max_time = std::numeric_limits<double>::max();
-    if (properties.exists("APPEND_OUTPUT_AFTER_TIME")) {
-      max_time = properties.get("APPEND_OUTPUT_AFTER_TIME").get_real();
-    }
-    if (last_time > max_time) {
-      last_time = max_time;
-    }
+    double max_time =
+        properties.get_optional("APPEND_OUTPUT_AFTER_TIME", std::numeric_limits<double>::max());
+    last_time = std::min(last_time, max_time);
 
     Ioss::Region *this_region = get_region();
     for (int i = 0; i < max_step; i++) {
@@ -1219,6 +1210,11 @@ namespace Ioex {
               Ioex::add_map_fields(get_file_pointer(), dynamic_cast<Ioss::ElementBlock *>(io_block),
                                    decomp->el_blocks[iblk].ioss_count(), maximumNameLength);
         }
+
+        if (!assemblyOmissions.empty() || !assemblyInclusions.empty()) {
+          update_block_omissions_from_assemblies();
+        }
+
         assert(blockOmissions.empty() || blockInclusions.empty()); // Only one can be non-empty
 
         // Handle all block omissions or inclusions...
@@ -1297,6 +1293,42 @@ namespace Ioex {
     }
     nodeConnectivityStatusCalculated = true;
   }
+
+  namespace {
+    void get_element_sides_lists(const std::unique_ptr<DecompositionDataBase> &decomp, int exoid,
+                                 int64_t id, int int_byte_size, int64_t number_sides,
+                                 Ioss::Int64Vector &element, Ioss::Int64Vector &sides)
+    {
+      // Check whether we already populated the element/sides vectors.
+      if (element.empty() && sides.empty() && number_sides > 0) {
+        element.resize(number_sides);
+        sides.resize(number_sides);
+
+        // Easier below here if the element and sides are a known 64-bit size...
+        // Kluge here to do that...
+        if (int_byte_size == 4) {
+          Ioss::Field side_field("sides", Ioss::Field::INTEGER, IOSS_SCALAR(), Ioss::Field::MESH,
+                                 number_sides);
+          Ioss::Field elem_field("ids_raw", Ioss::Field::INTEGER, IOSS_SCALAR(), Ioss::Field::MESH,
+                                 number_sides);
+
+          Ioss::IntVector e32(number_sides);
+          decomp->get_set_mesh_var(exoid, EX_SIDE_SET, id, elem_field, e32.data());
+          std::copy(e32.begin(), e32.end(), element.begin());
+          decomp->get_set_mesh_var(exoid, EX_SIDE_SET, id, side_field, e32.data());
+          std::copy(e32.begin(), e32.end(), sides.begin());
+        }
+        else {
+          Ioss::Field side_field("sides", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
+                                 number_sides);
+          Ioss::Field elem_field("ids_raw", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
+                                 number_sides);
+          decomp->get_set_mesh_var(exoid, EX_SIDE_SET, id, elem_field, element.data());
+          decomp->get_set_mesh_var(exoid, EX_SIDE_SET, id, side_field, sides.data());
+        }
+      }
+    }
+  } // namespace
 
   void ParallelDatabaseIO::get_sidesets()
   {
@@ -1421,34 +1453,12 @@ namespace Ioex {
           int64_t number_sides = decomp->side_sets[iss].ioss_count();
           // FIXME: Support-  number_distribution_factors = decomp->side_sets[iss].df_count();
 
-          Ioss::Int64Vector element(number_sides);
-          Ioss::Int64Vector sides(number_sides);
-
-          // Easier below here if the element and sides are a known 64-bit size...
-          // Kluge here to do that...
-          if (int_byte_size_api() == 4) {
-            Ioss::Field side_field("sides", Ioss::Field::INTEGER, IOSS_SCALAR(), Ioss::Field::MESH,
-                                   number_sides);
-            Ioss::Field elem_field("ids_raw", Ioss::Field::INTEGER, IOSS_SCALAR(),
-                                   Ioss::Field::MESH, number_sides);
-
-            Ioss::IntVector e32(number_sides);
-            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field, e32.data());
-            std::copy(e32.begin(), e32.end(), element.begin());
-            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, e32.data());
-            std::copy(e32.begin(), e32.end(), sides.begin());
-          }
-          else {
-            Ioss::Field side_field("sides", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
-                                   number_sides);
-            Ioss::Field elem_field("ids_raw", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
-                                   number_sides);
-            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field,
-                                     element.data());
-            decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, sides.data());
-          }
+          Ioss::Int64Vector element;
+          Ioss::Int64Vector sides;
 
           if (!blockOmissions.empty() || !blockInclusions.empty()) {
+            get_element_sides_lists(decomp, get_file_pointer(), id, int_byte_size_api(),
+                                    number_sides, element, sides);
             Ioex::filter_element_list(get_region(), element, sides, true);
             number_sides = element.size();
             assert(element.size() == sides.size());
@@ -1503,6 +1513,8 @@ namespace Ioex {
               side_map[std::make_pair(side_topo.first->name(), side_topo.second)] = 0;
             }
 
+            get_element_sides_lists(decomp, get_file_pointer(), id, int_byte_size_api(),
+                                    number_sides, element, sides);
             Ioex::separate_surface_element_sides(element, sides, get_region(), topo_map, side_map,
                                                  split_type, side_set_name);
           }
@@ -1543,6 +1555,8 @@ namespace Ioex {
                 }
               }
             }
+            get_element_sides_lists(decomp, get_file_pointer(), id, int_byte_size_api(),
+                                    number_sides, element, sides);
             Ioex::separate_surface_element_sides(element, sides, get_region(), topo_map, side_map,
                                                  split_type, side_set_name);
           }
@@ -2979,9 +2993,9 @@ int64_t ParallelDatabaseIO::read_ss_transient_field(const Ioss::Field &field, in
                                                     void            *variables,
                                                     Ioss::IntVector &is_valid_side) const
 {
-  size_t                    num_valid_sides = 0;
-  size_t                    my_side_count   = is_valid_side.size();
-  std::vector<double>       temp(my_side_count);
+  size_t              num_valid_sides = 0;
+  size_t              my_side_count   = is_valid_side.size();
+  std::vector<double> temp(my_side_count);
 
   size_t step = get_current_state();
 
@@ -4078,7 +4092,7 @@ void ParallelDatabaseIO::write_nodal_transient_field(ex_entity_type /* type */,
   // exodus fields.  These fields were already defined in
   // "write_results_metadata".
 
-  std::vector<double>       temp(count);
+  std::vector<double> temp(count);
 
   int step = get_current_state();
   step     = get_database_step(step);
@@ -4161,8 +4175,8 @@ void ParallelDatabaseIO::write_entity_transient_field(ex_entity_type type, const
                                                       const Ioss::GroupingEntity *ge, int64_t count,
                                                       void *variables) const
 {
-  static Ioss::Map non_element_map; // Used as an empty map for ge->type() != element block.
-  std::vector<double>       temp(count);
+  static Ioss::Map    non_element_map; // Used as an empty map for ge->type() != element block.
+  std::vector<double> temp(count);
 
   int step = get_current_state();
   step     = get_database_step(step);

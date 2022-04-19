@@ -65,8 +65,8 @@ namespace MueLuTests {
 
     Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map,CrsMatrixWrap>::Build(map, 3);
 
-    LocalOrdinal NumMyElements = map->getNodeNumElements();
-    Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+    LocalOrdinal NumMyElements = map->getLocalNumElements();
+    Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
     GlobalOrdinal NumGlobalElements = map->getGlobalNumElements();
     GlobalOrdinal nIndexBase = map->getIndexBase();
 

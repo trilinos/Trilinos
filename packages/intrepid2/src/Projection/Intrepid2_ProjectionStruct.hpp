@@ -90,16 +90,19 @@ public:
   enum EvalPointsType {BASIS, TARGET};
 
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-  typedef typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType;
-  typedef Kokkos::DynRankView<ValueType,HostSpaceType> view_type;
-  typedef Kokkos::View<range_type**,HostSpaceType> range_tag;
+  /// KK : do we really need this complication instead of using default host exec space ????
+  typedef typename Kokkos::Impl::is_space<DeviceType>::host_execution_space HostExecutionSpaceType;
+  typedef typename Kokkos::Impl::is_space<DeviceType>::host_memory_space HostMemorySpaceType;
+  typedef Kokkos::Device<HostExecutionSpaceType,HostMemorySpaceType> HostDeviceType;
+  typedef Kokkos::DynRankView<ValueType,HostDeviceType > view_type;
+  typedef Kokkos::View<range_type**,HostDeviceType> range_tag;
   static constexpr int numberSubCellDims = 4; //{0 for vertex, 1 for edges, 2 for faces, 3 for volumes}
   //max of numVertices, numEdges, numFaces for a reference cell.
   //12 is the number of edges in a Hexahderon.
   //We'll need to change this if we consider generic polyhedra
   static constexpr int maxSubCellsCount = 12;
   typedef std::array<std::array<view_type, maxSubCellsCount>, numberSubCellDims> view_tag;
-  typedef Kokkos::View<unsigned**,HostSpaceType> key_tag;
+  typedef Kokkos::View<unsigned**,HostDeviceType > key_tag;
 
   /** \brief  Returns number of basis evaluation points
    */

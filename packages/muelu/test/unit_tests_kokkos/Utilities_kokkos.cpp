@@ -48,6 +48,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
 
@@ -95,7 +96,7 @@ namespace MueLuTests
     {
       auto ordering = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CuthillMcKee(*A);
 
-      TEST_EQUALITY(ordering->getLocalLength(), A->getNodeNumRows());
+      TEST_EQUALITY(ordering->getLocalLength(), A->getLocalNumRows());
       TEST_EQUALITY(ordering->getGlobalLength(), A->getGlobalNumRows());
     }
 
@@ -103,7 +104,7 @@ namespace MueLuTests
     {
       auto ordering = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReverseCuthillMcKee(*A);
 
-      TEST_EQUALITY(ordering->getLocalLength(), A->getNodeNumRows());
+      TEST_EQUALITY(ordering->getLocalLength(), A->getLocalNumRows());
       TEST_EQUALITY(ordering->getGlobalLength(), A->getGlobalNumRows());
     }
   }
@@ -141,7 +142,7 @@ namespace MueLuTests
     TEST_EQUALITY(drowsHost(localRowToZero - 1), false);
 
     // row 5 should be Dirichlet
-    drows = Utils_Kokkos::DetectDirichletRows(*A, TST::magnitude(0.26));
+    drows = Utils_Kokkos::DetectDirichletRows(*A, TST::magnitude(0.26), true);
     drowsHost = Kokkos::create_mirror_view(drows);
     Kokkos::deep_copy(drowsHost, drows);
 
@@ -191,7 +192,7 @@ namespace MueLuTests
     auto diag = Utils_Kokkos::GetMatrixDiagonal(*A);
     auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
 
-    TEST_EQUALITY(diagView.extent(0), A->getNodeNumRows());
+    TEST_EQUALITY(diagView.extent(0), A->getLocalNumRows());
 
     for (size_t idx = 0; idx < diagView.extent(0); ++idx)
     {
@@ -214,7 +215,7 @@ namespace MueLuTests
     auto diag = Utils_Kokkos::GetMatrixDiagonalInverse(*A);
     auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
 
-    TEST_EQUALITY(diagView.extent(0), A->getNodeNumRows());
+    TEST_EQUALITY(diagView.extent(0), A->getLocalNumRows());
 
     for (size_t idx = 0; idx < diagView.extent(0); ++idx)
     {
@@ -303,8 +304,8 @@ namespace MueLuTests
     CreateDirichletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero);
 
     auto drows = Utils_Kokkos::DetectDirichletRows(*A);
-    Kokkos::View<bool *, typename Node::device_type> dirichletCols("dirichletCols", A->getColMap()->getNodeNumElements());
-    Kokkos::View<bool *, typename Node::device_type> dirichletDomain("dirichletDomain", A->getDomainMap()->getNodeNumElements());
+    Kokkos::View<bool *, typename Node::device_type> dirichletCols("dirichletCols", A->getColMap()->getLocalNumElements());
+    Kokkos::View<bool *, typename Node::device_type> dirichletDomain("dirichletDomain", A->getDomainMap()->getLocalNumElements());
 
     Utils_Kokkos::DetectDirichletColsAndDomains(*A, drows, dirichletCols, dirichletDomain);
 
@@ -383,7 +384,7 @@ namespace MueLuTests
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
 
-    const auto numCols = A->getColMap()->getNodeNumElements();
+    const auto numCols = A->getColMap()->getLocalNumElements();
     const auto colToZero = 2;
     Kokkos::View<bool *, typename Node::device_type> dCols("", numCols);
     Kokkos::parallel_for(
@@ -395,7 +396,7 @@ namespace MueLuTests
     Utils_Kokkos::ZeroDirichletCols(A, dCols, zeroVal);
 
     const auto localMatrix = A->getLocalMatrixHost();
-    const auto numRows = A->getNodeNumRows();
+    const auto numRows = A->getLocalNumRows();
     for (size_t row = 0; row < numRows; ++row)
     {
       auto rowView = localMatrix.row(row);
@@ -422,7 +423,7 @@ namespace MueLuTests
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
 
-    const auto numRows = A->getNodeNumRows();
+    const auto numRows = A->getLocalNumRows();
     Kokkos::View<bool *, typename Node::device_type> dRows("", numRows);
 
     Utils_Kokkos::ApplyRowSumCriterion(*A, Magnitude(1.0), dRows);
@@ -462,7 +463,7 @@ namespace MueLuTests
 
     const auto localMatrixScaled = A->getLocalMatrixHost();
     const auto localMatrixOriginal = B->getLocalMatrixHost();
-    const auto numRows = A->getNodeNumRows();
+    const auto numRows = A->getLocalNumRows();
     for (size_t row = 0; row < numRows; ++row)
     {
       auto scaledRowView = localMatrixScaled.row(row);
@@ -493,7 +494,7 @@ namespace MueLuTests
     using RangeType = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
-    Kokkos::View<bool *, typename Node::device_type> dRowsIn("", A->getNodeNumRows());
+    Kokkos::View<bool *, typename Node::device_type> dRowsIn("", A->getLocalNumRows());
 
     Kokkos::parallel_for(
         "", RangeType(0, dRowsIn.extent(0)), KOKKOS_LAMBDA(const int index) {
@@ -557,12 +558,14 @@ namespace MueLuTests
 
     using TpetraMat = Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using Operator = Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using CrsMatrixFactory = Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     auto compareMat = [&](const Matrix &xpetraMat, const TpetraMat &tpetraMat)
     {
       TEST_EQUALITY(xpetraMat.getGlobalNumRows(), tpetraMat.getGlobalNumRows());
       TEST_EQUALITY(xpetraMat.getGlobalNumCols(), tpetraMat.getGlobalNumCols());
-      TEST_EQUALITY(xpetraMat.getNodeNumRows(), tpetraMat.getNodeNumRows());
+      TEST_EQUALITY(xpetraMat.getLocalNumRows(), tpetraMat.getLocalNumRows());
       TEST_EQUALITY(xpetraMat.getGlobalNumEntries(), tpetraMat.getGlobalNumEntries());
     };
 
@@ -578,6 +581,17 @@ namespace MueLuTests
     auto nonConstTpetraCrs2 = Utils_Kokkos::Op2NonConstTpetraCrs(*A);
     compareMat(*A, nonConstTpetraCrs2);
 
+    auto crsMat = CrsMatrixFactory::Build(map);
+
+    auto op = Utils_Kokkos::Crs2Op(crsMat);
+
+    TEST_EQUALITY(crsMat->getGlobalNumRows(), op->getGlobalNumRows());
+    TEST_EQUALITY(crsMat->getLocalNumRows(), op->getLocalNumRows());
+
+    auto transposeRes = Utils_Kokkos::Transpose(*A);
+    TEST_EQUALITY(transposeRes->getGlobalNumRows(), A->getGlobalNumRows());
+    TEST_EQUALITY(transposeRes->getLocalNumRows(), A->getLocalNumRows());
+
     auto tpetraRow = Utils_Kokkos::Op2TpetraRow(A);
     compareMat(*A, *tpetraRow);
 
@@ -587,6 +601,46 @@ namespace MueLuTests
     auto tpetraMap = Utils_Kokkos::Map2TpetraMap(*map);
     TEST_INEQUALITY(tpetraMap, Teuchos::null);
     TEST_EQUALITY_CONST(tpetraMap->getGlobalNumElements(), map->getGlobalNumElements());
+
+    using VectorFactory = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using MultiVectorFactory = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    // GetInverse
+    {
+      auto vec = Teuchos::RCP<Vector>(VectorFactory::Build(map));
+      vec->putScalar(Scalar(5.0));
+
+      auto inv = Utils_Kokkos::GetInverse(vec);
+
+      auto invData = inv->getData(0);
+
+      TEST_EQUALITY(vec->getData(0).size(), invData.size());
+      for (int i = 0; i < invData.size(); ++i)
+      {
+        TEST_EQUALITY(Scalar(1.0 / 5.0), invData[i]);
+      }
+    }
+
+    // ResidualNorm
+    {
+      auto vector2 = MultiVectorFactory::Build(map, 1);
+      vector2->putScalar(Scalar(3.0));
+      vector->putScalar(Scalar(2.0));
+
+      auto residualNormRes = Utils_Kokkos::ResidualNorm((Operator &)(*A), *vector, *vector2);
+      TEST_EQUALITY(residualNormRes.size(), 1);
+    }
+
+    // PowerMethod
+    {
+      auto powerRes = Utils_Kokkos::PowerMethod(*A);
+
+      auto inversDiag = Utils_Kokkos::GetMatrixDiagonalInverse(*A);
+      auto powerRes2 = Utils_Kokkos::PowerMethod(*A, inversDiag);
+
+      TEST_INEQUALITY(powerRes, Scalar(0.0));
+      TEST_INEQUALITY(powerRes2, Scalar(0.0));
+    }
 
 #endif
   } //TransformFunctions

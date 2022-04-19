@@ -283,7 +283,7 @@ void test_serial_input_adapter(Teuchos::RCP<const Teuchos::Comm<int> > global_tc
   //Basically each element has its global id as part number.
   //It global ids are same as local ids here because each processors owns the whole thing.
   Zoltan2::PartitioningSolution<mytest_adapter_t> single_phase_mapping_solution(env, global_tcomm, 0);
-  Teuchos::ArrayView< const test_gno_t> gids = serial_map->getNodeElementList();
+  Teuchos::ArrayView< const test_gno_t> gids = serial_map->getLocalElementList();
 
   ArrayRCP<int> initial_part_ids(myTasks);
   for (test_gno_t i = 0; i < myTasks; ++i){

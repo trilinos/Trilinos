@@ -2,37 +2,36 @@
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
 #include "StkIoUtils.hpp"
-#include <algorithm>
-#include <utility>
-#include "Ioss_Field.h"
-#include "Ioss_Region.h"
-#include "Ioss_SideBlock.h"
-#include "Ioss_SideSet.h"
-#include "StkMeshIoBroker.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_RCPDecl.hpp"                                   // for RCP
-#include "stk_io/IossBridge.hpp"
-#include "stk_mesh/base/Bucket.hpp"
-#include "stk_mesh/base/BulkData.hpp"
-#include "stk_mesh/base/Entity.hpp"
-#include "stk_mesh/base/ExodusTranslator.hpp"
-#include "stk_mesh/base/FieldBase.hpp"
-#include "stk_mesh/base/GetEntities.hpp"
-#include "stk_mesh/base/MetaData.hpp"
-#include "stk_mesh/base/Part.hpp"
-#include "stk_mesh/base/Selector.hpp"
-#include "stk_mesh/base/SideSetEntry.hpp"
-#include "stk_mesh/base/Types.hpp"
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp"
-#include "stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp"
-#include "stk_topology/topology.hpp"
-#include "stk_util/util/ReportHandler.hpp"
-#include "stk_util/parallel/ParallelReduceBool.hpp"
-#include "stk_util/util/SortAndUnique.hpp"
-#include "stk_util/diag/StringUtil.hpp"           // for Type, etc
-#include "stk_util/util/string_case_compare.hpp"
-#include <stk_util/environment/RuntimeWarning.hpp>
+#include <cmath>                                  // for log10
+#include <string.h>                               // for strcmp, strtok, strchr
+#include <cassert>                                // for assert
+#include <cstdint>                                // for int64_t
+#include <iomanip>                                // for operator<<, setfill
+#include <iostream>                               // for operator<<, basic_o...
+#include <stdexcept>                              // for runtime_error
+#include <type_traits>                            // for __decay_and_strip<>...
+#include <utility>                                // for make_pair, pair
+#include "Ioss_Field.h"                           // for Field::BasicType
+#include "Ioss_Region.h"                          // for Region, SideSetCont...
+#include "Ioss_SideBlock.h"                       // for SideBlock
+#include "Ioss_SideSet.h"                         // for SideSet, SideBlockC...
+#include "StkMeshIoBroker.hpp"                    // for StkMeshIoBroker
+#include "Teuchos_RCP.hpp"                        // for RCP::operator*
+#include "Teuchos_RCPDecl.hpp"                    // for RCP
+#include "stk_io/IossBridge.hpp"                  // for get_field_role, is_...
+#include "stk_io/OutputParams.hpp"                // for OutputParams
+#include "stk_mesh/base/BulkData.hpp"             // for BulkData
+#include "stk_mesh/base/FieldBase.hpp"            // for FieldBase
+#include "stk_mesh/base/GetEntities.hpp"          // for get_entities
+#include "stk_mesh/base/MetaData.hpp"             // for MetaData, is_auto_d...
+#include "stk_mesh/base/Part.hpp"                 // for Part
+#include "stk_mesh/base/Selector.hpp"             // for Selector, operator&
+#include "stk_mesh/base/Types.hpp"                // for PartVector, FieldVe...
+#include "stk_topology/topology.hpp"              // for topology, topology:...
+#include "stk_util/diag/StringUtil.hpp"           // for make_lower
+#include "stk_util/util/ReportHandler.hpp"        // for ThrowRequire
+#include "stk_util/util/string_case_compare.hpp"  // for equal_case
+namespace Teuchos { class any; }
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -148,7 +147,7 @@ void throw_if_any_elem_block_has_invalid_topology(const stk::mesh::MetaData& met
 {
   const stk::mesh::PartVector& parts = meta.get_parts();
   for(const stk::mesh::Part* part : parts) {
-    if (part->primary_entity_rank() == stk::topology::ELEM_RANK && stk::io::is_part_io_part(*part)) {
+    if (is_part_element_block_io_part(*part)) {
       if (part->topology() == stk::topology::INVALID_TOPOLOGY) {
         std::ostringstream msg;
         msg << " INTERNAL_ERROR when defining output for region '"<<msgRegionName

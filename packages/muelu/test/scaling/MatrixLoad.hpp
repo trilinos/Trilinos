@@ -120,16 +120,16 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
     // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
     if (matrixType == "Laplace1D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
     } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
                matrixType == "BigStar2D" || matrixType == "AnisotropicDiffusion" || matrixType == "Elasticity2D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
 
     } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
     }
 
     // Expand map to do multiple DOF per node for block problems
@@ -162,7 +162,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
     
 
     if(!coordinates.is_null() && (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") ) {
-      Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LocalOrdinal,GlobalOrdinal,Node> > newcoordinates;
+      Teuchos::RCP<Xpetra::MultiVector<real_type,LocalOrdinal,GlobalOrdinal,Node> > newcoordinates;
       newcoordinates = Pr->BuildCoords();
 
       // Galeri makes multiple copies of coordinates to deal with
@@ -215,7 +215,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
         coordMap = Xpetra::IO<SC,LO,GO,Node>::ReadMap(coordMapFile, lib, comm);
       else
         coordMap = map;
-      coordinates = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,Node>::ReadMultiVector(coordFile, coordMap);
+      coordinates = Xpetra::IO<real_type,LO,GO,Node>::ReadMultiVector(coordFile, coordMap);
     }
 
     if (!nullFile.empty())
@@ -234,7 +234,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::Underlyi
     X->randomize();
     A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
-    Teuchos::Array<typename STS::magnitudeType> norms(numVectors);
+    Teuchos::Array<real_type> norms(numVectors);
     B->norm2(norms);
     B->scale(one/norms[0]);
 

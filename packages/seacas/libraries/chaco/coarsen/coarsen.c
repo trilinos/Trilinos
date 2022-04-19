@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,10 +20,10 @@ void coarsen(
     int               nedges,      /* number of edges in graph */
     int               using_vwgts, /* are vertices weights being used? */
     int               using_ewgts, /* are edge weights being used? */
-    float *           term_wgts[], /* terminal weights */
+    float            *term_wgts[], /* terminal weights */
     int               igeom,       /* dimension for geometric information */
-    float **          coords,      /* coordinates for vertices */
-    double **         yvecs,       /* eigenvectors returned */
+    float           **coords,      /* coordinates for vertices */
+    double          **yvecs,       /* eigenvectors returned */
     int               ndims,       /* number of eigenvectors to calculate */
     int               solver_flag, /* which eigensolver to use */
     int               vmax,        /* largest subgraph to stop coarsening */
@@ -33,7 +33,7 @@ void coarsen(
     int               give_up      /* has coarsening bogged down? */
 )
 {
-  extern FILE *     Output_File;            /* output file or null */
+  extern FILE      *Output_File;            /* output file or null */
   extern int        DEBUG_COARSEN;          /* debug flag for coarsening */
   extern int        PERTURB;                /* was matrix perturbed in Lanczos? */
   extern double     COARSEN_RATIO_MIN;      /* min vtx reduction for coarsening */
@@ -41,32 +41,32 @@ void coarsen(
   extern int        COARSEN_EWGTS;          /* use edge weights while coarsening? */
   extern double     refine_time;            /* time for RQI/Symmlq iterative refinement */
   struct vtx_data **cgraph;                 /* array of vtx data for coarsened graph */
-  struct orthlink * orthlist;               /* list of lower evecs to suppress */
-  struct orthlink * newlink;                /* lower evec to suppress */
-  double *          cyvecs[MAXDIMS + 1];    /* eigenvectors for subgraph */
+  struct orthlink  *orthlist;               /* list of lower evecs to suppress */
+  struct orthlink  *newlink;                /* lower evec to suppress */
+  double           *cyvecs[MAXDIMS + 1];    /* eigenvectors for subgraph */
   double            evals[MAXDIMS + 1];     /* eigenvalues returned */
   double            goal[MAXSETS];          /* needed for convergence mode = 1 */
-  double *          r1, *r2, *work;         /* space needed by symmlq/RQI */
-  double *          v, *w, *x, *y;          /* space needed by symmlq/RQI */
-  double *          gvec;                   /* rhs vector in extended eigenproblem */
+  double           *r1, *r2, *work;         /* space needed by symmlq/RQI */
+  double           *v, *w, *x, *y;          /* space needed by symmlq/RQI */
+  double           *gvec;                   /* rhs vector in extended eigenproblem */
   double            evalest;                /* eigenvalue estimate returned by RQI */
   double            maxdeg;                 /* maximum weighted degree of a vertex */
-  float **          ccoords;                /* coordinates for coarsened graph */
-  float *           cterm_wgts[MAXSETS];    /* coarse graph terminal weights */
-  float *           new_term_wgts[MAXSETS]; /* terminal weights for Bui's method*/
-  float **          real_term_wgts;         /* one of the above */
-  float *           twptr      = NULL;      /* loops through term_wgts */
-  float *           twptr_save = NULL;      /* copy of twptr */
-  float *           ctwptr;                 /* loops through cterm_wgts */
-  double *          vwsqrt = NULL;          /* square root of vertex weights */
+  float           **ccoords;                /* coordinates for coarsened graph */
+  float            *cterm_wgts[MAXSETS];    /* coarse graph terminal weights */
+  float            *new_term_wgts[MAXSETS]; /* terminal weights for Bui's method*/
+  float           **real_term_wgts;         /* one of the above */
+  float            *twptr      = NULL;      /* loops through term_wgts */
+  float            *twptr_save = NULL;      /* copy of twptr */
+  float            *ctwptr;                 /* loops through cterm_wgts */
+  double           *vwsqrt = NULL;          /* square root of vertex weights */
   double            norm, alpha;            /* values used for orthogonalization */
   double            initshift;              /* initial shift for RQI */
   double            total_vwgt;             /* sum of all the vertex weights */
   double            w1, w2;                 /* weights of two sets */
   double            term_tot;               /* sum of all terminal weights */
-  int *             space;                  /* room for assignment in Lanczos */
-  int *             morespace;              /* room for assignment in Lanczos */
-  int *             v2cv;                   /* mapping from vertices to coarse vtxs */
+  int              *space;                  /* room for assignment in Lanczos */
+  int              *morespace;              /* room for assignment in Lanczos */
+  int              *v2cv;                   /* mapping from vertices to coarse vtxs */
   int               vwgt_max;               /* largest vertex weight */
   int               oldperturb;             /* saves PERTURB value */
   int               cnvtxs;                 /* number of vertices in coarsened graph */
@@ -76,7 +76,8 @@ void coarsen(
   int               i, j;                   /* loop counters */
   double            time;                   /* time marker */
 
-  double           dot(), ch_normalize(), find_maxdeg(), seconds();
+  double dot(double *vec1, int beg, int end, double *vec2), ch_normalize(), find_maxdeg(),
+      seconds(void);
   struct orthlink *makeorthlnk();
   void             makevwsqrt(), eigensolve(), coarsen1(), orthogvec(), rqi_ext();
   void             ch_interpolate(), orthog1(), rqi(), scadd(), free_graph();

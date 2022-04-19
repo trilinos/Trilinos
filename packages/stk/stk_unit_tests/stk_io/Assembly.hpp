@@ -44,6 +44,12 @@
 #include <algorithm>
 #include <fstream>
 
+namespace stk
+{
+namespace io
+{
+namespace unit_test
+{
 class Assembly : public IOMeshFixture
 {
 protected:
@@ -152,8 +158,8 @@ protected:
   }
 
   void compare_assemblies(const stk::mesh::MetaData& meta1,
-                          const stk::mesh::MetaData& meta2,
-                          const stk::mesh::PartVector& excludedBlocks = stk::mesh::PartVector())
+      const stk::mesh::MetaData& meta2,
+      const stk::mesh::PartVector& excludedParts = stk::mesh::PartVector())
   {
     std::vector<std::string> assemblyNames1 = stk::io::get_assembly_names(meta1);
     std::vector<std::string> assemblyNames2 = stk::io::get_assembly_names(meta2);
@@ -161,6 +167,9 @@ protected:
     std::sort(assemblyNames1.begin(), assemblyNames1.end());
     std::sort(assemblyNames2.begin(), assemblyNames2.end());
     EXPECT_EQ(assemblyNames1, assemblyNames2);
+
+    const stk::mesh::BulkData& bulk1 = meta1.mesh_bulk_data();
+    const stk::mesh::BulkData& bulk2 = meta2.mesh_bulk_data();
 
     for(size_t i=0; i<assemblyNames1.size(); ++i) {
       const stk::mesh::Part* assemblyPart1 = meta1.get_part(assemblyNames1[i]);
@@ -176,18 +185,27 @@ protected:
       stk::mesh::PartVector leafParts2 = stk::io::get_unique_leaf_parts(meta2, assemblyNames2[i]);
       ASSERT_GE(leafParts1.size(), leafParts2.size());
       for(size_t j=0; j<leafParts1.size(); ++j) {
-        if (excludedBlocks.empty() || !find_by_name(excludedBlocks, leafParts1[j]->name())) {
-          EXPECT_TRUE(stk::mesh::find(leafParts2, leafParts1[j]->name()) != nullptr);
+        if (excludedParts.empty() || !find_by_name(excludedParts, leafParts1[j]->name())) {
+          EXPECT_TRUE(stk::mesh::find(leafParts2, leafParts1[j]->name()) != nullptr)
+              << "Could not find " << leafParts1[j]->name();
+
+          stk::mesh::EntityRank rank1 = leafParts1[j]->primary_entity_rank();
+          stk::mesh::EntityRank rank2 = leafParts2[j]->primary_entity_rank();
+          EXPECT_EQ(rank1, rank2);
+
+          unsigned numFaces1 = stk::mesh::count_selected_entities(*leafParts1[j], bulk1.buckets(rank1));
+          unsigned numFaces2 = stk::mesh::count_selected_entities(*leafParts2[j], bulk2.buckets(rank2));
+          EXPECT_EQ(numFaces1, numFaces2);
         }
       }
     }
   }
 
-  void test_write_then_read_assemblies(size_t expectedNumAssemblies,
-                                       const stk::mesh::PartVector& blocksToExclude = stk::mesh::PartVector())
+  void test_write_then_read_block_assemblies(
+      size_t expectedNumAssemblies, const stk::mesh::PartVector& partsToExclude = stk::mesh::PartVector())
   {
-    const std::string fileName("meshWithAssemblies.e");
-    stk::mesh::Selector meshSubsetSelector = create_subset_selector(blocksToExclude);
+    const std::string fileName("meshWithBlockAssemblies.e");
+    stk::mesh::Selector meshSubsetSelector = create_block_subset_selector(partsToExclude);
     stk::io::write_mesh_subset(fileName, get_bulk(), meshSubsetSelector);
 
     stk::mesh::MetaData meta;
@@ -196,12 +214,66 @@ protected:
 
     EXPECT_EQ(expectedNumAssemblies, stk::io::get_assembly_names(meta).size());
     if (expectedNumAssemblies > 0) {
-      compare_assemblies(get_meta(), meta, blocksToExclude);
+      compare_assemblies(get_meta(), meta, partsToExclude);
     }
 
     unlink(fileName.c_str());
   }
+
+  void test_write_then_read_non_element_assemblies(size_t expectedNumAssemblies,
+      const stk::mesh::PartVector& outputPartsToExclude,
+      const stk::mesh::PartVector& inputPartsToExclude,
+      const std::string& fileName,
+      stk::mesh::EntityRank rank)
+  {
+    stk::mesh::Selector meshSubsetSelector = !stk::mesh::Selector(stk::mesh::selectUnion(outputPartsToExclude));
+    stk::io::StkMeshIoBroker stkIo;
+    stkIo.set_bulk_data(get_bulk());
+    size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
+    stkIo.set_output_selector(outputFileIndex, rank, meshSubsetSelector);
+    stkIo.write_output_mesh(outputFileIndex);
+
+    stk::mesh::MetaData meta;
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+    stk::io::fill_mesh(fileName, bulk);
+
+    EXPECT_EQ(expectedNumAssemblies, stk::io::get_assembly_names(meta).size());
+    if (expectedNumAssemblies > 0) {
+      compare_assemblies(get_meta(), meta, inputPartsToExclude);
+    }
+
+    unlink(fileName.c_str());
+  }
+
+  void test_write_then_read_surface_assemblies(size_t expectedNumAssemblies,
+      const stk::mesh::PartVector& outputPartsToExclude = stk::mesh::PartVector(),
+      const stk::mesh::PartVector& inputPartsToExclude = stk::mesh::PartVector())
+  {
+    const std::string fileName("meshWithSurfaceAssemblies.e");
+    test_write_then_read_non_element_assemblies(
+        expectedNumAssemblies, outputPartsToExclude, inputPartsToExclude, fileName, get_meta().side_rank());
+  }
+
+  void test_write_then_read_nodeset_assemblies(size_t expectedNumAssemblies,
+      const stk::mesh::PartVector& outputPartsToExclude = stk::mesh::PartVector(),
+      const stk::mesh::PartVector& inputPartsToExclude = stk::mesh::PartVector())
+  {
+    const std::string fileName("meshWithNodesetAssemblies.e");
+    test_write_then_read_non_element_assemblies(
+        expectedNumAssemblies, outputPartsToExclude, inputPartsToExclude, fileName, stk::topology::NODE_RANK);
+  }
+
+  void test_for_null_parts(const stk::mesh::PartVector& parts)
+  {
+    for (const stk::mesh::Part* part : parts) {
+      EXPECT_TRUE(part != nullptr);
+    }
+  }
 };
+
+}  // namespace unit_test
+}  // namespace io
+}  // namespace stk
 
 #endif
 

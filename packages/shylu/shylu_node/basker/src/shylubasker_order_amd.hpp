@@ -384,6 +384,10 @@ namespace BaskerNS
     for(Int b = b_start; b < b_end; b++)
     {
       Int blk_size = btf_tabs(b+1) - btf_tabs(b);
+      if (Options.verbose) {
+        std::cout << std::endl << " + blk(" << b << "): size=" << blk_size
+                  << ", rows=" << btf_tabs(b) << ":" << btf_tabs(b+1)-1 << std::endl;
+      }
 
       // -----------------------------------------------
       // compute MWM of b-th diagonal block
@@ -692,7 +696,7 @@ namespace BaskerNS
         {
           // AMD on diagonal block
           if (flag) {
-            std::cout << " >> + Basker::AMD_ORDER" << std::endl;
+            std::cout << " >> + Basker::AMD_ORDER + <<" << std::endl;
           }
           int amd_info =
           BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), &(temp_row(0)), 
@@ -700,21 +704,23 @@ namespace BaskerNS
           if (amd_info == TRILINOS_AMD_OUT_OF_MEMORY || amd_info == TRILINOS_AMD_INVALID) {
             if(Options.verbose == BASKER_TRUE) {
               std::cout << " ++ amd_order returned " << amd_info
-                        << " for blk(" << b << ")" << std::endl;
+                        << " for blk(" << b << ") with lu_work = "
+                        << lu_work << std::endl;
             }
             FREE_INT_1DARRAY(temp_col);
             FREE_INT_1DARRAY(temp_row);
             FREE_ENTRY_1DARRAY(temp_val);
             return BASKER_ERROR;
+          } else if (Options.verbose == BASKER_TRUE) {
+            std::cout << " ++ amd_order returned " << amd_info
+                      << " for blk(" << b << ") with lu_work = " << lu_work
+                      << " and l_nnz = " << l_nnz << " ++" << std::endl;
           }
         }
       }
       #ifdef BASKER_TIMER
       amd_time += timer_order.seconds();
       #endif
-      if (Options.verbose) {
-        printf( " + blk(%d: size=%d, rows=%d:%d)\n", (int)b, (int)(btf_tabs(b+1)-btf_tabs(b)), (int)btf_tabs(b),(int)btf_tabs(b+1)-1 );
-      }
       #if 0
       printf( " >> debug: set blk_amd to identity <<\n" );
       for(Int ii = 0; ii < blk_size; ii++)
@@ -726,7 +732,11 @@ namespace BaskerNS
         btf_nnz(b) = l_nnz;
       }
       if (b < (Int)btf_work.extent(0)) {
-        btf_work(b) = lu_work;
+        if (0 <= (Int)lu_work) {
+          btf_work(b) = lu_work;
+        } else {
+          btf_work(b) = Teuchos::OrdinalTraits<Int>::max();
+        }
       }
 
       #ifdef BASKER_DEBUG_ORDER_AMD

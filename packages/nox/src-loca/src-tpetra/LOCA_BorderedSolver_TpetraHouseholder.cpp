@@ -80,7 +80,7 @@
 // Forward declaration needed for ParameterList validation
 namespace LOCA {
   namespace MultiContinuation {
-    class ConstraintModelEvaluator;
+    class ConstraintInterface;
   }
 }
 
@@ -170,7 +170,7 @@ TpetraHouseholder(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 {
   Teuchos::ParameterList validParams;
   validParams.set("Bordered Solver Method", "Householder");
-  validParams.set("Constraint Object",Teuchos::RCP<LOCA::MultiContinuation::ConstraintModelEvaluator>(Teuchos::null));
+  validParams.set("Constraint Object",Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>(Teuchos::null));
   validParams.set("Constraint Parameter Names",Teuchos::RCP<std::vector<std::string>>(Teuchos::null));
   validParams.set("Scale Augmented Rows", true);
   Teuchos::setStringToIntegralParameter<int>("Preconditioner Method",
@@ -1119,7 +1119,7 @@ updateCrsMatrixForPreconditioner(const NOX::Abstract::MultiVector& UU,
   const auto uu = UU_tpetra.getLocalViewDevice(::Tpetra::Access::ReadOnly);
   const auto vv = VV_tpetra.getLocalViewDevice(::Tpetra::Access::ReadOnly);
 
-  const auto numRows = matrix.getNodeNumRows();
+  const auto numRows = matrix.getLocalNumRows();
   const auto rowMap = matrix.getRowMap()->getLocalMap();
   const auto colMap = matrix.getColMap()->getLocalMap();
   const auto uMap = UU_tpetra.getMap()->getLocalMap();
@@ -1127,8 +1127,8 @@ updateCrsMatrixForPreconditioner(const NOX::Abstract::MultiVector& UU,
   auto J_view = matrix.getLocalMatrixDevice();
   auto numConstraintsLocal = numConstraints; // for cuda lambda capture
 
-  TEUCHOS_ASSERT(static_cast<size_t>(matrix.getRowMap()->getNodeNumElements()) == uu.extent(0));
-  TEUCHOS_ASSERT(static_cast<size_t>(matrix.getRowMap()->getNodeNumElements()) == vv.extent(0));
+  TEUCHOS_ASSERT(static_cast<size_t>(matrix.getRowMap()->getLocalNumElements()) == uu.extent(0));
+  TEUCHOS_ASSERT(static_cast<size_t>(matrix.getRowMap()->getLocalNumElements()) == vv.extent(0));
   TEUCHOS_ASSERT(numConstraintsLocal == static_cast<int>(uu.extent(1)));
   TEUCHOS_ASSERT(numConstraintsLocal == static_cast<int>(vv.extent(1)));
 

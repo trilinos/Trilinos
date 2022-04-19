@@ -132,7 +132,7 @@ namespace Amesos2 {
       "Amesos2::MultiVecAdapter::get1dCopy: this->getMap() returns null.");
 
 #ifdef HAVE_AMESOS2_DEBUG
-    const size_t requested_vector_length = distribution_map->getNodeNumElements ();
+    const size_t requested_vector_length = distribution_map->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
       lda < requested_vector_length, std::invalid_argument,
       "Amesos2::MultiVecAdapter::get1dCopy: On process " <<
@@ -248,7 +248,7 @@ namespace Amesos2 {
       "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: this->getMap() returns null.");
 
 #ifdef HAVE_AMESOS2_DEBUG
-    const size_t requested_vector_length = distribution_map->getNodeNumElements ();
+    const size_t requested_vector_length = distribution_map->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
       lda < requested_vector_length, std::invalid_argument,
       "Amesos2::MultiVecAdapter::get1dCopy_kokkos_view: On process " <<
@@ -338,12 +338,12 @@ namespace Amesos2 {
     // if( local ){
     //   this->localize();
     //   /* Use the global element list returned by
-    //    * mv_->getMap()->getNodeElementList() to get a subCopy of mv_ which we
+    //    * mv_->getMap()->getLocalElementList() to get a subCopy of mv_ which we
     //    * assign to l_l_mv_, then return get1dViewNonConst() of l_l_mv_
     //    */
     //   if(l_l_mv_.is_null() ){
     //  Teuchos::ArrayView<const GlobalOrdinal> nodeElements_go
-    //    = mv_->getMap()->getNodeElementList();
+    //    = mv_->getMap()->getLocalElementList();
     //  Teuchos::Array<size_t> nodeElements_st(nodeElements_go.size());
 
     //  // Convert the node element to a list of size_t type objects
@@ -362,7 +362,7 @@ namespace Amesos2 {
     //  // made to the global structure that are not reflected in the local
     //  // view.
     //  Teuchos::ArrayView<const GlobalOrdinal> nodeElements_go
-    //    = mv_->getMap()->getNodeElementList();
+    //    = mv_->getMap()->getLocalElementList();
     //  Teuchos::Array<size_t> nodeElements_st(nodeElements_go.size());
 
     //  // Convert the node element to a list of size_t type objects

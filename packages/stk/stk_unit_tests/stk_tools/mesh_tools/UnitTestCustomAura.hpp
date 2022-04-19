@@ -81,7 +81,8 @@ namespace aura_unit_tests {
             "2,3,SHELL_QUAD_4,3,4,9,8,block_1\n"
             "3,4,SHELL_QUAD_4,4,5,10,9,block_1";
         }
-        stk::unit_test_util::setup_text_mesh(get_bulk(), mesh_description, coordinates);
+        stk::unit_test_util::setup_text_mesh(
+            get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(mesh_description, coordinates));
       }
 
       void print_local_node_comm(const int rank);

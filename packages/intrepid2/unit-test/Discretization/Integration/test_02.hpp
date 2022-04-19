@@ -130,7 +130,7 @@ namespace Intrepid2 {
       int errorFlag = 0;
 
       // open file with analytic values
-      std::string basedir = "../data";
+      std::string basedir = "./data";
       std::stringstream namestream;
       std::string filename;
       namestream <<  basedir << "/EDGE_integrals" << ".dat";

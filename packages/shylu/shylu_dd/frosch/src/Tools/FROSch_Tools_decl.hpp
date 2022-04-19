@@ -44,6 +44,7 @@
 
 #include <ShyLU_DDFROSch_config.h>
 
+#include <FROSch_Types.h>
 #include <FROSch_Output.h>
 #include <FROSch_Timers.h>
 
@@ -71,23 +72,6 @@ namespace FROSch {
     using namespace Teuchos;
     using namespace Xpetra;
 
-    #if defined HAVE_XPETRA_EPETRA || defined HAVE_TPETRA_INT_INT
-    typedef int DefaultGlobalOrdinal;
-    #elif !defined HAVE_TPETRA_INT_LONG_LONG
-    typedef long DefaultGlobalOrdinal;
-    #else
-    typedef long long DefaultGlobalOrdinal;
-    #endif
-
-    enum DofOrdering {NodeWise=0,DimensionWise=1,Custom=2};
-
-    enum class NullSpaceType
-    {
-      Laplace = 0,
-      Elasticity = 1
-    };
-
-        enum Verbosity {None=0,All=1};
 
     template <typename LO,
               typename GO>
@@ -150,6 +134,8 @@ namespace FROSch {
         using GOVecPtr                  = ArrayRCP<GO>;
         using GOVecVec                  = Array<GOVec>;
         using GOVecVecPtr               = ArrayRCP<GOVec>;
+
+        using GOView                    = Kokkos::View<GO*, Kokkos::HostSpace>;
 
     public:
         LowerPIDTieBreak(CommPtr comm,

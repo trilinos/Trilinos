@@ -72,6 +72,9 @@
 #include "user_app_BCStrategy_Factory.hpp"
 #include "user_app_NOXObserverFactory.hpp"
 #include "user_app_RythmosObserverFactory.hpp"
+#ifdef PANZER_HAVE_TEMPUS
+#include "user_app_TempusObserverFactory.hpp"
+#endif
 #include "user_app_ResponseEvaluatorFactory_HOFlux.hpp"
 
 #include <Ioss_SerializeIO.h>
@@ -243,7 +246,16 @@ int main(int argc, char *argv[])
 	}
 
         // solver = me_factory.getResponseOnlyModelEvaluator();
+#ifdef PANZER_HAVE_TEMPUS
+        Teuchos::RCP<const panzer_stk::TempusObserverFactory> tof;
+	{
+          tof = Teuchos::rcp(new user_app::TempusObserverFactory(stkIOResponseLibrary,rLibrary->getWorksetContainer()));
+	}
+
+        solver = me_factory.buildResponseOnlyModelEvaluator(physics,global_data,Teuchos::null,Teuchos::null,nof.ptr(),rof.ptr(),tof.ptr());
+#else
         solver = me_factory.buildResponseOnlyModelEvaluator(physics,global_data,Teuchos::null,nof.ptr(),rof.ptr());
+#endif
       } 
 
     }

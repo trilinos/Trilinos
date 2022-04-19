@@ -7,6 +7,7 @@
 #include "io_info.h"
 #include <Ioss_Hex8.h>
 #include <Ioss_Sort.h>
+#define FMT_DEPRECATED_OSTREAM
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #if defined(SEACAS_HAVE_CGNS)
@@ -549,7 +550,9 @@ namespace Ioss {
       dbi->set_use_generic_canonical_name(true);
     }
 
-    dbi->set_surface_split_type(Ioss::int_to_surface_split(interFace.surface_split_scheme()));
+    if (interFace.surface_split_scheme() != Ioss::SPLIT_INVALID) {
+      dbi->set_surface_split_type(Ioss::int_to_surface_split(interFace.surface_split_scheme()));
+    }
     dbi->set_field_separator(interFace.field_suffix_separator());
     dbi->set_field_recognition(!interFace.disable_field_recognition());
     if (interFace.ints_64_bit()) {

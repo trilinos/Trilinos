@@ -57,7 +57,7 @@ int main (int argc, char *argv[])
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::tuple;
-  typedef double Scalar;
+  typedef Tpetra::CrsMatrix<>::scalar_type Scalar;
   typedef Tpetra::CrsMatrix<Scalar> crs_matrix_type;
   typedef Tpetra::Map<> map_type;
   typedef Tpetra::Map<>::global_ordinal_type GO;
@@ -73,8 +73,8 @@ int main (int argc, char *argv[])
 
     crs_matrix_type A (map, 3);
 
-    Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
-    const size_t numMyElements = map->getNodeNumElements ();
+    Teuchos::ArrayView<const GO> myGlobalElements = map->getLocalElementList();
+    const size_t numMyElements = map->getLocalNumElements ();
     for (size_t i = 0; i < numMyElements; ++i) {
       if (myGlobalElements[i] == 0) {
         A.insertGlobalValues (myGlobalElements[i],

@@ -47,6 +47,7 @@
 #include "Ifpack2_Parameters.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Details_residual.hpp"
 #include <cmath>
 #include <iostream>
 #include <sstream>
@@ -373,6 +374,35 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
   ApplyTime_ += (timer.wallTime() - startTime);
 }
 
+
+template<class MatrixType>
+void
+Hiptmair<MatrixType>::
+updateCachedMultiVectors (const Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>>& map1,
+                          const Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>>& map2,
+                          size_t numVecs) const
+{
+  // Allocate a multivector if the cached one isn't perfect.  Checking
+  // for map pointer equality is much cheaper than Map::isSameAs.
+  using MV = Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                                 global_ordinal_type, node_type>;
+  if (cachedResidual1_.is_null () ||
+      map1.get () != cachedResidual1_->getMap ().get () ||
+      cachedResidual1_->getNumVectors () != numVecs) {
+
+    cachedResidual1_ = Teuchos::rcp (new MV (map1, numVecs, false));
+    cachedSolution1_ = Teuchos::rcp (new MV (map1, numVecs, false));
+  }
+  if (cachedResidual2_.is_null () ||
+      map2.get () != cachedResidual2_->getMap ().get () ||
+      cachedResidual2_->getNumVectors () != numVecs) {
+
+    cachedResidual2_ = Teuchos::rcp (new MV (map2, numVecs, false));
+    cachedSolution2_ = Teuchos::rcp (new MV (map2, numVecs, false));
+  }
+}
+
+
 template <class MatrixType>
 void Hiptmair<MatrixType>::
 applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type,
@@ -384,44 +414,35 @@ applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type
                       typename MatrixType::global_ordinal_type,
                       typename MatrixType::node_type>& Y) const
 {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcpFromRef;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-    global_ordinal_type, node_type> MV;
   const scalar_type ZERO = STS::zero ();
   const scalar_type ONE = STS::one ();
 
-  RCP<MV> res1 = rcp (new MV (A_->getRowMap (), X.getNumVectors ()));
-  RCP<MV> vec1 = rcp (new MV (A_->getRowMap (), X.getNumVectors ()));
-  RCP<MV> res2 = rcp (new MV (PtAP_->getRowMap (), X.getNumVectors ()));
-  RCP<MV> vec2 = rcp (new MV (PtAP_->getRowMap (), X.getNumVectors ()));
+  updateCachedMultiVectors (A_->getRowMap (),
+                            PtAP_->getRowMap (),
+                            X.getNumVectors ());
 
   if (preOrPost_ == "pre" || preOrPost_ == "both") {
     // apply initial relaxation to primary space
-    A_->apply (Y, *res1);
-    res1->update (ONE, X, -ONE);
-    vec1->putScalar (ZERO);
-    ifpack2_prec1_->apply (*res1, *vec1);
-    Y.update (ONE, *vec1, ONE);
+    Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
+    cachedSolution1_->putScalar (ZERO);
+    ifpack2_prec1_->apply (*cachedResidual1_, *cachedSolution1_);
+    Y.update (ONE, *cachedSolution1_, ONE);
   }
 
   // project to auxiliary space and smooth
-  A_->apply (Y, *res1);
-  res1->update (ONE, X, -ONE);
-  P_->apply (*res1, *res2, Teuchos::TRANS);
-  vec2->putScalar (ZERO);
-  ifpack2_prec2_->apply (*res2, *vec2);
-  P_->apply (*vec2, *vec1, Teuchos::NO_TRANS);
-  Y.update (ONE,*vec1,ONE);
+  Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
+  P_->apply (*cachedResidual1_, *cachedResidual2_, Teuchos::TRANS);
+  cachedSolution2_->putScalar (ZERO);
+  ifpack2_prec2_->apply (*cachedResidual2_, *cachedSolution2_);
+  P_->apply (*cachedSolution2_, *cachedSolution1_, Teuchos::NO_TRANS);
+  Y.update (ONE,*cachedSolution1_,ONE);
 
   if (preOrPost_ == "post" || preOrPost_ == "both") {
     // smooth again on primary space
-    A_->apply (Y, *res1);
-    res1->update (ONE, X, -ONE);
-    vec1->putScalar (ZERO);
-    ifpack2_prec1_->apply (*res1, *vec1);
-    Y.update (ONE, *vec1, ONE);
+    Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
+    cachedSolution1_->putScalar (ZERO);
+    ifpack2_prec1_->apply (*cachedResidual1_, *cachedSolution1_);
+    Y.update (ONE, *cachedSolution1_, ONE);
   }
 }
 

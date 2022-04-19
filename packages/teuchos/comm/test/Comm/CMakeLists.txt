@@ -10,7 +10,7 @@ TRIBITS_ADD_EXECUTABLE(
   )
 
 TRIBITS_ADD_TEST(
-  DefaultMpiComm_UnitTests  
+  DefaultMpiComm_UnitTests
   NAME DefaultMpiComm_UnitTests_serial
   ARGS "--teuchos-suppress-startup-banner --show-test-details=ALL --test-serial"
   COMM serial mpi
@@ -19,7 +19,7 @@ TRIBITS_ADD_TEST(
   )
 
 TRIBITS_ADD_TEST(
-  DefaultMpiComm_UnitTests  
+  DefaultMpiComm_UnitTests
   NAME DefaultMpiComm_UnitTests_mpi1
   ARGS "--teuchos-suppress-startup-banner --show-test-details=ALL"
   COMM mpi
@@ -28,7 +28,7 @@ TRIBITS_ADD_TEST(
   )
 
 TRIBITS_ADD_TEST(
-  DefaultMpiComm_UnitTests  
+  DefaultMpiComm_UnitTests
   NAME DefaultMpiComm_UnitTests_mpi
   ARGS "--teuchos-suppress-startup-banner --show-test-details=ALL"
   COMM mpi
@@ -39,7 +39,7 @@ TRIBITS_ADD_TEST(
   # ordinals will overflow for std::complex<double> packet type.
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Comm_test  
+  Comm_test
   SOURCES Comm_test.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1-10
@@ -47,7 +47,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DefaultMpiComm_TagTests  
+  DefaultMpiComm_TagTests
   SOURCES
     DefaultMpiComm_TagTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
@@ -94,7 +94,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   reduceAllInPlace
   SOURCES
-    reduceAllInPlace
+    reduceAllInPlace.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2-10
@@ -127,14 +127,14 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_EXECUTABLE(
   waterman_teuchoscomm
   SOURCES waterman_teuchoscomm.cpp
-  COMM mpi 
+  COMM mpi
 )
 
 TRIBITS_ADD_TEST(
   waterman_teuchoscomm
   NAME waterman_teuchoscomm_with_comm_duplicate
   ARGS "Y"
-  COMM mpi 
+  COMM mpi
   PASS_REGULAR_EXPRESSION "PASS"
 )
 
@@ -142,7 +142,7 @@ TRIBITS_ADD_TEST(
   waterman_teuchoscomm
   NAME waterman_teuchoscomm_without_comm_duplicate
   ARGS "N"
-  COMM mpi 
+  COMM mpi
   PASS_REGULAR_EXPRESSION "PASS"
 )
 
@@ -159,4 +159,3 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4
   COMM mpi
 )
-

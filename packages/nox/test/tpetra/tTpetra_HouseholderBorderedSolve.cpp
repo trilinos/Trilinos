@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_Householder, BasicSolve)
   auto& locaParamsList = pList->sublist("LOCA");
   auto& constraint_list = locaParamsList.sublist("Constraints");
   constraint_list.set("Bordered Solver Method", "Householder");
-  constraint_list.set("Constraint Object", constraints);
+  constraint_list.set<Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>>("Constraint Object", constraints);
   constraint_list.set("Constraint Parameter Names", g_names);
 
   auto loca_parser = Teuchos::rcp(new LOCA::Parameter::SublistParser(global_data));
@@ -298,9 +298,29 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_Householder, BasicSolve)
     out << "\nFinal Parameter Value for \"k\" = " << std::setprecision(10) << c_group.getParam(0) << std::endl;
     out << "Final Parameter Value for \"T_left\" = " << std::setprecision(10) << c_group.getParam(1) << std::endl;
 
-    const double tol = 1.0e-3;
+    const double tol = 1.0e-8;
+    // Check parameter values
     TEST_FLOATING_EQUALITY(c_group.getParam(0),-0.5993277206,tol);
     TEST_FLOATING_EQUALITY(c_group.getParam(1),1.0,tol);
+    // Check constraint values
+    {
+      // get the solution
+      const auto& final_x = solver->getSolutionGroup().getX();
+      const auto& final_x_nox = *(dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(final_x).getXVec());
+      const auto& final_x_thyra = dynamic_cast<const NOX::Thyra::Vector&>(final_x_nox).getThyraVector();
+      const auto& final_x_tpetra_const = *(dynamic_cast<const ::Thyra::TpetraVector<NOX::Scalar,NOX::LocalOrdinal,NOX::GlobalOrdinal,NOX::NodeType>&>(final_x_thyra).getConstTpetraVector());
+      auto& final_x_tpetra = const_cast<::Tpetra::Vector<NOX::Scalar,NOX::LocalOrdinal,NOX::GlobalOrdinal,NOX::NodeType>&>(final_x_tpetra_const);
+      const auto& final_x_view = final_x_tpetra.getLocalViewHost(Tpetra::Access::ReadOnly);
+
+      // Left T value
+      if (comm->getRank() == 0) { 
+        TEST_FLOATING_EQUALITY(final_x_view(0,0),1.0,tol);
+      }
+      // Right T value
+      if (comm->getRank() == (comm->getSize()-1)) {
+        TEST_FLOATING_EQUALITY(final_x_view(final_x_view.extent(0)-1,0),2.0,tol);        
+      }
+    }
   }
 
   // Breaks RCP cyclic dependency

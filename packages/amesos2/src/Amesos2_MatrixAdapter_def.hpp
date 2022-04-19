@@ -247,14 +247,14 @@ namespace Amesos2 {
   size_t
   MatrixAdapter<Matrix>::getLocalNumRows() const
   {
-    return row_map_->getNodeNumElements(); // TODO: verify
+    return row_map_->getLocalNumElements(); // TODO: verify
   }
 
   template < class Matrix >
   size_t
   MatrixAdapter<Matrix>::getLocalNumCols() const
   {
-    return col_map_->getNodeNumElements();
+    return col_map_->getLocalNumElements();
   }
   
   template < class Matrix >
@@ -422,7 +422,7 @@ namespace Amesos2 {
     // compatibility, but things are working fine now.
 
     RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rmap = get_mat->getRowMap();
-    ArrayView<const global_ordinal_t> node_elements = rmap->getNodeElementList();
+    ArrayView<const global_ordinal_t> node_elements = rmap->getLocalElementList();
     if( node_elements.size() == 0 ) return; // no more contribution
 
     typename ArrayView<const global_ordinal_t>::iterator row_it, row_end;
@@ -509,7 +509,7 @@ namespace Amesos2 {
     // compatibility, but things are working fine now.
 
     RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rmap = get_mat->getRowMap();
-    ArrayView<const global_ordinal_t> node_elements = rmap->getNodeElementList();
+    ArrayView<const global_ordinal_t> node_elements = rmap->getLocalElementList();
     //if( node_elements.size() == 0 ) return; // no more contribution
     typename ArrayView<const global_ordinal_t>::iterator row_it, row_end;
     row_end = node_elements.end();
@@ -788,7 +788,7 @@ namespace Amesos2 {
     RCP<const Tpetra::Map<scalar_t,local_ordinal_t,global_ordinal_t> > cmap = get_mat->getColMap();
     TEUCHOS_ASSERT( *colmap == *cmap );
 
-    ArrayView<global_ordinal_t> node_elements = cmap->getNodeElementList();
+    ArrayView<global_ordinal_t> node_elements = cmap->getLocalElementList();
     if( node_elements.size() == 0 ) return; // no more contribution
     
     typename ArrayView<global_ordinal_t>::iterator col_it, col_end;

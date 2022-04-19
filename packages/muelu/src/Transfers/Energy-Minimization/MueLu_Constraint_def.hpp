@@ -72,7 +72,7 @@ namespace MueLu {
 
     Ppattern_ = Ppattern;
 
-    size_t numRows = Ppattern_->getNodeNumRows();
+    size_t numRows = Ppattern_->getLocalNumRows();
     XXtInv_.resize(numRows);
 
     RCP<const Import> importer = Ppattern_->getImporter();
@@ -139,7 +139,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(!P.getRowMap()->isSameAs(*Projected.getRowMap()), Exceptions::Incompatible,
                                "Row maps are incompatible");
     const size_t NSDim   = X_->getNumVectors();
-    const size_t numRows = P.getNodeNumRows();
+    const size_t numRows = P.getLocalNumRows();
 
     const Map& colMap  = *P.getColMap();
     const Map& PColMap = *Projected.getColMap();
@@ -148,7 +148,7 @@ namespace MueLu {
 
     Teuchos::ArrayView<const LO> indices, pindices;
     Teuchos::ArrayView<const SC> values,  pvalues;
-    Teuchos::Array<SC> valuesAll(colMap.getNodeNumElements()), newValues;
+    Teuchos::Array<SC> valuesAll(colMap.getLocalNumElements()), newValues;
 
     LO invalid = Teuchos::OrdinalTraits<LO>::invalid();
     LO oneLO   = Teuchos::OrdinalTraits<LO>::one();

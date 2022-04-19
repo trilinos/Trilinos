@@ -55,8 +55,8 @@
 #include "stk_mesh/base/EntityLess.hpp"
 #include "stk_mesh/base/Comm.hpp"
 #include "stk_balance/m2n/TransientFieldTransferById.hpp"
-#include "stk_balance/m2n/OutputSerializerBulkData.hpp"
-#include "stk_balance/m2n/SubdomainWriter.hpp"
+#include "stk_balance/m2n/M2NOutputSerializerBulkData.hpp"
+#include "stk_balance/m2n/M2NSubdomainWriter.hpp"
 #include "Ioss_Field.h"
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 

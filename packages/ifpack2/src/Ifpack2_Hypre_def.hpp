@@ -110,7 +110,7 @@ Hypre(const Teuchos::RCP<const row_matrix_type>& A):
       Teuchos::RCP<const crs_matrix_type> Aconst = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A_);
       GloballyContiguousColMap_ = MakeContiguousColumnMap(Aconst);
       GloballyContiguousRowMap_ = rcp(new map_type(A_->getRowMap()->getGlobalNumElements(),
-                                                   A_->getRowMap()->getNodeNumElements(), 0, A_->getRowMap()->getComm()));
+                                                   A_->getRowMap()->getLocalNumElements(), 0, A_->getRowMap()->getComm()));
     }
     else {
       throw std::runtime_error("Ifpack_Hypre: Unsupported map configuration: Row/Domain maps do not match");
@@ -136,7 +136,7 @@ Hypre(const Teuchos::RCP<const row_matrix_type>& A):
   YVec_ = Teuchos::rcp((hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_)),false);
 
   // Cache
-  VectorCache_.resize(A->getRowMap()->getNodeNumElements());
+  VectorCache_.resize(A->getRowMap()->getLocalNumElements());
 } //Constructor
 
 //==============================================================================
@@ -401,7 +401,7 @@ int Hypre<MatrixType>::SetDiscreteGradient(Teuchos::RCP<const crs_matrix_type> G
 
   // Get the maps for the nodes (assuming the edge map from A is OK);
   GloballyContiguousNodeRowMap_ = rcp(new map_type(G->getDomainMap()->getGlobalNumElements(),
-                                                   G->getDomainMap()->getNodeNumElements(), 0, A_->getRowMap()->getComm()));
+                                                   G->getDomainMap()->getLocalNumElements(), 0, A_->getRowMap()->getComm()));
   GloballyContiguousNodeColMap_ = MakeContiguousColumnMap(G);
 
   // Start building G
@@ -414,18 +414,18 @@ int Hypre<MatrixType>::SetDiscreteGradient(Teuchos::RCP<const crs_matrix_type> G
   IFPACK2_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreG_, HYPRE_PARCSR));
   IFPACK2_CHK_ERR(HYPRE_IJMatrixInitialize(HypreG_));
 
-  std::vector<GO> new_indices(G->getNodeMaxNumRowEntries());
-  for(LO i = 0; i < (LO)G->getNodeNumRows(); i++){
-    Teuchos::ArrayView<const SC> values;
-    Teuchos::ArrayView<const LO> indices;
+  std::vector<GO> new_indices(G->getLocalMaxNumRowEntries());
+  for(LO i = 0; i < (LO)G->getLocalNumRows(); i++){
+    typename crs_matrix_type::values_host_view_type     values;
+    typename crs_matrix_type::local_inds_host_view_type indices;
     G->getLocalRowView(i, indices, values);
-    for(LO j = 0; j < (LO) indices.size(); j++){
-      new_indices[j] = GloballyContiguousNodeColMap_->getGlobalElement(indices[j]);
+    for(LO j = 0; j < (LO) indices.extent(0); j++){
+      new_indices[j] = GloballyContiguousNodeColMap_->getGlobalElement(indices(j));
     }
     GO GlobalRow[1];
-    GO numEntries = (GO) indices.size();
+    GO numEntries = (GO) indices.extent(0);
     GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);
-    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreG_, 1, &numEntries, GlobalRow, new_indices.data(), values.getRawPtr()));
+    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreG_, 1, &numEntries, GlobalRow, new_indices.data(), values.data()));
   }
   IFPACK2_CHK_ERR(HYPRE_IJMatrixAssemble(HypreG_));
   IFPACK2_CHK_ERR(HYPRE_IJMatrixGetObject(HypreG_, (void**)&ParMatrixG_));
@@ -456,7 +456,7 @@ int Hypre<MatrixType>::SetCoordinates(Teuchos::RCP<multivector_type> coords) {
 
   MPI_Comm comm = * (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(A_->getRowMap()->getComm())->getRawMpiComm());
   local_ordinal_type NumEntries = coords->getLocalLength();
-  global_ordinal_type * indices = const_cast<global_ordinal_type*>(GloballyContiguousNodeRowMap_->getNodeElementList().getRawPtr());
+  global_ordinal_type * indices = const_cast<global_ordinal_type*>(GloballyContiguousNodeRowMap_->getLocalElementList().getRawPtr());
 
   global_ordinal_type ilower = GloballyContiguousNodeRowMap_->getMinGlobalIndex();
   global_ordinal_type iupper = GloballyContiguousNodeRowMap_->getMaxGlobalIndex();
@@ -890,18 +890,18 @@ int Hypre<MatrixType>::CopyTpetraToHypre(){
   if(Matrix.is_null()) 
     throw std::runtime_error("Hypre<MatrixType>: Unsupported matrix configuration: Tpetra::CrsMatrix required");
 
-  std::vector<GO> new_indices(Matrix->getNodeMaxNumRowEntries());
-  for(LO i = 0; i < (LO) Matrix->getNodeNumRows(); i++){
-    Teuchos::ArrayView<const SC> values;
-    Teuchos::ArrayView<const LO> indices;
+  std::vector<GO> new_indices(Matrix->getLocalMaxNumRowEntries());
+  for(LO i = 0; i < (LO) Matrix->getLocalNumRows(); i++){
+    typename crs_matrix_type::values_host_view_type     values;
+    typename crs_matrix_type::local_inds_host_view_type indices;
     Matrix->getLocalRowView(i, indices, values);
-    for(LO j = 0; j < (LO)indices.size(); j++){
-      new_indices[j] = GloballyContiguousColMap_->getGlobalElement(indices[j]);
+    for(LO j = 0; j < (LO)indices.extent(0); j++){
+      new_indices[j] = GloballyContiguousColMap_->getGlobalElement(indices(j));
     }
     GO GlobalRow[1];
-    GO numEntries = (GO) indices.size();
+    GO numEntries = (GO) indices.extent(0);
     GlobalRow[0] = GloballyContiguousRowMap_->getGlobalElement(i);    
-    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values.getRawPtr()));
+    IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, new_indices.data(), values.data()));
   }
   IFPACK2_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
   IFPACK2_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
@@ -984,10 +984,10 @@ Hypre<MatrixType>::MakeContiguousColumnMap(Teuchos::RCP<const crs_matrix_type> &
   else {
     // The domain map isn't linear, so we need a new domain map
     Teuchos::RCP<map_type> ContiguousDomainMap = rcp(new map_type(DomainMap->getGlobalNumElements(),
-                                                                      DomainMap->getNodeNumElements(), 0, DomainMap->getComm()));
+                                                                      DomainMap->getLocalNumElements(), 0, DomainMap->getComm()));
     if(importer) {    
       // If there's an importer then we can use it to get a new column map
-      go_vector_type MyGIDsHYPRE(DomainMap,ContiguousDomainMap->getNodeElementList());
+      go_vector_type MyGIDsHYPRE(DomainMap,ContiguousDomainMap->getLocalElementList());
 
       // import the HYPRE GIDs
       go_vector_type ColGIDsHYPRE(ColumnMap);
@@ -998,7 +998,7 @@ Hypre<MatrixType>::MakeContiguousColumnMap(Teuchos::RCP<const crs_matrix_type> &
     }
     else {
       // The problem has matching domain/column maps, and somehow the domain map isn't linear, so just use the new domain map
-      return Teuchos::rcp(new map_type(ColumnMap->getGlobalNumElements(),ContiguousDomainMap->getNodeElementList(), 0, ColumnMap->getComm()));
+      return Teuchos::rcp(new map_type(ColumnMap->getGlobalNumElements(),ContiguousDomainMap->getLocalElementList(), 0, ColumnMap->getComm()));
     }
   }  
 }

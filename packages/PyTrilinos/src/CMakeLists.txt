@@ -80,6 +80,12 @@ IF(PyTrilinos_ENABLE_NOX)
   ENDIF()
 ENDIF()
 
+IF(PyTrilinos_ENABLE_Tpetra)
+  IF(Tpetra_INST_INT_LONG_LONG)
+    SET(HAVE_PYTRILINOS_TPETRA_INST_INT_LONG_LONG ON)
+  ENDIF()
+ENDIF()
+
 #
 # Build the PyTrilinos configuration file
 TRIBITS_CONFIGURE_FILE(PyTrilinos_config.h)

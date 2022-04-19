@@ -132,8 +132,8 @@ global_size_t TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumElements()
 { XPETRA_MONITOR("TpetraMap::getGlobalNumElements"); return map_->getGlobalNumElements(); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-size_t TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumElements() const
-{ XPETRA_MONITOR("TpetraMap::getNodeNumElements"); return map_->getNodeNumElements(); }
+size_t TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getLocalNumElements() const
+{ XPETRA_MONITOR("TpetraMap::getLocalNumElements"); return map_->getLocalNumElements(); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 GlobalOrdinal TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getIndexBase() const
@@ -180,8 +180,8 @@ LookupStatus TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(cons
 { XPETRA_MONITOR("TpetraMap::getRemoteIndexList"); return toXpetra(map_->getRemoteIndexList(GIDList, nodeIDList)); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::ArrayView< const GlobalOrdinal > TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList() const
-{ XPETRA_MONITOR("TpetraMap::getNodeElementList"); return map_->getNodeElementList(); }
+Teuchos::ArrayView< const GlobalOrdinal > TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::getLocalElementList() const
+{ XPETRA_MONITOR("TpetraMap::getLocalElementList"); return map_->getLocalElementList(); }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 bool TpetraMap<LocalOrdinal,GlobalOrdinal,Node>::isNodeLocalElement(LocalOrdinal localIndex) const
@@ -319,7 +319,7 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     global_size_t getGlobalNumElements() const { return 0; }
 
     //! The number of elements belonging to the calling node.
-    size_t getNodeNumElements() const { return 0; }
+    size_t getLocalNumElements() const { return 0; }
 
     //! The index base for this Map.
     GlobalOrdinal getIndexBase() const { return 0; }
@@ -355,7 +355,7 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { return Xpetra::IDNotPresent; }
 
     //! Return a view of the global indices owned by this node.
-    Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const { return Teuchos::ArrayView<const GlobalOrdinal>(); }
+    Teuchos::ArrayView< const GlobalOrdinal > getLocalElementList() const { return Teuchos::ArrayView<const GlobalOrdinal>(); }
 
     //@}
 
@@ -485,7 +485,7 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     global_size_t getGlobalNumElements() const { return 0; }
 
     //! The number of elements belonging to the calling node.
-    size_t getNodeNumElements() const { return 0; }
+    size_t getLocalNumElements() const { return 0; }
 
     //! The index base for this Map.
     GlobalOrdinal getIndexBase() const { return 0; }
@@ -521,7 +521,7 @@ typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type TpetraMap<LocalO
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { return Xpetra::IDNotPresent; }
 
     //! Return a view of the global indices owned by this node.
-    Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const { return Teuchos::ArrayView<const GlobalOrdinal>(); }
+    Teuchos::ArrayView< const GlobalOrdinal > getLocalElementList() const { return Teuchos::ArrayView<const GlobalOrdinal>(); }
 
     //@}
 

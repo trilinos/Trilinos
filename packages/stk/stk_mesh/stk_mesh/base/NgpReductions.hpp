@@ -245,7 +245,7 @@ struct TeamReductionFunctor
   using ReductionOp = ReductionOpT;
   using value_type = typename ReductionOp::value_type;
   KOKKOS_FUNCTION
-  TeamReductionFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::NgpVector<unsigned> b, ReductionOp & red, const AlgorithmPerEntity f)
+  TeamReductionFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::NgpVector<unsigned> b, ReductionOp & red, const AlgorithmPerEntity& f)
     : mesh(m), rank(r), bucketIds(b), reduction(red), functor(f) {}
 
   using TeamHandleType = typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type;

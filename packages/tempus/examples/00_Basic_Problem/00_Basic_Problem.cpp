@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
       if ( std::isnan(x_n[0]) || std::isnan(x_n[1]) ) {
         passing = false;
       } else {
-        // Promote to next step (n -> n+1).
+        // Promote to next step (n <- n+1).
         n++;
         x_n[0] = x_np1[0];
         x_n[1] = x_np1[1];

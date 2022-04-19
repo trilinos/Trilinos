@@ -1072,7 +1072,7 @@ namespace Amesos2 {
       using Teuchos::as;
 
       Teuchos::Array<GO> elements_tmp;
-      elements_tmp = map.getNodeElementList();
+      elements_tmp = map.getLocalElementList();
       int num_my_elements = elements_tmp.size();
       Teuchos::Array<int> my_global_elements(num_my_elements);
       for (int i = 0; i < num_my_elements; ++i){

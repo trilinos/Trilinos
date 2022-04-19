@@ -15,10 +15,10 @@
 int main(void)
 {
   extern int    Using_Main;                 /* is main routine being called? */
-  extern char * Graph_File_Name;            /* name of graph input file */
-  extern char * Geometry_File_Name;         /* name of coordinate input file */
-  extern char * Assign_In_File_Name;        /* name of assignment input input file */
-  extern char * PARAMS_FILENAME;            /* name of file with parameter updates */
+  extern char  *Graph_File_Name;            /* name of graph input file */
+  extern char  *Geometry_File_Name;         /* name of coordinate input file */
+  extern char  *Assign_In_File_Name;        /* name of assignment input input file */
+  extern char  *PARAMS_FILENAME;            /* name of file with parameter updates */
   extern double EIGEN_TOLERANCE;            /* tolerance for eigen calculations */
   extern int    OUTPUT_ASSIGN;              /* whether to write assignment to file */
   extern int    DEBUG_MEMORY;               /* debug memory allocation and freeing? */
@@ -31,19 +31,19 @@ int main(void)
   extern int    MATCH_TYPE;                 /* matching routine to call */
   extern double input_time;                 /* times data file input */
   extern double start_time;                 /* time partitioning starts */
-  FILE *        fin;                        /* input file */
-  FILE *        fingeom;                    /* geometry input file (for inertial method) */
-  FILE *        finassign;                  /* assignment file if reading in */
-  FILE *        params_file;                /* file with parameter value updates */
-  double *      goal;                       /* desired set sizes */
-  float *       x, *y, *z;                  /* coordinates for inertial method */
-  int *         start;                      /* start of edge list for each vertex */
-  int *         adjacency;                  /* edge list data */
-  float *       ewgts;                      /* weights for all edges */
-  int *         vwgts;                      /* weights for all vertices */
+  FILE         *fin;                        /* input file */
+  FILE         *fingeom;                    /* geometry input file (for inertial method) */
+  FILE         *finassign;                  /* assignment file if reading in */
+  FILE         *params_file;                /* file with parameter value updates */
+  double       *goal;                       /* desired set sizes */
+  float        *x, *y, *z;                  /* coordinates for inertial method */
+  int          *start;                      /* start of edge list for each vertex */
+  int          *adjacency;                  /* edge list data */
+  float        *ewgts;                      /* weights for all edges */
+  int          *vwgts;                      /* weights for all vertices */
   int           global_method;              /* global partitioning method */
   int           local_method;               /* local partitioning method */
-  int *         assignment;                 /* set number of each vtx (length nvtxs+1) */
+  int          *assignment;                 /* set number of each vtx (length nvtxs+1) */
   double        eigtol;                     /* tolerance in eigenvector calculation */
   int           nvtxs;                      /* number of vertices in graph */
   int           ndims;                      /* dimension of recursive partitioning */
@@ -59,12 +59,12 @@ int main(void)
   char          inassignname[NAME_LENGTH];  /* assignment input file name */
   char          outassignname[NAME_LENGTH]; /* assignment output file name */
   char          outfilename[NAME_LENGTH];   /* name of output file */
-  char *        outassignptr;               /* name or null pointer for output assignment */
-  char *        outfileptr;                 /* name or null pointer for output file */
+  char         *outassignptr;               /* name or null pointer for output assignment */
+  char         *outfileptr;                 /* name or null pointer for output file */
   int           another;                    /* run another problem? */
   double        time;                       /* timing marker */
   int           flag;                       /* return code from input routines */
-  double        seconds();                  /* returns elapsed time in seconds */
+  double        seconds(void);              /* returns elapsed time in seconds */
   int           affirm();
   int           input_graph(), input_geom();
   void          input_queries(), read_params(), clear_timing();
@@ -89,7 +89,7 @@ int main(void)
 
   while (another) {
 
-    start_time = time = seconds();
+    start_time = time = seconds(void);
 
     x = y = z  = NULL;
     goal       = NULL;

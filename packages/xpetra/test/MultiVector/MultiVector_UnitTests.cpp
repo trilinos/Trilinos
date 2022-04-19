@@ -61,6 +61,7 @@
 #  include "Tpetra_Map.hpp"
 #  include "Xpetra_TpetraMultiVector.hpp"
 #  include "Xpetra_TpetraVector.hpp"
+#  include "Tpetra_Details_Behavior.hpp"
 #endif
 #ifdef HAVE_XPETRA_EPETRA
 #  include "Xpetra_EpetraMap.hpp"
@@ -358,7 +359,7 @@ namespace {
     // getDataNonConst(0).
     {
       Teuchos::ArrayRCP<Scalar> vcopy_data = vcopy->getDataNonConst (0);
-      if (map->getNodeNumElements () != 0) {
+      if (map->getLocalNumElements () != 0) {
         vcopy_data[0] += static_cast<magnitude_type> (10000.0);
       }
       // Destroy the view, so that the changes get written back to the Vector.
@@ -2464,15 +2465,17 @@ namespace {
       //TEST_THROW(m1n2.scale(rnd,m1n1), std::runtime_error); // abs  // TODO only available with Tpetra??
       //TEST_THROW(m1n2.scale(rnd,m2n2), std::runtime_error);
       TEST_THROW(m1n2.update(rnd,m1n1,rnd), std::runtime_error); // update(alpha,A,beta)
-      TEST_THROW(m1n2.update(rnd,m2n2,rnd), std::runtime_error);
-      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // update(alpha,A,beta,B,gamma) // A incompat
-      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is length            // A incompat
-      TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
-      TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
-      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
-      TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
-      TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is numVecs           // A incompat
-      TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error);                                 // A incompat
+      if (::Tpetra::Details::Behavior::debug ()) {
+        TEST_THROW(m1n2.update(rnd,m2n2,rnd), std::runtime_error);
+        TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // update(alpha,A,beta,B,gamma) // A incompat
+        TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is length            // A incompat
+        TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
+        TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m2n2  ,rnd), std::runtime_error);                                 // B incompat
+        TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
+        TEST_THROW(m1n2.update(rnd,m2n2  ,rnd,m2n2  ,rnd), std::runtime_error);                                 // A,B incompat
+        TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error); // incompt is numVecs           // A incompat
+        TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n2_2,rnd), std::runtime_error);                                 // A incompat
+      }
       TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m1n1  ,rnd), std::runtime_error);                                 // B incompat
       TEST_THROW(m1n2.update(rnd,m1n2_2,rnd,m1n1  ,rnd), std::runtime_error);                                 // B incompat
       TEST_THROW(m1n2.update(rnd,m1n1  ,rnd,m1n1  ,rnd), std::runtime_error);                                 // A,B incompat

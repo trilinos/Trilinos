@@ -136,8 +136,8 @@ convertToDimData(const Teuchos::RCP< const Tpetra::Map< PYTRILINOS_LOCAL_ORD,
     if (PyDict_SetItemString(dim_dict,
                              "dist_type",
                              PyString_FromString("u")) == -1) goto fail;
-    dims    = tm->getNodeElementList().size();
-    nodeBlockIDs = tm->getNodeElementList();
+    dims    = tm->getLocalElementList().size();
+    nodeBlockIDs = tm->getLocalElementList();
     indices = PyArray_SimpleNewFromData(1,
                                         &dims,
                                         NPY_LONG,

@@ -1370,7 +1370,7 @@ DOFManager<panzer::LocalOrdinal,panzer::GlobalOrdinal>::runLocalRCMReordering(co
 
   graph->fillComplete();
 
-  std::vector<panzer::GlobalOrdinal> newOrder(map->getNodeNumElements());
+  std::vector<panzer::GlobalOrdinal> newOrder(map->getLocalNumElements());
   {
     // graph is constructed, now run RCM using zoltan2
     typedef Zoltan2::XpetraCrsGraphInput<Graph> SparseGraphAdapter;

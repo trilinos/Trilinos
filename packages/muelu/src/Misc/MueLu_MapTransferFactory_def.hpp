@@ -135,7 +135,7 @@ namespace MueLu {
     RCP<const Map> prolongColMap = Ptent->getColMap();
     GO gRowID = -1;
     int numColEntries = 0;
-    for (size_t row = 0; row < Ptent->getNodeNumRows(); ++row) {
+    for (size_t row = 0; row < Ptent->getLocalNumRows(); ++row) {
       gRowID = Ptent->getRowMap()->getGlobalElement(row);
 
       if (transferMap->isNodeGlobalElement(gRowID)) {

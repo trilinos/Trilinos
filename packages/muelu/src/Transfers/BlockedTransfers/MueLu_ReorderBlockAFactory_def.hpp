@@ -132,8 +132,8 @@ namespace MueLu {
           Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SplitMatrix(*Ain,map_extractor,map_extractor,Teuchos::null,bThyraMode);
 
       TEUCHOS_TEST_FOR_EXCEPTION(Ain->getGlobalNumRows()    != bOp->getGlobalNumRows(),    Exceptions::RuntimeError,      "Split operator not consistent with input operator (different number of rows).");
-      TEUCHOS_TEST_FOR_EXCEPTION(Ain->getNodeNumRows()      != bOp->getNodeNumRows(),      Exceptions::RuntimeError,      "Split operator not consistent with input operator (different number of node rows).");
-      TEUCHOS_TEST_FOR_EXCEPTION(Ain->getNodeNumEntries()   != bOp->getNodeNumEntries(),   Exceptions::RuntimeError,      "Split operator not consistent with input operator (different number of local entries).");
+      TEUCHOS_TEST_FOR_EXCEPTION(Ain->getLocalNumRows()      != bOp->getLocalNumRows(),      Exceptions::RuntimeError,      "Split operator not consistent with input operator (different number of node rows).");
+      TEUCHOS_TEST_FOR_EXCEPTION(Ain->getLocalNumEntries()   != bOp->getLocalNumEntries(),   Exceptions::RuntimeError,      "Split operator not consistent with input operator (different number of local entries).");
       TEUCHOS_TEST_FOR_EXCEPTION(Ain->getGlobalNumEntries() != bOp->getGlobalNumEntries(), Exceptions::RuntimeError,      "Split operator not consistent with input operator (different number of global entries).");
 
       A = bOp;

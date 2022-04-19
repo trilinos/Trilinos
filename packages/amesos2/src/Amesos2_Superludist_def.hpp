@@ -69,9 +69,6 @@ namespace Amesos2 {
                                           Teuchos::RCP<Vector> X,
                                           Teuchos::RCP<const Vector> B)
     : SolverCore<Amesos2::Superludist,Matrix,Vector>(A, X, B)
-    , nzvals_()                 // initialization to empty arrays
-    , colind_()
-    , rowptr_()
     , bvals_()
     , xvals_()
     , in_grid_(false)
@@ -441,7 +438,7 @@ namespace Amesos2 {
 
       // Apply the column ordering, so that AC is the column-permuted A, and compute etree
       size_t nnz_loc = ((SLUD::NRformat_loc*)data_.A.Store)->nnz_loc;
-      for( size_t i = 0; i < nnz_loc; ++i ) colind_[i] = data_.perm_c[colind_[i]];
+      for( size_t i = 0; i < nnz_loc; ++i ) colind_view_(i) = data_.perm_c[colind_view_(i)];
 
       // Distribute data from the symbolic factorization
       if( same_symbolic_ ){
@@ -463,7 +460,8 @@ namespace Amesos2 {
       }
 
       // Retrieve the normI of A (required by gstrf).
-      double anorm = function_map::plangs((char *)"I", &(data_.A), &(data_.grid));
+      bool notran = (data_.options.Trans == SLUD::NOTRANS);
+      double anorm = function_map::plangs((notran ? (char *)"1" : (char *)"I"), &(data_.A), &(data_.grid));
 
       int info = 0;
       {
@@ -503,7 +501,7 @@ namespace Amesos2 {
 
     // local_len_rhs is how many of the multivector rows belong to
     // this processor in the SuperLU_DIST processor grid.
-    const size_t local_len_rhs = superlu_rowmap_->getNodeNumElements();
+    const size_t local_len_rhs = superlu_rowmap_->getLocalNumElements();
     const global_size_type nrhs = X->getGlobalNumVectors();
     const global_ordinal_type first_global_row_b = superlu_rowmap_->getMinGlobalIndex();
 
@@ -857,20 +855,19 @@ namespace Amesos2 {
     g_cols = g_rows;            // we deal with square matrices
     fst_global_row = as<int_t>(superlu_rowmap_->getMinGlobalIndex());
 
-    nzvals_.resize(l_nnz);
-    colind_.resize(l_nnz);
-    rowptr_.resize(l_rows + 1);
-
+    Kokkos::resize(nzvals_view_, l_nnz);
+    Kokkos::resize(colind_view_, l_nnz);
+    Kokkos::resize(rowptr_view_, l_rows + 1);
     int_t nnz_ret = 0;
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
 
-      Util::get_crs_helper<
-      MatrixAdapter<Matrix>,
-        slu_type, int_t, int_t >::do_get(redist_mat.ptr(),
-                                         nzvals_(), colind_(), rowptr_(),
+      Util::get_crs_helper_kokkos_view<MatrixAdapter<Matrix>,
+        host_value_type_array,host_ordinal_type_array, host_size_type_array >::do_get(
+                                         redist_mat.ptr(),
+                                         nzvals_view_, colind_view_, rowptr_view_,
                                          nnz_ret,
                                          ptrInArg(*superlu_rowmap_),
                                          ROOTED,
@@ -888,9 +885,9 @@ namespace Amesos2 {
     function_map::create_CompRowLoc_Matrix(&(data_.A),
                                            g_rows, g_cols,
                                            l_nnz, l_rows, fst_global_row,
-                                           nzvals_.getRawPtr(),
-                                           colind_.getRawPtr(),
-                                           rowptr_.getRawPtr(),
+                                           nzvals_view_.data(),
+                                           colind_view_.data(),
+                                           rowptr_view_.data(),
                                            SLUD::SLU_NR_loc,
                                            dtype, SLUD::SLU_GE);
   }

@@ -60,7 +60,7 @@
 
 int main(int argc, char *argv[]) {
   //
-  typedef double                           ST;
+  typedef Tpetra::MultiVector<>::scalar_type ST;
   typedef Teuchos::ScalarTraits<ST>       SCT;
   typedef SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
     //
     // Construct an unpreconditioned linear problem instance.
     //
-    Belos::LinearProblem<double,MV,OP> problem( A, X, B );
+    Belos::LinearProblem<ST,MV,OP> problem( A, X, B );
     bool set = problem.setProblem();
     if (set == false) {
       if (proc_verbose)
@@ -168,12 +168,12 @@ int main(int argc, char *argv[]) {
     //
     // Create an iterative solver manager.
     //
-    RCP< Belos::SolverManager<double,MV,OP> > solver;
+    RCP< Belos::SolverManager<ST,MV,OP> > solver;
 
     if (pseudo)
-      solver = rcp( new Belos::PseudoBlockTFQMRSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)) );
+      solver = rcp( new Belos::PseudoBlockTFQMRSolMgr<ST,MV,OP>(rcp(&problem,false), rcp(&belosList,false)) );
     else
-      solver = rcp( new Belos::TFQMRSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)) );
+      solver = rcp( new Belos::TFQMRSolMgr<ST,MV,OP>(rcp(&problem,false), rcp(&belosList,false)) );
     //
     // **********Print out information about problem*******************
     //

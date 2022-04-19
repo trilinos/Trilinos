@@ -64,12 +64,12 @@ class TestBlockWeights : public stk::unit_test_util::MeshFixture
 protected:
   void set_up_1x1x8_mesh_one_block()
   {
-    setup_mesh("generated:1x1x8", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh("generated:1x1x8", stk::mesh::BulkData::AUTO_AURA);
   }
 
   void set_up_1x1x8_mesh_two_blocks()
   {
-    setup_mesh("generated:1x1x8", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh("generated:1x1x8", stk::mesh::BulkData::AUTO_AURA);
     stk::mesh::Part * block2 = &get_meta().declare_part("block_2");
     move_elements_into_part(block2, {5, 6, 7, 8});
   }

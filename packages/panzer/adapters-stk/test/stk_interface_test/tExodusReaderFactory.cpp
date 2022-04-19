@@ -56,6 +56,8 @@
 
 #include "Shards_BasicTopologies.hpp"
 
+#include <stk_mesh/base/Comm.hpp>
+
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
 #else
@@ -746,6 +748,24 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, umr_refine_once_with_geometry)
 
   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),12*8);
 
+  std::vector<std::string> sidesets;
+  mesh->getSidesetNames(sidesets);
+  TEST_EQUALITY((int) sidesets.size(),5);
+
+  std::vector<std::string> nodesets;
+  mesh->getNodesetNames(nodesets);
+  TEST_EQUALITY((int) nodesets.size(),3);
+
+  std::map<std::string,int> sidesets_counts = {{"top",4},  {"interface",2}, {"surface_3",2}, {"surface_4",4}, {"inner",2}};
+  
+  for (auto const& x : sidesets_counts) {
+    std::vector<size_t> globalCounts;
+    stk::mesh::Part * ss_part = mesh->getSideset(x.first);
+    stk::mesh::Selector selector(*ss_part);
+    stk::mesh::comm_mesh_counts( *(mesh->getBulkData()), globalCounts, &selector);
+
+    TEST_EQUALITY((int) globalCounts[mesh->getFaceRank()],x.second*4);
+  }
   mesh->writeToExodus("meshes/2block_cylinders_30deg.r1.g");
 }
 #endif

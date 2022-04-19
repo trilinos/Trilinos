@@ -135,7 +135,7 @@ public:
    * The order of weights should correspond to the order of rows
    * returned by
    *   \code
-   *       theMatrix->getRowMap()->getNodeElementList();
+   *       theMatrix->getRowMap()->getLocalElementList();
    *   \endcode
    */
 
@@ -160,22 +160,22 @@ public:
   ////////////////////////////////////////////////////
 
   size_t getLocalNumRows() const { 
-    return matrix_->getNodeNumRows();
+    return matrix_->getLocalNumRows();
   }
 
   size_t getLocalNumColumns() const { 
-    return matrix_->getNodeNumCols();
+    return matrix_->getLocalNumCols();
   }
 
   size_t getLocalNumEntries() const {
-    return matrix_->getNodeNumEntries();
+    return matrix_->getLocalNumEntries();
   }
 
   bool CRSViewAvailable() const { return true; }
 
   void getRowIDsView(const gno_t *&rowIds) const 
   {
-    ArrayView<const gno_t> rowView = rowMap_->getNodeElementList();
+    ArrayView<const gno_t> rowView = rowMap_->getLocalElementList();
     rowIds = rowView.getRawPtr();
   }
 
@@ -263,8 +263,8 @@ template <typename User, typename UserCoord>
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
 
-  size_t nrows = matrix_->getNodeNumRows();
-  size_t nnz = matrix_->getNodeNumEntries();
+  size_t nrows = matrix_->getLocalNumRows();
+  size_t nnz = matrix_->getLocalNumEntries();
 
   // Get ArrayRCP pointers to the structures in the underlying matrix
   ArrayRCP< const offset_t > offset;

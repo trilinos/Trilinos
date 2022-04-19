@@ -56,15 +56,21 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
                                             std::vector<INT>& elem_side_ids)
 {
   const mesh::BulkData &bulk_data = params.bulk_data();
-  const stk::mesh::Selector *subset_selector = params.get_subset_selector();
-  const stk::mesh::Selector *output_selector = params.get_output_selector(stk::topology::ELEM_RANK);
+  const stk::mesh::Selector *elemSubsetSelector = params.get_subset_selector();
+  const stk::mesh::Selector *elemOutputSelector = params.get_output_selector(stk::topology::ELEM_RANK);
+  const stk::mesh::Selector *faceOutputSelector = params.get_output_selector(bulk_data.mesh_meta_data().side_rank());
 
   size_t num_sides = sset.size();
   elem_side_ids.reserve(num_sides*2);
 
   stk::mesh::Selector selector = *part & construct_sideset_selector(params);
+  if (nullptr != faceOutputSelector) {
+    selector &= *faceOutputSelector;
+  }
   stk::mesh::Selector parentElementSelector =  (parentElementBlock == nullptr) ? stk::mesh::Selector() : *parentElementBlock;
   const stk::mesh::EntityRank sideRank = part->primary_entity_rank();
+
+  unsigned previousBucketId = stk::mesh::INVALID_BUCKET_ID;
 
   for(size_t i=0;i<sset.size();++i)
   {
@@ -74,21 +80,29 @@ void fill_element_and_side_ids_from_sideset(const stk::mesh::SideSet& sset,
     stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair_of_rank(bulk_data, element, zero_based_side_ord, sideRank);
     if(bulk_data.is_valid(side))
     {
-      if(selector(bulk_data.bucket(side)))
-      {
+      const stk::mesh::Bucket &sideBucket = bulk_data.bucket(side);
+      bool sideIsSelected = false;
+
+      if (sideBucket.bucket_id() == previousBucketId) {
+        sideIsSelected = true;
+      } else {
+        sideIsSelected = selector(sideBucket);
+
+        if (sideIsSelected) {
+          previousBucketId = sideBucket.bucket_id();
+        }
+      }
+
+      if (sideIsSelected) {
         stk::mesh::Bucket &elementBucket = bulk_data.bucket(element);
-        if(stk_element_topology == stk::topology::INVALID_TOPOLOGY ||
-            stk_element_topology == elementBucket.topology())
-        {
-          std::vector<stk::mesh::PartOrdinal> partOrdinalsElementBlock;
-          stk::mesh::impl::get_element_block_part_ordinals(element, bulk_data, partOrdinalsElementBlock);
+        if (elementBucket.owned() && (stk_element_topology == stk::topology::INVALID_TOPOLOGY ||
+                                         stk_element_topology == elementBucket.topology())) {
 
           bool selectedByParent = (parentElementBlock == nullptr) ? true : parentElementSelector(elementBucket);
-          bool selectedByBucket = (   subset_selector == nullptr) ? true :    (*subset_selector)(elementBucket);
-          bool selectedByOutput = (   output_selector == nullptr) ? true :    (*output_selector)(elementBucket);
+          bool selectedByBucket = (elemSubsetSelector == nullptr) ? true : (*elemSubsetSelector)(elementBucket);
+          bool selectedByOutput = (elemOutputSelector == nullptr) ? true : (*elemOutputSelector)(elementBucket);
 
-          if(selectedByBucket && selectedByParent && selectedByOutput && elementBucket.owned())
-          {
+          if (selectedByBucket && selectedByParent && selectedByOutput) {
             elem_side_ids.push_back(elemId);
             elem_side_ids.push_back(zero_based_side_ord+1);
             sides.push_back(side);
@@ -248,9 +262,7 @@ void fill_element_and_side_ids(stk::io::OutputParams &params,
 
 inline size_t get_number_sides_in_sideset(OutputParams &params,
                                           const stk::mesh::Part &ssPart,
-                                          stk::mesh::Selector selector,
                                           stk::topology stk_element_topology,
-                                          const stk::mesh::BucketVector& buckets,
                                           const stk::mesh::Part *parentElementBlock = nullptr)
 {
     stk::mesh::EntityVector sides;

@@ -2,7 +2,7 @@
 // Name        : testnas2exo.cpp
 // Author      : Ramon J. Moral (STRA LLC), John Niederhaus (Coordinator, SNL)
 // Version     :
-// Copyright   : (c) Sandia National Labs 2020, 2021
+// Copyright   : (c) Sandia National Labs 2020, 2021, 2022
 // Description : Testing nas2exo Library, C++ 14
 //============================================================================
 
@@ -47,11 +47,11 @@ namespace NasModules {
     std::unique_ptr<std::ifstream> inStream{};
     unsigned                       lineCount{0u};
 
-    std::vector<sectionType> sections;
-    std::vector<gridType>    gridList;
-    std::vector<elementType> elementList;
+    std::vector<sectionType> sections{};
+    std::vector<gridType>    gridList{};
+    std::vector<elementType> elementList{};
 
-    std::string modelTitle;
+    std::string modelTitle{};
 
     bool doesFileExist(const std::string &fname);
     // Local buffer for reading faster

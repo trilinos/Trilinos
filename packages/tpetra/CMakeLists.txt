@@ -21,6 +21,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT}
 )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT
+  TPETRA_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT
+  "Tpetra enables block crs little block layout left (default is layout right)"
+  OFF
+)
+
 ASSERT_DEFINED (Tpetra_ENABLE_DEPRECATED_CODE)
 IF (Tpetra_ENABLE_DEPRECATED_CODE)
   MESSAGE(STATUS "Tpetra: Enabling deprecated code")
@@ -240,15 +247,15 @@ ELSE ()
           MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is CUDA aware.")
           SET (Tpetra_ASSUME_CUDA_AWARE_MPI_DEFAULT ON)
         ELSEIF (NOT (Tpetra_OMPI_INFO_OUTPUT_FOUND_FALSE EQUAL -1))
-          MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is NOT CUDA aware.  You may want to use a different OpenMPI installation that is CUDA aware, or reconfigure and rebuild OpenMPI in order to make it CUDA aware.  For details, please refer to OpenMPI's website: https://www.open-mpi.org/faq/?category=runcuda")
+          MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is NOT CUDA aware.  You may want to use a different OpenMPI installation that is CUDA aware, or reconfigure and rebuild OpenMPI in order to make it CUDA aware.  For details, please refer to OpenMPI's website: https://www.open-mpi.org/faq/?category=runcuda .  You can still override this at runtime with the environment variable TPETRA_ASSUME_CUDA_AWARE_MPI=ON or OFF.")
         ELSE ()
           MESSAGE (STATUS "  - \"ompi_info\" claims to know nothing about whether your MPI implementation is CUDA aware.  Its output is \"${Tpetra_OMPI_INFO_OUTPUT}\".")
         ENDIF ()
       ELSE ()
-        MESSAGE (STATUS "  - While I found the \"ompi_info\" executable, it would not run.  Thus, I will make the sane assumption that your MPI implementation is NOT CUDA aware.")
+        MESSAGE (STATUS "  - While I found the \"ompi_info\" executable, it would not run.  Thus, I will make the sane assumption that your MPI implementation is NOT CUDA aware. You can change this at configure time with the option Tpetra_ASSUME_CUDA_AWARE_MPI=ON, and override the configure-time setting at runtime with the environment variable TPETRA_ASSUME_CUDA_AWARE_MPI=ON or OFF.")
       ENDIF ()
     ELSE ()
-      MESSAGE (STATUS "  - Tpetra did not find the \"ompi_info\" executable.  This may not be bad; for example, if your MPI implementation is not OpenMPI, then you won't have this executable.  Tpetra will conservatively assume that your MPI implementation is NOT CUDA aware.  If you would like to change this, please set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON explicitly at configure time.")
+      MESSAGE (STATUS "  - Tpetra did not find the \"ompi_info\" executable.  This may not be bad; for example, if your MPI implementation is not OpenMPI, then you won't have this executable.  Tpetra will conservatively assume that your MPI implementation is NOT CUDA aware.  If you would like to change this, please set the CMake variable Tpetra_ASSUME_CUDA_AWARE_MPI:BOOL=ON explicitly at configure time.  You can also override this at runtime with the environment variable TPETRA_ASSUME_CUDA_AWARE_MPI=ON or OFF.")
     ENDIF () # Tpetra_FOUND_OMPI_INFO_EXECUTABLE
   ENDIF () # Whether we are cross compiling
 ENDIF () # Whether we have CUDA and MPI

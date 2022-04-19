@@ -104,7 +104,8 @@ public:
     std::vector<double> coordinates = stk::unit_test_util::get_many_block_coordinates(m_numBlocks);
 
     setup_field_per_block();
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     construct_ngp_fields();
   }
 
@@ -114,7 +115,8 @@ public:
     std::vector<double> coordinates = stk::unit_test_util::get_many_block_coordinates(m_numBlocks);
 
     setup_fields_on_all_blocks();
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
     construct_ngp_fields();
   }
 

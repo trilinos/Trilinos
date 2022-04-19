@@ -131,6 +131,7 @@ namespace Example {
       }
     }
 
+    KOKKOS_INLINE_FUNCTION
     Fun(const Intrepid2::EFunctionSpace& space) {
       a=a0=a1=a2=0;
       if(space != Intrepid2::FUNCTION_SPACE_HCURL)
@@ -501,7 +502,7 @@ int feProjection(int argc, char *argv[]) {
     globalIndexer->getOwnedIndices(ownedIndices);
     Teuchos::RCP<const map_t> ownedMap = Teuchos::rcp(new map_t(Teuchos::OrdinalTraits<global_ordinal_t>::invalid(),ownedIndices,0,Teuchos::rcpFromRef(comm)));
 
-    *outStream << "Total number of DoFs: " << ownedMap->getGlobalNumElements() << ", number of owned DoFs: " << ownedMap->getNodeNumElements() << "\n";
+    *outStream << "Total number of DoFs: " << ownedMap->getGlobalNumElements() << ", number of owned DoFs: " << ownedMap->getLocalNumElements() << "\n";
 
     Teuchos::Array<global_ordinal_t> globalIdsInRow(basisCardinality);
     blockId = (dim == 2) ? "eblock-0_0" : "eblock-0_0_0";

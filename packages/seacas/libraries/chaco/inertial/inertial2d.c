@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -16,7 +16,7 @@ void inertial2d(struct vtx_data **graph,        /* graph data structure for weig
                 int               cube_or_mesh, /* 0 => hypercube, d => d-dimensional mesh */
                 int               nsets,        /* number of sets to divide into */
                 float *x, float *y,             /* x and y coordinates of vertices */
-                int *   sets,                   /* set each vertex gets assigned to */
+                int    *sets,                   /* set each vertex gets assigned to */
                 double *goal,                   /* desired set sizes */
                 int     using_vwgts             /* are vertex weights being used? */
 )
@@ -26,16 +26,16 @@ void inertial2d(struct vtx_data **graph,        /* graph data structure for weig
   extern double median_time;        /* time spent computing medians */
   double        tensor[2][2];       /* inertial tensor */
   double        evec[2];            /* eigenvector of tensor */
-  double *      value;              /* values along selected direction to sort */
+  double       *value;              /* values along selected direction to sort */
   double        xcm, ycm;           /* center of mass in each direction */
   double        xx, yy, xy;         /* elements of inertial tensor */
   double        xdif, ydif;         /* deviation from center of mass */
   double        eval, res;          /* eigenvalue and error in eval calculation */
   double        vwgt_sum;           /* sum of all the vertex weights */
   double        time;               /* timing parameters */
-  int *         space;              /* space required by median routine */
+  int          *space;              /* space required by median routine */
   int           i;                  /* loop counter */
-  double        seconds();
+  double        seconds(void);
 
   void evals2(), eigenvec2(), rec_median_1();
 

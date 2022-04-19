@@ -74,7 +74,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-    template<typename DeviceSpaceType>
+    template<typename DeviceType>
     int OrientationToolsHexMesh(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -88,13 +88,6 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-      *outStream << "\n";
-
 
       *outStream
         << "===============================================================================\n"
@@ -106,7 +99,7 @@ namespace Intrepid2 {
       int errorFlag = 0;
       //const double tol = tolerence();
 
-      typedef OrientationTools<DeviceSpaceType> ots;
+      typedef OrientationTools<DeviceType> ots;
       try {
 
         {
@@ -146,18 +139,18 @@ namespace Intrepid2 {
           const auto cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
           // view to store orientation
-          Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
+          Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
 
           // view to import refMesh from host
-          Kokkos::DynRankView<ordinal_type,Kokkos::LayoutRight,HostSpaceType>
+          Kokkos::DynRankView<ordinal_type,Kokkos::LayoutRight,Kokkos::HostSpace>
             elemNodesHost(&refMesh[0][0], numCells, numVerts);
-          auto elemNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), elemNodesHost);
+          auto elemNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), elemNodesHost);
           Kokkos::deep_copy(elemNodes, elemNodesHost);
 
           ots::getOrientation(elemOrts, elemNodes, cellTopo);
 
           // for comparison move data to host
-          auto elemOrtsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), elemOrts);
+          auto elemOrtsHost = Kokkos::create_mirror_view( elemOrts);
 
           for (auto cell=0;cell<numCells;++cell) {
             // decode edge orientations

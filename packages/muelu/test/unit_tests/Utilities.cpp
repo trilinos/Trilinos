@@ -525,7 +525,7 @@ namespace MueLuTests {
       TEST_ASSERT(!diffMatrix.is_null());
 
       bool allEntriesAreZero = true;
-      for (LO lRowId = 0; lRowId < Teuchos::as<LO>(diffMatrix->getNodeNumRows()); ++lRowId)
+      for (LO lRowId = 0; lRowId < Teuchos::as<LO>(diffMatrix->getLocalNumRows()); ++lRowId)
       {
         ArrayView<const LO> cols;
         ArrayView<const Scalar> vals;
@@ -555,7 +555,7 @@ namespace MueLuTests {
       TEST_ASSERT(!diffMatrix.is_null());
 
       bool allEntriesAreZero = true;
-      for (LO lRowId = 0; lRowId < Teuchos::as<LO>(diffMatrix->getNodeNumRows()); ++lRowId)
+      for (LO lRowId = 0; lRowId < Teuchos::as<LO>(diffMatrix->getLocalNumRows()); ++lRowId)
       {
         ArrayView<const LO> cols;
         ArrayView<const Scalar> vals;

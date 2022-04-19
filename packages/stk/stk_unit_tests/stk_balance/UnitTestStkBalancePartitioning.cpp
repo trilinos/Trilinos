@@ -21,7 +21,7 @@ protected:
 
   void setup_initial_mesh(const std::string & inputMeshFile)
   {
-    setup_mesh(inputMeshFile, stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh(inputMeshFile, stk::mesh::BulkData::AUTO_AURA);
   }
 
   void setup_4hex_contact_perpendicular_to_proc_boundary()
@@ -40,7 +40,8 @@ protected:
       0,1,1, 1,1,1, 2,1,1, 0,2,1, 1,2,1, 2,2,1
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void balance_mesh(const stk::ParallelMachine & decompCommunicator,

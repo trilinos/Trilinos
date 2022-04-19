@@ -440,12 +440,13 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         timer1.reset();
         #endif
         //printf( " U_assign_nnz(LU(%d,%d))\n",U_col,U_row );
+        double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; 
         #ifdef SHYLU_BASKER_STREE_LIST
-        U_assign_nnz(LU(U_col)(U_row), stree_p, 0);
-        L_assign_nnz(LL(blk)(l+1),     stree_p, 0);
+        U_assign_nnz(LU(U_col)(U_row), stree_p, fill_factor, 0);
+        L_assign_nnz(LL(blk)(l+1),     stree_p, fill_factor, 0);
         #else
-        U_assign_nnz(LU(U_col)(U_row), stree, 0);
-        L_assign_nnz(LL(blk)(l+1),     stree, 0);
+        U_assign_nnz(LU(U_col)(U_row), stree, fill_factor, 0);
+        L_assign_nnz(LL(blk)(l+1),     stree, fill_factor, 0);
         #endif
         #ifdef BASKER_TIMER 
         time2 += timer1.seconds();
@@ -592,12 +593,13 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
             printf( "   ++ leaf_assign_nnz(LU(%d, %d))\n",(int)U_col,(int)U_row);
             printf( "   ++ leaf_assign_nnz(LL(%d, %d))\n",(int)inner_blk,(int)(l-lvl));
           }
+          double fill_factor = BASKER_SEP_NNZ_OVER+Options.user_fill; 
           #ifdef SHYLU_BASKER_STREE_LIST
-          U_assign_nnz(LU(U_col)(U_row), stree_p, 0);
-          L_assign_nnz(LL(inner_blk)(l-lvl), stree_p, 0);
+          U_assign_nnz(LU(U_col)(U_row), stree_p, fill_factor, 0);
+          L_assign_nnz(LL(inner_blk)(l-lvl), stree_p, fill_factor, 0);
           #else
-          U_assign_nnz(LU(U_col)(U_row), stree, 0);
-          L_assign_nnz(LL(inner_blk)(l-lvl), stree, 0);
+          U_assign_nnz(LU(U_col)(U_row), stree, fill_factor, 0);
+          L_assign_nnz(LL(inner_blk)(l-lvl), stree, fill_factor, 0);
           #endif
           //printf("Here 1 \n");
         }
@@ -1108,7 +1110,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       if(parent[j] != BASKER_MAX_IDX)
       {past[j] = parent[j];}
     }//over all col/row
-
 
     for(Int k = 0; k < MV.ncol; k++)
     {
@@ -2216,23 +2217,27 @@ printf( " col_count:: view \n" );
     if(option == 0)
     {
       Int t_nnz = 0;
+      Int temp = 0;
 
       for(Int i = 0; i < M.ncol; i++)
       {
-        if (t_nnz + ST.col_counts[i] > t_nnz) {
+        temp = t_nnz + ST.col_counts[i];
+        if (temp > t_nnz) {
+          t_nnz = temp;
+        } else {
           // let's just hope it is enough, if overflow
-          t_nnz += ST.col_counts[i];
+          break;
         }
       }
-
       #ifdef BASKER_DEBUG_SFACTOR
       printf("leaf nnz: %ld \n", (long)t_nnz);
       #endif
 
       //double nnz_shoulder = 1.05;
       double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; // used to boost fill estimate
-      if ((Int)(fill_factor*t_nnz) > t_nnz) {
-        M.nnz = fill_factor*t_nnz;
+      temp = fill_factor*t_nnz;
+      if (temp > t_nnz) {
+        M.nnz = temp;
       } else {
         M.nnz = t_nnz;
       }
@@ -2242,9 +2247,10 @@ printf( " col_count:: view \n" );
       t_nnz = 0;
       #endif
 
-      if (global_nnz + t_nnz > global_nnz) {
+      temp = global_nnz + t_nnz;
+      if (temp > global_nnz) {
         // let's just hope it is enough, if overflow
-        global_nnz += t_nnz;
+        global_nnz = temp;
       }
       if(Options.verbose == BASKER_TRUE)
       {
@@ -2260,18 +2266,23 @@ printf( " col_count:: view \n" );
   void Basker<Int,Entry,Exe_Space>::U_assign_nnz
   (
    BASKER_MATRIX &M,
-   BASKER_SYMBOLIC_TREE &ST, 
+   BASKER_SYMBOLIC_TREE &ST,
+   double fill_factor, // used to boost fill estimate
    Int option
   )
   {
-    if(option == 0 )
+    if(option == 0)
     {
       Int t_nnz = 0; 
+      Int temp = 0;
       for(Int i = 0; i < M.ncol; i++)
       {
-        if (t_nnz + ST.U_col_counts[i] > t_nnz) {
+        temp = t_nnz + ST.U_col_counts[i];
+        if (temp > t_nnz) {
+          t_nnz = temp;
+        } else {
           // let's just hope it is enough, if overflow
-          t_nnz += ST.U_col_counts[i];
+          break;
         }
       }
 
@@ -2280,13 +2291,16 @@ printf( " col_count:: view \n" );
       #endif
 
       //double fill_factor = 1.05;
-      double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; // used to boost fill estimate
-      if ((Int)(fill_factor*t_nnz) >= t_nnz) {
-        M.nnz = fill_factor*t_nnz;
+      temp = fill_factor*t_nnz;
+      if (temp >= t_nnz) {
+        M.nnz = temp;
+      } else {
+        M.nnz = t_nnz;
       }
-      if (global_nnz + t_nnz > global_nnz) {
+      temp = global_nnz + t_nnz;
+      if (temp > global_nnz) {
         // let's just hope it is enough, if overflow
-        global_nnz += t_nnz;
+        global_nnz = temp;
       }
       #if 0
       printf( " debug: set U.nnz = 0 to force realloc\n" );
@@ -2307,19 +2321,24 @@ printf( " col_count:: view \n" );
   void Basker<Int,Entry,Exe_Space>::L_assign_nnz
   (
    BASKER_MATRIX &M,
-   BASKER_SYMBOLIC_TREE &ST, 
+   BASKER_SYMBOLIC_TREE &ST,
+   double fill_factor, // used to boost fill estimate
    Int option
   )
   {
     if(option == 0)
     {
       Int t_nnz = 0; 
+      Int temp = 0;
 
       for(Int i = 0; i < M.nrow; i++)
       {
-        if (t_nnz + ST.L_row_counts[i] > t_nnz) {
+        temp = t_nnz + ST.L_row_counts[i];
+        if (temp > t_nnz) {
+          t_nnz = temp;
+        } else {
           // let's just hope it is enough, if overflow
-          t_nnz += ST.L_row_counts[i];
+          break;
         }
       }
 
@@ -2327,11 +2346,11 @@ printf( " col_count:: view \n" );
       printf("L_assign_nnz: %ld \n", t_nnz);
       #endif
 
-     // double fill_factor = 2.05;
+      // double fill_factor = 2.05;
       double old_nnz = M.nnz;
-      double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; // used to boost fill estimate
-      if ((Int)(fill_factor*t_nnz) >= t_nnz) {
-        M.nnz = fill_factor*t_nnz;
+      temp = fill_factor*t_nnz;
+      if (temp >= t_nnz) {
+        M.nnz = temp;
       } else {
         M.nnz = t_nnz;
       }
@@ -2340,9 +2359,10 @@ printf( " col_count:: view \n" );
       M.nnz = 0;
       t_nnz = 0;
       #endif
-      if (global_nnz + t_nnz > global_nnz) {
+      temp = global_nnz + t_nnz;
+      if (temp > global_nnz) {
         // let's just hope it is enough, if overflow
-        global_nnz += t_nnz;
+        global_nnz = temp;
       }
       if(Options.verbose == BASKER_TRUE)
       {
@@ -2369,15 +2389,19 @@ printf( " col_count:: view \n" );
       printf("S_assign_nnz: %ld  \n", M.nnz);
       #endif
 
-      if (global_nnz + M.nnz > global_nnz) {
+      Int temp = global_nnz + M.nnz;
+      if (temp > global_nnz) {
         // let's just hope it is enough, if overflow
-        global_nnz += M.nnz;
+        global_nnz = temp;
       }
       if(Options.verbose == BASKER_TRUE)
       {
         printf("S_assign elbow global_nnz = %ld, M.nnz = %ld + 2\n", (long)global_nnz, (long)M.nnz);
       }
-      M.nnz += 2;
+      temp = M.nnz + 2;
+      if (temp > M.nnz) {
+        M.nnz += 2;
+      }
     }
   }//end assign_sep_nnze
 

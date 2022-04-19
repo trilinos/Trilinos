@@ -170,7 +170,7 @@ setMatrix (const Teuchos::RCP<const operator_type>& A)
     using Teuchos::rcp_dynamic_cast;
     A_crs_ = rcp_dynamic_cast<const crs_matrix_type> (A);
 
-    const size_t lclNumRows = A_crs_->getRowMap ()->getNodeNumElements ();
+    const size_t lclNumRows = A_crs_->getRowMap ()->getLocalNumElements ();
 
     if (offsets_.extent (0) < lclNumRows) {
       using Kokkos::view_alloc;
@@ -203,7 +203,7 @@ compute (vector_type& D_inv,
   const char kernel_label[] = "inverse_diagonal_kernel";
   using execution_space = typename NT::execution_space;
   using range_type = Kokkos::RangePolicy<execution_space, LO>;
-  const size_t lclNumRows = A_crs_->getRowMap ()->getNodeNumElements ();
+  const size_t lclNumRows = A_crs_->getRowMap ()->getLocalNumElements ();
   auto policy = range_type(0, lclNumRows);
 
   d_type d = D_inv.getLocalViewDevice(Tpetra::Access::OverwriteAll);

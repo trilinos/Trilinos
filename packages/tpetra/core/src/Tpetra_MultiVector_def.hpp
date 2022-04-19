@@ -513,14 +513,14 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "MultiVector(Map,DualView): ";
     const size_t lclNumRows_map = map.is_null () ? size_t (0) :
-      map->getNodeNumElements ();
+      map->getLocalNumElements ();
     const size_t lclNumRows_view = view.extent (0);
     const size_t LDA = getDualViewStride (view_);
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (LDA < lclNumRows_map || lclNumRows_map != lclNumRows_view,
        std::invalid_argument, "Kokkos::DualView does not match Map. "
-       "map->getNodeNumElements() = " << lclNumRows_map
+       "map->getLocalNumElements() = " << lclNumRows_map
        << ", view.extent(0) = " << lclNumRows_view
        << ", and getStride() = " << LDA << ".");
 
@@ -549,14 +549,14 @@ namespace Tpetra {
   {
     const char tfecfFuncName[] = "MultiVector(Map,DualView): ";
     const size_t lclNumRows_map = map.is_null () ? size_t (0) :
-      map->getNodeNumElements ();
+      map->getLocalNumElements ();
     const size_t lclNumRows_view = view.extent (0);
     const size_t LDA = getDualViewStride (view);
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (LDA < lclNumRows_map || lclNumRows_map != lclNumRows_view,
        std::invalid_argument, "Kokkos::DualView does not match Map. "
-       "map->getNodeNumElements() = " << lclNumRows_map
+       "map->getLocalNumElements() = " << lclNumRows_map
        << ", view.extent(0) = " << lclNumRows_view
        << ", and getStride() = " << LDA << ".");
 
@@ -590,10 +590,10 @@ namespace Tpetra {
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV ctor (map,d_view)");
 
     const size_t LDA = getViewStride (d_view);
-    const size_t lclNumRows = map->getNodeNumElements ();
+    const size_t lclNumRows = map->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (LDA < lclNumRows, std::invalid_argument, "Map does not match "
-       "Kokkos::View.  map->getNodeNumElements() = " << lclNumRows
+       "Kokkos::View.  map->getLocalNumElements() = " << lclNumRows
        << ", View's column stride = " << LDA
        << ", and View's extent(0) = " << d_view.extent (0) << ".");
 
@@ -687,7 +687,7 @@ namespace Tpetra {
     }
 
     const size_t lclNumRows = map.is_null () ? size_t (0) :
-      map->getNodeNumElements ();
+      map->getLocalNumElements ();
     // Check dimensions of the input DualView.  We accept that Kokkos
     // might not allow construction of a 0 x m (Dual)View with m > 0,
     // so we only require the number of rows to match if the
@@ -697,7 +697,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       view.extent (1) != 0 && static_cast<size_t> (view.extent (0)) < lclNumRows,
       std::invalid_argument, "view.extent(0) = " << view.extent (0)
-      << " < map->getNodeNumElements() = " << lclNumRows << ".");
+      << " < map->getLocalNumElements() = " << lclNumRows << ".");
     if (whichVectors.size () != 0) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         view.extent (1) != 0 && view.extent (1) == 0,
@@ -771,7 +771,7 @@ namespace Tpetra {
     }
 
     const size_t lclNumRows = map.is_null () ? size_t (0) :
-      map->getNodeNumElements ();
+      map->getLocalNumElements ();
     // Check dimensions of the input DualView.  We accept that Kokkos
     // might not allow construction of a 0 x m (Dual)View with m > 0,
     // so we only require the number of rows to match if the
@@ -781,7 +781,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       view.extent (1) != 0 && static_cast<size_t> (view.extent (0)) < lclNumRows,
       std::invalid_argument, "view.extent(0) = " << view.extent (0)
-      << " < map->getNodeNumElements() = " << lclNumRows << ".");
+      << " < map->getLocalNumElements() = " << lclNumRows << ".");
     if (whichVectors.size () != 0) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         view.extent (1) != 0 && view.extent (1) == 0,
@@ -870,7 +870,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       view.extent (1) != 0 && static_cast<size_t> (view.extent (0)) < lclNumRows,
       std::invalid_argument, "view.extent(0) = " << view.extent (0)
-      << " < map->getNodeNumElements() = " << lclNumRows << ".");
+      << " < map->getLocalNumElements() = " << lclNumRows << ".");
     if (whichVectors.size () != 0) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         view.extent (1) != 0 && view.extent (1) == 0,
@@ -935,10 +935,10 @@ namespace Tpetra {
     // There is no need for a deep copy constructor with nonconstant stride.
 
     const size_t lclNumRows =
-      map.is_null () ? size_t (0) : map->getNodeNumElements ();
+      map.is_null () ? size_t (0) : map->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (LDA < lclNumRows, std::invalid_argument, "LDA = " << LDA << " < "
-       "map->getNodeNumElements() = " << lclNumRows << ".");
+       "map->getLocalNumElements() = " << lclNumRows << ".");
     if (numVecs != 0) {
       const size_t minNumEntries = LDA * (numVecs - 1) + lclNumRows;
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -946,7 +946,7 @@ namespace Tpetra {
          std::invalid_argument, "Input Teuchos::ArrayView does not have enough "
          "entries, given the input Map and number of vectors in the MultiVector."
          "  data.size() = " << data.size () << " < (LDA*(numVecs-1)) + "
-         "map->getNodeNumElements () = " << minNumEntries << ".");
+         "map->getLocalNumElements () = " << minNumEntries << ".");
     }
 
     this->view_ = allocDualView<Scalar, LO, GO, Node> (lclNumRows, numVecs);
@@ -1002,7 +1002,7 @@ namespace Tpetra {
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV ctor (map,Teuchos::ArrayView of ArrayView,numVecs)");
 
     const size_t lclNumRows =
-      map.is_null () ? size_t (0) : map->getNodeNumElements ();
+      map.is_null () ? size_t (0) : map->getLocalNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (numVecs < 1 || numVecs != static_cast<size_t> (ArrayOfPtrs.size ()),
        std::runtime_error, "Either numVecs (= " << numVecs << ") < 1, or "
@@ -1012,7 +1012,7 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         static_cast<size_t> (X_j_av.size ()) < lclNumRows,
         std::invalid_argument, "ArrayOfPtrs[" << j << "].size() = "
-        << X_j_av.size () << " < map->getNodeNumElements() = " << lclNumRows
+        << X_j_av.size () << " < map->getLocalNumElements() = " << lclNumRows
         << ".");
     }
 
@@ -1051,7 +1051,7 @@ namespace Tpetra {
     if (this->getMap ().is_null ()) { // possible, due to replaceMap().
       return static_cast<size_t> (0);
     } else {
-      return this->getMap ()->getNodeNumElements ();
+      return this->getMap ()->getLocalNumElements ();
     }
   }
 
@@ -2753,7 +2753,7 @@ namespace Tpetra {
 
       // Case 3: current Map is null, new Map is nonnull.
       // Reallocate the DualView with the right dimensions.
-      const size_t newNumRows = newMap->getNodeNumElements ();
+      const size_t newNumRows = newMap->getLocalNumElements ();
       const size_t origNumRows = view_.extent (0);
       const size_t numCols = this->getNumVectors ();
 
@@ -3318,7 +3318,7 @@ namespace Tpetra {
 
     const LO lclNumRowsBefore = static_cast<LO> (X.getLocalLength ());
     const LO numCols = static_cast<LO> (X.getNumVectors ());
-    const LO newNumRows = static_cast<LO> (subMap->getNodeNumElements ());
+    const LO newNumRows = static_cast<LO> (subMap->getLocalNumElements ());
     if (verbose) {
       std::ostringstream os;
       os << "Proc " << myRank << ": " << prefix
@@ -3335,7 +3335,7 @@ namespace Tpetra {
       newNumRows + rowOffset > static_cast<LO> (X.getOrigNumLocalRows ());
     if (tooManyElts) {
       errStrm = std::unique_ptr<std::ostringstream> (new std::ostringstream);
-      *errStrm << "  Proc " << myRank << ": subMap->getNodeNumElements() (="
+      *errStrm << "  Proc " << myRank << ": subMap->getLocalNumElements() (="
                << newNumRows << ") + rowOffset (=" << rowOffset
                << ") > X.getOrigNumLocalRows() (=" << X.getOrigNumLocalRows ()
                << ")." << endl;
@@ -3389,7 +3389,7 @@ namespace Tpetra {
           errStrm = std::unique_ptr<std::ostringstream> (new std::ostringstream);
         }
         *errStrm << "  Proc " << myRank <<
-          ": subMap.getNodeNumElements(): " << newNumRows <<
+          ": subMap.getLocalNumElements(): " << newNumRows <<
           ", subViewMV.getLocalLength(): " << lclNumRowsRet <<
           ", X.getNumVectors(): " << numCols <<
           ", subViewMV.getNumVectors(): " << numColsRet << endl;
