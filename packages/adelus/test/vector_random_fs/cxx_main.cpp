@@ -268,9 +268,11 @@ int main(int argc, char *argv[])
 
   printf("Rank %d, ViewMatrixType execution_space %s, memory_space %s, value_type %s\n",rank, typeid(execution_space).name(), typeid(memory_space).name(), typeid(ScalarA).name());
 
-  ViewMatrixType A( "A", myrows, mycols + myrhs + 6 );
+  ViewMatrixType A( "A", myrows, mycols );
+  ViewMatrixType B( "B", myrows, myrhs + 6 );
 
   ViewMatrixType::HostMirror h_A = Kokkos::create_mirror( A );
+  ViewMatrixType::HostMirror h_B = Kokkos::create_mirror( B );
 
   // Some temp arrays
 
@@ -324,7 +326,7 @@ int main(int argc, char *argv[])
   // Now put the RHS in the appropriate position
 
   if( myrhs > 0 ) {
-    Kokkos::deep_copy( subview(h_A,Kokkos::ALL(),mycols), temp2 );
+    Kokkos::deep_copy( subview(h_B,Kokkos::ALL(),0), temp2 );
     Kokkos::deep_copy( subview(rhs,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows)), temp2 );
   }
 
@@ -338,7 +340,7 @@ int main(int argc, char *argv[])
 
   rhs_nrm = KokkosBlas::nrm2(rhs);
 
-  Kokkos::deep_copy( subview(A,Kokkos::ALL(),mycols), subview(h_A,Kokkos::ALL(),mycols) );
+  Kokkos::deep_copy( B, h_B );
 
   // Now Factor the matrix
 
@@ -360,31 +362,31 @@ int main(int argc, char *argv[])
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Solve (1st)   ****" << std::endl;
 
-  Adelus::Solve (A, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
+  Adelus::Solve (A, B, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
 
   if( rank == 0)
     std::cout << " ----  Solution time (1st)  ----   " << secs << "  in secs. " << std::endl;
 
   // Restore the orig. RHS for testing Adelus::Solve() on a pre-computed LU factorization
-  Kokkos::deep_copy( subview(A,Kokkos::ALL(),mycols), subview(h_A,Kokkos::ALL(),mycols) );
+  Kokkos::deep_copy( B, h_B );
 
   // Call Solve (2nd time)
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Solve (2nd)   ****" << std::endl;
 
-  Adelus::Solve (A, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
+  Adelus::Solve (A, B, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
 
   if( rank == 0)
     std::cout << " ----  Solution time (2nd)  ----   " << secs << "  in secs. " << std::endl;
 
   // Now Check the Solution
 
-  Kokkos::deep_copy( subview(h_A,Kokkos::ALL(),mycols), subview(A,Kokkos::ALL(),mycols) );
+  Kokkos::deep_copy( h_B, B );
 
   // Pack the Answer into the apropriate position
 
   if ( myrhs > 0) {
-    Kokkos::deep_copy( subview(tempp,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows)), subview(h_A,Kokkos::ALL(),mycols) );
+    Kokkos::deep_copy( subview(tempp,Kokkos::make_pair(myfirstrow - 1, myfirstrow - 1 + myrows)), subview(h_B, Kokkos::ALL(), 0) );
   }
 
   // All processors get the answer
