@@ -3408,7 +3408,15 @@ template \
                      const Teuchos::RCP<const Map<LO, GO , NODE > >& rangeMap, \
                      const Teuchos::RCP<Teuchos::ParameterList>& params); \
 \
-  template struct MMdetails::AddKernels<SCALAR, LO, GO, NODE>;
+  template struct MMdetails::AddKernels<SCALAR, LO, GO, NODE>; \
+\
+  template void MMdetails::import_and_extract_views<SCALAR, LO, GO, NODE>(const CrsMatrix<SCALAR, LO, GO, NODE>& M, \
+                                                                          Teuchos::RCP<const Map<LO, GO, NODE> > targetMap, \
+                                                                          CrsMatrixStruct<SCALAR, LO, GO, NODE>& Mview, \
+                                                                          Teuchos::RCP<const Import<LO,GO, NODE> > prototypeImporter, \
+                                                                          bool userAssertsThereAreNoRemotes, \
+                                                                          const std::string& label, \
+                                                                          const Teuchos::RCP<Teuchos::ParameterList>& params);
 
 } //End namespace Tpetra
 
