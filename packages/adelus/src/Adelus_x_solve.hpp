@@ -69,9 +69,9 @@
 
 namespace Adelus {
 
-template<class ZViewType, class PViewType>
+template<class ZViewType, class RHSViewType, class PViewType>
 inline
-void solve_(ZViewType& ZRHS, PViewType& permute, int *num_rhs, double *secs)
+void solve_(ZViewType& Z, RHSViewType& RHS, PViewType& permute, int *num_rhs, double *secs)
 {
 #ifdef ADELUS_HAVE_TIME_MONITOR
   using Teuchos::TimeMonitor;
@@ -101,9 +101,11 @@ void solve_(ZViewType& ZRHS, PViewType& permute, int *num_rhs, double *secs)
     
     //NOTE: Currently doing RHS permute and forward solve in host memory and for a single RHS
     //TODO: do these in device memory
-    typename ZViewType::HostMirror h_Z = Kokkos::create_mirror_view( ZRHS );
-    Kokkos::deep_copy (h_Z, ZRHS);
-    auto h_RHS = subview(h_Z, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols + my_rhs + 6));
+    typename ZViewType::HostMirror h_Z = Kokkos::create_mirror_view( Z );
+    typename RHSViewType::HostMirror h_RHS = Kokkos::create_mirror_view( RHS );
+    // Bring data to host memory
+    Kokkos::deep_copy (h_Z, Z);
+    Kokkos::deep_copy (h_RHS, RHS);
 
 #ifdef ADELUS_HAVE_TIME_MONITOR
     {
@@ -125,7 +127,9 @@ void solve_(ZViewType& ZRHS, PViewType& permute, int *num_rhs, double *secs)
     }
 #endif
 
-    Kokkos::deep_copy (ZRHS, h_Z);//bring back to device memory
+    // Copy back to device memory
+    Kokkos::deep_copy (Z,   h_Z);  
+    Kokkos::deep_copy (RHS, h_RHS);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -133,8 +137,7 @@ void solve_(ZViewType& ZRHS, PViewType& permute, int *num_rhs, double *secs)
     {
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: backsolve"));
 #endif
-      //TODO: Need to separate Z and RHS in the input argument of back_solve6()
-      back_solve6(ZRHS);
+      back_solve6(Z, RHS);
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }
 #endif
@@ -145,7 +148,6 @@ void solve_(ZViewType& ZRHS, PViewType& permute, int *num_rhs, double *secs)
     {
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: permutation"));
 #endif
-      auto RHS = subview(ZRHS, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols + my_rhs + 6));
       perm1_(RHS, &my_rhs);
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }

@@ -89,10 +89,10 @@ extern MPI_Comm col_comm;
 namespace Adelus {
 
 //  Customized elimination on the rhs that I own	
-template<class ZDView, class RView>
-void elimination_rhs(int N, ZDView& ptr3, ZDView& ptr2, RView& ptr4, int act_col) {
+template<class ZView, class RHSView, class DView>
+void elimination_rhs(int N, ZView& ptr2, RHSView& ptr3, DView& ptr4, int act_col) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-  Kokkos::parallel_for(Kokkos::RangePolicy<typename ZDView::device_type::execution_space>(0,N), KOKKOS_LAMBDA (const int i) {
+  Kokkos::parallel_for(Kokkos::RangePolicy<typename ZView::device_type::execution_space>(0,N), KOKKOS_LAMBDA (const int i) {
     ptr4(0,i) = ptr3(i)/ptr2(act_col);
     ptr3(i)   = ptr4(0,i);
   });
@@ -104,22 +104,22 @@ void elimination_rhs(int N, ZDView& ptr3, ZDView& ptr2, RView& ptr4, int act_col
 #endif
 }
 
-template<class ZDView>
+template<class ZViewType, class RHSViewType>
 inline
-void back_solve6(ZDView& ZV)
+void back_solve6(ZViewType& Z, RHSViewType& RHS)
 {
-  typedef typename ZDView::value_type value_type;
+  using value_type      = typename ZViewType::value_type;
 #ifdef PRINT_STATUS
-  typedef typename ZDView::device_type::execution_space execution_space;
+  using execution_space = typename ZViewType::device_type::execution_space;
 #endif
-  typedef typename ZDView::device_type::memory_space memory_space;
-  typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space> ViewMatrixType;
+  using memory_space    = typename ZViewType::device_type::memory_space;
+  using View2DType      = Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space>;
 
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)
 #if defined(KOKKOS_ENABLE_CUDA)
-  typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace> View2DHostPinnType;//CudaHostPinnedSpace
+  using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
 #elif defined(KOKKOS_ENABLE_HIP)
-  typedef Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace> View2DHostPinnType;//HIPHostPinnedSpace
+  using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
 #endif
 #endif
 
@@ -192,11 +192,11 @@ void back_solve6(ZDView& ZV)
   t1 = MPI_Wtime();
 #endif
 
-  ViewMatrixType row1( "row1", one, nrhs );   // row1: diagonal row (temp variables)
+  View2DType row1( "row1", one, nrhs );   // row1: diagonal row (temp variables)
 #if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
   View2DHostPinnType h_row2( "h_row2", my_rows, max_bytes/sizeof(ADELUS_DATA_TYPE)/my_rows );
 #else
-  ViewMatrixType row2( "row2", my_rows, max_bytes/sizeof(ADELUS_DATA_TYPE)/my_rows );
+  View2DType row2( "row2", my_rows, max_bytes/sizeof(ADELUS_DATA_TYPE)/my_rows );
 #endif
 #if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
   View2DHostPinnType h_row1( "h_row1", one, nrhs );
@@ -238,7 +238,7 @@ void back_solve6(ZDView& ZV)
                  
         // do an elimination step on the rhs that I own
 
-        //auto ptr2_view = subview(ZV, end_row-1, Kokkos::ALL());
+        //auto ptr2_view = subview(Z, end_row-1, Kokkos::ALL());
 
         root = row_owner(global_col);
 
@@ -246,9 +246,9 @@ void back_solve6(ZDView& ZV)
 #ifdef GET_TIMING
           t1 = MPI_Wtime();
 #endif
-          auto ptr2_view = subview(ZV, end_row-1, Kokkos::ALL());
-          auto ptr3_view = subview(ZV, end_row-1, Kokkos::make_pair(my_cols, my_cols+n_rhs_this));
-          elimination_rhs(n_rhs_this, ptr3_view, ptr2_view, row1, act_col);//note: row1 = ptr4
+          auto ptr2_view = subview(Z,   end_row-1, Kokkos::ALL());
+          auto ptr3_view = subview(RHS, end_row-1, Kokkos::make_pair(0, n_rhs_this));
+          elimination_rhs(n_rhs_this, ptr2_view, ptr3_view, row1, act_col);//note: row1 = ptr4
           end_row--;
 #ifdef GET_TIMING
           eliminaterhstime += (MPI_Wtime()-t1);
@@ -298,8 +298,8 @@ void back_solve6(ZDView& ZV)
         t1 = MPI_Wtime();
 #endif
 
-        auto A_view = subview(ZV, Kokkos::make_pair(0, end_row), Kokkos::make_pair(act_col, act_col+one));
-        auto C_view = subview(ZV, Kokkos::make_pair(0, end_row), Kokkos::make_pair(my_cols, my_cols+n_rhs_this));
+        auto A_view = subview(Z,    Kokkos::make_pair(0, end_row), Kokkos::make_pair(act_col, act_col+one));
+        auto C_view = subview(RHS,  Kokkos::make_pair(0, end_row), Kokkos::make_pair(0, n_rhs_this));
         auto B_view = subview(row1, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this));
 
         KokkosBlas::gemm("N","N",d_min_one,
@@ -332,7 +332,8 @@ void back_solve6(ZDView& ZV)
         n_rhs_this = bytes[0]/sizeof(ADELUS_DATA_TYPE)/my_rows;
 
 #if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-        Kokkos::deep_copy(subview(h_rhs, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)), subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols+n_rhs_this)));
+        Kokkos::deep_copy(subview(h_rhs, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)), 
+                          subview(RHS,   Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)));
 #endif
 
         dest[1]  = dest_left;
@@ -342,7 +343,7 @@ void back_solve6(ZDView& ZV)
 #if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
         MPI_Send(reinterpret_cast<char *>(h_rhs.data()), bytes[1], MPI_CHAR, dest[1], type[1], MPI_COMM_WORLD);
 #else //GPU-aware MPI
-        MPI_Send(reinterpret_cast<char *>(ZV.data()+my_rows*my_cols), bytes[1], MPI_CHAR, dest[1], type[1], MPI_COMM_WORLD);
+        MPI_Send(reinterpret_cast<char *>(RHS.data()), bytes[1], MPI_CHAR, dest[1], type[1], MPI_COMM_WORLD);
 #endif
 
         MPI_Wait(&msgrequest,&msgstatus);
@@ -351,18 +352,18 @@ void back_solve6(ZDView& ZV)
         int blas_length = n_rhs_this*my_rows;
 #if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)) //Use memcpy for now, can use deep_copy in the future //deep_copy is slower than BLAS XCOPY
 #if defined(KOKKOS_ENABLE_CUDA)
-        //Kokkos::deep_copy(subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols+n_rhs_this)), subview(h_row2, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)));
-        cudaMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(h_row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), cudaMemcpyHostToDevice);
+        //Kokkos::deep_copy(subview(RHS, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)), subview(h_row2, Kokkos::ALL(), Kokkos::make_pair(0, n_rhs_this)));
+        cudaMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(RHS.data()), reinterpret_cast<ADELUS_DATA_TYPE *>(h_row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), cudaMemcpyHostToDevice);
 #elif defined(KOKKOS_ENABLE_HIP)
-        hipMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(h_row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), hipMemcpyHostToDevice);
+        hipMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(RHS.data()), reinterpret_cast<ADELUS_DATA_TYPE *>(h_row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), hipMemcpyHostToDevice);
 #endif
 #else
 #if defined(KOKKOS_ENABLE_CUDA)
-        cudaMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), cudaMemcpyDeviceToDevice);
+        cudaMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(RHS.data()), reinterpret_cast<ADELUS_DATA_TYPE *>(row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), cudaMemcpyDeviceToDevice);
 #elif defined(KOKKOS_ENABLE_HIP)
-        hipMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), hipMemcpyDeviceToDevice);
+        hipMemcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(RHS.data()), reinterpret_cast<ADELUS_DATA_TYPE *>(row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE), hipMemcpyDeviceToDevice);
 #else
-        memcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(ZV.data()+my_rows*my_cols), reinterpret_cast<ADELUS_DATA_TYPE *>(row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE));
+        memcpy(reinterpret_cast<ADELUS_DATA_TYPE *>(RHS.data()), reinterpret_cast<ADELUS_DATA_TYPE *>(row2.data()), blas_length*sizeof(ADELUS_DATA_TYPE));
 #endif
 #endif
       }

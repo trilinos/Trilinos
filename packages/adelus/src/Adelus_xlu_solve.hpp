@@ -68,19 +68,19 @@
 
 namespace Adelus {
 
-template<class ZDView>
+template<class ZRHSViewType>
 inline
-void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, double *secs)
+void lusolve_(ZRHSViewType& ZRHS, int *matrix_size, int *num_procsr, int *num_rhs, double *secs)
 {
 #ifdef ADELUS_HAVE_TIME_MONITOR
   using Teuchos::TimeMonitor;
 #endif
 
-  using value_type      = typename ZDView::value_type;
+  using value_type      = typename ZRHSViewType::value_type;
 #ifdef PRINT_STATUS
-  using execution_space = typename ZDView::device_type::execution_space;
+  using execution_space = typename ZRHSViewType::device_type::execution_space;
 #endif
-  using memory_space    = typename ZDView::device_type::memory_space;
+  using memory_space    = typename ZRHSViewType::device_type::memory_space;
 
   double run_secs;              // time (in secs) during which the prog ran
   double tsecs;                 // intermediate storage of timing info
@@ -161,7 +161,7 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
   {
     TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: factor"));
 #endif
-    factor(ZV,
+    factor(ZRHS,
            col1_view,
            row1_view,
            row2_view, 
@@ -172,6 +172,9 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
 #endif
 
   if (nrhs > 0) {
+    auto Z   = subview(ZRHS, Kokkos::ALL(), Kokkos::make_pair(0, my_cols));
+    auto RHS = subview(ZRHS, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols + my_rhs + 6));
+
     // Perform the backsolve
 
 #ifdef PRINT_STATUS
@@ -181,7 +184,7 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
     {
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: backsolve"));
 #endif
-      back_solve6(ZV);
+      back_solve6(Z, RHS);
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }
 #endif
@@ -195,8 +198,7 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
     {
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: permutation"));
 #endif
-      auto sub_ZV = subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols + my_rhs + 6));
-      perm1_(sub_ZV, &my_rhs);
+      perm1_(RHS, &my_rhs);
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }
 #endif

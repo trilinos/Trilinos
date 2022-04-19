@@ -175,7 +175,8 @@ namespace Adelus {
   /// Adelus Solve
   /// Solves the previously factored dense matrix for provided RHS 
 
-  /// \param AA (InOut)       -- Kokkos View that has the matrix and rhs packed (Note: matrix and rhs are overwritten)
+  /// \param AA (In)          -- Kokkos View that has the LU-factorized matrix
+  /// \param BB (InOut)       -- Kokkos View that has the rhs and solution (Note: rhs are overwritten)
   /// \param permute (In)     -- Kokkos View that has the global pivot vector
   /// \param my_rows_ (In)    -- number of rows of the matrix on this processor
   /// \param my_cols_ (In)    -- number of columns of the matrix on this processor
@@ -183,9 +184,10 @@ namespace Adelus {
   /// \param num_procsr (In)  -- number of processors for a row
   /// \param secs (Out)       -- factor and solve time in seconds
 
-  template<class ZDView, class IDView>
+  template<class ZDView, class BDView, class IDView>
   inline
   void Solve( ZDView AA,
+              BDView BB,
               IDView permute,
               int my_rows_,
               int my_cols_,
@@ -202,6 +204,7 @@ namespace Adelus {
 #endif
 
     solve_(AA,
+           BB,
            permute,
            num_rhs,
            secs);
