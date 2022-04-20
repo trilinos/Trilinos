@@ -1685,7 +1685,7 @@ void Iocgns::Utils::add_assemblies(int cgns_file_ptr, Ioss::DatabaseIO *db)
           }
           cg_free(dtext);
         }
-        if (!assem_name.empty()) {
+        if (!assem_name.empty() && assem_name != "Unspecified") {
           // Create an assembly with this name...
           auto *assem = new Ioss::Assembly(db, assem_name);
           db->get_region()->add(assem);
