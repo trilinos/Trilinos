@@ -367,15 +367,16 @@ void RegionMgCycleAdapter(const std::string cycleType,
   regionalToComposite(regX, X, rowImport);
 } // RegionMgCycleAdapter
 
+// Solve via Richardson iteration with region MG preconditioning, hand in matrix in region format
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void solveRegionProblem(const double tol, const bool scaleResidualHist, const int maxIts,
-                        const std::string cycleType, const std::string convergenceLog,
-                        RCP<Teuchos::ParameterList>& coarseSolverData,
-                        Array<RCP<Teuchos::ParameterList> >& smootherParams,
-                        RCP<Teuchos::ParameterList> hierarchyData,
-                        RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & regHierarchy,
-                        RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
-                        RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& B) {
+void solveRegionProblemRichardson(const double tol, const bool scaleResidualHist, const int maxIts,
+                                  const std::string cycleType, const std::string convergenceLog,
+                                  RCP<Teuchos::ParameterList>& coarseSolverData,
+                                  Array<RCP<Teuchos::ParameterList> >& smootherParams,
+                                  RCP<Teuchos::ParameterList> hierarchyData,
+                                  RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > & regHierarchy,
+                                  RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
+                                  RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& B) {
 
   using LO = LocalOrdinal;
   using GO = GlobalOrdinal;
@@ -516,8 +517,9 @@ void solveRegionProblem(const double tol, const bool scaleResidualHist, const in
 
   std::cout << std::setprecision(old_precision);
   std::cout.unsetf(std::ios::fixed | std::ios::scientific);
-} // solveRegionProblem
+} // solveRegionProblemRichardson
 
+// Solve via Conjugate Gradient with region MG preconditioning, hand in matrix in composite format
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, const int maxIts,
                               const std::string cycleType, const std::string convergenceLog,
@@ -649,6 +651,7 @@ void solveCompositeProblemPCG(const double tol, const bool scaleResidualHist, co
   std::cout.unsetf(std::ios::fixed | std::ios::scientific);
 } // solveCompositeProblemPCG
 
+// Solve via Richardson iteration with region MG preconditioning, hand in matrix in composite format
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void solveCompositeProblemRichardson(const double tol, const bool scaleResidualHist, const int maxIts,
                                      const std::string cycleType, const std::string convergenceLog,

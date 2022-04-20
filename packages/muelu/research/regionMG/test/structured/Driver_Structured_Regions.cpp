@@ -764,20 +764,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
 
   if(solverType == "region") {
-    solveRegionProblem(tol, scaleResidualHist, maxIts,
-                       cycleType, convergenceLog,
-                       coarseSolverData, smootherParams, hierarchyData,
-                       regHierarchy, X, B);
+    solveRegionProblemRichardson(tol, scaleResidualHist, maxIts,
+        cycleType, convergenceLog,
+        coarseSolverData, smootherParams, hierarchyData,
+        regHierarchy, X, B);
   } else if(solverType == "Richardson") {
     solveCompositeProblemRichardson(tol, scaleResidualHist, maxIts,
-                                    cycleType, convergenceLog,
-                                    coarseSolverData, smootherParams, hierarchyData,
-                                    regHierarchy, A, X, B);
+        cycleType, convergenceLog,
+        coarseSolverData, smootherParams, hierarchyData,
+        regHierarchy, A, X, B);
   } else if(solverType == "CG") {
     solveCompositeProblemPCG(tol, scaleResidualHist, maxIts,
-                             cycleType, convergenceLog,
-                             coarseSolverData, smootherParams, hierarchyData,
-                             regHierarchy, A, X, B);
+        cycleType, convergenceLog,
+        coarseSolverData, smootherParams, hierarchyData,
+        regHierarchy, A, X, B);
   } else {
     throw std::runtime_error("Unknown solverType: "+solverType);
   }
