@@ -62,7 +62,6 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadratureHVOL(Intrepid2
   
   const double flopsPerJacobianPerCell    = flopsPerJacobian(spaceDim, numPoints, numVertices);
   const double flopsPerJacobianDetPerCell = flopsPerJacobianDet(spaceDim, numPoints);
-  const double flopsPerJacobianInvPerCell = flopsPerJacobianInverse(spaceDim, numPoints);
   
   // Allocate some intermediate containers
   ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints );
