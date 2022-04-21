@@ -282,15 +282,6 @@ private:
   const RCP<const Comm<int> > comm_;
   int coordinateDim_;
 
-  // TODO: We now have a Kokkos version and non kokkos version so need to clean
-  // this up and perhaps eliminate the non-kokkos version completely.
-  // However not all tests are converted to Kokkos so keeping both forms around
-  // for now is probably necessary.
-  Kokkos::View<const gno_t *, typename node_t::device_type> kokkos_gids_;
-  // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
-  Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> kokkos_xyz_;
-  Kokkos::View<scalar_t **, typename node_t::device_type> kokkos_weights_;
-
   ArrayRCP<const gno_t> gids_;
   ArrayRCP<input_t> xyz_;
   int userNumWeights_;
