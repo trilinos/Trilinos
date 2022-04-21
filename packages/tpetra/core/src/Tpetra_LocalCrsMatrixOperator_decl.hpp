@@ -88,6 +88,7 @@ namespace Tpetra {
                               local_ordinal_type>;
     using local_graph_device_type = typename local_matrix_device_type::StaticCrsGraphType;
 
+  public:
     // cwp 05 Apr 2022
     // A functor that does the on-rank part of a local SpMV
     // KokkosKernels does not currently have a 4-array CSR
@@ -274,7 +275,7 @@ namespace Tpetra {
 
 
 
-  public:
+
     using ordinal_view_type = typename local_graph_device_type::entries_type::non_const_type;
 
     LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_device_type>& A);
