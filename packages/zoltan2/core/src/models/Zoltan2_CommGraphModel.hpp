@@ -195,10 +195,23 @@ public:
     return nLocalVertices_;
   }
 
+  size_t getVertexListKokkos(
+    Kokkos::View<const gno_t *, typename node_t::device_type> &Ids,
+    Kokkos::View<input_t *, typename node_t::device_type> &wgts) const
+  {
+      // TODO review, how can we be sure that getIDsKokkosView is of Vexted Ids ?
+      // getVertexIDsView ???
+      ia_->getIDsKokkosView(Ids);
+
+      if(nWeightsPerVertex_ > 0) {
+        ia_->getWeightsKokkosView(wgts); // getVertexWeightsView ??
+      }
+
+  }
+
   // Implied Vertex LNOs from getVertexList are used as indices to offsets
   // array.
   // Vertex GNOs are returned as neighbors in edgeIds.
-
   size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
     ArrayView<const offset_t> &offsets,
     ArrayView<input_t> &wgts) const
@@ -208,6 +221,25 @@ public:
     wgts = eWeights_.view(0, nWeightsPerEdge_);
     return nLocalEdges_;
   }
+
+  size_t getEdgeListKokkos(Kokkos::View<const gno_t *, typename node_t::device_type> &edgeIds,
+    Kokkos::View<offset_t *, typename node_t::device_type> &offsets,
+    Kokkos::View<input_t *, typename node_t::device_type> &wgts) const
+  {
+//    edgeIds = eGids_.view(0, nLocalEdges_);
+//    offsets = eOffsets_.view(0, nLocalVertices_+1);
+
+    // TO review, how can we be sure that getIDsKokkosView is of edgeIds ?
+    ia_->getIDsKokkosView(edgeIds);
+
+    // offsets : getEdgesView()
+
+    if(nWeightsPerVertex_ > 0) {
+      ia_->getWeightsKokkosView(wgts);
+    }
+    return nLocalEdges_;
+  }
+
 
   /*! \brief Return the vtxDist array
    *  Array of size comm->getSize() + 1
@@ -255,6 +287,7 @@ private:
   int destRank_, startRank_, endRank_;
 
 
+  RCP<const GraphAdapter<user_t, userCoord_t>> ia_;
   size_t nLocalVertices_;                // # local vertices in built graph
   size_t nGlobalVertices_;               // # global vertices in built graph
   ArrayRCP<gno_t> vGids_;                  // vertices of graph built in model;
@@ -294,7 +327,7 @@ private:
 // GraphModel from GraphAdapter
 template <typename Adapter>
 CommGraphModel<Adapter>::CommGraphModel(
-  const RCP<const GraphAdapter<user_t,userCoord_t> > &bia,
+  const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   const modelFlag_t &/* modelflags */):
@@ -313,19 +346,20 @@ CommGraphModel<Adapter>::CommGraphModel(
         eWeights_(),
         vtxDist_()
 {
+  this->ia_ = ia;
   int commSize = comm_->getSize();
 
   // Get XpetraCrsGraphAdapter from GraphAdapter
-  RCP<XpetraCrsGraphAdapter<user_t, userCoord_t>> ia;
+  RCP<XpetraCrsGraphAdapter<user_t, userCoord_t>> xpetraIa;
   try{
     RCP<GraphAdapter<user_t, userCoord_t>> tmp =
-       rcp_const_cast<GraphAdapter<user_t, userCoord_t>>(bia);
-    ia = rcp_dynamic_cast<XpetraCrsGraphAdapter<user_t, userCoord_t>>(tmp);
+       rcp_const_cast<GraphAdapter<user_t, userCoord_t>>(ia);
+    xpetraIa = rcp_dynamic_cast<XpetraCrsGraphAdapter<user_t, userCoord_t>>(tmp);
   }
   Z2_FORWARD_EXCEPTIONS;
 
   // Get the graph from the input adapter
-  auto inGraph = ia->getXpetraGraph();
+  auto inGraph = xpetraIa->getXpetraGraph();
 
   // Get the importer of the graph
   auto imp = inGraph->getImporter();
