@@ -1253,7 +1253,7 @@ DOFManager::buildOverlapMapFromElements(const ElementBlockAccess & access) const
 
   /* 3.  Construct an overlap map from this structure.
    */
-  return Tpetra::createNonContigMap<panzer::LocalOrdinal,panzer::GlobalOrdinal>(overlapVector,getComm());
+  return Tpetra::createNonContigMapWithNode<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>(overlapVector,getComm());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
