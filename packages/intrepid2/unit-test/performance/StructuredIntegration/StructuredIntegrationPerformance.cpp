@@ -290,7 +290,8 @@ BasisPtr<DeviceType,Scalar,Scalar> getHypercubeBasisForFormulation(FormulationCh
     case Serendipity:
       INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "basis family choice not yet implemented");
   }
-
+  
+  return Teuchos::null;
 }
 
 int main( int argc, char* argv[] )
