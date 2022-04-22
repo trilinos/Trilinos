@@ -81,10 +81,10 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,NewImpl) {
       Kokkos::deep_copy(b,3.0);
       Kokkos::deep_copy(c,4.0);
 
-      v_of_v.addView(a,0,0);
-      v_of_v.addView(b,0,1);
-      v_of_v.addView(c,1,0);
-      v_of_v.addView(d,1,1);
+      v_of_v.setView(a,0,0);
+      v_of_v.setView(b,0,1);
+      v_of_v.setView(c,1,0);
+      v_of_v.setView(d,1,1);
     }
 
     v_of_v.syncHostToDevice();
