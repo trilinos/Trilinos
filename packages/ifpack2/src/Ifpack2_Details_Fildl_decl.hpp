@@ -65,6 +65,7 @@ class Fildl : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     typedef FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node> Base;
     typedef typename Base::TRowMatrix TRowMatrix;
     typedef typename Base::ScalarArray ScalarArray;
+    typedef typename Base::ConstScalarArray ConstScalarArray;
     typedef FastILDLPrec<LocalOrdinal, Scalar, typename Base::execution_space> LocalFILDL;
 
     //! Constructor

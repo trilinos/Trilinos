@@ -119,24 +119,26 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
   int nvecs = X.getNumVectors();
   if(nvecs == 1)
   {
-    auto x2d = X.template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
-    auto y2d = Y.template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
-    auto x1d = Kokkos::subview(x2d, Kokkos::ALL(), 0);
-    auto y1d = Kokkos::subview(y2d, Kokkos::ALL(), 0);
+    auto x2d = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto y2d = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
+    ScalarArray x1d (const_cast<Scalar*>(x2d.data()), x1d.extent(0));
+    ScalarArray y1d (const_cast<Scalar*>(y2d.data()), y1d.extent(0));
+
     applyLocalPrec(x1d, y1d);
   }
   else
   {
     //Solve each vector one at a time (until FastILU supports multiple RHS)
+    auto x2d = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto y2d = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
     for(int i = 0; i < nvecs; i++)
     {
-      auto Xcol = X.getVector(i);
-      auto Ycol = Y.getVector(i);
-      auto xColView2d = Xcol->template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
-      auto yColView2d = Ycol->template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
-      auto xColView1d = Kokkos::subview(xColView2d, Kokkos::ALL(), 0);
-      auto yColView1d = Kokkos::subview(yColView2d, Kokkos::ALL(), 0);
-      applyLocalPrec(xColView1d, yColView1d);
+      auto xColView1d = Kokkos::subview(x2d, Kokkos::ALL(), i);
+      auto yColView1d = Kokkos::subview(y2d, Kokkos::ALL(), i);
+      ScalarArray x1d (const_cast<Scalar*>(xColView1d.data()), xColView1d.extent(0));
+      ScalarArray y1d (const_cast<Scalar*>(yColView1d.data()), yColView1d.extent(0));
+
+      applyLocalPrec(x1d, y1d);
     }
   }
 }
@@ -153,7 +155,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 initialize()
 {
-
   const std::string timerName ("Ifpack2::FastILU::initialize");
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {

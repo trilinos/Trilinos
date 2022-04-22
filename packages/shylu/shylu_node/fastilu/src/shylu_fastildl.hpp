@@ -79,6 +79,11 @@ class FastILDLPrec
                 Kokkos::MemoryUnmanaged> UMScalarArray;
         typedef FastILDLPrec<Ordinal, Scalar, ExecSpace> FastPrec;
 
+        typedef Kokkos::View<Ordinal *, Kokkos::HostSpace> OrdinalArrayHost;
+        typedef Kokkos::View<Scalar  *, Kokkos::HostSpace>  ScalarArrayHost;
+        typedef typename OrdinalArray::host_mirror_type OrdinalArrayMirror;
+        typedef typename ScalarArray::host_mirror_type  ScalarArrayMirror;
+
     private:
         double computeTime;
         double applyTime;
@@ -97,27 +102,43 @@ class FastILDLPrec
         ScalarArray lVal;
         OrdinalArray lColIdx;
         OrdinalArray lRowMap;
+        // mirrors
+        ScalarArrayMirror lVal_;
+        OrdinalArrayMirror lColIdx_;
+        OrdinalArrayMirror lRowMap_;
 
         //Upper triangular factor (CSR)
         ScalarArray ltVal;
         OrdinalArray ltColIdx;
         OrdinalArray ltRowMap;
+        // mirrors
+        ScalarArrayMirror ltVal_;
+        OrdinalArrayMirror ltColIdx_;
+        OrdinalArrayMirror ltRowMap_;
 
         //Pointer to the original host copy of A.
-        ScalarArray aValHost;
-        OrdinalArray aRowMapHost;
-        OrdinalArray aColIdxHost;
+        ScalarArrayMirror aValHost;
+        OrdinalArrayMirror aRowMapHost;
+        OrdinalArrayMirror aColIdxHost;
 
         //A matrix in COO format
         ScalarArray aVal;
         OrdinalArray aRowMap;
         OrdinalArray aRowIdx;
         OrdinalArray aColIdx;
+        // mirrors
+        ScalarArrayMirror aVal_;
+        OrdinalArrayMirror aRowMap_;
+        OrdinalArrayMirror aRowIdx_;
+        OrdinalArrayMirror aColIdx_;
 
         //Diagonal scaling factors
         ScalarArray diagFact;
         ScalarArray diagElems;
         ScalarArray diagElemsInv;
+        // mirrors
+        ScalarArrayMirror diagElems_;
+        ScalarArrayMirror diagElemsInv_;
 
         //Temporary vectors for triangular solves
         ScalarArray xOld;
@@ -128,7 +149,7 @@ class FastILDLPrec
 
 
     public:
-        FastILDLPrec(OrdinalArray &aRowMap_, OrdinalArray &aColIdx_, ScalarArray &aVal_, Ordinal nRow_,
+        FastILDLPrec(OrdinalArray &aRowMapIn, OrdinalArray &aColIdxIn, ScalarArray &aValIn, Ordinal nRow_,
                 Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, 
                 Scalar shift_, Ordinal guessFlag_, Ordinal blkSz_)
         {
@@ -139,19 +160,23 @@ class FastILDLPrec
             applyTime = 0.0;
             initTime = 0.0;
             level = level_;
-            aRowMapHost = aRowMap_;
-            aColIdxHost = aColIdx_;
-            aValHost = aVal_;
+
+            // mirror & deep-copy input matrix to host
+            aRowMapHost = Kokkos::create_mirror(aRowMapIn);
+            aColIdxHost = Kokkos::create_mirror(aColIdxIn);
+            aValHost    = Kokkos::create_mirror(aValIn);
+            Kokkos::deep_copy(aRowMapHost, aRowMapIn);
+            Kokkos::deep_copy(aColIdxHost, aColIdxIn);
+            Kokkos::deep_copy(aValHost,    aValIn);
+
             omega = omega_;
             guessFlag = guessFlag_;
             shift = shift_;
             blkSz = blkSz_;
 
+            const Scalar one = Kokkos::ArithTraits<Scalar>::one();
             onesVector = ScalarArray("onesVector", nRow_);
-            for (int i = 0; i < nRow_; i++)
-            {
-                onesVector[i] = 1.0;
-            }
+            Kokkos::deep_copy(onesVector, one);
 
             diagFact = ScalarArray("diagFact", nRow_);
             diagElems = ScalarArray("diagElems", nRow_);
@@ -161,7 +186,7 @@ class FastILDLPrec
 
             if (level > 0)
             {
-                initGuessPrec = Teuchos::rcp(new FastPrec(aRowMap_, aColIdx_, aVal_, nRow_, 3, 5, 
+                initGuessPrec = Teuchos::rcp(new FastPrec(aRowMapIn, aColIdxIn, aValIn, nRow_, 3, 5, 
                             level_ - 1, omega_, shift_, guessFlag_, blkSz_));
             }
 
@@ -208,32 +233,36 @@ class FastILDLPrec
             
         }
 
-        void getL(OrdinalArray &lRowMap_, OrdinalArray &lColIdx_, ScalarArray &lVal_)
+        void getL(OrdinalArray &lRowMapOut, OrdinalArray &lColIdxOut, ScalarArray &lValOut)
         {
-            lRowMap_ = lRowMap;
-            lColIdx_ = lColIdx;
-            lVal_ = lVal;
+            lRowMapOut = lRowMap;
+            lColIdxOut = lColIdx;
+            lValOut = lVal;
         }
 
-        void getD(ScalarArray &diagElems_)
+        void getD(ScalarArray &diagElemsOut)
         {
-            diagElems_ = diagElems;
+            diagElemsOut = diagElems;
         }
 
         void transposeL()
         {
+            auto ltRowMap_ = Kokkos::create_mirror(ltRowMap);
+            auto ltColIdx_ = Kokkos::create_mirror(ltColIdx);
+            auto ltVal_ = Kokkos::create_mirror(ltVal);
+
             //Count the elements in each row of Lt
-            auto temp = OrdinalArray("temp", nRows + 1);
-            auto rowPtrs = OrdinalArray("rowPtrs", nRows);
+            auto temp = OrdinalArrayHost("temp", nRows + 1);
+            auto rowPtrs = OrdinalArrayHost("rowPtrs", nRows);
             for (Ordinal i = 0; i <= nRows; i++) 
             {
                 temp[i] = 0;
             }
             for (Ordinal i = 0; i < nRows; i++) 
             {
-                for (Ordinal k = lRowMap[i]; k < lRowMap[i+1]; k++) 
+                for (Ordinal k = lRowMap_[i]; k < lRowMap_[i+1]; k++) 
                 {
-                    temp[lColIdx[k]+1]++;
+                    temp[lColIdx_[k]+1]++;
 
                 }
             }
@@ -241,30 +270,34 @@ class FastILDLPrec
             //the transpose
             for (Ordinal i = 0; i <= nRows; i++) 
             {
-                ltRowMap[i] = temp[i];
+                ltRowMap_[i] = temp[i];
             }
             for (Ordinal i = 1; i <= nRows; i++) 
             {
-                ltRowMap[i] += ltRowMap[i-1];
+                ltRowMap_[i] += ltRowMap_[i-1];
             }
             //Set the row pointers to their initial places;
             for (Ordinal i = 0; i < nRows; i++) 
             {
-                rowPtrs[i] = ltRowMap[i];
+                rowPtrs[i] = ltRowMap_[i];
             }
             //Copy the data
+            Kokkos::deep_copy(lVal_, lVal);
             for (Ordinal i = 0; i < nRows; i++) 
             {
-                for (Ordinal k = lRowMap[i]; k < lRowMap[i+1]; k++)
+                for (Ordinal k = lRowMap_[i]; k < lRowMap_[i+1]; k++)
                 {
-                    Ordinal row = lColIdx[k];
-                    Scalar value = lVal[k];
-                    ltVal[rowPtrs[row]] = value;
-                    ltColIdx[rowPtrs[row]] = i;
+                    Ordinal row = lColIdx_[k];
+                    Scalar value = lVal_[k];
+                    ltVal_[rowPtrs[row]] = value;
+                    ltColIdx_[rowPtrs[row]] = i;
                     rowPtrs[row]++;
                     assert(rowPtrs[row] <= ltRowMap[row + 1]);
                 }
             }
+            Kokkos::deep_copy(ltRowMap, ltRowMap_);
+            Kokkos::deep_copy(ltColIdx, ltColIdx_);
+            Kokkos::deep_copy(ltVal, ltVal_);
         }
 
         void symbolicILU()
@@ -273,8 +306,8 @@ class FastILDLPrec
             using std::cout;
             using std::stable_sort;
             using std::sort;
-            OrdinalArray ia = aRowMapHost;
-            OrdinalArray ja = aColIdxHost;
+            OrdinalArrayMirror ia = aRowMapHost;
+            OrdinalArrayMirror ja = aColIdxHost;
             int *nzu;
             int *nzl;
             nzu = new int[1];
@@ -442,9 +475,12 @@ class FastILDLPrec
             aRowMap = OrdinalArray("aRowMap", nRows + 1);
             aColIdx = OrdinalArray("aColIdx", knzl + knzu);
             aRowIdx = OrdinalArray("aRowIds", knzl + knzu);
-            Ordinal aRowPtr = 0;
+            aRowMap_ = Kokkos::create_mirror(aRowMap);
+            aColIdx_ = Kokkos::create_mirror(aColIdx);
+            aRowIdx_ = Kokkos::create_mirror(aRowIdx);
 
-            aRowMap[0] = 0;
+            Ordinal aRowPtr = 0;
+            aRowMap_[0] = 0;
             for (i = 0; i < nRows; i++) 
             {
                 #ifdef FASTILDL_DEBUG_OUTPUT
@@ -455,26 +491,30 @@ class FastILDLPrec
                     #ifdef FASTILDL_DEBUG_OUTPUT
                     std::cout << "jal[k]=" << jal[k] << std::endl;
                     #endif
-                    aColIdx[aRowPtr] = jal[k];
-                    aRowIdx[aRowPtr] = i;
+                    aColIdx_[aRowPtr] = jal[k];
+                    aRowIdx_[aRowPtr] = i;
                     aRowPtr++;
                 }
                 for(Ordinal k = iau[i]; k < iau[i+1]; k++)
                 {
-                    aColIdx[aRowPtr] = jau[k];
-                    aRowIdx[aRowPtr] = i;
+                    aColIdx_[aRowPtr] = jau[k];
+                    aRowIdx_[aRowPtr] = i;
                     aRowPtr++;
                 }
-                aRowMap[i+1] = aRowPtr;
+                aRowMap_[i+1] = aRowPtr;
             }
+            Kokkos::deep_copy(aRowMap, aRowMap_);
+            Kokkos::deep_copy(aColIdx, aColIdx_);
+            Kokkos::deep_copy(aRowIdx, aRowIdx_);
+
             //Now allocate memory for L and U. 
             //
             lRowMap = OrdinalArray("lRowMap", nRows + 1);
             ltRowMap = OrdinalArray("ltRowMap", nRows + 1);
             countL();
             //Allocate memory and initialize pattern for L, U (transpose).
-            lColIdx = OrdinalArray("lColIdx", lRowMap[nRows]);
-            ltColIdx = OrdinalArray("ltColIdx", lRowMap[nRows]);
+            lColIdx = OrdinalArray("lColIdx", lRowMap_[nRows]);
+            ltColIdx = OrdinalArray("ltColIdx", lRowMap_[nRows]);
             #ifdef FASTILDL_DEBUG_OUTPUT
             std::cout << "nnz L = " << lRowMap[nRows] << std::endl;
             #endif
@@ -483,77 +523,93 @@ class FastILDLPrec
         void numericILU()
         {
             aVal = ScalarArray("aVal", aColIdx.extent(0));
+            aVal_ = Kokkos::create_mirror(aVal);
+
             //Copy the host matrix into the initialized a;
             Ordinal aHostPtr = 0;
-            Ordinal check = 0;
             for (Ordinal i = 0; i < nRows; i++)
             {
-                check = aHostPtr;
-                for(Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
+                #ifdef SHYLU_DEBUG
+                Ordinal check = aHostPtr;
+                #endif
+                for(Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
                 {
-                    Ordinal col = aColIdx[k];
+                    Ordinal col = aColIdx_[k];
                     #ifdef FASTILDL_DEBUG_OUTPUT
                     std::cout << "col =" << col << std::endl;
                     #endif
                     
                     if (col == aColIdxHost[aHostPtr])
                     {
-                       aVal[k] = aValHost[aHostPtr]; 
+                       aVal_[k] = aValHost[aHostPtr]; 
                        aHostPtr++;
                     }
                 }
+                #ifdef SHYLU_DEBUG
                 assert((aHostPtr - check) == (aRowMapHost[i+1] - aRowMapHost[i]));
+                #endif
             }
-            lVal = ScalarArray("lVal", lRowMap[nRows]);
-            ltVal = ScalarArray("ltVal", lRowMap[nRows]);
+            lVal = ScalarArray("lVal", lRowMap_[nRows]);
+            ltVal = ScalarArray("ltVal", lRowMap_[nRows]);
             applyDiagonalScaling();
             applyManteuffelShift();
+            Kokkos::deep_copy(aVal, aVal_);
+
             fillL();
         }
         
         void countL()
         {
-            lRowMap[0] = 0;
+            lRowMap_ = Kokkos::create_mirror(lRowMap);
+
+            lRowMap_[0] = 0;
             for (Ordinal i = 0; i < nRows; i++) 
             {
                 Ordinal row_count = 0;
-                for (Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++) 
+                for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++) 
                 {
                     Ordinal row = i;
-                    Ordinal col = aColIdx[k];
+                    Ordinal col = aColIdx_[k];
 
                     if (row >= col)
                     {
                        row_count++; 
                     }
                 }
-                lRowMap[i+1] = lRowMap[i] + row_count;
+                lRowMap_[i+1] = lRowMap_[i] + row_count;
             }
+            Kokkos::deep_copy(lRowMap, lRowMap_);
         }
 
         void fillL()
         {
+            lVal_    = Kokkos::create_mirror(lVal);
+            lColIdx_ = Kokkos::create_mirror(lColIdx);
+            diagElems_ = Kokkos::create_mirror(diagElems);
+
             Ordinal lPtr = 0; 
             for (Ordinal i = 0; i < nRows; i++) 
             {
-                for (Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++) 
+                for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++) 
                 {
                     Ordinal row = i;
-                    Ordinal col = aColIdx[k];
+                    Ordinal col = aColIdx_[k];
 
                     if (row >= col)
                     {
                         if (row == col) 
                         {
-                            diagElems[row] = aVal[k];
+                            diagElems_[row] = aVal_[k];
                         }
-                        lVal[lPtr] = aVal[k];
-                        lColIdx[lPtr] = aColIdx[k];
+                        lVal_[lPtr] = aVal_[k];
+                        lColIdx_[lPtr] = aColIdx_[k];
                         lPtr++;
                     }
                 }
             }
             assert(lPtr == lRowMap[nRows]);
+            Kokkos::deep_copy(diagElems, diagElems_);
+
             if ((level > 0) && (guessFlag !=0))
             {
                 OrdinalArray lGRowMap;
@@ -561,34 +617,40 @@ class FastILDLPrec
                 ScalarArray lGVal;
                 ScalarArray gD;
                 Ordinal lGPtr = 0;
-                Ordinal check = 0;
-                Ordinal rowLen;
 
                 initGuessPrec->getL(lGRowMap, lGColIdx, lGVal);
                 initGuessPrec->getD(gD);
 
-                for (Ordinal i = 0; i < nRows; i++)
-                {
-                    diagElems[i] = gD[i];
-                }
+                Kokkos::deep_copy(diagElems, gD);
+
+                auto lGColIdx_ = Kokkos::create_mirror(lGColIdx);
+                auto lGVal_ = Kokkos::create_mirror(lGVal);
+                Kokkos::deep_copy(lGColIdx_, lGColIdx);
+                Kokkos::deep_copy(lGVal_, lGVal);
                 for (Ordinal i = 0; i < nRows; i++) 
                 {
-                    check = lGPtr;
-                    for (Ordinal k = lRowMap[i]; k < lRowMap[i+1]; k++)
+                    #ifdef SHYLU_DEBUG
+                    Ordinal check = lGPtr;
+                    #endif
+                    for (Ordinal k = lRowMap_[i]; k < lRowMap_[i+1]; k++)
                     {
                         //unused: Ordinal row = i;
-                        Ordinal col = lColIdx[k];
+                        Ordinal col = lColIdx_[k];
 
-                        if (col == lGColIdx[lGPtr])
+                        if (col == lGColIdx_[lGPtr])
                         {
-                            lVal[k] = lGVal[lGPtr];
+                            lVal_[k] = lGVal_[lGPtr];
                             lGPtr++;
                         }
                     }
-                    rowLen = lGPtr - check;
+                    #ifdef SHYLU_DEBUG
+                    Ordinal rowLen = lGPtr - check;
                     assert(rowLen == lGRowMap[i+1] - lGRowMap[i]);
+                    #endif
                 }
             }
+            Kokkos::deep_copy(lColIdx, lColIdx_);
+            Kokkos::deep_copy(lVal, lVal_);
         }
 
         void applyDiagonalScaling()
@@ -597,14 +659,15 @@ class FastILDLPrec
             //First fill Aj and extract the diagonal scaling factors
             //Use diag array to store scaling factors since
             //it gets set to the correct value by findFactorPattern anyway.
+            auto diagFact_ = Kokkos::create_mirror(diagFact);
             for (int i = 0; i < nRows; i++) 
             {
-                for(int k = aRowMap[i]; k < aRowMap[i+1]; k++) 
+                for(int k = aRowMap_[i]; k < aRowMap_[i+1]; k++) 
                 {
-                    aRowIdx[anext++] = i;
-                    if (aColIdx[k] == i) 
+                    aRowIdx_[anext++] = i;
+                    if (aColIdx_[k] == i) 
                     {
-                        diagFact[i] = 1.0/std::sqrt(std::fabs(aVal[k]));
+                        diagFact_[i] = 1.0/std::sqrt(std::fabs(aVal_[k]));
                         //diagFact[i] = std::sqrt(std::fabs(aVal[k]));
                         #ifdef FASTILDL_DEBUG_OUTPUT
                         std::cout << "diagFact["<<i<<"]="<<aVal[k]<<std::endl;
@@ -620,16 +683,17 @@ class FastILDLPrec
 
             for (int i = 0; i < nRows; i++) 
             {
-                for (int k = aRowMap[i]; k < aRowMap[i+1]; k++) 
+                for (int k = aRowMap_[i]; k < aRowMap_[i+1]; k++) 
                 {
-                    row = aRowIdx[k];
-                    col = aColIdx[k];
+                    row = aRowIdx_[k];
+                    col = aColIdx_[k];
 
-                    sc1 = diagFact[row];
-                    sc2 = diagFact[col];
-                    aVal[k] = aVal[k]*sc1*sc2;
+                    sc1 = diagFact_[row];
+                    sc2 = diagFact_[col];
+                    aVal_[k] = aVal_[k]*sc1*sc2;
                 }
             }
+            Kokkos::deep_copy(diagFact, diagFact_);
         }
 
         void applyManteuffelShift()
@@ -637,13 +701,13 @@ class FastILDLPrec
             //Scalar shift = 0.05;
             for (Ordinal i = 0; i < nRows; i++) 
             {
-                for (Ordinal k = aRowMap[i]; k < aRowMap[i+1]; k++)
+                for (Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
                 {
                     Ordinal row = i;
-                    Ordinal col = aColIdx[k];
+                    Ordinal col = aColIdx_[k];
                     if (row != col)
                     {
-                        aVal[k] = (1.0/(1.0 + shift))*aVal[k];
+                        aVal_[k] = (1.0/(1.0 + shift))*aVal_[k];
                     }
                 }
             }
@@ -723,7 +787,8 @@ class FastILDLPrec
 
         void setValues(ScalarArray& aValsIn)
         {
-          this->aValHost = aValsIn;
+          this->aValHost = Kokkos::create_mirror(aValsIn);
+          Kokkos::deep_copy(this->aValHost, aValsIn);
           if(!initGuessPrec.is_null())
           {
             initGuessPrec->setValues(aValsIn);
@@ -732,30 +797,40 @@ class FastILDLPrec
 
         void compute()
         {
-            
             if((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec->compute();
             }
-            Kokkos::Timer timer;
-            numericILU();
-            FastILDLFunctor<Ordinal, Scalar, ExecSpace> icFunctor(nRows, aRowMap, aColIdx, aRowIdx, aVal,
-                    lRowMap, lColIdx, lVal, diagElems, omega);
             ExecSpace().fence();
 
+            Kokkos::Timer timer;
+            numericILU();
+            Ordinal blkSzILDLt = 4096;
+            FastILDLFunctor<Ordinal, Scalar, ExecSpace> ildltFunctor(aRowMap_[nRows], blkSzILDLt,
+                    aRowMap, aColIdx, aRowIdx, aVal, lRowMap, lColIdx, lVal, diagElems, omega);
+
+            Ordinal extent = aRowMap_[nRows]/blkSzILDLt;
+            if (aRowMap_[nRows]%blkSzILDLt != 0)
+            {
+                extent++;
+            }
+            //Ordinal extent = aRowMap[nRows];
             for (int i = 0; i < nFact; i++) 
             {
-                Kokkos::parallel_for(aRowMap[nRows], icFunctor);
+                Kokkos::parallel_for(extent, ildltFunctor);
             }
             ExecSpace().fence();
 
             double t = timer.seconds();
             computeTime = t;
 
+            Kokkos::deep_copy(diagElems_, diagElems);
+            diagElemsInv_ = Kokkos::create_mirror(diagElemsInv);
             for (int i = 0; i < nRows; i++) 
             {
-                diagElemsInv[i] = 1.0/diagElems[i];
+                diagElemsInv_[i] = 1.0/diagElems_[i];
             }
+            Kokkos::deep_copy(diagElemsInv, diagElemsInv_);
             transposeL();
         }
 
@@ -869,61 +944,76 @@ class FastILDLFunctor
         typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
 
-        FastILDLFunctor (Ordinal nvtx, ordinal_array_type Ap, ordinal_array_type Ai,
+        FastILDLFunctor (Ordinal nNZ, Ordinal bs, ordinal_array_type Ap, ordinal_array_type Ai,
                 ordinal_array_type Aj, scalar_array_type Ax, ordinal_array_type Lp,
                 ordinal_array_type Li, scalar_array_type Lx, scalar_array_type diag, Scalar omega)
             :
+                nnz(nNZ), blk_size(bs),
                 _Ap(Ap), _Ai(Ai), _Aj(Aj),  _Lp(Lp), _Li(Li), _Ax(Ax), _Lx(Lx), _diag(diag), _omega(omega)
     {
     }
         
         KOKKOS_INLINE_FUNCTION
-            void operator()(const Ordinal nz_index) const
+            void operator()(const Ordinal blk_index) const
             {
-                Ordinal i = _Ai[nz_index];
-                Ordinal j = _Aj[nz_index];
-                Scalar val = _Ax[nz_index];
-                Scalar acc_val = 0.0;
-                Scalar temp = 0.0;
-                Ordinal lptr = _Lp[i];
-                Ordinal ltptr = _Lp[j];
-                Ordinal endpt = j;
-                if (i >= j) { 
+                Ordinal start = blk_index * blk_size;
+                Ordinal end = start + blk_size;
 
-                    for ( ; _Li[lptr] < endpt && _Li[ltptr] < endpt; )
-                    {
-                        if (_Li[lptr] == _Li[ltptr])
-                        {
-                            acc_val += _Lx[lptr] * _diag[_Li[ltptr]] * _Lx[ltptr];
-                            lptr++;
-                            ltptr++;
-                        }
-                        else if (_Li[lptr] < _Li[ltptr])
-                        {
-                            lptr++;
-                        }
-                        else 
-                        {
-                            ltptr++;
-                        }
+                Ordinal nz_index;
 
-                    }
-                    if (i > j) 
-                    {
-                        val = (val-acc_val) / _diag[j];
-                        for ( ; _Li[lptr] < j ; lptr++) ; // dummy loop
-                        assert (_Li[lptr] == j);
-                     //   _Lx[lptr] = val;
-                        _Lx[lptr] = ((1.0 - _omega)*_Lx[lptr]) + (_omega * val);
-                    }
-                    else if (i == j)
-                    {
-                        //_diag[j] = val - acc_val;
-                        temp = val - acc_val;
-                        _diag[j] = ((1.0 - _omega) * _diag[j]) +  (_omega * temp);
+                if (end > nnz)
+                {
+                    end = nnz;
+                }
+
+                for (nz_index = start; nz_index < end && nz_index < nnz; nz_index++)
+                {
+                    Ordinal i = _Ai[nz_index];
+                    Ordinal j = _Aj[nz_index];
+                    Scalar val = _Ax[nz_index];
+                    Scalar acc_val = 0.0;
+                    Scalar temp = 0.0;
+                    Ordinal lptr = _Lp[i];
+                    Ordinal ltptr = _Lp[j];
+                    Ordinal endpt = j;
+                    if (i >= j) { 
+
+                        for ( ; _Li[lptr] < endpt && _Li[ltptr] < endpt; )
+                        {
+                            if (_Li[lptr] == _Li[ltptr])
+                            {
+                                acc_val += _Lx[lptr] * _diag[_Li[ltptr]] * _Lx[ltptr];
+                                lptr++;
+                                ltptr++;
+                            }
+                            else if (_Li[lptr] < _Li[ltptr])
+                            {
+                                lptr++;
+                            }
+                            else 
+                            {
+                                ltptr++;
+                            }
+                        }
+                        if (i > j) 
+                        {
+                            val = (val-acc_val) / _diag[j];
+                            for ( ; _Li[lptr] < j ; lptr++) ; // dummy loop
+                            assert (_Li[lptr] == j);
+                         //   _Lx[lptr] = val;
+                            _Lx[lptr] = ((1.0 - _omega)*_Lx[lptr]) + (_omega * val);
+                        }
+                        else if (i == j)
+                        {
+                            //_diag[j] = val - acc_val;
+                            temp = val - acc_val;
+                            _diag[j] = ((1.0 - _omega) * _diag[j]) +  (_omega * temp);
+                        }
                     }
                 }
             }
+
+        Ordinal nnz, blk_size;
         ordinal_array_type _Ap, _Ai, _Aj, _Lp, _Li;
         scalar_array_type _Ax, _Lx, _diag;
         Scalar _omega;
