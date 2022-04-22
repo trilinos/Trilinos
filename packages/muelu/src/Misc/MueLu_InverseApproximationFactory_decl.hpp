@@ -43,15 +43,9 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_SchurComplementFactory_decl.hpp
- *
- *  Created on: Jun 18, 2012
- *      Author: wiesner
- */
 
-#ifndef MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_
-#define MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_
+#ifndef MUELU_INVERSEAPPROXIMATIONFACTORY_DECL_HPP_
+#define MUELU_INVERSEAPPROXIMATIONFACTORY_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -63,7 +57,6 @@
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_StridedMap_fwd.hpp>
 
-
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_FactoryManagerBase_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -71,26 +64,19 @@
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
-
 namespace MueLu {
 
   /*!
-    @class SchurComplementFactory class.
-    @brief Factory for building the Schur Complement for a 2x2 block matrix.
-
-    For a blocked matrix
-        A = [A_00  A_01; A_10  A_11]
-    it computes the Schur complement
-        S = A_11 - 1/\omega A_10 Ainv A_01,
-    where \omega is some scaling factor and Ainv an approximation of A_00^{-1}
-    (from InverseApproximationFactory)
+    @class InverseApproximationFactory class.
+    @brief Factory for building the approximate inverse of a matrix
+           block inside a block matrix.
   */
   template <class Scalar = DefaultScalar,
             class LocalOrdinal = DefaultLocalOrdinal,
             class GlobalOrdinal = DefaultGlobalOrdinal,
             class Node = DefaultNode>
-  class SchurComplementFactory : public SingleLevelFactoryBase {
-#undef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
+  class InverseApproximationFactory : public SingleLevelFactoryBase {
+#undef MUELU_INVERSEAPPROXIMATIONFACTORY_SHORT
     #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -98,10 +84,10 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SchurComplementFactory() { }
+    InverseApproximationFactory() { }
 
     //! Destructor.
-    virtual ~SchurComplementFactory() { }
+    virtual ~InverseApproximationFactory() { }
     //@}
 
     //! Input
@@ -121,14 +107,9 @@ namespace MueLu {
 
     //@}
 
-
-  private:
-
-    RCP<Matrix> ComputeSchurComplement(RCP<BlockedCrsMatrix>& bA, RCP<Vector>& Ainv) const;
-
-  }; // class SchurComplementFactory
+  }; // class InverseApproximationFactory
 
 } // namespace MueLu
 
-#define MUELU_SCHURCOMPLEMENTFACTORY_SHORT
-#endif /* MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_ */
+#define MUELU_INVERSEAPPROXIMATIONFACTORY_SHORT
+#endif /* MUELU_INVERSEAPPROXIMATIONFACTORY_DECL_HPP_ */

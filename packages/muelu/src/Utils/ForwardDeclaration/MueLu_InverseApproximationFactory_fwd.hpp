@@ -43,92 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_SchurComplementFactory_decl.hpp
- *
- *  Created on: Jun 18, 2012
- *      Author: wiesner
- */
-
-#ifndef MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_
-#define MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_
-
-#include "MueLu_ConfigDefs.hpp"
-
-#include <Teuchos_ParameterList.hpp>
-
-#include <Xpetra_CrsMatrix_fwd.hpp>
-#include <Xpetra_CrsMatrixWrap_fwd.hpp>
-#include <Xpetra_MapExtractor_fwd.hpp>
-#include <Xpetra_Map_fwd.hpp>
-#include <Xpetra_StridedMap_fwd.hpp>
+#ifndef MUELU_INVERSEAPPROXIMATIONFACTORY_FWD_HPP
+#define MUELU_INVERSEAPPROXIMATIONFACTORY_FWD_HPP
 
 
-#include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_FactoryManagerBase_fwd.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_SmootherBase_fwd.hpp"
-#include "MueLu_SmootherPrototype.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 
 namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class InverseApproximationFactory;
+}
 
-  /*!
-    @class SchurComplementFactory class.
-    @brief Factory for building the Schur Complement for a 2x2 block matrix.
-
-    For a blocked matrix
-        A = [A_00  A_01; A_10  A_11]
-    it computes the Schur complement
-        S = A_11 - 1/\omega A_10 Ainv A_01,
-    where \omega is some scaling factor and Ainv an approximation of A_00^{-1}
-    (from InverseApproximationFactory)
-  */
-  template <class Scalar = DefaultScalar,
-            class LocalOrdinal = DefaultLocalOrdinal,
-            class GlobalOrdinal = DefaultGlobalOrdinal,
-            class Node = DefaultNode>
-  class SchurComplementFactory : public SingleLevelFactoryBase {
-#undef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
-    #include "MueLu_UseShortNames.hpp"
-
-  public:
-    //! @name Constructors/Destructors.
-    //@{
-
-    //! Constructor.
-    SchurComplementFactory() { }
-
-    //! Destructor.
-    virtual ~SchurComplementFactory() { }
-    //@}
-
-    //! Input
-    //@{
-
-    void DeclareInput(Level& currentLevel) const;
-
-    RCP<const ParameterList> GetValidParameterList() const;
-
-    //@}
-
-    //@{
-    //! @name Build methods.
-
-    //! Build an object with this factory.
-    void Build(Level& currentLevel) const;
-
-    //@}
+#ifndef MUELU_INVERSEAPPROXIMATIONFACTORY_SHORT
+#define MUELU_INVERSEAPPROXIMATIONFACTORY_SHORT
+#endif
 
 
-  private:
 
-    RCP<Matrix> ComputeSchurComplement(RCP<BlockedCrsMatrix>& bA, RCP<Vector>& Ainv) const;
-
-  }; // class SchurComplementFactory
-
-} // namespace MueLu
-
-#define MUELU_SCHURCOMPLEMENTFACTORY_SHORT
-#endif /* MUELU_SCHURCOMPLEMENTFACTORY_DECL_HPP_ */
+#endif // MUELU_INVERSEAPPROXIMATIONFACTORY_FWD_HPP
