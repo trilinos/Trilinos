@@ -220,6 +220,8 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationCh
       return performStandardQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     case L2:
       return performStandardQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    default:
+      return Intrepid2::ScalarView<Scalar,DeviceType>();
   }
 }
 
@@ -240,6 +242,8 @@ Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadrature(Formulation
       return performStructuredQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
     case L2:
       return performStructuredQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+    default:
+      return Intrepid2::ScalarView<Scalar,DeviceType>();
   }
 }
 
