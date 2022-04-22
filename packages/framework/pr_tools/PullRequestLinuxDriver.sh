@@ -29,17 +29,11 @@ function bootstrap_modules() {
         get_python_packages pip3
         export PYTHON_EXE=python3
     else
-      if [[ ${JOB_BASE_NAME:?} == "Trilinos_pullrequest_gcc_8.3.0" ]] || [[ ${JOB_BASE_NAME:?} == "intel-19.0.5" ]]; then
-            print_banner "Using SEMS spack-cm TPLs"
-            source /projects/sems/modulefiles/utils/sems-modules-init.sh
-            execute_command_checked "module load sems-git/2.11.1"
-        else
-            print_banner "Using SEMS Archive TPLs"
-            source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
-            execute_command_checked "module unload sems-archive-git"
-            execute_command_checked "module unload sems-archive-python"
-            execute_command_checked "module load sems-archive-git/2.10.1"
-        fi
+        source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
+        execute_command_checked "module unload sems-archive-git"
+        execute_command_checked "module unload sems-archive-python"
+        execute_command_checked "module load sems-archive-git/2.10.1"
+
         envvar_set_or_create     PYTHON_EXE $(which python3)
     fi
 
