@@ -119,10 +119,9 @@ namespace PHX {
   }
 
   /** Wrapper class that correctly handles ViewOfViews construction
-      and object lifetime. Can be used for more than just Views as the
-      inner object. This class makes sure the host view stays in scope
-      for the life of the device view and makes sure that the device
-      is synced to host before use.
+      and object lifetime. This class makes sure the host view stays
+      in scope for the life of the device view and makes sure that the
+      device is synced to host before use.
 
       Main restrictions:
 
@@ -138,6 +137,12 @@ namespace PHX {
 
       3. The InnerViewType template parameter must be managed. We
       will add the unmanaged tag internally.
+
+      4. This object assumes that all inner views are on device. When
+      the accessors reference Host/Device it is with respect to the
+      outer view. If a user wants to initialize the inner view data,
+      they must do that manually external to this object and deep_copy
+      to the device views.
 
       @param OuterViewRank The rank of the outerview.
       @param InnerViewType The type of inner view. Currently MUST be a Managed view!
@@ -172,14 +177,18 @@ namespace PHX {
     // True if device view is updated with host view data.
     bool device_view_is_synced_;
 
+    // True if the outer view has been allocated via ctor or call to initialize().
+    bool is_initialized_;
+
   public:
+
     template<typename... Extents>
-    ViewOfViews2(const std::string name,
-                Extents... extents)
-      : view_host_managed_(name,extents...),
-        view_host_unmanaged_(name,extents...),
-        view_device_(name,extents...),
-        device_view_is_synced_(false)
+    ViewOfViews2(const std::string name, Extents... extents)
+    { this->initialize(name,extents...); }
+
+    ViewOfViews2() :
+      device_view_is_synced_(false),
+      is_initialized_(false)
     {}
 
     ~ViewOfViews2()
@@ -190,16 +199,32 @@ namespace PHX {
         Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
     }
 
-    template<typename... Indices>
-    void addView(InnerViewType v,Indices... i)
+    /// Allocate the out view objects. Extents are for the outer view.
+    template<typename... Extents>
+    void initialize(const std::string name,Extents... extents)
     {
+      view_host_managed_ = OuterViewManagedHostMirror(name,extents...);
+      view_host_unmanaged_ = OuterViewUnmanagedHostMirror(name,extents...);
+      view_device_ = OuterViewUnmanaged(name,extents...);
+      device_view_is_synced_ = false;
+      is_initialized_ = true;
+    }
+
+    /// Set an innder device view on the outer view. Indices are the outer view indices. 
+    template<typename... Indices>
+    void setView(InnerViewType v,Indices... i)
+    {
+      TEUCHOS_ASSERT(is_initialized_);
       view_host_managed_(i...) = v;
       view_host_unmanaged_(i...) = v;
       device_view_is_synced_ = false;
     }
 
+    /// Note this only syncs the outer view. The inner views are
+    /// assumed to be on device for both host and device outer views.
     void syncHostToDevice()
     {
+      TEUCHOS_ASSERT(is_initialized_);
       Kokkos::deep_copy(view_device_,view_host_unmanaged_);
       device_view_is_synced_ = true;
     }
@@ -208,6 +233,7 @@ namespace PHX {
     /// views are still on device.
     auto getViewHost()
     {
+      TEUCHOS_ASSERT(is_initialized_);
       return view_host_managed_;
     }
 
