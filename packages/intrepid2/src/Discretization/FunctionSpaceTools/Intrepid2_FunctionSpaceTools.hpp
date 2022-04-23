@@ -64,7 +64,7 @@
 #include "Intrepid2_CellTools.hpp"
 
 #include "Intrepid2_Data.hpp"
-#include "Intrepid2_TransformedVectorData.hpp"
+#include "Intrepid2_TransformedBasisValues.hpp"
 #include "Intrepid2_VectorData.hpp"
 
 #include "Kokkos_Core.hpp"
@@ -89,7 +89,7 @@ namespace Intrepid2 {
           defined on cells in physical space and indexed by (C,F,P,D).  The transformations are
           computed on entry access; algorithms such as sum factorization rely on having access to the
           reference-space basis values as well as the transformation operator; both are stored in the
-          returned TransformedVectorData object.
+          returned TransformedBasisValues object.
 
           Computes pullback of gradients of \e HGRAD functions
           \f$\Phi^*(\nabla\widehat{u}_f) = \left((DF_c)^{-{\sf T}}\cdot\nabla\widehat{u}_f\right)\circ F^{-1}_{c}\f$
@@ -123,13 +123,351 @@ namespace Intrepid2 {
           \endcode
 
           \param  jacobianInverse  [in]  - Input array containing cell Jacobian inverses.
-          \param  inputVals        [in]  - Input array of reference HGRAD gradients.
-     \return TransformedVectorData object defined on (C,F,P,D) indices; transformation is computed on access.
+          \param  refBasisGradValues [in]  - Input array of reference HGRAD gradients.
+     \return TransformedBasisValues object defined on (C,F,P,D) indices; transformation is computed on access.
       */
     template<class Scalar>
-    static TransformedVectorData<Scalar,DeviceType> getHGRADtransformGRAD(const Data<Scalar,DeviceType> &jacobianInverse, const VectorData<Scalar,DeviceType> &refBasisGradValues)
+    static TransformedBasisValues<Scalar,DeviceType> getHGRADtransformGRAD(const Data<Scalar,DeviceType> &jacobianInverse, const BasisValues<Scalar,DeviceType> &refBasisGradValues)
     {
-      return TransformedVectorData<Scalar,DeviceType>(jacobianInverse,refBasisGradValues);
+      return TransformedBasisValues<Scalar,DeviceType>(jacobianInverse,refBasisGradValues);
+    }
+        
+    /** \brief Transformation of a (scalar) value field in the H-grad space, defined at points on a
+        reference cell, stored in the user-provided container <var><b>input</b></var>
+        and indexed by (F,P), into the output container <var><b>output</b></var>,
+        defined on cells in physical space and indexed by (C,F,P).  This transformation is trivial, and the
+        returned container is logically indexed by (C,F,P), but only contains (F,P) distinct data entries.
+   
+        Computes pullback of \e HGRAD functions \f$\Phi^*(\widehat{u}_f) = \widehat{u}_f\circ F^{-1}_{c} \f$
+        for points in one or more physical cells that are images of a given set of points in the reference cell:
+        \f[
+        \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+        \f]
+        In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+        should contain the values of the function set \f$\{\widehat{u}_f\}_{f=0}^{F}\f$ at the
+        reference points:
+        \f[
+        input(f,p) = \widehat{u}_f(\widehat{x}_p) \,.
+        \f]
+        The method returns
+        \f[
+        output(c,f,p)
+        = \widehat{u}_f\circ F^{-1}_{c}(x_{c,p})
+        = \widehat{u}_f(\widehat{x}_p) =  input(f,p) \qquad 0\le c < C \,,
+        \f]
+        i.e., it simply replicates the values in the user-provided container to every cell.
+        See Section \ref sec_pullbacks for more details about pullbacks.
+    
+        \code
+        |------|----------------------|--------------------------------------------------|
+        |      |         Index        |                   Dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        |   C  |         cell         |  0 <= C < num. integration domains               |
+        |   F  |         field        |  0 <= F < dim. of the basis                      |
+        |   P  |         point        |  0 <= P < num. integration points                |
+        |------|----------------------|--------------------------------------------------|
+        \endcode
+
+        \param  input [in]  - Input container of reference HGRAD values.
+        \return TransformedBasisValues object of logical shape (C,F,P).
+    */
+    template<class Scalar>
+    static TransformedBasisValues<Scalar,DeviceType>
+    getHGRADtransformVALUE(const ordinal_type &numCells, const BasisValues<Scalar,DeviceType> &refBasisValues)
+    {
+      return TransformedBasisValues<Scalar,DeviceType>(numCells,refBasisValues);
+    }
+    
+    /** \brief Transformation of a (vector) value field in the H-curl space, defined at points on a
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
+        and indexed by (F,P,D), into the output container <var><b>outputVals</b></var>,
+        defined on cells in physical space and indexed by (C,F,P,D).
+
+        Computes pullback of \e HCURL functions
+        \f$\Phi^*(\widehat{\bf u}_f) = \left((DF_c)^{-{\sf T}}\cdot\widehat{\bf u}_f\right)\circ F^{-1}_{c}\f$
+        for points in one or more physical cells that are images of a given set of points in the reference cell:
+        \f[
+        \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+        \f]
+        In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+        should contain the values of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the
+        reference points:
+        \f[
+        inputVals(f,p,*) = \widehat{\bf u}_f(\widehat{x}_p) \,.
+        \f]
+        The method returns
+        \f[
+        outputVals(c,f,p,*)
+        = \left((DF_c)^{-{\sf T}}\cdot\widehat{\bf u}_f\right)\circ F^{-1}_{c}(x_{c,p})
+        = (DF_c)^{-{\sf T}}(\widehat{x}_p)\cdot\widehat{\bf u}_f(\widehat{x}_p) \qquad 0\le c < C \,.
+        \f]
+        See Section \ref sec_pullbacks for more details about pullbacks.
+        \code
+        |------|----------------------|--------------------------------------------------|
+        |      |         Index        |                   Dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        |   C  |         cell         |  0 <= C < num. integration domains               |
+        |   F  |         field        |  0 <= F < dim. of native basis                   |
+        |   P  |         point        |  0 <= P < num. integration points                |
+        |   D  |         space dim    |  0 <= D < spatial dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        \endcode
+
+        \param  jacobianInverse  [in]  - Input array containing cell Jacobian inverses.
+        \param  inputVals        [in]  - Input array of reference HCURL values.
+        \return lazily-evaluated transformed basis values.
+    */
+    template<class Scalar>
+    static TransformedBasisValues<Scalar,DeviceType>
+    getHCURLtransformVALUE(const Data<Scalar,DeviceType> &jacobianInverse,
+                          const BasisValues<Scalar,DeviceType> &refBasisValues )
+    {
+      return TransformedBasisValues<Scalar,DeviceType>(jacobianInverse,refBasisValues);
+    }
+    
+    /** \brief Transformation of a 3D curl field in the H-curl space, defined at points on a
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
+        and indexed by (F,P,D), into the output container <var><b>outputVals</b></var>,
+        defined on cells in physical space and indexed by (C,F,P,D).
+
+        Computes pullback of curls of \e HCURL functions
+        \f$\Phi^*(\widehat{\bf u}_f) = \left(J^{-1}_{c} DF_{c}\cdot\nabla\times\widehat{\bf u}_f\right)\circ F^{-1}_{c}\f$
+        for points in one or more physical cells that are images of a given set of points in the reference cell:
+        \f[
+        \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+        \f]
+        In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+        should contain the curls of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the
+        reference points:
+        \f[
+        inputVals(f,p,*) = \nabla\times\widehat{\bf u}_f(\widehat{x}_p) \,.
+        \f]
+        The method returns
+        \f[
+        outputVals(c,f,p,*)
+        = \left(J^{-1}_{c} DF_{c}\cdot\nabla\times\widehat{\bf u}_f\right)\circ F^{-1}_{c}(x_{c,p})
+        = J^{-1}_{c}(\widehat{x}_p) DF_{c}(\widehat{x}_p)\cdot\nabla\times\widehat{\bf u}_f(\widehat{x}_p)
+        \qquad 0\le c < C \,.
+        \f]
+        See Section \ref sec_pullbacks for more details about pullbacks.
+    
+        \code
+        |------|----------------------|--------------------------------------------------|
+        |      |         Index        |                   Dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        |   C  |         cell         |  0 <= C < num. integration domains               |
+        |   F  |         field        |  0 <= F < dim. of the basis                      |
+        |   P  |         point        |  0 <= P < num. integration points                |
+        |   D  |         space dim    |  0 <= D < spatial dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        \endcode
+
+     \param  jacobianDividedByJacobianDet [in]  - Input cell Jacobians, divided by their determinant.
+     \param  inputVals                                           [in]  - Input container of reference HDIV values.
+     \return lazily-evaluated transformed basis values.
+    */
+    template<class Scalar>
+    static TransformedBasisValues<Scalar,DeviceType>
+    getHCURLtransformCURL(const Data<Scalar,DeviceType> &jacobianDividedByJacobianDet,
+                          const BasisValues<Scalar,DeviceType> &refBasisValues )
+    {
+      return TransformedBasisValues<Scalar,DeviceType>(jacobianDividedByJacobianDet,refBasisValues);
+    }
+    
+    /** \brief Transformation of a 2D curl field in the H-curl space, defined at points on a
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
+        and indexed by (F,P,D), into the output container <var><b>outputVals</b></var>,
+        defined on cells in physical space and indexed by (C,F,P).
+
+        Computes pullback of curls of \e HCURL functions
+        \f$\Phi^*(\widehat{\bf u}_f) = \left(J^{-1}_{c}\nabla\times\widehat{\bf u}_{f}\right) \circ F^{-1}_{c} \f$
+        for points in one or more physical cells that are images of a given set of points in the reference cell:
+        \f[
+        \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+        \f]
+        In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+        should contain the 2d curls of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the
+        reference points:
+        \f[
+        inputVals(f,p) = \nabla\times\widehat{\bf u}_f(\widehat{x}_p) \,.
+        \f]
+        The method returns
+        \f[
+        outputVals(c,f,p,*)
+        = \left(J^{-1}_{c}\nabla\times\widehat{\bf u}_{f}\right) \circ F^{-1}_{c} (x_{c,p})
+        = J^{-1}_{c}(\widehat{x}_p) \nabla\times\widehat{\bf u}_{f} (\widehat{x}_p)
+        \qquad 0\le c < C \,.
+        \f]
+        See Section \ref sec_pullbacks for more details about pullbacks.
+
+        \code
+        |------|----------------------|--------------------------------------------------|
+        |      |         Index        |                   Dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        |   C  |         cell         |  0 <= C < num. integration domains               |
+        |   F  |         field        |  0 <= F < dim. of the basis                      |
+        |   P  |         point        |  0 <= P < num. integration points                |
+        |   D  |         space dim    |  0 <= D < spatial dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        \endcode
+
+        \param  outputVals   [out] - Output array with transformed values
+        \param  jacobianDetInverse  [in]  - Reciprocals of input cell Jacobian determinants.
+        \param  inputVals    [in]  - Input array of reference HCURL curls.
+    */
+
+    template<class Scalar>
+    static TransformedBasisValues<Scalar,DeviceType>
+    getHCURLtransformCURL2D(const Data<Scalar,DeviceType> &jacobianDetInverse,
+                            const BasisValues<Scalar,DeviceType> &refBasisValues )
+    {
+      return TransformedBasisValues<Scalar,DeviceType>(jacobianDetInverse,refBasisValues);
+    }
+
+    /** \brief Transformation of a (vector) value field in the H-div space, defined at points on a
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
+        and indexed by (F,P,D), into the output container <var><b>outputVals</b></var>,
+        defined on cells in physical space and indexed by (C,F,P,D).
+
+        Computes pullback of \e HDIV functions
+        \f$\Phi^*(\widehat{\bf u}_f) = \left(J^{-1}_{c} DF_{c}\cdot\widehat{\bf u}_f\right)\circ F^{-1}_{c} \f$
+        for points in one or more physical cells that are images of a given set of points in the reference cell:
+        \f[
+        \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+        \f]
+        In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+        should contain the values of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the
+        reference points:
+        \f[
+        inputVals(f,p,*) = \widehat{\bf u}_f(\widehat{x}_p) \,.
+        \f]
+        The method returns
+        \f[
+        outputVals(c,f,p,*)
+        = \left(J^{-1}_{c} DF_{c}\cdot \widehat{\bf u}_f\right)\circ F^{-1}_{c}(x_{c,p})
+        = J^{-1}_{c}(\widehat{x}_p) DF_{c}(\widehat{x}_p)\cdot\widehat{\bf u}_f(\widehat{x}_p)
+        \qquad 0\le c < C \,.
+        \f]
+        See Section \ref sec_pullbacks for more details about pullbacks.
+    
+        \code
+        |------|----------------------|--------------------------------------------------|
+        |      |         Index        |                   Dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        |   C  |         cell         |  0 <= C < num. integration domains               |
+        |   F  |         field        |  0 <= F < dim. of the basis                      |
+        |   P  |         point        |  0 <= P < num. integration points                |
+        |   D  |         space dim    |  0 <= D < spatial dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        \endcode
+
+        \param  jacobianDividedByJacobianDet [in]  - Input cell Jacobians, divided by their determinant.
+        \param  inputVals                                           [in]  - Input container of reference HDIV values.
+     \return TransformedBasisValues object of logical shape (C,F,P,D).
+    */
+
+    template<class Scalar>
+    static TransformedBasisValues<Scalar,DeviceType>
+    getHDIVtransformVALUE(const Data<Scalar,DeviceType> &jacobianDividedByJacobianDet,
+                          const BasisValues<Scalar,DeviceType> &refBasisValues )
+    {
+      return TransformedBasisValues<Scalar,DeviceType>(jacobianDividedByJacobianDet,refBasisValues);
+    }
+    
+    /** \brief Transformation of a divergence field in the H-div space, defined at points on a
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
+        and indexed by (F,P), into the output container <var><b>outputVals</b></var>,
+        defined on cells in physical space and indexed by (C,F,P).
+
+        Computes pullback of the divergence of \e HDIV functions
+        \f$\Phi^*(\widehat{\bf u}_f) = \left(J^{-1}_{c}\nabla\cdot\widehat{\bf u}_{f}\right) \circ F^{-1}_{c} \f$
+        for points in one or more physical cells that are images of a given set of points in the reference cell:
+        \f[
+        \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+        \f]
+        In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+        should contain the divergencies of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the
+        reference points:
+        \f[
+        inputVals(f,p) = \nabla\cdot\widehat{\bf u}_f(\widehat{x}_p) \,.
+        \f]
+        The method returns
+        \f[
+        outputVals(c,f,p,*)
+        = \left(J^{-1}_{c}\nabla\cdot\widehat{\bf u}_{f}\right) \circ F^{-1}_{c} (x_{c,p})
+        = J^{-1}_{c}(\widehat{x}_p) \nabla\cdot\widehat{\bf u}_{f} (\widehat{x}_p)
+        \qquad 0\le c < C \,.
+        \f]
+        See Section \ref sec_pullbacks for more details about pullbacks.
+    
+        \code
+        |------|----------------------|--------------------------------------------------|
+        |      |         Index        |                   Dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        |   C  |         cell         |  0 <= C < num. integration domains               |
+        |   F  |         field        |  0 <= F < dim. of the basis                      |
+        |   P  |         point        |  0 <= P < num. integration points                |
+        |------|----------------------|--------------------------------------------------|
+        \endcode
+
+     \param  jacobianDetInverse  [in]  - Reciprocals of input cell Jacobian determinants.
+     \param  refBasisDivValues    [in]  - Input container of reference HDIV divergences.
+  \return TransformedBasisValues object of logical shape (C,F,P).
+    */
+    template<class Scalar>
+    static TransformedBasisValues<Scalar,DeviceType>
+    getHDIVtransformDIV(const Data<Scalar,DeviceType> &jacobianDetInverse,
+                        const BasisValues<Scalar,DeviceType> &refBasisDivValues )
+    {
+      return TransformedBasisValues<Scalar,DeviceType>(jacobianDetInverse,refBasisDivValues);
+    }
+    
+    /** \brief Transformation of a (scalar) value field in the H-vol space, defined at points on a
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
+        and indexed by (F,P), into the output container <var><b>outputVals</b></var>,
+        defined on cells in physical space and indexed by (C,F,P).
+
+        Computes pullback of \e HVOL functions
+        \f$\Phi^*(\widehat{u}_f) = \left(J^{-1}_{c}\widehat{u}_{f}\right) \circ F^{-1}_{c} \f$
+        for points in one or more physical cells that are images of a given set of points in the reference cell:
+        \f[
+        \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+        \f]
+        In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+        should contain the values of the functions in the set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the
+        reference points:
+        \f[
+        inputVals(f,p) = \widehat{u}_f(\widehat{x}_p) \,.
+        \f]
+        The method returns
+        \f[
+        outputVals(c,f,p,*)
+        = \left(J^{-1}_{c}\widehat{u}_{f}\right) \circ F^{-1}_{c} (x_{c,p})
+        = J^{-1}_{c}(\widehat{x}_p) \widehat{u}_{f} (\widehat{x}_p)
+        \qquad 0\le c < C \,.
+        \f]
+        See Section \ref sec_pullbacks for more details about pullbacks.
+    
+        \code
+        |------|----------------------|--------------------------------------------------|
+        |      |         Index        |                   Dimension                      |
+        |------|----------------------|--------------------------------------------------|
+        |   C  |         cell         |  0 <= C < num. integration domains               |
+        |   F  |         field        |  0 <= F < dim. of the basis                      |
+        |   P  |         point        |  0 <= P < num. integration points                |
+        |------|----------------------|--------------------------------------------------|
+        \endcode
+
+     \param  jacobianDetInverse  [in]  - Reciprocals of input cell Jacobian determinants.
+     \param  refBasisValues    [in]  - Input container of reference HVOL values.
+     \return TransformedBasisValues object of logical shape (C,F,P).
+    */
+    template<class Scalar>
+    static TransformedBasisValues<Scalar,DeviceType>
+    getHVOLtransformVALUE(const Data<Scalar,DeviceType> &jacobianDetInverse,
+                          const BasisValues<Scalar,DeviceType> &refBasisValues )
+    {
+      return TransformedBasisValues<Scalar,DeviceType>(jacobianDetInverse,refBasisValues);
     }
     
     /** \brief Transformation of a (scalar) value field in the H-grad space, defined at points on a
