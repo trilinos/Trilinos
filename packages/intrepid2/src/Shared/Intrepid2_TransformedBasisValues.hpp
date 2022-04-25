@@ -41,43 +41,46 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid2_TransformedVectorData.hpp
-    \brief  Structure-preserving representation of transformed vector data; reference space values and transformations are stored separately.
+/** \file   Intrepid2_TransformedBasisValues.hpp
+    \brief  Structure-preserving representation of transformed basis values; reference space values and transformations are stored separately.
+ 
+ There are effectively two modes: one for vector-valued BasisValues, and one for scalar-valued BasisValues.  In the former case the transformation is logically a matrix, with shape (C,P,D,D).  In the latter case, the transformation is logically a weight on each physical-space quadrature point, with shape (C,P).  If the transform is left unset, it is understood to be the identity.
 
     \author Nathan V. Roberts
 */
 
-#ifndef Intrepid2_TransformedVectorData_h
-#define Intrepid2_TransformedVectorData_h
+#ifndef Intrepid2_TransformedBasisValues_h
+#define Intrepid2_TransformedBasisValues_h
 
-#include "Intrepid2_VectorData.hpp"
-
+#include "Intrepid2_BasisValues.hpp"
 #include "Intrepid2_ScalarView.hpp"
 
 namespace Intrepid2 {
-/** \class Intrepid2::TransformedVectorData
+/** \class Intrepid2::TransformedBasisValues
     \brief Structure-preserving representation of transformed vector data; reference space values and transformations are stored separately.
  
- TransformedVectorData provides a View-like interface of rank 4, with shape (C,F,P,D).  When the corresponding accessor is used, the transformed value is determined from corresponding reference space values and the transformation.
+ TransformedBasisValues provides a View-like interface of rank 4, with shape (C,F,P,D).  When the corresponding accessor is used, the transformed value is determined from corresponding reference space values and the transformation.
 */
   template<class Scalar, typename DeviceType>
-  class TransformedVectorData
+  class TransformedBasisValues
   {
   public:
-    using Transform = Data<Scalar,DeviceType>;
+    ordinal_type numCells_;
     
-    Data<Scalar,DeviceType> transform_; // (C,P,D,D) jacobian or jacobian inverse; can also be unset for identity transform
+    Data<Scalar,DeviceType> transform_; // vector case: (C,P,D,D) jacobian or jacobian inverse; can also be unset for identity transform.  Scalar case: (C,P), or unset for identity.
     
-    VectorData<Scalar, DeviceType> vectorData_; // notionally (F,P,D) container
+    BasisValues<Scalar, DeviceType> basisValues_;
     
     /**
      \brief Standard constructor.
-     \param [in] transform - the transformation matrix, with logical shape (C,P,D,D)
-     \param [in] vectorData - the reference-space data to be transformed, with logical shape (F,P,D)
+     \param [in] transform - the transformation (matrix), with logical shape (C,P) or (C,P,D,D)
+     \param [in] basisValues - the reference-space data to be transformed, with logical shape (F,P) (for scalar values) or (F,P,D) (for vector values)
     */
-    TransformedVectorData(const Data<Scalar,DeviceType> &transform, const VectorData<Scalar,DeviceType> &vectorData)
+    TransformedBasisValues(const Data<Scalar,DeviceType> &transform, const BasisValues<Scalar,DeviceType> &basisValues)
     :
-    transform_(transform), vectorData_(vectorData)
+    numCells_(transform.extent_int(0)),
+    transform_(transform),
+    basisValues_(basisValues)
     {
       // sanity check: when transform is diagonal, we expect there to be no pointwise variation.
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(transform_.isDiagonal() && (transform_.getVariationTypes()[1] != CONSTANT), std::invalid_argument, "When transform is diagonal, we assume in various places that there is no pointwise variation; the transform_ Data should have CONSTANT as its variation type in dimension 1.");
@@ -87,17 +90,27 @@ namespace Intrepid2 {
      \brief Constructor for the case of an identity transform.
      \param [in] vectorData - the reference-space data, with logical shape (F,P,D)
     */
-    TransformedVectorData(const VectorData<Scalar, DeviceType> &vectorData)
+    TransformedBasisValues(const ordinal_type &numCells, const BasisValues<Scalar,DeviceType> &basisValues)
     :
-    vectorData_(vectorData)
+    numCells_(numCells),
+    basisValues_(basisValues)
     {}
     
     //! copy-like constructor for differing device types.  This may do a deep_copy of underlying views, depending on the memory spaces involved.
     template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<DeviceType, OtherDeviceType>::value>::type>
-    TransformedVectorData(const TransformedVectorData<Scalar,OtherDeviceType> &transformedVectorData)
+    TransformedBasisValues(const TransformedBasisValues<Scalar,OtherDeviceType> &transformedVectorData)
     :
+    numCells_(transformedVectorData.numCells()),
     transform_(transformedVectorData.transform()),
-    vectorData_(transformedVectorData.vectorData())
+    basisValues_(transformedVectorData.basisValues())
+    {}
+    
+    /**
+     \brief Default constructor; an invalid container.  Will return -1 for numCells().
+     */
+    TransformedBasisValues()
+    :
+    numCells_(-1)
     {}
     
     //! Returns true if the transformation matrix is diagonal.
@@ -113,7 +126,12 @@ namespace Intrepid2 {
         return transform_.isDiagonal();
       }
     }
-    
+
+    BasisValues<Scalar, DeviceType> basisValues() const
+    {
+      return basisValues_;
+    }
+
     //! Returns the true data extent in the cell dimension (e.g., will be 1 for transform matrices that do not vary from one cell to the next).
     KOKKOS_INLINE_FUNCTION int cellDataExtent() const
     {
@@ -129,47 +147,75 @@ namespace Intrepid2 {
     //! Returns the logical extent in the cell dimension, which is the 0 dimension in this container.
     KOKKOS_INLINE_FUNCTION int numCells() const
     {
-      return transform_.extent_int(0);
+      return numCells_;
     }
     
     //! Returns the logical extent in the fields dimension, which is the 1 dimension in this container.
     KOKKOS_INLINE_FUNCTION int numFields() const
     {
-      return vectorData_.numFields();
+      return basisValues_.extent_int(0);
     }
     
     //! Returns the logical extent in the points dimension, which is the 2 dimension in this container.
     KOKKOS_INLINE_FUNCTION int numPoints() const
     {
-      return vectorData_.numPoints();
+      return basisValues_.extent_int(1);
     }
     
     //! Returns the logical extent in the space dimension, which is the 3 dimension in this container.
     KOKKOS_INLINE_FUNCTION int spaceDim() const
     {
-      return vectorData_.spaceDim();
+      return basisValues_.extent_int(2);
     }
     
-    //! Accessor, with arguments (C,F,P,D).
+    //! Scalar accessor, with arguments (C,F,P).
+    KOKKOS_INLINE_FUNCTION Scalar operator()(const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal) const
+    {
+      if (!transform_.isValid())
+      {
+        // null transform is understood as the identity
+        return basisValues_(fieldOrdinal,pointOrdinal);
+      }
+      else
+      {
+        return transform_(cellOrdinal,pointOrdinal) * basisValues_(fieldOrdinal,pointOrdinal);
+      }
+    }
+    
+    //! Vector accessor, with arguments (C,F,P,D).
     KOKKOS_INLINE_FUNCTION Scalar operator()(const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal, const int &dim) const
     {
       if (!transform_.isValid())
       {
         // null transform is understood as the identity
-        return vectorData_(fieldOrdinal,pointOrdinal,dim);
+        return basisValues_(fieldOrdinal,pointOrdinal,dim);
       }
       else if (transform_.isDiagonal())
       {
-        return transform_(cellOrdinal,pointOrdinal,dim,dim) * vectorData_(fieldOrdinal,pointOrdinal,dim);
+        return transform_(cellOrdinal,pointOrdinal,dim,dim) * basisValues_(fieldOrdinal,pointOrdinal,dim);
       }
       else
       {
         Scalar value = 0.0;
         for (int d2=0; d2<transform_.extent_int(2); d2++)
         {
-          value += transform_(cellOrdinal,pointOrdinal,dim,d2) * vectorData_(fieldOrdinal,pointOrdinal,d2);
+          value += transform_(cellOrdinal,pointOrdinal,dim,d2) * basisValues_(fieldOrdinal,pointOrdinal,d2);
         }
         return value;
+      }
+    }
+    
+    //! Returns the specified entry in the (scalar) transform.  (Only valid for scalar-valued BasisValues; see the four-argument transformWeight() for the vector-valued case.)
+    KOKKOS_INLINE_FUNCTION Scalar transformWeight(const int &cellOrdinal, const int &pointOrdinal) const
+    {
+      if (!transform_.isValid())
+      {
+        // null transform is understood as identity
+        return 1.0;
+      }
+      else
+      {
+        return transform_(cellOrdinal,pointOrdinal);
       }
     }
     
@@ -196,14 +242,14 @@ namespace Intrepid2 {
     //! Returns the reference-space vector data.
     const VectorData<Scalar,DeviceType> & vectorData() const
     {
-      return vectorData_;
+      return basisValues_.vectorData();
     }
     
-    //! Returns the rank of the container, which is 4.
+    //! Returns the rank of the container, which is 3 for scalar values, and 4 for vector values.
     KOKKOS_INLINE_FUNCTION
-    constexpr unsigned rank() const
+    unsigned rank() const
     {
-      return 4; // shape is (C,F,P,D)
+      return basisValues_.rank() + 1; // transformation adds a cell dimension
     }
     
     //! Returns the extent in the specified dimension as an int.
@@ -216,10 +262,9 @@ namespace Intrepid2 {
       else if (r == 3) return spaceDim();
       else if (r  > 3) return 1;
       
-      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "Unsupported rank");
       return -1; // unreachable return; here to avoid compiler warnings.
     }
   };
 }
 
-#endif /* Intrepid2_TransformedVectorData_h */
+#endif /* Intrepid2_TransformedBasisValues_h */

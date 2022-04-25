@@ -120,15 +120,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE(
-  SquareMeshGen 
+  SquareMeshGen
   SOURCES SquareMeshGen.cpp
   )
 
-TRIBITS_ADD_EXECUTABLE(
-  ScatterSpeed_Epetra
-  SOURCES   tScatterSpeed_Epetra.cpp
+IF (PANZER_HAVE_EPETRA)
+  TRIBITS_ADD_EXECUTABLE(
+    ScatterSpeed_Epetra
+    SOURCES   tScatterSpeed_Epetra.cpp
   )
-
+ENDIF()
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tUniformRef
 #  SOURCES tUniformRef.cpp ${UNIT_TEST_DRIVER}
@@ -143,7 +144,7 @@ TRIBITS_ADD_EXECUTABLE(
 # files.  So for now we will check to see if ThreadPool is
 # enabled. STK will eventually remove this dependency.
 #
-# 10/18 KDD STK's dependence on ThreadPool has been removed #3463, and 
+# 10/18 KDD STK's dependence on ThreadPool has been removed #3463, and
 # ThreadPool is being removed now #3445.  Yet, without the ThreadPool
 # guard, this test does not build.
 #
@@ -155,7 +156,7 @@ TRIBITS_ADD_EXECUTABLE(
 #    )
 #ENDIF()
 #
-# 10/18 KDD a more appropriate guard for the above test is 
+# 10/18 KDD a more appropriate guard for the above test is
 #IF (${PROJECT_NAME}_ENABLE_STKSearch AND ${PROJECT_NAME}_ENABLE_STKSearchUtil)
 # This guard induces compilation, but the compilation fails for me.
 # This test appears to have fallen into disrepair.  #3719
