@@ -132,11 +132,11 @@ namespace panzer {
   void testGatherScatter(const bool enable_tangents, Teuchos::FancyOStream& out, bool& success)
   {
 
-    #ifdef HAVE_MPI
-       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-    #else
-       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-    #endif
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+   #else
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+   #endif
 
     int myRank = eComm->MyPID();
     int numProcs = eComm->NumProc();
