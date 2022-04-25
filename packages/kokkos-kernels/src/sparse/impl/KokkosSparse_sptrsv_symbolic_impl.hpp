@@ -223,65 +223,33 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
     HostSignedEntriesType level_list = Kokkos::create_mirror_view(dlevel_list);
     Kokkos::deep_copy(level_list, dlevel_list);
 
-    HostSignedEntriesType previous_level_list(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "previous_level_list"),
-        nrows);
-    Kokkos::deep_copy(previous_level_list, signed_integral_t(-1));
+    signed_integral_t level = 0;
+    size_type node_count    = 0;
 
-    const bool stored_diagonal = thandle.is_stored_diagonal();
-    // diagonal_offsets is uninitialized - deep_copy unnecessary at the
-    // beginning, only needed at the end
-    auto diagonal_offsets  = thandle.get_diagonal_offsets();
-    auto hdiagonal_offsets = thandle.get_host_diagonal_offsets();
-
-    size_type level    = 0;
-    auto starting_node = 0;
-    auto ending_node   = nrows;
-
-    size_type node_count = 0;
-
-    while (node_count < nrows) {
-      for (size_type row = starting_node; row < ending_node; ++row) {
-        if (level_list(row) == -1) {  // unmarked
-          bool is_root               = true;
-          signed_integral_t ptrstart = row_map(row);
-          signed_integral_t ptrend   = row_map(row + 1);
-
-          for (signed_integral_t offset = ptrstart; offset < ptrend; ++offset) {
-            size_type col = entries(offset);
-            if (previous_level_list(col) == -1 && col != row) {  // unmarked
-              if (col < row) {
-                is_root = false;
-                break;
-              }
-            } else if (col == row) {
-              if (stored_diagonal) hdiagonal_offsets(row) = offset;
-            } else if (col > row) {
-              std::cout << "\nrow = " << row << "  col = " << col
-                        << "  offset = " << offset << std::endl;
-              throw(
-                  std::runtime_error("SYMB ERROR: Lower tri with colid > rowid "
-                                     "- SHOULD NOT HAPPEN!!!"));
-            }
-          }  // end for offset , i.e. cols of this row
-
-          if (is_root == true) {
-            level_list(row) = level;
-            nodes_per_level(level) += 1;
-            nodes_grouped_by_level(node_count) = row;
-            node_count += 1;
-          }
-
-        }  // end if
-      }    // end for row
-
-      // Kokkos::deep_copy(previous_level_list, level_list);
-      for (size_type i = 0; i < nrows; ++i) {
-        previous_level_list(i) = level_list(i);
+    typename DeviceEntriesType::HostMirror level_ptr(
+        "lp", nrows + 1);  // temp View used for index bookkeeping
+    level_ptr(0) = 0;
+    for (size_type i = 0; i < nrows; ++i) {
+      signed_integral_t l = 0;
+      size_type rowstart  = row_map(i);
+      size_type rowend    = row_map(i + 1);
+      for (size_type j = rowstart; j < rowend; j++) {
+        size_type col = entries(j);
+        l             = std::max(l, level_list(col));
       }
-
-      level += 1;
-    }  // end while
+      level_list(i) = l + 1;
+      nodes_per_level(l) += 1;  // 0-based indexing
+      level_ptr(l + 1) += 1;
+      level = std::max(level, l + 1);
+      node_count++;
+    }
+    for (signed_integral_t i = 1; i <= level; ++i) {
+      level_ptr(i) += level_ptr(i - 1);
+    }
+    for (size_type i = 0; i < nrows; i++) {
+      nodes_grouped_by_level(level_ptr(level_list(i) - 1)) = i;
+      level_ptr(level_list(i) - 1) += 1;
+    }
 
     thandle.set_num_levels(level);
 
@@ -320,9 +288,8 @@ void lower_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
     Kokkos::deep_copy(dnodes_grouped_by_level, nodes_grouped_by_level);
     Kokkos::deep_copy(dnodes_per_level, nodes_per_level);
     Kokkos::deep_copy(dlevel_list, level_list);
-    if (stored_diagonal) Kokkos::deep_copy(diagonal_offsets, hdiagonal_offsets);
 
-      // Extra check:
+    // Extra check:
 #ifdef LVL_OUTPUT_INFO
     {
       std::cout << "  End symb - extra checks" << std::endl;
@@ -705,61 +672,35 @@ void upper_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
     HostSignedEntriesType level_list = Kokkos::create_mirror_view(dlevel_list);
     Kokkos::deep_copy(level_list, dlevel_list);
 
-    HostSignedEntriesType previous_level_list(
-        Kokkos::view_alloc(Kokkos::WithoutInitializing, "previous_level_list"),
-        nrows);
-    Kokkos::deep_copy(previous_level_list, signed_integral_t(-1));
+    signed_integral_t level = 0;
+    size_type node_count    = 0;
 
-    const bool stored_diagonal = thandle.is_stored_diagonal();
-    // diagonal_offsets is uninitialized - deep_copy unnecessary at the
-    // beginning, only needed at the end
-    auto diagonal_offsets  = thandle.get_diagonal_offsets();
-    auto hdiagonal_offsets = thandle.get_host_diagonal_offsets();
-
-    size_type level    = 0;
-    auto starting_node = nrows - 1;
-    auto ending_node   = 0;
-
-    size_type node_count = 0;
-
-    while (node_count < nrows) {
-      for (signed_integral_t row = starting_node; row >= ending_node; --row) {
-        if (level_list(row) == -1) {  // unmarked
-          bool is_root               = true;
-          signed_integral_t ptrstart = row_map(row);
-          signed_integral_t ptrend   = row_map(row + 1);
-
-          for (signed_integral_t offset = ptrend - 1; offset >= ptrstart;
-               --offset) {
-            signed_integral_t col = entries(offset);
-
-            if (previous_level_list(col) == -1 && col != row) {  // unmarked
-              if (col > row) {
-                is_root = false;
-                break;
-              }
-            } else if (col == row) {
-              if (stored_diagonal) hdiagonal_offsets(row) = offset;
-            }
-          }  // end for offset , i.e. cols of this row
-
-          if (is_root == true) {
-            level_list(row) = level;
-            nodes_per_level(level) += 1;
-            nodes_grouped_by_level(node_count) = row;
-            node_count += 1;
-          }
-
-        }  // end if
-      }    // end for row
-
-      // Kokkos::deep_copy(previous_level_list, level_list);
-      for (size_type i = 0; i < nrows; ++i) {
-        previous_level_list(i) = level_list(i);
+    typename DeviceEntriesType::HostMirror level_ptr(
+        "lp", nrows + 1);  // temp View used for index bookkeeping
+    level_ptr(0) = 0;
+    for (size_type ii = nrows; ii > 0; ii--) {
+      size_type i = ii - 1;  // Avoid >= 0 comparison in for-loop to prevent
+                             // wraparound errors with unsigned types
+      signed_integral_t l = 0;
+      size_type rowstart  = row_map(i) + 1;  // skip diag
+      size_type rowend    = row_map(i + 1);
+      for (size_type j = rowstart; j < rowend; ++j) {
+        size_type col = entries(j);
+        l             = std::max(l, level_list(col));
       }
-
-      level += 1;
-    }  // end while
+      level_list(i) = l + 1;
+      nodes_per_level(l) += 1;  // 0-based indexing
+      level_ptr(l + 1) += 1;
+      level = std::max(level, l + 1);
+      node_count++;
+    }
+    for (signed_integral_t i = 1; i <= level; ++i) {
+      level_ptr(i) += level_ptr(i - 1);
+    }
+    for (size_type i = 0; i < nrows; i++) {
+      nodes_grouped_by_level(level_ptr(level_list(i) - 1)) = i;
+      level_ptr(level_list(i) - 1) += 1;
+    }
 
     thandle.set_num_levels(level);
 
@@ -798,9 +739,8 @@ void upper_tri_symbolic(TriSolveHandle& thandle, const RowMapType drow_map,
     Kokkos::deep_copy(dnodes_grouped_by_level, nodes_grouped_by_level);
     Kokkos::deep_copy(dnodes_per_level, nodes_per_level);
     Kokkos::deep_copy(dlevel_list, level_list);
-    if (stored_diagonal) Kokkos::deep_copy(diagonal_offsets, hdiagonal_offsets);
 
-      // Extra check:
+    // Extra check:
 #ifdef LVL_OUTPUT_INFO
     {
       std::cout << "  End symb - extra checks" << std::endl;
