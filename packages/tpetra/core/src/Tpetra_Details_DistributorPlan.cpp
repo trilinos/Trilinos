@@ -644,7 +644,7 @@ void DistributorPlan::computeReceives()
   const int numProcs = comm_->getSize();
 
   // MPI tag for nonblocking receives and blocking sends in this method.
-  const int pathTag = 2;
+  const int pathTag = 0;
   const int tag = getTag(pathTag);
 
   // toProcsFromMe[i] == the number of messages sent by this process

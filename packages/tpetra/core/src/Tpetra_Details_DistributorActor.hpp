@@ -94,7 +94,7 @@ public:
 
 private:
   int getNewMpiTag() {
-    return 0;
+    return 1;
   }
 
   int mpiTag_;
@@ -204,7 +204,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // (getIndicesTo().is_null()) and others might take the "slow" path for
   // the same doPosts() call, so the path tag must be the same for
   // both.
-  const int pathTag = 0;
+  const int pathTag = 1;
   const int tag = plan.getTag(pathTag);
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -482,7 +482,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // (plan.getIndicesTo().is_null()) and others might take the "slow" path for
   // the same doPosts() call, so the path tag must be the same for
   // both.
-  const int pathTag = 1;
+  const int pathTag = 2;
   const int tag = plan.getTag(pathTag);
 
 #ifdef HAVE_TPETRA_DEBUG
