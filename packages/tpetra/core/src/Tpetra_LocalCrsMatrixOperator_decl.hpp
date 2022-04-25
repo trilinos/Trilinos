@@ -90,7 +90,7 @@ namespace Tpetra {
 
   public:
     template<typename OffsetDeviceViewType>
-    static KokkosSparse::SparseRowViewConst<local_matrix_device_type> on_rank_row_view(
+    KOKKOS_INLINE_FUNCTION static KokkosSparse::SparseRowViewConst<local_matrix_device_type> on_rank_row_view(
         const local_matrix_device_type &A,
         const OffsetDeviceViewType &aOff,
         const local_ordinal_type i
@@ -107,7 +107,7 @@ namespace Tpetra {
     }
 
     template<typename OffsetDeviceViewType>
-    static KokkosSparse::SparseRowViewConst<local_matrix_device_type> off_rank_row_view(
+    KOKKOS_INLINE_FUNCTION static KokkosSparse::SparseRowViewConst<local_matrix_device_type> off_rank_row_view(
         const local_matrix_device_type &A,
         const OffsetDeviceViewType &aOff,
         const local_ordinal_type i
@@ -345,6 +345,7 @@ namespace Tpetra {
         using y_value_type = typename y_type::non_const_value_type;
 
         const int rowsPerTeam = dev.team_size();
+        // printf("rowsPerTeam %d\n", rowsPerTeam);
 
         Kokkos::parallel_for(Kokkos::TeamThreadRange(dev,0,rowsPerTeam), [&] (const ordinal_type& loop) {
 
@@ -355,6 +356,7 @@ namespace Tpetra {
           const KokkosSparse::SparseRowViewConst<local_matrix_device_type> row = 
             off_rank_row_view(A_, offRankOffsets_, iRow);
           const ordinal_type row_length = static_cast<ordinal_type> (row.length);
+          // printf("row %d length %d\n", iRow, row_length);
           y_value_type sum = 0;
 
           Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev,row_length), [&] (const ordinal_type& iEntry, y_value_type& lsum) {
