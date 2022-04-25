@@ -152,9 +152,9 @@ template<class ScalarType, class MV, class OP>
 class GmresPolySolMgr : public SolverManager<ScalarType,MV,OP> {
 private:
 
-  typedef MultiVecTraits<ScalarType,MV> MVT;
-  typedef Teuchos::ScalarTraits<ScalarType> STS;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+
+  typedef Teuchos::ScalarTraits<MagnitudeType> MTS;
   typedef Belos::GmresPolyOp<ScalarType,MV,OP> gmres_poly_t;
   typedef Belos::GmresPolyMv<ScalarType,MV>    gmres_poly_mv_t;
 
@@ -216,6 +216,26 @@ public:
   /*! \brief Get a parameter list containing the current parameters for this object.
    */
   Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const override { return params_; }
+
+  /*! \brief Tolerance achieved by the last \c solve() invocation.
+    
+     This is the maximum over all right-hand sides' achieved
+     convergence tolerances, and is set whether or not the solve
+     actually managed to achieve the desired convergence tolerance.
+    
+     \warning This solver manager may be use as either a polynomial
+       preconditioned iterative method or a polynomial preconditioner.
+       In the later case, where a static polynomial is being applied
+       through each call to solve(), there is not an outer solve that 
+       can provide the achieved tolerance.
+     \warning This result may not be meaningful if there was a loss
+       of accuracy during the outer solve.  You should first call \c
+       isLOADetected() to check for a loss of accuracy during the
+       last solve.
+  */
+    MagnitudeType achievedTol() const override {
+      return achievedTol_;
+    }
 
   /*! \brief Return the timers for this object.
    *
@@ -331,7 +351,7 @@ private:
 #endif
 
   // Current solver values.
-  MagnitudeType polyTol_;
+  MagnitudeType polyTol_, achievedTol_;
   int maxDegree_, numIters_;
   int verbosity_;
   bool hasOuterSolver_;
@@ -363,6 +383,7 @@ template<class ScalarType, class MV, class OP>
 GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
   outputStream_ (Teuchos::rcp(outputStream_default_,false)),
   polyTol_ (DefaultSolverParameters::polyTol),
+  achievedTol_(MTS::zero()),
   maxDegree_ (maxDegree_default_),
   numIters_ (0),
   verbosity_ (verbosity_default_),
@@ -691,6 +712,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
     ret = solver->solve();
     numIters_ = solver->getNumIters();
     loaDetected_ = solver->isLOADetected();
+    achievedTol_ = solver->achievedTol();
 
   } // if (hasOuterSolver_ && maxDegree_)
   else if (hasOuterSolver_) {
@@ -706,12 +728,14 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
     ret = solver->solve();
     numIters_ = solver->getNumIters();
     loaDetected_ = solver->isLOADetected();
+    achievedTol_ = solver->achievedTol();
 
   }
   else if (maxDegree_) {
 
     // Apply the polynomial to the current linear system
     poly_Op_->ApplyPoly( *problem_->getRHS(), *problem_->getLHS() );
+    achievedTol_ = MTS::one();
 
   }
 
