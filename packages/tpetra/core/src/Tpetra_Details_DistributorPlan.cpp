@@ -115,10 +115,6 @@ DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
     indicesFrom_(otherPlan.indicesFrom_)
 { }
 
-int DistributorPlan::getTag(const int pathTag) const {
-  return useDistinctTags_ ? pathTag : comm_->getTag();
-}
-
 size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs) {
   using Teuchos::outArg;
   using Teuchos::REDUCE_MAX;
@@ -644,8 +640,11 @@ void DistributorPlan::computeReceives()
   const int numProcs = comm_->getSize();
 
   // MPI tag for nonblocking receives and blocking sends in this method.
-  const int pathTag = 0;
-  const int tag = getTag(pathTag);
+  // Note that useDistinctTags_ is deprecated.  After deprecation cycle is complete, we should just
+  // use 0 here (although it's highly unlikely the Actor's communication will conflict with this
+  // communication, we still avoid the use of tag 0 in Actor, so the hardcoded 0 is in fact still
+  // unique with respect to the Actor code paths)
+  const int tag = useDistinctTags_ ? 0 : comm_->getTag();
 
   // toProcsFromMe[i] == the number of messages sent by this process
   // to process i.  The data in numSendsToOtherProcs_, procIdsToSendTo_, and lengthsTo_

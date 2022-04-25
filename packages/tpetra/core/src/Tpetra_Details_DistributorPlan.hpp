@@ -104,12 +104,6 @@ public:
   DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm);
   DistributorPlan(const DistributorPlan& otherPlan);
 
-  //! Get the tag to use for receives and sends.
-  ///
-  /// See useDistinctTags_.  This is called in doPosts() (both
-  /// variants) and computeReceives().
-  int getTag(const int pathTag) const;
-
   size_t createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs);
   void createFromRecvs(const Teuchos::ArrayView<const int>& remoteProcIDs);
   void createFromSendsAndRecvs(const Teuchos::ArrayView<const int>& exportProcIDs,
