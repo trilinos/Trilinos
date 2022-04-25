@@ -353,6 +353,11 @@ namespace MueLu {
     if(precList22_.isParameter("repartition: enable")) {
       bool repartition = precList22_.get<bool>("repartition: enable");
       precList11_.set("repartition: enable",repartition);
+
+      // If we're repartitioning (2,2), we need to rebalance for (1,1) to do the right thing
+      if(repartition)
+        precList22_.set("repartition: rebalance P and R",true);
+
       if (precList22_.isParameter("repartition: use subcommunicators")) {
         precList11_.set("repartition: use subcommunicators", precList22_.get<bool>("repartition: use subcommunicators"));
         
@@ -376,10 +381,8 @@ namespace MueLu {
     else
       precList11_.remove("repartition: enable", false);
    
-
-    std::cout<<"**** CMS: precList22_ ****"<<std::endl <<precList22_ << std::endl;
+    // Build (2,2) hierarcy
     Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
-
 
     ////////////////////////////////////////////////////////////////////////////////
     // Copy the relevant (2,2) data to the (1,1) hierarchy
@@ -435,9 +438,6 @@ namespace MueLu {
         precList11_.set("coarse: type", "none");
       }
 
-      std::cout<<"**** CMS: precList11_ ****"<<std::endl <<precList11_ << std::endl;
-
-      //    Hierarchy11_ = MueLu::CreateXpetraPreconditioner(SM_Matrix_, precList11_);
       // Rip off non-serializable data before validation
       Teuchos::ParameterList nonSerialList11, processedPrecList11;
       MueLu::ExtractNonSerializableData(precList11_, processedPrecList11, nonSerialList11);

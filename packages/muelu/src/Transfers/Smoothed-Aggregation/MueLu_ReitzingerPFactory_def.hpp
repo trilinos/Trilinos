@@ -310,6 +310,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION( (num_coarse_edges > 0  && CoarseNodeMatrix.is_null()) ||
                                 (num_coarse_edges == 0 && !CoarseNodeMatrix.is_null()) 
                                 , Exceptions::RuntimeError, "MueLu::ReitzingerPFactory: Mismatched num_coarse_edges and NodeMatrix repartition.");
+    
 
     // Count the total number of edges
     // NOTE: Since we solve the ownership issue above, this should do what we want
