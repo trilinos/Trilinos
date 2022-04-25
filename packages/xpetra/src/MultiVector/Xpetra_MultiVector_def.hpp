@@ -95,6 +95,7 @@ MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Xpetra_randomize(const Scalar& minVal, const Scalar& maxVal)
 {
     typedef Teuchos::ScalarTraits<Scalar> SCT;
+    Scalar point5 = SCT::one()/ (SCT::one()  + SCT::one());
 
     const size_t numVectors = getNumVectors();
     for(size_t i = 0; i < numVectors; i++)
@@ -104,7 +105,7 @@ Xpetra_randomize(const Scalar& minVal, const Scalar& maxVal)
         const size_t myLength = getLocalLength();
         for(size_t j = 0; j < myLength; j++)
         {
-          datai[ j ] = 0.5*(maxVal-minVal)*SCT::random()+0.5*(maxVal+minVal);
+          datai[ j ] = point5*(maxVal-minVal)*SCT::random()+point5*(maxVal+minVal);
         }
     }
 }

@@ -41,6 +41,9 @@
 // @HEADER
 
 #include "PanzerAdaptersSTK_config.hpp"
+
+#ifdef PANZER_HAVE_EPETRA
+
 #include "Panzer_STK_SetupLOWSFactory.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
 #include "Panzer_STK_ParameterListCallbackBlocked.hpp"
@@ -526,3 +529,5 @@ namespace {
     return Teuchos::null;
   }
 }
+
+#endif // PANZER_HAVE_EPETRA

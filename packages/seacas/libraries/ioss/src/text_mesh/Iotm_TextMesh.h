@@ -29,11 +29,13 @@ namespace Iotm {
   using ElementData    = text_mesh::ElementData<int64_t, TopologyMapEntry>;
   using SidesetData    = text_mesh::SidesetData<int64_t, TopologyMapEntry>;
   using NodesetData    = text_mesh::NodesetData<int64_t>;
+  using AssemblyData   = text_mesh::AssemblyData<int64_t>;
   using Coordinates    = text_mesh::Coordinates<int64_t>;
   using TextMeshParser = text_mesh::TextMeshParser<int64_t, IossTopologyMapping>;
   using ErrorHandler   = text_mesh::ErrorHandler;
   using SideBlockInfo  = text_mesh::SideBlockInfo;
   using SplitType      = text_mesh::SplitType;
+  using AssemblyType   = text_mesh::AssemblyType;
 
   inline std::ostream &operator<<(std::ostream &out, const TopologyMapEntry &t)
   {
@@ -144,6 +146,11 @@ namespace Iotm {
      * block with id 'block_number'.
      */
     virtual int64_t element_count_proc(int64_t block_number) const;
+
+    /**
+     * Return number of assemblies in the entire model.
+     */
+    int64_t assembly_count() const;
 
     /**
      * Returns pair containing "topology type string" and "number of
@@ -264,6 +271,14 @@ namespace Iotm {
     std::vector<std::string> get_sideset_names() const;
     std::string              get_sideset_name(int64_t id) const;
     int64_t                  get_sideset_id(const std::string &name) const;
+
+    std::vector<std::string> get_assembly_names() const;
+    std::string              get_assembly_name(int64_t id) const;
+    int64_t                  get_assembly_id(const std::string &name) const;
+    Ioss::EntityType         get_assembly_type(const std::string &name) const;
+    std::vector<std::string> get_assembly_members(const std::string &name) const;
+
+    Ioss::EntityType assembly_type_to_entity_type(const AssemblyType type) const;
 
     unsigned spatial_dimension() const;
 

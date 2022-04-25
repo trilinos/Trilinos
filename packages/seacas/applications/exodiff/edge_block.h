@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -34,7 +34,7 @@ private:
   const char *label() const override { return "Edgeblock"; }
   const char *short_label() const override { return "edgeblock"; }
 
-  std::string elmt_type;
+  std::string elmt_type{};
   int         num_edges_per_elmt{-1};
 
   friend class ExoII_Read<INT>;

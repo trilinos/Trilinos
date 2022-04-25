@@ -80,7 +80,7 @@ Kokkos::initialize(argc, args);
         double d_phi = a/d_theta;
         for (int i=0; i<M_theta; ++i) {
             double theta = PI*(i + 0.5)/M_theta;
-            int M_phi = std::round(2*PI*std::sin(theta)/d_phi);
+            int M_phi = std::ceil(2*PI*std::sin(theta)/d_phi);
             for (int j=0; j<M_phi; ++j) {
                 double phi = 2*PI*j/M_phi;
                 source_coords(N_count, 0) = theta;
@@ -114,14 +114,14 @@ Kokkos::initialize(argc, args);
         // fill target coordinates from surface of a sphere with quasiuniform points
         // stop when enough points are found
         int N_count = 0;
-        double a = 4.0*PI*r*r/((double)(5.0*number_target_coords)); // 5.0 is in case number_target_coords is set to something very small (like 1)
+        double a = 4.0*PI*r*r/((double)(1.0*number_target_coords));
         double d = std::sqrt(a);
         int M_theta = std::round(PI/d);
         double d_theta = PI/((double)M_theta);
         double d_phi = a/d_theta;
         for (int i=0; i<M_theta; ++i) {
             double theta = PI*(i + 0.5)/M_theta;
-            int M_phi = std::round(2*PI*std::sin(theta)/d_phi);
+            int M_phi = std::ceil(2*PI*std::sin(theta)/d_phi);
             for (int j=0; j<M_phi; ++j) {
                 double phi = 2*PI*j/M_phi;
                 target_coords(N_count, 0) = theta;
@@ -143,6 +143,9 @@ Kokkos::initialize(argc, args);
             target_coords(i,2) = r*cos(theta);
             //printf("%f %f %f\n", target_coords(i,0), target_coords(i,1), target_coords(i,2));
         }
+        //for (int i=0; i<number_target_coords; ++i) {
+        //    printf("%d: %f %f %f\n", i, target_coords(i,0), target_coords(i,1), target_coords(i,2));
+        //}
     }
 
     
@@ -203,30 +206,45 @@ Kokkos::initialize(argc, args);
     
     //! [Performing Neighbor Search]
     
+    double epsilon_multiplier = 1.9;
     
     // Point cloud construction for neighbor search
     // CreatePointCloudSearch constructs an object of type PointCloudSearch, but deduces the templates for you
     auto point_cloud_search(CreatePointCloudSearch(source_coords, dimension));
 
-    // each row is a neighbor list for a target site, with the first column of each row containing
-    // the number of neighbors for that rows corresponding target site
-    double epsilon_multiplier = 1.9;
-    int estimated_upper_bound_number_neighbors = 
-        point_cloud_search.getEstimatedNumberNeighborsUpperBound(min_neighbors, dimension, epsilon_multiplier);
+    Kokkos::View<int*> neighbor_lists_device("neighbor lists", 
+            0); // first column is # of neighbors
+    Kokkos::View<int*>::HostMirror neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
+    // number_of_neighbors_list must be the same size as the number of target sites so that it can be populated
+    // with the number of neighbors for each target site.
+    Kokkos::View<int*> number_of_neighbors_list_device("number of neighbor lists", 
+            number_target_coords); // first column is # of neighbors
+    Kokkos::View<int*>::HostMirror number_of_neighbors_list = Kokkos::create_mirror_view(number_of_neighbors_list_device);
 
-    Kokkos::View<int**, Kokkos::DefaultExecutionSpace> neighbor_lists_device("neighbor lists", 
-            number_target_coords, estimated_upper_bound_number_neighbors); // first column is # of neighbors
-    Kokkos::View<int**>::HostMirror neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
-    
     // each target site has a window size
     Kokkos::View<double*, Kokkos::DefaultExecutionSpace> epsilon_device("h supports", number_target_coords);
     Kokkos::View<double*>::HostMirror epsilon = Kokkos::create_mirror_view(epsilon_device);
+
+    size_t storage_size = point_cloud_search.generateCRNeighborListsFromKNNSearch(true /*dry run*/, target_coords, neighbor_lists, 
+            number_of_neighbors_list, epsilon, min_neighbors, epsilon_multiplier);
     
-    // query the point cloud to generate the neighbor lists using a kdtree to produce the n nearest neighbor
-    // to each target site, adding (epsilon_multiplier-1)*100% to whatever the distance away the further neighbor used is from
-    // each target to the view for epsilon
-    point_cloud_search.generate2DNeighborListsFromKNNSearch(false /*not dry run*/, target_coords, neighbor_lists, 
-            epsilon, min_neighbors, epsilon_multiplier);
+    // resize neighbor_lists_device so as to be large enough to contain all neighborhoods
+    Kokkos::resize(neighbor_lists_device, storage_size);
+    neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
+
+    // query the point cloud a second time, but this time storing results into neighbor_lists
+    point_cloud_search.generateCRNeighborListsFromKNNSearch(false /*not dry run*/, target_coords, neighbor_lists, 
+            number_of_neighbors_list, epsilon, min_neighbors, epsilon_multiplier);
+
+    // Diagnostic for neighbors found
+    //int maxn = 0;
+    //int maxi = -1;
+    //for (int i=0; i<number_of_neighbors_list.extent(0); ++i) {
+    //    printf("%d: %d\n", i, number_of_neighbors_list[i]);
+    //    maxi = (number_of_neighbors_list[i] > maxn) ? i : maxi;
+    //    maxn = (number_of_neighbors_list[i] > maxn) ? number_of_neighbors_list[i] : maxn;
+    //}
+    //printf("max at %d: %d", maxi, maxn);
 
     //! [Performing Neighbor Search]
     
@@ -242,6 +260,7 @@ Kokkos::initialize(argc, args);
     // and used these instead, and then the copying of data to the device
     // would be performed in the GMLS class
     Kokkos::deep_copy(neighbor_lists_device, neighbor_lists);
+    Kokkos::deep_copy(number_of_neighbors_list_device, number_of_neighbors_list);
     Kokkos::deep_copy(epsilon_device, epsilon);
     
     // initialize an instance of the GMLS class for problems with a scalar basis and 
@@ -264,7 +283,7 @@ Kokkos::initialize(argc, args);
     //      dimensions: (# number of target sites) X (dimension)
     //                  # of target sites is same as # of rows of neighbor lists
     //
-    my_GMLS_scalar.setProblemData(neighbor_lists_device, source_coords_device, target_coords_device, epsilon_device);
+    my_GMLS_scalar.setProblemData(neighbor_lists_device, number_of_neighbors_list_device, source_coords_device, target_coords_device, epsilon_device);
 
     // set a reference outward normal direction, causing a surface orientation after
     // the GMLS instance computes an approximate tangent bundle
@@ -285,13 +304,13 @@ Kokkos::initialize(argc, args);
     my_GMLS_scalar.setCurvatureWeightingType(WeightingFunctionType::Power);
     
     // power to use in the weighting kernel function for curvature coefficients
-    my_GMLS_scalar.setCurvatureWeightingPower(2);
+    my_GMLS_scalar.setCurvatureWeightingParameter(2);
     
     // sets the weighting kernel function from WeightingFunctionType
     my_GMLS_scalar.setWeightingType(WeightingFunctionType::Power);
     
     // power to use in that weighting kernel function
-    my_GMLS_scalar.setWeightingPower(2);
+    my_GMLS_scalar.setWeightingParameter(2);
     
     // generate the alphas that to be combined with data for each target operation requested in lro
     my_GMLS_scalar.generateAlphas();
@@ -306,15 +325,15 @@ Kokkos::initialize(argc, args);
                         solver_name.c_str(), problem_name.c_str(), constraint_name.c_str(),
                         order /*manifold order*/);
 
-    my_GMLS_vector.setProblemData(neighbor_lists_device, source_coords_device, target_coords_device, epsilon_device);
+    my_GMLS_vector.setProblemData(neighbor_lists_device, number_of_neighbors_list_device, source_coords_device, target_coords_device, epsilon_device);
     std::vector<TargetOperation> lro_vector(2);
     lro_vector[0] = VectorPointEvaluation;
     lro_vector[1] = DivergenceOfVectorPointEvaluation;
     my_GMLS_vector.addTargets(lro_vector);
     my_GMLS_vector.setCurvatureWeightingType(WeightingFunctionType::Power);
-    my_GMLS_vector.setCurvatureWeightingPower(2);
+    my_GMLS_vector.setCurvatureWeightingParameter(2);
     my_GMLS_vector.setWeightingType(WeightingFunctionType::Power);
-    my_GMLS_vector.setWeightingPower(2);
+    my_GMLS_vector.setWeightingParameter(2);
     my_GMLS_vector.generateAlphas();
     Kokkos::Profiling::popRegion();
 
@@ -346,15 +365,15 @@ Kokkos::initialize(argc, args);
                                          solver_name.c_str(), problem_name.c_str(), constraint_name.c_str(),
                                          order /*manifold order*/);
 
-    my_GMLS_vector_of_scalar_clones.setProblemData(neighbor_lists_device, source_coords_device, target_coords_device, epsilon_device);
+    my_GMLS_vector_of_scalar_clones.setProblemData(neighbor_lists_device, number_of_neighbors_list_device, source_coords_device, target_coords_device, epsilon_device);
     std::vector<TargetOperation> lro_vector_of_scalar_clones(2);
     lro_vector_of_scalar_clones[0] = VectorPointEvaluation;
     lro_vector_of_scalar_clones[1] = DivergenceOfVectorPointEvaluation;
     my_GMLS_vector_of_scalar_clones.addTargets(lro_vector_of_scalar_clones);
     my_GMLS_vector_of_scalar_clones.setCurvatureWeightingType(WeightingFunctionType::Power);
-    my_GMLS_vector_of_scalar_clones.setCurvatureWeightingPower(2);
+    my_GMLS_vector_of_scalar_clones.setCurvatureWeightingParameter(2);
     my_GMLS_vector_of_scalar_clones.setWeightingType(WeightingFunctionType::Power);
-    my_GMLS_vector_of_scalar_clones.setWeightingPower(2);
+    my_GMLS_vector_of_scalar_clones.setWeightingParameter(2);
     my_GMLS_vector_of_scalar_clones.generateAlphas();
     Kokkos::Profiling::popRegion();
 

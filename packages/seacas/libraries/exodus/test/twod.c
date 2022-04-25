@@ -84,7 +84,7 @@ int main(int argc, char **argv)
   {
     int elem_map[] = {11,  21,  31,  41,  52,  62,  72,  82,  93,  103,
                       113, 123, 133, 143, 153, 163, 174, 184, 194, 204};
-    ex_put_elem_num_map(exoid, elem_map);
+    ex_put_id_map(exoid, EX_ELEM_MAP, elem_map);
   }
 
   /* write element block parameters */

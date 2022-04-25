@@ -395,7 +395,7 @@ class PointCloudSearch {
             row_offsets_view_type row_offsets;
             int max_neighbor_list_row_storage_size = 1;
             if (!is_dry_run) {
-                auto nla(CreateNeighborLists(neighbor_lists, number_of_neighbors_list));
+                auto nla = CreateNeighborLists(neighbor_lists, number_of_neighbors_list);
                 max_neighbor_list_row_storage_size = nla.getMaxNumNeighbors();
                 Kokkos::resize(row_offsets, num_target_sites);
                 Kokkos::fence();
@@ -491,7 +491,7 @@ class PointCloudSearch {
 
             });
             Kokkos::fence();
-            auto nla(CreateNeighborLists(number_of_neighbors_list));
+            auto nla = CreateNeighborLists(number_of_neighbors_list);
             return nla.getTotalNeighborsOverAllListsHost();
         }
 
@@ -681,7 +681,7 @@ class PointCloudSearch {
             // if dry-run, neighbors_needed, else max over previous dry-run
             int max_neighbor_list_row_storage_size = neighbors_needed;
             if (!is_dry_run) {
-                auto nla(CreateNeighborLists(neighbor_lists, number_of_neighbors_list));
+                auto nla = CreateNeighborLists(neighbor_lists, number_of_neighbors_list);
                 max_neighbor_list_row_storage_size = nla.getMaxNumNeighbors();
             }
 
@@ -778,7 +778,7 @@ class PointCloudSearch {
             generateCRNeighborListsFromRadiusSearch(is_dry_run, trg_pts_view, neighbor_lists, 
                     number_of_neighbors_list, epsilons, 0.0 /*don't set uniform radius*/, max_search_radius);
 
-            auto nla(CreateNeighborLists(number_of_neighbors_list));
+            auto nla = CreateNeighborLists(number_of_neighbors_list);
             return nla.getTotalNeighborsOverAllListsHost();
         }
 }; // PointCloudSearch

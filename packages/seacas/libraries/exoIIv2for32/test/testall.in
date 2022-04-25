@@ -41,17 +41,17 @@ echo "begin testwt" > test.output
 ${PREFIX} ${BINDIR}/f32_testwt${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
 echo "end testwt" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v "word_size" | grep -v int64_status| grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 
 # testrd - single precision read test
 echo "testrd ..."
-${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v "word size" |${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
+${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v "word_size" |${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 
 # testrdd - double precision read of single precision file
 echo "testrdd ..."
-${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
+${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v "word_size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 
 # testwtd - double precision write test
@@ -59,17 +59,17 @@ echo "testwtd ..."
 echo "begin testwtd" >> test.output
 ${PREFIX} ${BINDIR}/f32_testwtd${SUFFIX} >> test.output
 ret_status=$((ret_status+$?))
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v _FillValue | ${DIFF} - ${SRCDIR}/testd.dmp | tee testwtd.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v int64_status| grep -v "word_size" | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testd.dmp | tee testwtd.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 
 # testrdd - double precision read test
 echo "testrdd ..."
-${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
+${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v "word_size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 
 # testrd - single precision read of double precision file
 echo "testrd ..."
-${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
+${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v "word_size" | ${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
 ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 
 echo "************************************************************************"

@@ -19,15 +19,15 @@ double checkeig_ext(double *err, double *work, /* work vector of length n */
                                     contexts this is called */
 )
 {
-  extern FILE *Output_File;   /* output file or null */
-  extern int   DEBUG_EVECS;   /* print debugging output? */
-  extern int   WARNING_EVECS; /* print warning messages? */
-  double       resid;         /* the extended eigen residual */
-  double       ch_norm();     /* vector norm */
-  void         splarax();     /* sparse matrix vector mult */
-  void         scadd();       /* scaled vector add */
-  void         scale_diag();  /* scale vector by another's elements */
-  void         cpvec();       /* vector copy */
+  extern FILE *Output_File;                            /* output file or null */
+  extern int   DEBUG_EVECS;                            /* print debugging output? */
+  extern int   WARNING_EVECS;                          /* print warning messages? */
+  double       resid;                                  /* the extended eigen residual */
+  double       ch_norm(double *vec, int beg, int end); /* vector norm */
+  void         splarax();                              /* sparse matrix vector mult */
+  void         scadd();                                /* scaled vector add */
+  void         scale_diag();                           /* scale vector by another's elements */
+  void         cpvec();                                /* vector copy */
 
   splarax(err, A, n, y, vwsqrt, work);
   scadd(err, 1, n, -extval, y);

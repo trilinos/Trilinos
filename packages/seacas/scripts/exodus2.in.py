@@ -60,7 +60,7 @@ def getExodusVersion():
     version_major = 0
     version_minor = 0
     ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
-    for line in open(ACCESS + "/include/exodusII.h"):
+    for line in open(ACCESS + "/@SEACAS_INCLUDEDIR@/exodusII.h"):
         fields = line.split()
         if (len(fields) == 3 and
                 fields[0] == '#define' and
@@ -76,9 +76,9 @@ def getExodusVersion():
 
 ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
 if os.uname()[0] == 'Darwin':
-    EXODUS_SO = ACCESS + "/lib/libexodus.dylib"
+    EXODUS_SO = ACCESS + "/@SEACAS_LIBDIR@/libexodus.dylib"
 else:
-    EXODUS_SO = ACCESS + "/lib/libexodus.so"
+    EXODUS_SO = ACCESS + "/@SEACAS_LIBDIR@/libexodus.so"
 EXODUS_LIB = cdll.LoadLibrary(EXODUS_SO)
 
 MAX_STR_LENGTH = 32      # match exodus default

@@ -66,7 +66,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
                    int *node_map, int num_elems, int *elem_map, realtyp *x_coords,
                    realtyp *y_coords, realtyp *z_coords, int *connect, int close_files);
 
-double my_timer()
+double my_timer(void)
 {
 #ifdef PARALLEL_AWARE_EXODUS
   double t1 = MPI_Wtime();

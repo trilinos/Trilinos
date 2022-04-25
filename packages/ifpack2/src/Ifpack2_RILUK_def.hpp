@@ -129,7 +129,9 @@ template<class MatrixType>
 void RILUK<MatrixType>::allocateSolvers ()
 {
   L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  L_solver_->setObjectLabel("lower");
   U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  U_solver_->setObjectLabel("upper");
 }
 
 template<class MatrixType>

@@ -505,7 +505,7 @@ namespace MueLu {
             for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
               // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
               SC qr_jk = fineNS[k][aggToRowMapLO[aggStart[agg]+j]];
-              if(constantColSums) qr_jk = qr_jk / (double)aggSizes[agg];
+              if(constantColSums) qr_jk = qr_jk / (Magnitude)aggSizes[agg];
               if (qr_jk != zero) {
                 ja [rowStart+lnnz] = offset + k;
                 val[rowStart+lnnz] = qr_jk;
@@ -530,7 +530,7 @@ namespace MueLu {
             for (size_t k = 0, lnnz = 0; k < NSDim; ++k) {
               // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
               SC qr_jk = fineNS[k][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j])];
-              if(constantColSums) qr_jk = qr_jk / (double)aggSizes[agg];
+              if(constantColSums) qr_jk = qr_jk / (Magnitude)aggSizes[agg];
               if (qr_jk != zero) {
                 ja [rowStart+lnnz] = offset + k;
                 val[rowStart+lnnz] = qr_jk;

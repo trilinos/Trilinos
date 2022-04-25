@@ -178,13 +178,7 @@ namespace Thyra {
       else if (paramList.isType<RCP<const ThyLinOpBase> >(parameterName)) {
         RCP<const ThyLinOpBase> thyM = paramList.get<RCP<const ThyLinOpBase> >(parameterName);
         paramList.remove(parameterName);
-        RCP<const XpCrsMat> crsM = XpThyUtils::toXpetra(thyM);
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(crsM));
-        // MueLu needs a non-const object as input
-        RCP<XpCrsMat> crsMNonConst = rcp_const_cast<XpCrsMat>(crsM);
-        TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(crsMNonConst));
-        // wrap as an Xpetra::Matrix that MueLu can work with
-        RCP<XpMat> M = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsMNonConst));
+        RCP<XpMat> M = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(thyM));
         paramList.set<RCP<XpMat> >(parameterName, M);
         return true;
       } else if (paramList.isType<RCP<const ThyDiagLinOpBase> >(parameterName)) {
@@ -323,15 +317,9 @@ namespace Thyra {
       Teuchos::RCP<const LinearOpBase<Scalar> > b00 = ThyBlockedOp->getBlock(0,0);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(b00));
 
-      RCP<const XpCrsMat > xpetraFwdCrsMat00 = XpThyUtils::toXpetra(b00);
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMat00));
-
-      // MueLu needs a non-const object as input
-      RCP<XpCrsMat> xpetraFwdCrsMatNonConst00 = Teuchos::rcp_const_cast<XpCrsMat>(xpetraFwdCrsMat00);
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMatNonConst00));
-
       // wrap the forward operator as an Xpetra::Matrix that MueLu can work with
-      RCP<XpMat> A00 = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xpetraFwdCrsMatNonConst00));
+      // MueLu needs a non-const object as input
+      RCP<XpMat> A00 = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<LinearOpBase<Scalar> >(b00));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(A00));
 
       RCP<const XpMap> rowmap00 = A00->getRowMap();
@@ -344,15 +332,9 @@ namespace Thyra {
       // save blocked matrix
       A = bMat;
     } else {
-      RCP<const XpCrsMat > xpetraFwdCrsMat = XpThyUtils::toXpetra(fwdOp);
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMat));
-
-      // MueLu needs a non-const object as input
-      RCP<XpCrsMat> xpetraFwdCrsMatNonConst = Teuchos::rcp_const_cast<XpCrsMat>(xpetraFwdCrsMat);
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMatNonConst));
-
       // wrap the forward operator as an Xpetra::Matrix that MueLu can work with
-      A = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xpetraFwdCrsMatNonConst));
+      // MueLu needs a non-const object as input
+      A = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(fwdOp));
     }
     TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(A));
 

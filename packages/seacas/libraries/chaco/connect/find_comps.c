@@ -15,15 +15,15 @@ static int bfsearch();
 /* Breadth first search algorithm to find & mark connected components. */
 int find_comps(struct vtx_data **graph,  /* graph data structure */
                int               nvtxs,  /* number of vertices in graph */
-               int *             mark,   /* space for nvtxs+1 ints */
-               int *             vtxlist /* space for nvtxs ints */
+               int              *mark,   /* space for nvtxs+1 ints */
+               int              *vtxlist /* space for nvtxs ints */
 )
 {
   int    root;   /* vertex to start the dfs */
   int    count;  /* number of vertices seen so far */
   int    ncomps; /* number of components found */
   int    i;      /* loop counter */
-  double drandom();
+  double drandom(void);
 
   for (i = 1; i <= nvtxs; i++) {
     mark[i] = -1;
@@ -52,10 +52,10 @@ int find_comps(struct vtx_data **graph,  /* graph data structure */
 
 /* Breadth first search algorithm to find & mark connected components. */
 /* Returns list of edges to connect them together. */
-int find_edges(struct vtx_data ** graph,   /* graph data structure */
+int find_edges(struct vtx_data  **graph,   /* graph data structure */
                int                nvtxs,   /* number of vertices in graph */
-               int *              mark,    /* space for nvtxs+1 ints */
-               int *              vtxlist, /* space for nvtxs ints */
+               int               *mark,    /* space for nvtxs+1 ints */
+               int               *vtxlist, /* space for nvtxs ints */
                struct edgeslist **edges    /* list of edges connecting graph */
 )
 {
@@ -65,7 +65,7 @@ int find_edges(struct vtx_data ** graph,   /* graph data structure */
   int               count;   /* number of vertices seen so far */
   int               nadded;  /* number of edges needed to be added */
   int               i;       /* loop counter */
-  double            drandom();
+  double            drandom(void);
 
   for (i = 1; i <= nvtxs; i++) {
     mark[i] = -1;
@@ -101,9 +101,9 @@ int find_edges(struct vtx_data ** graph,   /* graph data structure */
 /* BFS to find connected component */
 static int bfsearch(struct vtx_data **graph,   /* graph data structure */
                     int               root,    /* start vertex for DFS */
-                    int *             count,   /* number of vertices in component */
-                    int *             mark,    /* has vtx been seen? */
-                    int *             vtxlist, /* space for storing vtxs to search */
+                    int              *count,   /* number of vertices in component */
+                    int              *mark,    /* has vtx been seen? */
+                    int              *vtxlist, /* space for storing vtxs to search */
                     int               comp_num /* current component number */
 )
 {

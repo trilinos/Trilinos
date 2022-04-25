@@ -83,8 +83,6 @@
 #include <utility>
 #include <vector>
 
-using Teuchos::rcpFromRef;
-
 namespace Tpetra {
 
 namespace { // (anonymous)

@@ -135,7 +135,7 @@ void reportTimings(Teuchos::RCP<Teuchos::StackedTimer> timer) {
 }
 
 int main(int argc, char *argv[]) {
-  Kokkos::ScopeGuard kokkos(argc, argv);
+  Kokkos::initialize(argc, argv);
 
   Teuchos::RCP<Teuchos::StackedTimer> stacked_timer = Teuchos::rcp(new Teuchos::StackedTimer("UVM Test"));
   Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
@@ -144,6 +144,6 @@ int main(int argc, char *argv[]) {
   tester.run();
 
   reportTimings(stacked_timer);
-
+  Kokkos::finalize();
   return 0;
 }

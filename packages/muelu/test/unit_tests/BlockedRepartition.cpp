@@ -1188,25 +1188,33 @@ namespace MueLuTests {
   RepHeuFact->SetParameter("repartition: start level",Teuchos::ParameterEntry(0));
   RepHeuFact->SetParameter("repartition: min rows per proc",Teuchos::ParameterEntry(40));
 
+#ifdef HAVE_MUELU_ZOLTAN2
   RCP<Zoltan2Interface> zoltan11 = rcp(new Zoltan2Interface());
   zoltan11->SetFactory("A",AR11Fact);
   zoltan11->SetFactory("number of partitions",RepHeuFact);
   zoltan11->SetFactory("Coordinates",Coord11);
+#endif
 
   RCP<RepartitionFactory> repart11 = rcp(new RepartitionFactory());
   repart11->SetFactory("A",AR11Fact);
   repart11->SetFactory("number of partitions",RepHeuFact);
+#ifdef HAVE_MUELU_ZOLTAN2
   repart11->SetFactory("Partition", zoltan11);
+#endif
 
+#ifdef HAVE_MUELU_ZOLTAN2
   RCP<Zoltan2Interface> zoltan22 = rcp(new Zoltan2Interface());
   zoltan22->SetFactory("A",AR22Fact);
   zoltan22->SetFactory("number of partitions",RepHeuFact);
   zoltan22->SetFactory("Coordinates",Coord22);
+#endif 
 
   RCP<RepartitionFactory> repart22 = rcp(new RepartitionFactory());
   repart22->SetFactory("A",AR22Fact);
   repart22->SetFactory("number of partitions",RepHeuFact);
+#ifdef HAVE_MUELU_ZOLTAN2
   repart22->SetFactory("Partition", zoltan22);
+#endif
 
   RCP<FactoryManager> MReb11 = rcp(new FactoryManager());
   MReb11->SetFactory("A", AR11Fact);

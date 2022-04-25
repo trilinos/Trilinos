@@ -219,17 +219,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, SplitMatrix, M, MA, Scalar,
   ones->putScalar(STS::one());
   rnd->randomize();
 
+  using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  magnitudeType tol1 = Teuchos::ScalarTraits<magnitudeType>::eps();
+  magnitudeType tol2 = 500*tol1;
+
   A->apply(*ones, *exp);
   bOp->apply(*ones, *res);
   res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-16, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-16, out, success);
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, tol1, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, tol1, out, success);
 
   A->apply(*rnd, *exp);
   bOp->apply(*rnd, *res);
   res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, tol2, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, tol2, out, success);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, CreateBlockedDiagonalOp, M, MA, Scalar, LO, GO, Node )
@@ -1545,17 +1549,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, Apply, M, MA, Scalar, LO, G
   ones->putScalar(STS::one());
   rnd->randomize();
 
+  using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  magnitudeType tol1 = Teuchos::ScalarTraits<magnitudeType>::eps();
+  magnitudeType tol2 = 500*tol1;
+
   A->apply(*ones, *exp);
   bOp->apply(*ones, *res);
   res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-16, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-16, out, success);
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, tol1, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, tol1, out, success);
 
   A->apply(*rnd, *exp);
   bOp->apply(*rnd, *res);
   res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, tol2, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, tol2, out, success);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, getLocalDiagCopy, M, MA, Scalar, LO, GO, Node )
@@ -1933,9 +1941,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, deepCopy, M, MA, Scalar, LO
   bop->getLocalDiagCopy(*v1);
   bop2->getLocalDiagCopy(*v2);
 
+  using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  magnitudeType tol = Teuchos::ScalarTraits<magnitudeType>::eps();
+
   v1->update(-Teuchos::ScalarTraits<Scalar>::one(),*v2,Teuchos::ScalarTraits<Scalar>::one());
-  TEUCHOS_TEST_COMPARE(v1->norm2(), <, 1e-16, out, success);
-  TEUCHOS_TEST_COMPARE(v1->normInf(), <, 1e-16, out, success);
+  TEUCHOS_TEST_COMPARE(v1->norm2(), <, tol, out, success);
+  TEUCHOS_TEST_COMPARE(v1->normInf(), <, tol, out, success);
 
   v1 = Teuchos::null;
   v2 = Teuchos::null;
@@ -2116,9 +2127,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, Merge, M, MA, Scalar, LO, G
   bop->getLocalDiagCopy(*v1);
   A2->getLocalDiagCopy(*v2);
 
+  using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  magnitudeType tol = Teuchos::ScalarTraits<magnitudeType>::eps();
+
   v1->update(-Teuchos::ScalarTraits<Scalar>::one(),*v2,Teuchos::ScalarTraits<Scalar>::one());
-  TEUCHOS_TEST_COMPARE(v1->norm2(), <, 1e-16, out, success);
-  TEUCHOS_TEST_COMPARE(v1->normInf(), <, 1e-16, out, success);
+  TEUCHOS_TEST_COMPARE(v1->norm2(), <, tol, out, success);
+  TEUCHOS_TEST_COMPARE(v1->normInf(), <, tol, out, success);
 
   TEST_EQUALITY(bop->getLocalNumEntries(), A2->getLocalNumEntries());
   TEST_EQUALITY(bop->getGlobalNumEntries(), A2->getGlobalNumEntries());
@@ -2139,8 +2153,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, Merge, M, MA, Scalar, LO, G
   A4->getLocalDiagCopy(*v2);
 
   v1->update(-Teuchos::ScalarTraits<Scalar>::one(),*v2,Teuchos::ScalarTraits<Scalar>::one());
-  TEUCHOS_TEST_COMPARE(v1->norm2(), <, 1e-16, out, success);
-  TEUCHOS_TEST_COMPARE(v1->normInf(), <, 1e-16, out, success);
+  TEUCHOS_TEST_COMPARE(v1->norm2(), <, tol, out, success);
+  TEUCHOS_TEST_COMPARE(v1->normInf(), <, tol, out, success);
 
   TEST_EQUALITY(bop3->getLocalNumEntries(), A4->getLocalNumEntries());
   TEST_EQUALITY(bop3->getGlobalNumEntries(), A4->getGlobalNumEntries());
@@ -2200,7 +2214,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, Merge, M, MA, Scalar, LO, G
 
   TEST_EQUALITY(brop->getLocalNumEntries(), A->getLocalNumEntries());
   TEST_EQUALITY(brop->getGlobalNumEntries(), A->getGlobalNumEntries());
-  TEUCHOS_TEST_COMPARE(Teuchos::ScalarTraits<Scalar>::magnitude(brop->getFrobeniusNorm() - A->getFrobeniusNorm()), <, 1e-13, out, success);
+  TEUCHOS_TEST_COMPARE(Teuchos::ScalarTraits<Scalar>::magnitude(brop->getFrobeniusNorm() - A->getFrobeniusNorm()), <, 1e3*tol, out, success);
 }
 
 
@@ -2385,9 +2399,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMultDiag, M, MA
 
   bOpOp2->fillComplete();
 
+  using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  magnitudeType tol = 1e6*Teuchos::ScalarTraits<magnitudeType>::eps();
+
   TEST_EQUALITY(bOpOp2->getMatrix(0,0)->getFrobeniusNorm(),bop->getMatrix(0,0)->getFrobeniusNorm());
   TEST_EQUALITY(bOpOp2->getMatrix(1,1)->getFrobeniusNorm(),2.0 * bop->getMatrix(1,1)->getFrobeniusNorm());
-  TEST_COMPARE(bOpOp2->getMatrix(2,2)->getFrobeniusNorm() - 3.0 * bop->getMatrix(2,2)->getFrobeniusNorm(), < , 1e-10 );
+  TEST_COMPARE(bOpOp2->getMatrix(2,2)->getFrobeniusNorm() - 3.0 * bop->getMatrix(2,2)->getFrobeniusNorm(), < , tol );
 
   Teuchos::RCP<VectorClass> v = VectorFactoryClass::Build(bOpOp2->getMatrix(2,2)->getRangeMap(),true);
   bOpOp2->getMatrix(2,2)->getLocalDiagCopy(*v);
@@ -2443,7 +2460,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMultDiag, M, MA
 
   TEST_EQUALITY(bOpOp2->getMatrix(0,0)->getFrobeniusNorm(),bop->getMatrix(0,0)->getFrobeniusNorm());
   TEST_EQUALITY(bOpOp21->getMatrix(0,0)->getFrobeniusNorm(),2.0 * bop->getMatrix(1,1)->getFrobeniusNorm());
-  TEST_COMPARE(bOpOp21->getMatrix(1,1)->getFrobeniusNorm() - 3.0 * bop->getMatrix(2,2)->getFrobeniusNorm(), < , 1e-10 );
+  TEST_COMPARE(bOpOp21->getMatrix(1,1)->getFrobeniusNorm() - 3.0 * bop->getMatrix(2,2)->getFrobeniusNorm(), < , tol );
 
   v = VectorFactoryClass::Build(bOpOp21->getMatrix(1,1)->getRangeMap(),true);
   bOpOp21->getMatrix(1,1)->getLocalDiagCopy(*v);
@@ -2495,7 +2512,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMultDiag, M, MA
 
   TEST_EQUALITY(bOpOp2->getMatrix(0,0)->getFrobeniusNorm(),bop->getMatrix(0,0)->getFrobeniusNorm());
   TEST_EQUALITY(bOpOp21->getMatrix(0,0)->getFrobeniusNorm(),2.0 * bop->getMatrix(1,1)->getFrobeniusNorm());
-  TEST_COMPARE(bOpOp21->getMatrix(1,1)->getFrobeniusNorm() - 3.0 * bop->getMatrix(2,2)->getFrobeniusNorm(), < , 1e-10 );
+  TEST_COMPARE(bOpOp21->getMatrix(1,1)->getFrobeniusNorm() - 3.0 * bop->getMatrix(2,2)->getFrobeniusNorm(), < , tol );
 
   v = VectorFactoryClass::Build(bOpOp21->getMatrix(1,1)->getRangeMap(),true);
   bOpOp21->getMatrix(1,1)->getLocalDiagCopy(*v);
@@ -2616,17 +2633,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMult, M, MA, Sc
   ones->putScalar(STS::one());
   rnd->randomize();
 
+  using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  magnitudeType tol1 = Teuchos::ScalarTraits<magnitudeType>::eps();
+  magnitudeType tol2 = 500*tol1;
+
   fuAfuA_2->apply(*ones, *exp);
   bOpbOp_2->apply(*ones, *res);
   res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-16, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-16, out, success);
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, tol1, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, tol1, out, success);
 
   A->apply(*rnd, *exp);
   bOp->apply(*rnd, *res);
   res->update(-STS::one(),*exp,STS::one());
-  TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
-  TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, tol2, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, tol2, out, success);
 
   TEUCHOS_TEST_EQUALITY(fuAfuA_2->getGlobalNumEntries(),312,out,success);
   TEUCHOS_TEST_EQUALITY(bOpbOp_2->getGlobalNumEntries(),312,out,success);
