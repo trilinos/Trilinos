@@ -166,10 +166,11 @@ namespace MueLuTests {
       TEST_EQUALITY(Ainv->getMap()->getMinGlobalIndex(), comm->getRank() * int(n/comm->getSize()));
       TEST_EQUALITY(Ainv->getMap()->getMaxGlobalIndex(), comm->getRank() * int(n/comm->getSize()) + int(n/comm->getSize()-1));
 
-      Teuchos::ArrayRCP<const double> AinvData = Ainv->getData(0);
+      Teuchos::ArrayRCP<const Scalar> AinvData = Ainv->getData(0);
       bool bCheck = false;
       for(int i=0; i<int(n/comm->getSize()); i++)
-        if(std::abs(AinvData[i] - 0.66666666667) < 1e-8 || std::abs(AinvData[i] - 0.5) < 1e-8)
+        if(std::abs(AinvData[i] - Teuchos::as<Scalar>(0.66666666667)) < std::abs(Teuchos::as<Scalar>(1e-8)) ||
+           std::abs(AinvData[i] - Teuchos::as<Scalar>(0.5)) < std::abs(Teuchos::as<Scalar>(1e-8)))
           bCheck = true;
       TEST_EQUALITY(bCheck, true);
     }
@@ -197,10 +198,11 @@ namespace MueLuTests {
       TEST_EQUALITY(Ainv->getMap()->getMinGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()));
       TEST_EQUALITY(Ainv->getMap()->getMaxGlobalIndex(), comm->getRank() * int(n*n/comm->getSize()) + int(n*n/comm->getSize()-1));
 
-      Teuchos::ArrayRCP<const double> AinvData = Ainv->getData(0);
+      Teuchos::ArrayRCP<const Scalar> AinvData = Ainv->getData(0);
       bool bCheck = false;
       for(int i=0; i<int(n*n/comm->getSize()); i++)
-        if(std::abs(AinvData[i] - 0.166667) < 1e-6 || std::abs(AinvData[i] - 0.142857) < 1e-6)
+        if(std::abs(AinvData[i] - Teuchos::as<Scalar>(0.166667)) < std::abs(Teuchos::as<Scalar>(1e-6)) ||
+           std::abs(AinvData[i] - Teuchos::as<Scalar>(0.142857)) < std::abs(Teuchos::as<Scalar>(1e-6)))
           bCheck = true;
       TEST_EQUALITY(bCheck, true);
     }
