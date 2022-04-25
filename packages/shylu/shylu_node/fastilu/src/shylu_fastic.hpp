@@ -139,15 +139,23 @@ class FastICPrec
         ScalarArray xTemp;
         ScalarArray onesVector;
 
+        //This will have the continuation initial
+        //guess if guessFlag=1
         Teuchos::RCP<FastPrec> initGuessPrec;
 
+        // forward/backwar substitution for standard SpTrsv
+        using MemSpace = typename ExecSpace::memory_space;
+        using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle <Ordinal, Ordinal, Scalar, ExecSpace, MemSpace, MemSpace >;
+        bool standard_sptrsv;
+        KernelHandle khL;
+        KernelHandle khLt;
 
     public:
-        FastICPrec(OrdinalArray &aRowMapIn, OrdinalArray &aColIdxIn, ScalarArray &aValIn, Ordinal nRow_,
-                Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, 
-                Scalar shift_, Ordinal guessFlag_, Ordinal blkSz_)
+        FastICPrec(OrdinalArray &aRowMapIn, OrdinalArray &aColIdxIn, ScalarArray &aValIn, Ordinal nRow_, bool standard_sptrsv_,
+                   Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_, Ordinal blkSz_)
         {
             nRows = nRow_;
+            standard_sptrsv = standard_sptrsv_;
             nFact = nFact_;
             nTrisol = nTrisol_;
             computeTime = 0.0;
@@ -180,8 +188,8 @@ class FastICPrec
 
             if (level > 0)
             {
-                initGuessPrec = Teuchos::rcp(new FastPrec(aRowMapIn, aColIdxIn, aValIn, nRow_, 3, 5, 
-                            level_ - 1, omega_, shift_, guessFlag_, blkSz_));
+                initGuessPrec = Teuchos::rcp(new FastPrec(aRowMapIn, aColIdxIn, aValIn, nRow_, standard_sptrsv, 3, 5, 
+                                                          level_-1, omega_, shift_, guessFlag_, blkSz_));
             }
 
         }
@@ -850,6 +858,28 @@ class FastICPrec
             }
             Kokkos::deep_copy(diagElemsInv, diagElemsInv_);
             transposeL();
+
+            if (standard_sptrsv) {
+                #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+                KokkosSparse::Experimental::SPTRSVAlgorithm algo = KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE;
+                #else
+                KokkosSparse::Experimental::SPTRSVAlgorithm algo = KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1;
+                #endif
+                // setup L solve
+                khL.create_sptrsv_handle(algo, nRows, true);
+                #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx, lVal);
+                #else
+                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx);
+                #endif
+                // setup Lt solve
+                khLt.create_sptrsv_handle(algo, nRows, false);
+                #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+                KokkosSparse::Experimental::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx, ltVal);
+                #else
+                KokkosSparse::Experimental::sptrsv_symbolic(&khLt, ltRowMap, ltColIdx);
+                #endif
+            }
         }
 
         void apply(ScalarArray &x, ScalarArray &y)
@@ -862,9 +892,16 @@ class FastICPrec
             ExecSpace().fence();
 
             applyD(x, xTemp);
-            applyLIC(xTemp, y);
-            //applyDD(y, xTemp);
-            applyLT(y, xTemp);
+            if (standard_sptrsv) {
+                // solve with L
+                KokkosSparse::Experimental::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
+                // solve with Lt
+                KokkosSparse::Experimental::sptrsv_solve(&khLt, ltRowMap, ltColIdx, ltVal, y, xTemp);
+            } else {
+                applyLIC(xTemp, y);
+                //applyDD(y, xTemp);
+                applyLT(y, xTemp);
+            }
             applyD(xTemp, y);
 
 //            ParCopyFunctor<Ordinal, Scalar, ExecSpace> parCopyFunctor2(nRows, y, xTemp);
