@@ -1226,7 +1226,7 @@ namespace Tpetra {
           else { 
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOSTMIRROR
-            Kokkos::deep_copy (tgt_j, src_j); 
+            Kokkos::deep_copy (execution_space(), tgt_j, src_j);
           }
         }
       }
@@ -1253,7 +1253,8 @@ namespace Tpetra {
           else { 
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-            Kokkos::deep_copy (tgt_j, src_j); 
+            Kokkos::deep_copy (execution_space(), tgt_j, src_j); 
+
           }
         }
       }
@@ -1975,13 +1976,13 @@ namespace Tpetra {
       whichVecs = Kokkos::DualView<size_t*, device_type> ("whichVecs", numVecs);
       if (unpackOnHost) {
         whichVecs.modify_host ();
-        // DEEP_COPY REVIEW - NOT TESTED FOR CUDA BUILD
+        //CWP: fixme: three-arg  deep_copy?
         Kokkos::deep_copy (whichVecs.view_host (), whichVecsIn);
       }
       else {
         whichVecs.modify_device ();
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
-        Kokkos::deep_copy (whichVecs.view_device (), whichVecsIn);
+        Kokkos::deep_copy (execution_space(), whichVecs.view_device (), whichVecsIn);
       }
     }
     auto whichVecs_d = whichVecs.view_device ();

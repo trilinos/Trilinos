@@ -583,7 +583,7 @@ namespace Tpetra {
 
     // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
     // output to std::cerr on every MPI process.  This is unwise for
-    // runs with large numbers of MPI processes.
+    // runs with large numbes of MPI pocesses.
     const bool verbose = Behavior::verbose("DistObject");
     std::unique_ptr<std::string> prefix;
     if (verbose) {
@@ -1075,9 +1075,13 @@ namespace Tpetra {
 
       doPackAndPrepare(src, exportLIDs, constantNumPackets);
       if (commOnHost) {
+        ProfilingRegion region_cp 
+          ("Tpetra::DistObject::beginTransfer::sync_host");
         this->exports_.sync_host();
       }
       else {
+        ProfilingRegion region_cp 
+          ("Tpetra::DistObject::beginTransfer::sync_device");
         this->exports_.sync_device();
       }
 
@@ -1506,7 +1510,8 @@ namespace Tpetra {
            numImportPacketsPerLID_av);
       }
       else { // pack on device
-        Kokkos::fence(); // for UVM
+      // CWP: okay to remove?
+        // Kokkos::fence("for UVM");
         this->imports_.modify_device ();
         distributorActor_.doPosts
           (distributorPlan,
@@ -1551,7 +1556,8 @@ namespace Tpetra {
            this->imports_.view_host ());
       }
       else { // pack on device
-        Kokkos::fence(); // for UVM
+      // CWP: okay to remove?
+        // Kokkos::fence("for UVM");
         this->imports_.modify_device ();
         distributorActor_.doPosts
           (distributorPlan,
