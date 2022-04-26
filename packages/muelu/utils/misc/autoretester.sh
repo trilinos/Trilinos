@@ -87,6 +87,7 @@ while [ $merged -eq 0 ]; do
     sleep 1800
     
     # Check to see if we're merged
+    curl -i -H $h https://api.github.com/repos/$fork/$repo/pulls/$pr/merge >$TMPFILE 2> /dev/null
     if grep 'Status: 204' $TMPFILE > /dev/null; then 
         merged=1
     fi
