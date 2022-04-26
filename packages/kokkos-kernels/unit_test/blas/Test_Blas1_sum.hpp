@@ -133,6 +133,7 @@ int test_sum_mv() {
   Test::impl_test_sum_mv<view_type_a_ll, Device>(0, 5);
   Test::impl_test_sum_mv<view_type_a_ll, Device>(13, 5);
   Test::impl_test_sum_mv<view_type_a_ll, Device>(1024, 5);
+  Test::impl_test_sum_mv<view_type_a_ll, Device>(789, 1);
   // Test::impl_test_sum_mv<view_type_a_ll, Device>(132231,5);
 #endif
 
@@ -143,6 +144,7 @@ int test_sum_mv() {
   Test::impl_test_sum_mv<view_type_a_lr, Device>(0, 5);
   Test::impl_test_sum_mv<view_type_a_lr, Device>(13, 5);
   Test::impl_test_sum_mv<view_type_a_lr, Device>(1024, 5);
+  Test::impl_test_sum_mv<view_type_a_lr, Device>(789, 1);
   // Test::impl_test_sum_mv<view_type_a_lr, Device>(132231,5);
 #endif
 
@@ -153,6 +155,7 @@ int test_sum_mv() {
   Test::impl_test_sum_mv<view_type_a_ls, Device>(0, 5);
   Test::impl_test_sum_mv<view_type_a_ls, Device>(13, 5);
   Test::impl_test_sum_mv<view_type_a_ls, Device>(1024, 5);
+  Test::impl_test_sum_mv<view_type_a_ls, Device>(789, 1);
   // Test::impl_test_sum_mv<view_type_a_ls, Device>(132231,5);
 #endif
 
