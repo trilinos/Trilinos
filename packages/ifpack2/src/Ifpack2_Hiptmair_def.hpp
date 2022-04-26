@@ -249,6 +249,8 @@ void Hiptmair<MatrixType>::initialize ()
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  const char methodName[] = "Ifpack2::Hiptmair::initialize";
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::Hiptmair::initialize: "
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
@@ -258,10 +260,13 @@ void Hiptmair<MatrixType>::initialize ()
   IsInitialized_ = false;
   IsComputed_ = false;
 
-  Teuchos::Time timer ("initialize");
-  double startTime = timer.wallTime();
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter (methodName);
+
+  double startTime = timer->wallTime();
+
   { // The body of code to time
-    Teuchos::TimeMonitor timeMon (timer);
+    Teuchos::TimeMonitor timeMon (*timer);
 
     Details::OneLevelFactory<row_matrix_type> factory;
 
@@ -276,13 +281,15 @@ void Hiptmair<MatrixType>::initialize ()
   }
   IsInitialized_ = true;
   ++NumInitialize_;
-  InitializeTime_ += (timer.wallTime() - startTime);
+  InitializeTime_ += (timer->wallTime() - startTime);
 }
 
 
 template <class MatrixType>
 void Hiptmair<MatrixType>::compute ()
 {
+  const char methodName[] = "Ifpack2::Hiptmair::initialize";
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::Hiptmair::compute: "
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
@@ -293,16 +300,18 @@ void Hiptmair<MatrixType>::compute ()
     initialize ();
   }
 
-  Teuchos::Time timer ("compute");
-  double startTime = timer.wallTime();
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter (methodName);
+
+  double startTime = timer->wallTime();
   { // The body of code to time
-    Teuchos::TimeMonitor timeMon (timer);
+    Teuchos::TimeMonitor timeMon (*timer);
     ifpack2_prec1_->compute();
     ifpack2_prec2_->compute();
   }
   IsComputed_ = true;
   ++NumCompute_;
-  ComputeTime_ += (timer.wallTime() - startTime);
+  ComputeTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -345,10 +354,14 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     mode != Teuchos::NO_TRANS, std::logic_error,
     "Ifpack2::Hiptmair::apply: mode != Teuchos::NO_TRANS has not been implemented.");
 
-  Teuchos::Time timer ("apply");
-  double startTime = timer.wallTime();
+  const std::string timerName ("Ifpack2::Hiptmair::apply");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
+  double startTime = timer->wallTime();
   { // The body of code to time
-    Teuchos::TimeMonitor timeMon (timer);
+    Teuchos::TimeMonitor timeMon (*timer);
 
     // If X and Y are pointing to the same memory location,
     // we need to create an auxiliary vector, Xcopy
@@ -371,7 +384,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
 
   }
   ++NumApply_;
-  ApplyTime_ += (timer.wallTime() - startTime);
+  ApplyTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -417,28 +430,45 @@ applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type
   const scalar_type ZERO = STS::zero ();
   const scalar_type ONE = STS::one ();
 
+  const std::string timerName1 ("Ifpack2::Hiptmair::apply 1");
+  const std::string timerName2 ("Ifpack2::Hiptmair::apply 2");
+
+  Teuchos::RCP<Teuchos::Time> timer1 = Teuchos::TimeMonitor::lookupCounter (timerName1);
+  if (timer1.is_null ()) {
+    timer1 = Teuchos::TimeMonitor::getNewCounter (timerName1);
+  }
+  Teuchos::RCP<Teuchos::Time> timer2 = Teuchos::TimeMonitor::lookupCounter (timerName2);
+  if (timer2.is_null ()) {
+    timer2 = Teuchos::TimeMonitor::getNewCounter (timerName2);
+  }
+
   updateCachedMultiVectors (A_->getRowMap (),
                             PtAP_->getRowMap (),
                             X.getNumVectors ());
 
   if (preOrPost_ == "pre" || preOrPost_ == "both") {
     // apply initial relaxation to primary space
+    Teuchos::TimeMonitor timeMon (*timer1);
     Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
     cachedSolution1_->putScalar (ZERO);
     ifpack2_prec1_->apply (*cachedResidual1_, *cachedSolution1_);
     Y.update (ONE, *cachedSolution1_, ONE);
   }
 
-  // project to auxiliary space and smooth
-  Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
-  P_->apply (*cachedResidual1_, *cachedResidual2_, Teuchos::TRANS);
-  cachedSolution2_->putScalar (ZERO);
-  ifpack2_prec2_->apply (*cachedResidual2_, *cachedSolution2_);
-  P_->apply (*cachedSolution2_, *cachedSolution1_, Teuchos::NO_TRANS);
-  Y.update (ONE,*cachedSolution1_,ONE);
+  {
+    // project to auxiliary space and smooth
+    Teuchos::TimeMonitor timeMon (*timer2);
+    Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
+    P_->apply (*cachedResidual1_, *cachedResidual2_, Teuchos::TRANS);
+    cachedSolution2_->putScalar (ZERO);
+    ifpack2_prec2_->apply (*cachedResidual2_, *cachedSolution2_);
+    P_->apply (*cachedSolution2_, *cachedSolution1_, Teuchos::NO_TRANS);
+    Y.update (ONE,*cachedSolution1_,ONE);
+  }
 
   if (preOrPost_ == "post" || preOrPost_ == "both") {
     // smooth again on primary space
+    Teuchos::TimeMonitor timeMon (*timer1);
     Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
     cachedSolution1_->putScalar (ZERO);
     ifpack2_prec1_->apply (*cachedResidual1_, *cachedSolution1_);
