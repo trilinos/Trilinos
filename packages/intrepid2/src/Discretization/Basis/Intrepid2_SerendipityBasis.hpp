@@ -8,6 +8,8 @@
 #ifndef Intrepid2_SerendipityBasis_h
 #define Intrepid2_SerendipityBasis_h
 
+#include <Intrepid2_CellTopology.hpp>
+
 namespace Intrepid2
 {
 
