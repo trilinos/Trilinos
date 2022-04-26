@@ -378,6 +378,15 @@ public:
     template<class PointScalar>
     static void setJacobianDet( Data<PointScalar,DeviceType> & jacobianDet,
                                const Data<PointScalar,DeviceType> & jacobian);
+    
+    /** \brief  Computes reciprocals of determinants corresponding to the Jacobians in the Data container provided
+
+        \param  jacobianDet   [out]  - data with shape (C,P), as returned by CellTools::allocateJacobianDet()
+        \param  jacobian          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
+    */
+    template<class PointScalar>
+    static void setJacobianDetInv( Data<PointScalar,DeviceType> & jacobianDet,
+                                  const Data<PointScalar,DeviceType> & jacobian);
 
     /** \brief  Computes determinants corresponding to the Jacobians in the Data container provided
 

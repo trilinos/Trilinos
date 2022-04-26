@@ -43,7 +43,12 @@
 #include <ostream>      // for std::ostream
 
 #ifdef __CUDACC__
-#include <math_functions.h>
+    #include <cuda_runtime_api.h>
+    // including math functions via math_functions.h is deprecated in cuda version >= 10.0
+    // the deprecation warning indicates to use cuda_runtime_api.h instead
+    #if CUDART_VERSION < 10000
+        #include <math_functions.h>
+    #endif
 #endif
 
 /*

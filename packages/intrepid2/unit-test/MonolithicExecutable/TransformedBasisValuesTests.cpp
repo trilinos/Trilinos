@@ -42,7 +42,7 @@
 
 
 /** \file   TransformedVectorDataTests.cpp
-    \brief  Tests against TransformedVectorData.
+    \brief  Tests against TransformedBasisValues.
     \author Created by Nate Roberts
 */
 
@@ -65,7 +65,7 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_TensorData.hpp"
 #include "Intrepid2_TensorPoints.hpp"
-#include "Intrepid2_TransformedVectorData.hpp"
+#include "Intrepid2_TransformedBasisValues.hpp"
 #include "Intrepid2_VectorData.hpp"
 
 #include "Intrepid2_ScalarView.hpp"
@@ -136,7 +136,8 @@ namespace
       }
       vectorComponents[d] = TensorData<Scalar,DeviceType>(gradComponent_d);
     }
-    VectorData<Scalar,DeviceType> gradientValues(vectorComponents, false); // false: not axis-aligned
+    VectorData<Scalar,DeviceType> gradientVectorData(vectorComponents, false); // false: not axis-aligned
+    BasisValues<Scalar, DeviceType> gradientValues(gradientVectorData);
     
     CellGeometry<PointScalar,spaceDim,DeviceType> cellNodes = uniformCartesianMesh<PointScalar,spaceDim,DeviceType>(1.0, meshWidth);
     
@@ -215,7 +216,7 @@ namespace
     testFloatingEquality4(transformedGradValues, transformedGradientData, relTol, absTol, out, success);
   }
 
-  TEUCHOS_UNIT_TEST( TransformedVectorData, TransformedVector_1D_p1 )
+  TEUCHOS_UNIT_TEST( TransformedBasisValues, TransformedVector_1D_p1 )
   {
     const int spaceDim = 1;
     const int polyOrder = 1;
@@ -223,7 +224,7 @@ namespace
     testVectorTransformation<spaceDim>(polyOrder, meshWidth, out, success);
   }
    
- TEUCHOS_UNIT_TEST( TransformedVectorData, TransformedVector_1D_p2 )
+ TEUCHOS_UNIT_TEST( TransformedBasisValues, TransformedVector_1D_p2 )
  {
    const int spaceDim = 1;
    const int polyOrder = 2;
@@ -231,7 +232,7 @@ namespace
    testVectorTransformation<spaceDim>(polyOrder, meshWidth, out, success);
  }
   
- TEUCHOS_UNIT_TEST( TransformedVectorData, TransformedVector_2D_p1 )
+ TEUCHOS_UNIT_TEST( TransformedBasisValues, TransformedVector_2D_p1 )
  {
    const int spaceDim = 2;
    const int polyOrder = 1;
@@ -239,7 +240,7 @@ namespace
    testVectorTransformation<spaceDim>(polyOrder, meshWidth, out, success);
  }
   
- TEUCHOS_UNIT_TEST( TransformedVectorData, TransformedVector_2D_p2 )
+ TEUCHOS_UNIT_TEST( TransformedBasisValues, TransformedVector_2D_p2 )
  {
    const int spaceDim = 2;
    const int polyOrder = 2;

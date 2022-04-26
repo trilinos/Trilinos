@@ -819,10 +819,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //currently finds ND and permute BTF_A
     //Would like to change so finds permuation, 
     //and move into 2D-Structure
-#if 0 // FIX: Do we need to sort?
-    sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
-#endif
-
     /*printf(" in apply_scotch_partition\n" );
     printf(" T = [\n" );
     for(Int j = 0; j < BTF_A.ncol; j++) {
@@ -953,22 +949,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     {
       permute_row(BTF_B, part_tree.permtab);
     }
-    //needed because  moving into 2D-Structure,
-    //assumes sorted columns
-    //sort_matrix(BTF_A);
-#if 0 // FIX: do we need to sort (eg for cAMD)?
-    sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array); // BTF_A( perm(i) ) <- BTF_A( i )
-    if(btf_nblks > 1)
-    {
-      //new for sfactor_copy2 replacement
-      if ( BTF_B.nnz > 0 ) {
-        sort_matrix_store_valperms(BTF_B, vals_order_ndbtfb_array);
-      }
-      if ( BTF_C.nnz > 0 ) {
-        sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
-      }
-    }
-#endif
 
     //--------------------------------------------------------------
     //4. Init tree structure
@@ -1007,7 +987,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         #ifdef BASKER_TIMER
         scotch_amd_timer.reset();
         #endif
-#if 1
         #if 0
         Int nleaves = 1;
         printf( " * debug nleaves = 1 *\n" );
@@ -1018,41 +997,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
                                           tempp, temp_col, temp_row, order_csym_array, Options.verbose);
         Kokkos::parallel_for("BLK_AMD on A", Kokkos::RangePolicy<Exe_Space>(0, nleaves), amd_functor);
         Kokkos::fence();
-#else
-        for(Int b = 0; b < tree.nblks; ++b) {
-          Int frow = tree.col_tabs(b);
-          Int erow = tree.col_tabs(b+1);
-          Int fnnz = AAT.col_ptr(frow);
-
-          Int nnz = 0;
-          temp_col(frow+b) = 0;
-          for(Int k = frow; k < erow; k++) {
-            for(Int i = AAT.col_ptr(k); i < AAT.col_ptr(k+1); i++) {
-              if(AAT.row_idx(i) >= frow && AAT.row_idx(i) < erow) {
-                temp_row(fnnz + nnz) = AAT.row_idx(i) - frow;
-                nnz++;
-              }
-            }
-            temp_col(b+k+1) = nnz;
-          }
-          Int blk_size = erow - frow;
-          #ifdef BASKER_SORT_MATRIX_FOR_AMD
-          sort_matrix(nnz, blk_size, &(temp_col(frow+b)), &(temp_row(fnnz)), &(temp_val(fnnz)));
-          #endif
-
-          double l_nnz = 0;
-          double lu_work = 0;
-          BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(frow+b)), &(temp_row(fnnz)),
-                                          &(tempp(frow)), l_nnz, lu_work);
-          for(Int k = 0; k < blk_size; k++)
-          {
-            order_csym_array(frow+tempp(frow + k)) = frow+k;
-          }
-          #ifdef BASKER_TIMER
-          std::cout << " AMD ( " << b << " ) : " << scotch_amd_timer.seconds() << " seconds " << std::endl;
-          #endif
-        }
-#endif
         if(Options.verbose == BASKER_TRUE) {
           std::cout << " ++ Basker AMD_functor on A ++ " << std::endl << std::endl;
         }
@@ -1163,9 +1107,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       permute_row(BTF_B, order_csym_array);
       //new for sfactor_copy2 replacement
       if ( BTF_B.nnz > 0 ) {
-        #if 0 // no need ??
-        sort_matrix_store_valperms(BTF_B, vals_order_ndbtfb_array);
-        #endif
         #ifdef BASKER_TIMER
         double sortB_time = scotch_timer.seconds();
         std::cout << " ++ Basker apply_scotch : sort(B) time              : " << sortB_time << std::endl;
@@ -1173,9 +1114,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         #endif
       }
       if ( BTF_C.nnz > 0 ) {
-        #if 0 // no need ??
-        sort_matrix_store_valperms(BTF_C, vals_order_ndbtfc_array);
-        #endif
         #ifdef BASKER_TIMER
         double sortC_time = scotch_timer.seconds();
         std::cout << " ++ Basker apply_scotch : sort(C) time              : " << sortC_time << std::endl;
@@ -2035,13 +1973,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     MALLOC_ENTRY_1DARRAY(temp_v, nnz);
 
     //Determine column ptr of output matrix
-    #if 0
-    for(Int j = 0; j < n; j++)
-    {
-      Int i = col (j);
-      temp_p (i+1) = M.col_ptr (j+1) - M.col_ptr (j);
-    }
-    #else
     Kokkos::parallel_for(
       "permute_col", n,
       KOKKOS_LAMBDA(const int j) {
@@ -2049,7 +1980,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         temp_p (i+1) = M.col_ptr (j+1) - M.col_ptr (j);
       });
     Kokkos::fence();
-    #endif
 
     //Get ptrs from lengths
     temp_p (0) = 0;
@@ -2057,21 +1987,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     {
       temp_p (j+1) = temp_p (j+1) + temp_p (j);
     }
-    //copy idxs
-    #if 0
-    for(Int ii = 0; ii < n; ii++)
-    {
-      Int ko = temp_p (col (ii) );
-      for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
-      {
-        temp_i (ko) = M.row_idx (k); // preserves order of indices in row_idx (they may not be ordered, but won't be reshuffled)
-        temp_v (ko) = M.val (k);     // and corresponding order with vals
 
-        vals_order_perm(k) = ko; //this works for first perm or individual; how to best compose subsequent perms? track separately and compose after?
-        ko++;
-      }
-    }
-    #else
+    //copy idxs
     Kokkos::parallel_for(
       "permute_col", n,
       KOKKOS_LAMBDA(const int ii) {
@@ -2095,20 +2012,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
           vals_order_perm(k) = k;
         }
       });
-    #endif
 
     //copy back into A
-    #if 0
-    for(Int ii=0; ii < n+1; ii++)
-    {
-      M.col_ptr (ii) = temp_p (ii);
-    }
-    for(Int ii=0; ii < nnz; ii++)
-    {
-      M.row_idx (ii) = temp_i (ii);
-      M.val (ii) = temp_v (ii);
-    }
-    #else
     Kokkos::parallel_for(
       "permute_col", n+1,
       KOKKOS_LAMBDA(const int ii) {
@@ -2121,7 +2026,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         M.val (ii) = temp_v (ii);
       });
     Kokkos::fence();
-    #endif
 
     FREE_INT_1DARRAY(temp_p);
     FREE_INT_1DARRAY(temp_i);
@@ -2184,18 +2088,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     }
 
     //copy idxs
-    #if 0
-    for(Int ii = frow; ii < frow+n; ii++)
-    {
-      Int ko = temp_p (col (ii-frow));
-      for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
-      {
-        temp_i (ko) = M.row_idx (k); // preserves order of indices in row_idx (they may not be ordered, but won't be reshuffled)
-        temp_v (ko) = M.val (k);     // and corresponding order with vals
-        ko++;
-      }
-    }
-    #else
     Kokkos::parallel_for(
       "permute_col", Kokkos::RangePolicy<Exe_Space> (frow, frow+n),
       KOKKOS_LAMBDA(const int ii) {
@@ -2208,20 +2100,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         }
       });
     Kokkos::fence();
-    #endif
 
     //copy back into A
-    #if 0
-    for(Int ii = frow; ii < frow+n; ii++)
-    {
-      M.col_ptr (ii+1) = M.col_ptr (frow) + temp_p (ii-frow+1);
-    }
-    for(Int ii = 0; ii < nnz; ii++)
-    {
-      M.row_idx (M.col_ptr (frow) + ii) = temp_i (ii);
-      M.val (M.col_ptr (frow) + ii) = temp_v (ii);
-    }
-    #else
     Kokkos::parallel_for(
       "permute_col", Kokkos::RangePolicy<Exe_Space> (frow, frow+n),
       KOKKOS_LAMBDA(const int ii) {
@@ -2236,7 +2116,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         M.val (M.col_ptr (frow) + ii) = temp_v (ii);
       });
     Kokkos::fence();
-    #endif
 
     FREE_INT_1DARRAY(temp_p);
     FREE_INT_1DARRAY(temp_i);
@@ -2260,19 +2139,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     { return 0; }
 
     //permute
-    #if 0
-    for(Int k = 0; k < nnz; k++)
-    {
-      row_idx[k] = row[row_idx[k]];
-    }
-    #else
     Kokkos::parallel_for(
       "permute_row", nnz,
       KOKKOS_LAMBDA(const int &k) {
         row_idx[k] = row[row_idx[k]];
       });
     Kokkos::fence();
-    #endif
 
     return 0;
   }//end permute_row(matrix,int)
@@ -2614,14 +2486,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //for(Int k = 0; k <= nblks; k++) printf( "tree[%d] = %d\n",k,tree.row_tabs[k] );
 
     Int nids = num_threads;
-    #if 0
-    for(Int k = 0; k < nblks; k++)
-    {
-      for (Int i = tree.row_tabs[k]; i < tree.row_tabs[k+1]; i++) {
-        nd_map(i) = k;
-      }
-    }
-    #else
     Kokkos::parallel_for(
       "ndsort_matrix_store_valperms", nids,
       KOKKOS_LAMBDA(const int id) {
@@ -2632,7 +2496,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         }
       });
     Kokkos::fence();
-    #endif
 
     #ifdef BASKER_TIMER_AMD
     std::cout << std::endl << " > sort malloc time : " << timer_order.seconds() << std::endl;

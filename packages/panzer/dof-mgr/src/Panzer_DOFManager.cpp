@@ -1253,7 +1253,7 @@ DOFManager::buildOverlapMapFromElements(const ElementBlockAccess & access) const
 
   /* 3.  Construct an overlap map from this structure.
    */
-  return Tpetra::createNonContigMap<panzer::LocalOrdinal,panzer::GlobalOrdinal>(overlapVector,getComm());
+  return Tpetra::createNonContigMapWithNode<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>(overlapVector,getComm());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1389,7 +1389,7 @@ DOFManager<panzer::LocalOrdinal,panzer::GlobalOrdinal>::runLocalRCMReordering(co
     size_t checkLength = soln->getPermutationSize();
     panzer::LocalOrdinal * checkPerm = soln->getPermutation(&dummy);
 
-    Teuchos::ArrayView<const panzer::GlobalOrdinal > oldOrder = map->getNodeElementList();
+    Teuchos::ArrayView<const panzer::GlobalOrdinal > oldOrder = map->getLocalElementList();
     TEUCHOS_ASSERT(checkLength==oldOrder.size());
     TEUCHOS_ASSERT(checkLength==newOrder.size());
 
