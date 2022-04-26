@@ -246,6 +246,11 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     Teuchos::ParameterList responses                 = input_params->sublist("Responses");
     Teuchos::ParameterList & user_data               = input_params->sublist("User Data");
 
+    // Set basis order
+    Teuchos::ParameterList& maxwellEqSet = physicsBlock_pl->sublist("Maxwell Physics").sublist("Maxwell Physics");
+    basis_order = maxwellEqSet.get("Basis Order", basis_order);
+    int integration_order = maxwellEqSet.get("Integration Order", 2*basis_order);
+
     RCP<panzer_stk::STK_Interface> mesh;
     int dim = 3;
     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
@@ -328,7 +333,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
               min_dx = std::max(x_elements,y_elements);
             // This is only correct when epsilon==epsilon0, mu==mu0
             double c = 299792458.0;
-            dt = cfl * min_dx / c;
+            dt = cfl * min_dx / basis_order / c;
           }
         }
       } else
@@ -437,10 +442,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     panzer::buildBCs(aux_bcs,aux_bcs_pl,globalData);
 
     workset_size = assembly_pl.get("Workset Size", workset_size);
-
-    Teuchos::ParameterList& maxwellEqSet = physicsBlock_pl->sublist("Maxwell Physics").sublist("Maxwell Physics");
-    basis_order = maxwellEqSet.get("Basis Order", basis_order);
-    int integration_order = maxwellEqSet.get("Integration Order", 2*basis_order);
 
     const std::string loDOF = "_LO";
     Teuchos::ParameterList& auxMaxwellEqSet = physicsBlock_pl->sublist("Auxiliary Physics Block");
