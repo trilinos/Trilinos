@@ -40,7 +40,6 @@ public:
   using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
   using OutputViewType         = typename BasisBase::OutputViewType;
   using PointViewType          = typename BasisBase::PointViewType;
-  using TensorBasis            = Basis_TensorBasis<BasisBaseClass>;
 protected:
   OrdinalTypeArray1D ordinalMap_; // our field ordinal --> full basis field ordinal
 public:
@@ -257,6 +256,15 @@ public:
     using HostBasis = SerendipityBasis<HostBasisBase>;
     auto hostBasis = Teuchos::rcp(new HostBasis(fullBasis_->getHostBasis()));
     return hostBasis;
+  }
+  
+  /** \brief Returns a pointer to the underlying full basis.
+   
+      \return Pointer to the underlying full basis.
+   */
+  BasisPtr getUnderlyingBasis() const
+  {
+    return fullBasis_;
   }
   
   /** \brief Returns the ordinal map from the Serendipity basis ordinal to the ordinal in the underlying full basis.
