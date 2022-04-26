@@ -104,7 +104,6 @@ namespace Intrepid2 {
                                       const outStreamPtrType      outStreamPtr ) {
       using ct = CellTools<DeviceType>;
       using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
-      using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
 
       // Get cell dimension and subcell count
       const auto cellDim   = parentCell.getDimension();
@@ -172,11 +171,11 @@ namespace Intrepid2 {
         //strided subviews from subviews cannot be directly copied to host into a non-strided views
         DynRankView ConstructWithLabel(nonStridedParamNodes, mappedParamNodes.extent(0),mappedParamNodes.extent(1));
         Kokkos::deep_copy(nonStridedParamNodes, mappedParamNodes);
-        auto hMappedParamNodes = Kokkos::create_mirror_view_and_copy(typename HostSpaceType::memory_space(), nonStridedParamNodes);
+        auto hMappedParamNodes = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), nonStridedParamNodes);
 
         DynRankView ConstructWithLabel(nonStridedRefNodes, refSubcellNodes.extent(0),refSubcellNodes.extent(1));
         Kokkos::deep_copy(nonStridedRefNodes, refSubcellNodes);
-        auto hRefSubcellNodes = Kokkos::create_mirror_view_and_copy(typename HostSpaceType::memory_space(), nonStridedRefNodes);
+        auto hRefSubcellNodes = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), nonStridedRefNodes);
 
         // Compare the images of the parametrization domain vertices with the true vertices (test provide vertices only).
         for (size_type subcVertOrd=0;subcVertOrd<subcVertexCount;++subcVertOrd) 
@@ -211,11 +210,6 @@ namespace Intrepid2 {
         Teuchos::oblackholestream oldFormatState;
         oldFormatState.copyfmt(std::cout);
 
-        using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
-
-        *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
-        *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-      
         *outStream
           << "===============================================================================\n"
           << "|                                                                             |\n"

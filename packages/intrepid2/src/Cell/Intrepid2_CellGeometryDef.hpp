@@ -941,7 +941,7 @@ namespace Intrepid2
   template<class PointScalar, int spaceDim, typename DeviceType>
   void CellGeometry<PointScalar,spaceDim,DeviceType>::initializeOrientations()
   {
-    using HostExecSpace = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space ;
+    using HostExecSpace = Kokkos::DefaultHostExecutionSpace;
     
     const bool isGridType = (cellGeometryType_ == TENSOR_GRID) || (cellGeometryType_ == UNIFORM_GRID);
     const int numOrientations = isGridType ? numCellsPerGridCell(subdivisionStrategy_) : numCells();

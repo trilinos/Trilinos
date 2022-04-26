@@ -96,7 +96,7 @@ namespace Intrepid2 {
         const ordinal_type dim = dofs.extent(1);
         
         // temporary values
-        Kokkos::View<vector_type**, Kokkos::Impl::ActiveExecutionMemorySpace> 
+        Kokkos::View<vector_type**, Kokkos::AnonymousSpace> 
           jac    (&buf[0], dim, dim), 
           jac_inv(&buf[9], dim, dim); 
 

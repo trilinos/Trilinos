@@ -112,7 +112,7 @@ struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_space<Space>::value
 };
 
 template< class MemoryTraits , class ... Prop >
-struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_memory_traits<MemoryTraits>::value >::type , MemoryTraits , Prop ... >
+struct ViewTraits< typename std::enable_if< Kokkos::is_memory_traits<MemoryTraits>::value >::type , MemoryTraits , Prop ... >
 {
   // Specify memory trait, should not be any subsequent arguments
   typedef void         array_layout ;

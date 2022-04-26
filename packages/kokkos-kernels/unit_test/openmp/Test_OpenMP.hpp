@@ -10,17 +10,13 @@
 #endif
 
 class openmp : public ::testing::Test {
-protected:
-  static void SetUpTestCase()
-  {
-  }
+ protected:
+  static void SetUpTestCase() {}
 
-  static void TearDownTestCase()
-  {
-  }
+  static void TearDownTestCase() {}
 };
 
 #define TestCategory openmp
 #define TestExecSpace Kokkos::OpenMP
 
-#endif // TEST_OPENMP_HPP
+#endif  // TEST_OPENMP_HPP

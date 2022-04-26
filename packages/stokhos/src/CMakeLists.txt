@@ -514,7 +514,7 @@ IF(Kokkos_ENABLE_SERIAL)
     kokkos/Serial/Stokhos_Serial_CrsProductTensor.hpp
     )
 ENDIF()
-IF(Kokkos_ENABLE_PTHREAD)
+IF(Kokkos_ENABLE_THREADS)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/kokkos/Threads)
   SET(HEADERS ${HEADERS}
     kokkos/Threads/Stokhos_Threads_CrsProductTensor.hpp

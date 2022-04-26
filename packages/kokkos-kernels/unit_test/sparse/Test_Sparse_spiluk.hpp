@@ -42,7 +42,6 @@
 //@HEADER
 */
 
-
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
@@ -57,8 +56,7 @@
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosSparse_spiluk.hpp"
 
-#include<gtest/gtest.h>
-
+#include <gtest/gtest.h>
 
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -75,20 +73,20 @@ typedef Kokkos::complex<float> kokkos_complex_float;
 
 namespace Test {
 
-template <typename scalar_t, typename lno_t, typename size_type, typename device>
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
 void run_test_spiluk() {
-
-  typedef Kokkos::View< size_type*, device >     RowMapType;
-  typedef Kokkos::View< lno_t*,     device >     EntriesType;
-  typedef Kokkos::View< scalar_t*,  device >     ValuesType;
+  typedef Kokkos::View<size_type*, device> RowMapType;
+  typedef Kokkos::View<lno_t*, device> EntriesType;
+  typedef Kokkos::View<scalar_t*, device> ValuesType;
   typedef Kokkos::Details::ArithTraits<scalar_t> AT;
 
   const size_type nrows = 9;
   const size_type nnz   = 21;
 
-  RowMapType  row_map("row_map", nrows+1);
+  RowMapType row_map("row_map", nrows + 1);
   EntriesType entries("entries", nnz);
-  ValuesType  values ("values",  nnz);
+  ValuesType values("values", nnz);
 
   auto hrow_map = Kokkos::create_mirror_view(row_map);
   auto hentries = Kokkos::create_mirror_view(entries);
@@ -155,242 +153,285 @@ void run_test_spiluk() {
 
   Kokkos::deep_copy(row_map, hrow_map);
   Kokkos::deep_copy(entries, hentries);
-  Kokkos::deep_copy(values,  hvalues);
+  Kokkos::deep_copy(values, hvalues);
 
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
-                                  typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, typename device::execution_space,
+      typename device::memory_space, typename device::memory_space>
+      KernelHandle;
 
   KernelHandle kh;
 
-  //SPILUKAlgorithm::SEQLVLSCHD_RP
+  // SPILUKAlgorithm::SEQLVLSCHD_RP
   {
-    kh.create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, 4*nrows, 4*nrows);
-    
+    kh.create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_RP, nrows, 4 * nrows,
+                            4 * nrows);
+
     auto spiluk_handle = kh.get_spiluk_handle();
-    
+
     // Allocate L and U as outputs
-    RowMapType  L_row_map("L_row_map", nrows + 1);                
+    RowMapType L_row_map("L_row_map", nrows + 1);
     EntriesType L_entries("L_entries", spiluk_handle->get_nnzL());
-    ValuesType  L_values ("L_values",  spiluk_handle->get_nnzL());
-    RowMapType  U_row_map("U_row_map", nrows + 1);                    
+    ValuesType L_values("L_values", spiluk_handle->get_nnzL());
+    RowMapType U_row_map("U_row_map", nrows + 1);
     EntriesType U_entries("U_entries", spiluk_handle->get_nnzU());
-    ValuesType  U_values ("U_values",  spiluk_handle->get_nnzU());
-	  
+    ValuesType U_values("U_values", spiluk_handle->get_nnzU());
+
     typename KernelHandle::const_nnz_lno_t fill_lev = 2;
-    
-    spiluk_symbolic( &kh, fill_lev, row_map, entries, L_row_map, L_entries, U_row_map, U_entries );
+
+    spiluk_symbolic(&kh, fill_lev, row_map, entries, L_row_map, L_entries,
+                    U_row_map, U_entries);
 
     Kokkos::fence();
-    
+
     Kokkos::resize(L_entries, spiluk_handle->get_nnzL());
-    Kokkos::resize(L_values,  spiluk_handle->get_nnzL());
+    Kokkos::resize(L_values, spiluk_handle->get_nnzL());
     Kokkos::resize(U_entries, spiluk_handle->get_nnzU());
-    Kokkos::resize(U_values,  spiluk_handle->get_nnzU());
-    
+    Kokkos::resize(U_values, spiluk_handle->get_nnzU());
+
     spiluk_handle->print_algorithm();
-    spiluk_numeric( &kh, fill_lev, row_map, entries, values, 
-                                   L_row_map, L_entries, L_values, U_row_map, U_entries, U_values );
-	  				 
+    spiluk_numeric(&kh, fill_lev, row_map, entries, values, L_row_map,
+                   L_entries, L_values, U_row_map, U_entries, U_values);
+
     Kokkos::fence();
 
     // Checking
     typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
     crsMat_t A("A_Mtx", nrows, nrows, nnz, values, row_map, entries);
-    crsMat_t L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values, L_row_map, L_entries);
-    crsMat_t U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values, U_row_map, U_entries);
-    
+    crsMat_t L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values,
+               L_row_map, L_entries);
+    crsMat_t U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values,
+               U_row_map, U_entries);
+
     // Create a reference view e set to all 1's
-    ValuesType e_one  ( "e_one",  nrows ); Kokkos::deep_copy( e_one, 1.0 );
-    
+    ValuesType e_one("e_one", nrows);
+    Kokkos::deep_copy(e_one, 1.0);
+
     // Create two views for spmv results
-    ValuesType bb     ( "bb",     nrows );
-    ValuesType bb_tmp ( "bb_tmp", nrows );
-    
+    ValuesType bb("bb", nrows);
+    ValuesType bb_tmp("bb_tmp", nrows);
+
     // Compute norm2(L*U*e_one - A*e_one)/norm2(A*e_one)
-    KokkosSparse::spmv( "N", ONE, A, e_one, ZERO, bb); 
+    KokkosSparse::spmv("N", ONE, A, e_one, ZERO, bb);
 
     typename AT::mag_type bb_nrm = KokkosBlas::nrm2(bb);
-    
-    KokkosSparse::spmv( "N", ONE, U, e_one,  ZERO, bb_tmp);
-    KokkosSparse::spmv( "N", ONE, L, bb_tmp, MONE, bb);
+
+    KokkosSparse::spmv("N", ONE, U, e_one, ZERO, bb_tmp);
+    KokkosSparse::spmv("N", ONE, L, bb_tmp, MONE, bb);
 
     typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
-	     
-    EXPECT_TRUE( (diff_nrm/bb_nrm) < 1e-4 );
-    
+
+    EXPECT_TRUE((diff_nrm / bb_nrm) < 1e-4);
+
     kh.destroy_spiluk_handle();
   }
 
-  //SPILUKAlgorithm::SEQLVLSCHD_TP1
+  // SPILUKAlgorithm::SEQLVLSCHD_TP1
   {
-    kh.create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, 4*nrows, 4*nrows);
-    
+    kh.create_spiluk_handle(SPILUKAlgorithm::SEQLVLSCHD_TP1, nrows, 4 * nrows,
+                            4 * nrows);
+
     auto spiluk_handle = kh.get_spiluk_handle();
-    
+
     // Allocate L and U as outputs
-    RowMapType  L_row_map("L_row_map", nrows + 1);                
+    RowMapType L_row_map("L_row_map", nrows + 1);
     EntriesType L_entries("L_entries", spiluk_handle->get_nnzL());
-    ValuesType  L_values ("L_values",  spiluk_handle->get_nnzL());
-    RowMapType  U_row_map("U_row_map", nrows + 1);                    
+    ValuesType L_values("L_values", spiluk_handle->get_nnzL());
+    RowMapType U_row_map("U_row_map", nrows + 1);
     EntriesType U_entries("U_entries", spiluk_handle->get_nnzU());
-    ValuesType  U_values ("U_values",  spiluk_handle->get_nnzU());
-	  
+    ValuesType U_values("U_values", spiluk_handle->get_nnzU());
+
     typename KernelHandle::const_nnz_lno_t fill_lev = 2;
-    
-    spiluk_symbolic( &kh, fill_lev, row_map, entries, L_row_map, L_entries, U_row_map, U_entries );
+
+    spiluk_symbolic(&kh, fill_lev, row_map, entries, L_row_map, L_entries,
+                    U_row_map, U_entries);
 
     Kokkos::fence();
-    
+
     Kokkos::resize(L_entries, spiluk_handle->get_nnzL());
-    Kokkos::resize(L_values,  spiluk_handle->get_nnzL());
+    Kokkos::resize(L_values, spiluk_handle->get_nnzL());
     Kokkos::resize(U_entries, spiluk_handle->get_nnzU());
-    Kokkos::resize(U_values,  spiluk_handle->get_nnzU());
-    
+    Kokkos::resize(U_values, spiluk_handle->get_nnzU());
+
     spiluk_handle->print_algorithm();
-    spiluk_numeric( &kh, fill_lev, row_map, entries, values, 
-                                   L_row_map, L_entries, L_values, U_row_map, U_entries, U_values );
+    spiluk_numeric(&kh, fill_lev, row_map, entries, values, L_row_map,
+                   L_entries, L_values, U_row_map, U_entries, U_values);
 
     Kokkos::fence();
 
     // Checking
     typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
     crsMat_t A("A_Mtx", nrows, nrows, nnz, values, row_map, entries);
-    crsMat_t L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values, L_row_map, L_entries);
-    crsMat_t U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values, U_row_map, U_entries);
-    
+    crsMat_t L("L_Mtx", nrows, nrows, spiluk_handle->get_nnzL(), L_values,
+               L_row_map, L_entries);
+    crsMat_t U("U_Mtx", nrows, nrows, spiluk_handle->get_nnzU(), U_values,
+               U_row_map, U_entries);
+
     // Create a reference view e set to all 1's
-    ValuesType e_one  ( "e_one",  nrows ); Kokkos::deep_copy( e_one, 1.0 );
-    
-    // Create two views for spmv results     
-    ValuesType bb     ( "bb",     nrows );
-    ValuesType bb_tmp ( "bb_tmp", nrows );
-    
+    ValuesType e_one("e_one", nrows);
+    Kokkos::deep_copy(e_one, 1.0);
+
+    // Create two views for spmv results
+    ValuesType bb("bb", nrows);
+    ValuesType bb_tmp("bb_tmp", nrows);
+
     // Compute norm2(L*U*e_one - A*e_one)/norm2(A*e_one)
-    KokkosSparse::spmv( "N", ONE, A, e_one, ZERO, bb);
-	
+    KokkosSparse::spmv("N", ONE, A, e_one, ZERO, bb);
+
     typename AT::mag_type bb_nrm = KokkosBlas::nrm2(bb);
-    
-    KokkosSparse::spmv( "N", ONE, U, e_one,  ZERO, bb_tmp);
-    KokkosSparse::spmv( "N", ONE, L, bb_tmp, MONE, bb);
-	  
+
+    KokkosSparse::spmv("N", ONE, U, e_one, ZERO, bb_tmp);
+    KokkosSparse::spmv("N", ONE, L, bb_tmp, MONE, bb);
+
     typename AT::mag_type diff_nrm = KokkosBlas::nrm2(bb);
-	     
-    EXPECT_TRUE( (diff_nrm/bb_nrm) < 1e-4 );
-    
+
+    EXPECT_TRUE((diff_nrm / bb_nrm) < 1e-4);
+
     kh.destroy_spiluk_handle();
   }
-
 }
 
-} // namespace Test
+}  // namespace Test
 
-template <typename scalar_t, typename lno_t, typename size_type, typename device>
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
 void test_spiluk() {
   Test::run_test_spiluk<scalar_t, lno_t, size_type, device>();
 }
 
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                      \
+  TEST_F(TestCategory,                                                     \
+         sparse##_##spiluk##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_spiluk<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
+  }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-TEST_F( TestCategory, sparse ## _ ## spiluk ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_spiluk<SCALAR,ORDINAL,OFFSET,DEVICE>(); \
-}
-
-
-#if (defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(double, int, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(double, int64_t, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int64_t, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(double, int, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&         \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(float, int, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(float, int, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(float, int64_t, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(float, int64_t, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(float, int, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_FLOAT) &&          \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(float, int, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
 #endif
 
 #if 0
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_double, int, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_double, int64_t, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_float, int, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
