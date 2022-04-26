@@ -1133,6 +1133,15 @@ public:
     return record ;
   }
 
+  template< class ... P >
+  SharedAllocationRecord<> *
+  allocate_shared( ViewCtorProp< P... > const & prop
+                 , typename Traits::array_layout const & layout
+                 , bool /*execution_space_specified*/)
+  {
+    return allocate_shared(prop, layout);
+  }
+
   //----------------------------------------
   // If the View is to construct or destroy the elements.
 
