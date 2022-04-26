@@ -175,7 +175,7 @@ unpackAndCombineIntoCrsArrays(
     size_t TargetNumRows,
     size_t TargetNumNonzeros,
     const int MyTargetPID,
-    const Teuchos::ArrayView<size_t>& CRS_rowptr,
+    const Teuchos::ArrayView<Details::DefaultTypes::offset_type>& CRS_rowptr,
     const Teuchos::ArrayView<GO>& CRS_colind,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids);

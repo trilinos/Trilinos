@@ -258,9 +258,11 @@ namespace Tpetra {
     auto lclGraph  = graph->getLocalGraphDevice();
     auto lclGraphT = graphT->getLocalGraphDevice();
 
-    using KKH_LO = KokkosKernels::Experimental::KokkosKernelsHandle<size_t, LocalOrdinal, impl_scalar_type,
+    using KKH_LO = KokkosKernels::Experimental::KokkosKernelsHandle<Details::DefaultTypes::offset_type,
+                                                                    LocalOrdinal, impl_scalar_type,
                                                                     typename Node::execution_space, typename Node::memory_space, typename Node::memory_space>;
-    using KKH_GO = KokkosKernels::Experimental::KokkosKernelsHandle<size_t, GlobalOrdinal, impl_scalar_type,
+    using KKH_GO = KokkosKernels::Experimental::KokkosKernelsHandle<Details::DefaultTypes::offset_type,
+                                                                    GlobalOrdinal, impl_scalar_type,
                                                                     typename Node::execution_space, typename Node::memory_space, typename Node::memory_space>;
 
     auto rowptrs  = lclGraph.row_map;

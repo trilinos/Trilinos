@@ -834,7 +834,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
-               const Teuchos::ArrayRCP<size_t>& rowPointers,
+               const Teuchos::ArrayRCP<Details::DefaultTypes::offset_type>& rowPointers,
                const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
                const Teuchos::ArrayRCP<Scalar>& values,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
@@ -1919,7 +1919,7 @@ namespace Tpetra {
     ///   shallow copy.  Any method that changes the matrix's values
     ///   may then change this.
     void
-    setAllValues (const Teuchos::ArrayRCP<size_t>& ptr,
+    setAllValues (const Teuchos::ArrayRCP<Details::DefaultTypes::offset_type>& ptr,
                   const Teuchos::ArrayRCP<LocalOrdinal>& ind,
                   const Teuchos::ArrayRCP<Scalar>& val);
 

@@ -70,7 +70,7 @@ KokkosSparse::CrsMatrix<
     LO,
     typename NT::device_type,
     void,
-    size_t>
+    Details::DefaultTypes::offset_type>
 localDeepCopyLocallyIndexedRowMatrix
 (const RowMatrix<SC, LO, GO, NT>& A,
  const char label[])
@@ -98,7 +98,8 @@ localDeepCopyLocallyIndexedRowMatrix
   using Kokkos::WithoutInitializing;
   using IST = typename Kokkos::ArithTraits<SC>::val_type;
   using local_matrix_device_type = KokkosSparse::CrsMatrix<
-    IST, LO, typename NT::device_type, void, size_t>;
+    IST, LO, typename NT::device_type, void,
+    Details::DefaultTypes::offset_type>;
   using local_graph_device_type =
     typename local_matrix_device_type::staticcrsgraph_type;
   using inds_type = typename local_graph_device_type::entries_type;
@@ -170,7 +171,7 @@ localDeepCopyLocallyIndexedRowMatrix
 namespace Details { \
   template KokkosSparse::CrsMatrix< \
     Kokkos::ArithTraits<SC>::val_type, \
-    LO, NT::device_type, void, size_t> \
+    LO, NT::device_type, void, Details::DefaultTypes::offset_type> \
   localDeepCopyLocallyIndexedRowMatrix<SC, LO, GO, NT> \
     (const RowMatrix<SC, LO, GO, NT>& A, \
      const char label[]); \

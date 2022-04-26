@@ -1872,7 +1872,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
     build_test_matrix_with_row_overlap<CrsMatrixType>(Comm,A);
     Ag = A->getCrsGraph();
 
-    Teuchos::ArrayRCP<const size_t> rowptr;
+    Teuchos::ArrayRCP<const ::Tpetra::Details::DefaultTypes::offset_type> rowptr;
     Teuchos::ArrayRCP<const LO> colind;
     Teuchos::ArrayRCP<const Scalar> vals;
 
@@ -2387,7 +2387,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     /////////////////////////////////////////////////////////
     // Test #2: Actual combine test
     /////////////////////////////////////////////////////////
-    Teuchos::Array<size_t>  rowptr (MapTarget->getLocalNumElements () + 1);
+
+    Teuchos::Array<::Tpetra::Details::DefaultTypes::offset_type>  rowptr (MapTarget->getLocalNumElements () + 1);
+
     Teuchos::Array<GO>      colind (nnz2);
     Teuchos::Array<Scalar>  vals (nnz2);
     Teuchos::Array<int>     TargetPids;

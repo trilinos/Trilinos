@@ -665,7 +665,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
-            const Teuchos::ArrayRCP<size_t>& rowPointers,
+            const Teuchos::ArrayRCP<Details::DefaultTypes::offset_type>& rowPointers,
             const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
@@ -3220,14 +3220,14 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  setAllIndices (const Teuchos::ArrayRCP<size_t>& rowPointers,
+  setAllIndices (const Teuchos::ArrayRCP<Details::DefaultTypes::offset_type>& rowPointers,
                  const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices)
   {
     using Kokkos::View;
     typedef typename local_graph_device_type::row_map_type row_map_type;
     typedef typename row_map_type::array_layout layout_type;
     typedef typename row_map_type::non_const_value_type row_offset_type;
-    typedef View<size_t*, layout_type , Kokkos::HostSpace,
+    typedef View<Details::DefaultTypes::offset_type*, layout_type , Kokkos::HostSpace,
       Kokkos::MemoryUnmanaged> input_view_type;
     typedef typename row_map_type::non_const_type nc_row_map_type;
 
@@ -3262,7 +3262,7 @@ namespace Tpetra {
         // FIXME (mfh 24 Mar 2015) If CUDA UVM, running in the host's
         // execution space would avoid the double copy.
         //
-        View<size_t*, layout_type, device_type> ptr_st ("Tpetra::CrsGraph::ptr", size);
+        View<Details::DefaultTypes::offset_type*, layout_type, device_type> ptr_st ("Tpetra::CrsGraph::ptr", size);
         Kokkos::deep_copy (ptr_st, ptr_in);
         // Copy on device (casting from size_t to row_offset_type,
         // with bounds checking if necessary) to ptr_rot.  This
@@ -7659,7 +7659,7 @@ namespace Tpetra {
     size_t N = BaseRowMap->getLocalNumElements();
 
     // Allocations
-    ArrayRCP<size_t> CSR_rowptr(N+1);
+    ArrayRCP<Details::DefaultTypes::offset_type> CSR_rowptr(N+1);
     ArrayRCP<GO> CSR_colind_GID;
     ArrayRCP<LO> CSR_colind_LID;
     CSR_colind_GID.resize(mynnz);

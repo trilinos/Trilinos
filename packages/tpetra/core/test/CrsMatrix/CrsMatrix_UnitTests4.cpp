@@ -438,7 +438,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     mvrand.randomize();
 
     // create the identity matrix, via three arrays constructor
-    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<::Tpetra::Details::DefaultTypes::offset_type> rowptr(numLocal+1);
     ArrayRCP<LO>     colind(numLocal); // one unknown per row
     ArrayRCP<Scalar> values(numLocal); // one unknown per row
 
@@ -505,7 +505,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     mvrand.randomize();
 
     // create the identity matrix, via three arrays constructor
-    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<::Tpetra::Details::DefaultTypes::offset_type> rowptr(numLocal+1);
     ArrayRCP<LO>     colind(numLocal); // one unknown per row
     ArrayRCP<Scalar> values(numLocal); // one unknown per row
 
@@ -635,7 +635,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     mvrand.randomize();
 
     // create the identity matrix, via three arrays constructor
-    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<::Tpetra::Details::DefaultTypes::offset_type> rowptr(numLocal+1);
     ArrayRCP<LO>     colind(numLocal); // one unknown per row
     ArrayRCP<Scalar> values(numLocal); // one unknown per row
 
@@ -708,7 +708,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     mvrand.randomize();
 
     // create the identity matrix, via three arrays constructor
-    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<::Tpetra::Details::DefaultTypes::offset_type> rowptr(numLocal+1);
     ArrayRCP<LO>     colind(numLocal); // one unknown per row
     ArrayRCP<Scalar> values(numLocal); // one unknown per row
 
@@ -787,7 +787,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
 
     // create block lower-triangular, via three arrays constructor
-    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<::Tpetra::Details::DefaultTypes::offset_type> rowptr(numLocal+1);
     ArrayRCP<LO>     colind((int)(1.5*numLocal)); // 1.5 unknowns per row
     ArrayRCP<Scalar> values((int)(1.5*numLocal)); // 1.5 two unknowns per row
 
@@ -886,7 +886,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
 
     // create block lower-triangular, via three arrays constructor
-    ArrayRCP<size_t> rowptr(numLocal+1);
+    ArrayRCP<::Tpetra::Details::DefaultTypes::offset_type> rowptr(numLocal+1);
     ArrayRCP<LO>     colind((int)(1.5*numLocal)); // 1.5 unknowns per row
     ArrayRCP<Scalar> values((int)(1.5*numLocal)); // 1.5 two unknowns per row
 

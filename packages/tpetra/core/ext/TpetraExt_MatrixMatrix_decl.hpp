@@ -567,7 +567,7 @@ struct AddKernels
   typedef typename map_type::local_map_type local_map_type;
   typedef typename Kokkos::View<GlobalOrdinal*, device_type> global_col_inds_array;
   typedef Kokkos::RangePolicy<execution_space> range_type;
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_t, LocalOrdinal, impl_scalar_type,
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<Details::DefaultTypes::offset_type, LocalOrdinal, impl_scalar_type,
               execution_space, memory_space, memory_space> KKH;
 
   /// \brief Given two matrices in CRS format, return their sum

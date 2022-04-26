@@ -66,7 +66,7 @@ KokkosSparse::CrsMatrix<
     LO,
     typename NT::device_type,
     void,
-    size_t>
+    Details::DefaultTypes::offset_type>
 localDeepCopyLocallyIndexedRowMatrix
   (const RowMatrix<SC, LO, GO, NT>& A,
    const char label[]);

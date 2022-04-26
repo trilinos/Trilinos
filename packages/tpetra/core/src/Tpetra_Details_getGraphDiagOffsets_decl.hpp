@@ -86,7 +86,9 @@ public:
   typedef ::Kokkos::StaticCrsGraph<LO,
                                    ::Kokkos::LayoutLeft,
                                    device_type,
-                                   void, size_t> local_graph_device_type;
+                                   void,
+                                   Details::DefaultTypes::offset_type> 
+                    local_graph_device_type;
   typedef ::Tpetra::Details::LocalMap<LO, GO, device_type> local_map_type;
   typedef ::Kokkos::View<const typename local_graph_device_type::size_type*,
                          ::Kokkos::LayoutLeft,

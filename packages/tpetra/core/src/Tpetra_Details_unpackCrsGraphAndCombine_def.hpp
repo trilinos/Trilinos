@@ -434,7 +434,7 @@ unpackAndCombineWithOwningPIDsCount(
 template<class Packet, class LO, class Device, class BufferDevice>
 void
 setupRowPointersForRemotes(
-  const Kokkos::View<size_t*, Device>& tgt_rowptr,
+  const Kokkos::View<Details::DefaultTypes::offset_type*, Device>& tgt_rowptr,
   const Kokkos::View<const LO*, BufferDevice>& import_lids,
   const Kokkos::View<const Packet*, BufferDevice>& /* imports */,
   const Kokkos::View<const size_t*, BufferDevice>& num_packets_per_lid)
@@ -460,8 +460,8 @@ setupRowPointersForRemotes(
 template<class Device>
 void
 makeCrsRowPtrFromLengths(
-    const Kokkos::View<size_t*,Device,Kokkos::MemoryUnmanaged>& tgt_rowptr,
-    const Kokkos::View<size_t*,Device>& new_start_row)
+    const Kokkos::View<Details::DefaultTypes::offset_type*,Device,Kokkos::MemoryUnmanaged>& tgt_rowptr,
+    const Kokkos::View<Details::DefaultTypes::offset_type*,Device>& new_start_row)
 {
   using Kokkos::parallel_scan;
   using device_type = Device;
@@ -488,8 +488,8 @@ copyDataFromSameIDs(
     const Kokkos::View<typename LocalMap::global_ordinal_type*,
                        typename LocalMap::device_type>& tgt_colind,
     const Kokkos::View<int*, typename LocalMap::device_type>& tgt_pids,
-    const Kokkos::View<size_t*,typename LocalMap::device_type>& new_start_row,
-    const Kokkos::View<size_t*, typename LocalMap::device_type>& tgt_rowptr,
+    const Kokkos::View<Details::DefaultTypes::offset_type*,typename LocalMap::device_type>& new_start_row,
+    const Kokkos::View<Details::DefaultTypes::offset_type*, typename LocalMap::device_type>& tgt_rowptr,
     const Kokkos::View<const int*, typename LocalMap::device_type>& src_pids,
     const LocalGraph& local_graph,
     const LocalMap& local_col_map,
@@ -534,9 +534,9 @@ copyDataFromPermuteIDs(
                        typename LocalMap::device_type>& tgt_colind,
     const Kokkos::View<int*,
                        typename LocalMap::device_type>& tgt_pids,
-    const Kokkos::View<size_t*,
+    const Kokkos::View<Details::DefaultTypes::offset_type*,
                        typename LocalMap::device_type>& new_start_row,
-    const Kokkos::View<size_t*,
+    const Kokkos::View<Details::DefaultTypes::offset_type*,
                        typename LocalMap::device_type>& tgt_rowptr,
     const Kokkos::View<const int*,
                        typename LocalMap::device_type>& src_pids,
@@ -587,8 +587,8 @@ void
 unpackAndCombineIntoCrsArrays2(
     const Kokkos::View<typename LocalMap::global_ordinal_type*, typename LocalMap::device_type>& tgt_colind,
     const Kokkos::View<int*, typename LocalMap::device_type>& tgt_pids,
-    const Kokkos::View<size_t*,typename LocalMap::device_type>& new_start_row,
-    const Kokkos::View<const size_t*, typename LocalMap::device_type>& offsets,
+    const Kokkos::View<Details::DefaultTypes::offset_type*,typename LocalMap::device_type>& new_start_row,
+    const Kokkos::View<const Details::DefaultTypes::offset_type*, typename LocalMap::device_type>& offsets,
     const Kokkos::View<
       const typename LocalMap::local_ordinal_type*,
       BufferDevice,
@@ -668,7 +668,7 @@ unpackAndCombineIntoCrsArrays(
     const Kokkos::View<const typename LocalMap::local_ordinal_type*,
                        BufferDevice,
                        Kokkos::MemoryUnmanaged>& permute_from_lids,
-    const Kokkos::View<size_t*,
+    const Kokkos::View<Details::DefaultTypes::offset_type*,
                        typename LocalMap::device_type,
                        Kokkos::MemoryUnmanaged>& tgt_rowptr,
     const Kokkos::View<typename LocalMap::global_ordinal_type*,
@@ -746,7 +746,7 @@ unpackAndCombineIntoCrsArrays(
 
   // Get the offsets from the number of packets per LID
   const size_type num_import_lids = import_lids.extent(0);
-  View<size_t*, device_type> offsets("offsets", num_import_lids+1);
+  View<Details::DefaultTypes::offset_type*, device_type> offsets("offsets", num_import_lids+1);
   computeOffsetsFromCounts(offsets, num_packets_per_lid);
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -768,7 +768,7 @@ unpackAndCombineIntoCrsArrays(
 
   // If multiple processes contribute to the same row, we may need to
   // update row offsets.  This tracks that.
-  View<size_t*, device_type> new_start_row("new_start_row", N+1);
+  View<Details::DefaultTypes::offset_type*, device_type> new_start_row("new_start_row", N+1);
 
   // Turn row length into a real CRS row pointer
   makeCrsRowPtrFromLengths(tgt_rowptr, new_start_row);
@@ -935,7 +935,7 @@ unpackAndCombineIntoCrsArrays(
     size_t TargetNumRows,
     size_t TargetNumNonzeros,
     const int MyTargetPID,
-    const Teuchos::ArrayView<size_t>& CRS_rowptr,
+    const Teuchos::ArrayView<Details::DefaultTypes::offset_type>& CRS_rowptr,
     const Teuchos::ArrayView<GlobalOrdinal>& CRS_colind,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids)
@@ -1011,7 +1011,7 @@ unpackAndCombineIntoCrsArrays(
       permuteFromLIDs.getRawPtr(), permuteFromLIDs.size(),
       true, "permute_from_lids");
 
-  Kokkos::View<size_t*, device_type> crs_rowptr_d =
+  Kokkos::View<Details::DefaultTypes::offset_type*, device_type> crs_rowptr_d =
     create_mirror_view_from_raw_host_array(outputDevice,
       CRS_rowptr.getRawPtr(), CRS_rowptr.size(),
       true, "crs_rowptr");
@@ -1073,7 +1073,7 @@ unpackAndCombineIntoCrsArrays(
     size_t, \
     size_t, \
     const int, \
-    const Teuchos::ArrayView<size_t>&, \
+    const Teuchos::ArrayView<Details::DefaultTypes::offset_type>&, \
     const Teuchos::ArrayView<GO>&, \
     const Teuchos::ArrayView<const int>&, \
     Teuchos::Array<int>&); \

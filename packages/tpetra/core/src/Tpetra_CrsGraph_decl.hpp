@@ -252,7 +252,8 @@ namespace Tpetra {
     //! The type of the part of the sparse graph on each MPI process.
     using local_graph_device_type =
            Kokkos::StaticCrsGraph<local_ordinal_type, Kokkos::LayoutLeft,
-                                  device_type, void, size_t>;
+                                  device_type, void,
+                                  Details::DefaultTypes::offset_type>;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     using local_graph_type = local_graph_device_type;
 #endif
@@ -550,7 +551,7 @@ public:
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const Teuchos::ArrayRCP<size_t>& rowPointers,
+              const Teuchos::ArrayRCP<Details::DefaultTypes::offset_type>& rowPointers,
               const Teuchos::ArrayRCP<local_ordinal_type>& columnIndices,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -1508,7 +1509,7 @@ public:
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    setAllIndices (const Teuchos::ArrayRCP<size_t> & rowPointers,
+    setAllIndices (const Teuchos::ArrayRCP<Details::DefaultTypes::offset_type> & rowPointers,
                    const Teuchos::ArrayRCP<local_ordinal_type> & columnIndices);
 
     /// \brief Get a host view of the packed row offsets.
@@ -2505,7 +2506,7 @@ public:
     /// inexplicable test failures only on CUDA.  Thus, I left it as a
     /// HostMirror, which means (given Trilinos' current UVM
     /// requirement) that it will be a UVM allocation.
-    typedef typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror num_row_entries_type;
+    typedef typename Kokkos::View<Details::DefaultTypes::offset_type*, Kokkos::LayoutLeft, device_type>::HostMirror num_row_entries_type;
 
     // typedef Kokkos::View<
     //   size_t*,
