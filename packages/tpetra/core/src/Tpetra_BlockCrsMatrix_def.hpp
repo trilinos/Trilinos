@@ -683,6 +683,7 @@ public:
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
+
     /// KK : additional check is needed that graph is fill complete.
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::"
@@ -720,6 +721,7 @@ public:
 
       auto ind_h = local_graph_h.entries;
       indHost_ = decltype(indHost_)(Kokkos::ViewAllocateWithoutInitializing("graph column indices"), ind_h.extent(0));
+      // DEEP_COPY REVIEW - HOST-TO-HOST
       Kokkos::deep_copy (indHost_, ind_h);
 
       const auto numValEnt = ind_h.extent(0) * offsetPerBlock ();
@@ -746,6 +748,8 @@ public:
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
+    using execution_space = typename Node::execution_space;
+
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::"
       "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
@@ -774,14 +778,17 @@ public:
       auto local_graph_h = graph.getLocalGraphHost ();
       auto ptr_h = local_graph_h.row_map;
       ptrHost_ = decltype(ptrHost_)(Kokkos::ViewAllocateWithoutInitializing("graph row offset"), ptr_h.extent(0));
+      // DEEP_COPY REVIEW - HOST-TO-HOST
       Kokkos::deep_copy(ptrHost_, ptr_h);
 
       auto ind_h = local_graph_h.entries;
       indHost_ = decltype(indHost_)(Kokkos::ViewAllocateWithoutInitializing("graph column indices"), ind_h.extent(0));
+      // DEEP_COPY REVIEW - HOST-TO-HOST
       Kokkos::deep_copy (indHost_, ind_h);
 
       const auto numValEnt = ind_h.extent(0) * offsetPerBlock ();
       val_ = decltype (val_) (impl_scalar_type_dualview("val", numValEnt));
+
     }
   }
 
@@ -3502,7 +3509,9 @@ public:
 
     // The code below works on host, so use a host View.
     auto diagOffsetsHost = Kokkos::create_mirror_view (diagOffsets);
-    Kokkos::deep_copy (diagOffsetsHost, diagOffsets);
+    // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+    using execution_space = typename device_type::execution_space;
+    Kokkos::deep_copy (execution_space(), diagOffsetsHost, diagOffsets);
 
     auto vals_host_out = val_.getHostView(Access::ReadOnly);
     const impl_scalar_type* vals_host_out_raw = vals_host_out.data();

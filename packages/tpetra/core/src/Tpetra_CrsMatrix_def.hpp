@@ -820,6 +820,8 @@ namespace Tpetra {
       using Kokkos::WithoutInitializing;
       values_type newvals (view_alloc ("val", WithoutInitializing),
                            vals.extent (0));
+          // DEEP_COPY REVIEW - DEVICE-TO_DEVICE
+      using execution_space = typename device_type::execution_space;
       Kokkos::deep_copy (newvals, vals);
       valuesPacked_wdv = values_wdv_type(newvals);
       valuesUnpacked_wdv = valuesPacked_wdv;
@@ -3946,7 +3948,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // do nothing
     }
     else {
-      Kokkos::deep_copy (valuesUnpacked_wdv.getDeviceView(Access::OverwriteAll),
+      // DEEP_COPY REVIEW - VALUE-TO-DEVICE
+      using execution_space = typename device_type::execution_space;
+      Kokkos::deep_copy (execution_space(), valuesUnpacked_wdv.getDeviceView(Access::OverwriteAll),
                          theAlpha);
     }
   }
@@ -4073,7 +4077,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       typedef Kokkos::View<size_t*, Kokkos::HostSpace,
                            Kokkos::MemoryUnmanaged> output_type;
       output_type offsetsOut (offsets.getRawPtr (), lclNumRows);
-      Kokkos::deep_copy (offsetsOut, offsetsTmp);
+      // DEEP_COPY REVIEW - DEVICE-TO-HOST
+      Kokkos::deep_copy (execution_space(), offsetsOut, offsetsTmp);
     }
   }
 
@@ -6023,11 +6028,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     using Kokkos::view_alloc;
     using Kokkos::WithoutInitializing;
-    row_ptrs_type row_ptr_beg(
-      view_alloc("row_ptr_beg", WithoutInitializing),
-                 myGraph_->rowPtrsUnpacked_dev_.extent(0));
-    Kokkos::deep_copy(row_ptr_beg, myGraph_->rowPtrsUnpacked_dev_);
-
+    row_ptrs_type row_ptr_beg(view_alloc("row_ptr_beg", WithoutInitializing),
+                              myGraph_->rowPtrsUnpacked_dev_.extent(0));
+    // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+    Kokkos::deep_copy(execution_space(),row_ptr_beg, myGraph_->rowPtrsUnpacked_dev_);
+    
     const size_t N = row_ptr_beg.extent(0) == 0 ? size_t(0) :
       size_t(row_ptr_beg.extent(0) - 1);
     if (verbose) {
@@ -6744,6 +6749,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       typedef Kokkos::Device<HES, HostSpace> host_device_type;
       Kokkos::View<const char*, host_device_type>
         exports_a_kv (exports_a.getRawPtr (), newAllocSize);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (exports_h_sub, exports_a_kv);
     }
 

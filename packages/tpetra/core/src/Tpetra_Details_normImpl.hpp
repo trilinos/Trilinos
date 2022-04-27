@@ -147,7 +147,9 @@ lclNormImpl (const RV& normsOut,
 
   if (lclNumRows == 0) {
     const mag_type zeroMag = Kokkos::ArithTraits<mag_type>::zero ();
-    Kokkos::deep_copy (normsOut, zeroMag);
+    // DEEP_COPY REVIEW - VALUE-TO-DEVICE
+    using execution_space = typename RV::execution_space;
+    Kokkos::deep_copy (execution_space(), normsOut, zeroMag);
   }
   else { // lclNumRows != 0
     if (constantStride) {
@@ -267,12 +269,15 @@ gblNormImpl (const RV& normsOut,
   if (distributed && comm != nullptr) {
     // The calling process only participates in the collective if
     // both the Map and its Comm on that process are nonnull.
+
     const int nv = static_cast<int> (numVecs);
     const bool commIsInterComm = ::Tpetra::Details::isInterComm (*comm);
 
     if (commIsInterComm) {
       RV lclNorms (Kokkos::ViewAllocateWithoutInitializing ("MV::normImpl lcl"), numVecs);
-      Kokkos::deep_copy (lclNorms, normsOut);
+      // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+      using execution_space = typename RV::execution_space;
+      Kokkos::deep_copy (execution_space(), lclNorms, normsOut);
       const mag_type* const lclSum = lclNorms.data ();
       mag_type* const gblSum = normsOut.data ();
 
