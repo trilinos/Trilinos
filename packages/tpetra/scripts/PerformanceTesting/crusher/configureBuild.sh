@@ -49,6 +49,8 @@ ARGS=(
     # JHU: 2022-02-07 I've been unable to get Trilinos to build with the Cray MPI wrappers.
     # Instead, compile with hipcc directly.
     -D MPI_USE_COMPILER_WRAPPERS:BOOL=OFF
+    -D MPI_EXEC_NUMPROCS_FLAG:STRING="--ntasks"
+    -D MPI_EXEC:STRING="srun"
     -D CMAKE_CXX_COMPILER:PATH="/opt/rocm-4.5.2/bin/hipcc"
     -D CMAKE_CXX_FLAGS:STRING="-I${CRAY_MPICH_DIR}/include"
     -D BUILD_SHARED_LIBS:BOOL=OFF
@@ -102,7 +104,7 @@ ARGS=(
     -D Trilinos_ENABLE_Tpetra:BOOL=ON
     -D   Tpetra_ENABLE_TESTS:BOOL=ON
     -D   Tpetra_ENABLE_CUDA:BOOL=OFF
-    -D   Tpetra_ENABLE_HIP:BOOL=ON
+    -D   Tpetra_INST_HIP:BOOL=ON
     -D   Tpetra_INST_SERIAL:BOOL=ON
     -D   Tpetra_INST_OPENMP:BOOL=OFF
     -D   Tpetra_INST_DOUBLE:BOOL=ON
@@ -160,5 +162,5 @@ ARGS=(
 
 cmake "${ARGS[@]}" $TRILINOS_SRC |& tee configure_trilinos_performance.log
 
-NUMTHREADS=127
+NUMTHREADS=63
 numactl -C $(seq -s, 0 2 $NUMTHREADS) ninja -j $(seq -s, 0 2 $NUMTHREADS | tr ',' '\n' | wc -l)

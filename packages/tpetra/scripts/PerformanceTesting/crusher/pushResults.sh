@@ -19,5 +19,5 @@ cd $HOME/spock/trilinos-kernel-performance/CrusherData
 TODAY=`date +%F`
 git pull
 git add .
-git commit -m "${TODAY} ${SHA}: spock results"
+git commit -m "${TODAY} ${SHA}: crusher results"
 git push

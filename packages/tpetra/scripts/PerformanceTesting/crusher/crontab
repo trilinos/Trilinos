@@ -25,5 +25,5 @@ SHELL=/bin/bash
 
 TRILINOS_ROOT_DIR="/ccs/home/jjhu/crusher/sources/trilinos/Trilinos-muelu"
 
-# run at 12:05am ET/10:05pm PT
-5 0 * * * . /etc/bash.bashrc.local; cd ${TRILINOS_ROOT_DIR}/packages/tpetra/scripts/PerformanceTesting/spock;  source load_modules.sh; source ./launch.sh
+# run at 12:10am ET/10:10pm PT
+10 0 * * * . /etc/bash.bashrc.local; cd ${TRILINOS_ROOT_DIR}/packages/tpetra/scripts/PerformanceTesting/crusher;  source load_modules.sh; source ./launch.sh
