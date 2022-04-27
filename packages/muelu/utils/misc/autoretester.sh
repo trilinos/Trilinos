@@ -47,6 +47,7 @@ token=$(cat $tokenfile)
 h="'Authorization: token $token'"
 curl -i -H $h https://api.github.com/repos/$fork/$repo/pulls/$pr >$TMPFILE 2> /dev/null
 
+
 # Ensure the pull request number was valid.
 if grep "message.*Not Found" $TMPFILE > /dev/null; then
   echo $usage
@@ -56,8 +57,9 @@ fi
 
 
 # Has it been merged yet?
-curl -i -H $h https://api.github.com/repos/$fork/$repo/pulls/$pr/merge >$TMPFILE 2> /dev/null
-if grep 'Status: 204' $TMPFILE > /dev/null; then 
+# NOTE: This check is somewhat different from what the API suggests
+curl -i -H "Accept: application/vnd.github.v3+json"  https://api.github.com/repos/$fork/$repo/pulls/$pr/merge >$TMPFILE 2> /dev/null
+if grep 'HTTP/1.1 204' $TMPFILE > /dev/null; then 
     merged=1
 else
     merged=0
@@ -87,8 +89,9 @@ while [ $merged -eq 0 ]; do
     sleep 1800
     
     # Check to see if we're merged
-    curl -i -H $h https://api.github.com/repos/$fork/$repo/pulls/$pr/merge >$TMPFILE 2> /dev/null
-    if grep 'Status: 204' $TMPFILE > /dev/null; then 
+    # NOTE: This check is somewhat different from what the API suggests
+    curl -i -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/$fork/$repo/pulls/$pr/merge >$TMPFILE 2> /dev/null
+    if grep 'HTTP/1.1 204' $TMPFILE > /dev/null; then 
         merged=1
     fi
     
