@@ -121,6 +121,10 @@ namespace Intrepid2
       {
         tensorDataFamilies_[family] = TensorData<Scalar,ExecSpaceType>(otherFamilies[family]);
       }
+      auto otherOrdinalFilter = basisValues.ordinalFilter();
+      ordinalFilter_ = Kokkos::View<ordinal_type*,ExecSpaceType>("BasisValues::ordinalFilter_",otherOrdinalFilter.extent(0));
+      
+      Kokkos::deep_copy(ordinalFilter_, otherOrdinalFilter);
     }
     
     //! field start and length must align with families in vectorData_ or tensorDataFamilies_ (whichever is valid).
@@ -360,6 +364,11 @@ namespace Intrepid2
     void setOrdinalFilter(Kokkos::View<ordinal_type*,ExecSpaceType> ordinalFilter)
     {
       ordinalFilter_ = ordinalFilter;
+    }
+    
+    Kokkos::View<ordinal_type*,ExecSpaceType> ordinalFilter() const
+    {
+      return ordinalFilter_;
     }
   };
 }
