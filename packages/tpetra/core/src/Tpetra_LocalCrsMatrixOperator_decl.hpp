@@ -42,7 +42,9 @@
 
 #include "Tpetra_LocalCrsMatrixOperator_fwd.hpp"
 #include "Tpetra_LocalOperator.hpp"
+#include "Tpetra_Space.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+
 #include <memory> // std::shared_ptr
 
 namespace Tpetra {
@@ -240,20 +242,26 @@ namespace Tpetra {
       }
 
       /// \brief Kokkos dispatch of non-transpose
-      void launch(TagNonTrans) {
+      void launch(TagNonTrans, const Kokkos::DefaultExecutionSpace &space) {
 #if 0
         Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans>(0, A_.numRows()), *this);
 #else
-        const int vectorLength = 32;
+        const int vectorLength = 4;
         const int teamSize = 256 / vectorLength;
         const int rowsPerTeam = teamSize;
 
         int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
 
-        // Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(worksets,teamSize,vectorLength);
-        Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(worksets,Kokkos::AUTO,vectorLength);
+        // printf("%s:%d %ld, %d, %d\n", __FILE__, __LINE__, worksets, teamSize, vectorLength);
+        // Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
+        Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,Kokkos::AUTO,vectorLength);
         Kokkos::parallel_for("on-rank", policy, *this);
 #endif
+      }
+
+      // \brief Kokkos dispatch of non-transpose in get_exec_space(0)
+      void launch(TagNonTrans t) {
+        launch(t, get_exec_space(0));
       }
 
       /// \brief Kokkos dispatch of transpose
@@ -302,7 +310,6 @@ namespace Tpetra {
       typedef typename local_matrix_device_type::non_const_value_type value_type;
       typedef typename local_matrix_device_type::non_const_ordinal_type ordinal_type; 
       typedef typename local_matrix_device_type::non_const_size_type size_type; 
-      typedef typename local_matrix_device_type::execution_space execution_space;
       typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
       typedef typename team_policy::member_type team_member;
       typedef Kokkos::Details::ArithTraits<value_type> ATV;
@@ -383,20 +390,24 @@ namespace Tpetra {
       }
 
       /// \brief Kokkos dispatch of non-transpose
-      void launch(TagNonTrans) {
+      void launch(TagNonTrans, const Kokkos::DefaultExecutionSpace &space) {
 #if 0
         Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans>(0, A_.numRows()), *this);
 #else
-        const int vectorLength = 32;
+        const int vectorLength = 4;
         const int teamSize = 256 / vectorLength;
         const int rowsPerTeam = teamSize;
 
         int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
 
         // Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(worksets,teamSize,vectorLength);
-        Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(worksets,Kokkos::AUTO,vectorLength);
+        Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,Kokkos::AUTO,vectorLength);
         Kokkos::parallel_for("off-rank", policy, *this);
 #endif
+      }
+      // \brief Kokkos dispatch of non-transpose in get_exec_space(0)
+      void launch(TagNonTrans t) {
+        launch(t, get_exec_space(0));
       }
 
       /// \brief Kokkos dispatch of transpose

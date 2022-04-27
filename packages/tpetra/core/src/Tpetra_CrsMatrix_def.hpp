@@ -4896,6 +4896,16 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
     }
 
+    // both on-rank and off-rank apply happen in a non-default exec space
+    // to ensure that it overlaps with the default stream.
+    // make sure both are done before export
+    // CWP: TODO, LocalCrsMatrix implicitly uses exec space 0 for on-rank columns,
+    // but this argument should be carried through localApplyOnRank once it's working
+    // properly
+    if (Details::Behavior::overlapCommunicationAndComputation()) {
+      get_exec_space(0).fence("wait(localApplyOnRank)");
+    }
+
     // If we have a nontrivial Export object, we must perform an
     // Export.  In that case, the local multiply result will go into
     // the row Map multivector.  We don't have to make a

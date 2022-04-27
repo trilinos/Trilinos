@@ -55,6 +55,8 @@
 #  include "mpi.h"
 #endif // HAVE_TPETRACORE_MPI
 
+
+
 namespace Tpetra {
 
   /// \brief Get Tpetra's default communicator.
