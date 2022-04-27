@@ -324,7 +324,7 @@ namespace MueLuTests {
     // check that the min and max of each row are in [0,1]
     bool lowerViolation = false;
     bool upperViolation = false;
-    for (size_t i = 0; i < (size_t)(P->getRowMap()->getNodeNumElements()); i++) {
+    for (size_t i = 0; i < (size_t)(P->getRowMap()->getLocalNumElements()); i++) {
       Teuchos::ArrayView<const LO> indices;
       Teuchos::ArrayView<const SC> vals;
       P->getLocalRowView((LO) i, indices, vals);

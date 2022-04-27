@@ -573,7 +573,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
 
     using local_mat_type = typename Matrix::local_matrix_type;
     constraintKernel<local_mat_type> myKernel(nPDEs,P->getLocalMatrixDevice() );
-    Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getNodeNumElements() ),
+    Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getLocalNumElements() ),
                         myKernel );
 
   } //SatsifyPConstraints()
@@ -585,8 +585,8 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
     LO nPDEs = 1;//A->GetFixedBlockSize();
 
     using local_mat_type = typename Matrix::local_matrix_type;
-    optimalSatisfyConstraintsForScalarPDEsKernel<local_mat_type> myKernel(nPDEs,P->getNodeMaxNumRowEntries(),P->getLocalMatrixDevice() );
-    Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getNodeNumRows() ),
+    optimalSatisfyConstraintsForScalarPDEsKernel<local_mat_type> myKernel(nPDEs,P->getLocalMaxNumRowEntries(),P->getLocalMatrixDevice() );
+    Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getLocalNumRows() ),
                         myKernel );
 
   } //SatsifyPConstraints()

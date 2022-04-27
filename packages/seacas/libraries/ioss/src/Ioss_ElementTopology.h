@@ -65,7 +65,7 @@ namespace Ioss {
 
     //: Return whether the topology describes an "element". If it
     //: isn't an element, then it is a component of an element.  For
-    // example, a quadrilater Shell is an element, but a QuadFace is
+    // example, a quadrilateral Shell is an element, but a QuadFace is
     // not.
     //
     // Default implementation returns true if spatial_dimension() ==

@@ -133,6 +133,8 @@ computeLocalRowScaledColumnNorms_RowMatrix (EquilibrationInfo<typename Kokkos::A
   using mag_type = typename KAT::mag_type;
 
   auto rowNorms_h = Kokkos::create_mirror_view (result.rowNorms);
+
+  // DEEP_COPY REVIEW - NOT TESTED
   Kokkos::deep_copy (rowNorms_h, result.rowNorms);
   auto rowScaledColNorms_h = Kokkos::create_mirror_view (result.rowScaledColNorms);
 
@@ -149,6 +151,8 @@ computeLocalRowScaledColumnNorms_RowMatrix (EquilibrationInfo<typename Kokkos::A
         rowScaledColNorms_h[lclCol] += matrixAbsVal / rowNorm;
       }
     });
+
+  // DEEP_COPY REVIEW - NOT TESTED
   Kokkos::deep_copy (result.rowScaledColNorms, rowScaledColNorms_h);
 }
 

@@ -234,10 +234,10 @@ Teuchos::RCP<Matrix> BuildMatrix(bool is3D, const Tensor<typename Teuchos::Scala
 
   Teuchos::RCP<Matrix> A = Galeri::Xpetra::MatrixTraits<Map,Matrix>::Build(map, nnz);
 
-  LO numMyElements = map->getNodeNumElements();
+  LO numMyElements = map->getLocalNumElements();
   GO indexBase     = map->getIndexBase();
 
-  ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+  ArrayView<const GO> myGlobalElements = map->getLocalElementList();
 
   std::vector<GO> inds(nnz);
   std::vector<SC> vals(nnz);

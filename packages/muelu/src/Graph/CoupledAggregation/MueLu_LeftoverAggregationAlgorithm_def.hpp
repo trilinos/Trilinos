@@ -59,6 +59,11 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
 
+#ifdef HAVE_MUELU_TPETRA
+#include <Tpetra_Details_DefaultTypes.hpp>
+#endif
+
+
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -72,7 +77,7 @@ namespace MueLu {
     Monitor m(*this, "AggregateLeftovers");
 
     my_size_t nVertices = graph.GetNodeNumVertices();
-    int exp_nRows    = aggregates.GetMap()->getNodeNumElements(); // Tentative fix... was previously exp_nRows = nVertices + graph.GetNodeNumGhost();
+    int exp_nRows    = aggregates.GetMap()->getLocalNumElements(); // Tentative fix... was previously exp_nRows = nVertices + graph.GetNodeNumGhost();
     int myPid        = graph.GetComm()->getRank();
     my_size_t nAggregates  = aggregates.GetNumAggregates();
 
@@ -84,7 +89,7 @@ namespace MueLu {
     MueLu::CoupledAggregationCommHelper<LO,GO,NO> myWidget(uniqueMap, nonUniqueMap);
 
     //TODO JJH We want to skip this call
-    RCP<Xpetra::Vector<double,LO,GO,NO> > distWeights = Xpetra::VectorFactory<double,LO,GO,NO>::Build(nonUniqueMap);
+    RCP<Xpetra::Vector<SC,LO,GO,NO> > distWeights = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(nonUniqueMap);
 
     // Aggregated vertices not "definitively" assigned to processors are
     // arbitrated by ArbitrateAndCommunicate(). There is some
@@ -92,9 +97,9 @@ namespace MueLu {
     {
       ArrayRCP<const LO> vertex2AggId = aggregates.GetVertex2AggId()->getData(0);
       ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
-      ArrayRCP<double>    weights     = distWeights->getDataNonConst(0);
+      ArrayRCP<SC>    weights     = distWeights->getDataNonConst(0);
 
-      for (size_t i=0;i<nonUniqueMap->getNodeNumElements();i++) {
+      for (size_t i=0;i<nonUniqueMap->getLocalNumElements();i++) {
         if (procWinner[i] == MUELU_UNASSIGNED) {
           if (vertex2AggId[i] != MUELU_UNAGGREGATED) {
             weights[i] = 1.;
@@ -115,7 +120,7 @@ namespace MueLu {
     {
       ArrayRCP<LO>       vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
       ArrayRCP<const LO> procWinner   = aggregates.GetProcWinner()->getData(0);
-      ArrayRCP<double>   weights      = distWeights->getDataNonConst(0);
+      ArrayRCP<SC>   weights      = distWeights->getDataNonConst(0);
 
       for (my_size_t i = 0; i < nVertices; i++) {
         if ( aggregates.IsRoot(i) && (procWinner[i] == myPid) ) {
@@ -162,7 +167,7 @@ namespace MueLu {
       /* base the number of new aggregates created on the percentage of     */
       /* unaggregated nodes.                                                */
 
-      ArrayRCP<double>    weights      = distWeights->getDataNonConst(0);
+      ArrayRCP<SC>    weights      = distWeights->getDataNonConst(0);
 
       double factor = 1.;
       factor = ((double) total_phase_one_aggregated)/((double)(total_nVertices + 1));
@@ -226,18 +231,18 @@ namespace MueLu {
     // local copies associated with each Gid. Thus, sums > 1 are shared.
 
     //         std::cout << "exp_nrows=" << exp_nRows << " (nVertices= " << nVertices << ", numGhost=" << graph.GetNodeNumGhost() << ")" << std::endl;
-    //         std::cout << "nonUniqueMap=" << nonUniqueMap->getNodeNumElements() << std::endl;
+    //         std::cout << "nonUniqueMap=" << nonUniqueMap->getLocalNumElements() << std::endl;
 
-    RCP<Xpetra::Vector<double,LO,GO,NO> > temp_ = Xpetra::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap,false); //no need to zero out vector in ctor
+    RCP<Xpetra::Vector<SC,LO,GO,NO> > temp_ = Xpetra::VectorFactory<SC,LO,GO,NO> ::Build(nonUniqueMap,false); //no need to zero out vector in ctor
     temp_->putScalar(1.);
 
-    RCP<Xpetra::Vector<double,LO,GO,NO> > tempOutput_ = Xpetra::VectorFactory<double,LO,GO,NO> ::Build(nonUniqueMap);
+    RCP<Xpetra::Vector<SC,LO,GO,NO> > tempOutput_ = Xpetra::VectorFactory<SC,LO,GO,NO> ::Build(nonUniqueMap);
 
     myWidget.NonUnique2NonUnique(*temp_, *tempOutput_, Xpetra::ADD);
 
     std::vector<bool> gidNotShared(exp_nRows);
     {
-      ArrayRCP<const double> tempOutput = tempOutput_->getData(0);
+      ArrayRCP<const SC> tempOutput = tempOutput_->getData(0);
       for (int i = 0; i < exp_nRows; i++) {
         if (tempOutput[i] > 1.)
           gidNotShared[i] = false;
@@ -275,7 +280,7 @@ namespace MueLu {
 
       temp_->randomize();
 
-      ArrayRCP<double> temp = temp_->getDataNonConst(0);
+      ArrayRCP<SC> temp = temp_->getDataNonConst(0);
 
       // build a list of candidate root nodes (vertices not adjacent
       // to aggregated vertices)
@@ -303,7 +308,7 @@ namespace MueLu {
 
         {
           ArrayRCP<LO>     vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-          ArrayRCP<double> weights      = distWeights->getDataNonConst(0);
+          ArrayRCP<SC> weights      = distWeights->getDataNonConst(0);
 
           for (int k = 0; k < nCandidates; k++ ) {
             int i = candidates[k];
@@ -452,7 +457,7 @@ namespace MueLu {
 
         ArrayRCP<LO> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
         ArrayRCP<const LO> procWinner = aggregates.GetProcWinner()->getData(0);
-        ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
+        ArrayRCP<SC> weights       = distWeights->getDataNonConst(0);
 
         for (int i = 0; i < exp_nRows; i++) {
 
@@ -580,7 +585,7 @@ namespace MueLu {
     {
 
       ArrayRCP<LO> vertex2AggId     = aggregates.GetVertex2AggId()->getDataNonConst(0);
-      ArrayRCP<double> weights       = distWeights->getDataNonConst(0);
+      ArrayRCP<SC> weights       = distWeights->getDataNonConst(0);
       ArrayRCP<const LO> procWinner = aggregates.GetProcWinner()->getData(0);
 
       int count = 0;
@@ -700,7 +705,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   int LeftoverAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::RemoveSmallAggs(Aggregates& aggregates, int min_size,
-                      RCP<Xpetra::Vector<double,LO,GO,NO> > & distWeights, const MueLu::CoupledAggregationCommHelper<LO,GO,NO> & myWidget) const {
+                      RCP<Xpetra::Vector<SC,LO,GO,NO> > & distWeights, const MueLu::CoupledAggregationCommHelper<LO,GO,NO> & myWidget) const {
     int myPid = aggregates.GetMap()->getComm()->getRank();
 
     LO nAggregates = aggregates.GetNumAggregates();
@@ -713,7 +718,7 @@ namespace MueLu {
     //aggregates.ComputeAggSizes(AggInfo);
     ArrayRCP<LO> AggInfo = aggregates.ComputeAggregateSizes();
 
-    ArrayRCP<double> weights = distWeights->getDataNonConst(0);
+    ArrayRCP<SC> weights = distWeights->getDataNonConst(0);
 
     // Make a list of all aggregates indicating New AggId
     // Use AggInfo array for this.

@@ -134,7 +134,7 @@ namespace FROSch {
                 // run local restriction on execution space defined by local-map
                 using XMap            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
                 using execution_space = typename XMap::local_map_type::execution_space;
-                Kokkos::RangePolicy<execution_space> policy (0, yMap->getNodeNumElements());
+                Kokkos::RangePolicy<execution_space> policy (0, yMap->getLocalNumElements());
                 for (UN i=0; i<y.getNumVectors(); i++) {
                     auto yOverlapData_i = YOverlap_->getData(i);
                     auto xLocalData_i = XTmp_->getDataNonConst(i);
@@ -154,7 +154,7 @@ namespace FROSch {
                 LO localID = 0;
                 for (UN i=0; i<y.getNumVectors(); i++) {
                     ConstSCVecPtr yOverlapData_i = YOverlap_->getData(i);
-                    for (UN j=0; j<yMap->getNodeNumElements(); j++) {
+                    for (UN j=0; j<yMap->getLocalNumElements(); j++) {
                         globID = yMap->getGlobalElement(j);
                         localID = yOverlapMap->getLocalElement(globID);
                         XTmp_->getDataNonConst(i)[j] = yOverlapData_i[localID];

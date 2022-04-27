@@ -38,6 +38,7 @@ APPEND_SET(SOURCES
   Hierarchy.cpp
   IndexManager.cpp
   Level.cpp
+  LowPrecision.cpp
   LWGraph.cpp
   MapTransferFactory.cpp
   Memory.cpp

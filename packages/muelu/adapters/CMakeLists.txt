@@ -120,6 +120,9 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory_decl.hpp
     ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory_def.hpp
     ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory.hpp
+    ${DIR}/Thyra_MueLuMaxwell1PreconditionerFactory_decl.hpp
+    ${DIR}/Thyra_MueLuMaxwell1PreconditionerFactory_def.hpp
+    ${DIR}/Thyra_MueLuMaxwell1PreconditionerFactory.hpp
     ${DIR}/Thyra_XpetraLinearOp_decl.hpp
     ${DIR}/Thyra_XpetraLinearOp_def.hpp
     ${DIR}/Thyra_XpetraLinearOp.hpp
@@ -189,6 +192,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
       APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
         Thyra::MueLuRefMaxwellPreconditionerFactory
+        Thyra::MueLuMaxwell1PreconditionerFactory
       )
     ENDIF()
   ENDIF()
@@ -197,11 +201,11 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
       Thyra::MueLuPreconditionerFactory
       Thyra::XpetraLinearOp
     )
-  ENDIF()	
+  ENDIF()
   IF (${PACKAGE_NAME}_ENABLE_AmgX)
     APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
       MueLu::AMGXOperator
-    )    
+    )
   ENDIF()
 
   # Set the list of classes in MueLu adapters that are templated on <LO, GO, Node> for

@@ -114,23 +114,23 @@ public:
   static_assert (std::is_same<typename CountsViewType::device_type::execution_space,
                    typename device_type::execution_space>::value,
                  "OutputOffsetsViewType and CountsViewType must have the same execution space.");
-  static_assert (Kokkos::Impl::is_view<OutputOffsetsViewType>::value,
+  static_assert (Kokkos::is_view<OutputOffsetsViewType>::value,
                  "OutputOffsetsViewType must be a Kokkos::View.");
   static_assert (std::is_same<typename OutputOffsetsViewType::value_type, output_offset_type>::value,
                  "OutputOffsetsViewType must be a nonconst Kokkos::View.");
   static_assert (std::is_integral<output_offset_type>::value,
                  "The type of each entry of OutputOffsetsViewType must be a built-in integer type.");
-  static_assert (Kokkos::Impl::is_view<CountsViewType>::value,
+  static_assert (Kokkos::is_view<CountsViewType>::value,
                  "CountsViewType must be a Kokkos::View.");
   static_assert (std::is_same<typename CountsViewType::value_type, output_offset_type>::value,
                  "CountsViewType must be a nonconst Kokkos::View.");
   static_assert (std::is_integral<count_type>::value,
                  "The type of each entry of CountsViewType must be a built-in integer type.");
-  static_assert (Kokkos::Impl::is_view<InputOffsetsViewType>::value,
+  static_assert (Kokkos::is_view<InputOffsetsViewType>::value,
                  "InputOffsetsViewType must be a Kokkos::View.");
   static_assert (std::is_integral<input_offset_type>::value,
                  "The type of each entry of InputOffsetsViewType must be a built-in integer type.");
-  static_assert (Kokkos::Impl::is_view<InputLocalRowIndicesViewType>::value,
+  static_assert (Kokkos::is_view<InputLocalRowIndicesViewType>::value,
                  "InputLocalRowIndicesViewType must be a Kokkos::View.");
   static_assert (std::is_integral<local_row_index_type>::value,
                  "The type of each entry of InputLocalRowIndicesViewType must be a built-in integer type.");
@@ -224,7 +224,9 @@ public:
   //! Host function for getting the error.
   int getError () const {
     auto error_h = Kokkos::create_mirror_view (error_);
-    Kokkos::deep_copy (error_h, error_);
+    // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+    using execution_space = typename device_type::execution_space;
+    Kokkos::deep_copy (execution_space(), error_h, error_);
     return error_h ();
   }
 
@@ -828,7 +830,10 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
   View<size_t*, HostSpace, MemoryUnmanaged>
     num_packets_per_lid_h (numPacketsPerLID.getRawPtr (),
                            numPacketsPerLID.size ());
-  Kokkos::deep_copy (num_packets_per_lid_h, num_packets_per_lid_d);
+
+  // DEEP_COPY REVIEW - DEVICE-TO-HOST
+  using execution_space = typename BDT::execution_space;
+  Kokkos::deep_copy (execution_space(), num_packets_per_lid_h, num_packets_per_lid_d);
 
   // FIXME (mfh 23 Aug 2017) If we're forced to use a DualView for
   // exports_dv above, then we have two host copies for exports_h.
@@ -841,7 +846,8 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
   }
   View<packet_type*, HostSpace, MemoryUnmanaged>
     exports_h (exports.getRawPtr (), exports.size ());
-  Kokkos::deep_copy (exports_h, exports_dv.d_view);
+  // DEEP_COPY REVIEW - DEVICE-TO-HOST
+  Kokkos::deep_copy (execution_space(), exports_h, exports_dv.d_view);
 }
 
 /// \brief Pack specified entries of the given local sparse graph for
@@ -995,7 +1001,10 @@ packCrsGraphWithOwningPIDs
   // have to copy them back to host.
   View<size_t*, HostSpace, MemoryUnmanaged> num_packets_per_lid_h
     (numPacketsPerLID.getRawPtr (), numPacketsPerLID.size ());
-  Kokkos::deep_copy (num_packets_per_lid_h, num_packets_per_lid_d);
+  // DEEP_COPY REVIEW - DEVICE-TO-HOST
+  using execution_space = typename buffer_device_type::execution_space;
+  Kokkos::deep_copy (execution_space(),
+    num_packets_per_lid_h, num_packets_per_lid_d);
 }
 
 } // namespace Details

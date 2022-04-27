@@ -189,7 +189,7 @@ namespace Xpetra {
           if (thyraOp->blockExists(r,c)) {
             // we only need at least one block in each block row to extract the range map
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
-            Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
+            Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > xop =
                             Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(const_op);
             subRangeMaps[r] = xop->getRangeMap();
             if(r!=c) is_diagonal_ = false;
@@ -216,7 +216,7 @@ namespace Xpetra {
           if (thyraOp->blockExists(r,c)) {
             // we only need at least one block in each block row to extract the range map
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
-            Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
+            Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > xop =
                             Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(const_op);
             subDomainMaps[c] = xop->getDomainMap();
             break;
@@ -245,10 +245,10 @@ namespace Xpetra {
             // TODO we do not support nested Thyra operators here!
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
             Teuchos::RCP<Thyra::LinearOpBase<Scalar> > op = Teuchos::rcp_const_cast<Thyra::LinearOpBase<Scalar> >(const_op); // cast away const
-            Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
+            Teuchos::RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > xop =
                 Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(op);
             Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node> > xwrap =
-                Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xop));
+              Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node> >(xop, true);
             blocks_.push_back(xwrap);
           } else {
             // add empty block
@@ -277,10 +277,10 @@ namespace Xpetra {
       for(size_t tt = 0; tt<subMaps.size(); ++tt) {
         Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > subMap = subMaps[tt];
 #if 1
-        Teuchos::ArrayView< const GlobalOrdinal > subMapGids = subMap->getNodeElementList();
+        Teuchos::ArrayView< const GlobalOrdinal > subMapGids = subMap->getLocalElementList();
         gids.insert(gids.end(), subMapGids.begin(), subMapGids.end());
 #else
-        size_t myNumElements = subMap->getNodeNumElements();
+        size_t myNumElements = subMap->getLocalNumElements();
         for(LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(myNumElements); ++l) {
           GlobalOrdinal gid = subMap->getGlobalElement(l);
           gids.push_back(gid);
@@ -504,7 +504,7 @@ namespace Xpetra {
 #if 0
       // get full row map
       RCP<const Map> rangeMap = rangemaps_->getFullMap();
-      fullrowmap_ = MapFactory::Build(rangeMap()->lib(), rangeMap()->getGlobalNumElements(), rangeMap()->getNodeElementList(), rangeMap()->getIndexBase(), rangeMap()->getComm());
+      fullrowmap_ = MapFactory::Build(rangeMap()->lib(), rangeMap()->getGlobalNumElements(), rangeMap()->getLocalElementList(), rangeMap()->getIndexBase(), rangeMap()->getComm());
 
       // build full col map
       fullcolmap_ = Teuchos::null; // delete old full column map
@@ -517,7 +517,7 @@ namespace Xpetra {
           Teuchos::RCP<CrsMatrix> Ablock = getMatrix(r,c);
 
           if (Ablock != Teuchos::null) {
-            Teuchos::ArrayView<const GO> colElements = Ablock->getColMap()->getNodeElementList();
+            Teuchos::ArrayView<const GO> colElements = Ablock->getColMap()->getLocalElementList();
             Teuchos::RCP<const Map>      colmap      = Ablock->getColMap();
             copy(colElements.getRawPtr(), colElements.getRawPtr() + colElements.size(), inserter(colset, colset.begin()));
           }
@@ -579,14 +579,14 @@ namespace Xpetra {
     }
 
     //! Returns the number of matrix rows owned on the calling node.
-    size_t getNodeNumRows() const {
-      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNodeNumRows");
+    size_t getLocalNumRows() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getLocalNumRows");
       global_size_t nodeNumRows = 0;
 
       for (size_t row = 0; row < Rows(); ++row)
         for (size_t col = 0; col < Cols(); col++)
           if (!getMatrix(row,col).is_null()) {
-            nodeNumRows += getMatrix(row,col)->getNodeNumRows();
+            nodeNumRows += getMatrix(row,col)->getLocalNumRows();
             break; // we need only one non-null matrix in a row
           }
 
@@ -607,14 +607,14 @@ namespace Xpetra {
     }
 
     //! Returns the local number of entries in this matrix.
-    size_t getNodeNumEntries() const {
-      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNodeNumEntries");
+    size_t getLocalNumEntries() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getLocalNumEntries");
       global_size_t nodeNumEntries = 0;
 
       for (size_t row = 0; row < Rows(); ++row)
         for (size_t col = 0; col < Cols(); ++col)
           if (!getMatrix(row,col).is_null())
-            nodeNumEntries += getMatrix(row,col)->getNodeNumEntries();
+            nodeNumEntries += getMatrix(row,col)->getLocalNumEntries();
 
       return nodeNumEntries;
     }
@@ -668,15 +668,15 @@ namespace Xpetra {
     //! \brief Returns the maximum number of entries across all rows/columns on this node.
     /** Undefined if isFillActive().
     */
-    size_t getNodeMaxNumRowEntries() const {
-      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNodeMaxNumRowEntries");
+    size_t getLocalMaxNumRowEntries() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getLocalMaxNumRowEntries");
       size_t localMaxEntries = 0;
 
       for (size_t row = 0; row < Rows(); row++) {
         size_t localMaxEntriesBlockRows = 0;
         for (size_t col = 0; col < Cols(); col++) {
           if (!getMatrix(row,col).is_null()) {
-            localMaxEntriesBlockRows += getMatrix(row,col)->getNodeMaxNumRowEntries();
+            localMaxEntriesBlockRows += getMatrix(row,col)->getLocalMaxNumRowEntries();
           }
         }
         if(localMaxEntriesBlockRows > localMaxEntries)
@@ -1377,7 +1377,7 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Xpetra::Exceptions::RuntimeError,
                                  "BlockedCrsMatrix::Merge: BlockMatrix must be fill-completed." );
 
-      LocalOrdinal lclNumRows = getFullRangeMap()->getNodeNumElements();
+      LocalOrdinal lclNumRows = getFullRangeMap()->getLocalNumElements();
       Teuchos::ArrayRCP<size_t> numEntPerRow (lclNumRows);
       for (LocalOrdinal lclRow = 0; lclRow < lclNumRows; ++lclRow)
         numEntPerRow[lclRow] = getNumEntriesInLocalRow(lclRow);
@@ -1400,7 +1400,7 @@ namespace Xpetra {
                                          "BlockedCrsMatrix::Merge: Merging of blocked sub-operators failed?!" );
 
               // jump over empty blocks
-              if(mat->getNodeNumEntries() == 0) continue;
+              if(mat->getLocalNumEntries() == 0) continue;
 
               this->Add(*mat, one, *sparse, one);
             }
@@ -1442,9 +1442,9 @@ namespace Xpetra {
                     *xdomMap);
 
               // jump over empty blocks
-              if(mat->getNodeNumEntries() == 0) continue;
+              if(mat->getLocalNumEntries() == 0) continue;
 
-              size_t maxNumEntries = mat->getNodeMaxNumRowEntries();
+              size_t maxNumEntries = mat->getLocalMaxNumRowEntries();
 
               size_t    numEntries;
               Array<GO> inds (maxNumEntries);
@@ -1452,7 +1452,7 @@ namespace Xpetra {
               Array<SC> vals (maxNumEntries);
 
               // loop over all rows and add entries
-              for (size_t k = 0; k < mat->getNodeNumRows(); k++) {
+              for (size_t k = 0; k < mat->getLocalNumRows(); k++) {
                 GlobalOrdinal rowTGID = trowMap->getGlobalElement(k);
                 crsMat->getCrsMatrix()->getGlobalRowCopy(rowTGID, inds(), vals(), numEntries);
 
@@ -1474,7 +1474,7 @@ namespace Xpetra {
 
       sparse->fillComplete(getFullDomainMap(), getFullRangeMap());
 
-      TEUCHOS_TEST_FOR_EXCEPTION(sparse->getNodeNumEntries() != getNodeNumEntries(), Xpetra::Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION(sparse->getLocalNumEntries() != getLocalNumEntries(), Xpetra::Exceptions::RuntimeError,
                                  "BlockedCrsMatrix::Merge: Local number of entries of merged matrix does not coincide with local number of entries of blocked operator." );
 
       TEUCHOS_TEST_FOR_EXCEPTION(sparse->getGlobalNumEntries() != getGlobalNumEntries(), Xpetra::Exceptions::RuntimeError,
@@ -1568,7 +1568,7 @@ namespace Xpetra {
                                        "BlockedCrsMatrix::Add: matrix A must be of type CrsMatrixWrap.");
       Teuchos::RCP<const CrsMatrix> crsA = rcpAwrap->getCrsMatrix();
 
-      size_t maxNumEntries = crsA->getNodeMaxNumRowEntries();
+      size_t maxNumEntries = crsA->getLocalMaxNumRowEntries();
 
       size_t    numEntries;
       Array<GO> inds(maxNumEntries);
@@ -1577,8 +1577,8 @@ namespace Xpetra {
       RCP<const Map> rowMap = crsA->getRowMap();
       RCP<const Map> colMap = crsA->getColMap();
 
-      ArrayView<const GO> rowGIDs = crsA->getRowMap()->getNodeElementList();
-      for (size_t i = 0; i < crsA->getNodeNumRows(); i++) {
+      ArrayView<const GO> rowGIDs = crsA->getRowMap()->getLocalElementList();
+      for (size_t i = 0; i < crsA->getLocalNumRows(); i++) {
         GO row = rowGIDs[i];
         crsA->getGlobalRowCopy(row, inds(), vals(), numEntries);
 
@@ -1604,6 +1604,28 @@ namespace Xpetra {
       // Set current view
       this->currentViewLabel_ = this->GetDefaultViewLabel();
     }
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumRows() const {
+      return getLocalNumRows();
+    }
+#endif
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumEntries() const {
+      return getLocalNumEntries();
+    }
+#endif
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeMaxNumRowEntries() const {
+      return getLocalMaxNumRowEntries();
+    }
+#endif
+
 
   private:
     bool is_diagonal_; ///< If we're diagonal, a bunch of the extraction stuff should work

@@ -44,6 +44,7 @@
 #include <BelosTypes.hpp> // includes BelosConfigDefs.hpp
 #include <BelosOrthoManagerFactory.hpp>
 #include <BelosOrthoManagerTest.hpp>
+#include <BelosTpetraTestFramework.hpp>
 #include <BelosTpetraAdapter.hpp>
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -107,33 +108,36 @@ namespace Belos {
     /// distribution of the sparse matrix: we distribute in a way such
     /// that the domain, range, and row maps are the same) and a
     /// sparse_matrix_type (the sparse matrix itself).
-    template<class LO, class GO, class NodeType>
-    std::pair<Teuchos::RCP<Tpetra::Map<LO, GO, NodeType> >, Teuchos::RCP<Tpetra::CrsMatrix<double, LO, GO, NodeType> > >
+    template<class SC, class LO, class GO, class NodeType>
+    std::pair<Teuchos::RCP<::Tpetra::Map<LO, GO, NodeType> >, Teuchos::RCP<::Tpetra::CrsMatrix<SC, LO, GO, NodeType> > >
     loadSparseMatrix (const Teuchos::RCP< const Teuchos::Comm<int> > pComm,
                       const std::string& filename,
                       int& numRows,
                       std::ostream& debugOut)
     {
-      typedef double scalar_type;
+      typedef SC scalar_type;
       typedef LO local_ordinal_type;
       typedef GO global_ordinal_type;
       typedef NodeType node_type;
 
-      typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-      typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
+      typedef ::Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+      typedef ::Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> sparse_matrix_type;
 
       using Teuchos::RCP;
       using Teuchos::rcp;
       using std::vector;
 
-      const int myRank = Teuchos::rank (*pComm);
+      //      const int myRank = Teuchos::rank (*pComm);
       RCP<map_type> pMap;
       RCP<sparse_matrix_type> pMatrix;
 
       if (filename != "")
         {
           debugOut << "Loading sparse matrix file \"" << filename << "\"" << endl;
-
+          Belos::Tpetra::HarwellBoeingReader<sparse_matrix_type> reader(pComm);
+          pMatrix = reader.readFromFile(filename);
+          pMap = Teuchos::rcp_const_cast<map_type>(pMatrix->getRowMap());
+#if 0          
           int loadedNumRows = 0;
           int numCols = 0;
           int nnz = -1;
@@ -274,6 +278,7 @@ namespace Belos {
           // among the processes.  The domain, range, and row maps are
           // the same (the matrix must be square).
           pMatrix->fillComplete();
+#endif
           debugOut << "Completed loading and distributing sparse matrix" << endl;
         } // else M == null
       else
@@ -283,7 +288,7 @@ namespace Belos {
           // Let M remain null, and allocate map using the number of rows
           // (numRows) specified on the command line.
           pMap = rcp (new map_type (numRows, 0, pComm,
-                                    Tpetra::GloballyDistributed));
+                                    ::Tpetra::GloballyDistributed));
         }
       return std::make_pair (pMap, pMatrix);
     }

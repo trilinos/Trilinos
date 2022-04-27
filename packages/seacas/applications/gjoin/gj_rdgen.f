@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C Copyright(C) 1999-2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -232,11 +232,6 @@ C   --Read in the element block ID array
          goto 960
       endif
 
-C   --Determine size of entity names...
-      if (namlen .eq. 0) then
-         call exinq(netid, EXDBMXUSNM, namlen, dummy, cdummy, ierr)
-         if (namlen .lt. 32) namlen = 32
-      end if
       call exmxnm(netid, namlen, ierr)
 
 C   --Read the element blocks

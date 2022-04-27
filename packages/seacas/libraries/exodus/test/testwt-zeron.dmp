@@ -18,7 +18,6 @@ variables:
 	float vals_glo_var(time_step, num_glo_var) ;
 
 // global attributes:
-		:floating_point_word_size = 4 ;
 		:file_size = 1 ;
 		:maximum_name_length = 32 ;
 		:title = "This is a test" ;

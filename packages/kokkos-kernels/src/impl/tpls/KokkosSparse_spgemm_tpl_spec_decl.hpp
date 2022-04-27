@@ -46,8 +46,7 @@
 #define KOKKOSPARSE_SPGEMM_TPL_SPEC_DECL_HPP_
 
 namespace KokkosSparse {
-namespace Impl {
-}
-}
+namespace Impl {}
+}  // namespace KokkosSparse
 
 #endif

@@ -8,9 +8,18 @@ SET(ARGS "--filedir=${CMAKE_CURRENT_BINARY_DIR}/")
 #
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Bug10008
+  SOURCES
+    Bug10008.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests
   SOURCES
-    CrsMatrix_UnitTests
+    CrsMatrix_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -20,7 +29,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests2
   SOURCES
-    CrsMatrix_UnitTests2
+    CrsMatrix_UnitTests2.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial mpi
@@ -30,7 +39,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests3
   SOURCES
-    CrsMatrix_UnitTests3
+    CrsMatrix_UnitTests3.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial mpi
@@ -40,7 +49,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests4
   SOURCES
-    CrsMatrix_UnitTests4
+    CrsMatrix_UnitTests4.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial mpi
@@ -50,7 +59,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests_LocalAccessors
   SOURCES
-    CrsMatrix_UnitTests_LocalAccessors
+    CrsMatrix_UnitTests_LocalAccessors.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -59,7 +68,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnitTests_Swap
   SOURCES
-    CrsMatrix_UnitTests_Swap
+    CrsMatrix_UnitTests_Swap.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM mpi
@@ -70,7 +79,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NonlocalAfterResume
   SOURCES
-    CrsMatrix_NonlocalAfterResume
+    CrsMatrix_NonlocalAfterResume.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -80,7 +89,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NodeConversion
   SOURCES
-    CrsMatrix_NodeConversion
+    CrsMatrix_NodeConversion.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -90,7 +99,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_LeftRightScale
   SOURCES
-    CrsMatrix_LeftRightScale
+    CrsMatrix_LeftRightScale.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -114,7 +123,7 @@ IF (Tpetra_INST_SYCL)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
 	  CrsMatrix_WithGraph_SYCL
     SOURCES
-      CrsMatrix_WithGraph_SYCL
+      CrsMatrix_WithGraph_SYCL.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS ${ARGS}
     COMM serial mpi
@@ -127,7 +136,7 @@ IF (Tpetra_INST_CUDA)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_Cuda
     SOURCES
-      CrsMatrix_WithGraph_Cuda
+      CrsMatrix_WithGraph_Cuda.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS ${ARGS}
     COMM serial mpi
@@ -140,7 +149,7 @@ IF (Tpetra_INST_OPENMP)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_OpenMP
     SOURCES
-      CrsMatrix_WithGraph_OpenMP
+      CrsMatrix_WithGraph_OpenMP.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS ${ARGS}
     COMM serial mpi
@@ -153,7 +162,7 @@ IF (Tpetra_INST_SERIAL)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_Serial
     SOURCES
-      CrsMatrix_WithGraph_Serial
+      CrsMatrix_WithGraph_Serial.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS ${ARGS}
     COMM serial mpi
@@ -166,7 +175,7 @@ IF (Tpetra_INST_PTHREAD)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_WithGraph_Threads
     SOURCES
-      CrsMatrix_WithGraph_Threads
+      CrsMatrix_WithGraph_Threads.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     ARGS ${ARGS}
     COMM serial mpi
@@ -178,7 +187,7 @@ ENDIF ()
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceDomainMapAndImporter
   SOURCES
-    CrsMatrix_ReplaceDomainMapAndImporter
+    CrsMatrix_ReplaceDomainMapAndImporter.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -188,7 +197,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceRangeMapAndExporter
   SOURCES
-    CrsMatrix_ReplaceRangeMapAndExporter
+    CrsMatrix_ReplaceRangeMapAndExporter.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -211,7 +220,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CrsTests_CopyFiles2
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NonlocalSumInto
   SOURCES
-    CrsMatrix_NonlocalSumInto
+    CrsMatrix_NonlocalSumInto.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM mpi
@@ -223,7 +232,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_NonlocalSumInto_Ignore
   SOURCES
-    CrsMatrix_NonlocalSumInto_Ignore
+    CrsMatrix_NonlocalSumInto_Ignore.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM mpi
@@ -235,7 +244,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_Bug5978
   SOURCES
-  Bug5978
+  Bug5978.cpp
   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM mpi
@@ -248,7 +257,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_Bug6069_1
   SOURCES
-  Bug6069_1
+  Bug6069_1.cpp
   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM mpi
@@ -261,7 +270,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_Bug6069_2
   SOURCES
-  Bug6069_2
+  Bug6069_2.cpp
   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM mpi
@@ -274,7 +283,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_Bug6171
   SOURCES
-  Bug6171
+  Bug6171.cpp
   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM mpi
@@ -285,7 +294,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_Bug8794
   SOURCES
-  Bug8794
+  Bug8794.cpp
   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM serial mpi
@@ -296,7 +305,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceLocalValues
   SOURCES
-    CrsMatrix_ReplaceLocalValues
+    CrsMatrix_ReplaceLocalValues.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -306,7 +315,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceDiagonal
   SOURCES
-    CrsMatrix_ReplaceDiagonal
+    CrsMatrix_ReplaceDiagonal.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -316,7 +325,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_MultipleFillCompletes
   SOURCES
-    CrsMatrix_MultipleFillCompletes
+    CrsMatrix_MultipleFillCompletes.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -326,7 +335,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReindexColumns
   SOURCES
-    CrsMatrix_ReindexColumns
+    CrsMatrix_ReindexColumns.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -336,7 +345,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_TransformValues
   SOURCES
-    CrsMatrix_TransformValues
+    CrsMatrix_TransformValues.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -346,7 +355,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_GetRowCopy
   SOURCES
-    CrsMatrix_GetRowCopy
+    CrsMatrix_GetRowCopy.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -376,7 +385,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   assembleElement
   SOURCES
-    assembleElement
+    assembleElement.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -398,7 +407,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   applyDirichlet
   SOURCES
-    applyDirichlet
+    applyDirichlet.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
@@ -409,7 +418,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_StaticImportExport
   SOURCES
-    CrsMatrix_StaticImportExport
+    CrsMatrix_StaticImportExport.cpp
   ARGS ""
   COMM serial mpi
   NUM_MPI_PROCS 1-4
@@ -418,7 +427,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   sumIntoStaticProfileExtraSpace
-  SOURCES sumIntoStaticProfileExtraSpace
+  SOURCES sumIntoStaticProfileExtraSpace.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -428,7 +437,7 @@ IF (Tpetra_ENABLE_DEPRECATED_CODE)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     CrsMatrix_createDeepCopy
     SOURCES
-      CrsMatrix_createDeepCopy
+      CrsMatrix_createDeepCopy.cpp
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     STANDARD_PASS_OUTPUT
@@ -438,7 +447,7 @@ ENDIF()
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_UnpackMerge
   SOURCES
-    UnpackMerge
+    UnpackMerge.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2
@@ -448,7 +457,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_Bug7745
   SOURCES
-  Bug7745
+  Bug7745.cpp
   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM mpi serial
@@ -458,7 +467,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_Bug8447
   SOURCES
-  Bug8447
+  Bug8447.cpp
   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS
   COMM mpi
@@ -469,7 +478,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_RemoveEmptyProcesses
   SOURCES
-    CrsMatrix_removeEmptyProcesses
+    CrsMatrix_removeEmptyProcesses.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2-4

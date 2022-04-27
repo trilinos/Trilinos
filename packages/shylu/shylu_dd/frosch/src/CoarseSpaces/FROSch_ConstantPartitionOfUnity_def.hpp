@@ -143,7 +143,7 @@ namespace FROSch {
                     globalVec[0] += 1;
                 }
                 if (globalVec[0]<0) globalVec[0] = 0;
-                localVec[0] = (LO) max((LO) Volumes_->getEntityMap()->getNodeNumElements(),(LO) 0);
+                localVec[0] = (LO) max((LO) Volumes_->getEntityMap()->getLocalNumElements(),(LO) 0);
                 reduceAll(*this->MpiComm_,REDUCE_SUM,localVec[0],ptr(&sumVec[0]));
                 avgVec[0] = max(sumVec[0]/double(this->MpiComm_->getSize()),0.0);
                 reduceAll(*this->MpiComm_,REDUCE_MIN,localVec[0],ptr(&minVec[0]));

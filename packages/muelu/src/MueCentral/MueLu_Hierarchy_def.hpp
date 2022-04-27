@@ -1442,10 +1442,10 @@ namespace MueLu {
       // Create a nodal map, as coordinates have not been expanded to a DOF map yet.
       RCP<const Map> dofMap       = A->getRowMap();
       GO             indexBase    = dofMap->getIndexBase();
-      size_t         numLocalDOFs = dofMap->getNodeNumElements();
+      size_t         numLocalDOFs = dofMap->getLocalNumElements();
       TEUCHOS_TEST_FOR_EXCEPTION(numLocalDOFs % blkSize, Exceptions::RuntimeError,
         "Hierarchy::ReplaceCoordinateMap: block size (" << blkSize << ") is incompatible with the number of local dofs in a row map (" << numLocalDOFs);
-      ArrayView<const GO> GIDs = dofMap->getNodeElementList();
+      ArrayView<const GO> GIDs = dofMap->getLocalElementList();
 
       Array<GO> nodeGIDs(numLocalDOFs/blkSize);
       for (size_t i = 0; i < numLocalDOFs; i += blkSize)
@@ -1458,7 +1458,7 @@ namespace MueLu {
       // Check whether the length of vectors fits to the size of A
       // If yes, make sure that the maps are matching
       // If no, throw a warning but do not touch the Coordinates
-      if(coords->getLocalLength() != A->getRowMap()->getNodeNumElements()) {
+      if(coords->getLocalLength() != A->getRowMap()->getLocalNumElements()) {
         GetOStream(Warnings) << "Coordinate vector does not match row map of matrix A!" << std::endl;
         return;
       }

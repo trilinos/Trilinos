@@ -93,16 +93,16 @@ namespace Xpetra {
     virtual global_size_t getGlobalNumCols() const = 0;
 
     //! Returns the number of rows owned on the calling node.
-    virtual size_t getNodeNumRows() const = 0;
+    virtual size_t getLocalNumRows() const = 0;
 
     //! Returns the number of columns needed to apply the forward operator on this node, i.e., the number of elements listed in the column map.
-    virtual size_t getNodeNumCols() const = 0;
+    virtual size_t getLocalNumCols() const = 0;
 
     //! Returns the global number of entries in this matrix.
     virtual global_size_t getGlobalNumEntries() const = 0;
 
     //! Returns the local number of entries in this matrix.
-    virtual size_t getNodeNumEntries() const = 0;
+    virtual size_t getLocalNumEntries() const = 0;
 
     //! Returns the current number of entries on this node in the specified local row.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
@@ -111,7 +111,7 @@ namespace Xpetra {
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    virtual size_t getLocalMaxNumRowEntries() const = 0;
 
     //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */.
     virtual bool isLocallyIndexed() const = 0;
@@ -163,6 +163,34 @@ namespace Xpetra {
 
     //! Computes the operator-multivector application.
     virtual void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=Teuchos::ScalarTraits< Scalar >::one(), Scalar beta=Teuchos::ScalarTraits< Scalar >::zero()) const = 0;
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumRows() const {
+      return getLocalNumRows();
+    }
+#endif
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumCols() const {
+      return getLocalNumCols();
+    }
+#endif
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumEntries() const {
+      return getLocalNumEntries();
+    }
+#endif
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeMaxNumRowEntries() const {
+      return getLocalMaxNumRowEntries();
+    }
+#endif
 
     //@}
 

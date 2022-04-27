@@ -25,7 +25,6 @@
 #include <spmv/OpenMPSmartStatic_SPMV.hpp>
 #endif
 
-
 #ifdef HAVE_CUSPARSE
 #include <spmv/CuSparse_SPMV.hpp>
 #endif
@@ -33,6 +32,9 @@
 #ifdef HAVE_MKL
 #include <spmv/MKL_SPMV.hpp>
 #endif
+
+template <typename AType, typename XType, typename YType>
+void armpl_matvec(AType /*A*/, XType x, YType y, spmv_additional_data* data);
 
 enum {
   KOKKOS,
@@ -57,9 +59,9 @@ using Layout  = default_layout;
 std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(
     const rajaperf::RunParams& params);
 
-
 test_list construct_kernel_base(const rajaperf::RunParams& run_params,
-                                Ordinal numRows, Ordinal numCols, spmv_additional_data* data,
+                                Ordinal numRows, Ordinal numCols,
+                                spmv_additional_data* data,
                                 Ordinal rows_per_thread, int team_size,
                                 int vector_length, int schedule, int loop);
 
@@ -86,7 +88,7 @@ struct SPMVTestData {
   h_mv_type h_y_compare;
   h_mv_type h_x;
   h_mv_type h_y;
-  //int test;
+  // int test;
   spmv_additional_data* data;
   int schedule;
   int num_errors;
@@ -135,7 +137,6 @@ SPMVTestData setup_test(spmv_additional_data* data, SPMVTestData::matrix_type A,
                         Ordinal rows_per_thread, int team_size,
                         int vector_length, int schedule, int loop);
 
-
 template <typename AType, typename XType, typename YType>
 void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size,
             int vector_length, spmv_additional_data* data, int schedule) {
@@ -160,48 +161,46 @@ void matvec(AType& A, XType x, YType y, Ordinal rows_per_thread, int team_size,
       break;
 
 #ifdef KOKKOS_ENABLE_OPENMP
-        case OMP_STATIC:
-                openmp_static_matvec<AType, XType, YType, Offset, Ordinal, Scalar>(A, x, y);
-                break;
-        case OMP_DYNAMIC:
-                openmp_dynamic_matvec<AType, XType, YType, Offset, Ordinal, Scalar>(A, x, y);
-                break;
-        case OMP_INSP:
-                openmp_smart_static_matvec<AType, XType, YType, Offset, Ordinal, Scalar>(A, x, y);
-                break;
+    case OMP_STATIC:
+      openmp_static_matvec<AType, XType, YType, Offset, Ordinal, Scalar>(A, x,
+                                                                         y);
+      break;
+    case OMP_DYNAMIC:
+      openmp_dynamic_matvec<AType, XType, YType, Offset, Ordinal, Scalar>(A, x,
+                                                                          y);
+      break;
+    case OMP_INSP:
+      openmp_smart_static_matvec<AType, XType, YType, Offset, Ordinal, Scalar>(
+          A, x, y);
+      break;
 #endif
 
 #ifdef HAVE_MKL
-        case MKL:
-                mkl_matvec(A, x, y);
-                break;
+    case MKL: mkl_matvec(A, x, y); break;
 #endif
 #ifdef HAVE_CUSPARSE
-        case CUSPARSE:
-                cusparse_matvec(A, x, y);
-                break;
+    case CUSPARSE: cusparse_matvec(A, x, y); break;
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
-	case ARMPL:
-	  armpl_matvec(A, x, y, data);
-	  break;
+    case ARMPL: armpl_matvec(A, x, y, data); break;
 #endif
-        case KK_KERNELS:
-                KokkosSparse::spmv (KokkosSparse::NoTranspose,1.0,A,x,0.0,y);
-                break;
-        case KK_KERNELS_INSP:
-                if(A.graph.row_block_offsets.data()==NULL) {
-                  printf("PTR: %p\n",static_cast<const void*>(A.graph.row_block_offsets.data()));
-                  A.graph.create_block_partitioning(AType::execution_space::concurrency());
-                  printf("PTR2: %p\n",static_cast<const void*>(A.graph.row_block_offsets.data()));
-                }
-                KokkosSparse::spmv (KokkosSparse::NoTranspose,1.0,A,x,0.0,y);
-                break;
-        default:
-          fprintf(stderr, "Selected test is not available.\n");
+    case KK_KERNELS:
+      KokkosSparse::spmv(KokkosSparse::NoTranspose, 1.0, A, x, 0.0, y);
+      break;
+    case KK_KERNELS_INSP:
+      if (A.graph.row_block_offsets.data() == NULL) {
+        printf("PTR: %p\n",
+               static_cast<const void*>(A.graph.row_block_offsets.data()));
+        A.graph.create_block_partitioning(
+            AType::execution_space::concurrency());
+        printf("PTR2: %p\n",
+               static_cast<const void*>(A.graph.row_block_offsets.data()));
       }
+      KokkosSparse::spmv(KokkosSparse::NoTranspose, 1.0, A, x, 0.0, y);
+      break;
+    default: fprintf(stderr, "Selected test is not available.\n");
+  }
 }
-
 
 void run_benchmark(SPMVTestData& data);
 

@@ -379,16 +379,16 @@ private:
   {
     double* nullDouble(0);
     m_coords = m_Parameters->get("Coordinates", nullDouble);
-    int numMyRows = m_Graph->getNodeNumRows();
-    int numEntries = m_Graph->getNodeNumEntries();
+    int numMyRows = m_Graph->getLocalNumRows();
+    int numEntries = m_Graph->getLocalNumEntries();
     RCP<const Map> RowMap = m_Graph->getRowMap();
     RCP<const Map> ColMap = m_Graph->getColMap();
-    int numCols = ColMap->getNodeNumElements();
+    int numCols = ColMap->getLocalNumElements();
     std::vector<int> colLIDs(numCols), colPIDs(numCols);
     Teuchos::ArrayView<LO> ColLIDs(colLIDs);
     Teuchos::ArrayView<LO> ColPIDs(colPIDs);
-    Teuchos::ArrayView<const GO> RowGIDs = RowMap->getNodeElementList();
-    Teuchos::ArrayView<const GO> ColGIDs = ColMap->getNodeElementList();
+    Teuchos::ArrayView<const GO> RowGIDs = RowMap->getLocalElementList();
+    Teuchos::ArrayView<const GO> ColGIDs = ColMap->getLocalElementList();
     RowMap->getRemoteIndexList(ColGIDs, ColPIDs, ColLIDs);
     Teuchos::ArrayView<const LO> Indices;
     m_objectGIDs.resize(numMyRows);
@@ -399,7 +399,7 @@ private:
     std::vector<LO> count(numMyRows);
     int nodeNotOnAnyProcessors(-1);
     for (int i=0; i<numMyRows; i++) {
-      m_objectGIDs[i] = RowMap->getNodeElementList()[i];
+      m_objectGIDs[i] = RowMap->getLocalElementList()[i];
       m_Graph->getLocalRowView(i, Indices);
       for (int j=0; j<Indices.size(); j++) {
 	BDDC_TEST_FOR_EXCEPTION(ColPIDs[Indices[j]] == nodeNotOnAnyProcessors, 

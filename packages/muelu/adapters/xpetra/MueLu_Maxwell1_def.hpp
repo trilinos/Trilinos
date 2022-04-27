@@ -68,16 +68,15 @@
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
-
+#include <MueLu_HierarchyUtils.hpp>
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
-#include "MueLu_Utilities_kokkos.hpp"
+# include "MueLu_Utilities_kokkos.hpp"
 #endif
-
-
 #include "MueLu_VerbosityLevel.hpp"
-
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
+#include <MueLu_OperatorSmoother_decl.hpp>
+#include <MueLu_OperatorSmoother_def.hpp>
 
 #ifdef HAVE_MUELU_CUDA
 #include "cuda_profiler_api.h"
@@ -152,6 +151,7 @@ namespace MueLu {
 
     // Make sure verbosity gets passed to the sublists
     std::string verbosity = list.get("verbosity","high");
+    VerboseObject::SetDefaultVerbLevel(toVerbLevel(verbosity));
 
     // Check the validity of the run mode
     if(mode_string == "standard")          mode_ = MODE_STANDARD;
@@ -230,6 +230,8 @@ namespace MueLu {
 # endif
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);
 #endif
+
+    parameterList_ = list;
 
   }
 
@@ -340,38 +342,121 @@ namespace MueLu {
 
     ////////////////////////////////////////////////////////////////////////////////
     // Generate the (2,2) Hierarchy
-    Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
+    Kn_Matrix_->setObjectLabel("Maxwell1 (2,2)");
+    
+    /* Critical ParameterList changes */
+    precList22_.sublist("user data").set("Coordinates",Coords_);
 
+    /* Repartitioning *must* be in sync between hierarchies, but the
+     only thing we need to watch here is the subcomms, since ReitzingerPFactory
+     won't look at all the other stuff */    
+    if(precList22_.isParameter("repartition: enable")) {
+      bool repartition = precList22_.get<bool>("repartition: enable");
+      precList11_.set("repartition: enable",repartition);
+
+      // If we're repartitioning (2,2), we need to rebalance for (1,1) to do the right thing
+      if(repartition)
+        precList22_.set("repartition: rebalance P and R",true);
+
+      if (precList22_.isParameter("repartition: use subcommunicators")) {
+        precList11_.set("repartition: use subcommunicators", precList22_.get<bool>("repartition: use subcommunicators"));
+        
+        // We do not want (1,1) and (2,2) blocks being repartitioned seperately, so we specify the map that
+        // is going to be used (this is generated in ReitzingerPFactory)
+        if(precList11_.get<bool>("repartition: use subcommunicators")==true) 
+          precList11_.set("repartition: use subcommunicators in place",true);
+      }
+      else {
+        // We'll have Maxwell1 default to using subcommunicators if you don't specify
+        precList11_.set("repartition: use subcommunicators", true);
+        precList22_.set("repartition: use subcommunicators", true);
+        
+        // We do not want (1,1) and (2,2) blocks being repartitioned seperately, so we specify the map that
+        // is going to be used (this is generated in ReitzingerPFactory)
+        precList11_.set("repartition: use subcommunicators in place",true);
+      }        
+
+        
+    }
+    else
+      precList11_.remove("repartition: enable", false);
+   
+    // Build (2,2) hierarcy
+    Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
 
     ////////////////////////////////////////////////////////////////////////////////
     // Copy the relevant (2,2) data to the (1,1) hierarchy
-    Hierarchy11_ = rcp(new Hierarchy());
-    for(int i=0; i<Hierarchy22_->GetNumLevels(); i++) {  
+    Hierarchy11_ = rcp(new Hierarchy("Maxwell1 (1,1)"));
+    for(int i=0; i<Hierarchy22_->GetNumLevels(); i++) {
       Hierarchy11_->AddNewLevel();
       RCP<Level> NodeL = Hierarchy22_->GetLevel(i);
       RCP<Level> EdgeL = Hierarchy11_->GetLevel(i);
-      EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
+      auto NodeOp      = NodeL->Get<RCP<Operator> >("A");
+      auto NodeMatrix  = rcp_dynamic_cast<Matrix>(NodeOp);
+
+      // If we repartition a processor away, a RCP<Operator> is stuck
+      // on the level instead of an RCP<Matrix>
+      if(!NodeMatrix.is_null()) EdgeL->Set("NodeMatrix",NodeMatrix);
+      else                      EdgeL->Set("NodeMatrix",NodeOp);
+
+      // Get the importer if we have one (for repartitioning)
+      // This will get used in ReitzingerPFactory
+      if(NodeL->IsAvailable("Importer")) {
+        auto importer = NodeL->Get<RCP<const Import> >("Importer");
+        EdgeL->Set("NodeImporter",importer);
+      }
+
       if(i==0) {
         EdgeL->Set("A", SM_Matrix_);
         EdgeL->Set("D0", D0_Matrix_);
       }
       else {
         EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
+        /*
+        auto P = NodeL->Get<RCP<Matrix> >("P");        
+        int Pn_r = P.is_null() ? 0 : (int) P->getRangeMap()->getLocalNumElements();
+        int Pn_d = P.is_null() ? 0 : (int) P->getDomainMap()->getLocalNumElements();          
+        printf("[%d] Local Level %d: Pn = %d x %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,Pn_r,Pn_d);
+        fflush(stdout);
+        */
+
       }
     }
-    
 
+    
     ////////////////////////////////////////////////////////////////////////////////
     // Generating the (1,1) Hierarchy
     {
       SM_Matrix_->setObjectLabel("A(1,1)");
       precList11_.set("coarse: max size",1);
-      precList11_.set("max levels",Hierarchy22_->GetNumLevels());      
-      //    Hierarchy11_ = MueLu::CreateXpetraPreconditioner(SM_Matrix_, precList11_);
-      RCP<HierarchyManager<SC,LO,GO,NO> > mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(precList11_,SM_Matrix_->getDomainMap()->getComm()));
+      precList11_.set("max levels",Hierarchy22_->GetNumLevels());
+
+      const bool refmaxwellCoarseSolve = (precList11_.get<std::string>("coarse: type",
+                                                                       MasterList::getDefault<std::string>("coarse: type")) == "RefMaxwell");
+      if (refmaxwellCoarseSolve) {
+        GetOStream(Runtime0) << "Maxwell1::compute(): Will set up RefMaxwell coarse solver" << std::endl;
+        precList11_.set("coarse: type", "none");
+      }
+
+      // Rip off non-serializable data before validation
+      Teuchos::ParameterList nonSerialList11, processedPrecList11;
+      MueLu::ExtractNonSerializableData(precList11_, processedPrecList11, nonSerialList11);
+      RCP<HierarchyManager<SC,LO,GO,NO> > mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(processedPrecList11,SM_Matrix_->getDomainMap()->getComm()));
       Hierarchy11_->setlib(SM_Matrix_->getDomainMap()->lib());
       Hierarchy11_->SetProcRankVerbose(SM_Matrix_->getDomainMap()->getComm()->getRank());
+      // Stick the non-serializible data on the hierarchy.
+      HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*Hierarchy11_, nonSerialList11);
       mueLuFactory->SetupHierarchy(*Hierarchy11_);
+
+      if (refmaxwellCoarseSolve) {
+        GetOStream(Runtime0) << "Maxwell1::compute(): Setting up RefMaxwell coarse solver" << std::endl;
+        auto coarseLvl = Hierarchy11_->GetLevel(Hierarchy11_->GetNumLevels()-1);
+        auto coarseSolver = rcp(new MueLu::OperatorSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node>("RefMaxwell",
+                                                                                                    precList11_.sublist("coarse: params")));
+        coarseSolver->Setup(*coarseLvl);
+        coarseLvl->Set("PreSmoother",
+                       rcp_dynamic_cast<SmootherBase>(coarseSolver, true));
+      }
       
       if(mode_ == MODE_REFMAXWELL) {
         if(Hierarchy11_->GetNumLevels() > 1) {
@@ -384,6 +469,8 @@ namespace MueLu {
     ////////////////////////////////////////////////////////////////////////////////
     // Allocate temporary MultiVectors for solve (only needed for RefMaxwell style)
     allocateMemory(1);
+
+    describe(GetOStream(Runtime0));
 
   }
 
@@ -591,7 +678,7 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseStandard(const MultiVector& RHS, MultiVector& X) const {
-    Hierarchy11_->Iterate(RHS,X);
+    Hierarchy11_->Iterate(RHS,X,1,true);
   }
  
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

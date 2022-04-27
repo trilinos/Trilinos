@@ -127,6 +127,16 @@ namespace Tpetra {
 /// }
 /// \endcode
 ///
+
+namespace Impl {
+  /// give an option to use layoutleft
+#if defined(TPETRA_ENABLE_BLOCKCRS_LITTLEBLOCK_LAYOUTLEFT)
+  using BlockCrsMatrixLittleBlockArrayLayout = Kokkos::LayoutLeft;
+#else
+  using BlockCrsMatrixLittleBlockArrayLayout = Kokkos::LayoutRight;
+#endif
+}
+
 template<class Scalar,
          class LO,
          class GO,
@@ -185,7 +195,7 @@ public:
 
   //! The type used to access nonconst matrix blocks.
   typedef Kokkos::View<impl_scalar_type**,
-                       Kokkos::LayoutRight,
+                       Impl::BlockCrsMatrixLittleBlockArrayLayout,
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_block_type;
@@ -193,7 +203,7 @@ public:
 
   //! The type used to access const matrix blocks.
   typedef Kokkos::View<const impl_scalar_type**,
-                       Kokkos::LayoutRight,
+                       Impl::BlockCrsMatrixLittleBlockArrayLayout,
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           const_little_block_type;

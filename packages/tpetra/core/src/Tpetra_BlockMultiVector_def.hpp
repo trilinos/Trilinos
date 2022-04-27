@@ -319,7 +319,9 @@ replaceLocalValuesImpl (const LO localRowIndex,
   auto X_dst = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
-  Kokkos::deep_copy (X_dst, X_src);
+  // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
+  using execution_space = typename device_type::execution_space;
+  Kokkos::deep_copy (execution_space(), X_dst, X_src);
 }
 
 
@@ -773,9 +775,9 @@ blockJacobiUpdate (const ViewY& Y,
                    const ViewZ& Z,
                    const Scalar& beta)
 {
-  static_assert (Kokkos::Impl::is_view<ViewY>::value, "Y must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<ViewD>::value, "D must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<ViewZ>::value, "Z must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewY>::value, "Y must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewD>::value, "D must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewZ>::value, "Z must be a Kokkos::View.");
   static_assert (static_cast<int> (ViewY::rank) == static_cast<int> (ViewZ::rank),
                  "Y and Z must have the same rank.");
   static_assert (static_cast<int> (ViewD::rank) == 3, "D must have rank 3.");

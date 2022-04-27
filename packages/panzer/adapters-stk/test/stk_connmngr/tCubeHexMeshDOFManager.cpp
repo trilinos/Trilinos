@@ -57,12 +57,6 @@
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 using Teuchos::RCP;

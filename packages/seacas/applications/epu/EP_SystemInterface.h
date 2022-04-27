@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -163,13 +163,13 @@ namespace Excn {
     bool         verifyValidFile_{false};
     bool         addNodalCommunicationMap_{false};
 
-    StringIdVector globalVarNames_;
-    StringIdVector nodeVarNames_;
-    StringIdVector elemVarNames_;
-    StringIdVector nsetVarNames_;
-    StringIdVector ssetVarNames_;
-    StringIdVector edblkVarNames_;
-    StringIdVector fablkVarNames_;
+    StringIdVector globalVarNames_{};
+    StringIdVector nodeVarNames_{};
+    StringIdVector elemVarNames_{};
+    StringIdVector nsetVarNames_{};
+    StringIdVector ssetVarNames_{};
+    StringIdVector edblkVarNames_{};
+    StringIdVector fablkVarNames_{};
   };
 
   inline int SystemInterface::part_count() const

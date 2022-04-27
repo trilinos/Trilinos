@@ -204,7 +204,7 @@ namespace {
         // by element block, then output is much easier.
         dbi->set_surface_split_type(Ioss::SPLIT_BY_ELEMENT_BLOCK);
       }
-      else {
+      else if (interFace.surface_split_type != Ioss::SPLIT_INVALID) {
         dbi->set_surface_split_type(Ioss::int_to_surface_split(interFace.surface_split_type));
       }
       dbi->set_field_separator(interFace.fieldSuffixSeparator);

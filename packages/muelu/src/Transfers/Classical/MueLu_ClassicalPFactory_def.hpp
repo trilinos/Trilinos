@@ -262,9 +262,9 @@ namespace MueLu {
     {
       RCP<const CrsMatrix> Acrs = rcp_dynamic_cast<const CrsMatrixWrap>(A)->getCrsMatrix();
       int rank = A->getRowMap()->getComm()->getRank();
-      printf("[%d] A local size = %dx%d\n",rank,(int)Acrs->getRowMap()->getNodeNumElements(),(int)Acrs->getColMap()->getNodeNumElements());
+      printf("[%d] A local size = %dx%d\n",rank,(int)Acrs->getRowMap()->getLocalNumElements(),(int)Acrs->getColMap()->getLocalNumElements());
 
-      printf("[%d] graph local size = %dx%d\n",rank,(int)graph->GetDomainMap()->getNodeNumElements(),(int)graph->GetImportMap()->getNodeNumElements());
+      printf("[%d] graph local size = %dx%d\n",rank,(int)graph->GetDomainMap()->getLocalNumElements(),(int)graph->GetImportMap()->getLocalNumElements());
 
       std::ofstream ofs(std::string("dropped_graph_") + std::to_string(fineLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
       RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
@@ -309,7 +309,7 @@ namespace MueLu {
     // pcol2cpoint - Takes a LCID for P and turns in into an LCID for A.
     // cpoint2pcol - Takes a LCID for A --- if it is a C Point --- and turns in into an LCID for P.
     Array<LO> cpoint2pcol(myPointType.size(),LO_INVALID);
-    Array<LO> pcol2cpoint(coarseMap->getNodeNumElements(),LO_INVALID);   
+    Array<LO> pcol2cpoint(coarseMap->getLocalNumElements(),LO_INVALID);   
     LO num_c_points = 0;
     LO num_f_points =0;
     for(LO i=0; i<(LO) myPointType.size(); i++) {
@@ -430,13 +430,13 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     // Initial (estimated) allocation
     // NOTE: If we only used Tpetra, then we could use these guys as is, but because Epetra, we can't, so there
     // needs to be a copy below.
-    size_t Nrows = A.getNodeNumRows();
+    size_t Nrows = A.getLocalNumRows();
     double c_point_density = (double)num_c_points / (num_c_points+num_f_points);
     double mean_strong_neighbors_per_row = (double) graph.GetNodeNumEdges() / graph.GetNodeNumVertices();
-    //    double mean_neighbors_per_row = (double)A.getNodeNumEntries() / Nrows;
+    //    double mean_neighbors_per_row = (double)A.getLocalNumEntries() / Nrows;
     double nnz_per_row_est = c_point_density*mean_strong_neighbors_per_row;
 
-    size_t nnz_est = std::max(Nrows,std::min((size_t)A.getNodeNumEntries(),(size_t)(nnz_per_row_est*Nrows)));
+    size_t nnz_est = std::max(Nrows,std::min((size_t)A.getLocalNumEntries(),(size_t)(nnz_per_row_est*Nrows)));
     Array<size_t> tmp_rowptr(Nrows+1);
     Array<LO> tmp_colind(nnz_est);
 
@@ -521,21 +521,21 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     }
 
     // Gustavson-style perfect hashing
-    ArrayRCP<LO> Acol_to_Pcol(A.getColMap()->getNodeNumElements(),LO_INVALID);
+    ArrayRCP<LO> Acol_to_Pcol(A.getColMap()->getLocalNumElements(),LO_INVALID);
 
     // Get a quick reindexing array from Pghost LCIDs to P LCIDs
     ArrayRCP<LO> Pghostcol_to_Pcol;
     if(!Pghost.is_null()) {
-      Pghostcol_to_Pcol.resize(Pghost->getColMap()->getNodeNumElements(),LO_INVALID);
-      for(LO i=0; i<(LO) Pghost->getColMap()->getNodeNumElements(); i++) 
+      Pghostcol_to_Pcol.resize(Pghost->getColMap()->getLocalNumElements(),LO_INVALID);
+      for(LO i=0; i<(LO) Pghost->getColMap()->getLocalNumElements(); i++) 
         Pghostcol_to_Pcol[i] = Pgraph->getColMap()->getLocalElement(Pghost->getColMap()->getGlobalElement(i));
     }//end Pghost
 
     // Get a quick reindexing array from Aghost LCIDs to A LCIDs
     ArrayRCP<LO> Aghostcol_to_Acol;
     if(!Aghost.is_null()) {
-      Aghostcol_to_Acol.resize(Aghost->getColMap()->getNodeNumElements(),LO_INVALID);
-      for(LO i=0; i<(LO)Aghost->getColMap()->getNodeNumElements(); i++) 
+      Aghostcol_to_Acol.resize(Aghost->getColMap()->getLocalNumElements(),LO_INVALID);
+      for(LO i=0; i<(LO)Aghost->getColMap()->getLocalNumElements(); i++) 
         Aghostcol_to_Acol[i] = A.getColMap()->getLocalElement(Aghost->getColMap()->getGlobalElement(i));
     }//end Aghost
 
@@ -824,13 +824,13 @@ Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBas
     using STS = typename Teuchos::ScalarTraits<SC>;
     using MT  = typename STS::magnitudeType;
     using MTS = typename Teuchos::ScalarTraits<MT>;
-    size_t Nrows = A.getNodeNumRows();
+    size_t Nrows = A.getLocalNumRows();
     double c_point_density = (double)num_c_points / (num_c_points+num_f_points);
     double mean_strong_neighbors_per_row = (double) graph.GetNodeNumEdges() / graph.GetNodeNumVertices();
-    //    double mean_neighbors_per_row = (double)A.getNodeNumEntries() / Nrows;
+    //    double mean_neighbors_per_row = (double)A.getLocalNumEntries() / Nrows;
     double nnz_per_row_est = c_point_density*mean_strong_neighbors_per_row;
 
-    size_t nnz_est = std::max(Nrows,std::min((size_t)A.getNodeNumEntries(),(size_t)(nnz_per_row_est*Nrows)));
+    size_t nnz_est = std::max(Nrows,std::min((size_t)A.getLocalNumEntries(),(size_t)(nnz_per_row_est*Nrows)));
     SC SC_ZERO = STS::zero();
     MT MT_ZERO = MTS::zero();
     Array<size_t> tmp_rowptr(Nrows+1);
@@ -1052,16 +1052,16 @@ GenerateStrengthFlags(const Matrix & A,const GraphBase & graph, Teuchos::Array<s
   // To make this easier, we'll create a bool array equal to the nnz in the matrix
   // so we know whether each edge is strong or not.  This will save us a bunch of
   // trying to match the graph and matrix later
-  size_t Nrows = A.getNodeNumRows();
+  size_t Nrows = A.getLocalNumRows();
   eis_rowptr.resize(Nrows+1);
 
   if(edgeIsStrong.size() == 0) {
     // Preferred
-    edgeIsStrong.resize(A.getNodeNumEntries(),false);
+    edgeIsStrong.resize(A.getLocalNumEntries(),false);
   }
   else {
-    edgeIsStrong.resize(A.getNodeNumEntries(),false);
-    edgeIsStrong.assign(A.getNodeNumEntries(),false);
+    edgeIsStrong.resize(A.getLocalNumEntries(),false);
+    edgeIsStrong.assign(A.getLocalNumEntries(),false);
   }
   
   eis_rowptr[0] = 0;

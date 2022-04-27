@@ -1,7 +1,7 @@
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  XMLParser_test  
+  XMLParser_test
   SOURCES XMLParser_test.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
@@ -10,7 +10,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  XMLParser_ordered  
+  XMLParser_ordered
   SOURCES XMLParser_ordered.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
@@ -29,7 +29,7 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_EXECUTABLE(
   XMLParser_ParseWithoutFailing
-  SOURCES XMLParser_ParseWithoutFailing
+  SOURCES XMLParser_ParseWithoutFailing.cpp
           ${TEUCHOS_STD_UNIT_TEST_MAIN}
 )
 

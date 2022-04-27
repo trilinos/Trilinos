@@ -118,7 +118,7 @@ namespace Intrepid2 {
               // wrap static workspace with a view; serial interface has a template view interface.
               // either view or dynrankview with a right size is okay.
               OutValueType workbuf[worksize];
-              Kokkos::View<OutValueType*,Kokkos::Impl::ActiveExecutionMemorySpace> work(&workbuf[0], worksize);
+              Kokkos::View<OutValueType*,Kokkos::AnonymousSpace> work(&workbuf[0], worksize);
               
               // evaluate basis using serial interface
               Impl::Basis_HGRAD_QUAD_Cn_FEM

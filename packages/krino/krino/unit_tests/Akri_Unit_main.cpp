@@ -18,13 +18,13 @@
 #include <Kokkos_Core.hpp>
 
 int main(int argc, char **argv) {
-  Kokkos::ScopeGuard guard(argc, argv);
-
   sierra::Env::set_input_file_required(false);
 
   testing::InitGoogleTest(&argc, argv);
 
   krino::Startup startup__(argc, argv);
+
+  Kokkos::ScopeGuard guard(argc, argv);
 
   stk::unit_test_util::create_parallel_output(sierra::Env::parallel_rank());
 

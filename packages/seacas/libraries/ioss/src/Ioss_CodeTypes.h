@@ -48,7 +48,7 @@ inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33")
 #if defined(SEACAS_HAVE_MPI)
 #include <mpi.h>
 #define PAR_UNUSED(x)
-using Ioss_MPI_Comm  = MPI_Comm;
+using Ioss_MPI_Comm = MPI_Comm;
 #else
 #define PAR_UNUSED(x)                                                                              \
   do {                                                                                             \
