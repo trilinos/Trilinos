@@ -227,6 +227,9 @@
       \textit{rowmap\_X\_level.mm}; c) its column map (for matrices) is saved in
       \textit{colmap\_X\_level.mm}.}
         
+\cbb{keep data}{string}{"{}"}{Keep a subset of the hierarchy data after the
+      hierarchy is constructed.  Use comma-seperated array in braces}
+        
 \cbb{print initial parameters}{bool}{true}{Print parameters provided for a hierarchy construction.}
         
 \cbb{print unused parameters}{bool}{true}{Print parameters unused during a hierarchy construction.}
@@ -346,6 +349,8 @@ Only used when tentative: calculate qr is set to false.}
 \cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.}
         
 \cbb{repartition: use map}{bool}{false}{Instead of using a matrix, use a map to determine rebalancing heuristics. Obviously, this cannot evaluate nonzero imbalance.}
+        
+\cbb{repartition: use subcommunicators in place}{bool}{false}{Instead of repartitioning, we just removeEmptyProcessesInPlace, using a map to provide the new communicator.}
         
 \cbb{repartition: node repartition level}{int}{-1}{Level on which to run node-level repartitioning (negative means don't).}
         

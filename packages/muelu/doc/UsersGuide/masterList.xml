@@ -1013,6 +1013,17 @@
     </parameter>
 
     <parameter>
+      <name>keep data</name>
+      <type>string</type>
+      <default>"{}"</default>
+      <description>Keep a subset of the hierarchy data after the
+      hierarchy is constructed.  Use comma-seperated array in braces</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+
+    <parameter>
       <name>print initial parameters</name>
       <type>bool</type>
       <default>true</default>
@@ -1545,6 +1556,16 @@ Only used when tentative: calculate qr is set to false.</description>
       <description>Instead of using a matrix, use a map to determine rebalancing heuristics. Obviously, this cannot evaluate nonzero imbalance.</description>
       <visible>false</visible>
     </parameter>
+
+
+     <parameter>
+      <name>repartition: use subcommunicators in place</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Instead of repartitioning, we just removeEmptyProcessesInPlace, using a map to provide the new communicator.</description>
+      <visible>false</visible>
+    </parameter>
+
 
     <parameter>
       <name>repartition: node repartition level</name>

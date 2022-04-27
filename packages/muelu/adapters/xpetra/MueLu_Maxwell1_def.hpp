@@ -343,8 +343,46 @@ namespace MueLu {
     ////////////////////////////////////////////////////////////////////////////////
     // Generate the (2,2) Hierarchy
     Kn_Matrix_->setObjectLabel("Maxwell1 (2,2)");
-    Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
+    
+    /* Critical ParameterList changes */
+    precList22_.sublist("user data").set("Coordinates",Coords_);
 
+    /* Repartitioning *must* be in sync between hierarchies, but the
+     only thing we need to watch here is the subcomms, since ReitzingerPFactory
+     won't look at all the other stuff */    
+    if(precList22_.isParameter("repartition: enable")) {
+      bool repartition = precList22_.get<bool>("repartition: enable");
+      precList11_.set("repartition: enable",repartition);
+
+      // If we're repartitioning (2,2), we need to rebalance for (1,1) to do the right thing
+      if(repartition)
+        precList22_.set("repartition: rebalance P and R",true);
+
+      if (precList22_.isParameter("repartition: use subcommunicators")) {
+        precList11_.set("repartition: use subcommunicators", precList22_.get<bool>("repartition: use subcommunicators"));
+        
+        // We do not want (1,1) and (2,2) blocks being repartitioned seperately, so we specify the map that
+        // is going to be used (this is generated in ReitzingerPFactory)
+        if(precList11_.get<bool>("repartition: use subcommunicators")==true) 
+          precList11_.set("repartition: use subcommunicators in place",true);
+      }
+      else {
+        // We'll have Maxwell1 default to using subcommunicators if you don't specify
+        precList11_.set("repartition: use subcommunicators", true);
+        precList22_.set("repartition: use subcommunicators", true);
+        
+        // We do not want (1,1) and (2,2) blocks being repartitioned seperately, so we specify the map that
+        // is going to be used (this is generated in ReitzingerPFactory)
+        precList11_.set("repartition: use subcommunicators in place",true);
+      }        
+
+        
+    }
+    else
+      precList11_.remove("repartition: enable", false);
+   
+    // Build (2,2) hierarcy
+    Hierarchy22_ = MueLu::CreateXpetraPreconditioner(Kn_Matrix_, precList22_);
 
     ////////////////////////////////////////////////////////////////////////////////
     // Copy the relevant (2,2) data to the (1,1) hierarchy
@@ -353,17 +391,39 @@ namespace MueLu {
       Hierarchy11_->AddNewLevel();
       RCP<Level> NodeL = Hierarchy22_->GetLevel(i);
       RCP<Level> EdgeL = Hierarchy11_->GetLevel(i);
-      EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
+      auto NodeOp      = NodeL->Get<RCP<Operator> >("A");
+      auto NodeMatrix  = rcp_dynamic_cast<Matrix>(NodeOp);
+
+      // If we repartition a processor away, a RCP<Operator> is stuck
+      // on the level instead of an RCP<Matrix>
+      if(!NodeMatrix.is_null()) EdgeL->Set("NodeMatrix",NodeMatrix);
+      else                      EdgeL->Set("NodeMatrix",NodeOp);
+
+      // Get the importer if we have one (for repartitioning)
+      // This will get used in ReitzingerPFactory
+      if(NodeL->IsAvailable("Importer")) {
+        auto importer = NodeL->Get<RCP<const Import> >("Importer");
+        EdgeL->Set("NodeImporter",importer);
+      }
+
       if(i==0) {
         EdgeL->Set("A", SM_Matrix_);
         EdgeL->Set("D0", D0_Matrix_);
       }
       else {
         EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
+        /*
+        auto P = NodeL->Get<RCP<Matrix> >("P");        
+        int Pn_r = P.is_null() ? 0 : (int) P->getRangeMap()->getLocalNumElements();
+        int Pn_d = P.is_null() ? 0 : (int) P->getDomainMap()->getLocalNumElements();          
+        printf("[%d] Local Level %d: Pn = %d x %d\n",SM_Matrix_->getRowMap()->getComm()->getRank(),i,Pn_r,Pn_d);
+        fflush(stdout);
+        */
+
       }
     }
-    
 
+    
     ////////////////////////////////////////////////////////////////////////////////
     // Generating the (1,1) Hierarchy
     {
@@ -378,7 +438,6 @@ namespace MueLu {
         precList11_.set("coarse: type", "none");
       }
 
-      //    Hierarchy11_ = MueLu::CreateXpetraPreconditioner(SM_Matrix_, precList11_);
       // Rip off non-serializable data before validation
       Teuchos::ParameterList nonSerialList11, processedPrecList11;
       MueLu::ExtractNonSerializableData(precList11_, processedPrecList11, nonSerialList11);
