@@ -7,18 +7,31 @@ INCLUDE_DIRECTORIES(${PARENT_PACKAGE_SOURCE_DIR}/disc-fe/test/closure_model)
 SET(UNIT_TEST_DRIVER
   ${PANZER_UNIT_TEST_MAIN})
 
-SET(SOURCES
-    bcstrategy.cpp
+SET(COMMON_HEADERS
     user_app_BCStrategy_Dirichlet_Constant.hpp
     user_app_BCStrategy_Dirichlet_Constant_impl.hpp
     user_app_BCStrategy_Neumann_Constant.hpp
     user_app_BCStrategy_Neumann_Constant_impl.hpp
     user_app_BCStrategy_Factory.hpp
+    )
+
+SET(SOURCES_EPETRA
+    bcstrategy.cpp
     ) 
 
+SET(SOURCES_TPETRA
+    bcstrategy_tpetra.cpp
+    )
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  bcstrategy
-  SOURCES ${SOURCES} ${UNIT_TEST_DRIVER}
+  bcstrategy_epetra
+  SOURCES ${SOURCES_EPETRA} ${COMMON_HEADERS} ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  bcstrategy_tpetra
+  SOURCES ${SOURCES_TPETRA} ${COMMON_HEADERS} ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 1
   )
 
