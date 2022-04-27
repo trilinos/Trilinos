@@ -6,12 +6,10 @@ IF(Kokkos_ENABLE_OPENMP)
         SOURCES simple_test_check.cpp
      )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_EXECUTABLE(
         singular_matrix_check
         NOEXEPREFIX
         SOURCES singular_matrix_check.cpp
-        NUM_MPI_PROCS 1
-        FAIL_REGULAR_EXPRESSION "  FAILED  "
      )
 
     TRIBITS_ADD_EXECUTABLE(

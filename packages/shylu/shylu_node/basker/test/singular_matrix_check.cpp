@@ -15,7 +15,6 @@ int main(int argc, char* argv[])
   Int m = 2;
   Int n = 2;
   Int nnz = 4;
-  int error = 0;
 
   Kokkos::InitArguments init_args;
   const Int nthreads = 1;
@@ -75,22 +74,14 @@ int main(int argc, char* argv[])
       std::cout << "Setting Threads:" << nthreads << std::endl;
 
       double stime = myTime();
-      error = mybasker.Symbolic(m,n,nnz,col_ptr,row_idx,val);
+      int error = mybasker.Symbolic(m,n,nnz,col_ptr,row_idx,val);
       std::cout << "Done with Symbolic"
                 << "\nError code: " << error
                 << "\nTime: " 
         	      << totalTime(stime, myTime()) << std::endl;
 
       double ftime = myTime();
-      try
-      {
-        error = mybasker.Factor(m,n,nnz,col_ptr,row_idx,val);
-      }
-      catch (std::runtime_error& e)
-      {
-        std::cout << " ** Factor threw exception **" << std::endl;
-        error = 1;
-      }
+      error = mybasker.Factor(m,n,nnz,col_ptr,row_idx,val);
       std::cout << "Done with Factor"
                 << "\nError code: " << error
                 << "\nTime: " 
@@ -141,5 +132,5 @@ int main(int argc, char* argv[])
   }
   Kokkos::finalize();
 
-  return (error == 0 ? 1 : 0);
+
 } //end main
