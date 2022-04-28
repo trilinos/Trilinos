@@ -1,4 +1,3 @@
 ADD_SUBDIRECTORY(DataCombination)
-ADD_SUBDIRECTORY(StandardIntegration)
 ADD_SUBDIRECTORY(StructuredIntegration)
 
