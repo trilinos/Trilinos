@@ -20,7 +20,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   solverAugmentation.xml solverAugmentationEpetra.xml
   solverCG.xml solverGMRES.xml
   solverMueLuRefMaxwell.xml solverMueLuRefMaxwell2D.xml solverMueLuRefMaxwellEpetra.xml
-  solverMueLuMaxwellHO.xml
+  solverMueLuMaxwellHO.xml solverMueLuMaxwellHOCuda.xml
   solverMueLuRefMaxwellOpenMP.xml solverMueLuRefMaxwellCuda.xml
   solverAugmentationUseILU.xml
   solverMLRefMaxwell.xml
@@ -216,6 +216,7 @@ TRIBITS_ADD_TEST(
    ARGS
    "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2"
    "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3"
+   "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule=\"2,1\""
    COMM serial mpi
    NUM_MPI_PROCS 4
    )

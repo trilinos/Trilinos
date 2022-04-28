@@ -55,9 +55,7 @@
   </ParameterList>
 
   <ParameterList name="Assembly">
-    <Parameter name="Field Order"           type="string" value="blocked: B_face E_edge"/>
-    <Parameter name="Auxiliary Field Order" type="string" value="blocked: AUXILIARY_NODE AUXILIARY_EDGE AUXILIARY_NODE_LO AUXILIARY_EDGE_LO"/>
-    <!-- <Parameter name="Workset Size" type="int" value="500"/> -->
+    <Parameter name="Field Order" type="string" value="blocked: B_face E_edge"/>
   </ParameterList>
 
   <ParameterList name="Physics Blocks">
@@ -70,46 +68,6 @@
         <Parameter name="Permittivity"         type="string" value="epsilon"/>
         <Parameter name="Conductivity"         type="string" value="sigma"/>
         <Parameter name="Inverse Permeability" type="string" value="1/mu"/>
-      </ParameterList>
-    </ParameterList>
-    <!-- Auxiliary operators for the solve -->
-    <!-- Gets dt, 1/dt, mu and 1/mu from closure model 'electromagnetics_aux' -->
-    <ParameterList name="Auxiliary Physics Block">
-      <!-- Curl-Curl term for Schur complement, with weight dt / mu -->
-      <ParameterList name="Auxiliary Edge Curl Curl Physics">
-        <Parameter name="Type"              type="string" value="Auxiliary Curl Curl"/>
-        <Parameter name="DOF Name"          type="string" value="AUXILIARY_EDGE"/>
-        <Parameter name="Basis Type"        type="string" value="HCurl"/>
-        <Parameter name="Model ID"          type="string" value="electromagnetics_aux"/>
-        <Parameter name="Field Multipliers" type="string" value="dt,1/mu"/>
-      </ParameterList>
-      <!-- Auxiliary nodal mass matrix with weight mu / dt -->
-      <ParameterList name="Auxiliary Mass Physics">
-        <Parameter name="Type"              type="string" value="Auxiliary Mass Matrix"/>
-        <Parameter name="DOF Name"          type="string" value="AUXILIARY_NODE"/>
-        <Parameter name="Basis Type"        type="string" value="HGrad"/>
-        <Parameter name="Model ID"          type="string" value="electromagnetics_aux"/>
-        <Parameter name="Field Multipliers" type="string" value="mu,1/dt"/>
-      </ParameterList>
-      <ParameterList name="Auxiliary Mass Physics LO">
-        <Parameter name="Type"              type="string" value="Auxiliary Mass Matrix"/>
-        <Parameter name="DOF Name"          type="string" value="AUXILIARY_NODE_LO"/>
-        <Parameter name="Basis Type"        type="string" value="HGrad"/>
-        <Parameter name="Model ID"          type="string" value="electromagnetics_aux"/>
-        <Parameter name="Field Multipliers" type="string" value="mu,1/dt"/>
-      </ParameterList>
-      <!-- Auxiliary edge mass matrix with unit weight -->
-      <ParameterList name="Auxiliary Edge Mass Physics">
-        <Parameter name="Type"              type="string" value="Auxiliary Mass Matrix"/>
-        <Parameter name="DOF Name"          type="string" value="AUXILIARY_EDGE"/>
-        <Parameter name="Basis Type"        type="string" value="HCurl"/>
-        <Parameter name="Model ID"          type="string" value="electromagnetics_aux"/>
-      </ParameterList>
-      <ParameterList name="Auxiliary Edge Mass Physics LO">
-        <Parameter name="Type"              type="string" value="Auxiliary Mass Matrix"/>
-        <Parameter name="DOF Name"          type="string" value="AUXILIARY_EDGE_LO"/>
-        <Parameter name="Basis Type"        type="string" value="HCurl"/>
-        <Parameter name="Model ID"          type="string" value="electromagnetics_aux"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -177,32 +135,6 @@
       <Parameter name="Source" type="string" value="E_edge"/>
       <Parameter name="Target" type="string" value="B_face"/>
       <Parameter name="Op" type="string" value="curl"/>
-    </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="Auxiliary Operators">
-    <ParameterList name="Discrete Gradient">
-      <Parameter name="Source" type="string" value="AUXILIARY_NODE"/>
-      <Parameter name="Target" type="string" value="AUXILIARY_EDGE"/>
-      <Parameter name="Op" type="string" value="grad"/>
-    </ParameterList>
-
-    <ParameterList name="Discrete Gradient LO">
-      <Parameter name="Source" type="string" value="AUXILIARY_NODE_LO"/>
-      <Parameter name="Target" type="string" value="AUXILIARY_EDGE_LO"/>
-      <Parameter name="Op" type="string" value="grad"/>
-    </ParameterList>
-
-    <ParameterList name="Interpolation Hgrad">
-      <Parameter name="Source" type="string" value="AUXILIARY_NODE_LO"/>
-      <Parameter name="Target" type="string" value="AUXILIARY_NODE"/>
-      <Parameter name="Op" type="string" value="value"/>
-    </ParameterList>
-
-    <ParameterList name="Interpolation Hcurl">
-      <Parameter name="Source" type="string" value="AUXILIARY_EDGE_LO"/>
-      <Parameter name="Target" type="string" value="AUXILIARY_EDGE"/>
-      <Parameter name="Op" type="string" value="value"/>
     </ParameterList>
   </ParameterList>
 
