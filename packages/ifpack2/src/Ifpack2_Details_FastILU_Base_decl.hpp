@@ -200,6 +200,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     {
       Params() {}
       Params(const Teuchos::ParameterList& pL, std::string precType);
+      bool standard_sptrsv;
       int nFact;
       int nTrisol;
       int level;

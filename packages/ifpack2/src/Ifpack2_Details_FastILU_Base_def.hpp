@@ -356,6 +356,7 @@ FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Params::getDefaults()
 {
   Params p;
+  p.standard_sptrsv = false;
   p.nFact = 5;
   p.nTrisol = 1;
   p.level = 0;
@@ -388,6 +389,11 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
     else 
       TYPE_ERROR("sweeps", "int");
   }
+  if(pL.isParameter("standard triangular solve"))
+  {
+      standard_sptrsv = pL.get<bool>("standard triangular solve");
+  }
+
   //"triangular solve iterations" aka nTrisol
   if(pL.isParameter("triangular solve iterations"))
   {

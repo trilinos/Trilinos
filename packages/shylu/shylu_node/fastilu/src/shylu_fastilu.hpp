@@ -57,6 +57,7 @@
 #include <assert.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
+#include <KokkosSparse_sptrsv.hpp>
 
 //whether to print extra debug output at runtime to stdout
 //comment out next line to disable
@@ -181,6 +182,13 @@ class FastILUPrec
         //This will have the continuation initial
         //guess if guessFlag=1
         Teuchos::RCP<FastPrec> initGuessPrec;
+
+        // forward/backwar substitution for standard SpTrsv
+        using MemSpace = typename ExecSpace::memory_space;
+        using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle <Ordinal, Ordinal, Scalar, ExecSpace, MemSpace, MemSpace >;
+        bool standard_sptrsv;
+        KernelHandle khL;
+        KernelHandle khU;
 
         //Internal functions
         //Serial Transpose for now.
@@ -810,8 +818,6 @@ class FastILUPrec
 
         void applyL(ScalarArray &x, ScalarArray &y)
         {
-
-
             ParInitZeroFunctor<Ordinal, Scalar, ExecSpace> parInitZero(nRows, xOld);
             Kokkos::parallel_for(nRows, parInitZero);
             ExecSpace().fence();
@@ -868,10 +874,11 @@ class FastILUPrec
     public:
         //Constructor
         //TODO: Use a Teuchos::ParameterList object
-        FastILUPrec(OrdinalArray &aRowMapIn, OrdinalArray &aColIdxIn, ScalarArray &aValIn, Ordinal nRow_,
-                Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_, Ordinal blkSz_)
+        FastILUPrec(OrdinalArray &aRowMapIn, OrdinalArray &aColIdxIn, ScalarArray &aValIn, Ordinal nRow_, bool standard_sptrsv_,
+                    Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_, Ordinal blkSz_)
         {
             nRows = nRow_;
+            standard_sptrsv = standard_sptrsv_;
             nFact = nFact_;
             nTrisol = nTrisol_;
             computeTime = 0.0;
@@ -904,8 +911,8 @@ class FastILUPrec
 
             if (level > 0)
             {
-                initGuessPrec = Teuchos::rcp(new FastPrec(aRowMapIn, aColIdxIn, aValIn, nRow_, 3, 5,
-                            level_ - 1, omega_, shift_, guessFlag_, blkSz_));
+                initGuessPrec = Teuchos::rcp(new FastPrec(aRowMapIn, aColIdxIn, aValIn, nRow_, standard_sptrsv, 3, 5,
+                                                          level_-1, omega_, shift_, guessFlag_, blkSz_));
             }
         }
 
@@ -998,6 +1005,28 @@ class FastILUPrec
             double t = timer.seconds();
             transposeU();
             computeTime = t;
+
+            if (standard_sptrsv) {
+                #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+                KokkosSparse::Experimental::SPTRSVAlgorithm algo = KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE;
+                #else
+                KokkosSparse::Experimental::SPTRSVAlgorithm algo = KokkosSparse::Experimental::SPTRSVAlgorithm::SEQLVLSCHD_TP1;
+                #endif
+                // setup L solve
+                khL.create_sptrsv_handle(algo, nRows, true);
+                #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx, lVal);
+                #else
+                KokkosSparse::Experimental::sptrsv_symbolic(&khL, lRowMap, lColIdx);
+                #endif
+                // setup U solve
+                khU.create_sptrsv_handle(algo, nRows, false);
+                #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+                KokkosSparse::Experimental::sptrsv_symbolic(&khU, utRowMap, utColIdx, utVal);
+                #else
+                KokkosSparse::Experimental::sptrsv_symbolic(&khU, utRowMap, utColIdx);
+                #endif
+            }
             return;
         }
 
@@ -1015,10 +1044,17 @@ class FastILUPrec
 
             //apply D
             applyD(x, xTemp);
-            //apply L
-            applyL(xTemp, y);
-            //apply U or Lt depending on icFlag
-            applyU(y, xTemp);
+            if (standard_sptrsv) {
+                // solve with L
+                KokkosSparse::Experimental::sptrsv_solve(&khL, lRowMap, lColIdx, lVal, xTemp, y);
+                // solve with U
+                KokkosSparse::Experimental::sptrsv_solve(&khU, utRowMap, utColIdx, utVal, y, xTemp);
+            } else {
+                //apply L
+                applyL(xTemp, y);
+                //apply U or Lt depending on icFlag
+                applyU(y, xTemp);
+            }
             //apply D again (we assume that the scaling is 
             //symmetric for now).
             applyD(xTemp, y);
@@ -1162,8 +1198,7 @@ class FastICFunctor
                 ordinal_array_type Li, scalar_array_type Lx, scalar_array_type diag, Scalar omega)
             :
                 nnz(nNZ), blk_size(bs), _Ap(Ap), _Ai(Ai), _Aj(Aj),  _Lp(Lp), _Li(Li), _Ax(Ax), _Lx(Lx), _diag(diag), _omega(omega)
-    {
-    }
+        {}
         
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal blk_index) const
@@ -1246,8 +1281,8 @@ class MemoryPrimeFunctorNnzCsr
                 scalar_array_type Ax)
             :
                 _Ai(Ai),  _Ax(Ax)
-    {
-    }
+        {}
+
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal index) const
             {
@@ -1272,8 +1307,8 @@ class MemoryPrimeFunctorNnzCoo
                 scalar_array_type Ax)
             :
                 _Ai(Ai), _Aj(Aj), _Ax(Ax)
-    {
-    }
+        {}
+
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal index) const
             {
@@ -1306,8 +1341,8 @@ class MemoryPrimeFunctorN
             :
                 _Ap(Ap), _Lp(Lp), _Up(Up),
                  _diag(diag)
-    {
-    }
+        {}
+
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal index) const
             {
@@ -1343,8 +1378,8 @@ class FastILUFunctor
             :
                 nnz(nNZ), blk_size(bs), _Ap(Ap), _Ai(Ai), _Aj(Aj),  _Lp(Lp), _Li(Li),_Up(Up),
                 _Ui(Ui), _Ax(Ax), _Lx(Lx), _Ux(Ux), _diag(diag), _omega(omega)
-    {
-    }
+        {}
+
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal blk_index) const
             {
@@ -1428,8 +1463,7 @@ class BlockJacobiIterFunctorL
             :
                 nRow(n), blkSize(bs), aRPtr(aI), aColIdx(aJ), aVal2(aVal), rhs(b), x2(xNew), x1(xOld),
                 diagElems(diag)
-    {
-    }
+        {}
 
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal blkID) const
@@ -1486,8 +1520,7 @@ class BlockJacobiIterFunctorU
             :
                 nRow(n), blkSize(bs), aRPtr(aI), aColIdx(aJ), aVal2(aVal), rhs(b), x2(xNew), x1(xOld),
                 diagElems(diag)
-    {
-    }
+        {}
 
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal blkID) const
@@ -1542,8 +1575,7 @@ class JacobiIterFunctor
                 scalar_array_type xOld, scalar_array_type diag)
             :
                 aI_(aI), aJ_(aJ), aVal_(aVal), b_(b), xNew_(xNew), xOld_(xOld), diag_(diag)
-    {
-    } 
+        {}
 
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal xId) const
@@ -1580,9 +1612,7 @@ class ParCopyFunctor
         ParCopyFunctor (Ordinal n, scalar_array_type xDestination, scalar_array_type xSource)
             :
                 xDestination_(xDestination), xSource_(xSource)
-    {
-    }
-
+        {}
 
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal xId) const
@@ -1606,8 +1636,7 @@ class JacobiIterFunctorT
                 scalar_array_type xOld, scalar_array_type diag)
             :
                 aI_(aI), aJ_(aJ), aVal_(aVal), b_(b), xNew_(xNew), xOld_(xOld), diag_(diag), n_(n)
-    {
-    } 
+        {}
 
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal xId) const
@@ -1644,8 +1673,8 @@ class ParScalFunctor
         ParScalFunctor (Ordinal n, scalar_array_type x, scalar_array_type y, scalar_array_type scaleFactors)
             :
                 x_(x), y_(y), scaleFactors_(scaleFactors)
-    {
-    }
+        {
+        }
 
 
         KOKKOS_INLINE_FUNCTION
