@@ -104,6 +104,7 @@ void ObjectiveBase<Real,Key>::solve_state_equation(const Key &param,
   bool isComputed = storage_ ? stateStore_->get(*state_,param) : false;
   // Solve state equation if not done already.
   if (!isComputed || !storage_) {
+    if (obj_ != nullPtr) obj_->setParameter(param);
     con_->setParameter(param);
     // Update equality constraint with new Opt variable.
     if (doUpdate_) con_->update_2(z,updateType_,updateIter_);

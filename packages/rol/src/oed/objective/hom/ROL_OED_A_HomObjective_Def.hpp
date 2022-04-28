@@ -71,12 +71,11 @@ Real A_Objective<Real>::value( const Vector<Real> &z, Real &tol ) {
   const int dim = weight_.size();
   Real val(0);
   for (int i = 0; i < dim; ++i) {
-    // Solve state equation
     std::vector<Real> param = {static_cast<Real>(i)};
+    // Solve state equation
     ObjectiveBase<Real,std::vector<Real>>::solve_state_equation(param,z,tol);
     Vector<Real> &state = *ObjectiveBase<Real,std::vector<Real>>::getState();
     // Get objective function value
-    ObjectiveBase<Real,std::vector<Real>>::getObjective()->setParameter(param);
     val += weight_[i]*ObjectiveBase<Real,std::vector<Real>>::getObjective()->value(state,z,tol);
   }
   return val;
@@ -88,13 +87,13 @@ void A_Objective<Real>::gradient( Vector<Real> &g, const Vector<Real> &z, Real &
   const int dim = weight_.size();
   g.zero();
   for (int i = 0; i < dim; ++i) {
-    // Solve state equation
     std::vector<Real> param = {static_cast<Real>(i)};
+    // Solve state equation
     ObjectiveBase<Real,std::vector<Real>>::solve_state_equation(param,z,tol);
     Vector<Real> &state = *ObjectiveBase<Real,std::vector<Real>>::getState();
     // Build gradient
     ObjectiveBase<Real,std::vector<Real>>::getConstraint()->applyAdjointJacobian_2(*g_,state,state,z,tol);
-    g.axpy(static_cast<Real>(-1)*weight_[i],*g_);
+    g.axpy(-weight_[i],*g_);
   }
 }
 
@@ -104,8 +103,8 @@ void A_Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const 
   const int dim = weight_.size();
   hv.zero();
   for (int i = 0; i < dim; ++i) {
-    // Solve state equation
     std::vector<Real> param = {static_cast<Real>(i)};
+    // Solve state equation
     ObjectiveBase<Real,std::vector<Real>>::solve_state_equation(param,z,tol);
     Vector<Real> &state = *ObjectiveBase<Real,std::vector<Real>>::getState();
     // Solve state sensitivity equation

@@ -114,10 +114,7 @@ void ObjectiveBase<Real,Key>::solve_state_equation(const Key &param,
                           const Vector<Real> &z,
                                 Real &tol) { 
   // Check if state has been computed.
-  bool isComputed = false;
-  if (storage_) {
-    isComputed = stateStore_->get(*state_,param);
-  }
+  bool isComputed = storage_ ? stateStore_->get(*state_,param) : false;
   // Solve state equation if not done already.
   if (!isComputed || !storage_) {
     if (obj_ != nullPtr) obj_->setParameter(param);
@@ -127,13 +124,11 @@ void ObjectiveBase<Real,Key>::solve_state_equation(const Key &param,
     // Solve state equation.
     con_->solve(*res_,*state_,z,tol);
     //// Update equality constraint with new Sim variable.
-    //con_->update_1(*state_,updateType_,updateIter_);
-    //// Update full objective function.
-    //obj_->update(*state_,z,updateType_,updateIter_);
+    if (doUpdate_) con_->update_1(*state_,updateType_,updateIter_);
+    // Update full objective function.
+    if (obj_ != nullPtr && doUpdate_) obj_->update(*state_,z,updateType_,updateIter_);
     // Store state.
-    if (storage_) {
-      stateStore_->set(*state_,param);
-    }
+    if (storage_) stateStore_->set(*state_,param);
   }
   if (doUpdate_) con_->update_1(*state_,updateType_,updateIter_);
   if (obj_ != nullPtr && doUpdate_) obj_->update(*state_,z,updateType_,updateIter_);
