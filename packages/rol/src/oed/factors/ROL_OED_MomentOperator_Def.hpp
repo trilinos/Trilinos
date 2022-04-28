@@ -74,6 +74,12 @@ template<typename Real>
 void MomentOperator<Real>::sumAll(const Vector<Real> &p, Real* input, Real* output, int size) const {
   dynamic_cast<const ProbabilityVector<Real>&>(p).getBatchManager()->sumAll(input,output,size);
 }
+
+template<typename Real>
+void MomentOperator<Real>::applyPerturbation(Vector<Real> &Px, const Vector<Real> &x) const {
+  Real tol = std::sqrt(ROL_EPSILON<Real>());
+  pOp_->apply(Px,x,tol);
+}
 /***************************************************************************/
 /* End Accessor Functions                                                  */
 /***************************************************************************/
@@ -105,6 +111,11 @@ void MomentOperator<Real>::setFactors(const Ptr<Factors<Real>> &factors) {
   factors_ = factors;
 }
 
+template<typename Real>
+void MomentOperator<Real>::setPerturbation(const Ptr<LinearOperator<Real>> &pOp) {
+  pOp_ = pOp;
+}
+
 // Compute M(p)x where M(p) = p_1 X_1 S_1 X_1' + ... + p_N X_N S_N X_N'
 template<typename Real>
 void MomentOperator<Real>::apply(Vector<Real> &Mx,
@@ -121,6 +132,11 @@ void MomentOperator<Real>::apply(Vector<Real> &Mx,
     }
     Mx.zero();
     dynamic_cast<const ProbabilityVector<Real>&>(p).getBatchManager()->sumAll(*sum_,Mx);
+    if (pOp_ != nullPtr) {
+      sum_->zero();
+      applyPerturbation(*sum_,x);
+      Mx.plus(*sum_);
+    }
   }
   else {
     throw Exception::NotImplemented(">>> OED::MomentOperator::apply : Factors have not been set!");
@@ -161,7 +177,7 @@ void MomentOperator<Real>::applyInverse(Vector<Real> &Mx,
   // Set up Krylov solver
   if (setSolver_) {
     krylov_ = makePtr<ConjugateResiduals<Real>>(1e-10,1e0,1000);
-    M_ = makePtr<moment>(factors_);
+    M_ = makePtr<moment>(factors_,pOp_);
     P_ = makePtr<precond>();
     setSolver_ = false;
   }

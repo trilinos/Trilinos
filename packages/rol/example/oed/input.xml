@@ -7,6 +7,8 @@
     <Parameter name="Noise Decay Rate"      type="double" value="5.0"   />
     <Parameter name="Use Budget Constraint" type="bool"   value="false" />
     <Parameter name="Budget"                type="double" value="5.0"   />
+    <Parameter name="Use Tikhonov"          type="bool"   value="false" />
+    <Parameter name="Tikhonov Parameter"    type="double" value="1e-4"  />
   </ParameterList>
 
   <ParameterList name="OED">

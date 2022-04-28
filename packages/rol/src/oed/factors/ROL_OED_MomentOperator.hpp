@@ -125,15 +125,17 @@ private:
   Ptr<Vector<Real>> sum_;
   Ptr<Krylov<Real>> krylov_;
   bool setSolver_;
+  Ptr<LinearOperator<Real>> pOp_;
 
   class moment : public LinearOperator<Real> {
   private:
     const Ptr<Factors<Real>> factors_;
+    const Ptr<LinearOperator<Real>> pOp_;
     Ptr<Vector<Real>> sum_;
     Ptr<const ProbabilityVector<Real>> p_;
   public:
-    moment(const Ptr<Factors<Real>> &factors)
-      : factors_(factors) {
+    moment(const Ptr<Factors<Real>> &factors, const Ptr<LinearOperator<Real>> &pOp)
+      : factors_(factors), pOp_(pOp) {
       sum_ = factors_->createParameterVector(true);
     }
     void setProbabilityVector(const ProbabilityVector<Real> &p) {
@@ -148,6 +150,11 @@ private:
       }
       Mx.zero();
       p_->getBatchManager()->sumAll(*sum_,Mx);
+      if (pOp_ != nullPtr) {
+        sum_->zero();
+        pOp_->apply(*sum_,x,tol);
+        Mx.plus(*sum_);
+      }
     }
   };
   class precond : public LinearOperator<Real> {
@@ -174,6 +181,7 @@ protected:
   std::vector<Real>& getLocalDesign(Vector<Real> &p) const;
   const std::vector<Real>& getConstLocalDesign(const Vector<Real> &p) const;
   void sumAll(const Vector<Real> &p, Real* input, Real* output, int size) const;
+  void applyPerturbation(Vector<Real> &Px, const Vector<Real> &x) const;
   /***************************************************************************/
   /* End Accessor Functions                                                  */
   /***************************************************************************/
@@ -191,6 +199,7 @@ public:
   void setMatrixNumber(int matNum);
   virtual void update(const Vector<Real> &p, UpdateType type, int iter = -1) {}
   virtual void setFactors(const Ptr<Factors<Real>> &factors);
+  virtual void setPerturbation(const Ptr<LinearOperator<Real>> &pOp);
 
   // Compute M(p)x where M(p) = p_1 X_1 S_1 X_1' + ... + p_N X_N S_N X_N'
   virtual void apply(Vector<Real> &Mx,

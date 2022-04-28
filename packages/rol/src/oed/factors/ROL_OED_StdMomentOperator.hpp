@@ -59,13 +59,13 @@ namespace OED {
 template<typename Real>
 class StdMomentOperator : public MomentOperator<Real> {
 private:
-  const Ptr<LAPACK<int,Real>>                       lapack_;
-  const Ptr<BLAS<int,Real>>                           blas_;
-  LA::Matrix<Real>                M_, Minv_, U_, V_, Xpred_;
-  std::vector<Real>                           sval_, sfull_;
-  bool isBuilt_, isFactorized_, isSet_, isFullSet_, useSVD_;
-  std::vector<LA::Matrix<Real>>              Xdata_, Xfull_;
-  int                                                 nobs_;
+  const Ptr<LAPACK<int,Real>>                                lapack_;
+  const Ptr<BLAS<int,Real>>                                    blas_;
+  LA::Matrix<Real>                     M_, Minv_, U_, V_, Xpred_, P_;
+  std::vector<Real>                                    sval_, sfull_;
+  bool isBuilt_, isFactorized_, isSet_, isFullSet_, useSVD_, isPset_;
+  std::vector<LA::Matrix<Real>>                       Xdata_, Xfull_;
+  int                                                          nobs_;
 
   void initialize(int nfactors);
   void build(const Vector<Real> &p);
@@ -87,6 +87,7 @@ protected:
   using MomentOperator<Real>::getLocalDesign;
   using MomentOperator<Real>::getConstLocalDesign;
   using MomentOperator<Real>::sumAll;
+  using MomentOperator<Real>::applyPerturbation;
   using ProfiledClass<Real,std::string>::startTimer;
   using ProfiledClass<Real,std::string>::stopTimer;
 
@@ -114,6 +115,8 @@ public:
   void applySampleMatrices(Vector<Real> &uXv, const Vector<Real> &u, const Vector<Real> &v);
 
   void setFactors(const Ptr<Factors<Real>> &factors);
+
+  void setPerturbation(const Ptr<LinearOperator<Real>> &pOp);
 
   Real logDeterminant(const Vector<Real> &z);
 

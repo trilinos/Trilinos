@@ -83,6 +83,7 @@ void StdMomentOperator<Real>::build(const Vector<Real> &p) {
       Mtmp += M0;
     }
     sumAll(p,Mtmp.values(),M_.values(),nfactors*nfactors);
+    if (isPset_) blas_->AXPY(nfactors*nfactors,one,P_.values(),1,M_.values(),1);
     isBuilt_      = true;
     isFactorized_ = false;
     useSVD_       = false;
@@ -178,7 +179,7 @@ StdMomentOperator<Real>::StdMomentOperator(RegressionType regType,
     lapack_(makePtr<LAPACK<int,Real>>()),
     blas_(makePtr<Teuchos::BLAS<int,Real>>()),
     isBuilt_(false), isFactorized_(false), isSet_(false),
-    isFullSet_(false), useSVD_(false) {
+    isFullSet_(false), useSVD_(false), isPset_(false) {
   ProfiledClass<Real,std::string>::rename("OED::StdMomentOperator");
 }
 
@@ -392,8 +393,27 @@ void StdMomentOperator<Real>::setFactors(const Ptr<Factors<Real>> &factors) {
     }
     factors->setPredictionVector(*c);
   }
+  if (isPset_) {
+    P_.shape(ncols,ncols);
+    Ptr<Vector<Real>> ei  = factors->createParameterVector();
+    Ptr<Vector<Real>> Pei = factors->createParameterVector();
+    for (int i = 0; i < ncols; ++i) {
+      Pei->zero();
+      ei->set(*Pei->basis(i));
+      applyPerturbation(*Pei,*ei);
+      const std::vector<Real> &Pei_data = getConstData(*Pei);
+      // Build upper triangle of perturbation
+      for (int j = 0; j <= i; ++j) P_(j,i) = Pei_data[j];
+    }
+  }
   isSet_ = true;
   stopTimer("setFactors");
+}
+
+template<typename Real>
+void StdMomentOperator<Real>::setPerturbation(const Ptr<LinearOperator<Real>> &pOp) {
+  MomentOperator<Real>::setPerturbation(pOp);
+  isPset_ = true;
 }
 
 template<typename Real>

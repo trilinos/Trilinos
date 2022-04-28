@@ -97,6 +97,33 @@ public:
   }
 };
 
+template<typename Real>
+class RegularizationOperator : public ROL::LinearOperator<Real> {
+private:
+  const Real alpha_;
+
+public:
+  RegularizationOperator(Real alpha = Real(1)) : alpha_(alpha) {}
+
+  void apply(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const {
+    Px.set(x);
+    Px.scale(alpha_);
+  }
+
+  void applyInverse(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const {
+    Px.set(x);
+    Px.scale(static_cast<Real>(1)/alpha_);
+  }
+
+  void applyAdjoint(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const {
+    apply(Px,x,tol);
+  }
+
+  void applyAdjointInverse(ROL::Vector<Real> &Px, const ROL::Vector<Real> &x, Real &tol) const {
+    applyInverse(Px,x,tol);
+  }
+};
+
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
@@ -158,6 +185,13 @@ int main(int argc, char *argv[]) {
     ROL::OED::RegressionType type = ROL::OED::StringToRegressionType(regType);
     ROL::Ptr<ROL::OED::StdMomentOperator<RealT>>
       M = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,homNoise,noise);
+    bool addTik = parlist->sublist("Problem").get("Use Tikhonov",false);
+    if (addTik) {
+      RealT beta  = parlist->sublist("Problem").get("Tikhonov Parameter",1e-4);
+      ROL::Ptr<ROL::LinearOperator<RealT>>
+        P = ROL::makePtr<RegularizationOperator<RealT>>(beta);
+      M->setPerturbation(P);
+    }
     ROL::Ptr<ROL::OED::Factory<RealT>>
      factory = ROL::makePtr<ROL::OED::Factory<RealT>>(model,sampler,theta,M,*parlist);
     if (parlist->sublist("Problem").get("Use Budget Constraint",false)) {
