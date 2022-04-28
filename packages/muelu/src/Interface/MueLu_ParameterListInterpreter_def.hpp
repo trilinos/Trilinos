@@ -1169,6 +1169,10 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: brick z Dirichlet", bool, aggParams);
       aggFactory->SetParameterList(aggParams);
 
+      // Unlike other factories, BrickAggregationFactory makes the Graph/DofsPerNode itself
+      manager.SetFactory("Graph",     aggFactory);
+      manager.SetFactory("DofsPerNode",     aggFactory);
+      manager.SetFactory("Filtering",     aggFactory);
       if (levelID > 1) {
         // We check for levelID > 0, as in the interpreter aggFactory for
         // levelID really corresponds to level 0. Managers are clunky, as they
