@@ -76,6 +76,7 @@ Real A_Objective<Real>::value( const Vector<Real> &z, Real &tol ) {
     ObjectiveBase<Real,std::vector<Real>>::solve_state_equation(param,z,tol);
     Vector<Real> &state = *ObjectiveBase<Real,std::vector<Real>>::getState();
     // Get objective function value
+    ObjectiveBase<Real,std::vector<Real>>::getObjective()->setParameter(param);
     val += weight_[i]*ObjectiveBase<Real,std::vector<Real>>::getObjective()->value(state,z,tol);
   }
   return val;
