@@ -31,7 +31,7 @@ namespace {
       cell_count = static_cast<int64_t>(ni) * nj;
     }
     else if (index_dim == 3) {
-      cell_count = static_cast<int64_t>(ni) * nj * nk;
+      cell_count = static_cast<int64_t>(ni) * nj * (nk == 0 ? 1 : nk);
     }
     return cell_count;
   }

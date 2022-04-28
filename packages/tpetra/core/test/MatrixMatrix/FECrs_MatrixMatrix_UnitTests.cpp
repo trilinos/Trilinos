@@ -281,6 +281,9 @@ bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
   const LO invLO = Teuchos::OrdinalTraits<LO>::invalid();
   const auto& colMapA = *gA.getColMap();
   const auto& colMapB = *gB.getColMap();
+
+  Kokkos::fence(); // must protect UVM access
+
   for (LO irow=0; irow<num_my_rows; ++irow) {
     const GO grow = gA.getRowMap()->getGlobalElement(irow);
 

@@ -51,6 +51,7 @@
 /// This file is meant for Ifpack2 developers only, not for users.
 /// It defines a new implementation of Chebyshev iteration.
 
+#include "Ifpack2_PowerMethod.hpp"
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
 // #include "Ifpack2_Details_ScaledDampedResidual.hpp"
 #include "Ifpack2_Details_ChebyshevKernel.hpp"
@@ -183,42 +184,6 @@ reciprocal_threshold (Tpetra::Vector<S,L,G,N>& V, const S& minVal)
 {
   GlobalReciprocalThreshold<Tpetra::Vector<S,L,G,N> >::compute (V, minVal);
 }
-
-namespace { // (anonymous)
-
-// Functor for making sure the real parts of all entries of a vector
-// are nonnegative.  We use this in computeInitialGuessForPowerMethod
-// below.
-template<class OneDViewType,
-         class LocalOrdinal = typename OneDViewType::size_type>
-class PositivizeVector {
-  static_assert (Kokkos::is_view<OneDViewType>::value,
-                 "OneDViewType must be a 1-D Kokkos::View.");
-  static_assert (static_cast<int> (OneDViewType::rank) == 1,
-                 "This functor only works with a 1-D View.");
-  static_assert (std::is_integral<LocalOrdinal>::value,
-                 "The second template parameter, LocalOrdinal, "
-                 "must be an integer type.");
-public:
-  PositivizeVector (const OneDViewType& x) : x_ (x) {}
-
-  KOKKOS_INLINE_FUNCTION void
-  operator () (const LocalOrdinal& i) const
-  {
-    typedef typename OneDViewType::non_const_value_type IST;
-    typedef Kokkos::Details::ArithTraits<IST> STS;
-    typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
-
-    if (STS::real (x_(i)) < STM::zero ()) {
-      x_(i) = -x_(i);
-    }
-  }
-
-private:
-  OneDViewType x_;
-};
-
-} // namespace (anonymous)
 
 
 template<class ScalarType, const bool lapackSupportsScalarType = LapackSupportsScalar<ScalarType>::value>
@@ -897,11 +862,32 @@ Chebyshev<ScalarType, MV>::compute ()
   //
   // We at least need an estimate of the max eigenvalue.  This is the
   // most important one if using Chebyshev as a smoother.
+
   if (! assumeMatrixUnchanged_ ||
       (! computedEigenvalueEstimates && STS::isnaninf (userLambdaMax_))) {
     ST computedLambdaMax;
-    if ((eigenAnalysisType_ == "power method") || (eigenAnalysisType_ == "power-method"))
-      computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_);
+    if ((eigenAnalysisType_ == "power method") || (eigenAnalysisType_ == "power-method")) {
+      Teuchos::RCP<V> x;
+      if (eigVector_.is_null()) {
+        x = Teuchos::rcp(new V(A_->getDomainMap ()));
+        if (eigKeepVectors_)
+          eigVector_ = x;
+        PowerMethod::computeInitialGuessForPowerMethod (*x, false);
+      } else
+        x = eigVector_;
+
+      Teuchos::RCP<V> y;
+      if (eigVector2_.is_null()) {
+        y = rcp(new V(A_->getRangeMap ()));
+        if (eigKeepVectors_)
+          eigVector2_ = y;
+      } else
+        y = eigVector2_;
+      
+      Teuchos::RCP<Teuchos::FancyOStream> stream = (debug_ ? out_ : Teuchos::null);
+      computedLambdaMax = PowerMethod::powerMethodWithInitGuess (*A_, *D_, eigMaxIters_, x, y, 
+                                                                 eigRelTolerance_, eigNormalizationFreq_, stream);
+    }
     else
       computedLambdaMax = cgMethod (*A_, *D_, eigMaxIters_);
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1425,180 +1411,6 @@ ifpackApplyImpl (const op_type& A,
   }
 }
 
-template<class ScalarType, class MV>
-typename Chebyshev<ScalarType, MV>::ST
-Chebyshev<ScalarType, MV>::
-powerMethodWithInitGuess (const op_type& A,
-                          const V& D_inv,
-                          const int numIters,
-                          V& x)
-{
-  using std::endl;
-  if (debug_) {
-    *out_ << " powerMethodWithInitGuess:" << endl;
-  }
-
-  const ST zero = static_cast<ST> (0.0);
-  const ST one = static_cast<ST> (1.0);
-  ST lambdaMax = zero;
-  ST lambdaMaxOld = one;
-  ST norm;
-
-  Teuchos::RCP<V> y;
-  if (eigVector2_.is_null()) {
-    y = rcp(new V(A.getRangeMap ()));
-    if (eigKeepVectors_)
-      eigVector2_ = y;
-  } else
-    y = eigVector2_;
-  norm = x.norm2 ();
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (norm == zero, std::runtime_error,
-     "Ifpack2::Chebyshev::powerMethodWithInitGuess: The initial guess "
-     "has zero norm.  This could be either because Tpetra::Vector::"
-     "randomize filled the vector with zeros (if that was used to "
-     "compute the initial guess), or because the norm2 method has a "
-     "bug.  The first is not impossible, but unlikely.");
-
-  if (debug_) {
-    *out_ << "  Original norm1(x): " << x.norm1 ()
-          << ", norm2(x): " << norm << endl;
-  }
-
-  x.scale (one / norm);
-
-  if (debug_) {
-    *out_ << "  norm1(x.scale(one/norm)): " << x.norm1 () << endl;
-  }
-
-  for (int iter = 0; iter < numIters-1; ++iter) {
-    if (debug_) {
-      *out_ << "  Iteration " << iter << endl;
-    }
-    A.apply (x, *y);
-    solve (x, D_inv, *y);
-
-    if (((iter+1) % eigNormalizationFreq_ == 0) && (iter < numIters-2)) {
-      norm = x.norm2 ();
-      if (norm == zero) { // Return something reasonable.
-        if (debug_) {
-          *out_ << "   norm is zero; returning zero" << endl;
-          *out_ << "   Power method terminated after "<< iter << " iterations." << endl;
-        }
-        return zero;
-      } else {
-        lambdaMaxOld = lambdaMax;
-        lambdaMax = pow(norm, Teuchos::ScalarTraits<MT>::one() / eigNormalizationFreq_);
-        if (Teuchos::ScalarTraits<ST>::magnitude(lambdaMax-lambdaMaxOld) < eigRelTolerance_ * Teuchos::ScalarTraits<ST>::magnitude(lambdaMax)) {
-          if (debug_) {
-            *out_ << "  lambdaMax: " << lambdaMax << endl;
-            *out_ << "  Power method terminated after "<< iter << " iterations." << endl;
-          }
-          return lambdaMax;
-        } else if (debug_) {
-          *out_ << "  lambdaMaxOld: " << lambdaMaxOld << endl;
-          *out_ << "  lambdaMax: " << lambdaMax << endl;
-          *out_ << "  |lambdaMax-lambdaMaxOld|/|lambdaMax|: " << Teuchos::ScalarTraits<ST>::magnitude(lambdaMax-lambdaMaxOld)/Teuchos::ScalarTraits<ST>::magnitude(lambdaMax) << endl;
-        }
-      }
-      x.scale (one / norm);
-    }
-  }
-  if (debug_) {
-    *out_ << "  lambdaMax: " << lambdaMax << endl;
-  }
-
-  norm = x.norm2 ();
-  if (norm == zero) { // Return something reasonable.
-    if (debug_) {
-      *out_ << "   norm is zero; returning zero" << endl;
-      *out_ << "   Power method terminated after "<< numIters << " iterations." << endl;
-    }
-    return zero;
-  }
-  x.scale (one / norm);
-  A.apply (x, *y);
-  solve (*y, D_inv, *y);
-  lambdaMax = y->dot (x);
-  if (debug_) {
-    *out_ << "  lambdaMax: " << lambdaMax << endl;
-    *out_ << "  Power method terminated after "<< numIters << " iterations." << endl;
-  }
-
-  return lambdaMax;
-}
-
-template<class ScalarType, class MV>
-void
-Chebyshev<ScalarType, MV>::
-computeInitialGuessForPowerMethod (V& x, const bool nonnegativeRealParts) const
-{
-  typedef typename MV::device_type::execution_space dev_execution_space;
-  typedef typename MV::local_ordinal_type LO;
-
-  x.randomize ();
-
-  if (nonnegativeRealParts) {
-    auto x_lcl = x.getLocalViewDevice (Tpetra::Access::ReadWrite);
-    auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
-
-    const LO lclNumRows = static_cast<LO> (x.getLocalLength ());
-    Kokkos::RangePolicy<dev_execution_space, LO> range (0, lclNumRows);
-    PositivizeVector<decltype (x_lcl_1d), LO> functor (x_lcl_1d);
-    Kokkos::parallel_for (range, functor);
-  }
-}
-
-template<class ScalarType, class MV>
-typename Chebyshev<ScalarType, MV>::ST
-Chebyshev<ScalarType, MV>::
-powerMethod (const op_type& A, const V& D_inv, const int numIters)
-{
-  using std::endl;
-  if (debug_) {
-    *out_ << "powerMethod:" << endl;
-  }
-
-  const ST zero = static_cast<ST> (0.0);
-  Teuchos::RCP<V> x;
-  if (eigVector_.is_null()) {
-    x = rcp(new V(A.getDomainMap ()));
-    if (eigKeepVectors_)
-      eigVector_ = x;
-    // For the first pass, just let the pseudorandom number generator
-    // fill x with whatever values it wants; don't try to make its
-    // entries nonnegative.
-    computeInitialGuessForPowerMethod (*x, false);
-  } else
-    x = eigVector_;
-
-  ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, *x);
-
-  // mfh 07 Jan 2015: Taking the real part here is only a concession
-  // to the compiler, so that this class can build with ScalarType =
-  // std::complex<T>.  Our Chebyshev implementation only works with
-  // real, symmetric positive definite matrices.  The right thing to
-  // do would be what Belos does, which is provide a partial
-  // specialization for ScalarType = std::complex<T> with a stub
-  // implementation (that builds, but whose constructor throws).
-  if (STS::real (lambdaMax) < STS::real (zero)) {
-    if (debug_) {
-      *out_ << "real(lambdaMax) = " << STS::real (lambdaMax) << " < 0; "
-        "try again with a different random initial guess" << endl;
-    }
-    // Max eigenvalue estimate was negative.  Perhaps we got unlucky
-    // with the random initial guess.  Try again with a different (but
-    // still random) initial guess.  Only try again once, so that the
-    // run time is bounded.
-
-    // For the second pass, make all the entries of the initial guess
-    // vector have nonnegative real parts.
-    computeInitialGuessForPowerMethod (*x, true);
-    lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, *x);
-  }
-  return lambdaMax;
-}
-
 
 template<class ScalarType, class MV>
 typename Chebyshev<ScalarType, MV>::ST
@@ -1686,7 +1498,7 @@ cgMethod (const op_type& A, const V& D_inv, const int numIters)
     // For the first pass, just let the pseudorandom number generator
     // fill x with whatever values it wants; don't try to make its
     // entries nonnegative.
-    computeInitialGuessForPowerMethod (*r, false);
+    PowerMethod::computeInitialGuessForPowerMethod (*r, false);
   } else
     r = eigVector_;
 

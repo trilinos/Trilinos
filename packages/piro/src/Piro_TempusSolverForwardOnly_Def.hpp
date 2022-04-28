@@ -131,14 +131,13 @@ void Piro::TempusSolverForwardOnly<Scalar>::initialize(
 
   RCP<Teuchos::ParameterList> tempusPL = sublist(appParams, "Tempus", true);
 
-  // this only works if the stepper is "Forward Euler".for now just
-  // disable validation
-  // tempusPL->validateParameters(*getValidTempusParameters(),0);
-
   //
   *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
   //
 
+  // Validation of Parameters in tempusPL is done through each objects
+  // "create" function, e.g., createIntegratorBasic, createStepper,
+  // and createTimeStepControl.
   fwdStateIntegrator = Tempus::createIntegratorBasic(tempusPL, in_model);
 
 

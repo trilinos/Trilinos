@@ -70,6 +70,15 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 };
 }
 
+#define GEMM_ALGO_STRS                           \
+  "GemmTplAlgos::CUBLAS", "GemmTplAlgos::MAGMA", \
+      "GemmKokkosBatchedAlgos::KK_TEAM",         \
+      "GemmKokkosBatchedAlgos::KK_TEAMVECTOR",   \
+      "GemmKokkosBatchedAlgos::KK_SERIALSIMD",   \
+      "GemmKokkosBatchedAlgos::KK_TEAMSIMD",     \
+      "GemmKokkosBatchedAlgos::KK_SERIAL_RANK0", \
+      "GemmKokkosBatchedAlgos::KK_SERIAL_SHMEM", \
+      "GemmKokkosBatchedAlgos::KK_DBLBUF"
 // clang-format off
 /// \brief Handle for selecting runtime behavior of the BatchedGemm interface.
 ///
@@ -171,6 +180,14 @@ class BatchedGemmHandle : public BatchedKernelHandle {
     return this->BatchedKernelHandle::get_tpl_params();
 #endif
   }
+
+  std::string get_kernel_algo_type_str() const {
+    return gemm_algo_type_strs[_kernelAlgoType];
+  }
+
+ private:
+  const char *gemm_algo_type_strs[GemmKokkosBatchedAlgos::N] = {BASE_ALGO_STRS,
+                                                                GEMM_ALGO_STRS};
 };
 
 }  // namespace KokkosBatched

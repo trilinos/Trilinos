@@ -17,40 +17,40 @@
 int refine_part(struct vtx_data **graph,        /* graph data structure */
                 int               nvtxs,        /* number of vertices in graph */
                 int               using_ewgts,  /* are edge weights being used? */
-                int *             assign,       /* current assignment */
+                int              *assign,       /* current assignment */
                 int               architecture, /* 0 => hypercube, d => d-dimensional mesh */
                 int               ndims_tot,    /* if hypercube, number of dimensions */
                 int               mesh_dims[3], /* if mesh, size in each direction */
-                double *          goal          /* desired set sizes */
+                double           *goal          /* desired set sizes */
 )
 {
   extern int        TERM_PROP;              /* perform terminal propagation? */
-  struct bilist *   set_list  = NULL;       /* lists of vtxs in each set */
-  struct bilist *   vtx_elems = NULL;       /* space for all vtxs in set_lists */
-  struct bilist *   ptr       = NULL;       /* loops through set_lists */
-  struct ipairs *   pairs     = NULL;       /* ordered list of edges in comm graph */
-  double *          comm_vals = NULL;       /* edge wgts of comm graph for sorting */
-  float *           term_wgts[2];           /* terminal propagation vector */
+  struct bilist    *set_list  = NULL;       /* lists of vtxs in each set */
+  struct bilist    *vtx_elems = NULL;       /* space for all vtxs in set_lists */
+  struct bilist    *ptr       = NULL;       /* loops through set_lists */
+  struct ipairs    *pairs     = NULL;       /* ordered list of edges in comm graph */
+  double           *comm_vals = NULL;       /* edge wgts of comm graph for sorting */
+  float            *term_wgts[2];           /* terminal propagation vector */
   int               hops[MAXSETS][MAXSETS]; /* preference weighting */
-  void *            temp           = NULL;  /* return argument from srealloc_ret() */
-  int *             indices        = NULL;  /* sorted order for communication edges */
-  int *             space          = NULL;  /* space for mergesort */
-  int *             sizes          = NULL;  /* sizes of the different sets */
-  int *             sub_assign     = NULL;  /* new assignment for subgraph */
-  int *             old_sub_assign = NULL;  /* room for current sub assignment */
-  int **            edges_list     = NULL;  /* lists of comm graph edges */
-  int **            ewgts_list     = NULL;  /* lists of comm graph edge wgts */
-  int *             ewgts          = NULL;  /* loops through ewgts_list */
-  int *             edges          = NULL;  /* edges in communication graph */
-  int *             adj_sets       = NULL;  /* weights connecting sets */
-  int *             eptr           = NULL;  /* loop through edges and edge weights */
-  int *             ewptr          = NULL;  /* loop through edges and edge weights */
+  void             *temp           = NULL;  /* return argument from srealloc_ret() */
+  int              *indices        = NULL;  /* sorted order for communication edges */
+  int              *space          = NULL;  /* space for mergesort */
+  int              *sizes          = NULL;  /* sizes of the different sets */
+  int              *sub_assign     = NULL;  /* new assignment for subgraph */
+  int              *old_sub_assign = NULL;  /* room for current sub assignment */
+  int             **edges_list     = NULL;  /* lists of comm graph edges */
+  int             **ewgts_list     = NULL;  /* lists of comm graph edge wgts */
+  int              *ewgts          = NULL;  /* loops through ewgts_list */
+  int              *edges          = NULL;  /* edges in communication graph */
+  int              *adj_sets       = NULL;  /* weights connecting sets */
+  int              *eptr           = NULL;  /* loop through edges and edge weights */
+  int              *ewptr          = NULL;  /* loop through edges and edge weights */
   int               ewgt;                   /* weight of an edge */
   struct vtx_data **subgraph = NULL;        /* subgraph data structure */
-  int *             nedges   = NULL;        /* space for saving graph data */
-  int *             degrees  = NULL;        /* # neighbors of vertices */
-  int *             glob2loc = NULL;        /* maps full to reduced numbering */
-  int *             loc2glob = NULL;        /* maps reduced to full numbering */
+  int              *nedges   = NULL;        /* space for saving graph data */
+  int              *degrees  = NULL;        /* # neighbors of vertices */
+  int              *glob2loc = NULL;        /* maps full to reduced numbering */
+  int              *loc2glob = NULL;        /* maps reduced to full numbering */
   int               nmax;                   /* largest subgraph I expect to encounter */
   int               set, set1, set2;        /* sets vertices belong to */
   int               vertex;                 /* vertex in graph */
@@ -63,7 +63,7 @@ int refine_part(struct vtx_data **graph,        /* graph data structure */
   int               size;                   /* array spacing */
   int               i, j, k;                /* loop counters */
   int               kl_refine();
-  void              strout();
+  void              strout(char *msg);
   void              ch_mergesort(double *vals, int nvals, int *indices, int *space);
 
   error        = 1;

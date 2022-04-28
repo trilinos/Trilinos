@@ -1571,9 +1571,10 @@ namespace Iocgns {
     int  cell_dimension = 0;
     int  phys_dimension = 0;
     CGCHECKM(cg_base_read(get_file_pointer(), base, basename, &cell_dimension, &phys_dimension));
-    if (phys_dimension != 3) {
+    if (phys_dimension != 3 && mesh_type == Ioss::MeshType::STRUCTURED) {
       std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: The model is {}D.  Only 3D models are supported.", phys_dimension);
+      fmt::print(errmsg, "ERROR: The model is {}D.  Only 3D structured models are supported.",
+                 phys_dimension);
       IOSS_ERROR(errmsg);
     }
 
@@ -1812,16 +1813,19 @@ namespace Iocgns {
     size_t                num_to_get = field.verify(data_size);
     cgsize_t              first      = 1;
 
-    // Create a lambda to eliminate lots of duplicate code in coordinate outputs...
-    auto coord_lambda = [this, &data, &first, base](const char *ordinate) {
+    // Create a lambda to eliminate some duplicate code in coordinate outputs...
+    auto coord_lambda = [&data, &first,
+                         base](const char *ordinate, int cgns_file_ptr,
+                               const std::vector<CGNSIntVector> &block_local_node_map,
+                               int                               myProcessor) {
       auto *rdata = static_cast<double *>(data);
 
-      for (int zone = 1; zone < static_cast<int>(m_blockLocalNodeMap.size()); zone++) {
-        auto               &block_map = m_blockLocalNodeMap[zone];
+      for (int zone = 1; zone < static_cast<int>(block_local_node_map.size()); zone++) {
+        auto               &block_map = block_local_node_map[zone];
         cgsize_t            num_coord = block_map.size();
         std::vector<double> coord(num_coord);
-        CGCHECKM(cg_coord_read(get_file_pointer(), base, zone, ordinate, CGNS_ENUMV(RealDouble),
-                               &first, &num_coord, coord.data()));
+        CGCHECK(cg_coord_read(cgns_file_ptr, base, zone, ordinate, CGNS_ENUMV(RealDouble), &first,
+                              &num_coord, coord.data()));
 
         // Map to global coordinate position...
         for (cgsize_t i = 0; i < num_coord; i++) {
@@ -1834,15 +1838,15 @@ namespace Iocgns {
     if (role == Ioss::Field::MESH) {
       if (field.get_name() == "mesh_model_coordinates_x") {
         // Use the lambda...
-        coord_lambda("CoordinateX");
+        coord_lambda("CoordinateX", get_file_pointer(), m_blockLocalNodeMap, myProcessor);
       }
 
       else if (field.get_name() == "mesh_model_coordinates_y") {
-        coord_lambda("CoordinateY");
+        coord_lambda("CoordinateY", get_file_pointer(), m_blockLocalNodeMap, myProcessor);
       }
 
       else if (field.get_name() == "mesh_model_coordinates_z") {
-        coord_lambda("CoordinateZ");
+        coord_lambda("CoordinateZ", get_file_pointer(), m_blockLocalNodeMap, myProcessor);
       }
 
       else if (field.get_name() == "mesh_model_coordinates") {
@@ -1866,10 +1870,11 @@ namespace Iocgns {
 
           // ========================================================================
           // Repetitive code for each coordinate direction; use a lambda to consolidate...
-          auto blk_coord_lambda = [this, block_map, base, zone, &coord, first, num_coord,
-                                   phys_dimension, &rdata](const char *ord_name, int ordinate) {
-            CGCHECKM(cg_coord_read(get_file_pointer(), base, zone, ord_name, CGNS_ENUMV(RealDouble),
-                                   &first, &num_coord, coord.data()));
+          auto blk_coord_lambda = [block_map, base, zone, &coord, first, num_coord, phys_dimension,
+                                   &rdata](const char *ord_name, int ordinate, int cgns_file_ptr,
+                                           int myProcessor) {
+            CGCHECK(cg_coord_read(cgns_file_ptr, base, zone, ord_name, CGNS_ENUMV(RealDouble),
+                                  &first, &num_coord, coord.data()));
 
             // Map to global coordinate position...
             for (cgsize_t i = 0; i < num_coord; i++) {
@@ -1879,14 +1884,14 @@ namespace Iocgns {
           // End of lambda...
           // ========================================================================
 
-          blk_coord_lambda("CoordinateX", 0);
+          blk_coord_lambda("CoordinateX", 0, get_file_pointer(), myProcessor);
 
           if (phys_dimension >= 2) {
-            blk_coord_lambda("CoordinateY", 1);
+            blk_coord_lambda("CoordinateY", 1, get_file_pointer(), myProcessor);
           }
 
           if (phys_dimension >= 3) {
-            blk_coord_lambda("CoordinateZ", 2);
+            blk_coord_lambda("CoordinateZ", 2, get_file_pointer(), myProcessor);
           }
         }
       }
@@ -2258,10 +2263,11 @@ namespace Iocgns {
 
         // ========================================================================
         // Repetitive code for each coordinate direction; use a lambda to consolidate...
-        auto coord_lambda = [this, base, zone, &coord, &rmin, &rmax, phys_dimension, num_to_get,
-                             &rdata](const char *ord_name, int ordinate) {
-          CGCHECKM(cg_coord_read(get_file_pointer(), base, zone, ord_name, CGNS_ENUMV(RealDouble),
-                                 rmin, rmax, coord.data()));
+        auto coord_lambda = [base, zone, &coord, &rmin, &rmax, phys_dimension, num_to_get,
+                             &rdata](const char *ord_name, int ordinate, int cgns_file_ptr,
+                                     int myProcessor) {
+          CGCHECK(cg_coord_read(cgns_file_ptr, base, zone, ord_name, CGNS_ENUMV(RealDouble), rmin,
+                                rmax, coord.data()));
 
           // Map to global coordinate position...
           for (cgsize_t i = 0; i < num_to_get; i++) {
@@ -2271,14 +2277,14 @@ namespace Iocgns {
         // End of lambda...
         // ========================================================================
 
-        coord_lambda("CoordinateX", 0);
+        coord_lambda("CoordinateX", 0, get_file_pointer(), myProcessor);
 
         if (phys_dimension >= 2) {
-          coord_lambda("CoordinateY", 1);
+          coord_lambda("CoordinateY", 1, get_file_pointer(), myProcessor);
         }
 
         if (phys_dimension == 3) {
-          coord_lambda("CoordinateZ", 2);
+          coord_lambda("CoordinateZ", 2, get_file_pointer(), myProcessor);
         }
       }
       else if (field.get_name() == "cell_node_ids") {
@@ -2571,8 +2577,9 @@ namespace Iocgns {
 
         // ========================================================================
         // Repetitive code for each coordinate direction; use a lambda to consolidate...
-        auto coord_lambda = [this, &coord, num_to_get, phys_dimension, &rdata, base,
-                             zone](const char *ord_name, int ordinate) {
+        auto coord_lambda = [&coord, num_to_get, phys_dimension, &rdata, base,
+                             zone](const char *ord_name, int ordinate, int cgns_file_ptr,
+                                   int myProcessor) {
           int crd_index = 0;
 
           // Map to global coordinate position...
@@ -2580,19 +2587,19 @@ namespace Iocgns {
             coord[i] = rdata[phys_dimension * i + ordinate];
           }
 
-          CGCHECKM(cg_coord_write(get_file_pointer(), base, zone, CGNS_ENUMV(RealDouble), ord_name,
-                                  coord.data(), &crd_index));
+          CGCHECK(cg_coord_write(cgns_file_ptr, base, zone, CGNS_ENUMV(RealDouble), ord_name,
+                                 coord.data(), &crd_index));
         };
         // End of lambda...
         // ========================================================================
 
-        coord_lambda("CoordinateX", 0);
+        coord_lambda("CoordinateX", 0, get_file_pointer(), myProcessor);
 
         if (phys_dimension >= 2) {
-          coord_lambda("CoordinateY", 1);
+          coord_lambda("CoordinateY", 1, get_file_pointer(), myProcessor);
         }
         if (phys_dimension == 3) {
-          coord_lambda("CoordinateZ", 2);
+          coord_lambda("CoordinateZ", 2, get_file_pointer(), myProcessor);
         }
       }
       else {
@@ -2713,8 +2720,10 @@ namespace Iocgns {
             int field_byte_size            = (field.get_type() == Ioss::Field::INT32) ? 32 : 64;
             if (field_byte_size == CG_SIZEOF_SIZE) {
               Utils::unmap_cgns_connectivity(eb->topology(), num_to_get, (cgsize_t *)data);
-              CGCHECKM(cg_section_write(get_file_pointer(), base, zone, "HexElements", type, 1,
-                                        num_to_get, 0, (cgsize_t *)data, &sect));
+              std::string element_type =
+                  fmt::format("{}Elements", Ioss::Utils::shape_to_string(eb->topology()->shape()));
+              CGCHECKM(cg_section_write(get_file_pointer(), base, zone, element_type.c_str(), type,
+                                        1, num_to_get, 0, (cgsize_t *)data, &sect));
             }
             else {
               CGNSIntVector connect;
@@ -2732,8 +2741,10 @@ namespace Iocgns {
                 }
               }
               Utils::unmap_cgns_connectivity(eb->topology(), num_to_get, connect.data());
-              CGCHECKM(cg_section_write(get_file_pointer(), base, zone, "HexElements", type, 1,
-                                        num_to_get, 0, connect.data(), &sect));
+              std::string element_type =
+                  fmt::format("{}Elements", Ioss::Utils::shape_to_string(eb->topology()->shape()));
+              CGCHECKM(cg_section_write(get_file_pointer(), base, zone, element_type.c_str(), type,
+                                        1, num_to_get, 0, connect.data(), &sect));
             }
             m_bcOffset[zone] += num_to_get;
             eb->property_update("section", sect);
@@ -3089,8 +3100,10 @@ namespace Iocgns {
         CGCHECKM(
             cg_goto(get_file_pointer(), base, "Zone_t", zone, "ZoneBC_t", 1, "BC_t", sect, "end"));
         CGCHECKM(cg_famname_write(name.c_str()));
-        CGCHECKM(cg_boco_gridlocation_write(get_file_pointer(), base, zone, sect,
-                                            CGNS_ENUMV(FaceCenter)));
+
+        int  phys_dimension = get_region()->get_property("spatial_dimension").get_int();
+        auto location       = phys_dimension == 2 ? CGNS_ENUMV(EdgeCenter) : CGNS_ENUMV(FaceCenter);
+        CGCHECKM(cg_boco_gridlocation_write(get_file_pointer(), base, zone, sect, location));
 
         CGCHECKM(cg_section_partial_write(get_file_pointer(), base, zone, sb_name.c_str(), type,
                                           cg_start, cg_end, 0, &sect));

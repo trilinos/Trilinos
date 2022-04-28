@@ -98,6 +98,7 @@ namespace Iotm {
     void get_nodesets();
     void get_sidesets();
     void get_commsets();
+    void get_assemblies();
 
     const Ioss::Map &get_node_map() const;
     const Ioss::Map &get_element_map() const;
@@ -133,11 +134,8 @@ namespace Iotm {
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
 
-    int64_t get_field_internal(const Ioss::Assembly * /*sb*/, const Ioss::Field & /*field*/,
-                               void * /*data*/, size_t /*data_size*/) const override
-    {
-      return 0;
-    }
+    int64_t get_field_internal(const Ioss::Assembly *sb, const Ioss::Field &field, void *data,
+                               size_t data_size) const override;
 
     int64_t get_field_internal(const Ioss::Blob * /*sb*/, const Ioss::Field & /*field*/,
                                void * /*data*/, size_t /*data_size*/) const override
@@ -197,6 +195,7 @@ namespace Iotm {
     int elementBlockCount{0};
     int nodesetCount{0};
     int sidesetCount{0};
+    int assemblyCount{0};
 
     bool m_useVariableDf{true};
   };

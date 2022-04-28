@@ -54,12 +54,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION       "8.14"
+#define EXODUS_VERSION       "8.15"
 #define EXODUS_VERSION_MAJOR 8
-#define EXODUS_VERSION_MINOR 14
-#define EXODUS_RELEASE_DATE  "December 2, 2021"
+#define EXODUS_VERSION_MINOR 15
+#define EXODUS_RELEASE_DATE  "February 24, 2022"
 
-#define EX_API_VERS       8.14f
+#define EX_API_VERS       8.15f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 #define EX_VERS           EX_API_VERS
 
@@ -810,6 +810,9 @@ EXODUS_EXPORT int ex_get_id_map(int exoid, ex_entity_type map_type, void_int *ma
 EXODUS_EXPORT int ex_get_partial_id_map(int exoid, ex_entity_type map_type,
                                         int64_t start_entity_num, int64_t num_entities,
                                         void_int *map);
+
+EXODUS_EXPORT int ex_get_block_id_map(int exoid, ex_entity_type map_type, ex_entity_id entity_id,
+                                      void_int *map);
 
 EXODUS_EXPORT int ex_put_coordinate_frames(int exoid, int nframes, const void_int *cf_ids,
                                            const void *pt_coordinates, const char *tags);

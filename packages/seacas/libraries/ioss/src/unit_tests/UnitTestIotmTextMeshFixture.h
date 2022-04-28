@@ -21,6 +21,7 @@
 #include <Ioss_MeshType.h>       // for MeshType, etc
 #include <Ioss_NodeBlock.h>
 #include <Ioss_NodeSet.h>
+#include <Ioss_Assembly.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_PropertyManager.h>
 #include <Ioss_Region.h>
@@ -72,6 +73,66 @@ struct SideEntryLess
 
 namespace Iotm {
   namespace unit_test {
+
+  class AssemblyTreeGraph
+  {
+  public:
+    AssemblyTreeGraph()                          = delete;
+    AssemblyTreeGraph(const AssemblyTreeGraph &) = delete;
+
+    AssemblyTreeGraph(Ioss::Region *region)
+        : m_region(region)
+    {
+    }
+
+  public:
+    std::vector<std::string> get_unique_leaf_members(const std::string& name)
+    {
+      m_leafMembers.clear();
+      m_visitedAssemblies.clear();
+
+      for(Ioss::Assembly* assembly : m_region->get_assemblies()) {
+        m_visitedAssemblies[assembly] = false;
+      }
+
+      traverse_tree(m_region->get_assembly(name));
+
+      std::sort(m_leafMembers.begin(), m_leafMembers.end(), std::less<std::string>());
+      auto endIter = std::unique(m_leafMembers.begin(), m_leafMembers.end());
+      m_leafMembers.resize(endIter - m_leafMembers.begin());
+
+      return m_leafMembers;
+    }
+
+  private:
+    void traverse_tree(const Ioss::Assembly* assembly)
+    {
+      // Walk the tree without cyclic dependency
+      if (assembly != nullptr) {
+        if (m_visitedAssemblies[assembly] == false) {
+          m_visitedAssemblies[assembly] = true;
+
+          const Ioss::EntityType assemblyType = assembly->get_member_type();
+          if (Ioss::ASSEMBLY != assemblyType) {
+            for (const Ioss::GroupingEntity *ge : assembly->get_members()) {
+              m_leafMembers.push_back(ge->name());
+            }
+          } else {
+            for (const Ioss::GroupingEntity *ge : assembly->get_members()) {
+              const Ioss::Assembly* assemblyMember = dynamic_cast<const Ioss::Assembly*>(ge);
+              ThrowRequireWithMsg(nullptr != assemblyMember,
+                  "Non-assembly member: " << ge->name() << " in ASSEMBLY rank assembly: " << assembly->name());
+              traverse_tree(assemblyMember);
+            }
+          }
+        }
+      }
+    }
+
+    Ioss::Region                                           *m_region = nullptr;
+    mutable std::unordered_map<const Ioss::Assembly*,bool>  m_visitedAssemblies;
+    mutable std::vector<std::string>                        m_leafMembers;
+  };
 
     class TextMeshFixture : public ::testing::Test
     {
@@ -244,6 +305,32 @@ namespace Iotm {
 
         for (EntityId node : goldNodeIds) {
           EXPECT_TRUE(std::binary_search(nodeIds.begin(), nodeIds.end(), node));
+        }
+      }
+
+      void verify_num_assemblies(size_t goldCount)
+      {
+        ThrowRequireWithMsg(m_region != nullptr, "Ioss region has not been created");
+        size_t count = m_region->get_assemblies().size();
+        EXPECT_EQ(goldCount, count);
+      }
+
+      void verify_single_assembly(const std::string& name, const unsigned id,
+                                  const std::vector<std::string>& goldMembers)
+      {
+        Ioss::Assembly *assembly = get_assembly(name);
+        EXPECT_TRUE(nullptr != assembly);
+        EXPECT_EQ(id, assembly->get_property("id").get_int());
+
+        AssemblyTreeGraph graph(m_region);
+        std::vector<std::string> leafMembers = graph.get_unique_leaf_members(name);
+        EXPECT_EQ(goldMembers.size(), leafMembers.size());
+
+        for(size_t i=0; i<goldMembers.size(); i++) {
+          const std::string& goldMember = goldMembers[i];
+          const std::string& leafMember = leafMembers[i];
+          EXPECT_EQ(0, strcasecmp(goldMember.c_str(), leafMember.c_str()))
+            << "Comparison failure for " << name << ": " << goldMember << " <-> " << leafMember;
         }
       }
 
@@ -595,6 +682,22 @@ namespace Iotm {
         }
 
         return sideset;
+      }
+
+      Ioss::Assembly *get_assembly(const std::string &name) const
+      {
+        ThrowRequireWithMsg(m_region != nullptr, "Ioss region has not been created");
+
+        const Ioss::AssemblyContainer &assemblies = m_region->get_assemblies();
+        Ioss::Assembly                *assembly  = nullptr;
+
+        for (Ioss::Assembly *ass : assemblies) {
+          if (strcasecmp(ass->name().c_str(), name.c_str()) == 0) {
+            assembly = ass;
+          }
+        }
+
+        return assembly;
       }
 
       void verify_block(Ioss::ElementBlock *block) { ASSERT_TRUE(block != nullptr); }

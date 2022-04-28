@@ -42,7 +42,6 @@
 //@HEADER
 */
 
-
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 
@@ -60,8 +59,7 @@
 #include "KokkosSparse_sptrsv_supernode.hpp"
 #endif
 
-#include<gtest/gtest.h>
-
+#include <gtest/gtest.h>
 
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -330,58 +328,53 @@ void run_test_sptrsv_mtx() {
 }
 #endif
 
-
 namespace {
-template < class ViewType, typename ValueType, typename OrdinalType >
+template <class ViewType, typename ValueType, typename OrdinalType>
 struct ReductionCheck {
-
-  using lno_t = OrdinalType;
+  using lno_t      = OrdinalType;
   using value_type = ValueType;
 
   ViewType lhs;
 
-  ReductionCheck( const ViewType & lhs_ ) : lhs(lhs_) {}
+  ReductionCheck(const ViewType &lhs_) : lhs(lhs_) {}
 
   KOKKOS_INLINE_FUNCTION
-  void operator()( lno_t i, value_type &tsum ) const {
-    tsum += lhs(i);
-  }
-
+  void operator()(lno_t i, value_type &tsum) const { tsum += lhs(i); }
 };
-}
+}  // namespace
 
-
-template <typename scalar_t, typename lno_t, typename size_type, typename device>
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
 void run_test_sptrsv() {
-
-  typedef Kokkos::View< size_type*, device >  RowMapType;
-  typedef Kokkos::View< lno_t*, device >      EntriesType;
-  typedef Kokkos::View< scalar_t*, device >   ValuesType;
+  typedef Kokkos::View<size_type *, device> RowMapType;
+  typedef Kokkos::View<lno_t *, device> EntriesType;
+  typedef Kokkos::View<scalar_t *, device> ValuesType;
 
   scalar_t ZERO = scalar_t(0);
-  scalar_t ONE = scalar_t(1);
+  scalar_t ONE  = scalar_t(1);
 
   const size_type nrows = 5;
   const size_type nnz   = 10;
 
-  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t,
-      typename device::execution_space, typename device::memory_space, typename device::memory_space>;
+  using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle<
+      size_type, lno_t, scalar_t, typename device::execution_space,
+      typename device::memory_space, typename device::memory_space>;
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
   using host_crsmat_t = typename KernelHandle::SPTRSVHandleType::host_crsmat_t;
-  using host_graph_t = typename host_crsmat_t::StaticCrsGraphType;
+  using host_graph_t  = typename host_crsmat_t::StaticCrsGraphType;
 
-  using row_map_view_t  = typename host_graph_t::row_map_type::non_const_type;
-  using cols_view_t     = typename host_graph_t::entries_type::non_const_type;
-  using values_view_t   = typename host_crsmat_t::values_type::non_const_type;
+  using row_map_view_t = typename host_graph_t::row_map_type::non_const_type;
+  using cols_view_t    = typename host_graph_t::entries_type::non_const_type;
+  using values_view_t  = typename host_crsmat_t::values_type::non_const_type;
 
   // L & U handle for supernodal SpTrsv
   KernelHandle khL;
   KernelHandle khU;
 
   // right-hand-side and solution
-  ValuesType B ("rhs", nrows);
-  ValuesType X ("sol", nrows);
+  ValuesType B("rhs", nrows);
+  ValuesType X("sol", nrows);
 
   // host CRS for L & U
   host_crsmat_t L, U, Ut;
@@ -389,9 +382,9 @@ void run_test_sptrsv() {
 
   // Upper tri
   {
-    RowMapType  row_map("row_map", nrows+1);
+    RowMapType row_map("row_map", nrows + 1);
     EntriesType entries("entries", nnz);
-    ValuesType  values("values", nnz);
+    ValuesType values("values", nnz);
 
     auto hrow_map = Kokkos::create_mirror_view(row_map);
     auto hentries = Kokkos::create_mirror_view(entries);
@@ -415,15 +408,16 @@ void run_test_sptrsv() {
     hentries(8) = 4;
     hentries(9) = 4;
 
-    for ( size_type i = 0; i < nnz; ++i ) {
+    for (size_type i = 0; i < nnz; ++i) {
       hvalues(i) = ONE;
     }
 
     Kokkos::deep_copy(row_map, hrow_map);
     Kokkos::deep_copy(entries, hentries);
-    Kokkos::deep_copy(values,  hvalues);
+    Kokkos::deep_copy(values, hvalues);
 
-    // Create known_lhs, generate rhs, then solve for lhs to compare to known_lhs
+    // Create known_lhs, generate rhs, then solve for lhs to compare to
+    // known_lhs
     ValuesType known_lhs("known_lhs", nrows);
     // Create known solution lhs set to all 1's
     Kokkos::deep_copy(known_lhs, ONE);
@@ -436,41 +430,49 @@ void run_test_sptrsv() {
 
     typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
     crsMat_t triMtx("triMtx", nrows, nrows, nnz, values, row_map, entries);
-    KokkosSparse::spmv( "N", ONE, triMtx, known_lhs, ZERO, rhs);
+    KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs);
 
     {
       KernelHandle kh;
       bool is_lower_tri = false;
-      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,
+                              is_lower_tri);
 
-      sptrsv_symbolic( &kh, row_map, entries );
+      sptrsv_symbolic(&kh, row_map, entries);
       Kokkos::fence();
 
-      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
       Kokkos::fence();
 
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-      if ( sum != lhs.extent(0) ) {
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(0,
+                                                                lhs.extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if (sum != lhs.extent(0)) {
         std::cout << "Upper Tri Solve FAILURE" << std::endl;
         kh.get_sptrsv_handle()->print_algorithm();
       }
-      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+      EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
 
       Kokkos::deep_copy(lhs, ZERO);
       kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
-      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
       Kokkos::fence();
 
       sum = 0.0;
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-      if ( sum != lhs.extent(0) ) {
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(0,
+                                                                lhs.extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if (sum != lhs.extent(0)) {
         std::cout << "Upper Tri Solve FAILURE" << std::endl;
         kh.get_sptrsv_handle()->print_algorithm();
       }
-      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+      EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
 
-      //FIXME Issues with various integral type combos - algorithm currently unavailable and commented out until fixed
+      // FIXME Issues with various integral type combos - algorithm currently
+      // unavailable and commented out until fixed
       /*
       Kokkos::deep_copy(lhs, ZERO);
       kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
@@ -478,15 +480,15 @@ void run_test_sptrsv() {
       Kokkos::fence();
 
       sum = 0.0;
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-      if ( sum != lhs.extent(0) ) {
-        std::cout << "Upper Tri Solve FAILURE" << std::endl;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename
+      device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType,
+      scalar_t, lno_t>(lhs), sum); if ( sum != lhs.extent(0) ) { std::cout <<
+      "Upper Tri Solve FAILURE" << std::endl;
         kh.get_sptrsv_handle()->print_algorithm();
       }
       EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
       */
 
-
       kh.destroy_sptrsv_handle();
     }
 
@@ -494,61 +496,70 @@ void run_test_sptrsv() {
       Kokkos::deep_copy(lhs, ZERO);
       KernelHandle kh;
       bool is_lower_tri = false;
-      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows, is_lower_tri);
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows,
+                              is_lower_tri);
       auto chain_threshold = 1;
       kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
 
-      sptrsv_symbolic( &kh, row_map, entries );
+      sptrsv_symbolic(&kh, row_map, entries);
       Kokkos::fence();
 
-      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
       Kokkos::fence();
 
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-      if ( sum != lhs.extent(0) ) {
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(0,
+                                                                lhs.extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if (sum != lhs.extent(0)) {
         std::cout << "Upper Tri Solve FAILURE" << std::endl;
         kh.get_sptrsv_handle()->print_algorithm();
       }
-      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+      EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
 
       kh.destroy_sptrsv_handle();
     }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    if (std::is_same<size_type,int>::value && std::is_same<lno_t,int>::value && std::is_same<typename device::execution_space, Kokkos::Cuda>::value)
-    {
+    if (std::is_same<size_type, int>::value &&
+        std::is_same<lno_t, int>::value &&
+        std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
       Kokkos::deep_copy(lhs, ZERO);
       KernelHandle kh;
       bool is_lower_tri = false;
-      kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows, is_lower_tri);
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows,
+                              is_lower_tri);
 
       sptrsv_symbolic(&kh, row_map, entries, values);
       Kokkos::fence();
 
-      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
       Kokkos::fence();
 
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-      if ( sum != lhs.extent(0) ) {
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(0,
+                                                                lhs.extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if (sum != lhs.extent(0)) {
         std::cout << "Upper Tri Solve FAILURE" << std::endl;
         kh.get_sptrsv_handle()->print_algorithm();
       }
-      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+      EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
 
       kh.destroy_sptrsv_handle();
     }
 #endif
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
-    const scalar_t FIVE = scalar_t(5);
+    const scalar_t FIVE    = scalar_t(5);
     const size_type nnz_sp = 14;
     {
       // U in csr
-      row_map_view_t  hUrowptr("hUrowptr", nrows+1);
-      cols_view_t     hUcolind("hUcolind", nnz_sp);
-      values_view_t   hUvalues("hUvalues", nnz_sp);
+      row_map_view_t hUrowptr("hUrowptr", nrows + 1);
+      cols_view_t hUcolind("hUcolind", nnz_sp);
+      values_view_t hUvalues("hUvalues", nnz_sp);
 
       // rowptr
       hUrowptr(0) = 0;
@@ -560,15 +571,15 @@ void run_test_sptrsv() {
 
       // colind
       // first row (first supernode)
-      hUcolind(0)  = 0;
-      hUcolind(1)  = 1;
-      hUcolind(2)  = 2;
-      hUcolind(3)  = 4;
+      hUcolind(0) = 0;
+      hUcolind(1) = 1;
+      hUcolind(2) = 2;
+      hUcolind(3) = 4;
       // second row (first supernode)
-      hUcolind(4)  = 0;
-      hUcolind(5)  = 1;
-      hUcolind(6)  = 2;
-      hUcolind(7)  = 4;
+      hUcolind(4) = 0;
+      hUcolind(5) = 1;
+      hUcolind(6) = 2;
+      hUcolind(7) = 4;
       // third row (second supernode)
       hUcolind(8)  = 2;
       hUcolind(9)  = 3;
@@ -581,15 +592,15 @@ void run_test_sptrsv() {
 
       // values
       // first row (first supernode)
-      hUvalues(0)  = FIVE;
-      hUvalues(1)  = ONE;
-      hUvalues(2)  = ONE;
-      hUvalues(3)  = ZERO;
+      hUvalues(0) = FIVE;
+      hUvalues(1) = ONE;
+      hUvalues(2) = ONE;
+      hUvalues(3) = ZERO;
       // second row (first supernode)
-      hUvalues(4)  = ZERO;
-      hUvalues(5)  = FIVE;
-      hUvalues(6)  = ZERO;
-      hUvalues(7)  = ONE;
+      hUvalues(4) = ZERO;
+      hUvalues(5) = FIVE;
+      hUvalues(6) = ZERO;
+      hUvalues(7) = ONE;
       // third row (second supernode)
       hUvalues(8)  = FIVE;
       hUvalues(9)  = ONE;
@@ -602,33 +613,34 @@ void run_test_sptrsv() {
 
       // save U for Supernodal Sptrsv
       host_graph_t static_graph(hUcolind, hUrowptr);
-      U = host_crsmat_t ("CrsMatrixU", nrows, hUvalues, static_graph);
+      U = host_crsmat_t("CrsMatrixU", nrows, hUvalues, static_graph);
 
       // create handle for Supernodal Sptrsv
       bool is_lower_tri = false;
-      khU.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, is_lower_tri);
+      khU.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows,
+                               is_lower_tri);
 
       // X = U*ONES to generate B = A*ONES (on device)
       {
-        RowMapType  Urowptr("Urowptr", nrows+1);
+        RowMapType Urowptr("Urowptr", nrows + 1);
         EntriesType Ucolind("Ucolind", nnz_sp);
-        ValuesType  Uvalues("Uvalues", nnz_sp);
+        ValuesType Uvalues("Uvalues", nnz_sp);
 
         Kokkos::deep_copy(Urowptr, hUrowptr);
         Kokkos::deep_copy(Ucolind, hUcolind);
         Kokkos::deep_copy(Uvalues, hUvalues);
 
         crsMat_t mtxU("mtxU", nrows, nrows, nnz_sp, Uvalues, Urowptr, Ucolind);
-        Kokkos::deep_copy (B, ONE);
-        KokkosSparse::spmv ("N", ONE, mtxU, B, ZERO, X);
+        Kokkos::deep_copy(B, ONE);
+        KokkosSparse::spmv("N", ONE, mtxU, B, ZERO, X);
       }
     }
 
     {
       // U in csc (for inverting off-diag)
-      row_map_view_t  hUcolptr("hUcolptr", nrows+1);
-      cols_view_t     hUrowind("hUrowind", nnz_sp);
-      values_view_t   hUvalues("hUvalues", nnz_sp);
+      row_map_view_t hUcolptr("hUcolptr", nrows + 1);
+      cols_view_t hUrowind("hUrowind", nnz_sp);
+      values_view_t hUvalues("hUvalues", nnz_sp);
 
       // colptr
       hUcolptr(0) = 0;
@@ -640,18 +652,18 @@ void run_test_sptrsv() {
 
       // colind
       // first column (first supernode)
-      hUrowind(0)  = 0;
-      hUrowind(1)  = 1;
+      hUrowind(0) = 0;
+      hUrowind(1) = 1;
       // second column (first supernode)
-      hUrowind(2)  = 0;
-      hUrowind(3)  = 1;
+      hUrowind(2) = 0;
+      hUrowind(3) = 1;
       // third column (second supernode)
-      hUrowind(4)  = 2;
-      hUrowind(5)  = 0;
-      hUrowind(6)  = 1;
+      hUrowind(4) = 2;
+      hUrowind(5) = 0;
+      hUrowind(6) = 1;
       // fourth column (third supernode)
-      hUrowind(7)  = 3;
-      hUrowind(8)  = 2;
+      hUrowind(7) = 3;
+      hUrowind(8) = 2;
       // fifth column (fourth supernode)
       hUrowind(9)  = 4;
       hUrowind(10) = 0;
@@ -661,18 +673,18 @@ void run_test_sptrsv() {
 
       // values
       // first column (first supernode)
-      hUvalues(0)  = FIVE;
-      hUvalues(1)  = ZERO;
+      hUvalues(0) = FIVE;
+      hUvalues(1) = ZERO;
       // second column (first supernode)
-      hUvalues(2)  = ONE;
-      hUvalues(3)  = FIVE;
+      hUvalues(2) = ONE;
+      hUvalues(3) = FIVE;
       // third column (second supernode)
-      hUvalues(4)  = FIVE;
-      hUvalues(5)  = ONE;
-      hUvalues(6)  = ZERO;
+      hUvalues(4) = FIVE;
+      hUvalues(5) = ONE;
+      hUvalues(6) = ZERO;
       // fourth column (third supernode)
-      hUvalues(7)  = FIVE;
-      hUvalues(8)  = ONE;
+      hUvalues(7) = FIVE;
+      hUvalues(8) = ONE;
       // fifth column (fourth supernode)
       hUvalues(9)  = FIVE;
       hUvalues(10) = ZERO;
@@ -689,9 +701,9 @@ void run_test_sptrsv() {
 
   // Lower tri
   {
-    RowMapType  row_map("row_map", nrows+1);
+    RowMapType row_map("row_map", nrows + 1);
     EntriesType entries("entries", nnz);
-    ValuesType  values("values", nnz);
+    ValuesType values("values", nnz);
 
     auto hrow_map = Kokkos::create_mirror_view(row_map);
     auto hentries = Kokkos::create_mirror_view(entries);
@@ -715,15 +727,16 @@ void run_test_sptrsv() {
     hentries(8) = 3;
     hentries(9) = 4;
 
-    for ( size_type i = 0; i < nnz; ++i ) {
+    for (size_type i = 0; i < nnz; ++i) {
       hvalues(i) = ONE;
     }
 
     Kokkos::deep_copy(row_map, hrow_map);
     Kokkos::deep_copy(entries, hentries);
-    Kokkos::deep_copy(values,  hvalues);
+    Kokkos::deep_copy(values, hvalues);
 
-    // Create known_lhs, generate rhs, then solve for lhs to compare to known_lhs
+    // Create known_lhs, generate rhs, then solve for lhs to compare to
+    // known_lhs
     ValuesType known_lhs("known_lhs", nrows);
     // Create known solution lhs set to all 1's
     Kokkos::deep_copy(known_lhs, ONE);
@@ -736,42 +749,49 @@ void run_test_sptrsv() {
 
     typedef CrsMatrix<scalar_t, lno_t, device, void, size_type> crsMat_t;
     crsMat_t triMtx("triMtx", nrows, nrows, nnz, values, row_map, entries);
-    KokkosSparse::spmv( "N", ONE, triMtx, known_lhs, ZERO, rhs);
-
+    KokkosSparse::spmv("N", ONE, triMtx, known_lhs, ZERO, rhs);
 
     {
       KernelHandle kh;
       bool is_lower_tri = true;
-      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows, is_lower_tri);
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, nrows,
+                              is_lower_tri);
 
-      sptrsv_symbolic( &kh, row_map, entries );
+      sptrsv_symbolic(&kh, row_map, entries);
       Kokkos::fence();
 
-      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
       Kokkos::fence();
 
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-      if ( sum != lhs.extent(0) ) {
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(0,
+                                                                lhs.extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if (sum != lhs.extent(0)) {
         std::cout << "Lower Tri Solve FAILURE" << std::endl;
         kh.get_sptrsv_handle()->print_algorithm();
       }
-      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+      EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
 
       Kokkos::deep_copy(lhs, ZERO);
       kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHD_RP);
-      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
       Kokkos::fence();
 
       sum = 0.0;
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-      if ( sum != lhs.extent(0) ) {
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(0,
+                                                                lhs.extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if (sum != lhs.extent(0)) {
         std::cout << "Lower Tri Solve FAILURE" << std::endl;
         kh.get_sptrsv_handle()->print_algorithm();
       }
-      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+      EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
 
-      //FIXME Issues with various integral type combos - algorithm currently unavailable and commented out until fixed
+      // FIXME Issues with various integral type combos - algorithm currently
+      // unavailable and commented out until fixed
       /*
       Kokkos::deep_copy(lhs, ZERO);
       kh.get_sptrsv_handle()->set_algorithm(SPTRSVAlgorithm::SEQLVLSCHED_TP2);
@@ -779,9 +799,10 @@ void run_test_sptrsv() {
       Kokkos::fence();
 
       sum = 0.0;
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-      if ( sum != lhs.extent(0) ) {
-        std::cout << "Lower Tri Solve FAILURE" << std::endl;
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename
+      device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType,
+      scalar_t, lno_t>(lhs), sum); if ( sum != lhs.extent(0) ) { std::cout <<
+      "Lower Tri Solve FAILURE" << std::endl;
         kh.get_sptrsv_handle()->print_algorithm();
       }
       EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
@@ -794,48 +815,57 @@ void run_test_sptrsv() {
       Kokkos::deep_copy(lhs, ZERO);
       KernelHandle kh;
       bool is_lower_tri = true;
-      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows, is_lower_tri);
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1CHAIN, nrows,
+                              is_lower_tri);
       auto chain_threshold = 1;
       kh.get_sptrsv_handle()->reset_chain_threshold(chain_threshold);
 
-      sptrsv_symbolic( &kh, row_map, entries );
+      sptrsv_symbolic(&kh, row_map, entries);
       Kokkos::fence();
 
-      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
       Kokkos::fence();
 
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-      if ( sum != lhs.extent(0) ) {
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(0,
+                                                                lhs.extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if (sum != lhs.extent(0)) {
         std::cout << "Lower Tri Solve FAILURE" << std::endl;
         kh.get_sptrsv_handle()->print_algorithm();
       }
-      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+      EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
 
       kh.destroy_sptrsv_handle();
     }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
-    if (std::is_same<size_type,int>::value && std::is_same<lno_t,int>::value && std::is_same<typename device::execution_space, Kokkos::Cuda>::value)
-    {
+    if (std::is_same<size_type, int>::value &&
+        std::is_same<lno_t, int>::value &&
+        std::is_same<typename device::execution_space, Kokkos::Cuda>::value) {
       Kokkos::deep_copy(lhs, ZERO);
       KernelHandle kh;
       bool is_lower_tri = true;
-      kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows, is_lower_tri);
+      kh.create_sptrsv_handle(SPTRSVAlgorithm::SPTRSV_CUSPARSE, nrows,
+                              is_lower_tri);
 
       sptrsv_symbolic(&kh, row_map, entries, values);
       Kokkos::fence();
 
-      sptrsv_solve( &kh, row_map, entries, values, rhs, lhs );
+      sptrsv_solve(&kh, row_map, entries, values, rhs, lhs);
       Kokkos::fence();
 
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<typename device::execution_space>(0, lhs.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
-      if ( sum != lhs.extent(0) ) {
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(0,
+                                                                lhs.extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(lhs), sum);
+      if (sum != lhs.extent(0)) {
         std::cout << "Lower Tri Solve FAILURE" << std::endl;
         kh.get_sptrsv_handle()->print_algorithm();
       }
-      EXPECT_TRUE( sum == scalar_t(lhs.extent(0)) );
+      EXPECT_TRUE(sum == scalar_t(lhs.extent(0)));
 
       kh.destroy_sptrsv_handle();
     }
@@ -844,13 +874,13 @@ void run_test_sptrsv() {
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
     {
       // L in csc
-      const scalar_t TWO  = scalar_t(2);
-      const scalar_t FIVE = scalar_t(5);
+      const scalar_t TWO     = scalar_t(2);
+      const scalar_t FIVE    = scalar_t(5);
       const size_type nnz_sp = 14;
 
-      row_map_view_t  hLcolptr("hUcolptr", nrows+1);
-      cols_view_t     hLrowind("hUrowind", nnz_sp);
-      values_view_t   hLvalues("hUvalues", nnz_sp);
+      row_map_view_t hLcolptr("hUcolptr", nrows + 1);
+      cols_view_t hLrowind("hUrowind", nnz_sp);
+      values_view_t hLvalues("hUvalues", nnz_sp);
 
       // colptr
       hLcolptr(0) = 0;
@@ -872,7 +902,7 @@ void run_test_sptrsv() {
       hLrowind(6) = 2;
       hLrowind(7) = 4;
       // third column (second supernode)
-      hLrowind(8) = 2;
+      hLrowind(8)  = 2;
       hLrowind(9)  = 3;
       hLrowind(10) = 4;
       // fourth column (third supernode)
@@ -893,8 +923,8 @@ void run_test_sptrsv() {
       hLvalues(6) = ZERO;
       hLvalues(7) = ONE;
       // third column (second supernode)
-      hLvalues(8) = FIVE;
-      hLvalues(9) = ONE;
+      hLvalues(8)  = FIVE;
+      hLvalues(9)  = ONE;
       hLvalues(10) = ONE;
       // fourth column (third supernode)
       hLvalues(11) = FIVE;
@@ -904,23 +934,24 @@ void run_test_sptrsv() {
 
       // store Lt in crsmat
       host_graph_t static_graph(hLrowind, hLcolptr);
-      L = host_crsmat_t ("CrsMatrixL", nrows, hLvalues, static_graph);
+      L = host_crsmat_t("CrsMatrixL", nrows, hLvalues, static_graph);
 
       bool is_lower_tri = true;
-      khL.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, is_lower_tri);
+      khL.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows,
+                               is_lower_tri);
 
       // generate B = A*ONES = L*(U*ONES), where X = U*ONES (on device)
       {
-        RowMapType  Lcolptr("Lcolptr", nrows+1);
+        RowMapType Lcolptr("Lcolptr", nrows + 1);
         EntriesType Lrowind("Lrowind", nnz_sp);
-        ValuesType  Lvalues("Lvalues", nnz_sp);
+        ValuesType Lvalues("Lvalues", nnz_sp);
 
         Kokkos::deep_copy(Lcolptr, hLcolptr);
         Kokkos::deep_copy(Lrowind, hLrowind);
         Kokkos::deep_copy(Lvalues, hLvalues);
 
         crsMat_t mtxL("mtxL", nrows, nrows, nnz_sp, Lvalues, Lcolptr, Lrowind);
-        KokkosSparse::spmv ("T", ONE, mtxL, X, ZERO, B);
+        KokkosSparse::spmv("T", ONE, mtxL, X, ZERO, B);
       }
     }
 
@@ -928,44 +959,49 @@ void run_test_sptrsv() {
       // unit-test for supernode SpTrsv (default)
       // > set up supernodes (block size = one)
       size_type nsupers = 4;
-      Kokkos::View<int*, Kokkos::HostSpace> supercols ("supercols", 1+nsupers);
-      supercols (0) = 0;
-      supercols (1) = 2; // two columns
-      supercols (2) = 3; // one column
-      supercols (3) = 4; // one column
-      supercols (4) = 5; // one column
-      int *etree = NULL; // we generate graph internally
+      Kokkos::View<int *, Kokkos::HostSpace> supercols("supercols",
+                                                       1 + nsupers);
+      supercols(0) = 0;
+      supercols(1) = 2;     // two columns
+      supercols(2) = 3;     // one column
+      supercols(3) = 4;     // one column
+      supercols(4) = 5;     // one column
+      int *etree   = NULL;  // we generate graph internally
 
       // invert diagonal blocks
       bool invert_diag = true;
-      khL.set_sptrsv_invert_diagonal (invert_diag);
-      khU.set_sptrsv_invert_diagonal (invert_diag);
+      khL.set_sptrsv_invert_diagonal(invert_diag);
+      khU.set_sptrsv_invert_diagonal(invert_diag);
 
       // > symbolic (on host)
-      sptrsv_supernodal_symbolic (nsupers, supercols.data (), etree, L.graph, &khL, U.graph, &khU);
+      sptrsv_supernodal_symbolic(nsupers, supercols.data(), etree, L.graph,
+                                 &khL, U.graph, &khU);
       // > numeric (on host)
-      sptrsv_compute (&khL, L);
-      sptrsv_compute (&khU, U);
+      sptrsv_compute(&khL, L);
+      sptrsv_compute(&khU, U);
       Kokkos::fence();
 
-      // > solve 
-      ValuesType b ("b", nrows);
-      Kokkos::deep_copy (b, B);
-      Kokkos::deep_copy (X, ZERO);
-      sptrsv_solve (&khL, &khU, X, b);
+      // > solve
+      ValuesType b("b", nrows);
+      Kokkos::deep_copy(b, B);
+      Kokkos::deep_copy(X, ZERO);
+      sptrsv_solve(&khL, &khU, X, b);
       Kokkos::fence();
 
       // > check
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce (Kokkos::RangePolicy<typename device::execution_space>(0, X.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(X), sum);
-      if ( sum != lhs.extent(0) ) {
-        std::cout << "Supernode Tri Solve FAILURE : " << sum << " vs." << lhs.extent(0) << std::endl;
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(0, X.extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(X), sum);
+      if (sum != lhs.extent(0)) {
+        std::cout << "Supernode Tri Solve FAILURE : " << sum << " vs."
+                  << lhs.extent(0) << std::endl;
         khL.get_sptrsv_handle()->print_algorithm();
       } else {
         std::cout << "Supernode Tri Solve SUCCESS" << std::endl;
         khL.get_sptrsv_handle()->print_algorithm();
       }
-      EXPECT_TRUE( sum == scalar_t(X.extent(0)) );
+      EXPECT_TRUE(sum == scalar_t(X.extent(0)));
 
       khL.destroy_sptrsv_handle();
       khU.destroy_sptrsv_handle();
@@ -975,60 +1011,65 @@ void run_test_sptrsv() {
       // unit-test for supernode SpTrsv (running TRMM on device for compute)
       // > set up supernodes
       size_type nsupers = 4;
-      Kokkos::View<int*, Kokkos::HostSpace> supercols ("supercols", 1+nsupers);
-      supercols (0) = 0;
-      supercols (1) = 2; // two columns
-      supercols (2) = 3; // one column
-      supercols (3) = 4; // one column
-      supercols (4) = 5; // one column
-      int *etree = NULL; // we generate tree internally
+      Kokkos::View<int *, Kokkos::HostSpace> supercols("supercols",
+                                                       1 + nsupers);
+      supercols(0) = 0;
+      supercols(1) = 2;     // two columns
+      supercols(2) = 3;     // one column
+      supercols(3) = 4;     // one column
+      supercols(4) = 5;     // one column
+      int *etree   = NULL;  // we generate tree internally
 
       // > create handles
       KernelHandle khLd;
       KernelHandle khUd;
-      khLd.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
-      khUd.create_sptrsv_handle (SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
+      khLd.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, true);
+      khUd.create_sptrsv_handle(SPTRSVAlgorithm::SUPERNODAL_DAG, nrows, false);
 
       // > invert diagonal blocks
       bool invert_diag = true;
-      khLd.set_sptrsv_invert_diagonal (invert_diag);
-      khUd.set_sptrsv_invert_diagonal (invert_diag);
+      khLd.set_sptrsv_invert_diagonal(invert_diag);
+      khUd.set_sptrsv_invert_diagonal(invert_diag);
 
       // > invert off-diagonal blocks
       bool invert_offdiag = true;
-      khUd.set_sptrsv_column_major (true);
-      khLd.set_sptrsv_invert_offdiagonal (invert_offdiag);
-      khUd.set_sptrsv_invert_offdiagonal (invert_offdiag);
+      khUd.set_sptrsv_column_major(true);
+      khLd.set_sptrsv_invert_offdiagonal(invert_offdiag);
+      khUd.set_sptrsv_invert_offdiagonal(invert_offdiag);
 
       // > forcing sptrsv compute to perform TRMM on device
-      khLd.set_sptrsv_diag_supernode_sizes (1, 1);
-      khUd.set_sptrsv_diag_supernode_sizes (1, 1);
+      khLd.set_sptrsv_diag_supernode_sizes(1, 1);
+      khUd.set_sptrsv_diag_supernode_sizes(1, 1);
 
       // > symbolic (on host)
-      sptrsv_supernodal_symbolic (nsupers, supercols.data (), etree, L.graph, &khLd, Ut.graph, &khUd);
+      sptrsv_supernodal_symbolic(nsupers, supercols.data(), etree, L.graph,
+                                 &khLd, Ut.graph, &khUd);
       // > numeric (on host)
-      sptrsv_compute (&khLd, L);
-      sptrsv_compute (&khUd, Ut);
+      sptrsv_compute(&khLd, L);
+      sptrsv_compute(&khUd, Ut);
       Kokkos::fence();
 
-      // > solve 
-      ValuesType b ("b", nrows);
-      Kokkos::deep_copy (b, B);
-      Kokkos::deep_copy (X, ZERO);
-      sptrsv_solve (&khLd, &khUd, X, b);
+      // > solve
+      ValuesType b("b", nrows);
+      Kokkos::deep_copy(b, B);
+      Kokkos::deep_copy(X, ZERO);
+      sptrsv_solve(&khLd, &khUd, X, b);
       Kokkos::fence();
 
       // > check
       scalar_t sum = 0.0;
-      Kokkos::parallel_reduce (Kokkos::RangePolicy<typename device::execution_space>(0, X.extent(0)), ReductionCheck<ValuesType, scalar_t, lno_t>(X), sum);
-      if ( sum != lhs.extent(0) ) {
-        std::cout << "Supernode Tri Solve FAILURE : " << sum << " vs." << lhs.extent(0) << std::endl;
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<typename device::execution_space>(0, X.extent(0)),
+          ReductionCheck<ValuesType, scalar_t, lno_t>(X), sum);
+      if (sum != lhs.extent(0)) {
+        std::cout << "Supernode Tri Solve FAILURE : " << sum << " vs."
+                  << lhs.extent(0) << std::endl;
         khLd.get_sptrsv_handle()->print_algorithm();
       } else {
         std::cout << "Supernode Tri Solve SUCCESS" << std::endl;
         khLd.get_sptrsv_handle()->print_algorithm();
       }
-      EXPECT_TRUE( sum == scalar_t(X.extent(0)) );
+      EXPECT_TRUE(sum == scalar_t(X.extent(0)));
 
       khLd.destroy_sptrsv_handle();
       khUd.destroy_sptrsv_handle();
@@ -1037,116 +1078,147 @@ void run_test_sptrsv() {
   }
 }
 
-} // namespace Test
+}  // namespace Test
 
-template <typename scalar_t, typename lno_t, typename size_type, typename device>
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device>
 void test_sptrsv() {
   Test::run_test_sptrsv<scalar_t, lno_t, size_type, device>();
-//  Test::run_test_sptrsv_mtx<scalar_t, lno_t, size_type, device>();
+  //  Test::run_test_sptrsv_mtx<scalar_t, lno_t, size_type, device>();
 }
 
+#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE)                      \
+  TEST_F(TestCategory,                                                     \
+         sparse##_##sptrsv##_##SCALAR##_##ORDINAL##_##OFFSET##_##DEVICE) { \
+    test_sptrsv<SCALAR, ORDINAL, OFFSET, DEVICE>();                        \
+  }
 
-#define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
-TEST_F( TestCategory, sparse ## _ ## sptrsv ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_sptrsv<SCALAR,ORDINAL,OFFSET,DEVICE>(); \
-}
-
-
-#if (defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(double, int, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&      \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(double, int64_t, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int64_t, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(double, int, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&         \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_DOUBLE) &&          \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(double, int64_t, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(float, int, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_FLOAT) &&       \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&        \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(float, int, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(float, int64_t, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||     \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(float, int64_t, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(float, int, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_FLOAT) &&          \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&    \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) || \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&           \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(float, int, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_FLOAT) &&           \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) && \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||  \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&            \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(float, int64_t, size_t, TestExecSpace)
 #endif
 
-
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(kokkos_complex_double, int, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(kokkos_complex_double, int, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||            \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(kokkos_complex_double, int64_t, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&            \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(kokkos_complex_double, int, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(kokkos_complex_double, int64_t, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&        \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||         \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                   \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(kokkos_complex_double, int64_t, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(kokkos_complex_float, int, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(kokkos_complex_float, int, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_INT) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
+     defined(KOKKOSKERNELS_INST_OFFSET_INT)) ||           \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(kokkos_complex_float, int64_t, int, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT) &&           \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(kokkos_complex_float, int, size_t, TestExecSpace)
 #endif
 
-#if (defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_ORDINAL_INT64_T) \
- && defined (KOKKOSKERNELS_INST_OFFSET_SIZE_T) ) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
- EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
+#if (defined(KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) && \
+     defined(KOKKOSKERNELS_INST_ORDINAL_INT64_T) &&       \
+     defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T)) ||        \
+    (!defined(KOKKOSKERNELS_ETI_ONLY) &&                  \
+     !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
+EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
 #undef EXECUTE_TEST

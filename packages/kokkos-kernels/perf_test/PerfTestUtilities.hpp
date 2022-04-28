@@ -46,8 +46,9 @@ inline std::vector<std::string> get_directories(std::string path) {
     while ((dir = readdir(d)) != NULL) {
       std::string nname = std::string(dir->d_name);
       // Check to see if item is a directory
-      //if (isDirectory(path + '/' + nname))
-      if(nname != "." && nname != ".." && isDirectory(path + '/' + dir->d_name))
+      // if (isDirectory(path + '/' + nname))
+      if (nname != "." && nname != ".." &&
+          isDirectory(path + '/' + dir->d_name))
         // std::vector::emplace_back: insert a new element to the end of vector
         paths.emplace_back(dir->d_name);
     }

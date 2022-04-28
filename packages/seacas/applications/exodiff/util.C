@@ -14,7 +14,8 @@
 
 #include "ED_SystemInterface.h" // for SystemInterface, interFace
 
-#if defined(_MSC_VER)
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
 #include <io.h>
 #define isatty _isatty
 #endif

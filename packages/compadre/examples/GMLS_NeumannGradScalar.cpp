@@ -268,7 +268,7 @@ bool all_passed = true;
     my_GMLS.setWeightingType(WeightingFunctionType::Power);
     
     // power to use in that weighting kernel function
-    my_GMLS.setWeightingPower(2);
+    my_GMLS.setWeightingParameter(2);
     
     // generate the alphas that to be combined with data for each target operation requested in lro
     my_GMLS.generateAlphas(number_of_batches);
@@ -313,7 +313,7 @@ bool all_passed = true;
 
         // 0th entry is # of neighbors, which is the index beyond the last neighbor
         int num_neigh_i = neighbor_lists(i, 0);
-        double b_i = my_GMLS.getAlpha0TensorTo0Tensor(lro, i, num_neigh_i);
+        double b_i = my_GMLS.getSolutionSetHost()->getAlpha0TensorTo0Tensor(lro, i, num_neigh_i);
 
         // load value from output
         double GMLS_value = output_value(i);

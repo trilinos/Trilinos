@@ -58,12 +58,6 @@
 #include "percept/PerceptMesh.hpp"
 #endif
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
 #include "stk_mesh/base/CreateAdjacentEntities.hpp"
@@ -411,7 +405,7 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, keepPerceptData)
     TEST_ASSERT(nonnull(refinedMesh));
     TEST_ASSERT(refinedMesh->get_number_elements()>0);
 
-    // check if the parent information is stored 
+    // check if the parent information is stored
     std::vector<stk::mesh::EntityRank> ranks_to_be_deleted;
     ranks_to_be_deleted.push_back(stk::topology::ELEMENT_RANK);
     ranks_to_be_deleted.push_back(refinedMesh->side_rank());

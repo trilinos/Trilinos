@@ -217,9 +217,19 @@ namespace Iotm {
         return names;
       }
 
+      bool is_registered(const std::string &name) const { return m_ids.count(name) > 0; }
+
       const std::vector<std::string> &get_part_names() const { return m_partNames; }
 
       void set_error_handler(ErrorHandler errorHandler) { m_errorHandler = errorHandler; }
+
+      const std::string get_group_type() const { return "element block"; }
+
+      void finalize_parse()
+      {
+        if (!m_idsAssigned)
+          assign_ids();
+      }
 
     private:
       void handle_block_part(const std::string &name)
@@ -273,8 +283,6 @@ namespace Iotm {
           }
         }
       }
-
-      bool is_registered(const std::string &name) const { return m_ids.count(name) > 0; }
 
       bool is_assigned(unsigned id) const { return m_parts.count(id) > 0; }
 
@@ -382,18 +390,39 @@ namespace Iotm {
       operator EntityId() const { return identifier; }
     };
 
-    struct SideBlockInfo
+    template <typename EntityId, typename Topology> struct ElementDataLess
     {
-      std::string         name;
-      std::string         parentName;
-      std::string         sideTopology;
-      std::string         elementTopology;
-      std::string         touchingBlock;
-      std::vector<size_t> sideIndex;
-      unsigned            numNodesPerSide;
+      bool operator()(const ElementData<EntityId, Topology> &lhs,
+                      const ElementData<EntityId, Topology> &rhs)
+      {
+        return lhs.identifier < rhs.identifier;
+      };
+
+      bool operator()(const ElementData<EntityId, Topology> &lhs, const EntityId rhs)
+      {
+        return lhs.identifier < rhs;
+      };
+
+      bool operator()(const EntityId lhs, const ElementData<EntityId, Topology> &rhs)
+      {
+        return lhs < rhs.identifier;
+      };
+
+      bool operator()(const EntityId lhs, const EntityId rhs) { return lhs < rhs; };
     };
 
-    enum SplitType { TOPOLOGY, ELEMENT_BLOCK, NO_SPLIT, INVALID };
+    struct SideBlockInfo
+    {
+      std::string         name{};
+      std::string         parentName{};
+      std::string         sideTopology{};
+      std::string         elementTopology{};
+      std::string         touchingBlock{};
+      std::vector<size_t> sideIndex{};
+      unsigned            numNodesPerSide{};
+    };
+
+    enum SplitType { TOPOLOGY, ELEMENT_BLOCK, NO_SPLIT, INVALID_SPLIT };
 
     inline std::ostream &operator<<(std::ostream &out, const SplitType &t)
     {
@@ -403,7 +432,20 @@ namespace Iotm {
       case SplitType::NO_SPLIT: return out << "NO_SPLIT"; break;
       default: return out << "INVALID"; break;
       }
+      return out << "INVALID[" << (unsigned)t << "]";
+    }
 
+    enum AssemblyType { ASSEMBLY, BLOCK, SIDESET, NODESET, INVALID_ASSEMBLY };
+
+    inline std::ostream &operator<<(std::ostream &out, const AssemblyType &t)
+    {
+      switch (t) {
+      case AssemblyType::ASSEMBLY: return out << "ASSEMBLY"; break;
+      case AssemblyType::BLOCK: return out << "ELEMENT_BLOCK"; break;
+      case AssemblyType::SIDESET: return out << "SIDESET"; break;
+      case AssemblyType::NODESET: return out << "NODESET"; break;
+      default: return out << "INVALID"; break;
+      }
       return out << "INVALID[" << (unsigned)t << "]";
     }
 
@@ -471,9 +513,13 @@ namespace Iotm {
         m_idsAssigned = true;
       }
 
+      size_t size() const { return m_groupDataVec.size(); }
+
       const std::vector<GroupData> &get_group_data() const { return m_groupDataVec; }
 
       const std::vector<std::string> &get_part_names() const { return m_partNames; }
+
+      const std::string &get_group_type() const { return m_type; }
 
       const GroupData *get_group_data(unsigned id) const
       {
@@ -623,6 +669,118 @@ namespace Iotm {
       ErrorHandler m_errorHandler;
     };
 
+    using AssemblyDataType = std::string;
+
+    template <typename EntityId>
+    struct AssemblyData : public EntityGroupData<EntityId, AssemblyDataType>
+    {
+      using DataType = AssemblyDataType;
+
+      void         set_assembly_type(AssemblyType type_) { assemblyType = type_; }
+      AssemblyType get_assembly_type() const { return assemblyType; }
+
+    private:
+      AssemblyType assemblyType = INVALID_ASSEMBLY;
+    };
+
+    template <typename EntityId>
+    class Assemblies : public EntityGroup<EntityId, AssemblyData<EntityId>>
+    {
+    public:
+      using BaseClass = EntityGroup<EntityId, AssemblyData<EntityId>>;
+
+      Assemblies()
+          : EntityGroup<EntityId, AssemblyData<EntityId>>("ASSEMBLY", "ASSEMBLY_",
+                                                          {"BLOCK_", "SURFACE_", "NODELIST_"})
+      {
+      }
+
+      bool is_cyclic(const std::string &assembly) const
+      {
+        initialize_graph();
+        return check_for_cycle(assembly);
+      }
+
+      bool is_cyclic() const
+      {
+        for (const std::string &assembly : BaseClass::get_part_names())
+          if (is_cyclic(assembly)) {
+            return true;
+          }
+
+        return false;
+      }
+
+      std::vector<std::string> &&get_forward_traversal_list(const std::string &assembly) const
+      {
+        initialize_graph();
+        fill_traversal(assembly);
+
+        return std::move(m_traversalList);
+      }
+
+      std::vector<std::string> &&get_reverse_traversal_list(const std::string &assembly) const
+      {
+        initialize_graph();
+        fill_traversal(assembly);
+        std::reverse(m_traversalList.begin(), m_traversalList.end());
+
+        return std::move(m_traversalList);
+      }
+
+    private:
+      void fill_traversal(const std::string &assembly) const
+      {
+        const AssemblyData<EntityId> *assemblyData = BaseClass::get_group_data(assembly);
+        if (nullptr != assemblyData) {
+          if (m_visitedNodes[assembly] == false) {
+            m_visitedNodes[assembly] = true;
+            m_traversalList.push_back(assembly);
+
+            if (assemblyData->get_assembly_type() == AssemblyType::ASSEMBLY) {
+              for (const std::string &member : assemblyData->data) {
+                fill_traversal(member);
+              }
+            }
+          }
+        }
+      }
+
+      bool check_for_cycle(const std::string &assembly) const
+      {
+        bool                          isCyclic     = false;
+        const AssemblyData<EntityId> *assemblyData = BaseClass::get_group_data(assembly);
+        if (nullptr != assemblyData) {
+          if (m_visitedNodes[assembly] == true) {
+            isCyclic = true;
+          }
+          else {
+            m_visitedNodes[assembly] = true;
+
+            if (assemblyData->get_assembly_type() == AssemblyType::ASSEMBLY) {
+              for (const std::string &member : assemblyData->data) {
+                isCyclic |= check_for_cycle(member);
+              }
+            }
+          }
+        }
+        return isCyclic;
+      }
+
+      void initialize_graph() const
+      {
+        m_traversalList.clear();
+        m_traversalList.reserve(BaseClass::size());
+
+        for (const std::string &name : BaseClass::get_part_names()) {
+          m_visitedNodes[name] = false;
+        }
+      }
+
+      mutable std::unordered_map<std::string, bool> m_visitedNodes;
+      mutable std::vector<std::string>              m_traversalList;
+    };
+
     template <typename EntityId> using NodesetDataType = EntityId;
 
     template <typename EntityId>
@@ -637,7 +795,7 @@ namespace Iotm {
     public:
       Nodesets()
           : EntityGroup<EntityId, NodesetData<EntityId>>("NODESET", "NODELIST_",
-                                                         {"BLOCK_", "SURFACE_"})
+                                                         {"BLOCK_", "SURFACE_", "ASSEMBLY_"})
       {
       }
     };
@@ -657,7 +815,7 @@ namespace Iotm {
         set_error_handler(errorHandler);
       }
 
-      SidesetSplitter() : m_splitType(INVALID)
+      SidesetSplitter() : m_splitType(INVALID_SPLIT)
       {
         ErrorHandler errorHandler = [](const std::ostringstream &errmsg) {
           default_error_handler(errmsg);
@@ -750,7 +908,8 @@ namespace Iotm {
           const SidesetDataType<EntityId> &elemSidePair = sideset.data[i];
           EntityId                         elemId       = elemSidePair.first;
 
-          auto iter = bound_search(elementData.begin(), elementData.end(), elemId);
+          auto iter = bound_search(elementData.begin(), elementData.end(), elemId,
+                                   ElementDataLess<EntityId, Topology>());
           if (iter == elementData.end()) {
             std::ostringstream errmsg;
             errmsg << "Error!  Sideset with id: " << sideset.id << " and name: " << sideset.name
@@ -825,7 +984,8 @@ namespace Iotm {
           EntityId                         elemId       = elemSidePair.first;
           int                              side         = elemSidePair.second;
 
-          auto iter = bound_search(elementData.begin(), elementData.end(), elemId);
+          auto iter = bound_search(elementData.begin(), elementData.end(), elemId,
+                                   ElementDataLess<EntityId, Topology>());
           if (iter == elementData.end()) {
             std::ostringstream errmsg;
             errmsg << "Error!  Sideset with id: " << sideset.id << " and name: " << sideset.name
@@ -948,7 +1108,7 @@ namespace Iotm {
     public:
       using BaseClass = EntityGroup<EntityId, SidesetData<EntityId, Topology>>;
 
-      Sidesets() : BaseClass("SIDESET", "SURFACE_", {"BLOCK_", "NODELIST_"}) {}
+      Sidesets() : BaseClass("SIDESET", "SURFACE_", {"BLOCK_", "NODELIST_", "ASSEMBLY_"}) {}
 
       void set_error_handler(ErrorHandler errorHandler) override
       {
@@ -978,6 +1138,7 @@ namespace Iotm {
       Coordinates<EntityId>                        coords;
       Sidesets<EntityId, Topology>                 sidesets;
       Nodesets<EntityId>                           nodesets;
+      Assemblies<EntityId>                         assemblies;
 
       TextMeshData() : spatialDim(0) {}
 
@@ -1317,6 +1478,111 @@ namespace Iotm {
       ErrorHandler          m_errorHandler;
     };
 
+    class AssemblyParser
+    {
+    public:
+      AssemblyParser() : m_assemblyType(INVALID_ASSEMBLY)
+      {
+        ErrorHandler errorHandler = [](const std::ostringstream &errmsg) {
+          default_error_handler(errmsg);
+        };
+        set_error_handler(errorHandler);
+      }
+
+      void set_error_handler(ErrorHandler errorHandler) { m_errorHandler = errorHandler; }
+
+      std::string get_name() { return m_name; }
+
+      AssemblyType get_assembly_type() const { return m_assemblyType; }
+
+      const std::vector<std::string> &get_assembly_data() { return m_members; }
+
+      void parse(const std::string &parseData)
+      {
+        auto options = get_tokens(parseData, ";");
+
+        for (const auto &option : options) {
+          parse_option_group(option);
+        }
+      }
+
+    private:
+      void parse_option(std::string optionName, const std::string &optionValue)
+      {
+        convert_to_lower_case(optionName);
+
+        if (optionName == "name") {
+          parse_name(optionValue);
+        }
+        else if (optionName == "type") {
+          parse_assembly_type(optionValue);
+        }
+        else if (optionName == "member") {
+          parse_assembly_members(optionValue);
+        }
+        else {
+          std::ostringstream errmsg;
+          errmsg << "Unrecognized assembly option: " << optionName;
+          m_errorHandler(errmsg);
+        }
+      }
+
+      void parse_option_group(const std::string &option)
+      {
+        if (!option.empty()) {
+          auto optionTokens = get_tokens(option, "=");
+
+          if (optionTokens.size() != 2) {
+            std::ostringstream errmsg;
+            errmsg << "Unrecognized assembly option: " << option;
+            m_errorHandler(errmsg);
+          }
+
+          parse_option(optionTokens[0], optionTokens[1]);
+        }
+      }
+
+      void parse_name(const std::string &data) { m_name = data; }
+
+      void parse_assembly_type(std::string type)
+      {
+        convert_to_lower_case(type);
+
+        if (type == "assembly") {
+          m_assemblyType = ASSEMBLY;
+        }
+        else if (type == "block") {
+          m_assemblyType = BLOCK;
+        }
+        else if (type == "sideset") {
+          m_assemblyType = SIDESET;
+        }
+        else if (type == "nodeset") {
+          m_assemblyType = NODESET;
+        }
+        else {
+          std::ostringstream errmsg;
+          errmsg << "Unrecognized assembly type: " << type;
+          m_errorHandler(errmsg);
+        }
+      }
+
+      void parse_assembly_members(const std::string &data)
+      {
+        std::vector<std::string> assemblyData = get_tokens(data, ",");
+        for (std::string &member : assemblyData) {
+          convert_to_upper_case(member);
+        }
+
+        m_members = assemblyData;
+      }
+
+      std::vector<std::string> m_members;
+      std::string              m_name;
+      AssemblyType             m_assemblyType;
+      ErrorHandler             m_errorHandler;
+    };
+
     template <typename EntityId, typename Topology> class TextMeshOptionParser
     {
     private:
@@ -1328,7 +1594,8 @@ namespace Iotm {
         PARSED_DIMENSION   = 1L << 0,
         PARSED_COORDINATES = 1L << 1,
         PARSED_SIDESET     = 1L << 2,
-        PARSED_NODESET     = 1L << 3
+        PARSED_NODESET     = 1L << 3,
+        PARSED_ASSEMBLY    = 1L << 4
       };
 
     public:
@@ -1367,10 +1634,13 @@ namespace Iotm {
       void finalize_parse()
       {
         set_coordinates();
+        m_data.partIds.finalize_parse();
         m_data.sidesets.finalize_parse(m_data.elementDataVec);
         m_data.nodesets.finalize_parse();
+        m_data.assemblies.finalize_parse();
         validate_sidesets();
         validate_nodesets();
+        validate_assemblies();
       }
 
     private:
@@ -1488,6 +1758,18 @@ namespace Iotm {
         }
       }
 
+      template <typename SrcDataGroup, typename DestDataGroup>
+      void check_name_collision_with_group(const SrcDataGroup  &srcGroup,
+                                           const DestDataGroup &destGroup)
+      {
+        std::set<std::string> groupNames = transform_to_set(destGroup.get_part_names());
+
+        for (const auto &srcGroupData : srcGroup.get_group_data()) {
+          check_name_collision_with_entity_sets(srcGroupData, destGroup.get_group_type(),
+                                                groupNames);
+        }
+      }
+
       void check_sideset_element_reference()
       {
         for (const SidesetData<EntityId, Topology> &sidesetData :
@@ -1508,12 +1790,9 @@ namespace Iotm {
 
       void check_sideset_name_collision()
       {
-        std::set<std::string> elemBlockNames = transform_to_set(m_data.partIds.get_part_names());
-
-        for (const SidesetData<EntityId, Topology> &sidesetData :
-             m_data.sidesets.get_group_data()) {
-          check_name_collision_with_entity_sets(sidesetData, "element block", elemBlockNames);
-        }
+        check_name_collision_with_group(m_data.sidesets, m_data.partIds);
+        check_name_collision_with_group(m_data.sidesets, m_data.nodesets);
+        check_name_collision_with_group(m_data.sidesets, m_data.assemblies);
       }
 
       void validate_sidesets()
@@ -1539,19 +1818,83 @@ namespace Iotm {
 
       void check_nodeset_name_collision()
       {
-        std::set<std::string> elemBlockNames = transform_to_set(m_data.partIds.get_part_names());
-        std::set<std::string> sidesetNames   = transform_to_set(m_data.sidesets.get_part_names());
-
-        for (const NodesetData<EntityId> &nodesetData : m_data.nodesets.get_group_data()) {
-          check_name_collision_with_entity_sets(nodesetData, "element block", elemBlockNames);
-          check_name_collision_with_entity_sets(nodesetData, "sideset", sidesetNames);
-        }
+        check_name_collision_with_group(m_data.nodesets, m_data.partIds);
+        check_name_collision_with_group(m_data.nodesets, m_data.sidesets);
+        check_name_collision_with_group(m_data.nodesets, m_data.assemblies);
       }
 
       void validate_nodesets()
       {
         check_nodeset_node_reference();
         check_nodeset_name_collision();
+      }
+
+      template <typename T>
+      void check_assembly_member_reference_in_group(const AssemblyData<EntityId> &assemblyData,
+                                                    const T                      &group)
+      {
+        for (const std::string &entry : assemblyData.data) {
+          if (!group.is_registered(entry)) {
+            std::ostringstream errmsg;
+            errmsg << "Error!  Assembly with id: " << assemblyData.id
+                   << " and name: " << assemblyData.name << " has reference to invalid "
+                   << group.get_group_type() << " '" << entry << "'.";
+            m_errorHandler(errmsg);
+          }
+        }
+      }
+
+      void check_assembly_member_reference()
+      {
+        for (const AssemblyData<EntityId> &assemblyData : m_data.assemblies.get_group_data()) {
+          const AssemblyType assemblyType = assemblyData.get_assembly_type();
+
+          switch (assemblyType) {
+          case AssemblyType::BLOCK:
+            check_assembly_member_reference_in_group(assemblyData, m_data.partIds);
+            break;
+          case AssemblyType::SIDESET:
+            check_assembly_member_reference_in_group(assemblyData, m_data.sidesets);
+            break;
+          case AssemblyType::NODESET:
+            check_assembly_member_reference_in_group(assemblyData, m_data.nodesets);
+            break;
+          case AssemblyType::ASSEMBLY:
+            check_assembly_member_reference_in_group(assemblyData, m_data.assemblies);
+            break;
+          default:
+            std::ostringstream errmsg;
+            errmsg << "Error!  Assembly with id: " << assemblyData.id
+                   << " and name: " << assemblyData.name << " does not have a valid assembly type '"
+                   << assemblyType << "'.";
+            m_errorHandler(errmsg);
+          }
+        }
+      }
+
+      void check_assembly_name_collision()
+      {
+        check_name_collision_with_group(m_data.assemblies, m_data.partIds);
+        check_name_collision_with_group(m_data.assemblies, m_data.sidesets);
+        check_name_collision_with_group(m_data.assemblies, m_data.nodesets);
+      }
+
+      void check_assembly_cyclic_dependency()
+      {
+        for (const std::string &assembly : m_data.assemblies.get_part_names()) {
+          if (m_data.assemblies.is_cyclic(assembly)) {
+            std::ostringstream errmsg;
+            errmsg << "Error!  Assembly with name: '" << assembly << "' has a cyclic dependency.";
+            m_errorHandler(errmsg);
+          }
+        }
+      }
+
+      void validate_assemblies()
+      {
+        check_assembly_member_reference();
+        check_assembly_name_collision();
+        check_assembly_cyclic_dependency();
       }
 
       void parse_sideset_option(const std::vector<std::string> &sidesetOptionGroup)
@@ -1580,6 +1923,20 @@ namespace Iotm {
         }
       }
 
+      void parse_assembly_option(const std::vector<std::string> &assemblyOptionGroup)
+      {
+        if (assemblyOptionGroup.size() > 1) {
+          AssemblyParser parser;
+          parser.set_error_handler(m_errorHandler);
+          parser.parse(assemblyOptionGroup[1]);
+
+          AssemblyData<EntityId> *assembly =
+              m_data.assemblies.add_group_data(parser.get_name(), parser.get_assembly_data());
+          assembly->set_assembly_type(parser.get_assembly_type());
+          m_parsedOptionMask |= PARSED_ASSEMBLY;
+        }
+      }
+
       void print_help_message(std::ostream &out = std::cout)
       {
         out << "\nValid Options for TextMesh parameter string:\n"
@@ -1593,6 +1950,8 @@ namespace Iotm {
                "[split=<block|topology|none>;] "
                "(specifies sideset data)\n"
                "\t|nodeset:[name=<name>;] data=node_1,node_2,....,node_n (specifies nodeset data)\n"
+               "\t|assembly:[name=<name>;] type=<assembly|block|sideset|nodeset>; "
+               "member=member_1,...,member_n (specifies assembly hierarchy)\n"
                "\t|dimension:spatialDimension (specifies spatial dimension .. default is 3)\n"
                "\t|help -- show this list\n\n";
       }
@@ -1622,6 +1981,9 @@ namespace Iotm {
           }
           else if (optionType == "nodeset") {
             parse_nodeset_option(optionGroup);
+          }
+          else if (optionType == "assembly") {
+            parse_assembly_option(optionGroup);
           }
           else if (optionType == "help") {
             print_help_message();
@@ -1674,6 +2036,7 @@ namespace Iotm {
         m_data.coords.set_error_handler(errorHandler);
         m_data.sidesets.set_error_handler(errorHandler);
         m_data.nodesets.set_error_handler(errorHandler);
+        m_data.assemblies.set_error_handler(errorHandler);
         m_optionParser.set_error_handler(errorHandler);
       }
 
@@ -1712,11 +2075,8 @@ namespace Iotm {
           parse_newline();
         }
 
-        auto compareLess = [](const ElementData<EntityId, Topology> &lhs,
-                              const ElementData<EntityId, Topology> &rhs) {
-          return lhs.identifier < rhs.identifier;
-        };
-        std::sort(m_data.elementDataVec.begin(), m_data.elementDataVec.end(), compareLess);
+        std::sort(m_data.elementDataVec.begin(), m_data.elementDataVec.end(),
+                  ElementDataLess<EntityId, Topology>());
       }
 
       ElementData<EntityId, Topology> parse_element()

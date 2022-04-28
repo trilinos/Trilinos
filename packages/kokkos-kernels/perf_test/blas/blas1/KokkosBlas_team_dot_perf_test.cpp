@@ -45,6 +45,7 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosBlas1_team_dot.hpp>
 #include <Kokkos_Random.hpp>
+#include "KokkosKernels_TestUtils.hpp"
 
 struct Params {
   int use_cuda    = 0;
@@ -69,18 +70,19 @@ void print_options() {
 
 int parse_inputs(Params& params, int argc, char** argv) {
   for (int i = 1; i < argc; ++i) {
-    if (0 == strcasecmp(argv[i], "--help") || 0 == strcasecmp(argv[i], "-h")) {
+    if (0 == Test::string_compare_no_case(argv[i], "--help") ||
+        0 == Test::string_compare_no_case(argv[i], "-h")) {
       print_options();
       exit(0);  // note: this is before Kokkos::initialize
-    } else if (0 == strcasecmp(argv[i], "--threads")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--threads")) {
       params.use_threads = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--openmp")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--openmp")) {
       params.use_openmp = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--cuda")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--cuda")) {
       params.use_cuda = atoi(argv[++i]) + 1;
-    } else if (0 == strcasecmp(argv[i], "--m")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--m")) {
       params.m = atoi(argv[++i]);
-    } else if (0 == strcasecmp(argv[i], "--repeat")) {
+    } else if (0 == Test::string_compare_no_case(argv[i], "--repeat")) {
       // if provided, C will be written to given file.
       // has to have ".bin", or ".crs" extension.
       params.repeat = atoi(argv[++i]);
@@ -97,9 +99,8 @@ int parse_inputs(Params& params, int argc, char** argv) {
 template <class Vector, class ExecSpace>
 struct teamDotFunctor {
   // Compile - time check to see if your data type is a Kokkos::View:
-  static_assert(Kokkos::Impl::is_view<Vector>::value,
-                "Vector is not a "
-                "Kokkos::View.");
+  static_assert(Kokkos::is_view<Vector>::value,
+                "Vector is not a Kokkos::View.");
 
   using Scalar = typename Vector::non_const_value_type;
   // Vector is templated on memory space

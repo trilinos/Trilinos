@@ -48,15 +48,13 @@
 namespace KokkosSparse {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template<class CrsMatrixType,
-         class DomainMultiVectorType,
-         class RangeMultiVectorType>
+template <class CrsMatrixType, class DomainMultiVectorType,
+          class RangeMultiVectorType>
 struct trsv_tpl_spec_avail {
   enum : bool { value = false };
 };
 
-
-}
-}
+}  // namespace Impl
+}  // namespace KokkosSparse
 
 #endif
