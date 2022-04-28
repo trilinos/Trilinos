@@ -105,6 +105,8 @@
 
                   <Parameter name="smoother: type" type="string" value="HIPTMAIR"/>
                   <ParameterList name="smoother: params">
+                    <Parameter name="hiptmair: implicit transpose" type="bool" value="false"/>
+
                     <Parameter name="hiptmair: smoother type 1" type="string" value="RELAXATION"/>
                     <Parameter name="hiptmair: smoother type 2" type="string" value="RELAXATION"/>
                     <ParameterList name="hiptmair: smoother list 1">
@@ -129,7 +131,6 @@
                   <Parameter name="multigrid algorithm" type="string"  value="unsmoothed"/>
                   <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop tol" type="double" value="0.0"/>
-                  <Parameter name="max levels" type="int" value="2"/>
                   <Parameter name="smoother: type" type="string" value="none"/>
                   <Parameter name="coarse: type" type="string" value="none"/>
                   <Parameter name="rap: triple product" type="bool" value="false"/>
@@ -142,7 +143,7 @@
               </ParameterList>
             </ParameterList>
             <ParameterList name="Required Parameters">
-              <Parameter name="Coordinates" type="string" value="AUXILIARY_NODE_LO"/>
+              <Parameter name="Coordinates" type="string" value="AUXILIARY_NODE_1"/>
             </ParameterList>
           </ParameterList>
 
