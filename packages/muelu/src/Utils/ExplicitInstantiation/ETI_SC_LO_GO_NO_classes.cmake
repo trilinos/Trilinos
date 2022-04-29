@@ -51,6 +51,7 @@ APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::Ifpack2Smoother-.?if.defined[HAV
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::IndefBlockedDiagonalSmoother )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::InitialBlockNumberFactory )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::IntrepidPCoarsenFactory-.?ifdef.HAVE_MUELU_INTREPID2 )
+APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::InverseApproximationFactory )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::LineDetectionFactory )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::LocalPermutationStrategy )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::LowPrecisionFactory )
