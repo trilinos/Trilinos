@@ -100,6 +100,7 @@ int main(int argc, char *argv[]) {
     //list.sublist("General").sublist("Polyhedral Projection").set("Type","Brents");
     //list.sublist("General").sublist("Polyhedral Projection").set("Type","Dykstra");
     //list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
+    //list.sublist("General").sublist("Polyhedral Projection").set("Type","Douglas-Rachford");
 
     ROL::Ptr<std::vector<RealT>> yptr = ROL::makePtr<std::vector<RealT>>(2);
     (*yptr)[0] = static_cast<RealT>(10)*(static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX)-half);
