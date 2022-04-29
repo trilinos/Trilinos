@@ -2,7 +2,7 @@
 // Name        : testnas2exo.cpp
 // Author      : Ramon J. Moral (STRA LLC), John Niederhaus (Coordinator, SNL)
 // Version     :
-// Copyright   : (c) Sandia National Labs 2020, 2021
+// Copyright   : (c) Sandia National Labs 2020, 2021, 2022
 // Description : Testing nas2exo Library, C++ 14
 //============================================================================
 
@@ -16,7 +16,7 @@ namespace NasModules {
   {
     // TODO Auto-generated constructor stub
     if (!doesFileExist(this->inFileName)) {
-      std::string msg = "This file does not exist: " + ifname;
+      std::string msg = "This file does not exist: " + this->inFileName;
       throw std::invalid_argument(msg);
     }
 
@@ -41,16 +41,9 @@ namespace NasModules {
 
   void N2ENasReader::setModelTitle(const std::string &title)
   {
-
-    std::string stmp = title;
-
-    if (title.length() >= 72) {
-      stmp = title.substr(0, 71);
-    }
-
     // This gymnastics with std::string is b/c
     // a Nastran title is limited to 72 chars.
-    strncat(this->modelTitle, stmp.c_str(), 71);
+    this->modelTitle = title.substr(0, 71);
   }
 
   unsigned N2ENasReader::lineCounter()

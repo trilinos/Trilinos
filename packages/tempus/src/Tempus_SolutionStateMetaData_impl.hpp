@@ -20,6 +20,8 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData()
    dt_            (0.0),
    errorAbs_      (0.0),
    errorRel_      (0.0),
+   errorRelNm1_   (0.0),
+   errorRelNm2_   (0.0),
    order_         (1),
    nFailures_     (0),
    nRunningFailures_(0),
@@ -45,6 +47,8 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const Scalar dt,
   const Scalar errorAbs,
   const Scalar errorRel,
+  const Scalar errorRelNm1,
+  const Scalar errorRelNm2,
   const int    order,
   const int    nFailures,
   const int    nRunningFailures,
@@ -66,6 +70,8 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
    dt_            (dt),
    errorAbs_      (errorAbs),
    errorRel_      (errorRel),
+   errorRelNm1_   (errorRelNm1),
+   errorRelNm2_   (errorRelNm2),
    order_         (order),
    nFailures_     (nFailures),
    nRunningFailures_(nRunningFailures),
@@ -91,6 +97,8 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData
    dt_            (ssmd.dt_),
    errorAbs_      (ssmd.errorAbs_),
    errorRel_      (ssmd.errorRel_),
+   errorRelNm1_   (ssmd.errorRelNm1_),
+   errorRelNm2_   (ssmd.errorRelNm2_),
    order_         (ssmd.order_),
    nFailures_     (ssmd.nFailures_),
    nRunningFailures_(ssmd.nRunningFailures_),
@@ -119,6 +127,8 @@ Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clon
       dt_,
       errorAbs_,
       errorRel_,
+      errorRelNm1_,
+      errorRelNm2_,
       order_,
       nFailures_,
       nRunningFailures_,
@@ -149,6 +159,8 @@ copy(const Teuchos::RCP<const SolutionStateMetaData<Scalar> >& ssmd)
   dt_             = ssmd->dt_;
   errorAbs_       = ssmd->errorAbs_;
   errorRel_       = ssmd->errorRel_;
+  errorRelNm1_    = ssmd->errorRelNm1_;
+  errorRelNm2_    = ssmd->errorRelNm2_;
   order_          = ssmd->order_;
   nFailures_      = ssmd->nFailures_;
   nRunningFailures_= ssmd->nRunningFailures_;
@@ -181,32 +193,38 @@ void SolutionStateMetaData<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  if (verbLevel == Teuchos::VERB_EXTREME) {
-    auto l_out = Teuchos::fancyOStream( out.getOStream() );
-    l_out->setOutputToRootOnly(0);
-    *l_out << description() << "::describe:" << std::endl
-           << "time           = " << time_ << std::endl
-           << "iStep          = " << iStep_ << std::endl
-           << "dt             = " << dt_ << std::endl
-           << "errorAbs       = " << errorAbs_ << std::endl
-           << "errorRel       = " << errorRel_ << std::endl
-           << "order          = " << order_ << std::endl
-           << "nFailures      = " << nFailures_ << std::endl
-           << "nRunningFailures = " << nRunningFailures_<< std::endl
-           << "nConsecutiveFailures = " << nConsecutiveFailures_ << std::endl
-           << "tolRel         = " << tolRel_ << std::endl
-           << "tolAbs         = " << tolAbs_ << std::endl
-           << "xNormL2        = " << xNormL2_ << std::endl
-           << "dxNormL2Rel    = " << dxNormL2Rel_ << std::endl
-           << "dxNormL2Abs    = " << dxNormL2Abs_ << std::endl
-           << "computeNorms   = " << computeNorms_ << std::endl
-           << "solutionStatus = " << toString(solutionStatus_) << std::endl
-           << "output         = " << output_ << std::endl
-           << "outputScreen   = " << outputScreen_ << std::endl
-           << "isSynced       = " << isSynced_ << std::endl
-           << "isInterpolated = " << isInterpolated_ << std::endl
-           << "accuracy       = " << accuracy_ << std::endl;
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  *l_out << "\n--- " << this->description() << " ---" <<std::endl;
+
+  if (verbLevel >= Teuchos::VERB_MEDIUM) {
+    *l_out << "  time           = " << time_ << std::endl
+           << "  iStep          = " << iStep_ << std::endl
+           << "  dt             = " << dt_ << std::endl
+           << "  errorAbs       = " << errorAbs_ << std::endl
+           << "  errorRel       = " << errorRel_ << std::endl
+           << "  errorRelNm1    = " << errorRelNm1_ << std::endl
+           << "  errorRelNm2    = " << errorRelNm2_ << std::endl
+           << "  order          = " << order_ << std::endl
+           << "  nFailures      = " << nFailures_ << std::endl
+           << "  nRunningFailures = " << nRunningFailures_<< std::endl
+           << "  nConsecutiveFailures = " << nConsecutiveFailures_ << std::endl
+           << "  tolRel         = " << tolRel_ << std::endl
+           << "  tolAbs         = " << tolAbs_ << std::endl
+           << "  xNormL2        = " << xNormL2_ << std::endl
+           << "  dxNormL2Rel    = " << dxNormL2Rel_ << std::endl
+           << "  dxNormL2Abs    = " << dxNormL2Abs_ << std::endl
+           << "  computeNorms   = " << computeNorms_ << std::endl
+           << "  solutionStatus = " << toString(solutionStatus_) << std::endl
+           << "  output         = " << output_ << std::endl
+           << "  outputScreen   = " << outputScreen_ << std::endl
+           << "  isSynced       = " << isSynced_ << std::endl
+           << "  isInterpolated = " << isInterpolated_ << std::endl
+           << "  accuracy       = " << accuracy_ << std::endl;
   }
+  *l_out << std::string(this->description().length()+8, '-') <<std::endl;
 }
 
 } // namespace Tempus

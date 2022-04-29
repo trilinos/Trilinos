@@ -117,13 +117,12 @@ buildIntrepidOrientation(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
 
   // Fill the owned vector with the nodal connectivity of the cells on this processor
   {
-    auto vector_view = owned_nodes_vector->getLocalViewHost();
+    auto vector_view = owned_nodes_vector->getLocalViewHost(Tpetra::Access::OverwriteAll);
     for(int cell=0; cell<owned_cells.extent_int(0); ++cell){
       const GlobalOrdinal * nodes = conn.getConnectivity(cell);
       for(int node=0; node<num_nodes_per_cell; ++node)
         vector_view(cell,node) = nodes[node];
     }
-    owned_nodes_vector->sync_device();
   }
 
   // Import into the ghost vector
@@ -131,8 +130,7 @@ buildIntrepidOrientation(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
 
   // Add owned orientations
   {
-    owned_nodes_vector->sync_host();
-    auto vector_view = owned_nodes_vector->getLocalViewHost();
+    auto vector_view = owned_nodes_vector->getLocalViewHost(Tpetra::Access::ReadOnly);
     for(int cell=0; cell<num_owned_cells; ++cell){
       NodeView nodes("nodes",num_nodes_per_cell);
       for(int node=0; node<num_nodes_per_cell; ++node)
@@ -143,8 +141,7 @@ buildIntrepidOrientation(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
 
   // Add ghost orientations
   {
-    ghost_nodes_vector->sync_host();
-    auto vector_view = ghost_nodes_vector->getLocalViewHost();
+    auto vector_view = ghost_nodes_vector->getLocalViewHost(Tpetra::Access::ReadOnly);
     for(int ghost_cell=0; ghost_cell<num_ghost_cells; ++ghost_cell){
       const int cell = num_owned_cells + ghost_cell;
       NodeView nodes("nodes",num_nodes_per_cell);

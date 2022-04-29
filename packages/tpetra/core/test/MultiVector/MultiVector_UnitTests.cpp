@@ -1699,7 +1699,7 @@ namespace {
       // incompatible numvecs
       TEST_THROW(mv22.dot(mv21,dots()),std::runtime_error);
       // too small output array
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
       TEST_THROW(mv22.dot(mv22,dots(0,1)),std::runtime_error);
 #endif
     }
@@ -1711,7 +1711,7 @@ namespace {
       TEST_THROW(v2.dot(v1),std::runtime_error);
       // wrong size output array through MultiVector interface
       Array<Scalar> dots(2);
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
       TEST_THROW(v1.dot(v2,dots()),std::runtime_error);
       TEST_THROW(v2.dot(v1,dots()),std::runtime_error);
 #endif
@@ -2347,6 +2347,80 @@ namespace {
     int gblSuccess = 1;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
     TEST_ASSERT( gblSuccess == 1 );
+  }
+
+
+  //This test is for issue #9160. Row subview of a col subview (e.g. A->getVector(i)->getOffsetView(...))
+  //would have numVectors() equal to A->numVectors(), not the col subview's numVectors() as it should.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, VectorOffsetView, LO , GO , Scalar , Node )
+  {
+    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+
+    out << "Test: MultiVector, VectorOffsetView" << endl;
+
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map
+    const size_t numLocal1 = 3;
+    const size_t numLocal2 = 4;
+    const size_t numLocal = numLocal1 + numLocal2;
+    const size_t numVectors = 3;
+    RCP<const Map<LO,GO,Node> > fullMap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+    RCP<const Map<LO,GO,Node> >    map1 = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal1,comm);
+    RCP<const Map<LO,GO,Node> >    map2 = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal2,comm);
+    RCP<MV> A = rcp(new MV(fullMap,numVectors,false));
+    RCP<MV> Acol0 = A->getVectorNonConst(0);
+    //MultiVector has 3 interfaces for the same thing:
+    // 1.) MV(MV&, RCP<Map>, size_t): offset view of 1st arg, using given map.
+    //     Other 2 interfaces implemented in terms of this.
+    // 2.) MV(MV&, Map&, LO): same as 1.) but with different arg types, and it copy-ctors the map (shallow copy)
+    // 3.) Methods offsetView/offsetViewNonConst (RCP<Map>, size_t)
+
+    //Test first with a zero offset (corresponding to map1)
+    //1
+    {
+      RCP<MV> Acol0sub = rcp(new MV(*Acol0, map1, 0));
+      TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+    }
+    //2
+    {
+      RCP<MV> Acol0sub = rcp(new MV(*Acol0, *map1, 0));
+      TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+    }
+    //3
+    {
+      {
+        RCP<MV> Acol0sub = Acol0->offsetViewNonConst(map1, 0);
+        TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+      }
+      {
+        RCP<const MV> Acol0sub = Acol0->offsetView(map1, 0);
+        TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+      }
+    }
+    //Now test with offset numLocal1, corresponding to map2's
+    //1
+    {
+      RCP<MV> Acol0sub = rcp(new MV(*Acol0, map2, numLocal1));
+      TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+    }
+    //2
+    {
+      RCP<MV> Acol0sub = rcp(new MV(*Acol0, *map2, numLocal1));
+      TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+    }
+    //3
+    {
+      {
+        RCP<MV> Acol0sub = Acol0->offsetViewNonConst(map2, numLocal1);
+        TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+      }
+      {
+        RCP<const MV> Acol0sub = Acol0->offsetView(map2, numLocal1);
+        TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+      }
+    }
   }
 
 
@@ -3897,7 +3971,7 @@ namespace {
     RCP<const map_type> map = rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
     TEST_ASSERT( ! map.is_null () );
     TEST_EQUALITY( map->getGlobalNumElements (), gblNumRows );
-    TEST_EQUALITY( map->getNodeNumElements (), lclNumRows );
+    TEST_EQUALITY( map->getLocalNumElements (), lclNumRows );
     TEST_EQUALITY( map->getIndexBase (), indexBase );
 
     //
@@ -5181,6 +5255,35 @@ namespace {
     }
   }
 
+
+#ifdef KOKKOS_ENABLE_OPENMP
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OpenMP_ThreadedSum, LO , GO , Scalar , Node ) {
+    // Restrict to OpenMPNode and disable in debug mode (weird things happen w/ GCC 8.3.0 since RCP's
+    // are not necessarily thread-safe
+    if(typeid(Node)!=typeid(Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>) ||
+       ::Tpetra::Details::Behavior::debug())
+       return;
+
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<const map_type> map = rcp (new map_type (1000, 0, comm));
+    MV x(map, 1);
+    x.putScalar(0.0);
+    LO N= (LO) map->getLocalNumElements();
+
+    // Vector parallel fill
+    // If we
+#pragma omp parallel for
+    for(LO i=0; i<N; i++) {
+      GO global_idx = map->getGlobalElement(i);
+      double val = 1.0/global_idx;
+      x.sumIntoGlobalValue(global_idx, 0, val, true);
+    }
+  }
+#endif
+
+
 //
 // INSTANTIATIONS
 //
@@ -5203,6 +5306,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Norm2             , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, CopyView          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, OffsetView        , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, VectorOffsetView  , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ZeroScaleUpdate   , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(      Vector, ZeroScaleUpdate   , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ScaleAndAssign    , LO, GO, SCALAR, NODE ) \
@@ -5225,8 +5329,19 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE )
 
+#ifdef KOKKOS_ENABLE_OPENMP
+  // Add special test for OpenMP
+  #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+    UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, OpenMP_ThreadedSum, LO, GO, SCALAR, NODE )
+#else
   #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
     UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE )
+#endif
+
+
+
+
 
 
   typedef Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;
@@ -5245,6 +5360,8 @@ namespace {
 #else
 #  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( NODE )
 #endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+
+
 
 #define VIEWMODETEST(NODE) \
 

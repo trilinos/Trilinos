@@ -215,6 +215,15 @@ public:
     return rawMpiRequest_ == MPI_REQUEST_NULL;
   }
 
+  bool isReady() {
+    MPI_Status rawMpiStatus;
+    int flag = 0;
+
+    MPI_Test(&rawMpiRequest_, &flag, &rawMpiStatus);
+
+    return (flag != 0);
+  }
+
   /// \brief Wait on this communication request to complete.
   ///
   /// This is a blocking operation.  The user is responsible for
@@ -1059,6 +1068,8 @@ reduceAll (const ValueTypeReductionOp<Ordinal,char> &reductOp,
 {
   TEUCHOS_COMM_TIME_MONITOR( "Teuchos::MpiComm::reduceAll(...)" );
   int err = MPI_SUCCESS;
+
+  if (bytes == 0) return;
 
   Details::MpiReductionOp<Ordinal> opWrap (reductOp);
   MPI_Op op = Details::setMpiReductionOp (opWrap);

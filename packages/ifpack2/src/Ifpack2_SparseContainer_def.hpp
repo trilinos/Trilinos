@@ -147,17 +147,17 @@ solveBlockMV(const inverse_mv_type& X,
              InverseScalar beta) const
 {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      Inverses_[blockIndex]->getDomainMap()->getNodeNumElements() != X.getLocalLength(),
+      Inverses_[blockIndex]->getDomainMap()->getLocalNumElements() != X.getLocalLength(),
       std::logic_error, "Ifpack2::SparseContainer::apply: Inverse_ "
       "operator and X have incompatible dimensions (" <<
-      Inverses_[blockIndex]->getDomainMap()->getNodeNumElements() << " resp. "
+      Inverses_[blockIndex]->getDomainMap()->getLocalNumElements() << " resp. "
       << X.getLocalLength() << ").  Please report this bug to "
       "the Ifpack2 developers.");
     TEUCHOS_TEST_FOR_EXCEPTION(
-      Inverses_[blockIndex]->getRangeMap()->getNodeNumElements() != Y.getLocalLength(),
+      Inverses_[blockIndex]->getRangeMap()->getLocalNumElements() != Y.getLocalLength(),
       std::logic_error, "Ifpack2::SparseContainer::apply: Inverse_ "
       "operator and Y have incompatible dimensions (" <<
-      Inverses_[blockIndex]->getRangeMap()->getNodeNumElements() << " resp. "
+      Inverses_[blockIndex]->getRangeMap()->getLocalNumElements() << " resp. "
       << Y.getLocalLength() << ").  Please report this bug to "
       "the Ifpack2 developers.");
     Inverses_[blockIndex]->apply(X, Y, mode, alpha, beta);
@@ -507,7 +507,7 @@ extract ()
   Teuchos::Array<InverseScalar> valuesToInsert;
   if(this->scalarsPerRow_ > 1)
   {
-    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getNodeNumCols(), INVALID);
+    Array<LO> colToBlockOffset(this->inputBlockMatrix_->getLocalNumCols(), INVALID);
     for(int i = 0; i < this->numBlocks_; i++)
     {
       //Get the interval where block i is defined in blockRows_
@@ -529,14 +529,16 @@ extract ()
       Array<size_t> rowEntryCounts(blockPointSize, 0);
       //blockRow counts the BlockCrs LIDs that are going into this block
       //Rows are inserted into the CrsMatrix in sequential order
+      using inds_type = typename block_crs_matrix_type::local_inds_host_view_type;
+      using vals_type = typename block_crs_matrix_type::values_host_view_type;
       for(LO blockRow = 0; blockRow < blockSize; blockRow++)
       {
         //get a raw view of the whole block row
-        const LO* indices;
-        SC* values;
-        LO numEntries;
+        inds_type indices;
+        vals_type values;
         LO inputRow = this->blockRows_[blockStart + blockRow];
-        this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values, numEntries);
+        this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values);
+        LO numEntries = (LO) indices.size();
         for(LO br = 0; br < this->bcrsBlockSize_; br++)
         {
           for(LO k = 0; k < numEntries; k++)
@@ -551,17 +553,17 @@ extract ()
       }
       //now that row sizes are known, can allocate the diagonal matrix
       RCP<InverseMap> tempMap(new InverseMap(blockPointSize, 0, this->localComm_));
-      diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts, Tpetra::StaticProfile));
+      diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts));
       Inverses_[i] = rcp(new InverseType(diagBlocks_[i]));
       //insert the actual entries, one row at a time
       for(LO blockRow = 0; blockRow < blockSize; blockRow++)
       {
         //get a raw view of the whole block row
-        const LO* indices;
-        SC* values;
-        LO numEntries;
+        inds_type indices;
+        vals_type values;
         LO inputRow = this->blockRows_[blockStart + blockRow];
-        this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values, numEntries);
+        this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values);
+        LO numEntries = (LO) indices.size();
         for(LO br = 0; br < this->bcrsBlockSize_; br++)
         {
           indicesToInsert.clear();
@@ -592,7 +594,7 @@ extract ()
   {
     //get the mapping from point-indexed matrix columns to offsets in blockRows_
     //(this includes regular CrsMatrix columns, in which case scalarsPerRow_ == 1)
-    Array<LO> colToBlockOffset(this->inputMatrix_->getNodeNumCols() * this->bcrsBlockSize_, INVALID);
+    Array<LO> colToBlockOffset(this->inputMatrix_->getLocalNumCols() * this->bcrsBlockSize_, INVALID);
     for(int i = 0; i < this->numBlocks_; i++)
     {
       //Get the interval where block i is defined in blockRows_
@@ -615,7 +617,7 @@ extract ()
         rowEntryCounts[j] = this->getInputRowView(this->blockRows_[blockStart + j]).size();
       }
       RCP<InverseMap> tempMap(new InverseMap(blockSize, 0, this->localComm_));
-      diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts, Tpetra::StaticProfile));
+      diagBlocks_[i] = rcp(new InverseCrs(tempMap, rowEntryCounts));
       Inverses_[i] = rcp(new InverseType(diagBlocks_[i]));
       for(LO blockRow = 0; blockRow < blockSize; blockRow++)
       {

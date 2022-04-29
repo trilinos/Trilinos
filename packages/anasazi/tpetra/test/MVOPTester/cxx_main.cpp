@@ -102,8 +102,8 @@ namespace { // (anonymous)
   template<class Scalar, class O1, class O2>
   RCP<CrsMatrix<Scalar,O1,O2,Node> > constructDiagMatrix(const RCP<const Map<O1,O2,Node> > &map)
   {
-    RCP<CrsMatrix<Scalar,O1,O2,Node> > op = rcp( new CrsMatrix<Scalar,O1,O2,Node>(map,1,Tpetra::StaticProfile) );
-    for (size_t i=0; i<map->getNodeNumElements(); ++i) {
+    RCP<CrsMatrix<Scalar,O1,O2,Node> > op = rcp( new CrsMatrix<Scalar,O1,O2,Node>(map,1) );
+    for (size_t i=0; i<map->getLocalNumElements(); ++i) {
       op->insertGlobalValues(map->getGlobalElement(i),tuple(map->getGlobalElement(i)), tuple(ScalarTraits<Scalar>::one()));
     }
     op->fillComplete();

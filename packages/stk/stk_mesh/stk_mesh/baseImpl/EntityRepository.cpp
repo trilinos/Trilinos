@@ -37,6 +37,7 @@
 #include <sstream>                      // for operator<<, basic_ostream, etc
 #include <vector>
 #include "stk_mesh/base/Entity.hpp"     // for Entity, etc
+#include "stk_util/util/SortAndUnique.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 
 
@@ -45,6 +46,10 @@ namespace mesh {
 namespace impl {
 
 struct EntityKeyEntityLess {
+inline bool operator()(const std::pair<EntityKey,Entity>& lhsPair, const std::pair<EntityKey,Entity>& rhsPair) const
+{
+  return lhsPair.first.m_value < rhsPair.first.m_value;
+}
 inline bool operator()(const std::pair<EntityKey,Entity>& key_ent_pair, const EntityKey& key) const
 {
   return key_ent_pair.first.m_value < key.m_value;
@@ -83,22 +88,6 @@ EntityRepository::~EntityRepository()
 {
 }
 
-template<typename VecType>
-size_t capacity_in_bytes(const VecType& v)
-{
-  return sizeof(typename VecType::value_type)*v.capacity();
-}
-
-size_t EntityRepository::heap_memory_in_bytes() const
-{
-    size_t bytes = 0;
-    for(auto vec : m_entities) { bytes += capacity_in_bytes(vec); }
-    for(auto vec : m_create_cache) { bytes += capacity_in_bytes(vec); }
-    for(auto vec : m_update_cache) { bytes += capacity_in_bytes(vec); }
-    for(auto vec : m_destroy_cache) { bytes += capacity_in_bytes(vec); }
-    return bytes;
-}
-
 void EntityRepository::clear_all_cache()
 {
   EntityRank nRanks = static_cast<EntityRank>(m_create_cache.size());
@@ -131,7 +120,9 @@ void EntityRepository::clear_destroyed_entity_cache(EntityRank rank) const
     }
     if (endIdx < entities.size()) {
       size_t len = entities.size() - endIdx;
-      std::memmove(&entities[keep], &entities[endIdx], len*sizeof(EntityKeyEntity));
+      for(size_t i=0; i<len; ++i) {
+        entities[keep+i] = entities[endIdx+i];
+      }
       keep += len;
     }
     entities.resize(keep);
@@ -167,19 +158,7 @@ void EntityRepository::clear_created_entity_cache(EntityRank rank) const
 {
   if (!m_create_cache[rank].empty()) {
     std::sort(m_create_cache[rank].begin(), m_create_cache[rank].end());
-    unsigned numOld = m_entities[rank].size();
-    m_entities[rank].insert(m_entities[rank].end(), m_create_cache[rank].begin(), m_create_cache[rank].end());
-    if (numOld > 0) {
-      const EntityKey& firstNewKey = m_create_cache[rank][0].first;
-      const EntityKey& lastOldKey = m_entities[rank][numOld-1].first;
-      const bool isOverlap = (firstNewKey < lastOldKey);
-      if (isOverlap) {
-        EntityKeyEntityVector::iterator oldEnd = m_entities[rank].begin()+numOld;
-        EntityKeyEntityVector::iterator startOfOverlap = std::lower_bound(m_entities[rank].begin(), oldEnd, firstNewKey, EntityKeyEntityLess());
-        EntityKeyEntityVector::iterator endOfOverlap = std::lower_bound(oldEnd, m_entities[rank].end(), lastOldKey, EntityKeyEntityLess());
-        std::inplace_merge(startOfOverlap, oldEnd, endOfOverlap);
-      }
-    }
+    stk::util::insert_keep_sorted(m_create_cache[rank], m_entities[rank], EntityKeyEntityLess());
     m_create_cache[rank].clear();
     size_t num = std::max(m_entities[stk::topology::NODE_RANK].size(),
                           m_entities[stk::topology::ELEM_RANK].size());
@@ -245,7 +224,7 @@ stk::mesh::entity_iterator EntityRepository::get_from_cache(const EntityKey& key
 std::pair<stk::mesh::entity_iterator ,bool>
 EntityRepository::internal_create_entity( const EntityKey & key)
 {
-  if (key.rank() > m_entities.size()) {
+  if (key.rank() > entity_rank_count()) {
     m_entities.resize(key.rank());
     m_create_cache.resize(key.rank());
     m_update_cache.resize(key.rank());
@@ -284,7 +263,7 @@ Entity EntityRepository::get_entity(const EntityKey &key) const
   ThrowErrorMsgIf( ! key.is_valid(),
       "Invalid key: " << key.rank() << " " << key.id());
 
-  if (rank >= m_entities.size()) {
+  if (rank >= entity_rank_count()) {
     return Entity();
   }
 

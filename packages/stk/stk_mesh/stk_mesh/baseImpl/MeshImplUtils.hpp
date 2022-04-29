@@ -63,6 +63,32 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
 
 void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
 
+void remove_entities_not_connected_to_other_nodes(const BulkData& mesh, EntityRank rank,
+                                                  unsigned numNodes, const Entity* nodes,
+                                                  std::vector<Entity>& elementsInCommon);
+
+template<class Pred>
+void find_entities_these_nodes_have_in_common_and(const BulkData& mesh, EntityRank rank,
+                                                  unsigned numNodes, const Entity* nodes,
+                                                  std::vector<Entity>& elementsInCommon,
+                                                  const Pred& pred)
+{
+    elementsInCommon.clear();
+    if(numNodes > 0)
+    {
+        const Entity* begin = mesh.begin(nodes[0], rank);
+        const Entity* end = mesh.end(nodes[0], rank);
+        elementsInCommon.reserve(std::distance(begin,end));
+        for(const Entity* ent = begin; ent != end; ++ent) {
+          if (pred(*ent)) {
+            elementsInCommon.push_back(*ent);
+          }
+        }
+
+        remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
+    }
+}
+
 bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes);
 
 void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems);
@@ -132,14 +158,15 @@ private:
 stk::parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
 
 void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData& mesh,
-                             const Entity entity_from ,
+                             const Bucket& bucket_from ,
                              const OrdinalVector       & omit ,
                              EntityRank            entity_rank_to ,
                              OrdinalVector       & induced_parts);
+
 void get_part_ordinals_to_induce_on_lower_ranks(const BulkData& mesh,
-                             const Entity entity_from ,
-                             EntityRank            entity_rank_to ,
-                             OrdinalVector       & induced_parts);
+                                                const Bucket& bucket_from ,
+                                                EntityRank entity_rank_to ,
+                                                OrdinalVector& induced_parts);
 
 stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
@@ -206,10 +233,10 @@ void comm_sync_send_recv(
   std::set< EntityKey > & new_recv );
 
 void comm_sync_send_recv(
-  BulkData & mesh ,
-  std::set< EntityProc , EntityLess > & new_send ,
-  std::vector<Entity> & new_recv,
-  std::vector<bool>& ghostStatus );
+  const BulkData & mesh ,
+  const std::vector<Entity>& removeRecvGhosts,
+  std::set< EntityProc, EntityLess> & newSendGhosts,
+  std::set< EntityKeyProc> & removeSendGhosts);
 
 void comm_sync_aura_send_recv(
   BulkData & mesh ,
@@ -297,9 +324,16 @@ void check_declare_element_side_inputs(const BulkData & mesh,
                                        const Entity elem,
                                        const unsigned localSideId);
 
-void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
+bool connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
 void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face);
 
+bool has_upward_recv_ghost_connectivity(const stk::mesh::BulkData &bulk,
+                                        const stk::mesh::Ghosting& ghosting,
+                                        stk::mesh::Entity entity);
+bool has_upward_send_ghost_connectivity(const stk::mesh::BulkData &bulk,
+                                        const stk::mesh::Ghosting& ghosting,
+                                        int proc,
+                                        stk::mesh::Entity entity);
 bool has_upward_connectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity);
 
 bool can_destroy_entity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity);

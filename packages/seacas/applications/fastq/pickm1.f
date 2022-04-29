@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -94,7 +94,7 @@ C
                I4 = I3 + M
                IF  (I4 .GT. N) I4 = I4 - N
                AFAC = ANGLE (I1) + ANGLE (I2) + ANGLE (I3) + ANGLE (I4)
-               ERAT = AMIN1 (AMAXEL / FLOAT(M * M2) ,  5.)
+               ERAT = AMIN1 (AMAXEL / DBLE(M * M2) ,  5.)
                EFAC =  (ERAT + 15.) / 16.
                GVAL = AFAC * EFAC
                IF (GVAL .LT. GBEST) THEN
@@ -108,9 +108,9 @@ C
          ENDIF
  150  CONTINUE
       IF ( (REAL) .AND. (BADANG .GT. 2.62)) THEN
-         CALL MESAGE (' **  WARNING: CORNER (S) OF THE REGION HAVE  **')
-         CALL MESAGE (' **           LARGE ANGLES  (> 150 DEGREES.) **')
-         CALL MESAGE (' **           POORLY FORMED MESH MAY RESULT  **')
+         CALL MESSAGE(' **  WARNING: CORNER (S) OF THE REGION HAVE  **')
+         CALL MESSAGE(' **           LARGE ANGLES  (> 150 DEGREES.) **')
+         CALL MESSAGE(' **           POORLY FORMED MESH MAY RESULT  **')
       ENDIF
 C
       RETURN

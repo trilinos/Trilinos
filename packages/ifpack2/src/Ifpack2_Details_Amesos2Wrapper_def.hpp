@@ -316,7 +316,7 @@ void Amesos2Wrapper<MatrixType>::initialize ()
       A_local_crs_ = rcp_dynamic_cast<const crs_matrix_type> (A_local);
 
       if (A_local_crs_.is_null ()) {
-        local_ordinal_type numRows = A_local->getNodeNumRows();
+        local_ordinal_type numRows = A_local->getLocalNumRows();
         Array<size_t> entriesPerRow(numRows);
         for(local_ordinal_type i = 0; i < numRows; i++)
         {
@@ -327,14 +327,14 @@ void Amesos2Wrapper<MatrixType>::initialize ()
                                     A_local->getColMap (),
                                     entriesPerRow()));
         // copy entries into A_local_crs
-        Teuchos::Array<local_ordinal_type> indices(A_local->getNodeMaxNumRowEntries());
-        Teuchos::Array<scalar_type> values(A_local->getNodeMaxNumRowEntries());
+	typename crs_matrix_type::nonconst_local_inds_host_view_type indices("Indices",A_local->getLocalMaxNumRowEntries() );
+	typename crs_matrix_type::nonconst_values_host_view_type values("Values", A_local->getLocalMaxNumRowEntries());
         for(local_ordinal_type i = 0; i < numRows; i++)
         {
           size_t numEntries = 0;
-          A_local->getLocalRowCopy(i, indices(), values(), numEntries);
+          A_local->getLocalRowCopy(i, indices, values, numEntries);
           ArrayView<const local_ordinal_type> indicesInsert(indices.data(), numEntries);
-          ArrayView<const scalar_type> valuesInsert(values.data(), numEntries);
+          ArrayView<const scalar_type> valuesInsert((const scalar_type*)values.data(), numEntries);
           A_local_crs_nc->insertLocalValues(i, indicesInsert, valuesInsert);
         }
         A_local_crs_nc->fillComplete (A_local->getDomainMap (), A_local->getRangeMap ());

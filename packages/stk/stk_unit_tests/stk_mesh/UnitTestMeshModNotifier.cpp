@@ -119,7 +119,7 @@ TEST(MeshModNotifier, testLocalEvents)
 {
     std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(MPI_COMM_WORLD);
     stk::mesh::ModificationNotifier notifier;
-    notifier.register_observer(listener);
+    notifier.register_observer(listener, stk::mesh::ModificationObserverPriority::APPLICATION);
 
     EXPECT_EQ(0u, listener->get_local_entities_created_or_deleted(stk::topology::NODE_RANK));
 
@@ -137,7 +137,7 @@ TEST(MeshModNotifier, testGlobalEvents)
 
         std::shared_ptr<TestListener> listener = std::make_shared<TestListener>(comm);
         stk::mesh::ModificationNotifier notifier;
-        notifier.register_observer(listener);
+        notifier.register_observer(listener, stk::mesh::ModificationObserverPriority::APPLICATION);
 
         EXPECT_EQ(0u, listener->get_global_entity_comm_info_changed(stk::topology::NODE_RANK));
         EXPECT_EQ(0u, listener->get_global_buckets_changed(stk::topology::NODE_RANK));

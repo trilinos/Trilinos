@@ -131,7 +131,7 @@ namespace Tpetra {
     if (numProcs==1 && !alwaysUseParallelAlgorithm) {
       writeMatrixStrip(A,os,params);
     } else {
-      size_t numRows = rowMap->getNodeNumElements();
+      size_t numRows = rowMap->getLocalNumElements();
 
       //Create source map
       RCP<const map_type> allMeshGidsMap = rcp(new map_type(TOT::invalid(), numRows, A.getIndexBase(), comm));
@@ -198,6 +198,10 @@ namespace Tpetra {
   void writeMatrixStrip(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::ostream &os, Teuchos::ParameterList const &params) {
     using Teuchos::RCP;
     using map_type = Tpetra::Map<LO, GO, Node>;
+    using bcrs_type = BlockCrsMatrix<Scalar,LO,GO,Node>;
+    using bcrs_local_inds_host_view_type = typename bcrs_type::local_inds_host_view_type;
+    using bcrs_values_host_view_type = typename bcrs_type::values_host_view_type;
+    using impl_scalar_type = typename bcrs_type::impl_scalar_type;
 
     size_t numRows = A.getGlobalNumRows();
     RCP<const map_type> rowMap = A.getRowMap();
@@ -213,23 +217,23 @@ namespace Tpetra {
 
     if (myRank !=0) {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(A.getNodeNumRows() != 0,
+      TEUCHOS_TEST_FOR_EXCEPTION(A.getLocalNumRows() != 0,
         std::runtime_error, "Tpetra::writeMatrixStrip: pid "
-        << myRank << " should have 0 rows but has " << A.getNodeNumRows());
-      TEUCHOS_TEST_FOR_EXCEPTION(A.getNodeNumCols() != 0,
+        << myRank << " should have 0 rows but has " << A.getLocalNumRows());
+      TEUCHOS_TEST_FOR_EXCEPTION(A.getLocalNumCols() != 0,
         std::runtime_error, "Tpetra::writeMatrixStrip: pid "
-        << myRank << " should have 0 columns but has " << A.getNodeNumCols());
+        << myRank << " should have 0 columns but has " << A.getLocalNumCols());
 
     } else {
 
-      TEUCHOS_TEST_FOR_EXCEPTION(numRows != A.getNodeNumRows(),
+      TEUCHOS_TEST_FOR_EXCEPTION(numRows != A.getLocalNumRows(),
         std::runtime_error, "Tpetra::writeMatrixStrip: "
         "number of rows on pid 0 does not match global number of rows");
 
 
       int err = 0;
       const LO blockSize = A.getBlockSize();
-      const size_t numLocalRows = A.getNodeNumRows();
+      const size_t numLocalRows = A.getLocalNumRows();
       bool precisionChanged=false;
       int oldPrecision = 0; // avoid "unused variable" warning
       if (params.isParameter("precision")) {
@@ -246,30 +250,28 @@ namespace Tpetra {
       for (localRowInd = 0; localRowInd < numLocalRows; ++localRowInd) {
 
         // Get a view of the current row.
-        const LO*     localColInds;
-        Scalar* vals;
+        bcrs_local_inds_host_view_type localColInds;
+        bcrs_values_host_view_type vals;
         LO numEntries;
-        err = A.getLocalRowView (localRowInd, localColInds, vals, numEntries);
-        if (err != 0)
-          break;
+        A.getLocalRowView (localRowInd, localColInds, vals); numEntries = localColInds.extent(0);
         GO globalMeshRowID = rowMap->getGlobalElement(localRowInd) - meshRowOffset;
 
         for (LO k = 0; k < numEntries; ++k) {
           GO globalMeshColID = colMap->getGlobalElement(localColInds[k]) - meshColOffset;
-          Scalar* const curBlock = vals + blockSize * blockSize * k;
+          const impl_scalar_type* curBlock = vals.data() + blockSize * blockSize * k;
           // Blocks are stored in row-major format.
           for (LO j = 0; j < blockSize; ++j) {
             GO globalPointRowID = globalMeshRowID * blockSize + j + pointOffset;
             for (LO i = 0; i < blockSize; ++i) {
               GO globalPointColID = globalMeshColID * blockSize + i + pointOffset;
-              const Scalar curVal = curBlock[i + j * blockSize];
+              const impl_scalar_type curVal = curBlock[i + j * blockSize];
 
               os << globalPointRowID << " " << globalPointColID << " ";
-              if (Teuchos::ScalarTraits<Scalar>::isComplex) {
+              if (Teuchos::ScalarTraits<impl_scalar_type>::isComplex) {
                 // Matrix Market format wants complex values to be
                 // written as space-delimited pairs.  See Bug 6469.
-                os << Teuchos::ScalarTraits<Scalar>::real (curVal) << " "
-                   << Teuchos::ScalarTraits<Scalar>::imag (curVal);
+                os << Teuchos::ScalarTraits<impl_scalar_type>::real (curVal) << " "
+                   << Teuchos::ScalarTraits<impl_scalar_type>::imag (curVal);
               }
               else {
                 os << curVal;
@@ -307,8 +309,9 @@ namespace Tpetra {
       using Teuchos::RCP;
 
       typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
-      typedef Tpetra::Map<LO,GO,Node>                                 map_type;
-      typedef Tpetra::CrsGraph<LO,GO,Node>                            crs_graph_type;
+      typedef Tpetra::Map<LO,GO,Node>                   map_type;
+      typedef Tpetra::CrsGraph<LO,GO,Node>              crs_graph_type;
+      typedef Tpetra::CrsMatrix<Scalar, LO,GO,Node>     crs_matrix_type;
 
       const map_type &pointRowMap = *(pointMatrix.getRowMap());
       RCP<const map_type> meshRowMap = createMeshMap<LO,GO,Node>(blockSize, pointRowMap);
@@ -326,23 +329,23 @@ namespace Tpetra {
       // We can use static profile because the point graph should have at least as many entries per
       // row as the mesh graph.
       RCP<crs_graph_type> meshCrsGraph = rcp(new crs_graph_type(meshRowMap, meshColMap,
-                                                 pointMatrix.getGlobalMaxNumRowEntries(), Tpetra::StaticProfile));
+                                                 pointMatrix.getGlobalMaxNumRowEntries()));
       // Fill the graph by walking through the matrix.  For each mesh row, we query the collection of point
       // rows associated with it. The point column ids are converted to mesh column ids and put into an array.
       // As each point row collection is finished, the mesh column ids are sorted, made unique, and inserted
       // into the mesh graph.
-      ArrayView<const LO> pointColInds;
-      ArrayView<const Scalar> pointVals;
+      typename crs_matrix_type::local_inds_host_view_type pointColInds;
+      typename crs_matrix_type::values_host_view_type pointVals;
       Array<GO> meshColGids;
       meshColGids.reserve(pointMatrix.getGlobalMaxNumRowEntries());
       //again, I assume that point GIDs associated with a mesh GID are consecutive.
       //if they are not, this will break!!
-      for (size_t i=0; i<pointMatrix.getNodeNumRows()/blockSize; i++) {
+      for (size_t i=0; i<pointMatrix.getLocalNumRows()/blockSize; i++) {
         for (int j=0; j<blockSize; ++j) {
           LO rowLid = i*blockSize+j;
           pointMatrix.getLocalRowView(rowLid,pointColInds,pointVals); //TODO optimization: Since I don't care about values,
                                                                       //TODO I should use the graph instead.
-          for (int k=0; k<pointColInds.size(); ++k) {
+          for (size_t k=0; k<pointColInds.size(); ++k) {
             GO meshColInd = pointColMap.getGlobalElement(pointColInds[k]) / blockSize;
             meshColGids.push_back(meshColInd);
           }
@@ -359,8 +362,11 @@ namespace Tpetra {
       //create and populate the block matrix
       RCP<block_crs_matrix_type> blockMatrix = rcp(new block_crs_matrix_type(*meshCrsGraph, blockSize));
 
+      /// temporary pack
+      Array<Scalar> tmpBlock(blockSize*blockSize);
+
       //preallocate the maximum number of (dense) block entries needed by any row
-      int maxBlockEntries = blockMatrix->getNodeMaxNumRowEntries();
+      int maxBlockEntries = blockMatrix->getLocalMaxNumRowEntries();
       Array<Array<Scalar>> blocks(maxBlockEntries);
       for (int i=0; i<maxBlockEntries; ++i)
         blocks[i].reserve(blockSize*blockSize);
@@ -373,12 +379,12 @@ namespace Tpetra {
       //int offset;
       //if (pointMatrix.getIndexBase()) offset = 0;
       //else                     offset = 1;
-      for (size_t i=0; i<pointMatrix.getNodeNumRows()/blockSize; i++) {
+      for (size_t i=0; i<pointMatrix.getLocalNumRows()/blockSize; i++) {
         int blkCnt=0; //how many unique block entries encountered so far in current block row
         for (int j=0; j<blockSize; ++j) {
           LO rowLid = i*blockSize+j;
           pointMatrix.getLocalRowView(rowLid,pointColInds,pointVals);
-          for (int k=0; k<pointColInds.size(); ++k) {
+          for (size_t k=0; k<pointColInds.size(); ++k) {
             //convert point column to block col
             LO meshColInd = pointColInds[k] / blockSize;
             iter = bcol2bentry.find(meshColInd);
@@ -399,7 +405,17 @@ namespace Tpetra {
         for (iter=bcol2bentry.begin(); iter != bcol2bentry.end(); ++iter) {
           LO localBlockCol = iter->first;
           Scalar *vals = (blocks[iter->second]).getRawPtr();
-          blockMatrix->replaceLocalValues(i, &localBlockCol, vals, 1);
+          if (std::is_same<typename block_crs_matrix_type::little_block_type::array_layout,Kokkos::LayoutLeft>::value) {
+            /// col major
+            for (LO ii=0;ii<blockSize;++ii)
+              for (LO jj=0;jj<blockSize;++jj)
+                tmpBlock[ii+jj*blockSize] = vals[ii*blockSize+jj];
+            Scalar *tmp_vals = tmpBlock.getRawPtr();
+            blockMatrix->replaceLocalValues(i, &localBlockCol, tmp_vals, 1);
+          } else {
+            /// row major
+            blockMatrix->replaceLocalValues(i, &localBlockCol, vals, 1);
+          }
         }
 
         //Done with block row.  Zero everything out.
@@ -408,6 +424,8 @@ namespace Tpetra {
         blkCnt = 0;
         bcol2bentry.clear();
       }
+
+      tmpBlock.clear();
 
       return blockMatrix;
 
@@ -421,7 +439,7 @@ namespace Tpetra {
     typedef Tpetra::Map<LO,GO,Node> map_type;
 
     //calculate mesh GIDs
-    Teuchos::ArrayView<const GO> pointGids = pointMap.getNodeElementList();
+    Teuchos::ArrayView<const GO> pointGids = pointMap.getLocalElementList();
     Teuchos::Array<GO> meshGids;
     GO indexBase = pointMap.getIndexBase();
 
@@ -443,6 +461,139 @@ namespace Tpetra {
 
   }
 
+
+  template<class LO, class GO, class Node>
+  Teuchos::RCP<const Tpetra::Map<LO,GO,Node> >
+  createPointMap (const LO& blockSize, const Tpetra::Map<LO,GO,Node>& blockMap)
+  {
+    typedef Teuchos::OrdinalTraits<Tpetra::global_size_t> TOT;
+    typedef Tpetra::Map<LO,GO,Node> map_type;
+
+    //calculate mesh GIDs
+    Teuchos::ArrayView<const GO> blockGids = blockMap.getLocalElementList();
+    Teuchos::Array<GO> pointGids(blockGids.size() * blockSize);
+    GO indexBase = blockMap.getIndexBase();
+
+    for(LO i=0, ct=0; i<(LO)blockGids.size(); i++) {
+      GO base = (blockGids[i] - indexBase)* blockSize + indexBase;
+      for(LO j=0; j<blockSize; j++, ct++) 
+	pointGids[i*blockSize+j] = base+j;
+    }
+
+    Teuchos::RCP<const map_type> pointMap = Teuchos::rcp( new map_type(TOT::invalid(), pointGids(), 0, blockMap.getComm()) );
+    return pointMap;
+
+  }
+
+
+  template<class Scalar, class LO, class GO, class Node>
+  Teuchos::RCP<CrsMatrix<Scalar, LO, GO, Node> >
+  convertToCrsMatrix(const Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& blockMatrix) {
+
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::RCP;
+    
+    typedef Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node> block_crs_matrix_type;
+    typedef Tpetra::Map<LO,GO,Node>                   map_type;
+    typedef Tpetra::CrsMatrix<Scalar, LO,GO,Node>     crs_matrix_type;    
+
+    using crs_graph_type           = typename block_crs_matrix_type::crs_graph_type;
+    using local_graph_device_type  = typename crs_matrix_type::local_graph_device_type;
+    using local_matrix_device_type = typename crs_matrix_type::local_matrix_device_type;
+    using row_map_type             = typename local_graph_device_type::row_map_type::non_const_type;
+    using entries_type             = typename local_graph_device_type::entries_type::non_const_type;
+    using values_type              = typename local_matrix_device_type::values_type::non_const_type;
+
+    using row_map_type_const       = typename local_graph_device_type::row_map_type;
+    using entries_type_const       = typename local_graph_device_type::entries_type;
+
+    using little_block_type        = typename block_crs_matrix_type::const_little_block_type;
+    using offset_type              = typename row_map_type::non_const_value_type;
+    using column_type              = typename entries_type::non_const_value_type;
+
+    using execution_space = typename Node::execution_space;
+    using range_type = Kokkos::RangePolicy<execution_space, LO>;
+
+
+    LO blocksize = blockMatrix.getBlockSize();
+    const offset_type bs2 = blocksize * blocksize; 
+    size_t block_nnz = blockMatrix.getLocalNumEntries();
+    size_t point_nnz = block_nnz * bs2;
+
+    // We can get these from the blockMatrix directly
+    RCP<const map_type> pointDomainMap = blockMatrix.getDomainMap();
+    RCP<const map_type> pointRangeMap  = blockMatrix.getRangeMap();
+  
+    // We need to generate the row/col Map ourselves.
+    RCP<const map_type> blockRowMap = blockMatrix.getRowMap();
+    RCP<const map_type> pointRowMap = createPointMap<LO,GO,Node>(blocksize, *blockRowMap);
+
+    RCP<const map_type> blockColMap = blockMatrix.getColMap();
+    RCP<const map_type> pointColMap = createPointMap<LO,GO,Node>(blocksize, *blockColMap);
+
+    // Get the last few things
+
+    const crs_graph_type & blockGraph = blockMatrix.getCrsGraph();
+    LO point_rows = (LO) pointRowMap->getLocalNumElements();
+    LO block_rows = (LO) blockRowMap->getLocalNumElements();
+    auto blockValues = blockMatrix.getValuesDevice();
+    auto blockLocalGraph = blockGraph.getLocalGraphDevice();
+    row_map_type_const blockRowptr = blockLocalGraph.row_map;
+    entries_type_const blockColind = blockLocalGraph.entries;
+
+    // Generate the point matrix rowptr / colind / values
+    row_map_type rowptr("row_map", point_rows+1);
+    entries_type colind("entries", point_nnz);
+    values_type values("values",  point_nnz);
+
+    // Pre-fill the rowptr
+    Kokkos::parallel_for("fillRowPtr",range_type(0,block_rows),KOKKOS_LAMBDA(const LO i) {
+	offset_type base = blockRowptr[i];
+	offset_type diff = blockRowptr[i+1] - base;
+	for(LO j=0; j<blocksize; j++) {
+	  rowptr[i*blocksize +j] = base*bs2 + j*diff*blocksize;
+	}
+
+	// Fill the last guy, if we're on the final entry
+	if(i==block_rows-1) {
+	  rowptr[block_rows*blocksize] = blockRowptr[i+1] * bs2;
+	}	  
+      });
+
+
+    Kokkos::parallel_for("copyEntriesAndValues",range_type(0,block_rows),KOKKOS_LAMBDA(const LO i) {
+	const offset_type blkBeg    = blockRowptr[i];
+	const offset_type numBlocks = blockRowptr[i+1] - blkBeg;
+
+	// For each block in the row...
+	for (offset_type block=0; block < numBlocks; block++) {
+	  column_type point_col_base = blockColind[blkBeg + block] * blocksize;	  
+	  little_block_type my_block(blockValues.data () + (blkBeg+block) * bs2, blocksize, blocksize);
+                                   
+	  // For each entry in the block...
+	  for(LO little_row=0; little_row<blocksize; little_row++) {
+	    offset_type point_row_offset = rowptr[i*blocksize + little_row];
+	    for(LO little_col=0; little_col<blocksize; little_col++) {
+	      colind[point_row_offset + block*blocksize + little_col] = point_col_base + little_col;
+	      values[point_row_offset + block*blocksize + little_col] = my_block(little_row,little_col);
+	    }
+	  }
+
+	}
+      });
+
+    // Generate the matrix
+    RCP<crs_matrix_type> pointCrsMatrix = rcp(new crs_matrix_type(pointRowMap, pointColMap, 0));
+    pointCrsMatrix->setAllValues(rowptr,colind,values);
+
+    // FUTURE OPTIMIZATION: Directly compute import/export, rather than letting ESFC do it
+    pointCrsMatrix->expertStaticFillComplete(pointDomainMap,pointRangeMap);
+    
+    return pointCrsMatrix;
+  }
+
+
 } // namespace Tpetra
 
 //
@@ -457,12 +608,14 @@ namespace Tpetra {
   template void blockCrsMatrixWriter(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os); \
   template void blockCrsMatrixWriter(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
   template void writeMatrixStrip(BlockCrsMatrix<S,LO,GO,NODE> const &A, std::ostream &os, Teuchos::ParameterList const &params); \
-  template Teuchos::RCP<BlockCrsMatrix<S, LO, GO, NODE> > convertToBlockCrsMatrix(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize);
+  template Teuchos::RCP<BlockCrsMatrix<S, LO, GO, NODE> > convertToBlockCrsMatrix(const CrsMatrix<S, LO, GO, NODE>& pointMatrix, const LO &blockSize); \
+  template Teuchos::RCP<CrsMatrix<S, LO, GO, NODE> > convertToCrsMatrix(const BlockCrsMatrix<S, LO, GO, NODE>& blockMatrix);
 
 //
-// Explicit instantiation macro for createMeshMap.
+// Explicit instantiation macro for createMeshMap / createPointMap
 //
 #define TPETRA_CREATEMESHMAP_INSTANT(LO,GO,NODE) \
-  template Teuchos::RCP<const Map<LO,GO,NODE> > createMeshMap (const LO& blockSize, const Map<LO,GO,NODE>& pointMap);
+  template Teuchos::RCP<const Map<LO,GO,NODE> > createMeshMap  (const LO& blockSize, const Map<LO,GO,NODE>& pointMap); \
+  template Teuchos::RCP<const Map<LO,GO,NODE> > createPointMap (const LO& blockSize, const Map<LO,GO,NODE>& blockMap);
 
 #endif // TPETRA_BLOCKCRSMATRIX_HELPERS_DEF_HPP

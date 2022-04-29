@@ -44,6 +44,7 @@
 
 #include <ShyLU_DDFROSch_config.h>
 
+#include <FROSch_Types.h>
 #include <FROSch_Output.h>
 #include <FROSch_Timers.h>
 
@@ -71,23 +72,6 @@ namespace FROSch {
     using namespace Teuchos;
     using namespace Xpetra;
 
-    #if defined HAVE_XPETRA_EPETRA || defined HAVE_TPETRA_INT_INT
-    typedef int DefaultGlobalOrdinal;
-    #elif !defined HAVE_TPETRA_INT_LONG_LONG
-    typedef long DefaultGlobalOrdinal;
-    #else
-    typedef long long DefaultGlobalOrdinal;
-    #endif
-
-    enum DofOrdering {NodeWise=0,DimensionWise=1,Custom=2};
-
-    enum class NullSpaceType
-    {
-      Laplace = 0,
-      Elasticity = 1
-    };
-
-        enum Verbosity {None=0,All=1};
 
     template <typename LO,
               typename GO>
@@ -151,6 +135,8 @@ namespace FROSch {
         using GOVecVec                  = Array<GOVec>;
         using GOVecVecPtr               = ArrayRCP<GOVec>;
 
+        using GOView                    = Kokkos::View<GO*, Kokkos::HostSpace>;
+
     public:
         LowerPIDTieBreak(CommPtr comm,
                          ConstXMapPtr originalMap,
@@ -194,6 +180,13 @@ namespace FROSch {
 
     template <class SC, class LO, class GO, class NO>
     void readMM(std::string fileName, Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix_,RCP<const Comm<int> > &comm);
+
+    template <class SC,class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapGaleriStruct2D(RCP<const Matrix<SC,LO,GO,NO> > matrix,int M,int Dim);
+
+
+    template <class SC,class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapGaleriStruct3D(RCP<const Map<LO,GO,NO> > matrix,int M,int Dim);
 
     template <class LO,class GO,class NO>
     RCP<const Map<LO,GO,NO> > BuildUniqueMap(const RCP<const Map<LO,GO,NO> > map,

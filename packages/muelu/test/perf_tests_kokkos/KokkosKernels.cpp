@@ -2,7 +2,7 @@
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 template<class scalar_type, class local_ordinal_type, class device_type>
 class LWGraph_kokkos {
@@ -285,7 +285,7 @@ int main_(int argc, char **argv) {
   local_matrix_type A = kernel_construct<scalar_type, local_ordinal_type, device_type>(n);
 
   execution_space().fence();
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
 
 #ifdef KOKKOS_ENABLE_SERIAL
   if (typeid(device_type) == typeid(Kokkos::Serial)) {
@@ -350,6 +350,12 @@ int main(int argc, char* argv[]) {
     return main_<double,int,Kokkos::Cuda>(argc, argv);
 #else
     std::cout << "Error: CUDA node type is disabled" << std::endl;
+#endif
+  } else if (node == "hip") {
+#ifdef KOKKOS_ENABLE_HIP
+    return main_<double,int,Kokkos::Experimental::HIP>(argc, argv);
+#else
+    std::cout << "Error: HIP node type is disabled" << std::endl;
 #endif
   }
 

@@ -6,7 +6,6 @@
 #include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
 #include <vector>                       // for vector, vector<>::reference
 #include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, EntityProc, etc
@@ -55,7 +54,7 @@ protected:
         stk::io::fill_mesh("generated:1x1x4", bulk);
 
         observer = std::make_shared<MockCommInfoObserver>();
-        bulk.register_observer(observer);
+        bulk.register_observer(observer, stk::mesh::ModificationObserverPriority::APPLICATION);
 
         bulk.modification_begin();
         ghost = &bulk.create_ghosting("Clyde");
@@ -82,9 +81,8 @@ protected:
         EXPECT_TRUE(!observer->was_comm_info_changed(stk::topology::CONSTRAINT_RANK));
     }
 
-    void stop_ghosting_of_element1_to_proc1()
+    void add_element1_and_nodes_to_remove_from_ghosting(std::vector<stk::mesh::EntityKey>& entityKeysToStopGhosting)
     {
-        std::vector<stk::mesh::EntityKey> entityKeysToStopGhosting;
         if(bulk.parallel_rank() == 1)
         {
             entityKeysToStopGhosting.push_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK, 1));
@@ -93,6 +91,16 @@ protected:
                 entityKeysToStopGhosting.push_back(stk::mesh::EntityKey(stk::topology::NODE_RANK, nodeId));
             }
         }
+    }
+
+    void stop_ghosting_of_element1_to_proc1(bool testDuplicateRemoveGhostKeys)
+    {
+        std::vector<stk::mesh::EntityKey> entityKeysToStopGhosting;
+        add_element1_and_nodes_to_remove_from_ghosting(entityKeysToStopGhosting);
+        if (testDuplicateRemoveGhostKeys) {
+          add_element1_and_nodes_to_remove_from_ghosting(entityKeysToStopGhosting);
+        }
+
         bulk.modification_begin();
         bulk.change_ghosting(*ghost, {}, entityKeysToStopGhosting);
         bulk.modification_end();
@@ -150,7 +158,23 @@ TEST_F(CommInfoObserverTest, addAndRemoveFromGhosting)
 
         reset_comm_info_status();
 
-        stop_ghosting_of_element1_to_proc1();
+        bool testDuplicateRemoveGhostKeys = false;
+        stop_ghosting_of_element1_to_proc1(testDuplicateRemoveGhostKeys);
+        expect_comm_info_changed_for_nodes_and_elements_only();
+    }
+}
+
+TEST_F(CommInfoObserverTest, addAndRemoveFromGhosting_testDuplicateKeys)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(comm) == 2)
+    {
+        ghost_element1_to_proc1_and_check_for_comm_info_change();
+
+        reset_comm_info_status();
+
+        bool testDuplicateRemoveGhostKeys = true;
+        stop_ghosting_of_element1_to_proc1(testDuplicateRemoveGhostKeys);
         expect_comm_info_changed_for_nodes_and_elements_only();
     }
 }

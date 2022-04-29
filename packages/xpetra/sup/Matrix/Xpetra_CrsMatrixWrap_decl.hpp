@@ -253,13 +253,13 @@ public:
   global_size_t getGlobalNumCols() const;
 
   //! Returns the number of matrix rows owned on the calling node.
-  size_t getNodeNumRows() const;
+  size_t getLocalNumRows() const;
 
   //! Returns the global number of entries in this matrix.
   global_size_t getGlobalNumEntries() const;
 
   //! Returns the local number of entries in this matrix.
-  size_t getNodeNumEntries() const;
+  size_t getLocalNumEntries() const;
 
   //! Returns the current number of entries on this node in the specified local row.
   /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
@@ -277,7 +277,25 @@ public:
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
   /** Undefined if isFillActive().
    */
-  size_t getNodeMaxNumRowEntries() const;
+  size_t getLocalMaxNumRowEntries() const;
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumRows() const {
+      return getLocalNumRows();
+    }
+
+    XPETRA_DEPRECATED
+    size_t getNodeNumEntries() const {
+      return getLocalNumEntries();
+    }
+
+    XPETRA_DEPRECATED
+    size_t getNodeMaxNumRowEntries() const {
+      return getLocalMaxNumRowEntries();
+    }
+#endif
+
 
   //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
   bool isLocallyIndexed() const;
@@ -461,8 +479,12 @@ public:
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-  /// \brief Access the underlying local Kokkos::CrsMatrix object
-  local_matrix_type getLocalMatrix () const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual local_matrix_type getLocalMatrix () const;
+#endif
+
+  virtual local_matrix_type getLocalMatrixDevice () const;
+  virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const;
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."

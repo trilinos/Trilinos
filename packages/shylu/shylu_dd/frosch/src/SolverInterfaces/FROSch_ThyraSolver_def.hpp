@@ -93,6 +93,12 @@ namespace FROSch {
         }
 
         SolveStatus<double> status = solve<double>(*ThyraSolver_,tMode,*xThyra,YT_.ptr());
+
+        // It seems that we have to convert the Thyra vector back to Xpetra. Is there a cheaper/more elegant way?
+        // Same for ThyraPreconditioner
+        XMultiVectorPtr yXpetra = ThyraUtils<SC,LO,GO,NO>::toXpetra(YT_,y.getMap()->getComm());
+        y = *yXpetra;
+
         y.update(alpha,*YX_,beta);
     }
 

@@ -197,6 +197,7 @@ lib stk_mesh_base
     /sierra/stk_util//stk_util_parallel
     /sierra/stk_util//stk_util_util
     /sierra/stk_util//stk_util_diag
+    /sierra/stk_util//stk_util_ngp
     /sierra/stk_topology//stk_topology
     /tpl/trilinos//shards
     /tpl/lapack//lapack_interface

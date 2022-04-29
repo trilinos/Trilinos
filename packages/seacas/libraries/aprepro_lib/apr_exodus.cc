@@ -8,6 +8,7 @@
 #include "aprepro.h"
 #include "exodusII.h"
 
+#include "apr_symrec.h"
 #include "apr_util.h"
 #include "aprepro_parser.h"
 
@@ -60,10 +61,9 @@ namespace SEAMS {
   {
     int   cpu = sizeof(double);
     int   io  = 0;
-    int   exo;
     float version;
 
-    exo = ex_open(filename, EX_READ | EX_ALL_INT64_API, &cpu, &io, &version);
+    int exo = ex_open(filename, EX_READ | EX_ALL_INT64_API, &cpu, &io, &version);
     if (exo < 0) {
       // If there is an include path specified, try opening file there
       std::string file_path(aprepro->ap_options.include_path);

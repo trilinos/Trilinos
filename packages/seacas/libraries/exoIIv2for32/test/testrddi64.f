@@ -71,7 +71,6 @@ C ... All integers passed through the API will be 64-bit integers
 
       write (iout, '("test.exo is an EXODUSII file; version ",
      1  f4.2)') vers
-      write (iout, '("  I/O word size",i2)') io_ws
 
       mod_sz = exlgmd(exoid)
       write (iout, '("  Model Size",i2)') mod_sz
@@ -734,4 +733,3 @@ c read an element variable through time
 
       stop
       end
-

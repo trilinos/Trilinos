@@ -35,11 +35,11 @@
 #ifndef PARAMETERLIST_HPP
 #define PARAMETERLIST_HPP
 
-#include "stk_util/stk_config.h"  // for STK_HAVE_BOOST
+#include "stk_util/stk_config.h"
 
-#ifdef STK_HAVE_BOOST
+#include "Teuchos_any.hpp"
+#define STK_ANY_NAMESPACE Teuchos
 
-#include "boost/any.hpp"          // for any, any_cast
 #include <cstdint>                // for int64_t
 #include <iostream>               // for operator<<, basic_ostream, ostream, cerr
 #include <map>                    // for _Rb_tree_iterator, map<>::const_iterator, map, map<>::m...
@@ -112,7 +112,7 @@ inline ParameterType::Type get_type(const std::vector<std::string> &value)
      * just uses the defult "non-value" Param member data
      */
 struct Parameter{
-  boost::any value;
+  STK_ANY_NAMESPACE::any value;
   ParameterType::Type type;
   bool toResultsFile;
   bool toRestartFile;
@@ -123,6 +123,18 @@ struct Parameter{
       toResultsFile(false),
       toRestartFile(false)
   {}
+
+  template<typename T>
+  T get_value() const
+  {
+    if (type == ParameterType::get_type(T())) {
+      return STK_ANY_NAMESPACE::any_cast<T>(value);
+    } else {
+      std::cerr << "ERROR: Parameter has an incorrect type specified for the get_value"
+                << " template type.\n";
+    }
+    return T();
+  }
 };
 
 typedef std::map<const std::string, Parameter> ParameterMapType;
@@ -172,14 +184,7 @@ public:
   template <typename T> T get_value (const std::string name)
   {
     Parameter p = get_param(name);
-    if (p.type == ParameterType::get_type(T())) {
-      return boost::any_cast<T>(p.value);
-    } else {
-      std::cerr << "ERROR: Parameter named '" << name
-                << "' has an incorrect type specified for the get_value"
-                << " template type.\n";
-    }
-    return T();
+    return p.get_value<T>();
   }
 
   void write_parameter_list(std::ostream & stream);
@@ -192,7 +197,5 @@ private:
 };
 }
 }
-
-#endif //STK_HAVE_BOOST
 
 #endif /* PARAMETERLIST_HPP */

@@ -1,36 +1,22 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 #include "Ioss_CodeTypes.h"
-#include "Ioss_FileInfo.h"
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
+#include "Ioss_Utils.h"
 #include "fmt/ostream.h"
 #include "info_interface.h"
+
 #include <cstddef>  // for nullptr
 #include <cstdlib>  // for exit, EXIT_SUCCESS, getenv
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <string>   // for char_traits, string
 
 namespace {
-  std::string get_type_from_file(const std::string &filename)
-  {
-    Ioss::FileInfo file(filename);
-    auto           extension = file.extension();
-    if (extension == "e" || extension == "g" || extension == "gen" || extension == "exo") {
-      return "exodus";
-    }
-    else if (extension == "cgns") {
-      return "cgns";
-    }
-    else {
-      // "exodus" is default...
-      return "exodus";
-    }
-  }
 } // namespace
 
 Info::Interface::Interface() { enroll_options(); }
@@ -95,8 +81,8 @@ void Info::Interface::enroll_options()
 
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
                   "Method used to split sidesets into homogeneous blocks\n"
-                  "\t\tOptions are: TOPOLOGY, BLOCK, NOSPLIT",
-                  "TOPOLOGY", nullptr, true);
+                  "\t\tOptions are: TOPOLOGY, BLOCK, NO_SPLIT",
+                  nullptr, nullptr, true);
 
 #if defined(SEACAS_HAVE_MPI)
 #if !defined(NO_ZOLTAN_SUPPORT)
@@ -224,7 +210,8 @@ bool Info::Interface::parse_options(int argc, char **argv)
       else if (std::strcmp(temp, "BLOCK") == 0) {
         surfaceSplitScheme_ = 2;
       }
-      else if (std::strcmp(temp, "NO_SPLIT") == 0) {
+      else if (std::strcmp(temp, "NO_SPLIT") == 0 || std::strcmp(temp, "NOSPLIT") == 0) {
+        // Backward compatibility using "NOSPLIT" after bug fix...
         surfaceSplitScheme_ = 3;
       }
     }
@@ -282,33 +269,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
 #endif
 
   if (options_.retrieve("copyright") != nullptr) {
-    fmt::print(stderr, "\n"
-                       "Copyright(C) 1999-2021 National Technology & Engineering Solutions\n"
-                       "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-                       "NTESS, the U.S. Government retains certain rights in this software.\n\n"
-                       "Redistribution and use in source and binary forms, with or without\n"
-                       "modification, are permitted provided that the following conditions are\n"
-                       "met:\n\n "
-                       "    * Redistributions of source code must retain the above copyright\n"
-                       "      notice, this list of conditions and the following disclaimer.\n\n"
-                       "    * Redistributions in binary form must reproduce the above\n"
-                       "      copyright notice, this list of conditions and the following\n"
-                       "      disclaimer in the documentation and/or other materials provided\n"
-                       "      with the distribution.\n\n"
-                       "    * Neither the name of NTESS nor the names of its\n"
-                       "      contributors may be used to endorse or promote products derived\n"
-                       "      from this software without specific prior written permission.\n\n"
-                       "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-                       "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-                       "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-                       "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-                       "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-                       "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-                       "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-                       "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-                       "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-                       "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-                       "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n");
+    Ioss::Utils::copyright(std::cerr, "1999-2022");
     exit(EXIT_SUCCESS);
   }
 
@@ -323,7 +284,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
     }
 
     if (filetype_ == "unknown") {
-      filetype_ = get_type_from_file(filename_);
+      filetype_ = Ioss::Utils::get_type_from_file(filename_);
     }
   }
 

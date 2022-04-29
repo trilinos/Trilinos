@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -22,14 +22,14 @@ extern int submain(struct vtx_data **graph, int nvtxs, int nedges, int using_vwg
 int Using_Main = FALSE; /* Is main routine being called? */
 
 int INTER_FACE(int    nvtxs,                 /* number of vertices in full graph */
-               int *  start,                 /* start of edge list for each vertex */
-               int *  adjacency,             /* edge list data */
-               int *  vwgts,                 /* weights for all vertices */
+               int   *start,                 /* start of edge list for each vertex */
+               int   *adjacency,             /* edge list data */
+               int   *vwgts,                 /* weights for all vertices */
                float *ewgts,                 /* weights for all edges */
                float *x, float *y, float *z, /* coordinates for inertial method */
-               char *  outassignname,        /* name of assignment output file */
-               char *  outfilename,          /* output file name */
-               int *   assignment,           /* set number of each vtx (length n) */
+               char   *outassignname,        /* name of assignment output file */
+               char   *outfilename,          /* output file name */
+               int    *assignment,           /* set number of each vtx (length n) */
                int     architecture,         /* 0 => hypercube, d => d-dimensional mesh */
                int     ndims_tot,            /* total number of cube dimensions to divide */
                int     mesh_dims[3],         /* dimensions of mesh of processors */
@@ -43,7 +43,7 @@ int INTER_FACE(int    nvtxs,                 /* number of vertices in full graph
                long    seed                  /* for random graph mutations */
 )
 {
-  extern char *     PARAMS_FILENAME;    /* name of file with parameter updates */
+  extern char      *PARAMS_FILENAME;    /* name of file with parameter updates */
   extern int        MAKE_VWGTS;         /* make vertex weights equal to degrees? */
   extern int        MATCH_TYPE;         /* matching routine to use */
   extern int        FREE_GRAPH;         /* free graph data structure after reformat? */
@@ -51,12 +51,12 @@ int INTER_FACE(int    nvtxs,                 /* number of vertices in full graph
   extern int        DEBUG_TRACE;        /* trace main execution path */
   extern double     start_time;         /* time routine is entered */
   extern double     reformat_time;      /* time spent reformatting graph */
-  FILE *            params_file = NULL; /* file for reading new parameters */
+  FILE             *params_file = NULL; /* file for reading new parameters */
   struct vtx_data **graph;              /* graph data structure */
   double            vwgt_sum;           /* sum of vertex weights */
   double            time;               /* timing variable */
-  float **          coords;             /* coordinates for vertices if used */
-  int *             vptr;               /* loops through vertex weights */
+  float           **coords;             /* coordinates for vertices if used */
+  int              *vptr;               /* loops through vertex weights */
   int               flag;               /* return code from balance */
   int               nedges;             /* number of edges in graph */
   int               using_vwgts;        /* are vertex weights being used? */
@@ -65,9 +65,9 @@ int INTER_FACE(int    nvtxs,                 /* number of vertices in full graph
   int               igeom;              /* geometric dimension for inertial method */
   int               default_goal;       /* using default goals? */
   int               i;                  /* loop counter */
-  double            seconds();
+  double            seconds(void);
   int               reformat();
-  void              free_graph(), read_params(), strout();
+  void              free_graph(), read_params(), strout(char *msg);
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering INTER_FACE>\n");
@@ -216,8 +216,8 @@ int INTER_FACE(int    nvtxs,                 /* number of vertices in full graph
   /* Subtract from assignment to allow code to index from 1. */
   assignment = assignment - 1;
   flag       = submain(graph, nvtxs, nedges, using_vwgts, using_ewgts, igeom, coords, outassignname,
-                 outfilename, assignment, goal, architecture, ndims_tot, mesh_dims, global_method,
-                 local_method, rqi_flag, vmax, ndims, eigtol, seed);
+                       outfilename, assignment, goal, architecture, ndims_tot, mesh_dims, global_method,
+                       local_method, rqi_flag, vmax, ndims, eigtol, seed);
 
 skip:
   sfree(coords);

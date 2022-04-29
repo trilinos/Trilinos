@@ -32,10 +32,27 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_topology/topology.hpp>
-#include <stk_ngp_test/ngp_test.hpp>
-#include "topology_test_utils.hpp"
+#include "Kokkos_Core.hpp"            // for parallel_for, KOKKOS_LAMBDA
+#include "gtest/gtest.h"              // for AssertionResult, Message, TestPartResult, EXPECT_EQ
+#include "stk_ngp_test/ngp_test.hpp"  // for NGP_EXPECT_EQ, NGP_EXPECT_FALSE, NGP_EXPECT_TRUE
+#include "stk_topology/topology.hpp"  // for topology, topology::BEAM_2, topology::EDGE_RANK
+#include "topology_test_utils.hpp"    // for check_edge_node_ordinals, check_edge_node_ordinals_ngp
+#include <vector>                     // for vector
+
+namespace {
+
+std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_beam2() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1}
+  };
+}
+
+std::vector<std::vector<uint8_t>> get_gold_permutation_node_ordinals_beam2() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1},
+    {1, 0}
+  };
+}
 
 TEST( stk_topology, beam_2)
 {
@@ -65,25 +82,24 @@ TEST( stk_topology, beam_2)
 
   EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1} };
+  check_side_node_ordinals(t, get_gold_edge_node_ordinals_beam2());
+  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_beam2());
+  check_side_nodes(t, get_gold_edge_node_ordinals_beam2());
+  check_edge_nodes(t, get_gold_edge_node_ordinals_beam2());
 
-  check_side_node_ordinals(t, gold_edge_node_ordinals);
-  check_edge_node_ordinals(t, gold_edge_node_ordinals);
-  check_side_nodes(t, gold_edge_node_ordinals);
-  check_edge_nodes(t, gold_edge_node_ordinals);
+  check_permutation_node_ordinals(t, get_gold_permutation_node_ordinals_beam2());
+  check_permutation_nodes(t, get_gold_permutation_node_ordinals_beam2());
 
-  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = { {0, 1},
-                                                                        {1, 0} };
-  check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
-  check_permutation_nodes(t, gold_permutation_node_ordinals);
-
-  check_equivalent(t, gold_permutation_node_ordinals);
-  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+  check_equivalent(t, get_gold_permutation_node_ordinals_beam2());
+  check_lexicographical_smallest_permutation(t, get_gold_permutation_node_ordinals_beam2());
 }
 
 
 void check_beam2_on_device()
 {
+  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_beam2());
+  OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_beam2());
+
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::BEAM_2;
@@ -112,25 +128,38 @@ void check_beam2_on_device()
 
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-    unsigned gold_edge_node_ordinals[1][2] = { {0, 1} };
-    check_side_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_side_nodes_ngp(t, gold_edge_node_ordinals);
-    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::BEAM_2>::num_nodes;
 
-    unsigned gold_permutation_node_ordinals[2][2] = { {0, 1},
-                                                      {1, 0} };
-    check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
-    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+    check_side_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_side_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
 
-    check_equivalent_ngp(t, gold_permutation_node_ordinals);
-    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+    check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+
+    check_equivalent_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_lexicographical_smallest_permutation_ngp<numNodes>(t, goldPermutationNodeOrdinals);
   });
 }
 
 NGP_TEST(stk_topology_ngp, beam_2)
 {
   check_beam2_on_device();
+}
+
+
+std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_beam3() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 2}
+  };
+}
+
+std::vector<std::vector<uint8_t>> get_gold_permutation_node_ordinals_beam3() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 2},
+    {1, 0, 2}
+  };
 }
 
 TEST( stk_topology, beam_3)
@@ -164,24 +193,23 @@ TEST( stk_topology, beam_3)
 
   EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1, 2} };
-  check_side_node_ordinals(t, gold_edge_node_ordinals);
-  check_edge_node_ordinals(t, gold_edge_node_ordinals);
-  check_side_nodes(t, gold_edge_node_ordinals);
-  check_edge_nodes(t, gold_edge_node_ordinals);
+  check_side_node_ordinals(t, get_gold_edge_node_ordinals_beam3());
+  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_beam3());
+  check_side_nodes(t, get_gold_edge_node_ordinals_beam3());
+  check_edge_nodes(t, get_gold_edge_node_ordinals_beam3());
 
-  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = { {0, 1, 2},
-                                                                        {1, 0, 2} };
+  check_permutation_node_ordinals(t, get_gold_permutation_node_ordinals_beam3());
+  check_permutation_nodes(t, get_gold_permutation_node_ordinals_beam3());
 
-  check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
-  check_permutation_nodes(t, gold_permutation_node_ordinals);
-
-  check_equivalent(t, gold_permutation_node_ordinals);
-  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+  check_equivalent(t, get_gold_permutation_node_ordinals_beam3());
+  check_lexicographical_smallest_permutation(t, get_gold_permutation_node_ordinals_beam3());
 }
 
 void check_beam3_on_device()
 {
+  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_beam3());
+  OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_beam3());
+
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::BEAM_3;
@@ -210,19 +238,18 @@ void check_beam3_on_device()
 
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-    unsigned gold_edge_node_ordinals[1][3] = { {0, 1, 2} };
-    check_side_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_side_nodes_ngp(t, gold_edge_node_ordinals);
-    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::BEAM_3>::num_nodes;
 
-    unsigned gold_permutation_node_ordinals[2][3] = { {0, 1, 2},
-                                                      {1, 0, 2} };
-    check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
-    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+    check_side_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_side_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
 
-    check_equivalent_ngp(t, gold_permutation_node_ordinals);
-    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+    check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+
+    check_equivalent_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_lexicographical_smallest_permutation_ngp<numNodes>(t, goldPermutationNodeOrdinals);
   });
 }
 
@@ -231,3 +258,4 @@ NGP_TEST(stk_topology_ngp, beam_3)
   check_beam3_on_device();
 }
 
+}

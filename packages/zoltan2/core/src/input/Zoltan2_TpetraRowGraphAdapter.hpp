@@ -135,7 +135,7 @@ public:
    *  The order of the vertex weights should match the order that
    *  vertices appear in the input data structure.
    *     \code
-   *       TheGraph->getRowMap()->getNodeElementList()
+   *       TheGraph->getRowMap()->getLocalElementList()
    *     \endcode
    */
 
@@ -168,7 +168,7 @@ public:
    *
    *  By vertex:
    *     \code
-   *       TheGraph->getRowMap()->getNodeElementList()
+   *       TheGraph->getRowMap()->getLocalElementList()
    *     \endcode
    *
    *  Then by vertex neighbor:
@@ -189,16 +189,16 @@ public:
 
   // TODO:  Assuming rows == objects;
   // TODO:  Need to add option for columns or nonzeros?
-  size_t getLocalNumVertices() const { return graph_->getNodeNumRows(); }
+  size_t getLocalNumVertices() const { return graph_->getLocalNumRows(); }
 
   void getVertexIDsView(const gno_t *&ids) const
   {
     ids = NULL;
     if (getLocalNumVertices())
-      ids = graph_->getRowMap()->getNodeElementList().getRawPtr();
+      ids = graph_->getRowMap()->getLocalElementList().getRawPtr();
   }
 
-  size_t getLocalNumEdges() const { return graph_->getNodeNumEntries(); }
+  size_t getLocalNumEdges() const { return graph_->getLocalNumEntries(); }
 
   void getEdgesView(const offset_t *&offsets, const gno_t *&adjIds) const
   {
@@ -286,10 +286,10 @@ template <typename User, typename UserCoord>
 {
   typedef StridedData<lno_t,scalar_t> input_t;
 
-  size_t nvtx = graph_->getNodeNumRows();
-  size_t nedges = graph_->getNodeNumEntries();
+  size_t nvtx = graph_->getLocalNumRows();
+  size_t nedges = graph_->getLocalNumEntries();
   size_t maxnumentries =
-         graph_->getNodeMaxNumRowEntries(); // Diff from CrsMatrix
+         graph_->getLocalMaxNumRowEntries(); // Diff from CrsMatrix
 
   // Unfortunately we have to copy the offsets and edge Ids
   // because edge Ids are not usually stored in vertex id order.
@@ -317,11 +317,11 @@ template <typename User, typename UserCoord>
     }
   }
 
-  ArrayRCP<lno_t> nbors(maxnumentries); // Diff from CrsGraph
+  typename User::nonconst_local_inds_host_view_type  nbors("nbors", maxnumentries);
 
   offs[0] = 0;
   for (size_t v=0; v < nvtx; v++){
-    graph_->getLocalRowCopy(v, nbors(), nedges);  // Diff from CrsGraph
+    graph_->getLocalRowCopy(v, nbors, nedges);  // Diff from CrsGraph
     offs[v+1] = offs[v] + nedges;
     for (offset_t e=offs[v], i=0; e < offs[v+1]; e++) {
         adjids[e] = graph_->getColMap()->getGlobalElement(nbors[i++]);
@@ -503,7 +503,7 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
 
   // source map
   const RCP<const map_t> &smap = from.getRowMap();
-  int oldNumElts = smap->getNodeNumElements();
+  int oldNumElts = smap->getLocalNumElements();
   gno_t numGlobalRows = smap->getGlobalNumElements();
   gno_t base = smap->getMinAllGlobalIndex();
 
@@ -525,7 +525,7 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
   }
   numNew.doImport(numOld, importer, Tpetra::INSERT);
 
-  size_t numElts = tmap->getNodeNumElements();
+  size_t numElts = tmap->getLocalNumElements();
   ArrayRCP<const gno_t> nnz;
   if (numElts > 0)
     nnz = numNew.getData(0);    // hangs if vector len == 0
@@ -545,7 +545,7 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
 
   // target graph
   RCP<tcrsgraph_t> G =
-    rcp(new tcrsgraph_t(tmap, nnz_size_t(), Tpetra::StaticProfile));
+    rcp(new tcrsgraph_t(tmap, nnz_size_t()));
 
   G->doImport(*pCrsGraphSrc, importer, Tpetra::INSERT);
   G->fillComplete();

@@ -1,8 +1,35 @@
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraUtils_WrappedDualView
+  SOURCES
+    TpetraUtils_WrappedDualView.cpp
+  ARGS ${ARGS}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraUtils_WrappedDualViewMicrobench
+  SOURCES
+    TpetraUtils_WrappedDualViewMicrobench.cpp
+  ARGS ${ARGS}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraUtils_WrappedDualViewNull
+  SOURCES
+    TpetraUtils_WrappedDualViewNull.cpp
+  ARGS ${ARGS}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TpetraUtils_UnitTests
   SOURCES
-    TpetraUtils_UnitTests
+    TpetraUtils_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial
@@ -12,7 +39,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TpetraUtils_merge
   SOURCES
-    TpetraUtils_merge
+    TpetraUtils_merge.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial
@@ -22,7 +49,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TpetraUtils_congruent
   SOURCES
-    TpetraUtils_congruent
+    TpetraUtils_congruent.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial mpi
@@ -32,7 +59,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TpetraUtils_gathervPrint
   SOURCES
-    TpetraUtils_gathervPrint
+    TpetraUtils_gathervPrint.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial mpi
@@ -42,7 +69,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Behavior
   SOURCES
-    behavior
+    behavior.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -52,7 +79,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CombineMode
   SOURCES
-    CombineMode
+    CombineMode.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -61,7 +88,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   copyConvert
-  SOURCES copyConvert
+  SOURCES copyConvert.cpp
   ARGS ${ARGS}
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -70,7 +97,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   copyOffsets
-  SOURCES copyOffsets
+  SOURCES copyOffsets.cpp
   ARGS ${ARGS}
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -80,7 +107,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   createMirrorView
   SOURCES
-    createMirrorView
+    createMirrorView.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial mpi
@@ -91,7 +118,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   getEntryOnHost
   SOURCES
-    getEntryOnHost
+    getEntryOnHost.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ${ARGS}
   COMM serial mpi
@@ -103,7 +130,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   StaticView
   SOURCES
-    StaticView
+    StaticView.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -112,7 +139,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TpetraUtils_crsUtils
   SOURCES
-    TpetraUtils_crsUtils
+    TpetraUtils_crsUtils.cpp
   ARGS ""
   COMM serial mpi
   NUM_MPI_PROCS 1-4
@@ -122,7 +149,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   verbosePrintArray
   SOURCES
-    verbosePrintArray
+    verbosePrintArray.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   NUM_MPI_PROCS 1
@@ -132,7 +159,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE(
   createPrefix
   SOURCES
-    createPrefix
+    createPrefix.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   )
@@ -156,10 +183,9 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   insertCrsIndicesThreshold
   SOURCES
-    insertCrsIndicesThreshold
+    insertCrsIndicesThreshold.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
-

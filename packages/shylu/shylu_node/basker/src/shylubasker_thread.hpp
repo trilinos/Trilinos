@@ -38,7 +38,7 @@ namespace BaskerNS
     {
       //printf("THREADS BARRIER INIT, %d  \n", _nthreads);
 
-      init_flg = BASKER_TRUE;
+      Finalize();
 
       nthreads = _nthreads;
       ntasks   = _tasks;
@@ -61,38 +61,35 @@ namespace BaskerNS
       {
         exit_token[i] = BASKER_FALSE;
       }
-
+      init_flg = BASKER_TRUE;
     }//end BaskerPointBarrier
 
     ~BaskerPointBarrier()
     {
       //JDB: Need to figure out why this does not work
-      //Finalize();
+      Finalize();
     }//end ~BaskerPointBarrier()
     
     inline
     void Finalize()
     {
-      //std::cout << "flag: " << init_flg << std::endl;
       if(init_flg == BASKER_TRUE)
       {
         for(Int i = 0; i < nthreads; ++i)
         {
           delete [] token[i];
         }
-
         delete [] token;
         delete [] exit_token;
       }
-
       init_flg = BASKER_FALSE;
     }//end Finalize()
     
     inline
     void BarrierLeader(Int my_leader, Int my_id, Int task, Int k)
     {
-      printf("Entering barrier. leader: %d id: %d task: %d k: %d token: %d \n", 
-          my_leader, my_id, task, token[my_leader][task]);
+      //printf("Entering barrier. leader: %d id: %d task: %d k: %d token: %d \n", 
+      //    my_leader, my_id, task, token[my_leader][task]);
       //jdb: change from my_lead == my_id
       if(my_leader == my_id)
       {
@@ -102,9 +99,8 @@ namespace BaskerNS
       {
         while(token[my_leader][task] != k);
       }
-
-      printf("Leaving barrier. leader: %d id: %d task: %d k: %d token: %d \n",
-          my_leader, my_id, task, token);
+      //printf("Leaving barrier. leader: %d id: %d task: %d k: %d token: %d \n",
+      //    my_leader, my_id, task, token);
 
     }//end Barrier_Leader()
 
@@ -119,17 +115,13 @@ namespace BaskerNS
      Int l
     )
     {
-      //   printf("Enter Domain Barrier. leader: %d my_id: %d task: %d size: %d k: %d l: %d \n",
-      //   my_leader, my_id, task, lsize, k, l);
-	
       Int ltask = (l*ntasks) + task;
-      //printf("kid: %d updated ltask: %d before: %d \n", 
-      //   my_id, ltask, token[my_id][ltask]);
+      //printf("Enter Domain Barrier. leader=%d, lsize=%d (%d:%d), my_id=%d, task=%d, k=%d, l=%d -> ltask=%d\n",
+      //        my_leader, lsize, my_leader,my_leader+lsize-1, my_id, task, k, l, ltask); fflush(stdout);
       token[my_id][ltask] = k;
       for(Int dp = (my_leader+lsize)-1; dp >= my_leader; dp--)
       {
-        //printf("kid: %d checking location : %d ltask: %d\n",
-        //my_id, dp, ltask);
+        //printf("kid=%d: checking location token[%d][%d] = %d ?\n", my_id, dp, ltask, k);
         ///volatile Int ldp = token[dp][task];
         while(token[dp][ltask] != k);
         //{
@@ -137,9 +129,8 @@ namespace BaskerNS
         //}
 
       }
-      // printf("Leave Domain Barrier. leader: %d my_id: %d task: %d size: %d k: %d l: %d l\n",
-      //   my_leader, my_id, task, lsize, k, l);
-
+      //printf("Leave Domain Barrier. leader=%d, lsize=%d (%d:%d), my_id=%d, task=%d, k=%d, l=%d -> ltask=%d\n",
+      //        my_leader, lsize, my_leader,my_leader+lsize-1, my_id, task, k, l, ltask); fflush(stdout);
     }//end Barrier_Domain
 
     inline

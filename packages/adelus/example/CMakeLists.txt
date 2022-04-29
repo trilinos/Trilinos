@@ -54,7 +54,7 @@ LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS} ${Trilinos_TPL_LIBRARY_DIRS})
 
 ADD_EXECUTABLE(adelus_driver adelus_driver.cpp)
 
-set_property(TARGET adelus_driver PROPERTY CXX_STANDARD 11)
+set_property(TARGET adelus_driver PROPERTY CXX_STANDARD 14)
 
 TARGET_LINK_LIBRARIES(adelus_driver ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES} ${Trilinos_EXTRA_LINK_FLAGS})
 

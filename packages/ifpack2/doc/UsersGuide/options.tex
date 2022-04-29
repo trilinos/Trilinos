@@ -108,6 +108,16 @@ The following parameters are used in the point relaxation methods:
      is used with blocks of size $k$ (see \cite{Saad1999}).
      In the \texttt{apply()} there is significantly less
      error due to parallel updates of the LHS vector.}
+\ccc{relaxation: mtgs coloring algorithm}
+    {string}
+    {``Default''}
+    {Only has an effect if {\tt "relaxation: type"} is {\tt "MT Gauss-Seidel"}
+     or {\tt "MT Symmetric Gauss-Seidel"}. Selects which graph coloring algorithm
+     from Kokkos Kernels will be used to find sets of independent rows. ``Default''
+     selects the algorithm based on the Node type. ``Serial'' is sequential and greedy.
+     ``VB'', ``VBBIT'' and ``VBCS'' are parallel vertex-based (out of these, ``VBBIT'' is recommended).
+     ``EB'' is parallel edge-based (faster than ``VBBIT'' on GPUs for irregular graphs).
+     ``VBD'' and ``VBDBIT'' are parallel and deterministic.}
 \ccc{relaxation: local smoothing indices}
     {Teuchos::ArrayRCP<local\_ordinal>}
     {empty}
@@ -441,9 +451,11 @@ The following parameters are used in the ILUT method:
 \ccc{fact: ilut level-of-fill}
     {int|magnitude|double}
     {1}
-    {Maximum number of entries to keep in each row of $L$ and $U$. Each row of
-     $L$ ($U$) will have at most $\lceil\frac{(\mbox{\small\tt
-     level-of-fill}-1)nnz(A)}{2n}\rceil$ nonzero entries, where $nnz(A)$ is the
+    {Maximum fill fraction that controls the
+     number of entries to keep in the strict upper triangle of the
+     current row, and in the strict lower triangle of the current
+     row.  This value must be $>= 1.0$.  Each row of $L$ ($U$) will have at most $\lceil\frac{(\mbox{\small\tt
+     level-of-fill}-1)nnz(A)}{2n}\rceil$ nonzero entries, in addition to those from the sparsity pattern of A, where $nnz(A)$ is the
      number of nonzero entries in the matrix, and $n$ is the number of rows.
      ILUT always keeps the diagonal entry in the current row, regardless of the
      drop tolerance or fill level. \textbf{Note:} \textit{This is

@@ -476,13 +476,14 @@ namespace MueLuTests {
 
     RCP<Vector> v  = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(m, true);
     RCP<Vector> tv = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(m, true);
-    Teuchos::ArrayRCP<Scalar> vData  = v->getDataNonConst(0);
-    Teuchos::ArrayRCP<Scalar> tvData = tv->getDataNonConst(0);
-    for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(v->getLocalLength()); ++i) {
-      vData[i] = Teuchos::as<Scalar>(i+1);
-      tvData[i] = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(i+1);
+    {
+      Teuchos::ArrayRCP<Scalar> vData  = v->getDataNonConst(0);
+      Teuchos::ArrayRCP<Scalar> tvData = tv->getDataNonConst(0);
+      for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(v->getLocalLength()); ++i) {
+	vData[i] = Teuchos::as<Scalar>(i+1);
+	tvData[i] = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(i+1);
+      }
     }
-
     RCP<Vector> inv = Utilities::GetInverse(v);
 
     tv->update(1.0,*inv,-1.0);
@@ -524,7 +525,7 @@ namespace MueLuTests {
       TEST_ASSERT(!diffMatrix.is_null());
 
       bool allEntriesAreZero = true;
-      for (LO lRowId = 0; lRowId < Teuchos::as<LO>(diffMatrix->getNodeNumRows()); ++lRowId)
+      for (LO lRowId = 0; lRowId < Teuchos::as<LO>(diffMatrix->getLocalNumRows()); ++lRowId)
       {
         ArrayView<const LO> cols;
         ArrayView<const Scalar> vals;
@@ -554,7 +555,7 @@ namespace MueLuTests {
       TEST_ASSERT(!diffMatrix.is_null());
 
       bool allEntriesAreZero = true;
-      for (LO lRowId = 0; lRowId < Teuchos::as<LO>(diffMatrix->getNodeNumRows()); ++lRowId)
+      for (LO lRowId = 0; lRowId < Teuchos::as<LO>(diffMatrix->getLocalNumRows()); ++lRowId)
       {
         ArrayView<const LO> cols;
         ArrayView<const Scalar> vals;

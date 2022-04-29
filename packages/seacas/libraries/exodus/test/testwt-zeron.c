@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 
   float *glob_var_vals;
   float  time_value;
-  char * coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
+  char  *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
 
   ex_opts(EX_VERBOSE | EX_ABORT);
 

@@ -1,11 +1,15 @@
 #ifndef KOKKOSKERNELS_CONFIG_H
 #define KOKKOSKERNELS_CONFIG_H
 
-
 /* Define Fortran mangle from Trilinos macro definition */
-#ifndef F77_BLAS_MANGLE                                                                                       
-# define F77_BLAS_MANGLE@F77_BLAS_MANGLE@                                                                     
-#endif 
+// clang-format off
+#ifndef F77_BLAS_MANGLE
+#define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+#endif
+// clang-format on
+
+/* Define the current version of Kokkos Kernels */
+#cmakedefine KOKKOSKERNELS_VERSION @KOKKOSKERNELS_VERSION@
 
 /* Define if fortran blas 1 function can return complex type */
 #cmakedefine KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX
@@ -22,10 +26,16 @@
    than just BLAS and LAPACK functions.  */
 #cmakedefine HAVE_KOKKOSKERNELS_MKL
 
+#cmakedefine KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
+
 /* Define this macro if experimental features of Kokkoskernels are enabled */
 #cmakedefine HAVE_KOKKOSKERNELS_EXPERIMENTAL
 
-/* Define this macro to disallow instantiations of kernels which are not covered by ETI */
+/* Define this macro if we have SuperLU API version 5 */
+#cmakedefine HAVE_KOKKOSKERNELS_SUPERLU5_API
+
+/* Define this macro to disallow instantiations of kernels which are not covered
+ * by ETI */
 #cmakedefine KOKKOSKERNELS_ETI_ONLY
 /* Define this macro to only test ETI types */
 #cmakedefine KOKKOSKERNELS_TEST_ETI_ONLY
@@ -41,6 +51,9 @@
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_SYCL
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_SYCLSPACE
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_SYCLSHAREDSPACE
+/* Whether to build kernels for execution space Kokkos::Experimental::HIP */
+#cmakedefine KOKKOSKERNELS_INST_EXECSPACE_OPENMPTARGET
+#cmakedefine KOKKOSKERNELS_INST_MEMSPACE_OPENMPTARGETSPACE
 /* Whether to build kernels for execution space Kokkos::OpenMP */
 #cmakedefine KOKKOSKERNELS_INST_EXECSPACE_OPENMP
 /* Whether to build kernels for execution space Kokkos::Threads */
@@ -51,11 +64,12 @@
 /* Whether to build kernels for memory space Kokkos::HostSpace */
 #cmakedefine KOKKOSKERNELS_INST_MEMSPACE_HOSTSPACE
 
-
 /* Whether to build kernels for scalar type double */
 #cmakedefine KOKKOSKERNELS_INST_DOUBLE
 /* Whether to build kernels for scalar type float */
 #cmakedefine KOKKOSKERNELS_INST_FLOAT
+/* Whether to build kernels for scalar type Kokkos::Experimental::half_t */
+#cmakedefine KOKKOSKERNELS_INST_HALF
 /* Whether to build kernels for scalar type complex<double> */
 #cmakedefine KOKKOSKERNELS_INST_COMPLEX_DOUBLE
 /* Whether to build kernels for scalar type complex<float> */
@@ -98,6 +112,7 @@
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_MAGMA
 /* SuperLU */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_SUPERLU
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_SuperLU  // For Trilinos
 /* CHOLMOD */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_CHOLMOD
 /* CBLAS */
@@ -108,17 +123,26 @@
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_METIS
 /* ARMPL */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_ARMPL
+#cmakedefine ARMPL_BUILD @ARMPL_BUILD@
+/* ROCBLAS */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_ROCBLAS
+/* ROCSPARSE */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 
 #cmakedefine KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 
 /* if MKL or ARMPL, BLAS is also defined */
-#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) ||\
+#if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) || \
     defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 #define KOKKOSKERNELS_ENABLE_TPL_BLAS
 #endif
 #endif
 
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
+    !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
+#define KOKKOSKERNELS_ENABLE_HOST_ONLY
+#endif
 
 /*
  * "Optimization level" for computational kernels in this subpackage.
@@ -127,11 +151,10 @@
  * mean both better performance overall, and more uniform performance
  * for corner cases.
  */
-#define KOKKOSLINALG_OPT_LEVEL @KokkosLinAlg_Opt_Level@
+#define KOKKOSLINALG_OPT_LEVEL @KokkosLinAlg_Opt_Level @
 
 #ifndef KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 #define KOKKOSKERNELS_IMPL_COMPILE_LIBRARY false
 #endif
 
-
-#endif // KOKKOSKERNELS_CONFIG_H
+#endif  // KOKKOSKERNELS_CONFIG_H

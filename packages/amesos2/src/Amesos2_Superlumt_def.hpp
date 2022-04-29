@@ -352,10 +352,8 @@ namespace Amesos2 {
               ROOTED, this->rowIndexBase_);
       }
       else {
-        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-          slu_type>::do_get(B, bxvals_(),
-              ldbx_,
-              NON_CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "NON_CONTIGUOUS_AND_ROOTED not supported.");
       }
     }
 
@@ -433,8 +431,8 @@ namespace Amesos2 {
           MultiVecAdapter<Vector>, slu_type>::do_put(X, bxvals_(), ldbx_, ROOTED);
       }
       else {
-        Util::put_1d_data_helper<
-          MultiVecAdapter<Vector>, slu_type>::do_put(X, bxvals_(), ldbx_, NON_CONTIGUOUS_AND_ROOTED);
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "NON_CONTIGUOUS_AND_ROOTED not supported.");
       }
     }
 
@@ -464,8 +462,8 @@ namespace Amesos2 {
 
     RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
 
-
-    data_.options.nprocs = parameterList->get<int>("nprocs", 1);
+    int default_nprocs = Kokkos::DefaultHostExecutionSpace::concurrency();
+    data_.options.nprocs = parameterList->get<int>("nprocs", default_nprocs);
 
     data_.options.trans = this->control_.useTranspose_ ? SLUMT::TRANS : SLUMT::NOTRANS;
     // SuperLU_MT "trans" option can override the Amesos2 option
@@ -523,10 +521,11 @@ namespace Amesos2 {
     if( is_null(valid_params) ){
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
+      int default_nprocs = Kokkos::DefaultHostExecutionSpace::concurrency();
       Teuchos::RCP<EnhancedNumberValidator<int> > nprocs_validator
         = Teuchos::rcp( new EnhancedNumberValidator<int>() );
-      nprocs_validator->setMin(1);
-      pl->set("nprocs", 1, "The number of processors to factorize with", nprocs_validator);
+      nprocs_validator->setMin(default_nprocs);
+      pl->set("nprocs", default_nprocs, "The number of processors to factorize with", nprocs_validator);
 
       setStringToIntegralParameter<SLUMT::trans_t>("trans", "NOTRANS",
                                                    "Solve for the transpose system or not",
@@ -633,10 +632,8 @@ namespace Amesos2 {
               nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
       }
       else {
-        Util::get_ccs_helper<
-          MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
-              nzvals_, rowind_, colptr_,
-              nnz_ret, NON_CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "NON_CONTIGUOUS_AND_ROOTED not supported.");
       }
     }
 

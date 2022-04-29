@@ -128,7 +128,7 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::Para
 
    } else if(xProcs_==-1) {
       // default x only decomposition
-      xProcs_ = machSize_; 
+      xProcs_ = machSize_;
       yProcs_ = 1;
    }
   TEUCHOS_TEST_FOR_EXCEPTION(int(machSize_) != xProcs_ * yProcs_, std::logic_error,
@@ -141,7 +141,7 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::Para
    buildMetaData(parallelMach,*mesh);
 
    mesh->addPeriodicBCs(periodicBCVec_);
- 
+
    return mesh;
 }
 
@@ -160,6 +160,9 @@ void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::P
    mesh.buildSubcells();
 #endif
    mesh.buildLocalElementIDs();
+   if(createEdgeBlocks_) {
+      mesh.buildLocalEdgeIDs();
+   }
 
    // now that edges are built, sidsets can be added
 #ifndef ENABLE_UNIFORM
@@ -168,6 +171,10 @@ void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::P
 
    // add nodesets
    addNodeSets(mesh);
+
+   if(createEdgeBlocks_) {
+      addEdgeBlocks(mesh);
+   }
 
    // calls Stk_MeshFactory::rebalance
    this->rebalance(mesh);
@@ -180,11 +187,11 @@ void SquareQuadMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::Paramet
 
    setMyParamList(paramList);
 
-   x0_ = paramList->get<double>("X0"); 
-   y0_ = paramList->get<double>("Y0"); 
+   x0_ = paramList->get<double>("X0");
+   y0_ = paramList->get<double>("Y0");
 
-   xf_ = paramList->get<double>("Xf"); 
-   yf_ = paramList->get<double>("Yf"); 
+   xf_ = paramList->get<double>("Xf");
+   yf_ = paramList->get<double>("Yf");
 
    xBlocks_ = paramList->get<int>("X Blocks");
    yBlocks_ = paramList->get<int>("Y Blocks");
@@ -196,6 +203,8 @@ void SquareQuadMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::Paramet
    yProcs_ = paramList->get<int>("Y Procs");
 
    offsetGIDs_ = (paramList->get<std::string>("Offset mesh GIDs above 32-bit int limit") == "ON") ? true : false;
+
+   createEdgeBlocks_ = paramList->get<bool>("Create Edge Blocks");
 
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
@@ -225,6 +234,9 @@ Teuchos::RCP<const Teuchos::ParameterList> SquareQuadMeshFactory::getValidParame
       defaultParams->set<int>("X Elements",5);
       defaultParams->set<int>("Y Elements",5);
 
+      // default to false for backward compatibility
+      defaultParams->set<bool>("Create Edge Blocks",false,"Create edge blocks in the mesh");
+
       Teuchos::setStringToIntegralParameter<int>(
         "Offset mesh GIDs above 32-bit int limit",
         "OFF",
@@ -246,6 +258,12 @@ void SquareQuadMeshFactory::initializeWithDefaults()
 
    // set that parameter list
    setParameterList(validParams);
+
+   /* This is a quad mesh factory so all elements in all element blocks
+    * will be quad4.  This means that all the edges will be line2.
+    * The edge block name is hard coded to reflect this.
+    */
+   edgeBlockName_ = "line_2_"+panzer_stk::STK_Interface::edgeBlockString;
 }
 
 void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK_Interface & mesh) const
@@ -253,6 +271,7 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach *
    typedef shards::Quadrilateral<4> QuadTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
    const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
+   const CellTopologyData * edge_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
 
    // build meta data
    //mesh.setDimension(2);
@@ -266,12 +285,17 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach *
 
             // add element blocks
             mesh.addElementBlock("eblock"+ebPostfix.str(),ctd);
+            if(createEdgeBlocks_) {
+               mesh.addEdgeBlock("eblock"+ebPostfix.str(),
+                                 edgeBlockName_,
+                                 edge_ctd);
+            }
          }
 
       }
    }
 
-   // add sidesets 
+   // add sidesets
 #ifndef ENABLE_UNIFORM
    mesh.addSideset("left",side_ctd);
    mesh.addSideset("right",side_ctd);
@@ -322,7 +346,7 @@ void SquareQuadMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,i
 
    double deltaX = (xf_-x0_)/double(totalXElems);
    double deltaY = (yf_-y0_)/double(totalYElems);
- 
+
    std::vector<double> coord(2,0.0);
 
    offset_ = 0;
@@ -455,7 +479,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       // vertical boundaries
       ///////////////////////////////////////////
 
-      if(nx+1==totalXElems) { 
+      if(nx+1==totalXElems) {
          stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 1);
 
          // on the right
@@ -546,7 +570,7 @@ void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
    // mesh.getMyElements(localElmts);
 
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
-   if(machRank_==0) 
+   if(machRank_==0)
    {
       // add zero node to lower_left node set
       stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1 + offset_);
@@ -559,12 +583,30 @@ void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
    mesh.endModification();
 }
 
+void SquareQuadMeshFactory::addEdgeBlocks(STK_Interface & mesh) const
+{
+   mesh.beginModification();
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+
+   stk::mesh::Part * edge_block = mesh.getEdgeBlock(edgeBlockName_);
+
+   stk::mesh::Selector owned_block = metaData->locally_owned_part();
+
+   std::vector<stk::mesh::Entity> edges;
+   bulkData->get_entities(mesh.getEdgeRank(), owned_block, edges);
+   mesh.addEntitiesToEdgeBlock(edges, edge_block);
+
+   mesh.endModification();
+}
+
 //! Convert processor rank to a tuple
 Teuchos::Tuple<std::size_t,2> SquareQuadMeshFactory::procRankToProcTuple(std::size_t procRank) const
 {
    std::size_t i=0,j=0;
 
-   j = procRank/xProcs_; 
+   j = procRank/xProcs_;
    procRank = procRank % xProcs_;
    i = procRank;
 

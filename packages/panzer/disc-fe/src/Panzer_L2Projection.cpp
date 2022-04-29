@@ -94,13 +94,13 @@ namespace panzer {
     ghostedMatrix->resumeFill();
     ghostedMatrix->setAllToScalar(0.0);
 
-    auto M = ghostedMatrix->getLocalMatrix();
     const int fieldIndex = targetGlobalIndexer_->getFieldNum(targetBasisDescriptor_.getType());
 
     const bool is_scalar = targetBasisDescriptor_.getType()=="HGrad" || targetBasisDescriptor_.getType()=="Const" || targetBasisDescriptor_.getType()=="HVol";
 
     // Loop over element blocks and fill mass matrix
     if(is_scalar){
+      auto M = ghostedMatrix->getLocalMatrixDevice();
       for (const auto& block : elementBlockNames_) {
 
         double ebMultiplier = 1.0;
@@ -115,21 +115,24 @@ namespace panzer {
 
           const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
 
-          const auto unweightedBasis = basisValues.basis_scalar;
-          const auto weightedBasis = basisValues.weighted_basis_scalar;
+          const auto unweightedBasis = basisValues.getBasisValues(false).get_static_view();
+          const auto weightedBasis = basisValues.getBasisValues(true).get_static_view();
 
-          // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
           PHX::View<panzer::LocalOrdinal*> kOffsets("MassMatrix: Offsets",offsets.size());
+          auto kOffsets_h = Kokkos::create_mirror_view(kOffsets);
+
           for(const auto& i : offsets)
-            kOffsets(i) = offsets[i];
+            kOffsets_h(i) = offsets[i];
+
+          Kokkos::deep_copy(kOffsets, kOffsets_h);
 
           // Local Ids
           PHX::View<panzer::LocalOrdinal**> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
               targetGlobalIndexer_->getElementBlockGIDCount(block));
 
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
-          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
 
           targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
@@ -201,6 +204,7 @@ namespace panzer {
         }
       }
     } else {
+      auto M = ghostedMatrix->getLocalMatrixDevice();
       for (const auto& block : elementBlockNames_) {
 
         double ebMultiplier = 1.0;
@@ -215,14 +219,17 @@ namespace panzer {
 
           const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
 
-          const auto unweightedBasis = basisValues.basis_vector;
-          const auto weightedBasis = basisValues.weighted_basis_vector;
+          const auto unweightedBasis = basisValues.getVectorBasisValues(false).get_static_view();
+          const auto weightedBasis = basisValues.getVectorBasisValues(true).get_static_view();
 
-          // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
           PHX::View<panzer::LocalOrdinal*> kOffsets("MassMatrix: Offsets",offsets.size());
+          auto kOffsets_h = Kokkos::create_mirror_view(kOffsets);
+
           for(const auto& i : offsets)
-            kOffsets(i) = offsets[i];
+            kOffsets_h(i) = offsets[i];
+
+          Kokkos::deep_copy(kOffsets, kOffsets_h);
 
           // Local Ids
           PHX::View<panzer::LocalOrdinal**> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
@@ -333,7 +340,7 @@ namespace panzer {
 
     // Now insert the non-zero pattern per row
     // count number of entries per row; required by CrsGraph constructor
-    std::vector<size_t> nEntriesPerRow(ghostedTargetMap->getNodeNumElements(),0);
+    std::vector<size_t> nEntriesPerRow(ghostedTargetMap->getLocalNumElements(),0);
     std::vector<std::string> elementBlockIds;
     targetGlobalIndexer_->getElementBlockIds(elementBlockIds);
     std::vector<std::string>::const_iterator blockItr;
@@ -348,7 +355,7 @@ namespace panzer {
         targetGlobalIndexer_->getElementGIDs(elements[elmt],row_gids);
         sourceGlobalIndexer.getElementGIDs(elements[elmt],col_gids);
         for(std::size_t row=0;row<row_gids.size();row++) {
-          panzer::LocalOrdinal lid = 
+          panzer::LocalOrdinal lid =
                                ghostedTargetMap->getLocalElement(row_gids[row]);
           nEntriesPerRow[lid] += col_gids.size();
         }
@@ -356,7 +363,7 @@ namespace panzer {
     }
 
     Teuchos::ArrayView<const size_t> nEntriesPerRowView(nEntriesPerRow);
-    RCP<GraphType> ghostedGraph = rcp(new GraphType(ghostedTargetMap,ghostedSourceMap,nEntriesPerRowView,Tpetra::StaticProfile));
+    RCP<GraphType> ghostedGraph = rcp(new GraphType(ghostedTargetMap,ghostedSourceMap,nEntriesPerRowView));
 
     for (blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
       std::string blockId = *blockItr;
@@ -418,7 +425,7 @@ namespace panzer {
 
         // Get target basis values: current implementation assumes target basis is HGrad
         const auto& targetBasisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
-        const auto& targetWeightedBasis = targetBasisValues.weighted_basis_scalar.get_static_view();
+        const auto& targetWeightedBasis = targetBasisValues.getBasisValues(true).get_static_view();
 
         // Sources can be any basis
         const auto& sourceBasisValues = workset.getBasisValues(sourceBasisDescriptor,integrationDescriptor_);
@@ -427,15 +434,15 @@ namespace panzer {
         bool useRankThreeBasis = false; // default to gradient or vector basis
         if ( (sourceBasisDescriptor.getType() == "HGrad") || (sourceBasisDescriptor.getType() == "Const") || (sourceBasisDescriptor.getType() == "HVol") ) {
           if (directionIndex == -1) { // Project dof value
-            sourceUnweightedScalarBasis = sourceBasisValues.basis_scalar.get_static_view();
+            sourceUnweightedScalarBasis = sourceBasisValues.getBasisValues(false).get_static_view();
             useRankThreeBasis = true;
           }
           else { // Project dof gradient of scalar basis
-            sourceUnweightedVectorBasis = sourceBasisValues.grad_basis.get_static_view();
+            sourceUnweightedVectorBasis = sourceBasisValues.getGradBasisValues(false).get_static_view();
           }
         }
         else { // Project vector value
-          sourceUnweightedVectorBasis = sourceBasisValues.basis_vector.get_static_view();
+          sourceUnweightedVectorBasis = sourceBasisValues.getVectorBasisValues(false).get_static_view();
         }
 
         // Get the element local ids
@@ -477,7 +484,7 @@ namespace panzer {
           Kokkos::deep_copy(sourceFieldOffsets,hostOffsets);
         }
 
-        const auto localMatrix = ghostedMatrix->getLocalMatrix();
+        const auto localMatrix = ghostedMatrix->getLocalMatrixDevice();
         const int numRows = static_cast<int>(targetWeightedBasis.extent(1));
         int tmpNumCols = -1;
         int tmpNumQP = -1;

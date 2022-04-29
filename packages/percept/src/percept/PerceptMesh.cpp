@@ -2142,9 +2142,12 @@
     void PerceptMesh::
     createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities)
     {
-      std::vector<size_t> requests(  m_metaData->entity_rank_count() , 0 );
-      requests[entityRank] = count;
-      get_bulk_data()->generate_new_entities( requests, requested_entities );
+      std::vector<stk::mesh::EntityId> requestedIds;
+      get_bulk_data()->generate_new_ids(entityRank, count, requestedIds);
+      stk::mesh::PartVector addParts;
+      requested_entities.clear();
+      get_bulk_data()->declare_entities(entityRank, requestedIds, addParts, requested_entities);
+
       if (entityRank == node_rank())
         {
           stk::mesh::Part& nodePart = get_fem_meta_data()->get_topology_root_part(stk::topology::NODE);
@@ -2489,7 +2492,8 @@
 
     int PerceptMesh::get_ioss_aliases(const std::string &my_name, std::vector<std::string> &aliases)
     {
-      return m_iossMeshData->get_input_io_region()->get_aliases(my_name, aliases);
+      auto *ge = m_iossMeshData->get_input_io_region()->get_entity(my_name);
+      return ge != nullptr ? m_iossMeshData->get_input_io_region()->get_aliases(my_name, ge->type(), aliases) : 0;
     }
 
     bool PerceptMesh::checkForPartNameWithAliases(stk::mesh::Part& part, const std::string& bname)
@@ -2794,7 +2798,7 @@
           if (!Teuchos::is_null(mesh_data->get_input_io_region()))
             {
               {
-                const Ioss::AliasMap& aliases = mesh_data->get_input_io_region()->get_alias_map();
+                const Ioss::AliasMap& aliases = mesh_data->get_input_io_region()->get_alias_map(Ioss::ELEMENTBLOCK);
                 Ioss::AliasMap::const_iterator I  = aliases.begin();
                 Ioss::AliasMap::const_iterator IE = aliases.end();
 
@@ -5487,11 +5491,11 @@
         {
           bool stk_auto= stk::mesh::is_auto_declared_part(*parts[ip]);
           if (stk_auto) continue;
-          unsigned per = parts[ip]->primary_entity_rank();
+          stk::mesh::EntityRank per = parts[ip]->primary_entity_rank();
           if (per == element_rank())
             {
               const CellTopologyData *const topology = this->get_cell_topology(*parts[ip]);
-              if (!topology || topology->dimension != per)
+              if (!topology || topology->dimension != static_cast<unsigned>(per))
                 {
                   std::cout << "Warning: PerceptMesh::get_skin_part: skipping part with dimension < element_rank, part name= " << parts[ip]->name() << std::endl;
                   continue;
@@ -6155,7 +6159,7 @@
           if (!data_traits.is_floating_point)
             continue;
 
-          unsigned field_rank = field->entity_rank();
+          stk::mesh::EntityRank field_rank = field->entity_rank();
           if (field_rank == stk::topology::NODE_RANK)
             {
               continue;
@@ -7206,8 +7210,8 @@
         {
           std::string K, V;
           for (YAML::const_iterator i = node.begin(); i != node.end(); ++i) {
-            const YAML::Node & key   = i->first;
-            const YAML::Node & value = i->second;
+            const YAML::Node key   = i->first;
+            const YAML::Node value = i->second;
             K = key.as<std::string>();
             V = value.as<std::string>();
             setProperty(K, V);

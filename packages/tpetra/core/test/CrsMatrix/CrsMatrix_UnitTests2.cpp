@@ -166,11 +166,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   { \
     using Teuchos::outArg; \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
-    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getNodeElementList(); \
+    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getLocalElementList(); \
     ArrayView<const LO> loview; \
     ArrayView<const Scalar> sview; \
     size_t STMAX = 0; \
-    for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
+    for (size_t STR=0; STR < matrix.getLocalNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
       TEST_EQUALITY( numEntries, matrix.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
       matrix.getLocalRowView(STR,loview,sview); \
@@ -178,7 +178,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY( static_cast<size_t>( sview.size()), numEntries ); \
       STMAX = std::max( STMAX, numEntries ); \
     } \
-    TEST_EQUALITY( matrix.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
     global_size_t STGMAX; \
     Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
     TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
@@ -257,14 +257,13 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const map_type> lclmap = createLocalMapWithNode<LO,GO,Node> (P, comm);
 
     // create the matrix
-    MAT A(rowmap,P,TPETRA_DEFAULT_PROFILE_TYPE);
+    MAT A(rowmap,P);
     for (GO i=0; i<static_cast<GO>(M); ++i) {
       for (GO j=0; j<static_cast<GO>(P); ++j) {
         A.insertGlobalValues( M*myImageID+i, tuple<GO>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
       }
     }
     // call fillComplete()
-    TEST_EQUALITY_CONST( A.getProfileType() == TPETRA_DEFAULT_PROFILE_TYPE, true );
     A.fillComplete(lclmap,rowmap);
     // build the input multivector X
     MV X(lclmap,numVecs);
@@ -382,14 +381,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
     // test the properties
     TEST_EQUALITY(tri->getGlobalNumEntries()  , static_cast<size_t>(6*numImages-2));
-    TEST_EQUALITY(tri->getNodeNumEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
+    TEST_EQUALITY(tri->getLocalNumEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
     TEST_EQUALITY(tri->getGlobalNumRows()      , static_cast<size_t>(2*numImages));
-    TEST_EQUALITY(tri->getNodeNumRows()          , 2);
-    TEST_EQUALITY(tri->getNodeNumCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
+    TEST_EQUALITY(tri->getLocalNumRows()          , 2);
+    TEST_EQUALITY(tri->getLocalNumCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*tri), static_cast<GO> (2*numImages));
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*tri), static_cast<LO> (2) );
     TEST_EQUALITY(tri->getGlobalMaxNumRowEntries(), 3);
-    TEST_EQUALITY(tri->getNodeMaxNumRowEntries()    , 3);
+    TEST_EQUALITY(tri->getLocalMaxNumRowEntries()    , 3);
     TEST_EQUALITY(tri->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(tri->getRowMap()->isSameAs(*rowmap), true);
     TEST_EQUALITY_CONST(tri->getRangeMap()->isSameAs(*rngmap), true);
@@ -427,7 +426,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
 
     // test the constructors based on 4 maps + local matri_crsx
-    RCP<MAT> tri_crs_2 = rcp(new MAT(tri_crs->getLocalMatrix(), tri_crs->getRowMap(),
+    RCP<MAT> tri_crs_2 = rcp(new MAT(tri_crs->getLocalMatrixDevice(), tri_crs->getRowMap(),
                                      tri_crs->getColMap(), tri_crs->getDomainMap(), tri_crs->getRangeMap()));
     TEST_EQUALITY(tri_crs_2->isFillComplete(), true);
     auto exporter = tri_crs_2->getGraph()->getExporter();
@@ -528,14 +527,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // test the properties
     TEST_EQUALITY(A.getGlobalNumEntries()     , static_cast<size_t>(3*numImages-2));
-    TEST_EQUALITY(A.getNodeNumEntries()       , myNNZ);
+    TEST_EQUALITY(A.getLocalNumEntries()       , myNNZ);
     TEST_EQUALITY(A.getGlobalNumRows()       , static_cast<size_t>(numImages));
-    TEST_EQUALITY_CONST(A.getNodeNumRows()     , ONE);
-    TEST_EQUALITY(A.getNodeNumCols()           , myNNZ);
+    TEST_EQUALITY_CONST(A.getLocalNumRows()     , ONE);
+    TEST_EQUALITY(A.getLocalNumCols()           , myNNZ);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (A), static_cast<GO> (numImages));
     TEST_EQUALITY_CONST( Tpetra::Details::getLocalNumDiags (A), static_cast<LO> (ONE) );
     TEST_EQUALITY(A.getGlobalMaxNumRowEntries() , 3);
-    TEST_EQUALITY(A.getNodeMaxNumRowEntries()     , myNNZ);
+    TEST_EQUALITY(A.getLocalMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , 0);
     TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getColMap())   , false);
     TEST_EQUALITY_CONST(A.getRowMap()->isSameAs(*A.getDomainMap()), true);

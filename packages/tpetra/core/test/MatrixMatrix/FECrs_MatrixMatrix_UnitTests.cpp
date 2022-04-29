@@ -166,7 +166,7 @@ generate_crs_graph (const MeshInfo<4,LO,GO,NT>& mesh)
 {
   using CG = Tpetra::CrsGraph<LO,GO,NT>;
 
-  Teuchos::RCP<CG> g(new CG(mesh.uniqueMap,9,Tpetra::StaticProfile));
+  Teuchos::RCP<CG> g(new CG(mesh.uniqueMap,9));
   for (const auto& elem_dofs : mesh.element2node) {
     for (const GO gid_i : elem_dofs) {
       for (const GO gid_j : elem_dofs) {
@@ -186,7 +186,7 @@ generate_fecrs_graph (const MeshInfo<4,LO,GO,NT>& mesh)
   using FEG = Tpetra::FECrsGraph<LO,GO,NT>;
 
   Teuchos::RCP<FEG> feg(new FEG(mesh.uniqueMap,mesh.overlapMap,9,mesh.overlapMap));
-  feg->beginFill();
+  feg->beginAssembly();
   for (const auto& elem_dofs : mesh.element2node) {
     for (const GO gid_i : elem_dofs) {
       for (const GO gid_j : elem_dofs) {
@@ -194,7 +194,7 @@ generate_fecrs_graph (const MeshInfo<4,LO,GO,NT>& mesh)
       }
     }
   }
-  feg->endFill();
+  feg->endAssembly();
 
   return feg;
 }
@@ -205,13 +205,13 @@ generate_fecrs_graph (const MeshInfo<4,LO,GO,NT>& mesh)
 // Note that such matrix is strictly diagonally dominant.
 template<typename ST, typename LO, typename GO, typename NT>
 void
-fill_matrices (Tpetra::FECrsMatrix<ST,LO,GO,NT>& fe_mat,  
-               Tpetra::CrsMatrix<ST,LO,GO,NT>& mat,  
+fill_matrices (Tpetra::FECrsMatrix<ST,LO,GO,NT>& fe_mat,
+               Tpetra::CrsMatrix<ST,LO,GO,NT>& mat,
                const MeshInfo<4,LO,GO,NT>& mesh)
 {
   const ST zero = Teuchos::ScalarTraits<ST>::zero();
 
-  fe_mat.beginFill();
+  fe_mat.beginAssembly();
   mat.resumeFill();
 
   fe_mat.setAllToScalar(zero);
@@ -230,13 +230,13 @@ fill_matrices (Tpetra::FECrsMatrix<ST,LO,GO,NT>& fe_mat,
       }
     }
   }
-  fe_mat.endFill();
+  fe_mat.endAssembly();
   mat.fillComplete();
 }
 
 template<typename ST, typename LO, typename GO, typename NT>
 bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
-                       const Tpetra::CrsMatrix<ST,LO,GO,NT>& B, 
+                       const Tpetra::CrsMatrix<ST,LO,GO,NT>& B,
                        Teuchos::FancyOStream &out)
 {
   // They should have the same row/range/domain maps
@@ -257,27 +257,33 @@ bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
   // We do not care about the order in which entries appear, only the "mathematical" object.
   const auto& gA = *A.getGraph();
   const auto& gB = *B.getGraph();
-  const LO num_my_rows = gA.getNodeNumRows();
-  if (num_my_rows!=static_cast<LO>(gB.getNodeNumRows())) {
+  const LO num_my_rows = gA.getLocalNumRows();
+  if (num_my_rows!=static_cast<LO>(gB.getLocalNumRows())) {
     out << "Compare: number of local rows differ on some MPI rank: "
-        << num_my_rows << " vs " << gB.getNodeNumRows() << ".\n";
+        << num_my_rows << " vs " << gB.getLocalNumRows() << ".\n";
     return false;
   }
 
-  auto findLID = [](const Teuchos::ArrayView<const LO>& lids, const LO lid) -> int {
-    auto it = std::find(lids.begin(),lids.end(),lid);
-    if (it==lids.end()) {
+  typedef typename Tpetra::CrsMatrix<ST,LO,GO,NT> crs_matrix_type;
+  auto findLID = [](
+       const typename crs_matrix_type::local_inds_host_view_type& lids,
+       const LO lid) -> int {
+    auto it = std::find(lids.data(),lids.data()+lids.extent(0),lid);
+    if (it==lids.data()+lids.extent(0)) {
       return -1;
     } else {
-      return std::distance(lids.begin(),it);
+      return std::distance(lids.data(),it);
     }
   };
 
-  Teuchos::ArrayView<const ST> valsA, valsB;
-  Teuchos::ArrayView<const LO> colsA, colsB;
+  typename crs_matrix_type::values_host_view_type  valsA, valsB;
+  typename crs_matrix_type::local_inds_host_view_type colsA, colsB;
   const LO invLO = Teuchos::OrdinalTraits<LO>::invalid();
   const auto& colMapA = *gA.getColMap();
   const auto& colMapB = *gB.getColMap();
+
+  Kokkos::fence(); // must protect UVM access
+
   for (LO irow=0; irow<num_my_rows; ++irow) {
     const GO grow = gA.getRowMap()->getGlobalElement(irow);
 
@@ -293,7 +299,7 @@ bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
     }
 
     // Loop over rows entries
-    for (int j=0; j<numEntries; ++j) {
+    for (size_t j=0; j<numEntries; ++j) {
       const LO lidA = colsA[j];
       const GO gid = colMapA.getGlobalElement(lidA);
       const LO lidB = colMapB.getLocalElement(gid);
@@ -331,7 +337,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL (Tpetra_MatMat, FECrsMatrix, SC, LO, GO, NT)
 
   // get a comm
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-  
+
   // Generate a mesh
   const int numCells1D = 4;
   MeshInfo<4,LO,GO,NT> mesh;
@@ -356,15 +362,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL (Tpetra_MatMat, FECrsMatrix, SC, LO, GO, NT)
     for (bool transB : {false, true}) {
       Teuchos::RCP<Teuchos::ParameterList> params1(new Teuchos::ParameterList());
       Teuchos::RCP<Teuchos::ParameterList> params2(new Teuchos::ParameterList());
-      params2->set("MM_TAFC_OptimizationCoreCount",1);  
+      params2->set("MM_TAFC_OptimizationCoreCount",1);
       for (auto params : {params1, params2}) {
 
         // A and feA should have the same row map, so pick one.
         auto C_row_map = transA ? feA.getDomainMap() : feA.getRangeMap();
 
         // For the test, use a ridicolously large upper bound for the nnz per row
-        MAT feC(C_row_map,feA.getGraph()->getGlobalNumEntries(),Tpetra::StaticProfile);
-        MAT   C(C_row_map,  A.getGraph()->getGlobalNumEntries(),Tpetra::StaticProfile);
+        MAT feC(C_row_map,feA.getGraph()->getGlobalNumEntries());
+        MAT   C(C_row_map,  A.getGraph()->getGlobalNumEntries());
 
         Tpetra::MatrixMatrix::Multiply(feA, transA, feB, transB, feC, true, "", params);
         Tpetra::MatrixMatrix::Multiply(  A, transA,   B, transB,   C, true, "", params);
@@ -381,6 +387,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL (Tpetra_MatMat, FECrsMatrix, SC, LO, GO, NT)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
+// FIXME_SYCL
+#ifndef KOKKOS_ENABLE_SYCL
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP_SC_LO_GO_NO )
+#endif
 
 } // anonymous namespace

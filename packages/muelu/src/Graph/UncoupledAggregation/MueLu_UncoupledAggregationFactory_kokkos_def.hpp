@@ -105,7 +105,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
-    SET_VALID_ENTRY("aggregation: phase2a include root");
+    SET_VALID_ENTRY("aggregation: match ML phase2a");
     SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
@@ -191,7 +191,7 @@ namespace MueLu {
     const LO numRows = graph->GetNodeNumVertices();
 
     // construct aggStat information
-    Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space> aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"),
+    Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type> aggStat(Kokkos::ViewAllocateWithoutInitializing("aggregation status"),
                                                                            numRows);
     Kokkos::deep_copy(aggStat, READY);
 
@@ -204,7 +204,7 @@ namespace MueLu {
     // getLocalMap to have a Kokkos::View on the appropriate memory_space
     // instead of an ArrayRCP.
     {
-      typename LWGraph_kokkos::boundary_nodes_type dirichletBoundaryMap = graph->GetBoundaryNodeMap();
+      typename LWGraph_kokkos::boundary_nodes_type dirichletBoundaryMap = graph->getLocalLWGraph().GetBoundaryNodeMap();
       Kokkos::parallel_for("MueLu - UncoupledAggregation: tagging boundary nodes in aggStat",
                            Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numRows),
                            KOKKOS_LAMBDA(const local_ordinal_type nodeIdx) {
@@ -217,7 +217,7 @@ namespace MueLu {
     LO nDofsPerNode = Get<LO>(currentLevel, "DofsPerNode");
     GO indexBase = graph->GetDomainMap()->getIndexBase();
     if (OnePtMap != Teuchos::null) {
-      typename Kokkos::View<unsigned*,typename LWGraph_kokkos::memory_space>::HostMirror aggStatHost
+      typename Kokkos::View<unsigned*,typename LWGraph_kokkos::device_type>::HostMirror aggStatHost
         = Kokkos::create_mirror_view(aggStat);
       Kokkos::deep_copy(aggStatHost, aggStat);
 
@@ -296,8 +296,8 @@ namespace MueLu {
       }
 
       //Create device views for graph rowptrs/colinds
-      typename graph_t::row_map_type aRowptrs = graph->getRowPtrs();
-      typename graph_t::entries_type aColinds = graph->getEntries();
+      typename graph_t::row_map_type aRowptrs = graph->getLocalLWGraph().getRowPtrs();
+      typename graph_t::entries_type aColinds = graph->getLocalLWGraph().getEntries();
 
       //run d2 graph coloring
       //graph is symmetric so row map/entries and col map/entries are the same

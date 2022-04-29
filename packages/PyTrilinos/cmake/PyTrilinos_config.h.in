@@ -116,6 +116,9 @@
 /* Define if want to build with Tpetra enabled */
 #cmakedefine HAVE_PYTRILINOS_TPETRA
 
+/* Define if want to build with Tpetra long long support enabled */
+#cmakedefine HAVE_PYTRILINOS_TPETRA_INST_INT_LONG_LONG
+
 /* Define if want to build with TriUtils enabled */
 #cmakedefine HAVE_PYTRILINOS_TRIUTILS
 
@@ -123,7 +126,12 @@
 
 /* PyTrilinos ordinal types */
 
+#ifdef HAVE_PYTRILINOS_TPETRA_INST_INT_LONG_LONG
 #define PYTRILINOS_GLOBAL_ORD long long
+#else
+#define PYTRILINOS_GLOBAL_ORD int
+#endif
+
 #define PYTRILINOS_LOCAL_ORD  int
 
 /**********************************************************************/

@@ -119,15 +119,16 @@ public:
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     using Teuchos::ArrayRCP;
 
-    Teuchos::ArrayRCP<const size_t> rowptr;
-    Teuchos::ArrayRCP<const local_ordinal_type> colidx;
-    Teuchos::ArrayRCP<const scalar_type> val;
-    T_in.getAllValues(rowptr, colidx, val);
+    auto rowptr = T_in.getLocalRowPtrsHost();
+    auto colidx = T_in.getLocalIndicesHost();
+    auto val = T_in.getLocalValuesHost(Tpetra::Access::ReadOnly);
     Kokkos::fence();
 
     Teuchos::RCP<HtsCrsMatrix> T_hts = Teuchos::rcpWithDealloc(
       HTST::make_CrsMatrix(rowptr.size() - 1,
-                           rowptr.getRawPtr(), colidx.getRawPtr(), val.getRawPtr(),
+                           rowptr.data(), colidx.data(), 
+                           // For std/Kokkos::complex.
+                           reinterpret_cast<const scalar_type*>(val.data()),
                            transpose_, conjugate_),
       HtsCrsMatrixDeleter());
 
@@ -377,7 +378,7 @@ initialize ()
   using Tpetra::Details::determineLocalTriangularStructure;
   using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type>;
-  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+  using local_matrix_type = typename crs_matrix_type::local_matrix_device_type;
   using LO = local_ordinal_type;
 
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::initialize: ";
@@ -411,7 +412,7 @@ initialize ()
   // mfh 30 Apr 2018: See GitHub Issue #2658.
   constexpr bool ignoreMapsForTriStructure = true;
   auto lclTriStructure = [&] {
-    auto lclMatrix = A_crs_->getLocalMatrix ();
+    auto lclMatrix = A_crs_->getLocalMatrixDevice ();
     auto lclRowMap = A_crs_->getRowMap ()->getLocalMap ();
     auto lclColMap = A_crs_->getColMap ()->getLocalMap ();
     auto lclTriStruct =
@@ -419,7 +420,7 @@ initialize ()
                                          lclRowMap,
                                          lclColMap,
                                          ignoreMapsForTriStructure);
-    const LO lclNumRows = lclRowMap.getNodeNumElements ();
+    const LO lclNumRows = lclRowMap.getLocalNumElements ();
     this->diag_ = (lclTriStruct.diagCount < lclNumRows) ? "U" : "N";
     this->uplo_ = lclTriStruct.couldBeLowerTriangular ? "L" :
       (lclTriStruct.couldBeUpperTriangular ? "U" : "N");
@@ -429,7 +430,7 @@ initialize ()
   if (reverseStorage_ && lclTriStructure.couldBeUpperTriangular &&
       htsImpl_.is_null ()) {
     // Reverse the storage for an upper triangular matrix
-    auto Alocal = A_crs_->getLocalMatrix();
+    auto Alocal = A_crs_->getLocalMatrixDevice();
     auto ptr    = Alocal.graph.row_map;
     auto ind    = Alocal.graph.entries;
     auto val    = Alocal.values;
@@ -464,8 +465,8 @@ initialize ()
     {
       // Reverse row map
       auto rowMap = A_->getRowMap();
-      auto numElems = rowMap->getNodeNumElements();
-      auto rowElems = rowMap->getNodeElementList();
+      auto numElems = rowMap->getLocalNumElements();
+      auto rowElems = rowMap->getLocalElementList();
 
       Teuchos::Array<global_ordinal_type> newRowElems(rowElems.size());
       for (size_t i = 0; i < numElems; i++)
@@ -476,8 +477,8 @@ initialize ()
     {
       // Reverse column map
       auto colMap = A_->getColMap();
-      auto numElems = colMap->getNodeNumElements();
-      auto colElems = colMap->getNodeElementList();
+      auto numElems = colMap->getLocalNumElements();
+      auto colElems = colMap->getLocalElementList();
 
       Teuchos::Array<global_ordinal_type> newColElems(colElems.size());
       for (size_t i = 0; i < numElems; i++)
@@ -501,7 +502,7 @@ initialize ()
                                          newRowMap->getLocalMap (),
                                          newColMap->getLocalMap (),
                                          ignoreMapsForTriStructure);
-    const LO newLclNumRows = newRowMap->getNodeNumElements ();
+    const LO newLclNumRows = newRowMap->getLocalNumElements ();
     this->diag_ = (newLclTriStructure.diagCount < newLclNumRows) ? "U" : "N";
     this->uplo_ = newLclTriStructure.couldBeLowerTriangular ? "L" :
       (newLclTriStructure.couldBeUpperTriangular ? "U" : "N");
@@ -557,13 +558,14 @@ compute ()
      "been called by this point, but isInitialized_ is false.  "
      "Please report this bug to the Ifpack2 developers.");
 
+  if (! isComputed_) {//Only compute if not computed before
   if (Teuchos::nonnull (htsImpl_))
     htsImpl_->compute (*A_crs_, out_);
 
   if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_)
   {
     auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-    auto Alocal = A_crs->getLocalMatrix();
+    auto Alocal = A_crs->getLocalMatrixDevice();
     auto ptr    = Alocal.graph.row_map;
     auto ind    = Alocal.graph.entries;
     auto val    = Alocal.values;
@@ -589,6 +591,7 @@ compute ()
 
   isComputed_ = true;
   ++numCompute_;
+  }
 }
 
 template<class MatrixType>
@@ -713,7 +716,7 @@ localTriangularSolve (const MV& Y,
     (! X.isConstantStride () || ! Y.isConstantStride (), std::invalid_argument,
      "X and Y must be constant stride.");
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-    ( A_crs_->getNodeNumRows() > 0 && this->uplo_ == "N", std::runtime_error,
+    ( A_crs_->getLocalNumRows() > 0 && this->uplo_ == "N", std::runtime_error,
       "The matrix is neither upper triangular or lower triangular.  "
       "You may only call this method if the matrix is triangular.  "
       "Remember that this is a local (per MPI process) property, and that "
@@ -731,7 +734,7 @@ localTriangularSolve (const MV& Y,
   if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_ && trans == "N")
   {
     auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (this->A_);
-    auto A_lclk = A_crs->getLocalMatrix ();
+    auto A_lclk = A_crs->getLocalMatrixDevice ();
     auto ptr    = A_lclk.graph.row_map;
     auto ind    = A_lclk.graph.entries;
     auto val    = A_lclk.values;
@@ -753,7 +756,11 @@ localTriangularSolve (const MV& Y,
   else
   {
     const std::string diag = this->diag_;
-    auto A_lcl = this->A_crs_->getLocalMatrix ();
+    // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
+    // sequential, host-only code.  See
+    // https://github.com/kokkos/kokkos-kernels/issues/48. 
+
+    auto A_lcl = this->A_crs_->getLocalMatrixHost ();
 
     if (X.isConstantStride () && Y.isConstantStride ()) {
       auto X_lcl = X.getLocalViewHost (Tpetra::Access::ReadWrite);
@@ -882,15 +889,14 @@ description () const
     os << "Matrix: null";
   }
   else {
-    os << "Matrix: not null"
-       << ", Global matrix dimensions: ["
+    os << "Matrix dimensions: ["
        << A_->getGlobalNumRows () << ", "
-       << A_->getGlobalNumCols () << "]";
+       << A_->getGlobalNumCols () << "]"
+       << ", Number of nonzeros: " << A_->getGlobalNumEntries();
   }
 
   if (Teuchos::nonnull (htsImpl_))
     os << ", HTS computed: " << (htsImpl_->isComputed () ? "true" : "false");
-
   os << "}";
   return os.str ();
 }
@@ -972,10 +978,10 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     // Check in serial or one-process mode if the matrix is square.
     TEUCHOS_TEST_FOR_EXCEPTION
       (! A.is_null () && A->getComm ()->getSize () == 1 &&
-       A->getNodeNumRows () != A->getNodeNumCols (),
+       A->getLocalNumRows () != A->getLocalNumCols (),
        std::runtime_error, prefix << "If A's communicator only contains one "
        "process, then A must be square.  Instead, you provided a matrix A with "
-       << A->getNodeNumRows () << " rows and " << A->getNodeNumCols ()
+       << A->getLocalNumRows () << " rows and " << A->getLocalNumCols ()
        << " columns.");
 
     // It's legal for A to be null; in that case, you may not call

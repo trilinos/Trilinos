@@ -38,23 +38,23 @@
 # @HEADER
 
 #
-# @MACRO: ADD_SUBDIRECTORIES()
+# @MACRO: add_subdirectories()
 #
 # Macro that adds a list of subdirectories all at once (removes boiler-plate
 # code).
 #
 # Usage::
 #
-#   ADD_SUBDIRECTORIES(<dir1> <dir2> ...)
+#   add_subdirectories(<dir1> <dir2> ...)
 #
 # instead of::
 #
-#   ADD_SUBDIRECTORY(<dir1>)
-#   ADD_SUBDIRECTORY(<dir2>)
+#   add_subdirectory(<dir1>)
+#   add_subdirectory(<dir2>)
 #   ...
 #
-MACRO(ADD_SUBDIRECTORIES)
-  FOREACH(DIR ${ARGV})
-    ADD_SUBDIRECTORY(${DIR})
-  ENDFOREACH()
-ENDMACRO()
+macro(add_subdirectories)
+  foreach(DIR ${ARGV})
+    add_subdirectory(${DIR})
+  endforeach()
+endmacro()

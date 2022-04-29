@@ -1,5 +1,5 @@
 """
-exodus.py v 1.20.2 (seacas-beta) is a python wrapper of some of the exodus library
+exodus.py v 1.20.10 (seacas-py3) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -70,10 +70,10 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.20.2 (seacas-py3)"
+EXODUS_PY_VERSION = "1.20.10 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.20.2 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.20.10 (seacas-py3), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -83,10 +83,11 @@ rights in this software.
 
 EXODUS_PY_CONTACTS = """
 Authors:
+  Greg Sjaardema   (gdsjaar@sandia.gov)
+  Mario LoPrinzi   (mvlopri@sandia.gov)
   Timothy Shelton  (trshelt@sandia.gov)
   Michael Veilleux (mgveill@sandia.gov)
   David Littlewood (djlittl@sandia.gov)
-  Greg Sjaardema   (gdsjaar@sandia.gov)
 """
 
 # show the banner on first use
@@ -104,9 +105,7 @@ def basename(file_name):
     Extract base name from file_name.
     `basename("test.e") -> "test"`
     """
-    fileParts = file_name.split(".")
-    base_name = ".".join(fileParts[:-1])
-    return base_name
+    return os.path.splitext(file_name)[0]
 
 
 def getExodusVersion():
@@ -116,18 +115,19 @@ def getExodusVersion():
     """
     version_major = -1
     version_minor = -1
-    for line in open(ACCESS + "/include/exodusII.h"):
-        fields = line.split()
-        if (len(fields) == 3 and
-                fields[0] == '#define' and
-                fields[1] == 'EXODUS_VERSION_MAJOR'):
-            version_major = int(fields[2])
-        if (len(fields) == 3 and
-                fields[0] == '#define' and
-                fields[1] == 'EXODUS_VERSION_MINOR'):
-            version_minor = int(fields[2])
-        if (version_major > 0 and version_minor >= 0):
-           return 100 * version_major + version_minor
+    with open(ACCESS + "/@SEACAS_INCLUDEDIR@/exodusII.h") as header_file:
+        for line in header_file:
+            fields = line.split()
+            if (len(fields) == 3 and
+                    fields[0] == '#define' and
+                    fields[1] == 'EXODUS_VERSION_MAJOR'):
+                version_major = int(fields[2])
+            if (len(fields) == 3 and
+                    fields[0] == '#define' and
+                    fields[1] == 'EXODUS_VERSION_MINOR'):
+                version_minor = int(fields[2])
+            if (version_major > 0 and version_minor >= 0):
+               return 100 * version_major + version_minor
     return 0
 
 
@@ -161,9 +161,9 @@ class ex_options(Enum):
 
 ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
 if os.uname()[0] == 'Darwin':
-    EXODUS_SO = ACCESS + "/lib/libexodus.dylib"
+    EXODUS_SO = ACCESS + "/@SEACAS_LIBDIR@/libexodus.dylib"
 else:
-    EXODUS_SO = ACCESS + "/lib/libexodus.so"
+    EXODUS_SO = ACCESS + "/@SEACAS_LIBDIR@/libexodus.so"
 EXODUS_LIB = ctypes.cdll.LoadLibrary(EXODUS_SO)
 
 MAX_STR_LENGTH = 32      # match exodus default
@@ -427,8 +427,10 @@ def get_entity_type(varType):
     """
     Map the exodus ex_entity_type flags to an integer value.
     """
-    return ex_entity_type[varType].value
-
+    try:
+        return ex_entity_type[varType].value
+    except KeyError:
+        return varType.value
 
 # init params struct
 class ex_init_params(ctypes.Structure):
@@ -501,6 +503,10 @@ class assembly:
     def __init__(self, name, id, type):
         self.name = name
         self.id = id
+        if isinstance(type, str):
+            type = ex_entity_type[type].value
+        if isinstance(type, ex_entity_type):
+            type = type.value
         self.type = type
         self.entity_list = []
 
@@ -524,6 +530,12 @@ class ex_assembly(ctypes.Structure):
                 ("type", ctypes.c_int),
                 ("entity_count", ctypes.c_int),
                 ("entity_list", ctypes.POINTER(ctypes.c_longlong))]
+
+def setup_ex_assembly(assembly):
+    ctype_assem = ex_assembly(id=assembly.id, name=assembly.name.encode(), type=assembly.type)
+    ctype_assem.entity_count = len(assembly.entity_list)
+    ctype_assem.entity_list = (ctypes.c_longlong * ctype_assem.entity_count)(*assembly.entity_list)
+    return ctype_assem
 
 class blob(object):
     def __init__(self, name, id, num_entry):
@@ -782,7 +794,7 @@ class exodus:
         """
         put initialization information into exodus file
 
-        >>> e.put_info_ext(self,info_struct)
+        >>> e.put_info_ext(info_struct)
         """
         if len(p.title) > MAX_LINE_LENGTH:
             print("WARNING: Exodus title \"{}\" exceeds maximum line length ({}). It will be truncated."
@@ -872,7 +884,7 @@ class exodus:
         """
         Initialize static metadata for the database.
 
-        >>> status = exo.put_info(self, title, num_dims, num_nodes, num_elems,
+        >>> status = exo.put_info(title, num_dims, num_nodes, num_elems,
         ...                      num_blocks, num_ns, num_ss)
 
         Parameters
@@ -1749,9 +1761,9 @@ class exodus:
 
     def put_name(self, object_type, object_id, name):
         """
-        get the name of the specified entity_type and entity
+        put the name of the specified entity_type and entity
 
-        >>> exo.put_name('EX_ELEM_BLOCK', elem_blk_id)
+        >>> exo.put_name('EX_ELEM_BLOCK', elem_blk_id, block_name)
 
         Parameters
         ----------
@@ -1831,7 +1843,7 @@ class exodus:
         -------
 
             if array_type == 'ctype':
-              <list<c_double>>  evar_vals
+              <list<ctypes.c_double>>  evar_vals
 
             if array_type == 'numpy':
               <np_array<double>>  evar_vals
@@ -1979,6 +1991,22 @@ class exodus:
         if self.__ex_get_reduction_variable_param(objType).value == 0:
             return []
         return self.__ex_get_reduction_variable_names(objType)
+
+    # --------------------------------------------------------------------
+
+    def get_reduction_variable_name(self, objType, varId):
+        """
+        get a single reduction variable name in the model for the specified object type and index.
+
+        >>> nar_name = exo.get_reduction_variable_name('EX_ASSEMBL"Y', 100)
+
+        Returns
+        -------
+              string  nvar_name
+        """
+        if self.__ex_get_reduction_variable_param(objType).value == 0:
+            return ""
+        return self.__ex_get_reduction_variable_name(objType, varId)
 
     # --------------------------------------------------------------------
 
@@ -2131,8 +2159,95 @@ class exodus:
         return True
 
     # --------------------------------------------------------------------
+    def get_variable_values(self, objType, entityId, name, step):
+        """
+        get list of `objType` variable values for a specified object id
+        block, variable name, and time step
+
+        >>> evar_vals = exo.get_variable_values('EX_ELEM_BLOCK', elem_blk_id,
+        ...                                            evar_name, time_step)
+
+        Parameters
+        ----------
+        objType   : ex_entity_type
+            type of object being queried
+        entityId : int
+            id of the entity (block, set) *ID* (not *INDEX*)
+        name : string
+            name of variable
+        time_step : int
+            1-based index of time step
+
+        Returns
+        -------
+
+            if array_type == 'ctype':
+              <list<ctypes.c_double>>  evar_vals
+
+            if array_type == 'numpy':
+              <np_array<double>>  evar_vals
+        """
+        names = self.get_variable_names(objType)
+        var_id = names.index(name) + 1
+        numVals = 0
+        if objType == 'EX_NODAL':
+            numVals = self.num_nodes()
+        elif objType == 'EX_ELEM_BLOCK':
+            numVals = self.num_elems_in_blk(entityId)
+        elif objType == 'EX_NODE_SET':
+            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
+        elif objType == 'EX_EDGE_SET':
+            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
+        elif objType == 'EX_FACE_SET':
+            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
+        elif objType == 'EX_SIDE_SET':
+            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
+
+        values = self.__ex_get_var(step, objType, var_id, entityId, numVals)
+        if self.use_numpy:
+            values = ctype_to_numpy(self, values)
+        return values
 
 
+    # --------------------------------------------------------------------
+    def put_variable_values(self, objType, entityId, name, step, values):
+        """
+        store a list of element variable values for a specified element
+        block, element variable name, and time step
+
+        >>> status = exo.put_variable_values('EX_ELEM_BLOCK', elem_blk_id,
+        ...             evar_name, time_step, evar_vals)
+
+        Parameters
+        ----------
+        entityId : int  entity *ID* (not *INDEX*)
+            <string>    name    name of variable
+            <int>          time_step    1-based index of time step
+            <list<float>>  values the variable values to be output
+
+        Returns
+        -------
+        status : bool
+            True = successful execution
+        """
+        names = self.get_variable_names(objType)
+        var_id = names.index(name) + 1
+        numVals = 0
+        if objType == 'EX_NODAL':
+            numVals = self.num_nodes()
+        elif objType == 'EX_ELEM_BLOCK':
+            numVals = self.num_elems_in_blk(entityId)
+        elif objType == 'EX_NODE_SET':
+            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
+        elif objType == 'EX_EDGE_SET':
+            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
+        elif objType == 'EX_FACE_SET':
+            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
+        elif objType == 'EX_SIDE_SET':
+            (numVals, _numDistFactInSet) = self.__ex_get_set_param(objType, entityId)
+
+        self.__ex_put_var(step, objType, var_id, entityId, numVals, values)
+        return True
 
     # Attributes (meta-data attributes; not the per-element bulk-data kind)
     # --------------------------------------------------------------------
@@ -2200,24 +2315,41 @@ class exodus:
 
     def get_assembly(self, object_id):
         """
-        reads the assembly parameters and assembly data for one assembly
-        \param   exoid                   exodus file id
-        \param  *assembly                ex_assembly structure
+        reads the assembly parameters and assembly data for one assembly 
         """
         assem = ex_assembly(id=object_id)
         self.__ex_get_assembly(assem)
-        assmbly = assembly(assem.name.decode('utf8'), assem.id, ex_entity_type_to_objType(assem.type))
+        assmbly = assembly(assem.name.decode('utf8'), assem.id, assem.type)
         for j in range(assem.entity_count):
             assmbly.entity_list.append(assem.entity_list[j])
         return assmbly
 
+    def get_assemblies(self, object_ids):
+        """
+        reads the assembly parameters and assembly data for all assemblies 
+        with ids in object_ids
+        """
+        assemblies = [ex_assembly(id=object_id) for object_id in object_ids]
+        assems = (ex_assembly * len(assemblies))(*assemblies)
+        self.__ex_get_assemblies(assems)
+        assembs = [assembly(assem.name.decode('utf8'), assem.id, assem.type) for assem in
+                   assems]
+        for i, a in enumerate(assems):
+            for j in range(a.entity_count):
+                assembs[i].entity_list.append(a.entity_list[j])
+        return assembs
+
     def put_assembly(self, assembly):
         """
-        reads the assembly parameters and assembly data for one assembly
-        \param   exoid                   exodus file id
-        \param  *assembly                ex_assembly structure
+        writes the assembly parameters and assembly data for one assembly
         """
         self.__ex_put_assembly(assembly)
+
+    def put_assemblies(self, assemblies):
+        """
+        writes the assembly parameters and assembly data for multiple assemblies
+        """
+        self.__ex_put_assemblies(assemblies)
 
 
     # Blobs...
@@ -2238,8 +2370,6 @@ class exodus:
     def get_blob(self, object_id):
         """
         reads the blob parameters and blob data for one blob
-        \param   exoid                   exodus file id
-        \param  *blob                    ex_blob structure
         """
         assem = ex_blob(id=object_id)
         self.__ex_get_blob(assem)
@@ -2739,12 +2869,7 @@ class exodus:
             if array_type == 'numpy':
               <np_array<double>>  evar_vals
         """
-        names = self.get_variable_names('EX_ELEM_BLOCK')
-        var_id = names.index(name) + 1
-        numVals = self.num_elems_in_blk(blockId)
-        values = self.__ex_get_var(step, 'EX_ELEM_BLOCK', var_id, blockId, numVals)
-        if self.use_numpy:
-            values = ctype_to_numpy(self, values)
+        values = self.get_variable_values('EX_ELEM_BLOCK', blockId, name, step)
         return values
 
     # --------------------------------------------------------------------
@@ -2809,10 +2934,7 @@ class exodus:
         status : bool
             True = successful execution
         """
-        names = self.get_variable_names('EX_ELEM_BLOCK')
-        var_id = names.index(name) + 1
-        numVals = self.num_elems_in_blk(blockId)
-        self.__ex_put_var(step, 'EX_ELEM_BLOCK', var_id, blockId, numVals, values)
+        self.put_variable_values('EX_ELEM_BLOCK', blockId, name, step, values)
         return True
 
     # --------------------------------------------------------------------
@@ -3363,14 +3485,7 @@ class exodus:
             if array_type == 'numpy':
               <np_array<double>>  nsvar_vals
         """
-        names = self.get_variable_names('EX_NODE_SET')
-        var_id = names.index(name) + 1
-
-        (numNodeInSet, _numDistFactInSet) = self.__ex_get_set_param('EX_NODE_SET', object_id)
-
-        values = self.__ex_get_var(step, 'EX_NODE_SET', var_id, object_id, numNodeInSet)
-        if self.use_numpy:
-            values = ctype_to_numpy(self, values)
+        values = self.get_variable_values('EX_NODE_SET', object_id, name, step)
         return values
 
     # --------------------------------------------------------------------
@@ -3433,10 +3548,7 @@ class exodus:
         status : bool
             True = successful execution
         """
-        names = self.get_variable_names('EX_NODE_SET')
-        var_id = names.index(name) + 1
-        (numSetNodes, _numSetDistFacts) = self.get_set_params('EX_NODE_SET', object_id)
-        self.__ex_put_var(step, 'EX_NODE_SET', var_id, object_id, numSetNodes, values)
+        self.put_variable_values('EX_NODE_SET', object_id, name, step, values)
         return True
 
     # --------------------------------------------------------------------
@@ -4074,14 +4186,7 @@ class exodus:
             if array_type == 'numpy':
               <np_array<double>>  ssvar_vals
         """
-        names = self.get_variable_names('EX_SIDE_SET')
-        var_id = names.index(name) + 1
-
-        (numSideInSet, _numDistFactInSet) = self.__ex_get_set_param('EX_SIDE_SET', object_id)
-
-        values = self.__ex_get_var(step, 'EX_SIDE_SET', var_id, object_id, numSideInSet)
-        if self.use_numpy:
-            values = ctype_to_numpy(self, values)
+        values = self.get_variable_values('EX_SIDE_SET', object_id, name, step)
         return values
 
     # --------------------------------------------------------------------
@@ -4142,10 +4247,7 @@ class exodus:
         status : bool
             True = successful execution
         """
-        names = self.get_variable_names('EX_SIDE_SET')
-        var_id = names.index(name) + 1
-        (numSetSides, _numSetDistFacts) = self.get_set_params('EX_SIDE_SET', object_id)
-        self.__ex_put_var(step, 'EX_SIDE_SET', var_id, object_id, numSetSides, values)
+        self.put_variable_values('EX_SIDE_SET', object_id, name, step, values)
         return True
 
     # --------------------------------------------------------------------
@@ -4999,11 +5101,11 @@ class exodus:
         num_objs = ctypes.c_int(self.__ex_inquire_int(inqType)).value
         obj_name_ptrs = (ctypes.POINTER(ctypes.c_char * (MAX_NAME_LENGTH + 1)) * num_objs)()
         for i in range(num_objs):
+            obj_type = ctypes.c_int(get_entity_type(objType))
             obj_name_ptrs[i] = ctypes.pointer(
-                ctypes.create_string_buffer(
-                    MAX_NAME_LENGTH + 1))
+                    ctypes.create_string_buffer(
+                            MAX_NAME_LENGTH + 1))
 
-        obj_type = ctypes.c_int(get_entity_type(objType))
         EXODUS_LIB.ex_get_names(self.fileId, obj_type, ctypes.byref(obj_name_ptrs))
         obj_names = []
         for onp in obj_name_ptrs:
@@ -5048,6 +5150,16 @@ class exodus:
         assem_struct.entity_list = eptr
         EXODUS_LIB.ex_get_assembly(self.fileId, ctypes.byref(assem_struct))
 
+    # --------------------------------------------------------------------
+
+    def __ex_get_assemblies(self, assem_list):
+        EXODUS_LIB.ex_get_assemblies(self.fileId, assem_list)
+        for assem_struct in assem_list:
+            ptr = ctypes.create_string_buffer(MAX_NAME_LENGTH + 1)
+            assem_struct.name = ctypes.cast(ptr, ctypes.c_char_p)
+            eptr = (ctypes.c_longlong * assem_struct.entity_count)()
+            assem_struct.entity_list = eptr
+        EXODUS_LIB.ex_get_assemblies(self.fileId, assem_list)
 
     # --------------------------------------------------------------------
 
@@ -5061,18 +5173,20 @@ class exodus:
     # --------------------------------------------------------------------
 
     def __ex_put_assembly(self, assembly):
-        obj_id = ctypes.c_longlong(assembly.id)
-        assem = ex_assembly(id=obj_id)
-        ptr = ctypes.create_string_buffer(assembly.name.encode('ascii'), MAX_NAME_LENGTH+1)
-        assem.name = ctypes.cast(ptr, ctypes.c_char_p)
-        assem.type = ctypes.c_int(get_entity_type(assembly.type))
-        eptr = (ctypes.c_longlong * len(assembly.entity_list))()
-        for i in range(len(assembly.entity_list)):
-            eptr[i] = ctypes.c_longlong(assembly.entity_list[i])
-
-        assem.entity_list = eptr
-        assem.entity_count = len(assembly.entity_list)
+        assem = setup_ex_assembly(assembly)
         EXODUS_LIB.ex_put_assembly(self.fileId, assem)
+
+    # --------------------------------------------------------------------
+
+    def __ex_put_assemblies(self, assemblies):
+        assembly_list = []
+        for assembly in assemblies:
+            assem = setup_ex_assembly(assembly)
+            assembly_list.append(assem)
+        assems = (ex_assembly * len(assemblies))(*assembly_list)
+
+        EXODUS_LIB.ex_put_assemblies(self.fileId, len(assembly_list), assems)
+
 
     # --------------------------------------------------------------------
 
@@ -5109,35 +5223,35 @@ class exodus:
 
                 attributes[att[i].name.decode('utf8')] = tmp_att
 
-        return attributes;
+        return attributes
 
     # --------------------------------------------------------------------
 
     def __ex_put_attribute(self, attribute):
-        att_id = c_longlong(attribute.entity_id)
+        att_id = ctypes.c_longlong(attribute.entity_id)
         att = ex_attribute(entity_id=att_id)
         att.name = attribute.name.encode('ascii')
-        att.entity_type = c_int(get_entity_type(attribute.entity_type))
+        att.entity_type = ctypes.c_int(get_entity_type(attribute.entity_type))
         att.value_count = len(attribute.values)
 
         if (isinstance(attribute.values[0], int)):
             eptr = (c_int * len(attribute.values))()
             for i in range(len(attribute.values)):
-               eptr[i] = c_int(attribute.values[i])
-            att.values = ctypes.cast(eptr, c_void_p)
+               eptr[i] = ctypes.c_int(attribute.values[i])
+            att.values = ctypes.cast(eptr, ctypes.c_void_p)
             att.type = 4
 
         elif (isinstance(attribute.values[0], float)):
             eptr = (c_double * len(attribute.values))()
             for i in range(len(attribute.values)):
-              eptr[i] = c_double(attribute.values[i])
-            att.values = ctypes.cast(eptr, c_void_p)
+              eptr[i] = ctypes.c_double(attribute.values[i])
+            att.values = ctypes.cast(eptr, ctypes.c_void_p)
             att.type = 6
 
         elif (isinstance(attribute.values[0], str)):
             eptr = (c_char * (len(attribute.values)+1))()
             eptr = attribute.values[0].encode('ascii')
-            att.values = ctypes.cast(eptr, c_void_p)
+            att.values = ctypes.cast(eptr, ctypes.c_void_p)
             att.type = 2
 
         EXODUS_LIB.ex_put_attribute(self.fileId, att)
@@ -5588,7 +5702,7 @@ class exodus:
             var_type,
             var_id,
             block_id,
-            start_index, 
+            start_index,
             num_values,
             var_vals)
         return var_vals
@@ -5645,11 +5759,11 @@ class exodus:
     # --------------------------------------------------------------------
 
     def __ex_get_reduction_variable_name(self, varType, varId):
-        var_type = ctypes.c_int(varType)
+        var_type = ctypes.c_int(get_entity_type(varType))
         var_id = ctypes.c_int(varId)
         name = ctypes.create_string_buffer(MAX_NAME_LENGTH + 1)
         EXODUS_LIB.ex_get_reduction_variable_name(self.fileId, var_type, var_id, name)
-        return name.decode('utf8')
+        return name.value.decode("utf8")
 
     # --------------------------------------------------------------------
 
@@ -6463,8 +6577,7 @@ def internal_transfer_variables(exoFrom, exo_to, obj_type, additionalVariables, 
     if nVars > 0:
         exo_to.set_variable_number(obj_type, nVars)
         origVarNames = exoFrom.get_variable_names(obj_type)
-        eVarNames = exoFrom.get_variable_names(obj_type)
-        eVarNames.extend(newVariableNames)
+        origVarNames.extend(newVariableNames)
         truthTable = []
         if nOrigVars > 0:
             truthTable = exoFrom.get_variable_truth_table(obj_type)
@@ -6483,17 +6596,17 @@ def internal_transfer_variables(exoFrom, exo_to, obj_type, additionalVariables, 
             truthTable = newTruth
         exo_to.set_variable_truth_table(obj_type, truthTable)
         for nameIndex in range(nVars):
-            VarName = eVarNames[nameIndex]
-            exo_to.put_variable_name(obj_type, VarName, nameIndex + 1)
+            varName = origVarNames[nameIndex]
+            exo_to.put_variable_name(obj_type, varName, nameIndex + 1)
         truthIndex = 0
         for blkId in blkIds:
-            for eVarName in origVarNames:
+            for origVarName in origVarNames:
                 if truthTable[truthIndex]:
                     for step in range(nSteps):
                         eValues = exoFrom.get_variable_values(obj_type, blkId,
-                                                              eVarName, step + 1)
+                                                              origVarName, step + 1)
                         exo_to.put_variable_values(obj_type, blkId,
-                                                   eVarName, step + 1, eValues)
+                                                   origVarName, step + 1, eValues)
                 truthIndex = truthIndex + 1
             truthIndex = truthIndex + nNewVars
 

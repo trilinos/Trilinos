@@ -15,7 +15,6 @@
 #include <Ioss_Field.h>
 #include <Ioss_Map.h>
 #include <Ioss_Utils.h>
-#include <Iovs_Utils.h>
 
 #include <algorithm>
 #include <ctime>
@@ -28,6 +27,7 @@
 /** \brief A namespace for the visualization database format.
  */
 namespace Iovs_exodus {
+  class CatalystExodusMeshBase;
 
   typedef std::set<std::pair<int64_t, int64_t>> EntityIdSet;
 
@@ -35,7 +35,7 @@ namespace Iovs_exodus {
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
 
     ~DatabaseIO() override;
 

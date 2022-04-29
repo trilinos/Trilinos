@@ -119,14 +119,15 @@ namespace panzer
 
     // Create the fields that we're either contributing to or evaluating
     // (storing).
-    fields_ = PHX::View<PHX::MDField<ScalarT, Cell, BASIS>*>("Integrator_GradBasisTimesScalar",resNames.size());
+    fields_host_.resize(resNames.size());
+    fields_ = OuterView("Integrator_GradBasisCrossVector::fields_", resNames.size());
     {
       int i=0;
       for (const auto& name : resNames)
-        fields_(i++) = MDField<ScalarT, Cell, BASIS>(name, basis.functional);
+        fields_host_[i++] = PHX::MDField<ScalarT,Cell,BASIS>(name,basis.functional);
     }
     for (std::size_t i=0; i<fields_.extent(0); ++i) {
-      const auto& field = fields_(i);
+      const auto& field = fields_host_[i];
       if (evalStyle_ == EvaluatorStyle::CONTRIBUTES)
         this->addContributedField(field);
       else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
@@ -136,7 +137,7 @@ namespace panzer
     // Add the dependent field multipliers, if there are any.
     int i = 0;
     fieldMults_.resize(fmNames.size());
-    kokkosFieldMults_ = View<View<const ScalarT**>*>(
+    kokkosFieldMults_ = PHX::View<PHX::UnmanagedView<const ScalarT**>*>(
       "GradBasisTimesScalar::KokkosFieldMultipliers", fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -151,9 +152,9 @@ namespace panzer
     else // if (evalStyle_ == EvaluatorStyle::EVALUATES)
       n += "EVALUATES";
     n += "):  {";
-    for (size_t j=0; j < fields_.extent(0) - 1; ++j)
-      n += fields_[j].fieldTag().name() + ", ";
-    n += fields_(fields_.extent(0)-1).fieldTag().name() + "}";
+    for (size_t j=0; j < fields_host_.size() - 1; ++j)
+      n += resNames[j] + ", ";
+    n += resNames[resNames.size()-1] + "}";
     this->setName(n);
   } // end of Constructor
 
@@ -202,9 +203,17 @@ namespace panzer
     using Kokkos::createDynRankView;
     using panzer::getBasisIndex;
 
+    // Get the PHX::Views of the fields.
+    auto fields_host_mirror = Kokkos::create_mirror_view(fields_);
+    for (size_t i(0); i < fields_host_.size(); ++i)
+      fields_host_mirror(i) = fields_host_[i].get_static_view();
+    Kokkos::deep_copy(fields_,fields_host_mirror);
+
     // Get the PHX::Views of the field multipliers.
+    auto field_mults_host_mirror = Kokkos::create_mirror_view(kokkosFieldMults_);
     for (size_t i(0); i < fieldMults_.size(); ++i)
-      kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
+      field_mults_host_mirror(i) = fieldMults_[i].get_static_view();
+    Kokkos::deep_copy(kokkosFieldMults_,field_mults_host_mirror);
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);

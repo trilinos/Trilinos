@@ -1,11 +1,11 @@
-TRIBITS_PACKAGE( MixedLang  ENABLE_SHADOWING_WARNINGS  CLEANED )
+tribits_package( MixedLang  ENABLE_SHADOWING_WARNINGS  CLEANED )
 
-TRIBITS_ADD_DEBUG_OPTION()
+tribits_add_debug_option()
 
-TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+tribits_add_show_deprecated_warnings_option()
 
-ADD_SUBDIRECTORY(src)
+add_subdirectory(src)
 
-TRIBITS_ADD_TEST_DIRECTORIES(test)
+tribits_add_test_directories(test)
 
-TRIBITS_PACKAGE_POSTPROCESS()
+tribits_package_postprocess()

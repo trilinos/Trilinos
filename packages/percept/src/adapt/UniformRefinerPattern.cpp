@@ -865,6 +865,9 @@
       if (eMesh.get_spatial_dim() == 2)
         return;
 
+      if (eMesh.getProperty("Refiner_skip_side_part_fixes") == "true")
+        return;
+
       std::vector<const stk::mesh::Part*> surfaces = eMesh.get_fem_meta_data()->get_surfaces_in_surface_to_block_map();
       for (unsigned isu = 0; isu < surfaces.size(); ++isu)
         {

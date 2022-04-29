@@ -832,7 +832,7 @@ mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_double>& data)
   }
 
   size_t maxEntriesPerRow = data->getGlobalMaxNumRowEntries();
-  if(maxEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid() || maxEntriesPerRow == 0) maxEntriesPerRow = data->getNodeMaxNumRowEntries();
+  if(maxEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid() || maxEntriesPerRow == 0) maxEntriesPerRow = data->getLocalMaxNumRowEntries();
 
   int* rowProgress = new int[nc];
   //The array that will be copied to Pr and (if complex) Pi later

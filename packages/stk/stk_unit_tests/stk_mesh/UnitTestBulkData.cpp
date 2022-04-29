@@ -2070,8 +2070,6 @@ typedef stk::mesh::Field<int> PressureFieldType;
 static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_field, bool sync_shared, bool sync_aura)
 {
     unsigned p_rank = eMesh.parallel_rank();
-    unsigned p_size = eMesh.parallel_size();
-    static_cast<void>(p_size);
 
     const stk::mesh::BucketVector & buckets = eMesh.buckets(stk::topology::NODE_RANK);
 
@@ -5969,7 +5967,7 @@ TEST(BulkData, makeElementWithConflictingTopologies)
 
   mesh.modification_begin();
 
-  EXPECT_THROW(stk::mesh::declare_element(mesh, parts, element_ids[0], elem_node_ids[0]), std::runtime_error);
+  EXPECT_THROW(stk::mesh::declare_element(mesh, parts, element_ids[0], elem_node_ids[0]), std::logic_error);
 
   mesh.modification_end();
 }

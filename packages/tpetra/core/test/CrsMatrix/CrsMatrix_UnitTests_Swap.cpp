@@ -410,7 +410,7 @@ class crsMatrix_Swap_Tester
             }
         }
 
-        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row (), Tpetra::StaticProfile));
+        RCP<graph_type> output_graph(new graph_type(row_map, num_ent_per_row ()));
 
         for(auto& r: gbl_rows)
         {
@@ -698,14 +698,17 @@ class crsMatrix_Swap_Tester
             output = false;
         }
 
-        auto rowptr1 = matrix1.getLocalMatrix().graph.row_map;
-        auto rowptr2 = matrix2.getLocalMatrix().graph.row_map;
+        auto lclmtx1 = matrix1.getLocalMatrixHost();
+        auto lclmtx2 = matrix2.getLocalMatrixHost();
 
-        auto colind1 = matrix1.getLocalMatrix().graph.entries;
-        auto colind2 = matrix2.getLocalMatrix().graph.entries;
+        auto rowptr1 = lclmtx1.graph.row_map;
+        auto rowptr2 = lclmtx2.graph.row_map;
 
-        auto rbo1 = matrix1.getLocalMatrix().graph.row_block_offsets;
-        auto rbo2 = matrix2.getLocalMatrix().graph.row_block_offsets;
+        auto colind1 = lclmtx1.graph.entries;
+        auto colind2 = lclmtx2.graph.entries;
+
+        auto rbo1 = lclmtx1.graph.row_block_offsets;
+        auto rbo2 = lclmtx2.graph.row_block_offsets;
 
         if(rowptr1.extent(0) != rowptr2.extent(0))
         {
@@ -796,15 +799,15 @@ std::string filedir;
 #define STD_TESTS(graph)                                                                                        \
     {                                                                                                           \
         auto   STCOMM   = graph.getComm();                                                                      \
-        auto   STMYGIDS = graph.getRowMap()->getNodeElementList();                                              \
+        auto   STMYGIDS = graph.getRowMap()->getLocalElementList();                                              \
         size_t STMAX    = 0;                                                                                    \
                                                                                                                 \
-        for(size_t STR = 0; STR < graph.getNodeNumRows(); ++STR)                                                \
+        for(size_t STR = 0; STR < graph.getLocalNumRows(); ++STR)                                                \
         {                                                                                                       \
             TEST_EQUALITY(graph.getNumEntriesInLocalRow(STR), graph.getNumEntriesInGlobalRow(STMYGIDS[ STR ])); \
             STMAX = std::max(STMAX, graph.getNumEntriesInLocalRow(STR));                                        \
         }                                                                                                       \
-        TEST_EQUALITY(graph.getNodeMaxNumRowEntries(), STMAX);                                                  \
+        TEST_EQUALITY(graph.getLocalMaxNumRowEntries(), STMAX);                                                  \
         GST STGMAX;                                                                                             \
         Teuchos::reduceAll<int, GST>(*STCOMM, Teuchos::REDUCE_MAX, STMAX, Teuchos::outArg(STGMAX));             \
         TEST_EQUALITY(graph.getGlobalMaxNumRowEntries(), STGMAX);                                               \

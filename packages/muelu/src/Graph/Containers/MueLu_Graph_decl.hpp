@@ -84,8 +84,8 @@ namespace MueLu {
     virtual ~Graph() {}
     //@}
 
-    size_t GetNodeNumVertices() const                                        { return graph_->getNodeNumRows(); }
-    size_t GetNodeNumEdges()    const                                        { return graph_->getNodeNumEntries(); }
+    size_t GetNodeNumVertices() const                                        { return graph_->getLocalNumRows(); }
+    size_t GetNodeNumEdges()    const                                        { return graph_->getLocalNumEntries(); }
 
     Xpetra::global_size_t GetGlobalNumEdges() const                          { return graph_->getGlobalNumEntries(); }
 
@@ -94,6 +94,8 @@ namespace MueLu {
     //! Returns overlapping import map (nodes).
     const RCP<const Map> GetImportMap() const                                { return graph_->getColMap();    }
 
+    const RCP<const CrsGraph> GetGraph() const {return graph_;}
+
     //! Set map with local ids of boundary nodes.
     void SetBoundaryNodeMap(const ArrayRCP<const bool>& localDirichletNodes) { localDirichletNodes_ = localDirichletNodes; }
 
@@ -101,7 +103,7 @@ namespace MueLu {
     const ArrayRCP<const bool> GetBoundaryNodeMap() const                    { return localDirichletNodes_; }
 
     //! Returns the maximum number of entries across all rows/columns on this node
-    size_t getNodeMaxNumRowEntries () const                                  { return graph_->getNodeMaxNumRowEntries(); }
+    size_t getLocalMaxNumRowEntries () const                                  { return graph_->getLocalMaxNumRowEntries(); }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
     ArrayView<const LO> getNeighborVertices(LO i) const {

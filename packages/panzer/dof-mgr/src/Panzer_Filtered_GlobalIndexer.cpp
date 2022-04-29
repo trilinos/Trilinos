@@ -85,9 +85,9 @@ initialize(const Teuchos::RCP<const GlobalIndexer> & ugi,
   base_->getGhostedIndices(baseGhosted);
 
   RCP<const Map> ownedMap 
-      = Tpetra::createNonContigMap<LO,GO>(baseOwned,getComm());
+      = Tpetra::createNonContigMapWithNode<LO,GO,Node>(baseOwned,getComm());
   RCP<const Map> ghostedMap 
-      = Tpetra::createNonContigMap<LO,GO>(baseGhosted,getComm());
+      = Tpetra::createNonContigMapWithNode<LO,GO,Node>(baseGhosted,getComm());
 
   Vector ownedFiltered(ownedMap);
   Vector ghostedFiltered(ghostedMap);
@@ -95,22 +95,21 @@ initialize(const Teuchos::RCP<const GlobalIndexer> & ugi,
   ownedFiltered.putScalar(0.0);
   ghostedFiltered.putScalar(0.0);
 
-  ownedFiltered.sync_host();
-  ghostedFiltered.sync_host();
+  {
+    auto ownedFiltered_host = ownedFiltered.getLocalViewHost(Tpetra::Access::ReadWrite);
+    auto ghostedFiltered_host = ghostedFiltered.getLocalViewHost(Tpetra::Access::ReadWrite);
 
-  for(panzer::GlobalOrdinal f : filtered) {
-    bool isOwned = std::find(baseOwned.begin(),baseOwned.end(),f)!=baseOwned.end();
-    bool isGhosted = std::find(baseGhosted.begin(),baseGhosted.end(),f)!=baseGhosted.end();
- 
-    if(isOwned)
-      ownedFiltered.replaceGlobalValue(f,1.0);
-    else if(isGhosted)
-      ghostedFiltered.replaceGlobalValue(f,1.0);
-    // else no one cares...
+    for(panzer::GlobalOrdinal f : filtered) {
+      bool isOwned = std::find(baseOwned.begin(),baseOwned.end(),f)!=baseOwned.end();
+      bool isGhosted = std::find(baseGhosted.begin(),baseGhosted.end(),f)!=baseGhosted.end();
+
+      if(isOwned)
+        ownedFiltered_host(ownedMap->getLocalElement(f),0) = 1.0;
+      else if(isGhosted)
+        ghostedFiltered_host(ghostedMap->getLocalElement(f),0) = 1.0;
+      // else no one cares...
+    }
   }
-
-  ownedFiltered.modify_host();
-  ghostedFiltered.modify_host();
 
   Export exporter(ghostedMap,ownedMap);
   ownedFiltered.doExport(ghostedFiltered, exporter, Tpetra::ADD);
@@ -166,9 +165,9 @@ getOwnedAndGhostedNotFilteredIndicator(std::vector<int> & indicator) const
   getOwnedAndGhostedIndices(ghostedIndices);
 
   RCP<const Map> ownedMap 
-      = Tpetra::createNonContigMap<LO,GO>(ownedIndices,getComm());
+      = Tpetra::createNonContigMapWithNode<LO,GO,Node>(ownedIndices,getComm());
   RCP<const Map> ghostedMap 
-      = Tpetra::createNonContigMap<LO,GO>(ghostedIndices,getComm());
+      = Tpetra::createNonContigMapWithNode<LO,GO,Node>(ghostedIndices,getComm());
 
   // allocate the owned vector, mark those GIDs as unfiltered
   // (they are by definition)

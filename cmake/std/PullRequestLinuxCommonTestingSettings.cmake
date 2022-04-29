@@ -109,5 +109,5 @@ set (TPL_Scotch_INCLUDE_DIRS "$ENV{SEMS_SCOTCH_INCLUDE_PATH}" CACHE PATH "Set by
 set (Scotch_LIBRARY_DIRS "$ENV{SEMS_SCOTCH_LIBRARY_PATH}" CACHE PATH "Set by default for PR testing")
 
 # Build stats compiler wrappers (#7376)
-set(Trilinos_ENABLE_BUILD_STATS OFF CACHE BOOL "Set in PullRequestLinuxCommonTestingSettings.cmake")
-# Turn them off for now in all PR builds until more review can be done.
+set(Trilinos_ENABLE_BUILD_STATS ON CACHE BOOL "Set in PullRequestLinuxCommonTestingSettings.cmake")
+set(Trilinos_REMOVE_BUILD_STATS_TIMING_FILES_ON_FRESH_CONFIGURE OFF CACHE BOOL "Set in PullRequestLinuxCommonTestingSettings.cmake")

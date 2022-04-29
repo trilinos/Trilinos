@@ -83,7 +83,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, ParameterList)
   // Test constructor IntegratorBasic(model, stepperType)
   {
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::createIntegratorBasic<double>(model, "Backward Euler");
+      Tempus::createIntegratorBasic<double>(model, std::string("Backward Euler"));
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
     // Match Predictor for comparison

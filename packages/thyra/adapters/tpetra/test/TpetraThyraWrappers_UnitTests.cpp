@@ -114,10 +114,10 @@ createTriDiagonalTpetraOperator(const int numLocalRows)
 
   RCP<const Tpetra::Map<> > map = createTpetraMap(numLocalRows);
 
-  const size_t numMyElements = map->getNodeNumElements();
+  const size_t numMyElements = map->getLocalNumElements();
   const global_size_t numGlobalElements = map->getGlobalNumElements();
 
-  ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+  ArrayView<const GO> myGlobalElements = map->getLocalElementList();
 
   // Create an OTeger vector numNz that is used to build the Petra Matrix.
   // numNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
@@ -140,7 +140,7 @@ createTriDiagonalTpetraOperator(const int numLocalRows)
 
   // Create a Tpetra::Matrix using the Map, with a static allocation dictated by numNz
   RCP< Tpetra::CrsMatrix<Scalar> > A =
-    Teuchos::rcp( new Tpetra::CrsMatrix<Scalar>(map, numNz (), Tpetra::StaticProfile) );
+    Teuchos::rcp( new Tpetra::CrsMatrix<Scalar>(map, numNz ()) );
 
   // We are done with NumNZ
   {

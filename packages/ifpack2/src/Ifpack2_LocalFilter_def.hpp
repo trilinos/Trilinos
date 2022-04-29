@@ -135,13 +135,13 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   // of entries, namely, that of the local number of entries of A's
   // range Map.
 
-  const size_t numRows = A_->getRangeMap()->getNodeNumElements ();
+  const size_t numRows = A_->getRangeMap()->getLocalNumElements ();
 
   // using std::cerr;
   // using std::endl;
-  // cerr << "A_ has " << A_->getNodeNumRows () << " rows." << endl
-  //      << "Range Map has " << A_->getRangeMap ()->getNodeNumElements () << " entries." << endl
-  //      << "Row Map has " << A_->getRowMap ()->getNodeNumElements () << " entries." << endl;
+  // cerr << "A_ has " << A_->getLocalNumRows () << " rows." << endl
+  //      << "Range Map has " << A_->getRangeMap ()->getLocalNumElements () << " entries." << endl
+  //      << "Row Map has " << A_->getRowMap ()->getLocalNumElements () << " entries." << endl;
 
   const global_ordinal_type indexBase = static_cast<global_ordinal_type> (0);
 
@@ -160,7 +160,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
     localDomainMap_ = localRangeMap_;
   }
   else {
-    const size_t numCols = A_->getDomainMap()->getNodeNumElements ();
+    const size_t numCols = A_->getDomainMap()->getLocalNumElements ();
     localDomainMap_ =
       rcp (new map_type (numCols, indexBase, localComm,
                          Tpetra::GloballyDistributed));
@@ -173,12 +173,13 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
 
   // tentative value for MaxNumEntries. This is the number of
   // nonzeros in the local matrix
-  MaxNumEntries_  = A_->getNodeMaxNumRowEntries ();
-  MaxNumEntriesA_ = A_->getNodeMaxNumRowEntries ();
+  MaxNumEntries_  = A_->getLocalMaxNumRowEntries ();
+  MaxNumEntriesA_ = A_->getLocalMaxNumRowEntries ();
 
   // Allocate temporary arrays for getLocalRowCopy().
-  localIndices_.resize (MaxNumEntries_);
-  Values_.resize (MaxNumEntries_);
+  Kokkos::resize(localIndices_,MaxNumEntries_);
+  Kokkos::resize(localIndicesForGlobalCopy_,MaxNumEntries_);
+  Kokkos::resize(Values_,MaxNumEntries_);
 
   // now compute:
   // - the number of nonzero per row
@@ -293,28 +294,28 @@ LocalFilter<MatrixType>::getGraph () const
 template<class MatrixType>
 global_size_t LocalFilter<MatrixType>::getGlobalNumRows() const
 {
-  return static_cast<global_size_t> (localRangeMap_->getNodeNumElements ());
+  return static_cast<global_size_t> (localRangeMap_->getLocalNumElements ());
 }
 
 
 template<class MatrixType>
 global_size_t LocalFilter<MatrixType>::getGlobalNumCols() const
 {
-  return static_cast<global_size_t> (localDomainMap_->getNodeNumElements ());
+  return static_cast<global_size_t> (localDomainMap_->getLocalNumElements ());
 }
 
 
 template<class MatrixType>
-size_t LocalFilter<MatrixType>::getNodeNumRows() const
+size_t LocalFilter<MatrixType>::getLocalNumRows() const
 {
-  return static_cast<size_t> (localRangeMap_->getNodeNumElements ());
+  return static_cast<size_t> (localRangeMap_->getLocalNumElements ());
 }
 
 
 template<class MatrixType>
-size_t LocalFilter<MatrixType>::getNodeNumCols() const
+size_t LocalFilter<MatrixType>::getLocalNumCols() const
 {
-  return static_cast<size_t> (localDomainMap_->getNodeNumElements ());
+  return static_cast<size_t> (localDomainMap_->getLocalNumElements ());
 }
 
 
@@ -334,7 +335,7 @@ global_size_t LocalFilter<MatrixType>::getGlobalNumEntries () const
 
 
 template<class MatrixType>
-size_t LocalFilter<MatrixType>::getNodeNumEntries () const
+size_t LocalFilter<MatrixType>::getLocalNumEntries () const
 {
   return NumNonzeros_;
 }
@@ -390,7 +391,7 @@ size_t LocalFilter<MatrixType>::getGlobalMaxNumRowEntries () const
 
 
 template<class MatrixType>
-size_t LocalFilter<MatrixType>::getNodeMaxNumRowEntries() const
+size_t LocalFilter<MatrixType>::getLocalMaxNumRowEntries() const
 {
   return MaxNumEntries_;
 }
@@ -427,10 +428,10 @@ bool LocalFilter<MatrixType>::isFillComplete () const
 template<class MatrixType>
 void
 LocalFilter<MatrixType>::
-getGlobalRowCopy (global_ordinal_type globalRow,
-                  const Teuchos::ArrayView<global_ordinal_type>& globalIndices,
-                  const Teuchos::ArrayView<scalar_type>& values,
-                  size_t& numEntries) const
+  getGlobalRowCopy (global_ordinal_type globalRow,
+                   nonconst_global_inds_host_view_type &globalIndices,
+                   nonconst_values_host_view_type &values,
+                   size_t& numEntries) const
 {
   typedef local_ordinal_type LO;
   typedef typename Teuchos::Array<LO>::size_type size_type;
@@ -452,29 +453,44 @@ getGlobalRowCopy (global_ordinal_type globalRow,
     // FIXME (mfh 26 Mar 2014) If local_ordinal_type ==
     // global_ordinal_type, we could just alias the input array
     // instead of allocating a temporary array.
-    Teuchos::Array<LO> localIndices (numEntries);
-    this->getLocalRowCopy (localRow, localIndices (), values, numEntries);
+
+    // In this case, getLocalRowCopy *does* use the localIndices_, so we use a second temp array
+    this->getLocalRowCopy (localRow, localIndicesForGlobalCopy_, values, numEntries);
 
     const map_type& colMap = * (this->getColMap ());
 
     // Don't fill the output array beyond its size.
     const size_type numEnt =
       std::min (static_cast<size_type> (numEntries),
-                std::min (globalIndices.size (), values.size ()));
+                std::min ((size_type)globalIndices.size (), (size_type)values.size ()));
     for (size_type k = 0; k < numEnt; ++k) {
-      globalIndices[k] = colMap.getGlobalElement (localIndices[k]);
+      globalIndices[k] = colMap.getGlobalElement (localIndicesForGlobalCopy_[k]);
     }
   }
 }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+template<class MatrixType>
+void
+LocalFilter<MatrixType>::
+getGlobalRowCopy (global_ordinal_type globalRow,
+                  const Teuchos::ArrayView<global_ordinal_type>& Indices,
+                  const Teuchos::ArrayView<scalar_type>& Values,
+                  size_t& numEntries) const {
+  using IST = typename row_matrix_type::impl_scalar_type;
+  nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
+  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
+  getGlobalRowCopy(globalRow,ind_in,val_in,numEntries);  
+}
+#endif
 
 template<class MatrixType>
 void
 LocalFilter<MatrixType>::
 getLocalRowCopy (local_ordinal_type LocalRow,
-                 const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                 const Teuchos::ArrayView<scalar_type> &Values,
-                 size_t &NumEntries) const
+                 nonconst_local_inds_host_view_type &Indices,
+                 nonconst_values_host_view_type &Values,
+                 size_t& NumEntries) const
 {
   typedef local_ordinal_type LO;
   typedef global_ordinal_type GO;
@@ -486,7 +502,7 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   }
 
   if (A_->getRowMap()->getComm()->getSize() == 1) {
-    A_->getLocalRowCopy (LocalRow, Indices (), Values (), NumEntries);
+    A_->getLocalRowCopy (LocalRow, Indices, Values, NumEntries);
     return;
   }
 
@@ -524,7 +540,7 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   // column indices.  CrsMatrix could take a set of column indices,
   // and return their corresponding values.
   size_t numEntInMat = 0;
-  A_->getLocalRowCopy (LocalRow, localIndices_ (), Values_ (), numEntInMat);
+  A_->getLocalRowCopy (LocalRow, localIndices_, Values_ , numEntInMat);
 
   // Fill the user's arrays with the "local" indices and values in
   // that row.  Note that the matrix might have a different column Map
@@ -535,7 +551,7 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   const size_t capacity = static_cast<size_t> (std::min (Indices.size (),
                                                          Values.size ()));
   NumEntries = 0;
-  const size_t numRows = localRowMap_->getNodeNumElements (); // superfluous
+  const size_t numRows = localRowMap_->getLocalNumElements (); // superfluous
   const bool buggy = true; // mfh 07 Jul 2014: See FIXME below.
   for (size_t j = 0; j < numEntInMat; ++j) {
     // The LocalFilter only includes entries in the domain Map on
@@ -573,7 +589,35 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   }
 }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+template<class MatrixType>
+void
+LocalFilter<MatrixType>::
+getLocalRowCopy (local_ordinal_type globalRow,
+                 const Teuchos::ArrayView<local_ordinal_type> &Indices,
+                 const Teuchos::ArrayView<scalar_type> &Values,
+             size_t &NumEntries) const
+{
+  using IST = typename row_matrix_type::impl_scalar_type;
+  nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
+  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
+  getLocalRowCopy(globalRow,ind_in,val_in,NumEntries);  
+}
+#endif
 
+
+template<class MatrixType>
+void
+LocalFilter<MatrixType>::
+getGlobalRowView (global_ordinal_type /*GlobalRow*/,
+                    global_inds_host_view_type &/*indices*/,
+                    values_host_view_type &/*values*/) const 
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+    "Ifpack2::LocalFilter does not implement getGlobalRowView.");
+}
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
 void
 LocalFilter<MatrixType>::
@@ -584,8 +628,21 @@ getGlobalRowView (global_ordinal_type /* GlobalRow */,
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
     "Ifpack2::LocalFilter does not implement getGlobalRowView.");
 }
+#endif
+
+template<class MatrixType>
+void
+LocalFilter<MatrixType>::
+getLocalRowView (local_ordinal_type /*LocalRow*/,
+    local_inds_host_view_type &/*indices*/,
+    values_host_view_type &/*values*/) const 
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+    "Ifpack2::LocalFilter does not implement getLocalRowView.");
+}
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
 void
 LocalFilter<MatrixType>::
@@ -596,6 +653,7 @@ getLocalRowView (local_ordinal_type /* LocalRow */,
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
     "Ifpack2::LocalFilter does not implement getLocalRowView.");
 }
+#endif
 
 
 template<class MatrixType>
@@ -718,7 +776,7 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
   }
 
   const size_t NumVectors = Y.getNumVectors ();
-  const size_t numRows = localRowMap_->getNodeNumElements ();
+  const size_t numRows = localRowMap_->getLocalNumElements ();
 
   // FIXME (mfh 14 Apr 2014) At some point, we would like to
   // parallelize this using Kokkos.  This would require a
@@ -738,13 +796,14 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
     for (size_t i = 0; i < numRows; ++i) {
       size_t Nnz;
       // Use this class's getrow to make the below code simpler
-      getLocalRowCopy (i, localIndices_ (), Values_ (), Nnz);
+      getLocalRowCopy (i, localIndices_ , Values_ , Nnz);
+      scalar_type* Values = reinterpret_cast<scalar_type*>(Values_.data());
       if (mode == Teuchos::NO_TRANS) {
         for (size_t j = 0; j < Nnz; ++j) {
           const local_ordinal_type col = localIndices_[j];
           for (size_t k = 0; k < NumVectors; ++k) {
             y_ptr[i + y_stride*k] +=
-              alpha * Values_[j] * x_ptr[col + x_stride*k];
+              alpha * Values[j] * x_ptr[col + x_stride*k];
           }
         }
       }
@@ -753,7 +812,7 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
           const local_ordinal_type col = localIndices_[j];
           for (size_t k = 0; k < NumVectors; ++k) {
             y_ptr[col + y_stride*k] +=
-              alpha * Values_[j] * x_ptr[i + x_stride*k];
+              alpha * Values[j] * x_ptr[i + x_stride*k];
           }
         }
       }
@@ -762,7 +821,7 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
           const local_ordinal_type col = localIndices_[j];
           for (size_t k = 0; k < NumVectors; ++k) {
             y_ptr[col + y_stride*k] +=
-              alpha * STS::conjugate (Values_[j]) * x_ptr[i + x_stride*k];
+              alpha * STS::conjugate (Values[j]) * x_ptr[i + x_stride*k];
           }
         }
       }
@@ -777,13 +836,14 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
     for (size_t i = 0; i < numRows; ++i) {
       size_t Nnz;
       // Use this class's getrow to make the below code simpler
-      getLocalRowCopy (i, localIndices_ (), Values_ (), Nnz);
+      getLocalRowCopy (i, localIndices_ , Values_ , Nnz);
+      scalar_type* Values = reinterpret_cast<scalar_type*>(Values_.data());
       if (mode == Teuchos::NO_TRANS) {
         for (size_t k = 0; k < NumVectors; ++k) {
           ArrayView<const scalar_type> x_local = (x_ptr())[k]();
           ArrayView<scalar_type>       y_local = (y_ptr())[k]();
           for (size_t j = 0; j < Nnz; ++j) {
-            y_local[i] += alpha * Values_[j] * x_local[localIndices_[j]];
+            y_local[i] += alpha * Values[j] * x_local[localIndices_[j]];
           }
         }
       }
@@ -792,7 +852,7 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
           ArrayView<const scalar_type> x_local = (x_ptr())[k]();
           ArrayView<scalar_type>       y_local = (y_ptr())[k]();
           for (size_t j = 0; j < Nnz; ++j) {
-            y_local[localIndices_[j]] += alpha * Values_[j] * x_local[i];
+            y_local[localIndices_[j]] += alpha * Values[j] * x_local[i];
           }
         }
       }
@@ -802,7 +862,7 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
           ArrayView<scalar_type>       y_local = (y_ptr())[k]();
           for (size_t j = 0; j < Nnz; ++j) {
             y_local[localIndices_[j]] +=
-              alpha * STS::conjugate (Values_[j]) * x_local[i];
+              alpha * STS::conjugate (Values[j]) * x_local[i];
           }
         }
       }
@@ -838,16 +898,16 @@ LocalFilter<MatrixType>::getFrobeniusNorm () const
 #endif
   typedef typename Teuchos::Array<scalar_type>::size_type size_type;
 
-  const size_type maxNumRowEnt = getNodeMaxNumRowEntries ();
-  Teuchos::Array<local_ordinal_type> ind (maxNumRowEnt);
-  Teuchos::Array<scalar_type> val (maxNumRowEnt);
-  const size_t numRows = static_cast<size_t> (localRowMap_->getNodeNumElements ());
+  const size_type maxNumRowEnt = getLocalMaxNumRowEntries ();
+  nonconst_local_inds_host_view_type ind ("ind",maxNumRowEnt);
+  nonconst_values_host_view_type val ("val",maxNumRowEnt);
+  const size_t numRows = static_cast<size_t> (localRowMap_->getLocalNumElements ());
 
   // FIXME (mfh 03 Apr 2013) Scale during sum to avoid overflow.
   mag_type sumSquared = STM::zero ();
   for (size_t i = 0; i < numRows; ++i) {
     size_t numEntries = 0;
-    this->getLocalRowCopy (i, ind (), val (), numEntries);
+    this->getLocalRowCopy (i, ind, val, numEntries);
     for (size_type k = 0; k < static_cast<size_type> (numEntries); ++k) {
       const mag_type v_k_abs = STS::magnitude (val[k]);
       sumSquared += v_k_abs * v_k_abs;

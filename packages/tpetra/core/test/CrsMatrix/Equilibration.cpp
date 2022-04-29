@@ -148,8 +148,8 @@ deepCopyFillCompleteCrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
     (! A.isFillComplete (), std::invalid_argument,
      "deepCopyFillCompleteCrsMatrix: Input matrix A must be fillComplete.");
   RCP<crs_matrix_type> A_copy (new crs_matrix_type (A.getCrsGraph ()));
-  auto A_copy_lcl = A_copy->getLocalMatrix ();
-  auto A_lcl = A.getLocalMatrix ();
+  auto A_copy_lcl = A_copy->getLocalMatrixDevice ();
+  auto A_lcl = A.getLocalMatrixDevice ();
   Kokkos::deep_copy (A_copy_lcl.values, A_lcl.values);
   A_copy->fillComplete (A.getDomainMap (), A.getRangeMap ());
   return A_copy;
@@ -166,15 +166,12 @@ testCrsMatrixEquality (bool& success,
   using mag_type = typename Kokkos::ArithTraits<SC>::mag_type;
   const mag_type toleranceFactor = 10.0; // factor of eps
 
-  auto A_expected_lcl = A_expected.getLocalMatrix ();
-  auto ptr_h = Kokkos::create_mirror_view (A_expected_lcl.graph.row_map);
-  Kokkos::deep_copy (ptr_h, A_expected_lcl.graph.row_map);
+  auto A_expected_lcl = A_expected.getLocalMatrixHost ();
+  auto ptr_h = A_expected_lcl.graph.row_map;
+  auto expected_val_h = A_expected_lcl.values;
 
-  auto expected_val_h = Kokkos::create_mirror_view (A_expected_lcl.values);
-  Kokkos::deep_copy (expected_val_h, A_expected_lcl.values);
-
-  auto A_actual_lcl = A_actual.getLocalMatrix ();
-  auto actual_val_h = Kokkos::create_mirror_view (A_actual_lcl.values);
+  auto A_actual_lcl = A_actual.getLocalMatrixHost ();
+  auto actual_val_h = A_actual_lcl.values;
   Kokkos::deep_copy (actual_val_h, A_actual_lcl.values);
 
   using size_type = typename decltype (A_actual_lcl.graph)::size_type;
@@ -276,9 +273,9 @@ testEquilibration (Teuchos::FancyOStream& out,
   Teuchos::OSTab tab1 (out);
 
   const LO lclNumRows =
-    static_cast<LO> (test.A->getRowMap ()->getNodeNumElements ());
+    static_cast<LO> (test.A->getRowMap ()->getLocalNumElements ());
   RCP<const map_type> colMap = test.A->getColMap ();
-  const LO lclNumCols = static_cast<LO> (colMap->getNodeNumElements ());
+  const LO lclNumCols = static_cast<LO> (colMap->getLocalNumElements ());
 
   // Test computeLocalRowAndColumnOneNorms (CrsMatrix)
   {
@@ -981,7 +978,7 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
   out << "Create CrsGraph" << endl;
   const size_t maxNumEntPerRow = 3;
   RCP<crs_graph_type> G =
-    rcp (new crs_graph_type (rowMap, maxNumEntPerRow, Tpetra::StaticProfile));
+    rcp (new crs_graph_type (rowMap, maxNumEntPerRow));
   std::vector<GO> globalIndices (maxNumEntPerRow);
 
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -1043,7 +1040,7 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
   A->fillComplete (domMap, ranMap);
 
   RCP<const map_type> colMap = G->getColMap ();
-  const LO lclNumCols = static_cast<LO> (colMap->getNodeNumElements ());
+  const LO lclNumCols = static_cast<LO> (colMap->getLocalNumElements ());
   const GO gblNumCols = static_cast<GO> (G->getDomainMap ()->getGlobalNumElements ());
 
   const mag_type diagAbsVal = KAT::abs (diagVal);
@@ -1074,7 +1071,7 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1237,7 +1234,7 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1336,7 +1333,7 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
   out << "Create CrsGraph" << endl;
   const size_t maxNumEntPerRow = 1;
   RCP<crs_graph_type> G =
-    rcp (new crs_graph_type (rowMap, maxNumEntPerRow, Tpetra::StaticProfile));
+    rcp (new crs_graph_type (rowMap, maxNumEntPerRow));
   std::vector<GO> globalIndices (maxNumEntPerRow);
 
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -1366,7 +1363,7 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
   A->fillComplete (domMap, ranMap);
 
   RCP<const map_type> colMap = G->getColMap ();
-  const LO lclNumCols = static_cast<LO> (colMap->getNodeNumElements ());
+  const LO lclNumCols = static_cast<LO> (colMap->getLocalNumElements ());
 
   out << "Compute local row norms and diagonal entries" << endl;
   std::vector<val_type> lclRowDiagonalEntries (lclNumRows);
@@ -1388,7 +1385,7 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1475,7 +1472,7 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1574,7 +1571,7 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
   out << "Create CrsGraph" << endl;
   const size_t maxNumEntPerRow = 1;
   RCP<crs_graph_type> G =
-    rcp (new crs_graph_type (rowMap, maxNumEntPerRow, Tpetra::StaticProfile));
+    rcp (new crs_graph_type (rowMap, maxNumEntPerRow));
 
   // Process 1 gets an implicit zero diagonal entry.
   std::vector<GO> globalIndices (maxNumEntPerRow);
@@ -1604,7 +1601,7 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
   A->fillComplete (domMap, ranMap);
 
   RCP<const map_type> colMap = G->getColMap ();
-  const LO lclNumCols = static_cast<LO> (colMap->getNodeNumElements ());
+  const LO lclNumCols = static_cast<LO> (colMap->getLocalNumElements ());
 
   out << "Compute local row norms and diagonal entries" << endl;
   std::vector<val_type> lclRowDiagonalEntries (lclNumRows);
@@ -1626,7 +1623,7 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1713,7 +1710,7 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1812,7 +1809,7 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
   out << "Create CrsGraph" << endl;
   const size_t maxNumEntPerRow = 1;
   RCP<crs_graph_type> G =
-    rcp (new crs_graph_type (rowMap, maxNumEntPerRow, Tpetra::StaticProfile));
+    rcp (new crs_graph_type (rowMap, maxNumEntPerRow));
   std::vector<GO> globalIndices (maxNumEntPerRow);
 
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
@@ -1845,7 +1842,7 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
   A->fillComplete (domMap, ranMap);
 
   RCP<const map_type> colMap = G->getColMap ();
-  const LO lclNumCols = static_cast<LO> (colMap->getNodeNumElements ());
+  const LO lclNumCols = static_cast<LO> (colMap->getLocalNumElements ());
 
   out << "Compute local row norms and diagonal entries" << endl;
   std::vector<val_type> lclRowDiagonalEntries (lclNumRows);
@@ -1876,7 +1873,7 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1998,7 +1995,7 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);

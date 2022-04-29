@@ -69,7 +69,7 @@ namespace MueLu {
     procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
     procWinner_->putScalar(MUELU_UNASSIGNED);
 
-    isRoot_ = Kokkos::View<bool*,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("roots"), graph.GetImportMap()->getNodeNumElements());
+    isRoot_ = Kokkos::View<bool*, device_type>(Kokkos::ViewAllocateWithoutInitializing("roots"), graph.GetImportMap()->getLocalNumElements());
     Kokkos::deep_copy(isRoot_, false);
 
     // slow but safe, force TentativePFactory to build column map for P itself
@@ -87,7 +87,7 @@ namespace MueLu {
     procWinner_ = LOVectorFactory::Build(map);
     procWinner_->putScalar(MUELU_UNASSIGNED);
 
-    isRoot_ = Kokkos::View<bool*,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("roots"), map->getNodeNumElements());
+    isRoot_ = Kokkos::View<bool*,device_type>(Kokkos::ViewAllocateWithoutInitializing("roots"), map->getLocalNumElements());
     Kokkos::deep_copy(isRoot_, false);
 
     // slow but safe, force TentativePFactory to build column map for P itself
@@ -106,8 +106,8 @@ namespace MueLu {
 
       int myPID = GetMap()->getComm()->getRank();
 
-      auto vertex2AggId = vertex2AggId_->getDeviceLocalView();
-      auto procWinner   = procWinner_  ->getDeviceLocalView();
+      auto vertex2AggId = vertex2AggId_->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      auto procWinner   = procWinner_  ->getDeviceLocalView(Xpetra::Access::ReadOnly);
 
       typename AppendTrait<decltype(aggregateSizes_), Kokkos::Atomic>::type aggregateSizesAtomic = aggregateSizes;
       Kokkos::parallel_for("MueLu:Aggregates:ComputeAggregateSizes:for", range_type(0,procWinner.size()),
@@ -135,8 +135,8 @@ namespace MueLu {
     if (static_cast<LO>(graph_.numRows()) == numAggregates)
       return graph_;
 
-    auto vertex2AggId = vertex2AggId_->getDeviceLocalView();
-    auto procWinner   = procWinner_  ->getDeviceLocalView();
+    auto vertex2AggId = vertex2AggId_->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto procWinner   = procWinner_  ->getDeviceLocalView(Xpetra::Access::ReadOnly);
     auto sizes        = ComputeAggregateSizes();
 
     // FIXME_KOKKOS: replace by ViewAllocateWithoutInitializing + rows(0) = 0.

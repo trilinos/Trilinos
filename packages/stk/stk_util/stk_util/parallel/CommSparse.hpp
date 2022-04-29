@@ -35,6 +35,7 @@
 #ifndef stk_util_parallel_CommSparse_hpp
 #define stk_util_parallel_CommSparse_hpp
 
+#include "stk_util/util/ReportHandler.hpp"
 #include "stk_util/parallel/Parallel.hpp"      // for ParallelMachine, parallel_machine_null
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
 #include <cstddef>                             // for size_t
@@ -90,27 +91,21 @@ public:
   /** Obtain the message buffer for a given processor */
   CommBuffer & send_buffer( int p )
   {
-#ifndef NDEBUG
-    if ( m_size <= p ) { rank_error("send_buffer",p); }
-#endif
+    ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     return m_send[p] ;
   }
 
   /** Obtain the message buffer for a given processor */
   CommBuffer & recv_buffer( int p )
   {
-#ifndef NDEBUG
-    if ( m_size <= p ) { rank_error("recv_buffer",p); }
-#endif
+    ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     return m_recv[p] ;
   }
 
   /** Obtain the message buffer for a given processor */
   const CommBuffer & recv_buffer( int p ) const
   {
-#ifndef NDEBUG
-    if ( m_size <= p ) { rank_error("recv_buffer",p); }
-#endif
+    ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     return m_recv[p] ;
   }
 
@@ -199,8 +194,6 @@ private:
       m_send_procs(),
       m_recv_procs()
   {}
-
-  void rank_error( const char * , int ) const ;
 
   void allocate_data(std::vector<CommBuffer>& bufs, std::vector<unsigned char>& data);
   void verify_send_buffers_filled();

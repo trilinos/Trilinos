@@ -31,7 +31,7 @@ class IntegratorBasic : virtual public Tempus::Integrator<Scalar>
 {
 public:
 
-  /// Default constructor that requires a subsequent, ??? , setStepper, and initialize calls.
+  /// Default constructor (requires calls to setModel and setSolutionHistory for initial conditions before calling initialize() to be fully constructed).
   IntegratorBasic();
 
   /// Full constructor
@@ -42,6 +42,9 @@ public:
     Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver,
     std::vector<int>                          outputScreenIndices,
     int                                       outputScreenInterval);
+
+  /// Copy (a shallow copy)
+  virtual void copy(Teuchos::RCP<IntegratorBasic<Scalar> > iB);
 
   /// Destructor
   virtual ~IntegratorBasic() {}
@@ -60,15 +63,20 @@ public:
     virtual void checkTimeStep();
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
     /// Return a copy of the Tempus ParameterList DEPRECATED!
+    TEMPUS_DEPRECATED
     virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()
       override { return Teuchos::rcp_const_cast<Teuchos::ParameterList> (this->getValidParameters()); }
+
+    TEMPUS_DEPRECATED
     virtual void setTempusParameterList(
       Teuchos::RCP<Teuchos::ParameterList> pl) override
     {
       TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
         "  IntegratorBasic::setTempusParameterList() --  Deprecated!\n");
     }
+#endif
   //@}
 
   /// \name Accessor methods
@@ -82,6 +90,8 @@ public:
     /// Get Status
     virtual Status getStatus() const override
     {return integratorStatus_;}
+    /// Set Status
+    virtual void setStatus(const Status st) override { integratorStatus_ = st; }
     /// Get the Stepper
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override
     {return stepper_;}
@@ -99,6 +109,9 @@ public:
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
     /// Get the SolutionHistory
     virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override
+      {return solutionHistory_;}
+    /// Get the SolutionHistory
+    virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() override
       {return solutionHistory_;}
     /// Set the SolutionHistory
     virtual void setSolutionHistory(
@@ -212,7 +225,15 @@ protected:
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+  bool runInitialize=true);
+
+
+/// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  bool runInitialize=true);
 
 
 /// Nonmember constructor
@@ -231,7 +252,8 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic();
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
-  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models,
+  bool runInitialize=true);
 
 
 } // namespace Tempus

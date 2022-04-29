@@ -167,7 +167,9 @@ const RCP<TempusSolver<double> > solverNew(
   const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
   const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
 
-  const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer));
+  const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver = 
+	  Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer, 
+				  false, false, sens_method));
   integrator->setObserver(tempusObserver);
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
@@ -208,7 +210,8 @@ const RCP<TempusSolver<double> > solverNew(
   else if (sens_method_string == "Forward") sens_method = Piro::FORWARD; 
   else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT; 
   const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver 
-      = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer, sens_method));
+      = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, 
+			      timeStepControl, observer, false, false, sens_method));
   integrator->setObserver(tempusObserver);
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
   RCP<ParameterList> stepperPL = Teuchos::rcp(&(tempusPL->sublist("Demo Stepper")), false);
@@ -302,12 +305,12 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_NoDfDpMv_NoSensitivity)
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
 
-  const int responseIndex = 0;
+  /*const int responseIndex = 0;
   const int solutionResponseIndex = solver->Ng() - 1;
   const int parameterIndex = 0;
 
   TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, responseIndex, parameterIndex).none());
-  TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, solutionResponseIndex, parameterIndex).none());
+  TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, solutionResponseIndex, parameterIndex).none());*/
 
   TEST_NOTHROW(solver->evalModel(inArgs, outArgs));
 }

@@ -149,8 +149,7 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+      using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
 
       *verboseStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*verboseStream, false);
       *verboseStream << "HostSpace::    ";   HostSpaceType::print_configuration(*verboseStream, false);
@@ -162,7 +161,7 @@ namespace Intrepid2 {
         << " Test Array Structure (C,P,D) = " << C << ", " << P << ", " << D << "\n"
         << "===============================================================================\n";
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       double t_dynrankview[20] = {}, t_view[20] = {};
       int errorFlag = 0, itest = 0;
 

@@ -88,11 +88,7 @@ main (int argc, char *argv[])
   using TpetraIntrepidPoissonExample::makeMatrixAndRightHandSide;
   using TpetraIntrepidPoissonExample::solveWithBelos;
   using TpetraIntrepidPoissonExample::solveWithBelosGPU;
-  using IntrepidPoissonExample::makeMeshInput;
-  using IntrepidPoissonExample::parseCommandLineArguments;
-  using IntrepidPoissonExample::setCommandLineArgumentDefaults;
-  using IntrepidPoissonExample::setMaterialTensorOffDiagonalValue;
-  using IntrepidPoissonExample::setUpCommandLineArguments;
+  using namespace IntrepidPoissonExample;
   using Teuchos::Comm;
   using Teuchos::outArg;
   using Teuchos::ParameterList;
@@ -137,7 +133,9 @@ main (int argc, char *argv[])
     int maxNumItersFromCmdLine = -1; // -1 means "read from XML file"
     double tolFromCmdLine = -1.0; // -1 means "read from XML file"
     std::string solverName = "GMRES";
-    ST materialTensorOffDiagonalValue = 0.0;
+    ST materialTensorOffDiagonalValue = Teuchos::ScalarTraits<ST>::nan();
+    std::vector<double> diff_rotation_angle {0.0, 0.0, 0.0};
+    std::vector<double> diff_strength {1.0, 1.0, 1.0};
     Teuchos::ParameterList problemStatistics;
 
     // Set default values of command-line arguments.
@@ -149,11 +147,26 @@ main (int argc, char *argv[])
                                solverName, tolFromCmdLine,
                                maxNumItersFromCmdLine,
                                verbose, debug);
+
+    // Diffusion tensor information (if we're using it)
     cmdp.setOption ("materialTensorOffDiagonalValue",
                     &materialTensorOffDiagonalValue, "Off-diagonal value in "
                     "the material tensor.  This controls the iteration count.  "
                     "Be careful with this if you use CG, since you can easily "
                     "make the matrix indefinite.");
+    for(int i=0; i<3; i++) {
+      char letter[4] = "xyz";
+      char str1[80], str2[80];
+      // Rotation
+      sprintf(str1,"rot_%c_angle",letter[i]);
+      sprintf(str2,"Rotation around %c axis, in degrees",letter[i]);
+      cmdp.setOption(str1,&diff_rotation_angle[i],str2);
+      
+      // Strength
+      sprintf(str1,"strength_%c",letter[i]);
+      sprintf(str2,"Strength of pre-rotation %c-diffusion",letter[i]);
+      cmdp.setOption(str1,&diff_strength[i],str2);
+    }
 
     // Additional command-line arguments for GPU experimentation.
     bool gpu = false;
@@ -229,7 +242,12 @@ main (int argc, char *argv[])
     // Initialize RNG
     srand(randomSeed);
 
-    setMaterialTensorOffDiagonalValue (materialTensorOffDiagonalValue);
+
+    // Set material information
+    if(Teuchos::ScalarTraits<ST>::isnaninf(materialTensorOffDiagonalValue))
+      setDiffusionRotationAndStrength(diff_rotation_angle, diff_strength);
+    else
+      setMaterialTensorOffDiagonalValue (materialTensorOffDiagonalValue);
 
     // Both streams only print on MPI Rank 0.  "out" only prints if the
     // user specified --verbose.
@@ -243,6 +261,16 @@ main (int argc, char *argv[])
 #else
     *out << "SERIAL executable" << endl;
 #endif
+
+    if(useDiffusionMatrix()) {
+      const std::vector<double> & A = getDiffusionMatrix();
+      *out<<"[ "<<A[0]<<" "<<A[1]<<" "<<A[2]<<" ]\n"
+          <<"[ "<<A[3]<<" "<<A[4]<<" "<<A[5]<<" ]\n"
+          <<"[ "<<A[6]<<" "<<A[7]<<" "<<A[8]<<" ]"<<std::endl;
+    }
+    else {
+      *out<<"off diagonal value = "<<materialTensorOffDiagonalValue<<std::endl;
+    }
 
     /**********************************************************************************/
     /********************************** GET XML INPUTS ********************************/

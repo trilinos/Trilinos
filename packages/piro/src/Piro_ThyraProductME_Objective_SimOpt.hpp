@@ -60,9 +60,10 @@ public:
 
 
   ThyraProductME_Objective_SimOpt(const Thyra::ModelEvaluator<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,
-      Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH,
+      Teuchos::ParameterList& piroParams_, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH,
       Teuchos::RCP<ROL_ObserverBase<Real>> observer_ = Teuchos::null) :
-        thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_),
+        thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_),
+        optParams(piroParams_.sublist("Optimization Status")),
         out(Teuchos::VerboseObjectBase::getDefaultOStream()),
         verbosityLevel(verbLevel), observer(observer_)  {
     computeValue = computeGradient1 = computeGradient2 = true;
@@ -70,12 +71,8 @@ public:
     value_ = 0;
     rol_u_ptr = rol_z_ptr = Teuchos::null;
     z_stored_ptr =  Teuchos::null;
-    if(params != Teuchos::null) {
-      write_interval = params->get("Write Interval", 1);
-      params->set<int>("Optimizer Iteration Number", -1);
-    }
-    else
-      write_interval = 1;
+    write_interval = optParams.get("Write Interval", 1);
+    optParams.set<int>("Optimizer Iteration Number", -1);
   };
 
 
@@ -271,14 +268,15 @@ public:
 
   void hessian_22(const Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> H,
                   const ROL::Vector<Real> &u,
-                  const ROL::Vector<Real> &z) {
+                  const ROL::Vector<Real> &z,
+                  const int g_idx) {
     if(verbosityLevel >= Teuchos::VERB_MEDIUM)
       *out << "ROL::ThyraProductME_Objective_SimOpt::hessian_22" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
     bool supports_deriv = true;
     for(std::size_t i=0; i<p_indices.size(); ++i)
-      supports_deriv = supports_deriv &&  outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_index, p_indices[i], p_indices[i]);
+      supports_deriv = supports_deriv &&  outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_idx, p_indices[i], p_indices[i]);
 
     if(supports_deriv) { //use derivatives computed by model evaluator
       const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
@@ -297,18 +295,18 @@ public:
       }
       inArgs.set_x(thyra_x.getVector());
 
-      Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_multiplier_space(g_index));
+      Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_multiplier_space(g_idx));
       Thyra::put_scalar(1.0, multiplier_g.ptr());
-      inArgs.set_g_multiplier(g_index, multiplier_g);
+      inArgs.set_g_multiplier(g_idx, multiplier_g);
 
       Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
 
       for(std::size_t i=0; i<p_indices.size(); ++i) {
-        bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_index, p_indices[i], p_indices[i]);
+        bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_idx, p_indices[i], p_indices[i]);
         ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Objective_SimOpt: H_pp is not supported");
 
-        Teuchos::RCP<Thyra::LinearOpBase<Real>> hess_g_pp = thyra_model.create_hess_g_pp(g_index, p_indices[i], p_indices[i]);
-        outArgs.set_hess_g_pp(g_index, p_indices[i], p_indices[i], hess_g_pp);
+        Teuchos::RCP<Thyra::LinearOpBase<Real>> hess_g_pp = thyra_model.create_hess_g_pp(g_idx, p_indices[i], p_indices[i]);
+        outArgs.set_hess_g_pp(g_idx, p_indices[i], p_indices[i], hess_g_pp);
         H->setBlock(p_indices[i], p_indices[i], hess_g_pp);
       }
       H->endBlockFill();
@@ -674,8 +672,12 @@ public:
       print = false;
     }
 
-    if(params != Teuchos::null)
-      params->set<int>("Optimizer Iteration Number", iter);
+    optParams.set<int>("Optimizer Iteration Number", iter);
+  }
+
+  void update( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::UpdateType /*type*/, int iter = -1) {
+    //temporary implementation using old update function  
+    this->update( u, z, true, iter);
   }
 
   bool z_hasChanged(const ROL::Vector<Real> &rol_z) const {
@@ -714,7 +716,7 @@ private:
   Teuchos::RCP<ROL::Vector<Real> > grad2_ptr_;
   Teuchos::RCP<ROL::Vector<Real> > rol_z_ptr;
   Teuchos::RCP<ROL::Vector<Real> > rol_u_ptr;
-  Teuchos::RCP<Teuchos::ParameterList> params;
+  Teuchos::ParameterList& optParams;
   Teuchos::RCP<Teuchos::FancyOStream> out;
   Teuchos::EVerbosityLevel verbosityLevel;
   Teuchos::RCP<ROL_ObserverBase<Real>> observer;

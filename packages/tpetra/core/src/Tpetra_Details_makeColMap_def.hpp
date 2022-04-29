@@ -126,7 +126,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
           "domain and range Maps as input." << endl;
       }
     }
-    if (numLocalColGIDs == domMap->getNodeNumElements ()) {
+    if (numLocalColGIDs == domMap->getLocalNumElements ()) {
       colMap = domMap; // shallow copy
       return errCode;
     }
@@ -207,7 +207,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   //    maintain a consistent ordering of GIDs between the columns
   //    and the domain.
 
-  const size_t numDomainElts = domMap->getNodeNumElements ();
+  const size_t numDomainElts = domMap->getLocalNumElements ();
   if (numLocalColGIDs == numDomainElts) {
     // If the number of locally owned GIDs are the same as the
     // number of local domain Map elements, then the local domain
@@ -215,7 +215,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
     if (domMap->isContiguous ()) {
       // NOTE (mfh 03 Mar 2013, 02 Sep 2014) In the common case that
       // the domain Map is contiguous, it's more efficient to avoid
-      // calling getNodeElementList(), since that permanently
+      // calling getLocalElementList(), since that permanently
       // constructs and caches the GID list in the contiguous Map.
       GO curColMapGid = domMap->getMinGlobalIndex ();
       for (size_t k = 0; k < numLocalColGIDs; ++k, ++curColMapGid) {
@@ -223,7 +223,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
       }
     }
     else {
-      ArrayView<const GO> domainElts = domMap->getNodeElementList ();
+      ArrayView<const GO> domainElts = domMap->getLocalElementList ();
       std::copy (domainElts.begin(), domainElts.end(), LocalColGIDs.begin());
     }
   }
@@ -234,7 +234,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
     if (domMap->isContiguous ()) {
       // NOTE (mfh 03 Mar 2013, 02 Sep 2014) In the common case that
       // the domain Map is contiguous, it's more efficient to avoid
-      // calling getNodeElementList(), since that permanently
+      // calling getLocalElementList(), since that permanently
       // constructs and caches the GID list in the contiguous Map.
       GO curColMapGid = domMap->getMinGlobalIndex ();
       for (size_t i = 0; i < numDomainElts; ++i, ++curColMapGid) {
@@ -244,7 +244,7 @@ makeColMapImpl(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
       }
     }
     else {
-      ArrayView<const GO> domainElts = domMap->getNodeElementList ();
+      ArrayView<const GO> domainElts = domMap->getLocalElementList ();
       for (size_t i = 0; i < numDomainElts; ++i) {
         if (GIDisLocal[i]) {
           LocalColGIDs[numLocalCount++] = domainElts[i];
@@ -375,7 +375,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
       // Assume that we want to recreate the column Map.
       if (colMap->isContiguous ()) {
         // The number of indices on each process must fit in LO.
-        const LO numCurGids = static_cast<LO> (colMap->getNodeNumElements ());
+        const LO numCurGids = static_cast<LO> (colMap->getLocalNumElements ());
         myColumns.resize (numCurGids);
         const GO myFirstGblInd = colMap->getMinGlobalIndex ();
         for (LO k = 0; k < numCurGids; ++k) {
@@ -383,7 +383,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
         }
       }
       else { // the column Map is NOT contiguous
-        ArrayView<const GO> curGids = graph.getColMap ()->getNodeElementList ();
+        ArrayView<const GO> curGids = graph.getColMap ()->getLocalElementList ();
         // The number of indices on each process must fit in LO.
         const LO numCurGids = static_cast<LO> (curGids.size ());
         myColumns.resize (numCurGids);
@@ -423,7 +423,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
 
     // GIDisLocal[lid] is false if and only if local index lid in the
     // domain Map is remote (not local).
-    std::vector<bool> GIDisLocal (domMap->getNodeNumElements (), false);
+    std::vector<bool> GIDisLocal (domMap->getLocalNumElements (), false);
     std::set<GO> RemoteGIDSet;
     // This preserves the not-sorted Epetra order of GIDs.
     // We only use this if sortEachProcsGids is false.
@@ -431,10 +431,10 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
 
     if (! graph.getRowMap ().is_null ()) {
       const Tpetra::Map<LO, GO, NT>& rowMap = * (graph.getRowMap ());
-      const LO lclNumRows = rowMap.getNodeNumElements ();
+      const LO lclNumRows = rowMap.getLocalNumElements ();
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
         const GO gblRow = rowMap.getGlobalElement (lclRow);
-        Teuchos::ArrayView<const GO> rowGids;
+        typename RowGraph<LO,GO,NT>::global_inds_host_view_type rowGids;
         graph.getGlobalRowView (gblRow, rowGids);
 
         const LO numEnt = static_cast<LO> (rowGids.size ());
@@ -496,14 +496,12 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
   return errCode;
 }
 
-template<typename GO, typename device_t>
+template<typename GOView, typename bitset_t>
 struct GatherPresentEntries
 {
-  using bitset_t = Kokkos::Bitset<device_t>;
-  using mem_space = typename device_t::memory_space;
-  using GOView = Kokkos::View<GO*, mem_space>;
+  using GO = typename GOView::non_const_value_type;
 
-  GatherPresentEntries(GO minGID_, const GOView& gids_, bitset_t& present_)
+  GatherPresentEntries(GO minGID_, const GOView& gids_, const bitset_t& present_)
     : minGID(minGID_), gids(gids_), present(present_)
   {}
 
@@ -517,10 +515,9 @@ struct GatherPresentEntries
   bitset_t present;
 };
 
-template<typename LO, typename GO, typename device_t, typename LocalMapType, bool doingRemotes>
+template<typename LO, typename GO, typename device_t, typename LocalMapType, typename const_bitset_t, bool doingRemotes>
 struct ListGIDs
 {
-  using const_bitset_t = Kokkos::ConstBitset<device_t>;
   using mem_space = typename device_t::memory_space;
   using GOView = Kokkos::View<GO*, mem_space>;
   using SingleView = Kokkos::View<GO, mem_space>;
@@ -590,8 +587,13 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   using device_t = typename NT::device_type;
   using exec_space = typename device_t::execution_space;
   using memory_space = typename device_t::memory_space;
-  using bitset_t = Kokkos::Bitset<device_t>;
-  using const_bitset_t = Kokkos::ConstBitset<device_t>;
+  // Note BMK 5-2021: this is deliberately not just device_t.
+  // Bitset cannot use HIPHostPinnedSpace currently, so this needs to
+  // use the default memory space for HIP (HIPSpace). Using the default mem
+  // space is fine for all other backends too. This bitset type is only used
+  // in this function so it won't cause type mismatches.
+  using bitset_t = Kokkos::Bitset<typename exec_space::memory_space>;
+  using const_bitset_t = Kokkos::ConstBitset<typename exec_space::memory_space>;
   using GOView = Kokkos::View<GO*, memory_space>;
   using SingleView = Kokkos::View<GO, memory_space>;
   using map_type = Tpetra::Map<LO, GO, NT>;
@@ -608,7 +610,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   //Now, know the full range of input GIDs.
   //Determine the set of GIDs in the column map using a dense bitset, which corresponds to the range [minGID, maxGID]
   bitset_t presentGIDs(maxGID - minGID + 1);
-  Kokkos::parallel_for(RangePolicy<exec_space>(0, nentries), GatherPresentEntries<GO, device_t>(minGID, gids, presentGIDs));
+  Kokkos::parallel_for(RangePolicy<exec_space>(0, nentries), GatherPresentEntries<GOView, bitset_t>(minGID, gids, presentGIDs));
   const_bitset_t constPresentGIDs(presentGIDs);
   //Get the set of local and remote GIDs on device
   SingleView numLocals("Num local GIDs");
@@ -618,26 +620,30 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   LocalMap localDomMap = domMap->getLocalMap();
   //This lists the locally owned GIDs in localGIDView
   Kokkos::parallel_scan(RangePolicy<exec_space>(0, constPresentGIDs.size()),
-      ListGIDs<LO, GO, device_t, LocalMap, false>
+      ListGIDs<LO, GO, device_t, LocalMap, const_bitset_t, false>
       (minGID, localGIDView, numLocals, constPresentGIDs, localDomMap));
   //And this lists the remote GIDs in remoteGIDView
   Kokkos::parallel_scan(RangePolicy<exec_space>(0, constPresentGIDs.size()),
-      ListGIDs<LO, GO, device_t, LocalMap, true>
+      ListGIDs<LO, GO, device_t, LocalMap, const_bitset_t, true>
       (minGID, remoteGIDView, numRemotes, constPresentGIDs, localDomMap));
   //Pull down the sizes
   GO numLocalColGIDs = 0;
   GO numRemoteColGIDs = 0;
-  Kokkos::deep_copy(numLocalColGIDs, numLocals);
-  Kokkos::deep_copy(numRemoteColGIDs, numRemotes);
+  // DEEP_COPY REVIEW - DEVICE-TO-VALUE
+  Kokkos::deep_copy(exec_space(), numLocalColGIDs, numLocals);
+  // DEEP_COPY REVIEW - DEVICE-TO-numLocalColGIDs
+  Kokkos::deep_copy(exec_space(), numRemoteColGIDs, numRemotes);
   //Pull down the remote lists
   auto localsHost = Kokkos::create_mirror_view(localGIDView);
   auto remotesHost = Kokkos::create_mirror_view(remoteGIDView);
-  Kokkos::deep_copy(localsHost, localGIDView);
-  Kokkos::deep_copy(remotesHost, remoteGIDView);
+  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+  Kokkos::deep_copy(exec_space(), localsHost, localGIDView);
+  // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR
+  Kokkos::deep_copy(exec_space(), remotesHost, remoteGIDView);
   //Finally, populate the STL structures which hold the index lists
   std::set<GO> RemoteGIDSet;
   std::vector<GO> RemoteGIDUnorderedVector;
-  std::vector<bool> GIDisLocal (domMap->getNodeNumElements (), false);
+  std::vector<bool> GIDisLocal (domMap->getLocalNumElements (), false);
   for(GO i = 0; i < numLocalColGIDs; i++)
   {
     GO gid = localsHost(i);

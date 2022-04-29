@@ -275,7 +275,7 @@ makePointMap (const map_type& meshMap, const LO blockSize)
   const GST gblNumMeshMapInds =
     static_cast<GST> (meshMap.getGlobalNumElements ());
   const size_t lclNumMeshMapIndices =
-    static_cast<size_t> (meshMap.getNodeNumElements ());
+    static_cast<size_t> (meshMap.getLocalNumElements ());
   const GST gblNumPointMapInds =
     gblNumMeshMapInds * static_cast<GST> (blockSize);
   const size_t lclNumPointMapInds =
@@ -290,7 +290,7 @@ makePointMap (const map_type& meshMap, const LO blockSize)
     // "Hilbert's Hotel" trick: multiply each process' GIDs by
     // blockSize, and fill in.  That ensures correctness even if the
     // mesh Map is overlapping.
-    Teuchos::ArrayView<const GO> lclMeshGblInds = meshMap.getNodeElementList ();
+    Teuchos::ArrayView<const GO> lclMeshGblInds = meshMap.getLocalElementList ();
     const size_type lclNumMeshGblInds = lclMeshGblInds.size ();
     Teuchos::Array<GO> lclPointGblInds (lclNumPointMapInds);
     for (size_type g = 0; g < lclNumMeshGblInds; ++g) {
@@ -319,7 +319,9 @@ replaceLocalValuesImpl (const LO localRowIndex,
   auto X_dst = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
-  Kokkos::deep_copy (X_dst, X_src);
+  // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
+  using execution_space = typename device_type::execution_space;
+  Kokkos::deep_copy (execution_space(), X_dst, X_src);
 }
 
 
@@ -401,8 +403,8 @@ sumIntoGlobalValues (const GO globalRowIndex,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
 
 template<class Scalar, class LO, class GO, class Node>
+TPETRA_DEPRECATED
 bool
-// TPETRA_DEPRECATED
 BlockMultiVector<Scalar, LO, GO, Node>::
 getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals)
 {
@@ -416,8 +418,8 @@ getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals)
 }
 
 template<class Scalar, class LO, class GO, class Node>
+TPETRA_DEPRECATED
 bool
-// TPETRA_DEPRECATED
 BlockMultiVector<Scalar, LO, GO, Node>::
 getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals)
 {
@@ -432,8 +434,8 @@ getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals)
 }
 
 template<class Scalar, class LO, class GO, class Node>
+TPETRA_DEPRECATED
 typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
-// TPETRA_DEPRECATED
 BlockMultiVector<Scalar, LO, GO, Node>::
 getLocalBlock (const LO localRowIndex,
                const LO colIndex)
@@ -571,8 +573,7 @@ packAndPrepare
  buffer_device_type>& exports,
  Kokkos::DualView<size_t*,
  buffer_device_type> numPacketsPerLID,
- size_t& constantNumPackets,
- Distributor& distor)
+ size_t& constantNumPackets)
 {
   TEUCHOS_TEST_FOR_EXCEPTION
     (true, std::logic_error,
@@ -590,7 +591,6 @@ unpackAndCombine
  Kokkos::DualView<size_t*,
  buffer_device_type> numPacketsPerLID,
  const size_t constantNumPackets,
- Distributor& distor,
  const CombineMode combineMode)
 {
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -775,9 +775,9 @@ blockJacobiUpdate (const ViewY& Y,
                    const ViewZ& Z,
                    const Scalar& beta)
 {
-  static_assert (Kokkos::Impl::is_view<ViewY>::value, "Y must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<ViewD>::value, "D must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<ViewZ>::value, "Z must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewY>::value, "Y must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewD>::value, "D must be a Kokkos::View.");
+  static_assert (Kokkos::is_view<ViewZ>::value, "Z must be a Kokkos::View.");
   static_assert (static_cast<int> (ViewY::rank) == static_cast<int> (ViewZ::rank),
                  "Y and Z must have the same rank.");
   static_assert (static_cast<int> (ViewD::rank) == 3, "D must have rank 3.");
@@ -823,8 +823,7 @@ blockWiseMultiply (const Scalar& alpha,
 {
   using Kokkos::ALL;
   typedef typename device_type::execution_space execution_space;
-  typedef typename device_type::memory_space memory_space;
-  const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
+  const LO lclNumMeshRows = meshMap_.getLocalNumElements ();
 
   if (alpha == STS::zero ()) {
     this->putScalar (STS::zero ());
@@ -857,7 +856,6 @@ blockJacobiUpdate (const Scalar& alpha,
 {
   using Kokkos::ALL;
   using Kokkos::subview;
-  typedef typename device_type::memory_space memory_space;
   typedef impl_scalar_type IST;
 
   const IST alphaImpl = static_cast<IST> (alpha);

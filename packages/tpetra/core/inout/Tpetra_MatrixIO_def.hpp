@@ -174,9 +174,9 @@ readHBMatrix (const std::string &filename,
     TEUCHOS_TEST_FOR_EXCEPTION( rowMap->isDistributed() == false && comm->getSize() > 1, std::runtime_error,
         "Tpetra::Utils::readHBMatrix(): specified map is not distributed.");
   }
-  Teuchos::Array<size_t> myNNZ (rowMap->getNodeNumElements ());
+  Teuchos::Array<size_t> myNNZ (rowMap->getLocalNumElements ());
   if (myRank == 0) {
-    LocalOrdinal numRowsAlreadyDistributed = rowMap->getNodeNumElements();
+    LocalOrdinal numRowsAlreadyDistributed = rowMap->getLocalNumElements();
     std::copy(nnzPerRow.begin(), nnzPerRow.begin()+numRowsAlreadyDistributed, myNNZ.begin());
     for (int p=1; p < Teuchos::size(*comm); ++p) {
       size_t numRowsForP;
@@ -188,7 +188,7 @@ readHBMatrix (const std::string &filename,
     }
   }
   else {
-    const size_t numMyRows = rowMap->getNodeNumElements();
+    const size_t numMyRows = rowMap->getLocalNumElements();
     Teuchos::send(*comm,numMyRows,0);
     if (numMyRows) {
       Teuchos::receive<int,size_t>(*comm,0,numMyRows,myNNZ(0,numMyRows).getRawPtr());
@@ -203,7 +203,7 @@ readHBMatrix (const std::string &filename,
   else {
     domMap = createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numCols,comm);
   }
-  A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap, myNNZ (), Tpetra::StaticProfile));
+  A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap, myNNZ ()));
   // free this locally, A will keep it allocated as long as it is needed by A (up until allocation of nonzeros)
   {
     // Classic idiom for freeing an std::vector; resize doesn't

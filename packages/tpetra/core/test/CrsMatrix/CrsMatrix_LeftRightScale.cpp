@@ -93,8 +93,6 @@ namespace {
   using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createVector;
   using Tpetra::createCrsMatrix;
-  using Tpetra::ProfileType;
-  using Tpetra::StaticProfile;
   using Tpetra::OptimizeOption;
   using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;
@@ -119,18 +117,18 @@ namespace {
     typedef Teuchos::ScalarTraits<ST> STS;
     typedef typename STS::magnitudeType MT;
     typedef Teuchos::ScalarTraits<MT> STM;
-    typedef typename ArrayView<const LO>::size_type size_type;
+    typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MAT;
 
     MT mySum = STM::zero ();
-    Array<LO> inds (matrix->getNodeMaxNumRowEntries ());
-    Array<Scalar> vals (matrix->getNodeMaxNumRowEntries ());
+    Array<LO> inds (matrix->getLocalMaxNumRowEntries ());
+    Array<Scalar> vals (matrix->getLocalMaxNumRowEntries ());
 
-    const size_t myNumRows = matrix->getNodeNumRows ();
+    const size_t myNumRows = matrix->getLocalNumRows ();
     for (size_t i = 0; i < myNumRows; ++i) {
       const LO myRow = as<LO> (i);
       const size_t numRowEnts = matrix->getNumEntriesInLocalRow (myRow);
-      ArrayView<const LO> indsView = inds.view (0, as<size_type> (numRowEnts));
-      ArrayView<const ST> valsView = vals.view (0, as<size_type> (numRowEnts));
+      typename MAT::local_inds_host_view_type indsView;
+      typename MAT::values_host_view_type valsView;
       matrix->getLocalRowView (myRow, indsView, valsView);
       for (size_t j = 0; j < numRowEnts; ++j) {
         const ST curVal = valsView[j];

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,11 +12,9 @@
 static int ex__look_up_var(int exoid, ex_entity_type var_type, ex_entity_id obj_id,
                            const char *var_obj_id, const char *dim_num_obj_var, int *varid)
 {
-  int    status;
-  int    obj_id_ndx;
-  int    time_dim, numvardim, dims[2];
-  size_t num_obj_var;
-  char   errmsg[MAX_ERR_LENGTH];
+  int  status;
+  int  obj_id_ndx;
+  char errmsg[MAX_ERR_LENGTH];
 
   if (var_type == EX_ASSEMBLY) {
     status = nc_inq_varid(exoid, VAR_ENTITY_ASSEMBLY(obj_id), varid);
@@ -66,6 +64,7 @@ static int ex__look_up_var(int exoid, ex_entity_type var_type, ex_entity_id obj_
   if ((status = nc_inq_varid(exoid, ex__name_red_var_of_object(var_type, obj_id_ndx), varid)) !=
       NC_NOERR) {
     if (status == NC_ENOTVAR) { /* variable doesn't exist, create it! */
+      int time_dim;
       if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate time dimension in file id %d",
                  exoid);
@@ -73,6 +72,8 @@ static int ex__look_up_var(int exoid, ex_entity_type var_type, ex_entity_id obj_
         return EX_FATAL;
       }
 
+      size_t num_obj_var;
+      int    numvardim;
       if ((status = ex__get_dimension(exoid, dim_num_obj_var, ex_name_of_object(var_type),
                                       &num_obj_var, &numvardim, __func__)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
@@ -90,8 +91,7 @@ static int ex__look_up_var(int exoid, ex_entity_type var_type, ex_entity_id obj_
       }
 
       /* define NetCDF variable to store reduction variable values */
-      dims[0] = time_dim;
-      dims[1] = numvardim;
+      int dims[] = {time_dim, numvardim};
       if ((status = nc_def_var(exoid, ex__name_red_var_of_object(var_type, obj_id_ndx),
                                nc_flt_code(exoid), 2, dims, varid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s in file id %d",

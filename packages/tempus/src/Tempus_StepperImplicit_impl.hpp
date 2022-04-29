@@ -237,6 +237,7 @@ void StepperImplicit<Scalar>::setSolver(
 }
 
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
 template<class Scalar>
 const Thyra::SolveStatus<Scalar>
 StepperImplicit<Scalar>::solveImplicitODE(
@@ -251,18 +252,22 @@ StepperImplicit<Scalar>::solveImplicitODE(
 }
 
 
+#endif
 template<class Scalar>
 const Thyra::SolveStatus<Scalar>
 StepperImplicit<Scalar>::solveImplicitODE(
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > & xDot,
   const Scalar time,
-  const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p )
+  const Teuchos::RCP<ImplicitODEParameters<Scalar> > & p,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> > & y,
+  const int index                                         )
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();
   MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
   inArgs.set_x(x);
+  if ( y != Teuchos::null ) inArgs.set_p(index, y);
   if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
   if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time);
   if (inArgs.supports(MEB::IN_ARG_step_size))
@@ -328,6 +333,7 @@ template<class Scalar>
 void StepperImplicit<Scalar>::describe(Teuchos::FancyOStream        & out,
                                const Teuchos::EVerbosityLevel verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << "--- StepperImplicit ---\n";
   out << "  wrapperModel_     = " << wrapperModel_ << std::endl;
   out << "  solver_           = " << solver_ << std::endl;
@@ -340,6 +346,7 @@ void StepperImplicit<Scalar>::describe(Teuchos::FancyOStream        & out,
 template<class Scalar>
 bool StepperImplicit<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if (wrapperModel_->getAppModel() == Teuchos::null) {

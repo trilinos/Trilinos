@@ -10,6 +10,7 @@
 #define Tempus_TimeStepControlStrategy_IntegralController_hpp
 
 #include "Tempus_config.hpp"
+#include "Tempus_NumericalUtils.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionState.hpp"
 #include "Tempus_SolutionHistory.hpp"
@@ -66,9 +67,6 @@ public:
       safetyFactor_(0.90), safetyFactorAfterReject_(0.9),
       facMax_(5.0), facMin_(0.5)
   {
-    errN_ = Scalar(1.0);
-    errNm1_ = Scalar(1.0);
-    errNm2_ = Scalar(1.0);
     facMaxINPUT_ = facMax_;
 
     this->setStrategyType("Integral Controller");
@@ -87,9 +85,6 @@ public:
       safetyFactorAfterReject_(safetyFactorAfterReject),
       facMax_(facMax), facMin_(facMin)
   {
-    errN_ = Scalar(1.0);
-    errNm1_ = Scalar(1.0);
-    errNm2_ = Scalar(1.0);
     facMaxINPUT_ = facMax_;
 
     this->setStrategyType("Integral Controller");
@@ -118,25 +113,28 @@ public:
     }
 
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-    const Scalar errorRel = workingState->getErrorRel();
     Scalar beta = 1.0;
 
     // assumes the embedded solution is the low order solution
     int order = workingState->getOrder() - 1;
     Scalar dt = workingState->getTimeStep();
 
-    // update errors
-    errNm2_ = errNm1_;
-    errNm1_ = errN_;
-    errN_ = errorRel;
+    // Get the relative errors.
+    Scalar errN   = workingState->getErrorRel();
+    Scalar errNm1 = workingState->getErrorRelNm1();
+    Scalar errNm2 = workingState->getErrorRelNm2();
+
+    if ( errN   < numericalTol<Scalar>()) errN   = 1.0;
+    if ( errNm1 < numericalTol<Scalar>()) errNm1 = 1.0;
+    if ( errNm2 < numericalTol<Scalar>()) errNm2 = 1.0;
 
     Scalar k1 = Teuchos::as<Scalar>(-KI_ / order);
     Scalar k2 = Teuchos::as<Scalar>( KP_ / order);
     Scalar k3 = Teuchos::as<Scalar>(-KD_ / order);
 
-    k1 = std::pow(errN_, k1);
-    k2 = std::pow(errNm1_, k2);
-    k3 = std::pow(errNm2_, k3);
+    k1 = std::pow(errN, k1);
+    k2 = std::pow(errNm1, k2);
+    k3 = std::pow(errNm2, k3);
 
     if (controller_ == "I")
        beta = safetyFactor_*k1;
@@ -178,22 +176,26 @@ public:
     void describe(Teuchos::FancyOStream          &out,
                   const Teuchos::EVerbosityLevel verbLevel) const override
     {
-      Teuchos::OSTab ostab(out,2,"describe");
-      out << description() << "::describe:" << std::endl
-          << "Strategy Type                      = " << this->getStrategyType() << std::endl
-          << "Step Type                          = " << this->getStepType()     << std::endl
-          << "Controller Type                    = " << getController()         << std::endl
-          << "KI                                 = " << getKI()                 << std::endl
-          << "KP                                 = " << getKP()                 << std::endl
-          << "KD                                 = " << getKD()                 << std::endl
-          << "errN_                              = " << errN_                   << std::endl
-          << "errNm1_                            = " << errNm1_                 << std::endl
-          << "errNm2_                            = " << errNm2_                 << std::endl
-          << "Safety Factor                      = " << getSafetyFactor()       << std::endl
-          << "Safety Factor After Step Rejection = " << getSafetyFactorAfterReject() << std::endl
-          << "Maximum Safety Factor (INPUT)      = " << facMaxINPUT_            << std::endl
-          << "Maximum Safety Factor              = " << getFacMax()             << std::endl
-          << "Minimum Safety Factor              = " << getFacMin()             << std::endl;
+      auto l_out = Teuchos::fancyOStream( out.getOStream() );
+      Teuchos::OSTab ostab(*l_out, 2, this->description());
+      l_out->setOutputToRootOnly(0);
+
+      *l_out << "\n--- " << this->description() << " ---" << std::endl;
+
+      if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
+       *l_out << "  Strategy Type                      = " << this->getStrategyType() << std::endl
+            << "  Step Type                          = " << this->getStepType()     << std::endl
+            << "  Controller Type                    = " << getController()         << std::endl
+            << "  KI                                 = " << getKI()                 << std::endl
+            << "  KP                                 = " << getKP()                 << std::endl
+            << "  KD                                 = " << getKD()                 << std::endl
+            << "  Safety Factor                      = " << getSafetyFactor()       << std::endl
+            << "  Safety Factor After Step Rejection = " << getSafetyFactorAfterReject() << std::endl
+            << "  Maximum Safety Factor (INPUT)      = " << facMaxINPUT_            << std::endl
+            << "  Maximum Safety Factor              = " << getFacMax()             << std::endl
+            << "  Minimum Safety Factor              = " << getFacMin()             << std::endl;
+        *l_out << std::string(this->description().length()+8, '-') <<std::endl;
+      }
     }
   //@}
 
@@ -267,9 +269,6 @@ private:
   Scalar KI_;                       ///< Integral gain
   Scalar KP_;                       ///< Proportional gain
   Scalar KD_;                       ///< Derivative gain
-  Scalar errN_;
-  Scalar errNm1_;
-  Scalar errNm2_;
   Scalar safetyFactor_;             ///< Safety Factor
   Scalar safetyFactorAfterReject_;  ///< Safety Factor Following Step Rejection
   Scalar facMaxINPUT_;              ///< Maximum Safety Factor from input
@@ -290,10 +289,10 @@ createTimeStepControlStrategyIntegralController(
 {
   using Teuchos::rcp;
   auto tscs = rcp(new TimeStepControlStrategyIntegralController<Scalar>());
-  if (pList == Teuchos::null) return tscs;
+  if (pList == Teuchos::null || pList->numParams() == 0) return tscs;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    pList->get<std::string>("Strategy Type", "Integral Controller") !=
+    pList->get<std::string>("Strategy Type") !=
       "Integral Controller", std::logic_error,
     "Error - Strategy Type != 'Integral Controller'.  (='"
     +pList->get<std::string>("Strategy Type")+"')\n");

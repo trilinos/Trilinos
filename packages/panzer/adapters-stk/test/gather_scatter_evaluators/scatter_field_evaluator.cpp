@@ -77,8 +77,6 @@ using Teuchos::rcp;
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
-#include "Epetra_MpiComm.h"
-
 #include <cstdio> // for get char
 #include <vector>
 #include <string>
@@ -130,14 +128,18 @@ namespace panzer {
   XCoordinate<EvalT, Traits>::
   evaluateFields(
     typename Traits::EvalData workset)
-  { 
+  {
      std::size_t numcells = workset.num_cells;
+     int l_nodes = nodes;
+     auto xcoord_v = PHX::as_view(xcoord);
+     auto cvc = PHX::as_view(this->wda(workset).cell_vertex_coordinates);
 
-     for(std::size_t n=0;n<numcells;n++) {
-        for(int v=0;v<nodes;v++) {
-           xcoord(n,v) = this->wda(workset).cell_vertex_coordinates(n,v,0);
+     Kokkos::parallel_for(numcells, KOKKOS_LAMBDA (int n) {
+        for(int v=0;v<l_nodes;v++) {
+	  xcoord_v(n,v) = cvc(n,v,0);
         }
-     }
+       });
+     Kokkos::fence();
   }
 
   Teuchos::RCP<panzer::PureBasis> buildLinearBasis(std::size_t worksetSize);
@@ -150,13 +152,14 @@ namespace panzer {
 
     const std::size_t workset_size = 20;
     linBasis = buildLinearBasis(workset_size);
-    Kokkos::push_finalize_hook( [=] { 
-      linBasis = Teuchos::RCP<panzer::PureBasis>(); 
+    Kokkos::push_finalize_hook( [=] {
+      linBasis = Teuchos::RCP<panzer::PureBasis>();
     });
 
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(20,20,true);
 
-    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > comm
+        = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
 
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
@@ -164,7 +167,7 @@ namespace panzer {
 
     Teuchos::ParameterList pl;
     pl.set("Data Layout",linBasis->functional);
-    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm = 
+    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm =
       Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
     fm->registerEvaluator<panzer::Traits::Residual>(Teuchos::rcp(new XCoordinate<panzer::Traits::Residual,panzer::Traits>(pl)));
 
@@ -189,7 +192,7 @@ namespace panzer {
 
       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
-      
+
       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
@@ -213,7 +216,7 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
 
     Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,physics_block_one->elementBlockID(),
-                                                                                            physics_block_one->getWorksetNeeds()); 
+                                                                                            physics_block_one->getWorksetNeeds());
 
     panzer::Traits::SD sd;
     sd.worksets_ = volume_worksets;
@@ -228,7 +231,7 @@ namespace panzer {
     }
     fm->postEvaluate<panzer::Traits::Residual>(0);
 
-    if(mesh->isWritable()) 
+    if(mesh->isWritable())
        mesh->writeToExodus("x-coord.exo");
   }
 
@@ -237,15 +240,16 @@ namespace panzer {
 
     const std::size_t workset_size = 5;
     linBasis = buildLinearBasis(workset_size);
-    Kokkos::push_finalize_hook( [=] { 
-      linBasis = Teuchos::RCP<panzer::PureBasis>(); 
+    Kokkos::push_finalize_hook( [=] {
+      linBasis = Teuchos::RCP<panzer::PureBasis>();
     });
 
     Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(5,5,false);
 
-    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > comm
+        = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Teuchos::DefaultComm<int>::getComm());
 
-     Teuchos::RCP<shards::CellTopology> topo = 
+     Teuchos::RCP<shards::CellTopology> topo =
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
     panzer::CellData cellData(workset_size,topo);
     Teuchos::RCP<panzer::IntegrationRule> intRule = Teuchos::rcp(new panzer::IntegrationRule(1,cellData));
@@ -254,7 +258,7 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     testInitialzation(ipb, bcs);
 
-    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm = 
+    Teuchos::RCP<PHX::FieldManager<panzer::Traits> > fm =
       Teuchos::rcp(new PHX::FieldManager<panzer::Traits>);
     {
        Teuchos::ParameterList pl;
@@ -273,7 +277,7 @@ namespace panzer {
        Teuchos::RCP<std::vector<std::string> > fieldNames
              = Teuchos::rcp(new std::vector<std::string>);
        fieldNames->push_back("x-coord");
-    
+
        Teuchos::ParameterList pl;
        pl.set("Mesh",mesh);
        pl.set("IR",intRule);
@@ -310,7 +314,7 @@ namespace panzer {
 
       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
-      
+
       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
@@ -335,7 +339,7 @@ namespace panzer {
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block_one = panzer::findPhysicsBlock("eblock-0_0",physicsBlocks);
     Teuchos::RCP<std::vector<panzer::Workset> > volume_worksets = panzer_stk::buildWorksets(*mesh,physics_block_one->elementBlockID(),
-                                                                                            physics_block_one->getWorksetNeeds()); 
+                                                                                            physics_block_one->getWorksetNeeds());
 
 
     panzer::Traits::SD sd;
@@ -351,18 +355,18 @@ namespace panzer {
     }
     fm->postEvaluate<panzer::Traits::Residual>(0);
 
-    if(mesh->isWritable()) 
+    if(mesh->isWritable())
        mesh->writeToExodus("x-coord-cell.exo");
   }
 
   Teuchos::RCP<panzer::PureBasis> buildLinearBasis(std::size_t worksetSize)
   {
-     Teuchos::RCP<shards::CellTopology> topo = 
+     Teuchos::RCP<shards::CellTopology> topo =
         Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
      panzer::CellData cellData(worksetSize,topo);
 
-     return Teuchos::rcp(new panzer::PureBasis("HGrad",1,cellData)); 
+     return Teuchos::rcp(new panzer::PureBasis("HGrad",1,cellData));
   }
 
   Teuchos::RCP<panzer_stk::STK_Interface> buildMesh(int elemX,int elemY,bool solution)
@@ -372,17 +376,17 @@ namespace panzer {
     pl->set("Y Blocks",1);
     pl->set("X Elements",elemX);
     pl->set("Y Elements",elemY);
-    
+
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
- 
+
     // add in some fields
     mesh->addSolutionField("x-coord","eblock-0_0");
     if(!solution)
        mesh->addCellField("x-coord","eblock-0_0");
 
-    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
+    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
     return mesh;
   }
@@ -419,10 +423,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    } 
+    }
     {
       std::size_t bc_id = 1;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -433,10 +437,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }   
+    }
     {
       std::size_t bc_id = 2;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -447,7 +451,7 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
     }

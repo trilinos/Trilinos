@@ -45,8 +45,9 @@
 #ifndef PHX_TRAITS_HPP
 #define PHX_TRAITS_HPP
 
-#include "Kokkos_View.hpp"
 #include "Kokkos_View_Fad.hpp"
+#include "Kokkos_DynRankView_Fad.hpp"
+#include "Kokkos_View.hpp"
 #include "Phalanx_config.hpp"
 
 namespace PHX {

@@ -116,7 +116,7 @@ int ConvergenceQuad(const bool verbose) {
   oldFormatState.copyfmt(std::cout);
 
   using ExecSpaceType = typename DeviceType::execution_space;
-  using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+  using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
 
   *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
   *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);

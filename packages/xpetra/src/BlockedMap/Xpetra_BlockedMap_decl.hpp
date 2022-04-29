@@ -125,7 +125,7 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node>
 
 
     //! The number of elements belonging to the calling process.
-    virtual size_t getNodeNumElements() const;
+    virtual size_t getLocalNumElements() const;
 
 
     //! The index base for this Map.
@@ -176,7 +176,7 @@ class BlockedMap : public Map<LocalOrdinal, GlobalOrdinal, Node>
 
 
     //! Return a view of the global indices owned by this process.
-    virtual Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const;
+    virtual Teuchos::ArrayView<const GlobalOrdinal> getLocalElementList() const;
 
 
     //@}

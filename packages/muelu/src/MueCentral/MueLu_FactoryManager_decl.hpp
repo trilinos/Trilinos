@@ -56,6 +56,7 @@
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_ConstraintFactory_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
+#include "MueLu_InitialBlockNumberFactory_fwd.hpp"
 #include "MueLu_LineDetectionFactory_fwd.hpp"
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_PatternFactory_fwd.hpp"
@@ -65,6 +66,7 @@
 #include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_ScaledNullspaceFactory_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
+#include "MueLu_StructuredAggregationFactory_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_TransPFactory_fwd.hpp"
 #include "MueLu_TrilinosSmoother_fwd.hpp"
@@ -136,6 +138,10 @@ namespace MueLu {
       if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
         useKokkos_ = true;
 # endif
+# ifdef HAVE_MUELU_HIP
+      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+        useKokkos_ = true;
+# endif
 #endif
     }
 
@@ -156,6 +162,10 @@ namespace MueLu {
 # endif
 # ifdef HAVE_MUELU_CUDA
       if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+        useKokkos_ = true;
+# endif
+# ifdef HAVE_MUELU_HIP
+      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
         useKokkos_ = true;
 # endif
 #endif

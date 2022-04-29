@@ -300,7 +300,7 @@ size_t ILUT<MatrixType>::getNodeSmootherComplexity() const {
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
     "input matrix, then call compute(), before calling this method.");
   // ILUT methods cost roughly one apply + the nnz in the upper+lower triangles
-  return A_->getNodeNumEntries() + getNodeNumEntries();
+  return A_->getLocalNumEntries() + getLocalNumEntries();
 }
 
 
@@ -311,8 +311,8 @@ global_size_t ILUT<MatrixType>::getGlobalNumEntries () const {
 
 
 template<class MatrixType>
-size_t ILUT<MatrixType>::getNodeNumEntries () const {
-  return L_->getNodeNumEntries () + U_->getNodeNumEntries ();
+size_t ILUT<MatrixType>::getLocalNumEntries () const {
+  return L_->getLocalNumEntries () + U_->getLocalNumEntries ();
 }
 
 
@@ -323,11 +323,11 @@ void ILUT<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     // Check in serial or one-process mode if the matrix is square.
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! A.is_null () && A->getComm ()->getSize () == 1 &&
-      A->getNodeNumRows () != A->getNodeNumCols (),
+      A->getLocalNumRows () != A->getLocalNumCols (),
       std::runtime_error, "Ifpack2::ILUT::setMatrix: If A's communicator only "
       "contains one process, then A must be square.  Instead, you provided a "
-      "matrix A with " << A->getNodeNumRows () << " rows and "
-      << A->getNodeNumCols () << " columns.");
+      "matrix A with " << A->getLocalNumRows () << " rows and "
+      << A->getLocalNumCols () << " columns.");
 
     // It's legal for A to be null; in that case, you may not call
     // initialize() until calling setMatrix() with a nonnull input.
@@ -439,7 +439,7 @@ void ILUT<MatrixType>::compute ()
     const scalar_type zero = STS::zero ();
     const scalar_type one  = STS::one ();
 
-    const local_ordinal_type myNumRows = A_local_->getNodeNumRows ();
+    const local_ordinal_type myNumRows = A_local_->getLocalNumRows ();
 
     // If this macro is defined, files containing the L and U factors
     // will be written. DON'T CHECK IN THE CODE WITH THIS MACRO ENABLED!!!
@@ -451,7 +451,7 @@ void ILUT<MatrixType>::compute ()
 
     // Calculate how much fill will be allowed in addition to the
     // space that corresponds to the input matrix entries.
-    double local_nnz = static_cast<double> (A_local_->getNodeNumEntries ());
+    double local_nnz = static_cast<double> (A_local_->getLocalNumEntries ());
     double fill = ((getLevelOfFill () - 1.0) * local_nnz) / (2 * myNumRows);
 
     // std::ceil gives the smallest integer larger than the argument.
@@ -491,18 +491,17 @@ void ILUT<MatrixType>::compute ()
     // =================== //
     // start factorization //
     // =================== //
-
-    ArrayRCP<local_ordinal_type> ColIndicesARCP;
-    ArrayRCP<scalar_type>       ColValuesARCP;
+    nonconst_local_inds_host_view_type ColIndicesARCP;
+    nonconst_values_host_view_type ColValuesARCP;
     if (! A_local_->supportsRowViews ()) {
-      const size_t maxnz = A_local_->getNodeMaxNumRowEntries ();
-      ColIndicesARCP.resize (maxnz);
-      ColValuesARCP.resize (maxnz);
+      const size_t maxnz = A_local_->getLocalMaxNumRowEntries ();
+      Kokkos::resize(ColIndicesARCP,maxnz);
+      Kokkos::resize(ColValuesARCP,maxnz);
     }
 
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
-      ArrayView<const local_ordinal_type> ColIndicesA;
-      ArrayView<const scalar_type> ColValuesA;
+      local_inds_host_view_type  ColIndicesA;
+      values_host_view_type ColValuesA;
       size_t RowNnz;
 
       if (A_local_->supportsRowViews ()) {
@@ -510,9 +509,9 @@ void ILUT<MatrixType>::compute ()
         RowNnz = ColIndicesA.size ();
       }
       else {
-        A_local_->getLocalRowCopy (row_i, ColIndicesARCP (), ColValuesARCP (), RowNnz);
-        ColIndicesA = ColIndicesARCP (0, RowNnz);
-        ColValuesA = ColValuesARCP (0, RowNnz);
+        A_local_->getLocalRowCopy (row_i, ColIndicesARCP, ColValuesARCP, RowNnz);
+        ColIndicesA = Kokkos::subview(ColIndicesARCP,std::make_pair((size_t)0, RowNnz));
+        ColValuesA  = Kokkos::subview(ColValuesARCP,std::make_pair((size_t)0, RowNnz));
       }
 
       // Always include the diagonal in the U factor. The value should get
@@ -612,7 +611,7 @@ void ILUT<MatrixType>::compute ()
       // Put indices and values for L into arrays and then into the L_ matrix.
 
       //   first, the original entries from the L section of A:
-      for (size_type i = 0; i < ColIndicesA.size (); ++i) {
+      for (size_type i = 0; i < (size_type)ColIndicesA.size (); ++i) {
         if (ColIndicesA[i] < row_i) {
           L_tmp_idx[row_i].push_back(ColIndicesA[i]);
           L_tmpv[row_i].push_back(cur_row[ColIndicesA[i]]);
@@ -717,7 +716,7 @@ void ILUT<MatrixType>::compute ()
     }
 
     L_ = rcp (new crs_matrix_type (A_local_->getRowMap(), A_local_->getColMap(),
-                                   nnzPerRow(), Tpetra::StaticProfile));
+                                   nnzPerRow()));
 
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
       L_->insertLocalValues (row_i, L_tmp_idx[row_i](), L_tmpv[row_i]());
@@ -730,7 +729,7 @@ void ILUT<MatrixType>::compute ()
     }
 
     U_ = rcp (new crs_matrix_type (A_local_->getRowMap(), A_local_->getColMap(),
-                                   nnzPerRow(), Tpetra::StaticProfile));
+                                   nnzPerRow()));
 
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
       U_->insertLocalValues (row_i, U_tmp_idx[row_i](), U_tmpv[row_i]());

@@ -185,8 +185,8 @@ static void zgeom(void *data, int ngid, int nlid, int nobj,
 static void zhgsize(void *data, int *nLists, int *nPins, int *format, int *ierr)
 {
   tMatrix_t *matrix = (tMatrix_t *) data;
-  *nLists = matrix->getNodeNumRows();
-  *nPins = matrix->getNodeNumEntries();
+  *nLists = matrix->getLocalNumRows();
+  *nPins = matrix->getLocalNumEntries();
   *format = ZOLTAN_COMPRESSED_VERTEX;
   *ierr = ZOLTAN_OK;
 }
@@ -197,7 +197,7 @@ static void zhg(void *data, int ngid, int nLists, int nPins, int format,
 {
   tMatrix_t *matrix = (tMatrix_t *) data;
   RCP<const tGraph_t> graph = matrix->getCrsGraph();
-  zlno_t nrows = graph->getNodeNumRows();
+  zlno_t nrows = graph->getLocalNumRows();
   
   offsets[0] = 0;
   for (zlno_t i = 0; i < nrows; i++) {
@@ -209,7 +209,8 @@ static void zhg(void *data, int ngid, int nLists, int nPins, int format,
     size_t nEntries = graph->getNumEntriesInLocalRow(i);
     offsets[i+1] = offsets[i] + nEntries;
 
-    Teuchos::ArrayView<const zlno_t> colind;
+    
+    typename tMatrix_t::local_inds_host_view_type colind;
     graph->getLocalRowView(i, colind);
 
     for (size_t j = 0; j < nEntries; j++) {

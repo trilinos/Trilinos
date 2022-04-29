@@ -171,6 +171,7 @@ lib stk_balance_lib
       [ glob 
              $(stk_balance-root)/stk_balance/*.cpp 
              $(stk_balance-root)/stk_balance/internal/*.cpp 
+             $(stk_balance-root)/stk_balance/m2n/*.cpp 
              $(stk_balance-root)/stk_balance/mesh/*.cpp
              $(stk_balance-root)/stk_balance/io/*.cpp
              $(stk_balance-root)/stk_balance/setup/*.cpp
@@ -186,6 +187,7 @@ lib stk_balance_lib
     /sierra/stk_tools//stk_tools_lib
     /sierra/stk_util//stk_util_command_line
     /sierra/stk_math//stk_math
+    /sierra/stk_topology//stk_topology
   :
     <include>$(stk_balance-root-inc)/stk_balance
     [ ifuserbuild <file>$(stk_balance-root)/lib/libstk_balance_lib.a

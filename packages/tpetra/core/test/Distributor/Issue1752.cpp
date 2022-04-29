@@ -86,7 +86,7 @@ void fill_and_complete(CrsMatrixType& matrix)
 
   // Fill the sparse matrix, one row at a time.
   auto map = matrix.getRowMap();
-  auto my_num_rows = map->getNodeNumElements();
+  auto my_num_rows = map->getLocalNumElements();
   auto num_rows = map->getGlobalNumElements();
   for (LO i=0; i<static_cast<LO>(my_num_rows); i++) {
     auto gbl_row = map->getGlobalElement(i);
@@ -124,7 +124,6 @@ std::pair<int, std::string> check_matrix(CrsMatrixType& matrix)
   typedef typename CrsMatrixType::scalar_type ST;
   typedef typename CrsMatrixType::local_ordinal_type LO;
   typedef typename CrsMatrixType::global_ordinal_type GO;
-  typedef typename ArrayView<LO>::size_type size_type;
   typedef Tpetra::global_size_t GST;
 
   int ierr = 0;
@@ -135,13 +134,13 @@ std::pair<int, std::string> check_matrix(CrsMatrixType& matrix)
 
   // Fill the sparse matrix, one row at a time.
   auto map = matrix.getRowMap();
-  auto my_num_rows = map->getNodeNumElements();
+  auto my_num_rows = map->getLocalNumElements();
   auto num_rows = matrix.getGlobalNumRows();
 
   for (LO i=0; i<static_cast<LO>(my_num_rows); i++) {
     auto gbl_row = map->getGlobalElement(i);
-    ArrayView<const LO> cols;
-    ArrayView<const ST> vals;
+    typename CrsMatrixType::local_inds_host_view_type cols;
+    typename CrsMatrixType::values_host_view_type vals;
     matrix.getLocalRowView(i, cols, vals);
 
     std::map<GO,ST> expected;
@@ -162,7 +161,7 @@ std::pair<int, std::string> check_matrix(CrsMatrixType& matrix)
       expected[gbl_row+1] = neg_one;
     }
 
-    if (static_cast<size_type>(expected.size()) != cols.size()) {
+    if (expected.size() != cols.size()) {
       ierr++;
       os << " Error: expected row " << gbl_row
          << " to have " << expected.size()
@@ -171,7 +170,7 @@ std::pair<int, std::string> check_matrix(CrsMatrixType& matrix)
       continue;
     }
 
-    for (typename ArrayView<const ST>::size_type j=0; j<cols.size(); j++) {
+    for (size_t j=0; j<cols.size(); j++) {
       auto gbl_col = matrix.getColMap()->getGlobalElement(cols[j]);
       if (vals[j] != expected[gbl_col]) {
         ierr++;
@@ -237,7 +236,7 @@ TEUCHOS_UNIT_TEST(Distributor, ReverseDistributeToNonuniformMap)
   // Create matrix using the unique map
   out << std::right << std::setfill('*') <<  std::setw(80)
       << "Proc " << my_rank << ": Creating matrix with unique map" << endl;
-  matrix_type unique_mtx(unique_map, 3, Tpetra::StaticProfile);
+  matrix_type unique_mtx(unique_map, 3);
   fill_and_complete(unique_mtx);
 
   // Sanity check the unique matrix
@@ -259,7 +258,7 @@ TEUCHOS_UNIT_TEST(Distributor, ReverseDistributeToNonuniformMap)
   import_type importer(unique_map, default_map);
 
   // Matrix built with default map
-  matrix_type default_mtx_fwd(default_map, 3, Tpetra::StaticProfile);
+  matrix_type default_mtx_fwd(default_map, 3);
 
   // Do a forward import (an import operation using an Import plan) from the
   // unique matrix to the default matrix.  i.e., communicate entries
@@ -286,7 +285,7 @@ TEUCHOS_UNIT_TEST(Distributor, ReverseDistributeToNonuniformMap)
   }
 
   // Matrix built with default map
-  matrix_type default_mtx_rev(default_map, 3, Tpetra::StaticProfile);
+  matrix_type default_mtx_rev(default_map, 3);
 
   // Do a reverse mode import (an import operation using an Export plan) from the
   // unique matrix to the default matrix.  i.e., communicate entries

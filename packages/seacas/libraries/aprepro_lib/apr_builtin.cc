@@ -1,10 +1,11 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include "apr_builtin.h"
+#include "apr_symrec.h"
 
 #include <cctype>
 #include <cerrno>
@@ -14,17 +15,16 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
-#include <functional>
-#include <sstream>
+#include <stack>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
-#include <sys/stat.h>
-#ifdef _WIN32
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
 #include <io.h>
-#else
-#include <unistd.h>
 #endif
 #include "apr_scanner.h"
 #include "apr_tokenize.h"
@@ -60,12 +60,18 @@ namespace {
 
   void reset_error()
   {
+#if !defined(WIN32) && !defined(__WIN32__) && !defined(_WIN32) && !defined(_MSC_VER) &&            \
+    !defined(__MINGW32__) && !defined(_WIN64) && !defined(__MINGW64__)
+#ifndef math_errhandling
+#define math_errhandling MATH_ERRNO
+#endif
     if (math_errhandling & MATH_ERREXCEPT) {
       std::feclearexcept(FE_ALL_EXCEPT);
     }
     if (math_errhandling & MATH_ERRNO) {
       errno = 0;
     }
+#endif
   }
 } // namespace
 
@@ -453,9 +459,11 @@ namespace SEAMS {
 
   double do_juldayhms(double mon, double day, double year, double h, double mi, double se)
   {
-    long   m = static_cast<long>(mon), d = static_cast<long>(day), y = static_cast<long>(year);
-    long   c, ya, j;
     double seconds = h * 3600.0 + mi * 60 + se;
+
+    long m = static_cast<long>(mon);
+    long d = static_cast<long>(day);
+    long y = static_cast<long>(year);
 
     if (m > 2) {
       m -= 3;
@@ -464,9 +472,9 @@ namespace SEAMS {
       m += 9;
       --y;
     }
-    c  = y / 100L;
-    ya = y - (100L * c);
-    j  = (146097L * c) / 4L + (1461L * ya) / 4L + (153L * m + 2L) / 5L + d + 1721119L;
+    long c  = y / 100L;
+    long ya = y - (100L * c);
+    long j  = (146097L * c) / 4L + (1461L * ya) / 4L + (153L * m + 2L) / 5L + d + 1721119L;
     if (seconds < 12 * 3600.0) {
       j--;
       seconds += 12.0 * 3600.0;
@@ -504,7 +512,7 @@ namespace SEAMS {
 
   const char *do_get_date()
   {
-    char *       tmp;
+    char        *tmp;
     const size_t bufsize = 32;
     static char  tmpstr[32];
 
@@ -519,7 +527,7 @@ namespace SEAMS {
 
   const char *do_get_iso_date()
   {
-    char *       tmp;
+    char        *tmp;
     const size_t bufsize = 32;
     static char  tmpstr[32];
 
@@ -534,7 +542,7 @@ namespace SEAMS {
 
   const char *do_get_time()
   {
-    char *       tmp;
+    char        *tmp;
     const size_t bufsize = 32;
     static char  tmpstr[32];
 
@@ -573,7 +581,7 @@ namespace SEAMS {
 
   const char *do_tostring(double x)
   {
-    char *      tmp;
+    char       *tmp;
     static char tmpstr[128];
     if (x == 0.0) {
       new_string("0", &tmp);
@@ -637,7 +645,7 @@ namespace SEAMS {
 
   double do_find_word(char *word, char *string, char *delm)
   {
-    auto &      tokens = get_tokenized_strings(string, delm);
+    auto       &tokens = get_tokenized_strings(string, delm);
     std::string sword{word};
     for (size_t i = 0; i < tokens.size(); i++) {
       if (tokens[i] == sword) {
@@ -662,7 +670,7 @@ namespace SEAMS {
 
   const char *do_file_to_string(char *filename)
   {
-    char *        ret_string = nullptr;
+    char         *ret_string = nullptr;
     std::fstream *file       = aprepro->open_file(filename, "r");
 
     if (file != nullptr) {
@@ -695,7 +703,7 @@ namespace SEAMS {
   double do_strtod(char *string)
   {
     reset_error();
-    double x = atof(string);
+    double x = strtod(string, nullptr);
     SEAMS::math_error("strtod");
     return x;
   }
@@ -703,6 +711,12 @@ namespace SEAMS {
   const char *do_dumpsym()
   {
     aprepro->dumpsym(SEAMS::Parser::token::VAR, false);
+    return (nullptr);
+  }
+
+  const char *do_dumpsym_json()
+  {
+    aprepro->dumpsym_json();
     return (nullptr);
   }
 
@@ -782,7 +796,7 @@ namespace SEAMS {
     // Using 'intout(val)', val will be converted to a string
     // using an integer format
 
-    char *      tmp;
+    char       *tmp;
     static char tmpstr[128];
     if (intval == 0.0) {
       new_string("0", &tmp);
@@ -887,7 +901,7 @@ namespace SEAMS {
     }
 
     std::string tmpstr(start, 0, len);
-    char *      tmp;
+    char       *tmp;
     new_string(tmpstr, &tmp);
     return tmp;
   }
@@ -963,11 +977,10 @@ namespace SEAMS {
 
   array *do_identity(double size)
   {
-    int  i;
-    int  isize      = size;
     auto array_data = aprepro->make_array(size, size);
 
-    for (i = 0; i < isize; i++) {
+    int isize = size;
+    for (int i = 0; i < isize; i++) {
       array_data->data[i * isize + i] = 1.0;
     }
     return array_data;
@@ -989,11 +1002,10 @@ namespace SEAMS {
 
   array *do_transpose(const array *a)
   {
-    int  i, j;
     auto array_data = aprepro->make_array(a->cols, a->rows);
 
-    for (i = 0; i < a->rows; i++) {
-      for (j = 0; j < a->cols; j++) {
+    for (int i = 0; i < a->rows; i++) {
+      for (int j = 0; j < a->cols; j++) {
         array_data->data[j * a->rows + i] = a->data[i * a->cols + j];
       }
     }
@@ -1006,13 +1018,13 @@ namespace SEAMS {
   {
     size_t rows_to_skip = static_cast<size_t>(skip);
 
-    const char *  delim = ",\t ";
-    std::fstream *file  = aprepro->open_file(filename, "r");
+    std::fstream *file = aprepro->open_file(filename, "r");
     if (file != nullptr) {
 
       size_t rows = 0;
       size_t cols = 0;
 
+      const char *delim = ",\t ";
       std::string line;
       while (std::getline(*file, line)) {
         rows++;

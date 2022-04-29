@@ -53,7 +53,7 @@
 
 namespace {
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 typedef double my_double;
 #else
 typedef long double my_double;
@@ -63,6 +63,8 @@ typedef long double my_double;
 typedef Kokkos::OpenMP   ExecSpace ;
 #elif defined(KOKKOS_ENABLE_CUDA)
 typedef Kokkos::Cuda     ExecSpace ;
+#elif defined(KOKKOS_ENABLE_HIP)
+typedef Kokkos::Experimental::HIP      ExecSpace ;
 #else
 typedef Kokkos::Serial   ExecSpace ;
 #endif
@@ -71,6 +73,8 @@ typedef Kokkos::Serial   ExecSpace ;
 typedef Kokkos::OpenMP       MemSpace;
 #elif defined(KOKKOS_ENABLE_CUDA)
 typedef Kokkos::CudaSpace    MemSpace;
+#elif defined(KOKKOS_ENABLE_HIP)
+typedef Kokkos::Experimental::HIPSpace MemSpace;
 #else
 typedef Kokkos::HostSpace    MemSpace;
 #endif
@@ -79,6 +83,8 @@ typedef Kokkos::HostSpace    MemSpace;
 typedef Kokkos::OpenMP       UVMMemSpace;
 #elif defined(KOKKOS_ENABLE_CUDA)
 typedef Kokkos::CudaUVMSpace UVMMemSpace;
+#elif defined(KOKKOS_ENABLE_HIP)
+typedef Kokkos::Experimental::HIPHostPinnedSpace UVMMemSpace;
 #else
 typedef Kokkos::HostSpace    UVMMemSpace;
 #endif
@@ -92,7 +98,7 @@ typedef Kokkos::View<my_double*, Kokkos::HostSpace>   HostViewVectorType;
 typedef Kokkos::TeamPolicy<ExecSpace>               team_policy ;
 typedef Kokkos::TeamPolicy<ExecSpace>::member_type  member_type ;
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 typedef Kokkos::LayoutLeft   Layout ;
 #else
 typedef Kokkos::LayoutRight   Layout ;
@@ -100,17 +106,12 @@ typedef Kokkos::LayoutRight   Layout ;
 
 typedef Kokkos::View<double**, Layout, MemSpace>   DeviceViewMatrixType;
 typedef Kokkos::View<const double**, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> >   ConstDeviceViewMatrixType;
-//typedef Kokkos::View<double**, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::Atomic> >   DeviceViewAtomicMatrixType;
 typedef Kokkos::View<double**, Layout, MemSpace>   DeviceViewAtomicMatrixType;
 
 typedef Kokkos::View<double**, Layout, MemSpace>   DeviceArray2DType;
-typedef Kokkos::View<const double**, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> >   ConstDeviceArray2DType;
-
 typedef Kokkos::View<double***, Layout, MemSpace>   DeviceArray3DType;
-typedef Kokkos::View<const double***, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> >   ConstDeviceArray3DType;
 
 typedef Kokkos::View<int*, Layout, MemSpace> DeviceViewIntType;
-typedef Kokkos::View<const int*, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>> ConstDeviceViewIntType;
 
 } // namespace
 

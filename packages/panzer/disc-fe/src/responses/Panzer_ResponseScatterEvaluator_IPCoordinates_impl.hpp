@@ -113,13 +113,16 @@ evaluateFields(typename Traits::EvalData workset)
       tmpCoords_[dim].clear();
   }
 
+  auto ip_coordinates_h = Kokkos::create_mirror_view(PHX::as_view(iv.ip_coordinates));
+  Kokkos::deep_copy(ip_coordinates_h, PHX::as_view(iv.ip_coordinates));
+
   // This ordering is for the DataTransferKit.  It blocks all x
   // coordinates for a set of points, then all y coordinates and if
   // required all z coordinates.
   for (int dim = 0; dim < iv.ip_coordinates.extent_int(2); ++dim)
     for (index_t cell = 0; cell < workset.num_cells; ++cell)
       for (int ip = 0; ip < iv.ip_coordinates.extent_int(1); ++ip)
-        tmpCoords_[dim].push_back(iv.ip_coordinates(static_cast<int>(cell),ip,dim));
+        tmpCoords_[dim].push_back(ip_coordinates_h(static_cast<int>(cell),ip,dim));
 }
 
 //**********************************************************************
@@ -132,7 +135,7 @@ postEvaluate(typename Traits::PostEvalData /* data */)
 
   for (std::size_t dim = 0; dim < tmpCoords_.size(); ++dim) {
     for (typename std::vector<ScalarT>::const_iterator x=tmpCoords_[dim].begin(); x != tmpCoords_[dim].end(); ++ x)
-      coords.push_back(Sacado::ScalarValue<ScalarT>::eval(*x));
+      coords.push_back(Sacado::scalarValue(*x));
   }
 
   tmpCoords_.clear();

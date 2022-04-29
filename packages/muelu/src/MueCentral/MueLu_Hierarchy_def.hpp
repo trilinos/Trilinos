@@ -83,7 +83,7 @@ namespace MueLu {
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       fuseProlongationAndUpdate_(GetDefaultFuseProlongationAndUpdate()),
       doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
-      scalingFactor_(Teuchos::ScalarTraits<double>::one()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1),
+      scalingFactor_(Teuchos::ScalarTraits<double>::one()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-2), rate_(-1),
       sizeOfAllocatedLevelMultiVectors_(0)
   {
     AddLevel(rcp(new Level));
@@ -102,7 +102,7 @@ namespace MueLu {
     : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(GetDefaultImplicitTranspose()),
       fuseProlongationAndUpdate_(GetDefaultFuseProlongationAndUpdate()),
       doPRrebalance_(GetDefaultPRrebalance()), isPreconditioner_(true), Cycle_(GetDefaultCycle()), WCycleStartLevel_(0),
-      scalingFactor_(Teuchos::ScalarTraits<double>::one()), isDumpingEnabled_(false), dumpLevel_(-1), rate_(-1),
+      scalingFactor_(Teuchos::ScalarTraits<double>::one()), isDumpingEnabled_(false), dumpLevel_(-2), rate_(-1),
       sizeOfAllocatedLevelMultiVectors_(0)
   {
     lib_ = A->getDomainMap()->lib();
@@ -357,8 +357,8 @@ namespace MueLu {
     // Attach FactoryManager to the coarse level
     SetFactoryManager SFMCoarse(Levels_[coarseLevelID], coarseLevelManager);
 
-    if (isDumpingEnabled_ && dumpLevel_ == 0 && coarseLevelID == 1)
-      DumpCurrentGraph();
+    if (isDumpingEnabled_ && (dumpLevel_ == 0 || dumpLevel_ == -1) && coarseLevelID == 1)
+      DumpCurrentGraph(0);
 
     RCP<TopSmootherFactory> coarseFact   = rcp(new TopSmootherFactory(coarseLevelManager, "CoarseSolver"));
     RCP<TopSmootherFactory> smootherFact = rcp(new TopSmootherFactory(coarseLevelManager, "Smoother"));
@@ -506,8 +506,8 @@ namespace MueLu {
     }
 
     // I think this is the proper place for graph so that it shows every dependence
-    if (isDumpingEnabled_ && dumpLevel_ > 0 && coarseLevelID == dumpLevel_)
-      DumpCurrentGraph();
+    if (isDumpingEnabled_ && ( (dumpLevel_ > 0 && coarseLevelID == dumpLevel_) || dumpLevel_ == -1 ) )
+      DumpCurrentGraph(coarseLevelID);
 
     if (!isFinestLevel) {
       // Release the hierarchy data
@@ -652,7 +652,7 @@ namespace MueLu {
 
 #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_ADDITIVE_VARIANT)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ReturnType Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const MultiVector& B, MultiVector& X, ConvData conv,
+  ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const MultiVector& B, MultiVector& X, ConvData conv,
                                                                            bool InitialGuessIsZero, LO startLevel) {
     LO            nIts = conv.maxIts_;
     MagnitudeType tol  = conv.tol_;
@@ -851,12 +851,12 @@ namespace MueLu {
 
    //communicator->barrier();
 
-   return (tol > 0 ? Unconverged : Undefined);
+   return (tol > 0 ? ConvergenceStatus::Unconverged : ConvergenceStatus::Undefined);
 }
 #else
   // ---------------------------------------- Iterate -------------------------------------------------------
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ReturnType Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const MultiVector& B, MultiVector& X, ConvData conv,
+  ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const MultiVector& B, MultiVector& X, ConvData conv,
                                                                            bool InitialGuessIsZero, LO startLevel) {
     LO            nIts = conv.maxIts_;
     MagnitudeType tol  = conv.tol_;
@@ -902,7 +902,7 @@ namespace MueLu {
       // This processor does not have any data for this process on coarser
       // levels. This can only happen when there are multiple processors and
       // we use repartitioning.
-      return Undefined;
+      return ConvergenceStatus::Undefined;
     }
 
     // If we switched the number of vectors, we'd need to reallocate here.
@@ -918,36 +918,16 @@ namespace MueLu {
 
     // Print residual information before iterating
     typedef Teuchos::ScalarTraits<typename STS::magnitudeType> STM;
-    MagnitudeType prevNorm = STM::one(), curNorm = STM::one();
+    MagnitudeType prevNorm = STM::one();
     rate_ = 1.0;
-    if (startLevel == 0 && !isPreconditioner_ &&
-        (IsPrint(Statistics1) || tol > 0)) {
-      // We calculate the residual only if we want to print it out, or if we
-      // want to stop once we achive the tolerance
-      Teuchos::Array<MagnitudeType> rn;
-      rn = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
-
-      if (tol > 0) {
-        bool passed = true;
-        for (LO k = 0; k < rn.size(); k++)
-          if (rn[k] >= tol)
-            passed = false;
-
-        if (passed)
-          return Converged;
-      }
-
-      if (IsPrint(Statistics1))
-        GetOStream(Statistics1) << "iter:    "
-            << std::setiosflags(std::ios::left)
-            << std::setprecision(3) << 0 // iter 0
-            << "           residual = "
-            << std::setprecision(10) << rn
-            << std::endl;
+    if (IsCalculationOfResidualRequired(startLevel, conv)) {
+      ConvergenceStatus convergenceStatus = ComputeResidualAndPrintHistory(*A, X, B, Teuchos::ScalarTraits<LO>::zero(), startLevel, conv, prevNorm);
+      if (convergenceStatus == MueLu::ConvergenceStatus::Converged)
+        return convergenceStatus;
     }
 
     SC one = STS::one(), zero = STS::zero();
-    for (LO i = 1; i <= nIts; i++) {
+    for (LO iteration = 1; iteration <= nIts; iteration++) {
 #ifdef HAVE_MUELU_DEBUG
 #if 0 // TODO fix me
       if (A->getDomainMap()->isCompatible(*(X.getMap())) == false) {
@@ -1136,37 +1116,14 @@ namespace MueLu {
       }
       zeroGuess = false;
 
-      if (startLevel == 0 && !isPreconditioner_ &&
-          (IsPrint(Statistics1) || tol > 0)) {
-        // We calculate the residual only if we want to print it out, or if we
-        // want to stop once we achive the tolerance
-        Teuchos::Array<MagnitudeType> rn;
-        rn = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
 
-        prevNorm = curNorm;
-        curNorm  = rn[0];
-        rate_ = as<MagnitudeType>(curNorm / prevNorm);
-
-        if (IsPrint(Statistics1))
-          GetOStream(Statistics1) << "iter:    "
-                                     << std::setiosflags(std::ios::left)
-                                     << std::setprecision(3) << i
-                                     << "           residual = "
-                                     << std::setprecision(10) << rn
-                                     << std::endl;
-
-        if (tol > 0) {
-          bool passed = true;
-          for (LO k = 0; k < rn.size(); k++)
-            if (rn[k] >= tol)
-              passed = false;
-
-          if (passed)
-            return Converged;
-        }
+      if (IsCalculationOfResidualRequired(startLevel, conv)) {
+        ConvergenceStatus convergenceStatus = ComputeResidualAndPrintHistory(*A, X, B, iteration, startLevel, conv, prevNorm);
+        if (convergenceStatus == MueLu::ConvergenceStatus::Converged)
+          return convergenceStatus;
       }
     }
-    return (tol > 0 ? Unconverged : Undefined);
+    return (tol > 0 ? ConvergenceStatus::Unconverged : ConvergenceStatus::Undefined);
   }
 #endif
 
@@ -1301,6 +1258,8 @@ namespace MueLu {
         oss << "\n--------------------------------------------------------------------------------\n";
         oss << "---                            Multigrid Summary "  << std::setw(28) << std::left << label << "---\n";
         oss << "--------------------------------------------------------------------------------" << std::endl;
+        if (verbLevel & Parameters1)
+          oss << "Scalar              = " << Teuchos::ScalarTraits<Scalar>::name() << std::endl;
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
@@ -1393,10 +1352,11 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DumpCurrentGraph() const {
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DumpCurrentGraph(int currLevel) const {
     if (GetProcRankVerbose() != 0)
       return;
 #if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
+
     BoostGraph      graph;
 
     BoostProperties dp;
@@ -1415,7 +1375,7 @@ namespace MueLu {
     int rank = A->getDomainMap()->getComm()->getRank();
 
     //    printf("[%d] CMS: ----------------------\n",rank);
-    for (int i = dumpLevel_; i <= dumpLevel_+1 && i < GetNumLevels(); i++) {
+    for (int i = currLevel; i <= currLevel+1 && i < GetNumLevels(); i++) {
       edges.clear();
       Levels_[i]->UpdateGraph(vindices, edges, dp, graph);
 
@@ -1425,24 +1385,14 @@ namespace MueLu {
         // Because xdot.py views 'Graph' as a keyword
         if(eit->second==std::string("Graph")) boost::put("label", dp, boost_edge.first, std::string("Graph_"));
         else boost::put("label", dp, boost_edge.first, eit->second);
-        if (i == dumpLevel_)
+        if (i == currLevel)
           boost::put("color", dp, boost_edge.first, std::string("red"));
         else
           boost::put("color", dp, boost_edge.first, std::string("blue"));
       }
     }
 
-#if 0
-    std::ostringstream legend;
-    legend << "< <TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\"> \
-               <TR><TD COLSPAN=\"2\">Legend</TD></TR> \
-               <TR><TD><FONT color=\"red\">Level " << dumpLevel_ << "</FONT></TD><TD><FONT color=\"blue\">Level " << dumpLevel_+1 << "</FONT></TD></TR> \
-               </TABLE> >";
-    BoostVertex boost_vertex = boost::add_vertex(graph);
-    boost::put("label", dp, boost_vertex, legend.str());
-#endif
-
-    std::ofstream out(dumpFile_.c_str() +std::to_string(call_id)+std::string("_")+ std::to_string(rank) + std::string(".dot"));
+    std::ofstream out(dumpFile_.c_str()+std::string("_")+std::to_string(currLevel)+std::string("_")+std::to_string(call_id)+std::string("_")+ std::to_string(rank) + std::string(".dot"));
     boost::write_graphviz_dp(out, graph, dp, std::string("id"));
     out.close();
     call_id++;
@@ -1492,10 +1442,10 @@ namespace MueLu {
       // Create a nodal map, as coordinates have not been expanded to a DOF map yet.
       RCP<const Map> dofMap       = A->getRowMap();
       GO             indexBase    = dofMap->getIndexBase();
-      size_t         numLocalDOFs = dofMap->getNodeNumElements();
+      size_t         numLocalDOFs = dofMap->getLocalNumElements();
       TEUCHOS_TEST_FOR_EXCEPTION(numLocalDOFs % blkSize, Exceptions::RuntimeError,
         "Hierarchy::ReplaceCoordinateMap: block size (" << blkSize << ") is incompatible with the number of local dofs in a row map (" << numLocalDOFs);
-      ArrayView<const GO> GIDs = dofMap->getNodeElementList();
+      ArrayView<const GO> GIDs = dofMap->getLocalElementList();
 
       Array<GO> nodeGIDs(numLocalDOFs/blkSize);
       for (size_t i = 0; i < numLocalDOFs; i += blkSize)
@@ -1508,7 +1458,7 @@ namespace MueLu {
       // Check whether the length of vectors fits to the size of A
       // If yes, make sure that the maps are matching
       // If no, throw a warning but do not touch the Coordinates
-      if(coords->getLocalLength() != A->getRowMap()->getNodeNumElements()) {
+      if(coords->getLocalLength() != A->getRowMap()->getLocalNumElements()) {
         GetOStream(Warnings) << "Coordinate vector does not match row map of matrix A!" << std::endl;
         return;
       }
@@ -1613,6 +1563,68 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeleteLevelMultiVecto
   coarseExport_.resize(0);
   correction_.resize(0);
   sizeOfAllocatedLevelMultiVectors_ = 0;
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsCalculationOfResidualRequired(
+    const LO startLevel, const ConvData& conv) const
+{
+  return (startLevel == 0 && !isPreconditioner_ && (IsPrint(Statistics1) || conv.tol_ > 0));
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsConverged(
+    const Teuchos::Array<MagnitudeType>& residualNorm, const MagnitudeType convergenceTolerance) const
+{
+  ConvergenceStatus convergenceStatus = ConvergenceStatus::Undefined;
+
+  if (convergenceTolerance > Teuchos::ScalarTraits<MagnitudeType>::zero())
+  {
+    bool passed = true;
+    for (LO k = 0; k < residualNorm.size(); k++)
+      if (residualNorm[k] >= convergenceTolerance)
+        passed = false;
+
+    if (passed)
+      convergenceStatus = ConvergenceStatus::Converged;
+    else
+      convergenceStatus = ConvergenceStatus::Unconverged;
+  }
+
+  return convergenceStatus;
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrintResidualHistory(
+    const LO iteration, const Teuchos::Array<MagnitudeType>& residualNorm) const
+{
+  GetOStream(Statistics1) << "iter:    "
+      << std::setiosflags(std::ios::left)
+      << std::setprecision(3) << std::setw(4) << iteration
+      << "           residual = "
+      << std::setprecision(10) << residualNorm
+      << std::endl;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeResidualAndPrintHistory(
+    const Operator& A, const MultiVector& X, const MultiVector& B, const LO iteration,
+    const LO startLevel, const ConvData& conv, MagnitudeType& previousResidualNorm)
+{
+  Teuchos::Array<MagnitudeType> residualNorm;
+  residualNorm = Utilities::ResidualNorm(A, X, B, *residual_[startLevel]);
+
+  const MagnitudeType currentResidualNorm = residualNorm[0];
+  rate_ = currentResidualNorm / previousResidualNorm;
+  previousResidualNorm = currentResidualNorm;
+
+  if (IsPrint(Statistics1))
+    PrintResidualHistory(iteration, residualNorm);
+
+  return IsConverged(residualNorm, conv.tol_);
 }
 
 

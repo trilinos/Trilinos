@@ -107,12 +107,6 @@ SharedAllocationRecord<Kokkos::Experimental::OpenMPTargetSpace,
                      SharedAllocationRecord<void, void>::m_alloc_size);
 }
 
-// TODO: Implement deep copy back see CudaSpace
-std::string SharedAllocationRecord<Kokkos::Experimental::OpenMPTargetSpace,
-                                   void>::get_label() const {
-  return std::string("OpenMPTargetAllocation");
-}
-
 SharedAllocationRecord<Kokkos::Experimental::OpenMPTargetSpace, void>::
     SharedAllocationRecord(
         const Kokkos::Experimental::OpenMPTargetSpace &arg_space,
@@ -127,7 +121,8 @@ SharedAllocationRecord<Kokkos::Experimental::OpenMPTargetSpace, void>::
 #endif
           reinterpret_cast<SharedAllocationHeader *>(arg_space.allocate(
               sizeof(SharedAllocationHeader) + arg_alloc_size)),
-          sizeof(SharedAllocationHeader) + arg_alloc_size, arg_dealloc),
+          sizeof(SharedAllocationHeader) + arg_alloc_size, arg_dealloc,
+          arg_label),
       m_space(arg_space) {
   SharedAllocationHeader header;
 
@@ -137,26 +132,13 @@ SharedAllocationRecord<Kokkos::Experimental::OpenMPTargetSpace, void>::
   // DeepCopy
   Kokkos::Impl::DeepCopy<Experimental::OpenMPTargetSpace, HostSpace>(
       RecordBase::m_alloc_ptr, &header, sizeof(SharedAllocationHeader));
+  Kokkos::fence(
+      "SharedAllocationRecord<Kokkos::Experimental::OpenMPTargetSpace, "
+      "void>::SharedAllocationRecord(): fence after copying header from "
+      "HostSpace");
 }
 
 //----------------------------------------------------------------------------
-
-void *SharedAllocationRecord<Kokkos::Experimental::OpenMPTargetSpace, void>::
-    reallocate_tracked(void *const arg_alloc_ptr, const size_t arg_alloc_size) {
-  SharedAllocationRecord *const r_old = get_record(arg_alloc_ptr);
-  SharedAllocationRecord *const r_new =
-      allocate(r_old->m_space, r_old->get_label(), arg_alloc_size);
-
-  // Kokkos::Impl::DeepCopy<OpenMPTargetSpace,OpenMPTargetSpace>( r_new->data()
-  // , r_old->data()
-  //                                           , std::min( r_old->size() ,
-  //                                           r_new->size() ) );
-
-  RecordBase::increment(r_new);
-  RecordBase::decrement(r_old);
-
-  return r_new->data();
-}
 
 }  // namespace Impl
 }  // namespace Kokkos

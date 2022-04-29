@@ -94,7 +94,7 @@ namespace Intrepid2 {
       
       using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::DefaultHostExecutionSpace HostSpaceType ;
       
       *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
@@ -131,7 +131,7 @@ namespace Intrepid2 {
       int errorFlag = 0;
       
       // get names of files with analytic values
-      std::string basedir = "../data";
+      std::string basedir = "./data";
       std::stringstream namestream;
       std::string filename;
       namestream << basedir << "/TRI_integrals" << ".dat";

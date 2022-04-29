@@ -82,7 +82,7 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
   // Test constructor IntegratorBasic(model, stepperType)
   {
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::createIntegratorBasic<double>(model, "BDF2");
+      Tempus::createIntegratorBasic<double>(model, std::string("BDF2"));
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
     RCP<const ParameterList> defaultPL =
@@ -340,7 +340,6 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
   RCP<ParameterList> pList =
     getParametersFromXmlFile("Tempus_BDF2_SinCos_AdaptDt.xml");
   //Set initial time step = 2*dt specified in input file (for convergence study)
-  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
   double dt = pList->sublist("Tempus")
              .sublist("Default Integrator")
              .sublist("Time Step Control").get<double>("Initial Time Step");
@@ -395,7 +394,7 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
 
     // Test if at 'Final Time'
     time = integrator->getTime();
-    double timeFinal =pl->sublist("Default Integrator")
+    double timeFinal = pl->sublist("Default Integrator")
        .sublist("Time Step Control").get<double>("Final Time");
     TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 

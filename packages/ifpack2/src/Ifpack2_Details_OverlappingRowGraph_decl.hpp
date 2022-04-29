@@ -70,11 +70,16 @@ public:
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
   typedef typename GraphType::global_ordinal_type global_ordinal_type;
   typedef typename GraphType::node_type node_type;
-
+  typedef typename GraphType::local_inds_host_view_type local_inds_host_view_type;  
+  typedef typename GraphType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;  
+  typedef typename GraphType::global_inds_host_view_type global_inds_host_view_type;
+  typedef typename GraphType::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  
   typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
+  
   //@}
   //! \name Constructors and destructor
   //@{
@@ -150,14 +155,14 @@ public:
   virtual global_size_t getGlobalNumCols () const;
 
   //! The number of rows owned by the calling process.
-  virtual size_t getNodeNumRows () const;
+  virtual size_t getLocalNumRows () const;
 
   /// \brief The number of columns owned by the calling process.
   ///
   /// This is the number of columns needed to apply the forward
   /// operator on the calling process, that is, the number of elements
   /// listed in the column Map on the calling process.
-  virtual size_t getNodeNumCols () const;
+  virtual size_t getLocalNumCols () const;
 
   //! The index base for global indices for this graph.
   virtual global_ordinal_type getIndexBase () const;
@@ -166,7 +171,7 @@ public:
   virtual global_size_t getGlobalNumEntries () const;
 
   //! The number of entries in this graph owned by the calling process.
-  virtual size_t getNodeNumEntries () const;
+  virtual size_t getLocalNumEntries () const;
 
   /// \brief The number of entries in the given global row that are
   ///   owned by the calling process.
@@ -194,7 +199,7 @@ public:
   virtual size_t getGlobalMaxNumRowEntries () const;
 
   //! The maximum number of entries in any row on the calling process.
-  virtual size_t getNodeMaxNumRowEntries() const;
+  virtual size_t getLocalMaxNumRowEntries() const;
 
   //! Whether this graph has a column Map.
   virtual bool hasColMap() const;
@@ -227,8 +232,16 @@ public:
   /// Teuchos::OrdinalTraits<size_t>::invalid() on output.
   virtual void
   getGlobalRowCopy (global_ordinal_type globalRow,
+                    nonconst_global_inds_host_view_type& gblColInds,
+                    size_t& numIndices) const;
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getGlobalRowCopy (global_ordinal_type globalRow,
                     const Teuchos::ArrayView<global_ordinal_type>& indices,
                     size_t& numIndices) const;
+#endif
+
 
   /// \brief Copy out a list of local column indices in the given
   ///   local row that are owned by the calling process.
@@ -249,8 +262,77 @@ public:
   /// Teuchos::OrdinalTraits<size_t>::invalid() on output.
   virtual void
   getLocalRowCopy (local_ordinal_type localRow,
+                   nonconst_local_inds_host_view_type& gblColInds,
+                   size_t& numIndices) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getLocalRowCopy (local_ordinal_type localRow,
                    const Teuchos::ArrayView<local_ordinal_type>& indices,
                    size_t& numIndices) const;
+#endif
+
+    /// \brief Get a constant, nonpersisting, locally indexed view of
+    ///   the given row of the graph.
+    ///
+    /// The returned views of the column indices are not guaranteed to
+    /// persist beyond the lifetime of <tt>this</tt>.  Furthermore,
+    /// some RowGraph implementations allow changing the values, or
+    /// the indices and values.  Any such changes invalidate the
+    /// returned views.
+    ///
+    /// This method only gets the entries in the given row that are
+    /// stored on the calling process.  Note that if the graph has an
+    /// overlapping row Map, it is possible that the calling process
+    /// does not store all the entries in that row.
+    ///
+    /// \pre <tt>isLocallyIndexed () && supportsRowViews ()</tt>
+    /// \post <tt>indices.size () == getNumEntriesInGlobalRow (LocalRow)</tt>
+    ///
+    /// \param lclRow [in] Local index of the row.
+    /// \param lclColInds [out] Local indices of the columns in the
+    ///   row.  If the given row is not a valid row index on the
+    ///   calling process, then the result has no entries (its size is
+    ///   zero).
+    ///
+    /// Subclasses are expected to implement this method.  We would
+    /// have made this method pure virtual, but that would have broken
+    /// backwards compatibility, since we added the method at least
+    /// one major release after introducing this class.
+    virtual void
+    getLocalRowView (const local_ordinal_type lclRow,
+                     local_inds_host_view_type & lclColInds) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual void
+    getLocalRowView (const local_ordinal_type lclRow,
+                     Teuchos::ArrayView<const local_ordinal_type>& lclColInds) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+    /// \brief Get a const, non-persisting view of the given global
+    ///   row's global column indices, as a Teuchos::ArrayView.
+    ///
+    /// \param gblRow [in] Global index of the row.
+    /// \param gblColInds [out] Global column indices in the row.  If
+    ///   the given row is not a valid row index on the calling
+    ///   process, then the result has no entries (its size is zero).
+    ///
+    /// \pre <tt>! isLocallyIndexed()</tt>
+    /// \post <tt>gblColInds.size() == getNumEntriesInGlobalRow(gblRow)</tt>
+    ///
+    /// Subclasses are expected to implement this method.  We would
+    /// have made this method pure virtual, but that would have broken
+    /// backwards compatibility, since we added the method at least
+    /// one major release after introducing this class.
+    virtual void
+    getGlobalRowView (const global_ordinal_type gblRow,
+                      global_inds_host_view_type& gblColInds) const;
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual void
+    getGlobalRowView (const global_ordinal_type gblRow,
+                      Teuchos::ArrayView<const global_ordinal_type>& gblColInds) const;
+#endif
+
+
   //@}
 private:
   //! \name Internal data

@@ -48,6 +48,13 @@
 #ifndef __INTREPID2_POINTTOOLS_DEF_HPP__
 #define __INTREPID2_POINTTOOLS_DEF_HPP__
 
+#if defined(_MSC_VER) || defined(_WIN32) && defined(__ICL)
+// M_PI, M_SQRT2, etc. are hidden in MSVC by #ifdef _USE_MATH_DEFINES
+  #ifndef _USE_MATH_DEFINES
+  #define _USE_MATH_DEFINES
+  #endif
+  #include <math.h>
+#endif
 
 namespace Intrepid2 {
 
@@ -314,7 +321,9 @@ getWarpBlendLatticeLine(       Kokkos::DynRankView<pointValueType,pointPropertie
     // this should be fixed after view and dynrankview is interoperatable
     auto z   = Kokkos::DynRankView<pointValueType,Kokkos::HostSpace>(zHost.data() + offset, np-offset);
 
-    Kokkos::deep_copy(pts, z);
+    const auto common_range = range_type(0, std::min(pts.extent(0), z.extent(0)));
+    Kokkos::deep_copy(Kokkos::subview(pts, common_range), 
+                      Kokkos::subview(z,   common_range));
   }
 }
 

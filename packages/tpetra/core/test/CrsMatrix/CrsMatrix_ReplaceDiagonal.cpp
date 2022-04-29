@@ -157,7 +157,7 @@ namespace { // (anonymous)
          * the number of replaced diagonal entries to match the
          * local number of rows.
          */
-	const LO lclNumRows = static_cast<LO> (matrix->getNodeNumRows ());
+	const LO lclNumRows = static_cast<LO> (matrix->getLocalNumRows ());
         TEST_EQUALITY(numReplacedDiagEntries, lclNumRows);
 
         /* Test for successful replacement
@@ -183,9 +183,9 @@ namespace { // (anonymous)
         /* Test that no other matrix values were changed
          */
         
-        for (size_t i = 0; i < matrix->getRowMap()->getNodeNumElements(); i++) {
-          Teuchos::ArrayView<const LO> lcols;
-          Teuchos::ArrayView<const Scalar> lvals;
+        for (size_t i = 0; i < matrix->getRowMap()->getLocalNumElements(); i++) {
+          typename crs_matrix_type::local_inds_host_view_type lcols;
+          typename crs_matrix_type::values_host_view_type lvals;
           matrix->getLocalRowView(static_cast<LO>(i), lcols, lvals);
           GO gI = matrix->getRowMap()->getGlobalElement(i);
           auto j = lcols.size();
@@ -372,9 +372,9 @@ namespace { // (anonymous)
          */
         
 	using impl_scalar_type = typename crs_matrix_type::impl_scalar_type;
-        for (size_t i = 0; i < matrix->getRowMap()->getNodeNumElements(); i++) {
-          Teuchos::ArrayView<const LO> lcols;
-          Teuchos::ArrayView<const Scalar> lvals;
+        for (size_t i = 0; i < matrix->getRowMap()->getLocalNumElements(); i++) {
+          typename crs_matrix_type::local_inds_host_view_type lcols;
+          typename crs_matrix_type::values_host_view_type lvals;
           matrix->getLocalRowView(static_cast<LO>(i), lcols, lvals);
           GO gI = matrix->getRowMap()->getGlobalElement(i);
           auto j = lcols.size();

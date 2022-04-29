@@ -36,27 +36,18 @@
 #define STK_IO_HEARTBEAT_HPP
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <Ioss_Field.h>                            // for Field, etc
-#include <Ioss_PropertyManager.h>                  // for PropertyManager
-#include <stddef.h>                                // for size_t
-#include <Teuchos_RCP.hpp>                         // for RCP::RCP<T>, etc
-#include <algorithm>                               // for swap
-#include <stk_io/DatabasePurpose.hpp>              // for DatabasePurpose
-#include <stk_io/IossBridge.hpp>
-#include <stk_io/MeshField.hpp>                    // for MeshField, etc
-#include <stk_mesh/base/BulkData.hpp>              // for BulkData
-#include <stk_mesh/base/Selector.hpp>              // for Selector
-#include <stk_util/parallel/Parallel.hpp>          // for ParallelMachine
-#include <stk_util/util/ParameterList.hpp>         // for Type
-#include <string>                                  // for string
-#include <vector>                                  // for vector
-#include "Teuchos_RCPDecl.hpp"                     // for RCP
-#include "mpi.h"                                   // for MPI_Comm, etc
-#include "stk_mesh/base/Types.hpp"                 // for FieldVector
-#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
-namespace Ioss { class Property; }
+#include <Ioss_Field.h>                     // for Field, Field::TRANSIENT
+#include <Teuchos_RCP.hpp>                  // for RCP::~RCP<T>, RCP::RCP<T>
+#include <stk_io/IossBridge.hpp>            // for GlobalAnyVariable
+#include <stk_util/util/ParameterList.hpp>  // for STK_ANY_NAMESPACE, Type
+#include <string>                           // for string
+#include <vector>                           // for vector
+#include "Teuchos_RCPDecl.hpp"              // for RCP
+#include "mpi.h"                            // for MPI_Comm
+namespace Ioss { class PropertyManager; }
 namespace Ioss { class Region; }
-namespace boost { class any; }
+namespace Teuchos { class any; }
+namespace Ioss { class Property; }
 namespace stk { namespace io { class InputFile; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -90,26 +81,24 @@ public:
     ~Heartbeat() {};
 
     void define_global_ref(const std::string &variableName,
-                           const boost::any *value,
-                           stk::util::ParameterType::Type type,
+                           const stk::util::Parameter &param,
                            int copies = 1,
                            Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
     void define_global_ref(const std::string &name,
-                           const boost::any *value,
+                           const stk::util::Parameter &param,
                            const std::string &storage,
                            Ioss::Field::BasicType dataType,
                            int copies = 1,
                            Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
     void add_global_ref(const std::string &variableName,
-                        const boost::any *value,
-                        stk::util::ParameterType::Type type,
+                        const stk::util::Parameter &param,
                         int copies = 1,
                         Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
     void add_global_ref(const std::string &name,
-                        const boost::any *value,
+                        const stk::util::Parameter &param,
                         const std::string &storage,
                         Ioss::Field::BasicType dataType,
                         int copies = 1,
@@ -131,6 +120,19 @@ public:
     bool has_global(const std::string &name);
 
 private:
+    void internal_define_global_ref(const std::string &variableName,
+                           const STK_ANY_NAMESPACE::any *value,
+                           stk::util::ParameterType::Type type,
+                           int copies = 1,
+                           Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
+    void internal_define_global_ref(const std::string &name,
+                           const STK_ANY_NAMESPACE::any *value,
+                           const std::string &storage,
+                           Ioss::Field::BasicType dataType,
+                           int copies = 1,
+                           Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
     std::vector<GlobalAnyVariable> m_fields;
     Teuchos::RCP<Ioss::Region> m_region;
 

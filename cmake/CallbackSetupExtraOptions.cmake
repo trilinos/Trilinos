@@ -16,6 +16,9 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
   SET(Trilinos_ENABLE_FLOAT  OFF  CACHE  BOOL
     "Enable the float scalar type in all Trilinos packages by default.")
 
+  SET(Trilinos_ENABLE_LONG_DOUBLE  OFF  CACHE  BOOL
+    "Enable the long double scalar type in all Trilinos packages by default.")
+
   SET(Trilinos_ENABLE_COMPLEX  OFF  CACHE  BOOL
     "Enable std::complex<T> scalar types in all Trilinos packages by default.")
 

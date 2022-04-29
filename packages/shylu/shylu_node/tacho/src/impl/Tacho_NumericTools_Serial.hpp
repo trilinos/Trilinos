@@ -48,6 +48,7 @@ namespace Tacho {
     using base_type::_nsupernodes;
     using base_type::_supernodes;
     using base_type::_stree_roots;
+    using base_type::_superpanel_buf;
     using base_type::_piv;
     using base_type::_diag; 
     using base_type::_info;
@@ -109,7 +110,7 @@ namespace Tacho {
     void
     factorizeCholesky(const value_type_array &ax,
                       const ordinal_type verbose) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       {
         timer.reset();
         {
@@ -154,7 +155,7 @@ namespace Tacho {
     factorizeCholesky(const value_type_array &ax,
                       const ordinal_type panelsize,
                       const ordinal_type verbose) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       {
         timer.reset();
         {
@@ -203,7 +204,7 @@ namespace Tacho {
                   const value_type_matrix &b,   // right hand side
                   const value_type_matrix &t,   // temporary workspace (store permuted vectors)
                   const ordinal_type verbose) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       _info.x = t;
 
@@ -255,7 +256,7 @@ namespace Tacho {
                                  "Serial interface works on host device only");
       }
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       {
         timer.reset();
         {
@@ -321,7 +322,7 @@ namespace Tacho {
                                  "x, b and t have the same data pointer");
       }
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       _info.x = t;
 
@@ -375,6 +376,8 @@ namespace Tacho {
                                  std::logic_error, 
                                  "Serial interface works on host device only");
       }
+      /// reset the supernode buffer for potential reuse cases
+      Kokkos::deep_copy(_superpanel_buf, value_type(0));
       switch (this->getSolutionMethod()) {
       case 1: { /// Cholesky
         // if (_nb > 0) {

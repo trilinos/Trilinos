@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,38 +19,29 @@
 
 int main(int argc, char **argv)
 {
-  int  exoid, num_dim, num_nodes, num_elem, num_elem_blk;
-  int  num_elem_in_block[10], num_total_nodes_per_blk[10];
-  int  num_face_in_block[10], num_total_faces_per_blk[10];
-  int  num_node_sets, error;
-  int  i, j, k, m, *connect;
-  int  bids[10], nnpe[10];
-  int  num_qa_rec, num_info;
-  int  num_glo_vars, num_nod_vars, num_ele_vars;
-  int *truth_tab;
-  int  whole_time_step, num_time_steps;
-  int  CPU_word_size, IO_word_size;
+  int num_elem_in_block[10], num_total_nodes_per_blk[10];
+  int num_face_in_block[10], num_total_faces_per_blk[10];
+  int error;
+  int i, j;
+  int bids[10], nnpe[10];
 
-  float *glob_var_vals, *nodal_var_vals, *elem_var_vals;
-  float  time_value;
-  float  x[100], y[100], z[100];
-  char * coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
-  char * block_names[10], *nset_names[10], *sset_names[10];
-  char * prop_names[2], *attrib_names[2];
-  char * title = "This is a test";
+  float x[100], y[100], z[100];
+  char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
+  char *block_names[10], *nset_names[10], *sset_names[10];
+  char *prop_names[2], *attrib_names[2];
   ex_opts(EX_VERBOSE | EX_ABORT);
 
   /* Specify compute and i/o word size */
 
-  CPU_word_size = 0; /* sizeof(float) */
-  IO_word_size  = 4; /* (4 bytes) */
+  int CPU_word_size = 0; /* sizeof(float) */
+  int IO_word_size  = 4; /* (4 bytes) */
 
   /* create EXODUS II file */
 
-  exoid = ex_create("test-nfaced.exo", /* filename path */
-                    EX_CLOBBER,        /* create mode */
-                    &CPU_word_size,    /* CPU float word size in bytes */
-                    &IO_word_size);    /* I/O float word size in bytes */
+  int exoid = ex_create("test-nfaced.exo", /* filename path */
+                        EX_CLOBBER,        /* create mode */
+                        &CPU_word_size,    /* CPU float word size in bytes */
+                        &IO_word_size);    /* I/O float word size in bytes */
   printf("after ex_create for test.exo, exoid = %d\n", exoid);
   printf(" cpu word size: %d io word size: %d\n", CPU_word_size, IO_word_size);
 
@@ -58,12 +49,13 @@ int main(int argc, char **argv)
   {
     ex_init_params par;
 
-    num_dim       = 3;
-    num_nodes     = 14;
-    num_elem      = 1;
-    num_elem_blk  = 1;
-    num_node_sets = 0;
+    int num_dim       = 3;
+    int num_nodes     = 14;
+    int num_elem      = 1;
+    int num_elem_blk  = 1;
+    int num_node_sets = 0;
 
+    char *title = "This is a test";
     ex_copy_string(par.title, title, MAX_LINE_LENGTH + 1);
     par.num_dim       = num_dim;
     par.num_nodes     = num_nodes;
@@ -174,7 +166,7 @@ int main(int argc, char **argv)
 
   /* write face connectivity */
 
-  connect = (int *)calloc(num_total_nodes_per_blk[0], sizeof(int));
+  int *connect = (int *)calloc(num_total_nodes_per_blk[0], sizeof(int));
 
   i = 0;
   j = 0;
@@ -325,7 +317,7 @@ int main(int argc, char **argv)
   }
 
   /* write QA records; test empty and just blank-filled records */
-  num_qa_rec = 2;
+  int num_qa_rec = 2;
 
   qa_record[0][0] = "TESTWT-NFACED";
   qa_record[0][1] = "testwt-nfaced";
@@ -345,7 +337,7 @@ int main(int argc, char **argv)
   }
 
   /* write information records; test empty and just blank-filled records */
-  num_info = 3;
+  int num_info = 3;
 
   info[0] = "This is the first information record.";
   info[1] = "";
@@ -360,7 +352,7 @@ int main(int argc, char **argv)
   }
 
   /* write results variables parameters and names */
-  num_glo_vars = 1;
+  int num_glo_vars = 1;
 
   var_names[0] = "glo_vars";
 
@@ -378,7 +370,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  num_nod_vars = 2;
+  int num_nod_vars = 2;
   /*              12345678901234567890123456789012 */
   var_names[0] = "node_variable_a_very_long_name_0";
   var_names[1] = EX_NODE_SET;
@@ -397,7 +389,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  num_ele_vars = 3;
+  int num_ele_vars = 3;
 
   var_names[0] = "ele_var0";
   var_names[1] = "ele_var1";
@@ -418,9 +410,9 @@ int main(int argc, char **argv)
   }
 
   /* write element variable truth table */
-  truth_tab = (int *)calloc((num_elem_blk * num_ele_vars), sizeof(int));
+  int *truth_tab = (int *)calloc((num_elem_blk * num_ele_vars), sizeof(int));
 
-  k = 0;
+  int k = 0;
   for (i = 0; i < num_elem_blk; i++) {
     for (j = 0; j < num_ele_vars; j++) {
       truth_tab[k++] = 1;
@@ -443,15 +435,15 @@ int main(int argc, char **argv)
    * obviously the analysis code will populate these arrays
    */
 
-  whole_time_step = 1;
-  num_time_steps  = 10;
+  int whole_time_step = 1;
+  int num_time_steps  = 10;
 
-  glob_var_vals  = (float *)calloc(num_glo_vars, CPU_word_size);
-  nodal_var_vals = (float *)calloc(num_nodes, CPU_word_size);
-  elem_var_vals  = (float *)calloc(8, CPU_word_size);
+  float *glob_var_vals  = (float *)calloc(num_glo_vars, CPU_word_size);
+  float *nodal_var_vals = (float *)calloc(num_nodes, CPU_word_size);
+  float *elem_var_vals  = (float *)calloc(8, CPU_word_size);
 
   for (i = 0; i < num_time_steps; i++) {
-    time_value = (float)(i + 1) / 100.;
+    float time_value = (float)(i + 1) / 100.;
 
     /* write time value */
     error = ex_put_time(exoid, whole_time_step, &time_value);
@@ -492,7 +484,7 @@ int main(int argc, char **argv)
     /* write element variables */
     for (k = 1; k <= num_ele_vars; k++) {
       for (j = 0; j < num_elem_blk; j++) {
-        for (m = 0; m < num_elem_in_block[j]; m++) {
+        for (int m = 0; m < num_elem_in_block[j]; m++) {
           elem_var_vals[m] = (float)(k + 1) + (float)(j + 2) + ((float)(m + 1) * time_value);
           /* printf("elem_var_vals[%d]: %f\n",m,elem_var_vals[m]); */
         }

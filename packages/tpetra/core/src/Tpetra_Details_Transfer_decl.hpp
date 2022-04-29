@@ -57,6 +57,21 @@ class Distributor;
 
 namespace Details {
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+/// \brief Expert function that messes with internals of Transfer.
+/// Used for testing. Do not use unless you know what you are doing.
+template <class LO, class GO, class NT>
+void
+expertSetRemoteLIDsContiguous(Transfer<LO, GO, NT> transfer, bool contig);
+
+
+/// \brief Expert function that messes with internals of Transfer.
+/// Used for testing. Do not use unless you know what you are doing.
+template <class LO, class GO, class NT>
+void
+expertSetExportLIDsContiguous(Transfer<LO, GO, NT> transfer, bool contig);
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
 /// \class Transfer
 /// \brief Common base class of Import and Export
 /// \warning This is an implementation detail of Tpetra.  We make no
@@ -201,6 +216,31 @@ public:
   /// Maps in the way that you expect.
   bool isLocallyComplete () const;
 
+
+  void detectRemoteExportLIDsContiguous() const;
+
+  bool areRemoteLIDsContiguous() const;
+
+  bool areExportLIDsContiguous() const;
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  //! Friend declaration for non-member function that allows setting a flag.
+  friend
+  void expertSetRemoteLIDsContiguous<LO,GO,NT>(Transfer<LO, GO, NT> transfer, bool contig);
+
+  //! Friend declaration for non-member function that allows setting a flag.
+  friend
+  void expertSetExportLIDsContiguous<LO,GO,NT>(Transfer<LO, GO, NT> transfer, bool contig);
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+  /// \brief Are source and target map locally fitted?
+  ///
+  /// Returns whether source and target map are locally fitted on the
+  /// calling rank. This is can be more efficient that calling
+  /// isLocallyFitted() on the maps directly, since no indices need to
+  /// be compared.
+  bool isLocallyFitted () const;
+
   /// \brief Describe this object in a human-readable way to the given
   ///   output stream.
   ///
@@ -296,6 +336,8 @@ private:
 // GO: The global ordinal type.
 // NODE: The Kokkos Node type.
 #define TPETRA_DETAILS_TRANSFER_INSTANT(LO, GO, NODE) \
-  template class Transfer< LO , GO , NODE >;
+  template class Transfer< LO , GO , NODE >;          \
+  template void expertSetRemoteLIDsContiguous< LO , GO , NODE >(Transfer<LO, GO, NODE> transfer, bool contig);    \
+  template void expertSetExportLIDsContiguous< LO , GO , NODE >(Transfer<LO, GO, NODE> transfer, bool contig);
 
 #endif // TPETRA_DETAILS_TRANSFER_DECL_HPP

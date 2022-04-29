@@ -78,17 +78,17 @@ Integrator_Scalar(
     const std::vector<std::string>& field_multiplier_names = 
       *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
 
+    field_multipliers_h = typename PHX::View<PHX::UnmanagedView<const ScalarT**>* >::HostMirror("FieldMultipliersHost", field_multiplier_names.size());
+    field_multipliers = PHX::View<PHX::UnmanagedView<const ScalarT**>* >("FieldMultipliersDevice", field_multiplier_names.size());
+
+    int cnt=0;
     for (std::vector<std::string>::const_iterator name = 
 	   field_multiplier_names.begin(); 
-	 name != field_multiplier_names.end(); ++name) {
+	 name != field_multiplier_names.end(); ++name, ++cnt) {
       PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
-      field_multipliers.push_back(tmp_field);
+      this->addDependentField(tmp_field.fieldTag(),field_multipliers_h(cnt));
     }
   }
-
-  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->addDependentField(*field);
 
   std::string n = "Integrator_Scalar: " + integral.fieldTag().name();
   this->setName(n);
@@ -105,7 +105,10 @@ postRegistrationSetup(
   num_qp = scalar.extent(1);
   tmp = Kokkos::createDynRankView(scalar.get_static_view(),"tmp", scalar.extent(0), num_qp);
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
+
+  Kokkos::deep_copy(field_multipliers, field_multipliers_h);
 }
+
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
@@ -114,47 +117,28 @@ Integrator_Scalar<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
-/*
-  for (index_t cell = 0; cell < workset.num_cells; ++cell)
-    integral(cell) = 0.0;
-*/
 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (std::size_t qp = 0; qp < num_qp; ++qp) {
-      tmp(cell,qp) = multiplier * scalar(cell,qp);
-      for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-	   field != field_multipliers.end(); ++field)
-        tmp(cell,qp) = tmp(cell,qp) * (*field)(cell,qp);  
+  const auto wm = this->wda(workset).int_rules[quad_index]->weighted_measure;
+
+  auto l_tmp = tmp;
+  auto l_multiplier = multiplier;
+  auto l_scalar = scalar;
+  auto l_field_multipliers = field_multipliers;
+  auto l_num_qp = num_qp;
+  auto l_integral = integral.get_static_view();
+
+  Kokkos::parallel_for("IntegratorScalar", workset.num_cells, KOKKOS_LAMBDA (int cell) {
+    for (std::size_t qp = 0; qp < l_num_qp; ++qp) {
+      l_tmp(cell,qp) = l_multiplier * l_scalar(cell,qp);
+      for (size_t f=0;f<l_field_multipliers.extent(0); ++f)
+        l_tmp(cell,qp) *= l_field_multipliers(f)(cell,qp);  
     }
-  }
-
-  // Switch to Kokkos means we can no longer use intrepid.  There is a
-  // hard coded call to blas that grab a reference to the first
-  // element. You can't grab refrerences to memory anymore with
-  // kokkos.  When Intrepid2 is fixed, we can switch this back.
-  /*
-  if(workset.num_cells>0)
-    Intrepid2::FunctionSpaceTools::
-      integrate<ScalarT>(integral, tmp, 
-			 (this->wda(workset).int_rules[quad_index])->weighted_measure, 
-			 Intrepid2::COMP_CPP);
-  */
-  
-  // NOTE: this is not portable to GPUs.  Need to remove all uses of
-  // intrepid field container for MDFields.  This is rather involved
-  // since we need to change the Worksets.
-
-  // const Kokkos::DynRankView<double,PHX::Device>& rightFields = (this->wda(workset).int_rules[quad_index])->weighted_measure;
-  const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quad_index];
-
-  int numPoints       = tmp.extent(1);
- 
-  for(index_t cl = 0; cl < workset.num_cells; cl++) {
-    integral(cl) = tmp(cl, 0)*iv.weighted_measure(cl, 0);
-    for(int qp = 1; qp < numPoints; qp++)
-      // integral(cl) += tmp(cl, qp)*rightFields(cl, qp);
-      integral(cl) += tmp(cl, qp)*iv.weighted_measure(cl, qp);
-  } // cl-loop
+    l_integral(cell) = 0.0;
+    for (std::size_t qp = 0; qp < l_num_qp; ++qp) {
+      l_integral(cell) += l_tmp(cell, qp)*wm(cell, qp);
+    }
+  } );
+  Kokkos::fence();
 }
 
 //**********************************************************************

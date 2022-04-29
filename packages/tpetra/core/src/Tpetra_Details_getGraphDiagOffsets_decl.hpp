@@ -86,9 +86,9 @@ public:
   typedef ::Kokkos::StaticCrsGraph<LO,
                                    ::Kokkos::LayoutLeft,
                                    device_type,
-                                   void, size_t> local_graph_type;
+                                   void, size_t> local_graph_device_type;
   typedef ::Tpetra::Details::LocalMap<LO, GO, device_type> local_map_type;
-  typedef ::Kokkos::View<const typename local_graph_type::size_type*,
+  typedef ::Kokkos::View<const typename local_graph_device_type::size_type*,
                          ::Kokkos::LayoutLeft,
                          device_type,
                          ::Kokkos::MemoryUnmanaged> row_offsets_type;
@@ -133,11 +133,11 @@ getGraphDiagOffsets (const DiagOffsetsType& diagOffsets,
                      const LclColIndsType& ind,
                      const bool isSorted)
 {
-  static_assert (Kokkos::Impl::is_view<DiagOffsetsType>::value,
+  static_assert (Kokkos::is_view<DiagOffsetsType>::value,
                  "DiagOffsetsType (the type of diagOffsets) must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<RowOffsetsType>::value,
+  static_assert (Kokkos::is_view<RowOffsetsType>::value,
                  "RowOffsetsType (the type of ptr) must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<LclColIndsType>::value,
+  static_assert (Kokkos::is_view<LclColIndsType>::value,
                  "LclColIndsType (the type of ind) must be a Kokkos::View.");
   static_assert (static_cast<int> (DiagOffsetsType::rank) == 1,
                  "DiagOffsetsType (the type of diagOffsets) must be a rank-1 Kokkos::View.");

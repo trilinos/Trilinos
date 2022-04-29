@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -168,9 +168,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
   /* Local variables */
 
-  INT *  num_nodes_in_node_set = nullptr;
+  INT   *num_nodes_in_node_set = nullptr;
   int    mesh_exoid            = 0;
-  INT *  num_elem_in_ssets = nullptr, *num_df_in_ssets = nullptr, *num_df_in_nsets = nullptr;
+  INT   *num_elem_in_ssets = nullptr, *num_df_in_ssets = nullptr, *num_df_in_nsets = nullptr;
   int    cpu_ws;
   float  version;
   double start_time = 0.0;
@@ -272,8 +272,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     int mode   = EX_READ | int64api;
     mesh_exoid = ex_open(ExoFile.c_str(), mode, &cpu_ws, &io_ws, &version);
     if (mesh_exoid < 0) {
-      fmt::print(stderr, "{}Exodus returned error opening mesh file, {}\n", __func__,
-                 ExoFile.c_str());
+      fmt::print(stderr, "{}Exodus returned error opening mesh file, {}\n", __func__, ExoFile);
       exit(1);
     }
   }
@@ -395,9 +394,9 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     Num_Attr_Per_Elem  = Num_Nodes_Per_Elem + globals.Num_Elem_Blk;
     Elem_Blk_Ids       = Num_Attr_Per_Elem + globals.Num_Elem_Blk;
     Elem_Blk_Types     = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Elem_Blk,
-                                          MAX_STR_LENGTH + 1, sizeof(char));
+                                              MAX_STR_LENGTH + 1, sizeof(char));
     Elem_Blk_Names     = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Elem_Blk,
-                                          max_name_length + 1, sizeof(char));
+                                              max_name_length + 1, sizeof(char));
     Elem_Blk_Attr_Names =
         (char ***)array_alloc(__FILE__, __LINE__, 1, globals.Num_Elem_Blk, sizeof(char **));
   }
@@ -412,7 +411,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     num_nodes_in_node_set = Node_Set_Ids + globals.Num_Node_Set;
     num_df_in_nsets       = num_nodes_in_node_set + globals.Num_Node_Set;
     Node_Set_Names        = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Node_Set,
-                                          max_name_length + 1, sizeof(char));
+                                                 max_name_length + 1, sizeof(char));
   }
   else {
     Node_Set_Ids   = nullptr;
@@ -425,7 +424,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     num_elem_in_ssets = Side_Set_Ids + globals.Num_Side_Set;
     num_df_in_ssets   = num_elem_in_ssets + globals.Num_Side_Set;
     Side_Set_Names    = (char **)array_alloc(__FILE__, __LINE__, 2, globals.Num_Side_Set,
-                                          max_name_length + 1, sizeof(char));
+                                             max_name_length + 1, sizeof(char));
   }
   else {
     Side_Set_Ids   = nullptr;
@@ -578,7 +577,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
 
     /* Create the parallel Exodus file for writing */
     if (Debug_Flag >= 7) {
-      fmt::print("{}Parallel mesh file name is {}\n", __func__, Parallel_File_Name.c_str());
+      fmt::print("{}Parallel mesh file name is {}\n", __func__, Parallel_File_Name);
     }
     else {
       if (iproc % 10 == 0 || iproc == Proc_Info[2] - 1) {
@@ -595,7 +594,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     if ((mesh_exoid = ex_create(Parallel_File_Name.c_str(), mode, &cpu_ws, &io_ws)) == -1) {
 
       fmt::print(stderr, "[{}] Could not create parallel Exodus file:\n\t{}\n", __func__,
-                 Parallel_File_Name.c_str());
+                 Parallel_File_Name);
       exit(1);
     }
 
@@ -785,9 +784,8 @@ void NemSpread<T, INT>::read_node_set_ids(int mesh_exoid, INT num_nodes_in_node_
  */
 
 {
-  int error;
   if (globals.Num_Node_Set > 0) {
-    error = ex_get_ids(mesh_exoid, EX_NODE_SET, Node_Set_Ids);
+    int error = ex_get_ids(mesh_exoid, EX_NODE_SET, Node_Set_Ids);
     check_exodus_error(error, "ex_get_node_set_ids");
 
     error = ex_get_names(mesh_exoid, EX_NODE_SET, Node_Set_Names);
@@ -840,9 +838,8 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, INT num_elem_in_ssets[
  */
 
 {
-  int error;
   if (globals.Num_Side_Set > 0) {
-    error = ex_get_ids(mesh_exoid, EX_SIDE_SET, Side_Set_Ids);
+    int error = ex_get_ids(mesh_exoid, EX_SIDE_SET, Side_Set_Ids);
     check_exodus_error(error, "ex_get_side_set_ids");
 
     error = ex_get_names(mesh_exoid, EX_SIDE_SET, Side_Set_Names);
@@ -865,8 +862,8 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, INT num_elem_in_ssets[
 
     if (globals.Num_Side_Set > 0) {
       for (int i = 0; i < globals.Num_Side_Set; i++) {
-        fmt::print("{:6d}{:11d}  {:12n}\n", i, (size_t)Side_Set_Ids[i],
-                   (size_t)num_elem_in_ssets[i]);
+        fmt::print("{:6d}{:11d}  {:12}\n", i, Side_Set_Ids[i],
+                   fmt::group_digits(num_elem_in_ssets[i]));
       }
     }
 
@@ -965,10 +962,10 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
       if (global_node_ids[i] <= 0) {
         fmt::print(stderr,
                    "---------------------------------------------------------------------\n"
-                   "ERROR: Local node {:n} has a global id of {:n} which is invalid.\n"
+                   "ERROR: Local node {} has a global id of {} which is invalid.\n"
                    "       All global ids must be greater than 0. The map will be ignored.\n"
                    "---------------------------------------------------------------------\n",
-                   i + 1, global_node_ids[i]);
+                   fmt::group_digits(i + 1), fmt::group_digits(global_node_ids[i]));
         sequential = true; // Map is invalid, ignore it.
         break;
       }
@@ -1154,11 +1151,14 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
                  "Glb_Elm_In_Blk");
       print_line("-", 79);
       for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++) {
-        fmt::print("{:4d}\t\t{:5n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\n", i,
-                   globals.GElem_Blks[iproc][i], globals.Proc_Elem_Blk_Ids[iproc][i],
-                   globals.Proc_Nodes_Per_Elem[iproc][i], globals.Proc_Num_Attr[iproc][i],
-                   globals.Proc_Elem_Blk_Types[iproc][i], globals.Proc_Num_Elem_In_Blk[iproc][i],
-                   Num_Elem_In_Blk[globals.GElem_Blks[iproc][i]]);
+        fmt::print("{:4d}\t\t{:5}\t{:8}\t{:8}\t{:8}\t{:8}\t{:8}\t{:8}\n", i,
+                   globals.GElem_Blks[iproc][i],
+                   fmt::group_digits(globals.Proc_Elem_Blk_Ids[iproc][i]),
+                   fmt::group_digits(globals.Proc_Nodes_Per_Elem[iproc][i]),
+                   fmt::group_digits(globals.Proc_Num_Attr[iproc][i]),
+                   globals.Proc_Elem_Blk_Types[iproc][i],
+                   fmt::group_digits(globals.Proc_Num_Elem_In_Blk[iproc][i]),
+                   fmt::group_digits(Num_Elem_In_Blk[globals.GElem_Blks[iproc][i]]));
       }
       print_line("=", 79);
     }
@@ -1194,7 +1194,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
 #ifdef DEBUG
   size_t ielem_count;
 #endif
-  INT *  elem_blk             = nullptr, ipos;
+  INT   *elem_blk             = nullptr, ipos;
   size_t num_elem_per_message = 0;
   size_t num_attr_per_message = 0;
   size_t num_attr_left_over   = 0;
@@ -1485,10 +1485,10 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
       if (global_ids[i] <= 0) {
         fmt::print(stderr,
                    "---------------------------------------------------------------------\n"
-                   "ERROR: Local element {:n} has a global id of {:n} which is invalid.\n"
+                   "ERROR: Local element {} has a global id of {} which is invalid.\n"
                    "       All global ids must be greater than 0. The map will be ignored.\n"
                    "---------------------------------------------------------------------\n",
-                   i + 1, global_ids[i]);
+                   fmt::group_digits(i + 1), fmt::group_digits(global_ids[i]));
         sequential = true; // Map is invalid, ignore it.
         break;
       }

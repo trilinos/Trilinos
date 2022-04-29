@@ -68,14 +68,7 @@ namespace ExoModules {
     return true;
   }
 
-  void N2EExoWriter::setModelTitle(const std::string &title)
-  {
-    std::string tmp = title;
-    if (title.length() >= MAX_LINE_LENGTH - 1) {
-      tmp = title.substr(0, MAX_LINE_LENGTH - 1);
-    }
-    strncat(this->modelTitle, tmp.c_str(), MAX_LINE_LENGTH - 1);
-  }
+  void N2EExoWriter::setModelTitle(const std::string &title) { this->modelTitle = title; }
 
   bool N2EExoWriter::writeFile()
   {
@@ -104,10 +97,10 @@ namespace ExoModules {
     bool result{true};
 
     // Now we write the nodes
-    size_t num_nodes = this->gridList.size();
-    double * x         = new double[num_nodes];
-    double * y         = new double[num_nodes];
-    double * z         = new double[num_nodes];
+    size_t  num_nodes = this->gridList.size();
+    double *x         = new double[num_nodes];
+    double *y         = new double[num_nodes];
+    double *z         = new double[num_nodes];
     for (size_t i = 0; i < num_nodes; i++) {
 
       N2EPoint3D crd = std::get<1>(this->gridList[i]);
@@ -138,9 +131,10 @@ namespace ExoModules {
   {
     bool result{true};
 
-    int ret = ex_put_init(this->exoFileID, this->modelTitle, 3 /* 3D models only*/,
-                          this->gridList.size(), this->elementList.size(), this->sections.size(), 0,
-                          0); // Make your fancy pants nodes and side sets elsewherem, laddy.
+    auto tmp = this->modelTitle.substr(0, MAX_LINE_LENGTH - 1);
+    int  ret = ex_put_init(this->exoFileID, tmp.c_str(), 3 /* 3D models only*/,
+                           this->gridList.size(), this->elementList.size(), this->sections.size(), 0,
+                           0); // Make your fancy pants nodes and side sets elsewherem, laddy.
 
     if (ret != 0) {
       std::cerr << "Problem initializing model params in N2EExoWriter::writeFile(). punching out\n";
@@ -162,7 +156,7 @@ namespace ExoModules {
       std::vector<elementType> thisBlock;
       int64_t                  block = (int)std::get<0>(sect);
 
-      int                    retvalue{0};
+      int retvalue{0};
 
       for (const elementType &elem : this->elementList) {
 
@@ -193,7 +187,7 @@ namespace ExoModules {
 
       for (const elementType &elem : thisBlock) {
 
-	const N2EModules::N2EGridPtList  &pts{std::get<3>(elem)};
+        const N2EModules::N2EGridPtList &pts{std::get<3>(elem)};
         std::copy(pts.v, pts.v + nodes_per_elem, elemCon.data() + numNodesCopied);
         numNodesCopied += nodes_per_elem;
       }

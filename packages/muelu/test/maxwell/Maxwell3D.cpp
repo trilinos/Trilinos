@@ -64,6 +64,7 @@
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
+#include <MueLu_Maxwell1.hpp>
 #include <MueLu_TestHelpers_Common.hpp>
 #include <MueLu_Exceptions.hpp>
 
@@ -381,6 +382,13 @@ bool SetupSolveWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     if (reuse) {
       TEUCHOS_ASSERT(precType == "MueLu-RefMaxwell");
       for (int solveno = 0; solveno<2; solveno++) {
+        // SM_Matrix->resumeFill();
+        // SM_Matrix->fillComplete();
+        if (X0.is_null())
+          X->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+        else
+          X = X0;
+        problem -> setProblem( X, B );
         Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
         Belos::ReturnType status = solver -> solve();
         int iters = solver -> getNumIters();
@@ -445,6 +453,11 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
       preconditioner = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Ms_Matrix,M0inv_Matrix,
                                                                M1_Matrix,nullspace,coords,params) );
     }
+    else if (precType=="MueLu-Maxwell1" || precType=="MueLu-Reitzinger") {
+      preconditioner = rcp( new MueLu::Maxwell1<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Kn_Matrix,nullspace,coords,params) );
+
+    }
+
 #ifdef HAVE_MUELU_EPETRA
     else if (precType=="ML-RefMaxwell") {
       Xpetra::UnderlyingLib  lib = *static_cast<Xpetra::UnderlyingLib*>(inputs["lib"]);
@@ -516,6 +529,13 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     if (reuse) {
       TEUCHOS_ASSERT(precType == "MueLu-RefMaxwell");
       for (int solveno = 0; solveno<2; solveno++) {
+        // SM_Matrix->resumeFill();
+        // SM_Matrix->fillComplete();
+        if (X0.is_null())
+          X->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+        else
+          X = X0;
+        problem -> setProblem( X, B );
         Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
         Belos::ReturnType status = solver -> solve();
         int iters = solver -> getNumIters();
@@ -562,6 +582,8 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
           sublist->set(*key_it, M1_Matrix);
         else if (value == "Ms")
           sublist->set(*key_it, Ms_Matrix);
+        else if (value == "Kn")
+          sublist->set(*key_it, Kn_Matrix);
         else if (value == "Coordinates")
           sublist->set(*key_it, coords);
         // else if (*key_it == "Nullspace")
@@ -593,6 +615,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     // Build Stratimikos solver
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
     Stratimikos::enableMueLuRefMaxwell<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+    Stratimikos::enableMueLuMaxwell1<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
 #ifdef HAVE_MUELU_IFPACK2
     typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
@@ -708,14 +731,23 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
+  if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1" || precType == "ML-Maxwell") {
+    if (SM_file != "")
+      M1_file = "";
+    M0_file = "";
+  }
+
   if (xml == ""){
     if (precType == "MueLu-RefMaxwell")
       xml = "Maxwell.xml";
+    else if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1")
+      xml = "Maxwell_Reitzinger.xml";
     else if (precType == "ML-RefMaxwell")
       xml = "Maxwell_ML.xml";
     else if (precType == "ML-Maxwell")
       xml = "Maxwell_ML1.xml";
     else if (precType == "Hypre")
+
       xml = "Hypre.xml";
   }
 
@@ -730,12 +762,29 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   // Read matrices in from files
   RCP<Matrix> D0_Matrix, SM_Matrix, M1_Matrix, Ms_Matrix, M0inv_Matrix, Kn_Matrix;
 
-  // gradient matrix
-  D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, lib, comm);
-
   // maps for nodal and edge matrices
-  RCP<const Map> node_map = D0_Matrix->getDomainMap();
-  RCP<const Map> edge_map = D0_Matrix->getRangeMap();
+  RCP<const Map> node_map;
+  RCP<const Map> edge_map;
+
+  // gradient matrix
+  try {
+    std::string base = D0_file.substr(0, D0_file.find_last_of('/')+1);
+    std::string D0_filename = D0_file.substr(D0_file.find_last_of('/')+1, std::string::npos);
+    std::string edgeMap_file = base + "rowmap_"    + D0_filename;
+    std::string nodeMap_file = base + "domainmap_" + D0_filename;
+    std::string colMap_file  = base + "colmap_"    + D0_filename;
+    node_map = Xpetra::IO<SC, LO, GO, NO>::ReadMap(nodeMap_file, lib, comm);
+    edge_map = Xpetra::IO<SC, LO, GO, NO>::ReadMap(edgeMap_file, lib, comm);
+    RCP<const Map> colMap;
+    if (comm->getSize() > 1)
+      colMap = Xpetra::IO<SC, LO, GO, NO>::ReadMap(colMap_file, lib, comm);
+    D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, edge_map, colMap, node_map, edge_map);
+  } catch (const std::exception& e) {
+    // *out << "Skipping D0 maps, because: " << e.what() << std::endl;
+    D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(D0_file, lib, comm);
+    node_map = D0_Matrix->getDomainMap();
+    edge_map = D0_Matrix->getRangeMap();
+  }
 
   // build stiffness plus mass matrix (SM_Matrix)
   if (SM_file == "") {
@@ -767,7 +816,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::ArrayRCP<LO> colInd;
     Teuchos::ArrayRCP<SC> values;
     Teuchos::ArrayRCP<const SC> diags = diag->getData(0);
-    size_t nodeNumElements = node_map->getNodeNumElements();
+    size_t nodeNumElements = node_map->getLocalNumElements();
     M0inv_CrsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
     SC ONE = Teuchos::ScalarTraits<Scalar>::one();
     for (size_t i = 0; i < nodeNumElements; i++) {

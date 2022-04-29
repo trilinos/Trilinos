@@ -31,6 +31,7 @@
 // if you are not using precompiled headers then include these lines:
 #include <stdio.h>
 #include <tchar.h>
+#define NOMINMAX
 #include <windows.h>
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -123,7 +124,7 @@
 //                       break;
 //
 //                   case _T('n'):
-//                       TRACE(_T("option n: value=%d\n"), atoi(optarg));
+//                       TRACE(_T("option n: value=%d\n"), strtol(optarg, NULL, 10));
 //                       //
 //                       // do something with value here
 //                       //

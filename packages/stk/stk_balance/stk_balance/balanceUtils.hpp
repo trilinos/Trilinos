@@ -46,7 +46,6 @@ namespace stk
 {
 namespace balance
 {
-//rcb, multijagged, rib, hsfc, patoh, phg, metis, parmetis, parma, scotch, ptscotch, block, cyclic, random, zoltan, nd
 
 class FaceSearchTolerance;
 
@@ -88,13 +87,22 @@ public:
         COLOR_MESH_AND_OUTPUT_COLOR_FIELDS,
     };
 
+    virtual void set_num_input_processors(unsigned numInputProcs) { m_numInputProcessors = numInputProcs; }
+    virtual unsigned get_num_input_processors() const { return m_numInputProcessors; }
+
+    virtual void set_num_output_processors(unsigned numOutputProcs) { m_numOutputProcessors = numOutputProcs; }
+    virtual unsigned get_num_output_processors() const { return m_numOutputProcessors; }
+
+    virtual void set_is_rebalancing(bool isRebalancing) { m_isRebalancing = isRebalancing; }
+    virtual bool get_is_rebalancing() const { return m_isRebalancing; }
+
     virtual size_t getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const;
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const;
     virtual int getGraphVertexWeight(stk::topology type) const;
     virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const ;
     virtual GraphOption getGraphOption() const;
 
-    // Graph (parmetis) based options only
+    // Graph based options only
     virtual bool includeSearchResultsInGraph() const;
     virtual void setIncludeSearchResultsInGraph(bool doContactSearch);
 
@@ -161,19 +169,27 @@ public:
     virtual void set_output_filename(const std::string& filename);
     virtual std::string get_output_filename() const;
 
+    virtual void set_log_filename(const std::string& filename);
+    virtual std::string get_log_filename() const;
+
     virtual void setShouldFixSpiders(bool fixSpiders) { }
     virtual void setEdgeWeightForSearch(double w) { }
     virtual void setVertexWeightMultiplierForVertexInSearch(double w) { }
     virtual void setToleranceForFaceSearch(double tol) { }
 
-protected:
-    const DefaultSettings defaults;
+    void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
+    bool get_use_nested_decomp() const { return m_useNestedDecomp; }
 
 private:
+    unsigned m_numInputProcessors;
+    unsigned m_numOutputProcessors;
+    bool m_isRebalancing;
     std::string m_initialDecompMethod;
     std::string m_inputFilename;
     std::string m_outputFilename;
+    std::string m_logFilename;
     BlockWeightMultipliers m_vertexWeightBlockMultipliers;
+    bool m_useNestedDecomp;
 };
 
 class BasicGeometricSettings : public BalanceSettings
@@ -186,16 +202,16 @@ class GraphCreationSettings : public BalanceSettings
 {
 public:
     GraphCreationSettings()
-      : mToleranceForFaceSearch(defaults.faceSearchAbsTol),
-        mToleranceForParticleSearch(defaults.particleSearchTol),
-        edgeWeightForSearch(defaults.faceSearchEdgeWeight),
-        method(defaults.decompMethod),
-        vertexWeightMultiplierForVertexInSearch(defaults.faceSearchVertexMultiplier),
+      : mToleranceForFaceSearch(DefaultSettings::faceSearchAbsTol),
+        mToleranceForParticleSearch(DefaultSettings::particleSearchTol),
+        edgeWeightForSearch(DefaultSettings::faceSearchEdgeWeight),
+        method(DefaultSettings::decompMethod),
+        vertexWeightMultiplierForVertexInSearch(DefaultSettings::faceSearchVertexMultiplier),
         m_UseConstantToleranceForFaceSearch(true),
         m_shouldFixSpiders(false),
         m_spiderBeamConnectivityCountField(nullptr),
         m_spiderVolumeConnectivityCountField(nullptr),
-        m_includeSearchResultInGraph(defaults.useContactSearch),
+        m_includeSearchResultInGraph(DefaultSettings::useContactSearch),
         m_useNodeBalancer(false),
         m_nodeBalancerTargetLoadBalance(1.0),
         m_nodeBalancerMaxIterations(5)
@@ -438,6 +454,38 @@ public:
     {
         return BalanceSettings::COLOR_MESH_BY_TOPOLOGY;
     }
+};
+
+class M2NBalanceSettings : public GraphCreationSettings
+{
+public:
+    M2NBalanceSettings()
+      : GraphCreationSettings(),
+        m_numOutputProcs(0),
+        m_useNestedDecomp(false)
+    {}
+
+    M2NBalanceSettings(const std::string & inputFileName,
+                       unsigned numOutputProcs,
+                       bool useNestedDecomp = false)
+      : GraphCreationSettings(),
+        m_numOutputProcs(numOutputProcs),
+        m_useNestedDecomp(useNestedDecomp)
+    {
+      set_input_filename(inputFileName);
+    }
+
+    ~M2NBalanceSettings() = default;
+
+    void set_num_output_processors(unsigned numOutputProcs) { m_numOutputProcs = numOutputProcs; }
+    unsigned get_num_output_processors() const { return m_numOutputProcs; }
+
+    void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
+    bool get_use_nested_decomp() const { return m_useNestedDecomp; }
+
+protected:
+    unsigned m_numOutputProcs;
+    bool m_useNestedDecomp;
 };
 
 class GraphEdge

@@ -82,7 +82,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ParameterList)
   // Test constructor IntegratorBasic(model, stepperType)
   {
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::createIntegratorBasic<double>(model, "Trapezoidal Method");
+      Tempus::createIntegratorBasic<double>(model, std::string("Trapezoidal Method"));
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
     RCP<const ParameterList> defaultPL =

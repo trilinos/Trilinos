@@ -80,6 +80,8 @@
 #include "MueLu_BlockedRAPFactory.hpp"
 #include "MueLu_BraessSarazinSmoother.hpp"
 #include "MueLu_BrickAggregationFactory.hpp"
+#include "MueLu_ClassicalMapFactory.hpp"
+#include "MueLu_ClassicalPFactory.hpp"
 #include "MueLu_CloneRepartitionInterface.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_SmooVecCoalesceDropFactory.hpp"
@@ -142,6 +144,7 @@
 #include "MueLu_TogglePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_TransPFactory.hpp"
+#include "MueLu_RfromP_Or_TransP.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_UnsmooshFactory.hpp"
@@ -163,6 +166,7 @@
 #include "MueLu_GeometricInterpolationPFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_StructuredAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
@@ -236,9 +240,10 @@ namespace MueLu {
       if (factoryName == "AggregationExportFactory")              return Build2<AggregationExportFactory>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "AmalgamationFactory")                   return Build2<AmalgamationFactory>                   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedCoarseMapFactory")               return Build2<BlockedCoarseMapFactory>               (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "BlockedCoordinatesTransferFactory")     return Build2<BlockedCoordinatesTransferFactory>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedRAPFactory")                     return BuildRAPFactory<BlockedRAPFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BrickAggregationFactory")               return Build2<BrickAggregationFactory>               (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ClassicalMapFactory")                   return Build2<ClassicalMapFactory>             (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ClassicalPFactory")                     return Build2<ClassicalPFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CloneRepartitionInterface")             return Build2<CloneRepartitionInterface>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseMapFactory")                      return Build2<CoarseMapFactory>                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseningVisualizationFactory")        return Build2<CoarseningVisualizationFactory>        (paramList, factoryMapIn, factoryManagersIn);
@@ -294,6 +299,7 @@ namespace MueLu {
       if (factoryName == "ToggleCoordinatesTransferFactory")      return BuildToggleCoordinatesTransferFactory         (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TogglePFactory")                        return BuildTogglePFactory<TogglePFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TransPFactory")                         return Build2<TransPFactory>                         (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "RfromP_Or_TransP")                      return Build2<RfromP_Or_TransP>                      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TrilinosSmoother")                      return BuildTrilinosSmoother                         (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory")           return Build2<UncoupledAggregationFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UnsmooshFactory")                       return Build2<UnsmooshFactory>                       (paramList, factoryMapIn, factoryManagersIn);
@@ -309,6 +315,7 @@ namespace MueLu {
       if (factoryName == "GeometricInterpolationPFactory_kokkos") return Build2<GeometricInterpolationPFactory_kokkos> (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspaceFactory_kokkos")               return Build2<NullspaceFactory_kokkos>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SaPFactory_kokkos")                     return Build2<SaPFactory_kokkos>                     (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SemiCoarsenPFactory_kokkos")            return Build2<SemiCoarsenPFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "StructuredAggregationFactory_kokkos")   return Build2<StructuredAggregationFactory_kokkos>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TentativePFactory_kokkos")              return Build2<TentativePFactory_kokkos>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory_kokkos")    return Build2<UncoupledAggregationFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
@@ -359,6 +366,7 @@ namespace MueLu {
 #endif // HAVE_MPI
       }
       // Blocked factories
+      if (factoryName == "BlockedCoordinatesTransferFactory")     return BuildBlockedCoordFactory<BlockedCoordinatesTransferFactory>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedDirectSolver")             return BuildBlockedDirectSolver(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedGaussSeidelSmoother")      return BuildBlockedSmoother<BlockedGaussSeidelSmoother>(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedJacobiSmoother")           return BuildBlockedSmoother<BlockedJacobiSmoother>(paramList, factoryMapIn, factoryManagersIn);
@@ -914,6 +922,56 @@ namespace MueLu {
 
       return pfac;
     }
+
+
+    template <class T> // T must implement the Factory interface
+    RCP<T> BuildBlockedCoordFactory(const Teuchos::ParameterList & paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      RCP<T> pfac = Teuchos::null;
+
+      // read in sub lists
+      RCP<ParameterList> paramListNonConst = rcp(new ParameterList(paramList));
+
+      // internal vector of factory managers
+      std::vector<RCP<const FactoryBase> > facBase;
+
+      // loop over all "block%i" sublists in parameter list
+      int blockid = 1;
+      bool blockExists = true;
+      while (blockExists == true) {
+        std::stringstream ss;
+        ss << "block" << blockid;
+
+        if(paramList.isSublist(ss.str()) == true) {
+          // we either have a parameter group or we have a list of factories in here
+          RCP<const ParameterList> b = rcp(new ParameterList(*sublist(paramListNonConst, ss.str())));
+
+            // read in the list of factories
+            for (ParameterList::ConstIterator param = b->begin(); param != b->end(); ++param) {
+              RCP<const FactoryBase> p = BuildFactory(b->entry(param), factoryMapIn, factoryManagersIn);
+              facBase.push_back(p);
+            }
+
+          // add factory manager to internal vector of factory managers
+          paramListNonConst->remove(ss.str());
+          blockid++;
+        } else {
+          blockExists = false;
+          break;
+        }
+
+      }
+
+      // build BlockedPFactory (without sub block information)
+      pfac = Build2<T>(*paramListNonConst, factoryMapIn, factoryManagersIn);
+
+      // add FactoryManager objects
+      for(size_t i = 0; i<facBase.size(); i++) {
+        pfac->AddFactory(facBase[i]); // add factory manager
+      }
+
+      return pfac;
+    }
+
   }; // class
 } // namespace MueLu
 

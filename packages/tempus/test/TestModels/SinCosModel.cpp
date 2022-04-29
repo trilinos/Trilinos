@@ -14,6 +14,7 @@
 
 namespace Tempus_Test {
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SinCosModel)
+  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SinCosModelAdjoint)
 }
 
 #endif

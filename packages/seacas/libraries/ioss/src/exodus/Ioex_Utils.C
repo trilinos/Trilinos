@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,7 +10,6 @@
 #include <Ioss_SmartAssert.h>
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
-#include <Ioss_Version.h>
 #include <algorithm>
 #include <cstring>
 #include <exodus/Ioex_Utils.h>
@@ -92,12 +91,8 @@ namespace {
 } // namespace
 
 namespace Ioex {
-  const char *Version() { return Ioss::Version(); }
-
   void update_last_time_attribute(int exodusFilePtr, double value)
   {
-    char errmsg[MAX_ERR_LENGTH];
-
     double tmp    = 0.0;
     int    rootid = static_cast<unsigned>(exodusFilePtr) & EX_FILE_ID_MASK;
     int    status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
@@ -106,6 +101,7 @@ namespace Ioex {
       status = nc_put_att_double(rootid, NC_GLOBAL, "last_written_time", NC_DOUBLE, 1, &value);
       if (status != NC_NOERR) {
         ex_opts(EX_VERBOSE);
+        char errmsg[MAX_ERR_LENGTH];
         fmt::print(errmsg, "Error: failed to define 'last_written_time' attribute to file id {}",
                    exodusFilePtr);
         ex_err_fn(exodusFilePtr, __func__, errmsg, status);
@@ -242,7 +238,7 @@ namespace Ioex {
     const char *s = substring;
     const char *t = type.c_str();
 
-    assert(s != nullptr && t != nullptr);
+    SMART_ASSERT(s != nullptr && t != nullptr);
     while (*s != '\0' && *t != '\0') {
       if (*s++ != tolower(*t++)) {
         return false;
@@ -309,7 +305,7 @@ namespace Ioex {
         // later...
         auto *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
         new_entity->property_erase(id_prop);
-        assert(!entity->property_exists(id_prop));
+        SMART_ASSERT(!entity->property_exists(id_prop))(id_prop);
       }
     }
     return succeed;
@@ -434,7 +430,7 @@ namespace Ioex {
 
   void fix_bad_name(char *name)
   {
-    assert(name != nullptr);
+    SMART_ASSERT(name != nullptr);
 
     size_t len = std::strlen(name);
     for (size_t i = 0; i < len; i++) {
@@ -464,19 +460,23 @@ namespace Ioex {
       size_t base_size = basename.size();
       if (std::strncmp(basename.c_str(), &buffer[0], base_size) == 0) {
         int64_t name_id = extract_id(buffer.data());
-        if (name_id > 0 && name_id != id) {
-          // See if name is truly of form "basename_name_id"
-          std::string tmp_name = Ioss::Utils::encode_entity_name(basename, name_id);
-          if (tmp_name == buffer.data()) {
-            std::string new_name = Ioss::Utils::encode_entity_name(basename, id);
-            fmt::print(Ioss::WARNING(),
-                       "The entity named '{}' has the id {} which does not match the "
-                       "embedded id {}.\n"
-                       "         This can cause issues later; the entity will be renamed to '{}' "
-                       "(IOSS)\n\n",
-                       buffer.data(), id, name_id, new_name);
+
+        // See if name is truly of form "basename_name_id" (e.g. "surface_{id}")
+        std::string tmp_name = Ioss::Utils::encode_entity_name(basename, name_id);
+        if (tmp_name == buffer.data()) {
+          if (name_id > 0) {
             db_has_name = false;
-            return new_name;
+            if (name_id != id) {
+              std::string new_name = Ioss::Utils::encode_entity_name(basename, id);
+              fmt::print(Ioss::WARNING(),
+                         "The entity named '{}' has the id {} which does not match the "
+                         "embedded id {}.\n"
+                         "         This can cause issues later; the entity will be renamed to '{}' "
+                         "(IOSS)\n\n",
+                         buffer.data(), id, name_id, new_name);
+              return new_name;
+            }
+            return tmp_name;
           }
         }
       }
@@ -567,7 +567,7 @@ namespace Ioex {
     }
   }
 
-  bool filter_node_list(Ioss::Int64Vector &               nodes,
+  bool filter_node_list(Ioss::Int64Vector                &nodes,
                         const std::vector<unsigned char> &node_connectivity_status)
   {
     // Iterate through 'nodes' and determine which of the nodes are
@@ -613,8 +613,8 @@ namespace Ioex {
     for (const auto &block : element_blocks) {
 
       if (Ioss::Utils::block_is_omitted(block)) {
-        ssize_t min_id = block->get_offset() + 1;
-        ssize_t max_id = min_id + block->entity_count() - 1;
+        int64_t min_id = block->get_offset() + 1;
+        int64_t max_id = min_id + block->entity_count() - 1;
         for (size_t i = 0; i < elements.size(); i++) {
           if (min_id <= elements[i] && elements[i] <= max_id) {
             omitted     = true;
@@ -632,9 +632,9 @@ namespace Ioex {
 
   void separate_surface_element_sides(Ioss::Int64Vector &element, Ioss::Int64Vector &sides,
                                       Ioss::Region *region, Ioex::TopologyMap &topo_map,
-                                      Ioex::TopologyMap &    side_map,
+                                      Ioex::TopologyMap     &side_map,
                                       Ioss::SurfaceSplitType split_type,
-                                      const std::string &    surface_name)
+                                      const std::string     &surface_name)
   {
     if (!element.empty()) {
       Ioss::ElementBlock *block = nullptr;
@@ -655,8 +655,8 @@ namespace Ioex {
         }
         if (block == nullptr || !block->contains(elem_id)) {
           block = region->get_element_block(elem_id);
-          assert(block != nullptr);
-          assert(!Ioss::Utils::block_is_omitted(block)); // Filtered out above.
+          SMART_ASSERT(block != nullptr);
+          SMART_ASSERT(!Ioss::Utils::block_is_omitted(block)); // Filtered out above.
 
           // nullptr if hetero sides on element
           common_ftopo = block->topology()->boundary_type(0);
@@ -668,9 +668,19 @@ namespace Ioex {
 
         if (common_ftopo == nullptr && sides[iel] != current_side) {
           current_side = sides[iel];
-          assert(current_side > 0 && current_side <= block->topology()->number_boundaries());
+          if (current_side <= 0 || current_side > block->topology()->number_boundaries()) {
+            std::ostringstream errmsg;
+            fmt::print(
+                errmsg,
+                "ERROR: In sideset/surface '{}' for the element with id {} of topology '{}';\n\t"
+                "an invalid face index '{}' is specified.\n\tFace indices "
+                "must be between 1 and {}. ({})",
+                surface_name, fmt::group_digits(elem_id), block->topology()->name(), current_side,
+                block->topology()->number_boundaries(), __func__);
+            IOSS_ERROR(errmsg);
+          }
           topo = block->topology()->boundary_type(sides[iel]);
-          assert(topo != nullptr);
+          SMART_ASSERT(topo != nullptr);
         }
         std::pair<std::string, const Ioss::ElementTopology *> name_topo;
         if (split_type == Ioss::SPLIT_BY_TOPOLOGIES) {
@@ -699,8 +709,7 @@ namespace Ioex {
 
   void write_reduction_attributes(int exoid, const Ioss::GroupingEntity *ge)
   {
-    Ioss::NameList properties;
-    ge->property_describe(Ioss::Property::Origin::ATTRIBUTE, &properties);
+    Ioss::NameList properties = ge->property_describe(Ioss::Property::Origin::ATTRIBUTE);
 
     auto type = Ioex::map_exodus_type(ge->type());
     auto id   = ge->get_optional_property("id", 0);

@@ -77,10 +77,10 @@ namespace MueLu
   ### References ###
 
   - Wiesner, T. A.: Flexible Aggregation-based Algebraic Multigrid Methods for Contact and Flow Problems,
-    PhD thesis, Technical University of Munich (2015)
+    PhD thesis, Technical University of Munich, 2015
   - Wiesner, T. A., Mayr, M., Popp, A., Gee, M. W., Wall, W. A.:
     Algebraic multigrid methods for saddle point systems arising from mortar contact formulations,
-    submitted for publication
+    Int. J. Numer. Methods Eng., 122(15):3749–3779, 2021, https://doi.org/10.1002/nme.6680
 
   @ingroup Aggregation
 

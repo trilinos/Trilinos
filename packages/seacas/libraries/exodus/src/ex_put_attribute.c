@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -9,19 +9,14 @@
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
 
-/* An assembly attribute is similar to an IOSS property consisting of
+/* An entity attribute is similar to an IOSS property consisting of
    a name, a type, and a value or values. It is not a value per entity
-   in the assembly, but a value for the assembly. For now, they types
+   in the entity, but a value for the entity itself. For now, the types
    will be limited to text, integer, and double to provide capability
    without the complexity of supporting the many types available in
    NetCDF-4 including user-defined types. Note that an attribute can
    have multiple values, for example if the attribute is a range, it
    could have the value {1.0, 100.0}
-
-   NOTE: This type of attribute (value on entity instead of value per
-   entities members, for example nodes in a nodeset) will also be added
-   to the other entity types (blocks and sets) when implemented for
-   assemblies.
 
    NOTE: Need a better name or way of distinguishing from the
    attributes which are currently supported in Exodus.
@@ -111,7 +106,7 @@ static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
 
 /* define and output a double attribute */
 int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
-                            const char *atr_name, int num_values, double *values)
+                            const char *atr_name, int num_values, const double *values)
 {
   int  status;
   char errmsg[MAX_ERR_LENGTH];
@@ -155,7 +150,7 @@ error_ret:
 
 /* define and output an integer attribute */
 int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
-                             const char *atr_name, int num_values, void_int *values)
+                             const char *atr_name, int num_values, const void_int *values)
 {
   int  status;
   char errmsg[MAX_ERR_LENGTH];
@@ -273,7 +268,7 @@ int ex_put_attribute(int exoid, ex_attribute attribute)
 }
 
 /*! Define and output the specified attributes. */
-int ex_put_attributes(int exoid, size_t attr_count, ex_attribute *attr)
+int ex_put_attributes(int exoid, size_t attr_count, const ex_attribute *attr)
 {
   for (size_t i = 0; i < attr_count; i++) {
     int status = ex_put_attribute(exoid, attr[i]);

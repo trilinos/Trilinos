@@ -44,7 +44,7 @@
 #include "stk_ngp_test/ngp_test.hpp"
 #include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/NgpMesh.hpp>
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
 #include <stk_unit_test_utils/stk_mesh_fixtures/TestHexFixture.hpp>
@@ -171,7 +171,7 @@ void check_volatile_fast_shared_comm_map_values_on_device(const stk::mesh::NgpMe
                        });
 }
 
-using HostCommMapIndices = Kokkos::View<stk::mesh::FastMeshIndex*, stk::mesh::HostExecSpace>;
+using HostCommMapIndices = Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::HostExecSpace>;
 
 NGP_TEST_F(NgpMeshTest, volatileFastSharedCommMap)
 {

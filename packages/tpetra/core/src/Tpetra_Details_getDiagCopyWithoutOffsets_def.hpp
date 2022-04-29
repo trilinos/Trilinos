@@ -77,7 +77,6 @@ public:
 
   typedef typename vec_type::impl_scalar_type IST;
   // The output Vector determines the execution space.
-  typedef typename vec_type::device_type device_type;
 
 private:
   typedef typename vec_type::dual_view_type::t_host::execution_space host_execution_space;
@@ -121,11 +120,11 @@ public:
     const LO lclNumRows = static_cast<LO> (diag.getLocalLength ());
     {
       const LO matLclNumRows =
-        static_cast<LO> (lclRowMap_.getNodeNumElements ());
+        static_cast<LO> (lclRowMap_.getLocalNumElements ());
       TEUCHOS_TEST_FOR_EXCEPTION
         (lclNumRows != matLclNumRows, std::invalid_argument,
          "diag.getLocalLength() = " << lclNumRows << " != "
-         "A.getRowMap()->getNodeNumElements() = " << matLclNumRows << ".");
+         "A.getRowMap()->getLocalNumElements() = " << matLclNumRows << ".");
     }
 
     // Side effects start below this point.
@@ -152,25 +151,20 @@ public:
       errCount++;
     }
     else { // row index is also in the column Map on this process
-      LO numEnt;
-      const LO* lclColInds;
-      const SC* curVals;
-      const LO err = A_.getLocalRowViewRaw (lclRowInd, numEnt, lclColInds, curVals);
-      if (err != 0) {
+      typename row_matrix_type::local_inds_host_view_type lclColInds;
+      typename row_matrix_type::values_host_view_type curVals;
+      A_.getLocalRowView(lclRowInd, lclColInds, curVals);
+      LO numEnt = lclColInds.extent(0);
+      // The search hint is always zero, since we only call this
+      // once per row of the matrix.
+      const LO hint = 0;
+      const LO offset =
+        findRelOffset (lclColInds, numEnt, lclColInd, hint, sorted_);
+      if (offset == numEnt) { // didn't find the diagonal column index
         errCount++;
       }
       else {
-        // The search hint is always zero, since we only call this
-        // once per row of the matrix.
-        const LO hint = 0;
-        const LO offset =
-          findRelOffset (lclColInds, numEnt, lclColInd, hint, sorted_);
-        if (offset == numEnt) { // didn't find the diagonal column index
-          errCount++;
-        }
-        else {
-          D_lcl_1d_(lclRowInd) = curVals[offset];
-        }
+        D_lcl_1d_(lclRowInd) = curVals[offset];
       }
     }
   }

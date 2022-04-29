@@ -145,7 +145,9 @@ namespace MueLu {
     LO MakeSemiCoarsenP(LO const Ntotal, LO const nz, LO const CoarsenRate, LO const LayerId[],
                                   LO const VertLineId[], LO const DofsPerNode, RCP<Matrix>& Amat,
                                   RCP<Matrix>& P, RCP<const Map>& coarseMap, 
-                                  const RCP<MultiVector> fineNullspace, RCP<MultiVector>& coarseNullspace) const;
+                                  const RCP<MultiVector> fineNullspace, RCP<MultiVector>& coarseNullspace, RCP<Matrix>& R, bool buildRestriction) const;
+    void RevertToPieceWiseConstant( RCP<Matrix>& P, LO BlkSize) const;
+
 
     mutable bool bTransferCoordinates_; //< boolean which is true if coordinate information is available to be transferred to coarse coordinate information
   }; //class SemiCoarsenPFactory

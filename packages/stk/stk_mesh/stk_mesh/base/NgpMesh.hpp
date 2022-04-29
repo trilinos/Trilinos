@@ -47,7 +47,7 @@
 #include <string>
 #include <memory>
 
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 
 #include <stk_mesh/base/DeviceMesh.hpp>

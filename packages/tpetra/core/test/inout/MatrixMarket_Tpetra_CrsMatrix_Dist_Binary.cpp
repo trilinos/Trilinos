@@ -100,6 +100,7 @@ public:
   using matrix_t = Tpetra::CrsMatrix<scalar_t>;
   using vector_t = Tpetra::Vector<scalar_t>;
   using reader_t = Tpetra::MatrixMarket::Reader<matrix_t>;
+  using indices_type = typename matrix_t::nonconst_global_inds_host_view_type;
 
   //////////////////////////////
   // Constructor
@@ -132,9 +133,7 @@ public:
     // Set all values in A to one: This is needed because binary readers 
     // do not currently support numeric values
     const scalar_t ONE = Teuchos::ScalarTraits<scalar_t>::one();
-    A_baseline->resumeFill();
     A_baseline->setAllToScalar(ONE);
-    A_baseline->fillComplete(A_baseline->getDomainMap(), A_baseline->getRangeMap());
 
     nRow = A_baseline->getRowMap()->getMaxAllGlobalIndex() 
          + 1;  // Since Trilinos' reader converts one-based to zero-based
@@ -421,7 +420,7 @@ private:
 
     // Write the header
     unsigned int nRows = static_cast<unsigned int>(AmatWrite->getRowMap()->getMaxAllGlobalIndex()) + 1;
-    unsigned long long  nNzs = static_cast<unsigned long long>(AmatWrite->getNodeNumEntries());
+    unsigned long long  nNzs = static_cast<unsigned long long>(AmatWrite->getLocalNumEntries());
     out.write((char *)& nRows, sizeof(unsigned int));
     out.write((char *)& nRows, sizeof(unsigned int));
     out.write((char *)& nNzs, sizeof(unsigned long long));
@@ -429,12 +428,12 @@ private:
     // Get the CrsGraph because we do not need the values
     auto graph = AmatWrite->getCrsGraph();	
     auto rowMap = graph->getRowMap();
-    Teuchos::Array<gno_t> gblColInds;
+    indices_type gblColInds;
     size_t numEntries = 0;
 
     // Write the nonzeros
     unsigned int entry[2];
-    for(size_t r = 0; r < graph->getNodeNumRows(); r++) {
+    for(size_t r = 0; r < graph->getLocalNumRows(); r++) {
 
       // Get the global index for row r
       auto gblRow = rowMap->getGlobalElement(static_cast<gno_t>(r));
@@ -442,8 +441,8 @@ private:
       
       // Get the copy of the row with global column indices
       numEntries = graph->getNumEntriesInGlobalRow(gblRow);
-      gblColInds.resize(numEntries);
-      graph->getGlobalRowCopy(gblRow, gblColInds(), numEntries);
+      Kokkos::resize(gblColInds,numEntries);
+      graph->getGlobalRowCopy(gblRow, gblColInds, numEntries);
       
       // Write the entries in the row in COO format (i.e., in "rowId colId" pairs)
       for(size_t c = 0; c < numEntries; c++) {
@@ -547,7 +546,7 @@ private:
     const Teuchos::RCP<vector_t> &y_test
   )
   {
-    const scalar_t epsilon = 0.0000001;
+    const scalar_t epsilon = 10*Teuchos::ScalarTraits<scalar_t>::squareroot(Teuchos::ScalarTraits<scalar_t>::eps());
     int ierr = 0;
 
     // First compare the norms of the result vector to the baseline

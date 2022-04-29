@@ -58,21 +58,20 @@ void SideNodeConnector::connect_side_to_nodes(stk::mesh::Entity sideEntity, stk:
     connect_side_to_other_elements_nodes(graphEdgeForElementToCreateSideOn , sideEntity, elemEntity, elemSide);
 }
 
-void declare_relations_to_nodes(stk::mesh::BulkData &bulk, stk::mesh::Entity sideEntity, const stk::mesh::EntityVector &sideNodes)
+void SideNodeConnector::declare_relations_to_nodes(stk::mesh::Entity sideEntity, const stk::mesh::EntityVector &sideNodes)
 {
-    stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
     stk::mesh::Permutation perm = stk::mesh::Permutation::INVALID_PERMUTATION;
     for(size_t i = 0; i < sideNodes.size(); i++) {
         bulk.declare_relation(sideEntity, sideNodes[i], i, perm,
-                              scratch1, scratch2, scratch3);
+                              m_scratchOrdinals1, m_scratchOrdinals2, m_scratchOrdinals3);
     }
 }
 
 void SideNodeConnector::connect_side_to_elements_nodes(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide)
 {
     stk::mesh::EntityVector sideNodes;
-    stk::mesh::impl::fill_element_side_nodes_from_topology(bulk, elemEntity, elemSide, sideNodes);
-    declare_relations_to_nodes(bulk, sideEntity, sideNodes);
+    stk::mesh::impl::fill_element_side_nodes_from_topology(bulk.bucket(elemEntity).topology(), bulk.begin_nodes(elemEntity), elemSide, sideNodes);
+    declare_relations_to_nodes(sideEntity, sideNodes);
 }
 
 stk::mesh::EntityVector SideNodeConnector::get_permuted_side_nodes(stk::mesh::Entity elemEntity, int elemSide, const stk::mesh::EntityVector &sideNodes, int permutation)
@@ -93,29 +92,20 @@ void SideNodeConnector::connect_side_to_other_elements_nodes(const GraphEdge &ed
     else
     {
         stk::mesh::EntityVector sideNodes;
-        stk::mesh::impl::fill_element_side_nodes_from_topology(bulk, elemEntity, elemSide, sideNodes);
+        stk::mesh::impl::fill_element_side_nodes_from_topology(bulk.bucket(elemEntity).topology(), bulk.begin_nodes(elemEntity), elemSide, sideNodes);
 
         const stk::mesh::impl::ParallelInfo &parInfo = parallelGraph.get_parallel_info_for_graph_edge(edgeWithMinId);
         stk::mesh::EntityVector permutedSideNodes = get_permuted_side_nodes(elemEntity, elemSide, sideNodes, parInfo.m_permutation);
-        declare_relations_to_nodes(bulk, sideEntity, permutedSideNodes);
+        declare_relations_to_nodes(sideEntity, permutedSideNodes);
     }
 }
 
 void check_entity_has_local_id(const stk::mesh::BulkData &bulk, const stk::mesh::impl::ElementLocalIdMapper &localMapper, stk::mesh::Entity elemEntity)
 {
-    if(!localMapper.does_entity_have_local_id(elemEntity))
-    {
-        std::cerr << "no local id for " << (bulk.is_valid(elemEntity) ? "valid" : "invalid")
-                  << " elem " << bulk.identifier(elemEntity)
-                  << ", local_offset=" << elemEntity.local_offset();
-        if(bulk.is_valid(elemEntity))
-        {
-            std::cerr << " " << bulk.bucket(elemEntity).topology()
-                      << ", owned=" << bulk.bucket(elemEntity).owned()
-                      << ", bucket=" << bulk.bucket(elemEntity).bucket_id()
-                      << ", bucket_ord=" << bulk.mesh_index(elemEntity).bucket_ordinal;
-        }
-    }
+  ThrowRequireMsg(localMapper.does_entity_have_local_id(elemEntity),
+      "no local id for " << (bulk.is_valid(elemEntity) ? "valid" : "invalid")
+                << " elem " << bulk.identifier(elemEntity)
+                << ", local_offset=" << elemEntity.local_offset());
 }
 
 void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide)
@@ -132,7 +122,7 @@ void SideConnector::connect_side_to_elem(stk::mesh::Entity sideEntity,
                                          int sideOrd)
 {
     stk::mesh::Permutation perm = get_permutation_for_side(sideEntity, element, sideOrd);
-    m_bulk_data.declare_relation(element, sideEntity, sideOrd, perm);
+    m_bulk_data.declare_relation(element, sideEntity, sideOrd, perm, m_scratchOrdinals1, m_scratchOrdinals2, m_scratchOrdinals3);
 }
 
 void SideConnector::connect_side_to_adjacent_elements(stk::mesh::Entity sideEntity,

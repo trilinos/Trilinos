@@ -59,6 +59,10 @@
 
 using namespace std;
 
+#ifdef SIERRA_GCOV
+extern "C" void __gcov_dump();
+#endif
+
 namespace sierra {
 
 std::string
@@ -280,9 +284,10 @@ output_flush()
 
 
 void
-request_shutdown(bool shutdown)
+request_shutdown(bool shutdown, const std::string shutdownReason)
 {
   stk::EnvData::instance().m_shutdownRequested = shutdown;
+  stk::EnvData::instance().m_shutdownReason = shutdownReason;
 }
 
 bool
@@ -324,6 +329,11 @@ void abort()
 
   ::sleep(1); // Give the other processors a chance at
               // catching up, seems to help hanging problems.
+
+#ifdef SIERRA_GCOV
+  __gcov_dump();
+#endif
+
 #if defined(STK_HAS_MPI)
   MPI_Abort(env_data.m_parallelComm, MPI_ERR_OTHER); // First try to die
 #endif

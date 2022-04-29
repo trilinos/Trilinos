@@ -21,7 +21,7 @@ protected:
 
   void setup_initial_mesh(const std::string & inputMeshFile)
   {
-    setup_mesh(inputMeshFile, stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh(inputMeshFile, stk::mesh::BulkData::AUTO_AURA);
   }
 
   void setup_4hex_contact_perpendicular_to_proc_boundary()
@@ -40,7 +40,8 @@ protected:
       0,1,1, 1,1,1, 2,1,1, 0,2,1, 1,2,1, 2,2,1
     };
 
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates);
+    stk::unit_test_util::setup_text_mesh(
+        get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coordinates));
   }
 
   void balance_mesh(const stk::ParallelMachine & decompCommunicator,
@@ -62,6 +63,15 @@ protected:
                     const std::vector<stk::mesh::Selector> & selectors)
   {
     stk::balance::GraphCreationSettings balanceSettings;
+    balance_mesh(decompCommunicator, numFinalSubdomains, selectors, balanceSettings);
+  }
+
+  void balance_mesh_scotch(const stk::ParallelMachine & decompCommunicator,
+                           int numFinalSubdomains,
+                           const std::vector<stk::mesh::Selector> & selectors)
+  {
+    stk::balance::GraphCreationSettings balanceSettings;
+    balanceSettings.setDecompMethod("scotch");
     balance_mesh(decompCommunicator, numFinalSubdomains, selectors, balanceSettings);
   }
 
@@ -292,3 +302,25 @@ TEST_F(StkBalancePartitioning, 4Elem2ProcMesh_Geometric_SeparateCommunicator_Emp
 
   test_partition_element_distribution({1, 1});
 }
+
+TEST_F(StkBalancePartitioning, 6Elem1ProcMesh_EntireDomain_Scotch)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) GTEST_SKIP();
+
+  setup_initial_mesh("generated:1x1x6");
+  balance_mesh_scotch(get_bulk().parallel(), 2, {get_meta().universal_part()});
+
+  test_partition_element_distribution({3, 3});
+}
+
+
+TEST_F(StkBalancePartitioning, 6Elem2ProcMesh_EntireDomain_Scotch)
+{
+  if (stk::parallel_machine_size(get_comm()) != 2) GTEST_SKIP();
+
+  setup_initial_mesh("generated:1x1x6");
+  balance_mesh_scotch(get_bulk().parallel(), 2, {get_meta().universal_part()});
+
+  test_partition_element_distribution({3, 3});
+}
+

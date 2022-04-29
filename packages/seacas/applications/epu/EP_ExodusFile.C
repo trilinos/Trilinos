@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,7 +10,9 @@
 #include "EP_Internals.h"
 #include "EP_ParallelDisks.h"
 #include "EP_SystemInterface.h"
+#include "fmt/color.h"
 #include "fmt/ostream.h"
+#include "open_file_limit.h"
 #include "smart_assert.h"
 #include <climits>
 #include <cstddef>
@@ -19,11 +21,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <vector>
-
-#if !defined(_WIN32)
 #include <unistd.h>
-#endif
+#include <vector>
 
 #include <exodusII.h>
 
@@ -38,6 +37,7 @@ int                      Excn::ExodusFile::cpuWordSize_    = 0;
 int                      Excn::ExodusFile::mode64bit_      = 0;
 std::string              Excn::ExodusFile::outputFilename_;
 bool                     Excn::ExodusFile::keepOpen_          = false;
+bool                     Excn::ExodusFile::verifyValidFile_   = false;
 int                      Excn::ExodusFile::maximumNameLength_ = 32;
 
 Excn::ExodusFile::ExodusFile(int processor) : myProcessor_(processor)
@@ -101,6 +101,32 @@ void Excn::ExodusFile::close_all()
     ex_close(outputId_);
     outputId_ = -1;
   }
+
+  // We have had some issues with file corruption.  Everything seems to be
+  // working fine, but when the file is opened later after EPU has completed,
+  // one or more of the output files (in subcyle mode) report being invalid.
+  // Here, if the user requests, we try to reopen the file and report an
+  // error if there is a problem.  This might still not catch all bad files,
+  // but will hopefully catch some at the point that it happens...
+  if (verifyValidFile_) {
+    float version          = 0.0;
+    int   cpu_word_size    = cpuWordSize_;
+    int   io_word_size_var = ioWordSize_;
+    int   mode             = EX_READ;
+    mode |= mode64bit_;
+    int exoid = ex_open(outputFilename_.c_str(), mode, &cpu_word_size, &io_word_size_var, &version);
+    if (exoid < 0) {
+      ex_get_err(nullptr, nullptr, &exoid);
+      fmt::print(stderr, fmt::fg(fmt::color::red),
+                 "EPU: Exodus error ({}) {}.\n"
+                 "Output File verification failed for '{}'.  Could not reopen output file after "
+                 "closing it\n",
+                 exoid, ex_strerror(exoid), outputFilename_);
+    }
+    else {
+      ex_close(exoid);
+    }
+  }
 }
 
 void Excn::ExodusFile::unlink_temporary_files()
@@ -135,8 +161,10 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
     mode64bit_ |= EX_ALL_INT64_DB;
   }
 
+  verifyValidFile_ = si.verify_valid_file();
+
   // See if we can keep files open
-  int max_files = get_free_descriptor_count();
+  int max_files = open_file_limit() - 1; // We also have an output exodus file.
   if (partCount_ <= max_files) {
     keepOpen_ = true;
     if (cycle == 0) {
@@ -191,7 +219,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       mode |= mode64bit_;
       int exoid = ex_open(filenames_[p].c_str(), mode, &cpu_word_size, &io_word_size_var, &version);
       if (exoid < 0) {
-        fmt::print(stderr, "Cannot open file '{}'\n", filenames_[p]);
+        fmt::print(stderr, fmt::fg(fmt::color::red), "Cannot open file '{}'\n", filenames_[p]);
         return false;
       }
 
@@ -226,7 +254,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       fileids_[p] =
           ex_open(filenames_[p].c_str(), mode, &cpuWordSize_, &io_word_size_var, &version);
       if (fileids_[p] < 0) {
-        fmt::print(stderr, "Cannot open file '{}'\n", filenames_[p]);
+        fmt::print(stderr, fmt::fg(fmt::color::red), "Cannot open file '{}'\n", filenames_[p]);
         return false;
       }
       ex_set_max_name_length(fileids_[p], maximumNameLength_);
@@ -310,7 +338,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
     outputId_ = ex_create(outputFilename_.c_str(), mode, &cpuWordSize_, &ioWordSize_);
   }
   if (outputId_ < 0) {
-    fmt::print(stderr, "Cannot open file '{}'\n", outputFilename_);
+    fmt::print(stderr, fmt::fg(fmt::color::red), "Cannot open file '{}'\n", outputFilename_);
     return false;
   }
 
@@ -339,35 +367,4 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
                int_size);
   }
   return true;
-}
-
-size_t Excn::ExodusFile::get_free_descriptor_count()
-{
-// Returns maximum number of files that one process can have open
-// at one time. (POSIX)
-#if defined(_WIN32)
-  int fdmax = _getmaxstdio();
-#else
-  int fdmax = sysconf(_SC_OPEN_MAX);
-  if (fdmax == -1) {
-    // POSIX indication that there is no limit on open files...
-    fdmax = INT_MAX;
-  }
-#endif
-  // File descriptors are assigned in order (0,1,2,3,...) on a per-process
-  // basis.
-
-  // Assume that we have stdin, stdout, stderr, and output exodus
-  // file (4 total).
-
-  return fdmax - 4;
-
-  // Could iterate from 0..fdmax and check for the first
-  // EBADF (bad file descriptor) error return from fcntl, but that takes
-  // too long and may cause other problems.  There is a isastream(filedes)
-  // call on Solaris that can be used for system-dependent code.
-  //
-  // Another possibility is to do an open and see which descriptor is
-  // returned -- take that as 1 more than the current count of open files.
-  //
 }

@@ -135,13 +135,13 @@ public:
 
   void getIDsView(const gno_t *&ids) const
   {
-    ids = map_->getNodeElementList().getRawPtr();
+    ids = map_->getLocalElementList().getRawPtr();
   }
 
   void getIDsKokkosView(
     Kokkos::View<const gno_t *, typename node_t::device_type> &ids) const {
     if (map_->lib() == Xpetra::UseTpetra) {
-      typedef typename node_t::execution_space execution_space;
+      using device_type = typename node_t::device_type;
       const xt_mvector_t *tvector =
         dynamic_cast<const xt_mvector_t *>(vector_.get());
       // MJ can be running Host, CudaSpace, or CudaUVMSpace while Map now
@@ -151,7 +151,7 @@ public:
       // Map such as getMyGlobalIndicesDevice() which could be direct assigned
       // here. Since Tpetra is still UVM dependent that is not going to happen
       // yet so just leaving this as Host to device_type conversion for now.
-      ids = Kokkos::create_mirror_view_and_copy(execution_space(),
+      ids = Kokkos::create_mirror_view_and_copy(device_type(),
         tvector->getTpetra_MultiVector()->getMap()->getMyGlobalIndices());
     }
     else if (map_->lib() == Xpetra::UseEpetra) {
@@ -339,8 +339,11 @@ template <typename User>
         dynamic_cast<const xt_mvector_t *>(vector_.get());
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
     Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> view2d =
-      tvector->getTpetra_MultiVector()->template getLocalView<node_t>();
+      tvector->getTpetra_MultiVector()->template getLocalView<typename node_t::device_type>(Tpetra::Access::ReadWrite);
     elements = view2d;
+    // CMS/KDD: Look at this stuff right here.  Compare against a non-cuda build OR, look at core/driver/driverinputs/kuberry/kuberry.coords
+    // Ca try changing the kuberry.xml to use "input adapter" "BasicVector" rather than "XpetraMultiVector"
+
   }
   else if (map_->lib() == Xpetra::UseEpetra){
 #if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)

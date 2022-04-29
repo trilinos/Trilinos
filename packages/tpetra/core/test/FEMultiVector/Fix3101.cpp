@@ -81,14 +81,14 @@ FEMultiVectorTest::FEMultiVectorTest(
   // Print the entries of each map
   std::cout << me << " MAP WITH COPIES ("
                   << mapWithCopies->getGlobalNumElements() << "):  ";
-  lno_t nlocal = lno_t(mapWithCopies->getNodeNumElements());
+  lno_t nlocal = lno_t(mapWithCopies->getLocalNumElements());
   for (lno_t i = 0; i < nlocal; i++)
     std::cout << mapWithCopies->getGlobalElement(i) << " ";
   std::cout << std::endl;
 
   std::cout << me << " ONE TO ONE MAP  ("
                   << mapOwned->getGlobalNumElements() << "):  ";
-  nlocal = lno_t(mapOwned->getNodeNumElements());
+  nlocal = lno_t(mapOwned->getLocalNumElements());
   for (lno_t i = 0; i < nlocal; i++)
     std::cout << mapOwned->getGlobalElement(i) << " ";
   std::cout << std::endl;
@@ -113,13 +113,13 @@ int FEMultiVectorTest::intTest()
 
   // Add contributions to owned vertices and copies of off-processor vertices
   try {
-    femv->beginFill();
+    femv->beginAssembly();
     for (lno_t i = 0; i < nLocalOwned + nLocalCopy; i++) {
       gno_t gid = mapWithCopies->getGlobalElement(i);
       femv->replaceGlobalValue(gid, 0, gid);
       femv->replaceGlobalValue(gid, 1, me);
     }
-    femv->endFill();
+    femv->endAssembly();
   }
   catch (std::exception &e) {
     std::cout << "FAIL:  Exception thrown in Fill:  " << e.what() << std::endl;
@@ -140,7 +140,7 @@ int FEMultiVectorTest::intTest()
 
   printFEMV("After doOwnedToOwnedPlusShared ");
 
-  // Check results:  after ADD in endFill,
+  // Check results:  after ADD in endAssembly,
   // -  overlapping entries of vec 0 should be 2 * gid
   //    nonoverlapping entries of vec 0 should be gid
   // -  overlapping entries of vec 1 should be me + (np + me-1) % np;

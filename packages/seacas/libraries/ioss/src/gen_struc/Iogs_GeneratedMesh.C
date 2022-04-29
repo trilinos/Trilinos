@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -15,9 +15,8 @@
 #include <gen_struc/Iogs_GeneratedMesh.h>
 #include <numeric>
 #include <string>
-#include <sys/types.h> // for ssize_t
-#include <tokenize.h>  // for tokenize
-#include <vector>      // for vector
+#include <tokenize.h> // for tokenize
+#include <vector>     // for vector
 
 namespace Iogs {
   GeneratedMesh::GeneratedMesh(int64_t /*num_x */, int64_t /* num_y */, int64_t /* num_z */,
@@ -298,14 +297,16 @@ namespace Iogs {
                  "\tX = {} * (0..{}) + {}\tRange: {} <= X <= {}\n"
                  "\tY = {} * (0..{}) + {}\tRange: {} <= Y <= {}\n"
                  "\tZ = {} * (0..{}) + {}\tRange: {} <= Z <= {}\n\n"
-                 "\tNode Count (total) = {:12n}\n"
-                 "\tCell Count (total) = {:12n}\n"
-                 "\tBlock Count        = {:12n}\n"
-                 "\tSideSet Count      = {:12n}\n"
-                 "\tTimestep Count     = {:12n}\n\n",
+                 "\tNode Count (total) = {:12}\n"
+                 "\tCell Count (total) = {:12}\n"
+                 "\tBlock Count        = {:12}\n"
+                 "\tSideSet Count      = {:12}\n"
+                 "\tTimestep Count     = {:12}\n\n",
                  numX, numY, numZ, sclX, numX, offX, offX, offX + numX * sclX, sclY, numY, offY,
-                 offY, offY + numY * sclY, sclZ, numZ, offZ, offZ, offZ + numZ * sclZ, node_count(),
-                 element_count(), structured_block_count(), sideset_count(), timestep_count());
+                 offY, offY + numY * sclY, sclZ, numZ, offZ, offZ, offZ + numZ * sclZ,
+                 fmt::group_digits(node_count()), fmt::group_digits(element_count()),
+                 fmt::group_digits(structured_block_count()), fmt::group_digits(sideset_count()),
+                 fmt::group_digits(timestep_count()));
 
       if (doRotation) {
         fmt::print(Ioss::OUTPUT(), "\tRotation Matrix: \n\t");
@@ -673,37 +674,29 @@ namespace Iogs {
     size_t count = node_count_proc();
     xyz.reserve(count);
 
-    double offset = 0;
-    double scale  = 1;
     if (component == 1) {
-      offset = offX;
-      scale  = sclX;
       for (size_t m = myStartZ; m < myStartZ + myNumZ + 1; m++) {
         for (size_t i = 0; i < numY + 1; i++) {
           for (size_t j = 0; j < numX + 1; j++) {
-            xyz.push_back(scale * static_cast<double>(j) + offset);
+            xyz.push_back(sclX * static_cast<double>(j) + offX);
           }
         }
       }
     }
     else if (component == 2) {
-      offset = offY;
-      scale  = sclY;
       for (size_t m = myStartZ; m < myStartZ + myNumZ + 1; m++) {
         for (size_t i = 0; i < numY + 1; i++) {
           for (size_t j = 0; j < numX + 1; j++) {
-            xyz.push_back(scale * static_cast<double>(i) + offset);
+            xyz.push_back(sclY * static_cast<double>(i) + offY);
           }
         }
       }
     }
     else if (component == 3) {
-      offset = offZ;
-      scale  = sclZ;
       for (size_t m = myStartZ; m < myStartZ + myNumZ + 1; m++) {
         for (size_t i = 0; i < numY + 1; i++) {
           for (size_t j = 0; j < numX + 1; j++) {
-            xyz.push_back(scale * static_cast<double>(m) + offset);
+            xyz.push_back(sclZ * static_cast<double>(m) + offZ);
           }
         }
       }

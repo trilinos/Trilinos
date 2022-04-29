@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstring>
 #include <stdexcept>
+#include <cassert>
 
 using namespace std;
 int main(int argc, char* argv[]) {
@@ -44,10 +45,13 @@ int main(int argc, char* argv[]) {
     double v;
     vector<int>    inds;
     vector<double> vals;
+    vector<bool>   writtenRows(m, false);
+    size_t         writtenEntries = 0;
+    bool           done = false;
 
     ifs >> i >> j >> v;
     i--; j--;
-    while (row != i && ifs.good()) {
+    while (row != i && !done) {
         row = i;
 
         inds.resize(0);
@@ -57,9 +61,14 @@ int main(int argc, char* argv[]) {
             inds.push_back(j);
             vals.push_back(v);
 
-            ifs >> i >> j >> v;
-            i--; j--;
-        } while (row == i && ifs.good());
+            if (ifs.good()) {
+              ifs >> i >> j >> v;
+              i--; j--;
+            } else {
+              i = -1;
+              done = true;
+            }
+        } while (row == i);
 
 
         int rownnz = inds.size();
@@ -67,7 +76,18 @@ int main(int argc, char* argv[]) {
         ofs.write(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
         for (int k = 0; k < rownnz; k++) ofs.write(reinterpret_cast<char*>(&inds[0] + k), sizeof(inds[k]));
         for (int k = 0; k < rownnz; k++) ofs.write(reinterpret_cast<char*>(&vals[0] + k), sizeof(vals[k]));
+        writtenRows[row] = true;
+        writtenEntries += rownnz;
 
+    }
+    assert (writtenEntries == nnz);
+
+    int rownnz = 0;
+    for (row = 0; row < m; row++) {
+      if (!writtenRows[row]) {
+        ofs.write(reinterpret_cast<char*>(&row),    sizeof(row));
+        ofs.write(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
+      }
     }
 
     return 0;

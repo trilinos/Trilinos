@@ -44,6 +44,7 @@ INCLUDE_DIRECTORIES(${DIR}/Transfers/BaseClass)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BlackBox)
 INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BlockedTransfers)
+INCLUDE_DIRECTORIES(${DIR}/Transfers/Classical)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization/Solvers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/GeneralGeometric)
@@ -70,6 +71,9 @@ IF (${PACKAGE_NAME}_ENABLE_Intrepid2)
 ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   INCLUDE_DIRECTORIES(${DIR}/../research/regionMG/src)
+ENDIF()
+IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
+   INCLUDE_DIRECTORIES(${DIR}/../adapters/stratimikos)
 ENDIF()
 
 # Function to generate ETI (explicit template instantiation) files
@@ -387,6 +391,7 @@ TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Smoothers/BlockedSmoothers NOSIER
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/BaseClass NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/BlackBox NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/BlockedTransfers NOSIERRABJAM)
+TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Classical NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Generic NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization NOSIERRABJAM)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR}/Transfers/Energy-Minimization/Solvers NOSIERRABJAM)
@@ -418,11 +423,21 @@ APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 SET(SOURCES_INTERFACE "")
 APPEND_GLOB(SOURCES_INTERFACE Interface/*.cpp)
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_FacadeClassBase.cpp)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_FacadeSimple.cpp)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_FacadeBGS2x2.cpp)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
+  APPEND_SET(SOURCES_INTERFACE Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
+
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
-  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeClassBase.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeSimple.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FacadeBGS2x2.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
+  APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)
   APPEND_SET(SOURCES_INTERFACE ${DIR}/Utils/ExplicitInstantiation/MueLu_AdaptiveSaMLParameterListInterpreter.cpp)
 ENDIF()
@@ -449,6 +464,11 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

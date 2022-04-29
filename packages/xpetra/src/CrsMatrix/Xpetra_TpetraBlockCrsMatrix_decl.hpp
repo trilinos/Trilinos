@@ -200,7 +200,9 @@ namespace Xpetra {
                       ArrayRCP<const LocalOrdinal>& colind, 
                       ArrayRCP<const Scalar>& values)  const;
 
-
+    //! Gets the 1D pointer arrays of the graph (not implemented)
+    void getAllValues(ArrayRCP<Scalar>& values);                      
+                     
     //! @name Transformational Methods
 
     //!
@@ -244,16 +246,16 @@ namespace Xpetra {
     global_size_t getGlobalNumCols() const;
 
     //! Returns the number of matrix rows owned on the calling node.
-    size_t getNodeNumRows() const;
+    size_t getLocalNumRows() const;
 
     //! Returns the number of columns connected to the locally owned rows of this matrix.
-    size_t getNodeNumCols() const;
+    size_t getLocalNumCols() const;
 
     //! Returns the global number of entries in this matrix.
     global_size_t getGlobalNumEntries() const;
 
     //! Returns the local number of entries in this matrix.
-    size_t getNodeNumEntries() const;
+    size_t getLocalNumEntries() const;
 
     //! Returns the current number of entries on this node in the specified local row.
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
@@ -265,7 +267,7 @@ namespace Xpetra {
     size_t getGlobalMaxNumRowEntries() const;
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    size_t getNodeMaxNumRowEntries() const;
+    size_t getLocalMaxNumRowEntries() const;
 
     //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
     bool isLocallyIndexed() const;
@@ -398,8 +400,13 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
     //using local_matrix_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
     using local_matrix_type = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
-
-    local_matrix_type getLocalMatrix () const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    local_matrix_type getLocalMatrix () const {
+      return getLocalMatrixDevice();
+    }
+#endif
+    local_matrix_type getLocalMatrixDevice () const;
+    typename local_matrix_type::HostMirror getLocalMatrixHost () const;
 
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                        const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,

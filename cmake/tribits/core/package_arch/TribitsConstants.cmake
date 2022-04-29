@@ -39,68 +39,68 @@
 
 # Define the TriBITS minimum required CMake version
 
-SET(TRIBITS_CMAKE_MINIMUM_REQUIRED 3.17.0)
+set(TRIBITS_CMAKE_MINIMUM_REQUIRED 3.17.0)
 
-MACRO(TRIBITS_ASESRT_MINIMUM_CMAKE_VERSION)
+macro(tribits_asesrt_minimum_cmake_version)
 
-  IF (CMAKE_VERSION VERSION_LESS ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
-    MESSAGE(FATAL_ERROR "Error, TriBiTS must have version"
+  if (CMAKE_VERSION VERSION_LESS ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
+    message(FATAL_ERROR "Error, TriBiTS must have version"
         " ${TRIBITS_CMAKE_MINIMUM_REQUIRED} or higher!")
-  ENDIF()
+  endif()
   
-ENDMACRO()
+endmacro()
 
 # Misc constants
 
-SET(${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES TRUE)
-# NOTE: This is left to maintain backward compatiblity after upgrade to CMake
+set(${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES TRUE)
+# NOTE: This is left to maintain backward compatibility after upgrade to CMake
 # 3.17 but this option is now hard-coded to TRUE in the implementation.
 
 # File names for TriBITS system
 
-SET(${PROJECT_NAME}_PACKAGES_FILE_NAME PackagesList.cmake)
+set(${PROJECT_NAME}_PACKAGES_FILE_NAME PackagesList.cmake)
 
-SET(${PROJECT_NAME}_TPLS_FILE_NAME TPLsList.cmake)
+set(${PROJECT_NAME}_TPLS_FILE_NAME TPLsList.cmake)
 
-SET(${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME ExtraRepositoriesList.cmake)
+set(${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME ExtraRepositoriesList.cmake)
 
-SET(${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME PackagesList.cmake)
+set(${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME PackagesList.cmake)
 
-SET(${PROJECT_NAME}_REPO_VERSION_FILE_NAME ${PROJECT_NAME}RepoVersion.txt)
+set(${PROJECT_NAME}_REPO_VERSION_FILE_NAME ${PROJECT_NAME}RepoVersion.txt)
 
-SET(${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME TPLsList.cmake)
+set(${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME TPLsList.cmake)
 
 # Directories relative to the TriBITS base directory
 
-SET(TRIBITS_PYTHON_SCRIPTS_DIR "python_utils")
+set(TRIBITS_PYTHON_SCRIPTS_DIR "python_utils")
 
-SET(TRIBITS_CI_SUPPORT_DIR "ci_support")
+set(TRIBITS_CI_SUPPORT_DIR "ci_support")
 
-SET(TRIBITS_CTEST_DRIVER_DIR "ctest_driver")
+set(TRIBITS_CTEST_DRIVER_DIR "ctest_driver")
 
-SET(TRIBITS_CMAKE_UTILS_DIR "core/utils")
+set(TRIBITS_CMAKE_UTILS_DIR "core/utils")
 
-SET(TRIBITS_CMAKE_PACKAGE_ARCH_DIR "core/package_arch")
+set(TRIBITS_CMAKE_PACKAGE_ARCH_DIR "core/package_arch")
 
-SET(TRIBITS_CMAKE_INSTALLATION_FILES_DIR "core/installation")
+set(TRIBITS_CMAKE_INSTALLATION_FILES_DIR "core/installation")
 
 # Files and directories related to the specific project
 
-SET(${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME ${PROJECT_NAME}PackageDependencies.xml)
+set(${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME ${PROJECT_NAME}PackageDependencies.xml)
 
-SET(${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME CDashSubprojectDependencies.xml)
+set(${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME CDashSubprojectDependencies.xml)
 
-SET(${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME ${PROJECT_NAME}PackageDependenciesTable.html)
+set(${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME ${PROJECT_NAME}PackageDependenciesTable.html)
 
-SET(${PROJECT_NAME}_PACKAGE_DEPS_FILES_DIR "cmake/dependencies")
+set(${PROJECT_NAME}_PACKAGE_DEPS_FILES_DIR "cmake/dependencies")
 
 # Other stuff
 
-IF(WIN32)
+if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Windows")
   #Apparently FIND_PROGRAM looks for an exact match of the file name.
   #So even though "git clone ..." is valid to use on windows we need to give the
   #full name of the command we want to run.
   SET(GIT_NAME git.cmd)
-ELSE(WIN32)
+else()
   SET(GIT_NAME git)
-ENDIF(WIN32)
+endif()

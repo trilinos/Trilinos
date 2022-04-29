@@ -42,7 +42,7 @@
 */
 
 // Test Tpetra::CrsMatrix::get{Global,Local}RowCopy for the case where
-// the matrix has StaticProfile, but has never yet been made fill
+// the matrix has never yet been made fill
 // complete.
 
 #include "Tpetra_TestingUtilities.hpp"
@@ -71,6 +71,8 @@ namespace {
     typedef Tpetra::global_size_t GST;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
+    typedef typename crs_matrix_type::nonconst_global_inds_host_view_type g_indices_type;
+    typedef typename crs_matrix_type::nonconst_values_host_view_type values_type;
 
     RCP<const Comm<int> > comm = getDefaultComm ();
     const int numProcs = comm->getSize ();
@@ -89,7 +91,7 @@ namespace {
                          indexBase, comm));
     // Leave room for three locally owned entries per row.
     // We will only fill in two entries per row.
-    crs_matrix_type A (rowMap, 3, Tpetra::StaticProfile);
+    crs_matrix_type A (rowMap, 3);
     const GO gblNumCols = gblNumRows;
 
     out << "Fill the matrix" << endl;
@@ -115,13 +117,13 @@ namespace {
 
     // Make the arrays bigger than necessary, just to make sure that
     // the methods behave correctly.
-    Teuchos::Array<GO> curGblColInds (5);
-    Teuchos::Array<Scalar> curVals (5);
+    g_indices_type curGblColInds ("indices",5);
+    values_type curVals ("values",5);
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       const GO gblRow = rowMap->getGlobalElement (lclRow);
 
       size_t numEnt = 0;
-      TEST_NOTHROW( A.getGlobalRowCopy (gblRow, curGblColInds (), curVals (), numEnt) );
+      TEST_NOTHROW( A.getGlobalRowCopy (gblRow, curGblColInds, curVals, numEnt) );
       TEST_EQUALITY( numEnt, static_cast<size_t> (2) );
       if (numEnt != static_cast<size_t> (2)) {
         break; // avoid segfault on error
@@ -168,6 +170,8 @@ namespace {
     typedef Tpetra::global_size_t GST;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
+    typedef typename crs_matrix_type::nonconst_local_inds_host_view_type l_indices_type;
+    typedef typename crs_matrix_type::nonconst_values_host_view_type values_type;
 
     RCP<const Comm<int> > comm = getDefaultComm ();
     const int numProcs = comm->getSize ();
@@ -193,7 +197,7 @@ namespace {
 
     // Leave room for three locally owned entries per row.
     // We will only fill in two entries per row.
-    crs_matrix_type A (rowMap, colMap, 3, Tpetra::StaticProfile);
+    crs_matrix_type A (rowMap, colMap, 3);
 
     out << "Fill the matrix" << endl;
 
@@ -217,11 +221,11 @@ namespace {
 
     // Make the arrays bigger than necessary, just to make sure that
     // the methods behave correctly.
-    Teuchos::Array<LO> curLclColInds (5);
-    Teuchos::Array<Scalar> curVals (5);
+    l_indices_type curLclColInds ("indices",5);
+    values_type curVals ("values",5);
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       size_t numEnt = 0;
-      TEST_NOTHROW( A.getLocalRowCopy (lclRow, curLclColInds (), curVals (), numEnt) );
+      TEST_NOTHROW( A.getLocalRowCopy (lclRow, curLclColInds, curVals, numEnt) );
       TEST_EQUALITY( numEnt, static_cast<size_t> (2) );
       if (numEnt != static_cast<size_t> (2)) {
         break; // avoid segfault on error

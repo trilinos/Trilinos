@@ -381,15 +381,14 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 
 
     //Set d_pred as initial guess for NOX solver, and solve nonlinear system.
-    const Thyra::SolveStatus<Scalar> sStatus =
-      this->solveImplicitODE(initial_guess);
+    const Thyra::SolveStatus<Scalar> sStatus = (*(this->solver_)).solve(&*initial_guess);
 
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
       StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
-    //solveImplicitODE will return converged solution in initial_guess
+    //solve will return converged solution in initial_guess
     //vector.  Copy it here to d_new, to define the new displacement.
     Thyra::copy(*initial_guess, d_new.ptr());
 
@@ -455,6 +454,7 @@ StepperNewmarkImplicitDForm<Scalar>::describe(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
 
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
   StepperImplicit<Scalar>::describe(out, verbLevel);
@@ -470,6 +470,7 @@ StepperNewmarkImplicitDForm<Scalar>::describe(
 template<class Scalar>
 bool StepperNewmarkImplicitDForm<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;

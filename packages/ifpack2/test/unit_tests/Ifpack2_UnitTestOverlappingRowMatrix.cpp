@@ -67,6 +67,7 @@
 #endif
 
 #include "Tpetra_Details_residual.hpp"
+#include "KokkosSparse_spmv_impl.hpp"
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_OverlappingRowMatrix.hpp>
@@ -133,8 +134,7 @@ void localReducedMatvec(const MatrixClass & A_lcl,
   int64_t numLocalRows = userNumRows;
   int64_t myNnz = A_lcl.nnz();
 
-  int64_t rows_per_team = 
-    Tpetra::Details::residual_launch_parameters<execution_space>(numLocalRows, myNnz, rows_per_thread, team_size, vector_length);
+  int64_t rows_per_team = KokkosSparse::Impl::spmv_launch_parameters<execution_space>(numLocalRows, myNnz, rows_per_thread, team_size, vector_length);
   int64_t worksets = (X_lcl.extent (0) + rows_per_team - 1) / rows_per_team;
 
   using policy_type = typename Kokkos::TeamPolicy<execution_space>;
@@ -228,13 +228,13 @@ void reducedMatvec(const OverlappedMatrixClass & A,
   if(overlapLevel >= (int) hstarts.size()) 
     throw std::runtime_error("reducedMatvec: Exceeded available overlap");
 
-  auto undA_lcl = undA->getLocalMatrix ();
-  auto extA_lcl = extA->getLocalMatrix ();
+  auto undA_lcl = undA->getLocalMatrixDevice ();
+  auto extA_lcl = extA->getLocalMatrixDevice ();
   auto X_lcl = X.getLocalViewDevice (Tpetra::Access::ReadOnly);
   auto Y_lcl = Y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   
   // Do the "Local part"
-  auto numLocalRows = undA->getNodeNumRows();
+  auto numLocalRows = undA->getLocalNumRows();
   localReducedMatvec(undA_lcl,X_lcl,numLocalRows,Y_lcl);
 
   
@@ -352,7 +352,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   size_t NumGlobalRowsB = B->getGlobalNumRows ();
   size_t NumGlobalNonzerosB = B->getGlobalNumEntries ();
 
-  for (LO i = 0 ; i < static_cast<LO> (A->getNodeNumRows ()); ++i) {
+  for (LO i = 0 ; i < static_cast<LO> (A->getLocalNumRows ()); ++i) {
     x_ptr[0][i] = 1.0 * A->getRowMap ()->getGlobalElement (i);
   }
   Y.putScalar (0.0);
@@ -396,10 +396,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   // getDomainMap () and getRangeMap (), as desired, and see the overlap
   // pattern.
   {
-    const auto n = B->getRowMap ()->getNodeNumElements ();
-    TEST_EQUALITY( B->getColMap ()->getNodeNumElements (), n );
-    TEST_EQUALITY( B->getRangeMap ()->getNodeNumElements (), n );
-    TEST_EQUALITY( B->getDomainMap ()->getNodeNumElements (), n );
+    const auto n = B->getRowMap ()->getLocalNumElements ();
+    TEST_EQUALITY( B->getColMap ()->getLocalNumElements (), n );
+    TEST_EQUALITY( B->getRangeMap ()->getLocalNumElements (), n );
+    TEST_EQUALITY( B->getDomainMap ()->getLocalNumElements (), n );
   }
 
   try {
@@ -618,9 +618,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, reducedMatvec, Sc
       printf("%d ",(int) hstarts[i]);
     printf("\n");
 #endif
-    //    printf("Before matvec A is (locally)%dx%d x is of size %d, ovX is ov size %d\n",(int)A->getNodeNumRows(),(int)A->getNodeNumCols(),
-    //           (int)x.getMap()->getNodeNumElements(),(int)ovX.getMap()->getNodeNumElements());
-    //    printf("ovA->getUnderlyingMatrix() is (locally) %dx%d\n",(int)ovA.getUnderlyingMatrix()->getNodeNumRows(),(int)ovA.getUnderlyingMatrix()->getNodeNumCols());
+    //    printf("Before matvec A is (locally)%dx%d x is of size %d, ovX is ov size %d\n",(int)A->getLocalNumRows(),(int)A->getLocalNumCols(),
+    //           (int)x.getMap()->getLocalNumElements(),(int)ovX.getMap()->getLocalNumElements());
+    //    printf("ovA->getUnderlyingMatrix() is (locally) %dx%d\n",(int)ovA.getUnderlyingMatrix()->getLocalNumRows(),(int)ovA.getUnderlyingMatrix()->getLocalNumCols());
 
     reducedMatvec(ovA,ovX,2,temp1);
     reducedMatvec(ovA,temp1,1,temp2);

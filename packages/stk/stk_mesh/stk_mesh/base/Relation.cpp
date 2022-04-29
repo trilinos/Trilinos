@@ -156,9 +156,14 @@ void induced_part_membership(const BulkData& mesh,
     int num_rels = mesh.num_connectivity(entity, irank);
     Entity const* rels     = mesh.begin(entity, irank);
 
+    const Bucket* prevBucketPtr = nullptr;
     for (int j = 0; j < num_rels; ++j)
     {
-      impl::get_part_ordinals_to_induce_on_lower_ranks(mesh, rels[j], e_rank, induced_parts);
+      const Bucket* curBucketPtr = mesh.bucket_ptr(rels[j]);
+      if (prevBucketPtr != curBucketPtr) {
+        prevBucketPtr = curBucketPtr;
+        impl::get_part_ordinals_to_induce_on_lower_ranks(mesh, *curBucketPtr, e_rank, induced_parts);
+      }
     }
   }
 }

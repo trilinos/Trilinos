@@ -364,7 +364,7 @@ namespace percept {
       }
 
     // change so all -block get removed and replaced with + only
-    for (unsigned irank=eMesh.side_rank(); irank <= eMesh.element_rank(); irank++)
+    for (stk::mesh::EntityRank irank=eMesh.side_rank(); irank <= eMesh.element_rank(); irank++)
       {
         bool found_minus = false, found_plus = false;
         for (unsigned ib=0; ib < blocks[irank].size(); ++ib)

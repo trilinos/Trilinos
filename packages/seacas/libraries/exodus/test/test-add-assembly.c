@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -13,7 +13,7 @@
 #include <string.h>
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
@@ -28,19 +28,16 @@
 
 int main(int argc, char **argv)
 {
-  int  exoid;
-  int  num_assembly;
-  int  error;
-  int *ids;
-  int  CPU_word_size;
-  int  IO_word_size;
-  int  idum;
+  int exoid;
+  int error;
+  int CPU_word_size;
+  int IO_word_size;
+  int idum;
 
   float version;
   float fdum;
 
-  char  title_chk[MAX_LINE_LENGTH + 1];
-  char *cdum = 0;
+  char *cdum = NULL;
 
   CPU_word_size = 0; /* sizeof(float) */
   IO_word_size  = 0; /* use what is stored in file */
@@ -85,9 +82,8 @@ int main(int argc, char **argv)
     printf("num_node_sets = %" PRId64 "\n", par.num_node_sets);
     printf("num_side_sets = %" PRId64 "\n", par.num_side_sets);
 
-    num_assembly = par.num_assembly;
-
     /* Check that ex_inquire gives same title */
+    char title_chk[MAX_LINE_LENGTH + 1];
     EXCHECK(ex_inquire(exoid, EX_INQ_TITLE, &idum, &fdum, title_chk));
     if (strcmp(par.title, title_chk) != 0) {
       printf("error in ex_inquire for EX_INQ_TITLE %s, vs %s\n", par.title, title_chk);
@@ -95,8 +91,6 @@ int main(int argc, char **argv)
   }
 
   /* See if we can add a new assembly to an existing file... */
-  ids = (int *)calloc(num_assembly, sizeof(int));
-  EXCHECK(ex_get_ids(exoid, EX_ASSEMBLY, ids));
   {
     int64_t     list_222[] = {100, 200, 300, 400};
     ex_assembly assembly   = {222, "NewAssembly", EX_ASSEMBLY, 4, NULL};
@@ -105,8 +99,6 @@ int main(int argc, char **argv)
     assembly.entity_list = list_222;
     EXCHECK(ex_put_assembly(exoid, assembly));
   }
-
-  /*  free(block_names[i]); */
   EXCHECK(ex_close(exoid));
   return 0;
 }

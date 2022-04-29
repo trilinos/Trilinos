@@ -15,7 +15,7 @@ printf "CMAKE_EXE_LINKER_FLAGS=${cmake_exe_linker_flags}\n";
 printf "CMAKE_CXX_FLAGS=${cmake_cxx_flags}\n";
 printf "CUDA=${cuda_on_or_off}\n";
 printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
-printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk'\n\n";
+printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk_no_stk_io'\n\n";
 
 cd ${build_dir}
 
@@ -23,15 +23,6 @@ mkdir -p $trilinos_install_dir
 
 # Cleanup old cache before we configure
 rm -rf CMakeFiles CMakeCache.txt
-
-mpi_base_dir=${MPI_HOME}
-if [ -z "${mpi_base_dir}" ] ; then
-  mpi_base_dir=${MPI_ROOT};
-fi
-if [ -z "${mpi_base_dir}" ] ; then
-  echo "Neither MPI_HOME nor MPI_ROOT is set. Make sure MPI is available."
-  exit 1;
-fi
 
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
@@ -44,7 +35,6 @@ cmake \
 -DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF \
 -DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
 -DTPL_ENABLE_MPI=ON \
--DMPI_BASE_DIR:PATH=$mpi_base_dir \
 -DTPL_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA_UVM:BOOL=${cuda_on_or_off} \

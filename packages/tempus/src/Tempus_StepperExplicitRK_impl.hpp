@@ -11,6 +11,7 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
+
 #include "Tempus_RKButcherTableau.hpp"
 
 
@@ -40,6 +41,7 @@ void StepperExplicitRK<Scalar>::setup(
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setUseEmbedded(        useEmbedded);
   this->setStageNumber(-1);
+  this->setErrorNorm();
 
   this->setAppAction(stepperRKAppAction);
 
@@ -85,22 +87,11 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
    outArgs.set_f(stageXDot[0]); // K1
    this->appModel_->evalModel(inArgs, outArgs);
 
-   auto err_func = [] (Teuchos::RCP<Thyra::VectorBase<Scalar> > U,
-         const Scalar rtol, const Scalar atol,
-         Teuchos::RCP<Thyra::VectorBase<Scalar> > absU)
-   {
-      // compute err = Norm_{WRMS} with w = Atol + Rtol * | U |
-      Thyra::assign(absU.ptr(), *U);
-      Thyra::abs(*U, absU.ptr()); // absU = | X0 |
-      Thyra::Vt_S(absU.ptr(), rtol); // absU *= Rtol
-      Thyra::Vp_S(absU.ptr(), atol); // absU += Atol
-      Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *U, *absU, absU.ptr());
-      Scalar err = Thyra::norm_inf(*absU);
-      return err;
-   };
+   this->stepperErrorNormCalculator_->setRelativeTolerance(errorRel);
+   this->stepperErrorNormCalculator_->setAbsoluteTolerance(errorAbs);
 
-   Scalar d0 = err_func(stageX, errorRel, errorAbs, scratchX);
-   Scalar d1 = err_func(stageXDot[0], errorRel, errorAbs, scratchX);
+   Scalar d0 = this->stepperErrorNormCalculator_->errorNorm(stageX);
+   Scalar d1 = this->stepperErrorNormCalculator_->errorNorm(stageXDot[0]);
 
    // b) first guess for the step size
    dt = Teuchos::as<Scalar>(0.01)*(d0/d1);
@@ -121,7 +112,7 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
    errX = Thyra::createMember(this->appModel_->get_f_space());
    assign(errX.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
    Thyra::V_VmV(errX.ptr(), *(stageXDot[1]), *(stageXDot[0]));
-   Scalar d2 = err_func(errX, errorRel, errorAbs, scratchX) / dt;
+   Scalar d2 = this->stepperErrorNormCalculator_->errorNorm(errX) / dt;
 
    // e) compute step size h_1 (from m = 0 order Taylor series)
    Scalar max_d1_d2 = std::max(d1, d2);
@@ -167,7 +158,17 @@ void StepperExplicitRK<Scalar>::initialize()
     "Error - Need to set the model, setModel(), before calling "
     "StepperExplicitRK::initialize()\n");
 
-  // Initialize the stage vectors
+  Stepper<Scalar>::initialize();
+}
+
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setModel(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+{
+  StepperExplicit<Scalar>::setModel(appModel);
+
+  // Set the stage vectors
   int numStages = this->tableau_->numStages();
   stageXDot_.resize(numStages);
   for (int i=0; i<numStages; ++i) {
@@ -175,14 +176,30 @@ void StepperExplicitRK<Scalar>::initialize()
     assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
   }
 
-  if ( this->tableau_->isEmbedded() && this->getUseEmbedded() ){
-     this->ee_ = Thyra::createMember(this->appModel_->get_f_space());
-     this->abs_u0 = Thyra::createMember(this->appModel_->get_f_space());
-     this->abs_u = Thyra::createMember(this->appModel_->get_f_space());
-     this->sc = Thyra::createMember(this->appModel_->get_f_space());
-  }
+  this->setEmbeddedMemory();
+  this->setErrorNorm();
 
-  Stepper<Scalar>::initialize();
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::setEmbeddedMemory()
+{
+  if (this->getModel() == Teuchos::null)
+    return;  // Embedded memory will be set when setModel() is called.
+
+  if ( this->tableau_->isEmbedded() && this->getUseEmbedded() ){
+    this->ee_    = Thyra::createMember(this->appModel_->get_f_space());
+    this->abs_u0 = Thyra::createMember(this->appModel_->get_f_space());
+    this->abs_u  = Thyra::createMember(this->appModel_->get_f_space());
+    this->sc     = Thyra::createMember(this->appModel_->get_f_space());
+  } else {
+    this->ee_    = Teuchos::null;
+    this->abs_u0 = Teuchos::null;
+    this->abs_u  = Teuchos::null;
+    this->sc     = Teuchos::null;
+  }
 }
 
 
@@ -308,12 +325,16 @@ void StepperExplicitRK<Scalar>::takeStep(
       const Scalar tolRel = workingState->getTolRel();
       const Scalar tolAbs = workingState->getTolAbs();
 
+      // update the tolerance
+      this->stepperErrorNormCalculator_->setRelativeTolerance(tolRel);
+      this->stepperErrorNormCalculator_->setAbsoluteTolerance(tolAbs);
+
       // just compute the error weight vector
       // (all that is needed is the error, and not the embedded solution)
       Teuchos::SerialDenseVector<int,Scalar> errWght = b ;
       errWght -= this->tableau_->bstar();
 
-      //compute local truncation error estimate: | u^{n+1} - \hat{u}^{n+1} |
+      // Compute local truncation error estimate: | u^{n+1} - \hat{u}^{n+1} |
       // Sum for solution: ee_n = Sum{ (b(i) - bstar(i)) * dt*f(i) }
       assign(this->ee_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
       for (int i=0; i < numStages; ++i) {
@@ -322,21 +343,11 @@ void StepperExplicitRK<Scalar>::takeStep(
          }
       }
 
-      // compute: Atol + max(|u^n|, |u^{n+1}| ) * Rtol
-      Thyra::abs( *(currentState->getX()), this->abs_u0.ptr());
-      Thyra::abs( *(workingState->getX()), this->abs_u.ptr());
-      Thyra::pair_wise_max_update(tolRel, *this->abs_u0, this->abs_u.ptr());
-      Thyra::add_scalar(tolAbs, this->abs_u.ptr());
 
-      //compute: || ee / sc ||
-      assign(this->sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-      Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *this->ee_, *this->abs_u,this->sc.ptr());
-
-      const auto space_dim = this->ee_->space()->dim();
-      Scalar err = std::abs(Thyra::norm(*this->sc)) / space_dim ;
+      Scalar err = this->stepperErrorNormCalculator_->computeWRMSNorm(currentState->getX(), workingState->getX(), this->ee_);
       workingState->setErrorRel(err);
 
-      // test if step should be rejected
+      // Test if step should be rejected
       if (std::isinf(err) || std::isnan(err) || err > Teuchos::as<Scalar>(1.0))
         workingState->setSolutionStatus(Status::FAILED);
     }
@@ -371,6 +382,7 @@ void StepperExplicitRK<Scalar>::describe(
   Teuchos::FancyOStream               &out,
   const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
   StepperExplicit<Scalar>::describe(out, verbLevel);
@@ -396,6 +408,7 @@ void StepperExplicitRK<Scalar>::describe(
 template<class Scalar>
 bool StepperExplicitRK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -22,17 +22,17 @@
 int lanczos_ext(struct vtx_data **A,       /* sparse matrix in row linked list format */
                 int               n,       /* problem size */
                 int               d,       /* problem dimension = number of eigvecs to find */
-                double **         y,       /* columns of y are eigenvectors of A  */
+                double          **y,       /* columns of y are eigenvectors of A  */
                 double            eigtol,  /* tolerance on eigenvectors */
-                double *          vwsqrt,  /* square roots of vertex weights */
+                double           *vwsqrt,  /* square roots of vertex weights */
                 double            maxdeg,  /* maximum degree of graph */
                 int               version, /* flags which version of sel. orth. to use */
-                double *          gvec,    /* the rhs n-vector in the extended eigen problem */
+                double           *gvec,    /* the rhs n-vector in the extended eigen problem */
                 double            sigma    /* specifies the norm constraint on extended
                                               eigenvector */
 )
 {
-  extern FILE *     Output_File;         /* output file or null */
+  extern FILE      *Output_File;         /* output file or null */
   extern int        LANCZOS_SO_INTERVAL; /* interval between orthogonalizations */
   extern int        LANCZOS_MAXITNS;     /* maximum Lanczos iterations allowed */
   extern int        DEBUG_EVECS;         /* print debugging output? */
@@ -54,22 +54,22 @@ int lanczos_ext(struct vtx_data **A,       /* sparse matrix in row linked list f
   extern double     pause_time;          /* time to compute whether to pause */
   int               i, j, k;             /* indices */
   int               maxj;                /* maximum number of Lanczos iterations */
-  double *          u, *r;               /* Lanczos vectors */
-  double *          alpha, *beta;        /* the Lanczos scalars from each step */
-  double *          ritz;                /* copy of alpha for ql */
-  double *          workj;               /* work vector, e.g. copy of beta for ql */
-  double *          workn;               /* work vector, e.g. product Av for checkeig */
-  double *          s;                   /* eigenvector of T */
-  double **         q;                   /* columns of q are Lanczos basis vectors */
-  double *          bj;                  /* beta(j)*(last el. of corr. eigvec s of T) */
+  double           *u, *r;               /* Lanczos vectors */
+  double           *alpha, *beta;        /* the Lanczos scalars from each step */
+  double           *ritz;                /* copy of alpha for ql */
+  double           *workj;               /* work vector, e.g. copy of beta for ql */
+  double           *workn;               /* work vector, e.g. product Av for checkeig */
+  double           *s;                   /* eigenvector of T */
+  double          **q;                   /* columns of q are Lanczos basis vectors */
+  double           *bj;                  /* beta(j)*(last el. of corr. eigvec s of T) */
   double            Sres;                /* how well Tevec calculated eigvec s */
   double            Sres_max;            /* Max value of Sres */
   int               inc_bis_safety;      /* has Sres increased? */
-  double *          Ares;                /* how well Lanczos calc. eigpair lambda,y */
-  int *             index;               /* the Ritz index of an eigenpair */
+  double           *Ares;                /* how well Lanczos calc. eigpair lambda,y */
+  int              *index;               /* the Ritz index of an eigenpair */
   struct orthlink **solist;              /* vec. of structs with vecs. to orthog. against */
-  struct scanlink * scanlist;            /* linked list of fields to do with min ritz vals */
-  struct scanlink * curlnk;              /* for traversing the scanlist */
+  struct scanlink  *scanlist;            /* linked list of fields to do with min ritz vals */
+  struct scanlink  *curlnk;              /* for traversing the scanlist */
   double            bis_safety;          /* real safety for T bisection algorithm */
   int               converged;           /* has the iteration converged? */
   double            goodtol;             /* error tolerance for a good Ritz vector */
@@ -85,34 +85,36 @@ int lanczos_ext(struct vtx_data **A,       /* sparse matrix in row linked list f
   int               pausemode;           /* which Lanczos pausing criterion to use */
   int               pause;               /* whether to pause */
   int               temp;                /* used to prevent redundant index computations */
-  double *          extvec;              /* n-vector solving the extended A eigenproblem */
-  double *          v;                   /* j-vector solving the extended T eigenproblem */
+  double           *extvec;              /* n-vector solving the extended A eigenproblem */
+  double           *v;                   /* j-vector solving the extended T eigenproblem */
   double            extval = 0.0;        /* computed extended eigenvalue (of both A and T) */
-  double *          work1, *work2;       /* work vectors */
+  double           *work1, *work2;       /* work vectors */
   double            check;               /* to check an orthogonality condition */
   double            numerical_zero;      /* used for zero in presence of round-off  */
   int               ritzval_flag;        /* status flag for get_ritzvals() */
   int               memory_ok;           /* TRUE until memory runs out */
 
-  double *         mkvec();        /* allocates space for a vector */
-  double *         mkvec_ret();    /* mkvec() which returns error code */
-  double           dot();          /* standard dot product routine */
-  struct orthlink *makeorthlnk();  /* makes space for new entry in orthog. set */
-  double           ch_norm();      /* vector norm */
-  double           Tevec();        /* calc eigenvector of T by linear recurrence */
-  struct scanlink *mkscanlist();   /* init scan list for min ritz vecs */
-  double           lanc_seconds(); /* switcheable timer */
-                                   /* free allocated memory safely */
-  int    lanpause();               /* figure when to pause Lanczos iteration */
-  int    get_ritzvals();           /* compute eigenvalues of T */
-  void   setvec();                 /* initialize a vector */
-  void   vecscale();               /* scale a vector */
-  void   splarax();                /* matrix vector multiply */
-  void   update();                 /* add scalar multiple of a vector to another */
+  double *mkvec(int nl, int nh);     /* allocates space for a vector */
+  double *mkvec_ret(int nl, int nh); /* mkvec(int nl, int nh) which returns error code */
+  double  dot(double *vec1, int beg, int end, double *vec2); /* standard dot product routine */
+  struct orthlink *makeorthlnk(); /* makes space for new entry in orthog. set */
+  double           ch_norm(double *vec, int beg, int end); /* vector norm */
+  double           Tevec(double *, double *, int, double,
+                         double *);    /* calc eigenvector of T by linear recurrence */
+  struct scanlink *mkscanlist();       /* init scan list for min ritz vecs */
+  double           lanc_seconds(void); /* switcheable timer */
+                                       /* free allocated memory safely */
+  int    lanpause();                   /* figure when to pause Lanczos iteration */
+  int    get_ritzvals();               /* compute eigenvalues of T */
+  void   setvec();                     /* initialize a vector */
+  void   vecscale();                   /* scale a vector */
+  void   splarax();                    /* matrix vector multiply */
+  void   update(double *vec1, int beg, int end, double *vec2, double fac,
+                double *vec3);     /* add scalar multiple of a vector to another */
   void   sorthog();                /* orthogonalize vector against list of others */
   void   bail();                   /* our exit routine */
   void   scanmin();                /* store small values of vector in linked list */
-  void   frvec();                  /* free vector */
+  void   frvec(double *v, int nl); /* free vector */
   void   scadd();                  /* add scalar multiple of vector to another */
   void   cpvec();                  /* copy a vector */
   void   orthog1();                /* efficiently orthog. against vector of ones */
@@ -121,7 +123,7 @@ int lanczos_ext(struct vtx_data **A,       /* sparse matrix in row linked list f
   void   orthogvec();              /* orthogonalize one vector against another */
   void   get_extval();             /* find extended Ritz values */
   void   scale_diag();             /* scale vector by diagonal matrix */
-  void   strout();                 /* print string to screen and file */
+  void   strout(char *msg);        /* print string to screen and file */
   double checkeig_ext();           /* check extended eigenpair residual directly */
 
   if (DEBUG_TRACE > 0) {

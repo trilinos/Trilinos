@@ -37,22 +37,22 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(AppendCmndlineArgs)
-INCLUDE(DualScopeSet)
+include(AppendCmndlineArgs)
+include(DualScopeSet)
 
 #
-# @MACRO: DUAL_SCOPE_APPEND_CMNDLINE_ARGS()
+# @MACRO: dual_scope_append_cmndline_args()
 #
 # Utility function that appends command-line arguments to a variable of
 # command-line options and sets the result in current scope and parent scope.
 #
 # Usage::
 #
-#   DUAL_SCOPE_APPEND_CMNDLINE_ARGS(<var> "<extraArgs>")
+#   dual_scope_append_cmndline_args(<var> "<extraArgs>")
 #
-# Just calls `APPEND_CMNDLINE_ARGS()`_ and then ``SET(<var> ${<var>} PARENT_SCOPE)``.
+# Just calls `append_cmndline_args()`_ and then ``set(<var> ${<var>} PARENT_SCOPE)``.
 #
-MACRO(DUAL_SCOPE_APPEND_CMNDLINE_ARGS  CMNDLINE_VAR_NAME  EXTRAARGS)
-  APPEND_CMNDLINE_ARGS(${CMNDLINE_VAR_NAME} "${EXTRAARGS}")
-  SET(${CMNDLINE_VAR_NAME} "${${CMNDLINE_VAR_NAME}}" PARENT_SCOPE)
-ENDMACRO()
+macro(dual_scope_append_cmndline_args  CMNDLINE_VAR_NAME  EXTRAARGS)
+  append_cmndline_args(${CMNDLINE_VAR_NAME} "${EXTRAARGS}")
+  set(${CMNDLINE_VAR_NAME} "${${CMNDLINE_VAR_NAME}}" PARENT_SCOPE)
+endmacro()

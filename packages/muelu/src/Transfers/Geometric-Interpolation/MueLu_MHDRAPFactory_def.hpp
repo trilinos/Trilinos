@@ -243,7 +243,7 @@ namespace MueLu {
       // TODO: skip if nproc == 1
 
     //nonzero imbalance
-    size_t numMyNnz  = Ac.getNodeNumEntries();
+    size_t numMyNnz  = Ac.getLocalNumEntries();
     GO maxNnz, minNnz;
     RCP<const Teuchos::Comm<int> > comm = Ac.getRowMap()->getComm();
     MueLu_maxAll(comm,(GO)numMyNnz,maxNnz);
@@ -251,7 +251,7 @@ namespace MueLu {
     MueLu_minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
     double imbalance = ((double) maxNnz) / minNnz;
 
-    size_t numMyRows = Ac.getNodeNumRows();
+    size_t numMyRows = Ac.getLocalNumRows();
     //Check whether Ac is spread over more than one process.
     GO numActiveProcesses=0;
     MueLu_sumAll(comm, (GO)((numMyRows > 0) ? 1 : 0), numActiveProcesses);

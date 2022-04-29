@@ -37,10 +37,10 @@
 # ************************************************************************
 # @HEADER
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(fmangle C Fortran)
-ADD_DEFINITIONS(${COMMON_DEFS})
-SET(CMAKE_VERBOSE_MAKEFILE ON)
-ADD_LIBRARY(fmangle fmangle.f)
-ADD_EXECUTABLE(cmangle cmangle.c)
-TARGET_LINK_LIBRARIES(cmangle fmangle)
+cmake_minimum_required(VERSION 3.17)
+project(fmangle C Fortran)
+add_definitions(${COMMON_DEFS})
+set(CMAKE_VERBOSE_MAKEFILE ON)
+add_library(fmangle fmangle.f)
+add_executable(cmangle cmangle.c)
+target_link_libraries(cmangle fmangle)

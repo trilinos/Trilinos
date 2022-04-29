@@ -6,14 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
+#include "Tempus_UnitTest_Utils.hpp"
 
-#include "Thyra_VectorStdOps.hpp"
-
-#include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
 
@@ -23,14 +17,7 @@
 #include "Tempus_StepperBackwardEulerModifierDefault.hpp"
 #include "Tempus_StepperBackwardEulerModifierXDefault.hpp"
 #include "Tempus_StepperBackwardEulerObserverDefault.hpp"
-#include "Tempus_UnitTest_Utils.hpp"
 
-#include "../TestModels/SinCosModel.hpp"
-#include "../TestModels/VanDerPolModel.hpp"
-#include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
-
-#include <fstream>
-#include <vector>
 
 namespace Tempus_Unit_Test {
 
@@ -40,8 +27,6 @@ using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
-using Teuchos::getParametersFromXmlFile;
-
 
 
 // ************************************************************

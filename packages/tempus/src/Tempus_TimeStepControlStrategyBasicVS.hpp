@@ -212,13 +212,21 @@ public:
     void describe(Teuchos::FancyOStream          &out,
                   const Teuchos::EVerbosityLevel verbLevel) const override
     {
-      Teuchos::OSTab ostab(out,2,"describe");
-      out << description() << "::describe:" << std::endl
-          << "StrategyType                      = " << this->getStrategyType()<< std::endl
-          << "Amplification Factor              = " << getAmplFactor()   << std::endl
-          << "Reduction Factor                  = " << getReductFactor() << std::endl
-          << "Minimum Value Monitoring Function = " << getMinEta()       << std::endl
-          << "Maximum Value Monitoring Function = " << getMaxEta()       << std::endl;
+      auto l_out = Teuchos::fancyOStream( out.getOStream() );
+      Teuchos::OSTab ostab(*l_out, 2, this->description());
+      l_out->setOutputToRootOnly(0);
+
+      *l_out << "\n--- " << this->description() << " ---" << std::endl;
+
+      if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
+        *l_out << "  StrategyType                      = " << this->getStrategyType()<< std::endl
+               << "  Step Type                         = " << this->getStepType() << std::endl
+               << "  Amplification Factor              = " << getAmplFactor()   << std::endl
+               << "  Reduction Factor                  = " << getReductFactor() << std::endl
+               << "  Minimum Value Monitoring Function = " << getMinEta()       << std::endl
+               << "  Maximum Value Monitoring Function = " << getMaxEta()       << std::endl;
+        *l_out << std::string(this->description().length()+8, '-') <<std::endl;
+      }
     }
   //@}
 
@@ -285,15 +293,14 @@ createTimeStepControlStrategyBasicVS(
   std::string name = "Basic VS")
 {
   auto tscs = Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>());
-  if (pList == Teuchos::null) return tscs;
+  if (pList == Teuchos::null || pList->numParams() == 0) return tscs;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    pList->get<std::string>("Strategy Type", "Basic VS") != "Basic VS",
-    std::logic_error,
+    pList->get<std::string>("Strategy Type") != "Basic VS", std::logic_error,
     "Error - Strategy Type != 'Basic VS'.  (='"
     +pList->get<std::string>("Strategy Type")+"')\n");
 
-  pList->validateParametersAndSetDefaults(*tscs->getValidParameters(), 0);
+  pList->validateParametersAndSetDefaults(*tscs->getValidParameters());
 
   tscs->setAmplFactor(  pList->get<double>("Amplification Factor"));
   tscs->setReductFactor(pList->get<double>("Reduction Factor"));

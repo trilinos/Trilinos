@@ -115,8 +115,8 @@ void RegionAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetUpHierarchy()
     GlobalOrdinal nx = std::sqrt(n);
 
     RCP<const map_type> map = matrixSplitting_->getRegionMatrix(region_idx)->getRowMap();
-    size_t NumMyElements = map->getNodeNumElements();
-    Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+    size_t NumMyElements = map->getLocalNumElements();
+    Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getLocalElementList();
 
     RCP<multivector_type> coords = mv_factory_type::Build (map, 2);
 
@@ -268,7 +268,7 @@ void RegionAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::computeRegionX (const
   for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
   {
     Teuchos::Array<GlobalOrdinal> overlapped_composite;
-    LocalOrdinal num_elements = regionX[region_idx]->getMap()->getNodeNumElements();
+    LocalOrdinal num_elements = regionX[region_idx]->getMap()->getLocalNumElements();
     for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
     {
       GlobalOrdinal composite_region_index = regionX[region_idx]->getMap()->getGlobalElement(local_region_index);
@@ -288,12 +288,12 @@ void RegionAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::computeRegionX (const
     if( overlapping_composite_array[region_idx].size()>0 )
     {
       Teuchos::Array<GlobalOrdinal> aux1 = overlapping_composite_array[region_idx];
-      Teuchos::Array<GlobalOrdinal> aux2 = X.getMap()->getNodeElementList();
+      Teuchos::Array<GlobalOrdinal> aux2 = X.getMap()->getLocalElementList();
       std::set_union(aux1.begin(), aux1.end(), aux2.begin(), aux2.end(),std::back_inserter(aux));
     }
     else
     {
-      aux = X.getMap()->getNodeElementList();
+      aux = X.getMap()->getLocalElementList();
     }
     RCP<map_type> overlapping_composite_map = MapFactory< LocalOrdinal, GlobalOrdinal, Node >::Build( Xpetra::UseTpetra, X.getGlobalLength(), aux, 0, comm_ );
     composite_overlapping_X[region_idx] = MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(overlapping_composite_map, X.getNumVectors());
@@ -309,7 +309,7 @@ void RegionAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::computeRegionX (const
     for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
     {
       ArrayRCP<const Scalar> composite_column = composite_overlapping_X[region_idx]->getData( i );
-      LocalOrdinal num_elements = regionX[region_idx]->getMap()->getNodeNumElements();
+      LocalOrdinal num_elements = regionX[region_idx]->getMap()->getLocalNumElements();
       ArrayRCP<Scalar> region_column = regionX[region_idx]->getDataNonConst( i );
       for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
       {
@@ -335,7 +335,7 @@ void RegionAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::computeCompositeY (Ar
   //Create Overlapping composite maps
   for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
   {
-    LocalOrdinal num_elements = regionY[region_idx]->getMap()->getNodeNumElements();
+    LocalOrdinal num_elements = regionY[region_idx]->getMap()->getLocalNumElements();
     for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
     {
       GlobalOrdinal composite_region_index = regionY[region_idx]->getMap()->getGlobalElement(local_region_index);
@@ -357,8 +357,8 @@ void RegionAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::computeCompositeY (Ar
   //Safety checks to guarantee the legitimacy of non-unique source composite map and unique target composite map
   //The unique target composite map must be a subset of the non-unique source composite map
   //Before running the std::includes algorithm it is very important to sort the ElementList in ascending order
-  Teuchos::Array<GlobalOrdinal> original_map = Y.getMap()->getNodeElementList();
-  Teuchos::Array<GlobalOrdinal> overlapping_map = composite_overlapping_Y->getMap()->getNodeElementList();
+  Teuchos::Array<GlobalOrdinal> original_map = Y.getMap()->getLocalElementList();
+  Teuchos::Array<GlobalOrdinal> overlapping_map = composite_overlapping_Y->getMap()->getLocalElementList();
   std::sort(original_map.begin(), original_map.end());
   std::sort(overlapping_map.begin(), overlapping_map.end());
   TEUCHOS_TEST_FOR_EXCEPTION( !( std::includes(overlapping_map.begin(), overlapping_map.end(), original_map.begin(), original_map.end()) ), Exceptions::RuntimeError, "Overlapping (non-unique) composite map does NOT include original (unique) composite map \n" );
@@ -369,7 +369,7 @@ void RegionAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::computeCompositeY (Ar
     for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
     {
       ArrayRCP<Scalar> composite_column = composite_overlapping_Y->getDataNonConst( i );
-      LocalOrdinal num_elements = regionY[region_idx]->getMap()->getNodeNumElements();
+      LocalOrdinal num_elements = regionY[region_idx]->getMap()->getLocalNumElements();
       ArrayRCP<const Scalar> region_column = regionY[region_idx]->getData( i );
       for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
       {
@@ -403,7 +403,7 @@ void RegionAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::rescaleInterfaceEntri
 
   for( int region_idx = 0; region_idx<num_regions_; ++region_idx )
   {
-    LocalOrdinal num_elements = regionY[region_idx]->getMap()->getNodeNumElements();
+    LocalOrdinal num_elements = regionY[region_idx]->getMap()->getLocalNumElements();
     for( LocalOrdinal local_region_index = 0; local_region_index<num_elements; ++local_region_index )
     {
       GlobalOrdinal composite_region_index = regionY[region_idx]->getMap()->getGlobalElement(local_region_index);

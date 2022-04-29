@@ -1,3 +1,42 @@
+//@HEADER
+// ************************************************************************
+//
+//                 Belos: Block Linear Solvers Package
+//                  Copyright 2004 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ************************************************************************
+//@HEADER
+
 #ifndef BELOS_TPETRA_GMRES_SINGLE_REDUCE_HPP
 #define BELOS_TPETRA_GMRES_SINGLE_REDUCE_HPP
 
@@ -469,7 +508,7 @@ private:
     vec_type R  (B.getMap (), zeroOut);
     vec_type Y  (B.getMap (), zeroOut);
     vec_type MP (B.getMap (), zeroOut);
-    vec_type P = * (Q.getVectorNonConst (0));
+    vec_type P0 = * (Q.getVectorNonConst (0));
 
     Teuchos::BLAS<LO ,SC> blas;
     dense_matrix_type H (restart+1, restart,   true);
@@ -494,9 +533,9 @@ private:
     if (input.precoSide == "left") {
       {
         Teuchos::TimeMonitor LocalTimer (*precTimer);
-        M.apply (R, P);
+        M.apply (R, P0);
       }
-      r_norm = P.norm2 (); // initial residual norm, left-preconditioned
+      r_norm = P0.norm2 (); // initial residual norm, left-preconditioned
     } else {
       r_norm = b0_norm;
     }
@@ -557,9 +596,9 @@ private:
       if (input.precoSide == "left") {
         {
           Teuchos::TimeMonitor LocalTimer (*precTimer);
-          M.apply (R, P);
+          M.apply (R, P0);
         }
-        r_norm = P.norm2 (); // residual norm
+        r_norm = P0.norm2 (); // residual norm
       }
       else {
         r_norm = output.absResid;
@@ -569,9 +608,9 @@ private:
 
     // initialize starting vector
     if (input.precoSide != "left") {
-      Tpetra::deep_copy (P, R);
+      Tpetra::deep_copy (P0, R);
     }
-    P.scale (one / r_norm);
+    P0.scale (one / r_norm);
     y[0] = SC {r_norm};
     const int s = getStepSize ();
     // main loop
@@ -759,20 +798,20 @@ private:
                     << " since H(" << iter << ", " << iter-1 << ") = zero" << endl;
           }
           iter = 0;
-          P = * (Q.getVectorNonConst (0));
+          P0 = * (Q.getVectorNonConst (0));
           if (input.precoSide == "left") {
             {
               Teuchos::TimeMonitor LocalTimer (*precTimer);
-              M.apply (R, P);
+              M.apply (R, P0);
             }
             // FIXME (mfh 14 Aug 2018) Didn't we already compute this above?
-            r_norm = P.norm2 ();
+            r_norm = P0.norm2 ();
           }
           else {
             // set the starting vector
-            Tpetra::deep_copy (P, R);
+            Tpetra::deep_copy (P0, R);
           }
-          P.scale (one / r_norm);
+          P0.scale (one / r_norm);
           y[0] = SC {r_norm};
           for (int i=1; i < restart+1; i++) {
             y[i] = zero;

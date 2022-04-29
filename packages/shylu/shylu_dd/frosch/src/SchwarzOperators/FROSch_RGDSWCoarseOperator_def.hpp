@@ -150,11 +150,11 @@ namespace FROSch {
                 << " | " << setw(41) << blockId
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << "| " << left << setw(41) << "Spatial dimensions" << right
                 << " | " << setw(41) << dimension
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << "| " << left << setw(41) << "Number of degrees of freedom per node" << right
                 << " | " << setw(41) << dofsPerNode
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
@@ -227,11 +227,11 @@ namespace FROSch {
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << setw(89) << "========================================================================================="
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "Coarse nodes " << " | " << setw(19) << " Translations" << right
+                    << "| " << left << setw(19) << "Coarse nodes " << " | " << setw(19) << "Translations " << right
                     << " | " << setw(41) << boolalpha << useForCoarseSpace << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "Coarse nodes " << " | " << setw(19) << " Rotations" << right
+                    << "| " << left << setw(19) << "Coarse nodes " << " | " << setw(19) << "Rotations " << right
                     << " | " << setw(41) << boolalpha << useRotations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "

@@ -1,22 +1,14 @@
-#
-# A) Forward declare the package so that certain options are also defined for
-# subpackages
-#
-TRIBITS_PACKAGE_DECL(WithSubpackages)
+tribits_package_decl(WithSubpackages)
 
-#
-# B) Define the common options for the package first so they can be used by
-# subpackages as well.
-#
-TRIBITS_ADD_DEBUG_OPTION()
+tribits_add_debug_option()
 
-#
-# C) Process the subpackages
-#
-TRIBITS_PROCESS_SUBPACKAGES()
+tribits_process_subpackages()
 
-#
-# D) Define the package now and perform standard post processing
-#
-TRIBITS_PACKAGE_DEF()
-TRIBITS_PACKAGE_POSTPROCESS()
+tribits_exclude_files(
+  b/ExcludeFromRelease.txt
+  b/src/AlsoExcludeFromTarball.txt
+  )
+
+tribits_package_def()
+
+tribits_package_postprocess()

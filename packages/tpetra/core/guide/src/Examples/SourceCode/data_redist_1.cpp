@@ -82,9 +82,9 @@ createMatrix(const Teuchos::RCP<const typename CrsMatrixType::map_type>& map)
   const SC negOne = static_cast<SC>(-1.0);
   const GST numGlobalIndices = map->getGlobalNumElements();
 
-  // const size_t numMyElements = map->getNodeNumElements();
+  // const size_t numMyElements = map->getLocalNumElements();
   // The list of global elements owned by this MPI process.
-  ArrayView<const GO> myGlobalElements = map->getNodeElementList();
+  ArrayView<const GO> myGlobalElements = map->getLocalElementList();
   typedef typename ArrayView<const GO>::const_iterator iter_type;
   for(iter_type it = myGlobalElements.begin(); it != myGlobalElements.end(); ++it) {
     const LO i_local = *it;
@@ -123,7 +123,7 @@ example(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   using GST = Tpetra::global_size_t;
 
   // Set up Tpetra typedefs.
-  using SC = double;
+  using SC = Tpetra::CrsMatrix<>::scalar_type;
   using crs_matrix_type = Tpetra::CrsMatrix<SC>;
   using map_type = Tpetra::Map<>;
   using GO = Tpetra::Map<>::global_ordinal_type;

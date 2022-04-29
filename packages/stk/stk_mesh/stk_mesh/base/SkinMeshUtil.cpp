@@ -77,7 +77,7 @@ void SkinMeshUtil::add_exposed_sides_due_to_air_selector(impl::LocalId local_id,
     stk::mesh::Entity element = eeGraph.get_entity(local_id);
     std::vector<bool> areAllConnectedElemsAir(eeGraph.get_mesh().bucket(element).topology().num_sides(), true);
 
-    const GraphEdgesForElement& graphEdges = eeGraph.get_edges_for_element(local_id);
+    GraphEdgesForElement graphEdges = eeGraph.get_edges_for_element(local_id);
     for(const GraphEdge & graphEdge : graphEdges)
     {
         if(is_connected_element_air(graphEdge))

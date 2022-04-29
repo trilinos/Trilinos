@@ -60,12 +60,13 @@ using Teuchos::rcp;
 using Teuchos::Time;
 using Teuchos::TimeMonitor;
 
+using SC = Tpetra::CrsMatrix<>::scalar_type;
 using GST = Tpetra::global_size_t;
 using map_type = Tpetra::Map<>;
 using LO = map_type::local_ordinal_type;
 using GO = map_type::global_ordinal_type;
 using crs_graph_type = Tpetra::CrsGraph<>;
-using crs_matrix_type = Tpetra::CrsMatrix<double>;
+using crs_matrix_type = Tpetra::CrsMatrix<SC>;
 using export_type = Tpetra::Export<>;
 
 struct CmdLineArgs {
@@ -136,7 +137,7 @@ getLclRowsToTest(const export_type& exporter)
 {
   Teuchos::ArrayView<const LO> incomingRows = exporter.getRemoteLIDs();
   const map_type& tgtMap = *(exporter.getTargetMap());
-  const LO tgtLclNumRows = LO(tgtMap.getNodeNumElements());
+  const LO tgtLclNumRows = LO(tgtMap.getLocalNumElements());
 
   using device_type = crs_matrix_type::device_type;
   using Kokkos::view_alloc;
@@ -233,7 +234,7 @@ RCP<Time> getTimer(const std::string& timerName) {
 
 class FillSourceMatrixValues {
 public:
-  FillSourceMatrixValues(const crs_matrix_type::local_matrix_type& A,
+  FillSourceMatrixValues(const crs_matrix_type::local_matrix_device_type& A,
                          const map_type::local_map_type& lclColMap)
     : A_(A), lclColMap_(lclColMap)
   {}
@@ -248,7 +249,7 @@ public:
     }
   }
 private:
-  crs_matrix_type::local_matrix_type A_;
+  crs_matrix_type::local_matrix_device_type A_;
   map_type::local_map_type lclColMap_;
 };
 
@@ -256,7 +257,7 @@ void
 fillSourceMatrixValues(const crs_matrix_type& A)
 {
   TEUCHOS_ASSERT(! A.isFillComplete() );
-  auto A_lcl = A.getLocalMatrix();
+  auto A_lcl = A.getLocalMatrixDevice();
 
   TEUCHOS_ASSERT( A.hasColMap() );
   const auto lclColMap = A.getColMap()->getLocalMap();
@@ -275,12 +276,12 @@ fillSourceMatrixValues(const crs_matrix_type& A)
 // optimizations.
 
 class TestTargetMatrixValues {
-  using local_matrix_type = crs_matrix_type::local_matrix_type;
+  using local_matrix_device_type = crs_matrix_type::local_matrix_device_type;
   using device_type = crs_matrix_type::device_type;
   using local_map_type = map_type::local_map_type;
 
 public:
-  TestTargetMatrixValues(const local_matrix_type& A,
+  TestTargetMatrixValues(const local_matrix_device_type& A,
                          const local_map_type& lclColMap,
                          const Kokkos::View<const int*, device_type>& lclRowsToTest,
                          const bool replaceCombineMode)
@@ -316,14 +317,14 @@ public:
     }
   }
 private:
-  local_matrix_type A_;
+  local_matrix_device_type A_;
   local_map_type lclColMap_;
   Kokkos::View<const int*, device_type> lclRowsToTest_;
   bool replaceCombineMode_;
 };
 
 int
-testTargetLocalMatrixValues(const crs_matrix_type::local_matrix_type& A,
+testTargetLocalMatrixValues(const crs_matrix_type::local_matrix_device_type& A,
                             const map_type::local_map_type& lclColMap,
                             const Kokkos::View<const int*, typename crs_matrix_type::device_type>& lclRowsToTest,
                             const Tpetra::CombineMode combineMode,
@@ -422,22 +423,10 @@ printLocalMatrix(std::ostream& out,
 
   out << "Proc " << myRank << ":" << endl;
 
-  auto A_lcl = A.getLocalMatrix();
-  Kokkos::HostSpace hostMemSpace;
-  auto val = Kokkos::create_mirror_view(hostMemSpace, A_lcl.values);
-  Kokkos::deep_copy(val, A_lcl.values);
-  auto ind = Kokkos::create_mirror_view(hostMemSpace, A_lcl.graph.entries);
-  Kokkos::deep_copy(ind, A_lcl.graph.entries);
-
-  // A_lcl.graph.row_map is a View of const, so the result of
-  // create_mirror_view is also a View of const.  This means we can't
-  // use it as the destination of deep_copy.
-  using row_map_type = decltype(A_lcl.graph.row_map);
-  Kokkos::View<row_map_type::non_const_data_type,
-    row_map_type::array_layout,
-    Kokkos::DefaultHostExecutionSpace> ptr
-      ("ptr", A_lcl.graph.row_map.extent(0));
-  Kokkos::deep_copy(ptr, A_lcl.graph.row_map);
+  auto A_lcl = A.getLocalMatrixHost();
+  auto val = A_lcl.values;
+  auto ind = A_lcl.graph.entries;
+  auto ptr = A_lcl.graph.row_map;
 
   for(LO lclRow = 0; lclRow < A_lcl.numRows(); ++lclRow) {
     const GO gblRow = rowMap.getGlobalElement(lclRow);
@@ -485,7 +474,7 @@ testTargetMatrixValues(const crs_matrix_type& A,
   auto comm = A.getMap()->getComm();
   const int myRank = comm->getRank();
 
-  auto A_lcl = A.getLocalMatrix();
+  auto A_lcl = A.getLocalMatrixDevice();
   TEUCHOS_ASSERT( A.hasColMap() );
   auto lclColMap = A.getColMap()->getLocalMap();
   const int lclSuccess =
@@ -570,13 +559,13 @@ void benchmark(const RCP<const Teuchos::Comm<int>>& comm,
     std::unique_ptr<GO[]> colGids(new GO[numColsToFill]);
     std::iota(colGids.get(), colGids.get()+numColsToFill,
               domainMap->getIndexBase());
-    const LO tgtLclNumRows = LO(tgtRowMap->getNodeNumElements());
+    const LO tgtLclNumRows = LO(tgtRowMap->getLocalNumElements());
     for(LO lclRow = 0; lclRow < tgtLclNumRows; ++lclRow) {
       const GO gblRow = tgtRowMap->getGlobalElement(lclRow);
       tgtGraph->insertGlobalIndices(gblRow, numColsToFill,
                                     colGids.get());
     }
-    const LO srcLclNumRows = LO(srcRowMap->getNodeNumElements());
+    const LO srcLclNumRows = LO(srcRowMap->getLocalNumElements());
     for(LO lclRow = 0; lclRow < srcLclNumRows; ++lclRow) {
       const GO gblRow = srcRowMap->getGlobalElement(lclRow);
       srcGraph->insertGlobalIndices(gblRow, numColsToFill,

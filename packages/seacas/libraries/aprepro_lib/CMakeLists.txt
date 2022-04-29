@@ -35,7 +35,6 @@ SET(HEADERS
 SET(SOURCES
  apr_aprepro.cc
  apr_util.cc
- apr_stats.cc
  apr_init.cc
  apr_builtin.cc
  apr_units.cc
@@ -105,7 +104,6 @@ if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
    endif()
 endif()
 
-# Currently doesn't run on windows due to use of sed...
 if (${CMAKE_PROJECT_NAME}_ENABLE_TESTS)
   TRIBITS_ADD_EXECUTABLE(aprepro_test_app NOEXEPREFIX NOEXESUFFIX SOURCES apr_test.cc LINKER_LANGUAGE CXX)
 
@@ -113,19 +111,11 @@ TRIBITS_ADD_ADVANCED_TEST(
  aprepro_lib_unit_test
  TEST_0 EXEC aprepro_test_app
         ARGS -o test.output ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app
-  OUTPUT_FILE test.stderr
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
- TEST_1 CMND sed ARGS s+${CMAKE_CURRENT_SOURCE_DIR}++
-		       ${CMAKE_CURRENT_BINARY_DIR}/test.stderr
-  OUTPUT_FILE filtered.output
-  PASS_ANY
- TEST_2 CMND diff ARGS -w
+ TEST_1 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test_standard.out
 		       ${CMAKE_CURRENT_BINARY_DIR}/test.output
- TEST_3 CMND diff ARGS -w
-		       ${CMAKE_CURRENT_SOURCE_DIR}/test.stderr.gold
-		       ${CMAKE_CURRENT_BINARY_DIR}/filtered.output
  COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION
@@ -135,9 +125,8 @@ TRIBITS_ADD_ADVANCED_TEST(
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_lib_array_test
  TEST_0 EXEC aprepro_test_app
-	ARGS --include=${CMAKE_CURRENT_SOURCE_DIR} -o test-array.out
+	ARGS --info=test-array.dump --include=${CMAKE_CURRENT_SOURCE_DIR} -o test-array.out
 	     ${CMAKE_CURRENT_SOURCE_DIR}/test-array.i
-  OUTPUT_FILE test-array.stderr
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
  TEST_1 CMND diff ARGS -w
@@ -145,7 +134,7 @@ TRIBITS_ADD_ADVANCED_TEST(
 		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.out
  TEST_2 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test-array.stderr.gold
-		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.stderr
+		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.dump
  COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION

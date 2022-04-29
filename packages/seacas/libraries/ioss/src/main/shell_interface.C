@@ -1,12 +1,11 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 #include "Ioss_CodeTypes.h"
-#include "Ioss_FileInfo.h"
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_Sort.h"
 #include "Ioss_Utils.h" // for Utils
@@ -21,24 +20,6 @@
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <string>   // for string, char_traits
 #include <vector>   // for vector
-
-namespace {
-  std::string get_type_from_file(const std::string &filename)
-  {
-    Ioss::FileInfo file(filename);
-    auto           extension = file.extension();
-    if (extension == "e" || extension == "g" || extension == "gen" || extension == "exo") {
-      return "exodus";
-    }
-    else if (extension == "cgns") {
-      return "cgns";
-    }
-    else {
-      // "exodus" is default...
-      return "exodus";
-    }
-  }
-} // namespace
 
 IOShell::Interface::Interface(const std::string &app_version) : version(app_version)
 {
@@ -274,7 +255,7 @@ void IOShell::Interface::enroll_options()
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
                   "Method used to split sidesets into homogeneous blocks\n"
                   "\t\tOptions are: TOPOLOGY, BLOCK, NO_SPLIT",
-                  "TOPOLOGY");
+                  nullptr);
 
   options_.enroll("native_variable_names", Ioss::GetLongOption::NoValue,
                   "Do not lowercase variable names and replace spaces with underscores.\n"
@@ -617,34 +598,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
 
   if (options_.retrieve("copyright") != nullptr) {
     if (my_processor == 0) {
-      fmt::print(stderr,
-                 "\n"
-                 "Copyright(C) 1999-2021 National Technology & Engineering Solutions\n"
-                 "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-                 "NTESS, the U.S. Government retains certain rights in this software.\n\n"
-                 "Redistribution and use in source and binary forms, with or without\n"
-                 "modification, are permitted provided that the following conditions are\n"
-                 "met:\n\n "
-                 "    * Redistributions of source code must retain the above copyright\n"
-                 "      notice, this list of conditions and the following disclaimer.\n\n"
-                 "    * Redistributions in binary form must reproduce the above\n"
-                 "      copyright notice, this list of conditions and the following\n"
-                 "      disclaimer in the documentation and/or other materials provided\n"
-                 "      with the distribution.\n\n"
-                 "    * Neither the name of NTESS nor the names of its\n"
-                 "      contributors may be used to endorse or promote products derived\n"
-                 "      from this software without specific prior written permission.\n\n"
-                 "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-                 "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-                 "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-                 "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-                 "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-                 "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-                 "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-                 "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-                 "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-                 "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-                 "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n");
+      Ioss::Utils::copyright(std::cerr, "1999-2022");
     }
     exit(EXIT_SUCCESS);
   }
@@ -665,10 +619,10 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
 
   // If inFileType and/or outFileType not specified, see if can infer from file suffix type...
   if (inFiletype == "unknown") {
-    inFiletype = get_type_from_file(inputFile[0]);
+    inFiletype = Ioss::Utils::get_type_from_file(inputFile[0]);
   }
   if (outFiletype == "unknown") {
-    outFiletype = get_type_from_file(outputFile);
+    outFiletype = Ioss::Utils::get_type_from_file(outputFile);
   }
   return true;
 }

@@ -44,6 +44,9 @@
 
 //#include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
+#include <Xpetra_Access.hpp>
+
+#include<KokkosKernels_Utils.hpp>
 
 #include <FROSch_Tools_def.hpp>
 
@@ -108,7 +111,7 @@ namespace FROSch {
         int buildGlobalBasisMatrix(ConstXMapPtr rowMap,
                                    ConstXMapPtr rangeMap,
                                    ConstXMapPtr repeatedMap,
-                                   SC treshold);
+                                   SC tresholdDropping);
 
         int clearCoarseSpace();
 

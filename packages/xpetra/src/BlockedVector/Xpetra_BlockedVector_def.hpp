@@ -416,10 +416,10 @@ elementWiseMultiply( Scalar /* scalarAB */,
     XPETRA_TEST_FOR_EXCEPTION(B.getMap()->isSameAs(*(this->getMap())) == false,
                               Xpetra::Exceptions::RuntimeError,
                               "BlockedVector::elementWiseMultipy: B must have same blocked map than this.");
-    TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getNodeNumElements() != B.getMap()->getNodeNumElements(),
+    TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getLocalNumElements() != B.getMap()->getLocalNumElements(),
                                Xpetra::Exceptions::RuntimeError,
                                "BlockedVector::elementWiseMultipy: A has "
-                                 << A.getMap()->getNodeNumElements() << " elements, B has " << B.getMap()->getNodeNumElements()
+                                 << A.getMap()->getLocalNumElements() << " elements, B has " << B.getMap()->getLocalNumElements()
                                  << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(A.getMap()->getGlobalNumElements() != B.getMap()->getGlobalNumElements(),
                                Xpetra::Exceptions::RuntimeError,
@@ -591,6 +591,18 @@ randomize(bool bUseXpetraImplementation)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+randomize(const Scalar& minVal, const Scalar& maxVal, bool bUseXpetraImplementation)
+{
+    for(size_t r = 0; r < this->getBlockedMap()->getNumMaps(); ++r)
+    {
+        getMultiVector(r)->randomize(minVal, maxVal, bUseXpetraImplementation);
+    }
+}
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Xpetra_randomize()
 {
     {
@@ -598,38 +610,16 @@ Xpetra_randomize()
     }
 }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 
-#if 0
-    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<std::is_same<typename dev_execution_space::memory_space,
-                                                      typename TargetDeviceType::memory_space>::value,
-                                typename dual_view_type::t_dev_um,
-                                typename dual_view_type::t_host_um>::type
-    BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    getLocalView() const
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+Xpetra_randomize(const Scalar& minVal, const Scalar& maxVal)
+{
     {
-        if(std::is_same<typename host_execution_space::memory_space, typename TargetDeviceType::memory_space>::value)
-        {
-            return getHostLocalView();
-        }
-        else
-        {
-            return getDeviceLocalView();
-        }
+        Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Xpetra_randomize(minVal, maxVal);
     }
-#endif
-
-//    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//    virtual typename dual_view_type::
-//    t_dev_um BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDeviceLocalView() const
-//    {
-//        typename dual_view_type::t_dev_um test;
-//        return test;
-//    }
-#endif      // HAVE_XPETRA_KOKKOS_REFACTOR
-
+}
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >

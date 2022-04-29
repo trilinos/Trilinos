@@ -98,6 +98,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tQuad8ToQuad4Factory
+  SOURCES tQuad8ToQuad4Factory.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 2
+  COMM serial mpi
+  )
+
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tSolutionReader
 #  SOURCES tSolutionReader.cpp ${UNIT_TEST_DRIVER}
@@ -113,15 +120,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE(
-  SquareMeshGen 
+  SquareMeshGen
   SOURCES SquareMeshGen.cpp
   )
 
-TRIBITS_ADD_EXECUTABLE(
-  ScatterSpeed_Epetra
-  SOURCES   tScatterSpeed_Epetra.cpp
+IF (PANZER_HAVE_EPETRA)
+  TRIBITS_ADD_EXECUTABLE(
+    ScatterSpeed_Epetra
+    SOURCES   tScatterSpeed_Epetra.cpp
   )
-
+ENDIF()
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tUniformRef
 #  SOURCES tUniformRef.cpp ${UNIT_TEST_DRIVER}
@@ -136,7 +144,7 @@ TRIBITS_ADD_EXECUTABLE(
 # files.  So for now we will check to see if ThreadPool is
 # enabled. STK will eventually remove this dependency.
 #
-# 10/18 KDD STK's dependence on ThreadPool has been removed #3463, and 
+# 10/18 KDD STK's dependence on ThreadPool has been removed #3463, and
 # ThreadPool is being removed now #3445.  Yet, without the ThreadPool
 # guard, this test does not build.
 #
@@ -148,13 +156,13 @@ TRIBITS_ADD_EXECUTABLE(
 #    )
 #ENDIF()
 #
-# 10/18 KDD a more appropriate guard for the above test is 
+# 10/18 KDD a more appropriate guard for the above test is
 #IF (${PROJECT_NAME}_ENABLE_STKSearch AND ${PROJECT_NAME}_ENABLE_STKSearchUtil)
 # This guard induces compilation, but the compilation fails for me.
 # This test appears to have fallen into disrepair.  #3719
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(stk_interface_copy
-  SOURCE_FILES basic.gen basic.gen.2.0 basic.gen.2.1 basic3d.gen basic3d.gen.2.0 basic3d.gen.2.1
+  SOURCE_FILES basic.gen basic.gen.2.0 basic.gen.2.1 basic3d.gen basic3d.gen.2.0 basic3d.gen.2.1 twoblock_cube.gen twoblock_cube.gen.2.0 twoblock_cube.gen.2.1 quad8.jou quad8.gen 2block_cylinders_30deg.g 2block_cylinders_30deg.stp
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/meshes"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/meshes"
   EXEDEPS tExodusReaderFactory
@@ -167,6 +175,13 @@ IF(${PACKAGE_NAME}_ENABLE_Pamgen)
     SOURCES tPamgenMeshFactory.cpp ${UNIT_TEST_DRIVER}
     NUM_MPI_PROCS 1
     COMM serial mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tSTKRebalancing
+    SOURCES tSTKRebalancing.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 4
+    COMM mpi
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

@@ -82,13 +82,6 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
   p = Tpetra::createVector<ScalarType>(A->getRangeMap());
   Ap = Tpetra::createVector<ScalarType>(A->getRangeMap());
 
-  int length = r->getLocalLength();
-  for(int i = 0;i<length;i++) {
-    x->replaceLocalValue(i,0);
-    r->replaceLocalValue(i,1);
-    Ap->replaceLocalValue(i,1);
-  }
-
   magnitude_type normr = 0;
   magnitude_type rtrans = 0;
   magnitude_type oldrtrans = 0;
@@ -212,8 +205,6 @@ int run()
   typedef Tpetra::Vector<Scalar,LO,GO,Node>             vec_type;
   typedef Tpetra::Map<LO,GO,Node>                       map_type;
 
-  typedef typename vec_type::mag_type                   mag_type;
-
   //
   // Get the communicator and node
   //
@@ -264,8 +255,7 @@ int run()
                                      map);
   } else {
     typedef Tpetra::Utils::MatrixGenerator<crs_matrix_type> gen_type;
-    b = gen_type::generate_miniFE_vector (nsize, map->getComm ()
-                                         );
+    b = gen_type::generate_miniFE_vector (nsize, map->getComm ());
   }
 
   // The vector x on input is the initial guess for the CG solve.
@@ -316,6 +306,8 @@ int main(int argc, char *argv[]) {
     numgpus = std::atoi(rawKokkosNumDevices);
   int skipgpu = 999;
 
+  bool useSYCL = false;
+  bool useHIP = false;
   bool useCuda = false;
   bool useOpenMP = false;
   bool useThreads = false;
@@ -337,6 +329,12 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("tol_small",&tol_small,"Tolerance for total CG-Time and final residual.");
   cmdp.setOption("tol_large",&tol_large,"Tolerance for individual times.");
   //Only provide the option to use Node types that are actually enabled in this build
+#ifdef HAVE_TPETRA_INST_SYCL
+  cmdp.setOption("sycl","no-sycl",&useSYCL,"Use SYCL node");
+#endif
+  #ifdef HAVE_TPETRA_INST_HIP
+  cmdp.setOption("hip","no-hip",&useHIP,"Use HIP node");
+#endif
 #ifdef HAVE_TPETRA_INST_CUDA
   cmdp.setOption("cuda","no-cuda",&useCuda,"Use Cuda node");
 #endif
@@ -354,8 +352,22 @@ int main(int argc, char *argv[]) {
   }
 
   //If no node type was explicitly requested, use Tpetra's default node
-  if(!useCuda && !useOpenMP && !useThreads && !useSerial)
+  if(!useSYCL && !useHIP && !useCuda && !useOpenMP && !useThreads && !useSerial)
   {
+#ifdef HAVE_TPETRA_INST_SYCL
+    if(std::is_same<default_exec, Kokkos::Experimental::SYCL>::value)
+    {
+      std::cout << "No node specified in command-line args, so using default (SYCL)\n";
+      useSYCL = true;
+    }
+#endif
+#ifdef HAVE_TPETRA_INST_HIP
+    if(std::is_same<default_exec, Kokkos::Experimental::HIP>::value)
+    {
+      std::cout << "No node specified in command-line args, so using default (HIP)\n";
+      useHIP = true;
+    }
+#endif
 #ifdef HAVE_TPETRA_INST_CUDA
     if(std::is_same<default_exec, Kokkos::Cuda>::value)
     {
@@ -399,6 +411,14 @@ int main(int argc, char *argv[]) {
 
   Kokkos::initialize (kokkosArgs);
   {
+#ifdef HAVE_TPETRA_INST_SYCL
+    if(useSYCL)
+      return run<KokkosSYCLWrapperNode>();
+#endif
+#ifdef HAVE_TPETRA_INST_HIP
+    if(useHIP)
+      return run<KokkosHIPWrapperNode>();
+#endif
 #ifdef HAVE_TPETRA_INST_CUDA
     if(useCuda)
       return run<KokkosCudaWrapperNode>();

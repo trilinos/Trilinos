@@ -3,7 +3,6 @@
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/GeometricVertices.hpp>
 #include <stk_balance/internal/StkGeometricMethodViaZoltan.hpp>
-#include <stk_balance/internal/MxNutils.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
@@ -31,7 +30,6 @@
 #include <map>
 
 #include "stk_mesh/base/FieldParallel.hpp"
-#include "stk_tools/mesh_tools/CustomAura.hpp"
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
@@ -173,34 +171,6 @@ void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face,
 
         addBoxForNodes(stkMeshBulkData, numNodes, nodes, coord, eps, stkMeshBulkData.identifier(*element), faceBoxes);
     }
-}
-
-void addEdgeAndVertexWeightsForSearchResult(stk::mesh::BulkData& stkMeshBulkData,
-                                            const BalanceSettings &balanceSettings,
-                                            stk::mesh::EntityId element1Id,
-                                            stk::mesh::EntityId element2Id,
-                                            unsigned owningProcElement2,
-                                            std::vector<GraphEdge>& graphEdges)
-{
-  stk::mesh::EntityKey entityKeyElement1(stk::topology::ELEMENT_RANK, element1Id);
-  stk::mesh::Entity element1 = stkMeshBulkData.get_entity(entityKeyElement1);
-  ThrowRequireWithSierraHelpMsg(stkMeshBulkData.entity_rank(element1) == stk::topology::ELEMENT_RANK);
-
-  if(stkMeshBulkData.is_valid(element1) && stkMeshBulkData.bucket(element1).owned() && element1Id != element2Id)
-  {
-    stk::mesh::EntityKey entityKeyElement2(stk::topology::ELEMENT_RANK, element2Id);
-    stk::mesh::Entity element2 = stkMeshBulkData.get_entity(entityKeyElement2);
-
-    bool anyIntersections = false;
-    if (stkMeshBulkData.is_valid(element2)) {
-      anyIntersections = stk::balance::internal::has_common_nodes_between_elements(stkMeshBulkData, element1, element2);
-    }
-
-    if (!anyIntersections) {
-      double edge_weight = balanceSettings.getGraphEdgeWeightForSearch();
-      graphEdges.push_back(GraphEdge(element1, element2Id, owningProcElement2, edge_weight, true));
-    }
-  }
 }
 
 void
@@ -660,6 +630,26 @@ int num_volume_elements_connected_to_beam(const stk::mesh::BulkData& bulk, stk::
   return numVolumeElems;
 }
 
+
+
+void register_internal_fields(stk::mesh::BulkData & bulk, const stk::balance::BalanceSettings & balanceSettings)
+{
+  if (balanceSettings.shouldFixSpiders()) {
+    stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+    const int initValue = 0;
+
+    stk::mesh::Field<int> & beamField =
+        meta.declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK,
+                                                  balanceSettings.getSpiderBeamConnectivityCountFieldName());
+    stk::mesh::put_field_on_mesh(beamField, meta.universal_part(), &initValue);
+
+    stk::mesh::Field<int> & volumeField =
+        meta.declare_field<stk::mesh::Field<int>>(stk::topology::ELEM_RANK,
+                                                  balanceSettings.getSpiderVolumeConnectivityCountFieldName());
+    stk::mesh::put_field_on_mesh(volumeField, meta.universal_part(), &initValue);
+  }
+}
+
 void fill_spider_connectivity_count_fields(stk::mesh::BulkData & bulk, const BalanceSettings & balanceSettings)
 {
   if (balanceSettings.shouldFixSpiders()) {
@@ -793,14 +783,14 @@ void fill_decomp_using_geometric_method(stk::mesh::BulkData& stkMeshBulkData, co
 }
 
 
-void get_multicriteria_parmetis_decomp(const stk::mesh::BulkData &mesh,
-                                       stk::mesh::Selector selector,
-                                       const stk::ParallelMachine & decompCommunicator,
-                                       const BalanceSettings& balanceSettings,
-                                       const stk::mesh::impl::LocalIdMapper& domainLocalIds,
-                                       Zoltan2ParallelGraph &zoltan2Graph,
-                                       Teuchos::ParameterList &params,
-                                       stk::mesh::EntityProcVec &decomp)
+void get_multicriteria_graph_based_decomp(const stk::mesh::BulkData &mesh,
+                                          stk::mesh::Selector selector,
+                                          const stk::ParallelMachine & decompCommunicator,
+                                          const BalanceSettings& balanceSettings,
+                                          const stk::mesh::impl::LocalIdMapper& domainLocalIds,
+                                          Zoltan2ParallelGraph &zoltan2Graph,
+                                          Teuchos::ParameterList &params,
+                                          stk::mesh::EntityProcVec &decomp)
 
 {
   StkMeshZoltanAdapter stkMeshAdapter(zoltan2Graph);
@@ -1025,8 +1015,6 @@ stk::mesh::EntityProcMap determine_global_new_owner(const stk::mesh::BulkData & 
 
 void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & bulk)
 {
-  stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(bulk, bulk.mesh_meta_data().globally_shared_part(), "customAura");
-
   stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   const stk::mesh::Field<int> & beamConnectivityCountField = *balanceSettings.getSpiderBeamConnectivityCountField(bulk);
 
@@ -1093,7 +1081,6 @@ void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::Bul
     }
   }
 
-  stk::tools::destroy_custom_aura(bulk, customAura);
   bulk.change_entity_owner(entitiesToMove);
 }
 
@@ -1157,12 +1144,12 @@ void createZoltanParallelGraph(stk::mesh::BulkData & stkMeshBulkData,
   }
 }
 
-void fill_decomp_using_parmetis(stk::mesh::BulkData & stkMeshBulkData,
-                                const std::vector<stk::mesh::Selector> & selectors,
-                                const stk::ParallelMachine & decompCommunicator,
-                                const int numSubdomainsToCreate,
-                                const BalanceSettings & balanceSettings,
-                                stk::mesh::EntityProcVec & decomp)
+void fill_decomp_using_graph_based_method(stk::mesh::BulkData & stkMeshBulkData,
+                                          const std::vector<stk::mesh::Selector> & selectors,
+                                          const stk::ParallelMachine & decompCommunicator,
+                                          const int numSubdomainsToCreate,
+                                          const BalanceSettings & balanceSettings,
+                                          stk::mesh::EntityProcVec & decomp)
 {
 #if defined(WRITE_OUT_DEBUGGING_INFO) || defined(WRITE_OUT_DECOMP_METRICS)
   static int step = 0;
@@ -1182,15 +1169,15 @@ void fill_decomp_using_parmetis(stk::mesh::BulkData & stkMeshBulkData,
     stk::mesh::Selector selectUnion = stk::mesh::selectUnion(selectors);
     Zoltan2ParallelGraph zoltan2Graph;
     createZoltanParallelGraph(stkMeshBulkData, selectUnion, decompCommunicator, balanceSettings, zoltan2Graph);
-    get_multicriteria_parmetis_decomp(stkMeshBulkData, selectUnion, decompCommunicator, balanceSettings,
-                                      localIds, zoltan2Graph, params, decomp);
+    get_multicriteria_graph_based_decomp(stkMeshBulkData, selectUnion, decompCommunicator, balanceSettings,
+                                         localIds, zoltan2Graph, params, decomp);
   }
   else {
     for (const stk::mesh::Selector & selector : selectors) {
       Zoltan2ParallelGraph zoltan2Graph;
       createZoltanParallelGraph(stkMeshBulkData, selector, decompCommunicator, balanceSettings, zoltan2Graph);
-      get_multicriteria_parmetis_decomp(stkMeshBulkData, selector, decompCommunicator, balanceSettings,
-                                        localIds, zoltan2Graph, params, decomp);
+      get_multicriteria_graph_based_decomp(stkMeshBulkData, selector, decompCommunicator, balanceSettings,
+                                           localIds, zoltan2Graph, params, decomp);
     }
   }
 
@@ -1269,7 +1256,8 @@ bool is_geometric_method(const std::string& method)
 
 bool is_graph_based_method(const std::string& method)
 {
-  return (method == "parmetis");
+  return (method == "parmetis" ||
+          method == "scotch");
 }
 
 void calculateGeometricOrGraphBasedDecomp(stk::mesh::BulkData & stkMeshBulkData,
@@ -1290,12 +1278,8 @@ void calculateGeometricOrGraphBasedDecomp(stk::mesh::BulkData & stkMeshBulkData,
                                          localIds, decomp);
     }
     else if (is_graph_based_method(balanceSettings.getDecompMethod())) {
-      stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(stkMeshBulkData,
-                                                                        stkMeshBulkData.mesh_meta_data().globally_shared_part(),
-                                                                        "customAura");
       internal::fill_spider_connectivity_count_fields(stkMeshBulkData, balanceSettings);
-      fill_decomp_using_parmetis(stkMeshBulkData, selectors, decompCommunicator, numSubdomainsToCreate, balanceSettings, decomp);
-      stk::tools::destroy_custom_aura(stkMeshBulkData, customAura);
+      fill_decomp_using_graph_based_method(stkMeshBulkData, selectors, decompCommunicator, numSubdomainsToCreate, balanceSettings, decomp);
     }
   }
   else {
@@ -1391,6 +1375,25 @@ void print_rebalance_metrics(const size_t num_global_entity_migrations, const si
     oss.str("");
     oss << "Max/Avg global entity migrations = " << max_global_entity_migrations/avg_global_entity_migrations;
     stk::balance::internal::logMessage(stkMeshBulkData.parallel(),oss.str());
+}
+
+EnableAura::EnableAura(stk::mesh::BulkData & bulk)
+  : m_bulk(bulk),
+    m_weTurnedOnAura(false)
+{
+  if (not bulk.is_automatic_aura_on()) {
+    const bool applyImmediately = true;
+    m_bulk.set_automatic_aura_option(stk::mesh::BulkData::AUTO_AURA, applyImmediately);
+    m_weTurnedOnAura = true;
+  }
+}
+
+EnableAura::~EnableAura()
+{
+  if (m_weTurnedOnAura) {
+    const bool applyImmediately = true;
+    m_bulk.set_automatic_aura_option(stk::mesh::BulkData::NO_AUTO_AURA, applyImmediately);
+  }
 }
 
 } //internal

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -66,7 +66,7 @@ namespace Ioss {
  *  \returns A pointer to the newly-constructed Ioss::DatabaseIO object, or NULL if unsuccessful.
  */
 Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::string &filename,
-                                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                                          Ioss::DatabaseUsage db_usage, Ioss_MPI_Comm communicator,
                                           const Ioss::PropertyManager &properties)
 {
   IOSS_FUNC_ENTER(m_);
@@ -118,17 +118,33 @@ int Ioss::IOFactory::describe(NameList *names)
   return describe__(registry(), names);
 }
 
+/** \brief Get the names of database formats known to IOSS.
+ *
+ *  \returns The list of known database format names.
+ */
+Ioss::NameList Ioss::IOFactory::describe()
+{
+  Ioss::NameList names;
+  describe(&names);
+  return names;
+}
+
 std::string Ioss::IOFactory::show_configuration()
 {
   std::stringstream config;
   fmt::print(config, "IOSS Library Version '{}'\n\n", Ioss::Version());
-  NameList db_types;
-  describe(&db_types);
+  NameList db_types = describe();
   fmt::print(config, "Supported database types:\n\t{}\n", fmt::join(db_types, ", "));
 
 #if defined(SEACAS_HAVE_MPI)
   fmt::print(config, "\nSupported decomposition methods:\n\t{}\n",
              fmt::join(Ioss::valid_decomp_methods(), ", "));
+  {
+    char version[MPI_MAX_LIBRARY_VERSION_STRING];
+    int  length = 0;
+    MPI_Get_library_version(version, &length);
+    fmt::print(config, "MPI Version: {}\n", version);
+  }
 #endif
 
   fmt::print(config, "\nThird-Party Library Configuration Information:\n\n");

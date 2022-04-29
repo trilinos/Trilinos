@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+tribits_package_define_dependencies(
   LIB_OPTIONAL_PACKAGES Teuchos Stokhos Epetra EpetraExt
   TEST_OPTIONAL_TPLS ADOLC CppUnit
   )

@@ -8,15 +8,15 @@
 #define Iovs_cgns_DatabaseIO_h
 
 #include <Ioss_DatabaseIO.h>
-#include <Iovs_Utils.h>
 
 namespace Iovs_cgns {
+  class CatalystCGNSMeshBase;
 
   class DatabaseIO : public Ioss::DatabaseIO
   {
   public:
     DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
-               MPI_Comm communicator, const Ioss::PropertyManager &props);
+               Ioss_MPI_Comm communicator, const Ioss::PropertyManager &props);
 
     ~DatabaseIO() override;
 

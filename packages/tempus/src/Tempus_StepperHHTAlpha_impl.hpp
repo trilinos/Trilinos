@@ -409,7 +409,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
         Thyra::put_scalar(0.0, a_init.ptr());
       }
       wrapperModel->initializeNewmark(v_init,d_init,0.0,time,beta_,gamma_);
-      const Thyra::SolveStatus<Scalar> sStatus=this->solveImplicitODE(a_init);
+      const Thyra::SolveStatus<Scalar> sStatus=(*(this->solver_)).solve(&*a_init);
 
       workingState->setSolutionStatus(sStatus);  // Converged --> pass.
       Thyra::copy(*a_init, a_old.ptr());
@@ -439,7 +439,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
       StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
     //Solve for new acceleration
-    const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
+    const Thyra::SolveStatus<Scalar> sStatus = (*(this->solver_)).solve(&*a_new);
 
     stepperHHTAlphaAppAction_->execute(solutionHistory, thisStepper,
       StepperHHTAlphaAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
@@ -488,17 +488,18 @@ void StepperHHTAlpha<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
 
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
 
-  out << std::endl;
-  Stepper<Scalar>::describe(out, verbLevel);
-  StepperImplicit<Scalar>::describe(out, verbLevel);
+  *l_out << std::endl;
+  Stepper<Scalar>::describe(*l_out, verbLevel);
+  StepperImplicit<Scalar>::describe(*l_out, verbLevel);
 
-  auto l_out = Teuchos::fancyOStream( out.getOStream() );
-  l_out->setOutputToRootOnly(0);
   *l_out << "--- StepperHHTAlpha ---\n";
   *l_out << "  schemeName_ = " << schemeName_ << std::endl;
   *l_out << "  beta_       = " << beta_       << std::endl;
@@ -512,6 +513,7 @@ void StepperHHTAlpha<Scalar>::describe(
 template<class Scalar>
 bool StepperHHTAlpha<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;

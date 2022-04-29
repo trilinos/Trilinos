@@ -164,6 +164,8 @@ TEST_F( MeshOperations, PerformanceTimings )
 {
   const unsigned NUM_RUNS = 30;
 
+  stk::parallel_machine_barrier(get_comm());
+
   parse_filename_args();
 
   for (unsigned run=0; run<NUM_RUNS; run++) {

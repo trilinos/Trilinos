@@ -44,10 +44,14 @@
 /// \brief Declaration of function for getting local row offsets from
 ///   a Tpetra::RowGraph.
 
+#include "TpetraCore_config.h"
 #include "Tpetra_CrsGraph_fwd.hpp"
 #include "Tpetra_RowGraph_fwd.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include <utility> // pair
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE 
+// This file can be deleted when deprecated code is removed
 
 namespace Tpetra {
 namespace Details {
@@ -56,13 +60,13 @@ namespace Details {
 template <class NT>
 struct LocalRowOffsetsResult {
 private:
-  using local_graph_type =
+  using local_graph_device_type =
     typename KokkosSparse::CrsMatrix<
       double, int, typename NT::device_type, void, size_t>::
         staticcrsgraph_type;
 public:
   using offsets_type =
-    typename local_graph_type::row_map_type::non_const_type;
+    typename local_graph_device_type::row_map_type::non_const_type;
   using offset_type = typename offsets_type::non_const_value_type;
 
   offsets_type ptr; //!< Local row offsets (Kokkos::View)
@@ -95,4 +99,5 @@ localRowOffsets (const RowGraph<LO, GO, NT>& G);
 } // namespace Details
 } // namespace Tpetra
 
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 #endif // TPETRA_DETAILS_LOCALROWOFFSETS_DECL_HPP

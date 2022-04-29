@@ -6,19 +6,15 @@ models.
 
 As I see it, it does the following for the interpolation:
 
- * For all blocks
-
-   * For all time steps
-
-     * For all nodal variables
-       * Iterate all nodes in this block; map from A->B
-       * Write values for *all* B nodes at this step for this variable
-
-   * For all time steps
-
-     * For all element variables
-       * Iterate all elements in this block; map from A->B
-       * Write values for all elements in this block at this step for this variable
+ *   For all blocks
+   *   For all time steps
+     *   For all nodal variables
+       *   Iterate all nodes in this block; map from A->B
+       *   Write values for *all*  B nodes at this step for this variable
+   *   For all time steps
+     *   For all element variables
+       *   Iterate all elements in this block; map from A->B
+       *   Write values for all elements in this block at this step for this variable
 
 This works for element variables since the exodus API can output
 elements a block and variable at a time.  For nodes, it doesn't work
@@ -36,9 +32,9 @@ shared between multiple element blocks -- it will only get the
 interpolated value from the last block.
 
 Now, what to do...
- * I think that the Percept code can do some mapping from mesh to mesh...
- * Klugy, but can do a timestep at a time and then rejoin all timesteps using `conjoin`
- * Klugy, but can subset down to one block / mesh and then run mapvar on each submesh and then join using `ejoin`
+*   I think that the Percept code can do some mapping from mesh to mesh...
+*   Klugy, but can do a timestep at a time and then rejoin all timesteps using `conjoin`
+*   Klugy, but can subset down to one block / mesh and then run mapvar on each submesh and then join using `ejoin`
 
 Sorry for the bearer of bad news, but hopefully there is a path to get
 done what you need...

@@ -43,8 +43,7 @@
 # tribits implementation to use in {PROJECT_NAME}_TRIBITS_DIR.
 #
 
-
-SET(CMAKE_MODULE_PATH
+set(CMAKE_MODULE_PATH
    ${CMAKE_CURRENT_SOURCE_DIR}
    ${CMAKE_CURRENT_SOURCE_DIR}/cmake
    ${${PROJECT_NAME}_TRIBITS_DIR}/core/utils
@@ -54,56 +53,57 @@ SET(CMAKE_MODULE_PATH
    ${${PROJECT_NAME}_TRIBITS_DIR}/core/installation
    )
 
-IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-  MESSAGE("CMAKE_MODULE_PATH='${CMAKE_MODULE_PATH}'")
-ENDIF()
+if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+  message("CMAKE_MODULE_PATH='${CMAKE_MODULE_PATH}'")
+endif()
 
-INCLUDE(TribitsConstants)
-TRIBITS_ASESRT_MINIMUM_CMAKE_VERSION()
-INCLUDE(TribitsCMakePolicies)
+include(TribitsConstants)
+tribits_asesrt_minimum_cmake_version()
+include(TribitsCMakePolicies)
 
-INCLUDE(TribitsIncludeDirectories)
-INCLUDE(TribitsFindPythonInterp)
-INCLUDE(TribitsGlobalMacros)
-INCLUDE(TribitsConfigureCTestCustom)
-INCLUDE(TribitsGenerateResourceSpecFile)
+include(TribitsIncludeDirectories)
+include(TribitsFindPythonInterp)
+include(TribitsGlobalMacros)
+include(TribitsConfigureCTestCustom)
+include(TribitsGenerateResourceSpecFile)
+include(TribitsPrintDependencyInfo)
 
-INCLUDE(AdvancedSet)
-INCLUDE(AdvancedOption)
-INCLUDE(TimingUtils)
-INCLUDE(SetDefault)
+include(AdvancedSet)
+include(AdvancedOption)
+include(TimingUtils)
+include(SetDefault)
 
 
 #
 # Defines a TriBITS project (the guts).
 #
 
-MACRO(TRIBITS_PROJECT_IMPL)
+macro(tribits_project_impl)
 
   #
   # A) Basic top-level TriBITS project stuff
   #
 
-  MESSAGE("")
-  MESSAGE("Configuring ${PROJECT_NAME} build directory")
-  MESSAGE("")
+  message("")
+  message("Configuring ${PROJECT_NAME} build directory")
+  message("")
 
   # A.1) Set some basic system vars and info you can't change
-  TRIBITS_ASSERT_AND_SETUP_PROJECT_AND_STATIC_SYSTEM_VARS()
+  tribits_assert_and_setup_project_and_static_system_vars()
 
   # A.2) Read user provided options from specified files.  It is important to
   # process these files *very* early on so that they have the same basic
   # effect of setting these variables directly in the cache.
-  TRIBITS_READ_IN_OPTIONS_FROM_FILE()
+  tribits_read_in_options_from_file()
 
   # A.3) Get some other basic system info that is useful early on in
   # configuration
-  TRIBITS_SETUP_BASIC_SYSTEM_VARS()
-  TRIBITS_FIND_PYTHON_INTERP()
-  FIND_PACKAGE(Git)
-  IF (NOT "${GIT_VERSION_STRING_OVERRIDE}" STREQUAL "")
-    SET(GIT_VERSION_STRING ${GIT_VERSION_STRING_OVERRIDE}) # For testing!
-  ENDIF()
+  tribits_setup_basic_system_vars()
+  tribits_find_python_interp()
+  find_package(Git)
+  if (NOT "${GIT_VERSION_STRING_OVERRIDE}" STREQUAL "")
+    set(GIT_VERSION_STRING ${GIT_VERSION_STRING_OVERRIDE}) # For testing!
+  endif()
 
   #
   # A.4) Read in the Project's version file
@@ -112,114 +112,103 @@ MACRO(TRIBITS_PROJECT_IMPL)
   # read because the variables defined in Version.cmake provide defaults for
   # many of these options.
   #
-  TRIBITS_PROJECT_READ_VERSION_FILE(${PROJECT_SOURCE_DIR})
+  tribits_project_read_version_file(${PROJECT_SOURCE_DIR})
 
   # Since the version header file is now configured the root build
   # dir needs to be on the include path
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+  include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
   #
   # B) Set up user options and global variables that will be used throughout
   #
 
-  MESSAGE("")
-  MESSAGE("Setting up major user options ...")
-  MESSAGE("")
+  message("")
+  message("Setting up major user options ...")
+  message("")
 
-  TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()
+  tribits_define_global_options_and_define_extra_repos()
 
   # Have to start timing after we read in the major options since that
   # determines the timing option var.
-  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    TIMER_GET_RAW_SECONDS(GLOBAL_TIME_START_SECONDS)
-  ENDIF()
+  tribits_config_code_start_timer(GLOBAL_TIME_START_SECONDS)
 
-  TRIBITS_READ_IN_NATIVE_REPOSITORIES()
+  tribits_read_in_native_repositories()
 
-  TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS()
+  tribits_combine_native_and_extra_repos()
 
-  TRIBITS_PROCESS_EXTRA_REPOS_OPTIONS_FILES()
+  tribits_process_extra_repos_options_files()
 
-  INCLUDE(TribitsInstallationTestingMacros)
-  TRIBITS_FIND_PROJECT_INSTALL()
+  include(TribitsInstallationTestingMacros)
+  tribits_find_project_install()
 
   #
   # C) Generate version info file and read in ${PROJECT_NAME} packages and
   # TPLs and process dependencies
   #
 
-  TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL()
+  tribits_generate_repo_version_output_and_file_and_install()
 
   # Read in and process all of the project's package, TPL, listss and
-  # dependency definition files.  The order these are read in are:
-  #
-  # * Read in all PackagesList.cmake and TPLsList.cmake files for all
-  #   native and extra repos in repo order.
-  # * Process each repos's cmake/RepositoryDependenciesSetup.cmake file
-  #   in repo order.
-  # * Process the project's cmake/cmake/ProjectDependenciesSetup.cmake
-  # * Process each package's Dependencies.cmake file.  If a package a subpackages,
-  #   The subpackage Dependencies.cmake files are read before setting up the
-  #   parent package's dependenices.
-  #
-  TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
+  # dependency definition files.
+  tribits_read_all_project_deps_files_create_deps_graph()
+  tribits_print_initial_dependency_info()
+  tribits_write_xml_dependency_files_if_supported()
 
   #
-  # D) Apply dependency logic to enable and disable TriBITS packages packages
-  # and tests
+  # D) Apply dependency logic to enable and disable TriBITS packages and tests
   #
 
-  TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
+  tribits_adjust_and_print_package_dependencies()
 
   #
-  # E) Stop after all dependencies handling is finished if asked.
+  # E) Stop after all dependencies handling is finished if asked
   #
 
-  IF (${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
-    MESSAGE("")
-    MESSAGE("Shortcircuiting after dependency tracking ...")
-    RETURN()
-  ENDIF()
+  if (${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
+    message("")
+    message("Shortcircuiting after dependency tracking ...")
+    return()
+  endif()
 
   #
   # F) Set up the environment on this computer
   #
 
-  MESSAGE("")
-  MESSAGE("Probing the environment ...")
-  MESSAGE("")
+  message("")
+  message("Probing the environment ...")
+  message("")
 
-  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
-    TRIBITS_SETUP_ENV()
-  ELSE()
-    MESSAGE("-- Skipping env setup due to"
+  if (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    tribits_setup_env()
+  else()
+    message("-- Skipping env setup due to"
       " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
-  ENDIF()
+  endif()
 
   #
   # G) Go get the information for all enabled TPLS
   #
 
-  MESSAGE("")
-  MESSAGE("Getting information for all enabled TPLs ...")
-  MESSAGE("")
+  message("")
+  message("Getting information for all enabled TPLs ...")
+  message("")
 
-  TRIBITS_PROCESS_ENABLED_TPLS()
+  tribits_process_enabled_tpls()
 
   #
   # H) Set up for testing with CTest and ${PROJECT_NAME} test harness
   #
 
-  MESSAGE("")
-  MESSAGE("Setting up testing support ...")
-  MESSAGE("")
+  message("")
+  message("Setting up testing support ...")
+  message("")
 
-  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
-    TRIBITS_INCLUDE_CTEST_SUPPORT()
-  ELSE()
-    MESSAGE("-- Skipping testing support setup due to"
+  if (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    tribits_include_ctest_support()
+  else()
+    message("-- Skipping testing support setup due to"
       " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
-  ENDIF()
+  endif()
 
   #
   # I) Add the 'dashboard' target
@@ -227,139 +216,130 @@ MACRO(TRIBITS_PROJECT_IMPL)
   # NOTE: Must come after setting up for testing
   #
 
-  SET(TRIBITS_ADD_DASHBOARD_TARGET_MODULE
+  set(TRIBITS_ADD_DASHBOARD_TARGET_MODULE
     ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CTEST_DRIVER_DIR}/TribitsAddDashboardTarget.cmake
     )
-  IF (
+  if (
     EXISTS ${TRIBITS_ADD_DASHBOARD_TARGET_MODULE}
     AND
     NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY
     )
-    INCLUDE(${TRIBITS_ADD_DASHBOARD_TARGET_MODULE})
-    TRIBITS_ADD_DASHBOARD_TARGET()
-  ENDIF()
+    include(${TRIBITS_ADD_DASHBOARD_TARGET_MODULE})
+    tribits_add_dashboard_target()
+  endif()
 
   #
   # J) Configure individual packages
   #
 
-  MESSAGE("")
-  MESSAGE("Configuring individual enabled ${PROJECT_NAME} packages ...")
-  MESSAGE("")
+  message("")
+  message("Configuring individual enabled ${PROJECT_NAME} packages ...")
+  message("")
 
-  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
-    TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES(
+  if (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    tribits_repository_configure_all_version_header_files(
       ${${PROJECT_NAME}_ALL_REPOSITORIES})
-    TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_DATE_FILES(
+    tribits_repository_configure_all_version_date_files(
       ${${PROJECT_NAME}_ALL_REPOSITORIES})
-  ENDIF()
+  endif()
 
-  TRIBITS_CONFIGURE_ENABLED_PACKAGES()
+  tribits_configure_enabled_packages()
 
   #
   # K) Write dummy makefiles for Ninja
   #
 
-  IF (CMAKE_GENERATOR STREQUAL "Ninja")
+  if (CMAKE_GENERATOR STREQUAL "Ninja")
 
-    IF (${PROJECT_NAME}_WRITE_NINJA_MAKEFILES)
+    if (${PROJECT_NAME}_WRITE_NINJA_MAKEFILES)
 
-      MESSAGE("")
-      MESSAGE("Generating dummy makefiles in each directory to call Ninja ...")
-      MESSAGE("")
+      message("")
+      message("Generating dummy makefiles in each directory to call Ninja ...")
+      message("")
   
-      IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-        TIMER_GET_RAW_SECONDS(NINJA_MAKEFILES_TIME_START_SECONDS)
-      ENDIF()
+      tribits_config_code_start_timer(NINJA_MAKEFILES_TIME_START_SECONDS)
   
-      INCLUDE(GenerateNinjaMakefiles)
-      GENERATE_NINJA_MAKEFILES(${CMAKE_SOURCE_DIR})
+      include(GenerateNinjaMakefiles)
+      generate_ninja_makefiles(${CMAKE_SOURCE_DIR})
   
-      IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-        TIMER_GET_RAW_SECONDS(NINJA_MAKEFILES_TIME_END_SECONDS)
-        TIMER_PRINT_REL_TIME(${NINJA_MAKEFILES_TIME_START_SECONDS}
-         ${NINJA_MAKEFILES_TIME_END_SECONDS}
-           "Total time generate Ninja makefiles ${PROJECT_NAME}")
-      ENDIF()
+      tribits_config_code_stop_timer(NINJA_MAKEFILES_TIME_START_SECONDS
+         "Total time generate Ninja makefiles ${PROJECT_NAME}")
 
-    ELSE()
+    else()
 
-      MESSAGE("\nNOTE: *NOT* generating dummy Ninja makefiles (see above note"
+      message("\nNOTE: *NOT* generating dummy Ninja makefiles (see above note"
         " and check CMake version)")
 
-    ENDIF()
+    endif()
 
 
-  ENDIF()
+  endif()
 
   #
   # L) Setup for packaging and distribution
   #
 
-  IF (${PROJECT_NAME}_ENABLE_CPACK_PACKAGING)
-    MESSAGE("")
-    MESSAGE("Set up for creating a distribution ...")
-    MESSAGE("")
-    IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
-      TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION()
-    ELSE()
-      MESSAGE("-- Skipping distribution setup due to"
+  if (${PROJECT_NAME}_ENABLE_CPACK_PACKAGING)
+    message("")
+    message("Set up for creating a distribution ...")
+    message("")
+    if (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+      tribits_setup_packaging_and_distribution()
+    else()
+      message("-- Skipping distribution setup due to"
         " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
-    ENDIF()
-  ELSE()
-    MESSAGE("")
-    MESSAGE("Skipping setup for distribution because"
+    endif()
+  else()
+    message("")
+    message("Skipping setup for distribution because"
       " ${PROJECT_NAME}_ENABLE_CPACK_PACKAGING=OFF")
-    MESSAGE("")
-  ENDIF()
+    message("")
+  endif()
 
   #
   # M) Set up for installation
   #
 
-  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
-    TRIBITS_SETUP_FOR_INSTALLATION()
-  ENDIF()
+  if (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    tribits_setup_for_installation()
+  endif()
 
   #
   # N) Generate resource spec file if applicable
   #
 
-  TRIBITS_GENERATE_CTEST_RESOURCE_SPEC_FILE_PROJECT_LOGIC()
+  tribits_generate_ctest_resource_spec_file_project_logic()
 
   #
   # O) Show final timing and end
   #
 
-  MESSAGE("")
-  MESSAGE("Finished configuring ${PROJECT_NAME}!")
-  MESSAGE("")
-  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    TIMER_GET_RAW_SECONDS(GLOBAL_TIME_STOP_SECONDS)
-    TIMER_PRINT_REL_TIME(${GLOBAL_TIME_START_SECONDS}  ${GLOBAL_TIME_STOP_SECONDS}
-      "Total time to configure ${PROJECT_NAME}")
-  ENDIF()
+  message("")
+  message("Finished configuring ${PROJECT_NAME}!")
+  message("")
+  tribits_config_code_stop_timer(GLOBAL_TIME_START_SECONDS
+    "Total time to configure ${PROJECT_NAME}")
 
-ENDMACRO()
+endmacro()
 
 
 #
-# @MACRO: TRIBITS_PROJECT_ENABLE_ALL()
+# @MACRO: tribits_project_enable_all()
 #
 # Process a project where you enable all of the packages by default.
 #
 # Usage::
 #
-#   TRIBITS_PROJECT_ENABLE_ALL()
+#   tribits_project_enable_all()
 #
 # This macro just sets the global cache var
 # `${PROJECT_NAME}_ENABLE_ALL_PACKAGES`_ to ``ON`` by default then calls
-# `TRIBITS_PROJECT()`_.  That is all.  This macro is generally used for
+# `tribits_project()`_.  That is all.  This macro is generally used for
 # TriBITS projects that have just a single package or by default just want to
 # enable all packages.  This is especially useful when you have a TriBITS
 # project with just a single package.
 #
-MACRO(TRIBITS_PROJECT_ENABLE_ALL)
-  SET(${PROJECT_NAME}_ENABLE_ALL_PACKAGES ON CACHE BOOL "Enable all by default" )
-  TRIBITS_PROJECT_IMPL(${ARGN})
-ENDMACRO()
+macro(tribits_project_enable_all)
+  set(${PROJECT_NAME}_ENABLE_ALL_PACKAGES ON CACHE BOOL "Enable all by default" )
+  tribits_project_impl(${ARGN})
+endmacro()

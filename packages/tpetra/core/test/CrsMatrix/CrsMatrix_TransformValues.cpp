@@ -80,10 +80,10 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap =
       rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
 
-    crs_matrix_type matrix (rowMap, 1, Tpetra::StaticProfile);
+    crs_matrix_type matrix (rowMap, 1);
 
     out << "Fill matrix by calling insertGlobalValues" << endl;
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -113,7 +113,7 @@ namespace { // (anonymous)
 
     // Use transformLocalValues to change entries of the matrix.
     matrix.resumeFill ();
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -135,46 +135,26 @@ namespace { // (anonymous)
     TEST_EQUALITY_CONST( gblSuccess, 1 );
 
     // Make sure that the values actually got changed.
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
         const LO lclCol = colMap->getLocalElement (gblRow);
 
-        Teuchos::ArrayView<const LO> lclIndsT;
-        Teuchos::ArrayView<const Scalar> valsT;
+        typename crs_matrix_type::local_inds_host_view_type lclIndsT;
+        typename crs_matrix_type::values_host_view_type valsT;
 
         matrix.getLocalRowView (lclRow, lclIndsT, valsT);
         TEST_EQUALITY( lclIndsT[0], lclCol );
         TEST_EQUALITY( valsT[0], SIX );
 
-        LO rawNumEnt = 0;
-        const Scalar* rawValsT = NULL;
-        const LO* rawLclIndsT = NULL;
-        const LO err = matrix.getLocalRowView (lclRow, rawNumEnt, rawValsT, rawLclIndsT);
-        TEST_EQUALITY( err, static_cast<LO> (0) );
-        if (err == 0) {
-          TEST_EQUALITY( rawNumEnt, static_cast<LO> (lclIndsT.size ()) );
-          if (rawNumEnt == static_cast<LO> (lclIndsT.size ())) {
-            TEST_ASSERT( rawLclIndsT != NULL );
-            if (rawLclIndsT != NULL) {
-              TEST_EQUALITY( rawLclIndsT[0], lclIndsT[0] );
-            }
-          }
-          if (rawNumEnt == static_cast<LO> (valsT.size ())) {
-            TEST_ASSERT( rawValsT != NULL );
-            if (rawValsT != NULL) {
-              TEST_EQUALITY( rawValsT[0], valsT[0] );
-            }
-          }
-        }
       }
     }
 
     // Again, use transformLocalValues to change entries of the
     // matrix, but use a different binary function this time.
     matrix.resumeFill ();
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -189,14 +169,14 @@ namespace { // (anonymous)
     matrix.fillComplete ();
 
     // Make sure that the values actually got changed.
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
         const LO lclCol = colMap->getLocalElement (gblRow);
 
-        Teuchos::ArrayView<const LO> lclIndsT;
-        Teuchos::ArrayView<const Scalar> valsT;
+        typename crs_matrix_type::local_inds_host_view_type lclIndsT;
+        typename crs_matrix_type::values_host_view_type valsT;
 
         matrix.getLocalRowView (lclRow, lclIndsT, valsT);
         TEST_EQUALITY( lclIndsT[0], lclCol );
@@ -252,10 +232,10 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap =
       rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
 
-    crs_matrix_type matrix (rowMap, 1, Tpetra::StaticProfile);
+    crs_matrix_type matrix (rowMap, 1);
 
     out << "Fill matrix by calling insertGlobalValues" << endl;
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -281,7 +261,7 @@ namespace { // (anonymous)
     Kokkos::View<GO*, HD> gblInds ("gblInds", 1);
     Kokkos::View<ST*, HD> vals ("vals", 1);
 
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -302,14 +282,14 @@ namespace { // (anonymous)
     TEST_EQUALITY_CONST( gblSuccess, 1 );
 
     out << "Before calling fillComplete, test the values" << endl;
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
         const LO gblCol = gblRow;
 
-        Teuchos::ArrayView<const GO> gblIndsT;
-        Teuchos::ArrayView<const Scalar> valsT;
+        typename crs_matrix_type::global_inds_host_view_type gblIndsT;
+        typename crs_matrix_type::values_host_view_type valsT;
 
         matrix.getGlobalRowView (gblRow, gblIndsT, valsT);
         TEST_EQUALITY( gblIndsT[0], gblCol );
@@ -341,7 +321,7 @@ namespace { // (anonymous)
     Kokkos::View<LO*, HD> lclInds ("lclInds", 1);
     auto colMap = matrix.getColMap ();
     matrix.resumeFill ();
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
@@ -363,14 +343,14 @@ namespace { // (anonymous)
     TEST_EQUALITY_CONST( gblSuccess, 1 );
 
     // Make sure that the values actually got changed.
-    if (rowMap->getNodeNumElements () != 0) {
+    if (rowMap->getLocalNumElements () != 0) {
       for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         const GO gblRow = rowMap->getGlobalElement (lclRow);
         const LO lclCol = colMap->getLocalElement (gblRow);
 
-        Teuchos::ArrayView<const LO> lclIndsT;
-        Teuchos::ArrayView<const Scalar> valsT;
+        typename crs_matrix_type::local_inds_host_view_type lclIndsT;
+        typename crs_matrix_type::values_host_view_type valsT;
 
         matrix.getLocalRowView (lclRow, lclIndsT, valsT);
         TEST_EQUALITY( lclIndsT[0], lclCol );

@@ -90,7 +90,7 @@ tpetraToEpetraMap (const Tpetra::Map<LO, GO, NT>& map_t,
                    const Epetra_Comm& comm_e)
 {
   const int gblNumInds = static_cast<int> (map_t.getGlobalNumElements ());
-  const int lclNumInds = static_cast<int> (map_t.getNodeNumElements ());
+  const int lclNumInds = static_cast<int> (map_t.getLocalNumElements ());
   const int indexBase = static_cast<int> (map_t.getIndexBase ());
 
   if (map_t.isContiguous ()) {
@@ -380,17 +380,20 @@ tpetraToEpetraCrsMatrix (const Tpetra::CrsMatrix<double, LO, GO, NT>& A_t,
   // We can use static profile, since we know the structure in advance.
   Epetra_CrsMatrix A_e (Copy, rowMap, colMap, numEntPerRow.data (), true);
 
-  Teuchos::Array<LO> lclColIndsBuf (A_t.getNodeMaxNumRowEntries ());
-  Teuchos::Array<double> valsBuf (A_t.getNodeMaxNumRowEntries ());
+  using tmatrix_t = Tpetra::CrsMatrix<double, LO, GO, NT>;
+
+  typename tmatrix_t::nonconst_local_inds_host_view_type 
+           lclColInds ("ifpack2::lclColInds", A_t.getLocalMaxNumRowEntries());
+  typename tmatrix_t::nonconst_values_host_view_type 
+           vals ("ifpack2::vals", A_t.getLocalMaxNumRowEntries());
+
   int lclErrCode = 0;
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
     size_t numEnt = A_t.getNumEntriesInLocalRow (lclRow);
-    Teuchos::ArrayView<LO> lclColInds = lclColIndsBuf (0, numEnt);
-    Teuchos::ArrayView<double> vals = valsBuf (0, numEnt);
 
     A_t.getLocalRowCopy (static_cast<LO> (lclRow), lclColInds, vals, numEnt);
     lclErrCode = A_e.InsertMyValues (lclRow, static_cast<int> (numEnt),
-      vals.getRawPtr (), lclColInds.getRawPtr ());
+      vals.data(), lclColInds.data());
     if (lclErrCode != 0) {
       break;
     }
@@ -880,8 +883,7 @@ gatherCrsMatrixAndMultiVector (LO& errCode,
   export_type exp (A.getRowMap (), rowMap_gathered);
   auto A_gathered =
     Teuchos::rcp (new crs_matrix_type (rowMap_gathered,
-                                       A.getGlobalMaxNumRowEntries (),
-                                       Tpetra::StaticProfile));
+                                       A.getGlobalMaxNumRowEntries ()));
   A_gathered->doExport (A, exp, Tpetra::INSERT);
   auto domainMap_gathered = computeGatherMap (A.getDomainMap (), Teuchos::null);
   auto rangeMap_gathered = computeGatherMap (A.getRangeMap (), Teuchos::null);
@@ -911,28 +913,25 @@ densifyGatheredCrsMatrix (LO& errCode,
                           const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
                           const std::string& label)
 {
-  const LO numRows = LO (A.getRangeMap ()->getNodeNumElements ());
-  const LO numCols = LO (A.getDomainMap ()->getNodeNumElements ());
+  const LO numRows = LO (A.getRangeMap ()->getLocalNumElements ());
+  const LO numCols = LO (A.getDomainMap ()->getLocalNumElements ());
+  using lids_type = typename Tpetra::CrsMatrix<SC, LO, GO, NT>::local_inds_host_view_type;
+  using vals_type = typename Tpetra::CrsMatrix<SC, LO, GO, NT>::values_host_view_type;
 
   using dense_matrix_type = HostDenseMatrix<SC, LO, GO, NT>;
   dense_matrix_type A_dense (label, numRows, numCols);
 
   for (LO lclRow = 0; lclRow < numRows; ++lclRow) {
-    LO numEnt = 0;
-    const LO* lclColInds = nullptr;
-    const SC* vals = nullptr;
-    const LO curErrCode = A.getLocalRowView (lclRow, numEnt, vals, lclColInds);
-    if (errCode != 0) {
-      errCode = curErrCode;
-    }
-    else {
-      for (LO k = 0; k < numEnt; ++k) {
-        const LO lclCol = lclColInds[k];
-        using impl_scalar_type =
-          typename Tpetra::CrsMatrix<SC, LO, GO, NT>::impl_scalar_type;
-        A_dense(lclRow, lclCol) += impl_scalar_type (vals[k]);
-      }
-    }
+    lids_type lclColInds;
+    vals_type vals;
+    A.getLocalRowView (lclRow, lclColInds, vals);
+    LO numEnt = vals.size();
+    for (LO k = 0; k < numEnt; ++k) {
+      const LO lclCol = lclColInds[k];
+      using impl_scalar_type =
+        typename Tpetra::CrsMatrix<SC, LO, GO, NT>::impl_scalar_type;
+      A_dense(lclRow, lclCol) += impl_scalar_type (vals[k]);
+    }   
   }
 
   return A_dense;
@@ -1125,8 +1124,8 @@ deepCopyFillCompleteCrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
     (! A.isFillComplete (), std::invalid_argument,
      "deepCopyFillCompleteCrsMatrix: Input matrix A must be fillComplete.");
   RCP<crs_matrix_type> A_copy (new crs_matrix_type (A.getCrsGraph ()));
-  auto A_copy_lcl = A_copy->getLocalMatrix ();
-  auto A_lcl = A.getLocalMatrix ();
+  auto A_copy_lcl = A_copy->getLocalMatrixDevice ();
+  auto A_lcl = A.getLocalMatrixDevice ();
   Kokkos::deep_copy (A_copy_lcl.values, A_lcl.values);
   A_copy->fillComplete (A.getDomainMap (), A.getRangeMap ());
   return A_copy;

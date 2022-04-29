@@ -56,6 +56,7 @@
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_DiagonalLinearOpBase.hpp"
 #include "Thyra_XpetraLinearOp.hpp"
+#include <Thyra_MueLuPreconditionerFactory.hpp>
 #ifdef HAVE_MUELU_TPETRA
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
@@ -94,9 +95,6 @@
 #include <list>
 
 namespace Thyra {
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool replaceWithXpetra(ParameterList& paramList, std::string parameterName);
 
   /** @brief Concrete preconditioner factory subclass for Thyra based on MueLu.
       @ingroup MueLuAdapters
@@ -225,7 +223,6 @@ namespace Thyra {
       // we are using typedefs here, since we are using objects from different packages (Xpetra, Thyra,...)
       typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>      XpOp;
       typedef Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>       XpThyUtils;
-      typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>        XpCrsMat;
       typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMat;
       typedef Thyra::LinearOpBase<Scalar>                                      ThyLinOpBase;
       typedef Thyra::XpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyXpOp;
@@ -233,7 +230,6 @@ namespace Thyra {
       typedef Xpetra::TpetraHalfPrecisionOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpHalfPrecOp;
       typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>           XpMV;
       typedef typename XpHalfPrecOp::HalfScalar                                     HalfScalar;
-      typedef Xpetra::Operator<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>          XpHalfOp;
       typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType                 Magnitude;
       typedef typename Teuchos::ScalarTraits<Magnitude>::halfPrecision              HalfMagnitude;
       typedef Xpetra::MultiVector<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>       XphMV;
@@ -260,15 +256,9 @@ namespace Thyra {
       bool bIsTpetra  = XpThyUtils::isTpetra(fwdOp);
       TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra == true  && bIsTpetra == true));
 
-      RCP<const XpCrsMat > xpetraFwdCrsMat = XpThyUtils::toXpetra(fwdOp);
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMat));
-
-      // MueLu needs a non-const object as input
-      RCP<XpCrsMat> xpetraFwdCrsMatNonConst = Teuchos::rcp_const_cast<XpCrsMat>(xpetraFwdCrsMat);
-      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpetraFwdCrsMatNonConst));
-
       // wrap the forward operator as an Xpetra::Matrix that MueLu can work with
-      RCP<XpMat> A = rcp(new Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>(xpetraFwdCrsMatNonConst));
+      // MueLu needs a non-const object as input
+      RCP<XpMat> A = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(fwdOp));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(A));
 
       // Retrieve concrete preconditioner object
@@ -283,7 +273,7 @@ namespace Thyra {
       // rebuild preconditioner if startingOver == true
       // reuse preconditioner if startingOver == false
       const bool startingOver = (thyra_precOp.is_null() || !paramList.isParameter("refmaxwell: enable reuse") || !paramList.get<bool>("refmaxwell: enable reuse"));
-      const bool useHalfPrecision = paramList.get<bool>("refmaxwell: half precision", false) && bIsTpetra;
+      const bool useHalfPrecision = paramList.get<bool>("half precision", false) && bIsTpetra;
 
       RCP<XpOp> xpPrecOp;
       if (startingOver == true) {

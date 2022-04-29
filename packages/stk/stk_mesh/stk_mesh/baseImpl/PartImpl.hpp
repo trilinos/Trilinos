@@ -116,6 +116,8 @@ public:
   template<class T>
   bool remove_attribute( const T *);
 
+  CSet & get_attributes() { return m_attribute; }
+
   /** Construct a subset part within a given mesh.
    *  Is used internally by the two 'declare_part' methods.
    */

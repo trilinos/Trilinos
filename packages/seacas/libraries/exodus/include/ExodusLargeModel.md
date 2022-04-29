@@ -82,7 +82,6 @@ The files that were changed are:
 *   exgcor.c
 *   exgnv.c
 
-
 \section ex_create ex_create():
 -- Check whether the `EX_LARGE_MODEL` mode was set.  If so, then the
 mode passed to nccreate must have the `NC_64BIT_OFFSET` bit set.  For
@@ -110,16 +109,16 @@ define the `VAR_COORD` variable as is currently done.
        /* node coordinate arrays -- separate storage... */
        dim[0] = numnoddim;
        if (ncvardef (exoid, VAR_COORD_X, nc_flt_code(exoid), 1, dim) == -1)
-	 { ... handle error }
+         { ... handle error }
        
        if (num_dim > 1) {
-	 if (ncvardef (exoid, VAR_COORD_Y, nc_flt_code(exoid), 1, dim) == -1)
-	   { ... handle error }
+         if (ncvardef (exoid, VAR_COORD_Y, nc_flt_code(exoid), 1, dim) == -1)
+           { ... handle error }
        }
        
        if (num_dim > 2) {
-	 if (ncvardef (exoid, VAR_COORD_Z, nc_flt_code(exoid), 1, dim) == -1)
-	   { ... handle error }
+         if (ncvardef (exoid, VAR_COORD_Z, nc_flt_code(exoid), 1, dim) == -1)
+           { ... handle error }
        }
      } else {
        /* node coordinate arrays: -- all stored together (old method) */
@@ -140,13 +139,13 @@ are written a component at a time, otherwise write the old way as a single blob.
     
     if (num_dim > 1) {
       if ((coordidy = ncvarid (exoid, VAR_COORD_Y)) == -1)
-	{ ... handle error }
+        { ... handle error }
     } else {
       coordidy = 0;
     }
     if (num_dim > 2) {
       if ((coordidz = ncvarid (exoid, VAR_COORD_Z)) == -1)
-	{ ... handle error }
+        { ... handle error }
     } else {
       coordidz = 0;
     }
@@ -155,8 +154,8 @@ are written a component at a time, otherwise write the old way as a single blob.
       dims[0] = time_dim;
       dims[1] = num_nod_dim;
       if ((ncvardef (exoid, VAR_NOD_VAR_NEW(i),
-		     nc_flt_code(exoid), 2, dims)) == -1)
-	{  ... handle error ...	}
+                     nc_flt_code(exoid), 2, dims)) == -1)
+        {  ... handle error ... }
     }
   }
 ```
@@ -180,7 +179,7 @@ are written a component at a time, otherwise write the old way as a single blob.
      count[2] = num_nodes;
    } else {
      /* nodal variables stored separately, find variable for this variable
-	index */
+        index */
      if ((varid = ncvarid (exoid, VAR_NOD_VAR_NEW(nodal_var_index))) == -1) {
        ... handle error ...
      }
@@ -193,7 +192,7 @@ are written a component at a time, otherwise write the old way as a single blob.
    }
  
    if (ncvarput (exoid, varid, start, count,
-		 ex_conv_array(exoid,WRITE_CONVERT,nodal_var_vals,num_nodes)) == -1) {
+                 ex_conv_array(exoid,WRITE_CONVERT,nodal_var_vals,num_nodes)) == -1) {
      ...handle error ...
    }
 ```

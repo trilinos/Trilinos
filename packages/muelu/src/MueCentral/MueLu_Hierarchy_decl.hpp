@@ -80,7 +80,7 @@
 
 namespace MueLu {
 
-  enum ReturnType {
+  enum class ConvergenceStatus {
     Converged,
     Unconverged,
     Undefined
@@ -169,7 +169,7 @@ namespace MueLu {
 
   private:
     int  LastLevelID()      const { return Levels_.size() - 1; }
-    void DumpCurrentGraph() const;
+    void DumpCurrentGraph(int level) const;
 
   public:
 
@@ -271,7 +271,7 @@ namespace MueLu {
       @param InitialGuessIsZero Indicates whether the initial guess is zero
       @param startLevel index of starting level to build multigrid hierarchy (default = 0)
     */
-    ReturnType Iterate(const MultiVector& B, MultiVector& X, ConvData conv = ConvData(),
+    ConvergenceStatus Iterate(const MultiVector& B, MultiVector& X, ConvData conv = ConvData(),
                        bool InitialGuessIsZero = false, LO startLevel = 0);
 
     /*!
@@ -355,6 +355,28 @@ namespace MueLu {
     //! Copy constructor is not implemented.
     Hierarchy(const Hierarchy &h);
 
+    //! Decide if the residual needs to be computed
+    bool IsCalculationOfResidualRequired(const LO startLevel, const ConvData& conv) const;
+
+    /*!
+    \brief Decide if the multigrid iteration is converged
+
+    We judge convergence by comparing the current \c residualNorm
+    to the user given \c convergenceTolerance and then return the
+    appropriate \c ConvergenceStatus
+    */
+    ConvergenceStatus IsConverged(const Teuchos::Array<MagnitudeType>& residualNorm,
+        const MagnitudeType convergenceTolerance) const;
+
+    //! Print \c residualNorm for this \c iteration to the screen
+    void PrintResidualHistory(const LO iteration,
+        const Teuchos::Array<MagnitudeType>& residualNorm) const;
+
+    //! Compute the residual norm and print it depending on the verbosity level
+    ConvergenceStatus ComputeResidualAndPrintHistory(const Operator& A, const MultiVector& X,
+        const MultiVector& B, const LO iteration,
+        const LO startLevel, const ConvData& conv, MagnitudeType& previousResidualNorm);
+
     //! Container for Level objects
     Array<RCP<Level> > Levels_;
 
@@ -404,6 +426,7 @@ namespace MueLu {
     If enabled, we dump the graph on a specified level into a specified file
     */
     bool isDumpingEnabled_;
+    // -1 = dump all levels, -2 = dump nothing
     int  dumpLevel_;
     std::string dumpFile_;
 

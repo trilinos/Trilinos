@@ -43,7 +43,6 @@
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
-#include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
@@ -162,7 +161,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
 
   out << "Preparing arguments for packCrsMatrix" << endl;
 
-  LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
+  LO num_loc_rows = static_cast<LO>(A->getLocalNumRows());
   Array<LO> exportLIDs (num_loc_rows); // input argument
   for (LO i=0; i < num_loc_rows; ++i) {
     exportLIDs[i] = static_cast<LO>(i); // pack all the rows
@@ -170,7 +169,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
   Array<char> exports; // output argument; to be realloc'd
   Array<size_t> numPacketsPerLID (num_loc_rows, 0); // output argument
   size_t constantNumPackets; // output argument
-  Tpetra::Distributor distor (comm); // argument required, but not used
 
   out << "Calling packCrsMatrix" << endl;
 
@@ -180,7 +178,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
     try {
       packCrsMatrix (*A, exports, numPacketsPerLID (),
                      exportLIDs ().getConst (),
-                     constantNumPackets, distor);
+                     constantNumPackets);
       local_op_ok = 1;
     }
     catch (std::exception& e) {
@@ -220,7 +218,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
     try {
       unpackCrsMatrixAndCombine (*B, exports, numPacketsPerLID (),
                                  exportLIDs ().getConst (),
-                                 constantNumPackets, distor,
+                                 constantNumPackets,
                                  Tpetra::REPLACE);
       local_op_ok = 1;
     }
@@ -254,12 +252,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
     std::ostringstream errStrm;
     int lclNumErrors = 0;
     for (LO lclRow=0; lclRow<num_loc_rows; ++lclRow) {
-      ArrayView<const LO> A_indices;
-      ArrayView<const SC> A_values;
+      typename crs_matrix_type::local_inds_host_view_type A_indices;
+      typename crs_matrix_type::values_host_view_type A_values;
       A->getLocalRowView(lclRow, A_indices, A_values);
 
-      ArrayView<const LO> B_indices;
-      ArrayView<const SC> B_values;
+      typename crs_matrix_type::local_inds_host_view_type B_indices;
+      typename crs_matrix_type::values_host_view_type B_values;
       B->getLocalRowView(lclRow, B_indices, B_values);
 
       TEST_EQUALITY( A_indices.size (), B_indices.size () );
@@ -319,7 +317,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
     try {
       unpackCrsMatrixAndCombine (*B, exports, numPacketsPerLID (),
                                  exportLIDs ().getConst (),
-                                 constantNumPackets, distor,
+                                 constantNumPackets,
                                  Tpetra::ADD);
       local_op_ok = 1;
     }
@@ -348,12 +346,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
     std::ostringstream errStrm;
     int lclNumErrors = 0;
     for (LO loc_row=0; loc_row<num_loc_rows; ++loc_row) {
-      ArrayView<const LO> A_indices;
-      ArrayView<const SC> A_values;
+      typename crs_matrix_type::local_inds_host_view_type A_indices;
+      typename crs_matrix_type::values_host_view_type A_values;
       A->getLocalRowView(loc_row, A_indices, A_values);
 
-      ArrayView<const LO> B_indices;
-      ArrayView<const SC> B_values;
+      typename crs_matrix_type::local_inds_host_view_type B_indices;
+      typename crs_matrix_type::values_host_view_type B_values;
       B->getLocalRowView(loc_row, B_indices, B_values);
 //      std::cout << "A_values: " << A_values << "\n";
 //      std::cout << "B_values: " << B_values << "\n";
@@ -428,7 +426,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
   std::ostringstream errStrm; // for error string local to each process
 
   {
-    LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
+    LO num_loc_rows = static_cast<LO>(A->getLocalNumRows());
     Array<LO> exportLIDs(num_loc_rows);
     // exportLIDs[i] should equal i, but we set it to i+2
     for (LO i=0; i<num_loc_rows; i++) {
@@ -438,14 +436,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
     Array<char> exports;
     Array<size_t> numPacketsPerLID(num_loc_rows, 0);
     size_t constantNumPackets;
-    Tpetra::Distributor distor(comm);
     {
       int local_op_ok;
       std::ostringstream msg;
       try {
         packCrsMatrix (*A, exports, numPacketsPerLID (),
                        exportLIDs ().getConst (),
-                       constantNumPackets, distor);
+                       constantNumPackets);
         local_op_ok = 1;
       }
       catch (std::exception& e) {
@@ -471,7 +468,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
 
   {
     // Let's try this again, but send in the wrong number of exportLIDs
-    LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
+    LO num_loc_rows = static_cast<LO>(A->getLocalNumRows());
     // Note the -1!
     out << "Allocating ids... ";
     Array<LO> exportLIDs(num_loc_rows-1);
@@ -483,7 +480,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
     Array<char> exports;
     Array<size_t> numPacketsPerLID(num_loc_rows, 0);
     size_t constantNumPackets;
-    Tpetra::Distributor distor(comm);
     out << "Calling packCrsMatrix" << endl;
     {
       int local_op_ok;
@@ -491,7 +487,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
       try {
         packCrsMatrix (*A, exports, numPacketsPerLID (),
                        exportLIDs ().getConst (),
-                       constantNumPackets, distor);
+                       constantNumPackets);
         local_op_ok = 1;
       }
       catch (std::exception& e) {
@@ -537,7 +533,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
 
   out << "Preparing arguments for packCrsMatrix" << endl;
 
-  LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
+  LO num_loc_rows = static_cast<LO>(A->getLocalNumRows());
   Array<LO> exportLIDs (num_loc_rows); // input argument
   for (LO i=0; i < num_loc_rows; ++i) {
     if (i%2 != 0) continue;  // pack only even rows!
@@ -546,7 +542,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
   Array<char> exports; // output argument; to be realloc'd
   Array<size_t> numPacketsPerLID (num_loc_rows, 0); // output argument
   size_t constantNumPackets; // output argument
-  Tpetra::Distributor distor (comm); // argument required, but not used
 
   out << "Calling packCrsMatrix" << endl;
 
@@ -556,7 +551,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
     try {
       packCrsMatrix (*A, exports, numPacketsPerLID (),
                      exportLIDs ().getConst (),
-                     constantNumPackets, distor);
+                     constantNumPackets);
       local_op_ok = 1;
     }
     catch (std::exception& e) {
@@ -596,7 +591,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
     try {
       unpackCrsMatrixAndCombine (*B, exports, numPacketsPerLID (),
                                  exportLIDs ().getConst (),
-                                 constantNumPackets, distor,
+                                 constantNumPackets,
                                  Tpetra::REPLACE);
       local_op_ok = 1;
     }
@@ -630,12 +625,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
     std::ostringstream errStrm;
     int lclNumErrors = 0;
     for (LO lclRow=0; lclRow<num_loc_rows; ++lclRow) {
-      ArrayView<const LO> A_indices;
-      ArrayView<const SC> A_values;
+      typename crs_matrix_type::local_inds_host_view_type A_indices;
+      typename crs_matrix_type::values_host_view_type A_values;
       A->getLocalRowView(lclRow, A_indices, A_values);
 
-      ArrayView<const LO> B_indices;
-      ArrayView<const SC> B_values;
+      typename crs_matrix_type::local_inds_host_view_type B_indices;
+      typename crs_matrix_type::values_host_view_type B_values;
       B->getLocalRowView(lclRow, B_indices, B_values);
 
       TEST_EQUALITY( A_indices.size (), B_indices.size () );

@@ -30,18 +30,26 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include "Gmesh_STKmesh_Fixture.hpp"
-#include <Ioss_Property.h>              // for Property
-#include <Ioss_Region.h>                // for Region
-#include <generated/Iogn_DatabaseIO.h>  // for DatabaseIO
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include "Ioss_DatabaseIO.h"            // for DatabaseIO
-#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
-#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
-#include "stk_mesh/base/Types.hpp"      // for PartVector
+#include <Ioss_Property.h>                 // for Property
+#include <Ioss_Region.h>                   // for Region
+#include <generated/Iogn_DatabaseIO.h>     // for DatabaseIO
+#include <cstddef>                         // for size_t
+#include <stk_mesh/base/MetaData.hpp>      // for MetaData
+#include "Ioss_DatabaseIO.h"               // for DatabaseIO
+#include "Teuchos_RCP.hpp"                 // for RCP::operator->, RCP::RCP<T>
+#include "Teuchos_RCPDecl.hpp"             // for RCP
+#include "mpi.h"                           // for ompi_communicator_t
+#include "stk_io/DatabasePurpose.hpp"      // for READ_MESH
+#include "stk_io/StkMeshIoBroker.hpp"      // for StkMeshIoBroker
+#include "stk_mesh/base/Types.hpp"         // for PartVector
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
 namespace io {

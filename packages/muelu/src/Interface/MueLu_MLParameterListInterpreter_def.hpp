@@ -49,7 +49,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML)
 #include <ml_ValidateParameters.h>
 #endif
 
@@ -211,6 +211,10 @@ namespace MueLu {
 # endif
 # ifdef HAVE_MUELU_CUDA
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+      useKokkosRefactor = true;
+# endif
+# ifdef HAVE_MUELU_HIP
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
       useKokkosRefactor = true;
 # endif
 #endif
@@ -613,7 +617,7 @@ namespace MueLu {
           Teuchos::ArrayRCP<Scalar> coordsi  = coordinates->getDataNonConst(i);
           const size_t              myLength = coordinates->getLocalLength();
           for (size_t j = 0; j < myLength; j++) {
-            coordsi[j] = coordPTR[0][j];
+            coordsi[j] = coordPTR[i][j];
           }
         }
         fineLevel->Set("Coordinates",coordinates);
@@ -687,6 +691,43 @@ namespace MueLu {
         MUELU_COPY_PARAM(paramList, "smoother: MLS alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
       } else {
         MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
+      }
+
+
+      smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
+      smooProto->SetFactory("A", AFact);
+
+    } else if (type == "Hiptmair") {
+      ifpackType = "HIPTMAIR";
+      std::string subSmootherType = "Chebyshev";
+      if (paramList.isParameter("subsmoother: type"))
+        subSmootherType = paramList.get<std::string>("subsmoother: type");
+      std::string subSmootherIfpackType;
+      if (subSmootherType == "Chebyshev")
+        subSmootherIfpackType = "CHEBYSHEV";
+      else if (subSmootherType == "Jacobi" || subSmootherType == "Gauss-Seidel" || subSmootherType == "symmetric Gauss-Seidel") {
+        if (subSmootherType == "symmetric Gauss-Seidel") subSmootherType = "Symmetric Gauss-Seidel"; // FIXME
+        subSmootherIfpackType = "RELAXATION";
+      } else
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown smoother type. '" << subSmootherType << "' not supported by MueLu.");
+
+      smootherParamList.set("hiptmair: smoother type 1", subSmootherIfpackType);
+      smootherParamList.set("hiptmair: smoother type 2", subSmootherIfpackType);
+
+      auto smoother1ParamList = smootherParamList.sublist("hiptmair: smoother list 1");
+      auto smoother2ParamList = smootherParamList.sublist("hiptmair: smoother list 2");
+
+      if (subSmootherType == "Chebyshev") {
+        MUELU_COPY_PARAM(paramList, "subsmoother: edge sweeps", int, 2, smoother1ParamList, "chebyshev: degree");
+        MUELU_COPY_PARAM(paramList, "subsmoother: node sweeps", int, 2, smoother2ParamList, "chebyshev: degree");
+
+        MUELU_COPY_PARAM(paramList, "subsmoother: Chebyshev", double, 20, smoother1ParamList, "chebyshev: ratio eigenvalue");
+        MUELU_COPY_PARAM(paramList, "subsmoother: Chebyshev", double, 20, smoother2ParamList, "chebyshev: ratio eigenvalue");
+      } else {
+        MUELU_COPY_PARAM(paramList, "subsmoother: edge sweeps", int, 2, smoother1ParamList, "relaxation: sweeps");
+        MUELU_COPY_PARAM(paramList, "subsmoother: node sweeps", int, 2, smoother2ParamList, "relaxation: sweeps");
+
+        MUELU_COPY_PARAM(paramList, "subsmoother: SGS damping factor", double, 0.8, smoother2ParamList, "relaxation: damping factor");
       }
 
 
@@ -778,7 +819,7 @@ namespace MueLu {
   void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupOperator(Operator & Op) const {
     try {
       Matrix& A = dynamic_cast<Matrix&>(Op);
-      if (A.GetFixedBlockSize() != blksize_)
+      if (A.IsFixedBlockSizeSet() && (A.GetFixedBlockSize() != blksize_))
         this->GetOStream(Warnings0) << "Setting matrix block size to " << blksize_ << " (value of the parameter in the list) "
             << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
 

@@ -51,7 +51,6 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
 #include "stk_mesh/baseImpl/PartRepository.hpp"  // for PartRepository
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_topology/topology_utils.hpp"    // for topology::num_nodes, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 
 namespace stk {
@@ -153,13 +152,14 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
     m_owns_part( NULL ),
     m_shares_part( NULL ),
     m_aura_part(NULL),
-    m_field_repo(),
+    m_field_repo(*this),
     m_coord_field(NULL),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
     m_surfaceToBlock()
 {
-  // Declare the predefined parts
+  const size_t numRanks = stk::topology::NUM_RANKS;
+  ThrowRequireMsg(entity_rank_names.size() <= numRanks, "MetaData: number of entity-ranks (" << entity_rank_names.size() << ") exceeds limit of stk::topology::NUM_RANKS (" << numRanks <<")");
 
   m_universal_part = m_part_repo.universal_part();
   m_owns_part = & declare_internal_part("OWNS");
@@ -179,7 +179,7 @@ MetaData::MetaData()
     m_owns_part( NULL ),
     m_shares_part( NULL ),
     m_aura_part(NULL),
-    m_field_repo(),
+    m_field_repo(*this),
     m_coord_field(NULL),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
@@ -224,9 +224,9 @@ void MetaData::initialize(size_t spatial_dimension,
 
 const std::string& MetaData::entity_rank_name( EntityRank entity_rank ) const
 {
-  ThrowErrorMsgIf( entity_rank >= m_entity_rank_names.size(),
+  ThrowErrorMsgIf( entity_rank >= entity_rank_count(),
       "entity-rank " << entity_rank <<
-      " out of range. Must be in range 0.." << m_entity_rank_names.size());
+      " out of range. Must be in range 0.." << entity_rank_count());
 
   return m_entity_rank_names[entity_rank];
 }
@@ -502,20 +502,7 @@ void MetaData::commit()
 #endif
 }
 
-MetaData::~MetaData()
-{
-  // Destroy the properties, used 'new' to allocate so now use 'delete'
-
-  try {
-    std::vector<shards::CellTopologyManagedData*>::iterator i = m_created_topologies.begin();
-    for ( ; i != m_created_topologies.end(); ++i) {
-      delete *i;
-    }
-  } catch(...) {}
-
-  // PartRepository is member data
-  // FieldRepository is member data
-}
+MetaData::~MetaData() {}
 
 void MetaData::internal_declare_known_cell_topology_parts()
 {
@@ -1068,7 +1055,7 @@ void set_topology(Part & part, stk::topology topo)
   try {
       root_part = &meta.get_topology_root_part(topo);
   }
-  catch(std::exception& e) {
+  catch(std::exception&) {
       meta.register_topology(topo);
       root_part = &meta.get_topology_root_part(topo);
   }
@@ -1108,12 +1095,9 @@ get_topology(const MetaData& meta_data, EntityRank entity_rank, const std::pair<
             first_found_part = &part;
         }
         else {
-          if ( top != stk::topology::INVALID_TOPOLOGY && top != topology) {
-              std::ostringstream os;
-              os << "topology defined as both " << topology.name() << " and as " << top.name()
-                 << "; a given mesh entity must have only one topology.";
-              throw std::runtime_error(os.str());
-          }
+          ThrowRequireMsg(top == stk::topology::INVALID_TOPOLOGY || top == topology,
+              "topology defined as both " << topology.name() << " and as " << top.name()
+                  << "; a given mesh entity must have only one topology.");
         }
       }
     }

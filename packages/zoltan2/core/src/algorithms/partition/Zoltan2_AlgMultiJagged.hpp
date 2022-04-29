@@ -192,10 +192,10 @@ struct uSortItem
  */
 template <class IT, class WT>
 void uqsort(IT n, uSortItem<IT, WT> * arr) {
-  int NSTACK = 50;
+  const int NSTACK = 50;
   int M = 7;
   IT         i, ir=n, j, k, l=1;
-  IT         jstack=0, istack[50];
+  IT         jstack=0, istack[NSTACK];
   WT aval;
   uSortItem<IT,WT>    a;
 
@@ -301,10 +301,10 @@ struct uSignedSortItem
  */
 template <class IT, class WT, class SIGN>
 void uqSignsort(IT n, uSignedSortItem<IT, WT, SIGN> * arr) {
-  IT NSTACK = 50;
+  const IT NSTACK = 50;
   IT M = 7;
   IT         i, ir=n, j, k, l=1;
-  IT         jstack=0, istack[50];
+  IT         jstack=0, istack[NSTACK];
   uSignedSortItem<IT,WT,SIGN>    a;
 
   --arr;
@@ -1130,7 +1130,7 @@ public:
     const Kokkos::View<mj_part_t *, Kokkos::HostSpace> & first_level_distribution_
       = Kokkos::View<mj_part_t *, Kokkos::HostSpace>());
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   public:
 #else
   private:
@@ -3551,7 +3551,7 @@ struct Zoltan2_MJArrayType {
   }
 };
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 
 template<class policy_t, class scalar_t, class part_t>
 struct ArrayCombinationReducer {
@@ -3627,7 +3627,7 @@ struct ArrayCombinationReducer {
     }
   }
 };
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA && KOKKOS_ENABLE_HIP
 
 template<class policy_t, class scalar_t, class part_t, class index_t,
   class device_t, class array_t>
@@ -3635,7 +3635,7 @@ struct ReduceWeightsFunctor {
   typedef typename policy_t::member_type member_type;
   typedef Kokkos::View<scalar_t*> scalar_view_t;
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   typedef array_t value_type[];
 #endif
 
@@ -3658,11 +3658,11 @@ struct ReduceWeightsFunctor {
   bool uniform_weights0;
   scalar_t sEpsilon;
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   Kokkos::View<double *, device_t> current_part_weights;
   Kokkos::View<scalar_t *, device_t> current_left_closest;
   Kokkos::View<scalar_t *, device_t> current_right_closest;
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || defined(KOKKOS_ENABLE_HIP)
 
   ReduceWeightsFunctor(
     int mj_loop_count,
@@ -3681,11 +3681,11 @@ struct ReduceWeightsFunctor {
     Kokkos::View<index_t *, device_t> & mj_part_xadj,
     bool mj_uniform_weights0,
     scalar_t mj_sEpsilon
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ,Kokkos::View<double *, device_t> & mj_current_part_weights,
     Kokkos::View<scalar_t *, device_t> & mj_current_left_closest,
     Kokkos::View<scalar_t *, device_t> & mj_current_right_closest
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     ) :
       loop_count(mj_loop_count),
       max_scalar(mj_max_scalar),
@@ -3704,16 +3704,16 @@ struct ReduceWeightsFunctor {
       part_xadj(mj_part_xadj),
       uniform_weights0(mj_uniform_weights0),
       sEpsilon(mj_sEpsilon)
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       ,current_part_weights(mj_current_part_weights),
       current_left_closest(mj_current_left_closest),
       current_right_closest(mj_current_right_closest)
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
   {
   }
 
   size_t team_shmem_size (int team_size) const {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     int result = sizeof(array_t) *
       (value_count_weights + value_count_rightleft);
 #else
@@ -3730,7 +3730,7 @@ struct ReduceWeightsFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   void operator() (const member_type & teamMember) const {
 #else
   void operator() (const member_type & teamMember, value_type teamSum) const {
@@ -3757,7 +3757,7 @@ struct ReduceWeightsFunctor {
       end = all_end;
     }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     size_t sh_mem_size = sizeof(array_t) * (value_count_weights +
       value_count_rightleft);
 
@@ -3780,7 +3780,7 @@ struct ReduceWeightsFunctor {
     Kokkos::parallel_for(
       Kokkos::TeamThreadRange(teamMember, begin, end),
       [=] (index_t ii) {
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     // create the team shared data - each thread gets one of the arrays
     size_t sh_mem_size = sizeof(array_t) * (value_count_weights +
       value_count_rightleft) * teamMember.team_size();
@@ -3801,7 +3801,7 @@ struct ReduceWeightsFunctor {
     Kokkos::parallel_reduce(
       Kokkos::TeamThreadRange(teamMember, begin, end),
       [=] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
       int i = permutations(ii);
       scalar_t coord = coordinates(i);
@@ -3819,7 +3819,7 @@ struct ReduceWeightsFunctor {
         scalar_t b = (part == num_cuts) ? max_scalar : cut_coordinates(part);
 
         if(coord >= a + sEpsilon && coord <= b - sEpsilon) {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
           Kokkos::atomic_add(&shared_ptr[part*2], w);
 #else
           threadSum.ptr[part*2] += w;
@@ -3828,7 +3828,7 @@ struct ReduceWeightsFunctor {
           parts(i) = part*2;
 
           // now handle the left/right closest part
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
           array_t new_value = (array_t) coord;
           array_t prev_value = shared_ptr[value_count_weights + part * 2 + 1];
           while(new_value < prev_value) {
@@ -3862,7 +3862,7 @@ struct ReduceWeightsFunctor {
             // Note if on cut we set right/left closest to the cut itself
             // but we add +2 because we buffered the area with an extra slot
             // to reduce cuda branching. So it's +2, +3 instead of +0, +1.
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
             Kokkos::atomic_add(&shared_ptr[part*2+1], w);
             shared_ptr[value_count_weights + part * 2 + 2] = b;
             shared_ptr[value_count_weights + part * 2 + 3] = b;
@@ -3889,7 +3889,7 @@ struct ReduceWeightsFunctor {
                 // Note if on cut we set right/left closest to the cut itself
                 // but we add +2 because we buffered the area with an extra slot
                 // to reduce cuda branching. So it's +2, +3 instead of +0, +1.
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
                 Kokkos::atomic_add(&shared_ptr[part*2+1], w);
                 shared_ptr[value_count_weights + part * 2 + 2] = b;
                 shared_ptr[value_count_weights + part * 2 + 3] = b;
@@ -3911,7 +3911,7 @@ struct ReduceWeightsFunctor {
                 // Note if on cut we set right/left closest to the cut itself
                 // but we add +2 because we buffered the area with an extra slot
                 // to reduce cuda branching. So it's +2, +3 instead of +0, +1.
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
                 Kokkos::atomic_add(&shared_ptr[part*2+1], w);
                 shared_ptr[value_count_weights + part * 2 + 2] = b;
                 shared_ptr[value_count_weights + part * 2 + 3] = b;
@@ -3958,33 +3958,33 @@ struct ReduceWeightsFunctor {
           }
         }
       }
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     });
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     }, arraySumReducer);
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
     teamMember.team_barrier();
 
     // collect all the team's results
     Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
       for(int n = 0; n < value_count_weights; ++n) {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         Kokkos::atomic_add(&current_part_weights(n),
           static_cast<double>(shared_ptr[n]));
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
         teamSum[n] += array.ptr[n];
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
       }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       int insert_left = 0;
       int insert_right = 0;
 #endif
 
       for(int n = 2 + value_count_weights;
         n < value_count_weights + value_count_rightleft - 2; n += 2) {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         scalar_t new_value = shared_ptr[n+1];
         scalar_t prev_value = current_right_closest(insert_right);
         while(new_value < prev_value) {
@@ -4001,21 +4001,21 @@ struct ReduceWeightsFunctor {
 
         ++insert_left;
         ++insert_right;
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
         if(array.ptr[n] > teamSum[n]) {
           teamSum[n] = array.ptr[n];
         }
         if(array.ptr[n+1] < teamSum[n+1]) {
           teamSum[n+1] = array.ptr[n+1];
         }
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
       }
     });
 
     teamMember.team_barrier();
   }
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   KOKKOS_INLINE_FUNCTION
   void join(value_type dst, const value_type src)  const {
     for(int n = 0; n < value_count_weights; ++n) {
@@ -4061,7 +4061,7 @@ struct ReduceWeightsFunctor {
       dst[n+1] =  max_scalar;
     }
   }
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 };
 
 /*! \brief Function that calculates the weights of each part according to given
@@ -4130,7 +4130,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
     auto policy_ReduceWeightsFunctor = policy_t(
       mj_num_teams ? mj_num_teams : 60, Kokkos::AUTO);
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
     int total_array_length =
       weight_array_length + right_left_array_length;
 #endif
@@ -4141,10 +4141,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
     // Just use scalar_t to match the original algorithm.
     typedef mj_scalar_t array_t;
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
     array_t * reduce_array =
       new array_t[static_cast<size_t>(total_array_length)];
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA && KOKKOS_ENABLE_HIP
 
     int offset_cuts = 0;
     for(int kk2 = 0; kk2 < kk; ++kk2) {
@@ -4168,7 +4168,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
 
     array_t max_scalar = std::numeric_limits<array_t>::max();
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     // initialize values
     Kokkos::parallel_for(
       Kokkos::RangePolicy<typename mj_node_t::execution_space, int> (0, 1),
@@ -4205,21 +4205,21 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
         part_xadj,
         mj_uniform_weights(0), // host and currently only relevant to slot 0
         sEpsilon
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         ,my_current_part_weights,
         my_current_left_closest,
         my_current_right_closest
 #endif
         );
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     Kokkos::parallel_for(policy_ReduceWeightsFunctor, teamFunctor);
 #else
     Kokkos::parallel_reduce(policy_ReduceWeightsFunctor,
       teamFunctor, reduce_array);
 #endif
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
     auto hostArray = Kokkos::create_mirror_view(my_current_part_weights);
 
     for(int i = 0; i < static_cast<int>(total_part_count); ++i) {
@@ -4419,7 +4419,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
   new_cut_position = coordinate_range * required_shift + cut_lower_bound;
 }
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 
 template<class policy_t, class scalar_t>
 struct ArrayReducer {
@@ -4471,7 +4471,7 @@ struct ReduceArrayFunctor {
   typedef typename policy_t::member_type member_type;
   typedef Kokkos::View<scalar_t*> scalar_view_t;
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   typedef array_t value_type[];
 #endif
 
@@ -4483,9 +4483,9 @@ struct ReduceArrayFunctor {
   Kokkos::View<index_t *, device_t> part_xadj;
   Kokkos::View<index_t *, device_t> track_on_cuts;
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   Kokkos::View<int *, device_t> local_point_counts;
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
   ReduceArrayFunctor(
     part_t mj_concurrent_current_part,
@@ -4495,9 +4495,9 @@ struct ReduceArrayFunctor {
     Kokkos::View<part_t*, device_t> & mj_parts,
     Kokkos::View<index_t *, device_t> & mj_part_xadj,
     Kokkos::View<index_t *, device_t> & mj_track_on_cuts
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ,Kokkos::View<int *, device_t> & mj_local_point_counts
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     ) :
       concurrent_current_part(mj_concurrent_current_part),
       value_count(mj_weight_array_size),
@@ -4506,14 +4506,14 @@ struct ReduceArrayFunctor {
       parts(mj_parts),
       part_xadj(mj_part_xadj),
       track_on_cuts(mj_track_on_cuts)
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       ,local_point_counts(mj_local_point_counts)
 #endif
   {
   }
 
   size_t team_shmem_size (int team_size) const {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     int result = sizeof(array_t) * (value_count);
 #else
     int result = sizeof(array_t) * (value_count) * team_size;
@@ -4528,7 +4528,7 @@ struct ReduceArrayFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   void operator() (const member_type & teamMember) const {
 #else
   void operator() (const member_type & teamMember, value_type teamSum) const {
@@ -4554,7 +4554,7 @@ struct ReduceArrayFunctor {
     int track_on_cuts_insert_index = track_on_cuts.size() - 1;
 
     // create the team shared data - each thread gets one of the arrays
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     size_t sh_mem_size = sizeof(array_t) * (value_count);
 #else
     size_t sh_mem_size =
@@ -4564,7 +4564,7 @@ struct ReduceArrayFunctor {
     array_t * shared_ptr = (array_t *) teamMember.team_shmem().get_shmem(
       sh_mem_size);
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     // init the shared array to 0
     Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
       for(int n = 0; n < value_count; ++n) {
@@ -4575,7 +4575,7 @@ struct ReduceArrayFunctor {
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, begin, end),
       [=] (index_t ii) {
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     // select the array for this thread
     Zoltan2_MJArrayType<array_t> array(&shared_ptr[teamMember.team_rank() *
         (value_count)]);
@@ -4586,13 +4586,13 @@ struct ReduceArrayFunctor {
     Kokkos::parallel_reduce(
       Kokkos::TeamThreadRange(teamMember, begin, end),
       [=] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
       index_t coordinate_index = permutations(ii);
       part_t place = parts(coordinate_index);
       part_t part = place / 2;
       if(place % 2 == 0) {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         Kokkos::atomic_add(&shared_ptr[part], 1);
 #else
         threadSum.ptr[part] += 1;
@@ -4607,29 +4607,29 @@ struct ReduceArrayFunctor {
             &track_on_cuts(track_on_cuts_insert_index), 1);
         track_on_cuts(set_index) = ii;
       }
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     });
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     }, arrayReducer);
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
     teamMember.team_barrier();
 
     // collect all the team's results
     Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
       for(int n = 0; n < value_count; ++n) {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         Kokkos::atomic_add(&local_point_counts(n), shared_ptr[n]);
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
         teamSum[n] += array.ptr[n];
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
       }
     });
 
     teamMember.team_barrier();
   }
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 
   KOKKOS_INLINE_FUNCTION
   void join(value_type dst, const value_type src)  const {
@@ -4785,7 +4785,7 @@ mj_create_new_partitions(
 
   // just need parts - on the cuts will be handled in a separate serial
   // call after this.
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   array_t * reduce_array = new array_t[static_cast<size_t>(num_parts)];
 #endif
 
@@ -4798,18 +4798,18 @@ mj_create_new_partitions(
       assigned_part_ids,
       part_xadj,
       track_on_cuts
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       ,local_point_counts
 #endif
       );
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   Kokkos::parallel_for(policy_ReduceFunctor, teamFunctor);
 #else
   Kokkos::parallel_reduce(policy_ReduceFunctor, teamFunctor, reduce_array);
 #endif
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   for(mj_part_t part = 0; part < num_parts; ++part) {
     local_point_counts(part) = reduce_array[part];
   }
@@ -4935,7 +4935,7 @@ mj_create_new_partitions(
   // here we will determine insert indices for N teams
   // then all the teams can fill
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 
   // This is the fastest so far - just straight atomic writes for CUDA
   // However this is not a deterministic result since it is atomic.
@@ -6517,6 +6517,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       mj_timer_base_string + "Migration Z1Migration-" + iteration);
 
     // MPI Buffers should be on Kokkos::HostSpace not Kokkos::CudaUVMSpace
+      // Note, with UVM space, create_mirror_view does NOT create a non-UVM
+      // view; need the explicit Host creation and deep_copy.
 
     // migrate gnos.
     {
@@ -6675,88 +6677,95 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
 
     // note MPI buffers should all be on Kokkos::HostSpace and not
     // Kokkos::CudaUVMSpace.
-
+    // Note, with UVM space, create_mirror_view does NOT create a non-UVM
+    // view; need the explicit Host creation and deep_copy.
     // migrate gnos.
     {
-      ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
-      auto src_host_current_mj_gnos =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->current_mj_gnos);
-      Kokkos::deep_copy(src_host_current_mj_gnos, this->current_mj_gnos);
-      ArrayView<mj_gno_t> sent_gnos(
-        src_host_current_mj_gnos.data(), this->num_local_coords);
-      distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
+      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> received_gnos(
+        Kokkos::ViewAllocateWithoutInitializing("received_gnos"),
+        num_incoming_gnos);
+
+      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> sent_gnos(
+        Kokkos::ViewAllocateWithoutInitializing("sent_gnos"),
+        this->current_mj_gnos.extent(0));
+      Kokkos::deep_copy(sent_gnos, this->current_mj_gnos);
+
+      distributor.doPostsAndWaits(sent_gnos, 1, received_gnos);
+
       this->current_mj_gnos = Kokkos::View<mj_gno_t*, device_t>(
         Kokkos::ViewAllocateWithoutInitializing("gids"), num_incoming_gnos);
-      auto host_current_mj_gnos = Kokkos::create_mirror_view(
-        this->current_mj_gnos);
-      memcpy(host_current_mj_gnos.data(),
-        received_gnos.getRawPtr(), num_incoming_gnos * sizeof(mj_gno_t));
-      Kokkos::deep_copy(this->current_mj_gnos, host_current_mj_gnos);
+
+      Kokkos::deep_copy(this->current_mj_gnos, received_gnos);
     }
 
     // migrate coordinates
-    // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+    // coordinates in MJ are LayoutLeft since Tpetra Multivector is LayoutLeft
     Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, device_t>
       dst_coordinates("mj_coordinates", num_incoming_gnos, this->coord_dim);
-    auto host_dst_coordinates = Kokkos::create_mirror_view(dst_coordinates);
-    auto host_src_coordinates = Kokkos::create_mirror_view(
-      Kokkos::HostSpace(), this->mj_coordinates);
+
+    Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace> 
+      host_src_coordinates(
+        Kokkos::ViewAllocateWithoutInitializing("host_coords"),
+        this->mj_coordinates.extent(0), this->mj_coordinates.extent(1));
     Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
+
+    Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_coord(
+      Kokkos::ViewAllocateWithoutInitializing("received_coord"),
+      num_incoming_gnos);
+
     for(int i = 0; i < this->coord_dim; ++i) {
-      Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sub_host_src_coordinates
-        = Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
-      auto sub_host_dst_coordinates
-        = Kokkos::subview(host_dst_coordinates, Kokkos::ALL, i);
+
       // Note Layout Left means we can do these in contiguous blocks
-      // This form was causing problems on cuda 10 pascal nodes, issue #6422
-      // Doing a manual copy clears the error though it seems this is probably
-      // just shifting some kind of race condition or UVM issue around. The
-      // bug can be sensitive to simple changes like adding a printf log.
 
-      // Using this form will segfault on cuda 10 pascal node
-      //ArrayView<mj_scalar_t> sent_coord(
-      //  sub_host_src_coordinates.data(), this->num_local_coords);
+      Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sent_coord
+        = Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
 
-      // Manual copy will clear the error but this is probably just due to
-      // shifting some kind of race condition.
-      ArrayRCP<mj_scalar_t> sent_coord(this->num_local_coords);
-      for(int n = 0; n < this->num_local_coords; ++n) {
-        sent_coord[n] = sub_host_src_coordinates[n];
-      }
+      distributor.doPostsAndWaits(sent_coord, 1, received_coord);
 
-      ArrayRCP<mj_scalar_t> received_coord(num_incoming_gnos);
-      distributor.doPostsAndWaits<mj_scalar_t>(
-        sent_coord(), 1, received_coord());
-      memcpy(sub_host_dst_coordinates.data(),
-        received_coord.getRawPtr(), num_incoming_gnos * sizeof(mj_scalar_t));
+      Kokkos::deep_copy(Kokkos::subview(dst_coordinates, Kokkos::ALL, i),
+                        received_coord);
+
+      // Kokkos::deep_copy will fence, I think, so it should be safe
+      // to reuse received_coord in the next lop iteration
     }
-    deep_copy(dst_coordinates, host_dst_coordinates);
     this->mj_coordinates = dst_coordinates;
 
     // migrate weights.
     Kokkos::View<mj_scalar_t**, device_t> dst_weights(
      "mj_weights", num_incoming_gnos, this->num_weights_per_coord);
-    auto host_dst_weights = Kokkos::create_mirror_view(dst_weights);
-    auto host_src_weights = Kokkos::create_mirror_view(
-      Kokkos::HostSpace(), this->mj_weights);
-    Kokkos::deep_copy(host_src_weights, this->mj_weights);
+    auto host_dst_weights = Kokkos::create_mirror_view(Kokkos::HostSpace(),
+                                                       dst_weights);
+
+    auto host_src_weights = Kokkos::create_mirror_view_and_copy(
+                                    Kokkos::HostSpace(), this->mj_weights);
+
+    // contiguous buffers to gather potentially strided data
+    Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sent_weight(
+      Kokkos::ViewAllocateWithoutInitializing("send_weight_buffer"),
+      this->num_local_coords);
+
+    Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_weight(
+      Kokkos::ViewAllocateWithoutInitializing("received_weight_buffer"),
+      num_incoming_gnos); 
+
     for(int i = 0; i < this->num_weights_per_coord; ++i) {
+
       auto sub_host_src_weights
         = Kokkos::subview(host_src_weights, Kokkos::ALL, i);
+
       auto sub_host_dst_weights
         = Kokkos::subview(host_dst_weights, Kokkos::ALL, i);
-      ArrayRCP<mj_scalar_t> sent_weight(this->num_local_coords);
 
-      // TODO: Layout Right means these are not contiguous
+
+      // Layout Right means the weights are not contiguous
       // However we don't have any systems setup with more than 1 weight so
       // really I have not tested any of this code with num weights > 1.
       // I think this is the right thing to do.
       for(mj_lno_t n = 0; n < this->num_local_coords; ++n) {
         sent_weight[n] = sub_host_src_weights(n);
       }
-      ArrayRCP<mj_scalar_t> received_weight(num_incoming_gnos);
-      distributor.doPostsAndWaits<mj_scalar_t>(
-        sent_weight(), 1, received_weight());
+
+      distributor.doPostsAndWaits(sent_weight, 1, received_weight);
 
       // Again we copy by index due to layout
       for(mj_lno_t n = 0; n < num_incoming_gnos; ++n) {
@@ -6769,37 +6778,33 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
     // migrate owners
     {
       // Note owners we kept on Serial
-      ArrayView<int> sent_owners(
-        owner_of_coordinate.data(), this->num_local_coords);
-      ArrayRCP<int> received_owners(num_incoming_gnos);
-      distributor.doPostsAndWaits<int>(sent_owners, 1, received_owners());
-      this->owner_of_coordinate = Kokkos::View<int *, Kokkos::HostSpace>
-        ("owner_of_coordinate", num_incoming_gnos);
-      memcpy(this->owner_of_coordinate.data(),
-        received_owners.getRawPtr(), num_incoming_gnos * sizeof(int));
+      Kokkos::View<int *, Kokkos::HostSpace> received_owners(
+              Kokkos::ViewAllocateWithoutInitializing("owner_of_coordinate"),
+              num_incoming_gnos);
+
+      distributor.doPostsAndWaits(owner_of_coordinate, 1, received_owners);
+
+      this->owner_of_coordinate = received_owners;
     }
 
     // if num procs is less than num parts,
     // we need the part assigment arrays as well, since
     // there will be multiple parts in processor.
     if(num_procs < num_parts) {
-      auto src_host_assigned_part_ids =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->assigned_part_ids);
-      Kokkos::deep_copy(src_host_assigned_part_ids, assigned_part_ids);
-      ArrayView<mj_part_t> sent_partids(
-        src_host_assigned_part_ids.data(), this->num_local_coords);
-      ArrayRCP<mj_part_t> received_partids(num_incoming_gnos);
-      distributor.doPostsAndWaits<mj_part_t>(
-        sent_partids, 1, received_partids());
+      Kokkos::View<mj_part_t*, Kokkos::HostSpace> sent_partids(
+        Kokkos::ViewAllocateWithoutInitializing("host_parts"),
+        this->assigned_part_ids.extent(0));
+      Kokkos::deep_copy(sent_partids, assigned_part_ids);
+
+      Kokkos::View<mj_part_t*, Kokkos::HostSpace> received_partids(
+        Kokkos::ViewAllocateWithoutInitializing("received_partids"),
+        num_incoming_gnos);
+
+      distributor.doPostsAndWaits(sent_partids, 1, received_partids);
+
       this->assigned_part_ids = Kokkos::View<mj_part_t *, device_t>
         ("assigned_part_ids", num_incoming_gnos);
-      auto host_assigned_part_ids = Kokkos::create_mirror_view(
-        this->assigned_part_ids);
-      memcpy(
-        host_assigned_part_ids.data(),
-        received_partids.getRawPtr(),
-        num_incoming_gnos * sizeof(mj_part_t));
-      Kokkos::deep_copy(this->assigned_part_ids, host_assigned_part_ids);
+      Kokkos::deep_copy(this->assigned_part_ids, received_partids);
     }
     else {
       this->assigned_part_ids = Kokkos::View<mj_part_t *, device_t>
@@ -7569,6 +7574,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
         mj_timer_base_string + "Final Z1PlanComm");
 
       // MPI Buffers should be on Kokkos::HostSpace not Kokkos::CudaUVMSpace
+      // Note, with UVM space, create_mirror_view does NOT create a non-UVM
+      // view; need the explicit Host creation and deep_copy.
 
       // migrate gnos to actual owners.
       auto host_current_mj_gnos = Kokkos::create_mirror_view(
@@ -7626,42 +7633,44 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
       this->mj_env->timerStart(MACRO_TIMERS,
         mj_timer_base_string + "Final DistributorPlanComm");
 
-      // MPI buffers should be Kokkos::HostSpace, not Kokkos::CudaUVMSpace
-
       // migrate gnos to actual owners.
-      auto src_host_current_mj_gnos =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->current_mj_gnos);
-      Kokkos::deep_copy(src_host_current_mj_gnos, this->current_mj_gnos);
-      ArrayRCP<mj_gno_t> received_gnos(incoming);
-      ArrayView<mj_gno_t> sent_gnos(src_host_current_mj_gnos.data(),
-        this->num_local_coords);
-      distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
+      // MPI buffers should be Kokkos::HostSpace, not Kokkos::CudaUVMSpace
+      // Note, with UVM space, create_mirror_view does NOT create a non-UVM
+      // view; need the explicit Host creation and deep_copy.
+      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> sent_gnos(
+        Kokkos::ViewAllocateWithoutInitializing("sent_gnos"),
+        this->current_mj_gnos.extent(0));
+      Kokkos::deep_copy(sent_gnos, this->current_mj_gnos);
+           
+      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> received_gnos(
+        Kokkos::ViewAllocateWithoutInitializing("received_gnos"),
+        incoming);
+
+      distributor.doPostsAndWaits(sent_gnos, 1, received_gnos);
+
       this->current_mj_gnos = Kokkos::View<mj_gno_t*, device_t>(
         Kokkos::ViewAllocateWithoutInitializing("current_mj_gnos"), incoming);
-      auto host_current_mj_gnos = Kokkos::create_mirror_view(
-        this->current_mj_gnos);
-      memcpy(host_current_mj_gnos.data(),
-        received_gnos.getRawPtr(), incoming * sizeof(mj_gno_t));
-      Kokkos::deep_copy(this->current_mj_gnos, host_current_mj_gnos);
+
+      Kokkos::deep_copy(this->current_mj_gnos, received_gnos);
 
       // migrate part ids to actual owners.
-      auto src_host_assigned_part_ids =
-        Kokkos::create_mirror_view(Kokkos::HostSpace(), this->assigned_part_ids);
-      Kokkos::deep_copy(src_host_assigned_part_ids, this->assigned_part_ids);
-      ArrayView<mj_part_t> sent_partids(src_host_assigned_part_ids.data(),
-        this->num_local_coords);
-      ArrayRCP<mj_part_t> received_partids(incoming);
-      distributor.doPostsAndWaits<mj_part_t>(
-        sent_partids, 1, received_partids());
+      Kokkos::View<mj_part_t *, Kokkos::HostSpace> sent_partids(
+        Kokkos::ViewAllocateWithoutInitializing("sent_partids"),
+        this->assigned_part_ids.extent(0));
+      Kokkos::deep_copy(sent_partids, this->assigned_part_ids);
+
+      Kokkos::View<mj_part_t *, Kokkos::HostSpace> received_partids(
+        Kokkos::ViewAllocateWithoutInitializing("received_partids"),
+        incoming);
+
+      distributor.doPostsAndWaits(sent_partids, 1, received_partids);
+
       this->assigned_part_ids =
         Kokkos::View<mj_part_t*, device_t>(
           Kokkos::ViewAllocateWithoutInitializing("assigned_part_ids"),
           incoming);
-      auto host_assigned_part_ids = Kokkos::create_mirror_view(
-        this->assigned_part_ids);
-      memcpy( host_assigned_part_ids.data(),
-        received_partids.getRawPtr(), incoming * sizeof(mj_part_t));
-      deep_copy(this->assigned_part_ids, host_assigned_part_ids);
+
+      Kokkos::deep_copy(this->assigned_part_ids, received_partids);
       this->num_local_coords = incoming;
 
       this->mj_env->timerStop(MACRO_TIMERS,
@@ -8801,70 +8810,86 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
   mj_env_->timerStart(MACRO_TIMERS,
     timer_base_string + "PreMigration DistributorMigration");
 
-  // MPI Buffers should be on Kokkos::HostSpace not Kokkos::CudaUVMSpace
 
   // migrate gnos.
+  // MPI buffers should be on Kokkos::HostSpace not Kokkos::CudaUVMSpace
+  // Note, with UVM space, create_mirror_view does NOT create a non-UVM
+  // view; need the explicit Host creation and deep_copy.
   {
-    ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
-    Kokkos::View<mj_gno_t*, Kokkos::HostSpace> host_initial_mj_gnos(
-      Kokkos::ViewAllocateWithoutInitializing("host_initial_mj_gnos"),
+    Kokkos::View<mj_gno_t*, Kokkos::HostSpace> sent_gnos(
+      Kokkos::ViewAllocateWithoutInitializing("sent_gnos"),
       initial_mj_gnos_.size()); // initial_mj_gnos_ is const mj_gno_t *
-    Kokkos::deep_copy(host_initial_mj_gnos, initial_mj_gnos_);
-    ArrayView<const mj_gno_t> sent_gnos(host_initial_mj_gnos.data(),
-      num_local_coords_);
-    distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
+    Kokkos::deep_copy(sent_gnos, initial_mj_gnos_);
+
+    Kokkos::View<mj_gno_t*, Kokkos::HostSpace> received_gnos (
+      Kokkos::ViewAllocateWithoutInitializing("received_gnos"),
+      num_incoming_gnos);
+
+    distributor.doPostsAndWaits(sent_gnos, 1, received_gnos);
+
     result_initial_mj_gnos_ = Kokkos::View<mj_gno_t*, device_t>(
       Kokkos::ViewAllocateWithoutInitializing("result_initial_mj_gnos_"),
       num_incoming_gnos);
-    auto host_result_initial_mj_gnos_ = Kokkos::create_mirror_view(
-      result_initial_mj_gnos_);
-    memcpy(host_result_initial_mj_gnos_.data(),
-      received_gnos.getRawPtr(), num_incoming_gnos * sizeof(mj_gno_t));
-    Kokkos::deep_copy(result_initial_mj_gnos_, host_result_initial_mj_gnos_);
+    Kokkos::deep_copy(result_initial_mj_gnos_, received_gnos);
   }
 
   // migrate coordinates
   // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
+
+  Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, Kokkos::HostSpace>
+    host_src_coordinates(
+      Kokkos::ViewAllocateWithoutInitializing("mj_coordinates"),
+      this->mj_coordinates.extent(0), this->mj_coordinates.extent(1));
+
+  Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
+
   Kokkos::View<mj_scalar_t**, Kokkos::LayoutLeft, device_t> dst_coordinates(
     Kokkos::ViewAllocateWithoutInitializing("mj_coordinates"),
     num_incoming_gnos, this->coord_dim);
-  auto host_dst_coordinates = Kokkos::create_mirror_view(
-    dst_coordinates);
-  auto host_src_coordinates =
-    Kokkos::create_mirror_view(Kokkos::HostSpace(), this->mj_coordinates);
-  Kokkos::deep_copy(host_src_coordinates, this->mj_coordinates);
+
+  Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_coord(
+    Kokkos::ViewAllocateWithoutInitializing("received_coord"),
+    num_incoming_gnos);
+
   for(int i = 0; i < this->coord_dim; ++i) {
-    auto sub_host_src_coordinates
-      = Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
-    auto sub_host_dst_coordinates
-      = Kokkos::subview(host_dst_coordinates, Kokkos::ALL, i);
-    // Note Layout Left means we can do these in contiguous blocks
-    ArrayView<mj_scalar_t> sent_coord(
-      sub_host_src_coordinates.data(), this->num_local_coords);
-    ArrayRCP<mj_scalar_t> received_coord(num_incoming_gnos);
-    distributor.doPostsAndWaits<mj_scalar_t>(
-      sent_coord, 1, received_coord());
-    memcpy(sub_host_dst_coordinates.data(),
-      received_coord.getRawPtr(), num_incoming_gnos * sizeof(mj_scalar_t));
+
+    auto sent_coord = Kokkos::subview(host_src_coordinates, Kokkos::ALL, i);
+
+    distributor.doPostsAndWaits(sent_coord, 1, received_coord);
+
+    Kokkos::deep_copy(Kokkos::subview(dst_coordinates, Kokkos::ALL, i),
+                      received_coord);
+    Kokkos::fence();
   }
-  deep_copy(dst_coordinates, host_dst_coordinates);
   result_mj_coordinates_ = dst_coordinates;
 
   // migrate weights.
+
   Kokkos::View<mj_scalar_t**, device_t> dst_weights(
     Kokkos::ViewAllocateWithoutInitializing("mj_weights"),
     num_incoming_gnos, this->num_weights_per_coord);
   auto host_dst_weights = Kokkos::create_mirror_view(dst_weights);
-  auto host_src_weights = Kokkos::create_mirror_view(this->mj_weights);
-  Kokkos::deep_copy(host_src_weights, this->mj_weights);
+
+  auto host_src_weights = Kokkos::create_mirror_view_and_copy(
+                                  Kokkos::HostSpace(), this->mj_weights);
+
+  // contiguous buffers to gather potentially strided data
+  Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> sent_weight(
+    Kokkos::ViewAllocateWithoutInitializing("send_weight_buffer"),
+    this->num_local_coords);
+
+  Kokkos::View<mj_scalar_t*, Kokkos::HostSpace> received_weight(
+    Kokkos::ViewAllocateWithoutInitializing("received_weight_buffer"),
+    num_incoming_gnos); 
+
   for(int i = 0; i < this->num_weights_per_coord; ++i) {
+
     auto sub_host_src_weights
       = Kokkos::subview(host_src_weights, Kokkos::ALL, i);
     auto sub_host_dst_weights
       = Kokkos::subview(host_dst_weights, Kokkos::ALL, i);
-    ArrayRCP<mj_scalar_t> sent_weight(this->num_local_coords);
 
-    // Layout Right means these are not contiguous
+    // Layout Right means these weights are not contiguous
     // However we don't have any systems setup with more than 1 weight so
     // really I have not tested any of this code with num weights > 1.
     // I think this is the right thing to do. Note that there are other
@@ -8873,9 +8898,8 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
     for(mj_lno_t n = 0; n < this->num_local_coords; ++n) {
       sent_weight[n] = sub_host_src_weights(n);
     }
-    ArrayRCP<mj_scalar_t> received_weight(num_incoming_gnos);
-    distributor.doPostsAndWaits<mj_scalar_t>(
-      sent_weight(), 1, received_weight());
+
+    distributor.doPostsAndWaits(sent_weight, 1, received_weight);
 
     // Again we copy by index due to layout
     for(mj_lno_t n = 0; n < num_incoming_gnos; ++n) {
@@ -8887,14 +8911,21 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
 
   // migrate the owners of the coordinates
   {
-    std::vector<int> owner_of_coordinate(num_local_coords_, myRank);
-    ArrayView<int> sent_owners(&(owner_of_coordinate[0]), num_local_coords_);
-    ArrayRCP<int> received_owners(num_incoming_gnos);
-    distributor.doPostsAndWaits<int>(sent_owners, 1, received_owners());
+    Kokkos::View<int*, Kokkos::HostSpace> sent_owners(
+                 Kokkos::ViewAllocateWithoutInitializing("sent_owners"),
+                 num_local_coords_);
+    Kokkos::deep_copy(sent_owners, myRank);
+                             
+    Kokkos::View<int*, Kokkos::HostSpace> received_owners(
+                 Kokkos::ViewAllocateWithoutInitializing("received_owners"),
+                 num_incoming_gnos);
+
+    distributor.doPostsAndWaits(sent_owners, 1, received_owners);
+
     result_actual_owner_rank_ = new int[num_incoming_gnos];
     memcpy(
 	    result_actual_owner_rank_,
-	    received_owners.getRawPtr(),
+	    received_owners.data(),
 	    num_incoming_gnos * sizeof(int));
   }
 
@@ -9087,10 +9118,13 @@ void Zoltan2_AlgMJ<Adapter>::partition(
       this->mj_env->timerStart(MACRO_TIMERS, timer_base_string +
         "PostMigration DistributorPlanCreating");
       Tpetra::Distributor distributor(this->mj_problemComm);
+
       ArrayView<const mj_part_t> actual_owner_destinations(
         result_actual_owner_rank , result_num_local_coords);
+
       mj_lno_t num_incoming_gnos = distributor.createFromSends(
         actual_owner_destinations);
+
       if(num_incoming_gnos != this->num_local_coords) {
         throw std::logic_error("Zoltan2 - Multijagged Post Migration - "
           "num incoming is not equal to num local coords");
@@ -9100,18 +9134,23 @@ void Zoltan2_AlgMJ<Adapter>::partition(
         "PostMigration DistributorPlanCreating");
       mj_env->timerStart(MACRO_TIMERS, timer_base_string +
         "PostMigration DistributorMigration");
-      ArrayRCP<mj_gno_t> received_gnos(num_incoming_gnos);
-      ArrayRCP<mj_part_t> received_partids(num_incoming_gnos);
-      {
-        ArrayView<const mj_gno_t> sent_gnos(host_result_initial_mj_gnos.data(),
-         result_num_local_coords);
-        distributor.doPostsAndWaits<mj_gno_t>(sent_gnos, 1, received_gnos());
-      }
 
+      Kokkos::View<mj_gno_t*, Kokkos::HostSpace> received_gnos(
+        Kokkos::ViewAllocateWithoutInitializing("received_gnos"),
+        num_incoming_gnos);
+      Kokkos::View<mj_part_t*, Kokkos::HostSpace> received_partids(
+        Kokkos::ViewAllocateWithoutInitializing("received_partids"),
+        num_incoming_gnos);
+
+      distributor.doPostsAndWaits(host_result_initial_mj_gnos, 1,
+                                  received_gnos);
       {
-        ArrayView<mj_part_t> sent_partnos(partId());
-        distributor.doPostsAndWaits<mj_part_t>(sent_partnos, 1,
-         received_partids());
+        Kokkos::View<mj_part_t*, Kokkos::HostSpace> sent_partnos;
+        if (partId.size() > 0) {
+          sent_partnos = Kokkos::View<mj_part_t*, Kokkos::HostSpace>(
+                                 partId.getRawPtr(), partId.size()); //unmanaged
+        }
+        distributor.doPostsAndWaits(sent_partnos, 1, received_partids);
       }
 
       partId = arcp(new mj_part_t[this->num_local_coords],

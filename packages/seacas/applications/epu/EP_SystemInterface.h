@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -64,8 +64,12 @@ namespace Excn {
     void set_use_netcdf4() const { useNetcdf4_ = true; }
     bool append() const { return append_; }
     bool map_element_ids() const { return mapIds_; }
+    bool map_edge_ids() const { return mapEdgeIds_; }
+    bool map_face_ids() const { return mapFaceIds_; }
     bool omit_nodesets() const { return omitNodesets_; }
     bool omit_sidesets() const { return omitSidesets_; }
+    bool omit_edgeblocks() const { return omitEdgeBlocks_; }
+    bool omit_faceblocks() const { return omitFaceBlocks_; }
     bool int64() const { return intIs64Bit_; }
     void set_int64() const { intIs64Bit_ = true; }
     int  compress_data() const { return compressData_; }
@@ -75,6 +79,7 @@ namespace Excn {
     bool output_shared_nodes() const { return outputSharedNodes_; }
     bool is_auto() const { return auto_; }
     bool keep_temporary() const { return keepTemporary_; }
+    bool verify_valid_file() const { return verifyValidFile_; }
     int  max_open_files() const
     {
       return maxOpenFiles_;
@@ -85,6 +90,8 @@ namespace Excn {
     StringIdVector elem_var_names() const { return elemVarNames_; }
     StringIdVector nset_var_names() const { return nsetVarNames_; }
     StringIdVector sset_var_names() const { return ssetVarNames_; }
+    StringIdVector edblk_var_names() const { return edblkVarNames_; }
+    StringIdVector fablk_var_names() const { return fablkVarNames_; }
 
     //! Dumps representation of data in this class to cerr
     void dump(std::ostream &str) const;
@@ -139,8 +146,12 @@ namespace Excn {
     bool         addProcessorIdField_{false};
     bool         addProcessorIdMap_{false};
     bool         mapIds_{true};
+    bool         mapEdgeIds_{true};
+    bool         mapFaceIds_{true};
     bool         omitNodesets_{false};
     bool         omitSidesets_{false};
+    bool         omitEdgeBlocks_{false};
+    bool         omitFaceBlocks_{false};
     mutable bool useNetcdf4_{false};
     bool         useNetcdf5_{false};
     bool         append_{false};
@@ -149,13 +160,16 @@ namespace Excn {
     bool         outputSharedNodes_{false};
     bool         auto_{false};
     bool         keepTemporary_{false};
+    bool         verifyValidFile_{false};
     bool         addNodalCommunicationMap_{false};
 
-    StringIdVector globalVarNames_;
-    StringIdVector nodeVarNames_;
-    StringIdVector elemVarNames_;
-    StringIdVector nsetVarNames_;
-    StringIdVector ssetVarNames_;
+    StringIdVector globalVarNames_{};
+    StringIdVector nodeVarNames_{};
+    StringIdVector elemVarNames_{};
+    StringIdVector nsetVarNames_{};
+    StringIdVector ssetVarNames_{};
+    StringIdVector edblkVarNames_{};
+    StringIdVector fablkVarNames_{};
   };
 
   inline int SystemInterface::part_count() const

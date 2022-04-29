@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,11 +36,11 @@
 #include "exodusII.h"
 
 #define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define TOSTRING(x)  STRINGIFY(x)
 
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
-    error = (funcall);                                                                             \
+    int error = (funcall);                                                                         \
     printf("after %s, error = %d\n", TOSTRING(funcall), error);                                    \
     if (error != EX_NOERR) {                                                                       \
       fprintf(stderr, "Error calling %s\n", TOSTRING(funcall));                                    \
@@ -51,47 +51,38 @@
 
 int main(int argc, char **argv)
 {
-  int exoid, num_dim, num_nodes, num_elem, num_elem_blk;
-  int num_node_sets, num_side_sets, num_assembly;
-  int error;
-  int CPU_word_size, IO_word_size;
-
-  char *title = "This is a test";
-
   ex_opts(EX_VERBOSE);
 
   /* Specify compute and i/o word size */
-
-  CPU_word_size = 8;
-  IO_word_size  = 8;
+  int CPU_word_size = 8;
+  int IO_word_size  = 8;
 
   /* create EXODUS II file */
-
-  exoid = ex_create("test-assembly.exo", /* filename path */
-                    EX_CLOBBER,          /* create mode */
-                    &CPU_word_size,      /* CPU double word size in bytes */
-                    &IO_word_size);      /* I/O double word size in bytes */
+  int exoid = ex_create("test-assembly.exo", /* filename path */
+                        EX_CLOBBER,          /* create mode */
+                        &CPU_word_size,      /* CPU double word size in bytes */
+                        &IO_word_size);      /* I/O double word size in bytes */
   printf("after ex_create for test.exo, exoid = %d\n", exoid);
   printf(" cpu word size: %d io word size: %d\n", CPU_word_size, IO_word_size);
 
-  /* initialize file with parameters */
+  int num_elem_blk = 7;
+  int num_assembly = 4;
   {
-    num_dim       = 3;
-    num_nodes     = 1;
-    num_elem      = 7;
-    num_elem_blk  = 7;
-    num_node_sets = 0;
-    num_side_sets = 0;
-    num_assembly  = 4;
+    /* initialize file with parameters */
+    int            num_dim       = 3;
+    int            num_nodes     = 1;
+    int            num_elem      = 7;
+    int            num_node_sets = 0;
+    int            num_side_sets = 0;
+    ex_init_params par           = {.num_dim       = num_dim,
+                                    .num_nodes     = num_nodes,
+                                    .num_elem      = num_elem,
+                                    .num_elem_blk  = num_elem_blk,
+                                    .num_node_sets = num_node_sets,
+                                    .num_side_sets = num_side_sets,
+                                    .num_assembly  = num_assembly};
 
-    ex_init_params par = {.num_dim       = num_dim,
-                          .num_nodes     = num_nodes,
-                          .num_elem      = num_elem,
-                          .num_elem_blk  = num_elem_blk,
-                          .num_node_sets = num_node_sets,
-                          .num_side_sets = num_side_sets,
-                          .num_assembly  = num_assembly};
-
+    char *title = "This is a test";
     ex_copy_string(par.title, title, MAX_LINE_LENGTH + 1);
     EXCHECK(ex_put_init_ext(exoid, &par));
   }
@@ -166,7 +157,7 @@ int main(int argc, char **argv)
   {
     double scale     = 1.5;
     double offset[]  = {1.1, 2.2, 3.3};
-    char * dimension = "length";
+    char  *dimension = "length";
     int    units[]   = {1, 0, 0, -1};
 
     EXCHECK(ex_put_double_attribute(exoid, EX_ASSEMBLY, 100, "Scale", 1, &scale));
@@ -203,7 +194,7 @@ int main(int argc, char **argv)
   { /* Output time steps ... */
     double *var_vals = (double *)calloc(num_assem_vars, CPU_word_size);
     for (int ts = 0; ts < 10; ts++) {
-      double time_val = (double)(ts + 1) / 100.0f;
+      double time_val = (double)(ts + 1) / 100.0;
 
       EXCHECK(ex_put_time(exoid, ts + 1, &time_val));
 
@@ -216,6 +207,7 @@ int main(int argc, char **argv)
                                       var_vals));
       }
     }
+    free(var_vals);
   }
 
   /* close the EXODUS files

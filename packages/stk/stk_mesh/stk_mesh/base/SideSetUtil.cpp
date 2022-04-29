@@ -52,7 +52,7 @@ std::pair<bool,bool> old_is_positive_sideset_polarity(const stk::mesh::BulkData 
     try {
         ssetPtr = &bulk.get_sideset(parentPart);
     }
-    catch(std::exception& excpt) {
+    catch(std::exception&) {
         return returnValue;
     }
 
@@ -376,7 +376,7 @@ bool is_side_supported(const stk::mesh::BulkData &bulk, stk::mesh::Entity side, 
         stk::mesh::impl::LocalId elementId = graph.get_local_element_id(elements[indexFirstOwnedElement]);
         stk::mesh::Ordinal ord = ordinals[indexFirstOwnedElement];
 
-        const stk::mesh::GraphEdgesForElement& graphEdges = graph.get_edges_for_element(elementId);
+        stk::mesh::GraphEdgesForElement graphEdges = graph.get_edges_for_element(elementId);
         for(size_t i = 0; i < graphEdges.size(); ++i)
         {
             const stk::mesh::GraphEdge& graphEdge =  graph.get_graph().get_edge_for_element(elementId, i);

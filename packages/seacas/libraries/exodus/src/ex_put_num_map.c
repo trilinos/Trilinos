@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -37,24 +37,18 @@
 
 int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, const void_int *map)
 {
-  int         dimid, varid;
-  int         map_int_type;
-  size_t      start[1];
-  int         ldum;
-  int         num_maps;
-  size_t      num_entries;
-  int         cur_num_maps;
-  char        errmsg[MAX_ERR_LENGTH];
-  const char *dnumentries;
-  const char *dnummaps;
-  const char *vmapids;
-  const char *vmap;
-  int         status;
+  size_t start[1];
+  char   errmsg[MAX_ERR_LENGTH];
+  int    status;
 
   EX_FUNC_ENTER();
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
+
+  const char *dnumentries;
+  const char *dnummaps;
+  const char *vmapids;
 
   switch (map_type) {
   case EX_NODE_MAP:
@@ -85,6 +79,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   }
 
   /* Make sure the file contains entries */
+  int dimid;
   if (nc_inq_dimid(exoid, dnumentries, &dimid) != NC_NOERR) {
     EX_FUNC_LEAVE(EX_NOERR);
   }
@@ -107,20 +102,21 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   }
 
   /* Get number of maps initialized for this file */
+  size_t num_entries;
   if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d",
              ex_name_of_object(map_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
-  num_maps = num_entries;
+  int num_maps = num_entries;
 
   /* Keep track of the total number of maps defined using a counter stored
      in a linked list keyed by exoid.
      NOTE: ex__get_file_item  is used to find the number of maps
      for a specific file and returns that value.
   */
-  cur_num_maps = ex__get_file_item(exoid, ex__get_counter_list(map_type));
+  int cur_num_maps = ex__get_file_item(exoid, ex__get_counter_list(map_type));
   if (cur_num_maps >= num_maps) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: exceeded number of %ss (%d) specified in file id %d",
              ex_name_of_object(map_type), num_maps, exoid);
@@ -135,6 +131,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   /* write out information to previously defined variable */
 
   /* first get id of variable */
+  int varid;
   if ((status = nc_inq_varid(exoid, vmapids, &varid)) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s ids in file id %d",
              ex_name_of_object(map_type), exoid);
@@ -145,7 +142,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   /* then, write out map id */
   start[0] = cur_num_maps;
 
-  ldum = (int)map_id;
+  int ldum = (int)map_id;
   if ((status = nc_put_var1_int(exoid, varid, start, &ldum)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s id %" PRId64 " in file id %d",
              ex_name_of_object(map_type), map_id, exoid);
@@ -153,6 +150,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
+  const char *vmap;
   switch (map_type) {
   case EX_NODE_MAP: vmap = VAR_NODE_MAP(cur_num_maps + 1); break;
   case EX_EDGE_MAP: vmap = VAR_EDGE_MAP(cur_num_maps + 1); break;
@@ -185,7 +183,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
     }
 
     /* Check type to be used for maps... */
-    map_int_type = NC_INT;
+    int map_int_type = NC_INT;
     if (ex_int64_status(exoid) & EX_MAPS_INT64_DB) {
       map_int_type = NC_INT64;
     }

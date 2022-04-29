@@ -223,11 +223,12 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif
 
-    // add coordinates to parameter list
+    // add coordinates and nullspace to parameter list
     if (paramList->isSublist("Preconditioner Types") &&
         paramList->sublist("Preconditioner Types").isSublist("MueLu")) {
         ParameterList& userParamList = paramList->sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
         userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+        userParamList.set<RCP<MultiVector> >("Nullspace", nullspace);
       }
 
     // Setup solver parameters using a Stratimikos parameter list.

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -29,7 +29,6 @@ namespace {
     std::string sline = line;
     chop_whitespace(sline);
     Error(fmt::format("parsing input file, currently at \"{}\".\n", sline));
-    exit(1);
   }
 
   std::string Parse_Variables(std::string xline, std::ifstream &cmd_file, bool &all_flag,
@@ -58,12 +57,10 @@ namespace {
       Error(fmt::format(" Problem converting the string '{}'"
                         " to a double value while parsing tolerance.  Aborting...\n",
                         str_val));
-      exit(1);
     }
 
     if (val < 0.0) {
       Error(fmt::format(" Parsed a negative value \"{}\".  Aborting...\n", val));
-      exit(1);
     }
     return val;
   }
@@ -158,7 +155,6 @@ namespace {
       Error(fmt::format("Parsing error: Cannot specify both "
                         "variables to include and exclude without using the "
                         "'(all)' specifier.  Aborting...\n"));
-      exit(1);
     }
     if (num_include == 0 && num_exclude > 0) {
       all_flag = true;
@@ -185,7 +181,6 @@ namespace {
       if (ival1 < 1) {
         Error(fmt::format("parsing exclusion times from command "
                           "line .. value was less than 1\n"));
-        exit(1);
       }
 
       ++num_excluded_steps;
@@ -199,7 +194,6 @@ namespace {
         if (ival2 < 1) {
           Error(fmt::format("parsing exclusion times from command "
                             "line .. value was less than 1\n"));
-          exit(1);
         }
 
         if (ival1 < ival2) {
@@ -211,7 +205,6 @@ namespace {
           Error(fmt::format("parsing exclusion times from command "
                             "line .. first value in a range was greater than the "
                             "second.\n"));
-          exit(1);
         }
       }
 
@@ -570,7 +563,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
   else {
     Error("no files specified\n\n");
-    return false;
   }
 
   // Get options from environment variable also...
@@ -614,14 +606,14 @@ bool SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("TimeStepOffset");
     if (temp != nullptr) {
       errno            = 0;
-      time_step_offset = atoi(temp);
+      time_step_offset = strtol(temp, NULL, 10);
       SMART_ASSERT(errno == 0);
     }
     else {
       const char *temp2 = options_.retrieve("T");
       if (temp2 != nullptr) {
         errno            = 0;
-        time_step_offset = atoi(temp2);
+        time_step_offset = strtol(temp2, NULL, 10);
         SMART_ASSERT(errno == 0);
       }
     }
@@ -669,7 +661,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
         Error(fmt::format("parse error for -explicit keyword. "
                           "Expected '<int|last>:<int|last>', found '{}' Aborting...\n",
                           temp));
-        exit(1);
       }
     }
   }
@@ -816,7 +807,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("max_warnings");
     if (temp != nullptr) {
       errno        = 0;
-      max_warnings = atoi(temp);
+      max_warnings = strtol(temp, NULL, 10);
       SMART_ASSERT(errno == 0);
     }
   }
@@ -850,7 +841,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
       command_file = temp;
       if (!summary_flag && (File_Exists(command_file) == 0)) {
         Error(fmt::format("Can't open file \"{}\".\n", command_file));
-        exit(1);
       }
 
       // Command file exists, parse contents...
@@ -862,7 +852,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
         command_file = t2;
         if (!summary_flag && (File_Exists(command_file) == 0)) {
           Error(fmt::format("Can't open file \"{}\".\n", command_file));
-          exit(1);
         }
 
         // Command file exists, parse contents...
@@ -963,7 +952,6 @@ void SystemInterface::Parse_Command_File()
           Error(fmt::format(" expected \"TOLERANCE\" after the \"FINAL TIME\" keyword. "
                             "Found \"{}\" instead. Aborting...\n",
                             tok3));
-          exit(1);
         }
         std::string tok = extract_token(xline, " \n\t=,");
         if (tok == "") {
@@ -1195,7 +1183,7 @@ void SystemInterface::Parse_Command_File()
       else if (abbreviation(tok1, "global", 4) && abbreviation(tok2, "variables", 3)) {
         glob_var_default = default_tol;
         xline            = Parse_Variables(xline, cmd_file, glob_var_do_all_flag, glob_var_default,
-                                glob_var_names, glob_var);
+                                           glob_var_names, glob_var);
 
         Check_Parsed_Names(glob_var_names, glob_var_do_all_flag);
 
@@ -1211,7 +1199,7 @@ void SystemInterface::Parse_Command_File()
       else if (abbreviation(tok1, "nodal", 4) && abbreviation(tok2, "variables", 3)) {
         node_var_default = default_tol;
         xline            = Parse_Variables(xline, cmd_file, node_var_do_all_flag, node_var_default,
-                                node_var_names, node_var);
+                                           node_var_names, node_var);
 
         Check_Parsed_Names(node_var_names, node_var_do_all_flag);
 
@@ -1227,7 +1215,7 @@ void SystemInterface::Parse_Command_File()
       else if (abbreviation(tok1, "element", 4) && abbreviation(tok2, "variables", 3)) {
         elmt_var_default = default_tol;
         xline            = Parse_Variables(xline, cmd_file, elmt_var_do_all_flag, elmt_var_default,
-                                elmt_var_names, elmt_var);
+                                           elmt_var_names, elmt_var);
 
         Check_Parsed_Names(elmt_var_names, elmt_var_do_all_flag);
 
@@ -1389,7 +1377,7 @@ void SystemInterface::Parse_Command_File()
       else if (abbreviation(tok1, "element", 4) && abbreviation(tok2, "attributes", 3)) {
         elmt_att_default = default_tol;
         xline            = Parse_Variables(xline, cmd_file, elmt_att_do_all_flag, elmt_att_default,
-                                elmt_att_names, elmt_att);
+                                           elmt_att_names, elmt_att);
 
         Check_Parsed_Names(elmt_att_names, elmt_att_do_all_flag);
 
@@ -1432,7 +1420,6 @@ namespace {
           !abbreviation(tok, "eigen_combine", 7) && !abbreviation(tok, "ignore", 3) &&
           !abbreviation(tok, "floor", 3)) {
         Error(fmt::format("in parsing command file: unrecognized keyword \"{}\"\n", tok));
-        exit(1);
       }
 
       if (tok == "(all)" || tok == "all") {
@@ -1447,7 +1434,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error(" Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1459,7 +1445,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1471,7 +1456,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1483,7 +1467,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1495,7 +1478,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1507,7 +1489,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1519,7 +1500,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1531,7 +1511,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1548,7 +1527,6 @@ namespace {
         tok = extract_token(xline, " \n\t=,");
         if (tok == "" || tok[0] == '#') {
           Error("Floor specified but couldn't find value\n");
-          exit(1);
         }
         def_tol.floor = To_Double(tok);
       }

@@ -36,22 +36,22 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <stddef.h>                                       // for size_t
-#include <map>                                            // for map, etc
-#include <string>                                         // for string, etc
-#include <vector>                                         // for vector
-#include "stk_mesh/base/Types.hpp"                        // for EntityRank, etc
-#include "stk_mesh/base/SideSetUtil.hpp"
-#include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
-#include "stk_io/OutputParams.hpp"
-#include "stk_util/util/ParameterList.hpp"
-#include "Ioss_Field.h"
-
-namespace stk { namespace io   { class StkMeshIoBroker; } }
-namespace stk { namespace mesh { class BulkData; } }
+#include <cstddef>                          // for size_t
+#include <map>                              // for map, map<>::value_compare
+#include <string>                           // for string
+#include <utility>                          // for pair
+#include <vector>                           // for vector
+#include "Ioss_Field.h"                     // for Field, Field::BasicType
+#include "stk_mesh/base/Types.hpp"          // for EntityRank, EntityVector
+#include "stk_util/util/ParameterList.hpp"  // for Type, STK_ANY_NAMESPACE
+namespace Teuchos { class any; }
+namespace stk { namespace io { class StkMeshIoBroker; } }
+namespace stk { namespace io { struct OutputParams; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
+
+namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { struct Entity; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -107,7 +107,7 @@ get_parameter_type_from_field_representation(const std::string &storage,
 
 std::pair<size_t, Ioss::Field::BasicType>
 get_io_parameter_size_and_type(const stk::util::ParameterType::Type type,
-                               const boost::any &value);
+                               const STK_ANY_NAMESPACE::any &value);
 
 void superset_mesh_parts(const stk::mesh::Part& part, stk::mesh::PartVector& supersetParts);
 

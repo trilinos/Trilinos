@@ -66,10 +66,10 @@ namespace Stokhos {
 
     // Get map info
     const global_size_t num_global_entries = map.getGlobalNumElements();
-    const size_t num_local_entries = map.getNodeNumElements();
+    const size_t num_local_entries = map.getLocalNumElements();
     const GlobalOrdinal index_base = map.getIndexBase();
     ArrayView<const GlobalOrdinal> element_list =
-      map.getNodeElementList();
+      map.getLocalElementList();
 
     // Create new elements
     const global_size_t flat_num_global_entries = num_global_entries*block_size;
@@ -128,9 +128,9 @@ namespace Stokhos {
       flat_row_map = create_flat_map(*(graph.getRowMap()), block_size);
 
     // Build flattened row offsets and column indices
-    ArrayRCP<const size_t> row_offsets = graph.getNodeRowPtrs();
-    ArrayRCP<const LocalOrdinal> col_indices = graph.getNodePackedIndices();
-    const size_t num_row = graph.getNodeNumRows();
+    auto row_offsets = graph.getLocalRowPtrsHost();
+    auto col_indices = graph.getLocalIndicesHost();
+    const size_t num_row = graph.getLocalNumRows();
     const size_t num_col_indices = col_indices.size();
     ArrayRCP<size_t> flat_row_offsets(num_row*block_size+1);
     ArrayRCP<LocalOrdinal> flat_col_indices(num_col_indices * block_size);
@@ -181,8 +181,8 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
     typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> Graph;
-    typedef typename Graph::local_graph_type::row_map_type::non_const_type RowPtrs;
-    typedef typename Graph::local_graph_type::entries_type::non_const_type LocalIndices;
+    typedef typename Graph::local_graph_device_type::row_map_type::non_const_type RowPtrs;
+    typedef typename Graph::local_graph_device_type::entries_type::non_const_type LocalIndices;
 
     // Build domain map if necessary
     if (flat_domain_map == Teuchos::null)
@@ -206,12 +206,14 @@ namespace Stokhos {
       flat_row_map = create_flat_map(*(graph.getRowMap()), block_size);
 
     // Build flattened row offsets and column indices
-    ArrayRCP<const size_t> row_offsets = graph.getNodeRowPtrs();
-    ArrayRCP<const LocalOrdinal> col_indices = graph.getNodePackedIndices();
-    const size_t num_row = graph.getNodeNumRows();
+    auto row_offsets = graph.getLocalRowPtrsHost();
+    auto col_indices = graph.getLocalIndicesHost();
+    const size_t num_row = graph.getLocalNumRows();
     const size_t num_col_indices = col_indices.size();
     RowPtrs flat_row_offsets("row_ptrs", num_row*block_size+1);
     LocalIndices flat_col_indices("col_indices", num_col_indices * block_size);
+    auto flat_row_offsets_host = Kokkos::create_mirror_view(flat_row_offsets);
+    auto flat_col_indices_host = Kokkos::create_mirror_view(flat_col_indices);
     for (size_t row=0; row<num_row; ++row) {
       const size_t row_beg = row_offsets[row];
       const size_t row_end = row_offsets[row+1];
@@ -219,15 +221,17 @@ namespace Stokhos {
       for (LocalOrdinal j=0; j<block_size; ++j) {
         const size_t flat_row = row*block_size + j;
         const size_t flat_row_beg = row_beg*block_size + j*num_col;
-        flat_row_offsets[flat_row] = flat_row_beg;
+        flat_row_offsets_host[flat_row] = flat_row_beg;
         for (size_t entry=0; entry<num_col; ++entry) {
           const LocalOrdinal col = col_indices[row_beg+entry];
           const LocalOrdinal flat_col = col*block_size + j;
-          flat_col_indices[flat_row_beg+entry] = flat_col;
+          flat_col_indices_host[flat_row_beg+entry] = flat_col;
         }
       }
     }
-    flat_row_offsets[num_row*block_size] = num_col_indices*block_size;
+    flat_row_offsets_host[num_row*block_size] = num_col_indices*block_size;
+    Kokkos::deep_copy(flat_row_offsets, flat_row_offsets_host);
+    Kokkos::deep_copy(flat_col_indices, flat_col_indices_host);
 
     // Build flattened graph
     RCP<Graph> flat_graph =
@@ -454,16 +458,17 @@ namespace Stokhos {
     typedef typename Storage::value_type BaseScalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename FlatVector::dual_view_type flat_view_type;
+    typedef typename FlatVector::dual_view_type::t_dev flat_view_type;
+
+    // Have to do a nasty const-cast because getLocalViewDevice(ReadWrite) is a
+    // non-const method, yet getLocalViewDevice(ReadOnly) returns a const-view
+    // (i.e., with a constant scalar type), and there is no way to make a
+    // MultiVector out of it!
+    typedef Tpetra::MultiVector<Sacado::MP::Vector<Storage>, LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Device> > mv_type;
+    mv_type& vec_nc = const_cast<mv_type&>(vec);
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals (vec.getLocalViewDevice(), vec.getLocalViewHost());
-    if (vec.need_sync_device ()) {
-      flat_vals.modify_host ();
-    }
-    else if (vec.need_sync_host ()) {
-      flat_vals.modify_device ();
-    }
+    flat_view_type flat_vals = vec_nc.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
@@ -490,16 +495,10 @@ namespace Stokhos {
     typedef typename Storage::value_type BaseScalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename FlatVector::dual_view_type flat_view_type;
+    typedef typename FlatVector::dual_view_type::t_dev flat_view_type;
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals (vec.getLocalViewDevice(), vec.getLocalViewHost());
-    if (vec.need_sync_device ()) {
-      flat_vals.modify_host ();
-    }
-    else if (vec.need_sync_host ()) {
-      flat_vals.modify_device ();
-    }
+    flat_view_type flat_vals = vec.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
@@ -527,16 +526,17 @@ namespace Stokhos {
 
     typedef Sacado::MP::Vector<Storage> Scalar;
     typedef typename Storage::value_type BaseScalar;
+    typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
     typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatMatrix;
 
     // Create flat matrix
     RCP<FlatMatrix> flat_mat = rcp(new FlatMatrix(flat_graph));
 
     // Set values
-    const size_t num_rows = mat.getNodeNumRows();
-    const size_t max_cols = mat.getNodeMaxNumRowEntries();
-    ArrayView<const LocalOrdinal> indices, flat_indices;
-    ArrayView<const Scalar> values;
+    const size_t num_rows = mat.getLocalNumRows();
+    const size_t max_cols = mat.getLocalMaxNumRowEntries();
+    typename Matrix::local_inds_host_view_type indices, flat_indices;
+    typename Matrix::values_host_view_type values;
     Array<BaseScalar> flat_values(max_cols);
     for (size_t row=0; row<num_rows; ++row) {
       mat.getLocalRowView(row, indices, values);
@@ -546,7 +546,7 @@ namespace Stokhos {
         for (size_t j=0; j<num_col; ++j)
           flat_values[j] = values[j].coeff(i);
         flat_graph->getLocalRowView(flat_row, flat_indices);
-        flat_mat->replaceLocalValues(flat_row, flat_indices,
+        flat_mat->replaceLocalValues(flat_row, Kokkos::Compat::getConstArrayView(flat_indices),
                                      flat_values(0, num_col));
       }
     }

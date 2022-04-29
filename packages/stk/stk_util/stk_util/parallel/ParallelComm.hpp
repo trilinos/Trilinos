@@ -36,6 +36,7 @@
 #define stk_util_parallel_ParallelComm_hpp
 
 #include "stk_util/parallel/Parallel.hpp"   // for MPI_Irecv, MPI_Wait, MPI_Barrier, MPI_Send
+#include "stk_util/parallel/MPITagManager.hpp"  // for MPITagManager
 #include "stk_util/stk_config.h"            // for STK_HAS_MPI
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg, ThrowRequire
 #include <cstddef>                          // for size_t, ptrdiff_t
@@ -179,9 +180,6 @@ private:
   friend class CommSparse ;
   friend class CommNeighbors ;
   friend class CommBroadcast ;
-
-  static CommBuffer * allocate( const unsigned, const unsigned * const );
-  static void deallocate( const unsigned , CommBuffer * );
 
   void pack_overflow() const ;
   void unpack_overflow() const ;
@@ -526,7 +524,7 @@ void parallel_data_exchange_t(std::vector< std::vector<T> > &send_lists,
   //
   //  Determine the number of processors involved in this communication
   //
-  const int msg_tag = 10242;
+  auto msg_tag = get_mpi_tag_manager().get_tag(mpi_communicator, 10242);
   int num_procs;
   MPI_Comm_size(mpi_communicator, &num_procs);
   int my_proc;
@@ -585,7 +583,7 @@ void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
   //  Determine the number of processors involved in this communication
   //
 #if defined( STK_HAS_MPI)
-  const int msg_tag = 10242;
+  auto msg_tag = get_mpi_tag_manager().get_tag(mpi_communicator, 10242);
   int num_procs = stk::parallel_machine_size(mpi_communicator);
   int class_size = sizeof(T);
 
@@ -629,7 +627,7 @@ void parallel_data_exchange_nonsym_known_sizes_t(const int* sendOffsets,
                                                  MPI_Comm mpi_communicator )
 {
 #if defined( STK_HAS_MPI)
-  const int msg_tag = 10243; //arbitrary tag value, anything less than 32768 is legal
+  const auto msg_tag = get_mpi_tag_manager().get_tag(mpi_communicator, 10243); //arbitrary tag value, anything less than 32768 is legal
   const int num_procs = stk::parallel_machine_size(mpi_communicator);
   const int bytesPerScalar = sizeof(T);
 
@@ -678,7 +676,7 @@ void parallel_data_exchange_sym_unknown_size_t(std::vector< std::vector<T> > &se
                                                MPI_Comm &mpi_communicator )
 {
 #if defined( STK_HAS_MPI)
-  const int msg_tag = 10242;
+  const auto msg_tag = get_mpi_tag_manager().get_tag(mpi_communicator, 10242);
   int num_procs = stk::parallel_machine_size(mpi_communicator);
   int class_size = sizeof(T);
 
@@ -747,7 +745,7 @@ void parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
                                             bool deterministic)
 {
 #if defined( STK_HAS_MPI)
-  const int msg_tag = 10242;
+  const auto msg_tag = get_mpi_tag_manager().get_tag(mpi_communicator, 10242);
   int class_size = sizeof(T);
 
   int num_comm_procs = comm_procs.size();

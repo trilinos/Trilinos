@@ -1,4 +1,4 @@
-// Copyright(C) 2021 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -20,8 +20,11 @@
 //     -- rank (for parallel -- which rank does this entry exist on)
 //
 
+#include <array>
 #include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "UnitCell.h"
 //! \file
@@ -34,8 +37,8 @@ enum class Loc { C = 0, BL, B, BR, L, R, TL, T, TR };
 class Cell
 {
 public:
-  Cell() = default;
-  Cell(const Cell&) = default;
+  Cell()             = default;
+  Cell(const Cell &) = default;
 
   std::pair<double, double> get_coordinate_range(enum Axis) const;
   void                      initialize(size_t i, size_t j, std::shared_ptr<UnitCell> unit_cell);

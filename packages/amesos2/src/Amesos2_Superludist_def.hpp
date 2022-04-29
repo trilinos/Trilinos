@@ -69,9 +69,6 @@ namespace Amesos2 {
                                           Teuchos::RCP<Vector> X,
                                           Teuchos::RCP<const Vector> B)
     : SolverCore<Amesos2::Superludist,Matrix,Vector>(A, X, B)
-    , nzvals_()                 // initialization to empty arrays
-    , colind_()
-    , rowptr_()
     , bvals_()
     , xvals_()
     , in_grid_(false)
@@ -355,17 +352,17 @@ namespace Amesos2 {
         free( data_.fstVtxSep );
 #endif
       }
-#ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor preOrderTime( this->timers_.preOrderTime_ );
-#endif
-
       float info = 0.0;
-      info = SLUD::get_perm_c_parmetis( &(data_.A),
-                                        data_.perm_r.getRawPtr(), data_.perm_c.getRawPtr(),
-                                        data_.grid.nprow * data_.grid.npcol, data_.domains,
-                                        &(data_.sizes), &(data_.fstVtxSep),
-                                        &(data_.grid), &(data_.symb_comm) );
-
+      {
+#ifdef HAVE_AMESOS2_TIMERS
+        Teuchos::TimeMonitor preOrderTime( this->timers_.preOrderTime_ );
+#endif
+        info = SLUD::get_perm_c_parmetis( &(data_.A),
+                                          data_.perm_r.getRawPtr(), data_.perm_c.getRawPtr(),
+                                          data_.grid.nprow * data_.grid.npcol, data_.domains,
+                                          &(data_.sizes), &(data_.fstVtxSep),
+                                          &(data_.grid), &(data_.symb_comm) );
+      }
       TEUCHOS_TEST_FOR_EXCEPTION( info > 0.0,
                           std::runtime_error,
                           "SuperLU_DIST pre-ordering ran out of memory after allocating "
@@ -389,18 +386,18 @@ namespace Amesos2 {
 
     if( in_grid_ ){
 
-#ifdef HAVE_AMESOS2_TIMERS
-      Teuchos::TimeMonitor symFactTime( this->timers_.symFactTime_ );
-#endif
-
       float info = 0.0;
-      info = SLUD::symbfact_dist((data_.grid.nprow) * (data_.grid.npcol),
-                                 data_.domains, &(data_.A), data_.perm_c.getRawPtr(),
-                                 data_.perm_r.getRawPtr(), data_.sizes,
-                                 data_.fstVtxSep, &(data_.pslu_freeable),
-                                 &(data_.grid.comm), &(data_.symb_comm),
-                                 &(data_.mem_usage));
-
+      {
+#ifdef HAVE_AMESOS2_TIMERS
+        Teuchos::TimeMonitor symFactTime( this->timers_.symFactTime_ );
+#endif
+        info = SLUD::symbfact_dist((data_.grid.nprow) * (data_.grid.npcol),
+                                   data_.domains, &(data_.A), data_.perm_c.getRawPtr(),
+                                   data_.perm_r.getRawPtr(), data_.sizes,
+                                   data_.fstVtxSep, &(data_.pslu_freeable),
+                                   &(data_.grid.comm), &(data_.symb_comm),
+                                   &(data_.mem_usage));
+      }
       TEUCHOS_TEST_FOR_EXCEPTION( info > 0.0,
                           std::runtime_error,
                           "SuperLU_DIST symbolic factorization ran out of memory after"
@@ -420,20 +417,28 @@ namespace Amesos2 {
 
     // loadA_impl();                    // Refresh the matrix values
 
-    // if( data_.options.Equil == SLUD::YES ){
-    //   // Apply the scalings computed in preOrdering
-    //   function_map::laqgs(&(data_.A), data_.R.getRawPtr(),
-    //                    data_.C.getRawPtr(), data_.rowcnd, data_.colcnd,
-    //                    data_.amax, &(data_.equed));
+    if( in_grid_ ) {
+      if( data_.options.Equil == SLUD::YES ) {
+        SLUD::int_t info = 0;
 
-    //   data_.rowequ = (data_.equed == SLUD::ROW) || (data_.equed == SLUD::BOTH);
-    //   data_.colequ = (data_.equed == SLUD::COL) || (data_.equed == SLUD::BOTH);
-    // }
+        // Compute scaling
+        data_.R.resize(this->globalNumRows_);
+        data_.C.resize(this->globalNumCols_);
+        function_map::gsequ_loc(&(data_.A), data_.R.getRawPtr(), data_.C.getRawPtr(),
+                                &(data_.rowcnd), &(data_.colcnd), &(data_.amax), &info, &(data_.grid));
 
-    if( in_grid_ ){
+        // Apply the scalings
+        function_map::laqgs_loc(&(data_.A), data_.R.getRawPtr(), data_.C.getRawPtr(), 
+                                data_.rowcnd, data_.colcnd, data_.amax,
+                                &(data_.equed));
+
+        data_.rowequ = (data_.equed == SLUD::ROW) || (data_.equed == SLUD::BOTH);
+        data_.colequ = (data_.equed == SLUD::COL) || (data_.equed == SLUD::BOTH);
+      }
+
       // Apply the column ordering, so that AC is the column-permuted A, and compute etree
       size_t nnz_loc = ((SLUD::NRformat_loc*)data_.A.Store)->nnz_loc;
-      for( size_t i = 0; i < nnz_loc; ++i ) colind_[i] = data_.perm_c[colind_[i]];
+      for( size_t i = 0; i < nnz_loc; ++i ) colind_view_(i) = data_.perm_c[colind_view_(i)];
 
       // Distribute data from the symbolic factorization
       if( same_symbolic_ ){
@@ -455,14 +460,14 @@ namespace Amesos2 {
       }
 
       // Retrieve the normI of A (required by gstrf).
-      double anorm = function_map::plangs((char *)"I", &(data_.A), &(data_.grid));
+      bool notran = (data_.options.Trans == SLUD::NOTRANS);
+      double anorm = function_map::plangs((notran ? (char *)"1" : (char *)"I"), &(data_.A), &(data_.grid));
 
       int info = 0;
       {
 #ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
 #endif
-
         function_map::gstrf(&(data_.options), this->globalNumRows_,
                             this->globalNumCols_, anorm, &(data_.lu),
                             &(data_.grid), &(data_.stat), &info);
@@ -496,7 +501,7 @@ namespace Amesos2 {
 
     // local_len_rhs is how many of the multivector rows belong to
     // this processor in the SuperLU_DIST processor grid.
-    const size_t local_len_rhs = superlu_rowmap_->getNodeNumElements();
+    const size_t local_len_rhs = superlu_rowmap_->getLocalNumElements();
     const global_size_type nrhs = X->getGlobalNumVectors();
     const global_ordinal_type first_global_row_b = superlu_rowmap_->getMinGlobalIndex();
 
@@ -511,7 +516,6 @@ namespace Amesos2 {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor convTimer(this->timers_.vecConvTime_);
 #endif
-
       {
         // The input dense matrix for B should be distributed in the
         // same manner as the superlu_dist matrix.  That is, if a
@@ -522,7 +526,6 @@ namespace Amesos2 {
 #ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
-
         // get grid-distributed mv data.  The multivector data will be
         // distributed across the processes in the SuperLU_DIST grid.
         typedef Util::get_1d_copy_helper<MultiVecAdapter<Vector>,slu_type> copy_helper;
@@ -563,12 +566,22 @@ namespace Amesos2 {
         same_solve_struct_ = true;
       }
 
+      // Apply row-scaling if requested
+      if (data_.options.Equil == SLUD::YES && data_.rowequ) {
+        SLUD::int_t ld = as<SLUD::int_t>(local_len_rhs);
+        for(global_size_type j = 0; j < nrhs; ++j) {
+          for(size_t i = 0; i < local_len_rhs; ++i) {
+            bvals_[i + j*ld] *= data_.R[first_global_row_b + i];
+          }
+        }
+      }
+
+      // Solve
       int ierr = 0; // returned error code
       {
 #ifdef HAVE_AMESOS2_TIMERS
         Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-
         function_map::gstrs(as<SLUD::int_t>(this->globalNumRows_), &(data_.lu),
                             &(data_.scale_perm), &(data_.grid), bvals_.getRawPtr(),
                             as<SLUD::int_t>(local_len_rhs), as<SLUD::int_t>(first_global_row_b),
@@ -606,6 +619,16 @@ namespace Amesos2 {
                                            as<int>(nrhs),
                                            &(data_.grid));
       }
+
+      // Apply col-scaling if requested
+      if (data_.options.Equil == SLUD::YES && data_.colequ) {
+        SLUD::int_t ld = as<SLUD::int_t>(local_len_rhs);
+        for(global_size_type j = 0; j < nrhs; ++j) {
+          for(size_t i = 0; i < local_len_rhs; ++i) {
+            xvals_[i + j*ld] *= data_.C[first_global_row_b + i];
+          }
+        }
+      }
     }
 
     /* Update X's global values */
@@ -613,7 +636,6 @@ namespace Amesos2 {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
-
       typedef Util::put_1d_data_helper<MultiVecAdapter<Vector>,slu_type> put_helper;
       put_helper::do_put(X,
                          xvals_(),
@@ -672,10 +694,9 @@ namespace Amesos2 {
 
     data_.options.Trans = SLUD::NOTRANS; // should always be set this way;
 
-    // TODO: Uncomment when supported
-    // bool equil = parameterList->get<bool>("Equil", true);
-    // data_.options.Equil = equil ? SLUD::YES : SLUD::NO;
-    data_.options.Equil = SLUD::NO;
+    // Equilbration option
+    bool equil = parameterList->get<bool>("Equil", false);
+    data_.options.Equil = equil ? SLUD::YES : SLUD::NO;
 
     if( parameterList->isParameter("ColPerm") ){
       RCP<const ParameterEntryValidator> colperm_validator = valid_params->getEntry("ColPerm").validator();
@@ -743,8 +764,8 @@ namespace Amesos2 {
                                                   tuple<SLUD::trans_t>(SLUD::NOTRANS),
                                                   pl.getRawPtr());
 
-      // TODO: uncomment when supported
-      // pl->set("Equil", false, "Whether to equilibrate the system before solve");
+      // Equillbration
+      pl->set("Equil", false, "Whether to equilibrate the system before solve");
 
       // TODO: uncomment when supported
       // setStringToIntegralParameter<SLUD::IterRefine_t>("IterRefine", "NOREFINE",
@@ -834,20 +855,19 @@ namespace Amesos2 {
     g_cols = g_rows;            // we deal with square matrices
     fst_global_row = as<int_t>(superlu_rowmap_->getMinGlobalIndex());
 
-    nzvals_.resize(l_nnz);
-    colind_.resize(l_nnz);
-    rowptr_.resize(l_rows + 1);
-
+    Kokkos::resize(nzvals_view_, l_nnz);
+    Kokkos::resize(colind_view_, l_nnz);
+    Kokkos::resize(rowptr_view_, l_rows + 1);
     int_t nnz_ret = 0;
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
 #endif
 
-      Util::get_crs_helper<
-      MatrixAdapter<Matrix>,
-        slu_type, int_t, int_t >::do_get(redist_mat.ptr(),
-                                         nzvals_(), colind_(), rowptr_(),
+      Util::get_crs_helper_kokkos_view<MatrixAdapter<Matrix>,
+        host_value_type_array,host_ordinal_type_array, host_size_type_array >::do_get(
+                                         redist_mat.ptr(),
+                                         nzvals_view_, colind_view_, rowptr_view_,
                                          nnz_ret,
                                          ptrInArg(*superlu_rowmap_),
                                          ROOTED,
@@ -865,9 +885,9 @@ namespace Amesos2 {
     function_map::create_CompRowLoc_Matrix(&(data_.A),
                                            g_rows, g_cols,
                                            l_nnz, l_rows, fst_global_row,
-                                           nzvals_.getRawPtr(),
-                                           colind_.getRawPtr(),
-                                           rowptr_.getRawPtr(),
+                                           nzvals_view_.data(),
+                                           colind_view_.data(),
+                                           rowptr_view_.data(),
                                            SLUD::SLU_NR_loc,
                                            dtype, SLUD::SLU_GE);
   }

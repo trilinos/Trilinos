@@ -136,17 +136,17 @@ namespace panzer {
     //! Value correspondes to integration order.  Use the offest for indexing.
     //TEUCHOS_DEPRECATED
     Teuchos::RCP< std::vector<int> > ir_degrees;
-    
+
     //TEUCHOS_DEPRECATED
-    std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > > int_rules;
-    
+    mutable std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > > int_rules;
+
     //! Value corresponds to basis type.  Use the offest for indexing.
     //TEUCHOS_DEPRECATED
     Teuchos::RCP< std::vector<std::string> > basis_names;
 
     //! Static basis function data, key is basis name, value is index in the static_bases vector
     //TEUCHOS_DEPRECATED
-    std::vector<Teuchos::RCP< panzer::BasisValues2<double> > > bases;
+    mutable std::vector<Teuchos::RCP< panzer::BasisValues2<double> > > bases;
 
     /** Grab the face connectivity for this workset
      * DEPRECATED - use: workset.getSubcellConnectivity(workset.numDimensions()-1)
@@ -236,11 +236,13 @@ namespace panzer {
      * \throws If setup has not been called
      *
      * \param[in] description Descriptor for integration scheme
+     * \param[in] lazy_version Get an empty IntegrationValues2 object that will construct/allocate itself on demand (less memory - EXPERIMENTAL)
      *
      * \return Object containing integration values
      */
     const panzer::IntegrationValues2<double> &
-    getIntegrationValues(const panzer::IntegrationDescriptor & description) const;
+    getIntegrationValues(const panzer::IntegrationDescriptor & description,
+                         const bool lazy_version=false) const;
 
     /*
      * \brief Grab the basis values for a given basis description
@@ -250,11 +252,13 @@ namespace panzer {
      * \throws If setup has not been called
      *
      * \param[in] basis_description Description of requested basis
+     * \param[in] lazy_version Get an empty BasisValues2 object that will construct/allocate itself on demand (less memory - EXPERIMENTAL)
      *
      * \return Object containing basis values
      */
     const panzer::BasisValues2<double> &
-    getBasisValues(const panzer::BasisDescriptor & basis_description) const;
+    getBasisValues(const panzer::BasisDescriptor & basis_description,
+                   const bool lazy_version=false) const;
 
     /*
      * \brief Grab the basis values for a given basis description
@@ -265,12 +269,14 @@ namespace panzer {
      *
      * \param[in] basis_description Description of requested basis
      * \param[in] integration_description Descriptor for integration scheme
+     * \param[in] lazy_version Get an empty BasisValues2 object that will construct/allocate itself on demand (less memory - EXPERIMENTAL)
      *
      * \return Object containing basis values
      */
     panzer::BasisValues2<double> &
     getBasisValues(const panzer::BasisDescriptor & basis_description,
-                   const panzer::IntegrationDescriptor & integration_description) const;
+                   const panzer::IntegrationDescriptor & integration_description,
+                   const bool lazy_version=false) const;
 
     /*
      * \brief Grab the basis values for a given basis description
@@ -280,12 +286,14 @@ namespace panzer {
      *
      * \param[in] basis_description Description of requested basis
      * \param[in] point_description Descriptor for points
+     * \param[in] lazy_version Get an empty BasisValues2 object that will construct/allocate itself on demand (less memory - EXPERIMENTAL)
      *
      * \return Object containing basis values
      */
     const panzer::BasisValues2<double> &
     getBasisValues(const panzer::BasisDescriptor & basis_description,
-                   const panzer::PointDescriptor & point_description) const;
+                   const panzer::PointDescriptor & point_description,
+                   const bool lazy_version=false) const;
 
     /**
      * \brief Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)
@@ -343,7 +351,7 @@ namespace panzer {
 
   };
 
-  /** This is the main workset object. Not that it inherits from WorksetDetails, this
+  /** This is the main workset object. Note that it inherits from WorksetDetails, this
     * is to maintain backwards compatibility in the use of the workset object. The addition
     * of a details vector supports things like DG based assembly.
     */
@@ -391,7 +399,7 @@ namespace panzer {
     size_t numDetails() const { return Teuchos::nonnull(other) ? 2 : 1; }
 
   private:
-    std::size_t identifier_;    
+    std::size_t identifier_;
   };
 
   std::ostream& operator<<(std::ostream& os, const panzer::Workset& w);

@@ -370,7 +370,6 @@ rowStatIsSupportedImpl(
       return false;
   }
 
-  TEUCHOS_UNREACHABLE_RETURN(false);
 }
 
 
@@ -411,16 +410,18 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRowStatImpl(
     TEUCHOS_ASSERT(tCrsMatrix->getRowMap()->isSameAs(*tCrsMatrix->getRangeMap()));
     TEUCHOS_ASSERT(tCrsMatrix->getRowMap()->isSameAs(*tRowSumVec->getMap()));
 
-    size_t numMyRows = tCrsMatrix->getNodeNumRows();
+    size_t numMyRows = tCrsMatrix->getLocalNumRows();
 
-    Teuchos::ArrayView<const LocalOrdinal> indices;
-    Teuchos::ArrayView<const Scalar> values;
+    using crs_t = Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    typename crs_t::local_inds_host_view_type indices;
+    typename crs_t::values_host_view_type values;
+
 
     for (size_t row=0; row < numMyRows; ++row) {
       MT sum = STM::zero ();
       tCrsMatrix->getLocalRowView (row, indices, values);
 
-      for (int col = 0; col < values.size(); ++col) {
+      for (int col = 0; col < (int) values.size(); ++col) {
         sum += STS::magnitude (values[col]);
       }
 

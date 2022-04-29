@@ -53,9 +53,17 @@
 #include <algorithm>
 #include <stdexcept>
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+// This file can be deleted when deprecated code is removed
+
 namespace Tpetra {
 namespace Details {
 
+// This function is deprecated, but users don't call it directly; it is a 
+// helper from createDeepCopy.  createDeepCopy is also deprecated.
+// We silence TPETRA_DEPRECATED warnings here to prevent noise from
+// compilation of createDeepCopy.
+// TPETRA_DEPRECATED
 template <class SC, class LO, class GO, class NT>
 KokkosSparse::CrsMatrix<
   typename Kokkos::ArithTraits<SC>::val_type,
@@ -89,32 +97,38 @@ localDeepCopyLocallyIndexedRowMatrix
   using Kokkos::view_alloc;
   using Kokkos::WithoutInitializing;
   using IST = typename Kokkos::ArithTraits<SC>::val_type;
-  using local_matrix_type = KokkosSparse::CrsMatrix<
+  using local_matrix_device_type = KokkosSparse::CrsMatrix<
     IST, LO, typename NT::device_type, void, size_t>;
-  using local_graph_type =
-    typename local_matrix_type::staticcrsgraph_type;
-  using inds_type = typename local_graph_type::entries_type;
+  using local_graph_device_type =
+    typename local_matrix_device_type::staticcrsgraph_type;
+  using inds_type = typename local_graph_device_type::entries_type;
   inds_type ind (view_alloc ("ind", WithoutInitializing), nnz);
   auto ind_h = Kokkos::create_mirror_view (ind);
 
-  using values_type = typename local_matrix_type::values_type;
+  using values_type = typename local_matrix_device_type::values_type;
   values_type val (view_alloc ("val", WithoutInitializing), nnz);
   auto val_h = Kokkos::create_mirror_view (val);
 
   const bool hasViews = A.supportsRowViews ();
+  using row_matrix_type = RowMatrix<SC, LO, GO, NT>;
+  using h_lids_type = typename row_matrix_type::nonconst_local_inds_host_view_type;
+  using h_vals_type = typename row_matrix_type::nonconst_values_host_view_type;
+  using h_lids_type_const = typename row_matrix_type::local_inds_host_view_type;
+  using h_vals_type_const = typename row_matrix_type::values_host_view_type;
 
-  Teuchos::Array<LO> inputIndsBuf;
-  Teuchos::Array<SC> inputValsBuf;
+
+  h_lids_type inputIndsBuf;
+  h_vals_type inputValsBuf;
   if (! hasViews) {
-    inputIndsBuf.resize (maxNumEnt);
-    inputValsBuf.resize (maxNumEnt);
+    Kokkos::resize(inputIndsBuf,maxNumEnt);
+    Kokkos::resize(inputValsBuf,maxNumEnt);
   }
 
-  const LO lclNumRows (A.getNodeNumRows ());
+  const LO lclNumRows (A.getLocalNumRows ());
   offset_type curPos = 0;
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-    Teuchos::ArrayView<const LO> inputInds_av;
-    Teuchos::ArrayView<const SC> inputVals_av;
+    h_lids_type_const inputInds_av;
+    h_vals_type_const inputVals_av;
     size_t numEnt = 0;
     if (hasViews) {
       A.getLocalRowView (lclRow, inputInds_av,
@@ -122,28 +136,34 @@ localDeepCopyLocallyIndexedRowMatrix
       numEnt = static_cast<size_t> (inputInds_av.size ());
     }
     else {
-      A.getLocalRowCopy (lclRow, inputIndsBuf (),
-                         inputValsBuf (), numEnt);
-      inputInds_av = inputIndsBuf.view (0, numEnt);
-      inputVals_av = inputValsBuf.view (0, numEnt);
+      A.getLocalRowCopy (lclRow, inputIndsBuf,
+                         inputValsBuf, numEnt);
+      inputInds_av = Kokkos::subview(inputIndsBuf,std::make_pair((size_t)0,numEnt));
+      inputVals_av = Kokkos::subview(inputValsBuf,std::make_pair((size_t)0,numEnt));
     }
     const IST* inVals =
-      reinterpret_cast<const IST*> (inputVals_av.getRawPtr ());
-    const LO* inInds = inputInds_av.getRawPtr ();
+      reinterpret_cast<const IST*> (inputVals_av.data());
+    const LO* inInds = inputInds_av.data();
     std::copy (inInds, inInds + numEnt, ind_h.data () + curPos);
     std::copy (inVals, inVals + numEnt, val_h.data () + curPos);
     curPos += offset_type (numEnt);
   }
-  Kokkos::deep_copy (ind, ind_h);
-  Kokkos::deep_copy (val, val_h);
 
-  local_graph_type lclGraph (ind, ptr);
-  const size_t numCols = A.getColMap ()->getNodeNumElements ();
-  return local_matrix_type (label, numCols, val, lclGraph);
+  using execution_space = typename inds_type::execution_space;
+  // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
+  Kokkos::deep_copy (execution_space(), ind, ind_h);
+  // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
+  Kokkos::deep_copy (execution_space(), val, val_h);
+
+  local_graph_device_type lclGraph (ind, ptr);
+  const size_t numCols = A.getColMap ()->getLocalNumElements ();
+  return local_matrix_device_type (label, numCols, val, lclGraph);
 }
+
 
 } // namespace Details
 } // namespace Tpetra
+
 
 //
 // Explicit instantiation macros
@@ -159,5 +179,7 @@ namespace Details { \
     (const RowMatrix<SC, LO, GO, NT>& A, \
      const char label[]); \
 }
+
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 #endif // TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DEF_HPP

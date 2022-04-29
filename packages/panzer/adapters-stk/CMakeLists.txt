@@ -16,6 +16,14 @@ ELSE()
    GLOBAL_SET(PANZER_HAVE_PERCEPT OFF)
 ENDIF()
 
+# Optional UMR dependency
+##########################
+IF(${PACKAGE_NAME}_ENABLE_UMR)
+   GLOBAL_SET(PANZER_HAVE_UMR ON)
+ELSE()
+   GLOBAL_SET(PANZER_HAVE_UMR OFF)
+ENDIF()
+
 # Optional Teko dependency
 ##########################
 IF(${PACKAGE_NAME}_ENABLE_Teko)
@@ -38,6 +46,14 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2)
    GLOBAL_SET(PANZER_HAVE_IFPACK2 ON)
 ELSE()
    GLOBAL_SET(PANZER_HAVE_IFPACK2 OFF)
+ENDIF()
+
+# Optional Tempus dependency
+#############################
+IF(${PACKAGE_NAME}_ENABLE_Tempus)
+   GLOBAL_SET(PANZER_HAVE_TEMPUS ON)
+ELSE()
+   GLOBAL_SET(PANZER_HAVE_TEMPUS OFF)
 ENDIF()
 
 ADD_SUBDIRECTORY(src)

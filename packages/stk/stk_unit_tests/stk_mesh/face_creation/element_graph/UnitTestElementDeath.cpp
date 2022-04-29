@@ -17,7 +17,6 @@
 #include "stk_unit_test_utils/ElemGraphTestUtils.hpp"  // for deactivate_elements, etc
 #include "mpi.h"                        // for ompi_communicator_t, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, operator<<
 #include "stk_mesh/base/Part.hpp"       // for Part

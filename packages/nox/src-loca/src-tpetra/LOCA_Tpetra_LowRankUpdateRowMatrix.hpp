@@ -76,20 +76,39 @@ namespace LOCA {
       virtual Teuchos::RCP<const NOX::TRowGraph> getGraph() const override;
       virtual ::Tpetra::global_size_t getGlobalNumRows() const override;
       virtual ::Tpetra::global_size_t getGlobalNumCols() const override;
-      virtual size_t getNodeNumRows() const override;
-      virtual size_t getNodeNumCols() const override;
+      virtual size_t getLocalNumRows() const override;
+      virtual size_t getLocalNumCols() const override;
       virtual NOX::GlobalOrdinal getIndexBase() const override;
       virtual ::Tpetra::global_size_t getGlobalNumEntries() const override;
-      virtual size_t getNodeNumEntries() const override;
+      virtual size_t getLocalNumEntries() const override;
       virtual size_t getNumEntriesInGlobalRow (NOX::GlobalOrdinal globalRow) const override;
       virtual size_t getNumEntriesInLocalRow (NOX::LocalOrdinal localRow) const override;
       virtual size_t getGlobalMaxNumRowEntries () const override;
-      virtual size_t getNodeMaxNumRowEntries () const override;
+      virtual size_t getLocalMaxNumRowEntries () const override;
       virtual bool hasColMap () const override;
       virtual bool isLocallyIndexed() const override;
       virtual bool isGloballyIndexed() const override;
       virtual bool isFillComplete() const override;
       virtual bool supportsRowViews() const override;
+      virtual void
+      getGlobalRowCopy (NOX::GlobalOrdinal GlobalRow,
+                        NOX::TRowMatrix::nonconst_global_inds_host_view_type &Indices,
+                        NOX::TRowMatrix::nonconst_values_host_view_type &Values,
+                        size_t &NumEntries) const override;
+      virtual void
+      getLocalRowCopy (NOX::LocalOrdinal LocalRow,
+                        NOX::TRowMatrix::nonconst_local_inds_host_view_type &Indices,
+                        NOX::TRowMatrix::nonconst_values_host_view_type &Values,
+                       size_t &NumEntries) const override;
+      virtual void
+      getGlobalRowView (NOX::GlobalOrdinal GlobalRow,
+                        NOX::TRowMatrix::global_inds_host_view_type &Indices,
+                        NOX::TRowMatrix::values_host_view_type &Values) const override;
+      virtual void
+      getLocalRowView (NOX::LocalOrdinal LocalRow,
+                       NOX::TRowMatrix::local_inds_host_view_type &Indices,
+                       NOX::TRowMatrix::values_host_view_type &Values) const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE 
       virtual void
       getGlobalRowCopy (NOX::GlobalOrdinal GlobalRow,
                         const Teuchos::ArrayView<NOX::GlobalOrdinal> &Indices,
@@ -108,6 +127,7 @@ namespace LOCA {
       getLocalRowView (NOX::LocalOrdinal LocalRow,
                        Teuchos::ArrayView<const NOX::LocalOrdinal>& indices,
                        Teuchos::ArrayView<const NOX::Scalar>& values) const override;
+#endif
 
       // Use the default implementation!
       // virtual NOX::LocalOrdinal
@@ -133,13 +153,13 @@ namespace LOCA {
       //***************************************
       // Derived from Tpetra::Operator interface
       //***************************************
-      virtual Teuchos::RCP<const NOX::TMap> getDomainMap() const;
-      virtual Teuchos::RCP<const NOX::TMap> getRangeMap() const;
+      virtual Teuchos::RCP<const NOX::TMap> getDomainMap() const override;
+      virtual Teuchos::RCP<const NOX::TMap> getRangeMap() const override;
       virtual void apply(const NOX::TMultiVector &X,
                          NOX::TMultiVector &Y,
                          Teuchos::ETransp mode = Teuchos::NO_TRANS,
                          NOX::Scalar alpha = Teuchos::ScalarTraits<NOX::Scalar>::one(),
-                         NOX::Scalar beta = Teuchos::ScalarTraits<NOX::Scalar>::zero()) const;
+                         NOX::Scalar beta = Teuchos::ScalarTraits<NOX::Scalar>::zero()) const override;
 
     protected:
 
@@ -158,12 +178,6 @@ namespace LOCA {
 
       //! Stores pointer to non-const V
       Teuchos::RCP<NOX::TMultiVector> nonconst_V;
-
-      //! View of U
-      const typename NOX::TMultiVector::dual_view_type::t_dev U_DeviceView;
-
-      //! View of V
-      const typename NOX::TMultiVector::dual_view_type::t_dev V_DeviceView;
 
       //! Flag indicating whether to include U*V^T terms
       bool includeUV;

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,8 +8,6 @@
 #define EXOII_READ_H
 
 #include "exo_entity.h"
-#include "exodusII.h"
-#include "netcdf.h"
 
 #include <iostream>
 #include <string>
@@ -45,7 +43,7 @@ public:
 
   std::string File_Name(const char * /*fname*/);
   virtual std::string
-              Open_File(const char * /*fname*/ = nullptr); // Default opens current file name.
+              Open_File(const char             */*fname*/ = nullptr); // Default opens current file name.
   std::string Close_File();
   std::string File_Name() const { return file_name; }
   int         Open() const { return (file_id >= 0); }
@@ -56,7 +54,9 @@ public:
   const std::string &Title() const { return title; }
   int                Dimension() const { return dimension; }
   size_t             Num_Nodes() const { return num_nodes; }
-  size_t             Num_Elmts() const { return num_elmts; }
+  size_t             Num_Elements() const { return num_elmts; }
+  size_t             Num_Faces() const { return num_faces; }
+  size_t             Num_Edges() const { return num_edges; }
   size_t             Num_Node_Sets() const { return num_node_sets; }
   size_t             Num_Side_Sets() const { return num_side_sets; }
   size_t             Num_Edge_Blocks() const { return num_edge_blocks; }
@@ -71,16 +71,16 @@ public:
 
   size_t                          Num_Global_Vars() const { return global_vars.size(); }
   size_t                          Num_Nodal_Vars() const { return nodal_vars.size(); }
-  size_t                          Num_Elmt_Vars() const { return elmt_vars.size(); }
-  size_t                          Num_Elmt_Atts() const { return elmt_atts.size(); }
+  size_t                          Num_Element_Vars() const { return elmt_vars.size(); }
+  size_t                          Num_Element_Atts() const { return elmt_atts.size(); }
   size_t                          Num_NS_Vars() const { return ns_vars.size(); }
   size_t                          Num_SS_Vars() const { return ss_vars.size(); }
   size_t                          Num_EB_Vars() const { return eb_vars.size(); }
   size_t                          Num_FB_Vars() const { return fb_vars.size(); }
   const std::vector<std::string> &Global_Var_Names() const { return global_vars; }
   const std::vector<std::string> &Nodal_Var_Names() const { return nodal_vars; }
-  const std::vector<std::string> &Elmt_Var_Names() const { return elmt_vars; }
-  const std::vector<std::string> &Elmt_Att_Names() const { return elmt_atts; }
+  const std::vector<std::string> &Element_Var_Names() const { return elmt_vars; }
+  const std::vector<std::string> &Element_Att_Names() const { return elmt_atts; }
   const std::vector<std::string> &NS_Var_Names() const { return ns_vars; }
   const std::vector<std::string> &SS_Var_Names() const { return ss_vars; }
   const std::vector<std::string> &EB_Var_Names() const { return eb_vars; }
@@ -88,34 +88,31 @@ public:
 
   const std::string &Global_Var_Name(int index) const;
   const std::string &Nodal_Var_Name(int index) const;
-  const std::string &Elmt_Var_Name(int index) const;
-  const std::string &Elmt_Att_Name(int index) const;
+  const std::string &Element_Var_Name(int index) const;
+  const std::string &Element_Att_Name(int index) const;
   const std::string &NS_Var_Name(int index) const;
   const std::string &SS_Var_Name(int index) const;
   const std::string &EB_Var_Name(int index) const;
   const std::string &FB_Var_Name(int index) const;
 
   // Element blocks:
-  size_t Num_Elmt_Blocks() const { return num_elmt_blocks; }
+  size_t Num_Element_Blocks() const { return num_elmt_blocks; }
 
-  std::string Load_Elmt_Block_Description(size_t block_index) const;
-  std::string Load_Elmt_Block_Descriptions() const;      // Loads all blocks.
-  std::string Free_Elmt_Block(size_t block_index) const; // Frees all dynamic memory.
-  std::string Free_Elmt_Blocks() const;                  // Frees all blocks.
-
-  // Moves array of connectivities from the block to the conn array.
-  std::string Give_Connectivity(size_t block_index, size_t &num_e, size_t &npe, INT *&new_conn);
+  std::string Load_Element_Block_Description(size_t block_index) const;
+  std::string Load_Element_Block_Descriptions() const;      // Loads all blocks.
+  std::string Free_Element_Block(size_t block_index) const; // Frees all dynamic memory.
+  std::string Free_Element_Blocks() const;                  // Frees all blocks.
 
   // Number maps:
   std::string Load_Node_Map();
   std::string Free_Node_Map();
-  const INT * Get_Node_Map() { return node_map; }
-  std::string Load_Elmt_Map();
-  std::string Free_Elmt_Map();
-  const INT * Get_Elmt_Map() { return elmt_map; }
-  inline INT  Node_Map(size_t node_num) const;   // numbers are global, 1-offset
-  inline INT  Elmt_Map(size_t elmt_num) const;   // numbers are global, 1-offset
-  inline INT  Elmt_Order(size_t elmt_num) const; // numbers are global, 1-offset
+  const INT  *Get_Node_Map() { return node_map; }
+  std::string Load_Element_Map();
+  std::string Free_Element_Map();
+  const INT  *Get_Element_Map() { return elmt_map; }
+  inline INT  Node_Map(size_t node_num) const;      // numbers are global, 1-offset
+  inline INT  Element_Map(size_t elmt_num) const;   // numbers are global, 1-offset
+  inline INT  Element_Order(size_t elmt_num) const; // numbers are global, 1-offset
 
   // Nodal data:
 
@@ -160,9 +157,9 @@ public:
   Exo_Entity *Get_Entity_by_Name(EXOTYPE type, const std::string &name) const;
 
   size_t          Block_Id(size_t block_index) const; // Returns associated block id.
-  Exo_Block<INT> *Get_Elmt_Block_by_Id(size_t id) const;
-  Exo_Block<INT> *Get_Elmt_Block_by_Index(size_t block_index) const;
-  Exo_Block<INT> *Get_Elmt_Block_by_Name(const std::string &name) const;
+  Exo_Block<INT> *Get_Element_Block_by_Id(size_t id) const;
+  Exo_Block<INT> *Get_Element_Block_by_Index(size_t block_index) const;
+  Exo_Block<INT> *Get_Element_Block_by_Name(const std::string &name) const;
 
   Side_Set<INT> *Get_Side_Set_by_Id(size_t set_id) const;
   Side_Set<INT> *Get_Side_Set_by_Index(size_t side_set_index) const;
@@ -182,23 +179,23 @@ public:
 
   // Misc functions:
 
-  virtual int Check_State() const;                           // Checks state of obj (not the file).
-  int         File_ID() const { return file_id; }            // This is temporary.
-  std::string Global_to_Block_Local(size_t  global_elmt_num, // 1-offset
-                                    int &   block_index,     // 0-offset
-                                    size_t &local_elmt_index) const; // 0-offset
+  virtual int            Check_State() const;                // Checks state of obj (not the file).
+  int                    File_ID() const { return file_id; } // This is temporary.
+  std::pair<int, size_t> Global_to_Block_Local(size_t global_elmt_num) const;
 
 protected:
-  std::string file_name;
+  std::string file_name{};
   int         file_id{-1}; // Exodus file id; also used to determine if file is open.
 
   // GENESIS info:
 
-  std::string              title;
-  std::vector<std::string> coord_names;
+  std::string              title{};
+  std::vector<std::string> coord_names{};
   size_t                   num_nodes{0};
   int                      dimension{0};
   size_t                   num_elmts{0};
+  size_t                   num_faces{0};
+  size_t                   num_edges{0};
   size_t                   num_elmt_blocks{0};
   size_t                   num_node_sets{0};
   size_t                   num_side_sets{0};
@@ -208,9 +205,9 @@ protected:
   float                    api_version{0.0};
   int                      io_word_size{0}; // Note: The "compute word size" is always 8.
 
-  Exo_Block<INT> * eblocks{nullptr};     // Array.
-  Node_Set<INT> *  nsets{nullptr};       // Array.
-  Side_Set<INT> *  ssets{nullptr};       // Array.
+  Exo_Block<INT>  *eblocks{nullptr};     // Array.
+  Node_Set<INT>   *nsets{nullptr};       // Array.
+  Side_Set<INT>   *ssets{nullptr};       // Array.
   Edge_Block<INT> *edge_blocks{nullptr}; // Array.
   Face_Block<INT> *face_blocks{nullptr}; // Array.
 
@@ -223,14 +220,14 @@ protected:
 
   // RESULTS info:
 
-  std::vector<std::string> global_vars;
-  std::vector<std::string> nodal_vars;
-  std::vector<std::string> elmt_vars;
-  std::vector<std::string> elmt_atts;
-  std::vector<std::string> ns_vars;
-  std::vector<std::string> ss_vars;
-  std::vector<std::string> eb_vars;
-  std::vector<std::string> fb_vars;
+  std::vector<std::string> global_vars{};
+  std::vector<std::string> nodal_vars{};
+  std::vector<std::string> elmt_vars{};
+  std::vector<std::string> elmt_atts{};
+  std::vector<std::string> ns_vars{};
+  std::vector<std::string> ss_vars{};
+  std::vector<std::string> eb_vars{};
+  std::vector<std::string> fb_vars{};
 
   int     num_times{0};
   double *times{nullptr};
@@ -257,7 +254,7 @@ template <typename INT> inline INT ExoII_Read<INT>::Node_Map(size_t node_num) co
   return 0;
 }
 
-template <typename INT> inline INT ExoII_Read<INT>::Elmt_Map(size_t elmt_num) const
+template <typename INT> inline INT ExoII_Read<INT>::Element_Map(size_t elmt_num) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(elmt_num <= num_elmts);
@@ -268,7 +265,7 @@ template <typename INT> inline INT ExoII_Read<INT>::Elmt_Map(size_t elmt_num) co
   return 0;
 }
 
-template <typename INT> inline INT ExoII_Read<INT>::Elmt_Order(size_t elmt_num) const
+template <typename INT> inline INT ExoII_Read<INT>::Element_Order(size_t elmt_num) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(elmt_num <= num_elmts);

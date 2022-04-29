@@ -54,9 +54,9 @@
 namespace KokkosBlas {
 namespace Impl {
 
-//NOTE: Might add the implementation of KokkosBlas::gesv later
+// NOTE: Might add the implementation of KokkosBlas::gesv later
 
-} // namespace Impl
-} // namespace KokkosBlas
+}  // namespace Impl
+}  // namespace KokkosBlas
 
-#endif // KOKKOSBLAS_IMPL_GESV_HPP
+#endif  // KOKKOSBLAS_IMPL_GESV_HPP

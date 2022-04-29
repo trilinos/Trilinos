@@ -57,6 +57,9 @@
 #include "Teuchos_BLAS.hpp"                        // class data element
 
 // forward declarations
+namespace Thyra {
+  template<typename T> class DefaultLinearOpSource;
+}
 namespace LOCA {
   class GlobalData;
   namespace Parameter {
@@ -421,14 +424,18 @@ namespace LOCA {
                 NOX::Abstract::MultiVector& V,
                 bool use_jac_transpose);
 
+    public:
       /*!
        * \brief Overwrites the Jacobian \f$J\f$ with \f$J + U V^T\f$
        * for computing the preconditioner of \f$P\f$.
+       *
+       * NOTE: This should be a protected method, but cuda lambda forces this to be public!
        */
-      void updateJacobianForPreconditioner(const NOX::Abstract::MultiVector& U,
-                                           const NOX::Abstract::MultiVector& V,
-                                           NOX::TCrsMatrix& jac) const;
+      void updateCrsMatrixForPreconditioner(const NOX::Abstract::MultiVector& U,
+                                            const NOX::Abstract::MultiVector& V,
+                                            NOX::TCrsMatrix& mat) const;
 
+    protected:
       Teuchos::RCP<NOX::Abstract::MultiVector>
       createBlockMV(const NOX::Abstract::MultiVector& v) const;
 
@@ -534,7 +541,10 @@ namespace LOCA {
       Teuchos::RCP<NOX::TOperator> tpetraOp;
 
       //! Pointer to Tpetra Preconditioner operator
-      Teuchos::RCP<NOX::TRowMatrix> tpetraPrecOp;
+      mutable Teuchos::RCP<NOX::TCrsMatrix> tpetraPrecMatrix;
+
+      //! Thyra wrapped preconditioner matrix (tpetraPrecMatrix) for when includeUV is true and use_P_for_Prec is false
+      mutable Teuchos::RCP<::Thyra::DefaultLinearOpSource<double>> prec_losb;
 
       //! Number of constraint equations
       int numConstraints;
@@ -583,7 +593,6 @@ namespace LOCA {
 
       //! Frequency for complex systems
       double omega;
-
     };
   } // namespace BorderedSolver
 } // namespace LOCA

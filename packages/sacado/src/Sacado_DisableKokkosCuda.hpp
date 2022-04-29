@@ -45,7 +45,7 @@
 #include "Sacado_ConfigDefs.h"
 
 // Redefine KOKKOS_*_FUNCTION macros to not include __device__
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(HAVE_SACADO_KOKKOSCORE) &&  ( defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) )
 // TODO double check me
 #if 1
 #undef SACADO_FUNCTION

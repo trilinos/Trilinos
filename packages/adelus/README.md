@@ -143,8 +143,8 @@ options can be found below.
 * ```Adelus_ENABLE_TIMING```
   * Whether to enable internal solver timing
   * ```BOOL``` Default: OFF
-* ```Adelus_ENABLE_CUDAHOSTPINNED```
-  * Whether to use Cuda Host Pinned memory for MPI
+* ```Adelus_ENABLE_HOSTPINNEDMEM```
+  * Whether to use Cuda/HIP Host Pinned memory for MPI
   * ```BOOL``` Default: OFF
 * ```Adelus_ENABLE_USEDEEPCOPY```
   * Whether to Use Kokkos::deep_copy for BLAS copy
@@ -207,7 +207,7 @@ cmake \
 \
 -D Kokkos_ENABLE_SERIAL:BOOL=OFF \
 -D Kokkos_ENABLE_OPENMP:BOOL=ON \
--D Kokkos_ENABLE_PTHREAD:BOOL=OFF \
+-D Kokkos_ENABLE_THREADS:BOOL=OFF \
 -D Kokkos_ENABLE_CUDA:BOOL=ON \
 -D Kokkos_ENABLE_CUDA_UVM:BOOL=OFF \
 -D Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON \
@@ -218,7 +218,7 @@ cmake \
 \
 -D Adelus_ENABLE_ZCPLX:BOOL=ON \
 -D Adelus_ENABLE_TIMING:BOOL=ON \
--D Adelus_ENABLE_CUDAHOSTPINNED:BOOL=OFF \
+-D Adelus_ENABLE_HOSTPINNEDMEM:BOOL=OFF \
 -D Adelus_ENABLE_PRINTSTATUS:BOOL=ON \
 \
 ${TRILINOS_HOME}/Trilinos

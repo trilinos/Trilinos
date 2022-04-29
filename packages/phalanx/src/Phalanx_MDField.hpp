@@ -321,7 +321,7 @@ namespace PHX {
 
     const PHX::FieldTag& fieldTag() const
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
 #endif
       return *m_tag;
@@ -329,7 +329,7 @@ namespace PHX {
 
     Teuchos::RCP<const PHX::FieldTag> fieldTagPtr() const
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
 #endif
       return m_tag;
@@ -355,7 +355,7 @@ namespace PHX {
     typename PHX::MDFieldReturnType<array_type>::return_type
     operator()(const index_pack&... indices) const
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
       TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
 #endif
       return m_view(indices...);
@@ -366,7 +366,7 @@ namespace PHX {
     typename PHX::MDFieldReturnType<array_type>::return_type
     access(const index_pack&... indices) const
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ ) && !defined(__HIP_DEVICE_COMPILE__)
       TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
 #endif
       return m_view.access(indices...);
@@ -450,7 +450,7 @@ namespace PHX {
     template<typename iType>
     void dimensions(std::vector<iType>& dims)
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       TEUCHOS_TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, fieldDataErrorMsg());
 #endif
@@ -458,6 +458,9 @@ namespace PHX {
       for (size_type i=0; i <  this->rank(); ++i)
         dims[i] = static_cast<iType>(m_view.extent(i));  // dangerous
     }
+
+    KOKKOS_FORCEINLINE_FUNCTION
+    operator array_type () const { return get_static_view();}
 
     KOKKOS_FORCEINLINE_FUNCTION
     Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> get_view()
@@ -481,11 +484,20 @@ namespace PHX {
     void deep_copy(const PHX::MDField<SrcScalar,SrcProps...>& source)
     {Kokkos::deep_copy(m_view, source.get_static_view());}
 
-    void deep_copy(const Scalar source)
+    void deep_copy(const Scalar& source)
     {Kokkos::deep_copy(m_view, source);}
 
     PHX::any get_static_view_as_any()
     {return get_static_view_as_any(ViewSpecialization<traits::rank>());}
+
+    /// Resets the underlying view ptr to null.
+    void releaseFieldData()
+    {
+#if defined(PHX_DEBUG)
+      m_data_set = false;
+#endif
+      m_view = array_type();
+    }
 
   private:
     template<int R> KOKKOS_INLINE_FUNCTION constexpr size_type rank(ViewSpecialization<R>) const {return traits::rank;}
@@ -493,7 +505,7 @@ namespace PHX {
 
     template<int R> void setFieldData(ViewSpecialization<R>,const PHX::any& a)
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       m_data_set = true;
 #endif
@@ -518,7 +530,7 @@ namespace PHX {
 
     void setFieldData(ViewSpecialization<0>,const PHX::any& a)
     {
-#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+#if defined( PHX_DEBUG)
       TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, fieldTagErrorMsg());
       m_data_set = true;
 #endif
@@ -642,6 +654,14 @@ namespace PHX {
     f.print(os, false);
     return os;
   }
+
+  /// \brief free function to allow one to pass in a kokkos view or MDField and get out a view
+  template <typename ...Args>
+  const auto as_view(const Kokkos::View<Args...> &a) { return a; }
+  template <typename ...Args>
+  const auto as_view(const Kokkos::DynRankView<Args...> &a) { return a; }
+  template <typename ...Args>
+  const auto as_view(const PHX::MDField<Args...> &a) { return a.get_static_view(); }
 
 }
 

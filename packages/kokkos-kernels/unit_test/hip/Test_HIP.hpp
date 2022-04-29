@@ -1,3 +1,6 @@
+#ifndef TEST_HIP_HPP
+#define TEST_HIP_HPP
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
@@ -7,15 +10,13 @@
 #endif
 
 class hip : public ::testing::Test {
-protected:
-  static void SetUpTestCase()
-  {
-  }
+ protected:
+  static void SetUpTestCase() {}
 
-  static void TearDownTestCase()
-  {
-  }
+  static void TearDownTestCase() {}
 };
 
 #define TestCategory hip
 #define TestExecSpace Kokkos::Experimental::HIP
+
+#endif  // TEST_HIP_HPP

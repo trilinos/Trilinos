@@ -67,6 +67,7 @@ namespace Ioss {
    * \param[in] desc A short description of the option.
    * \param[in] val The option value.
    * \param[in] optval The default value.
+   * \param[in] extra_line If true, add a blank line after this description output.
    * \returns 1 if successful, 0 if unsuccessful.
    */
   bool GetLongOption::enroll(const char *const opt, const OptType t, const char *const desc,
@@ -237,7 +238,7 @@ namespace Ioss {
   int GetLongOption::parse(char *const str, char *const p)
   {
     options_parsed    = true;
-    char *      token = strtok(str, " \t");
+    char       *token = strtok(str, " \t");
     const char *name  = p != nullptr ? p : "GetLongOption";
 
     while (token != nullptr) {

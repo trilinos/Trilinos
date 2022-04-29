@@ -263,9 +263,8 @@ void all_reduce( ParallelMachine , const ReduceOp & );
 #ifndef DOXYGEN_COMPILE
 
 namespace stk {
-namespace {
-// Blank namespace so that this class produces local symbols,
-// avoiding complaints from a linker of multiply-defined symbols.
+namespace util {
+namespace impl {
 
 struct ReduceEnd {
   struct WorkType {};
@@ -273,16 +272,6 @@ struct ReduceEnd {
   void copyout( WorkType & ) const {}
   static void op( WorkType & , WorkType & ) {}
 };
-
-inline
-void dummy_reference_ReduceEnd_to_avoid_compiler_warnings()
-{
-  ReduceEnd reduceEnd;
-  ReduceEnd::WorkType w;
-  reduceEnd.copyin(w);
-  ReduceEnd::op(w,w);
-  reduceEnd.copyout(w);
-}
 
 // Workhorse class for aggregating reduction operations.
 
@@ -338,11 +327,15 @@ void Reduce<Op,T,Next>::void_op( void*inv, void*inoutv,int*,ParallelDatatype*)
 
 }
 }
+}
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
 namespace stk {
+
+using stk::util::impl::Reduce;
+using stk::util::impl::ReduceEnd;
 
 template<unsigned N, typename T>
 inline

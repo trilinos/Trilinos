@@ -111,6 +111,10 @@ namespace Ifpack2 {
     // \name Constructors and Destructors
     //@{
 
+    //! Constructor that takes 1 Tpetra matrix (assumes we'll get the rest off the parameter list)
+    explicit Hiptmair (const Teuchos::RCP<const row_matrix_type>& A);
+
+
     //! Constructor that takes 3 Tpetra matrices.
     explicit Hiptmair (const Teuchos::RCP<const row_matrix_type>& A,
                        const Teuchos::RCP<const row_matrix_type>& PtAP,
@@ -175,6 +179,11 @@ namespace Ifpack2 {
                           typename MatrixType::local_ordinal_type,
                           typename MatrixType::global_ordinal_type,
                           typename MatrixType::node_type>& Y) const;
+
+    //! A service routine for updating the cached MultiVectors
+    void updateCachedMultiVectors(const Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >& map1,
+                                  const Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>>& map2,
+                                  size_t numVecs) const;
 
     //! Tpetra::Map representing the domain of this operator.
     Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> > getDomainMap() const;
@@ -267,6 +276,11 @@ namespace Ifpack2 {
     mutable double ApplyTime_;
     //! preconditioners for the two spaces
     Teuchos::RCP<prec_type> ifpack2_prec1_, ifpack2_prec2_;
+    //! MultiVectors for caching purposes (so apply doesn't need to allocate them on each call)
+    mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedResidual1_;
+    mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedSolution1_;
+    mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedResidual2_;
+    mutable Teuchos::RCP<Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > cachedSolution2_;
   };
 
 } // namespace Ifpack2

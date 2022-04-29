@@ -127,6 +127,9 @@ namespace Xpetra {
     //! Gets the 1D pointer arrays of the graph.
     virtual void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const = 0;
 
+    //! Gets the 1D pointer arrays of the graph.
+    virtual void getAllValues(ArrayRCP<Scalar>& values) =0;
+
     //@}
 
     //! @name Transformational Methods
@@ -171,13 +174,13 @@ namespace Xpetra {
     virtual global_size_t getGlobalNumCols() const = 0;
 
     //! Returns the number of matrix rows owned on the calling node.
-    virtual size_t getNodeNumRows() const = 0;
+    virtual size_t getLocalNumRows() const = 0;
 
     //! Returns the global number of entries in this matrix.
     virtual global_size_t getGlobalNumEntries() const = 0;
 
     //! Returns the local number of entries in this matrix.
-    virtual size_t getNodeNumEntries() const = 0;
+    virtual size_t getLocalNumEntries() const = 0;
 
     //! Returns the current number of entries on this node in the specified local row.
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
@@ -189,7 +192,7 @@ namespace Xpetra {
     virtual size_t getGlobalMaxNumRowEntries() const = 0;
 
     //! Returns the maximum number of entries across all rows/columns on this node.
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    virtual size_t getLocalMaxNumRowEntries() const = 0;
 
     //! If matrix indices are in the local range, this function returns true. Otherwise, this function returns false.
     virtual bool isLocallyIndexed() const = 0;
@@ -308,23 +311,29 @@ namespace Xpetra {
     //@{
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
-    typedef typename node_type::execution_space execution_space;
+    using impl_scalar_type  = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+    using execution_space   = typename node_type::device_type;
 
     // that is the local_graph_type in Tpetra::CrsGraph...
-    typedef Kokkos::StaticCrsGraph<LocalOrdinal,
-                                       Kokkos::LayoutLeft,
-                                       execution_space,
-                                       void,
-                                       size_t> local_graph_type;
+    using local_graph_type  = Kokkos::StaticCrsGraph<LocalOrdinal,
+						    Kokkos::LayoutLeft,
+						    execution_space,
+						    void,
+						    size_t>;
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
     ///  The same as for Tpetra
-    typedef KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,void,
-                              typename local_graph_type::size_type> local_matrix_type;
+    using local_matrix_type = KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,void,
+						      typename local_graph_type::size_type>;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Access the underlying local KokkosSparse::CrsMatrix object
-    virtual local_matrix_type getLocalMatrix () const = 0;
+    virtual local_matrix_type getLocalMatrix () const {
+      return getLocalMatrixDevice();
+    }
+#endif
+    virtual local_matrix_type getLocalMatrixDevice () const = 0;
+    virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const = 0;
 
     virtual void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                                const typename local_graph_type::entries_type::non_const_type& ind,
@@ -341,7 +350,7 @@ namespace Xpetra {
     //  Adding these functions by hand, as they're in the skip list.
 
     //! Returns the number of matrix columns owned on the calling node.
-        virtual size_t getNodeNumCols() const = 0;
+        virtual size_t getLocalNumCols() const = 0;
 
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
         virtual void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const = 0;
@@ -354,6 +363,27 @@ namespace Xpetra {
                           const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
                           MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const = 0;
 
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumRows() const {
+      return getLocalNumRows();
+    }
+#endif
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumCols() const {
+      return getLocalNumCols();
+    }
+#endif
+
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumEntries() const {
+      return getLocalNumEntries();
+    }
+#endif
 
   }; // CrsMatrix class
 

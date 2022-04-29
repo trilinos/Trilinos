@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+tribits_package_define_dependencies(
   LIB_OPTIONAL_PACKAGES Teuchos Epetra Zoltan Galeri Amesos Ifpack AztecOO EpetraExt Isorropia
   LIB_REQUIRED_TPLS BLAS LAPACK
   LIB_OPTIONAL_TPLS MPI METIS ParMETIS PETSC

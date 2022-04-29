@@ -55,7 +55,6 @@ namespace { // (anonymous)
 using Tpetra::TestingUtilities::getDefaultComm;
 using Tpetra::createContigMapWithNode;
 using Tpetra::createNonContigMapWithNode;
-using Tpetra::StaticProfile;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::rcp;
@@ -88,19 +87,19 @@ bool compare_final_graph_structure(Teuchos::FancyOStream &out,Tpetra::CrsGraph<L
   if (!g1.getDomainMap()->isSameAs(*g2.getDomainMap())) {out<<"Compare: DomainMap failed"<<endl;return false;}
   if (!g1.getColMap()->isSameAs(*g2.getColMap())) {out<<"Compare: ColMap failed"<<endl;g1.describe(out,Teuchos::VERB_EXTREME);g2.describe(out,Teuchos::VERB_EXTREME);return false;}
 
-  auto rowptr1 = g1.getLocalGraph().row_map;
-  auto rowptr2 = g2.getLocalGraph().row_map;
+  auto rowptr1 = g1.getLocalGraphHost().row_map;
+  auto rowptr2 = g2.getLocalGraphHost().row_map;
 
-  auto colind1 = g1.getLocalGraph().entries;
-  auto colind2 = g2.getLocalGraph().entries;
+  auto colind1 = g1.getLocalGraphHost().entries;
+  auto colind2 = g2.getLocalGraphHost().entries;
 
-  if (rowptr1.extent(0) != rowptr2.extent(0)) {out<<"Compare: rowptr extent failed"<<endl;return false;}      
+  if (rowptr1.extent(0) != rowptr2.extent(0)) {out<<"Compare: rowptr extent failed"<<endl;return false;}
   if (colind1.extent(0) != colind2.extent(0)) {out<<"Compare: colind extent failed: "<<colind1.extent(0)<<" vs "<<colind2.extent(0)<<endl;
     int rank = g1.getRowMap()->getComm()->getRank();
     print_graph(rank,"G1",rowptr1,colind1);
     print_graph(rank,"G2",rowptr2,colind2);
     return false;
-}      
+}
 
   bool success=true;
   TEST_COMPARE_ARRAYS(rowptr1,rowptr2);
@@ -141,19 +140,22 @@ bool compare_final_graph_structure_relaxed(Teuchos::FancyOStream &out,
     return false;
   }
 
-  const LO num_my_rows = g1.getNodeNumRows();
-  if (num_my_rows!=static_cast<LO>(g2.getNodeNumEntries())) {
+  const LO num_my_rows = g1.getLocalNumRows();
+  if (num_my_rows!=static_cast<LO>(g2.getLocalNumRows())) {
     out << "Compare: number of local rows differ on some MPI rank: "
-        << num_my_rows << " vs " << g2.getNodeNumRows() << ".\n";
+        << num_my_rows << " vs " << g2.getLocalNumRows() << ".\n";
     return false;
   }
 
-  auto hasLID = [](const Teuchos::ArrayView<const LO>& lids, const LO lid) -> bool {
-    auto it = std::find(lids.begin(),lids.end(),lid);
-    return it!=lids.end();
+  typedef typename Tpetra::CrsGraph<LO,GO,Node>::local_inds_host_view_type
+                   lcl_ind_type;
+
+  auto hasLID = [](const lcl_ind_type & lids, const LO lid) -> bool {
+    auto it = std::find(lids.data(),lids.data()+lids.extent(0),lid);
+    return it!=lids.data()+lids.extent(0);
   };
 
-  Teuchos::ArrayView<const LO> cols1, cols2;
+  lcl_ind_type cols1, cols2;
   const LO invLO = Teuchos::OrdinalTraits<LO>::invalid();
   const auto& colMap1 = *g1.getColMap();
   const auto& colMap2 = *g2.getColMap();
@@ -210,12 +212,12 @@ public:
   void print(int rank, std::ostream & out) {
     using std::endl;
     out << "["<<rank<<"] Unique Map  : ";
-    for(size_t i=0; i<uniqueMap->getNodeNumElements(); i++)
+    for(size_t i=0; i<uniqueMap->getLocalNumElements(); i++)
       out << uniqueMap->getGlobalElement(i) << " ";
-    out<<endl;      
+    out<<endl;
 
     out << "["<<rank<<"] Overlap Map : ";
-    for(size_t i=0; i<overlapMap->getNodeNumElements(); i++)
+    for(size_t i=0; i<overlapMap->getLocalNumElements(); i++)
       out << overlapMap->getGlobalElement(i) << " ";
     out<<endl;
 
@@ -395,19 +397,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal, LO, GO, Node )
 
 
     // Trivial test that makes sure a diagonal graph can be built
-    CG g1(map,1,StaticProfile);
+    CG g1(map,1);
     FEG g2(map,map,1);
 
-    Tpetra::beginFill(g2);
+    Tpetra::beginAssembly(g2);
     for(size_t i=0; i<numLocal; i++) {
       GO gid = map->getGlobalElement(i);
       g1.insertGlobalIndices(gid,1,&gid);
       g2.insertGlobalIndices(gid,1,&gid);
     }
-    Tpetra::endFill(g2);
+    Tpetra::endAssembly(g2);
     g1.fillComplete();
 
-    success = compare_final_graph_structure(out,g1,g2);
+    success = compare_final_graph_structure(out,g1,g2) && success;
     TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
 }
 
@@ -427,17 +429,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Diagonal_LocalIndex, LO, GO, Node
 
 
     // Trivial test that makes sure a diagonal graph can be built
-    CG g1(map,1,StaticProfile);
+    CG g1(map,1);
     FEG g2(map,map,map,1);
 
-    Tpetra::beginFill(g2);
+    Tpetra::beginAssembly(g2);
     for(size_t i=0; i<numLocal; i++) {
       GO gid = map->getGlobalElement(i);
       LO lid = (LO) i;
       g1.insertGlobalIndices(gid,1,&gid);
       g2.insertLocalIndices(lid,1,&lid);
     }
-    Tpetra::endFill(g2);
+    Tpetra::endAssembly(g2);
     g1.fillComplete();
 
     success = compare_final_graph_structure(out,g1,g2);
@@ -450,10 +452,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
 {
   typedef Tpetra::FECrsGraph<LO,GO,Node> FEG;
   typedef Tpetra::CrsGraph<LO,GO,Node> CG;
-  
+
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
-  
+
   // create a Map
   const size_t numLocal = 10;
 
@@ -463,12 +465,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
   //pack.print(comm->getRank(),std::cout);
 
   // Comparative assembly
-  // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
+  // FIXME: We should be able to get away with 3 here, but we need 4 since duplicates are
   // not being handled correctly.
-  CG g1(pack.uniqueMap,4,StaticProfile);
+  CG g1(pack.uniqueMap,4);
   FEG g2(pack.uniqueMap,pack.overlapMap,4);
 
-  g2.beginFill();
+  g2.beginAssembly();
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
       GO gid_j = pack.element2node[i][j];
@@ -481,7 +483,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D, LO, GO, Node )
     }
   }
   g1.fillComplete();
-  g2.endFill();
+  g2.endAssembly();
 
   success = compare_final_graph_structure(out,g1,g2);
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
@@ -496,7 +498,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D_LocalIndex, LO, GO, No
 
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
-  
+
   // create a Map
   const size_t numLocal = 10;
 
@@ -506,13 +508,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D_LocalIndex, LO, GO, No
   //  pack.print(comm->getRank(),std::cout);fflush(stdout);
 
   // Comparative assembly
-  // FIXME: We should be able to get away with 3 for StaticProfile here, but we need 4 since duplicates are
+  // FIXME: We should be able to get away with 3 here, but we need 4 since duplicates are
   // not being handled correctly.
 
-  CG g1(pack.uniqueMap,4,StaticProfile);
+  CG g1(pack.uniqueMap,4);
   FEG g2(pack.uniqueMap,pack.overlapMap,pack.overlapMap,4);
 
-  g2.beginFill();
+  g2.beginAssembly();
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
       GO gid_j = pack.element2node[i][j];
@@ -527,7 +529,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble1D_LocalIndex, LO, GO, No
     }
   }
   g1.fillComplete();
-  g2.endFill();
+  g2.endAssembly();
 
   success = compare_final_graph_structure(out,g1,g2);
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
@@ -540,7 +542,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
 
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
-  
+
   const int numCells1D = 4;
 
   // Generate a mesh
@@ -549,13 +551,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
 
   // Comparative assembly
 
-  CG  g0(pack.overlapMap,9,StaticProfile);
-  CG  g1(pack.uniqueMap,9,StaticProfile);
+  CG  g0(pack.overlapMap,9);
+  CG  g1(pack.uniqueMap,9);
   FEG g2(pack.uniqueMap,pack.overlapMap,9);
   FEG g3(pack.uniqueMap,pack.overlapMap,9,pack.overlapMap);
 
-  g2.beginFill();
-  g3.beginFill();
+  g2.beginAssembly();
+  g3.beginAssembly();
   for (const auto& cell_dofs : pack.element2node) {
     for (const auto& gid_i : cell_dofs) {
       for (const auto& gid_j : cell_dofs) {
@@ -568,23 +570,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
   }
   g0.fillComplete();
   g1.fillComplete();
-  g2.endFill();
-  g3.endFill();
+  g2.endAssembly();
+  g3.endAssembly();
   Tpetra::Import<LO,GO,Node> import(pack.uniqueMap,pack.overlapMap);
-  
+
   Teuchos::FancyOStream myout(Teuchos::rcpFromRef(std::cout));
-  CG  g11(pack.uniqueMap,9,StaticProfile);
+  CG  g11(pack.uniqueMap,9);
   g11.doExport(g0,import,Tpetra::INSERT);
   g11.fillComplete(pack.uniqueMap,pack.uniqueMap);
   success = compare_final_graph_structure(out,g11,g1);
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
-  
-  success = compare_final_graph_structure(out,g1,g2);
+
+  success = compare_final_graph_structure(out,g1,g2) && success;
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
 
   // Passing a domain map different from the uniqueMap should cause a rearrangement of
   // off-rank indices in the column map. Other than that, the graphs should still coincide.
-  success = compare_final_graph_structure_relaxed(out,g1,g3);
+  success = compare_final_graph_structure_relaxed(out,g1,g3) && success;
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
 
   // We can check that g3 is exactly what we would get if g1's col map had been
@@ -592,13 +594,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
   // a) use overlapMap as domainMap during fillComplete (this will generate the
   // correct colMap), and b) reset domainMap to be the unique map (so that the
   // checks in compare_final_graph_structure do not fail b/c of the domain map).
-  CG  g12(pack.uniqueMap,9,StaticProfile);
+  CG  g12(pack.uniqueMap,9);
   g12.doExport(g0,import,Tpetra::INSERT);
   g12.fillComplete(pack.overlapMap,pack.uniqueMap);
   auto importer = g12.getImporter();
   g12.replaceDomainMapAndImporter(pack.uniqueMap,importer);
 
-  success = compare_final_graph_structure(myout,g12,g3);
+  success = compare_final_graph_structure(myout,g12,g3) && success;
   TPETRA_GLOBAL_SUCCESS_CHECK(myout,comm,success)
 }
 
@@ -618,5 +620,3 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FECrsGraph, Assemble2D_OPSDomain, LO, GO, Nod
   TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
 
 } // end namespace (anonymous)
-
-

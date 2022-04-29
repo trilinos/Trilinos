@@ -117,7 +117,7 @@ namespace Intrepid2
      \param [in] tensorComponents - the data components that will be multiplied together.  May not have more than Parameters::MaxTensorComponents entries.
      \param [in] separateFirstComponent - if true, indicates that the first component will be indexed separately (this is used when the first index corresponds to a cell ordinal)
      
-     When <var>separateFirstComponent</var> is false, TensorData has rank equal to the maximum rank of the components in <var>tensorComponents</var>, and the nominal index in rank <var>r</var> is a function of the indices in rank <var>r</var> of its components, where the function is such that the fastest-moving component index is the one for the final component.  Components that have rank less than <var>r</var> are understood to have index 0 in that dimension.
+     When <var>separateFirstComponent</var> is false, TensorData has rank equal to the maximum rank of the components in <var>tensorComponents</var>, and the logical index in rank <var>r</var> is a function of the indices in rank <var>r</var> of its components, where the function is such that the fastest-moving component index is the one for the final component.  Components that have rank less than <var>r</var> are understood to have index 0 in that dimension.
      
     When <var>separateFirstComponent</var> is true, all components are required to have rank 1, and TensorData has rank 2, with the first argument reserved for the first component.  The second argument is indexed precisely as described above, omitting the first component.
     */
@@ -140,7 +140,7 @@ namespace Intrepid2
      \param [in] tensorComponents - the data components that will be multiplied together.  May not have more than Parameters::MaxTensorComponents entries.
      \param [in] separateFirstComponent - if true, indicates that the first component will be indexed separately (this is used when the first index corresponds to a cell ordinal)
      
-     When <var>separateFirstComponent</var> is false, TensorData has rank equal to the maximum rank of the components in <var>tensorComponents</var>, and the nominal index in rank <var>r</var> is a function of the indices in rank <var>r</var> of its components, where the function is such that the fastest-moving component index is the one for the final component.  Components that have rank less than <var>r</var> are understood to have index 0 in that dimension.
+     When <var>separateFirstComponent</var> is false, TensorData has rank equal to the maximum rank of the components in <var>tensorComponents</var>, and the logical index in rank <var>r</var> is a function of the indices in rank <var>r</var> of its components, where the function is such that the fastest-moving component index is the one for the final component.  Components that have rank less than <var>r</var> are understood to have index 0 in that dimension.
      
     When <var>separateFirstComponent</var> is true, all components are required to have rank 1, and TensorData has rank 2, with the first argument reserved for the first component.  The second argument is indexed precisely as described above, omitting the first component.
     */
@@ -158,10 +158,36 @@ namespace Intrepid2
     }
     
     /**
+     \brief Constructor to combine two other TensorData objects
+     \param [in] first - TensorData object with the components for the first dimension(s)
+     \param [in] second - TensorData object with the components for the remaining dimension(s).
+     \param [in] separateFirstComponent - if true, indicates that the first component (from the first TensorData object) will be indexed separately (this is used when the first index corresponds to a cell ordinal)
+     
+       When <var>separateFirstComponent</var> is true, all components are required to have rank 1, and TensorData has rank 2, with the first argument reserved for the first component.  The second argument is indexed precisely as described above, omitting the first component.
+    */
+    TensorData(const TensorData &first, const TensorData &second, bool separateFirstComponent = false)
+    :
+    separateFirstComponent_(separateFirstComponent),
+    numTensorComponents_(first.numTensorComponents() + second.numTensorComponents())
+    {
+      ordinal_type r = 0;
+      for (ordinal_type r1=0; r1<first.numTensorComponents(); r1++, r++)
+      {
+        tensorComponents_[r] = first.getTensorComponent(r1);
+      }
+      for (ordinal_type r2=0; r2<second.numTensorComponents(); r2++, r++)
+      {
+        tensorComponents_[r] = second.getTensorComponent(r2);
+      }
+      
+      initialize();
+    }
+    
+    /**
      \brief Simple constructor for the case of trivial tensor-product structure (single component)
      \param [in] tensorComponent - the data component.
      
-      Simple constructor for trivial tensor-product structure.  The TensorData object will have precisely the same nominal data layout as the provided <var>tensorComponent</var>.
+      Simple constructor for trivial tensor-product structure.  The TensorData object will have precisely the same logical data layout as the provided <var>tensorComponent</var>.
     */
     TensorData(Data<Scalar,DeviceType> tensorComponent)
     :
@@ -355,7 +381,7 @@ namespace Intrepid2
     
     //! return the index into the specified tensorial component in the dimension specified corresponding to the enumerationIndex given for that dimension.
     KOKKOS_INLINE_FUNCTION
-    ordinal_type getTensorComponentIndex(const ordinal_type &tensorComponent, const ordinal_type &dim, const ordinal_type &enumerationIndex)
+    ordinal_type getTensorComponentIndex(const ordinal_type &tensorComponent, const ordinal_type &dim, const ordinal_type &enumerationIndex) const
     {
       ordinal_type remainingEntryOrdinal = enumerationIndex;
       for (ordinal_type r=0; r<tensorComponent; r++)
@@ -461,10 +487,10 @@ namespace Intrepid2
       return value;
     }
     
-  /** \brief  Returns the nominal extent in the requested dimension
+  /** \brief  Returns the logical extent in the requested dimension
        \param [in] d - the dimension
        
-     \return nominal extent as an integer
+     \return logical extent as an integer
     */
     template <typename iType>
     KOKKOS_INLINE_FUNCTION
@@ -473,10 +499,10 @@ namespace Intrepid2
       return extents_[d];
     }
     
-    /** \brief  Returns the nominal extent in the requested dimension
+    /** \brief  Returns the logical extent in the requested dimension
          \param [in] d - the dimension
          
-       \return the nominal extent in the requested dimension.
+       \return the logical extent in the requested dimension.
       */
     template <typename iType>
     KOKKOS_INLINE_FUNCTION constexpr

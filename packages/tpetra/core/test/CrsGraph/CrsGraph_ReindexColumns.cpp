@@ -76,6 +76,7 @@ namespace {
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Import<LO, GO, Node> import_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
+    using lids_type = typename graph_type::nonconst_local_inds_host_view_type;
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     int gblSuccess = 0;
@@ -101,13 +102,13 @@ namespace {
       "to be contiguous, but is not.");
 
     const size_t maxNumEntPerRow = 3;
-    graph_type graph (rowMap, maxNumEntPerRow, Tpetra::StaticProfile);
+    graph_type graph (rowMap, maxNumEntPerRow);
 
     // Make the usual tridiagonal graph.  Let the graph create its own
     // column Map.  We'll use that column Map to create a new column
     // Map, and give that column Map to reindexColumns().
 
-    if (rowMap->getNodeNumElements () > 0) {
+    if (rowMap->getLocalNumElements () > 0) {
       const GO myMinGblInd = rowMap->getMinGlobalIndex ();
       const GO myMaxGblInd = rowMap->getMaxGlobalIndex ();
       const GO gblMinGblInd = rowMap->getMinAllGlobalIndex ();
@@ -172,13 +173,13 @@ namespace {
     // of getColMap(), and the call to reindexColumns() will
     // invalidate the graph's current column Map.
     RCP<const map_type> curColMap = graph.getColMap ();
-    Array<GO> newGblInds (curColMap->getNodeNumElements ());
+    Array<GO> newGblInds (curColMap->getLocalNumElements ());
     if (curColMap->isContiguous ()) {
       // const GO myMinGblInd = curColMap->getMinGlobalIndex ();
       const GO myMaxGblInd = curColMap->getMaxGlobalIndex ();
 
       const size_type myNumInds =
-        static_cast<size_type> (curColMap->getNodeNumElements ());
+        static_cast<size_type> (curColMap->getLocalNumElements ());
       if (myNumInds > 0) {
         GO curGblInd = myMaxGblInd;
         for (size_type k = 0; k < myNumInds; ++k, --curGblInd) {
@@ -186,7 +187,7 @@ namespace {
         }
       }
     } else { // original column Map is not contiguous
-      ArrayView<const GO> curGblInds = curColMap->getNodeElementList ();
+      ArrayView<const GO> curGblInds = curColMap->getLocalElementList ();
       for (size_type k = 0; k < curGblInds.size (); ++k) {
         const size_type k_opposite = (newGblInds.size () - 1) - k;
         newGblInds[k] = curGblInds[k_opposite];
@@ -341,7 +342,7 @@ namespace {
     // indices to global in the new column Map, and then back to local
     // in the old column Map, and compare with those in the original
     // graph.
-    const LO myNumRows = static_cast<LO> (rowMap->getNodeNumElements ());
+    const LO myNumRows = static_cast<LO> (rowMap->getLocalNumElements ());
     if (myNumRows > 0) {
       for (LO lclRowInd = 0; lclRowInd < myNumRows; ++lclRowInd) {
         os << "Proc " << myRank << ": Row: " << lclRowInd;
@@ -360,10 +361,10 @@ namespace {
         // Get the "new" local column indices that resulted from the
         // call to reindexColumns.  Get by copy, not by view, so we
         // can sort it.
-        Array<LO> newLclColInds (numEnt);
+        lids_type newLclColInds ("newLclColIds",numEnt);
         {
           size_t actualNumEnt = 0;
-          graph.getLocalRowCopy (lclRowInd, newLclColInds (), actualNumEnt);
+          graph.getLocalRowCopy (lclRowInd, newLclColInds, actualNumEnt);
           if (static_cast<size_t> (numEnt) != actualNumEnt) {
             os << ", graph.getLocalRowCopy(...) reported different # entries"
                << endl;
@@ -371,7 +372,7 @@ namespace {
             continue; // don't even bother with the rest
           }
         }
-        os << ", newLclInds: " << Teuchos::toString (newLclColInds);
+        //        os << ", newLclInds: " << Teuchos::toString (newLclColInds);
 
         // Use the new column Map to convert them to global indices.
         Array<GO> gblColInds (numEnt);
@@ -408,10 +409,10 @@ namespace {
         os << ", oldLclInds: " << Teuchos::toString (oldLclColInds);
 
         // Get the original local indices from the original graph.
-        Array<LO> origLclColInds (numEnt);
+        lids_type origLclColInds ("origLclColIds",numEnt);
         {
           size_t actualNumEnt = 0;
-          graph2->getLocalRowCopy (lclRowInd, origLclColInds (), actualNumEnt);
+          graph2->getLocalRowCopy (lclRowInd, origLclColInds, actualNumEnt);
           if (static_cast<size_t> (numEnt) != actualNumEnt) {
             os << ", graph2.getLocalRowCopy(...) reported different # entries"
                << endl;
@@ -419,16 +420,16 @@ namespace {
             continue; // don't even bother with the rest
           }
         }
-        os << ", origLclInds: " << Teuchos::toString (origLclColInds);
+        //        os << ", origLclInds: " << Teuchos::toString (origLclColInds);
 
         // The indices in both graphs don't need to be in the same
         // order; they just need to be the same indices.
-        std::sort (origLclColInds.begin (), origLclColInds.end ());
+        Tpetra::sort (origLclColInds, origLclColInds.extent(0));
         std::sort (oldLclColInds.begin (), oldLclColInds.end ());
 
         // Compare the two sets of indices.
         bool arraysSame = true;
-        if (oldLclColInds.size () != origLclColInds.size ()) {
+        if ((size_t)oldLclColInds.size() != (size_t)origLclColInds.extent(0)) {
           arraysSame = false;
         } else {
           for (size_type k = 0; k < oldLclColInds.size (); ++k) {
@@ -534,6 +535,7 @@ namespace {
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Import<LO, GO, Node> import_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
+    using lids_type = typename graph_type::nonconst_local_inds_host_view_type;
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     int gblSuccess = 0;
@@ -559,13 +561,13 @@ namespace {
       "to be contiguous, but is not.");
 
     const size_t maxNumEntPerRow = 3;
-    graph_type graph (rowMap, maxNumEntPerRow, Tpetra::StaticProfile);
+    graph_type graph (rowMap, maxNumEntPerRow);
 
     // Make the usual tridiagonal graph.  Let the graph create its own
     // column Map.  We'll use that column Map to create a new column
     // Map, and give that column Map to reindexColumns().
 
-    if (rowMap->getNodeNumElements () > 0) {
+    if (rowMap->getLocalNumElements () > 0) {
       const GO myMinGblInd = rowMap->getMinGlobalIndex ();
       const GO myMaxGblInd = rowMap->getMaxGlobalIndex ();
       const GO gblMinGblInd = rowMap->getMinAllGlobalIndex ();
@@ -630,13 +632,13 @@ namespace {
     // of getColMap(), and the call to reindexColumns() will
     // invalidate the graph's current column Map.
     RCP<const map_type> curColMap = graph.getColMap ();
-    Array<GO> newGblInds (curColMap->getNodeNumElements ());
+    Array<GO> newGblInds (curColMap->getLocalNumElements ());
     if (curColMap->isContiguous ()) {
       // const GO myMinGblInd = curColMap->getMinGlobalIndex ();
       const GO myMaxGblInd = curColMap->getMaxGlobalIndex ();
 
       const size_type myNumInds =
-        static_cast<size_type> (curColMap->getNodeNumElements ());
+        static_cast<size_type> (curColMap->getLocalNumElements ());
       if (myNumInds > 0) {
         GO curGblInd = myMaxGblInd;
         for (size_type k = 0; k < myNumInds; ++k, --curGblInd) {
@@ -644,7 +646,7 @@ namespace {
         }
       }
     } else { // original column Map is not contiguous
-      ArrayView<const GO> curGblInds = curColMap->getNodeElementList ();
+      ArrayView<const GO> curGblInds = curColMap->getLocalElementList ();
       for (size_type k = 0; k < curGblInds.size (); ++k) {
         const size_type k_opposite = (newGblInds.size () - 1) - k;
         newGblInds[k] = curGblInds[k_opposite];
@@ -803,7 +805,7 @@ namespace {
     // indices to global in the new column Map, and then back to local
     // in the old column Map, and compare with those in the original
     // graph.
-    const LO myNumRows = static_cast<LO> (rowMap->getNodeNumElements ());
+    const LO myNumRows = static_cast<LO> (rowMap->getLocalNumElements ());
     if (myNumRows > 0) {
       for (LO lclRowInd = 0; lclRowInd < myNumRows; ++lclRowInd) {
         os << "Proc " << myRank << ": Row: " << lclRowInd;
@@ -822,10 +824,10 @@ namespace {
         // Get the "new" local column indices that resulted from the
         // call to reindexColumns.  Get by copy, not by view, so we
         // can sort it.
-        Array<LO> newLclColInds (numEnt);
+        lids_type newLclColInds ("newLclColInds",numEnt);
         {
           size_t actualNumEnt = 0;
-          graph.getLocalRowCopy (lclRowInd, newLclColInds (), actualNumEnt);
+          graph.getLocalRowCopy (lclRowInd, newLclColInds, actualNumEnt);
           if (static_cast<size_t> (numEnt) != actualNumEnt) {
             os << ", graph.getLocalRowCopy(...) reported different # entries"
                << endl;
@@ -833,7 +835,7 @@ namespace {
             continue; // don't even bother with the rest
           }
         }
-        os << ", newLclInds: " << Teuchos::toString (newLclColInds);
+        //        os << ", newLclInds: " << Teuchos::toString (newLclColInds);
 
         // Use the new column Map to convert them to global indices.
         Array<GO> gblColInds (numEnt);
@@ -870,10 +872,10 @@ namespace {
         os << ", oldLclInds: " << Teuchos::toString (oldLclColInds);
 
         // Get the original local indices from the original graph.
-        Array<LO> origLclColInds (numEnt);
+        lids_type origLclColInds("origLclColIds",numEnt);
         {
           size_t actualNumEnt = 0;
-          graph2->getLocalRowCopy (lclRowInd, origLclColInds (), actualNumEnt);
+          graph2->getLocalRowCopy (lclRowInd, origLclColInds, actualNumEnt);
           if (static_cast<size_t> (numEnt) != actualNumEnt) {
             os << ", graph2.getLocalRowCopy(...) reported different # entries"
                << endl;
@@ -881,16 +883,16 @@ namespace {
             continue; // don't even bother with the rest
           }
         }
-        os << ", origLclInds: " << Teuchos::toString (origLclColInds);
+        //os << ", origLclInds: " << Teuchos::toString (origLclColInds);
 
         // The indices in both graphs don't need to be in the same
         // order; they just need to be the same indices.
-        std::sort (origLclColInds.begin (), origLclColInds.end ());
+        Tpetra::sort (origLclColInds, origLclColInds.extent(0));
         std::sort (oldLclColInds.begin (), oldLclColInds.end ());
 
         // Compare the two sets of indices.
         bool arraysSame = true;
-        if (oldLclColInds.size () != origLclColInds.size ()) {
+        if ((size_t)oldLclColInds.size () != (size_t)origLclColInds.size ()) {
           arraysSame = false;
         } else {
           for (size_type k = 0; k < oldLclColInds.size (); ++k) {

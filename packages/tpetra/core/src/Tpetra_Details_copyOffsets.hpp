@@ -172,7 +172,9 @@ namespace { // (anonymous)
       if (srcLen <= maxNumToPrint) {
         auto dst_h = Kokkos::create_mirror_view (dst);
         auto src_h = Kokkos::create_mirror_view (src);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (src_h, src);
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (dst_h, dst);
 
         os << "  src: [";
@@ -234,7 +236,7 @@ namespace { // (anonymous)
     CopyOffsetsFunctor (const OutputViewType& dst, const InputViewType& src) :
       dst_ (dst), src_ (src)
     {
-      static_assert (Kokkos::Impl::SpaceAccessibility<
+      static_assert (Kokkos::SpaceAccessibility<
                        typename OutputViewType::memory_space,
                        typename InputViewType::memory_space>::accessible,
                      "CopyOffsetsFunctor (implements copyOffsets): Output "
@@ -285,7 +287,7 @@ namespace { // (anonymous)
       dst_ (dst),
       src_ (src)
     {
-      static_assert (Kokkos::Impl::SpaceAccessibility<
+      static_assert (Kokkos::SpaceAccessibility<
                        typename OutputViewType::memory_space,
                        typename InputViewType::memory_space>::accessible,
                      "CopyOffsetsFunctor (implements copyOffsets): Output "
@@ -342,7 +344,7 @@ namespace { // (anonymous)
              std::is_same<typename OutputViewType::non_const_value_type,
                           typename InputViewType::non_const_value_type>::value,
            const bool outputExecSpaceCanAccessInputMemSpace =
-             Kokkos::Impl::SpaceAccessibility<
+             Kokkos::SpaceAccessibility<
                typename OutputViewType::memory_space,
                typename InputViewType::memory_space>::accessible>
   struct CopyOffsetsImpl {
@@ -378,7 +380,9 @@ namespace { // (anonymous)
                      "CopyOffsetsImpl (implementation of copyOffsets): In order"
                      " to call this specialization, src and dst must have the "
                      "the same array_layout.");
-      Kokkos::deep_copy (dst, src);
+      // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+      using execution_space = typename OutputViewType::execution_space;
+      Kokkos::deep_copy (execution_space(), dst, src);
     }
   };
 
@@ -413,7 +417,7 @@ namespace { // (anonymous)
                      "must be false.  That is, either the input and output "
                      "must have different array layouts, or their value types "
                      "must differ.");
-      static_assert (Kokkos::Impl::SpaceAccessibility<
+      static_assert (Kokkos::SpaceAccessibility<
                        typename OutputViewType::memory_space,
                        typename InputViewType::memory_space>::accessible,
                      "CopyOffsetsImpl (implements copyOffsets): In order to "
@@ -483,16 +487,17 @@ namespace { // (anonymous)
           Kokkos::LayoutLeft, typename OutputViewType::device_type>;
       using Kokkos::view_alloc;
       using Kokkos::WithoutInitializing;
+      using execution_space = typename OutputViewType::execution_space;
       output_space_copy_type
         outputSpaceCopy (view_alloc ("outputSpace", WithoutInitializing),
                          src.extent (0));
-      Kokkos::deep_copy (outputSpaceCopy, src);
+      // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), outputSpaceCopy, src);
 
       // The output View's execution space can access
       // outputSpaceCopy's data, so we can run the functor now.
       using functor_type =
         CopyOffsetsFunctor<OutputViewType, output_space_copy_type>;
-      using execution_space = typename OutputViewType::execution_space;
       using size_type = typename OutputViewType::size_type;
       using range_type = Kokkos::RangePolicy<execution_space, size_type>;
 
@@ -529,9 +534,9 @@ template<class OutputViewType, class InputViewType>
 void
 copyOffsets (const OutputViewType& dst, const InputViewType& src)
 {
-  static_assert (Kokkos::Impl::is_view<OutputViewType>::value,
+  static_assert (Kokkos::is_view<OutputViewType>::value,
                  "OutputViewType (the type of dst) must be a Kokkos::View.");
-  static_assert (Kokkos::Impl::is_view<InputViewType>::value,
+  static_assert (Kokkos::is_view<InputViewType>::value,
                  "InputViewType (the type of src) must be a Kokkos::View.");
   static_assert (std::is_same<typename OutputViewType::value_type,
                    typename OutputViewType::non_const_value_type>::value,

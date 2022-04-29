@@ -457,7 +457,7 @@ namespace MueLu {
     RCP<RealValuedMultiVector> coarseCoords;
 
     if(bTransferCoordinates_) {
-      ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
+      ArrayView<const GO> elementAList = coarseMap->getLocalElementList();
       GO                  indexBase    = coarseMap->getIndexBase();
 
       LO blkSize = 1;
@@ -503,8 +503,8 @@ namespace MueLu {
       auto aggGraph = aggregates->GetGraph();
       auto numAggs  = aggGraph.numRows();
 
-      auto fineCoordsView   = fineCoords  ->getDeviceLocalView();
-      auto coarseCoordsView = coarseCoords->getDeviceLocalView();
+      auto fineCoordsView   = fineCoords  ->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      auto coarseCoordsView = coarseCoords->getDeviceLocalView(Xpetra::Access::OverwriteAll);
 
       // Fill in coarse coordinates
       {
@@ -571,7 +571,7 @@ namespace MueLu {
     auto rowMap = A->getRowMap();
     auto colMap = A->getColMap();
 
-    const size_t numRows  = rowMap->getNodeNumElements();
+    const size_t numRows  = rowMap->getLocalNumElements();
     const size_t NSDim    = fineNullspace->getNumVectors();
 
     typedef Kokkos::ArithTraits<SC>     ATS;
@@ -615,8 +615,8 @@ namespace MueLu {
     GO globalOffset = amalgInfo->GlobalOffset();
 
     // Extract aggregation info (already in Kokkos host views)
-    auto         procWinner    = aggregates->GetProcWinner()  ->getDeviceLocalView();
-    auto         vertex2AggId  = aggregates->GetVertex2AggId()->getDeviceLocalView();
+    auto         procWinner    = aggregates->GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto         vertex2AggId  = aggregates->GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadOnly);
     const size_t numAggregates = aggregates->GetNumAggregates();
 
     int myPID = aggregates->GetMap()->getComm()->getRank();
@@ -709,8 +709,8 @@ namespace MueLu {
     coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
 
     // Pull out the nullspace vectors so that we can have random access (on the device)
-    auto fineNS   = fineNullspace  ->getDeviceLocalView();
-    auto coarseNS = coarseNullspace->getDeviceLocalView();
+    auto fineNS   = fineNullspace  ->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    auto coarseNS = coarseNullspace->getDeviceLocalView(Xpetra::Access::OverwriteAll);
 
     size_t nnz = 0;                       // actual number of nnz
 
@@ -948,7 +948,7 @@ namespace MueLu {
       // Stage 3: construct Xpetra::Matrix
       SubFactoryMonitor m2(*this, "Stage 3 (LocalMatrix+FillComplete)", coarseLevel);
 
-      local_matrix_type lclMatrix = local_matrix_type("A", numRows, coarseMap->getNodeNumElements(), nnz, vals, rows, cols);
+      local_matrix_type lclMatrix = local_matrix_type("A", numRows, coarseMap->getLocalNumElements(), nnz, vals, rows, cols);
 
       // Managing labels & constants for ESFC
       RCP<ParameterList> FCparams;
@@ -981,8 +981,8 @@ namespace MueLu {
     auto rowLocalMap = rowMap.getLocalMap();
     auto colLocalMap = colMap.getLocalMap();
 
-    const size_t numRows = rowLocalMap.getNodeNumElements();
-    const size_t numCols = colLocalMap.getNodeNumElements();
+    const size_t numRows = rowLocalMap.getLocalNumElements();
+    const size_t numCols = colLocalMap.getLocalNumElements();
 
     if (numCols < numRows)
       return false;

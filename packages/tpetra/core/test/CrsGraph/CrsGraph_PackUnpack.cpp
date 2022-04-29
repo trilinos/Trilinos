@@ -45,7 +45,6 @@
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Core.hpp"
-#include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_packCrsGraph.hpp"
@@ -154,7 +153,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
 
   out << "Preparing arguments for packCrsGraph" << endl;
 
-  LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
+  LO num_loc_rows = static_cast<LO>(A->getLocalNumRows());
   Array<LO> exportLIDs (num_loc_rows); // input argument
   for (LO i=0; i < num_loc_rows; ++i) {
     exportLIDs[i] = static_cast<LO>(i); // pack all the rows
@@ -162,7 +161,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   Array<packet_type> exports; // output argument; to be realloc'd
   Array<size_t> numPacketsPerLID (num_loc_rows, 0); // output argument
   size_t constantNumPackets; // output argument
-  Tpetra::Distributor distor (comm); // argument required, but not used
 
   out << "Calling packCrsGraph" << endl;
 
@@ -171,7 +169,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
     std::ostringstream msg;
     try {
       packCrsGraph<LO,GO,NT>(*A, exports, numPacketsPerLID(), exportLIDs(),
-          constantNumPackets, distor);
+          constantNumPackets);
       local_op_ok = 1;
     } catch (std::exception& e) {
       local_op_ok = 0;
@@ -194,7 +192,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   // Now make sure that the pack is correct by creating an empty graph and
   // unpacking in to it.  The graph should end up being the same as the above graph.
   out << "Building second graph" << endl;
-  RCP<crs_graph_type> B = rcp(new crs_graph_type(row_map, col_map, A->getNodeNumEntries()));
+  RCP<crs_graph_type> B = rcp(new crs_graph_type(row_map, col_map, A->getLocalNumEntries()));
 
 #if 0
   out << "Calling unpackCrsGraphAndCombine" << endl;
@@ -321,7 +319,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackWithError, LO, GO, NT)
   std::ostringstream errStrm; // for error string local to each process
 
   {
-    LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
+    LO num_loc_rows = static_cast<LO>(A->getLocalNumRows());
     Array<LO> exportLIDs(num_loc_rows);
     // exportLIDs[i] should equal i, but we set it to i+2
     for (LO i=0; i<num_loc_rows; i++) {
@@ -331,13 +329,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackWithError, LO, GO, NT)
     Array<packet_type> exports;
     Array<size_t> numPacketsPerLID(num_loc_rows, 0);
     size_t constantNumPackets;
-    Tpetra::Distributor distor(comm);
     {
       int local_op_ok;
       std::ostringstream msg;
       try {
         packCrsGraph<LO,GO,NT>(*A, exports, numPacketsPerLID(), exportLIDs(),
-            constantNumPackets, distor);
+            constantNumPackets);
         local_op_ok = 1;
       } catch (std::exception& e) {
         local_op_ok = 0;
@@ -362,7 +359,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackWithError, LO, GO, NT)
 
   {
     // Let's try this again, but send in the wrong number of exportLIDs
-    LO num_loc_rows = static_cast<LO>(A->getNodeNumRows());
+    LO num_loc_rows = static_cast<LO>(A->getLocalNumRows());
     // Note the -1!
     out << "Allocating ids... ";
     Array<LO> exportLIDs(num_loc_rows-1);
@@ -374,14 +371,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackWithError, LO, GO, NT)
     Array<packet_type> exports;
     Array<size_t> numPacketsPerLID(num_loc_rows, 0);
     size_t constantNumPackets;
-    Tpetra::Distributor distor(comm);
     out << "Calling packCrsGraph" << endl;
     {
       int local_op_ok;
       std::ostringstream msg;
       try {
         packCrsGraph<LO,GO,NT>(*A, exports, numPacketsPerLID(), exportLIDs(),
-            constantNumPackets, distor);
+            constantNumPackets);
         local_op_ok = 1;
       } catch (std::exception& e) {
         local_op_ok = 0;

@@ -91,7 +91,6 @@ namespace MueLu {
                                                  "Coarsening rate per spatial dimensions");
     validParamList->set<int>                    ("aggregation: coarsening order", 0,
                                                   "The interpolation order used to construct grid transfer operators based off these aggregates.");
-
     validParamList->set<RCP<const FactoryBase> >("Graph",                   Teuchos::null,
                                                  "Graph of the matrix after amalgamation but without dropping.");
     validParamList->set<RCP<const FactoryBase> >("DofsPerNode",             Teuchos::null,
@@ -145,8 +144,9 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
-    typedef typename LWGraph_kokkos::local_graph_type::device_type::execution_space execution_space;
-    typedef typename LWGraph_kokkos::local_graph_type::device_type::memory_space memory_space;
+    using device_type     = typename LWGraph_kokkos::local_graph_type::device_type;
+    using execution_space = typename LWGraph_kokkos::local_graph_type::device_type::execution_space;
+    using memory_space    = typename LWGraph_kokkos::local_graph_type::device_type::memory_space;
 
     *out << "Entering structured aggregation" << std::endl;
 
@@ -206,7 +206,7 @@ namespace MueLu {
                                                                    coarseRate));
 
     *out << "The index manager has now been built" << std::endl;
-    TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getNodeNumElements()
+    TEUCHOS_TEST_FOR_EXCEPTION(fineMap->getLocalNumElements()
                                != static_cast<size_t>(geoData->getNumLocalFineNodes()),
                                Exceptions::RuntimeError,
                                "The local number of elements in the graph's map is not equal to "
@@ -225,7 +225,7 @@ namespace MueLu {
       aggregates->SetNumAggregates(geoData->getNumCoarseNodes());
 
       LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
-      Kokkos::View<unsigned*, memory_space> aggStat("aggStat", numNonAggregatedNodes);
+      Kokkos::View<unsigned*, device_type> aggStat("aggStat", numNonAggregatedNodes);
       Kokkos::parallel_for("StructuredAggregation: initialize aggStat",
                            Kokkos::RangePolicy<execution_space>(0, numNonAggregatedNodes),
                            KOKKOS_LAMBDA(const LO nodeIdx) {aggStat(nodeIdx) = READY;});
@@ -248,10 +248,10 @@ namespace MueLu {
       Set(currentLevel, "prolongatorGraph", myGraph);
     }
 
-    Set(currentLevel, "lCoarseNodesPerDim",       geoData->getCoarseNodesPerDirArray());
-    Set(currentLevel, "indexManager",             geoData);
-    Set(currentLevel, "interpolationOrder",       interpolationOrder);
-    Set(currentLevel, "numDimensions",            numDimensions);
+    Set(currentLevel, "lCoarseNodesPerDim",           geoData->getCoarseNodesPerDirArray());
+    Set(currentLevel, "indexManager",                 geoData);
+    Set(currentLevel, "structuredInterpolationOrder", interpolationOrder);
+    Set(currentLevel, "numDimensions",                numDimensions);
 
   } // Build()
 

@@ -72,16 +72,7 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) {
   //
-#ifdef HAVE_COMPLEX
-  typedef std::complex<double> ST;
-#elif HAVE_COMPLEX_H
-  typedef std::complex<double> ST;
-#else
-  std::cout << "Not compiled with std::complex support." << std::endl;
-  std::cout << "End Result: TEST FAILED" << std::endl;
-  return EXIT_FAILURE;
-#endif
-
+  typedef std::complex<double>              ST;
   typedef ScalarTraits<ST>                 SCT;
   typedef SCT::magnitudeType                MT;
   typedef Belos::MultiVec<ST>               MV;
@@ -99,6 +90,7 @@ int main(int argc, char *argv[]) {
 
   bool success = false;
   bool verbose = false;
+  bool debug = false;
   try {
     int info = 0;
     bool norm_failure = false;
@@ -110,10 +102,12 @@ int main(int argc, char *argv[]) {
     int maxrestarts = 15;
     int length = 50;
     std::string filename("mhd1280b.cua");
+    std::string ortho("ICGS"); 
     MT tol = 1.0e-5;  // relative residual tolerance
 
     CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+    cmdp.setOption("debug","no-debug",&debug,"Print debug messages.");
     cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear systems.");
     cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
     cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
@@ -122,6 +116,7 @@ int main(int argc, char *argv[]) {
     cmdp.setOption("num-restarts",&maxrestarts,"Maximum number of restarts allowed for the GMRES solver.");
     cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
     cmdp.setOption("subspace-length",&length,"Maximum dimension of block-subspace used by GMRES solver.");
+    cmdp.setOption("ortho-type",&ortho,"Orthogonalization type, either DGKS, ICGS or IMGS");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
       return EXIT_FAILURE;
     }
@@ -176,9 +171,13 @@ int main(int argc, char *argv[]) {
     belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
     belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
     belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+    belosList.set( "Orthogonalization", ortho );           // Orthogonalization type
     if (verbose) {
-      belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
-          Belos::TimingDetails + Belos::StatusTestDetails );
+      int verbosity = Belos::Errors + Belos::Warnings +
+          Belos::TimingDetails + Belos::StatusTestDetails;
+      if (debug)
+        verbosity += Belos::OrthoDetails + Belos::Debug;
+      belosList.set( "Verbosity", verbosity );
       if (frequency > 0)
         belosList.set( "Output Frequency", frequency );
     }

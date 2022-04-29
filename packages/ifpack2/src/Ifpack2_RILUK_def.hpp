@@ -47,6 +47,8 @@
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
 #include "Kokkos_Sort.hpp"
+#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosKernels_Sorting.hpp"
 
 namespace Ifpack2 {
 
@@ -127,7 +129,9 @@ template<class MatrixType>
 void RILUK<MatrixType>::allocateSolvers ()
 {
   L_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  L_solver_->setObjectLabel("lower");
   U_solver_ = Teuchos::rcp (new LocalSparseTriangularSolver<row_matrix_type> ());
+  U_solver_->setObjectLabel("upper");
 }
 
 template<class MatrixType>
@@ -219,7 +223,7 @@ size_t RILUK<MatrixType>::getNodeSmootherComplexity() const {
     "input matrix, then call compute(), before calling this method.");
   // RILUK methods cost roughly one apply + the nnz in the upper+lower triangles
   if(!L_.is_null() && !U_.is_null())
-    return A_->getNodeNumEntries() + L_->getNodeNumEntries() + U_->getNodeNumEntries();
+    return A_->getLocalNumEntries() + L_->getLocalNumEntries() + U_->getLocalNumEntries();
   else
     return 0;
 }
@@ -503,16 +507,16 @@ void RILUK<MatrixType>::initialize ()
     if (this->isKokkosKernelsSpiluk_) {
       this->KernelHandle_ = Teuchos::rcp (new kk_handle_type ());
       KernelHandle_->create_spiluk_handle( KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, 
-                                           A_local_->getNodeNumRows(),
-                                           2*A_local_->getNodeNumEntries()*(LevelOfFill_+1), 
-                                           2*A_local_->getNodeNumEntries()*(LevelOfFill_+1) );
+                                           A_local_->getLocalNumRows(),
+                                           2*A_local_->getLocalNumEntries()*(LevelOfFill_+1), 
+                                           2*A_local_->getLocalNumEntries()*(LevelOfFill_+1) );
     }
 
     {
       RCP<const crs_matrix_type> A_local_crs =
         rcp_dynamic_cast<const crs_matrix_type> (A_local_);
       if (A_local_crs.is_null ()) {
-        local_ordinal_type numRows = A_local_->getNodeNumRows();
+        local_ordinal_type numRows = A_local_->getLocalNumRows();
         Array<size_t> entriesPerRow(numRows);
         for(local_ordinal_type i = 0; i < numRows; i++) {
           entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
@@ -522,14 +526,12 @@ void RILUK<MatrixType>::initialize ()
                                     A_local_->getColMap (),
                                     entriesPerRow()));
         // copy entries into A_local_crs
-        Teuchos::Array<local_ordinal_type> indices(A_local_->getNodeMaxNumRowEntries());
-        Teuchos::Array<scalar_type> values(A_local_->getNodeMaxNumRowEntries());
+        nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
+        nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
         for(local_ordinal_type i = 0; i < numRows; i++) {
           size_t numEntries = 0;
-          A_local_->getLocalRowCopy(i, indices(), values(), numEntries);
-          ArrayView<const local_ordinal_type> indicesInsert(indices.data(), numEntries);
-          ArrayView<const scalar_type> valuesInsert(values.data(), numEntries);
-          A_local_crs_nc->insertLocalValues(i, indicesInsert, valuesInsert);
+          A_local_->getLocalRowCopy(i, indices, values, numEntries);
+          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()), indices.data());
         }
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
@@ -545,8 +547,10 @@ void RILUK<MatrixType>::initialize ()
     checkOrderingConsistency (*A_local_);
     L_solver_->setMatrix (L_);
     L_solver_->initialize ();
+    L_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
     U_solver_->setMatrix (U_);
     U_solver_->initialize ();
+    U_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
 
     // Do not call initAllValues. compute() always calls initAllValues to
     // fill L and U with possibly new numbers. initialize() is concerned
@@ -566,8 +570,8 @@ checkOrderingConsistency (const row_matrix_type& A)
   // First check that the local row map ordering is the same as the local portion of the column map.
   // The extraction of the strictly lower/upper parts of A, as well as the factorization,
   // implicitly assume that this is the case.
-  Teuchos::ArrayView<const global_ordinal_type> rowGIDs = A.getRowMap()->getNodeElementList();
-  Teuchos::ArrayView<const global_ordinal_type> colGIDs = A.getColMap()->getNodeElementList();
+  Teuchos::ArrayView<const global_ordinal_type> rowGIDs = A.getRowMap()->getLocalElementList();
+  Teuchos::ArrayView<const global_ordinal_type> colGIDs = A.getColMap()->getLocalElementList();
   bool gidsAreConsistentlyOrdered=true;
   global_ordinal_type indexOfInconsistentGID=0;
   for (global_ordinal_type i=0; i<rowGIDs.size(); ++i) {
@@ -604,10 +608,10 @@ initAllValues (const row_matrix_type& A)
 
   // Allocate temporary space for extracting the strictly
   // lower and upper parts of the matrix A.
-  Teuchos::Array<local_ordinal_type> InI(MaxNumEntries);
+  nonconst_local_inds_host_view_type InI("InI",MaxNumEntries);
   Teuchos::Array<local_ordinal_type> LI(MaxNumEntries);
   Teuchos::Array<local_ordinal_type> UI(MaxNumEntries);
-  Teuchos::Array<scalar_type> InV(MaxNumEntries);
+  nonconst_values_host_view_type InV("InV",MaxNumEntries);
   Teuchos::Array<scalar_type> LV(MaxNumEntries);
   Teuchos::Array<scalar_type> UV(MaxNumEntries);
 
@@ -634,13 +638,13 @@ initAllValues (const row_matrix_type& A)
   // This is ok, as the *order* of the GIDs in the rowmap is a better
   // expression of the user's intent than the GIDs themselves.
 
-  Teuchos::ArrayView<const global_ordinal_type> nodeGIDs = rowMap->getNodeElementList();
-  for (size_t myRow=0; myRow<A.getNodeNumRows(); ++myRow) {
+  Teuchos::ArrayView<const global_ordinal_type> nodeGIDs = rowMap->getLocalElementList();
+  for (size_t myRow=0; myRow<A.getLocalNumRows(); ++myRow) {
     local_ordinal_type local_row = myRow;
 
     //TODO JJH 4April2014 An optimization is to use getLocalRowView.  Not all matrices support this,
     //                    we'd need to check via the Tpetra::RowMatrix method supportsRowViews().
-    A.getLocalRowCopy (local_row, InI(), InV(), NumIn); // Get Values and Indices
+    A.getLocalRowCopy (local_row, InI, InV, NumIn); // Get Values and Indices
 
     // Split into L and U (we don't assume that indices are ordered).
 
@@ -670,7 +674,7 @@ initAllValues (const row_matrix_type& A)
         LV[NumL] = InV[j];
         NumL++;
       }
-      else if (Teuchos::as<size_t>(k) <= rowMap->getNodeNumElements()) {
+      else if (Teuchos::as<size_t>(k) <= rowMap->getLocalNumElements()) {
         UI[NumU] = k;
         UV[NumU] = InV[j];
         NumU++;
@@ -764,38 +768,43 @@ void RILUK<MatrixType>::compute ()
 
     // Get Maximum Row length
     const size_t MaxNumEntries =
-            L_->getNodeMaxNumRowEntries () + U_->getNodeMaxNumRowEntries () + 1;
+            L_->getLocalMaxNumRowEntries () + U_->getLocalMaxNumRowEntries () + 1;
 
     Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
     Teuchos::Array<scalar_type> InV(MaxNumEntries);
-    size_t num_cols = U_->getColMap()->getNodeNumElements();
+    size_t num_cols = U_->getColMap()->getLocalNumElements();
     Teuchos::Array<int> colflag(num_cols);
 
     auto DV = Kokkos::subview(D_->getLocalViewHost(Tpetra::Access::ReadWrite), Kokkos::ALL(), 0);
 
     // Now start the factorization.
 
-    // Need some integer workspace and pointers
-    size_t NumUU;
-    Teuchos::ArrayView<const local_ordinal_type> UUI;
-    Teuchos::ArrayView<const scalar_type> UUV;
     for (size_t j = 0; j < num_cols; ++j) {
       colflag[j] = -1;
     }
-
-    for (size_t i = 0; i < L_->getNodeNumRows (); ++i) {
+    using IST = typename row_matrix_type::impl_scalar_type;
+    for (size_t i = 0; i < L_->getLocalNumRows (); ++i) {
       local_ordinal_type local_row = i;
+      // Need some integer workspace and pointers
+      size_t NumUU;
+      local_inds_host_view_type UUI;
+      values_host_view_type UUV;
 
       // Fill InV, InI with current row of L, D and U combined
 
       NumIn = MaxNumEntries;
-      L_->getLocalRowCopy (local_row, InI (), InV (), NumL);
+      nonconst_local_inds_host_view_type InI_v(InI.data(),MaxNumEntries);
+      nonconst_values_host_view_type     InV_v(reinterpret_cast<IST*>(InV.data()),MaxNumEntries);
+
+      L_->getLocalRowCopy (local_row, InI_v , InV_v, NumL);
 
       InV[NumL] = DV(i); // Put in diagonal
       InI[NumL] = local_row;
 
-      U_->getLocalRowCopy (local_row, InI (NumL+1, MaxNumEntries-NumL-1),
-                           InV (NumL+1, MaxNumEntries-NumL-1), NumU);
+      nonconst_local_inds_host_view_type InI_sub(InI.data()+NumL+1,MaxNumEntries-NumL-1);
+      nonconst_values_host_view_type     InV_sub(reinterpret_cast<IST*>(InV.data())+NumL+1,MaxNumEntries-NumL-1);
+  
+      U_->getLocalRowCopy (local_row, InI_sub,InV_sub, NumU);
       NumIn = NumL+NumU+1;
 
       // Set column flags
@@ -807,7 +816,7 @@ void RILUK<MatrixType>::compute ()
 
       for (size_t jj = 0; jj < NumL; ++jj) {
         local_ordinal_type j = InI[jj];
-        scalar_type multiplier = InV[jj]; // current_mults++;
+        IST multiplier = InV[jj]; // current_mults++;
         
         InV[jj] *= static_cast<scalar_type>(DV(j));
         
@@ -821,9 +830,10 @@ void RILUK<MatrixType>::compute ()
             // colflag above using size_t (which is generally unsigned),
             // but now we're querying it using int (which is signed).
             if (kk > -1) {
-              InV[kk] -= multiplier * UUV[k];
+              InV[kk] -= static_cast<scalar_type>(multiplier * UUV[k]);
             }
           }
+
         }
         else {
           for (size_t k = 0; k < NumUU; ++k) {
@@ -832,14 +842,15 @@ void RILUK<MatrixType>::compute ()
             // but now we're querying it using int (which is signed).
             const int kk = colflag[UUI[k]];
             if (kk > -1) {
-              InV[kk] -= multiplier*UUV[k];
+              InV[kk] -= static_cast<scalar_type>(multiplier*UUV[k]);
             }
             else {
-              diagmod -= multiplier*UUV[k];
+              diagmod -= static_cast<scalar_type>(multiplier*UUV[k]);
             }
           }
         }
       }
+
       if (NumL) {
         // Replace current row of L
         L_->replaceLocalValues (local_row, InI (0, NumL), InV (0, NumL));
@@ -868,7 +879,7 @@ void RILUK<MatrixType>::compute ()
       }
 
       if (NumU) {
-        // Replace current row of L and U
+        // Replace current row of L and U        
         U_->replaceLocalValues (local_row, InI (NumL+1, NumU), InV (NumL+1, NumU));
       }
 
@@ -890,16 +901,16 @@ void RILUK<MatrixType>::compute ()
 
     // If L_solver_ or U_solver store modified factors internally, we need to reset those
     L_solver_->setMatrix (L_);
-    L_solver_->compute ();
+    L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
     U_solver_->setMatrix (U_);
-    U_solver_->compute ();
+    U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
   }
   else {
     {//Make sure values in A is picked up even in case of pattern reuse
       RCP<const crs_matrix_type> A_local_crs =
         rcp_dynamic_cast<const crs_matrix_type> (A_local_);
       if (A_local_crs.is_null ()) {
-        local_ordinal_type numRows = A_local_->getNodeNumRows();
+        local_ordinal_type numRows = A_local_->getLocalNumRows();
         Array<size_t> entriesPerRow(numRows);
         for(local_ordinal_type i = 0; i < numRows; i++) {
           entriesPerRow[i] = A_local_->getNumEntriesInLocalRow(i);
@@ -909,21 +920,20 @@ void RILUK<MatrixType>::compute ()
                                     A_local_->getColMap (),
                                     entriesPerRow()));
         // copy entries into A_local_crs
-        Teuchos::Array<local_ordinal_type> indices(A_local_->getNodeMaxNumRowEntries());
-        Teuchos::Array<scalar_type> values(A_local_->getNodeMaxNumRowEntries());
+        nonconst_local_inds_host_view_type indices("indices",A_local_->getLocalMaxNumRowEntries());
+        nonconst_values_host_view_type values("values",A_local_->getLocalMaxNumRowEntries());
         for(local_ordinal_type i = 0; i < numRows; i++) {
           size_t numEntries = 0;
-          A_local_->getLocalRowCopy(i, indices(), values(), numEntries);
-          ArrayView<const local_ordinal_type> indicesInsert(indices.data(), numEntries);
-          ArrayView<const scalar_type> valuesInsert(values.data(), numEntries);
-          A_local_crs_nc->insertLocalValues(i, indicesInsert, valuesInsert);
+          A_local_->getLocalRowCopy(i, indices, values, numEntries);
+          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
         }
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
-      A_local_rowmap_  = A_local_crs->getLocalMatrix().graph.row_map;
-      A_local_entries_ = A_local_crs->getLocalMatrix().graph.entries;
-      A_local_values_  = A_local_crs->getLocalValuesView();
+      auto lclMtx = A_local_crs->getLocalMatrixDevice();
+      A_local_rowmap_  = lclMtx.graph.row_map;
+      A_local_entries_ = lclMtx.graph.entries;
+      A_local_values_  = lclMtx.values;
     }
 
     L_->resumeFill ();
@@ -934,35 +944,31 @@ void RILUK<MatrixType>::compute ()
       U_->setAllToScalar (STS::zero ());
     }
     
-    auto L_rowmap  = L_->getLocalMatrix().graph.row_map;
-    auto L_entries = L_->getLocalMatrix().graph.entries;
-    auto L_values  = L_->getLocalValuesView();
-    auto U_rowmap  = U_->getLocalMatrix().graph.row_map;
-    auto U_entries = U_->getLocalMatrix().graph.entries;
-    auto U_values  = U_->getLocalValuesView();
-    
-    for (unsigned int row_id = 0; row_id < L_rowmap.extent(0)-1; row_id++) {
-      int row_start = L_rowmap(row_id);
-      int row_end   = L_rowmap(row_id + 1);
-      Kokkos::sort(subview(L_entries, Kokkos::make_pair(row_start, row_end)));
+    using row_map_type = typename crs_matrix_type::local_matrix_device_type::row_map_type;
+
+    {
+      auto lclL = L_->getLocalMatrixDevice();
+      row_map_type L_rowmap  = lclL.graph.row_map;
+      auto L_entries = lclL.graph.entries;
+      auto L_values  = lclL.values;
+
+      auto lclU = U_->getLocalMatrixDevice();
+      row_map_type U_rowmap  = lclU.graph.row_map;
+      auto U_entries = lclU.graph.entries;
+      auto U_values  = lclU.values;
+
+      KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_, 
+                                                  A_local_rowmap_, A_local_entries_, A_local_values_, 
+                                                  L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
     }
-    for (unsigned int row_id = 0; row_id < U_rowmap.extent(0)-1; row_id++) {
-      int row_start = U_rowmap(row_id);
-      int row_end   = U_rowmap(row_id + 1);
-      Kokkos::sort(subview(U_entries, Kokkos::make_pair(row_start, row_end)));
-    }
-    
-    KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_, 
-                                                A_local_rowmap_, A_local_entries_, A_local_values_, 
-                                                L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
     
     L_->fillComplete (L_->getColMap (), A_local_->getRangeMap ());
     U_->fillComplete (A_local_->getDomainMap (), U_->getRowMap ());
     
     L_solver_->setMatrix (L_);
-    L_solver_->compute ();
+    L_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
     U_solver_->setMatrix (U_);
-    U_solver_->compute ();
+    U_solver_->compute ();//NOTE: Only do compute if the pointer changed. Otherwise, do nothing
   }
 
   isComputed_ = true;

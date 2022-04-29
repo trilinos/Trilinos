@@ -1,3 +1,42 @@
+//@HEADER
+// ************************************************************************
+//
+//                 Belos: Block Linear Solvers Package
+//                  Copyright 2004 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ************************************************************************
+//@HEADER
+
 #ifndef BELOS_TPETRA_CG_SINGLE_REDUCE_HPP
 #define BELOS_TPETRA_CG_SINGLE_REDUCE_HPP
 
@@ -8,8 +47,8 @@ namespace BelosTpetra {
 namespace Impl {
 
 template<class SC = Tpetra::MultiVector<>::scalar_type,
-	 class MV = Tpetra::MultiVector<SC>,
-	 class OP = Tpetra::Operator<SC>>
+         class MV = Tpetra::MultiVector<SC>,
+         class OP = Tpetra::Operator<SC>>
 class CgSingleReduce: public Krylov<SC, MV, OP> {
 private:
   using base_type = Krylov<SC, MV, OP>;
@@ -78,6 +117,7 @@ protected:
     // results of [R AR]'*R
     mag_type RAR;
     Kokkos::View<dot_type*, device_type> RR_RAR ("results[numVecs]", 2);
+    auto RR_RAR_host = Kokkos::create_mirror_view (RR_RAR);
     vec_type P (R, Teuchos::Copy);
     vec_type AP (P.getMap ());
 
@@ -99,8 +139,9 @@ protected:
       auto req = Tpetra::idot (RR_RAR, R_AR, MR);
       req->wait ();
 
-      beta_old = STS::real (RR_RAR(0));
-      PAP = STS::real (RR_RAR(1));
+      Kokkos::deep_copy (RR_RAR_host, RR_RAR);
+      beta_old = STS::real (RR_RAR_host(0));
+      PAP = STS::real (RR_RAR_host(1));
 
       r_norm = std::sqrt (beta_old);
     }
@@ -111,17 +152,15 @@ protected:
     for (int iter = 0; iter < input.maxNumIters; ++iter) {
       if (outPtr != nullptr) {
         *outPtr << "Iteration " << (iter+1) << " of " << input.maxNumIters
-		<< ":" << endl;
-        outPtr->pushTab ();
-        *outPtr << "r_norm: " << r_norm << endl;
+                << ": r_norm: " << r_norm;
       }
 
       // * search direction *
       // P = R + beta*P
       if (input.precoSide == "none") {
-	P.update (ONE, R, static_cast<SC> (beta));
+        P.update (ONE, R, static_cast<SC> (beta));
       } else {
-	P.update (ONE, MR, static_cast<SC> (beta));
+        P.update (ONE, MR, static_cast<SC> (beta));
       }
       // AP = AR + beta*AP
       AP.update (ONE, AR, static_cast<SC> (beta));
@@ -135,11 +174,11 @@ protected:
       // * matrix op *
       // AR = A*R
       if (input.precoSide == "none") {
-	A.apply (R, AR);
-	// [RR,RAR] = [R,AR]'*R
-	// TODO: idot is used for now.
-	auto req = Tpetra::idot (RR_RAR, R_AR, R);
-	req->wait ();
+        A.apply (R, AR);
+        // [RR,RAR] = [R,AR]'*R
+        // TODO: idot is used for now.
+        auto req = Tpetra::idot (RR_RAR, R_AR, R);
+        req->wait ();
       }
       else {
         M.apply (R, MR);
@@ -151,18 +190,20 @@ protected:
         req->wait ();
       }
       // * all-reduce *
-      beta_new = STS::real (RR_RAR(0));
-      RAR = STS::real (RR_RAR(1));
+      Kokkos::deep_copy (RR_RAR_host, RR_RAR);
+      beta_new = STS::real (RR_RAR_host(0));
+      RAR = STS::real (RR_RAR_host(1));
 
       // convergence check
       r_norm = std::sqrt( beta_new );
       metric = this->getConvergenceMetric (r_norm, r_norm_orig, input);
       if (outPtr != nullptr) {
-        *outPtr << "r_norm: " << r_norm << endl;
-        *outPtr << "RAR: " << RAR << endl;
-        *outPtr << "metric: " << metric << endl;
+        *outPtr << ", r_norm: " << r_norm << ", RAR: " << RAR << ", metric: " << metric;
       }
       if (metric <= input.tol) {
+        if (outPtr != nullptr) {
+          *outPtr << endl;
+        }
         output.absResid = r_norm;
         output.relResid = r_norm / r_norm_orig;
         output.numIters = iter + 1;
@@ -175,7 +216,7 @@ protected:
         // beta
         beta = beta_new / beta_old;
         if (outPtr != nullptr) {
-          *outPtr << "beta: " << beta << endl;
+          *outPtr << ", beta: " << beta;
         }
         // PAP
         PAP = RAR - beta_new * (beta /alpha);
@@ -188,14 +229,10 @@ protected:
         // alpha = 
         alpha = beta_new / PAP;
         if (outPtr != nullptr) {
-          *outPtr << "alpha: " << alpha << endl;
+          *outPtr << ", alpha: " << alpha << endl;
         }
         // beta_old
         beta_old = beta_new;
-      }
-
-      if (outPtr != nullptr) {
-        outPtr->popTab ();
       }
     }
 
@@ -211,7 +248,7 @@ protected:
 };
 
 template<class SC, class MV, class OP,
-	 template<class, class, class> class KrylovSubclassType>
+         template<class, class, class> class KrylovSubclassType>
 class SolverManager;
 
 // This is the Belos::SolverManager subclass that gets registered with

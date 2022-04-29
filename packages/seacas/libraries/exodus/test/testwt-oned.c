@@ -44,10 +44,10 @@ int main(int argc, char **argv)
   float  time_value;
   float  x[100];
   float  attrib[10], dist_fact[100];
-  char * coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
-  char * block_names[10], *set_names[10];
-  char * prop_names[2], *attrib_names[2];
-  char * title = "This is a test";
+  char  *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
+  char  *block_names[10], *set_names[10];
+  char  *prop_names[2], *attrib_names[2];
+  char  *title = "This is a test";
   ex_opts(EX_VERBOSE | EX_ABORT);
 
   /* Specify compute and i/o word size */
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
     elem_map[i - 1] = 10 * i;
   }
 
-  EXCHECK(ex_put_map(exoid, elem_map));
+  EXCHECK(ex_put_id_map(exoid, EX_ELEM_MAP, elem_map));
   free(elem_map);
 
   /* write element block parameters */

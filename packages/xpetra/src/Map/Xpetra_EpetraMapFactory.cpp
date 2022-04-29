@@ -154,9 +154,9 @@ namespace Xpetra {
         return rcp(new BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(*bmap));
       }
 
-      LocalOrdinal N = Teuchos::as<LocalOrdinal>(map->getNodeNumElements());
-      Teuchos::ArrayView<const GlobalOrdinal> oldElements = map->getNodeElementList();
-      Teuchos::Array<GlobalOrdinal> newElements(map->getNodeNumElements()*numDofPerNode);
+      LocalOrdinal N = Teuchos::as<LocalOrdinal>(map->getLocalNumElements());
+      Teuchos::ArrayView<const GlobalOrdinal> oldElements = map->getLocalElementList();
+      Teuchos::Array<GlobalOrdinal> newElements(map->getLocalNumElements()*numDofPerNode);
       for (LocalOrdinal i = 0; i < N; i++)
       {
         for (LocalOrdinal j = 0; j < numDofPerNode; j++)
@@ -378,6 +378,36 @@ namespace Xpetra {
     }
 
 
+Teuchos::RCP<const Map<int, int , EpetraNode> >
+MapFactory<int,int,EpetraNode>::copyMapWithNewComm(const Teuchos::RCP<const Map<int,int, EpetraNode>> & oldmap,
+                   const Teuchos::RCP<const Teuchos::Comm<int>>& newComm) {
+    XPETRA_MONITOR("MapFactory::Build");
+    using XMF = Xpetra::MapFactory<int,int,EpetraNode>;
+    global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+
+    size_t Nlocal  = oldmap->getLocalNumElements();
+    global_size_t Nglobal = oldmap->getGlobalNumElements();
+    
+    // Sanity check -- if there's no comm, we can't keep elements on the map  (vice versa is OK)
+    TEUCHOS_TEST_FOR_EXCEPTION( Nlocal && newComm.is_null(),
+                                std::logic_error, "MapFactory::copyMapWithNewComm needs the comm to match the map.");
+
+    // We'll return null if we don't have a Comm on this rank
+    RCP<const Map<int, int, Node> > newMap;
+    if(!newComm.is_null()) {
+      if(oldmap->isContiguous()) {
+        newMap = XMF::Build(oldmap->lib(),INVALID,Nlocal,oldmap->getIndexBase(),newComm);
+      }
+      else {
+        newMap = XMF::Build(oldmap->lib(),Nglobal,oldmap->getLocalElementList(),oldmap->getIndexBase(),newComm);
+      }
+    }
+
+    return newMap;
+    XPETRA_FACTORY_END;
+}
+
+
 
 #endif  // #if !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 
@@ -487,9 +517,9 @@ namespace Xpetra {
         return rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(*bmap));
       }
 
-      LocalOrdinal N = map->getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> oldElements = map->getNodeElementList();
-      Teuchos::Array<GlobalOrdinal> newElements(map->getNodeNumElements()*numDofPerNode);
+      LocalOrdinal N = map->getLocalNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> oldElements = map->getLocalElementList();
+      Teuchos::Array<GlobalOrdinal> newElements(map->getLocalNumElements()*numDofPerNode);
       for (LocalOrdinal i = 0; i < N; i++)
         for (LocalOrdinal j = 0; j < numDofPerNode; j++)
           newElements[i*numDofPerNode + j] = oldElements[i]*numDofPerNode + j;
@@ -690,6 +720,37 @@ namespace Xpetra {
 
         XPETRA_FACTORY_END;
     }
+
+
+Teuchos::RCP<const Map<int, long long, EpetraNode> >
+MapFactory<int,long long,EpetraNode>::copyMapWithNewComm(const Teuchos::RCP<const Map<int,long long, EpetraNode>> & oldmap,
+                   const Teuchos::RCP<const Teuchos::Comm<int>>& newComm) {
+    XPETRA_MONITOR("MapFactory::Build");
+    using XMF = Xpetra::MapFactory<int,ilong long,EpetraNode>;
+    global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+
+    size_t Nlocal  = oldmap->getLocalNumElements();
+    global_size_t Nglobal = oldmap->getGlobalNumElements();
+
+    // Sanity check -- if there's no comm, we can't keep elements on the map  (vice versa is OK)
+    TEUCHOS_TEST_FOR_EXCEPTION( Nlocal && newComm.is_null(),
+                                std::logic_error, "MapFactory::copyMapWithNewComm needs the comm to match the map.");
+
+    // We'll return null if we don't have a Comm on this rank
+    RCP<const Map<int, long long, Node> > newMap;
+    if(!newComm.is_null()) {
+      if(oldmap->isContiguous()) {
+        newMap = XMF::Build(oldmap->lib(),INVALID,Nlocal,oldmap->getIndexBase(),newComm);
+      }
+      else {
+        newMap = XMF::Build(oldmap->lib(),Nglobal,oldmap->getLocalElementList(),oldmap->getIndexBase(),newComm);
+      }
+    }
+
+    return newMap;
+    XPETRA_FACTORY_END;
+}
+
 
 
 

@@ -9,6 +9,7 @@
 
 #include "CatalystManagerBase.h"
 #include <Ioss_DBUsage.h>
+#include <Ioss_ParallelUtils.h>
 #include <Ioss_PropertyManager.h>
 #include <string>
 
@@ -32,10 +33,9 @@ namespace Iovs {
 
     struct DatabaseInfo
     {
-      std::string databaseFilename;
-      std::string separatorCharacter;
-      int         myRank;
-      MPI_Comm    communicator;
+      std::string                databaseFilename;
+      std::string                separatorCharacter;
+      const Ioss::ParallelUtils *parallelUtils;
     };
 
     void createDatabaseOutputFile(const DatabaseInfo &dbinfo);
@@ -51,6 +51,8 @@ namespace Iovs {
 
     void reportCatalystErrorMessages(const std::vector<int> &        error_codes,
                                      const std::vector<std::string> &error_messages, int myRank);
+
+    void writeToCatalystLogFile(const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props);
 
     CatalystManagerBase &getCatalystManager();
 
@@ -76,8 +78,7 @@ namespace Iovs {
     void loadPluginLibrary();
     void setPythonPathForParaViewPythonZipFile(std::string &paraviewPythonZipFilePath);
 
-    void getCatalystPluginPath(std::string &catalystPluginPath, bool callDlopenLibOSMesa,
-                               std::string &libOSMesaPath);
+    bool getCatalystPluginPath(std::string &catalystPluginPath, std::string &libOSMesaPath);
 
     std::string getSierraInstallDirectory();
 

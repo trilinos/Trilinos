@@ -188,8 +188,8 @@ namespace {
         Teuchos::OSTab tab1 (out);
         out << "m1.getGlobalNumElements() = " << m1.getGlobalNumElements () << endl
             << "m2.getGlobalNumElements() = " << m2.getGlobalNumElements () << endl
-            << "m1.getNodeNumElements() = " << m1.getNodeNumElements () << endl
-            << "m2.getNodeNumElements() = " << m2.getNodeNumElements () << endl;
+            << "m1.getLocalNumElements() = " << m1.getLocalNumElements () << endl
+            << "m2.getLocalNumElements() = " << m2.getLocalNumElements () << endl;
         TEST_IS_COMPATIBLE( m1, m2, false);
       }
       if (numImages > 2) {
@@ -279,7 +279,7 @@ namespace {
     TEST_EQUALITY_CONST(map.isContiguous(), true);
     TEST_EQUALITY_CONST(map.isDistributed(), numImages > 1);
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobalEntries);
-    TEST_EQUALITY_CONST(map.getNodeNumElements(), 2);
+    TEST_EQUALITY_CONST(map.getLocalNumElements(), 2);
     TEST_EQUALITY_CONST(map.getIndexBase(), indexBase);
     TEST_EQUALITY_CONST(map.getMinLocalIndex(), localIndexBase);
     TEST_EQUALITY_CONST(map.getMaxLocalIndex(), 1);
@@ -294,7 +294,7 @@ namespace {
     TEST_EQUALITY( map.getLocalElement(numGlobalEntries), OrdinalTraits<LO>::invalid() );
     TEST_EQUALITY( map.getGlobalElement(2),               OrdinalTraits<GO>::invalid() );
     TEST_EQUALITY( map.getLocalElement(numGlobalEntries-1), myImageID == numImages-1 ? 1 : OrdinalTraits<LO>::invalid() );
-    TEST_COMPARE_ARRAYS( map.getNodeElementList(), myGlobal);
+    TEST_COMPARE_ARRAYS( map.getLocalElementList(), myGlobal);
     TEST_EQUALITY_CONST( map.isNodeLocalElement(0), true );
     TEST_EQUALITY_CONST( map.isNodeLocalElement(1), true );
     TEST_EQUALITY_CONST( map.isNodeLocalElement(2), false ); // just try a couple
@@ -340,7 +340,7 @@ namespace {
     }
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
-    TEST_EQUALITY(map.getNodeNumElements(), numLocal);
+    TEST_EQUALITY(map.getLocalNumElements(), numLocal);
     TEST_EQUALITY(map.getIndexBase(), indexBase);
     TEST_EQUALITY_CONST(map.getMinLocalIndex(), 0);
     TEST_EQUALITY(map.getMaxLocalIndex(), numLocal-1);
@@ -349,8 +349,8 @@ namespace {
     TEST_EQUALITY(map.getMinAllGlobalIndex(), indexBase);
     TEST_EQUALITY(map.getGlobalElement(0), expectedGIDs[0]);
     TEST_EQUALITY_CONST((GST)map.getMaxAllGlobalIndex(), indexBase+numGlobal-1);
-    ArrayView<const GO> glist = map.getNodeElementList();
-    TEST_COMPARE_ARRAYS( map.getNodeElementList(), expectedGIDs);
+    ArrayView<const GO> glist = map.getLocalElementList();
+    TEST_COMPARE_ARRAYS( map.getLocalElementList(), expectedGIDs);
 
     // Make sure that the test passed on all MPI processes.
     const int lclSuccess = success ? 1 : 0;
@@ -385,7 +385,7 @@ namespace {
     Map map (numGlobal, GIDs (), indexBase, comm);
     //
     TEST_EQUALITY(map.getGlobalNumElements(), numGlobal);
-    TEST_EQUALITY(map.getNodeNumElements(), numLocal);
+    TEST_EQUALITY(map.getLocalNumElements(), numLocal);
     TEST_EQUALITY(map.getIndexBase(), indexBase);
     TEST_EQUALITY_CONST(map.getMinLocalIndex(), 0);
     TEST_EQUALITY(map.getMaxLocalIndex(), numLocal-1);
@@ -394,8 +394,8 @@ namespace {
     TEST_EQUALITY(map.getMinAllGlobalIndex(), actualBase);
     TEST_EQUALITY(map.getGlobalElement(0), GIDs[0]);
     TEST_EQUALITY_CONST((GST)map.getMaxAllGlobalIndex(), actualBase+numGlobal-1);
-    ArrayView<const GO> glist = map.getNodeElementList();
-    TEST_COMPARE_ARRAYS( map.getNodeElementList(), GIDs);
+    ArrayView<const GO> glist = map.getLocalElementList();
+    TEST_COMPARE_ARRAYS( map.getLocalElementList(), GIDs);
 
     // Make sure that the test passed on all MPI processes.
     const int lclSuccess = success ? 1 : 0;

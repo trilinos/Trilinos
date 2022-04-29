@@ -1,13 +1,13 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_Utils_h
-#define IOSS_Ioss_Utils_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>
+#include <Ioss_ElementTopology.h>
 #include <Ioss_Field.h>
 #include <Ioss_Property.h>
 #include <Ioss_Sort.h>
@@ -22,6 +22,7 @@
 #include <string>    // for string
 #include <vector>    // for vector
 namespace Ioss {
+  class DatabaseIO;
   class Field;
   class GroupingEntity;
   class Region;
@@ -107,6 +108,8 @@ namespace Ioss {
     static void set_pre_warning_text(const std::string &text) { m_preWarningText = text; }
     /** @}*/
 
+    static void copyright(std::ostream &out, const std::string &year_range);
+
     static void check_dynamic_cast(const void *ptr)
     {
       if (ptr == nullptr) {
@@ -115,6 +118,9 @@ namespace Ioss {
         IOSS_ERROR(errmsg);
       }
     }
+
+    /** \brief guess file type from extension */
+    static std::string get_type_from_file(const std::string &filename);
 
     template <typename T> static void uniquify(std::vector<T> &vec, bool skip_first = false)
     {
@@ -203,7 +209,7 @@ namespace Ioss {
      * (1,234,567,890 would return 13)
      * Typically used with the `fmt::print()` functions as:
      * ```
-     * fmt::print("{:{}n}", number, number_width(number,true))
+     * fmt::print("{:{}}", number, number_width(number,true))
      * fmt::print("{:{}d}", number, number_width(number,false))
      * ```
      */
@@ -277,8 +283,8 @@ namespace Ioss {
 
     static std::string decode_filename(const std::string &filename, int processor,
                                        int num_processors);
-    static size_t      get_number(const std::string &suffix);
-    static int64_t     extract_id(const std::string &name_id);
+    static int         get_number(const std::string &suffix);
+    static int         extract_id(const std::string &name_id);
     static std::string encode_entity_name(const std::string &entity_type, int64_t id);
 
     /** \brief create a string that describes the list of input `ids` collapsing ranges if possible.
@@ -290,8 +296,8 @@ namespace Ioss {
      * string `1..3, 5..8`
      */
     static std::string format_id_list(const std::vector<size_t> &ids,
-                                      const std::string &        rng_sep = " to ",
-                                      const std::string &        seq_sep = ", ");
+                                      const std::string         &rng_sep = " to ",
+                                      const std::string         &seq_sep = ", ");
 
     /** \brief Convert a string to lower case, and convert spaces to `_`.
      *
@@ -347,6 +353,13 @@ namespace Ioss {
      *  \returns The Ioss-formatted element name.
      */
     static std::string fixup_type(const std::string &base, int nodes_per_element, int spatial);
+
+    /** \brief Uppercase the first letter of the string
+     *
+     *  \param[in] name The string to convert.
+     *  \returns The converted string.
+     */
+    static std::string capitalize(std::string name);
 
     /** \brief Convert a string to upper case.
      *
@@ -408,15 +421,14 @@ namespace Ioss {
     static std::string local_filename(const std::string &relative_filename, const std::string &type,
                                       const std::string &working_directory);
 
-    static void get_fields(int64_t entity_count, char **names, size_t num_names,
-                           Ioss::Field::RoleType fld_role, bool enable_field_recognition,
-                           char suffix_separator, int *local_truth,
+    static void get_fields(int64_t entity_count, char **names, int num_names,
+                           Ioss::Field::RoleType fld_role, const DatabaseIO *db, int *local_truth,
                            std::vector<Ioss::Field> &fields);
 
     static int field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,
                              const std::string &inout);
 
-    static void calculate_sideblock_membership(IntVector &face_is_member, const SideBlock *ef_blk,
+    static void calculate_sideblock_membership(IntVector &face_is_member, const SideBlock *sb,
                                                size_t int_byte_size, const void *element,
                                                const void *sides, int64_t number_sides,
                                                const Region *region);
@@ -478,6 +490,8 @@ namespace Ioss {
     static std::string variable_name_kluge(const std::string &name, size_t component_count,
                                            size_t copies, size_t max_var_len);
 
+    static std::string shape_to_string(const ElementShape &shape);
+
     /** \brief Create a nominal mesh for use in history databases.
      *
      *  The model for a history file is a single sphere element (1 node, 1 element).
@@ -508,4 +522,3 @@ namespace Ioss {
   }
 
 } // namespace Ioss
-#endif

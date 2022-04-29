@@ -125,7 +125,7 @@ Teuchos::RCP<STK_Interface> SquareTriMeshFactory::buildUncommitedMesh(stk::Paral
 
    } else if(xProcs_==-1) {
       // default x only decomposition
-      xProcs_ = machSize_; 
+      xProcs_ = machSize_;
       yProcs_ = 1;
    }
    TEUCHOS_TEST_FOR_EXCEPTION(int(machSize_)!=xProcs_*yProcs_,std::logic_error,
@@ -137,7 +137,7 @@ Teuchos::RCP<STK_Interface> SquareTriMeshFactory::buildUncommitedMesh(stk::Paral
    buildMetaData(parallelMach,*mesh);
 
    mesh->addPeriodicBCs(periodicBCVec_);
- 
+
    return mesh;
 }
 
@@ -154,12 +154,19 @@ void SquareTriMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Pa
    // finish up the edges
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
+   if(createEdgeBlocks_) {
+      mesh.buildLocalEdgeIDs();
+   }
 
    // now that edges are built, sidets can be added
    addSideSets(mesh);
 
    // add nodesets
    addNodeSets(mesh);
+
+   if(createEdgeBlocks_) {
+      addEdgeBlocks(mesh);
+   }
 
    // calls Stk_MeshFactory::rebalance
    this->rebalance(mesh);
@@ -172,11 +179,11 @@ void SquareTriMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::Paramete
 
    setMyParamList(paramList);
 
-   x0_ = paramList->get<double>("X0"); 
-   y0_ = paramList->get<double>("Y0"); 
+   x0_ = paramList->get<double>("X0");
+   y0_ = paramList->get<double>("Y0");
 
-   xf_ = paramList->get<double>("Xf"); 
-   yf_ = paramList->get<double>("Yf"); 
+   xf_ = paramList->get<double>("Xf");
+   yf_ = paramList->get<double>("Yf");
 
    xBlocks_ = paramList->get<int>("X Blocks");
    yBlocks_ = paramList->get<int>("Y Blocks");
@@ -186,6 +193,8 @@ void SquareTriMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::Paramete
 
    xProcs_ = paramList->get<int>("X Procs");
    yProcs_ = paramList->get<int>("Y Procs");
+
+   createEdgeBlocks_ = paramList->get<bool>("Create Edge Blocks");
 
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
@@ -215,6 +224,9 @@ Teuchos::RCP<const Teuchos::ParameterList> SquareTriMeshFactory::getValidParamet
       defaultParams->set<int>("X Elements",5);
       defaultParams->set<int>("Y Elements",5);
 
+      // default to false for backward compatibility
+      defaultParams->set<bool>("Create Edge Blocks",false,"Create edge blocks in the mesh");
+
       Teuchos::ParameterList & bcs = defaultParams->sublist("Periodic BCs");
       bcs.set<int>("Count",0); // no default periodic boundary conditions
    }
@@ -229,6 +241,12 @@ void SquareTriMeshFactory::initializeWithDefaults()
 
    // set that parameter list
    setParameterList(validParams);
+
+   /* This is a tri mesh factory so all elements in all element blocks
+    * will be tri3.  This means that all the edges will be line2.
+    * The edge block name is hard coded to reflect this.
+    */
+   edgeBlockName_ = "line_2_"+panzer_stk::STK_Interface::edgeBlockString;
 }
 
 void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK_Interface & mesh) const
@@ -236,6 +254,7 @@ void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */
    typedef shards::Triangle<> TriTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<TriTopo>();
    const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
+   const CellTopologyData * edge_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
 
    // build meta data
    //mesh.setDimension(2);
@@ -249,12 +268,17 @@ void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */
 
             // add element blocks
             mesh.addElementBlock("eblock"+ebPostfix.str(),ctd);
+            if(createEdgeBlocks_) {
+               mesh.addEdgeBlock("eblock"+ebPostfix.str(),
+                                 edgeBlockName_,
+                                 edge_ctd);
+            }
          }
 
       }
    }
 
-   // add sidesets 
+   // add sidesets
    mesh.addSideset("left",side_ctd);
    mesh.addSideset("right",side_ctd);
    mesh.addSideset("top",side_ctd);
@@ -291,7 +315,7 @@ void SquareTriMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */, i
 
    double deltaX = (xf_-x0_)/double(totalXElems);
    double deltaY = (yf_-y0_)/double(totalYElems);
- 
+
    std::vector<double> coord(2,0.0);
 
    // build the nodes
@@ -410,7 +434,7 @@ void SquareTriMeshFactory::addSideSets(STK_Interface & mesh) const
       // vertical boundaries
       ///////////////////////////////////////////
 
-      if(nx+1==totalXElems && lower) { 
+      if(nx+1==totalXElems && lower) {
          stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 1);
 
          // on the right
@@ -457,7 +481,7 @@ void SquareTriMeshFactory::addNodeSets(STK_Interface & mesh) const
    stk::mesh::Part * origin = mesh.getNodeset("origin");
 
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
-   if(machRank_==0) 
+   if(machRank_==0)
    {
       stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);
 
@@ -468,12 +492,30 @@ void SquareTriMeshFactory::addNodeSets(STK_Interface & mesh) const
    mesh.endModification();
 }
 
+void SquareTriMeshFactory::addEdgeBlocks(STK_Interface & mesh) const
+{
+   mesh.beginModification();
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+
+   stk::mesh::Part * edge_block = mesh.getEdgeBlock(edgeBlockName_);
+
+   stk::mesh::Selector owned_block = metaData->locally_owned_part();
+
+   std::vector<stk::mesh::Entity> edges;
+   bulkData->get_entities(mesh.getEdgeRank(), owned_block, edges);
+   mesh.addEntitiesToEdgeBlock(edges, edge_block);
+
+   mesh.endModification();
+}
+
 //! Convert processor rank to a tuple
 Teuchos::Tuple<std::size_t,2> SquareTriMeshFactory::procRankToProcTuple(std::size_t procRank) const
 {
    std::size_t i=0,j=0;
 
-   j = procRank/xProcs_; 
+   j = procRank/xProcs_;
    procRank = procRank % xProcs_;
    i = procRank;
 

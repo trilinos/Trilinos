@@ -95,12 +95,12 @@ void print_field_data_for_entity(const BulkData& mesh, const MeshIndex& meshInde
     size_t b_ord = meshIndex.bucket_ordinal;
     const FieldVector& all_fields = mesh.mesh_meta_data().get_fields();
     for(FieldBase* field : all_fields) { 
-        if(static_cast<unsigned>(field->entity_rank()) != bucket->entity_rank()) continue;
+        if(field->entity_rank() != bucket->entity_rank()) continue;
         FieldMetaData field_meta_data = field->get_meta_data_for_field()[bucket->bucket_id()];
         unsigned data_size = field_meta_data.m_bytes_per_entity;
         if (data_size > 0) { // entity has this field?
             void* data = field_meta_data.m_data + field_meta_data.m_bytes_per_entity * b_ord;
-            out << "        For field: " << *field << ", has data: ";
+            out << "        " << *field << ", ";
             field->print_data(out, data, data_size); 
             out << std::endl;
         }
@@ -133,7 +133,7 @@ void print_entity_connectivity(const BulkData& mesh, const MeshIndex& meshIndex,
                 if (b_rank != stk::topology::NODE_RANK) {
                     Permutation const *permutations = bucket->begin_permutations(b_ord, r);
                     if (permutations) {
-                        out << " permutation index " << permutations[c_itr];
+                        out << " permutation " << permutations[c_itr];
                     }
                 }
             }
@@ -145,7 +145,7 @@ void print_entity_connectivity(const BulkData& mesh, const MeshIndex& meshIndex,
 
 void print_bucket_parts(const BulkData& mesh, const Bucket* bucket, std::ostream& out)
 {
-  out << "    Found bucket " << bucket->bucket_id() << " with superset parts: { ";
+  out << "    bucket " << bucket->bucket_id() << " parts: { ";
   const PartVector& supersets = bucket->supersets();
   for(const Part* part : supersets) {
     out << part->name() << " ";

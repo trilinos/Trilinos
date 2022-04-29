@@ -143,6 +143,7 @@ namespace {
   using Tpetra::DoNotOptimizeStorage;
   using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;
+  using namespace Tpetra::TestingUtilities;
 
 
   double errorTolSlack = 1e+1;
@@ -158,11 +159,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   { \
     using Teuchos::outArg; \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
-    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getNodeElementList(); \
-    ArrayView<const LO> loview; \
-    ArrayView<const Scalar> sview; \
+    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getLocalElementList(); \
+    typename MAT::local_inds_host_view_type loview; \
+    typename MAT::values_host_view_type sview; \
     size_t STMAX = 0; \
-    for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
+    for (size_t STR=0; STR < matrix.getLocalNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
       TEST_EQUALITY( numEntries, matrix.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
       matrix.getLocalRowView(STR,loview,sview); \
@@ -170,7 +171,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY( static_cast<size_t>( sview.size()), numEntries ); \
       STMAX = std::max( STMAX, numEntries ); \
     } \
-    TEST_EQUALITY( matrix.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
     global_size_t STGMAX; \
     Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
     TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
@@ -212,7 +213,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
       // create static-profile matrix, fill-complete without inserting (and therefore, without allocating)
-      MAT matrix(map,1,Tpetra::StaticProfile);
+      MAT matrix(map,1);
       matrix.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
@@ -221,7 +222,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // send in a parameterlist, check the defaults
       RCP<ParameterList> defparams = parameterList();
       // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
-      GRPH graph(map,1,Tpetra::StaticProfile);
+      GRPH graph(map,1);
       graph.fillComplete(defparams);
       TEST_EQUALITY_CONST(defparams->get<bool>("Optimize Storage"), true);
     }
@@ -264,18 +265,30 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<ParameterList> params = parameterList();
     for (int T=0; T<4; ++T) {
       if ( (T & 1) != 1 ) continue;
-      Tpetra::ProfileType pftype = Tpetra::StaticProfile;
       params->set("Optimize Storage",((T & 2) == 2));
-      MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
+      MAT matrix(rmap,cmap, ginds.size());   // only allocate as much room as necessary
       RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
-      Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
-      ArrayView<const GO> CGView; ArrayView<const LO> CLView; ArrayView<const Scalar> CSView;
+
+      typename MAT::nonconst_global_inds_host_view_type GCopy("gids",4);
+      typename MAT::nonconst_local_inds_host_view_type LCopy("lids",4);
+      typename MAT::nonconst_values_host_view_type SCopy("vals",4);
+
+      typename MAT::nonconst_global_inds_host_view_type GCopy_toshort("gids",1);
+      typename MAT::nonconst_local_inds_host_view_type LCopy_toshort("lids",1);
+      typename MAT::nonconst_values_host_view_type SCopy_toshort("vals",1);
+
+      typename MAT::global_inds_host_view_type CGView; 
+      typename MAT::local_inds_host_view_type CLView; 
+      typename MAT::values_host_view_type CSView;
+
       size_t numentries;
       // at this point, the graph has not allocated data as global or local, so we can do views/copies for either local or global
       matrix.getLocalRowCopy(0,LCopy,SCopy,numentries);
       matrix.getLocalRowView(0,CLView,CSView);
+
       matrix.getGlobalRowCopy(myrowind,GCopy,SCopy,numentries);
       matrix.getGlobalRowView(myrowind,CGView,CSView);
+
       // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
       for (size_t j=0; j<(size_t)ginds.size(); ++j) {
         matrix.insertGlobalValues(myrowind,ginds(j,1),tuple(ST::one()));
@@ -289,26 +302,25 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       // checks if an index exists the graph and only inserts if it doesn't. Thus, the
       // following test needs to be modified to insert another *unique* index and not a
       // repeat.
-      if (pftype == Tpetra::StaticProfile) {
-        TEST_THROW( matrix.insertGlobalValues(myrowind, tuple(myrowind+5), tuple(ST::one())), std::runtime_error );
-      }
+      TEST_THROW( matrix.insertGlobalValues(myrowind, tuple(myrowind+5), tuple(ST::one())), std::runtime_error );
       matrix.fillComplete(params);
       // check for throws and no-throws/values
       TEST_THROW( matrix.getGlobalRowView(myrowind,CGView,CSView), std::runtime_error );
-      TEST_THROW( matrix.getLocalRowCopy(    0       ,LCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
-      TEST_THROW( matrix.getGlobalRowCopy(myrowind,GCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
+      TEST_THROW( matrix.getLocalRowCopy(0,LCopy_toshort,SCopy_toshort,numentries), std::runtime_error );
+      TEST_THROW( matrix.getGlobalRowCopy(myrowind,GCopy_toshort,SCopy_toshort,numentries), std::runtime_error );
+
       //
       TEST_NOTHROW( matrix.getLocalRowView(0,CLView,CSView) );
       TEST_COMPARE_ARRAYS( CLView, linds );
       TEST_COMPARE_ARRAYS( CSView, vals  );
       //
       TEST_NOTHROW( matrix.getLocalRowCopy(0,LCopy,SCopy,numentries) );
-      TEST_COMPARE_ARRAYS( LCopy(0,numentries), linds );
-      TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
+      TEST_COMPARE_ARRAYS( arcp_from_view(LCopy,numentries), linds );
+      TEST_COMPARE_ARRAYS( arcp_from_view(SCopy,numentries), vals );
       //
       TEST_NOTHROW( matrix.getGlobalRowCopy(myrowind,GCopy,SCopy,numentries) );
-      TEST_COMPARE_ARRAYS( GCopy(0,numentries), ginds );
-      TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
+      TEST_COMPARE_ARRAYS( arcp_from_view(GCopy,numentries), ginds );
+      TEST_COMPARE_ARRAYS( arcp_from_view(SCopy,numentries), vals  );
       //
       STD_TESTS(rowmatrix);
     }

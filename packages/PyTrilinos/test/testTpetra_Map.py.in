@@ -146,11 +146,11 @@ class TpetraMapTestCase(unittest.TestCase):
         self.assertEqual(self.map2.getGlobalNumElements(), self.numGlobalEl     )
         self.assertEqual(self.map3.getGlobalNumElements(), self.numGlobalEl     )
 
-    def testGetNodeNumElements(self):
-        "Test Tpetra.Map getNodeNumElements method"
-        self.assertEqual(self.map1.getNodeNumElements(), self.numMyElConst)
-        self.assertEqual(self.map2.getNodeNumElements(), self.numMyEl     )
-        self.assertEqual(self.map3.getNodeNumElements(), self.numMyEl     )
+    def testGetLocalNumElements(self):
+        "Test Tpetra.Map getLocalNumElements method"
+        self.assertEqual(self.map1.getLocalNumElements(), self.numMyElConst)
+        self.assertEqual(self.map2.getLocalNumElements(), self.numMyEl     )
+        self.assertEqual(self.map3.getLocalNumElements(), self.numMyEl     )
 
     def testGetIndexBase(self):
         "Test Tpetra.Map getIndexBase method"
@@ -224,9 +224,9 @@ class TpetraMapTestCase(unittest.TestCase):
         self.failUnless((result[1] == lidList).all())
         self.assertEqual(result[2], Tpetra.AllIDsPresent)
 
-    def testGetNodeElementList(self):
-        "Test Tpetra.Map getNodeElementList method"
-        result = self.map3.getNodeElementList()
+    def testGetLocalElementList(self):
+        "Test Tpetra.Map getLocalElementList method"
+        result = self.map3.getLocalElementList()
         self.failUnless((result == self.myGlobalEls).all())
 
     def testIsNodeLocalElement(self):

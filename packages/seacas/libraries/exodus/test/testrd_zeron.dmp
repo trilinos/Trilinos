@@ -20,7 +20,7 @@ x coord name = 'xcoor'
  after ex_get_attr_param, error = 0
 num nodal attributes = 0
 
-after ex_get_map, error =   0
+after ex_get_id_map, error =   0
 
 after ex_get_qa, error =   0
 QA records = 

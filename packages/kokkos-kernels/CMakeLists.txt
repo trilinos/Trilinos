@@ -10,7 +10,7 @@ SET(KOKKOSKERNELS_TOP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 SET(KOKKOSKERNELS_TOP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
-  cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+  cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
   IF (Spack_WORKAROUND)
     #if we are explicitly using Spack for development,
     #nuke the Spack compiler
@@ -24,14 +24,14 @@ IF(NOT KOKKOSKERNELS_HAS_TRILINOS)
     PROJECT(KokkosKernels CXX)
   ENDIF()
   SET(KokkosKernels_VERSION_MAJOR 3)
-  SET(KokkosKernels_VERSION_MINOR 4)
-  SET(KokkosKernels_VERSION_PATCH 0)
+  SET(KokkosKernels_VERSION_MINOR 6)
+  SET(KokkosKernels_VERSION_PATCH 00)
+  SET(KokkosKernels_VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}")
+  MATH(EXPR KOKKOSKERNELS_VERSION "${KokkosKernels_VERSION_MAJOR} * 10000 + ${KokkosKernels_VERSION_MINOR} * 100 + ${KokkosKernels_VERSION_PATCH}")
 ENDIF()
 
-IF(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0")
-  MESSAGE(STATUS "Setting policy CMP0074 to use <Package>_ROOT variables")
-  CMAKE_POLICY(SET CMP0074 NEW)
-ENDIF()
+MESSAGE(STATUS "Setting policy CMP0074 to use <Package>_ROOT variables")
+CMAKE_POLICY(SET CMP0074 NEW)
 
 INCLUDE(GNUInstallDirs)
 IF (KOKKOSKERNELS_HAS_TRILINOS)
@@ -47,6 +47,8 @@ ENDIF()
 INCLUDE(cmake/fake_tribits.cmake)
 INCLUDE(cmake/kokkoskernels_tribits.cmake)
 
+OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+
 KOKKOSKERNELS_PACKAGE()
 
 IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
@@ -54,19 +56,39 @@ IF (NOT KOKKOSKERNELS_HAS_TRILINOS)
   KOKKOSKERNELS_ADD_OPTION(
     "ENABLE_EXAMPLES"
     OFF
-    BOOL
-    "Whether to build examples. Default: OFF"
+          BOOL
+          "Whether to build examples. Default: OFF"
   )
   KOKKOSKERNELS_ADD_OPTION(
-    "ENABLE_TESTS"
-    OFF
-    BOOL
-    "Whether to build tests. Default: OFF"
+          "ENABLE_TESTS"
+          OFF
+          BOOL
+          "Whether to build tests. Default: OFF"
   )
-ENDIF()
+  KOKKOSKERNELS_ADD_OPTION(
+          "ENABLE_TESTS_AND_PERFSUITE"
+          OFF
+          BOOL
+          "Whether to build tests including Perfsuite. Default: OFF"
+  )
+  IF(KokkosKernels_ENABLE_TESTS_AND_PERFSUITE)
+    set(BLT_CODE_CHECK_TARGET_NAME "fix-for-blt" CACHE STRING "Docstring")
+    set(INFRASTRUCTURE_ONLY ON CACHE BOOL "Only build the RAJAPerf infrastructure, no builtin kernels")
+    add_definitions("-DRAJAPERF_INFRASTRUCTURE_ONLY")
+    add_subdirectory(tpls/rajaperf)
+    include_directories(tpls/rajaperf/src)
+  ENDIF()
+ENDIF ()
+
+KOKKOSKERNELS_ADD_OPTION(
+        "ENABLE_DOCS"
+        OFF
+        BOOL
+        "Whether to build docs. Default: OFF"
+)
 
 SET(KokkosKernels_INSTALL_TESTING OFF CACHE INTERNAL
-    "Whether to build tests and examples against installation")
+        "Whether to build tests and examples against installation")
 IF (KokkosKernels_INSTALL_TESTING)
   # Force testing on if we are doing intall testing
   SET(KOKKOSKERNELS_ENABLE_TESTS ON)
@@ -76,7 +98,6 @@ IF (KokkosKernels_INSTALL_TESTING)
   # Still need to figure out which backends
   INCLUDE(cmake/kokkos_backends.cmake)
   # Only build the tests
-  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(test_common)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(unit_test)
   KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
@@ -196,14 +217,16 @@ ELSE()
   MESSAGE("")
   # Skip building Kokkos Kernels if we are doing an installation test
   ADD_SUBDIRECTORY(src)
-  IF(KokkosKernels_ENABLE_INSTALL_TEST)
+  IF (KokkosKernels_ENABLE_INSTALL_TEST)
     ADD_SUBDIRECTORY(install_test)
     MESSAGE("The install test has been enabled, you will need to peform: make install before running the tests otherwise install_test will fail")
-  ENDIF()
-  KOKKOSKERNELS_ADD_TEST_DIRECTORIES(test_common)
+  ENDIF ()
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(perf_test)
   KOKKOSKERNELS_ADD_TEST_DIRECTORIES(unit_test)
   KOKKOSKERNELS_ADD_EXAMPLE_DIRECTORIES(example)
 
   KOKKOSKERNELS_PACKAGE_POSTPROCESS()
+  IF (KokkosKernels_ENABLE_DOCS)
+    ADD_SUBDIRECTORY(docs)
+  ENDIF ()
 ENDIF()

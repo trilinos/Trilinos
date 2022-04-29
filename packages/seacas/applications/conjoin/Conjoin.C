@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -27,18 +27,17 @@
 #include <cctype>
 #include <cstring>
 #include <ctime>
-#ifndef _MSC_VER
-#include <sys/times.h>
-#include <sys/utsname.h>
-#endif
 
 #include "add_to_log.h"
 #include "adler.h"
 #include "copy_string_cpp.h"
+#include "format_time.h"
+#include "sys_info.h"
 #if !USE_STD_SORT
 #include "pdqsort.h"
 #endif
 #include "smart_assert.h"
+#include "time_stamp.h"
 #include <exodusII.h>
 
 #if EX_API_VERS_NODOT <= 467
@@ -134,9 +133,7 @@ namespace {
     T      timeValue;
   };
 
-  std::string time_stamp(const std::string &format);
-  std::string format_time(double seconds);
-  int         get_width(size_t max_value);
+  int get_width(size_t max_value);
 
   ex_entity_type exodus_object_type(const Excn::ObjectType &conjoin_type)
   {
@@ -218,7 +215,7 @@ namespace {
 
   template <typename T, typename U, typename INT>
   int read_write_master_values(Excn::Variables &vars, const Excn::Mesh<INT> &global,
-                               std::vector<U> &              global_sets,
+                               std::vector<U>               &global_sets,
                                std::vector<Excn::Mesh<INT>> &local_mesh,
                                std::vector<std::vector<U>> &local_sets, std::vector<T> &values,
                                size_t p, Excn::ExodusFile &id, int time_step, int time_step_out);
@@ -237,7 +234,7 @@ namespace {
                               size_t part_count, std::vector<INT> &global_node_map);
 
   template <typename INT>
-  void build_reverse_element_map(std::vector<Excn::Mesh<INT>> &         local_mesh,
+  void build_reverse_element_map(std::vector<Excn::Mesh<INT>>          &local_mesh,
                                  std::vector<std::vector<Excn::Block>> &blocks,
                                  std::vector<Excn::Block> &glob_blocks, Excn::Mesh<INT> *global,
                                  size_t                               part_count,
@@ -246,24 +243,24 @@ namespace {
   template <typename INT>
   void get_nodesets(size_t total_node_count, std::vector<Excn::Mesh<INT>> &local_mesh,
                     std::vector<std::vector<Excn::NodeSet<INT>>> &nodesets,
-                    std::vector<Excn::NodeSet<INT>> &             glob_sets);
+                    std::vector<Excn::NodeSet<INT>>              &glob_sets);
 
   template <typename INT>
-  void get_element_blocks(const std::vector<Excn::Mesh<INT>> &   local_mesh,
-                          const Excn::Mesh<INT> &                global,
+  void get_element_blocks(const std::vector<Excn::Mesh<INT>>    &local_mesh,
+                          const Excn::Mesh<INT>                 &global,
                           std::vector<std::vector<Excn::Block>> &blocks,
-                          std::vector<Excn::Block> &             glob_blocks);
+                          std::vector<Excn::Block>              &glob_blocks);
   template <typename T, typename INT>
-  void put_element_blocks(std::vector<Excn::Mesh<INT>> &         local_mesh,
+  void put_element_blocks(std::vector<Excn::Mesh<INT>>          &local_mesh,
                           std::vector<std::vector<Excn::Block>> &blocks,
                           std::vector<Excn::Block> &glob_blocks, T single_or_double);
 
   template <typename INT> void put_nodesets(std::vector<Excn::NodeSet<INT>> &glob_sets);
 
   template <typename INT>
-  void                         get_sideset_metadata(std::vector<Excn::Mesh<INT>> &                local_mesh,
+  void                         get_sideset_metadata(std::vector<Excn::Mesh<INT>>                 &local_mesh,
                                                     std::vector<std::vector<Excn::SideSet<INT>>> &sets,
-                                                    std::vector<Excn::SideSet<INT>> &             glob_ssets);
+                                                    std::vector<Excn::SideSet<INT>>              &glob_ssets);
   template <typename INT> void get_put_sidesets(std::vector<Excn::SideSet<INT>> &glob_ssets);
 
   template <typename T, typename INT>
@@ -275,8 +272,8 @@ namespace {
 
   template <typename INT>
   size_t find_max_entity_count(size_t part_count, std::vector<Excn::Mesh<INT>> &local_mesh,
-                               const Excn::Mesh<INT> &                       global,
-                               std::vector<std::vector<Excn::Block>> &       blocks,
+                               const Excn::Mesh<INT>                        &global,
+                               std::vector<std::vector<Excn::Block>>        &blocks,
                                std::vector<std::vector<Excn::NodeSet<INT>>> &nodesets,
                                std::vector<std::vector<Excn::SideSet<INT>>> &sidesets);
 
@@ -284,7 +281,7 @@ namespace {
 
   template <typename T>
   void verify_set_position_mapping(const std::string &type, size_t part_count,
-                                   const std::vector<T> &             global_sets,
+                                   const std::vector<T>              &global_sets,
                                    const std::vector<std::vector<T>> &sets)
   {
     bool problem = false;
@@ -913,11 +910,11 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
       fmt::print("{}", time_stamp(tsFormat));
     }
 
-    fmt::print(
-        "Step {:{}n}/{:n},  time {:.4e}  (Part {:{}}/{},  step {:{}n})   Active Elem: {:{}n}",
-        time_step + 1, step_width, num_time_steps, time_val, p + 1, part_width, part_count,
-        global_times[time_step].localStepNumber + 1, loc_step_width,
-        local_mesh[p].count(Excn::ObjectType::ELEM), element_width);
+    fmt::print("Step {:{}}/{},  time {:.4e}  (Part {:{}}/{},  step {:{}})   Active Elem: {:{}}",
+               fmt::group_digits(time_step + 1), step_width, fmt::group_digits(num_time_steps),
+               time_val, p + 1, part_width, part_count,
+               fmt::group_digits(global_times[time_step].localStepNumber + 1), loc_step_width,
+               fmt::group_digits(local_mesh[p].count(Excn::ObjectType::ELEM)), element_width);
 
     double cur_time        = seacas_timer();
     double elapsed         = cur_time - start_time;
@@ -1146,10 +1143,10 @@ namespace {
   }
 
   template <typename INT>
-  void get_element_blocks(const std::vector<Excn::Mesh<INT>> &   local_mesh,
-                          const Excn::Mesh<INT> &                global,
+  void get_element_blocks(const std::vector<Excn::Mesh<INT>>    &local_mesh,
+                          const Excn::Mesh<INT>                 &global,
                           std::vector<std::vector<Excn::Block>> &blocks,
-                          std::vector<Excn::Block> &             glob_blocks)
+                          std::vector<Excn::Block>              &glob_blocks)
   {
     size_t part_count = local_mesh.size();
     for (size_t ip = 0; ip < part_count; ip++) {
@@ -1255,20 +1252,20 @@ namespace {
         blocks[p][b].offset_ = local_order_entity_count[local_order];
 
         if (debug_level & 4) {
-          fmt::print("\tBlock {}, Id = {}, Name = '{}', Elements = {:12n}, Nodes/element = {}, "
+          fmt::print("\tBlock {}, Id = {}, Name = '{}', Elements = {:12}, Nodes/element = {}, "
                      "Attributes = {}, Position = {}, Offset = {}\n",
-                     b, glob_blocks[b].id, blocks[p][b].name_, blocks[p][b].entity_count(),
-                     blocks[p][b].nodesPerElement, blocks[p][b].attributeCount,
-                     blocks[p][b].position_, blocks[p][b].offset_);
+                     b, glob_blocks[b].id, blocks[p][b].name_,
+                     fmt::group_digits(blocks[p][b].entity_count()), blocks[p][b].nodesPerElement,
+                     blocks[p][b].attributeCount, blocks[p][b].position_, blocks[p][b].offset_);
         }
       }
     }
   }
 
   template <typename T, typename INT>
-  void put_element_blocks(std::vector<Excn::Mesh<INT>> &         local_mesh,
+  void put_element_blocks(std::vector<Excn::Mesh<INT>>          &local_mesh,
                           std::vector<std::vector<Excn::Block>> &blocks,
-                          std::vector<Excn::Block> &             glob_blocks, T /* dummy */)
+                          std::vector<Excn::Block>              &glob_blocks, T /* dummy */)
   {
     SMART_ASSERT(sizeof(T) == Excn::ExodusFile::io_word_size());
     int global_num_blocks = glob_blocks.size();
@@ -1282,10 +1279,11 @@ namespace {
 
       if (debug_level & 4) {
         fmt::print("\nOutput element block info for...\n"
-                   "Block {}, Id = {}, Name = '{}', Elements = {:12n}, Nodes/element = {}, "
+                   "Block {}, Id = {}, Name = '{}', Elements = {:12}, Nodes/element = {}, "
                    "Attributes = {}\n",
-                   b, glob_blocks[b].id, glob_blocks[b].name_, glob_blocks[b].entity_count(),
-                   glob_blocks[b].nodesPerElement, glob_blocks[b].attributeCount);
+                   b, glob_blocks[b].id, glob_blocks[b].name_,
+                   fmt::group_digits(glob_blocks[b].entity_count()), glob_blocks[b].nodesPerElement,
+                   glob_blocks[b].attributeCount);
       }
 
       if (debug_level & 4) {
@@ -1328,8 +1326,8 @@ namespace {
           size_t element_count           = blocks[p][b].entity_count();
           size_t boffset                 = blocks[p][b].offset_;
           size_t npe                     = blocks[p][b].nodesPerElement;
-          INT *  part_loc_elem_to_global = local_mesh[p].localElementToGlobal.data();
-          INT *  part_loc_node_to_global = local_mesh[p].localNodeToGlobal.data();
+          INT   *part_loc_elem_to_global = local_mesh[p].localElementToGlobal.data();
+          INT   *part_loc_node_to_global = local_mesh[p].localNodeToGlobal.data();
 
           for (size_t e = 0; e < element_count; e++) {
             global_block_pos = part_loc_elem_to_global[(e + boffset)] - goffset;
@@ -1398,7 +1396,7 @@ namespace {
   }
 
   template <typename INT>
-  void build_reverse_element_map(std::vector<Excn::Mesh<INT>> &         local_mesh,
+  void build_reverse_element_map(std::vector<Excn::Mesh<INT>>          &local_mesh,
                                  std::vector<std::vector<Excn::Block>> &blocks,
                                  std::vector<Excn::Block> &glob_blocks, Excn::Mesh<INT> *global,
                                  size_t                               part_count,
@@ -2014,18 +2012,24 @@ namespace {
   {
     // Write out Mesh info
     fmt::print(" Title: {}\n\n", mesh.title);
-    fmt::print(" Number of coordinates per node ={:14n}\n", mesh.count(Excn::ObjectType::DIM));
-    fmt::print(" Number of nodes                ={:14n}\n", mesh.count(Excn::ObjectType::NODE));
-    fmt::print(" Number of elements             ={:14n}\n", mesh.count(Excn::ObjectType::ELEM));
-    fmt::print(" Number of element blocks       ={:14n}\n", mesh.count(Excn::ObjectType::EBLK));
-    fmt::print(" Number of nodal point sets     ={:14n}\n", mesh.count(Excn::ObjectType::NSET));
-    fmt::print(" Number of element side sets    ={:14n}\n", mesh.count(Excn::ObjectType::SSET));
+    fmt::print(" Number of coordinates per node ={:14}\n",
+               fmt::group_digits(mesh.count(Excn::ObjectType::DIM)));
+    fmt::print(" Number of nodes                ={:14}\n",
+               fmt::group_digits(mesh.count(Excn::ObjectType::NODE)));
+    fmt::print(" Number of elements             ={:14}\n",
+               fmt::group_digits(mesh.count(Excn::ObjectType::ELEM)));
+    fmt::print(" Number of element blocks       ={:14}\n",
+               fmt::group_digits(mesh.count(Excn::ObjectType::EBLK)));
+    fmt::print(" Number of nodal point sets     ={:14}\n",
+               fmt::group_digits(mesh.count(Excn::ObjectType::NSET)));
+    fmt::print(" Number of element side sets    ={:14}\n",
+               fmt::group_digits(mesh.count(Excn::ObjectType::SSET)));
   }
 
   template <typename INT>
   void get_nodesets(size_t total_node_count, std::vector<Excn::Mesh<INT>> &local_mesh,
                     std::vector<std::vector<Excn::NodeSet<INT>>> &nodesets,
-                    std::vector<Excn::NodeSet<INT>> &             glob_sets)
+                    std::vector<Excn::NodeSet<INT>>              &glob_sets)
   {
     // Find number of nodesets in the global model...
     std::set<INT>    set_ids;
@@ -2072,7 +2076,7 @@ namespace {
 
     {
       size_t i = 0;
-      for (auto set_id : set_ids) {
+      for (auto &set_id : set_ids) {
         glob_sets[i].id        = set_id;
         glob_sets[i].position_ = i;
         i++;
@@ -2242,9 +2246,9 @@ namespace {
   }
 
   template <typename INT>
-  void get_sideset_metadata(std::vector<Excn::Mesh<INT>> &                local_mesh,
+  void get_sideset_metadata(std::vector<Excn::Mesh<INT>>                 &local_mesh,
                             std::vector<std::vector<Excn::SideSet<INT>>> &sets,
-                            std::vector<Excn::SideSet<INT>> &             glob_ssets)
+                            std::vector<Excn::SideSet<INT>>              &glob_ssets)
   {
     // Find number of sidesets in the global model...
     std::set<int>    set_ids;
@@ -2711,25 +2715,8 @@ namespace {
     // Maximum size of string is 'size' (not including terminating nullptr)
     // This is used as information data in the concatenated results file
     // to help in tracking when/where/... the file was created
-#ifndef _MSC_VER
-    struct utsname sys_info
-    {
-    };
-    uname(&sys_info);
-
-    std::string info = "CONJOIN: ";
-    info += sys_info.nodename;
-    info += ", OS: ";
-    info += sys_info.sysname;
-    info += " ";
-    info += sys_info.release;
-    info += ", ";
-    info += sys_info.version;
-    info += ", Machine: ";
-    info += sys_info.machine;
-    const char *sinfo = info.c_str();
-    copy_string(info_record, sinfo, size + 1);
-#endif
+    auto info = sys_info("CONJOIN");
+    copy_string(info_record, info, size + 1);
   }
 
   inline bool is_whitespace(char c)
@@ -2777,43 +2764,6 @@ namespace {
     while (i > 0 && is_whitespace(obuf[i])) {
       obuf[i--] = '\0';
     }
-  }
-
-  std::string time_stamp(const std::string &format)
-  {
-    if (format == "") {
-      return std::string("");
-    }
-
-    time_t      calendar_time = std::time(nullptr);
-    struct tm * local_time    = std::localtime(&calendar_time);
-    std::string time_string   = fmt::format(format, *local_time);
-    return time_string;
-  }
-
-  std::string format_time(double seconds)
-  {
-    char suffix = 'u';
-    if (seconds > 0.0 && seconds < 1.0) {
-      return " <1s";
-    }
-
-    if (seconds > 86400) {
-      suffix = 'd';
-      seconds /= 86400.;
-    }
-    else if (seconds > 3600) {
-      suffix = 'h';
-      seconds /= 3600.;
-    }
-    else if (seconds > 60) {
-      suffix = 'm';
-      seconds /= 60.;
-    }
-    else {
-      suffix = 's';
-    }
-    return fmt::format("{:.2}{}", seconds, suffix);
   }
 
   int get_width(size_t max_value)
@@ -2902,7 +2852,7 @@ namespace {
 
   template <typename T, typename U, typename INT>
   int read_write_master_values(Excn::Variables &vars, const Excn::Mesh<INT> &global,
-                               std::vector<U> &              global_sets,
+                               std::vector<U>               &global_sets,
                                std::vector<Excn::Mesh<INT>> &local_mesh,
                                std::vector<std::vector<U>> &local_sets, std::vector<T> &values,
                                size_t p, Excn::ExodusFile &id, int time_step, int time_step_out)
@@ -2984,8 +2934,8 @@ namespace {
 
   template <typename INT>
   size_t find_max_entity_count(size_t part_count, std::vector<Excn::Mesh<INT>> &local_mesh,
-                               const Excn::Mesh<INT> &                       global,
-                               std::vector<std::vector<Excn::Block>> &       blocks,
+                               const Excn::Mesh<INT>                        &global,
+                               std::vector<std::vector<Excn::Block>>        &blocks,
                                std::vector<std::vector<Excn::NodeSet<INT>>> &nodesets,
                                std::vector<std::vector<Excn::SideSet<INT>>> &sidesets)
   {

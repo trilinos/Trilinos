@@ -71,11 +71,28 @@ namespace Intrepid2 {
     bool isValid_;
     using reference_type = typename ScalarView<PointScalar,DeviceType>::reference_type;
     
+    void TEST_VALID_POINT_COMPONENTS()
+    {
+#ifdef HAVE_INTREPID2_DEBUG
+      if (isValid_)
+      {
+        for (ordinal_type r=0; r<numTensorComponents_; r++)
+        {
+          const auto & pointComponent = pointTensorComponents_[r];
+          INTREPID2_TEST_FOR_EXCEPTION(2 != pointComponent.rank(), std::invalid_argument, "Each component must have shape (P,D)");
+          INTREPID2_TEST_FOR_EXCEPTION(pointComponent.extent_int(0) <= 0, std::invalid_argument, "Each component must have at least one point");
+        }
+      }
+#endif
+    }
+    
     /**
      \brief Initialize members based on constructor parameters.
     */
     void initialize()
     {
+      TEST_VALID_POINT_COMPONENTS();
+      
       totalPointCount_ = 1;
       totalDimension_  = 0;
       for (ordinal_type r=0; r<numTensorComponents_; r++)
@@ -127,6 +144,27 @@ namespace Intrepid2 {
       for (unsigned r=0; r<numTensorComponents; r++)
       {
         pointTensorComponents_[r] = pointTensorComponents[r];
+      }
+      
+      initialize();
+    }
+    
+    /**
+     \brief Constructor that takes a subset of the tensorial components of another points container.
+     \param [in] otherPointsContainer - the original points container
+     \param [in] whichDims - the tensorial component indices to take from the other container.
+     
+     \note this does not copy the points.
+    */
+    TensorPoints(TensorPoints otherPointsContainer, std::vector<int> whichDims)
+    :
+    numTensorComponents_(whichDims.size()),
+    isValid_(true)
+    {
+      int r = 0;
+      for (const auto & componentOrdinal : whichDims)
+      {
+        pointTensorComponents_[r++] = otherPointsContainer.getTensorComponent(componentOrdinal);
       }
       
       initialize();
@@ -279,10 +317,10 @@ namespace Intrepid2 {
       return pointTensorComponents_[component](componentPointOrdinal,d);
     }
     
-    /** \brief  Returns the nominal extent in the requested dimension.
+    /** \brief  Returns the logical extent in the requested dimension.
        \param [in] r - the dimension
        
-     \return the nominal extent in the requested dimension, as an int.  (This will be 1 for r >= 2, as this is a rank-2 container.)
+     \return the logical extent in the requested dimension, as an int.  (This will be 1 for r >= 2, as this is a rank-2 container.)
     */
     template <typename iType>
     KOKKOS_INLINE_FUNCTION
@@ -302,10 +340,10 @@ namespace Intrepid2 {
       }
     }
     
-    /** \brief  Returns the nominal extent in the requested dimension.
+    /** \brief  Returns the logical extent in the requested dimension.
        \param [in] r - the dimension
        
-     \return the nominal extent in the requested dimension.  (This will be 1 for r >= 2, as this is a rank-2 container.)
+     \return the logical extent in the requested dimension.  (This will be 1 for r >= 2, as this is a rank-2 container.)
     */
     template <typename iType>
     KOKKOS_INLINE_FUNCTION constexpr

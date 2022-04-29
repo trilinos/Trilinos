@@ -60,7 +60,7 @@ StkFieldSyncDebugger::host_stale_access_entity_check(const stk::mesh::Entity& en
 }
 
 void
-StkFieldSyncDebugger::host_stale_access_entity_check(const unsigned & bucketId, const Bucket::size_type & bucketOrd,
+StkFieldSyncDebugger::host_stale_access_entity_check(const unsigned & bucketId, const unsigned & bucketOrd,
                                                      const char * fileName, int lineNumber)
 {
   BulkData & bulk = m_stkField->get_mesh();
@@ -150,20 +150,27 @@ StkFieldSyncDebugger::get_last_mod_location_field() const
     BulkData & bulk = m_stkField->get_mesh();
     MetaData & meta = bulk.mesh_meta_data();
     meta.enable_late_fields();
+    FieldState state = m_stkField->state();
+    FieldBase* fieldWithStateNew = m_stkField->field_state(stk::mesh::StateNew);
     Field<uint8_t> & lastModLocationField =
         meta.declare_field<Field<uint8_t>>(m_stkField->entity_rank(),
-                                           "DEBUG_lastFieldModLocation_"+m_stkField->name(),
+                                           "DEBUG_lastFieldModLocation_"+fieldWithStateNew->name(),
                                            m_stkField->number_of_states());
 
+    meta.set_mesh_on_fields(&bulk);
     const FieldBase::RestrictionVector & fieldRestrictions = m_stkField->restrictions();
-    for (const FieldBase::Restriction & restriction : fieldRestrictions) {
-      const BucketVector & buckets = bulk.get_buckets(m_stkField->entity_rank(), restriction.selector());
-      const unsigned numComponents = field_scalars_per_entity(*m_stkField, *buckets.front());
-      std::vector<uint8_t> initLastModLocation(numComponents, LastModLocation::HOST_OR_DEVICE);
-      put_field_on_mesh(lastModLocationField, restriction.selector(), numComponents, initLastModLocation.data());
+    if (not fieldRestrictions.empty()) {
+      for (const FieldBase::Restriction & restriction : fieldRestrictions) {
+        const unsigned numComponents = restriction.num_scalars_per_entity();
+        std::vector<uint8_t> initLastModLocation(numComponents, LastModLocation::HOST_OR_DEVICE);
+        put_field_on_mesh(lastModLocationField, restriction.selector(), numComponents, initLastModLocation.data());
+      }
+    }
+    else {
+      bulk.reallocate_field_data(lastModLocationField);
     }
 
-    m_lastModLocationField = &lastModLocationField;
+    m_lastModLocationField = lastModLocationField.field_state(state);
   }
   return *m_lastModLocationField;
 }

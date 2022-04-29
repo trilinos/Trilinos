@@ -89,7 +89,7 @@ namespace FROSch {
             if (CoarseSpace_->hasUnassembledMaps()) { // If there is no unassembled basis, the current Phi_ should already be correct
                 CoarseSpace_->assembleCoarseSpace();
                 FROSCH_ASSERT(CoarseSpace_->hasAssembledBasis(),"FROSch::CoarseOperator : !CoarseSpace_->hasAssembledBasis()");
-                CoarseSpace_->buildGlobalBasisMatrix(this->K_->getRowMap(),this->K_->getRangeMap(),subdomainMap,this->ParameterList_->get("Threshold Phi",1.e-8));
+                CoarseSpace_->buildGlobalBasisMatrix(this->K_->getRowMap(),this->K_->getRangeMap(),subdomainMap,this->ParameterList_->get("Phi: Dropping Threshold",1.e-8));
                 FROSCH_ASSERT(CoarseSpace_->hasGlobalBasisMatrix(),"FROSch::CoarseOperator : !CoarseSpace_->hasGlobalBasisMatrix()");
                 Phi_ = CoarseSpace_->getGlobalBasisMatrix();
             }
@@ -104,6 +104,13 @@ namespace FROSch {
         if ( this->ParameterList_->get("Store Phi",false) ) {
             FROSCH_NOTIFICATION("FROSch::CoarseOperator",this->Verbose_,"Storing current Phi in Parameterlist.");
             this->ParameterList_->set("RCP(Phi)", Phi_);
+        }
+
+        // Store current Coarse Matrix in ParameterList_
+        if ( this->ParameterList_->get("Store Coarse Matrix",false) ) {
+            FROSCH_NOTIFICATION("FROSch::CoarseOperator",this->Verbose_,"Storing current Coarse Matrix in Parameterlist.");
+            this->ParameterList_->set("RCP(Coarse Matrix)", CoarseMatrix_);
+            this->ParameterList_->set("bool(CoarseSolveComm)", OnCoarseSolveComm_);
         }
 
         return 0;
@@ -313,11 +320,11 @@ namespace FROSch {
                     GatheringMaps_[0] = k0->getRowMap();
                     CoarseSolveExporters_[0] = ExportFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMapUnique(),GatheringMaps_[0]);
 
-                    if (GatheringMaps_[0]->getNodeNumElements()>0) {
+                    if (GatheringMaps_[0]->getLocalNumElements()>0) {
                         OnCoarseSolveComm_=true;
                     }
                     CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
-                    CoarseSolveMap_ = MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMapUnique()->lib(),-1,GatheringMaps_[0]->getNodeElementList(),0,CoarseSolveComm_);
+                    CoarseSolveMap_ = MapFactory<LO,GO,NO>::Build(CoarseSpace_->getBasisMapUnique()->lib(),-1,GatheringMaps_[0]->getLocalElementList(),0,CoarseSolveComm_);
                 }
 #else
                 ThrowErrorMissingPackage("FROSch::CoarseOperator","Zoltan2");
@@ -332,7 +339,7 @@ namespace FROSch {
             // Matrix to the new communicator
             if (OnCoarseSolveComm_) {
                 FROSCH_DETAILTIMER_START_LEVELID(replicateCoarseMatrixOnCoarseCommTime,"replicate coarse matrix on coarse comm");
-                LO numRows = k0->getNodeNumRows();
+                LO numRows = k0->getLocalNumRows();
                 ArrayRCP<size_t> elemsPerRow(numRows);
                 LO numDiagonalsAdded = 0;
                 if (k0->isFillComplete()) {
@@ -405,14 +412,14 @@ namespace FROSch {
                 LOVec maxVec(5);
 
                 globalVec[0] = CoarseMatrix_->getGlobalNumRows();
-                localVec[0] = CoarseMatrix_->getNodeNumRows();
+                localVec[0] = CoarseMatrix_->getLocalNumRows();
                 reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVec[0],ptr(&sumVec[0]));
                 avgVec[0] = max(sumVec[0]/double(CoarseSolveComm_->getSize()),0.0);
                 reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVec[0],ptr(&minVec[0]));
                 reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVec[0],ptr(&maxVec[0]));
 
                 globalVec[1] = CoarseMatrix_->getGlobalNumEntries();
-                localVec[1] = CoarseMatrix_->getNodeNumEntries();
+                localVec[1] = CoarseMatrix_->getLocalNumEntries();
                 reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVec[1],ptr(&sumVec[1]));
                 avgVec[1] = max(sumVec[1]/double(CoarseSolveComm_->getSize()),0.0);
                 reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVec[1],ptr(&minVec[1]));
@@ -425,7 +432,7 @@ namespace FROSch {
                 reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVec[2],ptr(&minVec[2]));
                 reduceAll(*CoarseSolveComm_,REDUCE_MAX,localVec[2],ptr(&maxVec[2]));
 
-                localVec[3] = CoarseMatrix_->getNodeMaxNumRowEntries();
+                localVec[3] = CoarseMatrix_->getLocalMaxNumRowEntries();
                 reduceAll(*CoarseSolveComm_,REDUCE_SUM,localVec[3],ptr(&sumVec[3]));
                 avgVec[3] = max(sumVec[3]/double(CoarseSolveComm_->getSize()),0.0);
                 reduceAll(*CoarseSolveComm_,REDUCE_MIN,localVec[3],ptr(&minVec[3]));
@@ -605,8 +612,11 @@ namespace FROSch {
 #endif
 
             LO numProcsGatheringStep = this->MpiComm_->getSize();
-            GO numGlobalIndices = coarseMapUnique->getMaxAllGlobalIndex()+1;
-            int numMyRows;
+            GO numGlobalIndices = coarseMapUnique->getMaxAllGlobalIndex();
+            if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+                numGlobalIndices += 1;
+            }
+            LO numMyRows;
             double gatheringFactor = pow(double(this->MpiComm_->getSize())/double(NumProcsCoarseSolve_),1.0/double(gatheringSteps));
 
             for (int i=0; i<gatheringSteps-1; i++) {
@@ -646,7 +656,7 @@ namespace FROSch {
 
             //------------------------------------------------------------------------------------------------------------------------
             // Use a separate Communicator for the coarse problem
-            if (GatheringMaps_[GatheringMaps_.size()-1]->getNodeNumElements()>0) {
+            if (GatheringMaps_[GatheringMaps_.size()-1]->getLocalNumElements()>0) {
                 OnCoarseSolveComm_=true;
             }
             {
@@ -659,7 +669,7 @@ namespace FROSch {
 #ifdef FROSCH_COARSEOPERATOR_DETAIL_TIMERS
                 FROSCH_DETAILTIMER_START_LEVELID(coarseCommMapTime,"Coarse Communicator Map");
 #endif
-                CoarseSolveMap_ = MapFactory<LO,GO,NO>::Build(coarseMapUnique->lib(),-1,GatheringMaps_[GatheringMaps_.size()-1]->getNodeElementList(),0,CoarseSolveComm_);
+                CoarseSolveMap_ = MapFactory<LO,GO,NO>::Build(coarseMapUnique->lib(),-1,GatheringMaps_[GatheringMaps_.size()-1]->getLocalElementList(),0,CoarseSolveComm_);
             }
 
             // Possibly change the Send type for this Exporter
@@ -711,24 +721,19 @@ namespace FROSch {
             GatheringMaps_.resize(gatheringSteps);
             CoarseSolveExporters_.resize(gatheringSteps);
 
-            double gatheringFactor = pow(double(this->MpiComm_->getSize())/double(NumProcsCoarseSolve_),1.0/double(gatheringSteps));
-            LO numProcsGatheringStep = this->MpiComm_->getSize();
-            GO numGlobalIndices = CoarseMap_->getMaxAllGlobalIndex();
-            GO numMyRows;
-            numMyRows = 0;
-
             if (this->MpiComm_->getRank()%(this->MpiComm_->getSize()/NumProcsCoarseSolve_) == 0 && this->MpiComm_->getRank()/(this->MpiComm_->getSize()/NumProcsCoarseSolve_) < NumProcsCoarseSolve_) {
-                if (this->MpiComm_->getRank()==0) {
-                    numMyRows = numGlobalIndices - (numGlobalIndices/NumProcsCoarseSolve_)*(NumProcsCoarseSolve_-1);
-                } else {
-                    numMyRows = numGlobalIndices/NumProcsCoarseSolve_;
-                }
-            }
-
-            XMapPtr tmpCoarseMap = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,numMyRows,0,this->MpiComm_);
-            if (tmpCoarseMap->getNodeNumElements()>0) {
+                // if (this->MpiComm_->getRank()==0) {
+                //     numMyRows = numGlobalIndices - (numGlobalIndices/NumProcsCoarseSolve_)*(NumProcsCoarseSolve_-1);
+                // } else {
+                //     numMyRows = numGlobalIndices/NumProcsCoarseSolve_;
+                // }
                 OnCoarseSolveComm_=true;
             }
+
+            // // XMapPtr tmpCoarseMap = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,numMyRows,0,this->MpiComm_);
+            // if (tmpCoarseMap->getLocalNumElements()>0) {
+            //     OnCoarseSolveComm_=true;
+            // }
             CoarseSolveComm_ = this->MpiComm_->split(!OnCoarseSolveComm_,this->MpiComm_->getRank());
 
             //Gathering Steps for RepeatedMap#################################################
@@ -742,6 +747,7 @@ namespace FROSch {
             GO MLnumGlobalIndices = SubdomainConnectGraph_->getRowMap()->getMaxAllGlobalIndex()+1;
             GO MLnumMyRows;
 
+            LO numProcsGatheringStep = this->MpiComm_->getSize();
             MLGatheringMaps_[0] =  Xpetra::MapFactory<LO,GO,NO>::Build(this->K_->getMap()->lib(),-1,1,0,this->K_->getMap()->getComm());
             for (int i=1; i<MLgatheringSteps-1; i++) {
                 MLnumMyRows = 0;
@@ -754,7 +760,6 @@ namespace FROSch {
                     }
                 }
                 MLGatheringMaps_[i] = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,MLnumMyRows,0,this->MpiComm_);
-
             }
 
             MLnumMyRows = 0;
@@ -779,7 +784,7 @@ namespace FROSch {
                     RowsCoarseSolve[i] = start+i;
                 }
             }
-            Teuchos::ArrayView< const GO > CList = MLGatheringMaps_[MLgatheringSteps-1]->getNodeElementList();
+            Teuchos::ArrayView< const GO > CList = MLGatheringMaps_[MLgatheringSteps-1]->getLocalElementList();
             //MLCoarseMap_ =  Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,CList,0,CoarseSolveComm_);->Should work but does not WHY?!?!
             MLCoarseMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),MLGatheringMaps_[MLgatheringSteps-1]->getGlobalNumElements(),0,CoarseSolveComm_);
 
@@ -800,7 +805,11 @@ namespace FROSch {
             if (OnCoarseSolveComm_) {
                 //Coarse DofsMaps so far only one Block will work
                 ConstXMapPtrVecPtr2D CoarseDofsMaps(1);
-                FROSch::BuildRepMapZoltan(SubdomainConnectGraph_,ElementNodeList_, DistributionList_,MLCoarseMap_->getComm(),CoarseSolveRepeatedMap_);
+#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
+                BuildRepMapZoltan(SubdomainConnectGraph_,ElementNodeList_, DistributionList_,MLCoarseMap_->getComm(),CoarseSolveRepeatedMap_);
+#else
+                ThrowErrorMissingPackage("FROSch::CoarseOperator","Zoltan2");
+#endif
                 ConstRepMap = CoarseSolveRepeatedMap_;
                 ConstXMapPtrVecPtr NodesMapVector(1);
                 //MapVector for next Level
@@ -822,7 +831,7 @@ namespace FROSch {
                 UniqueMap = FROSch::BuildUniqueMap<LO,GO,NO>(CoarseSolveRepeatedMap_);
                 UniqueMapAll = this->BuildRepeatedMapCoarseLevel(UniqueMap,CoarseDofsPerNode_,DMap,PartitionType_);
 
-                uniEle = UniqueMapAll->getNodeElementList();
+                uniEle = UniqueMapAll->getLocalElementList();
                 //Set DofOderingVec and DofsPerNodeVec to ParameterList for the next Level
                 //Create Here DofsMaps for the next Level->DofOrdering will become redundant
                 Teuchos::ArrayRCP<DofOrdering> dofOrderings(1);
@@ -838,7 +847,26 @@ namespace FROSch {
                 sublist(sublist(sublist(this->ParameterList_,"CoarseSolver"),"FROSchPreconditioner"),"TwoLevelPreconditioner")->set("Nodes Map Vector",NodesMapVector);
             }
 
-            Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,uniEle,0,this->MpiComm_);
+            GatheringMaps_[gatheringSteps-1] = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,uniEle,0,this->MpiComm_);
+
+            GO numGlobalIndices = coarseMapUnique->getMaxAllGlobalIndex();
+            if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+                numGlobalIndices += 1;
+            }
+            LO numMyRows;
+            double gatheringFactor = pow(double(this->MpiComm_->getSize())/double(NumProcsCoarseSolve_),1.0/double(gatheringSteps));
+
+            //
+            // double gatheringFactor = pow(double(this->MpiComm_->getSize())/double(NumProcsCoarseSolve_),1.0/double(gatheringSteps));
+            // LO numProcsGatheringStep = this->MpiComm_->getSize();
+            // GO numGlobalIndices = CoarseMap_->getMaxAllGlobalIndex();
+            //
+            // LO numProcsGatheringStep = this->MpiComm_->getSize();
+            // GO numGlobalIndices = coarseMapUnique->getMaxAllGlobalIndex();
+            // if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+            //     numGlobalIndices += 1;
+            // }
+            // GO numMyRows;
 
             for (int i=0; i<gatheringSteps-1; i++) {
                 numMyRows = 0;
@@ -852,8 +880,9 @@ namespace FROSch {
                 }
                 GatheringMaps_[i] = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,numMyRows,0,this->MpiComm_);
             }
-            GatheringMaps_[gatheringSteps-1] = tmpMap;
-            CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,tmpMap->getNodeElementList(),0,CoarseSolveComm_);
+
+            CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,GatheringMaps_[gatheringSteps-1]->getLocalElementList(),0,CoarseSolveComm_);
+
         } else if (!DistributionList_->get("Type","linear").compare("Zoltan2")) {
 #ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
             GatheringMaps_.resize(1);
@@ -866,6 +895,88 @@ namespace FROSch {
 #endif
         } else {
             FROSCH_ASSERT(false,"FROSch::CoarseOperator: Distribution type unknown.");
+        }
+
+        // Output information about the Gatherin Steps
+        GO global,sum,numRanks;
+        LO local,minVal,maxVal;
+        SC avg;
+
+        global = coarseMapUnique->getMaxAllGlobalIndex();
+        if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+            global += 1;
+        }
+
+        local = (LO) max((LO) coarseMapUnique->getLocalNumElements(),(LO) 0);
+        reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
+        avg = max(sum/SC(this->MpiComm_->getSize()),0.0);
+        reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&minVal));
+        reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));
+
+        if (this->Verbose_) {
+            cout
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| "
+            << left << setw(74) << "> Gathering Steps Statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+            << " |"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << setw(89) << "========================================================================================="
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| " << left << setw(7) << " " << right
+            << " | " << setw(10) << "ranks"
+            << " | " << setw(10) << "total"
+            << " | " << setw(10) << "avg"
+            << " | " << setw(10) << "min"
+            << " | " << setw(10) << "max"
+            << " | " << setw(10) << "global sum"
+            << " |"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| " << left << setw(4) << "Map " << setw(3) << "0" << right
+            << " | " << setw(10) << this->MpiComm_->getSize()
+            << " | " << setw(10) << global
+            << " | " << setw(10) << setprecision(5) << avg
+            << " | " << setw(10) << minVal
+            << " | " << setw(10) << maxVal
+            << " | " << setw(10) << sum
+            << " |";
+        }
+
+        for (int i=0; i<GatheringMaps_.size(); i++) {
+            global = GatheringMaps_[i]->getMaxAllGlobalIndex();
+            if (GatheringMaps_[i]->lib()==UseEpetra || GatheringMaps_[i]->getGlobalNumElements()>0) {
+                global += 1;
+            }
+
+            local = (LO) max((LO) GatheringMaps_[i]->getLocalNumElements(),(LO) 0);
+            reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
+            reduceAll(*this->MpiComm_,REDUCE_SUM,GO(GatheringMaps_[i]->getLocalNumElements()>0),ptr(&numRanks));
+            avg = max(sum/SC(numRanks),0.0);
+            reduceAll(*this->MpiComm_,REDUCE_MIN,(GatheringMaps_[i]->getLocalNumElements()>0 ? local : numeric_limits<LO>::max()),ptr(&minVal));
+            reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));
+
+            if (this->Verbose_) {
+                cout
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+                << "| " << setw(4) << left << "Map " << setw(3) << i+1 << right
+                << " | " << setw(10) << numRanks
+                << " | " << setw(10) << global
+                << " | " << setw(10) << setprecision(3) << avg
+                << " | " << setw(10) << minVal
+                << " | " << setw(10) << maxVal
+                << " | " << setw(10) << sum
+                << " |";
+            }
+        }
+
+        if (this->Verbose_) {
+            cout
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << endl;
         }
 
         return 0;

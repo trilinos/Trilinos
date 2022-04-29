@@ -57,7 +57,7 @@ typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 /** This example whows how to get vertex IDs for all the elements
   */
 int main( int argc, char **argv )
-{  
+{
   using Teuchos::RCP;
 
   Teuchos::oblackholestream blackhole;
@@ -80,7 +80,7 @@ int main( int argc, char **argv )
      mesh->writeToExodus("blocked_mesh.exo");
   unsigned dim = mesh->getDimension();
 
-  std::vector<std::string> eBlocks; 
+  std::vector<std::string> eBlocks;
   mesh->getElementBlockNames(eBlocks);
 
   // loop over all blocks
@@ -91,7 +91,8 @@ int main( int argc, char **argv )
      std::vector<std::size_t> localIds;
      mesh->getMyElements(blockName,elements);
 
-     FieldContainer vertices("vertices",elements.size(),4,dim);  
+     FieldContainer vertices("vertices",elements.size(),4,dim);
+     auto vertices_h = Kokkos::create_mirror_view(vertices);
 
      // loop over elements of this block
      for(std::size_t elm=0;elm<elements.size();++elm) {
@@ -105,9 +106,9 @@ int main( int argc, char **argv )
 
         for(std::size_t v=0;v<nodes.size();++v) {
            const double * coord = mesh->getNodeCoordinates(nodes[v]);
-           
-           for(unsigned d=0;d<dim;++d) 
-              vertices(elm,v,d) = coord[d]; 
+
+           for(unsigned d=0;d<dim;++d)
+              vertices_h(elm,v,d) = coord[d];
         }
      }
   }

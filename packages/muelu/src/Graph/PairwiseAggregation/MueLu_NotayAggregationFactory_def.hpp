@@ -161,7 +161,6 @@ namespace MueLu {
 
     RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
     RCP<const Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
-    local_matrix_type localA = A->getLocalMatrix();
 
     // Setup aggregates & aggStat objects
     RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
@@ -221,7 +220,7 @@ namespace MueLu {
                                "Initial pairwise aggregation failed to aggregate all nodes");
     LO numLocalAggregates = aggregates->GetNumAggregates();
     GetOStream(Statistics0) << "Init   : " << numLocalAggregates << " - "
-                            << A->getNodeNumRows() / numLocalAggregates << std::endl;
+                            << A->getLocalNumRows() / numLocalAggregates << std::endl;
 
     // Temporary data storage for further aggregation steps
     local_matrix_type intermediateP;
@@ -232,7 +231,7 @@ namespace MueLu {
     // columns corresponding to local rows.
     LO numLocalDirichletNodes = numDirichletNodes;
     Array<LO> localVertex2AggId(aggregates->GetVertex2AggId()->getData(0).view(0, numRows));
-    BuildOnRankLocalMatrix(A->getLocalMatrix(), coarseLocalA);
+    BuildOnRankLocalMatrix(A->getLocalMatrixDevice(), coarseLocalA);
     for(LO aggregationIter = 1; aggregationIter < maxNumIter; ++aggregationIter) {
       // Compute the intermediate prolongator
       BuildIntermediateProlongator(coarseLocalA.numRows(), numLocalDirichletNodes, numLocalAggregates,
@@ -317,7 +316,7 @@ namespace MueLu {
       // Update the aggregates
       RCP<LOMultiVector> vertex2AggIdMV = aggregates->GetVertex2AggId();
       ArrayRCP<LO>       vertex2AggId   = vertex2AggIdMV->getDataNonConst(0);
-      for(size_t vertexIdx = 0; vertexIdx < A->getNodeNumRows(); ++vertexIdx) {
+      for(size_t vertexIdx = 0; vertexIdx < A->getLocalNumRows(); ++vertexIdx) {
         LO oldAggIdx = vertex2AggId[vertexIdx];
         if(oldAggIdx != Teuchos::OrdinalTraits<LO>::invalid()) {
           vertex2AggId[vertexIdx] = localVertex2AggId[oldAggIdx];
@@ -326,7 +325,7 @@ namespace MueLu {
 
       // We could probably print some better statistics at some point
       GetOStream(Statistics0) << "Iter " << aggregationIter << ": " << numLocalAggregates << " - "
-                              << A->getNodeNumRows() / numLocalAggregates << std::endl;
+                              << A->getLocalNumRows() / numLocalAggregates << std::endl;
     }
     aggregates->SetNumAggregates(numLocalAggregates);
     aggregates->AggregatesCrossProcessors(false);
@@ -403,7 +402,7 @@ namespace MueLu {
 
     // 0,1 : Initialize: Flag boundary conditions
     // Modification: We assume symmetry here aij = aji
-    for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
+    for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getLocalNumElements()); ++row) {
       MT aii = STS::magnitude(D[row]);
       MT rowsum = AbsRs[row];
 
@@ -832,9 +831,11 @@ namespace MueLu {
                               intermediateP.nnz());
 
     typename row_pointer_type::HostMirror rowPtrPt_h = Kokkos::create_mirror_view(rowPtrPt);
+    typename col_indices_type::HostMirror entries_h = Kokkos::create_mirror_view(intermediateP.graph.entries);
+    Kokkos::deep_copy(entries_h, intermediateP.graph.entries);
     Kokkos::deep_copy(rowPtrPt_h, 0);
     for(size_type entryIdx = 0; entryIdx < intermediateP.nnz(); ++entryIdx) {
-      rowPtrPt_h(intermediateP.graph.entries(entryIdx) + 1) += 1;
+      rowPtrPt_h(entries_h(entryIdx) + 1) += 1;
     }
     for(LO rowIdx = 0; rowIdx < intermediateP.numCols(); ++rowIdx) {
       rowPtrPt_h(rowIdx + 1) += rowPtrPt_h(rowIdx);
@@ -855,7 +856,7 @@ namespace MueLu {
     col_index_type colIdx = 0;
     for(LO rowIdx = 0; rowIdx < intermediateP.numRows(); ++rowIdx) {
       for(size_type entryIdxP = rowPtrP_h(rowIdx); entryIdxP < rowPtrP_h(rowIdx + 1); ++entryIdxP) {
-        colIdx = intermediateP.graph.entries(entryIdxP);
+        colIdx = entries_h(entryIdxP);
         for(size_type entryIdxPt = rowPtrPt_h(colIdx); entryIdxPt < rowPtrPt_h(colIdx + 1); ++entryIdxPt) {
           if(colIndPt_h(entryIdxPt) == invalidColumnIndex) {
             colIndPt_h(entryIdxPt) = rowIdx;
@@ -868,6 +869,7 @@ namespace MueLu {
 
     Kokkos::deep_copy(colIndPt, colIndPt_h);
     Kokkos::deep_copy(valuesPt, valuesPt_h);
+
 
     local_matrix_type intermediatePt("intermediatePt",
                                      intermediateP.numCols(),

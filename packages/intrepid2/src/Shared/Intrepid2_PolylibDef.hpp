@@ -95,6 +95,14 @@
 #ifndef __INTREPID2_POLYLIB_DEF_HPP__
 #define __INTREPID2_POLYLIB_DEF_HPP__
 
+#if defined(_MSC_VER) || defined(_WIN32) && defined(__ICL)
+// M_PI, M_SQRT2, etc. are hidden in MSVC by #ifdef _USE_MATH_DEFINES
+  #ifndef _USE_MATH_DEFINES
+  #define _USE_MATH_DEFINES
+  #endif
+  #include <math.h>
+#endif
+
 namespace Intrepid2 {
 
   // -----------------------------------------------------------------------
@@ -148,7 +156,7 @@ namespace Intrepid2 {
       auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.extent(0)));      
       JacobiZeros(z_plus_1, np-1, alpha, beta+1);
 
-      Kokkos::View<typename zViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<typename zViewType::value_type*,Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two, apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
@@ -181,7 +189,7 @@ namespace Intrepid2 {
       JacobiZeros(z, np-1, alpha+1, beta);
       z(np-1) = one;
 
-      Kokkos::View<typename zViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<typename zViewType::value_type*,Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two,apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
@@ -217,7 +225,7 @@ namespace Intrepid2 {
       auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.extent(0)));      
       JacobiZeros(z_plus_1, np-2, alpha+one, beta+one);
 
-      Kokkos::View<typename zViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<typename zViewType::value_type*,Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two, apb + 1)*GammaFunction(alpha + np)*GammaFunction(beta + np);
@@ -253,7 +261,7 @@ namespace Intrepid2 {
 
       typename zViewType::value_type pd_buf[MaxPolylibPoint];
       Kokkos::View<typename zViewType::value_type*,
-        Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+        Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> 
         pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
 
       JacobiPolynomialDerivative(np, z, pd, np, alpha, beta);
@@ -287,7 +295,7 @@ namespace Intrepid2 {
 
       typename zViewType::value_type pd_buf[MaxPolylibPoint];
       Kokkos::View<typename zViewType::value_type*,
-        Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged>
+        Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged>
         pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
       
       pd(0) = pow(-one,np-1)*GammaFunction(np+beta+one);
@@ -332,7 +340,7 @@ namespace Intrepid2 {
 
       typename zViewType::value_type pd_buf[MaxPolylibPoint];
       Kokkos::View<typename zViewType::value_type*,
-        Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged>
+        Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged>
         pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
 
       JacobiPolynomialDerivative(np-1, z, pd, np-1, alpha+1, beta);
@@ -374,7 +382,7 @@ namespace Intrepid2 {
 
       typename zViewType::value_type pd_buf[MaxPolylibPoint];
       Kokkos::View<typename zViewType::value_type*,
-        Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged>
+        Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged>
         pd((typename zViewType::pointer_type)&pd_buf[0], MaxPolylibPoint);
 
       pd(0)  = two*pow(-one,np)*GammaFunction(np + beta);
@@ -426,7 +434,7 @@ namespace Intrepid2 {
     typedef typename zViewType::pointer_type pointer_type;
 
     value_type h, p_buf, pd_buf, zi_buf = zgj(i);
-    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+    Kokkos::View<value_type*,Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> 
       p((pointer_type)&p_buf, 1), pd((pointer_type)&pd_buf, 1), zi((pointer_type)&zi_buf, 1), 
       zv(const_cast<pointer_type>(&z), 1), null;
     
@@ -459,7 +467,7 @@ namespace Intrepid2 {
     typedef typename zViewType::pointer_type pointer_type;
 
     value_type h, p_buf, pd_buf, zi_buf = zgrj(i);
-    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+    Kokkos::View<value_type*,Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> 
       p((pointer_type)&p_buf, 1), pd((pointer_type)&pd_buf, 1), zi((pointer_type)&zi_buf, 1), 
       zv(const_cast<pointer_type>(&z), 1), null;
     
@@ -497,7 +505,7 @@ namespace Intrepid2 {
     typedef typename zViewType::pointer_type pointer_type;
 
     value_type h, p_buf, pd_buf, zi_buf = zgrj(i);
-    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+    Kokkos::View<value_type*,Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> 
       p((pointer_type)&p_buf, 1), pd((pointer_type)&pd_buf, 1), zi((pointer_type)&zi_buf, 1), 
       zv(const_cast<pointer_type>(&z), 1), null;
 
@@ -535,7 +543,7 @@ namespace Intrepid2 {
     typedef typename zViewType::pointer_type pointer_type;
     
     value_type h, p_buf, pd_buf, zi_buf = zglj(i);
-    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+    Kokkos::View<value_type*,Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> 
       p((pointer_type)&p_buf, 1), pd((pointer_type)&pd_buf, 1), zi((pointer_type)&zi_buf, 1), 
       zv(const_cast<pointer_type>(&z), 1), null;
 
@@ -686,7 +694,7 @@ namespace Intrepid2 {
       for(ordinal_type i = 0; i < np; ++i)
         polyd(i) = 0.0;
     else {
-      Kokkos::View<typename polydViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<typename polydViewType::value_type*,Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, polyd, null, n-1, alpha+one, beta+one);
       for(ordinal_type i = 0; i < np; ++i)
         polyd(i) *= 0.5*(alpha + beta + n + one);
@@ -729,7 +737,7 @@ namespace Intrepid2 {
     typedef typename zViewType::pointer_type pointer_type;
 
     value_type r_buf, poly_buf, pder_buf;
-    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+    Kokkos::View<value_type*,Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> 
       poly((pointer_type)&poly_buf, 1), pder((pointer_type)&pder_buf, 1), r((pointer_type)&r_buf, 1); 
 
     value_type rlast = 0.0;
@@ -771,7 +779,7 @@ namespace Intrepid2 {
     typedef typename aViewType::pointer_type pointer_type;
 
     value_type b_buf[MaxPolylibPoint];
-    Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
+    Kokkos::View<value_type*,Kokkos::AnonymousSpace,Kokkos::MemoryUnmanaged> 
       b((pointer_type)&b_buf[0], MaxPolylibPoint);
 
     // generate normalised terms

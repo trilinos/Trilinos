@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_Map_h
-#define IOSS_Ioss_Map_h
+#pragma once
 
 #include <Ioss_CodeTypes.h>
 #include <cstddef> // for size_t
@@ -85,7 +84,7 @@ namespace Ioss {
                                         size_t offset);
 
     const MapContainer &map() const { return m_map; }
-    MapContainer &      map() { return m_map; }
+    MapContainer       &map() { return m_map; }
 
     bool defined() const { return m_defined; }
     void set_defined(bool yes_no) { m_defined = yes_no; }
@@ -114,5 +113,3 @@ namespace Ioss {
     bool m_defined{false}; // For use by some clients; not all, so don't read too much into value...
   };
 } // namespace Ioss
-
-#endif // IOSS_Ioss_Map_h

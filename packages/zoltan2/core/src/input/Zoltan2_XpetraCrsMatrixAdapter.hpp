@@ -135,7 +135,7 @@ public:
    * The order of weights should correspond to the order of rows
    * returned by
    *   \code
-   *       theMatrix->getRowMap()->getNodeElementList();
+   *       theMatrix->getRowMap()->getLocalElementList();
    *   \endcode
    */
 
@@ -160,37 +160,41 @@ public:
   ////////////////////////////////////////////////////
 
   size_t getLocalNumRows() const { 
-    return matrix_->getNodeNumRows();
+    return matrix_->getLocalNumRows();
   }
 
   size_t getLocalNumColumns() const { 
-    return matrix_->getNodeNumCols();
+    return matrix_->getLocalNumCols();
   }
 
   size_t getLocalNumEntries() const {
-    return matrix_->getNodeNumEntries();
+    return matrix_->getLocalNumEntries();
   }
 
   bool CRSViewAvailable() const { return true; }
 
   void getRowIDsView(const gno_t *&rowIds) const 
   {
-    ArrayView<const gno_t> rowView = rowMap_->getNodeElementList();
+    ArrayView<const gno_t> rowView = rowMap_->getLocalElementList();
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(const offset_t *&offsets, const gno_t *&colIds) const
+  void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const
   {
-    offsets = offset_.getRawPtr();
-    colIds = columnIds_.getRawPtr();
+
+    ArrayRCP< const lno_t > localColumnIds;
+    ArrayRCP<const scalar_t> values;
+    matrix_->getAllValues(offsets,localColumnIds,values);
+    colIds = columnIds_;
   }
 
-  void getCRSView(const offset_t *&offsets, const gno_t *&colIds,
-                    const scalar_t *&values) const
+  void getCRSView(ArrayRCP<const offset_t> &offsets,
+                  ArrayRCP<const gno_t> &colIds,
+                  ArrayRCP<const scalar_t> &values) const
   {
-    offsets = offset_.getRawPtr();
-    colIds = columnIds_.getRawPtr();
-    values = values_.getRawPtr();
+    ArrayRCP< const lno_t > localColumnIds;
+    matrix_->getAllValues(offsets,localColumnIds,values);
+    colIds = columnIds_;
   }
 
 
@@ -228,9 +232,6 @@ private:
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > colMap_;
   lno_t base_;
-  ArrayRCP< const offset_t > offset_;
-  ArrayRCP< const lno_t > localColumnIds_;
-  ArrayRCP< const scalar_t > values_;
   ArrayRCP<gno_t> columnIds_;  // TODO:  Refactor adapter to localColumnIds_
 
   int nWeightsPerRow_;
@@ -248,7 +249,7 @@ template <typename User, typename UserCoord>
   XpetraCrsMatrixAdapter<User,UserCoord>::XpetraCrsMatrixAdapter(
     const RCP<const User> &inmatrix, int nWeightsPerRow):
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(),
-      offset_(), columnIds_(),
+      columnIds_(),
       nWeightsPerRow_(nWeightsPerRow), rowWeights_(), numNzWeight_(),
       mayHaveDiagonalEntries(true)
 {
@@ -262,15 +263,18 @@ template <typename User, typename UserCoord>
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
 
-  size_t nrows = matrix_->getNodeNumRows();
-  size_t nnz = matrix_->getNodeNumEntries();
+  size_t nrows = matrix_->getLocalNumRows();
+  size_t nnz = matrix_->getLocalNumEntries();
 
   // Get ArrayRCP pointers to the structures in the underlying matrix
-  matrix_->getAllValues(offset_,localColumnIds_,values_);
+  ArrayRCP< const offset_t > offset;
+  ArrayRCP< const lno_t > localColumnIds;
+  ArrayRCP< const scalar_t > values;
+  matrix_->getAllValues(offset,localColumnIds,values);
   columnIds_.resize(nnz, 0);
 
-  for(offset_t i = 0; i < offset_[nrows]; i++) {
-    columnIds_[i] = colMap_->getGlobalElement(localColumnIds_[i]);
+  for(offset_t i = 0; i < offset[nrows]; i++) {
+    columnIds_[i] = colMap_->getGlobalElement(localColumnIds[i]);
   }
 
   if (nWeightsPerRow_ > 0){

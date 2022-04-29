@@ -156,7 +156,7 @@ namespace { // (anonymous)
     }
     const int myRank = map.getComm ()->getRank ();
     out << "Proc " << myRank << ": [";
-    const LO lclNumInds = static_cast<LO> (map.getNodeNumElements ());
+    const LO lclNumInds = static_cast<LO> (map.getLocalNumElements ());
     if (lclNumInds != 0) {
       for (LO lclInd = 0; lclInd < lclNumInds; ++lclInd) {
         const GO gblInd = map.getGlobalElement (lclInd);
@@ -188,7 +188,6 @@ namespace { // (anonymous)
                                  const CrsMatrixType& A)
   {
     using std::endl;
-    typedef typename CrsMatrixType::scalar_type ST;
     typedef typename CrsMatrixType::map_type map_type;
     typedef typename CrsMatrixType::local_ordinal_type LO;
     typedef typename CrsMatrixType::global_ordinal_type GO;
@@ -197,23 +196,23 @@ namespace { // (anonymous)
     const int myRank = rowMap.getComm ()->getRank ();
     out << "Proc " << myRank << ": {";
 
-    const LO lclNumRows = static_cast<LO> (rowMap.getNodeNumElements ());
+    const LO lclNumRows = static_cast<LO> (rowMap.getLocalNumElements ());
     if (lclNumRows != 0) {
       if (A.isLocallyIndexed ()) {
-        const map_type& colMap = * (A.getColMap ());
         Teuchos::Array<GO> gblColInds;
+        const map_type& colMap = * (A.getColMap ());
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
           const GO gblRow = rowMap.getGlobalElement (lclRow);
           out << "gblRow: " << gblRow;
-          Teuchos::ArrayView<const LO> lclColInds;
-          Teuchos::ArrayView<const ST> vals;
+          typename CrsMatrixType::local_inds_host_view_type lclColInds;
+          typename CrsMatrixType::values_host_view_type vals;
           A.getLocalRowView (lclRow, lclColInds, vals);
           out << ": {lclCols: ";
           printArray (out, lclColInds);
-          if (gblColInds.size () < lclColInds.size ()) {
+          if (size_t(gblColInds.size ()) < lclColInds.size ()) {
             gblColInds.resize (lclColInds.size ());
           }
-          for (ptrdiff_t k = 0; k < lclColInds.size (); ++k) {
+          for (size_t k = 0; k < lclColInds.size (); ++k) {
             gblColInds[k] = colMap.getGlobalElement (lclColInds[k]);
           }
           out << ", gblCols: ";
@@ -230,8 +229,8 @@ namespace { // (anonymous)
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
           const GO gblRow = rowMap.getGlobalElement (lclRow);
           out << "gblRow: " << gblRow;
-          Teuchos::ArrayView<const GO> gblColInds;
-          Teuchos::ArrayView<const ST> vals;
+          typename CrsMatrixType::global_inds_host_view_type gblColInds;
+          typename CrsMatrixType::values_host_view_type vals;
           A.getGlobalRowView (gblRow, gblColInds, vals);
           out << ": {gblCols: ";
           printArray (out, gblColInds);
@@ -562,10 +561,11 @@ namespace { // (anonymous)
         Teuchos::OSTab tab2 (out);
 
         const GO lclRow = rowMap.getLocalElement (gblRow);
-        LO numEnt = 0;
-        const LO* lclInds = NULL;
-        const ST* vals = NULL;
-        A.getLocalRowViewRaw (lclRow, numEnt, lclInds, vals);
+        typename CrsMatrixType::crs_graph_type::local_inds_host_view_type
+                 lclInds;
+        typename CrsMatrixType::values_host_view_type vals;
+        A.getLocalRowView(lclRow, lclInds, vals);
+        LO numEnt = lclInds.extent(0);
 
         TEST_EQUALITY( numEnt, numEnt_expected );
         if (numEnt == numEnt_expected) {
@@ -580,7 +580,8 @@ namespace { // (anonymous)
           // Sort the global column indices, since we don't want to
           // rely on a promise of ordering.  Apply the same
           // permutation to the values, so we can compare.
-          std::vector<ST> vals_got (vals, vals + numEnt);
+          std::vector<ST> vals_got(numEnt);
+          for (LO k = 0; k < numEnt; ++k) vals_got[k] = vals[k];
           Tpetra::sort2 (gblInds_got.begin (), gblInds_got.end (),
                          vals_got.begin ());
           testArrayEquality (out, success,
@@ -599,8 +600,8 @@ namespace { // (anonymous)
         out << "Overlapping CrsMatrix is globally indexed" << endl;
         Teuchos::OSTab tab2 (out);
 
-        Teuchos::ArrayView<const GO> gblInds;
-        Teuchos::ArrayView<const ST> vals;
+        typename CrsMatrixType::global_inds_host_view_type gblInds;
+        typename CrsMatrixType::values_host_view_type vals;
         A.getGlobalRowView (gblRow, gblInds, vals);
         const LO numEnt = static_cast<LO> (gblInds.size ());
 
@@ -610,8 +611,12 @@ namespace { // (anonymous)
           // indices, since we don't want to rely on a promise of
           // ordering.  Apply the same permutation to the values, so
           // we can compare.
-          std::vector<GO> gblInds_got (gblInds.begin (), gblInds.end ());
-          std::vector<ST> vals_got (vals.begin (), vals.end ());
+          std::vector<GO> gblInds_got(numEnt);
+          std::vector<ST> vals_got(numEnt);
+          for (LO k = 0; k < numEnt; ++k) {
+            gblInds_got[k] = gblInds[k];
+            vals_got[k] = vals[k];
+          }
           Tpetra::sort2 (gblInds_got.begin (), gblInds_got.end (),
                          vals_got.begin ());
           testArrayEquality (out, success, gblInds_got.data (),
@@ -839,32 +844,32 @@ namespace { // (anonymous)
       const GO gblRow = (myRank == 0) ? GO (0) : GO (1);
       const LO lclRow =
         A_nonoverlapping.getRowMap ()->getLocalElement (gblRow);
-      LO numEnt = 0;
-      const LO* lclColInds = NULL;
-      const double* vals = NULL;
-      const LO errCode = A_nonoverlapping.getLocalRowViewRaw (lclRow, numEnt,
-                                                              lclColInds, vals);
-      TEST_EQUALITY_CONST( errCode, LO (0) );
-      if (errCode == LO (0)) {
-        // Sort the input matrix's row data, so that this test does
-        // not depend on any assumption of sorted rows.
-        std::vector<double> vals_got (vals, vals + numEnt);
-        std::vector<LO> lclColInds_got (lclColInds, lclColInds + numEnt);
-        Tpetra::sort2 (lclColInds_got.begin (), lclColInds_got.end (),
-                       vals_got.begin ());
-        testArrayEquality (out, success, lclColInds_got.data (),
-                           lclColInds_got.size (), "lclColInds_got",
-                           lclColInds_expected.data (),
-                           lclColInds_expected.size (),
-                           "lclColInds_expected");
-        testArrayEquality (out, success, vals_got.data (), vals_got.size (),
-                           "vals_got", vals_expected.data (),
-                           vals_expected.size (), "vals_expected");
+      typename CrsMatrixType::local_inds_host_view_type lclColInds;
+      typename CrsMatrixType::values_host_view_type vals;
+      A_nonoverlapping.getLocalRowView(lclRow, lclColInds, vals);
+      LO numEnt = lclColInds.extent(0);
+      // Sort the input matrix's row data, so that this test does
+      // not depend on any assumption of sorted rows.
+      std::vector<LO> lclColInds_got (numEnt);
+      std::vector<double> vals_got(numEnt);
+      for (LO k = 0; k < numEnt; ++k) {
+        lclColInds_got[k] = lclColInds[k];
+        vals_got[k] = vals[k];
       }
+      Tpetra::sort2 (lclColInds_got.begin (), lclColInds_got.end (),
+                     vals_got.begin ());
+      testArrayEquality (out, success, lclColInds_got.data (),
+                         lclColInds_got.size (), "lclColInds_got",
+                         lclColInds_expected.data (),
+                         lclColInds_expected.size (),
+                         "lclColInds_expected");
+      testArrayEquality (out, success, vals_got.data (), vals_got.size (),
+                         "vals_got", vals_expected.data (),
+                         vals_expected.size (), "vals_expected");
     }
     else {
       const LO lclNumRows =
-        static_cast<LO> (A_nonoverlapping.getNodeNumRows ());
+        static_cast<LO> (A_nonoverlapping.getLocalNumRows ());
       TEST_EQUALITY_CONST( lclNumRows, LO (0) );
     }
 
@@ -998,15 +1003,14 @@ namespace { // (anonymous)
       out << "Target matrix is correct!" << endl;
     }
 
-    const Tpetra::ProfileType pftypes[1] = {Tpetra::StaticProfile};
-    for (Tpetra::ProfileType profileType : pftypes) {
-      out << ">>> Target matrix is {StaticProfile, locally indexed}" << endl;
+    {
+      out << ">>> Target matrix is locally indexed" << endl;
       Teuchos::OSTab tab2 (out);
 
       const size_t maxNumEntPerRow = 10; // needs to be an upper bound
       RCP<CrsMatrixType> A_nonoverlapping =
         rcp (new CrsMatrixType (rowMap_nonoverlapping, colMap_expected,
-                                maxNumEntPerRow, profileType));
+                                maxNumEntPerRow));
       export_type exp (A_overlapping.getRowMap (), rowMap_nonoverlapping);
       A_nonoverlapping->doExport (A_overlapping, exp, Tpetra::ADD);
       A_nonoverlapping->fillComplete (domMap, ranMap);

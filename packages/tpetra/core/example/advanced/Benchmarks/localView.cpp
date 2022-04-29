@@ -275,8 +275,7 @@ namespace { // (anonymous)
     const GO gblNumCols = static_cast<GO> (rowMap->getGlobalNumElements ());
     // Create the graph structure of the sparse matrix.
     RCP<graph_type> G =
-      rcp (new graph_type (rowMap, opts.numEntPerRow,
-                           Tpetra::StaticProfile));
+      rcp (new graph_type (rowMap, opts.numEntPerRow));
     // Fill in the graph structure of the sparse matrix.
     Teuchos::Array<GO> gblColInds (opts.numEntPerRow);
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) { // for each of my rows
@@ -653,7 +652,6 @@ main (int argc, char* argv[])
 
     totalLclNumEnt = 0;
     if (opts.testTpetra) {
-      typedef Tpetra::CrsMatrix<>::scalar_type SC;
       typedef Tpetra::CrsMatrix<>::local_ordinal_type LO;
 
       auto timer = TimeMonitor::getNewCounter ("Tpetra getLocalRowView");
@@ -668,8 +666,8 @@ main (int argc, char* argv[])
 	for (int trial = 0; trial < opts.numTrials; ++trial) {
 	  const LO lclNumRows = opts.lclNumRows;
 	  for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-	    Teuchos::ArrayView<const LO> ind;
-	    Teuchos::ArrayView<const SC> val;
+	    typename Tpetra::CrsMatrix<>::local_inds_host_view_type ind;
+	    typename Tpetra::CrsMatrix<>::values_host_view_type val;
 	    A.getLocalRowView (lclRow, ind, val);
 	    const size_t len = static_cast<size_t> (ind.size ());
 	    totalLclNumEnt += len;
@@ -727,7 +725,7 @@ main (int argc, char* argv[])
 
       auto timer = TimeMonitor::getNewCounter ("Kokkos sequential");
       auto A = getTpetraMatrix (comm, opts);
-      auto A_lcl = A->getLocalMatrix ();
+      auto A_lcl = A->getLocalMatrixDevice ();
       { // Start timing after matrix creation
 	TimeMonitor timeMon (*timer);
 
@@ -765,7 +763,7 @@ main (int argc, char* argv[])
 
       auto timer = TimeMonitor::getNewCounter ("Kokkos parallel");
       auto A = getTpetraMatrix (comm, opts);
-      auto A_lcl = A->getLocalMatrix ();
+      auto A_lcl = A->getLocalMatrixDevice ();
       { // Start timing after matrix creation
 	TimeMonitor timeMon (*timer);
 

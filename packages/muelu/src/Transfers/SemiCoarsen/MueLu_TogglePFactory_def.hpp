@@ -75,6 +75,7 @@ namespace MueLu {
     // request/release "P" and coarse level "Nullspace"
     for (std::vector<RCP<const FactoryBase> >::const_iterator it = prolongatorFacts_.begin(); it != prolongatorFacts_.end(); ++it) {
       coarseLevel.DeclareInput("P", (*it).get(), this); // request/release "P" (dependencies are not affected)
+      coarseLevel.DeclareInput("RfromPfactory", (*it).get(), this);
       (*it)->CallDeclareInput(coarseLevel); // request dependencies
     }
     for (std::vector<RCP<const FactoryBase> >::const_iterator it = ptentFacts_.begin(); it != ptentFacts_.end(); ++it) {
@@ -139,6 +140,9 @@ namespace MueLu {
     GetOStream(Runtime0) << "TogglePFactory: call transfer factory: " << (prolongatorFacts_[nProlongatorFactory])->description() << std::endl;
     prolongatorFacts_[nProlongatorFactory]->CallBuild(coarseLevel);
     P = coarseLevel.Get< RCP<Matrix> >("P", (prolongatorFacts_[nProlongatorFactory]).get());
+    RCP<Matrix> R     = Teuchos::null;
+    if (coarseLevel.IsAvailable("RfromPfactory",(prolongatorFacts_[nProlongatorFactory]).get()))
+      R = coarseLevel.Get< RCP<Matrix> >("RfromPfactory", (prolongatorFacts_[nProlongatorFactory]).get());
     // do not call "Build" for "Ptent" factory since it should automatically be called recursively
     // through the "Build" call for "P"
     Ptent = coarseLevel.Get< RCP<Matrix> >("P", (ptentFacts_[nProlongatorFactory]).get());
@@ -153,6 +157,7 @@ namespace MueLu {
 
     // store prolongator with this factory identification.
     Set(coarseLevel, "P", P);
+    if (R !=  Teuchos::null) Set(coarseLevel, "RfromPfactory", R);
     Set(coarseLevel, "Nullspace", coarseNullspace);
     Set(coarseLevel, "Ptent", Ptent);
     Set(coarseLevel, "Chosen P", nProlongatorFactory);

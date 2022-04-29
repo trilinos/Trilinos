@@ -89,7 +89,7 @@ namespace MueLuTests {
     TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
     // construct matrices
-    const SC lambdaMax = 5;
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType lambdaMax = 5;
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build2DPoisson(27*comm->getSize());
     A->SetMaxEigenvalueEstimate(lambdaMax);
     RCP<Matrix> Ptent = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::Build2DPoisson(27*comm->getSize());
@@ -214,6 +214,61 @@ namespace MueLuTests {
     using TMT            = Teuchos::ScalarTraits<magnitude_type>;
     TEST_FLOATING_EQUALITY(STS::magnitude(norms[0]), STS::magnitude(as<Scalar>(6.0)), 100*TMT::eps());
   }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, ConstrainRowOptimalScalarPDE, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    typedef Teuchos::ScalarTraits<SC> STS;
+    SC zero = STS::zero(), one = STS::one();
+
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+    // Don't test for complex - matrix reader won't work
+    if (STS::isComplex) {success=true; return;}
+
+    RCP<Matrix> P;
+    Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
+    P =  Xpetra::IO<SC, LO, GO, NO>::Read("../unit_tests/TestMatrices/SaP_constrainTest_P.mat", lib, comm);
+
+    RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
+    sapFactory->optimalSatisfyPConstraintsForScalarPDEs( P );
+
+    // check that row sums are all one by checking the norm of the vector
+    // note: optimalSatisfyPConstraintsForScalarPDEs preserves row sum of original P (one in this case),
+    //       but SatisfyPConstraints normalizes each row sum to one.
+    RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(), 1);
+    RCP<MultiVector> Bfact = MultiVectorFactory::Build(P->getRangeMap(),  1);
+    X->putScalar(one);
+    P->apply(*X, *Bfact, Teuchos::NO_TRANS, one, zero);
+    Array<typename STS::magnitudeType> norms(1);
+    Bfact->norm2(norms);
+    out << "|| B_factory ones || = " << norms[0] << std::endl;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitude_type>;
+    TEST_FLOATING_EQUALITY(STS::magnitude(norms[0]), STS::magnitude(6.0), 100*TMT::eps());
+
+    // check that the min and max of each row are in [0,1]
+    bool lowerViolation = false;
+    bool upperViolation = false;
+    for (size_t j = 0; j < as<size_t>(P->getRowMap()->getLocalNumElements()); j++) {
+      Teuchos::ArrayView<const LocalOrdinal> indices;
+      Teuchos::ArrayView<const Scalar> vals;
+      P->getLocalRowView((LocalOrdinal) j, indices, vals);
+      size_t nnz = indices.size();
+      for (LO i = 0; i < (LO) nnz; i++)  { 
+        if (Teuchos::ScalarTraits<SC>::real(vals[i]) < Teuchos::ScalarTraits<SC>::real(zero)) lowerViolation = true;
+        if (Teuchos::ScalarTraits<SC>::real(vals[i]) > Teuchos::ScalarTraits<SC>::real(one)) upperViolation = true;
+      }
+    }
+    TEST_EQUALITY(lowerViolation, false);
+    TEST_EQUALITY(upperViolation, false);
+
+
+  } //SaPFactory_ConstrainRowOptimalScalarPDE
 
   // FIXME_KOKKOS: uncomment the test when we get all corresponding factories ported to kokkos
 #if 0
@@ -424,7 +479,8 @@ namespace MueLuTests {
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, Constructor, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, Build,       SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, EnforceConstraints, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, EnforceConstraints, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, ConstrainRowOptimalScalarPDE, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 

@@ -102,7 +102,7 @@ The rules for these comment blocks are:
 
 * The comment blocks '#' must begin on the first column.
 
-* The speical comment block identifier '@MACRO: <name>()' must start on the
+* The special comment block identifier '@MACRO: <name>()' must start on the
   3rd column, i.e. '# @MACRO: <name>()'.  Otherwise, the comment block will be
   ignored.
 
@@ -112,17 +112,17 @@ The rules for these comment blocks are:
 * The comment blocks must terminate at the MACRO or FUNCTION definition and
   the <name> of the macro or function listed in the marker '@MACRO: <name>()'
   or '@MACRO: <name>()' must match what is in the MACRO(<name> ...) or
-  FUNTION(<name> ...)  definition.
+  FUNCTION(<name> ...)  definition.
 
 * Whitespce is allowed in the block marker between '@MACRO' and ':' and after
   the definition 'MACRO(' and 'FUNTION('.  However, the name must be on the
   same line.
 
 These RST comment blocks are then inserted into RST template files
-<name>Tempalte.rst producing output files <name>.rst listed in the
+<name>Template.rst producing output files <name>.rst listed in the
 --rst-file-pairs argument.
 
-The format of these RST tempalte files is:
+The format of these RST template files is:
 
 {{{
 
@@ -137,7 +137,7 @@ Detailed Macro and Function Documentation
 
 The line of the form '@FUNCTION: SOME_FUNC_NAME2() -' are flagged as
 replacement blocks that are substitted with the extracted RST blocks of the
-same name and type.  For example, the above RST tempalte file would be
+same name and type.  For example, the above RST template file would be
 substituted to look like:
 
 {{{
@@ -159,7 +159,7 @@ SOME_MACRO_NAME1()
 
 }}}
 
-The format of these subsitution lines is:
+The format of these substitution lines is:
 
   @<blockType>: <blockName> <sepChar>
 
@@ -175,13 +175,13 @@ The rules for this format are:
   substitution block is ignored.
 
 * <blockName> must match the name of a previously read in RST documentation
-  block.  If it is not, then procesing ends with an error.
+  block.  If it is not, then processing ends with an error.
 
 * The <sepChar> must be present and must be a single char, typically '-',
   '+', "=", etc.  This should be picked to be consistent with the RST document
   this is being put into.
 
-* At least one space must seprate the fields '<blockName> <sepChar>' or an
+* At least one space must separate the fields '<blockName> <sepChar>' or an
   error will occur.
 
 See the unit tests in extract_rst_cmake_doc_UnitTest.py for examples of
@@ -214,16 +214,20 @@ def getLineEntityTypeAndName(line, fileNameAndLinePrefix, currentRstDocBlockType
   lineEntityName = lineSplit[1].strip().split(" ")[0].strip()
   if lineEntityName[-1] == ")":
     lineEntityName = lineEntityName[0:-1]
-  return (lineEntityType, lineEntityName)
+  return (lineEntityType.upper(), lineEntityName)
 
 
 # Format file name and line number
+def getFileNameLineNum(fileName, lineNum):
+  return fileName+":"+str(lineNum)
+
+
+# Format file name and line number as prefix
 def getFileNameLineNumPrefix(fileName, lineNum):
-  return fileName+":"+str(lineNum)+": "
+  return getFileNameLineNum(fileName, lineNum)+": "
 
 
-#
-# Extract a set of RST doc blocks from the given text block (from a file?)
+# Extract a set of RST doc blocks from the given text block (read from a file).
 #
 def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtraction=False \
   ):
@@ -254,7 +258,7 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
 
     justFoundBlockBeginning = False
     if inCommentBlock and not inRstDocBlock:
-      # Look for begining of expected RST doc block type
+      # Look for beginning of expected RST doc block type
       for blockType in rstBlockTypes:
         blockBeginning = "# @"+blockType
         lineBlockBeginning = line[0:len(blockBeginning)]
@@ -270,6 +274,7 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
           inRstDocBlock = splitOnColon[1].strip()
           #print("inRstDocBlock = '" + inRstDocBlock + "'")
           #print("currentRstDocBlockType = '" + currentRstDocBlockType + "'")
+          inRstDocBlockFileNameLineNum = getFileNameLineNum(fileName, line_i)
           if traceExtraction:
             print("Extracting '" + blockType + "' block '" + inRstDocBlock + "'"
                   + " from " + getFileNameLineNumPrefix(fileName, line_i))
@@ -313,8 +318,9 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
       rstDocBlocks.update( {
         inRstDocBlock : {
           "type" : currentRstDocBlockType,
-          "body" : currentRstBlockBody
-           }
+          "body" : currentRstBlockBody,
+          "fileNameLineNum" : inRstDocBlockFileNameLineNum,
+          }
         } )
       # Finally, rest to look for the next RST block
       inRstDocBlock = ""
@@ -341,7 +347,7 @@ def getRstDocBlock(rstDocBlocks, rstBlockName, fileNameAndLinePrefix, line):
 
 
 #
-# Get RST section seperator of length lineLen
+# Get RST section separator of length lineLen
 #
 def getRstSectStr(sepChar, lineLen):
   return sepChar * lineLen
@@ -355,17 +361,22 @@ def removeEmtpyElements(arrayIn):
   return arrayOut
 
 
-#
 # Replace references to RST blocks with sections
 #
 def replaceWithRstDocBlocksInText(textToReplace, rstBlockTypes, rstDocBlocks, fileName, \
-  traceReplacements=False \
+  traceReplacements=False, fileNamePathBaseDir="", includeFileNameLineNum=False \
   ):
 
   replacedText = ""
 
   textToReplaceLines = textToReplace.splitlines()
   numTextToReplaceLines = len(textToReplaceLines)
+
+  if not fileNamePathBaseDir == "":
+    fileNamePathBaseDirAndSepLen = len(fileNamePathBaseDir)
+    if not fileNamePathBaseDir.endswith("/"): fileNamePathBaseDirAndSepLen += 1
+  else:
+    fileNamePathBaseDirAndSepLen = 0
 
   line_i = 0
 
@@ -417,6 +428,13 @@ def replaceWithRstDocBlocksInText(textToReplace, rstBlockTypes, rstDocBlocks, fi
         replacedText += (rstBlockName+"\n")
         replacedText += (rstSecStr+"\n")
         replacedText += rstDocBlock.get("body")
+        if includeFileNameLineNum:
+          fileNameLineNum = rstDocBlock.get("fileNameLineNum")
+          if fileNamePathBaseDirAndSepLen > 0:
+            relFileNameLineNum = fileNameLineNum[fileNamePathBaseDirAndSepLen:]
+          else:
+            relFileNameLineNum = fileNameLineNum
+          replacedText += "\nIn: "+relFileNameLineNum + "\n\n"
         replacedRstBlock = True
         break
 
@@ -467,16 +485,19 @@ def extractRstDocBlocksFromFileList(fileList, rstBlockTypes, traceExtraction=Fal
 
 # Make substitutions in a template file and produce a target file
 def replaceWithRstDocBlocksInTemplateFileList(rstFilesList, rstBlockTypes,
-  rstDocBlocks, traceReplacements=False \
+  rstDocBlocks, traceReplacements=False, fileNamePathBaseDir="",
+  includeFileNameLineNum=False \
   ):
   for (templateFileName, fileName) in rstFilesList:
     templateFileStr =   open(templateFileName, 'r').read()
     fileStr = replaceWithRstDocBlocksInText(templateFileStr, rstBlockTypes,
-      rstDocBlocks, templateFileName, traceReplacements)
+      rstDocBlocks, templateFileName, traceReplacements=traceReplacements,
+      fileNamePathBaseDir=fileNamePathBaseDir,
+      includeFileNameLineNum=includeFileNameLineNum )
     open(fileName, 'w').write(fileStr)
  
   
-# Run a command and syncronize the output
+# Run a command and synchronize the output
 def runCmnd(options, cmnd):
   if options.debug:
     print("*** Running command: " + cmnd)
@@ -497,16 +518,6 @@ def runCmnd(options, cmnd):
 
 if __name__ == '__main__':
 
-  
-  #
-  # Helper functions
-  #
-  
-
-  #
-  # Script exectuable statements
-  #
-
   #
   # A) Get command-line options
   #
@@ -520,7 +531,7 @@ if __name__ == '__main__':
     default="",
     help="List (comma separated) of directories (ending with '/') and files that the RST"+\
     " comment blocks will be extracted from.  Directories ending with '/' will result in"+\
-    " files being found with extentions listed in --file-extensions.  Otherwise, the given"+\
+    " files being found with extensions listed in --file-extensions.  Otherwise, the given"+\
     " files are searched.")
 
   clp.add_option(
@@ -533,7 +544,20 @@ if __name__ == '__main__':
     "--rst-file-pairs", dest="rstFilePairs", type="string",
     default="",
     help="List (comma separated) files of the form '<name>Template.rst:<name>.rst,...'"+\
-    " that gives sets of template files to to have comment blocks inserted into.")
+    " that gives sets of template files to have comment blocks inserted into.")
+
+  clp.add_option(
+    "--show-file-name-line-num", dest="showFileNameLineNum", action="store_true",
+    help="Include the relative file name path and line number for each documentation block.")
+  clp.add_option(
+    "--no-show-file-name-line-num", dest="showFileNameLineNum", action="store_false", default=False,
+    help="Include the relative file name path and line number for each documentation block. [default]" )
+
+  clp.add_option(
+    "--file-name-path-base-dir", dest="fileNamePathBaseDir", type="string",
+    default="",
+    help="Base path stripped off of file names reported when --show-file-name-line-num is set."+\
+      "  NOTE: This path should be relative to the paths in --extract-from and may be relative paths." )
 
   clp.add_option(
     "--dump-rst-blocks", dest="dumpRstBlocks", action="store_true",
@@ -561,6 +585,11 @@ if __name__ == '__main__':
     print("  --extract-from='" + options.extractFrom + "' \\")
     print("  --file-extensions='" + options.fileExtensions + "' \\")
     print("  --rst-file-pairs='" + options.rstFilePairs + "' \\")
+    if options.showFileNameLineNum:
+      print("  --show-file-name-line-num \\")
+    else:
+      print("  --no-show-file-name-line-num \\")
+    print("  --file-name-path-base-dir='" + options.fileNamePathBaseDir + "' \\")
     if options.dumpRstBlocks:
       print("  --dump-rst-blocks \\")
     else:
@@ -580,7 +609,7 @@ if __name__ == '__main__':
     print("\nWarning: --rst-file-pairs is empty and no RST comment blocks will be set!")
 
   #
-  # B) Read in all of the RST documenation blocks
+  # B) Read in all of the RST documentation blocks
   #
 
   rstBlockTypes = ["MACRO", "FUNCTION"]
@@ -596,11 +625,13 @@ if __name__ == '__main__':
     pp.pprint(rstDocBlocks)
   
   #
-  # C) Make the substititions in all of the file pairs
+  # C) Make the substitutions in all of the file pairs
   #
 
   if options.doTrace:
     print("\nReplacing RST documentation blocks in RST files in --rst-file-pairs:")
   rstFilesList = getRstFilesList(options)
   replaceWithRstDocBlocksInTemplateFileList(rstFilesList, rstBlockTypes,
-    rstDocBlocks, options.doTrace)
+    rstDocBlocks, traceReplacements=options.doTrace,
+    fileNamePathBaseDir=options.fileNamePathBaseDir,
+    includeFileNameLineNum=options.showFileNameLineNum )

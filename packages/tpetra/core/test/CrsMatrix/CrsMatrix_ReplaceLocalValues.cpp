@@ -72,6 +72,8 @@ namespace { // (anonymous)
     using std::endl;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
+    using lids_type = typename crs_matrix_type::nonconst_local_inds_host_view_type;
+    using vals_type = typename crs_matrix_type::nonconst_values_host_view_type;
     typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
     typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
     typedef typename Teuchos::Array<LO>::size_type size_type;
@@ -103,8 +105,8 @@ namespace { // (anonymous)
 
 
     RCP<crs_matrix_type> matrix = rcp (new crs_matrix_type (map, 10));
-    const LO NumMyElements = map->getNodeNumElements ();
-    Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList ();
+    const LO NumMyElements = map->getLocalNumElements ();
+    Teuchos::ArrayView<const GO> MyGlobalElements = map->getLocalElementList ();
 
     // Make the matrix the identity matrix.
     if (myRank == 0) {
@@ -225,10 +227,10 @@ namespace { // (anonymous)
       TEST_EQUALITY_CONST( numEnt, static_cast<size_t> (1) );
 
       if (numEnt == static_cast<size_t> (1)) {
-        Teuchos::Array<LO> ind (numEnt);
-        Teuchos::Array<Scalar> val (numEnt);
+        lids_type ind ("ind",numEnt);
+        vals_type val ("val",numEnt);
         size_t numEntOut = 0;
-        matrix->getLocalRowCopy (0, ind (), val (), numEntOut);
+        matrix->getLocalRowCopy (0, ind, val, numEntOut);
         TEST_EQUALITY( numEnt, numEntOut );
 
         if (numEntOut == static_cast<size_t> (1)) {
@@ -274,10 +276,10 @@ namespace { // (anonymous)
       TEST_EQUALITY_CONST( numEnt, static_cast<size_t> (1) );
 
       if (numEnt == static_cast<size_t> (1)) {
-        Teuchos::Array<LO> ind (numEnt);
-        Teuchos::Array<Scalar> val (numEnt);
+        lids_type ind ("ind",numEnt);
+        vals_type val ("val",numEnt);
         size_t numEntOut = 0;
-        matrix->getLocalRowCopy (0, ind (), val (), numEntOut);
+        matrix->getLocalRowCopy (0, ind, val, numEntOut);
         TEST_EQUALITY( numEnt, numEntOut );
 
         if (numEntOut == static_cast<size_t> (1)) {
@@ -466,15 +468,15 @@ namespace { // (anonymous)
       cerr << "Test the entries of vec_sol" << endl;
     }
     comm->barrier ();
-    if (rangeMap->getNodeNumElements () > 0) {
+    if (rangeMap->getLocalNumElements () > 0) {
       // Test this both for a const view and for a nonconst view.
       // This may also be a test for {T,X}petra::MultiVector::getData
       // and {T,X}petra::MultiVector::getDataNonConst.
 
       // Create the const view.
       Teuchos::ArrayRCP<const Scalar> outData = vec_sol->getData (0);
-      TEST_ASSERT( static_cast<size_t> (outData.size ()) == rangeMap->getNodeNumElements () );
-      if (static_cast<size_t> (outData.size ()) == rangeMap->getNodeNumElements () &&
+      TEST_ASSERT( static_cast<size_t> (outData.size ()) == rangeMap->getLocalNumElements () );
+      if (static_cast<size_t> (outData.size ()) == rangeMap->getLocalNumElements () &&
           outData.size () > static_cast<size_type> (0)) {
         TEST_EQUALITY( outData[0], FIVE );
         if (outData[0] != FIVE) {
@@ -484,9 +486,9 @@ namespace { // (anonymous)
           cerr << os.str ();
         }
       }
-      if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
+      if (rangeMap->getLocalNumElements () > static_cast<size_t> (1)) {
         bool allOnes = true;
-        for (size_t k = 1; k < rangeMap->getNodeNumElements (); ++k) {
+        for (size_t k = 1; k < rangeMap->getLocalNumElements (); ++k) {
           if (outData[k] != ONE) {
             allOnes = false;
           }
@@ -498,14 +500,14 @@ namespace { // (anonymous)
       outData = Teuchos::null;
       // Create the nonconst view.
       Teuchos::ArrayRCP<Scalar> outDataNonConst = vec_sol->getDataNonConst (0);
-      TEST_ASSERT( static_cast<size_t> (outDataNonConst.size ()) == rangeMap->getNodeNumElements () );
-      if (static_cast<size_t> (outDataNonConst.size ()) == rangeMap->getNodeNumElements () &&
+      TEST_ASSERT( static_cast<size_t> (outDataNonConst.size ()) == rangeMap->getLocalNumElements () );
+      if (static_cast<size_t> (outDataNonConst.size ()) == rangeMap->getLocalNumElements () &&
           outDataNonConst.size () > static_cast<size_type> (0)) {
         TEST_EQUALITY( outDataNonConst[0], FIVE );
       }
-      if (rangeMap->getNodeNumElements () > static_cast<size_t> (1)) {
+      if (rangeMap->getLocalNumElements () > static_cast<size_t> (1)) {
         bool allOnes = true;
-        for (size_t k = 1; k < rangeMap->getNodeNumElements (); ++k) {
+        for (size_t k = 1; k < rangeMap->getLocalNumElements (); ++k) {
           if (outDataNonConst[k] != ONE) {
             allOnes = false;
           }

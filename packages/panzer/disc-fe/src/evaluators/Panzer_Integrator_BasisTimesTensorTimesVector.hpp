@@ -340,8 +340,11 @@ namespace panzer
       /**
        *  \brief The vector basis information necessary for integration.
        */
-      PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP,
+      PHX::MDField<const double, panzer::Cell, panzer::BASIS, panzer::IP,
         panzer::Dim> basis_;
+
+    /// Scratch space for caching temporary values in the kokkos kernel. 
+    PHX::View<ScalarT*> tmp_;
 
   }; // end of class Integrator_BasisTimesTensorTimesVector
 

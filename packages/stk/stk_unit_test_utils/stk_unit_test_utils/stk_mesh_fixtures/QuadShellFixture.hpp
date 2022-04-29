@@ -47,7 +47,6 @@
 #include <vector>                       // for vector
 
 #include "stk_unit_test_utils/stk_mesh_fixtures/CoordinateMapping.hpp"
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class Part; } }

@@ -232,8 +232,8 @@ namespace Xpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeNumRows() const {
-    return matrixData_->getNodeNumRows();
+  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalNumRows() const {
+    return matrixData_->getLocalNumRows();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -242,8 +242,8 @@ namespace Xpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeNumEntries() const {
-    return matrixData_->getNodeNumEntries();
+  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalNumEntries() const {
+    return matrixData_->getLocalNumEntries();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -262,8 +262,8 @@ namespace Xpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getNodeMaxNumRowEntries() const {
-    return matrixData_->getNodeMaxNumRowEntries();
+  size_t CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMaxNumRowEntries() const {
+    return matrixData_->getLocalMaxNumRowEntries();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -446,10 +446,22 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMatrix () const {
-    return matrixData_->getLocalMatrix();
+    return getLocalMatrixDevice();
+  }
+#endif
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::HostMirror
+  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMatrixHost () const {
+    return matrixData_->getLocalMatrixHost();
+  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type
+  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMatrixDevice () const {
+    return matrixData_->getLocalMatrixDevice();
   }
 #else
 #ifdef __GNUC__

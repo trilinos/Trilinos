@@ -38,7 +38,7 @@
 # @HEADER
 
 
-TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+tribits_repository_define_packages(
   Ex2Package1     package1   PT
   Ex2Package2     package2   ST
   )

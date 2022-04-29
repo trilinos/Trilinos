@@ -67,6 +67,7 @@ public:
 
     RCP<Teuchos::FancyOStream> out = tsc.getOStream();
     Teuchos::OSTab ostab(out,1,"setNextTimeStep");
+    out->setOutputToRootOnly(0);
 
 
     // Check constant time step
@@ -124,11 +125,19 @@ public:
     void describe(Teuchos::FancyOStream          &out,
                   const Teuchos::EVerbosityLevel verbLevel) const override
     {
-      Teuchos::OSTab ostab(out,2,"describe");
-      out << description() << std::endl
-          << "Strategy Type = " << this->getStrategyType() << std::endl
-          << "Step Type     = " << this->getStepType() << std::endl
-          << "Time Step     = " << getConstantTimeStep() << std::endl;
+      auto l_out = Teuchos::fancyOStream( out.getOStream() );
+      Teuchos::OSTab ostab(*l_out, 2, this->description());
+      l_out->setOutputToRootOnly(0);
+
+      *l_out << "\n--- " << this->description() << " ---" << std::endl;
+
+      if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
+        *l_out << "  Strategy Type = " << this->getStrategyType() << std::endl
+               << "  Step Type     = " << this->getStepType() << std::endl
+               << "  Time Step     = " << getConstantTimeStep() << std::endl;
+
+        *l_out << std::string(this->description().length()+8, '-') <<std::endl;
+      }
     }
   //@}
 
@@ -171,15 +180,14 @@ createTimeStepControlStrategyConstant(
   std::string name = "Constant")
 {
   auto tscs = Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>());
-  if (pList == Teuchos::null) return tscs;
+  if (pList == Teuchos::null || pList->numParams() == 0) return tscs;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    pList->get<std::string>("Strategy Type", "Constant") != "Constant",
-    std::logic_error,
+    pList->get<std::string>("Strategy Type") != "Constant", std::logic_error,
     "Error - Strategy Type != 'Constant'.  (='"
     +pList->get<std::string>("Strategy Type")+"')\n");
 
-  pList->validateParametersAndSetDefaults(*tscs->getValidParameters(), 0);
+  pList->validateParametersAndSetDefaults(*tscs->getValidParameters());
 
   tscs->setConstantTimeStep(pList->get<double>("Time Step"));
 

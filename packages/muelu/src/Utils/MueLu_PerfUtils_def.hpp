@@ -68,8 +68,9 @@ namespace MueLu {
   void calculateStats(Type& minVal, Type& maxVal, double& avgVal, double& devVal, int& minProc, int& maxProc, const RCP<const Teuchos::Comm<int> >& comm, int numActiveProcs, const Type& v) {
 
     Type sumVal, sum2Val, v2 = v*v;
+    using MT = typename Teuchos::ScalarTraits<Type>::magnitudeType;
     double zero = Teuchos::ScalarTraits<double>::zero();
-
+    
     MueLu_sumAll(comm,  v, sumVal);
     MueLu_sumAll(comm, v2, sum2Val);
     MueLu_minAll(comm,  v, minVal);
@@ -82,7 +83,8 @@ namespace MueLu {
     MueLu_maxAll(comm,   w, minProc);
 
     avgVal = (numActiveProcs > 0 ? (as<double>(Teuchos::ScalarTraits<Type>::real(sumVal)) / numActiveProcs) : zero);
-    devVal = (numActiveProcs > 1 ? sqrt((as<double>(Teuchos::ScalarTraits<Type>::real(sum2Val - sumVal*avgVal)))/(numActiveProcs-1)) : zero);
+    MT avgVal_MT = Teuchos::as<MT>(avgVal);
+    devVal = (numActiveProcs > 1 ? sqrt((as<double>(Teuchos::ScalarTraits<Type>::real(sum2Val - sumVal*avgVal_MT)))/(numActiveProcs-1)) : zero);
   }
 
   template<class Type>
@@ -154,7 +156,7 @@ namespace MueLu {
     RCP<const Import> importer = A.getCrsGraph()->getImporter();
     RCP<const Export> exporter = A.getCrsGraph()->getExporter();
 
-    size_t numMyNnz = A.getNodeNumEntries(), numMyRows = A.getNodeNumRows();
+    size_t numMyNnz = A.getLocalNumEntries(), numMyRows = A.getLocalNumRows();
 
     // Create communicator only for active processes
     RCP<const Teuchos::Comm<int> > origComm = A.getRowMap()->getComm();

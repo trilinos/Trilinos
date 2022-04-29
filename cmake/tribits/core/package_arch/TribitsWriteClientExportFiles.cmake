@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsGeneralMacros)
+include(TribitsGeneralMacros)
 
 ###
 ### WARNING: See "NOTES TO DEVELOPERS" at the bottom of the file
@@ -48,15 +48,15 @@ INCLUDE(TribitsGeneralMacros)
 #  This function will take a list and turn it into a space separated string
 #  adding the prefix to the front of every entry.
 #
-FUNCTION(TRIBITS_LIST_TO_STRING LIST PREFIX OUTPUT_STRING)
-  SET(LIST_STRING "")
+function(tribits_list_to_string LIST PREFIX OUTPUT_STRING)
+  set(LIST_STRING "")
 
-  FOREACH(ITEM ${LIST})
-    SET(LIST_STRING "${LIST_STRING} ${PREFIX}${ITEM}")
-  ENDFOREACH()
+  foreach(ITEM ${LIST})
+    set(LIST_STRING "${LIST_STRING} ${PREFIX}${ITEM}")
+  endforeach()
 
-  SET(${OUTPUT_STRING} ${LIST_STRING} PARENT_SCOPE)
-ENDFUNCTION()
+  set(${OUTPUT_STRING} ${LIST_STRING} PARENT_SCOPE)
+endfunction()
 
 #
 #  This function will take a list of libraries and turn it into a space
@@ -66,20 +66,20 @@ ENDFUNCTION()
 #  with any decorations the system uses. When an absolute path is given
 #  the entry is used verbatim.
 #
-FUNCTION(TRIBITS_LIBRARY_LIST_TO_STRING LIST PREFIX OUTPUT_STRING)
-  SET(LIST_STRING "")
+function(tribits_library_list_to_string LIST PREFIX OUTPUT_STRING)
+  set(LIST_STRING "")
 
-  FOREACH(ITEM ${LIST})
-    STRING(SUBSTRING ${ITEM} 0 1 OPTION_FLAG)
-    IF(EXISTS ${ITEM} OR OPTION_FLAG STREQUAL "-")
-      SET(LIST_STRING "${LIST_STRING} ${ITEM}")
-    ELSE()
-      SET(LIST_STRING "${LIST_STRING} ${PREFIX}${ITEM}")
-    ENDIF()
-  ENDFOREACH()
+  foreach(ITEM ${LIST})
+    string(SUBSTRING ${ITEM} 0 1 OPTION_FLAG)
+    if(EXISTS ${ITEM} OR OPTION_FLAG STREQUAL "-")
+      set(LIST_STRING "${LIST_STRING} ${ITEM}")
+    else()
+      set(LIST_STRING "${LIST_STRING} ${PREFIX}${ITEM}")
+    endif()
+  endforeach()
 
-  SET(${OUTPUT_STRING} ${LIST_STRING} PARENT_SCOPE)
-ENDFUNCTION()
+  set(${OUTPUT_STRING} ${LIST_STRING} PARENT_SCOPE)
+endfunction()
 
 #
 # CMAKE_CURRENT_LIST_DIR is not defined in CMake versions < 2.8.3, but the
@@ -95,35 +95,35 @@ ENDFUNCTION()
 # to ensure that the CMAKE_CURRENT_LIST_DIR will be defined on the installation
 # target machine, even if it has an older version of cmake.
 #
-FUNCTION(TRIBITS_SET_DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET)
-  SET(DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET "
+function(tribits_set_define_cmake_current_list_dir_code_snippet)
+  set(DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET "
 # Include guard
-IF (${EXPORT_FILE_VAR_PREFIX}_CONFIG_INCLUDED)
-  RETURN()
-ENDIF()
-SET(${EXPORT_FILE_VAR_PREFIX}_CONFIG_INCLUDED TRUE)
+if (${EXPORT_FILE_VAR_PREFIX}_CONFIG_INCLUDED)
+  return()
+endif()
+set(${EXPORT_FILE_VAR_PREFIX}_CONFIG_INCLUDED TRUE)
 
 # Make sure CMAKE_CURRENT_LIST_DIR is usable
-IF (NOT DEFINED CMAKE_CURRENT_LIST_DIR)
-  GET_FILENAME_COMPONENT(_THIS_SCRIPT_PATH \${CMAKE_CURRENT_LIST_FILE} PATH)
-  SET(CMAKE_CURRENT_LIST_DIR \${_THIS_SCRIPT_PATH})
-ENDIF()
+if (NOT DEFINED CMAKE_CURRENT_LIST_DIR)
+  get_filename_component(_THIS_SCRIPT_PATH \${CMAKE_CURRENT_LIST_FILE} PATH)
+  set(CMAKE_CURRENT_LIST_DIR \${_THIS_SCRIPT_PATH})
+endif()
 "
   PARENT_SCOPE )
-ENDFUNCTION()
+endfunction()
 
 
 #
-# @FUNCTION: TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()
+# @FUNCTION: tribits_write_flexible_package_client_export_files()
 #
 # Utility function for writing ``${PACKAGE_NAME}Config.cmake`` and/or the
 # ``Makefile.export.${PACKAGE_NAME}`` files for package ``${PACKAGE_NAME}``
 # with some greater flexibility than what is provided by the function
-# ``TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES()``.
+# ``tribits_write_package_client_export_files()``.
 #
 # Usage::
 #
-#   TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(
+#   tribits_write_flexible_package_client_export_files(
 #     PACKAGE_NAME <packageName>
 #     [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
 #     [WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>]
@@ -180,22 +180,22 @@ ENDFUNCTION()
 # file but this file needs to be generated for a subset of enabled packages on
 # the fly during a one-pass configure.
 #
-# NOTE: This function does *not* contain the ``INSTALL()`` commands because
+# NOTE: This function does *not* contain the ``install()`` commands because
 # CMake will not allow those to even be present in scripting mode that is used
 # for unit testing this function.  Instead, the files to be installed are only
 # generated in the build tree and the install targets are added else where.
 #
-FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
+function(tribits_write_flexible_package_client_export_files)
 
-  IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-    MESSAGE("\nTRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(${ARGN})")
-  ENDIF()
+  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+    message("\ntribits_write_flexible_package_client_export_files(${ARGN})")
+  endif()
 
   #
   # A) Process the command-line arguments
   #
 
-  CMAKE_PARSE_ARGUMENTS(
+  cmake_parse_arguments(
      #prefix
      PARSE
      #options
@@ -207,96 +207,96 @@ FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
      ${ARGN}
      )
 
-  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+  tribits_check_for_unparsed_arguments()
 
-  IF (NOT ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES)
-    MESSAGE(SEND_ERROR "Error: Can't generate export depenency files because"
+  if (NOT ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES)
+    message(SEND_ERROR "Error: Can't generate export dependency files because"
       " ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES is not ON!")
-    RETURN()
-  ENDIF()
+    return()
+  endif()
 
-  SET(PACKAGE_NAME ${PARSE_PACKAGE_NAME})
-  IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-    PRINT_VAR(PACKAGE_NAME)
-  ENDIF()
+  set(PACKAGE_NAME ${PARSE_PACKAGE_NAME})
+  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+    print_var(PACKAGE_NAME)
+  endif()
 
-  SET(EXPORT_FILE_VAR_PREFIX ${PACKAGE_NAME})
-  IF (PARSE_EXPORT_FILE_VAR_PREFIX)
-    SET(EXPORT_FILE_VAR_PREFIX ${PARSE_EXPORT_FILE_VAR_PREFIX})
-  ENDIF()
-  IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-    PRINT_VAR(EXPORT_FILE_VAR_PREFIX)
-  ENDIF()
+  set(EXPORT_FILE_VAR_PREFIX ${PACKAGE_NAME})
+  if (PARSE_EXPORT_FILE_VAR_PREFIX)
+    set(EXPORT_FILE_VAR_PREFIX ${PARSE_EXPORT_FILE_VAR_PREFIX})
+  endif()
+  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+    print_var(EXPORT_FILE_VAR_PREFIX)
+  endif()
 
-  TRIBITS_SET_DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET()
+  tribits_set_define_cmake_current_list_dir_code_snippet()
 
   #
   # B) Get the set of upstream packages for this package that are enabled,
   # libraries, library dirs, and include dirs
   #
 
-  SET(FULL_PACKAGE_SET "")
-  SET(FULL_LIBRARY_SET "")
+  set(FULL_PACKAGE_SET "")
+  set(FULL_LIBRARY_SET "")
 
-  SET(SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM TRUE)
-  IF (${PACKAGE_NAME}_INCLUDE_DIRS)
-    SET(FULL_INCLUDE_DIRS_SET ${${PACKAGE_NAME}_INCLUDE_DIRS})
-    SET(FULL_LIBRARY_DIRS_SET ${${PACKAGE_NAME}_LIBRARY_DIRS})
-    SET(SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM FALSE)
-  ELSE()
-    SET(FULL_INCLUDE_DIRS_SET "")
-    SET(FULL_LIBRARY_DIRS_SET "")
-  ENDIF()
+  set(SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM TRUE)
+  if (${PACKAGE_NAME}_INCLUDE_DIRS)
+    set(FULL_INCLUDE_DIRS_SET ${${PACKAGE_NAME}_INCLUDE_DIRS})
+    set(FULL_LIBRARY_DIRS_SET ${${PACKAGE_NAME}_LIBRARY_DIRS})
+    set(SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM FALSE)
+  else()
+    set(FULL_INCLUDE_DIRS_SET "")
+    set(FULL_LIBRARY_DIRS_SET "")
+  endif()
 
-  IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-    PRINT_VAR(${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES)
-  ENDIF()
+  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+    print_var(${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES)
+  endif()
 
-  FOREACH(TRIBITS_PACKAGE ${${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES})
+  foreach(TRIBITS_PACKAGE ${${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES})
 
-    IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-      PRINT_VAR(TRIBITS_PACKAGE)
-      IF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
-        PRINT_VAR(${TRIBITS_PACKAGE}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
-      ENDIF()
-    ENDIF()
+    if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+      print_var(TRIBITS_PACKAGE)
+      if (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
+        print_var(${TRIBITS_PACKAGE}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
+      endif()
+    endif()
 
-    SET(APPEND_THE_PACKAGE TRUE)
-    SET(APPEND_THE_PACKAGE_LIBS TRUE)
+    set(APPEND_THE_PACKAGE TRUE)
+    set(APPEND_THE_PACKAGE_LIBS TRUE)
 
-    IF (NOT ${TRIBITS_PACKAGE}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
-      SET(APPEND_THE_PACKAGE_LIBS FALSE)
-    ENDIF()
+    if (NOT ${TRIBITS_PACKAGE}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
+      set(APPEND_THE_PACKAGE_LIBS FALSE)
+    endif()
 
-    IF (APPEND_THE_PACKAGE)
-      LIST(APPEND FULL_PACKAGE_SET ${TRIBITS_PACKAGE})
-      IF (APPEND_THE_PACKAGE_LIBS)
-        APPEND_SET(FULL_LIBRARY_SET ${${TRIBITS_PACKAGE}_LIBRARIES})
-        IF (SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM)
-          APPEND_SET(FULL_INCLUDE_DIRS_SET ${${TRIBITS_PACKAGE}_INCLUDE_DIRS})
-          APPEND_SET(FULL_LIBRARY_DIRS_SET ${${TRIBITS_PACKAGE}_LIBRARY_DIRS})
-        ENDIF()
-      ELSE()
-        IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-          MESSAGE("-- " "Skipping adding the package libs!")
-        ENDIF()
-      ENDIF()
-    ELSE()
-      IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-        MESSAGE("-- " "Skipping adding the package!")
-      ENDIF()
-    ENDIF()
+    if (APPEND_THE_PACKAGE)
+      list(APPEND FULL_PACKAGE_SET ${TRIBITS_PACKAGE})
+      if (APPEND_THE_PACKAGE_LIBS)
+        append_set(FULL_LIBRARY_SET ${${TRIBITS_PACKAGE}_LIBRARIES})
+        if (SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM)
+          append_set(FULL_INCLUDE_DIRS_SET ${${TRIBITS_PACKAGE}_INCLUDE_DIRS})
+          append_set(FULL_LIBRARY_DIRS_SET ${${TRIBITS_PACKAGE}_LIBRARY_DIRS})
+        endif()
+      else()
+        if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+          message("-- " "Skipping adding the package libs!")
+        endif()
+      endif()
+    else()
+      if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+        message("-- " "Skipping adding the package!")
+      endif()
+    endif()
 
-    IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-      PRINT_VAR(FULL_PACKAGE_SET)
-      PRINT_VAR(FULL_LIBRARY_SET)
-      IF (SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM)
-        PRINT_VAR(FULL_INCLUDE_DIRS_SET)
-        PRINT_VAR(FULL_LIBRARY_DIRS_SET)
-      ENDIF()
-    ENDIF()
+    if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+      print_var(FULL_PACKAGE_SET)
+      print_var(FULL_LIBRARY_SET)
+      if (SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM)
+        print_var(FULL_INCLUDE_DIRS_SET)
+        print_var(FULL_LIBRARY_DIRS_SET)
+      endif()
+    endif()
 
-  ENDFOREACH()
+  endforeach()
 
   # Must prepend the current package and its libraries itself so that we get
   # its TPLs libraries. However, if the current package has no native
@@ -304,27 +304,27 @@ FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
   # TPLs.  Why would a package list TPLs (with actual libraries) if itself
   # does not have libraries to export?  Note, this does not affect internal
   # tests and examples which could have TPLs but no native libraries.
-  IF (${PACKAGE_NAME}_LIBRARIES AND ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
-    PREPEND_SET(FULL_PACKAGE_SET ${PACKAGE_NAME})
-    PREPEND_SET(FULL_LIBRARY_SET ${${PACKAGE_NAME}_LIBRARIES})
-  ENDIF()
+  if (${PACKAGE_NAME}_LIBRARIES AND ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
+    prepend_set(FULL_PACKAGE_SET ${PACKAGE_NAME})
+    prepend_set(FULL_LIBRARY_SET ${${PACKAGE_NAME}_LIBRARIES})
+  endif()
 
-  IF (SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM)
-     IF (FULL_INCLUDE_DIRS_SET)
-       LIST(REMOVE_DUPLICATES FULL_INCLUDE_DIRS_SET)
-     ENDIF()
-     IF (FULL_LIBRARY_DIRS_SET)
-       LIST(REMOVE_DUPLICATES FULL_LIBRARY_DIRS_SET)
-     ENDIF()
-  ENDIF()
+  if (SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM)
+     if (FULL_INCLUDE_DIRS_SET)
+       list(REMOVE_DUPLICATES FULL_INCLUDE_DIRS_SET)
+     endif()
+     if (FULL_LIBRARY_DIRS_SET)
+       list(REMOVE_DUPLICATES FULL_LIBRARY_DIRS_SET)
+     endif()
+  endif()
 
-  IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-    MESSAGE("-- " "*** Final sets of packages, libs, include dirs, and lib dirs:")
-    PRINT_VAR(FULL_PACKAGE_SET)
-    PRINT_VAR(FULL_LIBRARY_SET)
-    PRINT_VAR(FULL_INCLUDE_DIRS_SET)
-    PRINT_VAR(FULL_LIBRARY_DIRS_SET)
-  ENDIF()
+  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+    message("-- " "*** Final sets of packages, libs, include dirs, and lib dirs:")
+    print_var(FULL_PACKAGE_SET)
+    print_var(FULL_LIBRARY_SET)
+    print_var(FULL_INCLUDE_DIRS_SET)
+    print_var(FULL_LIBRARY_DIRS_SET)
+  endif()
 
   #
   # C) Get the set of TPLs for this package that are enabled
@@ -332,52 +332,52 @@ FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
 
   # C.1) Get the set of enabled TPLs
 
-  SET(FULL_TPL_SET "")
-  FOREACH(TRIBITS_PACKAGE ${FULL_PACKAGE_SET})
-    LIST(APPEND FULL_TPL_SET ${${TRIBITS_PACKAGE}_LIB_REQUIRED_DEP_TPLS})
-    SET(OPTIONAL_TPLS ${${TRIBITS_PACKAGE}_LIB_OPTIONAL_DEP_TPLS})
-    FOREACH(TPL ${OPTIONAL_TPLS})
+  set(FULL_TPL_SET "")
+  foreach(TRIBITS_PACKAGE ${FULL_PACKAGE_SET})
+    list(APPEND FULL_TPL_SET ${${TRIBITS_PACKAGE}_LIB_REQUIRED_DEP_TPLS})
+    set(OPTIONAL_TPLS ${${TRIBITS_PACKAGE}_LIB_OPTIONAL_DEP_TPLS})
+    foreach(TPL ${OPTIONAL_TPLS})
       # Only add if support for the optional TPL is enabled in this
       # package.  Don't just check if the TPL is enabled!
-      IF(${TRIBITS_PACKAGE}_ENABLE_${TPL})
-        LIST(APPEND FULL_TPL_SET ${TPL})
-      ENDIF()
-    ENDFOREACH()
-  ENDFOREACH()
-  IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-    PRINT_VAR(FULL_TPL_SET)
-  ENDIF()
+      if(${TRIBITS_PACKAGE}_ENABLE_${TPL})
+        list(APPEND FULL_TPL_SET ${TPL})
+      endif()
+    endforeach()
+  endforeach()
+  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+    print_var(FULL_TPL_SET)
+  endif()
 
   # C.2) Sort the TPLs according to the master TPL list
 
   #We will use the complete list of supported tpls for the project
   #to help us create a properly ordered list of tpls.
-  IF (FULL_TPL_SET)
-    SET(ORDERED_FULL_TPL_SET ${FULL_TPL_SET})
-    TRIBITS_SORT_LIST_ACCORDING_TO_MASTER_LIST("${${PROJECT_NAME}_REVERSE_TPLS}"
+  if (FULL_TPL_SET)
+    set(ORDERED_FULL_TPL_SET ${FULL_TPL_SET})
+    tribits_sort_list_according_to_master_list("${${PROJECT_NAME}_REVERSE_TPLS}"
       ORDERED_FULL_TPL_SET)
-  ENDIF()
+  endif()
 
-  IF (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
-    PRINT_VAR(ORDERED_FULL_TPL_SET)
-  ENDIF()
+  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+    print_var(ORDERED_FULL_TPL_SET)
+  endif()
 
   #
   # D) Get the libraries, library dirs, and the include dirs for the
   # upstream enabled TPLs
   #
 
-  SET(${PACKAGE_NAME}_TPL_LIBRARIES "")
-  SET(${PACKAGE_NAME}_TPL_INCLUDE_DIRS "")
-  SET(${PACKAGE_NAME}_TPL_LIBRARY_DIRS "")
-  FOREACH(TPL ${ORDERED_FULL_TPL_SET})
-    LIST(APPEND ${PACKAGE_NAME}_TPL_LIBRARIES ${TPL_${TPL}_LIBRARIES})
-    LIST(APPEND ${PACKAGE_NAME}_TPL_INCLUDE_DIRS ${TPL_${TPL}_INCLUDE_DIRS})
-    LIST(APPEND ${PACKAGE_NAME}_TPL_LIBRARY_DIRS ${TPL_${TPL}_LIBRARY_DIRS})
-  ENDFOREACH()
+  set(${PACKAGE_NAME}_TPL_LIBRARIES "")
+  set(${PACKAGE_NAME}_TPL_INCLUDE_DIRS "")
+  set(${PACKAGE_NAME}_TPL_LIBRARY_DIRS "")
+  foreach(TPL ${ORDERED_FULL_TPL_SET})
+    list(APPEND ${PACKAGE_NAME}_TPL_LIBRARIES ${TPL_${TPL}_LIBRARIES})
+    list(APPEND ${PACKAGE_NAME}_TPL_INCLUDE_DIRS ${TPL_${TPL}_INCLUDE_DIRS})
+    list(APPEND ${PACKAGE_NAME}_TPL_LIBRARY_DIRS ${TPL_${TPL}_LIBRARY_DIRS})
+  endforeach()
 
   # Generate a note discouraging editing of the <package>Config.cmake file
-  SET(DISCOURAGE_EDITING "Do not edit: This file was generated automatically by CMake.")
+  set(DISCOURAGE_EDITING "Do not edit: This file was generated automatically by CMake.")
 
   #
   # E) Deal with the library rpath issues with shared libs
@@ -386,11 +386,11 @@ FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
   # Write the specification of the rpath if necessary. This is only needed if
   # we're building shared libraries.
 
-  IF(BUILD_SHARED_LIBS)
-    STRING(REPLACE ";" ":" SHARED_LIB_RPATH_COMMAND "${FULL_LIBRARY_DIRS_SET}")
-    SET(SHARED_LIB_RPATH_COMMAND
+  if(BUILD_SHARED_LIBS)
+    string(REPLACE ";" ":" SHARED_LIB_RPATH_COMMAND "${FULL_LIBRARY_DIRS_SET}")
+    set(SHARED_LIB_RPATH_COMMAND
       ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${SHARED_LIB_RPATH_COMMAND})
-  ENDIF()
+  endif()
 
   #
   # F) Create the contents of the cmake Config.cmake file for the build tree
@@ -401,18 +401,18 @@ FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
   # nice.
   #
 
-  IF (PARSE_WRITE_CMAKE_CONFIG_FILE)
+  if (PARSE_WRITE_CMAKE_CONFIG_FILE)
     # Custom code in configuration file.
-    SET(PACKAGE_CONFIG_CODE "")
+    set(PACKAGE_CONFIG_CODE "")
 
     # Include configurations of dependent packages
-    FOREACH(DEP_PACKAGE ${${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES})
+    foreach(DEP_PACKAGE ${${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES})
       # Could use file(RELATIVE_PATH ...), but probably not necessary
       # since unlike install trees, build trees need not be relocatable
-      SET(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
-INCLUDE(\"${${DEP_PACKAGE}_BINARY_DIR}/${DEP_PACKAGE}Config.cmake\")"
+      set(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
+include(\"${${DEP_PACKAGE}_BINARY_DIR}/${DEP_PACKAGE}Config.cmake\")"
         )
-    ENDFOREACH()
+    endforeach()
 
     # Import build tree targets into applications.
     #
@@ -423,28 +423,28 @@ INCLUDE(\"${${DEP_PACKAGE}_BINARY_DIR}/${DEP_PACKAGE}Config.cmake\")"
     # are sub-packages.  We'd like to export per-package, but deps
     # won't be satisfied, so we export one file for the project for
     # now...
-    IF(${TRIBITS_PACKAGE}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
-      EXPORT(TARGETS ${${PACKAGE_NAME}_LIBRARIES} FILE
+    if(${TRIBITS_PACKAGE}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
+      export(TARGETS ${${PACKAGE_NAME}_LIBRARIES} FILE
 	"${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Targets.cmake" APPEND)
-      SET(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
+      set(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
 # Import ${PACKAGE_NAME} targets
-INCLUDE(\"${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Targets.cmake\")"
+include(\"${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Targets.cmake\")"
       )
-    ENDIF()
+    endif()
 
-    TRIBITS_SET_COMPILER_VARS_FOR_CONFIG_FILE(BUILD_DIR)
+    tribits_set_compiler_vars_for_config_file(BUILD_DIR)
 
-    IF ("${CMAKE_CXX_FLAGS}" STREQUAL "")
-      SET(CMAKE_CXX_FLAGS_ESCAPED "")
-    ELSE()
+    if ("${CMAKE_CXX_FLAGS}" STREQUAL "")
+      set(CMAKE_CXX_FLAGS_ESCAPED "")
+    else()
       # Replace " by \".
-      STRING(REGEX REPLACE "\"" "\\\\\"" CMAKE_CXX_FLAGS_ESCAPED ${CMAKE_CXX_FLAGS})
-    ENDIF()
-    CONFIGURE_FILE(
+      string(REGEX REPLACE "\"" "\\\\\"" CMAKE_CXX_FLAGS_ESCAPED ${CMAKE_CXX_FLAGS})
+    endif()
+    configure_file(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.cmake.in
       "${PARSE_WRITE_CMAKE_CONFIG_FILE}"
       )
-  ENDIF()
+  endif()
 
   #
   # G) Create the export makefile for the build tree
@@ -453,34 +453,34 @@ INCLUDE(\"${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Targets.cmake\")"
   # it can be directly imported into a Makefile.
   #
 
-  IF(PARSE_WRITE_EXPORT_MAKEFILE)
+  if(PARSE_WRITE_EXPORT_MAKEFILE)
 
-    TRIBITS_LIST_TO_STRING("${FULL_LIBRARY_SET}" ${CMAKE_LINK_LIBRARY_FLAG} MAKEFILE_FULL_LIBRARY_SET)
-    TRIBITS_LIST_TO_STRING("${FULL_LIBRARY_DIRS_SET}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_LIBRARY_DIRS)
-    TRIBITS_LIST_TO_STRING("${FULL_INCLUDE_DIRS_SET}" "-I" MAKEFILE_INCLUDE_DIRS)
-    TRIBITS_LIST_TO_STRING("${${PACKAGE_NAME}_TPL_INCLUDE_DIRS}" "-I" MAKEFILE_${PACKAGE_NAME}_TPL_INCLUDE_DIRS)
-    TRIBITS_LIST_TO_STRING("${${PACKAGE_NAME}_TPL_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_${PACKAGE_NAME}_TPL_LIBRARY_DIRS)
+    tribits_list_to_string("${FULL_LIBRARY_SET}" ${CMAKE_LINK_LIBRARY_FLAG} MAKEFILE_FULL_LIBRARY_SET)
+    tribits_list_to_string("${FULL_LIBRARY_DIRS_SET}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_LIBRARY_DIRS)
+    tribits_list_to_string("${FULL_INCLUDE_DIRS_SET}" "-I" MAKEFILE_INCLUDE_DIRS)
+    tribits_list_to_string("${${PACKAGE_NAME}_TPL_INCLUDE_DIRS}" "-I" MAKEFILE_${PACKAGE_NAME}_TPL_INCLUDE_DIRS)
+    tribits_list_to_string("${${PACKAGE_NAME}_TPL_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_${PACKAGE_NAME}_TPL_LIBRARY_DIRS)
     #the TPL library names have to be treated differently
-    TRIBITS_LIBRARY_LIST_TO_STRING("${${PACKAGE_NAME}_TPL_LIBRARIES}" ${CMAKE_LINK_LIBRARY_FLAG} MAKEFILE_${PACKAGE_NAME}_TPL_LIBRARIES)
+    tribits_library_list_to_string("${${PACKAGE_NAME}_TPL_LIBRARIES}" ${CMAKE_LINK_LIBRARY_FLAG} MAKEFILE_${PACKAGE_NAME}_TPL_LIBRARIES)
 
-    TRIBITS_LIBRARY_LIST_TO_STRING("${${TPL_MPI_LIBRARIES}}" ${CMAKE_LINK_LIBRARY_FLAG} "MAKEFILE_TPL_MPI_LIBRARIES")
-    TRIBITS_LIST_TO_STRING("${${TPL_MPI_LIBRARY_DIRS}}" ${CMAKE_LIBRARY_PATH_FLAG} "MAKEFILE_TPL_MPI_LIBRARY_DIRS")
-    TRIBITS_LIST_TO_STRING("${${TPL_MPI_INCLUDE_DIRS}}" "-I" "MAKEFILE_TPL_MPI_INCLUDE_DIRS")
+    tribits_library_list_to_string("${${TPL_MPI_LIBRARIES}}" ${CMAKE_LINK_LIBRARY_FLAG} "MAKEFILE_TPL_MPI_LIBRARIES")
+    tribits_list_to_string("${${TPL_MPI_LIBRARY_DIRS}}" ${CMAKE_LIBRARY_PATH_FLAG} "MAKEFILE_TPL_MPI_LIBRARY_DIRS")
+    tribits_list_to_string("${${TPL_MPI_INCLUDE_DIRS}}" "-I" "MAKEFILE_TPL_MPI_INCLUDE_DIRS")
 
-    TRIBITS_LIST_TO_STRING("${FULL_PACKAGE_SET}" "" MAKEFILE_FULL_PACKAGE_SET)
-    TRIBITS_LIST_TO_STRING("${ORDERED_FULL_TPL_SET}" "" MAKEFILE_ORDERED_FULL_TPL_SET)
+    tribits_list_to_string("${FULL_PACKAGE_SET}" "" MAKEFILE_FULL_PACKAGE_SET)
+    tribits_list_to_string("${ORDERED_FULL_TPL_SET}" "" MAKEFILE_ORDERED_FULL_TPL_SET)
 
     # create an upper case name of the package so that we can make deprecated
     # versions of them to help people transistioning from the autotools
     # version diagnose any missed variables.
-    STRING(TOUPPER ${EXPORT_FILE_VAR_PREFIX} EXPORT_FILE_VAR_PREFIX_UPPER)
+    string(TOUPPER ${EXPORT_FILE_VAR_PREFIX} EXPORT_FILE_VAR_PREFIX_UPPER)
 
-    ASSERT_DEFINED(${PROJECT_NAME}_TRIBITS_DIR)
-    CONFIGURE_FILE(
+    assert_defined(${PROJECT_NAME}_TRIBITS_DIR)
+    configure_file(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.export.in
       "${PARSE_WRITE_EXPORT_MAKEFILE}"
       )
-  ENDIF()
+  endif()
 
   #
   # H) Create the cmake Config.cmake file for the install tree.
@@ -506,117 +506,117 @@ INCLUDE(\"${${PROJECT_NAME}_BINARY_DIR}/${PROJECT_NAME}Targets.cmake\")"
   # k is the number of components in <lib path>. Extract those here.
   # This doesn't work if ${${PROJECT_NAME}_INSTALL_LIB_DIR} contains "./" or
   # "../" components, but really, it never did. All of this should actually be
-  # handled by CMake's CONFIGURE_PACKAGE_CONFIG_FILE().
-  STRING(REPLACE "/" ";" PATH_LIST ${${PROJECT_NAME}_INSTALL_LIB_DIR})
-  SET(RELATIVE_PATH "../..")
-  FOREACH(PATH ${PATH_LIST})
-    SET(RELATIVE_PATH "${RELATIVE_PATH}/..")
-  ENDFOREACH()
-  SET(FULL_LIBRARY_DIRS_SET "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_LIB_DIR}")
-  SET(FULL_INCLUDE_DIRS_SET "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
+  # handled by CMake's configure_package_config_file().
+  string(REPLACE "/" ";" PATH_LIST ${${PROJECT_NAME}_INSTALL_LIB_DIR})
+  set(RELATIVE_PATH "../..")
+  foreach(PATH ${PATH_LIST})
+    set(RELATIVE_PATH "${RELATIVE_PATH}/..")
+  endforeach()
+  set(FULL_LIBRARY_DIRS_SET "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_LIB_DIR}")
+  set(FULL_INCLUDE_DIRS_SET "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
 
   # Custom code in configuration file.
-  SET(PACKAGE_CONFIG_CODE "")
+  set(PACKAGE_CONFIG_CODE "")
 
-  IF (${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES)
-    SET(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
+  if (${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES)
+    set(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
 # Include configuration of dependent packages")
-  ENDIF()
-  FOREACH(DEP_PACKAGE ${${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES})
-    SET(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
-INCLUDE(\"\${CMAKE_CURRENT_LIST_DIR}/../${DEP_PACKAGE}/${DEP_PACKAGE}Config.cmake\")"
+  endif()
+  foreach(DEP_PACKAGE ${${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES})
+    set(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
+include(\"\${CMAKE_CURRENT_LIST_DIR}/../${DEP_PACKAGE}/${DEP_PACKAGE}Config.cmake\")"
 )
-  ENDFOREACH()
-  IF(${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES)
-    SET(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}\n")
-  ENDIF()
+  endforeach()
+  if(${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES)
+    set(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}\n")
+  endif()
 
   # Import install tree targets into applications.
-  GET_PROPERTY(HAS_INSTALL_TARGETS GLOBAL PROPERTY ${PACKAGE_NAME}_HAS_INSTALL_TARGETS)
-  IF(HAS_INSTALL_TARGETS)
-    SET(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
+  get_property(HAS_INSTALL_TARGETS GLOBAL PROPERTY ${PACKAGE_NAME}_HAS_INSTALL_TARGETS)
+  if(HAS_INSTALL_TARGETS)
+    set(PACKAGE_CONFIG_CODE "${PACKAGE_CONFIG_CODE}
 # Import ${PACKAGE_NAME} targets
-INCLUDE(\"\${CMAKE_CURRENT_LIST_DIR}/${PACKAGE_NAME}Targets.cmake\")"
+include(\"\${CMAKE_CURRENT_LIST_DIR}/${PACKAGE_NAME}Targets.cmake\")"
 )
-  ENDIF()
+  endif()
 
   # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries.
-  IF(BUILD_SHARED_LIBS)
-    SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
-  ENDIF()
+  if(BUILD_SHARED_LIBS)
+    set(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
+  endif()
 
-  TRIBITS_SET_COMPILER_VARS_FOR_CONFIG_FILE(INSTALL_DIR)
+  tribits_set_compiler_vars_for_config_file(INSTALL_DIR)
 
-  IF (PARSE_WRITE_INSTALL_CMAKE_CONFIG_FILE)
+  if (PARSE_WRITE_INSTALL_CMAKE_CONFIG_FILE)
 
-    CONFIGURE_FILE(
+    configure_file(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.cmake.in
       ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${PACKAGE_NAME}Config_install.cmake
       )
 
-  ENDIF()
+  endif()
 
   #
   # I) Write the export makefile for the install tree
   #
 
-  IF (PARSE_WRITE_INSTALL_EXPORT_MAKEFILE)
+  if (PARSE_WRITE_INSTALL_EXPORT_MAKEFILE)
 
     # Generated Make imports must use CMAKE_INSTALL_PREFIX, rather
     # than the more platform friendly method of locating the libraries
     # and includes using the config file path above. The underlying
     # assumption here is that a generator that uses
     # CMAKE_INSTALL_PREFIX is being used.
-    SET(FULL_LIBRARY_DIRS_SET ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
-    SET(FULL_INCLUDE_DIRS_SET ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
+    set(FULL_LIBRARY_DIRS_SET ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
+    set(FULL_INCLUDE_DIRS_SET ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
 
-    TRIBITS_LIST_TO_STRING("${FULL_LIBRARY_DIRS_SET}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_LIBRARY_DIRS)
-    TRIBITS_LIST_TO_STRING("${FULL_INCLUDE_DIRS_SET}" "-I" MAKEFILE_INCLUDE_DIRS)
+    tribits_list_to_string("${FULL_LIBRARY_DIRS_SET}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_LIBRARY_DIRS)
+    tribits_list_to_string("${FULL_INCLUDE_DIRS_SET}" "-I" MAKEFILE_INCLUDE_DIRS)
 
-    CONFIGURE_FILE(
+    configure_file(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.export.in
       ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Makefile.export.${PACKAGE_NAME}_install
       )
-  ENDIF()
+  endif()
 
-ENDFUNCTION()
+endfunction()
 
 
 #
 # Set the install targets for the package config and export makefiles.
 #
-# The INSTALL() commands must be in a different subroutine or CMake will not
-# allow you to call the rountine, even if you if() it out!
+# The install() commands must be in a different subroutine or CMake will not
+# allow you to call the routine, even if you if() it out!
 #
 
-FUNCTION(TRIBITS_WRITE_PROJECT_CLIENT_EXPORT_FILES_INSTALL_TARGETS PACKAGE_NAME)
+function(tribits_write_project_client_export_files_install_targets PACKAGE_NAME)
 
-  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
-    INSTALL(
+  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+    install(
       FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${PACKAGE_NAME}Config_install.cmake
       DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PACKAGE_NAME}"
       RENAME ${PACKAGE_NAME}Config.cmake
       )
 
-    IF(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
-      INSTALL(
+    if(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES_TO_INSTALL)
+      install(
         EXPORT ${PACKAGE_NAME}
         DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PACKAGE_NAME}"
         FILE ${PACKAGE_NAME}Targets.cmake
         )
-    ENDIF()
-  ENDIF()
+    endif()
+  endif()
 
-  IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
+  if(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
 
-    INSTALL(
+    install(
       FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Makefile.export.${PACKAGE_NAME}_install
       DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
       RENAME Makefile.export.${PACKAGE_NAME}
       )
-  ENDIF()
+  endif()
 
-ENDFUNCTION()
+endfunction()
 
 
 #
@@ -626,41 +626,41 @@ ENDFUNCTION()
 # ToDo: Finish documentation!
 #
 
-FUNCTION(TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES PACKAGE_NAME)
+function(tribits_write_package_client_export_files PACKAGE_NAME)
 
-  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nTRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES: ${PACKAGE_NAME}")
-  ENDIF()
+  if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("\nTRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES: ${PACKAGE_NAME}")
+  endif()
 
-  SET(EXPORT_FILES_ARGS PACKAGE_NAME ${PACKAGE_NAME})
+  set(EXPORT_FILES_ARGS PACKAGE_NAME ${PACKAGE_NAME})
 
-  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
-    SET(WRITE_CMAKE_CONFIG_FILE
+  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+    set(WRITE_CMAKE_CONFIG_FILE
       ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake)
-    IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("For package ${PACKAGE_NAME} creating ${WRITE_CMAKE_CONFIG_FILE}")
-    ENDIF()
-    APPEND_SET(EXPORT_FILES_ARGS
+    if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      message("For package ${PACKAGE_NAME} creating ${WRITE_CMAKE_CONFIG_FILE}")
+    endif()
+    append_set(EXPORT_FILES_ARGS
       WRITE_CMAKE_CONFIG_FILE "${WRITE_CMAKE_CONFIG_FILE}"
       WRITE_INSTALL_CMAKE_CONFIG_FILE)
-  ENDIF()
+  endif()
 
-  IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
-    SET(WRITE_EXPORT_MAKEFILE
+  if(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
+    set(WRITE_EXPORT_MAKEFILE
       ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PACKAGE_NAME})
-    IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("For package ${PACKAGE_NAME} creating ${WRITE_EXPORT_MAKEFILE}")
-    ENDIF()
-    APPEND_SET(EXPORT_FILES_ARGS
+    if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      message("For package ${PACKAGE_NAME} creating ${WRITE_EXPORT_MAKEFILE}")
+    endif()
+    append_set(EXPORT_FILES_ARGS
       WRITE_EXPORT_MAKEFILE "${WRITE_EXPORT_MAKEFILE}"
       WRITE_INSTALL_EXPORT_MAKEFILE)
-  ENDIF()
+  endif()
 
-  TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES(${EXPORT_FILES_ARGS})
+  tribits_write_flexible_package_client_export_files(${EXPORT_FILES_ARGS})
 
-  TRIBITS_WRITE_PROJECT_CLIENT_EXPORT_FILES_INSTALL_TARGETS(${PACKAGE_NAME})
+  tribits_write_project_client_export_files_install_targets(${PACKAGE_NAME})
 
-ENDFUNCTION()
+endfunction()
 
 
 #
@@ -672,168 +672,168 @@ ENDFUNCTION()
 # ToDo: Finish documentation!
 #
 
-FUNCTION(TRIBITS_WRITE_PROJECT_CLIENT_EXPORT_FILES)
+function(tribits_write_project_client_export_files)
 
-  SET(EXPORT_FILE_VAR_PREFIX ${PROJECT_NAME})
-  TRIBITS_SET_DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET()
+  set(EXPORT_FILE_VAR_PREFIX ${PROJECT_NAME})
+  tribits_set_define_cmake_current_list_dir_code_snippet()
 
   # Reversing the package list so that libraries will be produced in order of
   # most dependent to least dependent.
-  SET(PACKAGE_LIST ${${PROJECT_NAME}_SE_PACKAGES})
-  IF (PACKAGE_LIST)
-    LIST(REVERSE PACKAGE_LIST)
-  ENDIF()
+  set(PACKAGE_LIST ${${PROJECT_NAME}_SE_PACKAGES})
+  if (PACKAGE_LIST)
+    list(REVERSE PACKAGE_LIST)
+  endif()
 
   # Loop over all packages to determine which were enabled. Then build a list
   # of all their libraries/includes in the proper order for linking
-  SET(FULL_PACKAGE_SET "")
-  SET(FULL_LIBRARY_SET "")
-  SET(FULL_INCLUDE_DIRS_SET "")
-  SET(FULL_LIBRARY_DIRS_SET "")
-  FOREACH(TRIBITS_PACKAGE ${PACKAGE_LIST})
-    IF(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
-      LIST(APPEND FULL_PACKAGE_SET ${TRIBITS_PACKAGE})
-      LIST(APPEND FULL_LIBRARY_SET ${${TRIBITS_PACKAGE}_LIBRARIES})
-      LIST(APPEND FULL_INCLUDE_DIRS_SET ${${TRIBITS_PACKAGE}_INCLUDE_DIRS})
-      LIST(APPEND FULL_LIBRARY_DIRS_SET ${${TRIBITS_PACKAGE}_LIBRARY_DIRS})
-    ENDIF()
-  ENDFOREACH()
+  set(FULL_PACKAGE_SET "")
+  set(FULL_LIBRARY_SET "")
+  set(FULL_INCLUDE_DIRS_SET "")
+  set(FULL_LIBRARY_DIRS_SET "")
+  foreach(TRIBITS_PACKAGE ${PACKAGE_LIST})
+    if(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
+      list(APPEND FULL_PACKAGE_SET ${TRIBITS_PACKAGE})
+      list(APPEND FULL_LIBRARY_SET ${${TRIBITS_PACKAGE}_LIBRARIES})
+      list(APPEND FULL_INCLUDE_DIRS_SET ${${TRIBITS_PACKAGE}_INCLUDE_DIRS})
+      list(APPEND FULL_LIBRARY_DIRS_SET ${${TRIBITS_PACKAGE}_LIBRARY_DIRS})
+    endif()
+  endforeach()
 
-  SET(${PROJECT_NAME}_CONFIG_LIBRARIES ${FULL_LIBRARY_SET})
+  set(${PROJECT_NAME}_CONFIG_LIBRARIES ${FULL_LIBRARY_SET})
 
   # Reversing the tpl list so that the list of tpls will be produced in
   # order of most dependent to least dependent.
-  IF (${PROJECT_NAME}_TPLS)
-    SET(TPL_LIST ${${PROJECT_NAME}_TPLS})
-    LIST(REVERSE TPL_LIST)
-  ENDIF()
+  if (${PROJECT_NAME}_TPLS)
+    set(TPL_LIST ${${PROJECT_NAME}_TPLS})
+    list(REVERSE TPL_LIST)
+  endif()
 
   # Loop over all TPLs to determine which were enabled. Then build a list
   # of all their libraries/includes in the proper order for linking
-  SET(FULL_TPL_SET "")
-  SET(FULL_TPL_LIBRARY_SET "")
-  SET(FULL_TPL_INCLUDE_DIRS_SET "")
-  SET(FULL_TPL_LIBRARY_DIRS_SET "")
-  FOREACH(TPL ${TPL_LIST})
-    IF(TPL_ENABLE_${TPL})
-      LIST(APPEND FULL_TPL_SET ${TPL})
-      LIST(APPEND FULL_TPL_LIBRARY_SET ${TPL_${TPL}_LIBRARIES})
-      LIST(APPEND FULL_TPL_INCLUDE_DIRS_SET ${TPL_${TPL}_INCLUDE_DIRS})
-      LIST(APPEND FULL_TPL_LIBRARY_DIRS_SET ${TPL_${TPL}_LIBRARY_DIRS})
-    ENDIF()
-  ENDFOREACH()
+  set(FULL_TPL_SET "")
+  set(FULL_TPL_LIBRARY_SET "")
+  set(FULL_TPL_INCLUDE_DIRS_SET "")
+  set(FULL_TPL_LIBRARY_DIRS_SET "")
+  foreach(TPL ${TPL_LIST})
+    if(TPL_ENABLE_${TPL})
+      list(APPEND FULL_TPL_SET ${TPL})
+      list(APPEND FULL_TPL_LIBRARY_SET ${TPL_${TPL}_LIBRARIES})
+      list(APPEND FULL_TPL_INCLUDE_DIRS_SET ${TPL_${TPL}_INCLUDE_DIRS})
+      list(APPEND FULL_TPL_LIBRARY_DIRS_SET ${TPL_${TPL}_LIBRARY_DIRS})
+    endif()
+  endforeach()
 
   # it is possible that tpls are in the same directory, to keep from
   # having a very long include path or library path we will strip out
   # any duplicates. This shouldn't affect which include or library is
   # found since the first instance of any path will be the one that is
   # kept.
-  LIST(REMOVE_DUPLICATES FULL_TPL_INCLUDE_DIRS_SET)
-  LIST(REMOVE_DUPLICATES FULL_TPL_LIBRARY_DIRS_SET)
+  list(REMOVE_DUPLICATES FULL_TPL_INCLUDE_DIRS_SET)
+  list(REMOVE_DUPLICATES FULL_TPL_LIBRARY_DIRS_SET)
 
-  SET(${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS ${FULL_TPL_INCLUDE_DIRS_SET})
-  SET(${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS ${FULL_TPL_LIBRARY_DIRS_SET})
-  SET(${PROJECT_NAME}_CONFIG_TPL_LIBRARIES ${FULL_TPL_LIBRARY_SET})
+  set(${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS ${FULL_TPL_INCLUDE_DIRS_SET})
+  set(${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS ${FULL_TPL_LIBRARY_DIRS_SET})
+  set(${PROJECT_NAME}_CONFIG_TPL_LIBRARIES ${FULL_TPL_LIBRARY_SET})
 
   #
   # Configure two files for finding ${PROJECT_NAME}. One for the build tree and one for installing
   #
 
   # Generate a note discouraging editing of the <package>Config.cmake file
-  SET(DISCOURAGE_EDITING "Do not edit: This file was generated automatically by CMake.")
+  set(DISCOURAGE_EDITING "Do not edit: This file was generated automatically by CMake.")
 
   #Config file for setting variables and finding include/library paths from the build directory
-  SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${FULL_INCLUDE_DIRS_SET})
-  SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${FULL_LIBRARY_DIRS_SET})
+  set(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${FULL_INCLUDE_DIRS_SET})
+  set(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${FULL_LIBRARY_DIRS_SET})
 
   # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries.
-  IF(BUILD_SHARED_LIBS)
-    STRING(REPLACE ";" ":" SHARED_LIB_RPATH_COMMAND "${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}")
-    SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${SHARED_LIB_RPATH_COMMAND})
-  ENDIF()
+  if(BUILD_SHARED_LIBS)
+    string(REPLACE ";" ":" SHARED_LIB_RPATH_COMMAND "${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}")
+    set(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${SHARED_LIB_RPATH_COMMAND})
+  endif()
 
   # Custom code in configuration file.
-  SET(PROJECT_CONFIG_CODE "")
+  set(PROJECT_CONFIG_CODE "")
 
   #  # Export targets from the build tree.
-  #  IF(FULL_LIBRARY_SET)
-  #    LIST(SORT FULL_LIBRARY_SET)
-  #    LIST(REMOVE_DUPLICATES FULL_LIBRARY_SET)
-  #    SET(FULL_LIBRARY_TARGET_SET)
-  #    FOREACH(LIB_ELE ${FULL_LIBRARY_SET})
-  #      IF (TARGET ${LIB_ELE})
-  #        LIST(APPEND FULL_LIBRARY_TARGET_SET ${LIB_ELE})
-  #      ENDIF()
-  #    ENDFOREACH()
-  #    EXPORT(TARGETS ${FULL_LIBRARY_TARGET_SET} FILE
+  #  if(FULL_LIBRARY_SET)
+  #    list(SORT FULL_LIBRARY_SET)
+  #    list(REMOVE_DUPLICATES FULL_LIBRARY_SET)
+  #    set(FULL_LIBRARY_TARGET_SET)
+  #    foreach(LIB_ELE ${FULL_LIBRARY_SET})
+  #      if (TARGET ${LIB_ELE})
+  #        list(APPEND FULL_LIBRARY_TARGET_SET ${LIB_ELE})
+  #      endif()
+  #    endforeach()
+  #    export(TARGETS ${FULL_LIBRARY_TARGET_SET} FILE
   #      "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake")
   #    # Import the targets in applications.
-  #    SET(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}
+  #    set(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}
   ## Import ${PROJECT_NAME} targets
-  #IF(NOT ${PROJECT_NAME}_TARGETS_IMPORTED)
-  #  SET(${PROJECT_NAME}_TARGETS_IMPORTED 1)
-  #  INCLUDE(\"${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake\")
-  #ENDIF()
+  #if(NOT ${PROJECT_NAME}_TARGETS_IMPORTED)
+  #  set(${PROJECT_NAME}_TARGETS_IMPORTED 1)
+  #  include(\"${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake\")
+  #endif()
   #")
-  #  ENDIF()
+  #  endif()
 
   # Appending the logic to include each package's config file.
-  SET(LOAD_CODE "# Load configurations from enabled packages")
-  FOREACH(TRIBITS_PACKAGE ${FULL_PACKAGE_SET})
-    SET(LOAD_CODE "${LOAD_CODE}
+  set(LOAD_CODE "# Load configurations from enabled packages")
+  foreach(TRIBITS_PACKAGE ${FULL_PACKAGE_SET})
+    set(LOAD_CODE "${LOAD_CODE}
 include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
-  ENDFOREACH()
-  SET(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}\n${LOAD_CODE}")
+  endforeach()
+  set(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}\n${LOAD_CODE}")
 
-  TRIBITS_SET_COMPILER_VARS_FOR_CONFIG_FILE(INSTALL_DIR)
+  tribits_set_compiler_vars_for_config_file(INSTALL_DIR)
 
-  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
     # In TribitsProjectConfigTemplate.cmake.in, we would like to preserve
     # ${}-variables after the conversion to TribitsProjectConfigTemplate.cmake.
     # To this end, one typically uses the @-syntax for variables. That doesn't
     # support nested variables, however.  Use ${PDOLLAR} as a workaround, cf.
     # <http://www.cmake.org/pipermail/cmake/2013-April/054341.html>.
-    SET(PDOLLAR "$")
-    CONFIGURE_FILE(
+    set(PDOLLAR "$")
+    configure_file(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.cmake.in
       ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake )
-  ENDIF()
+  endif()
 
-  IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
+  if(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
     ######
     # Create a Makefile.export.<project_name> for the build tree. This is the equivalent
     # of the cmake version only slightly changed so that it can be directly imported into
     # a Makefile.
     ######
 
-    TRIBITS_LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_LIBRARIES}" ${CMAKE_LINK_LIBRARY_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_LIBRARIES)
-    TRIBITS_LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_LIBRARY_DIRS)
-    TRIBITS_LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}" "-I" MAKEFILE_${PROJECT_NAME}_CONFIG_INCLUDE_DIRS)
-    TRIBITS_LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS}" "-I" MAKEFILE_${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS)
-    TRIBITS_LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS)
+    tribits_list_to_string("${${PROJECT_NAME}_CONFIG_LIBRARIES}" ${CMAKE_LINK_LIBRARY_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_LIBRARIES)
+    tribits_list_to_string("${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_LIBRARY_DIRS)
+    tribits_list_to_string("${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}" "-I" MAKEFILE_${PROJECT_NAME}_CONFIG_INCLUDE_DIRS)
+    tribits_list_to_string("${${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS}" "-I" MAKEFILE_${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS)
+    tribits_list_to_string("${${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS)
     #the TPL library names have to be treated differently
-    TRIBITS_LIBRARY_LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_TPL_LIBRARIES}" ${CMAKE_LINK_LIBRARY_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_TPL_LIBRARIES)
+    tribits_library_list_to_string("${${PROJECT_NAME}_CONFIG_TPL_LIBRARIES}" ${CMAKE_LINK_LIBRARY_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_TPL_LIBRARIES)
 
-    TRIBITS_LIBRARY_LIST_TO_STRING("${${TPL_MPI_LIBRARIES}}" ${CMAKE_LINK_LIBRARY_FLAG} "MAKEFILE_TPL_MPI_LIBRARIES")
-    TRIBITS_LIST_TO_STRING("${${TPL_MPI_LIBRARY_DIRS}}" ${CMAKE_LIBRARY_PATH_FLAG} "MAKEFILE_TPL_MPI_LIBRARY_DIRS")
-    TRIBITS_LIST_TO_STRING("${${TPL_MPI_INCLUDE_DIRS}}" "-I" "MAKEFILE_TPL_MPI_INCLUDE_DIRS")
+    tribits_library_list_to_string("${${TPL_MPI_LIBRARIES}}" ${CMAKE_LINK_LIBRARY_FLAG} "MAKEFILE_TPL_MPI_LIBRARIES")
+    tribits_list_to_string("${${TPL_MPI_LIBRARY_DIRS}}" ${CMAKE_LIBRARY_PATH_FLAG} "MAKEFILE_TPL_MPI_LIBRARY_DIRS")
+    tribits_list_to_string("${${TPL_MPI_INCLUDE_DIRS}}" "-I" "MAKEFILE_TPL_MPI_INCLUDE_DIRS")
 
-    TRIBITS_LIST_TO_STRING("${FULL_PACKAGE_SET}" "" MAKEFILE_FULL_PACKAGE_SET)
-    TRIBITS_LIST_TO_STRING("${FULL_TPL_SET}" "" MAKEFILE_FULL_TPL_SET)
+    tribits_list_to_string("${FULL_PACKAGE_SET}" "" MAKEFILE_FULL_PACKAGE_SET)
+    tribits_list_to_string("${FULL_TPL_SET}" "" MAKEFILE_FULL_TPL_SET)
 
-    IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+    if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
       # In TribitsProjectConfigTemplate.cmake.in, we would like to preserve
       # ${}-variables after the conversion to
       # TribitsProjectConfigTemplate.cmake. To this end, one typically uses the
       # @-syntax for variables. That doesn't support nested variables, however.
       # Use ${PDOLLAR} as a workaround, cf.
       # <http://www.cmake.org/pipermail/cmake/2013-April/054341.html>.
-      SET(PDOLLAR "$")
-      CONFIGURE_FILE(
+      set(PDOLLAR "$")
+      configure_file(
         ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.export.in
         ${PROJECT_BINARY_DIR}/Makefile.export.${PROJECT_NAME})
-    ENDIF()
-  ENDIF()
+    endif()
+  endif()
 
   ######
   # Create a configure file for the install tree and set the install target for it. This
@@ -854,38 +854,38 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
   # k is the number of components in <lib path>. Extract those here.
   # This doesn't work if ${${PROJECT_NAME}_INSTALL_LIB_DIR} contains "./" or
   # "../" components, but really, it never did. All of this should actually be
-  # handled by CMake's CONFIGURE_PACKAGE_CONFIG_FILE().
-  STRING(REPLACE "/" ";" PATH_LIST ${${PROJECT_NAME}_INSTALL_LIB_DIR})
-  SET(RELATIVE_PATH "../..")
-  FOREACH(PATH ${PATH_LIST})
-    SET(RELATIVE_PATH "${RELATIVE_PATH}/..")
-  ENDFOREACH()
-  SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
-  SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_LIB_DIR}")
+  # handled by CMake's configure_package_config_file().
+  string(REPLACE "/" ";" PATH_LIST ${${PROJECT_NAME}_INSTALL_LIB_DIR})
+  set(RELATIVE_PATH "../..")
+  foreach(PATH ${PATH_LIST})
+    set(RELATIVE_PATH "${RELATIVE_PATH}/..")
+  endforeach()
+  set(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
+  set(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_LIB_DIR}")
 
   # Write the specification of the rpath if necessary. This is only needed if we're building shared libraries.
-  IF(BUILD_SHARED_LIBS)
-    SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
-  ENDIF()
+  if(BUILD_SHARED_LIBS)
+    set(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
+  endif()
 
   # Custom code in configuration file.
-  SET(PROJECT_CONFIG_CODE "")
+  set(PROJECT_CONFIG_CODE "")
 
-  TRIBITS_SET_COMPILER_VARS_FOR_CONFIG_FILE(INSTALL_DIR)
+  tribits_set_compiler_vars_for_config_file(INSTALL_DIR)
 
-  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
-    CONFIGURE_FILE(
+  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+    configure_file(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.cmake.in
       ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake )
 
-    INSTALL(
+    install(
       FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake
       DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PROJECT_NAME}"
       RENAME ${PROJECT_NAME}Config.cmake
       )
-  ENDIF()
+  endif()
 
-  IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
+  if(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
     ######
     # Create a Makefile.export.<project_name> for the install tree. This is the equivalent
     # of the cmake version only slightly changed so that it can be directly imported into
@@ -897,57 +897,57 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
     # and includes using the config file path above. The underlying
     # assumption here is that a generator that uses
     # CMAKE_INSTALL_PREFIX is being used.
-    SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
-    SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
+    set(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
+    set(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
 
-    TRIBITS_LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_LIBRARY_DIRS)
-    TRIBITS_LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}" "-I" MAKEFILE_${PROJECT_NAME}_CONFIG_INCLUDE_DIRS)
+    tribits_list_to_string("${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_LIBRARY_DIRS)
+    tribits_list_to_string("${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}" "-I" MAKEFILE_${PROJECT_NAME}_CONFIG_INCLUDE_DIRS)
 
-    CONFIGURE_FILE(
+    configure_file(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.export.in
       ${PROJECT_BINARY_DIR}/Makefile.export.${PROJECT_NAME}_install )
 
-    INSTALL(
+    install(
       FILES ${PROJECT_BINARY_DIR}/Makefile.export.${PROJECT_NAME}_install
       DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
       RENAME Makefile.export.${PROJECT_NAME}
       )
-  ENDIF()
+  endif()
 
   #
   # Configure the version file for ${PROJECT_NAME}
   #
-  INCLUDE(CMakePackageConfigHelpers)
-  IF ("${${PROJECT_NAME}_VERSION}"  STREQUAL  "")
-    SET(${PROJECT_NAME}_VERSION  0.0.0)
-  ENDIF()
-  WRITE_BASIC_PACKAGE_VERSION_FILE(
+  include(CMakePackageConfigHelpers)
+  if ("${${PROJECT_NAME}_VERSION}"  STREQUAL  "")
+    set(${PROJECT_NAME}_VERSION  0.0.0)
+  endif()
+  write_basic_package_version_file(
     ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     VERSION ${${PROJECT_NAME}_VERSION}
     COMPATIBILITY SameMajorVersion
     )
-  INSTALL(
+  install(
     FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PROJECT_NAME}"
     )
 
-ENDFUNCTION()
+endfunction()
 
 
-MACRO(TRIBITS_SET_COMPILER_VAR_FOR_CONFIG_FILE LANG FOR_DIR)
-  IF (NOT "${CMAKE_${LANG}_COMPILER_FOR_CONFIG_FILE_${FOR_DIR}}" STREQUAL "")
-    SET(CMAKE_${LANG}_COMPILER_FOR_CONFIG_FILE
+macro(tribits_set_compiler_var_for_config_file LANG FOR_DIR)
+  if (NOT "${CMAKE_${LANG}_COMPILER_FOR_CONFIG_FILE_${FOR_DIR}}" STREQUAL "")
+    set(CMAKE_${LANG}_COMPILER_FOR_CONFIG_FILE
       "${CMAKE_${LANG}_COMPILER_FOR_CONFIG_FILE_${FOR_DIR}}")
-  ELSE()
-    SET(CMAKE_${LANG}_COMPILER_FOR_CONFIG_FILE
+  else()
+    set(CMAKE_${LANG}_COMPILER_FOR_CONFIG_FILE
       "${CMAKE_${LANG}_COMPILER}")
-  ENDIF()
-  #MESSAGE("${FOR_DIR}: CMAKE_${LANG}_COMPILER_FOR_CONFIG_FILE='${CMAKE_${LANG}_COMPILER_FOR_CONFIG_FILE}'")
-ENDMACRO()
+  endif()
+  #message("${FOR_DIR}: CMAKE_${LANG}_COMPILER_FOR_CONFIG_FILE='${CMAKE_${LANG}_COMPILER_FOR_CONFIG_FILE}'")
+endmacro()
 
 
-MACRO(TRIBITS_SET_COMPILER_VARS_FOR_CONFIG_FILE FOR_DIR)
-  TRIBITS_SET_COMPILER_VAR_FOR_CONFIG_FILE(CXX ${FOR_DIR})
-  TRIBITS_SET_COMPILER_VAR_FOR_CONFIG_FILE(C ${FOR_DIR})
-  TRIBITS_SET_COMPILER_VAR_FOR_CONFIG_FILE(Fortran ${FOR_DIR})
-ENDMACRO()
+macro(tribits_set_compiler_vars_for_config_file FOR_DIR)
+  tribits_set_compiler_var_for_config_file(CXX ${FOR_DIR})
+  tribits_set_compiler_var_for_config_file(C ${FOR_DIR})
+  tribits_set_compiler_var_for_config_file(Fortran ${FOR_DIR})
+endmacro()

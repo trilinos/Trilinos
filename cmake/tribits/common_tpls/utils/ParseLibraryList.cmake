@@ -40,7 +40,7 @@
 #
 # Modified version from MSTK which was originally based on Amanzi open
 # source code https://software.lanl.gov/ascem/trac)
-#      PARSE_LIBRARY_LIST( <lib_list>
+#      parse_library_list( <lib_list>
 #                         DEBUG   <out_debug_list>
 #                         OPT     <out_opt_list>
 #                         GENERAL <out_gen_list> )
@@ -48,7 +48,7 @@
 # CMake module
 include(CMakeParseArguments)
 
-function(PARSE_LIBRARY_LIST)
+function(parse_library_list)
 
     # Macro: _print_usage
     macro(_print_usage)
@@ -112,5 +112,5 @@ function(PARSE_LIBRARY_LIST)
         set(${PARSE_ARGS_FOUND} FALSE PARENT_SCOPE)
     endif()    
 
-endfunction(PARSE_LIBRARY_LIST)
+endfunction()
 

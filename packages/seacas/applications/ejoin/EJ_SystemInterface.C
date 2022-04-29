@@ -506,7 +506,7 @@ void SystemInterface::parse_step_option(const char *tokens)
 void SystemInterface::show_version()
 {
   fmt::print("EJoin\n"
-             "\t(A code for merging Exodus II databases; with or without results data.)\n"
+             "\t(A code for merging Exodus databases; with or without results data.)\n"
              "\t(Version: {}) Modified: {}\n",
              qainfo[2], qainfo[1]);
 }

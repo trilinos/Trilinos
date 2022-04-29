@@ -159,11 +159,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   { \
     using Teuchos::outArg; \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
-    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getNodeElementList(); \
+    ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getLocalElementList(); \
     ArrayView<const LO> loview; \
     ArrayView<const Scalar> sview; \
     size_t STMAX = 0; \
-    for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
+    for (size_t STR=0; STR < matrix.getLocalNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
       TEST_EQUALITY( numEntries, matrix.getNumEntriesInGlobalRow( STMYGIDS[STR] ) ); \
       matrix.getLocalRowView(STR,loview,sview); \
@@ -171,7 +171,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_EQUALITY( static_cast<size_t>( sview.size()), numEntries ); \
       STMAX = std::max( STMAX, numEntries ); \
     } \
-    TEST_EQUALITY( matrix.getNodeMaxNumRowEntries(), STMAX ); \
+    TEST_EQUALITY( matrix.getLocalMaxNumRowEntries(), STMAX ); \
     global_size_t STGMAX; \
     Teuchos::reduceAll<int,global_size_t>( *STCOMM, Teuchos::REDUCE_MAX, STMAX, outArg(STGMAX) ); \
     TEST_EQUALITY( matrix.getGlobalMaxNumRowEntries(), STGMAX ); \
@@ -231,14 +231,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
     // test the properties
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getLocalNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
-    TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumCols()          , numLocal);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getColMap())   , true);
     TEST_EQUALITY_CONST(eye->getRowMap()->isSameAs(*eye->getDomainMap()), true);
@@ -361,8 +361,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,1,comm);
     const Scalar SZERO = ScalarTraits<Scalar>::zero();
     {
-      Tpetra::ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
-      MAT matrix(map,map,1,pftype);
+      MAT matrix(map,map,1);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
@@ -391,14 +390,11 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       numValid = matrix.sumIntoLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
       TEST_EQUALITY( numValid, Teuchos::OrdinalTraits<LO>::invalid () );
 
-      TEST_THROW( matrix.setAllToScalar(SZERO), std::runtime_error );
-      TEST_THROW( matrix.scale(SZERO),          std::runtime_error );
       TEST_THROW( matrix.globalAssemble(),      std::runtime_error );
       TEST_THROW( matrix.fillComplete(),        std::runtime_error );
     }
     {
-      Tpetra::ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
-      MAT matrix(map,map,1,pftype);
+      MAT matrix(map,map,1);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
@@ -458,14 +454,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // test the properties
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getLocalNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
-    TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumCols()          , numLocal);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap()!=Teuchos::null, true);
     TEST_EQUALITY_CONST(eye->getColMap()!=Teuchos::null, true);
@@ -526,14 +522,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
     // test the properties
     TEST_EQUALITY(eye->getGlobalNumEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumEntries()      , numLocal);
+    TEST_EQUALITY(eye->getLocalNumEntries()      , numLocal);
     TEST_EQUALITY(eye->getGlobalNumRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye->getNodeNumRows()          , numLocal);
-    TEST_EQUALITY(eye->getNodeNumCols()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumRows()          , numLocal);
+    TEST_EQUALITY(eye->getLocalNumCols()          , numLocal);
     TEST_EQUALITY( Tpetra::Details::getGlobalNumDiags (*eye), static_cast<GO> (numImages*numLocal) );
     TEST_EQUALITY( Tpetra::Details::getLocalNumDiags (*eye), static_cast<LO> (numLocal) );
     TEST_EQUALITY(eye->getGlobalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye->getNodeMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getLocalMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye->getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye->getRowMap()!=Teuchos::null, true);
     TEST_EQUALITY_CONST(eye->getColMap()!=Teuchos::null, true);
@@ -607,8 +603,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     auto map = createContigMapWithNode<LO, GO, Node> (INVALID, 1, comm);
 
     // construct matrix
-    Tpetra::ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
-    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 1, pftype);
+    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 1);
     A.insertLocalValues (0, tuple<LO> (0), tuple<Scalar> (STS::zero ()));
     A.fillComplete (map, map);
 
@@ -832,16 +827,18 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // Make some vectors
     RCP<MV> toScale2 = rcp(new MV(map,1));
     RCP<MV> toScale4 = rcp(new MV(map,1)); 
-    auto v2 = toScale2->getDataNonConst(0);
-    auto v4 = toScale4->getDataNonConst(0);
-    for(size_t i=0; i<numLocal; i++){
-      if(i%2 == 0) {
-        v2[i] = SC_one;
-        v4[i] = SC_one;
-      }
-      else {        
-        v2[i] = SC_one+SC_one;
-        v4[i] = SC_one+SC_one;
+    {
+      auto v2 = toScale2->getDataNonConst(0);
+      auto v4 = toScale4->getDataNonConst(0);
+      for(size_t i=0; i<numLocal; i++){
+        if(i%2 == 0) {
+          v2[i] = SC_one;
+          v4[i] = SC_one;
+        }
+        else {        
+          v2[i] = SC_one+SC_one;
+          v4[i] = SC_one+SC_one;
+        }
       }
     }    
     
@@ -929,18 +926,20 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // Make some vectors
     RCP<MV> toScale2 = rcp(new MV(map,1));
     RCP<MV> toScale4 = rcp(new MV(map,1)); 
-    auto v2 = toScale2->getDataNonConst(0);
-    auto v4 = toScale4->getDataNonConst(0);
-    for(size_t i=0; i<numLocal; i++){
-      if(i%2 == 0) {
-        v2[i] = SC_one;
-        v4[i] = SC_one;
-      }
-      else {        
-        v2[i] = SC_one+SC_one;
-        v4[i] = SC_one+SC_one;
-      }
-    }    
+    {
+      auto v2 = toScale2->getDataNonConst(0);
+      auto v4 = toScale4->getDataNonConst(0);
+      for(size_t i=0; i<numLocal; i++){
+        if(i%2 == 0) {
+          v2[i] = SC_one;
+          v4[i] = SC_one;
+        }
+        else {        
+          v2[i] = SC_one+SC_one;
+          v4[i] = SC_one+SC_one;
+        }
+      }    
+    }
 
     // Now, let's rescale some vectors
     Tpetra::Details::inverseScaleBlockDiagonal(*diag2,true,*toScale2);
@@ -976,7 +975,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef Map<LO,GO,Node> MAP;
     typedef typename ST::magnitudeType Mag;
-    using values_type = typename MAT::local_matrix_type::values_type;
+    using values_type = typename MAT::local_matrix_device_type::values_type;
     using range_policy = Kokkos::RangePolicy<typename Node::device_type::execution_space>;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
@@ -992,13 +991,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const MAP> map = A1->getRowMap();
 
     /* Now take the same thing, but multiply the entries by 2*/
-    values_type A1_values = A1->getLocalMatrix().values;
+    auto lclMtx1 = A1->getLocalMatrixDevice();
+    values_type A1_values = lclMtx1.values;
     values_type A2_values("values",A1_values.extent(0));
     Kokkos::parallel_for( range_policy(0,A1_values.extent(0)),KOKKOS_LAMBDA(const int i){
         A2_values[i] = A1_values[i] + A1_values[i];
       });
 
-    RCP<MAT> A2 = rcp(new MAT(map,A1->getColMap(),A1->getLocalMatrix().graph.row_map,A1->getLocalMatrix().graph.entries,A2_values));
+    RCP<MAT> A2 = rcp(new MAT(map,A1->getColMap(),lclMtx1.graph.row_map,lclMtx1.graph.entries,A2_values));
     A2->expertStaticFillComplete(A1->getDomainMap(),A1->getRangeMap(),A1->getGraph()->getImporter(),A1->getGraph()->getExporter());
 
     /* Allocate multivectors */

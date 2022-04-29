@@ -109,11 +109,11 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-template<typename ValueType, typename DeviceSpaceType>
+template<typename ValueType, typename DeviceType>
 int OrientationHex(const bool verbose) {
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ordinal_type,DeviceSpaceType> DynRankViewInt;
+  typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
+  typedef Kokkos::DynRankView<ordinal_type,DeviceType> DynRankViewInt;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
   Teuchos::RCP<std::ostream> outStream;
@@ -126,13 +126,6 @@ int OrientationHex(const bool verbose) {
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-
-  typedef typename
-      Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-
-  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-  *outStream << "\n";
 
   int errorFlag = 0;
   const ValueType tol = tolerence();
@@ -193,12 +186,12 @@ int OrientationHex(const bool verbose) {
 
   typedef std::array<ordinal_type,2> edgeType;
   typedef std::array<ordinal_type,4> faceType;
-  typedef CellTools<DeviceSpaceType> ct;
-  typedef OrientationTools<DeviceSpaceType> ots;
+  typedef CellTools<DeviceType> ct;
+  typedef OrientationTools<DeviceType> ots;
   typedef Impl::OrientationTools iots;
-  typedef RealSpaceTools<DeviceSpaceType> rst;
-  typedef FunctionSpaceTools<DeviceSpaceType> fst;
-  typedef ArrayTools<DeviceSpaceType> at;
+  typedef RealSpaceTools<DeviceType> rst;
+  typedef FunctionSpaceTools<DeviceType> fst;
+  typedef ArrayTools<DeviceType> at;
 
   constexpr ordinal_type dim = 3;
   constexpr ordinal_type numCells = 2;
@@ -330,17 +323,17 @@ int OrientationHex(const bool verbose) {
        }
 
        //compute reference points
-       Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+       Basis_HGRAD_HEX_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
        ordinal_type numRefCoords = warpBasis.getCardinality();
        DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
        warpBasis.getDofCoords(refPoints);
 
        // compute orientations for cells (one time computation)
        DynRankViewInt elemNodes(&hexas[0][0], 2, numElemVertexes);
-       Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
+       Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
        ots::getOrientation(elemOrts, elemNodes, hexa);
 
-       Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+       Basis_HGRAD_HEX_Cn_FEM<DeviceType,ValueType,ValueType> basis(order);
        ordinal_type basisCardinality = basis.getCardinality();
 
        //compute DofCoords Oriented
@@ -356,7 +349,7 @@ int OrientationHex(const bool verbose) {
            }
 
 
-         Basis_HGRAD_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order);
+         Basis_HGRAD_LINE_Cn_FEM<DeviceType,ValueType,ValueType> lineBasis(order);
          ordinal_type lineBasisCardinality = lineBasis.getCardinality();
          DynRankView ConstructWithLabel(lineDofCoords, lineBasisCardinality, dim-2);
          lineBasis.getDofCoords(lineDofCoords);
@@ -380,7 +373,7 @@ int OrientationHex(const bool verbose) {
            }
          }
         
-         Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType,ValueType,ValueType> quadBasis(order);
+         Basis_HGRAD_QUAD_Cn_FEM<DeviceType,ValueType,ValueType> quadBasis(order);
          ordinal_type quadBasisCardinality = quadBasis.getCardinality();
          ordinal_type numInternalDofs = quadBasis.getDofCount(dim-1,0);
          DynRankView ConstructWithLabel(quadDofCoords, quadBasisCardinality, dim-1);
@@ -422,7 +415,7 @@ int OrientationHex(const bool verbose) {
        DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
        DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
        {
-         Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
+         Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
          DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
          hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
          DynRankView ConstructWithLabel(hexaLinearBasisValuesAtDofCoords, numCells, hexa.getNodeCount(), basisCardinality);
@@ -732,18 +725,18 @@ int OrientationHex(const bool verbose) {
         }
 
         //compute reference points
-        Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+        Basis_HGRAD_HEX_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
         ordinal_type numRefCoords = warpBasis.getCardinality();
         DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
         warpBasis.getDofCoords(refPoints);
 
         // compute orientations for cells (one time computation)
         DynRankViewInt elemNodes(&hexas[0][0], 2, numElemVertexes);
-        Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
+        Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, hexa);
 
 
-        Basis_HCURL_HEX_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+        Basis_HCURL_HEX_In_FEM<DeviceType,ValueType,ValueType> basis(order);
         ordinal_type basisCardinality = basis.getCardinality();
 
         //compute DofCoords Oriented
@@ -751,7 +744,7 @@ int OrientationHex(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_HGRAD_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order-1,POINTTYPE_GAUSS);
+          Basis_HGRAD_LINE_Cn_FEM<DeviceType,ValueType,ValueType> lineBasis(order-1,POINTTYPE_GAUSS);
           ordinal_type lineBasisCardinality = lineBasis.getCardinality();
           DynRankView ConstructWithLabel(lineDofCoords, lineBasisCardinality, dim-2);
           lineBasis.getDofCoords(lineDofCoords);
@@ -775,7 +768,7 @@ int OrientationHex(const bool verbose) {
             }
           }
 
-          Basis_HCURL_QUAD_In_FEM<DeviceSpaceType,ValueType,ValueType> quadBasis(order);
+          Basis_HCURL_QUAD_In_FEM<DeviceType,ValueType,ValueType> quadBasis(order);
           ordinal_type quadBasisCardinality = quadBasis.getCardinality();
           ordinal_type numInternalDofs = quadBasis.getDofCount(dim-1,0);
           DynRankView ConstructWithLabel(quadDofCoords, quadBasisCardinality, dim-1);
@@ -816,7 +809,7 @@ int OrientationHex(const bool verbose) {
         DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
         DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
         {
-          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
+          Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
           hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
           DynRankView ConstructWithLabel(hexaLinearBasisValuesAtDofCoords, numCells, hexa.getNodeCount(), basisCardinality);
@@ -853,7 +846,7 @@ int OrientationHex(const bool verbose) {
 
 
           DynRankView ortJacobian("ortJacobian", dim-1, dim-1);
-          Basis_HCURL_QUAD_In_FEM<DeviceSpaceType,ValueType,ValueType> quadBasis(order);
+          Basis_HCURL_QUAD_In_FEM<DeviceType,ValueType,ValueType> quadBasis(order);
           DynRankView ConstructWithLabel(quadDofCoeffs, quadBasis.getCardinality(), dim-1);
           quadBasis.getDofCoeffs(quadDofCoeffs);
           for(ordinal_type i=0; i<numCells; ++i) {
@@ -1232,16 +1225,16 @@ int OrientationHex(const bool verbose) {
 
         // compute orientations for cells (one time computation)
         DynRankViewInt elemNodes(&hexas[0][0], numCells, numElemVertexes);
-        Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
+        Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
         ots::getOrientation(elemOrts, elemNodes, hexa);
 
         //compute reference points
-        Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+        Basis_HGRAD_HEX_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
         ordinal_type numRefCoords = warpBasis.getCardinality();
         DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
         warpBasis.getDofCoords(refPoints);
 
-        Basis_HDIV_HEX_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+        Basis_HDIV_HEX_In_FEM<DeviceType,ValueType,ValueType> basis(order);
         ordinal_type basisCardinality = basis.getCardinality();
 
         //compute DofCoords Oriented
@@ -1249,7 +1242,7 @@ int OrientationHex(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          //Basis_HVOL_QUAD_Cn_FEM<DeviceSpaceType,ValueType,ValueType> quadBasis(order-1);
+          //Basis_HVOL_QUAD_Cn_FEM<DeviceType,ValueType,ValueType> quadBasis(order-1);
           Basis_HGRAD_QUAD_Cn_FEM<Kokkos::DefaultHostExecutionSpace> quadBasis(order-1, POINTTYPE_GAUSS);
           ordinal_type quadBasisCardinality = quadBasis.getCardinality();
           ordinal_type numInternalDofs = quadBasis.getDofCount(dim-1,0);
@@ -1290,7 +1283,7 @@ int OrientationHex(const bool verbose) {
         DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
         DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
         {
-          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
+          Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
           hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
           DynRankView ConstructWithLabel(hexaLinearBasisValuesAtDofCoords, numCells, hexa.getNodeCount(), basisCardinality);

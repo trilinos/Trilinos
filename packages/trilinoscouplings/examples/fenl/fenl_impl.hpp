@@ -51,7 +51,7 @@
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
 #include <Teuchos_CommHelpers.hpp>
@@ -135,7 +135,7 @@ public:
   typedef Tpetra::Vector<Scalar,LocalOrdinalType,GlobalOrdinalType,NodeType> GlobalVectorType;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinalType,GlobalOrdinalType,NodeType> GlobalMultiVectorType;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinalType,GlobalOrdinalType,NodeType> GlobalMatrixType;
-  typedef typename GlobalMatrixType::local_matrix_type LocalMatrixType;
+  typedef typename GlobalMatrixType::local_matrix_device_type LocalMatrixType;
   typedef typename LocalMatrixType::StaticCrsGraphType LocalGraphType;
 
 
@@ -261,7 +261,7 @@ public:
         throw std::runtime_error(std::string("Problem fixture setup failed"));
       }
 
-      print_flag = use_print && Kokkos::Impl::SpaceAccessibility< Kokkos::HostSpace::execution_space , typename Device::memory_space >::accessible ;
+      print_flag = use_print && Kokkos::SpaceAccessibility< Kokkos::HostSpace::execution_space , typename Device::memory_space >::accessible ;
 
       perf.global_elem_count  = fixture.elem_count_global();
       perf.global_node_count  = fixture.node_count_global();
@@ -286,7 +286,7 @@ public:
 
         //------------------------------
 
-        LocalMatrixType jacobian = g_jacobian.getLocalMatrix();
+        LocalMatrixType jacobian = g_jacobian.getLocalMatrixDevice();
 
         const unsigned nrow = jacobian.numRows();
         std::cout << "JacobianGraph[ "
@@ -356,15 +356,15 @@ public:
       typedef DirichletComputation< FixtureType , LocalMatrixType > DirichletComputationType ;
       typedef ResponseComputation< FixtureType , LocalVectorType > ResponseComputationType ;
 
-      Kokkos::Impl::Timer wall_clock ;
-      Kokkos::Impl::Timer newton_clock ;
+      Kokkos::Timer wall_clock ;
+      Kokkos::Timer newton_clock ;
       newton_clock.reset();
 
-      LocalMatrixType jacobian = g_jacobian.getLocalMatrix();
+      LocalMatrixType jacobian = g_jacobian.getLocalMatrixDevice();
 
-      const auto k_nodal_solution = g_nodal_solution.getLocalViewDevice();
-      const auto k_nodal_residual = g_nodal_residual.getLocalViewDevice();
-      const auto k_nodal_delta    = g_nodal_delta   .getLocalViewDevice();
+      const auto k_nodal_solution = g_nodal_solution.getLocalViewDevice(Tpetra::Access::ReadWrite);
+      const auto k_nodal_residual = g_nodal_residual.getLocalViewDevice(Tpetra::Access::ReadWrite);
+      const auto k_nodal_delta    = g_nodal_delta   .getLocalViewDevice(Tpetra::Access::ReadWrite);
 
       const LocalVectorType nodal_solution =
         Kokkos::subview(k_nodal_solution,Kokkos::ALL(),0);
@@ -606,11 +606,11 @@ public:
           "Response gradient length must match number of sensitivities specified in constuctor");
 
         const auto nodal_solution_dp =
-          g_nodal_solution_dp.getLocalViewDevice();
+          g_nodal_solution_dp.getLocalViewDevice(Tpetra::Access::ReadWrite);
         const auto nodal_residual_dp =
-          g_nodal_residual_dp.getLocalViewDevice();
+          g_nodal_residual_dp.getLocalViewDevice(Tpetra::Access::ReadWrite);
         const auto nodal_delta_dp =
-          g_nodal_delta_dp.getLocalViewDevice();
+          g_nodal_delta_dp.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
         LocalMultiVectorType nodal_solution_no_overlap_dp =
           Kokkos::subview(
@@ -753,7 +753,7 @@ Perf fenl(
 
   //------------------------------------
 
-  Kokkos::Impl::Timer wall_clock ;
+  Kokkos::Timer wall_clock ;
 
   Perf perf_stats = Perf() ;
 

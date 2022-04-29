@@ -1,3 +1,42 @@
+//@HEADER
+// ************************************************************************
+//
+//                 Belos: Block Linear Solvers Package
+//                  Copyright 2004 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ************************************************************************
+//@HEADER
+
 #ifndef BELOS_TPETRA_GMRES_PIPELINE_HPP
 #define BELOS_TPETRA_GMRES_PIPELINE_HPP
 
@@ -89,7 +128,7 @@ private:
     vec_type R (B.getMap (), zeroOut);
     vec_type Y (B.getMap (), zeroOut);
     vec_type MZ (B.getMap (), zeroOut);
-    vec_type Z = * (V.getVectorNonConst (0));
+    vec_type Z0 = * (V.getVectorNonConst (0));
 
     // initial residual (making sure R = B - Ax)
     {
@@ -100,9 +139,9 @@ private:
     // TODO: this should be idot?
     b0_norm = STM::squareroot (STS::real (R.dot (R))); // initial residual norm, no preconditioned
     if (input.precoSide == "left") {
-      M.apply (R, Z);
+      M.apply (R, Z0);
       // TODO: this should be idot?
-      b_norm = STS::real (Z.dot( Z )); //Z.norm2 (); // initial residual norm, preconditioned
+      b_norm = STS::real (Z0.dot( Z0 )); //Z.norm2 (); // initial residual norm, preconditioned
     }
     else {
       b_norm = b0_norm;
@@ -123,8 +162,8 @@ private:
         return output; // standard GMRES converged
       }
       if (input.precoSide == "left") {
-        M.apply (R, Z);
-        r_norm = Z.norm2 (); // residual norm
+        M.apply (R, Z0);
+        r_norm = Z0.norm2 (); // residual norm
       }
       else {
         r_norm = output.absResid;
@@ -132,7 +171,7 @@ private:
       output.numRests++;
     }
     if (input.precoSide != "left") {
-      Tpetra::deep_copy (Z, R);
+      Tpetra::deep_copy (Z0, R);
     }
 
     // for idot
@@ -155,11 +194,11 @@ private:
         }
 
         // Normalize initial vector
-        MVT::MvScale (Z, one/std::sqrt(G(0, 0)));
+        MVT::MvScale (Z0, one/std::sqrt(G(0, 0)));
 
         // Copy initial vector
         vec_type AP = * (Q.getVectorNonConst (0));
-        Tpetra::deep_copy (AP, Z);
+        Tpetra::deep_copy (AP, Z0);
       }
 
       // Restart cycle
@@ -352,14 +391,14 @@ private:
         if (iter >= restart+ell) {
           // Restart: Initialize starting vector for restart
           iter = 0;
-          Z = * (V.getVectorNonConst (0));
+          Z0 = * (V.getVectorNonConst (0));
           if (input.precoSide == "left") {
-            M.apply (R, Z);
-            r_norm = STS::real (Z.dot (Z)); //norm2 (); // residual norm
+            M.apply (R, Z0);
+            r_norm = STS::real (Z0.dot (Z0)); //norm2 (); // residual norm
           }
           else {
             // set the starting vector
-            Tpetra::deep_copy (Z, R);
+            Tpetra::deep_copy (Z0, R);
           }
           G(0, 0) = r_norm;
           r_norm = STM::squareroot (r_norm);

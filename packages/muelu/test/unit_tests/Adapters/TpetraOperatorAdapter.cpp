@@ -154,11 +154,73 @@ namespace MueLuTests {
 #   else
     out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
 #   endif
-
   } //Apply
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, Getters, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_AMESOS2)
+    using Utils = MueLu::Utilities<SC, LO, GO, NO>;
+    using TpetraOperatorType =  MueLu::TpetraOperator<SC, LO, GO, NO>;
+    using MagnitudeType = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+
+    if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra)
+    {
+      const auto Op = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(100);
+
+      ////////////////////////////////////////
+      //////////   WITH HIERARCHY   //////////
+      ////////////////////////////////////////
+      {
+        const auto map = Op->getRowMap();
+        auto H = rcp(new Hierarchy());
+        H->setDefaultVerbLevel(Teuchos::VERB_NONE);
+
+        auto Finest = H->GetLevel();
+        Finest->setDefaultVerbLevel(Teuchos::VERB_NONE);
+        Finest->Set("A", Op);
+
+        H->Setup();
+        auto tH = rcp(new TpetraOperatorType(H));
+
+        TEST_EQUALITY(tH->GetOperator(), Teuchos::null);
+        TEST_INEQUALITY(tH->GetHierarchy(), Teuchos::null);
+
+        TEST_INEQUALITY(tH->getRangeMap(), Teuchos::null);
+        TEST_INEQUALITY(tH->getDomainMap(), Teuchos::null);
+
+        // Hardcoded false
+        TEST_EQUALITY(tH->hasTransposeApply(), false);
+      }
+
+      ///////////////////////////////////////
+      //////////   WITH OPERATOR   //////////
+      ///////////////////////////////////////
+      {
+        auto tO = rcp(new TpetraOperatorType((Teuchos::RCP<Xpetra::Operator<SC, LO, GO, NO>>)(Op)));
+
+        TEST_INEQUALITY(tO->GetOperator(), Teuchos::null);
+        TEST_EQUALITY(tO->GetHierarchy(), Teuchos::null);
+
+        TEST_INEQUALITY(tO->getRangeMap(), Teuchos::null);
+        TEST_INEQUALITY(tO->getDomainMap(), Teuchos::null);
+
+        // Hardcoded false
+        TEST_EQUALITY(tO->hasTransposeApply(), false);
+      }
+    }
+#else
+    out << "Skipping test because some required packages are not enabled (Tpetra, Ifpack2, Amesos2)." << std::endl;
+#endif
+  }
+
 #define MUELU_ETI_GROUP(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TpetraOperator, Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TpetraOperator, Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TpetraOperator, Getters, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

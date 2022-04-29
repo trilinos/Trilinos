@@ -41,12 +41,12 @@
 #
 # Top-level project logic to generate resources spec file
 #
-FUNCTION(TRIBITS_GENERATE_CTEST_RESOURCE_SPEC_FILE_PROJECT_LOGIC)
-  IF (${PROJECT_NAME}_AUTOGENERATE_TEST_RESOURCE_FILE)
-    IF (CTEST_RESOURCE_SPEC_FILE STREQUAL CTEST_RESOURCE_SPEC_FILE_DEFAULT)
-      TRIBITS_GENERATE_CTEST_RESOURCE_SPEC_FILE()
-    ELSE()
-      MESSAGE("NOTE: The test resource file CTEST_RESOURCE_SPEC_FILE='${CTEST_RESOURCE_SPEC_FILE}'"
+function(tribits_generate_ctest_resource_spec_file_project_logic)
+  if (${PROJECT_NAME}_AUTOGENERATE_TEST_RESOURCE_FILE)
+    if (CTEST_RESOURCE_SPEC_FILE STREQUAL CTEST_RESOURCE_SPEC_FILE_DEFAULT)
+      tribits_generate_ctest_resource_spec_file()
+    else()
+      message("NOTE: The test resource file CTEST_RESOURCE_SPEC_FILE='${CTEST_RESOURCE_SPEC_FILE}'"
         " will not be auto-generated even through"
         " ${PROJECT_NAME}_AUTOGENERATE_TEST_RESOURCE_FILE=${${PROJECT_NAME}_AUTOGENERATE_TEST_RESOURCE_FILE}"
         " because its location does not match the default"
@@ -55,29 +55,29 @@ FUNCTION(TRIBITS_GENERATE_CTEST_RESOURCE_SPEC_FILE_PROJECT_LOGIC)
         " reconfigure or create that file on your own and clear"
         " ${PROJECT_NAME}_AUTOGENERATE_TEST_RESOURCE_FILE."
         )
-    ENDIF()
-  ENDIF()
-ENDFUNCTION()
+    endif()
+  endif()
+endfunction()
 
 
 #
 # Generate resource spec file
 #
-FUNCTION(TRIBITS_GENERATE_CTEST_RESOURCE_SPEC_FILE)
-  SET(GPUS_JSON)
-  MATH(EXPR LAST_GPU "${${PROJECT_NAME}_CUDA_NUM_GPUS} - 1")
-  SET(FIRST 1)
-  FOREACH(GPU RANGE 0 ${LAST_GPU})
-    IF(NOT FIRST)
-      STRING(APPEND GPUS_JSON ",\n")
-    ENDIF()
-    SET(FIRST 0)
-    STRING(APPEND GPUS_JSON "        {
+function(tribits_generate_ctest_resource_spec_file)
+  set(GPUS_JSON)
+  math(EXPR LAST_GPU "${${PROJECT_NAME}_CUDA_NUM_GPUS} - 1")
+  set(FIRST 1)
+  foreach(GPU RANGE 0 ${LAST_GPU})
+    if(NOT FIRST)
+      string(APPEND GPUS_JSON ",\n")
+    endif()
+    set(FIRST 0)
+    string(APPEND GPUS_JSON "        {
           \"id\": \"${GPU}\",
           \"slots\": ${${PROJECT_NAME}_CUDA_SLOTS_PER_GPU}
         }")
-  ENDFOREACH()
-  FILE(WRITE "${CMAKE_BINARY_DIR}/ctest_resources.json" "{
+  endforeach()
+  file(WRITE "${CMAKE_BINARY_DIR}/ctest_resources.json" "{
   \"version\": {
     \"major\": 1,
     \"minor\": 0
@@ -91,4 +91,4 @@ ${GPUS_JSON}
   ]
 }
 ")
-ENDFUNCTION()
+endfunction()

@@ -11,7 +11,6 @@
 #include "BulkDataElementGraphTester.hpp"
 #include "ElementGraphTester.hpp"       // for ElemElemGraphTester
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, PartVector
 #include "stk_unit_test_utils/ioUtils.hpp"  // for fill_mesh_using_stk_io
@@ -299,7 +298,7 @@ TEST_F(UpdateElemElemGraphTest, NewEntityNotification)
     if(bulk.parallel_size() == 2)
     {
         std::shared_ptr<ElemElemGraphUpdaterMock> observer = std::make_shared<ElemElemGraphUpdaterMock>();
-        bulk.register_observer(observer);
+        bulk.register_observer(observer, stk::mesh::ModificationObserverPriority::APPLICATION);
 
         MeshRefinementMock meshRefinement(bulk, activePart);
         meshRefinement.create_element_on_proc1();
@@ -316,9 +315,9 @@ TEST_F(UpdateElemElemGraphTest, MultipleObservers)
     if(bulk.parallel_size() == 2)
     {
         std::shared_ptr<ElemElemGraphUpdaterMock> observer1 = std::make_shared<ElemElemGraphUpdaterMock>();
-        bulk.register_observer(observer1);
+        bulk.register_observer(observer1, stk::mesh::ModificationObserverPriority::APPLICATION);
         std::shared_ptr<ElemElemGraphUpdaterMock> observer2 = std::make_shared<ElemElemGraphUpdaterMock>();
-        bulk.register_observer(observer2);
+        bulk.register_observer(observer2, stk::mesh::ModificationObserverPriority::APPLICATION);
 
         MeshRefinementMock meshRefinement(bulk, activePart);
         meshRefinement.create_element_on_proc1();

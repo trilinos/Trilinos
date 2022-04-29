@@ -122,14 +122,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test0, Scalar, LocalOr
 
   prec.applyMat(x, y);
 
-  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
-
   //Since crsmatrix is a diagonal matrix with 2 on the diagonal,
   //y should be full of 2's now.
 
   Teuchos::ArrayRCP<Scalar> twos(num_rows_per_proc*2, 2);
 
-  TEST_COMPARE_FLOATING_ARRAYS(yview, twos(), Teuchos::ScalarTraits<Scalar>::eps());
+  {
+    // Restrict scope of host access
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+    TEST_COMPARE_FLOATING_ARRAYS(yview, twos(), Teuchos::ScalarTraits<Scalar>::eps());
+  }
 
   prec.apply(x, y);
 
@@ -137,7 +139,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test0, Scalar, LocalOr
 
   Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
 
-  TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+  {
+    // Restrict scope of host access
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+    TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+  }
 }
 
 // Test apply() with x == y.
@@ -657,7 +663,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
 
   Teuchos::ParameterList params;
   params.set ("relaxation: type", "Jacobi");
-  params.set ("partitioner: local parts", (LO)bcrsmatrix->getNodeNumRows());
+  params.set ("partitioner: local parts", (LO)bcrsmatrix->getLocalNumRows());
   params.set ("relaxation: container", "Dense");
 
   try {
@@ -693,8 +699,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
   MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(x.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
 
   try {
     prec->apply (x, y);
@@ -744,16 +750,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestBlockContainers, S
   //the (block) graph should be diagonal
   auto crsgraph = tif_utest::create_banded_graph<LO,GO,Node>(num_rows_per_proc, 2);
 
-  auto bcrsmatrix = Teuchos::rcp(new
-      Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node>(*crsgraph, blockSize));
+  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node>;
+  using h_inds = typename block_crs_matrix_type::local_inds_host_view_type;
+  using h_vals = typename block_crs_matrix_type::nonconst_values_host_view_type;
+
+  auto bcrsmatrix = Teuchos::rcp(new block_crs_matrix_type(*crsgraph, blockSize));
+                                
   
   //Fill in values of the the matrix
-  for(LO l_row = 0; (size_t) l_row < bcrsmatrix->getNodeNumRows(); ++l_row)
+  for(LO l_row = 0; (size_t) l_row < bcrsmatrix->getLocalNumRows(); ++l_row)
   {
-    const LO * inds;
-    Scalar * vals;
-    LO numInd;
-    bcrsmatrix->getLocalRowView(l_row, inds, vals, numInd);
+    h_inds inds;
+    h_vals vals;
+    bcrsmatrix->getLocalRowViewNonConst(l_row, inds, vals);
+    LO numInd = (LO) inds.size();
     for(int k = 0; k < blockSize * blockSize * numInd; k++)
       vals[k] = 0;
     for (LO j = 0; j < numInd; ++j)
@@ -798,7 +808,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestBlockContainers, S
 
     Teuchos::ParameterList params;
     params.set ("relaxation: type", "Jacobi");
-    params.set ("partitioner: local parts", (LO)bcrsmatrix->getNodeNumRows());
+    params.set ("partitioner: local parts", (LO)bcrsmatrix->getLocalNumRows());
     params.set ("relaxation: sweeps", 10);
     params.set ("relaxation: container", contType);
 
@@ -842,8 +852,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestBlockContainers, S
       }
     }
     
-    TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
-    TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+    TEST_EQUALITY(x.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
+    TEST_EQUALITY(y.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
 
     try {
       prec->apply (x, y);
@@ -895,16 +905,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestBlockContainersDec
   //the (block) graph should be diagonal
   auto crsgraph = tif_utest::create_banded_graph<LO,GO,Node>(num_rows_per_proc, 1);
 
-  auto bcrsmatrix = Teuchos::rcp(new
-      Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node>(*crsgraph, blockSize));
+  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node>;
+  using h_inds = typename block_crs_matrix_type::local_inds_host_view_type;
+  using h_vals = typename block_crs_matrix_type::nonconst_values_host_view_type;
+  auto bcrsmatrix = Teuchos::rcp(new block_crs_matrix_type(*crsgraph, blockSize));
   
   //Fill in values of the the matrix
-  for(LO l_row = 0; (size_t) l_row < bcrsmatrix->getNodeNumRows(); ++l_row)
+  for(LO l_row = 0; (size_t) l_row < bcrsmatrix->getLocalNumRows(); ++l_row)
   {
-    const LO * inds;
-    Scalar * vals;
-    LO numInd;
-    bcrsmatrix->getLocalRowView(l_row, inds, vals, numInd);
+    h_inds inds;
+    h_vals vals;
+    bcrsmatrix->getLocalRowViewNonConst(l_row, inds, vals);
+    LO numInd = (LO)inds.size();
     for (LO j = 0; j < numInd; ++j)
     {
       const LO lcl_col = inds[j];
@@ -941,7 +953,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestBlockContainersDec
 
     Teuchos::ParameterList params;
     params.set ("relaxation: type", "Jacobi");
-    params.set ("partitioner: local parts", (LO)bcrsmatrix->getNodeNumRows() / 2);
+    params.set ("partitioner: local parts", (LO)bcrsmatrix->getLocalNumRows() / 2);
     params.set ("relaxation: sweeps", 10);
     params.set ("relaxation: container", contType);
     params.set ("block relaxation: decouple dofs", true);
@@ -986,8 +998,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestBlockContainersDec
       }
     }
     
-    TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
-    TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+    TEST_EQUALITY(x.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
+    TEST_EQUALITY(y.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
     try {
       prec->apply (x, y);
     } catch (std::exception& e) {
@@ -1091,7 +1103,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestContainersDofsDeco
 
     Teuchos::ParameterList params;
     params.set ("relaxation: type", "Jacobi");
-    params.set ("partitioner: local parts", (LO) matrix->getNodeNumRows() / 2 / dofsPerNode);
+    params.set ("partitioner: local parts", (LO) matrix->getLocalNumRows() / 2 / dofsPerNode);
     params.set ("relaxation: sweeps", 10);
     params.set ("relaxation: container", contType);
     params.set ("block relaxation: decouple dofs", true);
@@ -1132,8 +1144,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestContainersDofsDeco
       for(size_t i = 0; i < (size_t) xdata.size(); i++)
         xdata[i] = (Scalar) i;
     }
-    TEST_EQUALITY(x.getMap()->getNodeNumElements(), rowsPerProc);
-    TEST_EQUALITY(y.getMap()->getNodeNumElements(), rowsPerProc);
+    TEST_EQUALITY(x.getMap()->getLocalNumElements(), rowsPerProc);
+    TEST_EQUALITY(y.getMap()->getLocalNumElements(), rowsPerProc);
     try {
       prec->apply (x, y);
     } catch (std::exception& e) {
@@ -1214,7 +1226,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
 
   Teuchos::ParameterList params;
   params.set ("relaxation: type", "Gauss-Seidel");
-  params.set ("partitioner: local parts", static_cast<LO> (bcrsmatrix->getNodeNumRows ()));
+  params.set ("partitioner: local parts", static_cast<LO> (bcrsmatrix->getLocalNumRows ()));
   params.set ("relaxation: container", "Dense");
 
   try {
@@ -1250,8 +1262,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
   MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY( x.getMap()->getNodeNumElements (), blockSize * num_rows_per_proc );
-  TEST_EQUALITY( y.getMap ()->getNodeNumElements (), blockSize * num_rows_per_proc );
+  TEST_EQUALITY( x.getMap()->getLocalNumElements (), blockSize * num_rows_per_proc );
+  TEST_EQUALITY( y.getMap ()->getLocalNumElements (), blockSize * num_rows_per_proc );
 
   try {
     prec->apply (x, y);
@@ -1307,7 +1319,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   Teuchos::ParameterList params;
   params.set("relaxation: container", "Dense");
   params.set("relaxation: type", "Symmetric Gauss-Seidel");
-  params.set("partitioner: local parts", (LocalOrdinal)bcrsmatrix->getNodeNumRows());
+  params.set("partitioner: local parts", (LocalOrdinal)bcrsmatrix->getLocalNumRows());
   prec.setParameters(params);
 
   prec.initialize();
@@ -1319,8 +1331,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
 
-  TEST_EQUALITY(x.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
-  TEST_EQUALITY(y.getMap()->getNodeNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(x.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
+  TEST_EQUALITY(y.getMap()->getLocalNumElements(), blockSize*num_rows_per_proc);
   TEST_NOTHROW(prec.apply(x, y));
 
   Teuchos::Array<Scalar> exactSol(num_rows_per_proc);

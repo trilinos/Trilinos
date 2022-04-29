@@ -2,6 +2,39 @@
 Release Notes for TriBITS
 ----------------------------------------
 
+2021/06/17:
+
+(*) MINOR: Added tool tribits/python_utils/lower_case_cmake.py and driver
+    tribits/refactoring/lower-case-cmake-tree.sh that can make CMake command
+    calls lower-case and make macro and function definition names lowe case.
+    This was applied to the entire TriBITS repository (and then minor
+    modifications for fix a few issues).  This should not impact users of
+    TriBITS but it does change the case of commands in the TriBITS error
+    messages.  (See TriBITSPub/TriBITS#274)
+
+2021/05/15:
+
+(*) MAJOR: Changed so that all arguments passed to ctest -S command in
+    'dashboard' target are passed if their value is non-empty instead of TRUE.
+    Also, CTEST_BUILD_NAME, TRIBITS_2ND_CTEST_DROP_SITE and
+    TRIBITS_2ND_CTEST_DROP_LOCATION can now be set and overridden in the CMake
+    configure and will get passed to the ctest -S command by the 'dashboard'
+    target.  This now allows setting these latter vars to 'OFF' or 'FALSE'
+    which allows skipping a submit to a secondary CDash site if the underlying
+    project is set up to submit to a secondary CDash site by default (see
+    trilinos/Trilinos#9079).  These changes technically break backward
+    compatibility because now setting some vars in the CMake configure will
+    now get passed on to ctest -S command in the 'dashboard' target and some
+    vars set in the env when calling 'make dashboard' will now be ignored if
+    they were set in the CMake cache.  But many of these vars are only
+    forwarded to the ctest -S command in the env if they are set to non-empty
+    in the configure.  So existing processes that set CTEST_BUILD_NAME in the
+    env when running 'make dashboard' but not in the CMake configure will
+    still behave the same (which is why no existing TriBITS tests had to
+    change).  For these reasons, the chance of these changes causing a problem
+    for most users should be very small and in fact it restores what most
+    people would consider to be logical and useful behavior.
+
 2021/03/12:
 
 (*) MAJOR: Upgrade minimum required CMake version from 3.10 to 3.17.  Existing
@@ -10,13 +43,13 @@ Release Notes for TriBITS
 
 2020/11/12:
 
-*) MAJOR: The default for `<Project>_ENABLE_EXPLICIT_INSTANTIATION` (ETI) was
-   changed from `OFF` to `ON`.  This was turned on in practice for almost all
-   users of Trilinos so while this change technically breaks backward
-   compatibility of TriBITS, in practice, this will likely not impact any
-   important customers.  (And new customers of Trilinos and related TriBITS
-   projects will enjoy the benefits of ETI by default.  See
-   trilinos/Trilinos#8130.)
+(*) MAJOR: The default for `<Project>_ENABLE_EXPLICIT_INSTANTIATION` (ETI) was
+    changed from `OFF` to `ON`.  This was turned on in practice for almost all
+    users of Trilinos so while this change technically breaks backward
+    compatibility of TriBITS, in practice, this will likely not impact any
+    important customers.  (And new customers of Trilinos and related TriBITS
+    projects will enjoy the benefits of ETI by default.  See
+    trilinos/Trilinos#8130.)
 
 2020/10/08:
 
@@ -244,10 +277,10 @@ Trilinos 11.3:
     TRIBITS_ADD_EXECUTABLE_AND_TEST().
 
 (*) MINOR: TriBITS Core: Fixed the generation of headers for explicit
-    instantation system for subpackages: Now subpackages that use the macro
+    instantiation system for subpackages: Now subpackages that use the macro
     TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS() to generate XXX.hpp header files
-    with or without explicit instantation will key off of the parent package's
-    explicit instantation setting.  In addition, packages that use the macro
+    with or without explicit instantiation will key off of the parent package's
+    explicit instantiation setting.  In addition, packages that use the macro
     TRIBITS_CREATE_CLIENT_TEMPLATE_HEADERS() will also need to add a call to
     TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION() in their top-level
     CMakeLists.txt file.

@@ -36,37 +36,41 @@
 #define STK_IO_OUTPUTFILE_HPP
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include <Ioss_Field.h>                            // for Field, etc
-#include <Ioss_PropertyManager.h>                  // for PropertyManager
-#include <stddef.h>                                // for size_t
-#include <Teuchos_RCP.hpp>                         // for RCP::RCP<T>, etc
-#include <algorithm>                               // for swap
-#include <stk_io/DatabasePurpose.hpp>              // for DatabasePurpose
-#include <stk_io/IossBridge.hpp>
-#include <stk_io/Heartbeat.hpp>
-#include <stk_io/MeshField.hpp>                    // for MeshField, etc
-#include <stk_mesh/base/BulkData.hpp>              // for BulkData
-#include <stk_mesh/base/Selector.hpp>              // for Selector
-#include <stk_util/parallel/Parallel.hpp>          // for ParallelMachine
-#include <stk_util/util/ParameterList.hpp>         // for Type
-#include <string>                                  // for string
-#include <vector>                                  // for vector
-#include "Teuchos_RCPDecl.hpp"                     // for RCP
-#include "mpi.h"                                   // for MPI_Comm, etc
-#include "stk_mesh/base/Types.hpp"                 // for FieldVector
-#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
-namespace Ioss { class Property; }
+#include <Ioss_Field.h>                     // for Field::BasicType, Field
+#include <exception>                 // for exception
+#include <Teuchos_RCP.hpp>                  // for RCP::RCP<T>, RCP::reset
+#include <cstddef>                          // for size_t
+#include <stk_io/DatabasePurpose.hpp>       // for DatabasePurpose
+#include <stk_io/IOHelpers.hpp>             // for internal_add_global
+#include <stk_io/IossBridge.hpp>            // for GlobalAnyVariable
+#include <stk_mesh/base/Selector.hpp>       // for Selector
+#include <stk_util/util/ParameterList.hpp>  // for STK_ANY_NAMESPACE, Type
+#include <string>                           // for string
+#include <utility>                          // for pair, swap
+#include <vector>                           // for vector
+#include "Teuchos_RCPDecl.hpp"              // for RCP
+#include "Teuchos_any.hpp"                  // for any
+#include "mpi.h"                            // for MPI_Comm, ompi_communicat...
+#include "stk_io/FieldAndName.hpp"          // for FieldAndName, UserDataAnd...
+#include "stk_io/OutputVariableParams.hpp"  // for OutputVariableParams
+#include "stk_io/StkIoUtils.hpp"            // for get_io_parameter_size_and...
+#include "stk_mesh/base/FieldState.hpp"     // for FieldState
+#include "stk_mesh/base/Types.hpp"          // for EntityRank
+#include "stk_topology/topology.hpp"        // for topology, topology::ELEM_...
+namespace Ioss { class DatabaseIO; }
+namespace Ioss { class PropertyManager; }
 namespace Ioss { class Region; }
-namespace boost { class any; }
-namespace stk { namespace io { class InputFile; } }
+namespace stk { namespace io { struct OutputParams; } }
+namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
-namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { struct Entity; } }
+namespace Ioss { class Property; }
+namespace stk { namespace io { class InputFile; } }
+namespace stk { namespace mesh { class MetaData; } }
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
-namespace stk { namespace mesh { class BulkData; } }
 
-namespace Ioss { class DatabaseIO; }
 
 namespace stk {
 namespace io {
@@ -150,14 +154,24 @@ public:
     void add_attribute_field(stk::mesh::FieldBase &field, const OutputVariableParams &var);
     void add_user_data(const std::vector<std::string>& userData, const std::string &alternate_name, stk::io::DataLocation loc);
     bool has_global(const std::string &globalVarName) const;
-    void add_global(const std::string &variableName, const boost::any &value, stk::util::ParameterType::Type type);
-    void add_global_ref(const std::string &variableName, const boost::any *value, stk::util::ParameterType::Type type);
+    void add_global(const std::string &variableName, const stk::util::Parameter &value);
+
+    template<typename T>
+    void add_global(const std::string &variableName, const T& value, stk::util::ParameterType::Type type)
+    {
+      STK_ANY_NAMESPACE::any anyValue(value);
+      std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, anyValue);
+      m_anyGlobalVariablesDefined = true;
+      internal_add_global(m_region, variableName, parameter_type.first, parameter_type.second);
+    }
+
+    void add_global_ref(const std::string &variableName, const stk::util::Parameter &value);
     void add_global(const std::string &variableName, Ioss::Field::BasicType dataType);
     void add_global(const std::string &variableName, const std::string &type, Ioss::Field::BasicType dataType);
     void add_global(const std::string &variableName, int component_count,     Ioss::Field::BasicType dataType);
 
     void write_global(const std::string &variableName,
-                      const boost::any &value, stk::util::ParameterType::Type type);
+                      const stk::util::Parameter &param);
     void write_global(const std::string &variableName, double globalVarData);
     void write_global(const std::string &variableName, int globalVarData);
     void write_global(const std::string &variableName, std::vector<double>& globalVarData);

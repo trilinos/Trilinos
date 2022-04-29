@@ -89,9 +89,7 @@ variables:
 		assembly_entity222:_typename = "assembly" ;
 
 // global attributes:
-		:floating_point_word_size = 8 ;
 		:file_size = 1 ;
-		:int64_status = 0 ;
 		:title = "This is a test" ;
 		:SOLID_MODEL = "STEP-X-43-1547836-Rev 0" ;
 data:

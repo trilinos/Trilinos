@@ -73,6 +73,7 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 
 namespace MueLu {
 
@@ -214,8 +215,10 @@ namespace MueLu {
     void SetupLineSmoothing   (Level& currentLevel);
     void SetupBlockRelaxation (Level& currentLevel);
     void SetupTopological     (Level& currentLevel);
+    void SetupAggregate       (Level& currentLevel);
+    void SetupHiptmair        (Level& currentLevel);
     void SetupGeneric         (Level& currentLevel);
-
+    Scalar SetupChebyshevEigenvalues(Level & currentLevel, const std::string & matrixName, const std::string & label, Teuchos::ParameterList & paramList) const;
   private:
 
     //!
@@ -231,7 +234,7 @@ namespace MueLu {
     RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_;
 
     //! matrix, used in apply if solving residual equation
-    RCP<Matrix> A_;
+    RCP<Operator> A_;
 
   }; // class Ifpack2Smoother
 

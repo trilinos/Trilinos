@@ -97,11 +97,9 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap =
       rcp (new map_type (INV, myGblRowInds (), indexBase, comm));
 
-    const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
     bool insertLocalEntryValues[] = { true, false };
 
-    // Test both dynamic and static profile.
-    for (Tpetra::ProfileType profileType : profileTypes) {
+    {
 
       Teuchos::OSTab tab2 (out);
 
@@ -116,7 +114,7 @@ namespace { // (anonymous)
         Teuchos::OSTab tab3 (out);
 
         const size_t maxNumEntPerRow = static_cast<size_t> (insertLocalEntry ? 2 : 1);
-        crs_graph_type G (rowMap, maxNumEntPerRow, profileType);
+        crs_graph_type G (rowMap, maxNumEntPerRow);
 
         const GO gblRow0 = static_cast<GO> (myRank);
         const GO gblRow1 = static_cast<GO> ((myRank + 1) % numProcs);
@@ -159,37 +157,45 @@ namespace { // (anonymous)
 
         // Test gblRow0
         {
-          Teuchos::ArrayView<const GO> gblInds;
+          typename crs_graph_type::global_inds_host_view_type gblInds;
           G.getGlobalRowView (gblRow0, gblInds);
 
           const LO expectedNumEnt = static_cast<LO> (maxNumEntPerRow);
           TEST_EQUALITY( static_cast<LO> (gblInds.size ()), expectedNumEnt );
           if (static_cast<LO> (gblInds.size ()) == expectedNumEnt) {
             if (insertLocalEntry) {
-              auto lclEntIter = std::find (gblInds.begin (), gblInds.end (), gblRow0);
-              TEST_ASSERT( lclEntIter != gblInds.end () );
+              auto lclEntIter = std::find (gblInds.data(), 
+                                           gblInds.data() + gblInds.extent(0),
+                                           gblRow0);
+              TEST_ASSERT( lclEntIter != gblInds.data() + gblInds.extent(0));
             }
             const GO gblCol0 = gblRow0 + static_cast<GO> (numProcs);
-            auto nonlclEntIter = std::find (gblInds.begin (), gblInds.end (), gblCol0);
-            TEST_ASSERT( nonlclEntIter != gblInds.end () );
+            auto nonlclEntIter = std::find (gblInds.data(), 
+                                            gblInds.data() + gblInds.extent(0),
+                                            gblCol0);
+            TEST_ASSERT( nonlclEntIter != gblInds.data() + gblInds.extent(0));
           }
         }
 
         // Test gblRow1
         {
-          Teuchos::ArrayView<const GO> gblInds;
+          typename crs_graph_type::global_inds_host_view_type gblInds;
           G.getGlobalRowView (gblRow1, gblInds);
 
           const LO expectedNumEnt = static_cast<LO> (maxNumEntPerRow);
           TEST_EQUALITY( static_cast<LO> (gblInds.size ()), expectedNumEnt );
           if (static_cast<LO> (gblInds.size ()) == expectedNumEnt) {
             if (insertLocalEntry) {
-              auto lclEntIter = std::find (gblInds.begin (), gblInds.end (), gblRow1);
-              TEST_ASSERT( lclEntIter != gblInds.end () );
+              auto lclEntIter = std::find (gblInds.data(), 
+                                           gblInds.data() + gblInds.extent(0),
+                                           gblRow1);
+              TEST_ASSERT( lclEntIter != gblInds.data() + gblInds.extent(0) );
             }
             const GO gblCol1 = gblRow1 + static_cast<GO> (numProcs);
-            auto nonlclEntIter = std::find (gblInds.begin (), gblInds.end (), gblCol1);
-            TEST_ASSERT( nonlclEntIter != gblInds.end () );
+            auto nonlclEntIter = std::find (gblInds.data(), 
+                                            gblInds.data() + gblInds.extent(0),
+                                            gblCol1);
+            TEST_ASSERT( nonlclEntIter != gblInds.data() + gblInds.extent(0) );
           }
         }
 
@@ -203,7 +209,7 @@ namespace { // (anonymous)
           return;
         }
       } // insertLocalEntry
-    } // profileType
+    } 
   }
 
   //

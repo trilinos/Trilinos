@@ -68,7 +68,7 @@ You should have the following directories::
 Create a TriBITS package
 ------------------------
 
-Any TriBITS package needs to have atleast 3 files.
+Any TriBITS package needs to have at least 3 files.
 
 - a top level CMakeLists file
 - a file that track package dependencies
@@ -93,33 +93,33 @@ placed in the cmake directory.  Copy the below text into a file called
 Dependencies.cmake::
 
 
-  TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()
+  tribits_package_define_dependencies()
 
 
 In this case the package we are creating has no dependencies but we
 still need this file.  The lack of arguments to the
-TRIBITS_PACKAGE_DEFINE_DEPENDENCIES() call reflects that this package
+tribits_package_define_dependencies() call reflects that this package
 does not have dependencies.  The last and most interesting file we
 will create in the package directory is the CMakeLists.txt file.  Copy
 the following into CMakeLists.txt::
 
-  TRIBITS_PACKAGE(HelloPackage)
+  tribits_package(HelloPackage)
   
-  TRIBITS_ADD_EXECUTABLE(Hello-Executable-Name NOEXEPREFIX SOURCES
+  tribits_add_executable(Hello-Executable-Name NOEXEPREFIX SOURCES
     src/HelloWorld.cpp INSTALLABLE)
   
-  TRIBITS_PACKAGE_POSTPROCESS()
+  tribits_package_postprocess()
 
-**TRIBITS_PACKAGE(HelloPackage)** Sets up a TriBITS package with the
+**tribits_package(HelloPackage)** Sets up a TriBITS package with the
 name "HelloPackage"
 
-**TRIBITS_ADD_EXECUTABLE(Hello-Executable-Name NOEXEPREFIX SOURCES src/HelloWorld.cpp INSTALLABLE)** 
+**tribits_add_executable(Hello-Executable-Name NOEXEPREFIX SOURCES src/HelloWorld.cpp INSTALLABLE)** 
   tells TriBITS that we want to build an executable named
   "Hello-Executable-Name" from the source file src/HelloWorld.cpp.
-  NOEXEPREFIX and INSTALLABLE are options to TRIBITS_ADD_EXECUTABLE()
+  NOEXEPREFIX and INSTALLABLE are options to tribits_add_executable()
   that I will not go into right now.
 
-**TRIBITS_PACKAGE_POSTPROCESS()** Must be at the end of any
+**tribits_package_postprocess()** Must be at the end of any
 packages top level CMakeLists file
 
 
@@ -142,18 +142,18 @@ project.  In this case, the package does not depend on any TPLs so
 this file will be very simple.  It should contain just the following
 single line::
 
-  TRIBITS_REPOSITORY_DEFINE_TPLS()
+  tribits_repository_define_tpls()
 
 **ProjectName.cmake** this file sets the name of the project.  Some
  other options can be specified in this file but we will just set the
  project name. It should contain the following::
   
-  SET(PROJECT_NAME TribitsHelloWorld)
+  set(PROJECT_NAME TribitsHelloWorld)
 
-**PackageList.cmake** defeines which packages are in the project.  We
+**PackageList.cmake** defines which packages are in the project.  We
  will just need to tell it the name and location of our one package::
 
-  TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+  tribits_repository_define_packages(
     HelloPackage  hello_package_dir  PT
   )
 
@@ -163,35 +163,35 @@ single line::
  have the following contents::
 
   # To be safe, define your minimum CMake version
-  CMAKE_MINIMUM_REQUIRED(VERSION 3.17.0 FATAL_ERROR)
+  cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
   
   # Make CMake set WIN32 with CYGWIN for older CMake versions
-  SET(CMAKE_LEGACY_CYGWIN_WIN32 1 CACHE BOOL "" FORCE)
+  set(CMAKE_LEGACY_CYGWIN_WIN32 1 CACHE BOOL "" FORCE)
   
   # Get PROJECT_NAME (must be in file for other parts of system)
-  INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake)
   
   # CMake requires that you declare the CMake project in the top-level file 
-  PROJECT(${PROJECT_NAME} NONE)
+  project(${PROJECT_NAME} NONE)
 
   # This needs to be set to the path to the installation of TriBITS on your machine 
-  SET(${PROJECT_NAME}_TRIBITS_DIR 
+  set(${PROJECT_NAME}_TRIBITS_DIR 
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits CACHE PATH "TriBITS base
   directory (default assumes in TriBITS source tree).")
 
   # Include the TriBITS system
-  INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
+  include("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
   
-  # MPI and Fortran are enabled by defualt, turn them off for this project
-  SET(TPL_ENABLE_MPI OFF CACHE BOOL "" FORCE)
+  # MPI and Fortran are enabled by default, turn them off for this project
+  set(TPL_ENABLE_MPI OFF CACHE BOOL "" FORCE)
   # Turn off Fortran support by default
-  SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
+  set(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT OFF)
   
   # Only one package in this simple project so just enable it :-)
-  SET(${PROJECT_NAME}_ENABLE_HelloPackage ON CACHE BOOL "" FORCE)
+  set(${PROJECT_NAME}_ENABLE_HelloPackage ON CACHE BOOL "" FORCE)
   
   # Do all of the processing for this Tribits project
-  TRIBITS_PROJECT()
+  tribits_project()
 
 **${PROJECT_NAME}_TRIBITS_DIR** Make sure you set this to your Tribits
 Installation path it may not be the same as this path.  Now you should
@@ -220,7 +220,7 @@ project::
   cmake ../
 
 The configure step will have created several files inside your build
-directory, most notably it will have created nessesary make files to
+directory, most notably it will have created necessary make files to
 actually build your project.  The other file I will mention here is
 the CMakeCache.txt which stores information about how the project was
 configured. To build your project just type::
@@ -257,7 +257,7 @@ hello_package_dir/src directory create the following files:
   #include <iostream>
   #include "hello_world_lib.hpp"
   int main() {
-    std::cout << HelloWorld::getHelloWorld() << "\n";
+    std::cout << HelloWorld::gethelloworld() << "\n";
     return 0;
   }
 
@@ -265,12 +265,12 @@ hello_package_dir/src directory create the following files:
 
   #include <string>
   
-  namespace HelloWorld { std::string getHelloWorld(); }
+  namespace HelloWorld { std::string gethelloworld(); }
 
 **hello_world\_lib.cpp**::
 
   #include "hello_world_lib.hpp"
-  std::string HelloWorld::getHelloWorld()
+  std::string HelloWorld::gethelloworld()
   { return "Hello World!"; }
 
 **hello_world_unit_tests.cpp**::
@@ -282,8 +282,8 @@ hello_package_dir/src directory create the following files:
   
     bool success = true;
   
-    const std::string rtn = HelloWorld::getHelloWorld();
-    std::cout << "HelloWorld::getHelloWorld() = '"<<rtn<<"' == 'Hello World'? ";
+    const std::string rtn = HelloWorld::gethelloworld();
+    std::cout << "HelloWorld::gethelloworld() = '"<<rtn<<"' == 'Hello World'? ";
     if (rtn == "Hello World!") {
        std::cout << "passed\n";
     }
@@ -305,32 +305,32 @@ We will use these files to build an executalbe, a library, and tests.
 Remember in the CMakeLists.txt file for the HelloPackage
 (hello_package_dir/CMakeList.txt) we have the line::
 
-  TRIBITS_ADD_EXECUTABLE(Hello-Executable-Name NOEXEPREFIX SOURCES
+  tribits_add_executable(Hello-Executable-Name NOEXEPREFIX SOURCES
   src/HelloWorld.cpp INSTALLABLE)
 
 lets now modify that line to build an executable of the same name but
 using hello_world_main.cpp instead of HelloWorld.cpp::
 
-  TRIBITS_ADD_EXECUTABLE(Hello-Executable-Name NOEXEPREFIX SOURCES
+  tribits_add_executable(Hello-Executable-Name NOEXEPREFIX SOURCES
   src/hello_world_main.cpp INSTALLABLE)
 
-to create a library we need to call TRIBITS_ADD_LIBRARY() and give it
+to create a library we need to call tribits_add_library() and give it
 a name, headers and sources.  add this the CMakeLists.txt::
 
-  TRIBITS_ADD_LIBRARY(hello_world_lib HEADERS src/hello_world_lib.hpp
+  tribits_add_library(hello_world_lib HEADERS src/hello_world_lib.hpp
   SOURCES src/hello_world_lib.cpp)
 
 we can also add tests.  You can add a test based on an executable you
 have already specified for example::
 
-  TRIBITS_ADD_TEST(Hello-Executable-Name NOEXEPREFIX
+  tribits_add_test(Hello-Executable-Name NOEXEPREFIX
   PASS_REGULAR_EXPRESSION "Hello World")
 
 will run "Hello-Executable-Name" and verify that the output is "Hello
-World".  You can also add a test and an exectuable att he same
+World".  You can also add a test and an executable att he same
 time. for example::
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(unit_tests SOURCES
+  tribits_add_executable_and_test(unit_tests SOURCES
   src/hello_world_unit_tests.cpp PASS_REGULAR_EXPRESSION "All unit
   tests passed")
 
@@ -340,22 +340,22 @@ that will be marked as passing if the output of that executable is
 "All unit tests passed".  After making these changes and additions to
 the CMakeLists.txt file it should read::
 
-  TRIBITS_PACKAGE(HelloPackage)
+  tribits_package(HelloPackage)
 
-  TRIBITS_ADD_LIBRARY(hello_world_lib HEADERS src/hello_world_lib.hpp
+  tribits_add_library(hello_world_lib HEADERS src/hello_world_lib.hpp
    SOURCES src/hello_world_lib.cpp)
 
-  TRIBITS_ADD_EXECUTABLE(Hello-Executable-Name NOEXEPREFIX SOURCES
+  tribits_add_executable(Hello-Executable-Name NOEXEPREFIX SOURCES
    hello_world_main.cpp INSTALLABLE)
 
-  TRIBITS_ADD_TEST(Hello-Executable-Name NOEXEPREFIX
+  tribits_add_test(Hello-Executable-Name NOEXEPREFIX
    PASS_REGULAR_EXPRESSION "Hello World")
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(unit_tests SOURCES
+  tribits_add_executable_and_test(unit_tests SOURCES
    hello_world_unit_tests.cpp PASS_REGULAR_EXPRESSION "All unit tests
    passed")
 
-  TRIBITS_PACKAGE_POSTPROCESS()
+  tribits_package_postprocess()
 
 now reconfigure and rebuild in the build directory with::
 
@@ -409,15 +409,15 @@ this is set then the files will be installed to the directory
 specified.  For example in the top level CMakeLists set this variable
 to a diecroyr called "Install" in the current source tree::
 
-  SET(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/Install)
+  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/Install)
 
-now clear the contents ofthe build directory and reconfigure, biuld,
+now clear the contents of the build directory and reconfigure, biuld,
 and install the project with::
 
   cmake ../
   make install
 
-Now you should see a directory calle "Install" in the top level of the
+Now you should see a directory called "Install" in the top level of the
 project with contents::
 
   tree

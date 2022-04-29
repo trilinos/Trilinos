@@ -1,21 +1,31 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
+#include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>
-#include <Iovs_Utils.h>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <visualization/utils/Iovs_CatalystLogging.h>
+#include <visualization/utils/Iovs_Utils.h>
+
+#if defined(__IOSS_WINDOWS__)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#else
+#include <libgen.h>
+#endif
 
 #ifdef IOSS_DLOPEN_ENABLED
 #include <dlfcn.h>
 #endif
 
-#include <libgen.h>
 #include <sys/stat.h>
 
 namespace Iovs {
@@ -54,6 +64,7 @@ namespace Iovs {
 
   CatalystManagerBase *Utils::createCatalystManagerInstance()
   {
+#ifdef IOSS_DLOPEN_ENABLED
     void *dlh = this->getDlHandle();
 
     if (!dlh) {
@@ -72,6 +83,9 @@ namespace Iovs {
                                "'CreateCatalystManagerInstance'");
     }
     return (*mkr)();
+#else
+    return nullptr;
+#endif
   }
 
   std::unique_ptr<Iovs_exodus::CatalystExodusMeshBase>
@@ -121,7 +135,7 @@ namespace Iovs {
     else if (props.exists("PHACTORI_JSON_SCRIPT")) {
       bool        readOkay             = false;
       std::string phactoriJSONFilePath = props.get("PHACTORI_JSON_SCRIPT").get_string();
-      if (dbinfo.myRank == 0) {
+      if (dbinfo.parallelUtils->parallel_rank() == 0) {
         std::ifstream f(phactoriJSONFilePath);
         if (f) {
           std::ostringstream ss;
@@ -143,7 +157,7 @@ namespace Iovs {
     else if (props.exists("PHACTORI_INPUT_SYNTAX_SCRIPT")) {
       std::string phactoriFilePath = props.get("PHACTORI_INPUT_SYNTAX_SCRIPT").get_string();
       CatalystManagerBase::ParseResult pres;
-      if (dbinfo.myRank == 0) {
+      if (dbinfo.parallelUtils->parallel_rank() == 0) {
         this->getCatalystManager().parsePhactoriFile(phactoriFilePath, pres);
       }
       this->broadCastStatusCode(pres.parseFailed, dbinfo);
@@ -215,6 +229,16 @@ namespace Iovs {
     }
   }
 
+  void Utils::writeToCatalystLogFile(const DatabaseInfo &dbinfo, const Ioss::PropertyManager &props)
+  {
+    if(dbinfo.parallelUtils->parallel_rank() == 0) {
+      CatalystLogging catLog = CatalystLogging();
+      catLog.setProperties(&props);
+      catLog.writeToLogFile();
+    }
+    dbinfo.parallelUtils->barrier();
+  }
+
   std::string Utils::getRestartTag(const std::string &databaseFilename)
   {
     std::string            restartTag;
@@ -265,7 +289,7 @@ namespace Iovs {
     bool        callDlopenLibOSMesa{};
     std::string libOSMesaPath;
 
-    this->getCatalystPluginPath(pluginLibraryPath, callDlopenLibOSMesa, libOSMesaPath);
+    callDlopenLibOSMesa = this->getCatalystPluginPath(pluginLibraryPath, libOSMesaPath);
 
 #ifdef IOSS_DLOPEN_ENABLED
     if (callDlopenLibOSMesa) {
@@ -287,15 +311,15 @@ namespace Iovs {
 #endif
   }
 
-  void Utils::getCatalystPluginPath(std::string &catalystPluginPath, bool callDlopenLibOSMesa,
-                                    std::string &libOSMesaPath)
+  bool Utils::getCatalystPluginPath(std::string &catalystPluginPath, std::string &libOSMesaPath)
   {
+    bool callDlopenLibOSMesa = false;
 
     if (getenv("CATALYST_PLUGIN") != nullptr) {
       catalystPluginPath  = getenv("CATALYST_PLUGIN");
       callDlopenLibOSMesa = false;
       libOSMesaPath       = CATALYST_LIB_OSMESA;
-      return;
+      return callDlopenLibOSMesa;
     }
 
     std::string catalystInsDir = this->getCatalystAdapterInstallDirectory();
@@ -305,7 +329,7 @@ namespace Iovs {
           catalystInsDir + std::string(CATALYST_INSTALL_LIB_DIR) + CATALYST_PLUGIN_DYNAMIC_LIBRARY;
       callDlopenLibOSMesa = false;
       libOSMesaPath       = CATALYST_LIB_OSMESA;
-      return;
+      return callDlopenLibOSMesa;
     }
 
     catalystPluginPath =
@@ -320,6 +344,7 @@ namespace Iovs {
     std::string paraviewPythonZipFile =
         this->getSierraInstallDirectory() + CATALYST_PARAVIEW_PYTHON_ZIP_FILE;
     setPythonPathForParaViewPythonZipFile(paraviewPythonZipFile);
+    return callDlopenLibOSMesa;
   }
 
   void Utils::setPythonPathForParaViewPythonZipFile(std::string &paraviewPythonZipFilePath)
@@ -331,7 +356,11 @@ namespace Iovs {
     else {
       persistentLdLibraryPathEnvForCatalyst = paraviewPythonZipFilePath + ":" + existingPythonpath;
     }
+#if defined(__IOSS_WINDOWS__)
+    SetEnvironmentVariableA("PYTHONPATH", persistentLdLibraryPathEnvForCatalyst.c_str());
+#else
     setenv("PYTHONPATH", persistentLdLibraryPathEnvForCatalyst.c_str(), 1);
+#endif
   }
 
   std::string Utils::getCatalystPythonDriverPath()
@@ -372,7 +401,11 @@ namespace Iovs {
       IOSS_ERROR(errmsg);
     }
 
-    char *      cbuf          = realpath(sierraInsDir.c_str(), nullptr);
+#if defined(__IOSS_WINDOWS__)
+    char *cbuf = _fullpath(nullptr, sierraInsDir.c_str(), _MAX_PATH);
+#else
+    char *cbuf  = realpath(sierraInsDir.c_str(), nullptr);
+#endif
     std::string sierraInsPath = cbuf;
     free(cbuf);
 
@@ -384,6 +417,13 @@ namespace Iovs {
       IOSS_ERROR(errmsg);
     }
 
+#if defined(__IOSS_WINDOWS__)
+    {
+      std::ostringstream errmsg;
+      errmsg << "This code is not yet supported on windows...\n";
+      IOSS_ERROR(errmsg);
+    }
+#else
     char *cbase = strdup(sierraInsPath.c_str());
     char *cdir  = strdup(sierraInsPath.c_str());
     char *bname = basename(cbase);
@@ -400,6 +440,7 @@ namespace Iovs {
 
     free(cbase);
     free(cdir);
+#endif
 
     return sierraInsPath + "/" + CATALYST_PLUGIN_PATH + "/" + sierraSystem +
            CATALYST_IOSS_CATALYST_PLUGIN_DIR;
@@ -446,7 +487,7 @@ namespace Iovs {
   void Utils::createDatabaseOutputFile(const DatabaseInfo &dbinfo)
   {
     std::ostringstream errmsg;
-    if (dbinfo.myRank == 0) {
+    if (dbinfo.parallelUtils->parallel_rank() == 0) {
       if (!Utils::fileExists(dbinfo.databaseFilename)) {
         std::ofstream output_file;
         output_file.open(dbinfo.databaseFilename.c_str(), std::ios::out | std::ios::trunc);
@@ -458,6 +499,7 @@ namespace Iovs {
         output_file.close();
       }
     }
+    dbinfo.parallelUtils->barrier();
   }
 
   void Utils::reportCatalystErrorMessages(const std::vector<int> &        error_codes,
@@ -490,11 +532,11 @@ namespace Iovs {
     PAR_UNUSED(dbinfo);
 #ifdef SEACAS_HAVE_MPI
     int size = s.size();
-    MPI_Bcast(&size, 1, MPI_INT, 0, dbinfo.communicator);
-    if (dbinfo.myRank != 0) {
+    dbinfo.parallelUtils->broadcast(size);
+    if (dbinfo.parallelUtils->parallel_rank() != 0) {
       s.resize(size);
     }
-    MPI_Bcast(const_cast<char *>(s.data()), size, MPI_CHAR, 0, dbinfo.communicator);
+    dbinfo.parallelUtils->broadcast(s);
 #endif
   }
 
@@ -505,7 +547,7 @@ namespace Iovs {
 #ifdef SEACAS_HAVE_MPI
 
     int code = statusCode;
-    MPI_Bcast(&code, 1, MPI_INT, 0, dbinfo.communicator);
+    dbinfo.parallelUtils->broadcast(code);
     statusCode = code;
 #endif
   }

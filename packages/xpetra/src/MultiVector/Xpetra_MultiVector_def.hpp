@@ -89,6 +89,27 @@ Xpetra_randomize()
     }
 }
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+Xpetra_randomize(const Scalar& minVal, const Scalar& maxVal)
+{
+    typedef Teuchos::ScalarTraits<Scalar> SCT;
+    Scalar point5 = SCT::one()/ (SCT::one()  + SCT::one());
+
+    const size_t numVectors = getNumVectors();
+    for(size_t i = 0; i < numVectors; i++)
+    {
+        Teuchos::ArrayRCP<Scalar> datai = getDataNonConst(i);
+
+        const size_t myLength = getLocalLength();
+        for(size_t j = 0; j < myLength; j++)
+        {
+          datai[ j ] = point5*(maxVal-minVal)*SCT::random()+point5*(maxVal+minVal);
+        }
+    }
+}
+
 
 }      // namespace Xpetra
 

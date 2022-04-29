@@ -8,7 +8,7 @@
 #include "Tacho.hpp"
 
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 namespace Tacho {
 
@@ -158,8 +158,11 @@ namespace Tacho {
     Driver();
     /// delete copy constructor and assignment operator
     /// sharing numeric tools for different inputs does not make sense
-    Driver(const Driver &) = delete;
-    Driver& operator=(const Driver &) = delete;
+    Driver(const Driver &) = default;
+    Driver& operator=(const Driver &) = default;
+
+    /// duplicate the solver with sharing symbolic factorization
+    Driver duplicate();
 
     ///
     /// common options
@@ -210,14 +213,27 @@ namespace Tacho {
              typename arg_ordinal_type_array>
     int analyze(const ordinal_type m,
                 const arg_size_type_array &ap,
-                const arg_ordinal_type_array &aj) {
+                const arg_ordinal_type_array &aj,
+                const bool duplicate = false) {
       _m = m;
 
-      _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
-      _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
+      if (duplicate) {
+        /// for most cases, ap and aj are from host; so construct ap and aj and mirror to device
+        _h_ap = size_type_array_host
+          (Kokkos::ViewAllocateWithoutInitializing("h_ap"), ap.extent(0)); Kokkos::deep_copy(_h_ap, ap);
+        _h_aj = ordinal_type_array_host
+          (Kokkos::ViewAllocateWithoutInitializing("h_aj"), aj.extent(0)); Kokkos::deep_copy(_h_aj, aj);
 
-      _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
-      _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
+        _ap   = Kokkos::create_mirror_view(exec_memory_space(), _h_ap); Kokkos::deep_copy(_ap, _h_ap);
+        _aj   = Kokkos::create_mirror_view(exec_memory_space(), _h_aj); Kokkos::deep_copy(_aj, _h_aj);
+      } else {
+        /// this does not make any extra deep copy; users should hold the graph data
+        _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
+        _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
+        
+        _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
+        _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
+      }
 
       _h_perm = ordinal_type_array_host();
       _h_peri = ordinal_type_array_host();
@@ -243,18 +259,39 @@ namespace Tacho {
                 const arg_size_type_array &ap,
                 const arg_ordinal_type_array &aj,
 		const arg_perm_type_array &perm,
-		const arg_perm_type_array &peri) {
+		const arg_perm_type_array &peri,
+                const bool duplicate = false) {
       _m = m;
 
-      _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
-      _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
+      if (duplicate) {
+        /// for most cases, ap and aj are from host; so construct ap and aj and mirror to device
+        _h_ap = size_type_array_host   
+          (Kokkos::ViewAllocateWithoutInitializing("h_ap"), ap.extent(0)); Kokkos::deep_copy(_h_ap, ap);
+        _h_aj = ordinal_type_array_host
+          (Kokkos::ViewAllocateWithoutInitializing("h_aj"), aj.extent(0)); Kokkos::deep_copy(_h_aj, aj);
 
-      _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
-      _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
+        _ap   = Kokkos::create_mirror_view(exec_memory_space(), _h_ap); Kokkos::deep_copy(_ap, _h_ap);
+        _aj   = Kokkos::create_mirror_view(exec_memory_space(), _h_aj); Kokkos::deep_copy(_aj, _h_aj);
 
-      _h_perm = Kokkos::create_mirror_view(host_memory_space(), perm); Kokkos::deep_copy(_h_perm, perm);
-      _h_peri = Kokkos::create_mirror_view(host_memory_space(), peri); Kokkos::deep_copy(_h_peri, peri);
+        _h_perm = ordinal_type_array_host
+          (Kokkos::ViewAllocateWithoutInitializing("h_perm"), perm.extent(0)); 
+        _h_peri = ordinal_type_array_host
+          (Kokkos::ViewAllocateWithoutInitializing("h_peri"), peri.extent(0)); 
+      } else {
+        /// this does not make any extra deep copy; users should hold the graph data
+        _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
+        _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
+
+        _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
+        _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
+
+        _h_perm = Kokkos::create_mirror_view(host_memory_space(), perm); 
+        _h_peri = Kokkos::create_mirror_view(host_memory_space(), peri); 
+      }
       
+      Kokkos::deep_copy(_h_perm, perm);
+      Kokkos::deep_copy(_h_peri, peri);
+
       _nnz = _h_ap(m);
 
       _m_graph = 0;
@@ -278,14 +315,27 @@ namespace Tacho {
                 const ordinal_type m_graph,
                 const arg_size_type_array &ap_graph,
                 const arg_ordinal_type_array &aj_graph,
-                const arg_ordinal_type_array &aw_graph) {
+                const arg_ordinal_type_array &aw_graph,
+                const bool duplicate = false) {
       _m = m;
 
-      _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
-      _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
+      if (duplicate) {
+        /// for most cases, ap and aj are from host; so construct ap and aj and mirror to device
+        _h_ap = size_type_array_host   
+          (Kokkos::ViewAllocateWithoutInitializing("h_ap"), ap.extent(0)); Kokkos::deep_copy(_h_ap, ap);
+        _h_aj = ordinal_type_array_host
+          (Kokkos::ViewAllocateWithoutInitializing("h_aj"), aj.extent(0)); Kokkos::deep_copy(_h_aj, aj);
 
-      _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
-      _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
+        _ap   = Kokkos::create_mirror_view(exec_memory_space(), _h_ap); Kokkos::deep_copy(_ap, _h_ap);
+        _aj   = Kokkos::create_mirror_view(exec_memory_space(), _h_aj); Kokkos::deep_copy(_aj, _h_aj);
+      } else {
+        /// this does not make any extra deep copy; users should hold the graph data
+        _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
+        _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
+
+        _h_ap = Kokkos::create_mirror_view(host_memory_space(), ap); Kokkos::deep_copy(_h_ap, ap);
+        _h_aj = Kokkos::create_mirror_view(host_memory_space(), aj); Kokkos::deep_copy(_h_aj, aj);
+      }
 
       _h_perm = ordinal_type_array_host();
       _h_peri = ordinal_type_array_host();
@@ -293,9 +343,22 @@ namespace Tacho {
       _nnz = _h_ap(m);
 
       _m_graph = m_graph;
-      _h_ap_graph = Kokkos::create_mirror_view(host_memory_space(), ap_graph); Kokkos::deep_copy(_h_ap_graph, ap_graph);
-      _h_aj_graph = Kokkos::create_mirror_view(host_memory_space(), aj_graph); Kokkos::deep_copy(_h_aj_graph, aj_graph);
-      _h_aw_graph = Kokkos::create_mirror_view(host_memory_space(), aw_graph); Kokkos::deep_copy(_h_aw_graph, aw_graph);
+      if (duplicate) {
+        _h_ap_graph = size_type_array_host
+          (Kokkos::ViewAllocateWithoutInitializing("h_ap_graph"), ap_graph.extent(0)); 
+        _h_aj_graph = ordinal_type_array_host
+          (Kokkos::ViewAllocateWithoutInitializing("h_aj_graph"), aj_graph.extent(0)); 
+        _h_aw_graph = ordinal_type_array_host
+          (Kokkos::ViewAllocateWithoutInitializing("h_aw_graph"), aw_graph.extent(0)); 
+      } else {
+        _h_ap_graph = Kokkos::create_mirror_view(host_memory_space(), ap_graph); 
+        _h_aj_graph = Kokkos::create_mirror_view(host_memory_space(), aj_graph); 
+        _h_aw_graph = Kokkos::create_mirror_view(host_memory_space(), aw_graph); 
+      }
+
+      Kokkos::deep_copy(_h_ap_graph, ap_graph);
+      Kokkos::deep_copy(_h_aj_graph, aj_graph);
+      Kokkos::deep_copy(_h_aw_graph, aw_graph);
 
       _h_perm_graph = ordinal_type_array_host();
       _h_peri_graph = ordinal_type_array_host();

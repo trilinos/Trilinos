@@ -455,7 +455,7 @@ namespace Tacho {
         return;
       }
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       {
         timer.reset();
         {
@@ -506,7 +506,7 @@ namespace Tacho {
         return;
       }
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       {
         timer.reset();
         {
@@ -571,7 +571,7 @@ namespace Tacho {
                                t.data() == b.data(), std::logic_error,
                                "x, b and t have the same data pointer");
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       _info.x = t;
 
@@ -621,7 +621,7 @@ namespace Tacho {
         return;
       }
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       {
         timer.reset();
         {
@@ -687,7 +687,7 @@ namespace Tacho {
                                t.data() == b.data(), std::logic_error,
                                "x, b and t have the same data pointer");
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       _info.x = t;
 
@@ -738,7 +738,7 @@ namespace Tacho {
     void
     factorizeCholesky_Parallel(const value_type_array &ax,
                                const ordinal_type verbose = 0) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
 
@@ -857,7 +857,7 @@ namespace Tacho {
     factorizeCholesky_ParallelPanel(const value_type_array &ax,
                                     const ordinal_type panelsize, 
                                     const ordinal_type verbose = 0) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
 
@@ -992,7 +992,7 @@ namespace Tacho {
                                t.data() == b.data(), std::logic_error,
                                "x, b and t have the same data pointer");
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       _info.x = t;
 
@@ -1102,7 +1102,7 @@ namespace Tacho {
     factorizeCholesky_ParallelByBlocks(const value_type_array &ax,
                                        const ordinal_type blksize,
                                        const ordinal_type verbose = 0) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
 
@@ -1230,7 +1230,7 @@ namespace Tacho {
                                             const ordinal_type blksize,
                                             const ordinal_type panelsize,
                                             const ordinal_type verbose = 0) {
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
 
       timer.reset();
 

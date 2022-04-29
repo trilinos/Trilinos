@@ -162,8 +162,10 @@ public:
   RCP<PreconditionerBase<Scalar> > create_W_prec() const;
   /** \brief . */
   RCP<const LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
   /** \brief . */
   RCP<LinearOpBase<Scalar> > create_hess_g_pp( int j, int l1, int l2 ) const;
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
@@ -520,12 +522,14 @@ ModelEvaluatorDelegatorBase<Scalar>::get_W_factory() const
 }
 
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
 template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_hess_g_pp( int j, int l1, int l2 ) const
 {
   return getUnderlyingModel()->create_hess_g_pp(j, l1, l2);
 }
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 
 template<class Scalar>

@@ -43,6 +43,7 @@
 /// \file Tpetra_DistObject_decl.hpp
 /// \brief Declaration of the Tpetra::DistObject class
 
+#include "Tpetra_Details_DistributorActor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
@@ -515,6 +516,58 @@ namespace Tpetra {
               const CombineMode CM,
               const bool restrictedMode = false);
 
+    void
+    beginImport(const SrcDistObject& source,
+                const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                const CombineMode CM,
+                const bool restrictedMode = false);
+
+    void
+    beginExport(const SrcDistObject& source,
+                const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                const CombineMode CM,
+                const bool restrictedMode = false);
+
+    void
+    beginImport(const SrcDistObject& source,
+                const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                const CombineMode CM,
+                const bool restrictedMode = false);
+
+    void
+    beginExport(const SrcDistObject& source,
+                const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                const CombineMode CM,
+                const bool restrictedMode = false);
+
+    void
+    endImport(const SrcDistObject& source,
+              const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+              const CombineMode CM,
+              const bool restrictedMode = false);
+
+    void
+    endExport(const SrcDistObject& source,
+              const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+              const CombineMode CM,
+              const bool restrictedMode = false);
+
+    void
+    endImport(const SrcDistObject& source,
+              const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+              const CombineMode CM,
+              const bool restrictedMode = false);
+
+    void
+    endExport(const SrcDistObject& source,
+              const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+              const CombineMode CM,
+              const bool restrictedMode = false);
+
+    /// \brief Whether the data from an import/export operation has
+    ///        arrived, and is ready for the unpack and combine step.
+    bool transferArrived() const;
+
     //@}
     //! @name Attribute accessor methods
     //@{
@@ -721,22 +774,34 @@ namespace Tpetra {
     /// LID DualViews come from the Transfer object given to
     /// doTransfer.  They are <i>always</i> sync'd on both host and
     /// device.  Users must never attempt to modify or sync them.
-    virtual void
-    doTransferNew (const SrcDistObject& src,
-                   const CombineMode CM,
-                   const size_t numSameIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& permuteToLIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& permuteFromLIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& remoteLIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& exportLIDs,
-                   Distributor& distor,
-                   const ReverseOption revOp,
-                   const bool commOnHost,
-                   const bool restrictedMode);
+    void beginTransfer(const SrcDistObject& src,
+                       const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                       const char modeString[],
+                       const ReverseOption revOp,
+                       const CombineMode CM,
+                       const bool restrictedMode);
+
+    void endTransfer(const SrcDistObject& src,
+                     const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                     const char modeString[],
+                     const ReverseOption revOp,
+                     const CombineMode CM,
+                     const bool restrictedMode);
+
+    void doPosts(const Details::DistributorPlan& distributorPlan,
+                 size_t constantNumPackets,
+                 bool commOnHost,
+                 std::shared_ptr<std::string> prefix,
+                 const bool canTryAliasing,
+                 const CombineMode CM);
+
+    void doPackAndPrepare(const SrcDistObject& src,
+                          const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+                          size_t& constantNumPackets);
+
+    void doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
+                            size_t constantNumPackets,
+                            CombineMode CM);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///
@@ -831,9 +896,6 @@ namespace Tpetra {
     /// \param constantNumPackets [out] On exit, 0 if the number of
     ///   packets per LID could differ, else (if nonzero) the number
     ///   of packets per LID (which must be constant).
-    ///
-    /// \param distor [in] The Distributor object we are using.  Most
-    ///   implementations will not use this.
     virtual void
     packAndPrepare (const SrcDistObject& source,
                     const Kokkos::DualView<const local_ordinal_type*,
@@ -842,8 +904,7 @@ namespace Tpetra {
                       buffer_device_type>& exports,
                     Kokkos::DualView<size_t*,
                       buffer_device_type> numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor& distor);
+                    size_t& constantNumPackets);
 
     /// \brief Perform any unpacking and combining after
     ///   communication.
@@ -882,9 +943,6 @@ namespace Tpetra {
     ///   <tt>numPacketsPerLID[i]</tt> is the number of packets to
     ///   unpack for LID <tt>importLIDs[i]</tt>.
     ///
-    /// \param distor [in] The Distributor object we are using.  Most
-    ///   implementations will not use this.
-    ///
     /// \param combineMode [in] The CombineMode to use when combining
     ///   the imported entries with existing entries.
     virtual void
@@ -895,7 +953,6 @@ namespace Tpetra {
                       Kokkos::DualView<size_t*,
                         buffer_device_type> numPacketsPerLID,
                       const size_t constantNumPackets,
-                      Distributor& distor,
                       const CombineMode combineMode);
 
 
@@ -933,10 +990,12 @@ namespace Tpetra {
     /// <tt>exports_</tt> always gets passed into packAndPrepare()
     /// by nonconst reference.  Thus, that method can resize the
     /// DualView without needing to call other DistObject methods.
-    bool
+    virtual bool
     reallocImportsIfNeeded (const size_t newSize,
                             const bool verbose,
-                            const std::string* prefix);
+                            const std::string* prefix,
+                            const bool remoteLIDsContiguous=false,
+                            const CombineMode CM=INSERT);
 
     /// \brief Number of packets to receive for each receive operation.
     ///
@@ -977,6 +1036,8 @@ namespace Tpetra {
 
   private:
     using this_type = DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>;
+
+    Details::DistributorActor distributorActor_;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::RCP<Teuchos::Time> doXferTimer_;

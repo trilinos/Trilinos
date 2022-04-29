@@ -70,6 +70,10 @@ namespace MueLu {
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
+    // For Zoltan2 compatibility
+    using lno_t  = LocalOrdinal;
+    using gno_t  = GlobalOrdinal;
+    using node_t = Node;
 
     //! @name Constructors/Destructors.
     //@{
@@ -91,7 +95,7 @@ namespace MueLu {
 
     virtual void   SetBoundaryNodeMap(const ArrayRCP<const bool > & boundaryArray) = 0;
 
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    virtual size_t getLocalMaxNumRowEntries() const = 0;
 
     virtual const ArrayRCP<const bool> GetBoundaryNodeMap() const = 0;
 

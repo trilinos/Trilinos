@@ -44,11 +44,12 @@ class FileValidator {
 public:
   FileValidator(MPI_Comm comm);
 
-  void require_file_exists(const std::string& filename) const;
+  void require_file_exists(const std::string& filename, unsigned numProcs) const;
+  bool input_equals_output(const std::string& infile, const std::string& outfile) const;
   bool serial_input_equals_output(const std::string& infile, const std::string& outfile) const;
 
 private:
-  bool does_file_exist(const std::string& filename) const;
+  bool does_file_exist(const std::string& filename, unsigned numProcs) const;
   std::string trim_filename(const std::string& filename) const;
 
   MPI_Comm m_comm;

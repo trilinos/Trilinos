@@ -51,9 +51,11 @@ namespace {
 TEST(UnitTestRuntimeWarning, Throttle)
 {
   stk::set_report_handler(my_report_handler);
+  s_os.str(std::string());
+  stk::reset_warning_count();
 
-  int throttle_limit = 3;
-  stk::MessageCode id(throttle_limit);
+  size_t throttleLimit = 3;
+  stk::MessageCode id(throttleLimit);
   stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
   stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
   stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
@@ -62,6 +64,60 @@ TEST(UnitTestRuntimeWarning, Throttle)
   std::string warningstring = s_os.str();
   std::string expected("0: runtime-warning XX\n; 0: runtime-warning XX\n; 0: runtime-warning XX\n; -2147483648: Maximum count for this unknown (previous message) has been exceeded and will no longer be displayed; ");
   EXPECT_EQ(expected, warningstring);
+
+  EXPECT_EQ(4u, stk::get_warning_count());
+  EXPECT_EQ(throttleLimit, stk::get_warning_printed_count());
+  EXPECT_EQ(throttleLimit, stk::get_warning_printed_count(id));
+}
+
+TEST(UnitTestRuntimeWarning, ThrottlePrinted)
+{
+  stk::set_report_handler(my_report_handler);
+  s_os.str(std::string());
+  stk::reset_warning_count();
+
+  size_t throttle_limit = 3;
+  stk::MessageCode id(throttle_limit);
+  stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningAdHoc(id) << "runtime-warning XX" << std::endl;
+
+  stk::RuntimeWarning() << "runtime-warning default not throttled" << std::endl;
+  stk::RuntimeWarning() << "runtime-warning default not throttled" << std::endl;
+  stk::RuntimeWarning() << "runtime-warning default not throttled" << std::endl;
+  stk::RuntimeWarning() << "runtime-warning default not throttled" << std::endl;
+
+  EXPECT_EQ(10u, stk::get_warning_count());
+
+  EXPECT_EQ(throttle_limit, stk::get_warning_printed_count(id));
+  EXPECT_EQ(throttle_limit + 4u, stk::get_warning_printed_count());
+
+  stk::MessageCode defaultMessageCode = stk::MessageCode::s_defaultMessageCode;
+  EXPECT_EQ(4u, stk::get_warning_printed_count(defaultMessageCode));
+}
+
+TEST(UnitTestRuntimeWarningP0, WarningPrintedCountParallel)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
+  stk::set_report_handler(my_report_handler);
+  s_os.str(std::string());
+  stk::reset_warning_count();
+
+  stk::RuntimeWarningP0() << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningP0() << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningP0() << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningP0() << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningP0() << "runtime-warning XX" << std::endl;
+  stk::RuntimeWarningP0() << "runtime-warning XX" << std::endl;
+
+  unsigned expectedWarningCount = (stk::parallel_machine_rank(MPI_COMM_WORLD)==0) ? 6 : 0;
+
+  EXPECT_EQ(expectedWarningCount, stk::get_warning_count());
+  EXPECT_EQ(expectedWarningCount, stk::get_warning_printed_count());
 }
 
 }

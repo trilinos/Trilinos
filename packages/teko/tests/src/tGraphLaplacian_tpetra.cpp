@@ -179,23 +179,23 @@ bool tGraphLaplacian_tpetra::compareMatrix(const Tpetra::CrsMatrix<ST,LO,GO,NT> 
    bool allPassed = true;
 
    size_t count;
-   GO indicies[5];
-   ST values[5];
+   auto indices = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_global_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),5);
+   auto values = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),5);
    for(GO i=0;i<5;i++) {
-      gl.getGlobalRowCopy(i,Teuchos::ArrayView<GO>(indicies,5),Teuchos::ArrayView<ST>(values,5),count);
+      gl.getGlobalRowCopy(i,indices,values,count);
 
       for(size_t j=0;j<count;j++) {
-         GO col = indicies[j];
+         GO col = indices(j);
          ST diff = 0.0; 
          if(exact[i][col]==0.0) 
-            diff = std::fabs((exact[i][col]-values[j]));
+            diff = std::fabs((exact[i][col]-values(j)));
          else
-            diff = std::fabs((exact[i][col]-values[j])/exact[i][col]);
+            diff = std::fabs((exact[i][col]-values(j))/exact[i][col]);
          TEST_ASSERT(diff<=tolerance_,
                         "\n   tGraphLaplacian_tpetra::" << name << ": " << toString(status) << "\n"
                      << "      (row,col) = ( " << i << ", " << col << " )\n"
                      << "      exact = " << exact[i][col] << "\n"
-                     << "      gl = " << values[j] << "\n"
+                     << "      gl = " << values(j) << "\n"
                      << "      rel err = " << diff << "<= " << tolerance_ << "\n");
       }
    }

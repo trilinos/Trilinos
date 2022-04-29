@@ -27,8 +27,6 @@ namespace LOCA {
       J_rowMatrix(jacRowMatrix),
       nonconst_U(U_multiVec),
       nonconst_V(V_multiVec),
-      U_DeviceView(nonconst_U->getLocalViewDevice()),
-      V_DeviceView(nonconst_V->getLocalViewDevice()),
       includeUV(include_UV_terms),
       m(U_multiVec->getNumVectors()),
       U_map(*U_multiVec->getMap()),
@@ -60,11 +58,11 @@ namespace LOCA {
     ::Tpetra::global_size_t LowRankUpdateRowMatrix::getGlobalNumCols() const
     {return J_rowMatrix->getGlobalNumCols();}
 
-    size_t LowRankUpdateRowMatrix::getNodeNumRows() const
-    {return J_rowMatrix->getNodeNumRows();}
+    size_t LowRankUpdateRowMatrix::getLocalNumRows() const
+    {return J_rowMatrix->getLocalNumRows();}
 
-    size_t LowRankUpdateRowMatrix::getNodeNumCols() const
-    {return J_rowMatrix->getNodeNumCols();}
+    size_t LowRankUpdateRowMatrix::getLocalNumCols() const
+    {return J_rowMatrix->getLocalNumCols();}
 
     NOX::GlobalOrdinal LowRankUpdateRowMatrix::getIndexBase() const
     {return J_rowMatrix->getIndexBase();}
@@ -72,8 +70,8 @@ namespace LOCA {
     ::Tpetra::global_size_t LowRankUpdateRowMatrix::getGlobalNumEntries() const
     {return J_rowMatrix->getGlobalNumEntries();}
 
-    size_t LowRankUpdateRowMatrix::getNodeNumEntries() const
-    {return J_rowMatrix->getNodeNumEntries();}
+    size_t LowRankUpdateRowMatrix::getLocalNumEntries() const
+    {return J_rowMatrix->getLocalNumEntries();}
 
     size_t LowRankUpdateRowMatrix::getNumEntriesInGlobalRow(NOX::GlobalOrdinal globalRow) const
     {return J_rowMatrix->getNumEntriesInGlobalRow(globalRow);}
@@ -84,8 +82,8 @@ namespace LOCA {
     size_t LowRankUpdateRowMatrix::getGlobalMaxNumRowEntries() const
     {return J_rowMatrix->getGlobalMaxNumRowEntries();}
 
-    size_t LowRankUpdateRowMatrix::getNodeMaxNumRowEntries() const
-    {return J_rowMatrix->getNodeMaxNumRowEntries();}
+    size_t LowRankUpdateRowMatrix::getLocalMaxNumRowEntries() const
+    {return J_rowMatrix->getLocalMaxNumRowEntries();}
 
     bool LowRankUpdateRowMatrix::hasColMap() const
     {return J_rowMatrix->hasColMap();}
@@ -102,6 +100,45 @@ namespace LOCA {
     bool LowRankUpdateRowMatrix::supportsRowViews() const
     {return J_rowMatrix->supportsRowViews();}
 
+    void
+    LowRankUpdateRowMatrix::getGlobalRowCopy(NOX::GlobalOrdinal GlobalRow,
+                                             NOX::TRowMatrix::nonconst_global_inds_host_view_type &Indices,
+                                             NOX::TRowMatrix::nonconst_values_host_view_type &Values,
+                                             size_t &NumEntries) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                                 "ERROR - LOCA::LowRankRowMatrix::getGlobalRowCopy() - NOT implemented yet!");
+    }
+
+    void
+    LowRankUpdateRowMatrix::getLocalRowCopy (NOX::LocalOrdinal LocalRow,
+                                             NOX::TRowMatrix::nonconst_local_inds_host_view_type &Indices,
+                                             NOX::TRowMatrix::nonconst_values_host_view_type &Values,
+                                             size_t &NumEntries) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                                 "ERROR - LOCA::LowRankRowMatrix::getLocalRowCopy() - NOT implemented yet!");
+    }
+
+    void
+    LowRankUpdateRowMatrix::getGlobalRowView (NOX::GlobalOrdinal GlobalRow,
+                                              NOX::TRowMatrix::global_inds_host_view_type &indices,
+                                              NOX::TRowMatrix::values_host_view_type &values) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                                 "ERROR - LOCA::LowRankRowMatrix::getGlobalRowView() - NOT implemented yet!");
+    }
+
+    void
+    LowRankUpdateRowMatrix::getLocalRowView(NOX::LocalOrdinal LocalRow,
+                                            NOX::TRowMatrix::local_inds_host_view_type &indices,
+                                            NOX::TRowMatrix::values_host_view_type &values) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                                 "ERROR - LOCA::LowRankRowMatrix::getLocalRowView() - NOT implemented yet!");
+    }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE 
     void
     LowRankUpdateRowMatrix::getGlobalRowCopy(NOX::GlobalOrdinal GlobalRow,
                                              const Teuchos::ArrayView<NOX::GlobalOrdinal> &Indices,
@@ -139,6 +176,7 @@ namespace LOCA {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                  "ERROR - LOCA::LowRankRowMatrix::getLocalRowView() - NOT implemented yet!");
     }
+#endif
 
     // Use the default implementation!
     // NOX::LocalOrdinal
@@ -236,10 +274,12 @@ namespace LOCA {
     NOX::Scalar LowRankUpdateRowMatrix::computeUV(int u_row_lid, int v_row_lid) const
     {
       NOX::Scalar val = 0.0;
+      auto U_HostView=nonconst_U->getLocalViewHost(::Tpetra::Access::ReadOnly);
+      auto V_HostView=nonconst_V->getLocalViewHost(::Tpetra::Access::ReadOnly);
 
       // val = sum_{k=0}^m U(i,k)*V(j,k)
       for (int k=0; k<m; ++k)
-        val += U_DeviceView(u_row_lid,k) * V_DeviceView(v_row_lid,k);
+        val += U_HostView(u_row_lid,k) * V_HostView(v_row_lid,k);
 
       return val;
     }

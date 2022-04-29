@@ -219,8 +219,7 @@ getTpetraGraph (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   const GO gblNumCols = static_cast<GO> (rowMap->getGlobalNumElements ());
   // Create the graph structure of the sparse matrix.
   RCP<graph_type> G =
-    rcp (new graph_type (rowMap, opts.numEntPerRow,
-                         Tpetra::StaticProfile));
+    rcp (new graph_type (rowMap, opts.numEntPerRow));
   // Fill in the sparse graph.
   Teuchos::Array<GO> gblColInds (opts.numEntPerRow);
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) { // for each of my rows
@@ -271,20 +270,23 @@ getTpetraCrsMatrix (Teuchos::FancyOStream& out,
   // columns, or asking the column Map for the number of entries,
   // won't give the correct number of columns in the graph.
   // const GO gblNumCols = graph->getDomainMap ()->getGlobalNumElements ();
-  const LO lclNumRows = meshRowMap.getNodeNumElements ();
+  const LO lclNumRows = meshRowMap.getLocalNumElements ();
 
   RCP<matrix_type> A = rcp (new matrix_type (graph));
 
   // Fill in the sparse matrix.
   out << "Fill the CrsMatrix" << endl;
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) { // for each of my rows
-    Teuchos::ArrayView<const LO> lclColInds;
+    matrix_type::local_inds_host_view_type lclColInds;
     graph->getLocalRowView (lclRow, lclColInds);
 
     // Put some entries in the matrix.
-    Teuchos::Array<SC> lclValues(lclColInds.size(), Teuchos::ScalarTraits<SC>::one());
-    const LO err = A->replaceLocalValues (lclRow, lclColInds, lclValues());
-    TEUCHOS_TEST_FOR_EXCEPTION(err != lclColInds.size(), std::logic_error, "Bug");
+    matrix_type::values_host_view_type::non_const_type
+                 lclValues("testLclValues", lclColInds.extent(0));
+    Kokkos::deep_copy(lclValues, Teuchos::ScalarTraits<SC>::one());
+    const LO err = A->replaceLocalValues (lclRow, lclColInds, lclValues);
+    TEUCHOS_TEST_FOR_EXCEPTION(size_t(err) != lclColInds.size(),
+                               std::logic_error, "Bug");
   }
   A->fillComplete();
 

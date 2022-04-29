@@ -124,7 +124,7 @@ public:
    * The order of weights should correspond to the order of rows
    * returned by
    *   \code
-   *       theMatrix->getRowMap()->getNodeElementList();
+   *       theMatrix->getRowMap()->getLocalElementList();
    *   \endcode
    */
 
@@ -149,37 +149,38 @@ public:
   ////////////////////////////////////////////////////
 
   size_t getLocalNumRows() const {
-    return matrix_->getNodeNumRows();
+    return matrix_->getLocalNumRows();
   }
 
   size_t getLocalNumColumns() const {
-    return matrix_->getNodeNumCols();
+    return matrix_->getLocalNumCols();
   }
 
   size_t getLocalNumEntries() const {
-    return matrix_->getNodeNumEntries();
+    return matrix_->getLocalNumEntries();
   }
 
   bool CRSViewAvailable() const { return true; }
 
   void getRowIDsView(const gno_t *&rowIds) const
   {
-    ArrayView<const gno_t> rowView = rowMap_->getNodeElementList();
+    ArrayView<const gno_t> rowView = rowMap_->getLocalElementList();
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(const offset_t *&offsets, const gno_t *&colIds) const
+  void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const
   {
-    offsets = offset_.getRawPtr();
-    colIds = columnIds_.getRawPtr();
+    offsets = offset_;
+    colIds = columnIds_;
   }
 
-  void getCRSView(const offset_t *&offsets, const gno_t *&colIds,
-                    const scalar_t *&values) const
+  void getCRSView(ArrayRCP<const offset_t> &offsets,
+                  ArrayRCP<const gno_t> &colIds,
+                  ArrayRCP<const scalar_t> &values) const
   {
-    offsets = offset_.getRawPtr();
-    colIds = columnIds_.getRawPtr();
-    values = values_.getRawPtr();
+    offsets = offset_;
+    colIds = columnIds_;
+    values = values_;
   }
 
 
@@ -247,20 +248,21 @@ template <typename User, typename UserCoord>
   rowMap_ = matrix_->getRowMap();
   colMap_ = matrix_->getColMap();
 
-  size_t nrows = matrix_->getNodeNumRows();
-  size_t nnz = matrix_->getNodeNumEntries();
+  size_t nrows = matrix_->getLocalNumRows();
+  size_t nnz = matrix_->getLocalNumEntries();
   size_t maxnumentries =
-         matrix_->getNodeMaxNumRowEntries(); // Diff from CrsMatrix
+         matrix_->getLocalMaxNumRowEntries(); // Diff from CrsMatrix
 
   offset_.resize(nrows+1, 0);
   columnIds_.resize(nnz);
   values_.resize(nnz);
-  ArrayRCP<lno_t> indices(maxnumentries); // Diff from CrsMatrix
-  ArrayRCP<scalar_t> nzs(maxnumentries);  // Diff from CrsMatrix
+  typename User::nonconst_local_inds_host_view_type  indices("indices", maxnumentries);
+  typename User::nonconst_values_host_view_type  nzs("nzs", maxnumentries);
+
   lno_t next = 0;
   for (size_t i=0; i < nrows; i++){
     lno_t row = i;
-    matrix_->getLocalRowCopy(row, indices(), nzs(), nnz); // Diff from CrsMatrix
+    matrix_->getLocalRowCopy(row, indices, nzs, nnz); // Diff from CrsMatrix
     for (size_t j=0; j < nnz; j++){
       values_[next] = nzs[j];
       // TODO - this will be slow
@@ -455,7 +457,7 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
 
   // Original way we did it:
   //
-  int oldNumElts = smap->getNodeNumElements();
+  int oldNumElts = smap->getLocalNumElements();
   int newNumElts = numLocalRows;
 
   // number of non zeros in my new rows
@@ -478,7 +480,7 @@ RCP<User> TpetraRowMatrixAdapter<User,UserCoord>::doMigration(
   }
 
   RCP<tcrsmatrix_t> M =
-    rcp(new tcrsmatrix_t(tmap, nnz(), Tpetra::StaticProfile));
+    rcp(new tcrsmatrix_t(tmap, nnz()));
 
   M->doImport(from, importer, Tpetra::INSERT);
   M->fillComplete();

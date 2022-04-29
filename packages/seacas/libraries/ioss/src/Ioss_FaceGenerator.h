@@ -1,11 +1,10 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2022 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#ifndef IOSS_Ioss_FaceGenerator_h
-#define IOSS_Ioss_FaceGenerator_h
+#pragma once
 
 #include <algorithm>
 #include <array>
@@ -32,7 +31,7 @@ namespace Ioss {
   public:
     Face() = default;
     Face(size_t id, std::array<size_t, 4> conn) : hashId_(id), connectivity_(conn) {}
-    Face(std::array<size_t, 4> conn);
+    explicit Face(std::array<size_t, 4> conn);
 
     void add_element(size_t element_id) const
     {
@@ -124,11 +123,9 @@ namespace Ioss {
     template <typename INT> void generate_block_faces(INT /*dummy*/, bool local_ids);
     template <typename INT> void generate_model_faces(INT /*dummy*/, bool local_ids);
 
-    Ioss::Region &                          region_;
+    Ioss::Region                           &region_;
     std::map<std::string, FaceUnorderedSet> faces_;
     std::vector<size_t>                     hashIds_;
   };
 
 } // namespace Ioss
-
-#endif

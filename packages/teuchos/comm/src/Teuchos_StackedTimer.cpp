@@ -627,6 +627,14 @@ static void printXMLEscapedString(std::ostream& os, const std::string& str)
       case '&':
         os << "&amp;";
         break;
+      //NOTE: unescaped curly braces {} are valid in XML,
+      //however Watchr has a bug with parsing them
+      case '{':
+        os << '(';
+        break;
+      case '}':
+        os << ')';
+        break;
       default:
         os << c;
     }
@@ -821,5 +829,11 @@ void StackedTimer::enableVerboseTimestamps(const unsigned levels)
 
 void StackedTimer::setVerboseOstream(const Teuchos::RCP<std::ostream>& os)
 {verbose_ostream_ = os;}
+
+void StackedTimer::disableTimers()
+{enable_timers_ = false;}
+
+void StackedTimer::enableTimers()
+{enable_timers_ = true;}
 
 } //namespace Teuchos

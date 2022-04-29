@@ -117,7 +117,7 @@ namespace MueLu {
     using device_type         = DeviceType;
     using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
 
-    using aggregates_sizes_type = Kokkos::View<LocalOrdinal*, DeviceType>;
+    using aggregates_sizes_type = Kokkos::View<LocalOrdinal*, device_type>;
 
   private:
     // For compatibility
@@ -299,7 +299,7 @@ namespace MueLu {
      */
     LO graphNumColors_;
 
-    Kokkos::View<bool*, DeviceType> isRoot_;
+    Kokkos::View<bool*, device_type> isRoot_;
 
     //! Set to false iff aggregates do not include any DOFs belong to other processes.
     bool aggregatesIncludeGhosts_;

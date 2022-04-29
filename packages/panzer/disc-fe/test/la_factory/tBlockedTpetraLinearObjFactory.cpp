@@ -127,9 +127,7 @@ void fillComplete(CrsMatrixType & A)
 
 void putScalar(ScalarT s,CrsMatrixType & A)
 {
-  resumeFill(A);
   A.setAllToScalar(s);
-  fillComplete(A);
 }
 
 template <typename Intrepid2Type>
@@ -470,9 +468,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
    for(int i=0;i<numBlocks;i++) {
       for(int j=0;j<numBlocks;j++) {
          RCP<CrsMatrixType> M = getSubBlock_tp(i,j,*b_sys->get_A());
-         M->resumeFill();
          M->setAllToScalar(-3.0);
-         M->fillComplete(M->getDomainMap(),M->getRangeMap());
       }
    }
 
@@ -538,8 +534,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
 
    std::size_t sz = 20;
    std::size_t numEntries = 0;
-   Teuchos::Array<double> values(sz);
-   Teuchos::Array<int> indices(sz);
+   typename CrsMatrixType::nonconst_local_inds_host_view_type indices("indices", sz);
+   typename CrsMatrixType::nonconst_values_host_view_type values("values", sz);
 
    if(myRank==0) {   
       RCP<const Thyra::LinearOpBase<double> > A = b_sys->get_A();
@@ -715,8 +711,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
 
    std::size_t sz = 20;
    std::size_t numEntries = 0;
-   Teuchos::Array<double> values(sz);
-   Teuchos::Array<int> indices(sz);
+   typename CrsMatrixType::nonconst_local_inds_host_view_type indices("indices", sz);
+   typename CrsMatrixType::nonconst_values_host_view_type values("values", sz);
 
    if(myRank==0) {   
       RCP<const Thyra::LinearOpBase<double> > A = b_sys->get_A();

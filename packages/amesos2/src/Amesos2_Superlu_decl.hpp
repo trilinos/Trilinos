@@ -105,10 +105,6 @@ public:
 
   typedef FunctionMap<Amesos2::Superlu,slu_type>               function_map;
 
-#ifdef HAVE_AMESOS2_SUPERLU5_API
-  typedef typename function_map::GlobalLU_type                   GlobalLU_t;
-#endif
-
   /// \name Constructor/Destructor methods
   //@{
 
@@ -246,7 +242,7 @@ private:
     SLU::superlu_options_t options;
     SLU::mem_usage_t mem_usage;
 #ifdef HAVE_AMESOS2_SUPERLU5_API
-    GlobalLU_t lu;      // Use for gssvx and gsisx in SuperLU 5.0
+    SLU::GlobalLU_t lu;      // Use for gssvx and gsisx in SuperLU 5.0
 #endif
     SLU::SuperLUStat_t stat;
 
@@ -269,6 +265,7 @@ private:
     char equed;
     bool rowequ, colequ;        // flags what type of equilibration
                                 // has been performed
+    magnitude_type anorm, rcond; // condition number estimate
 
     int relax;
     int panel_size;
@@ -317,15 +314,24 @@ private:
   // bValues because a parameter can turn it on or off.
   mutable device_solve_array_t device_xValues_;
   mutable device_solve_array_t device_bValues_;
-  typedef Kokkos::View<int*, DeviceMemSpaceType>              device_int_array;
+  typedef Kokkos::View<int*,            DeviceMemSpaceType>      device_int_array;
+  typedef Kokkos::View<magnitude_type*, DeviceMemSpaceType>      device_mag_array;
   device_int_array device_trsv_perm_r_;
   device_int_array device_trsv_perm_c_;
+  device_mag_array device_trsv_R_;
+  device_mag_array device_trsv_C_;
   mutable device_solve_array_t device_trsv_rhs_;
   mutable device_solve_array_t device_trsv_sol_;
   typedef KokkosKernels::Experimental::KokkosKernelsHandle <size_type, ordinal_type, slu_type,
     DeviceExecSpaceType, DeviceMemSpaceType, DeviceMemSpaceType> kernel_handle_type;
   mutable kernel_handle_type device_khL_;
   mutable kernel_handle_type device_khU_;
+  /* parameters for SpTRSV */
+  bool sptrsv_invert_diag_;
+  bool sptrsv_invert_offdiag_;
+  bool sptrsv_u_in_csr_;
+  bool sptrsv_merge_supernodes_;
+  bool sptrsv_use_spmv_;
 #endif
 
   /* Note: In the above, must use "Amesos2::Superlu" rather than
@@ -362,6 +368,10 @@ private:
   bool use_triangular_solves_;
 
   void triangular_solve_factor();
+
+  /* call metis before SuperLU */
+  bool use_metis_;
+  bool symmetrize_metis_;
 
   public: // for GPU
     void triangular_solve() const; // Only for internal use - public to support kernels

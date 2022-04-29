@@ -17,6 +17,7 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
   Aggregates_kokkos.cpp
+  AmalgamationInfo_kokkos.cpp
   CoalesceDropFactory_kokkos.cpp
   CoarseMapFactory_kokkos.cpp
   IndexManager_kokkos.cpp
@@ -24,9 +25,11 @@ APPEND_SET(SOURCES
   MueLu_TestHelpers_kokkos.cpp
   MueLu_UnitTests_kokkos.cpp
   NotayAggregationFactory.cpp
-  StructuredAggregation_kokkos.cpp
   SaPFactory_kokkos.cpp
+  SemiCoarsenPFactory_kokkos.cpp
+  StructuredAggregation_kokkos.cpp
   TentativePFactory_kokkos.cpp
+  UncoupledAggregationFactory_kokkos.cpp
   UseKokkos_kokkos.cpp
   Utilities_kokkos.cpp
 )

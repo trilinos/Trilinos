@@ -1,13 +1,12 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 
-#ifndef modify_SystemInterface_h
-#define modify_SystemInterface_h
+#pragma once
 
 #include "Ioss_GetLongOpt.h" // for GetLongOption
 #include <string>            // for string
@@ -36,4 +35,3 @@ namespace Modify {
     bool                allowModification_{false};
   };
 } // namespace Modify
-#endif

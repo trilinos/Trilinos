@@ -234,22 +234,22 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
                                                        stencil.getGlobalMaxNumRowEntries()+1));
 
    // allocate an additional value for the diagonal, if neccessary
-   std::vector<ST> rowData(stencil.getGlobalMaxNumRowEntries()+1);
-   std::vector<GO> rowInd(stencil.getGlobalMaxNumRowEntries()+1);
+   auto rowInd = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_global_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),stencil.getGlobalMaxNumRowEntries()+1);
+   auto rowData = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),stencil.getGlobalMaxNumRowEntries()+1);
 
    // loop over all the rows
-   for(LO j=0;j< (LO) gl->getNodeNumRows();j++) {
+   for(LO j=0;j< (LO) gl->getLocalNumRows();j++) {
       GO row = gl->getRowMap()->getGlobalElement(j);
       ST diagValue = 0.0;
       GO diagInd = -1;
       size_t rowSz = 0;
 
       // extract a copy of this row...put it in rowData, rowIndicies
-      stencil.getGlobalRowCopy(row,Teuchos::ArrayView<GO>(rowInd),Teuchos::ArrayView<ST>(rowData),rowSz);
+      stencil.getGlobalRowCopy(row,rowInd,rowData,rowSz);
  
       // loop over elements of row
       for(size_t i=0;i<rowSz;i++) {
-         GO col = rowInd[i];
+        GO col = rowInd(i);
 
          // is this a 0 entry masquerading as some thing else?
          ST value = rowData[i];
@@ -259,7 +259,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
          if(row!=col) {
             ST d = dist(dim,coords,row,col);
             rowData[i] = -1.0/d;
-            diagValue += rowData[i];
+            diagValue += rowData(i);
          }
          else 
             diagInd = i;
@@ -267,17 +267,17 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(int dim,ST * coords,con
     
       // handle diagonal entry
       if(diagInd<0) { // diagonal not in row
-         rowData[rowSz] = -diagValue;
-         rowInd[rowSz] = row;
+         rowData(rowSz) = -diagValue;
+         rowInd(rowSz) = row;
          rowSz++;
       }
       else { // diagonal in row
-         rowData[diagInd] = -diagValue;
-         rowInd[diagInd] = row;
+         rowData(diagInd) = -diagValue;
+         rowInd(diagInd) = row;
       }
 
       // insert row data into graph Laplacian matrix
-      gl->replaceGlobalValues(row,Teuchos::ArrayView<GO>(rowInd),Teuchos::ArrayView<ST>(rowData));
+      gl->replaceGlobalValues(row,rowInd,rowData);
    }
 
    gl->fillComplete();
@@ -372,22 +372,22 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO
                                                        stencil.getGlobalMaxNumRowEntries()+1),true);
 
    // allocate an additional value for the diagonal, if neccessary
-   std::vector<ST> rowData(stencil.getGlobalMaxNumRowEntries()+1);
-   std::vector<GO> rowInd(stencil.getGlobalMaxNumRowEntries()+1);
+   auto rowInd = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_global_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),stencil.getGlobalMaxNumRowEntries()+1);
+   auto rowData = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),stencil.getGlobalMaxNumRowEntries()+1);
 
    // loop over all the rows
-   for(LO j=0;j<(LO) gl->getNodeNumRows();j++) {
+   for(LO j=0;j<(LO) gl->getLocalNumRows();j++) {
       GO row = gl->getRowMap()->getGlobalElement(j);
       ST diagValue = 0.0;
       GO diagInd = -1;
       size_t rowSz = 0;
 
       // extract a copy of this row...put it in rowData, rowIndicies
-      stencil.getGlobalRowCopy(row,Teuchos::ArrayView<GO>(rowInd),Teuchos::ArrayView<ST>(rowData),rowSz);
+      stencil.getGlobalRowCopy(row,rowInd,rowData,rowSz);
  
       // loop over elements of row
       for(size_t i=0;i<rowSz;i++) {
-         GO col = rowInd[i];
+         GO col = rowInd(i);
 
          // is this a 0 entry masquerading as some thing else?
          ST value = rowData[i];
@@ -397,7 +397,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO
          if(row!=col) {
             ST d = dist(x,y,z,stride,row,col);
             rowData[i] = -1.0/d;
-            diagValue += rowData[i];
+            diagValue += rowData(i);
          }
          else 
             diagInd = i;
@@ -405,17 +405,17 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO
     
       // handle diagonal entry
       if(diagInd<0) { // diagonal not in row
-         rowData[rowSz] = -diagValue;
-         rowInd[rowSz] = row;
+         rowData(rowSz) = -diagValue;
+         rowInd(rowSz) = row;
          rowSz++;
       }
       else { // diagonal in row
-         rowData[diagInd] = -diagValue;
-         rowInd[diagInd] = row;
+         rowData(diagInd) = -diagValue;
+         rowInd(diagInd) = row;
       }
 
       // insert row data into graph Laplacian matrix
-      gl->replaceGlobalValues(row,Teuchos::ArrayView<GO>(rowInd),Teuchos::ArrayView<ST>(rowData));
+      gl->replaceGlobalValues(row,rowInd,rowData);
    }
 
    gl->fillComplete();
@@ -696,18 +696,15 @@ ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op)
 
      // compute absolute value row sum
      diag.putScalar(0.0);
-     diag.sync_host(); // UVM read of getLocalRowView
-     for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
+     for(LO i=0;i<(LO) tCrsOp->getLocalNumRows();i++) {
         LO numEntries = tCrsOp->getNumEntriesInLocalRow (i); 
-        std::vector<LO> indices(numEntries);
-        std::vector<ST> values(numEntries);
-        Teuchos::ArrayView<const LO> indices_av(indices);
-        Teuchos::ArrayView<const ST> values_av(values);
-        tCrsOp->getLocalRowView(i,indices_av,values_av);
+        typename Tpetra::CrsMatrix<ST,LO,GO,NT>::local_inds_host_view_type indices;
+        typename Tpetra::CrsMatrix<ST,LO,GO,NT>::values_host_view_type values;
+        tCrsOp->getLocalRowView(i,indices,values);
 
         // build abs value row sum
         for(LO j=0;j<numEntries;j++)
-           diag.sumIntoLocalValue(i,std::abs(values_av[j]));
+           diag.sumIntoLocalValue(i,std::abs(values(j)));
      }
 
      // build Thyra diagonal operator
@@ -758,18 +755,15 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
 
      // compute absolute value row sum
      diag.putScalar(0.0);
-     diag.sync_host(); // UVM read of getLocalRowView
-     for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
-        LO numEntries = tCrsOp->getNumEntriesInLocalRow (i); 
-        std::vector<LO> indices(numEntries);
-        std::vector<ST> values(numEntries);
-        Teuchos::ArrayView<const LO> indices_av(indices);
-        Teuchos::ArrayView<const ST> values_av(values);
-        tCrsOp->getLocalRowView(i,indices_av,values_av);
+     for(LO i=0;i<(LO) tCrsOp->getLocalNumRows();i++) {
+        LO numEntries = tCrsOp->getNumEntriesInLocalRow (i);
+        typename Tpetra::CrsMatrix<ST,LO,GO,NT>::local_inds_host_view_type indices;
+        typename Tpetra::CrsMatrix<ST,LO,GO,NT>::values_host_view_type values;
+        tCrsOp->getLocalRowView(i,indices,values);
 
         // build abs value row sum
         for(LO j=0;j<numEntries;j++)
-           diag.sumIntoLocalValue(i,std::abs(values_av[j]));
+           diag.sumIntoLocalValue(i,std::abs(values(j)));
      }
      diag.scale(scalar);
      diag.reciprocal(diag); // invert entries
@@ -2128,18 +2122,15 @@ double infNorm(const LinearOp & op)
 
     // compute absolute value row sum
     diag.putScalar(0.0);
-    diag.sync_host(); // UVM read of getLocalRowView
-    for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
+    for(LO i=0;i<(LO) tCrsOp->getLocalNumRows();i++) {
        LO numEntries = tCrsOp->getNumEntriesInLocalRow (i);
-       std::vector<LO> indices(numEntries);
-       std::vector<ST> values(numEntries);
-       Teuchos::ArrayView<const LO> indices_av(indices);
-       Teuchos::ArrayView<const ST> values_av(values);
-       tCrsOp->getLocalRowView(i,indices_av,values_av);
+       typename Tpetra::CrsMatrix<ST,LO,GO,NT>::local_inds_host_view_type indices;
+       typename Tpetra::CrsMatrix<ST,LO,GO,NT>::values_host_view_type values;
+       tCrsOp->getLocalRowView(i,indices,values);
 
        // build abs value row sum
        for(LO j=0;j<numEntries;j++)
-          diag.sumIntoLocalValue(i,std::abs(values_av[j]));
+          diag.sumIntoLocalValue(i,std::abs(values(j)));
     }
     return diag.normInf()*scalar;    
 

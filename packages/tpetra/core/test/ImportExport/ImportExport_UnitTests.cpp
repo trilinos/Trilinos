@@ -123,11 +123,12 @@ namespace {
     auto permute = importer->getNumPermuteIDs();
     auto remote = importer->getNumRemoteIDs();
     auto sum = same + permute + remote;
-    auto expectedSum = target->getNodeNumElements();
+    auto expectedSum = target->getLocalNumElements();
     TEST_EQUALITY( sum, expectedSum );
 
     bool isvalid=Tpetra::Import_Util::checkImportValidity(*importer);
     TEST_EQUALITY(isvalid,true);
+    TEST_EQUALITY(importer->isLocallyFitted(), source->isLocallyFitted(*target));
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ImportExport, GetNeighborsForward, Scalar, LO, GO, Node )
@@ -185,11 +186,13 @@ namespace {
       TEST_EQUALITY( importer->getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
       TEST_EQUALITY( importer->getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
       TEST_EQUALITY( importer->getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+      TEST_EQUALITY( importer->isLocallyFitted(), tmap->isLocallyFitted(*smap));
       // exporter testing
       TEST_EQUALITY_CONST( exporter->getSourceMap() == tmap, true );
       TEST_EQUALITY_CONST( exporter->getTargetMap() == smap, true );
       TEST_EQUALITY( importer->getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
       TEST_EQUALITY( exporter->getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
+      TEST_EQUALITY( exporter->isLocallyFitted(), tmap->isLocallyFitted(*smap));
       // import neighbors, test their proper arrival
       //                   [ 0    n     2n    3n    4n ]
       // mvWithNeighbors = [...  ....  ....  ....  ....]
@@ -290,11 +293,13 @@ namespace {
       TEST_EQUALITY( importer->getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
       TEST_EQUALITY( importer->getNumExportIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
       TEST_EQUALITY( importer->getNumRemoteIDs(), (myImageID == 0 || myImageID == numImages - 1 ? 1 : 2) );
+      TEST_EQUALITY( importer->isLocallyFitted(), tmap->isLocallyFitted(*smap));
       // exporter testing
       TEST_EQUALITY_CONST( exporter->getSourceMap() == tmap, true );
       TEST_EQUALITY_CONST( exporter->getTargetMap() == smap, true );
       TEST_EQUALITY( importer->getNumSameIDs(), (myImageID == 0 ? 1 : 0) );
       TEST_EQUALITY( exporter->getNumPermuteIDs(), static_cast<size_t>(myImageID == 0 ? 0 : 1) );
+      TEST_EQUALITY( exporter->isLocallyFitted(), tmap->isLocallyFitted(*smap));
       // import neighbors, test their proper arrival
       //                   [ 0    n     2n    3n    4n ]
       // mvWithNeighbors = [...  ....  ....  ....  ....]
@@ -371,6 +376,7 @@ namespace {
     // - the first will be over-written (by 1.0) from the source, while
     // - the second will be "combined", i.e., abs(max(1.0,3.0)) = 3.0 from the dest
     auto importer = Tpetra::createImport<LO, GO, Node> (smap, dmap);
+    TEST_EQUALITY( importer->isLocallyFitted(), dmap->isLocallyFitted(*smap));
     dstVec->doImport (*srcVec,*importer,Tpetra::ABSMAX);
     TEST_COMPARE_ARRAYS( tuple<SC>(-1.0,3.0), dstVec->get1dView() )
     // All procs fail if any proc fails
@@ -443,6 +449,8 @@ namespace {
     // Importer
     Tpetra_Import Importer(FromMap,ToMap);
 
+    TEST_EQUALITY( Importer.isLocallyFitted(), ToMap->isLocallyFitted(*FromMap));
+
     // Duplicating what Zoltan2/Tpetra Does
     IntVector FromVector(FromMap);
     IntVector ToVector(ToMap);
@@ -458,7 +466,7 @@ namespace {
 
     // Check the "FromAnswer" answer against who_owns
     bool all_is_well=true;
-    for(size_t i=0; i<FromMap->getNodeNumElements(); i++) {
+    for(size_t i=0; i<FromMap->getLocalNumElements(); i++) {
       if(f_view[i] != who_owns[FromMap->getGlobalElement(i)]) {
         std::cerr<<"["<<MyPID<<"] ERROR: Ownership of GID"<<FromMap->getGlobalElement(i)<<" is incorrect!"<<std::endl;
         all_is_well=false;

@@ -55,8 +55,8 @@ typedef long long  * EPETRA_LONG_LONG;
 
 #ifdef EPETRA_ADDRESS64BIT
 
-typedef long int EPETRA_OBJECT_PTR;
-typedef long int & EPETRA_OBJECT_REF;
+typedef long long int EPETRA_OBJECT_PTR;
+typedef long long int & EPETRA_OBJECT_REF;
 
 #else
 

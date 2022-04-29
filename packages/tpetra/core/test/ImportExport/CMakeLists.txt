@@ -2,7 +2,7 @@
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ImportExport_UnitTests
   SOURCES
-    ImportExport_UnitTests
+    ImportExport_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -12,7 +12,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ImportExport_ImportConstructExpert
   SOURCES
-    ImportExport_ImportConstructExpert
+    ImportExport_ImportConstructExpert.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2-4
@@ -22,7 +22,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Import_Union
   SOURCES
-    Import_Union
+    Import_Union.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
@@ -30,9 +30,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Bug9116
+  SOURCES
+    Bug9116.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SubmapExportTests
   SOURCES
-    SubmapExport
+    SubmapExport.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2
@@ -42,14 +51,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SubmapImportTests
   SOURCES
-    SubmapImport
+    SubmapImport.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )
 
-IF(NOT Tpetra_INST_HIP)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     UnpackLongRows
     SOURCES
@@ -58,7 +66,6 @@ IF(NOT Tpetra_INST_HIP)
     NUM_MPI_PROCS 4
     STANDARD_PASS_OUTPUT
   )
-ENDIF()
 
 IF (${PROJECT_NAME}_ENABLE_Epetra)
   IF(NOT Trilinos_NO_32BIT_GLOBAL_INDICES AND Tpetra_INST_INT_INT)
@@ -148,7 +155,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Issue_607
   SOURCES
-    Issue_607
+    Issue_607.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
@@ -161,7 +168,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE(
   Issue_2198
   SOURCES
-    Issue_2198
+    Issue_2198.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   )
@@ -192,7 +199,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_EXECUTABLE(
   Issue_3968
   SOURCES
-    Issue_3968
+    Issue_3968.cpp
   COMM serial mpi
   )
 

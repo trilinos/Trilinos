@@ -256,8 +256,8 @@ void DenseSolver<MatrixType, false>::initialize ()
       "initialized.  Please report this bug to the Ifpack2 developers.");
 
     // Allocate the dense local matrix and the pivot array.
-    const size_t numRows = A_local_->getNodeNumRows ();
-    const size_t numCols = A_local_->getNodeNumCols ();
+    const size_t numRows = A_local_->getLocalNumRows ();
+    const size_t numCols = A_local_->getLocalNumCols ();
     TEUCHOS_TEST_FOR_EXCEPTION(
       numRows != numCols, std::logic_error, "Ifpack2::Details::DenseSolver::"
       "initialize: Local filter matrix is not square.  This should never happen.  "
@@ -641,11 +641,11 @@ extract (Teuchos::SerialDenseMatrix<int, scalar_type>& A_local_dense,
   // Temporary arrays to hold the indices and values of the entries in
   // each row of A_local.
   const size_type maxNumRowEntries =
-    static_cast<size_type> (A_local.getNodeMaxNumRowEntries ());
-  Array<LO> localIndices (maxNumRowEntries);
-  Array<scalar_type> values (maxNumRowEntries);
+    static_cast<size_type> (A_local.getLocalMaxNumRowEntries ());
+  nonconst_local_inds_host_view_type localIndices ("localIndices",maxNumRowEntries);
+  nonconst_values_host_view_type values ("values",maxNumRowEntries);
 
-  const LO numLocalRows = static_cast<LO> (rowMap.getNodeNumElements ());
+  const LO numLocalRows = static_cast<LO> (rowMap.getLocalNumElements ());
   const LO minLocalRow = rowMap.getMinLocalIndex ();
   // This slight complication of computing the upper loop bound avoids
   // issues if the row Map has zero entries on the calling process.
@@ -661,8 +661,8 @@ extract (Teuchos::SerialDenseMatrix<int, scalar_type>& A_local_dense,
       static_cast<size_type> (A_local.getNumEntriesInLocalRow (localRow));
     size_t numEntriesOut = 0; // ignored
     A_local.getLocalRowCopy (localRow,
-                             localIndices (0, numEntriesInRow),
-                             values (0, numEntriesInRow),
+                             localIndices,
+                             values,                             
                              numEntriesOut);
     for (LO k = 0; k < numEntriesInRow; ++k) {
       const LO localCol = localIndices[k];

@@ -143,7 +143,7 @@ public:
 
 
   inline static MetaData & get( const Part & part ) { return part.meta_data(); }
-  inline static MetaData & get( const FieldBase & field ) { return field.meta_data(); }
+  inline static MetaData & get( const FieldBase & field ) { return field.mesh_meta_data(); }
 
   static const MetaData & get( const BulkData & bulk_data );
 
@@ -227,6 +227,9 @@ public:
 
   /** \brief  Get an existing part by its ordinal */
   Part & get_part( unsigned ord ) const ;
+
+  /** \brief  Query if ordinal is in bounds */
+  bool is_valid_part_ordinal(unsigned ord) const;
 
   /** \brief  Query all parts of the mesh ordered by the parts' ordinal. */
   const PartVector & get_parts() const { return m_part_repo.get_all_parts(); }
@@ -323,8 +326,8 @@ public:
   const std::vector<std::string> & entity_rank_names() const
     { return m_entity_rank_names ; }
 
-  std::vector<std::string>::size_type entity_rank_count() const
-    { return m_entity_rank_names.size(); }
+  EntityRank entity_rank_count() const
+    { return static_cast<EntityRank>(m_entity_rank_names.size()); }
 
   const std::string & entity_rank_name( EntityRank entity_rank ) const ;
 
@@ -460,36 +463,10 @@ public:
 
   /** \brief  Allow late field registration */
   void enable_late_fields() { m_are_late_fields_enabled = true; }
+  void disable_late_fields() { m_are_late_fields_enabled = false; }
 
   /** \brief  Query if late fields are allowed */
   bool are_late_fields_enabled() const { return m_are_late_fields_enabled; }
-
-  /** \} */
-  //------------------------------------
-
-  /** \name  Field declaration with weak type information;
-   *         direct use in application code is strongly discouraged.
-   *  \{
-   */
-
-  /** \brief  Declare a field via runtime type information */
-  FieldBase * declare_field_base(
-    const std::string & arg_name,
-    stk::topology::rank_t arg_entity_rank,
-    const DataTraits  & arg_traits ,
-    unsigned            arg_rank ,
-    const shards::ArrayDimTag * const * arg_dim_tags ,
-    unsigned arg_num_states )
-  {
-    require_not_committed();
-
-    return m_field_repo.declare_field(
-                  arg_name, arg_entity_rank, arg_traits, arg_rank, arg_dim_tags,
-                  arg_num_states, this
-                 );
-  }
-
-
 
   /** \brief  Declare a field restriction via runtime type information.
    */
@@ -575,6 +552,8 @@ public:
     return m_surfaceToBlock.size();
   }
 
+  stk::mesh::impl::FieldRepository & get_field_repository();
+
 protected:
 
   Part & declare_internal_part( const std::string & p_name);
@@ -614,7 +593,6 @@ private:
   mutable FieldBase* m_coord_field;
 
   std::vector< std::string >   m_entity_rank_names ;
-  std::vector<shards::CellTopologyManagedData*> m_created_topologies;  // Delete after 2019-07-18
 
   unsigned m_spatial_dimension;
   SurfaceBlockMap m_surfaceToBlock;
@@ -754,11 +732,18 @@ field_type & put_field_on_entire_mesh(field_type & field)
 
 namespace stk {
 namespace mesh {
+inline bool MetaData::is_valid_part_ordinal(unsigned ord) const
+{
+  return ord < m_part_repo.size();
+}
 
-// TODO: bounds check in debug!
 inline
 Part & MetaData::get_part( unsigned ord ) const
-{ return * m_part_repo.get_all_parts()[ord] ; }
+{
+  ThrowAssertMsg(is_valid_part_ordinal(ord), "Invalid ordinal: " << ord);
+
+  return *m_part_repo.get_all_parts()[ord];
+}
 
 template< class field_type >
 inline
@@ -823,17 +808,9 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
 
   f[0] = dynamic_cast<field_type*>(rawField);
 
-
-  /*
-  //
-  //  NKC, this error would check that a field is not registred with the same name, but a differnt template type.
-  //  Seems like would never want to do this.  But percept does.  Maybe in all cases a lurking error....
-  //
-  if(rawField != nullptr) {
-    ThrowRequireMsg(f[0] == rawField, "Internal STK Error: Reregistration of field: '"<<name<<"' "
-                    <<"with a different template type.  ");
+  if (rawField != nullptr) {
+    ThrowRequireMsg(f[0] == rawField, "Re-registration of field '" << name << "' with a different template type is not allowed.");
   }
-  */
 
   if ( NULL != f[0] ) {
     for ( unsigned i = 1 ; i < number_of_states ; ++i ) {
@@ -876,7 +853,7 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
     }
 
     for ( unsigned i = 0 ; i < number_of_states ; ++i ) {
-      f[i]->m_impl.set_field_states( f );
+      f[i]->set_field_states( f );
     }
   }
 
@@ -1054,6 +1031,13 @@ field_type & put_field_on_mesh(field_type &field ,
   MetaData::get(field).declare_field_restriction( field, part, numScalarsPerEntity, firstDimension, init_value);
 
   return field ;
+}
+
+inline
+stk::mesh::impl::FieldRepository &
+MetaData::get_field_repository()
+{
+  return m_field_repo;
 }
 
 template<class T>

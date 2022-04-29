@@ -12,14 +12,16 @@ INCLUDE_DIRECTORIES(
 
 SET(SOURCES
   add_to_log.c
-  getline.c
   adler.c
   copy_string.c
+  open_file_limit.c
   term_width.c
   )
 
 IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-   APPEND_GLOB(SOURCES XGetopt.c)
+   IF (NOT MINGW)
+      APPEND_GLOB(SOURCES XGetopt.c)
+   ENDIF()
 ENDIF()
 
 TRIBITS_ADD_LIBRARY(

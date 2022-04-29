@@ -44,12 +44,14 @@ namespace stk {
 namespace balance {
 
 std::string construct_output_file_name(const std::string& outputDirectory, const std::string& inputFile);
+std::string construct_generic_parallel_file_name(const std::string& inputFile, unsigned numProcs);
 
 struct OptionNames
 {
   const std::string infile = "infile";
   const std::string outputDirectory = "output-directory";
-  const std::string deprecatedOutputDirectory = "outputDirectory";
+  const std::string rebalanceTo = "rebalance-to";
+  const std::string logfile = "logfile";
   const std::string smDefaults = "sm";
   const std::string sdDefaults = "sd";
   const std::string faceSearchAbsTol = "face-search-abs-tol";
@@ -57,6 +59,7 @@ struct OptionNames
   const std::string contactSearch = "contact-search";
   const std::string decompMethod = "decomp-method";
   const std::string vertexWeightBlockMultiplier = "block-weights";
+  const std::string useNestedDecomp = "use-nested-decomp";
 };
 
 class Examples
@@ -87,6 +90,9 @@ private:
   void setup_messages(const char** argv);
 
   void set_filenames(BalanceSettings& settings) const;
+  void set_logfile(BalanceSettings& settings) const;
+  void set_processors(BalanceSettings& settings) const;
+  void set_use_nested_decomp(BalanceSettings& settings) const;
   void set_app_type_defaults(BalanceSettings& settings) const;
   void set_contact_search(BalanceSettings& settings) const;
   void set_contact_search_tolerance(BalanceSettings& settings) const;
@@ -95,7 +101,6 @@ private:
 
   const MPI_Comm m_comm;
   const OptionNames m_optionNames;
-  const DefaultSettings m_defaults;
   stk::CommandLineParserParallel m_commandLineParser;
   Examples m_examples;
 

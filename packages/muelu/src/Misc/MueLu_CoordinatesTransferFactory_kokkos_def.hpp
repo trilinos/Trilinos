@@ -129,7 +129,7 @@ namespace MueLu {
     // Therefore, if we amalgamate coarseMap, logical nodes in the coordinates vector would correspond to
     // logical blocks in the matrix
 
-    ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
+    ArrayView<const GO> elementAList = coarseMap->getLocalElementList();
     GO                  indexBase    = coarseMap->getIndexBase();
 
     LO blkSize = 1;
@@ -175,8 +175,8 @@ namespace MueLu {
     auto aggGraph = aggregates->GetGraph();
     auto numAggs  = aggGraph.numRows();
 
-    auto fineCoordsView   = fineCoords  ->getDeviceLocalView();
-    auto coarseCoordsView = coarseCoords->getDeviceLocalView();
+    auto fineCoordsView   = fineCoords  ->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto coarseCoordsView = coarseCoords->getDeviceLocalView(Xpetra::Access::OverwriteAll);
 
     // Fill in coarse coordinates
     {
