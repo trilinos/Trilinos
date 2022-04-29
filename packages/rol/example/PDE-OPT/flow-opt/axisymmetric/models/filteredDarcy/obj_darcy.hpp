@@ -772,7 +772,7 @@ private:
   bool                                        onlyAxial_;
 
   Real xTarget(const std::vector<Real> &x) const {
-    const Real zero(0), X = x[0], Y = x[1];
+    const Real X = x[0], Y = x[1];
     //return xWeight(x) ? -X*Y/(rad_*rad_-Y*Y) : zero;
     //return xWeight(x) ? -X*Y/std::sqrt(rad_*rad_-Y*Y) : zero;
     //return polyWeight(x) * (-X*Y/std::sqrt(rad_*rad_-Y*Y));
@@ -781,7 +781,7 @@ private:
   }
 
   Real yTarget(const std::vector<Real> &x) const {
-    const Real zero(0), one(1), X = x[0], Y = x[1];
+    const Real one(1), Y = x[1];
     //return yWeight(x) ? one : zero;
     //return yWeight(x) ? std::sqrt(rad_*rad_-Y*Y) : zero;
     //return polyWeight(x) * std::sqrt(rad_*rad_-Y*Y);

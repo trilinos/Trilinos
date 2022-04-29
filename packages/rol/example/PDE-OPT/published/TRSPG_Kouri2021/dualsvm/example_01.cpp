@@ -68,10 +68,10 @@ private:
   int fval_, grad_, hess_;
 
   Real kernel(const std::vector<Real> &x, const std::vector<Real> &y) const {
-    const int size = x.size();
+    std::vector<Real>::size_type size = x.size();
     assert(size==y.size());
     Real val(0);
-    for (int i = 0; i < size; ++i) val += x[i]*y[i];
+    for (std::vector<Real>::size_type i = 0; i < size; ++i) val += x[i]*y[i];
     return val;
   }
 
