@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  ROL::Ptr<Teuchos::Comm<int>> dcomm, ocomm;
+  ROL::Ptr<const Teuchos::Comm<int>> dcomm, ocomm;
 #ifdef HAVE_MPI
   OED_SplitComm<int,Teuchos::MpiComm<int>> splitcomm(1);
   dcomm = splitcomm.getDesignComm();
@@ -355,7 +355,7 @@ int main(int argc, char *argv[]) {
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();
   }
-  catch (std::logic_error err) {
+  catch (std::logic_error &err) {
     std::cout << "Design MPI Rank = " << drank
               << "  Objective MPI Rank = " << orank
               << std::endl << err.what() << std::endl; 

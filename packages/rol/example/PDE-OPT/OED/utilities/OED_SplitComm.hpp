@@ -56,7 +56,7 @@ private:
   ROL::Ptr<Comm> comm_sample_;
 
 public:
-  OED_SplitComm(const int m) {
+  OED_SplitComm(int m) {
     Ordinal rank, Ngroups, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -91,11 +91,11 @@ public:
     comm_sample_ = ROL::makePtr<Comm>(sample_comm); // Wrap as Comm.
   }
 
-  const ROL::Ptr<Comm> getDesignComm(void) const {
+  const ROL::Ptr<Comm> getDesignComm() const {
     return comm_design_;
   }
 
-  const ROL::Ptr<Comm> getSampleComm(void) const {
+  const ROL::Ptr<Comm> getSampleComm() const {
     return comm_sample_;
   }
 };
