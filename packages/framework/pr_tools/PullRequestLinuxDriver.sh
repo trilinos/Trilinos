@@ -21,6 +21,8 @@ function bootstrap_modules() {
         execute_command_checked "module load python/3.7.2"
         get_python_packages pip3
         envvar_set_or_create PYTHON_EXE python3
+        # Always create user's tmp dir for nvcc. See https://github.com/trilinos/Trilinos/issues/10428#issuecomment-1109956415.
+        mkdir -p /tmp/trilinos
     elif [[ ${on_weaver} == "1" ]]; then
         module unload git
         module unload python
