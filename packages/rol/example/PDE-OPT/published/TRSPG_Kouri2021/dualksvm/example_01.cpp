@@ -76,7 +76,7 @@ private:
   bool computeKx_;
 
   Real kernel(const std::vector<Real> &x, const std::vector<Real> &y) const {
-    const int size = x.size();
+    typename std::vector<Real>::size_type size = x.size();
     assert(size==y.size());
     Real val = blas_->DOT(size,&x[0],1,&y[0],1);
     return std::tanh(kappa_ * val + alpha_);
