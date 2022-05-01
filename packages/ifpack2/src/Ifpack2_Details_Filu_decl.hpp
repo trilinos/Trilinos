@@ -64,9 +64,9 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   public:
     typedef FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node> Base;
     typedef typename Base::TRowMatrix TRowMatrix;
-    typedef typename Base::ScalarArray ScalarArray;
-    typedef typename Base::ConstScalarArray ConstScalarArray;
-    typedef FastILUPrec<LocalOrdinal, Scalar, typename Base::execution_space> LocalFILU;
+    typedef typename Base::ImplScalar ImplScalar;
+    typedef typename Base::ImplScalarArray ImplScalarArray;
+    typedef FastILUPrec<LocalOrdinal, ImplScalar, typename Base::execution_space> LocalFILU;
 
     //! Constructor
     Filu(Teuchos::RCP<const TRowMatrix> mat_);
@@ -89,7 +89,7 @@ class Filu : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     void initLocalPrec();
     //compute() takes A's local values
     void computeLocalPrec();
-    void applyLocalPrec(ScalarArray x, ScalarArray y) const;
+    void applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const;
     std::string getName() const;
 };
 
