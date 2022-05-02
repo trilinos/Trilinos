@@ -15,6 +15,8 @@
 #include "Test_Blas1_nrm1.hpp"
 #include "Test_Blas1_nrm2_squared.hpp"
 #include "Test_Blas1_nrm2.hpp"
+#include "Test_Blas1_nrm2w_squared.hpp"
+#include "Test_Blas1_nrm2w.hpp"
 #include "Test_Blas1_nrminf.hpp"
 #include "Test_Blas1_reciprocal.hpp"
 #include "Test_Blas1_scal.hpp"
