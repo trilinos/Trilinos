@@ -50,8 +50,11 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_RILUK_calore1_mm.xml 
   test_Cheby_calore1_mm.xml
   test_FILU_calore1_mm.xml
+  test_FILU_calore1_mm_sptrsv.xml
   test_FIC_calore1_mm.xml
+  test_FIC_calore1_mm_sptrsv.xml
   test_FILDL_calore1_mm.xml
+  test_FILDL_calore1_mm_sptrsv.xml
   test_Jacobi_nos1_hb.xml 
   test_2_Jacobi_nos1_hb.xml 
   test_Jacobi_gcrodr_nos1_hb.xml 
@@ -82,15 +85,21 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_ILUT_tfqmr_small_sym_mm.xml
   test_tfqmr_small_sym_mm.xml
   test_FILU_tfqmr_small_sym_mm.xml
+  test_FILU_tfqmr_small_sym_mm_sptrsv.xml
   test_FIC_tfqmr_small_sym_mm.xml
+  test_FIC_tfqmr_small_sym_mm_sptrsv.xml
   test_FILDL_tfqmr_small_sym_mm.xml
+  test_FILDL_tfqmr_small_sym_mm_sptrsv.xml
   test_ILUT_tfqmr_calore1_mm.xml
   5w.mtx 
   5w.vec
   5w_bel_tif_ILUT.xml
   5w_bel_tif_FILU.xml
+  5w_bel_tif_FILU_sptrsv.xml
   5w_bel_tif_FIC.xml
+  5w_bel_tif_FIC_sptrsv.xml
   5w_bel_tif_FILDL.xml
+  5w_bel_tif_FILDL_sptrsv.xml
   5w_missing_diag.mtx 
   5w_missing_diag_ILUT.xml
   5w_bel_tif_RILUK_0.xml 
@@ -99,8 +108,11 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_bordered_DIAG_small.xml 
   test_minres_bordered_DIAG_small.xml 
   test_FILU_small_sym_sing.xml
+  test_FILU_small_sym_sing_sptrsv.xml
   test_FIC_small_sym_sing.xml
+  test_FIC_small_sym_sing_sptrsv.xml
   test_FILDL_small_sym_sing.xml
+  test_FILDL_small_sym_sing_sptrsv.xml
   small_sym_sing.mtx consist_rhs.vec small_null.vec
   mueluMatrix.mtx
   mueluMatrix_rhs.mtx
@@ -413,24 +425,41 @@ ENDIF()
 IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
   #calore1
   TRIBITS_ADD_TEST(
-    tif_belos Ifpack2BelosCopyFiles
+    tif_belos
     NAME FILU_calore1
     ARGS "--xml_file=test_FILU_calore1_mm.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
+
   TRIBITS_ADD_TEST(
-    tif_belos Ifpack2BelosCopyFiles
+    tif_belos
+    NAME FILU_calore1_sptrsv
+    ARGS "--xml_file=test_FILU_calore1_mm_sptrsv.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
     NAME FILDL_calore1
     ARGS "--xml_file=test_FILDL_calore1_mm.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME FILDL_calore1_sptrsv
+    ARGS "--xml_file=test_FILDL_calore1_mm_sptrsv.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
   #5w
   TRIBITS_ADD_TEST(
-    tif_belos Ifpack2BelosCopyFiles
+    tif_belos
     NAME FILU_5w
     ARGS "--xml_file=5w_bel_tif_FILU.xml"
     COMM serial mpi
@@ -438,7 +467,15 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     STANDARD_PASS_OUTPUT
   )
   TRIBITS_ADD_TEST(
-    tif_belos Ifpack2BelosCopyFiles
+    tif_belos
+    NAME FILU_5w_sptrsv
+    ARGS "--xml_file=5w_bel_tif_FILU_sptrsv.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
     NAME FIC_5w
     ARGS "--xml_file=5w_bel_tif_FIC.xml"
     COMM serial mpi
@@ -446,16 +483,32 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     STANDARD_PASS_OUTPUT
   )
   TRIBITS_ADD_TEST(
-    tif_belos Ifpack2BelosCopyFiles
+    tif_belos
+    NAME FIC_5w_sptrsv
+    ARGS "--xml_file=5w_bel_tif_FIC_sptrsv.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
     NAME FILDL_5w
     ARGS "--xml_file=5w_bel_tif_FILDL.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME FILDL_5w_sptrsv
+    ARGS "--xml_file=5w_bel_tif_FILDL_sptrsv.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
   #small_sym
   TRIBITS_ADD_TEST(
-    tif_belos Ifpack2BelosCopyFiles
+    tif_belos
     NAME FILU_small_sym
     ARGS "--xml_file=test_FILU_tfqmr_small_sym_mm.xml"
     COMM serial mpi
@@ -463,7 +516,15 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     STANDARD_PASS_OUTPUT
   )
   TRIBITS_ADD_TEST(
-    tif_belos Ifpack2BelosCopyFiles
+    tif_belos
+    NAME FILU_small_sym_sptrsv
+    ARGS "--xml_file=test_FILU_tfqmr_small_sym_mm_sptrsv.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
     NAME FIC_small_sym
     ARGS "--xml_file=test_FIC_tfqmr_small_sym_mm.xml"
     COMM serial mpi
@@ -471,16 +532,32 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     STANDARD_PASS_OUTPUT
   )
   TRIBITS_ADD_TEST(
-    tif_belos Ifpack2BelosCopyFiles
+    tif_belos
+    NAME FIC_small_sym_sptrsv
+    ARGS "--xml_file=test_FIC_tfqmr_small_sym_mm_sptrsv.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
     NAME FILDL_small_sym
     ARGS "--xml_file=test_FILDL_tfqmr_small_sym_mm.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME FILDL_small_sym_sptrsv
+    ARGS "--xml_file=test_FILDL_tfqmr_small_sym_mm_sptrsv.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
   #small_sym_sing
   TRIBITS_ADD_TEST(
-    tif_belos Ifpack2BelosCopyFiles
+    tif_belos
     NAME FILU_small_sym_sing
     ARGS "--xml_file=test_FILU_small_sym_sing.xml"
     COMM serial mpi
@@ -488,7 +565,15 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     STANDARD_PASS_OUTPUT
   )
   TRIBITS_ADD_TEST(
-    tif_belos Ifpack2BelosCopyFiles
+    tif_belos
+    NAME FILU_small_sym_sing_sptrsv
+    ARGS "--xml_file=test_FILU_small_sym_sing_sptrsv.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
     NAME FIC_small_sym_sing
     ARGS "--xml_file=test_FIC_small_sym_sing.xml"
     COMM serial mpi
@@ -496,9 +581,25 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     STANDARD_PASS_OUTPUT
   )
   TRIBITS_ADD_TEST(
-    tif_belos Ifpack2BelosCopyFiles
+    tif_belos
+    NAME FIC_small_sym_sing_sptrsv
+    ARGS "--xml_file=test_FIC_small_sym_sing_sptrsv.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
     NAME FILDL_small_sym_sing
     ARGS "--xml_file=test_FILDL_small_sym_sing.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME FILDL_small_sym_sing_sptrsv
+    ARGS "--xml_file=test_FILDL_small_sym_sing_sptrsv.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
