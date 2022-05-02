@@ -1895,6 +1895,8 @@ namespace Iocgns {
         CGCHECKM(
             cg_base_read(get_file_pointer(), base, basename, &cell_dimension, &phys_dimension));
 
+        auto *rdata = static_cast<double *>(data);
+
         // Data required by upper classes store x0, y0, z0, ... xn,
         // yn, zn. Data stored in exodusII file is x0, ..., xn, y0,
         // ..., yn, z0, ..., zn so we have to allocate some scratch
