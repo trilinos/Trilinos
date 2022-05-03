@@ -53,7 +53,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
-#include "Panzer_STK_ExodusReaderFactory.hpp"
+#include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
@@ -83,15 +83,15 @@ using TpetraRowMatrix = Tpetra::RowMatrix<ST, LO, GO, NT>;
 
 namespace panzer {
 
-  void testInitialzation_blockStructure_tpetra(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
+  void testInitialzation_tpetra(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
-  TEUCHOS_UNIT_TEST(initial_condition_builder2_tpetra, block_structure)
+  TEUCHOS_UNIT_TEST(initial_condition_builder_tpetra, exodus_restart)
   {
     using Teuchos::RCP;
 
 
-    panzer_stk::STK_ExodusReaderFactory mesh_factory;
+    panzer_stk::SquareQuadMeshFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 20;
@@ -103,10 +103,12 @@ namespace panzer {
     RCP<panzer_stk::STK_Interface> mesh;
     {
        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-       pl->set("File Name","block-decomp.exo");
+       pl->set("X Blocks",2);
+       pl->set("Y Blocks",1);
+       pl->set("X Elements",6);
+       pl->set("Y Elements",4);
        mesh_factory.setParameterList(pl);
        mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
-       mesh->writeToExodus("initial_condition_builder.exo");
     }
 
     // setup physic blocks
@@ -115,11 +117,11 @@ namespace panzer {
     std::vector<panzer::BC> bcs;
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
     {
-       testInitialzation_blockStructure_tpetra(ipb, bcs);
+       testInitialzation_tpetra(ipb, bcs);
 
        std::map<std::string,std::string> block_ids_to_physics_ids;
-       block_ids_to_physics_ids["eblock-0_0"] = "PB A";
-       block_ids_to_physics_ids["eblock-1_0"] = "PB B";
+       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
+       block_ids_to_physics_ids["eblock-1_0"] = "test physics";
 
        std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
        block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
@@ -165,14 +167,13 @@ namespace panzer {
     const Teuchos::RCP<panzer::ConnManager> conn_manager
            = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
-    Teuchos::RCP<const panzer::GlobalIndexerFactory > indexerFactory
+    Teuchos::RCP<const panzer::GlobalIndexerFactory> indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory);
     const Teuchos::RCP<panzer::GlobalIndexer> dofManager
           = indexerFactory->buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
     auto tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-
     auto tlof
           = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,ST,LO,GO>(tComm.getConst(),dofManager));
 
@@ -188,7 +189,6 @@ namespace panzer {
 
     Teuchos::ParameterList closure_models("Closure Models");
     closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
-    closure_models.sublist("solid").sublist("SOURCE_ELECTRON_TEMPERATURE").set<double>("Value",1.0);
     closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);
 
     Teuchos::ParameterList user_data("User Data");
@@ -202,7 +202,7 @@ namespace panzer {
 
     Teuchos::ParameterList ic_closure_models("Initial Conditions");
     ic_closure_models.sublist("eblock-0_0").sublist("TEMPERATURE").set<double>("Value",3.0);
-    ic_closure_models.sublist("eblock-0_0").sublist("ELECTRON_TEMPERATURE").set<double>("Value",3.0);
+    ic_closure_models.sublist("eblock-0_0").sublist("ION_TEMPERATURE").set<double>("Value",3.0);
     ic_closure_models.sublist("eblock-1_0").sublist("TEMPERATURE").set<double>("Value",3.0);
     ic_closure_models.sublist("eblock-1_0").sublist("ION_TEMPERATURE").set<double>("Value",3.0);
 
@@ -226,55 +226,80 @@ namespace panzer {
 
     panzer::evaluateInitialCondition(*wkstContainer, phx_ic_field_managers, loc, *tlof, 0.0);
 
+
     auto x = tloc->get_x();
     auto xData = x->getData(0);
     out << x->getGlobalLength() << " " << xData.size() << std::endl;
     for (int i=0; i < xData.size(); ++i)
       TEST_FLOATING_EQUALITY(xData[i], 3.0, 1.0e-10);
+
   }
 
-  void testInitialzation_blockStructure_tpetra(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-			 std::vector<panzer::BC>& /* bcs */)
+  void testInitialzation_tpetra(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
+			 std::vector<panzer::BC>& bcs)
   {
     // Physics block
-    Teuchos::ParameterList& physics_block_a = ipb->sublist("PB A");
+    Teuchos::ParameterList& physics_block = ipb->sublist("test physics");
     {
-      Teuchos::ParameterList& p = physics_block_a.sublist("a");
+      Teuchos::ParameterList& p = physics_block.sublist("a");
       p.set("Type","Energy");
       p.set("Prefix","");
       p.set("Model ID","solid");
       p.set("Basis Type","HGrad");
-      p.set("Basis Order",1);
+      p.set("Basis Order",2);
       p.set("Integration Order",1);
     }
     {
-      Teuchos::ParameterList& p = physics_block_a.sublist("b");
-      p.set("Type","Energy");
-      p.set("Prefix","ELECTRON_");
-      p.set("Model ID","solid");
-      p.set("Basis Type","HGrad");
-      p.set("Basis Order",1);
-      p.set("Integration Order",1);
-    }
-
-    Teuchos::ParameterList& physics_block_b = ipb->sublist("PB B");
-    {
-      Teuchos::ParameterList& p = physics_block_b.sublist("a");
-      p.set("Type","Energy");
-      p.set("Prefix","");
-      p.set("Model ID","solid");
-      p.set("Basis Type","HGrad");
-      p.set("Basis Order",1);
-      p.set("Integration Order",1);
-    }
-    {
-      Teuchos::ParameterList& p = physics_block_b.sublist("b");
+      Teuchos::ParameterList& p = physics_block.sublist("b");
       p.set("Type","Energy");
       p.set("Prefix","ION_");
       p.set("Model ID","ion solid");
       p.set("Basis Type","HGrad");
       p.set("Basis Order",1);
       p.set("Integration Order",1);
+    }
+
+    {
+      std::size_t bc_id = 0;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "left";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 5.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
+		    strategy, p);
+      bcs.push_back(bc);
+    }
+    {
+      std::size_t bc_id = 1;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "right";
+      std::string element_block_id = "eblock-1_0";
+      std::string dof_name = "TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 5.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
+		    strategy, p);
+      bcs.push_back(bc);
+    }
+    {
+      std::size_t bc_id = 2;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "top";
+      std::string element_block_id = "eblock-1_0";
+      std::string dof_name = "TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 5.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
+		    strategy, p);
+      bcs.push_back(bc);
     }
   }
 
