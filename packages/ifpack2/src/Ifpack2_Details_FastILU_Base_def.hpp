@@ -121,8 +121,8 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
   {
     auto x2d = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
     auto y2d = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
-    ScalarArray x1d (const_cast<Scalar*>(x2d.data()), x1d.extent(0));
-    ScalarArray y1d (const_cast<Scalar*>(y2d.data()), y1d.extent(0));
+    ImplScalarArray x1d (const_cast<ImplScalar*>(x2d.data()), x1d.extent(0));
+    ImplScalarArray y1d (const_cast<ImplScalar*>(y2d.data()), y1d.extent(0));
 
     applyLocalPrec(x1d, y1d);
   }
@@ -135,8 +135,8 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
     {
       auto xColView1d = Kokkos::subview(x2d, Kokkos::ALL(), i);
       auto yColView1d = Kokkos::subview(y2d, Kokkos::ALL(), i);
-      ScalarArray x1d (const_cast<Scalar*>(xColView1d.data()), xColView1d.extent(0));
-      ScalarArray y1d (const_cast<Scalar*>(yColView1d.data()), yColView1d.extent(0));
+      ImplScalarArray x1d (const_cast<ImplScalar*>(xColView1d.data()), xColView1d.extent(0));
+      ImplScalarArray y1d (const_cast<ImplScalar*>(yColView1d.data()), yColView1d.extent(0));
 
       applyLocalPrec(x1d, y1d);
     }
@@ -166,7 +166,7 @@ initialize()
     throw std::runtime_error(std::string("Called ") + getName() + "::initialize() but matrix was null (call setMatrix() with a non-null matrix first)");
   }
   Kokkos::Timer copyTimer;
-  CrsArrayReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
+  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
   crsCopyTime_ = copyTimer.seconds();
   initLocalPrec();  //note: initLocalPrec updates initTime
   initFlag_ = true;
@@ -198,7 +198,7 @@ compute()
 
   //get copy of values array from matrix
   Kokkos::Timer copyTimer;
-  CrsArrayReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
+  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
   crsCopyTime_ += copyTimer.seconds(); //add to the time spent getting rowptrs/colinds
   computeLocalPrec(); //this updates computeTime_
   computedFlag_ = true;

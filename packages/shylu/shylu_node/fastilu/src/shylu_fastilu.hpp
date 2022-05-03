@@ -85,7 +85,7 @@ class BlockJacobiIterFunctorL;
 template<class Ordinal, class Scalar, class ExecSpace>
 class ParCopyFunctor;
 
-template<class Ordinal, class Scalar, class ExecSpace>
+template<class Ordinal, class Scalar, class Real, class ExecSpace>
 class ParScalFunctor;
 
 template<class Ordinal, class Scalar, class ExecSpace>
@@ -104,18 +104,23 @@ template<class Ordinal, class Scalar, class ExecSpace>
 class FastILUPrec
 {
     public:
+        typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Real;
         typedef Kokkos::View<Ordinal *, ExecSpace> OrdinalArray;
         typedef Kokkos::View<Scalar *, ExecSpace> ScalarArray;
+        typedef Kokkos::View<Real *, ExecSpace> RealArray;
         typedef Kokkos::View<Ordinal *, typename ExecSpace::array_layout,
-        Kokkos::Serial, Kokkos::MemoryUnmanaged> UMOrdinalArray;
+                             Kokkos::Serial, Kokkos::MemoryUnmanaged> UMOrdinalArray;
         typedef Kokkos::View<Scalar *, typename ExecSpace::array_layout,
-        Kokkos::Serial, Kokkos::MemoryUnmanaged> UMScalarArray;
+                             Kokkos::Serial, Kokkos::MemoryUnmanaged> UMScalarArray;
         typedef FastILUPrec<Ordinal, Scalar, ExecSpace> FastPrec;
 
         typedef Kokkos::View<Ordinal *, Kokkos::HostSpace> OrdinalArrayHost;
         typedef Kokkos::View<Scalar  *, Kokkos::HostSpace>  ScalarArrayHost;
         typedef typename OrdinalArray::host_mirror_type OrdinalArrayMirror;
         typedef typename ScalarArray::host_mirror_type  ScalarArrayMirror;
+
+        using STS = Kokkos::ArithTraits<Scalar>;
+        using RTS = Kokkos::ArithTraits<Real>;
 
     private:
         double computeTime;
@@ -171,7 +176,7 @@ class FastILUPrec
         OrdinalArrayMirror aColIdx_;
 
         //Diagonal scaling factors
-        ScalarArray diagFact;
+        RealArray diagFact;
         ScalarArray diagElems;
 
         //Temporary vectors for triangular solves
@@ -749,6 +754,7 @@ class FastILUPrec
 
         void applyDiagonalScaling()
         {
+            const Real one = RTS::one();
             int anext = 0;
             //First fill Aj and extract the diagonal scaling factors
             //Use diag array to store scaling factors since
@@ -761,8 +767,7 @@ class FastILUPrec
                     aRowIdx_[anext++] = i;
                     if (aColIdx_[k] == i)
                     {
-                        diagFact_[i] = 1.0/std::sqrt(std::fabs(aVal_[k]));
-                        //diagFact[i] = std::sqrt(std::fabs(aVal[k]));
+                        diagFact_[i] = one/(RTS::sqrt(STS::abs(aVal_[k])));
                         #ifdef FASTILU_DEBUG_OUTPUT
                         std::cout << "diagFact["<<i<<"]="<<aVal_[k]<<std::endl;
                         #endif
@@ -773,7 +778,7 @@ class FastILUPrec
             //Now go through each element of A and apply the scaling
             int row;
             int col;
-            double sc1, sc2;
+            Real sc1, sc2;
 
             for (int i = 0; i < nRows; i++) 
             {
@@ -809,7 +814,7 @@ class FastILUPrec
 
         void applyD(ScalarArray &x, ScalarArray &y)
         {
-            ParScalFunctor<Ordinal, Scalar, ExecSpace> parScal(nRows, x, y, diagFact);
+            ParScalFunctor<Ordinal, Scalar, Real, ExecSpace> parScal(nRows, x, y, diagFact);
             ExecSpace().fence();
             Kokkos::parallel_for(nRows, parScal);
             ExecSpace().fence();
@@ -900,11 +905,11 @@ class FastILUPrec
             shift = shift_;
             blkSz = blkSz_;
 
-            const Scalar one = Kokkos::ArithTraits<Scalar>::one();
+            const Scalar one = STS::one();
             onesVector = ScalarArray("onesVector", nRow_);
             Kokkos::deep_copy(onesVector, one);
 
-            diagFact = ScalarArray("diagFact", nRow_);
+            diagFact = RealArray("diagFact", nRow_);
             diagElems = ScalarArray("diagElems", nRow_);
             xOld = ScalarArray("xOld", nRow_);
             xTemp = ScalarArray("xTemp", nRow_);
@@ -1128,8 +1133,8 @@ class FastILUPrec
                 sum_diag += diagElems[i]*diagElems[i];
             }
             
-            std::cout << "l2 norm of nonlinear residual = " << std::sqrt(sum) << std::endl;
-            std::cout << "l2 norm of diag. of U = " << std::sqrt(sum_diag) << std::endl;
+            std::cout << "l2 norm of nonlinear residual = " << RTS::sqrt(STS::abs(sum)) << std::endl;
+            std::cout << "l2 norm of diag. of U = " << RTS::sqrt(STS::abs(sum_diag)) << std::endl;
         }
 
         void checkIC() const
@@ -1177,7 +1182,7 @@ class FastILUPrec
         friend class JacobiIterFunctor<Ordinal, Scalar, ExecSpace>;
         friend class ParCopyFunctor<Ordinal, Scalar, ExecSpace>;
         friend class JacobiIterFunctorT<Ordinal, Scalar, ExecSpace>;
-        friend class ParScalFunctor<Ordinal, Scalar, ExecSpace>;
+        friend class ParScalFunctor<Ordinal, Scalar, Real, ExecSpace>;
         friend class MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace>;
         friend class MemoryPrimeFunctorNnzCoo<Ordinal, Scalar, ExecSpace>;
         friend class MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace>;
@@ -1192,6 +1197,8 @@ class FastICFunctor
         typedef ExecSpace execution_space;
         typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
+
+        using STS = Kokkos::ArithTraits<Scalar>;
 
         FastICFunctor (Ordinal nNZ, Ordinal bs, ordinal_array_type Ap, ordinal_array_type Ai,
                 ordinal_array_type Aj, scalar_array_type Ax, ordinal_array_type Lp,
@@ -1253,7 +1260,7 @@ class FastICFunctor
                         else if (i == j)
                         {
                             //_diag[j] =  std::sqrt(val - acc_val);
-                            val = std::sqrt(val - acc_val);
+                            val = STS::sqrt(val - acc_val);
                             _diag[j] = ((1.0 - _omega) * _diag[j]) + (_omega*val); 
                             for ( ; _Li[lptr] < j ; lptr++) ; // dummy loop
                             assert(_Li[lptr]==i);
@@ -1371,6 +1378,8 @@ class FastILUFunctor
         typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
 
+        using STS = Kokkos::ArithTraits<Scalar>;
+
         FastILUFunctor (Ordinal nNZ, Ordinal bs, ordinal_array_type Ap, ordinal_array_type Ai,
                 ordinal_array_type Aj, scalar_array_type Ax, ordinal_array_type Lp,
                 ordinal_array_type Li, scalar_array_type Lx, ordinal_array_type Up,
@@ -1383,6 +1392,9 @@ class FastILUFunctor
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal blk_index) const
             {
+                const Scalar zero = STS::zero();
+                const Scalar one = STS::one();
+
                 Ordinal start = blk_index * blk_size;
                 Ordinal end = start + blk_size;
 
@@ -1400,8 +1412,8 @@ class FastILUFunctor
                     Ordinal lCol;
                     Ordinal uCol;
                     Scalar val = _Ax[nz_index];
-                    Scalar acc_val = 0.0;
-                    Scalar lAdd = 0.0;
+                    Scalar acc_val = zero;
+                    Scalar lAdd = zero;
                     Ordinal lptr = _Lp[i];
                     Ordinal uptr = _Up[j];
 
@@ -1409,7 +1421,7 @@ class FastILUFunctor
                     {
                         lCol = _Li[lptr];
                         uCol = _Ui[uptr];
-                        lAdd = 0.0;
+                        lAdd = zero;
                         if (lCol == uCol)
                         {
                             lAdd = _Lx[lptr] * _Ux[uptr];
@@ -1431,13 +1443,13 @@ class FastILUFunctor
                     if (i > j) 
                     {
                         val = (val-acc_val) / _Ux[_Up[j+1]-1];
-                        _Lx[lptr-1] = ((1 - _omega) * _Lx[lptr-1]) + (_omega * val);
+                        _Lx[lptr-1] = ((one - _omega) * _Lx[lptr-1]) + (_omega * val);
                     }
                     else
                     {
                         val = (val-acc_val);
                         if (i == j) _diag[j] = val;
-                        _Ux[uptr-1] = ((1 - _omega) * _Ux[uptr - 1]) + (_omega * val);
+                        _Ux[uptr-1] = ((one - _omega) * _Ux[uptr - 1]) + (_omega * val);
                     }
                 }
             }
@@ -1662,15 +1674,16 @@ class JacobiIterFunctorT
         Ordinal n_;
 };
 
-template<class Ordinal, class Scalar, class ExecSpace>
+template<class Ordinal, class Scalar, class Real, class ExecSpace>
 class ParScalFunctor
 {
     public:
         typedef ExecSpace execution_space;
         typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
+        typedef Kokkos::View<Real *, ExecSpace> real_array_type;
 
-        ParScalFunctor (Ordinal n, scalar_array_type x, scalar_array_type y, scalar_array_type scaleFactors)
+        ParScalFunctor (Ordinal n, scalar_array_type x, scalar_array_type y, real_array_type scaleFactors)
             :
                 x_(x), y_(y), scaleFactors_(scaleFactors)
         {
@@ -1684,7 +1697,8 @@ class ParScalFunctor
                y_[xId] = x_[xId]*scaleFactors_[xId];
             }
 
-        scalar_array_type x_, y_, scaleFactors_;
+        scalar_array_type x_, y_;
+        real_array_type scaleFactors_;
 };
 
 
