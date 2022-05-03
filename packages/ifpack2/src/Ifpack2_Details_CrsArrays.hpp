@@ -93,22 +93,24 @@ struct CrsArrayReader
       return;
     }
     using range_type = Kokkos::pair<int, int>;
-    using local_inds_host_view_type = typename TRowMatrix::local_inds_host_view_type;
-    using values_host_view_type = typename TRowMatrix::values_host_view_type;
+    using local_inds_host_view_type = typename TRowMatrix::nonconst_local_inds_host_view_type;
+    using values_host_view_type     = typename TRowMatrix::nonconst_values_host_view_type;
+    using scalar_type               = typename values_host_view_type::value_type;
 
     LocalOrdinal nrows = A->getLocalNumRows();
     size_t nnz = A->getLocalNumEntries();
+    size_t maxNnz = A->getLocalMaxNumRowEntries();
+    local_inds_host_view_type lclColInds ("lclColinds", maxNnz);
     vals = ScalarArray("Values", nnz);
 
     nnz = 0;
     for(LocalOrdinal i = 0; i < nrows; i++) {
-      local_inds_host_view_type lclColInds;
-      values_host_view_type lclValues;
-      A->getLocalRowView (i, lclColInds, lclValues);
+      size_t NumEntries = A->getNumEntriesInLocalRow(i);
+      auto constLclValues = Kokkos::subview (vals, range_type (nnz, nnz+NumEntries));
+      values_host_view_type lclValues (const_cast<scalar_type*>(constLclValues.data()), NumEntries);
 
-      auto lclValues_ = Kokkos::subview (vals, range_type (nnz, nnz+lclValues.extent(0)));
-      Kokkos::deep_copy(lclValues_, lclValues);
-      nnz += lclValues.extent(0);
+      A->getLocalRowCopy (i, lclColInds, lclValues, NumEntries);
+      nnz += NumEntries;
     }
   }
 
@@ -132,20 +134,23 @@ struct CrsArrayReader
     rowptrsHost = OrdinalArrayHost("RowPtrs (host)", nrows + 1);
 
     using range_type = Kokkos::pair<int, int>;
-    using local_inds_host_view_type = typename TRowMatrix::local_inds_host_view_type;
-    auto graph = A->getGraph();
+    using values_host_view_type     = typename TRowMatrix::nonconst_values_host_view_type;
+    using local_inds_host_view_type = typename TRowMatrix::nonconst_local_inds_host_view_type;
+    using local_ind_type            = typename local_inds_host_view_type::value_type;
     size_t nnz = A->getLocalNumEntries();
+    size_t maxNnz = A->getLocalMaxNumRowEntries();
+    values_host_view_type lclValues ("lclValues", maxNnz);
     colinds = OrdinalArray("ColInds", nnz);
 
     nnz = 0;
     rowptrsHost[0] = nnz;
     for(LocalOrdinal i = 0; i < nrows; i++) {
-      local_inds_host_view_type lclColInds;
-      graph->getLocalRowView (i, lclColInds);
+      size_t NumEntries = A->getNumEntriesInLocalRow(i);
+      auto constLclValues = Kokkos::subview (colinds, range_type (nnz, nnz+NumEntries));
+      local_inds_host_view_type lclColInds (const_cast<local_ind_type*>(constLclValues.data()), NumEntries);
+      A->getLocalRowCopy (i, lclColInds, lclValues, NumEntries);
 
-      auto lclColInds_ = Kokkos::subview (colinds, range_type (nnz, nnz+lclColInds.extent(0)));
-      Kokkos::deep_copy(lclColInds_, lclColInds);
-      nnz += lclColInds.extent(0);
+      nnz += NumEntries;
       rowptrsHost[i+1] = nnz;
     }
     rowptrs = OrdinalArray("RowPtrs", nrows + 1);
