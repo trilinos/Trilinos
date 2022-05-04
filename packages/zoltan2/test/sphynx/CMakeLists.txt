@@ -1,3 +1,21 @@
+TRIBITS_ADD_EXECUTABLE(
+  Hello_World
+  SOURCES hello_world_main.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+   Matrix_Reader 
+   SOURCES reader.cpp
+   COMM serial mpi
+)
+
+TRIBITS_ADD_EXECUTABLE(
+    driver
+    SOURCES driver.cpp
+    COMM serial mpi
+)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Sphynx
   SOURCES Test_Sphynx.cpp
