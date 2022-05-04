@@ -37,21 +37,21 @@
 #include "stk_util/parallel/DeviceAwareMPI.hpp"
 #include "stk_util/ngp/NgpSpaces.hpp"
 
-TEST(DeviceAwareMPI, trueIfOpenMPIAndCuda)
+TEST(DeviceAwareMPI, DISABLED_trueIfOpenMPIAndCuda)
 {
 #if defined(OMPI_MAJOR_VERSION) && defined(KOKKOS_ENABLE_CUDA)
   EXPECT_TRUE(stk::have_device_aware_mpi());
 #endif
 }
 
-TEST(DeviceAwareMPI, falseIfOpenMpiButNoCuda)
+TEST(DeviceAwareMPI, DISABLED_falseIfOpenMpiButNoCuda)
 {
 #if defined(OMPI_MAJOR_VERSION) && !defined(KOKKOS_ENABLED_CUDA)
   EXPECT_FALSE(stk::have_device_aware_mpi());
 #endif
 }
 
-TEST(DeviceAwareMPI, falseIfIntel)
+TEST(DeviceAwareMPI, DISABLED_falseIfIntel)
 {
 #if defined(I_MPI_VERSION)
   EXPECT_FALSE(stk::have_device_aware_mpi());
