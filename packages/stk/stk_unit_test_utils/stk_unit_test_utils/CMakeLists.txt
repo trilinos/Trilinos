@@ -72,6 +72,7 @@ SET(SOURCES_NEED_MPI
 
 SET(HEADERS
   AssemblyUtils.hpp
+  CommandLineArgs.hpp
   getOption.h
   StkReportRedirector.hpp
   stringAndNumberComparisons.hpp

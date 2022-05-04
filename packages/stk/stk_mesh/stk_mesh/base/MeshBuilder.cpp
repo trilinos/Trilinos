@@ -38,6 +38,17 @@
 namespace stk {
 namespace mesh {
 
+MeshBuilder::MeshBuilder()
+ : m_comm(MPI_COMM_NULL),
+   m_auraOption(BulkData::AUTO_AURA),
+   m_addFmwkData(false),
+   m_fieldDataManager(nullptr),
+   m_bucketCapacity(impl::BucketRepository::default_bucket_capacity),
+   m_spatialDimension(0),
+   m_entityRankNames()
+{
+}
+
 MeshBuilder::MeshBuilder(ParallelMachine comm)
  : m_comm(comm),
    m_auraOption(BulkData::AUTO_AURA),
@@ -58,6 +69,12 @@ MeshBuilder& MeshBuilder::set_spatial_dimension(unsigned spatialDimension)
 MeshBuilder& MeshBuilder::set_entity_rank_names(const std::vector<std::string>& entityRankNames)
 {
   m_entityRankNames = entityRankNames;
+  return *this;
+}
+
+MeshBuilder& MeshBuilder::set_communicator(ParallelMachine comm)
+{
+  m_comm = comm;
   return *this;
 }
 
@@ -94,14 +111,21 @@ std::shared_ptr<MetaData> MeshBuilder::create_meta_data()
   return std::make_shared<MetaData>();
 }
 
-std::shared_ptr<BulkData> MeshBuilder::create()
+std::unique_ptr<BulkData> MeshBuilder::create()
 {
   return create(create_meta_data());
 }
 
-std::shared_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData)
+void verify_valid_communicator(MPI_Comm comm)
 {
-  return std::shared_ptr<BulkData>(new BulkData(metaData, m_comm, m_auraOption,
+  ThrowRequireMsg(MPI_COMM_NULL != comm, "MeshBuilder must have a valid communicator before creating BulkData.");
+}
+
+std::unique_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData)
+{
+  verify_valid_communicator(m_comm);
+
+  return std::unique_ptr<BulkData>(new BulkData(metaData, m_comm, m_auraOption,
 #ifdef SIERRA_MIGRATION
                                    m_addFmwkData,
 #endif

@@ -190,6 +190,9 @@ public:
   const MetaData & mesh_meta_data() const { return *m_meta_raw_ptr_to_be_deprecated ; }
         MetaData & mesh_meta_data()       { return *m_meta_raw_ptr_to_be_deprecated ; }
 
+  std::shared_ptr<MetaData> mesh_meta_data_ptr() {return m_meta_data; }
+  const std::shared_ptr<MetaData> mesh_meta_data_ptr() const { return m_meta_data; }
+
   /** \brief  The parallel machine */
   ParallelMachine parallel() const { return m_parallel.parallel() ; }
 
