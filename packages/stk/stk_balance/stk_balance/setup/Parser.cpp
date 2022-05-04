@@ -116,6 +116,8 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
   set_app_type_defaults(settings);
   set_contact_search(settings);
   set_contact_search_tolerance(settings);
+  set_fix_spiders(settings);
+  set_fix_mechanisms(settings);
   set_decomp_method(settings);
   set_vertex_weight_block_multiplier(settings);
   set_use_nested_decomp(settings);
@@ -146,6 +148,8 @@ void Parser::add_options_to_parser()
   smStream << "Use settings suitable for solving Solid Mechanics problems. "
            << "This flag implies:" << std::endl
            << "    " << stk::dash_it(m_optionNames.faceSearchRelTol) << "=" << DefaultSettings::faceSearchRelTol << std::endl
+           << "    " << stk::dash_it(m_optionNames.fixSpiders) << "=" << ((DefaultSettings::fixSpiders) ? "on" : "off") << std::endl
+           << "    " << stk::dash_it(m_optionNames.fixMechanisms) << "=" << ((DefaultSettings::fixMechanisms) ? "on" : "off") << std::endl
            << "    Face search graph vertex weight multiplier = " << DefaultSettings::smFaceSearchVertexMultiplier << std::endl
            << "    Face search graph edge weight = " << DefaultSettings::smFaceSearchEdgeWeight;
   stk::CommandLineOption smDefaults{m_optionNames.smDefaults, "", smStream.str()};
@@ -154,9 +158,10 @@ void Parser::add_options_to_parser()
   sdStream << "Use settings suitable for solving Structural Dynamics problems. "
            << "This flag implies:" << std::endl
            << "    " << stk::dash_it(m_optionNames.faceSearchAbsTol) << "=" << DefaultSettings::faceSearchAbsTol << std::endl
+           << "    " << stk::dash_it(m_optionNames.fixSpiders) << "=on" << std::endl
+           << "    " << stk::dash_it(m_optionNames.fixMechanisms) << "=" << ((DefaultSettings::fixMechanisms) ? "on" : "off") << std::endl
            << "    Face search graph vertex weight multiplier = " << DefaultSettings::faceSearchVertexMultiplier << std::endl
-           << "    Face search graph edge weight = " << DefaultSettings::faceSearchEdgeWeight << std::endl
-           << "    Handle spider elements (currently for non-rebalance use-cases only)";
+           << "    Face search graph edge weight = " << DefaultSettings::faceSearchEdgeWeight;
   stk::CommandLineOption sdDefaults{m_optionNames.sdDefaults, "", sdStream.str()};
 
   stk::CommandLineOption faceSearchAbsTol{m_optionNames.faceSearchAbsTol, "",
@@ -167,6 +172,12 @@ void Parser::add_options_to_parser()
                            "Optionally provide a numeric tolerance value."};
   stk::CommandLineOption contactSearch{m_optionNames.contactSearch, "",
                            "Use proximity search for contact [on|off]"};
+  stk::CommandLineOption fixSpiders{m_optionNames.fixSpiders, "",
+                           "Correct the decomp to group spider legs (large collection of beam "
+                           "elements connected to a single node) onto fewer processors [on|off]"};
+  stk::CommandLineOption fixMechanisms{m_optionNames.fixMechanisms, "",
+                           "Remove mechanisms (partition components connected by a hinge) in "
+                           "the decomp by reassigning element ownership [on|off]"};
   stk::CommandLineOption decompMethod{m_optionNames.decompMethod, "",
                            "Use this geometric decomposition method [rcb|rib|multijagged] "
                            "or graph-based decomposition method [parmetis|scotch]. "
@@ -191,7 +202,9 @@ void Parser::add_options_to_parser()
   m_commandLineParser.add_flag(sdDefaults);
   m_commandLineParser.add_optional_implicit(faceSearchAbsTol, DefaultSettings::faceSearchAbsTol);
   m_commandLineParser.add_optional_implicit(faceSearchRelTol, DefaultSettings::faceSearchRelTol);
-  m_commandLineParser.add_optional(contactSearch, DefaultSettings::contactSearch);
+  m_commandLineParser.add_optional(contactSearch, (DefaultSettings::useContactSearch) ? "on" : "off");
+  m_commandLineParser.add_optional(fixSpiders, (DefaultSettings::fixSpiders) ? "on" : "off");
+  m_commandLineParser.add_optional(fixMechanisms, (DefaultSettings::fixMechanisms) ? "on" : "off");
   m_commandLineParser.add_optional(decompMethod, DefaultSettings::decompMethod);
   m_commandLineParser.add_optional(vertexWeightBlockMultiplier, DefaultSettings::vertexWeightBlockMultiplier);
   m_commandLineParser.add_flag(useNested);
@@ -281,6 +294,32 @@ void Parser::set_contact_search(BalanceSettings& settings) const
         "Invalid contact search type (" + searchOption + ").  Must be one of: [on|off]");
 
     settings.setIncludeSearchResultsInGraph(searchOption == "on");
+  }
+}
+
+void Parser::set_fix_spiders(BalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.fixSpiders)) {
+    std::string fixSpiders = m_commandLineParser.get_option_value<std::string>(m_optionNames.fixSpiders);
+    std::transform(fixSpiders.begin(), fixSpiders.end(), fixSpiders.begin(), ::tolower);
+
+    ThrowRequireMsg(fixSpiders == "on" || fixSpiders == "off",
+        "Invalid spider fixing argument (" + fixSpiders + ").  Must be one of: [on|off]");
+
+    settings.setShouldFixSpiders(fixSpiders == "on");
+  }
+}
+
+void Parser::set_fix_mechanisms(BalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.fixMechanisms)) {
+    std::string fixMechanisms = m_commandLineParser.get_option_value<std::string>(m_optionNames.fixMechanisms);
+    std::transform(fixMechanisms.begin(), fixMechanisms.end(), fixMechanisms.begin(), ::tolower);
+
+    ThrowRequireMsg(fixMechanisms == "on" || fixMechanisms == "off",
+        "Invalid mechanism fixing argument (" + fixMechanisms + ").  Must be one of: [on|off]");
+
+    settings.setShouldFixMechanisms(fixMechanisms == "on");
   }
 }
 

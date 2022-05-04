@@ -9,6 +9,7 @@ cmake_cxx_flags=${CMAKE_CXX_FLAGS}
 cmake_exe_linker_flags=${CMAKE_EXE_LINKER_FLAGS}
 cuda_on_or_off=${CUDA:-OFF}
 CUDA=$cuda_on_or_off
+clear_cache=${CLEAR_CACHE:-ON}
 
 printf "\nTRILINOS_DIR=${trilinos_src_dir}\n";
 printf "BUILD_DIR=${build_dir}\n";
@@ -45,8 +46,10 @@ mkdir -p $build_dir
 
 cd ${build_dir}
 
+if [ "${clear_cache}" == "ON" ] ; then
 # Cleanup old cache before we configure
-rm -rf CMakeFiles CMakeCache.txt
+  rm -rf CMakeFiles CMakeCache.txt
+fi
 
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \

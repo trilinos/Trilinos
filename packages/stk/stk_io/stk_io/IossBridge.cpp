@@ -60,6 +60,7 @@
 #include "Ioss_Assembly.h"                          // for Assembly
 #include "Ioss_CommSet.h"                           // for CommSet
 #include "Ioss_CompositeVariableType.h"             // for CompositeVariable...
+#include "Ioss_ConcreteVariableType.h"
 #include "Ioss_DBUsage.h"                           // for WRITE_RESULTS
 #include "Ioss_DataSize.h"                          // for USE_INT64_API
 #include "Ioss_DatabaseIO.h"                        // for DatabaseIO
@@ -80,6 +81,7 @@
 #include "Ioss_State.h"                             // for STATE_DEFINE_MODEL
 #include "Ioss_SurfaceSplit.h"                      // for SPLIT_BY_ELEMENT_...
 #include "Ioss_VariableType.h"                      // for VariableType
+#include "Ioss_Utils.h"
 #include "SidesetTranslator.hpp"                    // for get_number_sides_...
 #include "StkIoUtils.hpp"                           // for part_primary_enti...
 #include "mpi.h"                                    // for MPI_COMM_SELF
@@ -465,6 +467,23 @@ namespace io {
 
 namespace impl {
 
+void set_field_output_type(stk::mesh::FieldBase & field, const Ioss::VariableType * type)
+{
+  mesh::MetaData & meta = mesh::MetaData::get(field);
+  const Ioss::VariableType * oldVariableType = field.attribute<Ioss::VariableType>();
+  if (not oldVariableType) {
+    meta.declare_attribute_no_delete(field, type);
+  }
+  else {
+    if (oldVariableType->name() != type->name()) {
+      const bool success = meta.remove_attribute(field, oldVariableType);
+      ThrowRequireMsg(success, "stk::io::impl::set_field_output_type(): Failed to remove old attribute " +
+                      oldVariableType->name() + " from field " + field.name());
+      meta.declare_attribute_no_delete(field, type);
+    }
+  }
+}
+
 template<typename ArrayTag>
 stk::mesh::FieldBase* add_stk_field(stk::mesh::MetaData& meta,
                                     const std::string& fieldName,
@@ -479,10 +498,10 @@ stk::mesh::FieldBase* add_stk_field(stk::mesh::MetaData& meta,
 }
 
 const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta,
-                                                        stk::mesh::EntityRank type,
-                                                        stk::mesh::Part &part,
-                                                        const Ioss::Field &io_field,
-                                                        bool use_cartesian_for_scalar)
+                                                       stk::mesh::EntityRank type,
+                                                       stk::mesh::Part &part,
+                                                       const Ioss::Field &io_field,
+                                                       bool use_cartesian_for_scalar)
 {
     std::string name = io_field.get_name();
     stk::mesh::FieldBase *field_ptr = meta.get_field(type, name);
@@ -491,49 +510,80 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return field_ptr;
     }
 
-    const Ioss::VariableType* varType = io_field.transformed_storage();
-    const Ioss::CompositeVariableType* compVarType = dynamic_cast<const Ioss::CompositeVariableType*>(varType);
-    if (compVarType != nullptr) {
-      varType = compVarType->GetBaseType();
-    }
-    std::string field_type = varType->name();
-    size_t num_components = io_field.transformed_storage()->component_count();
     stk::topology::rank_t entity_rank = static_cast<stk::topology::rank_t>(type);
 
-    if (field_type == "scalar" || num_components == 1) {
-      if (!use_cartesian_for_scalar) {
-        stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entity_rank, name);
-        stk::mesh::put_field_on_mesh(field, part,
-                                     (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
-        field_ptr = &field;
-      } else {
-        stk::mesh::Field<double, stk::mesh::Cartesian> & field =
-          meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(entity_rank, name);
-        stk::mesh::put_field_on_mesh(field, part, 1,
-                                     (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian>>::data_type*) nullptr);
-        field_ptr = &field;
+    if (meta.is_using_simple_fields()) {
+      const Ioss::VariableType* varType = io_field.transformed_storage();
+      size_t numComponents = varType->component_count();
+      size_t numCopies = 1;
+
+      const Ioss::CompositeVariableType* compositeVarType = dynamic_cast<const Ioss::CompositeVariableType*>(varType);
+      if (compositeVarType != nullptr) {
+        const Ioss::VariableType * baseVarType = compositeVarType->GetBaseType();
+        numComponents = baseVarType->component_count();
+        numCopies = compositeVarType->GetNumCopies();
+        varType = baseVarType;
       }
-    }
-    else if (stk::string_starts_with(sierra::make_lower(field_type), "real[")) {
-      stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entity_rank, name);
-      stk::mesh::put_field_on_mesh(field, part, num_components,
-                                   (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+      std::string field_type = varType->name();
+
+      stk::mesh::Field<double> & field = meta.declare_field<double>(entity_rank, name);
+      stk::mesh::put_field_on_mesh(field, part, numComponents, numCopies, nullptr);
+
+      const int oldVarTypeSize = has_field_output_type(field) ? get_field_output_type(field)->component_count() : 0;
+      const int newVarTypeSize = varType->component_count();
+
+      if (newVarTypeSize > oldVarTypeSize) {
+        set_field_output_type(field, varType);
+      }
+
       field_ptr = &field;
     }
-    else if ((field_type == "vector_2d") || (field_type == "vector_3d")) {
-      field_ptr = add_stk_field<stk::mesh::Cartesian>(meta, name, entity_rank, part, num_components);
-    }
-    else if (field_type == "sym_tensor_33") {
-      field_ptr = add_stk_field<stk::mesh::SymmetricTensor>(meta, name, entity_rank, part, num_components);
-    }
-    else if (field_type == "full_tensor_36") {
-      field_ptr = add_stk_field<stk::mesh::FullTensor>(meta, name, entity_rank, part, num_components);
-    }
-    else if ((field_type == "matrix_22") || (field_type == "matrix_33")) {
-      field_ptr = add_stk_field<stk::mesh::Matrix>(meta, name, entity_rank, part, num_components);
-    }
     else {
-      field_ptr = add_stk_field<shards::ArrayDimension>(meta, name, entity_rank, part, num_components);
+
+      const Ioss::VariableType* varType = io_field.transformed_storage();
+      size_t num_components = varType->component_count();
+
+      const Ioss::CompositeVariableType* compVarType = dynamic_cast<const Ioss::CompositeVariableType*>(varType);
+      if (compVarType != nullptr) {
+        varType = compVarType->GetBaseType();
+      }
+      std::string field_type = varType->name();
+
+      if (field_type == "scalar" || num_components == 1) {
+        if (!use_cartesian_for_scalar) {
+          stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entity_rank, name);
+          stk::mesh::put_field_on_mesh(field, part,
+                                       (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+          field_ptr = &field;
+        } else {
+          stk::mesh::Field<double, stk::mesh::Cartesian> & field =
+              meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(entity_rank, name);
+          stk::mesh::put_field_on_mesh(field, part, 1,
+                                       (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian>>::data_type*) nullptr);
+          field_ptr = &field;
+        }
+      }
+      else if (stk::string_starts_with(sierra::make_lower(field_type), "real[")) {
+        stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entity_rank, name);
+        stk::mesh::put_field_on_mesh(field, part, num_components,
+                                     (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+        field_ptr = &field;
+      }
+      else if ((field_type == "vector_2d") || (field_type == "vector_3d")) {
+        field_ptr = add_stk_field<stk::mesh::Cartesian>(meta, name, entity_rank, part, num_components);
+      }
+      else if (field_type == "sym_tensor_33") {
+        field_ptr = add_stk_field<stk::mesh::SymmetricTensor>(meta, name, entity_rank, part, num_components);
+      }
+      else if (field_type == "full_tensor_36") {
+        field_ptr = add_stk_field<stk::mesh::FullTensor>(meta, name, entity_rank, part, num_components);
+      }
+      else if ((field_type == "matrix_22") || (field_type == "matrix_33")) {
+        field_ptr = add_stk_field<stk::mesh::Matrix>(meta, name, entity_rank, part, num_components);
+      }
+      else {
+        field_ptr = add_stk_field<shards::ArrayDimension>(meta, name, entity_rank, part, num_components);
+      }
     }
 
     if (field_ptr != nullptr) {
@@ -864,29 +914,26 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return is_field_on_part(field, part_type, part);
     }
 
-    void fill_field_type_string(const stk::mesh::FieldRestriction &res,
-                                FieldType *result)
+    void assign_generic_field_type(const stk::mesh::FieldRestriction &res, FieldType *result)
     {
-        size_t scalarsPerEntity = res.num_scalars_per_entity();
-        size_t firstDimension = res.dimension();
+      int scalarsPerEntity = res.num_scalars_per_entity();
+      int firstDimension = res.dimension();
 
-        if (scalarsPerEntity == 1) {
-            result->name = scalar;
-        }
-        else {
-            std::ostringstream tmp ;
-            tmp << "Real[" << firstDimension << "]" ;
-            result->name = tmp.str();
-            result->copies = scalarsPerEntity/firstDimension;
-        }
+      if (firstDimension == 1) {
+        result->name = scalar;
+      }
+      else {
+        result->name = "Real[" + std::to_string(firstDimension) + "]";
+      }
+
+      result->copies = scalarsPerEntity / firstDimension;
     }
 
     void get_io_field_type(const stk::mesh::FieldBase *field,
                            const stk::mesh::FieldRestriction &res,
                            FieldType *result)
     {
-      const unsigned rank = field->field_array_rank();
-      const shards::ArrayDimTag * const * const tags = field->dimension_tags();
+      const stk::mesh::MetaData & meta = field->mesh_meta_data();
 
       result->type = Ioss::Field::INVALID;
 
@@ -900,19 +947,44 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         result->type = Ioss::Field::INT64;
       }
 
-      size_t scalarsPerEntity = res.num_scalars_per_entity();
-      size_t firstDimension = res.dimension();
+      const int scalarsPerEntity = res.num_scalars_per_entity();
+      const int firstDimension = res.dimension();
+      const int legacyFieldArrayRank = meta.is_using_simple_fields() ? 0 : field->field_array_rank();
+      const shards::ArrayDimTag * const * const tags = meta.is_using_simple_fields() ? nullptr : field->dimension_tags();
+
       result->copies = 1;
 
-      if ( 0 == rank ) {
-        result->name = scalar ;
-        if (scalarsPerEntity > 1) {
-          std::ostringstream tmp ;
-          tmp << "Real[" << scalarsPerEntity << "]" ;
-          result->name = tmp.str();
+      if (has_field_output_type(*field)) {
+        const Ioss::VariableType * variableType = get_field_output_type(*field);
+        const std::string variableTypeName = Ioss::Utils::lowercase(variableType->name());
+
+        if (variableTypeName == vector_3d || variableTypeName == vector_2d) {
+          if (firstDimension == 3) {
+            result->name = vector_3d ;
+            result->copies = scalarsPerEntity / firstDimension;
+          }
+          else if (firstDimension == 2) {
+            result->name = vector_2d ;
+            result->copies = scalarsPerEntity / firstDimension;
+          }
+          else {
+            assign_generic_field_type(res, result);
+          }
+        }
+        else {
+          if (firstDimension == variableType->component_count()) {
+            result->name = variableType->name();
+            result->copies = scalarsPerEntity / firstDimension;
+          }
+          else {
+            assign_generic_field_type(res, result);
+          }
         }
       }
-      else if ( 1 == rank ) {
+      else if ( 0 == legacyFieldArrayRank ) {
+        assign_generic_field_type(res, result);
+      }
+      else if ( 1 == legacyFieldArrayRank ) {
         if ( tags[0] == & stk::mesh::Cartesian2d::tag() || tags[0] == & stk::mesh::Cartesian3d::tag()) {
           if (firstDimension == stk::mesh::Cartesian2d::Size) {
             result->name = vector_2d ;
@@ -961,11 +1033,73 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       }
 
       if ( result->name.empty() ) {
-          fill_field_type_string(res, result);
+        assign_generic_field_type(res, result);
       }
     }
 
-    //----------------------------------------------------------------------
+    void create_named_suffix_field_output_type(const std::string & typeName, const std::vector<std::string> & suffices)
+    {
+      Ioss::VariableType::create_named_suffix_field_type(typeName, suffices);
+    }
+
+    const Ioss::VariableType * get_variable_type_from_factory(const std::string & typeName)
+    {
+      static Ioss::StorageInitializer initializeStorage;
+
+      const Ioss::VariableType * variableType = nullptr;
+      try {
+        variableType = Ioss::VariableType::factory(typeName);
+      }
+      catch (...) {
+      }
+
+      return variableType;
+    }
+
+    void set_field_output_type(stk::mesh::FieldBase & field, const std::string & typeName)
+    {
+      const Ioss::VariableType * variableType = get_variable_type_from_factory(typeName);
+
+      if (not variableType) {
+        ThrowErrorMsg("Unrecognized Field output type '" + typeName + "'.  Valid choices with output subscripts are:\n"
+                      "  - Scalar\n"
+                      "  - Vector_2D      [x, y]\n"
+                      "  - Vector_3D      [x, y, z]\n"
+                      "  - Full_Tensor_36 [xx, yy, zz, xy, yz, zx, yx, zy, xz]\n"
+                      "  - Full_Tensor_32 [xx, yy, zz, xy, yx]\n"
+                      "  - Full_Tensor_22 [xx, yy, xy, yx]\n"
+                      "  - Full_Tensor_16 [xx, xy, yz, zx, yx, zy, xz]\n"
+                      "  - Full_Tensor_12 [xx, xy, yx]\n"
+                      "  - Sym_Tensor_33  [xx, yy, zz, xy, yz, zx]\n"
+                      "  - Sym_Tensor_31  [xx, yy, zz, xy]\n"
+                      "  - Sym_Tensor_21  [xx, yy, xy]\n"
+                      "  - Sym_Tensor_13  [xx, xy, yz, zx]\n"
+                      "  - Sym_Tensor_11  [xx, xy]\n"
+                      "  - Sym_Tensor_10  [xx]\n"
+                      "  - Asym_Tensor_03 [xy, yz, zx]\n"
+                      "  - Asym_Tensor_02 [xy, yz]\n"
+                      "  - Asym_Tensor_01 [xy]\n"
+                      "  - Matrix_22      [xx, xy, yx, yy]\n"
+                      "  - Matrix_33      [xx, xy, xz, yx, yy, yz, zx, zy, zz]\n"
+                      "  - Quaternion_2D  [s, q]\n"
+                      "  - Quaternion_3D  [x, y, z, q]\n"
+                      "  - Custom named-suffix output type [user-defined]\n"
+                      "Default if unspecified: Scalar or generic array [1, 2, 3, ...]");
+      }
+
+      impl::set_field_output_type(field, variableType);
+    }
+
+    bool has_field_output_type(const stk::mesh::FieldBase & field)
+    {
+      return (field.attribute<Ioss::VariableType>() != nullptr);
+    }
+
+    const Ioss::VariableType * get_field_output_type(const stk::mesh::FieldBase & field)
+    {
+      return field.attribute<Ioss::VariableType>();
+    }
+
     bool has_io_part_attribute(mesh::Part & part)
     {
         return is_part_io_part(part);
@@ -2316,7 +2450,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         if (params.get_output_selector(rank)) selector &= *params.get_output_selector(rank);
 
         std::string topologyName = map_stk_topology_to_ioss(topo);
-        const size_t num_faces = count_selected_entities( selector, bulk.buckets(rank));
+        const size_t num_faces = stk::mesh::count_entities(bulk, rank, selector);
 
         // Defer the counting of attributes until after we define the
         // element block so we can count them as we add them as fields to
@@ -2375,7 +2509,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         if (params.get_output_selector(rank)) selector &= *params.get_output_selector(rank);
 
         std::string topologyName = map_stk_topology_to_ioss(topo);
-        const size_t num_edges = count_selected_entities( selector, bulk.buckets(rank));
+        const size_t num_edges = stk::mesh::count_entities(bulk, rank, selector);
 
         // Defer the counting of attributes until after we define the
         // element block so we can count them as we add them as fields to
@@ -2423,11 +2557,11 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
         stk::mesh::EntityRank rank = get_output_rank(params);
 
-        mesh::Selector selector = meta.locally_owned_part() & part;
-        if (params.get_subset_selector()) selector &= *params.get_subset_selector();
-        if (params.get_output_selector(rank)) selector &= *params.get_output_selector(rank);
+        mesh::Selector selector = impl::internal_build_selector(params.get_subset_selector(),
+                                                          params.get_output_selector(rank),
+                                                          nullptr, part, false);
 
-        const size_t num_elems = count_selected_entities( selector, bulk.buckets(rank));
+        const size_t num_elems = stk::mesh::count_entities(bulk, rank, selector);
 
         stk::topology topo = part.topology();
         if (topo == stk::topology::INVALID_TOPOLOGY) {
@@ -3037,7 +3171,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
           const stk::mesh::MetaData & metaData = bulk.mesh_meta_data();
           const std::string& name = ns->name();
           const std::string dfName = s_distribution_factors + "_" + name;
-          stk::mesh::Field<double>* df_field = metaData.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, dfName);
+          stk::mesh::Field<double>* df_field = metaData.get_field<double>(stk::topology::NODE_RANK, dfName);
 
           if(df_field != nullptr) {
               const stk::mesh::FieldBase::Restriction& res = stk::mesh::find_restriction(*df_field, stk::topology::NODE_RANK, *part);

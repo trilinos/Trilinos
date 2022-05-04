@@ -36,7 +36,7 @@
 #include "stk_util/environment/Env.hpp"
 #include "stk_util/environment/EnvData.hpp"
 #include "stk_util/environment/OutputLog.hpp"
-
+#include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_balance/mesh/BalanceMesh.hpp"
 #include "stk_balance/io/BalanceIO.hpp"
 #include "stk_balance/internal/Balancer.hpp"
@@ -158,13 +158,14 @@ void LifeCycle::balance()
 
 void LifeCycle::rebalance()
 {
-  stk::mesh::MetaData meta;
-  stk::mesh::BulkData bulk(meta, m_comm);
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(m_comm).create();
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+  meta.use_simple_fields();
   stk::io::StkMeshIoBroker ioBroker;
 
   meta.set_coordinate_field_name(m_settings.getCoordinateFieldName());
-  stk::balance::internal::register_internal_fields(bulk, m_settings);
-  stk::io::fill_mesh_preexisting(ioBroker, m_settings.get_input_filename(), bulk);
+  stk::balance::internal::register_internal_fields(*bulk, m_settings);
+  stk::io::fill_mesh_preexisting(ioBroker, m_settings.get_input_filename(), *bulk);
 
   if (rebalance_will_corrupt_data(ioBroker, meta)) {
     m_exitCode = LifeCycleStatus::REBALANCE_CORRUPTION_ERROR;

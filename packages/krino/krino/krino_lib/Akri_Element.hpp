@@ -14,21 +14,24 @@
 #include <set>
 #include <map>
 
-#include <Akri_DiagWriter.hpp>
-#include <Akri_InterfaceID.hpp>
 #include <Akri_CDMesh.hpp>
+#include <Akri_DiagWriter.hpp>
 #include <Akri_FieldRef.hpp>
+#include <Akri_InterfaceGeometry.hpp>
+#include <Akri_InterfaceID.hpp>
 #include <Akri_MasterElement.hpp>
 #include <Akri_Vec.hpp>
 
-#include "../interface_geometry_interface/Akri_InterfaceGeometry.hpp"
+
 namespace krino {
 
 class SubElement;
 class SubElementNode;
 class ProlongationElementData;
+class InterfaceGeometry;
 class IntersectionPoint;
 class ElementIntersection;
+class Surface_Identifier;
 
 class ElementObj {
 public:
@@ -92,8 +95,8 @@ public:
     const MasterElement & me);
   static void gather_nodal_field(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef field, std::vector<double> & result, unsigned dim = 1, unsigned npe = 0);
   static double volume(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coords_field);
-  static PhaseTag update_phase(const CDMesh & mesh, const PhaseTag & startPhase, const InterfaceID interface_key, const int sign);
-  static PhaseTag update_phase(const CDMesh & mesh, const PhaseTag & startPhase, const std::vector<InterfaceID> & interfaces, const std::vector<int> & interfaceSigns);
+  static PhaseTag update_phase(const std::vector<Surface_Identifier> & surfaceIDs, const PhaseTag & startPhase, const InterfaceID interface_key, const int sign);
+  static PhaseTag update_phase(const std::vector<Surface_Identifier> & surfaceIDs, const PhaseTag & startPhase, const std::vector<InterfaceID> & interfaces, const std::vector<int> & interfaceSigns);
 
   const MasterElement* get_evaluation_master_element(const FieldRef field) const;
   void evaluate_prolongation_field(const CDMesh & mesh, const FieldRef field, const unsigned field_length, const Vector3d & p_coords, double * result) const;
@@ -105,7 +108,7 @@ public:
   unsigned num_subelements() const { return my_subelements.size(); }
   bool have_refined_edges() const;
 
-  virtual void determine_decomposed_elem_phase(const CDMesh & mesh) { ThrowRequire(false); }
+  virtual void determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & surfaceIDs) { ThrowRequire(false); }
   virtual void cut_interior_intersection_point(CDMesh & mesh, const Vector3d & pCoords, const std::vector<int> & sortedDomains);
   virtual void cut_face_intersection_point(const int iFace, const Vector3d & pCoords, const std::vector<int> & sortedDomains);
   bool have_edges_with_children() const;
@@ -170,7 +173,7 @@ public:
   int get_num_interfaces() const { return myCuttingInterfaces.size(); }
   int get_interface_index(const InterfaceID interface) const;
   const std::vector<InterfaceID> & get_sorted_cutting_interfaces() const { return myCuttingInterfaces; }
-  virtual void determine_decomposed_elem_phase(const CDMesh & mesh) override;
+  virtual void determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & surfaceIDs) override;
 
   bool triangulate(const CDMesh & mesh, const InterfaceGeometry & interfaceGeometry); //return value indicates if any changes were made
   void create_cutter(const CDMesh & mesh, const InterfaceGeometry & interfaceGeometry);

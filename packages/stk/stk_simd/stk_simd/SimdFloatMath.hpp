@@ -46,72 +46,6 @@ STK_MATH_FORCE_INLINE simd::Float fmadd(const simd::Float& a, const simd::Float&
   return simd::Float(fma(a._data, b._data, c._data));
 }
 
-//STK_MATH_FORCE_INLINE simd::Float fmadd(const float a, const simd::Float& b, const simd::Float& c) {
-//#if defined(__AVX2__)
-//  return simd::Float(_mm256_fmadd_pd(_mm256_set1_pd(a), b._data, c._data));
-//#else
-//  return simd::Float(
-//    _mm256_add_pd(
-//      _mm256_mul_pd(_mm256_set1_pd(a), b._data), c._data)
-//  );
-//#endif
-//}
-//
-//STK_MATH_FORCE_INLINE simd::Float fmadd(const float a, const float b, const simd::Float& c) {
-//#if defined(__AVX2__)
-//  return simd::Float(_mm256_fmadd_pd(_mm256_set1_pd(a), _mm256_set1_pd(b), c._data));
-//#else 
-//  return simd::Float(
-//    _mm256_add_pd(
-//      _mm256_mul_pd(_mm256_set1_pd(a), _mm256_set1_pd(b)), c._data)
-//  );
-//#endif
-//}
-//
-//STK_MATH_FORCE_INLINE simd::Float fmadd(const float a, const simd::Float& b, const float c) {
-//#if defined(__AVX2__)
-//  return simd::Float(_mm256_fmadd_pd(_mm256_set1_pd(a), b._data, _mm256_set1_pd(c)));
-//#else
-//  return simd::Float(
-//    _mm256_add_pd(
-//      _mm256_mul_pd(_mm256_set1_pd(a), b._data), _mm256_set1_pd(c))
-//  );
-//#endif
-//}
-//
-//STK_MATH_FORCE_INLINE simd::Float fmadd(const simd::Float& a, const float b, const simd::Float& c) {
-//#if defined(__AVX2__)
-//  return simd::Float(_mm256_fmadd_pd(a._data, _mm256_set1_pd(b), c._data));
-//#else
-//  return simd::Float(
-//    _mm256_add_pd(
-//      _mm256_mul_pd(a._data, _mm256_set1_pd(b)), c._data)
-//  );
-//#endif
-//}
-//
-//STK_MATH_FORCE_INLINE simd::Float fmadd(const simd::Float& a, const float b, const float c) {
-//#if defined(__AVX2__)
-//  return simd::Float(_mm256_fmadd_pd(a._data, _mm256_set1_pd(b), _mm256_set1_pd(c)));
-//#else
-//  return simd::Float(
-//    _mm256_add_pd(
-//      _mm256_mul_pd(a._data, _mm256_set1_pd(b)), _mm256_set1_pd(c))
-//  );
-//#endif
-//}
-//
-//STK_MATH_FORCE_INLINE simd::Float fmadd(const simd::Float& a, const simd::Float& b, const float c) {
-//#if defined(__AVX2__)
-//  return simd::Float(_mm256_fmadd_pd(a._data, b._data, _mm256_set1_pd(c)));
-//#else
-//  return simd::Float(
-//    _mm256_add_pd(
-//      _mm256_mul_pd(a._data, b._data), _mm256_set1_pd(c))
-//  );
-//#endif
-//}
-
 STK_MATH_FORCE_INLINE simd::Float sqrt(const simd::Float& x) {
   return simd::Float(SIMD_NAMESPACE::sqrt(x._data));
 }
@@ -305,11 +239,7 @@ STK_MATH_FORCE_INLINE simd::Float copysign(const simd::Float& x, const simd::Flo
 }
 
 STK_MATH_FORCE_INLINE simd::Float abs(const simd::Float& x) {
-  simd::Float tmp;
-  for (int i=0; i < simd::nfloats; ++i) {
-    tmp[i] = std::abs(x[i]);
-  }
-  return tmp;
+  return simd::Float(SIMD_NAMESPACE::abs(x._data));
 }
 
 STK_MATH_FORCE_INLINE simd::Float min(const simd::Float& x, const simd::Float& y) {

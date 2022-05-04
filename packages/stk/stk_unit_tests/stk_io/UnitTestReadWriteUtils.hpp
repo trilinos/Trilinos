@@ -97,6 +97,58 @@ inline bool is_fully_connected(const stk::mesh::BulkData& bulk, const stk::mesh:
   return entity1IsConnectedToEntity2 && entity2IsConnectedToEntity1;
 }
 
+namespace simple_fields {
+
+struct ExpectedValues
+{
+  ExpectedValues()
+    : numConnectedEdges(0),
+      globalEdgeCount(0),
+      globalElemCount(0)
+  {}
+
+  ExpectedValues(std::vector<unsigned> numLocalEdgesPerProc_, unsigned numFaces_,
+                 unsigned numConnectedEdges_, unsigned globalEdgeCount_, unsigned globalElemCount_)
+    : numLocalEdgesPerProc(numLocalEdgesPerProc_),
+      numConnectedEdges(numConnectedEdges_),
+      globalEdgeCount(globalEdgeCount_),
+      globalElemCount(globalElemCount_)
+  {}
+
+  std::vector<unsigned> numEdgesPerProc;
+  std::vector<unsigned> numLocalEdgesPerProc;
+  std::vector<unsigned> numFacesPerProc;
+  std::vector<unsigned> numLocalFacesPerProc;
+  unsigned numConnectedEdges;
+  unsigned globalEdgeCount;
+  unsigned globalElemCount;
+};
+
+inline bool is_entity1_connected_to_entity2(const stk::mesh::BulkData& bulk, const stk::mesh::Entity entity1, const stk::mesh::Entity entity2)
+{
+  stk::mesh::EntityRank entityRank = bulk.entity_rank(entity2);
+
+  unsigned numConnection = bulk.num_connectivity(entity1, entityRank);
+
+  const stk::mesh::Entity* connectedEntities = bulk.begin(entity1, entityRank);
+  for(unsigned i = 0; i < numConnection; i++) {
+    if(connectedEntities[i] == entity2) {
+      return true;
+    }
+  }
+  return false;
+}
+
+inline bool is_fully_connected(const stk::mesh::BulkData& bulk, const stk::mesh::Entity entity1, const stk::mesh::Entity entity2)
+{
+  bool entity1IsConnectedToEntity2 = is_entity1_connected_to_entity2(bulk, entity1, entity2);
+  bool entity2IsConnectedToEntity1 = is_entity1_connected_to_entity2(bulk, entity2, entity1);
+
+  return entity1IsConnectedToEntity2 && entity2IsConnectedToEntity1;
+}
+
+} // namespace simple_fields
+
 }//io_test_utils
 
 #endif

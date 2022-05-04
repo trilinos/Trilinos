@@ -43,10 +43,8 @@
 #ifdef STK_HAS_MPI
 #include <stk_unit_test_utils/ParallelGtestOutput.hpp>
 #endif
+#include <stk_unit_test_utils/CommandLineArgs.hpp>
 #include <stk_util/parallel/Parallel.hpp>
-
-int gl_argc = 0;
-char** gl_argv = 0;
 
 int main(int argc, char **argv)
 {
@@ -64,8 +62,7 @@ int main(int argc, char **argv)
     testing::InitGoogleTest(&argc, argv);
 #endif
 
-    gl_argc = argc;
-    gl_argv = argv;
+    stk::unit_test_util::GlobalCommandLineArguments::self().set_values(argc, argv);
 
 #ifdef STK_HAS_MPI
     int procId = stk::parallel_machine_rank(MPI_COMM_WORLD);

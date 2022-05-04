@@ -27,8 +27,10 @@ namespace stk
 {
 namespace coupling
 {
+namespace impl 
+{
 
-SplitComms::SplitComms(MPI_Comm parentComm, int localColor)
+SplitCommsImpl::SplitCommsImpl(MPI_Comm parentComm, int localColor)
   : m_parentComm(parentComm), m_splitComm(MPI_COMM_NULL), m_localColor(localColor),
     m_isInitialized(true)
 {
@@ -43,20 +45,30 @@ SplitComms::SplitComms(MPI_Comm parentComm, int localColor)
   initialize();
 }
 
-MPI_Comm SplitComms::get_split_comm() const
+SplitCommsImpl::~SplitCommsImpl()
 {
-  ThrowRequireMsg(m_isInitialized, "SplitComms has not been initialized.");
+  int isMPIFinalized;
+  MPI_Finalized(&isMPIFinalized);
+  if (m_isInitialized && !isMPIFinalized && get_free_comms_in_destructor()) {
+    free_comms_from_destructor();
+  }
+}
+
+
+MPI_Comm SplitCommsImpl::get_split_comm() const
+{
+  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
   return m_splitComm;
 }
 
-MPI_Comm SplitComms::get_parent_comm() const
+MPI_Comm SplitCommsImpl::get_parent_comm() const
 {
-  ThrowRequireMsg(m_isInitialized, "SplitComms has not been initialized.");
+  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
   return m_parentComm;
 }
 
 
-void SplitComms::setup_pairwise_comms()
+void SplitCommsImpl::setup_pairwise_comms()
 {
   int localRank = stk::parallel_machine_rank(m_parentComm);
   int numRanks = stk::parallel_machine_size(m_parentComm);
@@ -67,6 +79,8 @@ void SplitComms::setup_pairwise_comms()
 
   if (allColors.size() == 2) {
     int otherColor = (m_localColor == allColors[0]) ? allColors[1] : allColors[0];
+    //TODO: duplicating the comm is the correct thing to do, but it
+    //      breaks some tests
     m_pairwiseComms[otherColor] = m_parentComm;
     return;
   }
@@ -92,7 +106,7 @@ void SplitComms::setup_pairwise_comms()
   }
 }
 
-void SplitComms::fill_other_colors()
+void SplitCommsImpl::fill_other_colors()
 {
   m_otherColors.clear();
   for (auto& item : m_pairwiseComms) {
@@ -100,14 +114,14 @@ void SplitComms::fill_other_colors()
   }
 }
 
-void SplitComms::compute_all_pairwise_root_ranks()
+void SplitCommsImpl::compute_all_pairwise_root_ranks()
 {
   for (int otherColor : m_otherColors) {
     m_rootRanks[otherColor] = compute_pairwise_root_ranks(m_pairwiseComms[otherColor]);
   }
 }
 
-PairwiseRanks SplitComms::compute_pairwise_root_ranks(MPI_Comm pairwiseComm)
+PairwiseRanks SplitCommsImpl::compute_pairwise_root_ranks(MPI_Comm pairwiseComm)
 {
   const int localSize = stk::parallel_machine_size(m_splitComm);
   const int globalRank = stk::parallel_machine_rank(pairwiseComm);
@@ -121,7 +135,7 @@ PairwiseRanks SplitComms::compute_pairwise_root_ranks(MPI_Comm pairwiseComm)
   return PairwiseRanks{localRootRank, otherRootRank};
 }
 
-int SplitComms::compute_other_root_rank(const std::vector<int>& globalRanks)
+int SplitCommsImpl::compute_other_root_rank(const std::vector<int>& globalRanks)
 {
   int otherRootRankCandidate = 0;
   for (int rank : globalRanks) {
@@ -131,47 +145,104 @@ int SplitComms::compute_other_root_rank(const std::vector<int>& globalRanks)
   return otherRootRankCandidate;
 }
 
-bool SplitComms::is_coupling_version_deprecated() const
+bool SplitCommsImpl::is_coupling_version_deprecated() const
 {
   return (impl::Deprecated == m_compatibilityMode);
 }
 
-bool SplitComms::is_initialized() const
+bool SplitCommsImpl::is_initialized() const
 {
   return m_isInitialized;
 }
 
-void SplitComms::initialize()
+void SplitCommsImpl::free_comms()
+{
+  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized."); 
+  ThrowRequireMsg(!m_haveFreedComms, "SplitCommsImpl has already freed the comms");
+  ThrowRequireMsg(!m_freeCommsInDestructor, std::string("SplitCommsImpl is going to free the comms in the destructor. ") +
+                                            "Call set_free_comms_in_destructor(false) if you want to manage the memory manually");
+  free_comms_impl();
+}
+
+void SplitCommsImpl::set_free_comms_in_destructor(bool willFree)
+{
+  m_freeCommsInDestructor = willFree;
+}
+
+bool SplitCommsImpl::get_free_comms_in_destructor() const
+{
+  return m_freeCommsInDestructor;
+}
+
+void SplitCommsImpl::initialize()
 {
   setup_pairwise_comms();
   fill_other_colors();
   compute_all_pairwise_root_ranks();
 }
 
-MPI_Comm SplitComms::get_pairwise_comm(int otherColor) const
+MPI_Comm SplitCommsImpl::get_pairwise_comm(int otherColor) const
 {
-  ThrowRequireMsg(m_isInitialized, "SplitComms has not been initialized.");
+  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
   auto iter = m_pairwiseComms.find(otherColor);
-  ThrowRequireMsg(iter != m_pairwiseComms.end(), "SplitComms with color " << m_localColor <<
+  ThrowRequireMsg(iter != m_pairwiseComms.end(), "SplitCommsImpl with color " << m_localColor <<
                                                  " has no pairwise communicator with color: " << otherColor);
   return iter->second;
 }
 
-const std::vector<int>& SplitComms::get_other_colors() const
+const std::vector<int>& SplitCommsImpl::get_other_colors() const
 {
-  ThrowRequireMsg(m_isInitialized, "SplitComms has not been initialized.");
+  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
   return m_otherColors;
 }
 
-PairwiseRanks SplitComms::get_pairwise_root_ranks(int otherColor) const
+int SplitCommsImpl::get_local_color() const
+{  
+  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
+  return m_localColor;
+}
+
+
+PairwiseRanks SplitCommsImpl::get_pairwise_root_ranks(int otherColor) const
 {
-  ThrowRequireMsg(m_isInitialized, "SplitComms has not been initialized.");
+  ThrowRequireMsg(m_isInitialized, "SplitCommsImpl has not been initialized.");
   auto otherColorIter = m_rootRanks.find(otherColor);
-  ThrowRequireMsg(otherColorIter != m_rootRanks.end(), "SplitComms with color " << m_localColor <<
+  ThrowRequireMsg(otherColorIter != m_rootRanks.end(), "SplitCommsImpl with color " << m_localColor <<
                                                  " has no pairwise communicator with color: " << otherColor);
 
   return otherColorIter->second;
 }
 
+
+void SplitCommsImpl::free_comms_from_destructor()
+{
+  if (!m_isInitialized) {
+    std::cerr << "Warning: Cannot free communicators of uninitialized SplitCommsImpl" << std::endl;
+    return;
+  }
+
+  if (m_haveFreedComms) {
+    std::cerr << "Warning: SplitCommsImpl destructor is trying to free communicators that have aready been freed" << std::endl;
+    return;
+  }
+
+  free_comms_impl();
+}
+
+void SplitCommsImpl::free_comms_impl()
+{
+  MPI_Comm_free(&m_splitComm);
+
+  for (auto& item : m_pairwiseComms) {
+    MPI_Comm pairComm = item.second;
+    if (pairComm != m_parentComm) {
+      MPI_Comm_free(&pairComm);
+    }
+  }
+
+  m_haveFreedComms = true;
+}
+
+}
 }
 }

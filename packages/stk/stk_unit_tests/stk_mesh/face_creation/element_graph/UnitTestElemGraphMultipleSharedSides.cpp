@@ -3,45 +3,52 @@
 
 namespace {
 
-TEST_F(TwoElemTwoSharedSideTester, elem_death)
+class ElemGraph_TwoElemTwoSharedSide : public simple_fields::TwoElemTwoSharedSideTester {};
+
+TEST_F(ElemGraph_TwoElemTwoSharedSide, elem_death)
 {
-     if(bulkData.parallel_size() <= 2)
-     {
-         test_element_death_with_multiple_shared_sides(bulkData, activePart, skinPart);
-     }
+  if(bulkData.parallel_size() <= 2)
+  {
+    test_element_death_with_multiple_shared_sides(bulkData, activePart, skinPart);
+  }
 }
 
-TEST_F(TwoElemTwoSharedSideTester, double_kissing_hexes)
+TEST_F(ElemGraph_TwoElemTwoSharedSide, double_kissing_hexes)
 {
-     if(bulkData.parallel_size() <= 2)
-     {
-         test_elems_kissing_n_times(bulkData, activePart, 2);
-     }
+  if(bulkData.parallel_size() <= 2)
+  {
+    test_elems_kissing_n_times(bulkData, activePart, 2);
+  }
 }
 
+class ElemGraph_TwoElemThreeSharedSide : public simple_fields::TwoElemThreeSharedSideTester {};
 
-TEST_F(TwoElemThreeSharedSideTester, triple_kissing_hexes)
+TEST_F(ElemGraph_TwoElemThreeSharedSide, triple_kissing_hexes)
 {
-     if(bulkData.parallel_size() <= 2)
-     {
-         test_elems_kissing_n_times(bulkData, activePart, 3);
-     }
+  if(bulkData.parallel_size() <= 2)
+  {
+    test_elems_kissing_n_times(bulkData, activePart, 3);
+  }
 }
 
-TEST_F(TwoElemThreeSharedSideNoAuraTester, triple_kissing_hexes)
+class ElemGraph_TwoElemThreeSharedSideNoAura : public simple_fields::TwoElemThreeSharedSideNoAuraTester {};
+
+TEST_F(ElemGraph_TwoElemThreeSharedSideNoAura, triple_kissing_hexes)
 {
-     if(bulkData.parallel_size() <= 2)
-     {
-         test_elems_kissing_n_times(bulkData, activePart, 3);
-     }
+  if(bulkData.parallel_size() <= 2)
+  {
+    test_elems_kissing_n_times(bulkData, activePart, 3);
+  }
 }
 
-TEST_F(TwoElem2dTwoSharedSideTester, double_kissing_quads)
+class ElemGraph_TwoElem2dTwoSharedSide : public simple_fields::TwoElem2dTwoSharedSideTester {};
+
+TEST_F(ElemGraph_TwoElem2dTwoSharedSide, double_kissing_quads)
 {
-     if(bulkData.parallel_size() <= 2)
-     {
-         test_elems_kissing_n_times(bulkData, activePart, 2);
-     }
+  if(bulkData.parallel_size() <= 2)
+  {
+    test_elems_kissing_n_times(bulkData, activePart, 2);
+  }
 }
 
 

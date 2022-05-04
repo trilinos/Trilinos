@@ -153,9 +153,9 @@ StkFieldSyncDebugger::get_last_mod_location_field() const
     FieldState state = m_stkField->state();
     FieldBase* fieldWithStateNew = m_stkField->field_state(stk::mesh::StateNew);
     Field<uint8_t> & lastModLocationField =
-        meta.declare_field<Field<uint8_t>>(m_stkField->entity_rank(),
-                                           "DEBUG_lastFieldModLocation_"+fieldWithStateNew->name(),
-                                           m_stkField->number_of_states());
+        meta.declare_field<uint8_t>(m_stkField->entity_rank(),
+                                    "DEBUG_lastFieldModLocation_"+fieldWithStateNew->name(),
+                                    m_stkField->number_of_states());
 
     meta.set_mesh_on_fields(&bulk);
     const FieldBase::RestrictionVector & fieldRestrictions = m_stkField->restrictions();

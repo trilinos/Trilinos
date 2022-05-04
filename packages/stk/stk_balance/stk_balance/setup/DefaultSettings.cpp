@@ -47,8 +47,10 @@ namespace balance {
 
 constexpr const char * DefaultSettings::logFile;
 constexpr const char * DefaultSettings::decompMethod;
-constexpr const char * DefaultSettings::contactSearch;
+
 constexpr bool DefaultSettings::useContactSearch;
+constexpr bool DefaultSettings::fixSpiders;
+constexpr bool DefaultSettings::fixMechanisms;
 
 constexpr double DefaultSettings::faceSearchRelTol;
 constexpr double DefaultSettings::faceSearchAbsTol;

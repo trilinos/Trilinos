@@ -11,6 +11,7 @@
 #include <Akri_CDFEM_Parent_Edge.hpp>
 #include <Akri_CDMesh.hpp>
 #include <Akri_DiagWriter.hpp>
+#include <Akri_Phase_Support.hpp>
 
 #include <Akri_Unit_Single_Element_Fixtures.hpp>
 
@@ -26,19 +27,20 @@ TEST(CDFEM_Parent_Edge_One_LS, Two_Nodes_No_Snapping)
   nodes_isovar[0][0] = 1;
   nodes_isovar[1][0] = 1;
 
-  CDFEM_Parent_Edge edge(nodes_isovar);
+  const bool oneLSPerPhase = false;
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
   EXPECT_FALSE(edge.have_any_crossings());
   EXPECT_EQ(1, edge.get_crossing_sign(iface));
 
   nodes_isovar[0][0] = -1;
   nodes_isovar[1][0] = -1;
-  edge.find_crossings(nodes_isovar);
+  edge.find_crossings(oneLSPerPhase, nodes_isovar);
   EXPECT_FALSE(edge.have_any_crossings());
   EXPECT_EQ(-1, edge.get_crossing_sign(iface));
 
   nodes_isovar[0][0] = -1;
   nodes_isovar[1][0] = 2;
-  edge.find_crossings(nodes_isovar);
+  edge.find_crossings(oneLSPerPhase, nodes_isovar);
   EXPECT_TRUE(edge.have_any_crossings());
   EXPECT_TRUE(edge.have_crossing(iface));
   EXPECT_DOUBLE_EQ(1./3., edge.get_crossing_position(iface));
@@ -56,35 +58,36 @@ TEST(CDFEM_Parent_Edge_One_LS, Three_Nodes_No_Snapping)
   nodes_isovar[2][0] = 1;
   const InterfaceID iface(0,0);
 
-  CDFEM_Parent_Edge edge({0.0,0.5,1.0}, nodes_isovar);
+  const bool oneLSPerPhase = false;
+  CDFEM_Parent_Edge edge(oneLSPerPhase, {0.0,0.5,1.0}, nodes_isovar);
   EXPECT_FALSE(edge.have_any_crossings());
   EXPECT_EQ(1, edge.get_crossing_sign(iface));
 
   nodes_isovar[0][0] = -1;
   nodes_isovar[1][0] = -1;
   nodes_isovar[2][0] = -1;
-  edge.find_crossings(nodes_isovar);
+  edge.find_crossings(oneLSPerPhase, nodes_isovar);
   EXPECT_FALSE(edge.have_any_crossings());
   EXPECT_EQ(-1, edge.get_crossing_sign(iface));
 
   nodes_isovar[0][0] = -1;
   nodes_isovar[1][0] = 1;
   nodes_isovar[2][0] = -1;
-  edge.find_crossings(nodes_isovar);
+  edge.find_crossings(oneLSPerPhase, nodes_isovar);
   EXPECT_FALSE(edge.have_any_crossings());
   EXPECT_EQ(-1, edge.get_crossing_sign(iface));
 
   nodes_isovar[0][0] = 1;
   nodes_isovar[1][0] = -1;
   nodes_isovar[2][0] = 1;
-  edge.find_crossings(nodes_isovar);
+  edge.find_crossings(oneLSPerPhase, nodes_isovar);
   EXPECT_FALSE(edge.have_any_crossings());
   EXPECT_EQ(1, edge.get_crossing_sign(iface));
 
   nodes_isovar[0][0] = -1;
   nodes_isovar[1][0] = 2;
   nodes_isovar[2][0] = 4;
-  edge.find_crossings(nodes_isovar);
+  edge.find_crossings(oneLSPerPhase, nodes_isovar);
   EXPECT_TRUE(edge.have_any_crossings());
   const InterfaceID interface_id(0,0);
   EXPECT_TRUE(edge.have_crossing(interface_id));
@@ -94,7 +97,7 @@ TEST(CDFEM_Parent_Edge_One_LS, Three_Nodes_No_Snapping)
   nodes_isovar[0][0] = -1;
   nodes_isovar[1][0] = -1;
   nodes_isovar[2][0] = 1;
-  edge.find_crossings(nodes_isovar);
+  edge.find_crossings(oneLSPerPhase, nodes_isovar);
   EXPECT_TRUE(edge.have_any_crossings());
   EXPECT_TRUE(edge.have_crossing(interface_id));
   EXPECT_DOUBLE_EQ(3./4., edge.get_crossing_position(interface_id));
@@ -103,7 +106,7 @@ TEST(CDFEM_Parent_Edge_One_LS, Three_Nodes_No_Snapping)
 
 TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const InterfaceID iface(0,1);
 
@@ -118,7 +121,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
     nodes_isovar[0][1] = 1;
     nodes_isovar[1][0] = 0;
     nodes_isovar[1][1] = 1;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_FALSE(edge.have_any_crossings());
     EXPECT_EQ(0, edge.get_uncrossed_phase());
   }
@@ -129,7 +132,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
     nodes_isovar[0][1] = 1;
     nodes_isovar[1][0] = 2;
     nodes_isovar[1][1] = 1;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_FALSE(edge.have_any_crossings());
     EXPECT_EQ(1, edge.get_uncrossed_phase());
   }
@@ -140,7 +143,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
     nodes_isovar[0][1] = 1;
     nodes_isovar[1][0] = 1.5;
     nodes_isovar[1][1] = 1;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_TRUE(edge.have_any_crossings());
     EXPECT_TRUE(edge.have_crossing(iface));
     EXPECT_DOUBLE_EQ(0.5, edge.get_crossing_position(iface));
@@ -153,7 +156,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
     nodes_isovar[0][1] = 1;
     nodes_isovar[1][0] = 0.5;
     nodes_isovar[1][1] = 1;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_TRUE(edge.have_any_crossings());
     EXPECT_TRUE(edge.have_crossing(iface));
     EXPECT_DOUBLE_EQ(0.5, edge.get_crossing_position(iface));
@@ -166,7 +169,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
     nodes_isovar[0][1] = 0.;
     nodes_isovar[1][0] = 0;
     nodes_isovar[1][1] = 1.;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_TRUE(edge.have_any_crossings());
     EXPECT_TRUE(edge.have_crossing(iface));
     EXPECT_DOUBLE_EQ(0., edge.get_crossing_position(iface));
@@ -179,7 +182,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
     nodes_isovar[0][1] = 0.;
     nodes_isovar[1][0] = 0;
     nodes_isovar[1][1] = -1.;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_FALSE(edge.have_any_crossings());
     EXPECT_FALSE(edge.have_crossing(iface));
   }
@@ -189,7 +192,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
     nodes_isovar[0][1] = 1.;
     nodes_isovar[1][0] = 0;
     nodes_isovar[1][1] = 0.;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_TRUE(edge.have_any_crossings());
     EXPECT_TRUE(edge.have_crossing(iface));
     EXPECT_DOUBLE_EQ(1., edge.get_crossing_position(iface));
@@ -202,7 +205,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
     nodes_isovar[0][1] = -1.;
     nodes_isovar[1][0] = 0.;
     nodes_isovar[1][1] = 0.;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_FALSE(edge.have_any_crossings());
     EXPECT_FALSE(edge.have_crossing(iface));
   }
@@ -213,7 +216,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
     nodes_isovar[0][1] = 1.e-16;
     nodes_isovar[1][0] = 0.;
     nodes_isovar[1][1] = -1.;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_TRUE(edge.have_any_crossings());
     EXPECT_TRUE(edge.have_crossing(iface));
     EXPECT_NEAR(0., edge.get_crossing_position(iface), 1.e-15);
@@ -226,7 +229,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
     nodes_isovar[0][1] = -1.;
     nodes_isovar[1][0] = 0.;
     nodes_isovar[1][1] = 1.e-16;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_TRUE(edge.have_any_crossings());
     EXPECT_TRUE(edge.have_crossing(iface));
     EXPECT_NEAR(1., edge.get_crossing_position(iface), 1.e-15);
@@ -236,7 +239,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Nodes_No_Snapping)
 
 TEST(CDFEM_Parent_Edge_Three_LS, Two_Nodes_No_Snapping)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const InterfaceID iface01(0,1);
   const InterfaceID iface02(0,2);
@@ -253,7 +256,7 @@ TEST(CDFEM_Parent_Edge_Three_LS, Two_Nodes_No_Snapping)
     nodes_isovar[1][0] = 0.038335;
     nodes_isovar[1][1] = 0.037250;
     nodes_isovar[1][2] = 0.01;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_TRUE(edge.have_any_crossings());
     EXPECT_FALSE(edge.have_crossing(iface01));
     EXPECT_FALSE(edge.have_crossing(iface12));
@@ -271,7 +274,7 @@ TEST(CDFEM_Parent_Edge_Three_LS, Two_Nodes_No_Snapping)
     nodes_isovar[1][0] = -0.01288;
     nodes_isovar[1][1] = 0.021996;
     nodes_isovar[1][2] = 0.01;
-    CDFEM_Parent_Edge edge(nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, nodes_isovar);
     EXPECT_TRUE(edge.have_any_crossings());
     EXPECT_FALSE(edge.have_crossing(iface01));
     EXPECT_FALSE(edge.have_crossing(iface12));
@@ -285,7 +288,7 @@ TEST(CDFEM_Parent_Edge_Three_LS, Two_Nodes_No_Snapping)
 
 TEST(CDFEM_Parent_Edge_Three_LS, Three_Nodes_No_Snapping)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const InterfaceID iface01(0,1);
   const InterfaceID iface02(0,2);
@@ -306,7 +309,7 @@ TEST(CDFEM_Parent_Edge_Three_LS, Three_Nodes_No_Snapping)
     nodes_isovar[2][0] = 0.17;
     nodes_isovar[2][1] = -0.0052539980592431739;
     nodes_isovar[2][2] = 0.01;
-    CDFEM_Parent_Edge edge({0.0,0.5,1.0}, nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, {0.0,0.5,1.0}, nodes_isovar);
     EXPECT_FALSE(edge.have_any_crossings());
     EXPECT_FALSE(edge.have_crossing(iface01));
     EXPECT_FALSE(edge.have_crossing(iface12));
@@ -324,7 +327,7 @@ TEST(CDFEM_Parent_Edge_Three_LS, Three_Nodes_No_Snapping)
     nodes_isovar[2][0] = 0.015;
     nodes_isovar[2][1] = 1.;
     nodes_isovar[2][2] = 0.01;
-    CDFEM_Parent_Edge edge({0.0,0.5,1.0}, nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, {0.0,0.5,1.0}, nodes_isovar);
     EXPECT_FALSE(edge.have_any_crossings());
     EXPECT_FALSE(edge.have_crossing(iface01));
     EXPECT_FALSE(edge.have_crossing(iface12));
@@ -344,7 +347,7 @@ TEST(CDFEM_Parent_Edge_Three_LS, Three_Nodes_No_Snapping)
     nodes_isovar[2][0] = -0.28731;
     nodes_isovar[2][1] = 0.711750;
     nodes_isovar[2][2] = -0.5794;
-    CDFEM_Parent_Edge edge({0.0,0.5,1.0}, nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, {0.0,0.5,1.0}, nodes_isovar);
     EXPECT_TRUE(edge.have_any_crossings());
     EXPECT_FALSE(edge.have_crossing(iface01));
     EXPECT_TRUE(edge.have_crossing(iface12));
@@ -363,7 +366,7 @@ TEST(CDFEM_Parent_Edge_Three_LS, Three_Nodes_No_Snapping)
     nodes_isovar[2][0] = 0.25;
     nodes_isovar[2][1] = 0.0;
     nodes_isovar[2][2] = 1.0;
-    CDFEM_Parent_Edge edge({0.0,0.5,1.0}, nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, {0.0,0.5,1.0}, nodes_isovar);
     EXPECT_TRUE(edge.have_any_crossings());
     EXPECT_TRUE(edge.have_crossing(iface01));
     EXPECT_FALSE(edge.have_crossing(iface12));
@@ -376,7 +379,7 @@ TEST(CDFEM_Parent_Edge_Three_LS, Three_Nodes_No_Snapping)
 
 TEST(CDFEM_Parent_Edge_Two_LS, Two_Crossings_Same_Edge)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const InterfaceID iface01(0,1);
 
@@ -396,7 +399,7 @@ TEST(CDFEM_Parent_Edge_Two_LS, Two_Crossings_Same_Edge)
 
   // No snapping
   {
-    CDFEM_Parent_Edge edge({0.0,0.5,1.0}, nodes_isovar);
+    CDFEM_Parent_Edge edge(oneLSPerPhase, {0.0,0.5,1.0}, nodes_isovar);
     EXPECT_FALSE(edge.have_any_crossings());
     EXPECT_FALSE(edge.have_crossing(iface01));
   }
@@ -423,10 +426,10 @@ void expect_all_edge_segments_have_finite_or_zero_length(const CDFEM_Parent_Edge
 
 TEST(CDFEM_Parent_Edge_Two_LS, LSPerPhaseInfinitesimalSnapTo0)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const std::vector<std::vector<double> > nodesIsovar = {{-CDFEM_Parent_Edge::MinSize(),0.0},{1.0,0.0}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
   EXPECT_TRUE(edge.have_any_crossings());
 
   expect_all_edge_segments_have_finite_or_zero_length(edge, CDFEM_Parent_Edge::MinSize());
@@ -434,10 +437,10 @@ TEST(CDFEM_Parent_Edge_Two_LS, LSPerPhaseInfinitesimalSnapTo0)
 
 TEST(CDFEM_Parent_Edge_Two_LS, LSPerPhaseInfinitesimalSnapTo1)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const std::vector<std::vector<double> > nodesIsovar = {{1.0,0.0},{-CDFEM_Parent_Edge::MinSize(),0.0}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
   EXPECT_TRUE(edge.have_any_crossings());
 
   expect_all_edge_segments_have_finite_or_zero_length(edge, CDFEM_Parent_Edge::MinSize());
@@ -450,10 +453,10 @@ void expect_all_fake_crossings_are_really_fake(const CDFEM_Parent_Edge & edge)
 
 TEST(CDFEM_Parent_Edge_Three_LS, LSPerPhaseInfinitesimalSnapInMiddle)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const std::vector<std::vector<double> > nodesIsovar = {{-1.0,1.+CDFEM_Parent_Edge::MinSize(),0.0},{1.+CDFEM_Parent_Edge::MinSize(),-1.0,0.0}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
   EXPECT_EQ(1u,edge.get_crossings().size());
 
   expect_all_edge_segments_have_finite_or_zero_length(edge, CDFEM_Parent_Edge::MinSize());
@@ -462,10 +465,10 @@ TEST(CDFEM_Parent_Edge_Three_LS, LSPerPhaseInfinitesimalSnapInMiddle)
 
 TEST(CDFEM_Parent_Edge_Three_LS, LSPerPhaseTieInMiddle)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const std::vector<std::vector<double> > nodesIsovar = {{0.,-1.,1.},{0.,1.,-1.}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
   EXPECT_EQ(1u,edge.get_crossings().size());
 
   expect_all_edge_segments_have_finite_or_zero_length(edge, CDFEM_Parent_Edge::MinSize());
@@ -474,10 +477,10 @@ TEST(CDFEM_Parent_Edge_Three_LS, LSPerPhaseTieInMiddle)
 
 TEST(CDFEM_Parent_Edge_Three_LS, UnderflowAtEndStillResultsInCorrectFakeCrossing)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const std::vector<std::vector<double> > nodesIsovar = {{ -0.6, -0.6, 0.6 },{ -6e-16, -5.9e-16, -7e-16 }};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
   expect_all_edge_segments_have_finite_or_zero_length(edge, CDFEM_Parent_Edge::MinSize());
   expect_all_fake_crossings_are_really_fake(edge);
@@ -485,10 +488,10 @@ TEST(CDFEM_Parent_Edge_Three_LS, UnderflowAtEndStillResultsInCorrectFakeCrossing
 
 TEST(CDFEM_Parent_Edge_Three_LS, WithScaling_UnderflowAtEndStillResultsInCorrectFakeCrossing)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const std::vector<std::vector<double> > nodesIsovar = {{ -0.6e8, -0.6e8, 0.6e8 },{ -6e-8, -5.9e-8, -7e-8 }};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
   expect_all_edge_segments_have_finite_or_zero_length(edge, CDFEM_Parent_Edge::MinSize());
   expect_all_fake_crossings_are_really_fake(edge);
@@ -499,10 +502,10 @@ TEST(CDFEM_Parent_Edge_Three_LS, WithScaling_UnderflowAtEndStillResultsInCorrect
 TEST(CDFEM_Parent_Edge_Two_LS, SnapTo0)
 {
   const double snapTol = 0.1;
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const std::vector<std::vector<double> > nodesIsovar = {{-0.01,0.0},{1.0,0.0}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
   EXPECT_TRUE(edge.have_any_crossings());
 
   edge.collapse_small_segments_while_preserving_topology(snapTol);
@@ -512,10 +515,10 @@ TEST(CDFEM_Parent_Edge_Two_LS, SnapTo0)
 TEST(CDFEM_Parent_Edge_Two_LS, SnapTo1)
 {
   const double snapTol = 0.1;
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const std::vector<std::vector<double> > nodesIsovar = {{1.0,0.0},{-0.01,0.0}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
   edge.collapse_small_segments_while_preserving_topology(snapTol);
   expect_all_edge_segments_have_finite_or_zero_length(edge, snapTol);
@@ -524,10 +527,10 @@ TEST(CDFEM_Parent_Edge_Two_LS, SnapTo1)
 TEST(CDFEM_Parent_Edge_Three_LS, SnapInMiddle)
 {
   const double snapTol = 0.1;
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
 
   const std::vector<std::vector<double> > nodesIsovar = {{-1.0,1.1,0.0},{1.1,-1.0,0.0}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
   edge.collapse_small_segments_while_preserving_topology(snapTol);
   expect_all_edge_segments_have_finite_or_zero_length(edge, snapTol);
@@ -536,7 +539,7 @@ TEST(CDFEM_Parent_Edge_Three_LS, SnapInMiddle)
 TEST(CDFEM_Parent_Edge_Three_LS, OneSnapInMiddleMakesOtherSnapUnnecessary)
 {
   const double snapTol = 0.1;
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
   std::vector<double> locs = {0.4,0.44,0.53};
   const double phi0At0 = -1.0;
   const double phi0At1 = (0.-(1.-locs[0])*phi0At0)/locs[0];
@@ -547,13 +550,13 @@ TEST(CDFEM_Parent_Edge_Three_LS, OneSnapInMiddleMakesOtherSnapUnnecessary)
   const double phi2At0 = (phi1AtLocs2-locs[2]*phi2At1)/(1.-locs[2]);
 
   const std::vector<std::vector<double> > nodesIsovar = {{phi0At0, phi1At0, phi2At0, 0.0}, {phi0At1, phi1At1, phi2At1, 0.0}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
   edge.collapse_small_segments_while_preserving_topology(snapTol);
   expect_all_edge_segments_have_finite_or_zero_length(edge, snapTol);
 
   const std::vector<std::vector<double> > oppositeNodesIsovar = {{phi0At1, phi1At1, phi2At1, 0.0}, {phi0At0, phi1At0, phi2At0, 0.0}};
-  CDFEM_Parent_Edge oppositeEdge(oppositeNodesIsovar);
+  CDFEM_Parent_Edge oppositeEdge(oneLSPerPhase, oppositeNodesIsovar);
 
   oppositeEdge.collapse_small_segments_while_preserving_topology(snapTol);
   expect_all_edge_segments_have_finite_or_zero_length(oppositeEdge, snapTol);
@@ -577,9 +580,9 @@ void expect_crossing_at_position_with_sign(const CDFEM_Parent_Edge & edge, const
   EXPECT_EQ(sign, edge.get_crossing_sign(iface));
 }
 
-void expect_fake_crossing_at_position_with_sign(const CDFEM_Parent_Edge & edge, const InterfaceID & iface, const double pos, const int sign)
+void expect_fake_crossing_at_position_with_sign(const bool oneLSPerPhase, const CDFEM_Parent_Edge & edge, const InterfaceID & iface, const double pos, const int sign)
 {
-  const auto result = edge.get_crossing_position_and_sign(iface);
+  const auto result = edge.get_crossing_position_and_sign(oneLSPerPhase, iface);
   EXPECT_LE(0, std::get<0>(result)) << "Did not find expected fake crossing " << iface << " on edge " << edge;
   EXPECT_EQ(pos, std::get<0>(result));
   EXPECT_EQ(sign, std::get<1>(result));
@@ -588,194 +591,194 @@ void expect_fake_crossing_at_position_with_sign(const CDFEM_Parent_Edge & edge, 
 
 TEST(CDFEM_Parent_Edge_Snapping_One_LS, nodeDomainsAt0MovesNegCrossingTo0)
 {
-  Phase_Support::set_one_levelset_per_phase(false);
+  const bool oneLSPerPhase = false;
   const std::vector<std::vector<double> > nodesIsovar = {{1}, {-1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0}, {});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0}, {});
 
   expect_crossing_at_position_with_sign(edge, 0, 0., -1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_One_LS, nodeDomainsAt0MovesPosCrossingTo0)
 {
-  Phase_Support::set_one_levelset_per_phase(false);
+  const bool oneLSPerPhase = false;
   const std::vector<std::vector<double> > nodesIsovar = {{-1}, {1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0}, {});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0}, {});
 
   expect_crossing_at_position_with_sign(edge, 0, 0., 1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_One_LS, nodeDomainsAt1MovesNegCrossingTo1)
 {
-  Phase_Support::set_one_levelset_per_phase(false);
+  const bool oneLSPerPhase = false;
   const std::vector<std::vector<double> > nodesIsovar = {{1}, {-1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({}, {0});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {}, {0});
 
   expect_crossing_at_position_with_sign(edge, 0, 1., -1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_One_LS, nodeDomainsAt1MovesPosCrossingTo1)
 {
-  Phase_Support::set_one_levelset_per_phase(false);
+  const bool oneLSPerPhase = false;
   const std::vector<std::vector<double> > nodesIsovar = {{-1}, {1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({}, {0});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {}, {0});
 
   expect_crossing_at_position_with_sign(edge, 0, 1., 1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_One_LS, nodeDomainsAtBothEndsMovesNegCrossingToClosestAt0)
 {
-  Phase_Support::set_one_levelset_per_phase(false);
+  const bool oneLSPerPhase = false;
   const std::vector<std::vector<double> > nodesIsovar = {{0.9}, {-1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0}, {0});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0}, {0});
 
   expect_crossing_at_position_with_sign(edge, 0, 0., -1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_One_LS, nodeDomainsAtBothEndsMovesNegCrossingToClosestAt1)
 {
-  Phase_Support::set_one_levelset_per_phase(false);
+  const bool oneLSPerPhase = false;
   const std::vector<std::vector<double> > nodesIsovar = {{1}, {-0.9}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0}, {0});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0}, {0});
 
   expect_crossing_at_position_with_sign(edge, 0, 1., -1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_One_LS, nodeDomainsAtBothEndsMovesPosCrossingToClosestAt0)
 {
-  Phase_Support::set_one_levelset_per_phase(false);
+  const bool oneLSPerPhase = false;
   const std::vector<std::vector<double> > nodesIsovar = {{-0.9}, {1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0}, {0});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0}, {0});
 
   expect_crossing_at_position_with_sign(edge, 0, 0., 1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_Two_LS_Per_Phase, nodeDomainsAt0MovesNegCrossingTo0)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
   const std::vector<std::vector<double> > nodesIsovar = {{1,-1}, {-1,1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0,1}, {});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0,1}, {});
 
   expect_crossing_at_position_with_sign(edge, InterfaceID(0,1), 0., -1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_Two_LS_Per_Phase, nodeDomainsAt0MovesPosCrossingTo0)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
   const std::vector<std::vector<double> > nodesIsovar = {{-1,1}, {1,-1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0,1}, {});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0,1}, {});
 
   expect_crossing_at_position_with_sign(edge, InterfaceID(0,1), 0., 1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_Two_LS_Per_Phase, nodeDomainsAt1MovesNegCrossingTo1)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
   const std::vector<std::vector<double> > nodesIsovar = {{1,-1}, {-1,1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({}, {0,1});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {}, {0,1});
 
   expect_crossing_at_position_with_sign(edge, InterfaceID(0,1), 1., -1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_Two_LS_Per_Phase, nodeDomainsAt1MovesPosCrossingTo1)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
   const std::vector<std::vector<double> > nodesIsovar = {{-1,1}, {1,-1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({}, {0,1});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {}, {0,1});
 
   expect_crossing_at_position_with_sign(edge, InterfaceID(0,1), 1., 1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_Two_LS_Per_Phase, nodeDomainsAtBothEndsMovesNegCrossingToClosestAt0)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
   const std::vector<std::vector<double> > nodesIsovar = {{0.9,-0.9}, {-1,1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0,1}, {0,1});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0,1}, {0,1});
 
   expect_crossing_at_position_with_sign(edge, InterfaceID(0,1), 0., -1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_Two_LS_Per_Phase, nodeDomainsAtBothEndsMovesNegCrossingToClosestAt1)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
   const std::vector<std::vector<double> > nodesIsovar = {{1,-1}, {-0.9,0.9}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0,1}, {0,1});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0,1}, {0,1});
 
   expect_crossing_at_position_with_sign(edge, InterfaceID(0,1), 1., -1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_Two_LS_Per_Phase, nodeDomainsAtBothEndsMovesPosCrossingToClosestAt0)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
   const std::vector<std::vector<double> > nodesIsovar = {{-0.9,0.9}, {1,-1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0,1}, {0,1});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0,1}, {0,1});
 
   expect_crossing_at_position_with_sign(edge, InterfaceID(0,1), 0., 1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_Three_LS_Per_Phase, nodeDomainsMoveAllCrossingsTo0)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
   const std::vector<std::vector<double> > nodesIsovar = {{-1,0,2}, {2,0,-1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0,1,2}, {});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0,1,2}, {});
 
-  expect_fake_crossing_at_position_with_sign(edge, InterfaceID(0,1), 0., 1);
-  expect_fake_crossing_at_position_with_sign(edge, InterfaceID(1,2), 0., 1);
+  expect_fake_crossing_at_position_with_sign(oneLSPerPhase, edge, InterfaceID(0,1), 0., 1);
+  expect_fake_crossing_at_position_with_sign(oneLSPerPhase, edge, InterfaceID(1,2), 0., 1);
   expect_crossing_at_position_with_sign(edge, InterfaceID(0,2), 0., 1);
 }
 
 TEST(CDFEM_Parent_Edge_Snapping_Three_LS_Per_Phase, nodeDomainsWithMiddlePhase2MoveAllCrossingsTo0)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
   const std::vector<std::vector<double> > nodesIsovar = {{-1,2,0}, {2,-1,0}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0,1,2}, {});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0,1,2}, {});
 
-  expect_fake_crossing_at_position_with_sign(edge, InterfaceID(0,2), 0., 1);
-  expect_fake_crossing_at_position_with_sign(edge, InterfaceID(1,2), 0., -1);
+  expect_fake_crossing_at_position_with_sign(oneLSPerPhase, edge, InterfaceID(0,2), 0., 1);
+  expect_fake_crossing_at_position_with_sign(oneLSPerPhase, edge, InterfaceID(1,2), 0., -1);
   expect_crossing_at_position_with_sign(edge, InterfaceID(0,1), 0., 1);
 }
 
 
 TEST(CDFEM_Parent_Edge_Snapping_Three_LS_Per_Phase, nodeDomainsCenterPhaseMoveAllCrossingsTo0)
 {
-  Phase_Support::set_one_levelset_per_phase(true);
+  const bool oneLSPerPhase = true;
   const std::vector<std::vector<double> > nodesIsovar = {{-1,0,2}, {2,0,-1}};
-  CDFEM_Parent_Edge edge(nodesIsovar);
+  CDFEM_Parent_Edge edge(oneLSPerPhase, nodesIsovar);
 
-  edge.adjust_crossing_locations_based_on_node_captured_domains({0,2}, {});
+  edge.adjust_crossing_locations_based_on_node_captured_domains(oneLSPerPhase, {0,2}, {});
 
-  expect_fake_crossing_at_position_with_sign(edge, InterfaceID(0,1), 0., 1);
+  expect_fake_crossing_at_position_with_sign(oneLSPerPhase, edge, InterfaceID(0,1), 0., 1);
   expect_crossing_at_position_with_sign(edge, InterfaceID(0,2), 0., 1);
 }
 

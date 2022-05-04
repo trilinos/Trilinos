@@ -48,15 +48,13 @@
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 
-
-
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
 using stk::mesh::Entity;
 using stk::mesh::EntityId;
 using stk::mesh::EntityRank;
-using stk::mesh::fixtures::BoxFixture;
+using stk::mesh::fixtures::simple_fields::BoxFixture;
 
 namespace {
 
@@ -64,7 +62,7 @@ const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 class ExposePartition : public BoxFixture
 {
- public:
+public:
   static void expose_box_partition( int ip , int up , int axis ,
                                     const BOX box ,
                                     BOX p_box[] )
@@ -120,48 +118,48 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
   // Verify that the correct entities are on this process
 
   for ( int k = local_box[2][0] ; k < local_box[2][1] ; ++k ) {
-  for ( int j = local_box[1][0] ; j < local_box[1][1] ; ++j ) {
-  for ( int i = local_box[0][0] ; i < local_box[0][1] ; ++i ) {
+    for ( int j = local_box[1][0] ; j < local_box[1][1] ; ++j ) {
+      for ( int i = local_box[0][0] ; i < local_box[0][1] ; ++i ) {
 
-    const EntityId n0= 1 + (i+0) + (j+0) * (ngx+1) + (k+0) * (ngx+1) * (ngy+1);
-    const EntityId n1= 1 + (i+1) + (j+0) * (ngx+1) + (k+0) * (ngx+1) * (ngy+1);
-    const EntityId n2= 1 + (i+1) + (j+1) * (ngx+1) + (k+0) * (ngx+1) * (ngy+1);
-    const EntityId n3= 1 + (i+0) + (j+1) * (ngx+1) + (k+0) * (ngx+1) * (ngy+1);
-    const EntityId n4= 1 + (i+0) + (j+0) * (ngx+1) + (k+1) * (ngx+1) * (ngy+1);
-    const EntityId n5= 1 + (i+1) + (j+0) * (ngx+1) + (k+1) * (ngx+1) * (ngy+1);
-    const EntityId n6= 1 + (i+1) + (j+1) * (ngx+1) + (k+1) * (ngx+1) * (ngy+1);
-    const EntityId n7= 1 + (i+0) + (j+1) * (ngx+1) + (k+1) * (ngx+1) * (ngy+1);
+        const EntityId n0= 1 + (i+0) + (j+0) * (ngx+1) + (k+0) * (ngx+1) * (ngy+1);
+        const EntityId n1= 1 + (i+1) + (j+0) * (ngx+1) + (k+0) * (ngx+1) * (ngy+1);
+        const EntityId n2= 1 + (i+1) + (j+1) * (ngx+1) + (k+0) * (ngx+1) * (ngy+1);
+        const EntityId n3= 1 + (i+0) + (j+1) * (ngx+1) + (k+0) * (ngx+1) * (ngy+1);
+        const EntityId n4= 1 + (i+0) + (j+0) * (ngx+1) + (k+1) * (ngx+1) * (ngy+1);
+        const EntityId n5= 1 + (i+1) + (j+0) * (ngx+1) + (k+1) * (ngx+1) * (ngy+1);
+        const EntityId n6= 1 + (i+1) + (j+1) * (ngx+1) + (k+1) * (ngx+1) * (ngy+1);
+        const EntityId n7= 1 + (i+0) + (j+1) * (ngx+1) + (k+1) * (ngx+1) * (ngy+1);
 
-    const EntityId elem_id =  1 + i + j * ngx + k * ngx * ngy;
+        const EntityId elem_id =  1 + i + j * ngx + k * ngx * ngy;
 
-    std::vector<Entity> nodes(8);
-    nodes[0] = bulk.get_entity( NODE_RANK, n0 );
-    nodes[1] = bulk.get_entity( NODE_RANK, n1 );
-    nodes[2] = bulk.get_entity( NODE_RANK, n2 );
-    nodes[3] = bulk.get_entity( NODE_RANK, n3 );
-    nodes[4] = bulk.get_entity( NODE_RANK, n4 );
-    nodes[5] = bulk.get_entity( NODE_RANK, n5 );
-    nodes[6] = bulk.get_entity( NODE_RANK, n6 );
-    nodes[7] = bulk.get_entity( NODE_RANK, n7 );
+        std::vector<Entity> nodes(8);
+        nodes[0] = bulk.get_entity( NODE_RANK, n0 );
+        nodes[1] = bulk.get_entity( NODE_RANK, n1 );
+        nodes[2] = bulk.get_entity( NODE_RANK, n2 );
+        nodes[3] = bulk.get_entity( NODE_RANK, n3 );
+        nodes[4] = bulk.get_entity( NODE_RANK, n4 );
+        nodes[5] = bulk.get_entity( NODE_RANK, n5 );
+        nodes[6] = bulk.get_entity( NODE_RANK, n6 );
+        nodes[7] = bulk.get_entity( NODE_RANK, n7 );
 
-    Entity elem = bulk.get_entity( element_rank, elem_id );
+        Entity elem = bulk.get_entity( element_rank, elem_id );
 
-    std::vector<Entity> elems ;
-    stk::mesh::get_entities_through_relations(bulk, nodes , elems );
-    ASSERT_EQ( elems.size() , size_t(1) );
-    ASSERT_TRUE( elems[0] == elem );
+        std::vector<Entity> elems ;
+        stk::mesh::get_entities_through_relations(bulk, nodes , elems );
+        ASSERT_EQ( elems.size() , size_t(1) );
+        ASSERT_TRUE( elems[0] == elem );
 
-    stk::mesh::get_entities_through_relations(bulk, nodes, element_rank, elems);
-    ASSERT_EQ( elems.size() , size_t(1) );
-    ASSERT_TRUE( elems[0] == elem );
+        stk::mesh::get_entities_through_relations(bulk, nodes, element_rank, elems);
+        ASSERT_EQ( elems.size() , size_t(1) );
+        ASSERT_TRUE( elems[0] == elem );
 
-  }
-  }
+      }
+    }
   }
 
   Selector select_owned( meta.locally_owned_part() );
   Selector select_used = select_owned |
-                         meta.globally_shared_part();
+      meta.globally_shared_part();
   Selector select_all( meta.universal_part() );
 
   stk::mesh::count_entities( select_used , bulk , local_count );
@@ -181,27 +179,27 @@ TEST( UnitTestBoxFixture, verifyBoxFixture )
   ASSERT_EQ( local_count[0] , n_local );
 
   for ( int k = local_box[2][0] ; k <= local_box[2][1] ; ++k ) {
-  for ( int j = local_box[1][0] ; j <= local_box[1][1] ; ++j ) {
-  for ( int i = local_box[0][0] ; i <= local_box[0][1] ; ++i ) {
-    EntityRank node_type = stk::topology::NODE_RANK;
-    EntityId node_id = 1 + i + j * (ngx+1) + k * (ngx+1) * (ngy+1);
-    Entity const node = bulk.get_entity( node_type , node_id );
-    ASSERT_TRUE( bulk.is_valid(node) );
-    // Shared if on a processor boundary.
-    const bool shared =
-      ( k == local_box[2][0] && k != root_box[2][0] ) ||
-      ( k == local_box[2][1] && k != root_box[2][1] ) ||
-      ( j == local_box[1][0] && j != root_box[1][0] ) ||
-      ( j == local_box[1][1] && j != root_box[1][1] ) ||
-      ( i == local_box[0][0] && i != root_box[0][0] ) ||
-      ( i == local_box[0][1] && i != root_box[0][1] );
-    if (bulk.parallel_size() > 1) {
-        std::vector<int> shared_procs;
-        bulk.comm_shared_procs(bulk.entity_key(node),shared_procs);
-      ASSERT_EQ( shared , ! shared_procs.empty() );
+    for ( int j = local_box[1][0] ; j <= local_box[1][1] ; ++j ) {
+      for ( int i = local_box[0][0] ; i <= local_box[0][1] ; ++i ) {
+        EntityRank node_type = stk::topology::NODE_RANK;
+        EntityId node_id = 1 + i + j * (ngx+1) + k * (ngx+1) * (ngy+1);
+        Entity const node = bulk.get_entity( node_type , node_id );
+        ASSERT_TRUE( bulk.is_valid(node) );
+        // Shared if on a processor boundary.
+        const bool shared =
+            ( k == local_box[2][0] && k != root_box[2][0] ) ||
+            ( k == local_box[2][1] && k != root_box[2][1] ) ||
+            ( j == local_box[1][0] && j != root_box[1][0] ) ||
+            ( j == local_box[1][1] && j != root_box[1][1] ) ||
+            ( i == local_box[0][0] && i != root_box[0][0] ) ||
+            ( i == local_box[0][1] && i != root_box[0][1] );
+        if (bulk.parallel_size() > 1) {
+          std::vector<int> shared_procs;
+          bulk.comm_shared_procs(bulk.entity_key(node),shared_procs);
+          ASSERT_EQ( shared , ! shared_procs.empty() );
+        }
+      }
     }
-  }
-  }
   }
 
   size_t count_shared_node_pairs = 0 ;

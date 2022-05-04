@@ -57,6 +57,8 @@ struct OptionNames
   const std::string faceSearchAbsTol = "face-search-abs-tol";
   const std::string faceSearchRelTol = "face-search-rel-tol";
   const std::string contactSearch = "contact-search";
+  const std::string fixSpiders = "fix-spiders";
+  const std::string fixMechanisms = "fix-mechanisms";
   const std::string decompMethod = "decomp-method";
   const std::string vertexWeightBlockMultiplier = "block-weights";
   const std::string useNestedDecomp = "use-nested-decomp";
@@ -95,6 +97,8 @@ private:
   void set_use_nested_decomp(BalanceSettings& settings) const;
   void set_app_type_defaults(BalanceSettings& settings) const;
   void set_contact_search(BalanceSettings& settings) const;
+  void set_fix_spiders(BalanceSettings& settings) const;
+  void set_fix_mechanisms(BalanceSettings& settings) const;
   void set_contact_search_tolerance(BalanceSettings& settings) const;
   void set_decomp_method(BalanceSettings& settings) const;
   void set_vertex_weight_block_multiplier(BalanceSettings& settings) const;

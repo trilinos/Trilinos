@@ -63,8 +63,14 @@
 #include <Ioss_IOFactory.h>
 #include <Ioss_DBUsage.h>
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
-TEST(MeshGroupingEntity, universalSideset_get_entity_rank)
+using stk::unit_test_util::build_mesh;
+using stk::unit_test_util::build_mesh_no_simple_fields;
+
+#ifndef STK_USE_SIMPLE_FIELDS
+
+TEST(MeshGroupingEntity_legacy, universalSideset_get_entity_rank)
 {
   Ioss::Init::Initializer init;
   Ioss::PropertyManager properties;
@@ -81,13 +87,14 @@ TEST(MeshGroupingEntity, universalSideset_get_entity_rank)
   delete ioRegion;
 }
 
-TEST(MeshGroupingEntity, getElementBlockFromPart)
+TEST(MeshGroupingEntity_legacy, getElementBlockFromPart)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
-  stk::mesh::MetaData meta;
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
   stk::io::StkMeshIoBroker ioBroker;
-  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", bulk);
+  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
   Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
 
   stk::mesh::Part* part = meta.get_part("block_1");
@@ -99,28 +106,31 @@ TEST(MeshGroupingEntity, getElementBlockFromPart)
   EXPECT_EQ(Ioss::ELEMENTBLOCK, entity->type());   
 }
 
-TEST(MeshGroupingEntity, getElementBlockFromNonIoPart)
+TEST(MeshGroupingEntity_legacy, getElementBlockFromNonIoPart)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
   stk::io::StkMeshIoBroker ioBroker;
   stk::mesh::Part& dummyPart = meta.declare_part("dummy", stk::topology::ELEMENT_RANK);
   EXPECT_FALSE(stk::io::is_part_io_part(dummyPart));
-  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", bulk);
+  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
   Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
 
   Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, dummyPart);
   EXPECT_TRUE(entity == nullptr);
 }
 
-TEST(MeshGroupingEntity, getSideSetFromPart)
+TEST(MeshGroupingEntity_legacy, getSideSetFromPart)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
-  stk::mesh::MetaData meta;
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
   stk::io::StkMeshIoBroker ioBroker;
-  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1|sideset:x", bulk);
+  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1|sideset:x", *bulk);
   Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
 
   stk::mesh::Part* part = meta.get_part("surface_1");
@@ -132,13 +142,14 @@ TEST(MeshGroupingEntity, getSideSetFromPart)
   EXPECT_EQ(Ioss::SIDESET, entity->type());   
 }
 
-TEST(MeshGroupingEntity, getNodeSetFromPart)
+TEST(MeshGroupingEntity_legacy, getNodeSetFromPart)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
-  stk::mesh::MetaData meta;
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
   stk::io::StkMeshIoBroker ioBroker;
-  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1|nodeset:x", bulk);
+  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1|nodeset:x", *bulk);
   Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
 
   stk::mesh::Part* part = meta.get_part("nodelist_1");
@@ -150,18 +161,20 @@ TEST(MeshGroupingEntity, getNodeSetFromPart)
   EXPECT_EQ(Ioss::NODESET, entity->type());   
 }
 
-TEST(MeshGroupingEntity, nonInputIoPart)
+TEST(MeshGroupingEntity_legacy, nonInputIoPart)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
   stk::io::StkMeshIoBroker ioBroker;
   stk::mesh::Part& dummyPart = meta.declare_part("dummy", stk::topology::ELEMENT_RANK);
   EXPECT_FALSE(stk::io::is_part_io_part(dummyPart));
   stk::io::put_io_part_attribute(dummyPart);
   EXPECT_TRUE(stk::io::is_part_io_part(dummyPart));
 
-  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", bulk);
+  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
   Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
 
   Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, dummyPart);
@@ -170,20 +183,22 @@ TEST(MeshGroupingEntity, nonInputIoPart)
 
 void create_2block_quad_mesh(const std::string& fileName)
 {
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  const unsigned spatialDim = 2;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, MPI_COMM_WORLD);
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
                          "0,2,QUAD_4_2D,2,3,6,5,block_2";
 
-  stk::unit_test_util::setup_text_mesh(bulk, meshDesc);
-  stk::io::write_mesh(fileName, bulk);
+  stk::unit_test_util::setup_text_mesh(*bulk, meshDesc);
+  stk::io::write_mesh(fileName, *bulk);
 }
 
-TEST(MeshGroupingEntity, matchhingNameAndType)
+TEST(MeshGroupingEntity_legacy, matchhingNameAndType)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  const unsigned spatialDim = 2;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
   stk::io::StkMeshIoBroker ioBroker;
   std::string fileName = "output.g";
   std::string skippedPartName = "block_2";
@@ -213,7 +228,7 @@ TEST(MeshGroupingEntity, matchhingNameAndType)
   EXPECT_TRUE(entity == nullptr);
 }
 
-TEST(MeshGroupingEntity, iossEntityTypesForElementRank)
+TEST(MeshGroupingEntity_legacy, iossEntityTypesForElementRank)
 {
   stk::mesh::MetaData meta(2);
 
@@ -224,7 +239,7 @@ TEST(MeshGroupingEntity, iossEntityTypesForElementRank)
   EXPECT_TRUE(entityTypeVec[0] == Ioss::SUPERELEMENT || entityTypeVec[1] == Ioss::SUPERELEMENT);
 }
 
-TEST(MeshGroupingEntity, iossEntityTypesForFaceRank)
+TEST(MeshGroupingEntity_legacy, iossEntityTypesForFaceRank)
 {
   stk::mesh::MetaData meta2D(2);
   stk::mesh::MetaData meta3D(3);
@@ -249,7 +264,7 @@ TEST(MeshGroupingEntity, iossEntityTypesForFaceRank)
   EXPECT_EQ(0u, entityTypeVec.size());
 }
 
-TEST(MeshGroupingEntity, iossEntityTypesForConstraintRank)
+TEST(MeshGroupingEntity_legacy, iossEntityTypesForConstraintRank)
 {
   stk::mesh::MetaData meta(2);
 
@@ -258,7 +273,7 @@ TEST(MeshGroupingEntity, iossEntityTypesForConstraintRank)
   EXPECT_EQ(0u, entityTypeVec.size());
 }
 
-TEST(MeshGroupingEntity, iossEntityTypesForNodeRank)
+TEST(MeshGroupingEntity_legacy, iossEntityTypesForNodeRank)
 {
   stk::mesh::MetaData meta;
 
@@ -268,3 +283,229 @@ TEST(MeshGroupingEntity, iossEntityTypesForNodeRank)
   EXPECT_TRUE(entityTypeVec[0] == Ioss::NODESET || entityTypeVec[1] == Ioss::NODESET);
   EXPECT_TRUE(entityTypeVec[0] == Ioss::NODEBLOCK || entityTypeVec[1] == Ioss::NODEBLOCK);
 }
+
+#endif // STK_USE_SIMPLE_FIELDS
+
+namespace simple_fields {
+
+TEST(MeshGroupingEntity, universalSideset_get_entity_rank)
+{
+  Ioss::Init::Initializer init;
+  Ioss::PropertyManager properties;
+  Ioss::DatabaseIO *db_io = Ioss::IOFactory::create("generated", "1x1x32", Ioss::READ_MODEL, MPI_COMM_WORLD, properties);
+  Ioss::Region* ioRegion = new Ioss::Region(db_io, "IO_Region");
+
+  Ioss::SideSet* usideset = new Ioss::SideSet(db_io, "universal_sideset");
+  Ioss::SideBlock* usideblk = new Ioss::SideBlock(db_io, "universal_sideset", "unknown", "unknown", 1);
+  usideset->add(usideblk);
+  stk::mesh::MetaData meta(3);
+  meta.use_simple_fields();
+  EXPECT_EQ(stk::topology::FACE_RANK, stk::io::get_entity_rank(usideset, meta));
+  EXPECT_EQ(stk::topology::FACE_RANK, stk::io::get_entity_rank(usideblk, meta));
+  delete usideset;
+  delete ioRegion;
+}
+
+TEST(MeshGroupingEntity, getElementBlockFromPart)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
+  stk::io::StkMeshIoBroker ioBroker;
+  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
+  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+
+  stk::mesh::Part* part = meta.get_part("block_1");
+  EXPECT_TRUE(part != nullptr);
+  EXPECT_EQ(stk::topology::ELEMENT_RANK, part->primary_entity_rank());
+
+  Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, *part);
+  EXPECT_TRUE(entity != nullptr);
+  EXPECT_EQ(Ioss::ELEMENTBLOCK, entity->type());
+}
+
+TEST(MeshGroupingEntity, getElementBlockFromNonIoPart)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(spatialDim, MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
+  stk::io::StkMeshIoBroker ioBroker;
+  stk::mesh::Part& dummyPart = meta.declare_part("dummy", stk::topology::ELEMENT_RANK);
+  EXPECT_FALSE(stk::io::is_part_io_part(dummyPart));
+  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
+  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+
+  Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, dummyPart);
+  EXPECT_TRUE(entity == nullptr);
+}
+
+TEST(MeshGroupingEntity, getSideSetFromPart)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
+  stk::io::StkMeshIoBroker ioBroker;
+  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1|sideset:x", *bulk);
+  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+
+  stk::mesh::Part* part = meta.get_part("surface_1");
+  EXPECT_TRUE(part != nullptr);
+  EXPECT_EQ(meta.side_rank(), part->primary_entity_rank());
+
+  Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, *part);
+  EXPECT_TRUE(entity != nullptr);
+  EXPECT_EQ(Ioss::SIDESET, entity->type());
+}
+
+TEST(MeshGroupingEntity, getNodeSetFromPart)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
+  stk::io::StkMeshIoBroker ioBroker;
+  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1|nodeset:x", *bulk);
+  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+
+  stk::mesh::Part* part = meta.get_part("nodelist_1");
+  EXPECT_TRUE(part != nullptr);
+  EXPECT_EQ(stk::topology::NODE_RANK, part->primary_entity_rank());
+
+  Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, *part);
+  EXPECT_TRUE(entity != nullptr);
+  EXPECT_EQ(Ioss::NODESET, entity->type());
+}
+
+TEST(MeshGroupingEntity, nonInputIoPart)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(spatialDim, MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
+  stk::io::StkMeshIoBroker ioBroker;
+  stk::mesh::Part& dummyPart = meta.declare_part("dummy", stk::topology::ELEMENT_RANK);
+  EXPECT_FALSE(stk::io::is_part_io_part(dummyPart));
+  stk::io::put_io_part_attribute(dummyPart);
+  EXPECT_TRUE(stk::io::is_part_io_part(dummyPart));
+
+  stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x1", *bulk);
+  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+
+  Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, dummyPart);
+  EXPECT_TRUE(entity == nullptr);
+}
+
+void create_2block_quad_mesh(const std::string& fileName)
+{
+  const unsigned spatialDim = 2;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(spatialDim, MPI_COMM_WORLD);
+  std::string meshDesc = "0,1,QUAD_4_2D,1,2,5,4,block_1\n"
+                         "0,2,QUAD_4_2D,2,3,6,5,block_2";
+
+  stk::unit_test_util::setup_text_mesh(*bulk, meshDesc);
+  stk::io::write_mesh(fileName, *bulk);
+}
+
+TEST(MeshGroupingEntity, matchhingNameAndType)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
+  const unsigned spatialDim = 2;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(spatialDim, MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+
+  stk::io::StkMeshIoBroker ioBroker;
+  std::string fileName = "output.g";
+  std::string skippedPartName = "block_2";
+
+  create_2block_quad_mesh(fileName);
+
+  ioBroker.set_bulk_data(bulk);
+  size_t inputIndex = ioBroker.add_mesh_database(fileName, stk::io::READ_MESH);
+  Ioss::DatabaseIO* dbIo = ioBroker.get_input_database(inputIndex);
+  dbIo->set_block_omissions({skippedPartName});
+  ioBroker.create_input_mesh();
+
+  stk::mesh::Part* skippedPart = meta.get_part(skippedPartName);
+  EXPECT_EQ(nullptr, skippedPart);
+
+  skippedPart = &meta.declare_part(skippedPartName, stk::topology::NODE_RANK);
+  EXPECT_FALSE(stk::io::is_part_io_part(*skippedPart));
+  stk::io::put_io_part_attribute(*skippedPart);
+  EXPECT_TRUE(stk::io::is_part_io_part(*skippedPart));
+
+  ioBroker.add_all_mesh_fields_as_input_fields();
+  ioBroker.populate_bulk_data();
+
+  Teuchos::RCP<Ioss::Region> ioRegion = ioBroker.get_input_io_region();
+
+  Ioss::GroupingEntity* entity = stk::io::get_grouping_entity(*ioRegion, *skippedPart);
+  EXPECT_TRUE(entity == nullptr);
+}
+
+TEST(MeshGroupingEntity, iossEntityTypesForElementRank)
+{
+  stk::mesh::MetaData meta(2);
+  meta.use_simple_fields();
+
+  std::vector<Ioss::EntityType> entityTypeVec = stk::io::get_ioss_entity_types(meta, stk::topology::ELEMENT_RANK);
+
+  EXPECT_EQ(2u, entityTypeVec.size());
+  EXPECT_TRUE(entityTypeVec[0] == Ioss::ELEMENTBLOCK || entityTypeVec[1] == Ioss::ELEMENTBLOCK);
+  EXPECT_TRUE(entityTypeVec[0] == Ioss::SUPERELEMENT || entityTypeVec[1] == Ioss::SUPERELEMENT);
+}
+
+TEST(MeshGroupingEntity, iossEntityTypesForFaceRank)
+{
+  stk::mesh::MetaData meta2D(2);
+  meta2D.use_simple_fields();
+  stk::mesh::MetaData meta3D(3);
+  meta3D.use_simple_fields();
+
+  std::vector<Ioss::EntityType> entityTypeVec = stk::io::get_ioss_entity_types(meta2D, stk::topology::FACE_RANK);
+
+  EXPECT_EQ(0u, entityTypeVec.size());
+
+  entityTypeVec = stk::io::get_ioss_entity_types(meta2D, stk::topology::EDGE_RANK);
+
+  EXPECT_EQ(2u, entityTypeVec.size());
+  EXPECT_TRUE(entityTypeVec[0] == Ioss::SIDESET || entityTypeVec[1] == Ioss::SIDESET);
+  EXPECT_TRUE(entityTypeVec[0] == Ioss::SIDEBLOCK || entityTypeVec[1] == Ioss::SIDEBLOCK);
+
+  entityTypeVec = stk::io::get_ioss_entity_types(meta3D, stk::topology::FACE_RANK);
+
+  EXPECT_EQ(2u, entityTypeVec.size());
+  EXPECT_TRUE(entityTypeVec[0] == Ioss::SIDESET || entityTypeVec[1] == Ioss::SIDESET);
+  EXPECT_TRUE(entityTypeVec[0] == Ioss::SIDEBLOCK || entityTypeVec[1] == Ioss::SIDEBLOCK);
+
+  entityTypeVec = stk::io::get_ioss_entity_types(meta3D, stk::topology::EDGE_RANK);
+  EXPECT_EQ(0u, entityTypeVec.size());
+}
+
+TEST(MeshGroupingEntity, iossEntityTypesForConstraintRank)
+{
+  stk::mesh::MetaData meta(2);
+  meta.use_simple_fields();
+
+  std::vector<Ioss::EntityType> entityTypeVec = stk::io::get_ioss_entity_types(meta, stk::topology::CONSTRAINT_RANK);
+
+  EXPECT_EQ(0u, entityTypeVec.size());
+}
+
+TEST(MeshGroupingEntity, iossEntityTypesForNodeRank)
+{
+  stk::mesh::MetaData meta;
+  meta.use_simple_fields();
+
+  std::vector<Ioss::EntityType> entityTypeVec = stk::io::get_ioss_entity_types(meta, stk::topology::NODE_RANK);
+
+  EXPECT_EQ(2u, entityTypeVec.size());
+  EXPECT_TRUE(entityTypeVec[0] == Ioss::NODESET || entityTypeVec[1] == Ioss::NODESET);
+  EXPECT_TRUE(entityTypeVec[0] == Ioss::NODEBLOCK || entityTypeVec[1] == Ioss::NODEBLOCK);
+}
+
+} // namespace simple_fields

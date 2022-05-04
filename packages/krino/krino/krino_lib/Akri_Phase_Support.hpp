@@ -18,6 +18,7 @@
 
 #include <map>
 
+#include "Akri_FieldRef.hpp"
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace diag { class Timer; } }
@@ -26,20 +27,46 @@ namespace krino {
 
 class AuxMetaData;
 class LevelSet;
-struct LS_Field;
+class CDFEM_Inequality_Spec;
 
 typedef std::set< const stk::mesh::Part * > IOPartSet;
 typedef std::set< LevelSet * > LevelSetSet;
 typedef std::map<stk::mesh::PartOrdinal,std::set<unsigned>> PartPhaseMap;
 typedef std::map<std::string,std::vector<std::string>> PartnamePhasenameMap;
 
+struct LS_Field
+{
+  LS_Field(const std::string & name_, const Surface_Identifier & identifier_, const FieldRef isovar_, const double isoval_, const LevelSet * const ptr_, const CDFEM_Inequality_Spec * const deathPtr_ = nullptr)
+    : name(name_), identifier(identifier_), isovar(isovar_), isoval(isoval_), ptr(ptr_), deathPtr(deathPtr_) {
+    ThrowRequireMsg(isovar_.valid(), "Invalid field " + isovar_.name() + " used in CDFEM initialization");
+  }
+
+  // Constructor just for unit tests
+  LS_Field(const std::string & name_, const Surface_Identifier & identifier_)
+    : name(name_), identifier(identifier_), isoval(0), ptr(nullptr), deathPtr(nullptr) {
+  }
+
+  std::string name;
+  Surface_Identifier identifier;
+  FieldRef isovar;
+  double isoval;
+  const LevelSet * ptr;
+  const CDFEM_Inequality_Spec * deathPtr;
+};
+
 class Phase_Support {
 public:
   typedef std::set<stk::mesh::Part*,stk::mesh::PartLess> PartSet;
 
   static bool exists_and_has_phases_defined(const stk::mesh::MetaData & meta);
-  static Phase_Support & get(stk::mesh::MetaData & meta);
+  static Phase_Support & get_or_create(const std::string & FEModelName);
+  static void associate_FEModel_and_metadata(const std::string & FEModelName, stk::mesh::MetaData & meta); // for typical parsing scenario where Phase_Support is originally created with the FEModel and now is being associated with MetaData
   static Phase_Support & get(const stk::mesh::MetaData & meta);
+  static Phase_Support & get(stk::mesh::MetaData & meta); // for unit test usage where the Phase_Support is created with the MetaData
+
+  static std::vector<LS_Field> get_levelset_fields(const stk::mesh::MetaData & meta);
+  static void check_isovariable_field_existence_on_decomposed_blocks(const stk::mesh::MetaData & meta, const bool conformal_parts_require_field);
+  static void check_isovariable_field_existence_on_decomposed_blocks(const stk::mesh::MetaData & meta, const std::vector<LS_Field> & lsFields, const bool conformal_parts_require_field);
 
   void get_blocks_touching_surface(const std::string & surface_name, std::vector<std::string> & block_names);
   static void get_input_surfaces_touching_block(const Block_Surface_Connectivity & input_block_surface_info,
@@ -53,7 +80,8 @@ public:
 
   void decompose_blocks(std::vector<std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets);
   std::vector<stk::mesh::Part*> get_blocks_decomposed_by_levelset(const std::vector<unsigned> ls_phases) const;
-  void setup_phases(const krino::PhaseVec & FEmodel_phases);
+  std::vector<stk::mesh::Part*> get_blocks_decomposed_by_bounding_surface(const unsigned surfaceID) const;
+  void setup_phases();
   void set_input_block_surface_connectivity(const Block_Surface_Connectivity & input_block_surface_info) { my_input_block_surface_connectivity = input_block_surface_info; }
   const Block_Surface_Connectivity & get_input_block_surface_connectivity() const {return my_input_block_surface_connectivity;}
   void build_decomposed_block_surface_connectivity();
@@ -70,30 +98,38 @@ public:
   const stk::mesh::Selector & get_all_decomposed_blocks_selector() const { return all_decomposed_blocks_selector; }
 
   stk::mesh::Selector get_interface_part_selector(const LS_Field & ls_field);
-  void register_blocks_for_level_set(LevelSet * levelSet,
+  void register_blocks_for_level_set(const Surface_Identifier levelSetIdentifier,
       const std::vector<stk::mesh::Part *> & blocks_decomposed_by_ls);
   stk::mesh::Selector get_all_conformal_surfaces_selector() const;
 
-  bool level_set_is_used_by_nonconformal_part(const LevelSet * levelSet, const stk::mesh::Part * const ioPart) const;
+  bool level_set_is_used_by_nonconformal_part(const Surface_Identifier levelSetIdentifier, const stk::mesh::Part * const ioPart) const;
 
-  static bool has_one_levelset_per_phase() { return oneLevelSetPerPhase; }
-  static void set_one_levelset_per_phase(const bool val) { oneLevelSetPerPhase = val; }
+  bool has_one_levelset_per_phase() const { return oneLevelSetPerPhase; }
+  void set_one_levelset_per_phase(const bool val) { oneLevelSetPerPhase = val; }
+
+  const PhaseVec & get_mesh_phases() const { return myMeshPhases; }
+  PhaseVec & get_mesh_phases() { return myMeshPhases; }
+  const PartnamePhasenameMap & get_block_phases_by_name() const { return myMeshBlockPhasesByName; }
+  PartnamePhasenameMap & get_block_phases_by_name() { return myMeshBlockPhasesByName; }
 
   stk::mesh::PartVector get_nonconformal_parts() const;
   stk::mesh::PartVector get_nonconformal_parts_of_rank(const stk::mesh::EntityRank rank) const;
   stk::mesh::PartVector get_conformal_parts() const;
 
-  void determine_block_phases(const std::set<std::string> & FEmodel_block_names, const PhaseVec & FEmodel_phases);
-  void determine_block_phases(const PhaseVec & FEmodel_phases, const PartnamePhasenameMap & FEmodel_block_phase_names);
+  void determine_block_phases(const std::set<std::string> & FEmodel_block_names);
+  void determine_block_phases();
   static PartSet get_blocks_and_touching_surfaces(const stk::mesh::MetaData & mesh_meta, const stk::mesh::PartVector& input_blocks, const Block_Surface_Connectivity & input_block_surface_info);
 
-  static bool has_phases(const std::string & mesh_name) {std::map<std::string,PhaseVec>::const_iterator pos=the_mesh_phases.find(mesh_name); return (pos != the_mesh_phases.end());}
-  static PhaseVec & get_phases(const std::string & mesh_name) {return the_mesh_phases[mesh_name];}
-  static std::vector<unsigned> get_level_set_phases(const PhaseVec & mesh_phases, const LevelSet & levelSet);
-  static PartnamePhasenameMap & get_block_phases_by_name(const std::string & mesh_name) {return the_mesh_block_phases_by_name[mesh_name];}
+  static std::vector<unsigned> get_level_set_phases(const bool oneLSPerPhase, const PhaseVec & mesh_phases, const LevelSet & levelSet);
 
 private:
+  Phase_Support();
   Phase_Support(stk::mesh::MetaData & meta);
+
+  const stk::mesh::MetaData & meta() const { ThrowAssertMsg(myMeta, "MetaDeta not yet set on Phase_Support"); return *myMeta; }
+  stk::mesh::MetaData & meta() { ThrowAssertMsg(myMeta, "MetaDeta not yet set on Phase_Support"); return *myMeta; }
+  const AuxMetaData & aux_meta() const { ThrowAssertMsg(myAuxMeta, "AuxMetaData not yet set on Phase_Support"); return *myAuxMeta; }
+  AuxMetaData & aux_meta() { ThrowAssertMsg(myAuxMeta, "AuxMetaData not yet set on Phase_Support"); return *myAuxMeta; }
 
   const PhasePartTag * find_conformal_phase_part(const stk::mesh::Part & conformal_part) const;
   void create_nonconformal_parts(const PartSet & decomposed_ioparts);
@@ -105,18 +141,19 @@ private:
   void fill_nonconformal_level_set_maps() const;
 
 private:
-  stk::mesh::MetaData & my_meta;
-  AuxMetaData & my_aux_meta;
+  static std::map<std::string,std::unique_ptr<Phase_Support>> theModeltoPhaseSupportMap;
+  stk::mesh::MetaData * myMeta;
+  AuxMetaData * myAuxMeta;
   PhasePartSet my_phase_parts;
   Block_Surface_Connectivity my_input_block_surface_connectivity;
   PartPhaseMap my_mesh_block_phases;
-  std::map<LevelSet *, IOPartSet> lsUsedByParts_;
+  std::map<Surface_Identifier, IOPartSet> lsUsedByParts_;
   mutable bool nonconformalLsMapsAreFilled_;
+  bool oneLevelSetPerPhase;
+  PhaseVec myMeshPhases;
+  PartnamePhasenameMap myMeshBlockPhasesByName;
 
-  mutable std::map<const LevelSet *, IOPartSet> lsUsedByNonconformalParts_;
-  static bool oneLevelSetPerPhase;
-  static std::map<std::string,PhaseVec> the_mesh_phases;
-  static std::map<std::string,PartnamePhasenameMap> the_mesh_block_phases_by_name;
+  mutable std::map<const Surface_Identifier, IOPartSet> lsUsedByNonconformalParts_;
 
   typedef std::map< const stk::mesh::Part *, bool, stk::mesh::PartLess> PartToBoolMap;
   typedef std::map< const stk::mesh::Part *, const stk::mesh::Part *, stk::mesh::PartLess > PartToPartMap;
@@ -189,13 +226,16 @@ class CDFEM_Irreversible_Phase_Support {
 public:
   ~CDFEM_Irreversible_Phase_Support() {}
 
+  static CDFEM_Irreversible_Phase_Support * get_if_present(const stk::mesh::MetaData & meta);
   static CDFEM_Irreversible_Phase_Support & get(stk::mesh::MetaData & meta);
+  static CDFEM_Irreversible_Phase_Support & get(const stk::mesh::MetaData & meta);
 
   CDFEM_Inequality_Spec * add_death_spec(const std::string & death_name, bool is_death);
 
   bool is_active() const {return has_death || has_irreversible_phase_change;}
 
   const CDFEM_Inequality_Spec_Vec & get_death_specs() const {return my_death_specs;}
+  const CDFEM_Inequality_Spec * get_death_spec_for_ls(const LevelSet * ls) const;
 
   // For irreversible phase changes we decompose at the start of the time step, for death at the end.
   bool decompose_at_start_of_time_step() { ThrowAssert(has_irreversible_phase_change == !has_death); return has_irreversible_phase_change; }

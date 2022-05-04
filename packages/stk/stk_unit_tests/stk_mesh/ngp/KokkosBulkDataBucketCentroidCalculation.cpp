@@ -207,7 +207,7 @@ TEST_F(NGP_Kokkos, calculate_centroid_field_with_gather_on_device_bucket)
   MyApp app;
 
   GpuGatherBucketScratchData scratch(*app.bulk);
-  scratch.initialize(*app.bulk, *app.coords, app.centroid, app.meta.locally_owned_part());
+  scratch.initialize(*app.bulk, *app.coords, *app.centroid, app.meta->locally_owned_part());
 
   CentroidCalculator<GpuGatherBucketScratchData> calculator(scratch);
 
@@ -223,7 +223,7 @@ TEST_F(NGP_Kokkos, calculate_centroid_field_with_gather_on_device_bucket)
     unsigned numElements = bucket.size();
     for(unsigned elementIndex=0; elementIndex<numElements; ++elementIndex) {
       unsigned elemFieldIndex = scratch.host_get_index(bucket.host_get_entity(elementIndex));
-      calculator.test_centroid_of_element(app.hostCentroid, bucket.host_get_entity(elementIndex), elemFieldIndex);
+      calculator.test_centroid_of_element(*app.hostCentroid, bucket.host_get_entity(elementIndex), elemFieldIndex);
     }
   }
 }

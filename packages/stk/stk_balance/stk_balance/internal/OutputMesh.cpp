@@ -44,9 +44,10 @@ OutputMesh::OutputMesh(const InputMesh& inputMesh,
                        const std::vector<unsigned>& targetSubdomains)
   : m_inputMesh(inputMesh),
     m_targetSubdomains(targetSubdomains),
-    m_meta(),
-    m_bulk(m_meta, m_inputMesh.get_bulk().parallel())
+    m_bulk(m_inputMesh.get_bulk().parallel()),
+    m_meta(m_bulk.mesh_meta_data())
 {
+  m_meta.use_simple_fields();
   clone_input_mesh();
   move_subdomain_to_owning_processor();
 }
