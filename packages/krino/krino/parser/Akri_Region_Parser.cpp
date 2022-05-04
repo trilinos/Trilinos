@@ -14,8 +14,8 @@
 #include <Akri_LevelSet_Parser.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_Region.hpp>
-#include <Akri_RegionInterface.hpp>
 #include <Akri_ResultsOutput_Parser.hpp>
+#include <Akri_Surface_Manager.hpp>
 #include "Akri_Parser.hpp"
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
@@ -63,20 +63,20 @@ Region_Parser::parse(const Parser::Node & simulation_node, Simulation & simulati
     }
     region->associate_input_mesh(fem_model_name, use_32bit_ids, force_64bit_ids);
 
-    RegionInterface::set_currently_parsed_region(region->get_stk_mesh_meta_data(), region->name(), region->getRegionTimer(), region->name_of_input_mesh(), region->get_input_io_region());
+    stk::mesh::MetaData & meta = region->get_stk_mesh_meta_data();
+    const stk::diag::Timer & regionTimer = region->getRegionTimer();
+    Phase_Support::associate_FEModel_and_metadata(fem_model_name, meta);
+    Surface_Manager::associate_FEModel_and_metadata(fem_model_name, meta);
+    Phase_Support & phase_support = krino::Phase_Support::get(meta);
+    phase_support.determine_block_phases();
 
-    Phase_Support & phase_support = krino::Phase_Support::get(region->get_stk_mesh_meta_data());
-    const PhaseVec & mesh_phases = Phase_Support::get_phases(region->name_of_input_mesh());
-    const PartnamePhasenameMap & mesh_block_phase_names = Phase_Support::get_block_phases_by_name(region->name_of_input_mesh());
-    phase_support.determine_block_phases(mesh_phases, mesh_block_phase_names);
-
-
-    const Block_Surface_Connectivity block_surf_info(region->get_stk_mesh_meta_data());
+    const Block_Surface_Connectivity block_surf_info(meta);
     phase_support.set_input_block_surface_connectivity(block_surf_info);
-    phase_support.setup_phases(mesh_phases);
+    phase_support.setup_phases();
 
-    LevelSet_Parser::parse(region_node, RegionInterface::get_currently_parsed_region());
-    CDFEM_Options_Parser::parse(region_node, RegionInterface::get_currently_parsed_region());
+    LevelSet_Parser::parse(region_node, meta, regionTimer);
+    BoundingSurface_Parser::parse(region_node, meta, regionTimer);
+    CDFEM_Options_Parser::parse(region_node, meta);
     ResultsOutput_Parser::parse(region_node, *region);
   }
 }

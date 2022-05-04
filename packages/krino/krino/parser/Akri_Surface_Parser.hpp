@@ -6,16 +6,19 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#ifndef Akri_CDFEM_Options_Parser_h
-#define Akri_CDFEM_Options_Parser_h
+#ifndef Akri_Surface_Parser_h
+#define Akri_Surface_Parser_h
+#include <functional>
 
-namespace krino { namespace Parser { class Node; } }
+namespace stk { namespace diag { class Timer; } }
 namespace stk { namespace mesh { class MetaData; } }
+namespace krino { namespace Parser { class Node; } }
+namespace krino { class Surface; }
 
 namespace krino {
-namespace CDFEM_Options_Parser {
-  void parse(const Parser::Node & node, stk::mesh::MetaData & meta);
+namespace Surface_Parser {
+  Surface * parse(const Parser::Node & parserNode, const stk::mesh::MetaData & meta, const stk::diag::Timer &parentTimer);
 }
 }
 
-#endif // Akri_CDFEM_Options_Parser_h
+#endif // Akri_Surface_Parser_h

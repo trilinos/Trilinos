@@ -25,8 +25,6 @@ Fast_Marching::Fast_Marching(LevelSet & ls, const stk::mesh::Selector & selector
   : my_ls(ls),
     my_selector(selector),
     my_timer("Fast Marching", parent_timer),
-    my_tri_timer("Update Triangle", my_timer),
-    my_tet_timer("Update Tetrahedron", my_timer),
     my_fm_node_less(ls.mesh()),
     trial_nodes(my_fm_node_less)
 {
@@ -225,26 +223,7 @@ void Fast_Marching::initialize(ParallelErrorMessage& err)
     *fm_node = Fast_Marching_Node(node,STATUS_FAR,LevelSet::sign(*curr_node_dist) * std::numeric_limits<double>::max(),LevelSet::sign(*curr_node_dist),coords);
   }
 
-  // To start the nodes of elements that have interfaces will be redistanced.
-  // I have tried a few different methods for this distance calculation with varying success.
-  // We can:
-  // 1. Use only local facets to redistance the nodes of the element.  This appears to not work too
-  //    well because the closest facet to a node might be in an element that does not support the node.
-  // 2. Use local facets, but use the normal distance instead of the facet distance.  This seems to work
-  //    better than (1) usually.  However, it seems prone to pathalogical behavior when small facets run
-  //    parallel to an element side, producing inaccurate distance measures on this side.
-  // 3. Use the standard parallel redistance calculation used in "normal" redistancing. This is susceptible
-  //    to seeing through walls if the walls are thinner than the distance of the nodes of the cut element to
-  //    the surface.
-  // 4. Start the redistancing from the subelement facets, progressing through the subelements.
-  //    Somewhat surprisingly, this does not work too well.  I think this may be due to the obtuse angles
-  //    in the subelement decomposition.  The results are very similar to that produced by local redistancing (#1).
-  // 5. Rescale each cut element so that it has a unit gradient (or prescribed gradient) and set the nodal
-  //    distance to the minimum (magnitude) from all of the supporting elements.  This seems to work pretty
-  //    well in the test cases and is completely local, and is not susceptible to seeing through walls.
-
   {
-    // Initialize using method #5 (element rescaling)
     std::vector<stk::mesh::Entity> field_elems;
     stk::mesh::get_selected_entities( field_not_ghost, stk_mesh.buckets( stk::topology::ELEMENT_RANK ), field_elems );
     for (auto&& elem : field_elems)
@@ -327,11 +306,26 @@ static std::function<const Vector3d &(stk::mesh::Entity)> build_get_fm_node_coor
 void
 Fast_Marching::initialize_element(const stk::mesh::Entity & elem, const double speed)
 {
-  // Still another way to initialize fast marching.
-  // Here we go to each cut element and find the current distance gradient.
-  // By comparing this to the desired gradient, we rescale each element.  The nodal
-  // distance is set to the minimum (magnitude) for each of the rescaled elements that
-  // support the node.
+  // To start the nodes of elements that have interfaces will be redistanced.
+  // I have tried a few different methods for this distance calculation with varying success.
+  // We can:
+  // 1. Use only local facets to redistance the nodes of the element.  This appears to not work too
+  //    well because the closest facet to a node might be in an element that does not support the node.
+  // 2. Use local facets, but use the normal distance instead of the facet distance.  This seems to work
+  //    better than (1) usually.  However, it seems prone to pathalogical behavior when small facets run
+  //    parallel to an element side, producing inaccurate distance measures on this side.
+  // 3. Use the standard parallel redistance calculation used in "normal" redistancing. This is susceptible
+  //    to seeing through walls if the walls are thinner than the distance of the nodes of the cut element to
+  //    the surface.
+  // 4. Start the redistancing from the subelement facets, progressing through the subelements.
+  //    Somewhat surprisingly, this does not work too well.  I think this may be due to the obtuse angles
+  //    in the subelement decomposition.  The results are very similar to that produced by local redistancing (#1).
+  // 5. Rescale each cut element so that it has a unit gradient (or prescribed gradient) and set the nodal
+  //    distance to the minimum (magnitude) from all of the supporting elements.  This seems to work pretty
+  //    well in the test cases and is completely local, and is not susceptible to seeing through walls.
+
+  // Initialize using method #5 (element rescaling)
+
   const FieldRef dRef = my_ls.get_distance_field();
   const stk::mesh::Entity * elem_nodes = mesh().begin(elem, stk::topology::NODE_RANK);
   const int npe = mesh().bucket(elem).topology().num_nodes();
@@ -345,10 +339,9 @@ Fast_Marching::initialize_element(const stk::mesh::Entity & elem, const double s
     Fast_Marching_Node * fm_node = get_fm_node(elem_nodes[inode]);
     ThrowAssert(nullptr != fm_node && fm_node->status() != STATUS_UNUSED);
     const double elem_node_dist = *field_data<double>(dRef, elem_nodes[inode]) / (mag_grad * speed);
-    const int sign = LevelSet::sign(fm_node->signed_dist());
+    const int sign = fm_node->sign();
     fm_node->set_signed_dist(sign * std::min(std::abs(fm_node->signed_dist()), std::abs(elem_node_dist)));
     fm_node->set_status(STATUS_INITIAL);
-    fm_node->set_sign(sign);
   }
 }
 
@@ -468,27 +461,28 @@ Fast_Marching::update_node(std::vector<Fast_Marching_Node *> & elem_nodes, int n
 double
 Fast_Marching::update_triangle(std::vector<Fast_Marching_Node *> & elemNodes, int nodeToUpdate, const double speed)
 {
-  stk::diag::TimeBlock timer__(my_tri_timer);
-  const int dim = mesh().mesh_meta_data().spatial_dimension();
-  ThrowAssert(2 == dim || 3 == dim);
+  static constexpr double far = std::numeric_limits<double>::max();
 
   const std::array<int,3> lnn = get_oriented_nodes_triangle(nodeToUpdate);
   const std::array<Vector3d,3> x{elemNodes[lnn[0]]->coords(), elemNodes[lnn[1]]->coords(), elemNodes[lnn[2]]->coords()};
-  const std::array<double,3> d{elemNodes[lnn[0]]->signed_dist(), elemNodes[lnn[1]]->signed_dist(), elemNodes[lnn[2]]->signed_dist()};
+  const std::array<double,2> d{elemNodes[lnn[0]]->signed_dist(), elemNodes[lnn[1]]->signed_dist()};
   const int sign = elemNodes[lnn[2]]->sign();
-  return eikonal_solve_triangle(x, d, sign, dim, speed);
+  const double signedDist = eikonal_solve_triangle(x, d, sign, far, speed);
+  // For fast marching, we strictly enforce that the distance is increasing in magnitude
+  return sign * std::max({std::abs(d[0]),std::abs(d[1]),std::abs(signedDist)});
 }
 
 double
 Fast_Marching::update_tetrahedron(std::vector<Fast_Marching_Node *> & elemNodes, int nodeToUpdate, const double speed)
 {
-  stk::diag::TimeBlock timer__(my_tet_timer);
-
+  static constexpr double far = std::numeric_limits<double>::max();
   const std::array<int,4> lnn = get_oriented_nodes_tetrahedron(nodeToUpdate);
   const std::array<Vector3d,4> x{elemNodes[lnn[0]]->coords(), elemNodes[lnn[1]]->coords(), elemNodes[lnn[2]]->coords(), elemNodes[lnn[3]]->coords()};
-  const std::array<double,4> d{elemNodes[lnn[0]]->signed_dist(), elemNodes[lnn[1]]->signed_dist(), elemNodes[lnn[2]]->signed_dist(), elemNodes[lnn[3]]->signed_dist()};
+  const std::array<double,3> d{elemNodes[lnn[0]]->signed_dist(), elemNodes[lnn[1]]->signed_dist(), elemNodes[lnn[2]]->signed_dist()};
   const int sign = elemNodes[lnn[3]]->sign();
-  return eikonal_solve_tetrahedron(x, d, sign, speed);
+  const double signedDist = eikonal_solve_tetrahedron(x, d, sign, far, speed);
+  // For fast marching, we strictly enforce that the distance is increasing in magnitude
+  return sign * std::max({std::abs(d[0]),std::abs(d[1]),std::abs(d[2]),std::abs(signedDist)});
 }
 
 } // namespace krino

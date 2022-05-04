@@ -90,10 +90,10 @@ PhaseVec Part_Decomposition_Fixture::ls_phases(int num_ls, bool one_phase_per_ls
   static std::vector<NamedPhase> named_phases;
   if(!init)
   {
-    const LevelSet_Identifier id0(0);
-    const LevelSet_Identifier id1(1);
-    const LevelSet_Identifier id2(2);
-    const LevelSet_Identifier id3(3);
+    const Surface_Identifier id0(0);
+    const Surface_Identifier id1(1);
+    const Surface_Identifier id2(2);
+    const Surface_Identifier id3(3);
     PhaseTag pp, nn, pn, np;
     pp.add(id0,1); pp.add(id1,1);
     nn.add(id0,-1); nn.add(id1,-1);
@@ -147,7 +147,7 @@ PhaseVec Part_Decomposition_Fixture::ls_phases(int num_ls, bool one_phase_per_ls
 PhaseVec Part_Decomposition_Fixture::death_phases()
 {
   static bool init = false;
-  const LevelSet_Identifier id0(0);
+  const Surface_Identifier id0(0);
   static PhaseTag pos, neg;
   pos.add(id0,1); neg.add(id0,-1);
   static NamedPhase dead("dead", pos), alive("", neg);

@@ -14,6 +14,7 @@
 #include <Akri_Intersection_Points.hpp>
 #include <Akri_MathUtil.hpp>
 #include <Akri_MeshHelpers.hpp>
+#include <Akri_Phase_Support.hpp>
 #include <Akri_ProlongationData.hpp>
 #include <Akri_Utility.hpp>
 
@@ -914,13 +915,13 @@ SubElement::get_owner_coord_transform(double * dOwnerdSub) const
 }
 
 void
-SubElement::determine_decomposed_elem_phase(const CDMesh & mesh)
+SubElement::determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & surfaceIDs)
 {
   if(have_subelements())
   {
     for(auto && subelem : my_subelements)
     {
-      subelem->determine_decomposed_elem_phase(mesh);
+      subelem->determine_decomposed_elem_phase(surfaceIDs);
     }
     // Phase for SubElement with subelements is left empty
     return;
@@ -933,7 +934,7 @@ SubElement::determine_decomposed_elem_phase(const CDMesh & mesh)
   else
   {
     const PhaseTag startPhase = my_phase.empty() ? my_owner->get_phase() : my_phase;
-    my_phase = update_phase(mesh, startPhase, my_owner->get_sorted_cutting_interfaces(), myInterfaceSigns);
+    my_phase = update_phase(surfaceIDs, startPhase, my_owner->get_sorted_cutting_interfaces(), myInterfaceSigns);
   }
 
   if(krinolog.shouldPrint(LOG_DEBUG))
@@ -2213,10 +2214,6 @@ SubElement_Tet_4::perform_decomposition(CDMesh & mesh, const InterfaceID interfa
       // face 4: true: connect 6 and 8, false: connect 7 and 5
       const bool face4 = ElementObj::determine_diagonal_for_internal_quad_of_cut_tet_from_edge_nodes(simplexMethod, lnodes[i8], lnodes[i5], lnodes[i6], lnodes[i7],
           face0, face1, face2, face3);
-
-      ThrowAssert( mesh.num_ls_fields() > 1 ||
-          simplexMethod != CUT_QUADS_BY_GLOBAL_IDENTIFIER ||
-          face4 == ElementObj::determine_diagonal_for_internal_quad_of_cut_tet_from_owner_nodes(lnodes[i0], lnodes[i1], lnodes[i2], lnodes[i3]) );
 
       handle_wedge( mesh, lnodes, subelement_interface_signs(interface_key, -1), i8,i3,i7,i5,i2,i6, s1,s2,-1,s0,s3, !face1,!face2,face4 );
       handle_wedge( mesh, lnodes, subelement_interface_signs(interface_key,  1), i8,i1,i5,i7,i0,i6, s0,s3,-1,s1,s2, !face0,!face3,face4 );

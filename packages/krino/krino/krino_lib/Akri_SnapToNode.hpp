@@ -15,6 +15,7 @@
 namespace krino {
 
 class CDFEM_Support;
+class InterfaceGeometry;
 class Phase_Support;
 
 void snap_to_node(const stk::mesh::BulkData & mesh,
