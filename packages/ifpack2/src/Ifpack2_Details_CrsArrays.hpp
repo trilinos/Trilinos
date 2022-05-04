@@ -100,18 +100,21 @@ struct CrsArrayReader
     LocalOrdinal nrows = A->getLocalNumRows();
     size_t nnz = A->getLocalNumEntries();
     size_t maxNnz = A->getLocalMaxNumRowEntries();
-    local_inds_host_view_type lclColInds ("lclColinds", maxNnz);
+
     vals = ScalarArray("Values", nnz);
+    auto valsHost = Kokkos::create_mirror(vals);
+    local_inds_host_view_type lclColInds ("lclColinds", maxNnz);
 
     nnz = 0;
     for(LocalOrdinal i = 0; i < nrows; i++) {
       size_t NumEntries = A->getNumEntriesInLocalRow(i);
-      auto constLclValues = Kokkos::subview (vals, range_type (nnz, nnz+NumEntries));
+      auto constLclValues = Kokkos::subview (valsHost, range_type (nnz, nnz+NumEntries));
       values_host_view_type lclValues (const_cast<scalar_type*>(constLclValues.data()), NumEntries);
 
       A->getLocalRowCopy (i, lclColInds, lclValues, NumEntries);
       nnz += NumEntries;
     }
+    Kokkos::deep_copy(vals, valsHost);
   }
 
   //! Get the structure (rowptrs and colinds) of the local rows of A.
@@ -139,22 +142,26 @@ struct CrsArrayReader
     using local_ind_type            = typename local_inds_host_view_type::value_type;
     size_t nnz = A->getLocalNumEntries();
     size_t maxNnz = A->getLocalMaxNumRowEntries();
-    values_host_view_type lclValues ("lclValues", maxNnz);
+
     colinds = OrdinalArray("ColInds", nnz);
+    auto colindsHost = Kokkos::create_mirror(colinds);
+    values_host_view_type lclValues ("lclValues", maxNnz);
 
     nnz = 0;
     rowptrsHost[0] = nnz;
     for(LocalOrdinal i = 0; i < nrows; i++) {
       size_t NumEntries = A->getNumEntriesInLocalRow(i);
-      auto constLclValues = Kokkos::subview (colinds, range_type (nnz, nnz+NumEntries));
+      auto constLclValues = Kokkos::subview (colindsHost, range_type (nnz, nnz+NumEntries));
       local_inds_host_view_type lclColInds (const_cast<local_ind_type*>(constLclValues.data()), NumEntries);
       A->getLocalRowCopy (i, lclColInds, lclValues, NumEntries);
 
       nnz += NumEntries;
       rowptrsHost[i+1] = nnz;
     }
+
     rowptrs = OrdinalArray("RowPtrs", nrows + 1);
     Kokkos::deep_copy(rowptrs, rowptrsHost);
+    Kokkos::deep_copy(colinds, colindsHost);
   }
 
   private:
