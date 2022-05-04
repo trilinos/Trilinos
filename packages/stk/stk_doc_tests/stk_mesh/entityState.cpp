@@ -45,6 +45,7 @@ TEST(stkMeshHowTo, checkCreatedStateAfterMeshCreation)
   if (parallel_size != 1) { return; }
   const std::string fileName = "generated:1x1x1";
   stk::io::StkMeshIoBroker meshReader(communicator);
+  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
@@ -69,6 +70,7 @@ TEST(stkMeshHowTo, checkDeletedState)
   if (parallel_size != 1) { return; }
   const std::string fileName = "generated:1x1x1";
   stk::io::StkMeshIoBroker meshReader(communicator);
+  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
@@ -99,6 +101,7 @@ TEST(stkMeshHowTo, checkModifiedState)
   if (parallel_size != 1) { return; }
   const std::string fileName = "generated:1x1x1";
   stk::io::StkMeshIoBroker meshReader(communicator);
+  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
@@ -125,6 +128,7 @@ TEST(stkMeshHowTo, checkAuraModifiedState)
   if (parallel_size != 2) { return; }
   const std::string fileName = "generated:1x1x2";
   stk::io::StkMeshIoBroker meshReader(communicator);
+  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
@@ -132,13 +136,13 @@ TEST(stkMeshHowTo, checkAuraModifiedState)
   stk::mesh::Entity element1 = bulk.get_entity(stk::topology::ELEMENT_RANK, 1);
   stk::mesh::Entity element2 = bulk.get_entity(stk::topology::ELEMENT_RANK, 2);
   if (bulk.parallel_rank() == 0) {
-      EXPECT_EQ( stk::mesh::Created,  bulk.state(element1) );
-      EXPECT_TRUE( bulk.in_receive_ghost(bulk.entity_key(element2)) );
-      EXPECT_EQ( stk::mesh::Modified, bulk.state(element2) );
+    EXPECT_EQ( stk::mesh::Created,  bulk.state(element1) );
+    EXPECT_TRUE( bulk.in_receive_ghost(bulk.entity_key(element2)) );
+    EXPECT_EQ( stk::mesh::Modified, bulk.state(element2) );
   } else { // parallel_rank == 1
-      EXPECT_TRUE( bulk.in_receive_ghost(bulk.entity_key(element1)) );
-      EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );
-      EXPECT_EQ( stk::mesh::Created,  bulk.state(element2) );
+    EXPECT_TRUE( bulk.in_receive_ghost(bulk.entity_key(element1)) );
+    EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );
+    EXPECT_EQ( stk::mesh::Created,  bulk.state(element2) );
   }
 }
 //END_AURA_MODIFIED
@@ -151,6 +155,7 @@ TEST(stkMeshHowTo, checkCEOModifiedState)
   if (parallel_size != 2) { return; }
   const std::string fileName = "generated:1x1x2";
   stk::io::StkMeshIoBroker meshReader(communicator);
+  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
@@ -158,7 +163,7 @@ TEST(stkMeshHowTo, checkCEOModifiedState)
   stk::mesh::Entity node5 = bulk.get_entity(stk::topology::NODE_RANK, 5);
   std::vector<stk::mesh::EntityProc> ceo_vector;
   if (bulk.parallel_rank() == 0) {
-      ceo_vector.push_back(stk::mesh::EntityProc(node5,1));
+    ceo_vector.push_back(stk::mesh::EntityProc(node5,1));
   }
   bulk.change_entity_owner(ceo_vector);
   stk::mesh::Entity element1 = bulk.get_entity(stk::topology::ELEMENT_RANK, 1);
@@ -176,6 +181,7 @@ TEST(stkMeshHowTo, checkParallelConsistencyModifiedState)
   if (parallel_size != 2) { return; }
   const std::string fileName = "generated:1x1x2";
   stk::io::StkMeshIoBroker meshReader(communicator);
+  meshReader.use_simple_fields();
   meshReader.add_mesh_database(fileName, stk::io::READ_MESH);
   meshReader.create_input_mesh();
   meshReader.populate_bulk_data();
@@ -185,26 +191,26 @@ TEST(stkMeshHowTo, checkParallelConsistencyModifiedState)
   bulk.modification_begin();
   bulk.modification_end();
   if (bulk.parallel_rank() == 0) {
-      EXPECT_EQ( stk::mesh::Unchanged, bulk.state(element1) );
+    EXPECT_EQ( stk::mesh::Unchanged, bulk.state(element1) );
   } else { // parallel_rank == 1
-      EXPECT_EQ( stk::mesh::Unchanged, bulk.state(element1) );
+    EXPECT_EQ( stk::mesh::Unchanged, bulk.state(element1) );
   }
   bulk.modification_begin();
   if (bulk.parallel_rank() == 0) {
-      bulk.destroy_relation(element1, node1, 0);
-      stk::mesh::Entity new_node = bulk.declare_node(15);
-      bulk.declare_relation(element1,new_node,0);
+    bulk.destroy_relation(element1, node1, 0);
+    stk::mesh::Entity new_node = bulk.declare_node(15);
+    bulk.declare_relation(element1,new_node,0);
   }
   if (bulk.parallel_rank() == 0) {
-      EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );
+    EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );
   } else { // parallel_rank == 1
-      EXPECT_EQ( stk::mesh::Unchanged, bulk.state(element1) );
+    EXPECT_EQ( stk::mesh::Unchanged, bulk.state(element1) );
   }
   bulk.modification_end();
   if (bulk.parallel_rank() == 0) {
-      EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );
+    EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );
   } else { // parallel_rank == 1
-      EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );
+    EXPECT_EQ( stk::mesh::Modified, bulk.state(element1) );
   }
 }
 //END_PARALLEL_MODIFIED

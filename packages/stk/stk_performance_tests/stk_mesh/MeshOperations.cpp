@@ -30,25 +30,23 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
+
+#include <gtest/gtest.h>
 
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/SkinMesh.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <gtest/gtest.h>
-#include <stk_util/environment/WallTime.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/perf_util.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/SkinMesh.hpp>
+#include <stk_unit_test_utils/CommandLineArgs.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_util/environment/WallTime.hpp>
+#include <stk_util/environment/perf_util.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <string>
 
-// Globals for command-line arguments
-extern int gl_argc;
-extern char** gl_argv;
-
-class MeshOperations : public stk::unit_test_util::MeshFixture {
+class MeshOperations : public stk::unit_test_util::simple_fields::MeshFixture {
 public:
   MeshOperations()
     : p_rank(get_parallel_rank()),
@@ -69,8 +67,11 @@ protected:
   void parse_filename_args() {
     const std::string input_flag  = "--heavy-test:input-file=";
     const std::string output_flag = "--heavy-test:output-file=";
-    for (int argitr = 1; argitr < gl_argc; ++argitr) {
-      std::string argv(gl_argv[argitr]);
+
+    stk::unit_test_util::GlobalCommandLineArguments& args = stk::unit_test_util::GlobalCommandLineArguments::self();
+
+    for (int argitr = 1; argitr < args.get_argc(); ++argitr) {
+      std::string argv(args.get_argv()[argitr]);
       if (argv.find(input_flag) == 0) {
         input_base_filename = argv.replace(0, input_flag.size(), "");
       }
@@ -170,6 +171,7 @@ TEST_F( MeshOperations, PerformanceTimings )
 
   for (unsigned run=0; run<NUM_RUNS; run++) {
     stk::io::StkMeshIoBroker broker(get_comm());
+    broker.use_simple_fields();
 
     initialize_meta(broker);
     initialize_bulk(broker);

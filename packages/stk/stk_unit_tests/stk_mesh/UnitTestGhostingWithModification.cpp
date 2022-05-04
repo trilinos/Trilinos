@@ -62,223 +62,231 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
 #include "stk_mesh/base/MeshUtils.hpp"
+#include "stk_unit_test_utils/BuildMesh.hpp"
+
+using stk::unit_test_util::build_mesh;
 
 void fillStkMeshFromFileSpec(const std::string fileSpec, stk::mesh::BulkData &stkMeshBulkData)
 {
-    stk::io::StkMeshIoBroker stkMeshIoBroker(stkMeshBulkData.parallel());
-    stkMeshIoBroker.set_bulk_data(stkMeshBulkData);
-    stkMeshIoBroker.add_mesh_database(fileSpec, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
-    stkMeshIoBroker.populate_bulk_data();
+  stk::io::StkMeshIoBroker stkMeshIoBroker(stkMeshBulkData.parallel());
+  stkMeshIoBroker.set_bulk_data(stkMeshBulkData);
+  stkMeshIoBroker.add_mesh_database(fileSpec, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
+  stkMeshIoBroker.populate_bulk_data();
 }
 
 TEST(UnitTestGhosting, WithChangeParts)
 {
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(communicator);
-    if(numProcs == 3)
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if(numProcs == 3)
+  {
+    const int spatialDim = 3;
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+    stk::mesh::MetaData& stkMeshMetaData = bulkPtr->mesh_meta_data();
+    stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
+    const std::string generatedMeshSpecification = "generated:1x1x3|sideset:xXyYzZ";
+    fillStkMeshFromFileSpec(generatedMeshSpecification, stkMeshBulkData);
+
+    stk::mesh::EntityVector elementsOnProc;
+    stk::mesh::get_selected_entities(stkMeshMetaData.locally_owned_part(),
+                                     stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK),
+                                     elementsOnProc);
+    ASSERT_EQ(1u, elementsOnProc.size());
+
+    stk::mesh::EntityProcVec elementsToGhost;
+    if(stkMeshBulkData.parallel_rank() == 0)
     {
-        const int spatialDim = 3;
-        stk::mesh::MetaData stkMeshMetaData(spatialDim);
-        stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
-        const std::string generatedMeshSpecification = "generated:1x1x3|sideset:xXyYzZ";
-        fillStkMeshFromFileSpec(generatedMeshSpecification, stkMeshBulkData);
-
-        stk::mesh::EntityVector elementsOnProc;
-        stk::mesh::get_selected_entities(stkMeshMetaData.locally_owned_part(),
-                                         stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK),
-                                         elementsOnProc);
-        ASSERT_EQ(1u, elementsOnProc.size());
-
-        stk::mesh::EntityProcVec elementsToGhost;
-        if(stkMeshBulkData.parallel_rank() == 0)
-        {
-            const int ghostToProc2 = 2;
-            elementsToGhost.push_back(std::make_pair(elementsOnProc[0], ghostToProc2));
-        }
-
-        stkMeshBulkData.modification_begin();
-        stk::mesh::Ghosting &ghostElemFrom0To2 = stkMeshBulkData.create_ghosting("ghostElemFrom0to2");
-        stkMeshBulkData.change_ghosting(ghostElemFrom0To2, elementsToGhost);
-        stkMeshBulkData.modification_end();
-
-        std::vector<size_t> entityCounts;
-        stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
-        if(stkMeshBulkData.parallel_rank() == 0)
-        {
-            EXPECT_EQ(12u, entityCounts[stk::topology::NODE_RANK]);             //       __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |
-            EXPECT_EQ( 9u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|
-            EXPECT_EQ( 2u, entityCounts[stk::topology::ELEMENT_RANK]);
-        }
-        else if(stkMeshBulkData.parallel_rank() == 1)
-        {
-            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |  |G |
-            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
-            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
-        }
-        else
-        {
-            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |G |  |
-            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
-            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
-        }
-
-        stk::mesh::Part &newPart = stkMeshMetaData.declare_part("newPart");
-
-        stkMeshBulkData.modification_begin();
-        if(stkMeshBulkData.parallel_rank() == 0)
-        {
-            stk::mesh::PartVector partsToAdd(1, &newPart);
-            stk::mesh::EntityVector sharedNodes;
-            stk::mesh::get_selected_entities(stkMeshMetaData.globally_shared_part(),
-                                             stkMeshBulkData.buckets(stk::topology::NODE_RANK),
-                                             sharedNodes);
-            for(size_t i=0; i<sharedNodes.size(); i++)
-            {
-                stkMeshBulkData.change_entity_parts(sharedNodes[i], partsToAdd);
-            }
-        }
-        stkMeshBulkData.modification_end();
-
-        stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
-        if(stkMeshBulkData.parallel_rank() == 0)
-        {
-            EXPECT_EQ(12u, entityCounts[stk::topology::NODE_RANK]);             //       __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |
-            EXPECT_EQ( 9u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|
-            EXPECT_EQ( 2u, entityCounts[stk::topology::ELEMENT_RANK]);
-        }
-        else if(stkMeshBulkData.parallel_rank() == 1)
-        {
-            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |  |G |
-            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
-            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
-        }
-        else
-        {
-            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //          __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |  |
-            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |  |__|__|
-            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);          //      ^------------one face still ghosted
-        }
+      const int ghostToProc2 = 2;
+      elementsToGhost.push_back(std::make_pair(elementsOnProc[0], ghostToProc2));
     }
+
+    stkMeshBulkData.modification_begin();
+    stk::mesh::Ghosting &ghostElemFrom0To2 = stkMeshBulkData.create_ghosting("ghostElemFrom0to2");
+    stkMeshBulkData.change_ghosting(ghostElemFrom0To2, elementsToGhost);
+    stkMeshBulkData.modification_end();
+
+    std::vector<size_t> entityCounts;
+    stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
+    if(stkMeshBulkData.parallel_rank() == 0)
+    {
+      EXPECT_EQ(12u, entityCounts[stk::topology::NODE_RANK]);             //       __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |
+      EXPECT_EQ( 9u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|
+      EXPECT_EQ( 2u, entityCounts[stk::topology::ELEMENT_RANK]);
+    }
+    else if(stkMeshBulkData.parallel_rank() == 1)
+    {
+      EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |  |G |
+      EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
+      EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+    }
+    else
+    {
+      EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |G |  |
+      EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
+      EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+    }
+
+    stk::mesh::Part &newPart = stkMeshMetaData.declare_part("newPart");
+
+    stkMeshBulkData.modification_begin();
+    if(stkMeshBulkData.parallel_rank() == 0)
+    {
+      stk::mesh::PartVector partsToAdd(1, &newPart);
+      stk::mesh::EntityVector sharedNodes;
+      stk::mesh::get_selected_entities(stkMeshMetaData.globally_shared_part(),
+                                       stkMeshBulkData.buckets(stk::topology::NODE_RANK),
+                                       sharedNodes);
+      for(size_t i=0; i<sharedNodes.size(); i++)
+      {
+        stkMeshBulkData.change_entity_parts(sharedNodes[i], partsToAdd);
+      }
+    }
+    stkMeshBulkData.modification_end();
+
+    stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
+    if(stkMeshBulkData.parallel_rank() == 0)
+    {
+      EXPECT_EQ(12u, entityCounts[stk::topology::NODE_RANK]);             //       __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |
+      EXPECT_EQ( 9u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|
+      EXPECT_EQ( 2u, entityCounts[stk::topology::ELEMENT_RANK]);
+    }
+    else if(stkMeshBulkData.parallel_rank() == 1)
+    {
+      EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |  |G |
+      EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
+      EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+    }
+    else
+    {
+      EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //          __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |  |
+      EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |  |__|__|
+      EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);          //      ^------------one face still ghosted
+    }
+  }
 }
 
 TEST(UnitTestGhosting, WithDeclareConstraintRelatedToRecvGhostNode)
 {
-    stk::ParallelMachine communicator = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(communicator);
-    if(numProcs == 3)
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if(numProcs == 3)
+  {
+    const int spatialDim = 3;
+    stk::mesh::MeshBuilder builder(communicator);
+    builder.set_spatial_dimension(spatialDim);
+    std::vector<std::string> rank_names(5);
+    rank_names[0] = "node";
+    rank_names[1] = "edge";
+    rank_names[2] = "face";
+    rank_names[3] = "elem";
+    rank_names[4] = "constraint";
+    builder.set_entity_rank_names(rank_names);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+    stk::mesh::MetaData& stkMeshMetaData = bulkPtr->mesh_meta_data();
+    stkMeshMetaData.use_simple_fields();
+    stk::mesh::BulkData& stkMeshBulkData = *bulkPtr;
+    const std::string generatedMeshSpecification = "generated:1x1x3|sideset:xXyYzZ";
+    fillStkMeshFromFileSpec(generatedMeshSpecification, stkMeshBulkData);
+
+    stk::mesh::EntityVector elementsOnProc;
+    stk::mesh::get_selected_entities(stkMeshMetaData.locally_owned_part(),
+                                     stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK),
+                                     elementsOnProc);
+    ASSERT_EQ(1u, elementsOnProc.size());
+
+    stk::mesh::EntityProcVec elementsToGhost;
+    if(stkMeshBulkData.parallel_rank() == 0)
     {
-        const int spatialDim = 3;
-        stk::mesh::MetaData stkMeshMetaData;
-        std::vector<std::string> rank_names(5);
-        rank_names[0] = "node";
-        rank_names[1] = "edge";
-        rank_names[2] = "face";
-        rank_names[3] = "elem";
-        rank_names[4] = "constraint";
-        stkMeshMetaData.initialize(spatialDim, rank_names);
-        stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
-        const std::string generatedMeshSpecification = "generated:1x1x3|sideset:xXyYzZ";
-        fillStkMeshFromFileSpec(generatedMeshSpecification, stkMeshBulkData);
-
-        stk::mesh::EntityVector elementsOnProc;
-        stk::mesh::get_selected_entities(stkMeshMetaData.locally_owned_part(),
-                                         stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK),
-                                         elementsOnProc);
-        ASSERT_EQ(1u, elementsOnProc.size());
-
-        stk::mesh::EntityProcVec elementsToGhost;
-        if(stkMeshBulkData.parallel_rank() == 0)
-        {
-            const int ghostToProc2 = 2;
-            elementsToGhost.push_back(std::make_pair(elementsOnProc[0], ghostToProc2));
-        }
-
-        stkMeshBulkData.modification_begin();
-        stk::mesh::Ghosting &ghostElemFrom0To2 = stkMeshBulkData.create_ghosting("ghostElemFrom0to2");
-        stkMeshBulkData.change_ghosting(ghostElemFrom0To2, elementsToGhost);
-        stkMeshBulkData.modification_end();
-
-        std::vector<size_t> entityCounts;
-        stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
-        if(stkMeshBulkData.parallel_rank() == 0)
-        {
-            EXPECT_EQ(12u, entityCounts[stk::topology::NODE_RANK]);             //       __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |
-            EXPECT_EQ( 9u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|
-            EXPECT_EQ( 2u, entityCounts[stk::topology::ELEMENT_RANK]);
-        }
-        else if(stkMeshBulkData.parallel_rank() == 1)
-        {
-            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |  |G |
-            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
-            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
-        }
-        else
-        {
-            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |G |  |
-            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
-            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
-        }
-
-        stkMeshBulkData.modification_begin();
-        if(stkMeshBulkData.parallel_rank() == 2)
-        {
-            stk::mesh::EntityId constraintId = 1;
-            stk::mesh::Entity constraint = stkMeshBulkData.declare_constraint(constraintId);
-            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
-            EXPECT_TRUE(stkMeshBulkData.bucket(node1).member(stkMeshBulkData.ghosting_part(ghostElemFrom0To2)));
-            stkMeshBulkData.declare_relation(constraint, node1, 0);
-        }
-
-        fixup_ghosted_to_shared_nodes(stkMeshBulkData);
-        EXPECT_NO_THROW(stkMeshBulkData.modification_end());
-
-        stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
-        if(stkMeshBulkData.parallel_rank() == 0)
-        {
-            stk::mesh::EntityId constraintId = 1;
-            stk::mesh::Entity constraint = stkMeshBulkData.get_entity(stk::topology::CONSTRAINT_RANK, constraintId);
-            EXPECT_TRUE(stkMeshBulkData.bucket(constraint).in_aura());
-            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
-            EXPECT_TRUE(stkMeshBulkData.bucket(node1).shared());
-            EXPECT_TRUE(stkMeshBulkData.bucket(node1).owned());
-            EXPECT_EQ(12u, entityCounts[stk::topology::NODE_RANK]);             //       __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |
-            EXPECT_EQ( 9u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|
-            EXPECT_EQ( 2u, entityCounts[stk::topology::ELEMENT_RANK]);
-            EXPECT_EQ( 1u, entityCounts[stk::topology::CONSTRAINT_RANK]);
-        }
-        else if(stkMeshBulkData.parallel_rank() == 1)
-        {
-            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |  |G |
-            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
-            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
-            EXPECT_EQ( 0u, entityCounts[stk::topology::CONSTRAINT_RANK]);
-        }
-        else
-        {
-            stk::mesh::EntityId constraintId = 1;
-            stk::mesh::Entity constraint = stkMeshBulkData.get_entity(stk::topology::CONSTRAINT_RANK, constraintId);
-            EXPECT_TRUE(stkMeshBulkData.bucket(constraint).owned());
-            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
-            EXPECT_TRUE(stkMeshBulkData.bucket(node1).shared());
-            EXPECT_TRUE(!stkMeshBulkData.bucket(node1).owned());
-            EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
-            EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |G |  |
-            EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
-            EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
-            EXPECT_EQ( 1u, entityCounts[stk::topology::CONSTRAINT_RANK]);
-        }
+      const int ghostToProc2 = 2;
+      elementsToGhost.push_back(std::make_pair(elementsOnProc[0], ghostToProc2));
     }
+
+    stkMeshBulkData.modification_begin();
+    stk::mesh::Ghosting &ghostElemFrom0To2 = stkMeshBulkData.create_ghosting("ghostElemFrom0to2");
+    stkMeshBulkData.change_ghosting(ghostElemFrom0To2, elementsToGhost);
+    stkMeshBulkData.modification_end();
+
+    std::vector<size_t> entityCounts;
+    stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
+    if(stkMeshBulkData.parallel_rank() == 0)
+    {
+      EXPECT_EQ(12u, entityCounts[stk::topology::NODE_RANK]);             //       __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |
+      EXPECT_EQ( 9u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|
+      EXPECT_EQ( 2u, entityCounts[stk::topology::ELEMENT_RANK]);
+    }
+    else if(stkMeshBulkData.parallel_rank() == 1)
+    {
+      EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |  |G |
+      EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
+      EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+    }
+    else
+    {
+      EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |G |  |
+      EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
+      EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+    }
+
+    stkMeshBulkData.modification_begin();
+    if(stkMeshBulkData.parallel_rank() == 2)
+    {
+      stk::mesh::EntityId constraintId = 1;
+      stk::mesh::Entity constraint = stkMeshBulkData.declare_constraint(constraintId);
+      stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+      EXPECT_TRUE(stkMeshBulkData.bucket(node1).member(stkMeshBulkData.ghosting_part(ghostElemFrom0To2)));
+      stkMeshBulkData.declare_relation(constraint, node1, 0);
+    }
+
+    fixup_ghosted_to_shared_nodes(stkMeshBulkData);
+    EXPECT_NO_THROW(stkMeshBulkData.modification_end());
+
+    stk::mesh::count_entities(stkMeshMetaData.universal_part(), stkMeshBulkData, entityCounts);
+    if(stkMeshBulkData.parallel_rank() == 0)
+    {
+      stk::mesh::EntityId constraintId = 1;
+      stk::mesh::Entity constraint = stkMeshBulkData.get_entity(stk::topology::CONSTRAINT_RANK, constraintId);
+      EXPECT_TRUE(stkMeshBulkData.bucket(constraint).in_aura());
+      stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+      EXPECT_TRUE(stkMeshBulkData.bucket(node1).shared());
+      EXPECT_TRUE(stkMeshBulkData.bucket(node1).owned());
+      EXPECT_EQ(12u, entityCounts[stk::topology::NODE_RANK]);             //       __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |  |G |
+      EXPECT_EQ( 9u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|
+      EXPECT_EQ( 2u, entityCounts[stk::topology::ELEMENT_RANK]);
+      EXPECT_EQ( 1u, entityCounts[stk::topology::CONSTRAINT_RANK]);
+    }
+    else if(stkMeshBulkData.parallel_rank() == 1)
+    {
+      EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |  |G |
+      EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
+      EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+      EXPECT_EQ( 0u, entityCounts[stk::topology::CONSTRAINT_RANK]);
+    }
+    else
+    {
+      stk::mesh::EntityId constraintId = 1;
+      stk::mesh::Entity constraint = stkMeshBulkData.get_entity(stk::topology::CONSTRAINT_RANK, constraintId);
+      EXPECT_TRUE(stkMeshBulkData.bucket(constraint).owned());
+      stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+      EXPECT_TRUE(stkMeshBulkData.bucket(node1).shared());
+      EXPECT_TRUE(!stkMeshBulkData.bucket(node1).owned());
+      EXPECT_EQ(16u, entityCounts[stk::topology::NODE_RANK]);             //       __ __ __
+      EXPECT_EQ( 0u, entityCounts[stk::topology::EDGE_RANK]);             //      |G |G |  |
+      EXPECT_EQ(14u, entityCounts[stk::topology::FACE_RANK]);             //      |__|__|__|
+      EXPECT_EQ( 3u, entityCounts[stk::topology::ELEMENT_RANK]);
+      EXPECT_EQ( 1u, entityCounts[stk::topology::CONSTRAINT_RANK]);
+    }
+  }
 }
 

@@ -53,173 +53,189 @@
 namespace
 {
 
+std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim,
+                                                stk::ParallelMachine comm,
+                                                stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::AUTO_AURA)
+{
+  stk::mesh::MeshBuilder builder(comm);
+  builder.set_spatial_dimension(spatialDim);
+  builder.set_aura_option(auraOption);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+  bulk->mesh_meta_data().use_simple_fields();
+  return bulk;
+}
+
 TEST(UnitTestChangeParts, test_throw_on_internal_part_change)
 {
-    const int spatialDim = 3;
-    stk::mesh::MetaData metaData(spatialDim);
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    stk::mesh::BulkData bulkData(metaData, communicator);
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);
+  stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkData = *bulkPtr;
 
-    std::string generatedMeshSpec = "generated:1x1x4";
-    stk::io::fill_mesh(generatedMeshSpec, bulkData);
+  std::string generatedMeshSpec = "generated:1x1x4";
+  stk::io::fill_mesh(generatedMeshSpec, bulkData);
 
-    stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, 1);
+  stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, 1);
 
-    stk::mesh::PartVector addParts;
-    stk::mesh::PartVector removeParts;
+  stk::mesh::PartVector addParts;
+  stk::mesh::PartVector removeParts;
 
-    addParts.push_back(&metaData.locally_owned_part());
-    EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
+  addParts.push_back(&metaData.locally_owned_part());
+  EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
 
-    addParts.clear();
-    addParts.push_back(&metaData.globally_shared_part());
-    EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
+  addParts.clear();
+  addParts.push_back(&metaData.globally_shared_part());
+  EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
 
-    addParts.clear();
-    removeParts.push_back(&metaData.locally_owned_part());
-    EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
+  addParts.clear();
+  removeParts.push_back(&metaData.locally_owned_part());
+  EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
 
-    removeParts.clear();
-    removeParts.push_back(&metaData.globally_shared_part());
-    EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
+  removeParts.clear();
+  removeParts.push_back(&metaData.globally_shared_part());
+  EXPECT_THROW(bulkData.change_entity_parts(node, addParts, removeParts), std::runtime_error);
 }
 
 TEST(UnitTestChangeParts, test_batch_part_change)
 {
-    stk::ParallelMachine pm = MPI_COMM_WORLD;
-    const int p_size = stk::parallel_machine_size( pm );
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_size = stk::parallel_machine_size( pm );
 
-    if (p_size != 1) {
-      return;
-    }
+  if (p_size != 1) {
+    return;
+  }
 
-    const int spatialDim = 3;
-    stk::mesh::MetaData metaData(spatialDim);
-    stk::mesh::BulkData bulkData(metaData, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkData = *bulkPtr;
 
-    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-    stk::mesh::Part& part = metaData.declare_part_with_topology("new_part", stk::topology::NODE);
-    stk::unit_test_util::setup_text_mesh(bulkData, meshDesc);
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
+  stk::mesh::Part& part = metaData.declare_part_with_topology("new_part", stk::topology::NODE);
+  stk::unit_test_util::simple_fields::setup_text_mesh(bulkData, meshDesc);
 
-    stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1u);
-    EXPECT_TRUE(bulkData.is_valid(elem1));
+  stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1u);
+  EXPECT_TRUE(bulkData.is_valid(elem1));
 
-    stk::mesh::EntityVector nodes(bulkData.begin_nodes(elem1), bulkData.begin_nodes(elem1)+bulkData.num_nodes(elem1));
-    EXPECT_EQ(8u, nodes.size());
+  stk::mesh::EntityVector nodes(bulkData.begin_nodes(elem1), bulkData.begin_nodes(elem1)+bulkData.num_nodes(elem1));
+  EXPECT_EQ(8u, nodes.size());
 
-    for(stk::mesh::Entity node : nodes) {
-        EXPECT_FALSE(bulkData.bucket(node).member(part));
-    }
+  for(stk::mesh::Entity node : nodes) {
+    EXPECT_FALSE(bulkData.bucket(node).member(part));
+  }
 
-    stk::mesh::PartVector add_parts(1, &part);
-    bulkData.batch_change_entity_parts(nodes, add_parts, {});
+  stk::mesh::PartVector add_parts(1, &part);
+  bulkData.batch_change_entity_parts(nodes, add_parts, {});
 
-    for(stk::mesh::Entity node : nodes) {
-        EXPECT_TRUE(bulkData.bucket(node).member(part));
-    }
+  for(stk::mesh::Entity node : nodes) {
+    EXPECT_TRUE(bulkData.bucket(node).member(part));
+  }
 
-    stk::mesh::PartVector remove_parts(1, &part);
-    bulkData.batch_change_entity_parts(nodes, {}, remove_parts);
+  stk::mesh::PartVector remove_parts(1, &part);
+  bulkData.batch_change_entity_parts(nodes, {}, remove_parts);
 
-    for(stk::mesh::Entity node : nodes) {
-        EXPECT_FALSE(bulkData.bucket(node).member(part));
-    }
+  for(stk::mesh::Entity node : nodes) {
+    EXPECT_FALSE(bulkData.bucket(node).member(part));
+  }
 }
 
 TEST(UnitTestChangeParts, test_superset_and_subset_part_change)
 {
-    stk::ParallelMachine pm = MPI_COMM_WORLD;
-    const int p_size = stk::parallel_machine_size( pm );
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_size = stk::parallel_machine_size( pm );
 
-    if (p_size != 1) {
-      return;
-    }
+  if (p_size != 1) {
+    return;
+  }
 
-    const int spatialDim = 3;
-    stk::mesh::MetaData metaData(spatialDim);
-    stk::mesh::BulkData bulkData(metaData, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  const int spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, pm, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkData = *bulkPtr;
 
-    stk::mesh::Part& supersetPart = metaData.declare_part_with_topology("parent", stk::topology::NODE);
-    stk::mesh::Part& subsetPart1  = metaData.declare_part_with_topology("child 1", stk::topology::NODE);
-    stk::mesh::Part& subsetPart2  = metaData.declare_part_with_topology("child 2", stk::topology::NODE);
+  stk::mesh::Part& supersetPart = metaData.declare_part_with_topology("parent", stk::topology::NODE);
+  stk::mesh::Part& subsetPart1  = metaData.declare_part_with_topology("child 1", stk::topology::NODE);
+  stk::mesh::Part& subsetPart2  = metaData.declare_part_with_topology("child 2", stk::topology::NODE);
 
-    metaData.declare_part_subset(supersetPart, subsetPart1);
-    metaData.declare_part_subset(supersetPart, subsetPart2);
+  metaData.declare_part_subset(supersetPart, subsetPart1);
+  metaData.declare_part_subset(supersetPart, subsetPart2);
 
-    stk::mesh::FieldBase &field = metaData.declare_field< stk::mesh::Field<double> >(stk::topology::NODE_RANK, "sam");
-    stk::mesh::put_field_on_mesh(field, supersetPart, (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+  stk::mesh::FieldBase &field = metaData.declare_field<double>(stk::topology::NODE_RANK, "sam");
+  stk::mesh::put_field_on_mesh(field, supersetPart, (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
 
-    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
-    stk::unit_test_util::setup_text_mesh(bulkData, meshDesc);
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
+  stk::unit_test_util::simple_fields::setup_text_mesh(bulkData, meshDesc);
 
-    stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, 1u);
-    EXPECT_TRUE(bulkData.is_valid(node1));
+  stk::mesh::Entity node1 = bulkData.get_entity(stk::topology::NODE_RANK, 1u);
+  EXPECT_TRUE(bulkData.is_valid(node1));
 
-    stk::mesh::Entity node2 = bulkData.get_entity(stk::topology::NODE_RANK, 2u);
-    EXPECT_TRUE(bulkData.is_valid(node2));
+  stk::mesh::Entity node2 = bulkData.get_entity(stk::topology::NODE_RANK, 2u);
+  EXPECT_TRUE(bulkData.is_valid(node2));
 
-    EXPECT_FALSE(bulkData.bucket(node1).member(supersetPart));
-    EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart1));
-    EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart2));
+  EXPECT_FALSE(bulkData.bucket(node1).member(supersetPart));
+  EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart1));
+  EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart2));
 
-    EXPECT_FALSE(bulkData.bucket(node2).member(supersetPart));
-    EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
-    EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart2));
+  EXPECT_FALSE(bulkData.bucket(node2).member(supersetPart));
+  EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
+  EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart2));
 
-    bulkData.modification_begin();
-    stk::mesh::PartVector add_parts(1, &subsetPart1);
-    bulkData.change_entity_parts(node1, add_parts, {});
-    bulkData.modification_end();
+  bulkData.modification_begin();
+  stk::mesh::PartVector add_parts(1, &subsetPart1);
+  bulkData.change_entity_parts(node1, add_parts, {});
+  bulkData.modification_end();
 
-    EXPECT_TRUE(bulkData.bucket(node1).member(supersetPart));
-    EXPECT_TRUE(bulkData.bucket(node1).member(subsetPart1));
-    EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart2));
+  EXPECT_TRUE(bulkData.bucket(node1).member(supersetPart));
+  EXPECT_TRUE(bulkData.bucket(node1).member(subsetPart1));
+  EXPECT_FALSE(bulkData.bucket(node1).member(subsetPart2));
 
-    bulkData.modification_begin();
-    add_parts[0] = &supersetPart;
-    bulkData.change_entity_parts(node2, add_parts, {});
-    bulkData.modification_end();
+  bulkData.modification_begin();
+  add_parts[0] = &supersetPart;
+  bulkData.change_entity_parts(node2, add_parts, {});
+  bulkData.modification_end();
 
-    EXPECT_TRUE(bulkData.bucket(node2).member(supersetPart));
-    EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
-    EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart2));
+  EXPECT_TRUE(bulkData.bucket(node2).member(supersetPart));
+  EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
+  EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart2));
 
-    stk::mesh::PartVector partVector{&subsetPart1, &subsetPart2};
-    stk::mesh::Selector selector = supersetPart & !stk::mesh::selectUnion(partVector);
-    stk::mesh::EntityVector nodes;
-    stk::mesh::get_selected_entities(selector, bulkData.buckets(stk::topology::NODE_RANK), nodes);
+  stk::mesh::PartVector partVector{&subsetPart1, &subsetPart2};
+  stk::mesh::Selector selector = supersetPart & !stk::mesh::selectUnion(partVector);
+  stk::mesh::EntityVector nodes;
+  stk::mesh::get_selected_entities(selector, bulkData.buckets(stk::topology::NODE_RANK), nodes);
 
-    EXPECT_EQ(1u, nodes.size());
-    EXPECT_EQ(2u, bulkData.identifier(nodes[0]));
+  EXPECT_EQ(1u, nodes.size());
+  EXPECT_EQ(2u, bulkData.identifier(nodes[0]));
 
-    bulkData.modification_begin();
-    add_parts[0] = &subsetPart2;
-    bulkData.change_entity_parts(node2, add_parts, {});
-    bulkData.modification_end();
+  bulkData.modification_begin();
+  add_parts[0] = &subsetPart2;
+  bulkData.change_entity_parts(node2, add_parts, {});
+  bulkData.modification_end();
 
-    EXPECT_TRUE(bulkData.bucket(node2).member(supersetPart));
-    EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
-    EXPECT_TRUE(bulkData.bucket(node2).member(subsetPart2));
+  EXPECT_TRUE(bulkData.bucket(node2).member(supersetPart));
+  EXPECT_FALSE(bulkData.bucket(node2).member(subsetPart1));
+  EXPECT_TRUE(bulkData.bucket(node2).member(subsetPart2));
 
-    double* node1Data = (double*) stk::mesh::field_data(field, node1);
-    double* node2Data = (double*) stk::mesh::field_data(field, node1);
+  double* node1Data = (double*) stk::mesh::field_data(field, node1);
+  double* node2Data = (double*) stk::mesh::field_data(field, node1);
 
-    EXPECT_TRUE(node1Data != nullptr);
-    EXPECT_TRUE(node2Data != nullptr);
+  EXPECT_TRUE(node1Data != nullptr);
+  EXPECT_TRUE(node2Data != nullptr);
 
 
-    for(unsigned i=3; i<8u; ++i) {
-        stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, i);
-        EXPECT_TRUE(bulkData.is_valid(node));
-        double* nodeData = (double*) stk::mesh::field_data(field, node);
-        EXPECT_TRUE(nodeData == nullptr);
-    }
+  for(unsigned i=3; i<8u; ++i) {
+    stk::mesh::Entity node = bulkData.get_entity(stk::topology::NODE_RANK, i);
+    EXPECT_TRUE(bulkData.is_valid(node));
+    double* nodeData = (double*) stk::mesh::field_data(field, node);
+    EXPECT_TRUE(nodeData == nullptr);
+  }
 }
 
-class TestChangePartsWithSelector : public stk::unit_test_util::MeshFixture
+class TestChangePartsWithSelector : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
-  TestChangePartsWithSelector() : stk::unit_test_util::MeshFixture(3)
+  TestChangePartsWithSelector()
+    : stk::unit_test_util::simple_fields::MeshFixture(3)
   {
     setenv("STK_MESH_RUN_CONSISTENCY_CHECK", "ON", 1);
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);

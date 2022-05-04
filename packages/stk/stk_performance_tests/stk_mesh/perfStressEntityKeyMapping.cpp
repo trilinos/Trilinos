@@ -44,7 +44,7 @@
 
 using EntityIdPair = std::pair<stk::mesh::EntityId,stk::mesh::EntityId>;
 
-class StressEntityKeyMapping : public stk::unit_test_util::MeshFixture
+class StressEntityKeyMapping : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   StressEntityKeyMapping()
@@ -52,8 +52,9 @@ public:
 
   void setup_host_mesh()
   {
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
-    setup_mesh("generated:500x500x10", stk::mesh::BulkData::AUTO_AURA);
+    stk::io::fill_mesh("generated:500x500x10", get_bulk());
   }
 
   EntityIdPair get_min_max_elem_ids_on_local_proc()

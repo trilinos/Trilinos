@@ -61,8 +61,8 @@ double initial_value1[3] = {-1, 2, -0.3};
 
 void createNodalVectorField(stk::mesh::MetaData& meshMetaData, const std::string &field_name)
 {
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> &field1 = meshMetaData.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, field_name);
-    stk::mesh::put_field_on_entire_mesh_with_initial_value(field1, initial_value1);
+    stk::mesh::Field<double> &field1 = meshMetaData.declare_field<double>(stk::topology::NODE_RANK, field_name);
+    stk::mesh::put_field_on_mesh(field1, meshMetaData.universal_part(), 3, initial_value1);
 }
 
 void createNodalVectorFields(stk::mesh::MetaData& meshMetaData)
@@ -97,7 +97,7 @@ size_t setFieldData(stk::mesh::BulkData& mesh, stk::mesh::Selector select)
 
 void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, std::string genMeshSpec = std::string("generated:100x100x100"))
 {
-    std::string exodusFileName = stk::unit_test_util::get_option("-i", "NO_FILE_SPECIFIED");
+    std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-i", "NO_FILE_SPECIFIED");
     if (exodusFileName == "NO_FILE_SPECIFIED") {
       exodusFileName = genMeshSpec;
     }
@@ -309,6 +309,7 @@ TEST(CommunicateFieldData, copy_to_all)
     }
 
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
+    exodusFileReader.use_simple_fields();
 
     std::string genMeshSpec = "generated:100x100x100|sideset:xXyY";
     createMetaAndBulkData(exodusFileReader,genMeshSpec);
@@ -349,6 +350,7 @@ TEST(CommunicateFieldData, Ghosting)
     }
   
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
+    exodusFileReader.use_simple_fields();
 
     createMetaAndBulkData(exodusFileReader);
 
@@ -365,13 +367,14 @@ TEST(CommunicateFieldData, NgpGhosting)
     return;
   }
 
-  int meshDim = stk::unit_test_util::get_command_line_option("-s", 100);
+  int meshDim = stk::unit_test_util::simple_fields::get_command_line_option("-s", 100);
   std::string meshDimStr = std::to_string(meshDim);
-  int iter = stk::unit_test_util::get_command_line_option("-t", 1000);
-  bool syncToHostEveryIter = stk::unit_test_util::get_command_line_option("-h", false);
+  int iter = stk::unit_test_util::simple_fields::get_command_line_option("-t", 1000);
+  bool syncToHostEveryIter = stk::unit_test_util::simple_fields::get_command_line_option("-h", false);
   std::string meshSpec = "generated:" + meshDimStr + "x" + meshDimStr + "x" + meshDimStr;
 
   stk::io::StkMeshIoBroker exodusFileReader(communicator);
+  exodusFileReader.use_simple_fields();
 
   createMetaAndBulkData(exodusFileReader, meshSpec);
 

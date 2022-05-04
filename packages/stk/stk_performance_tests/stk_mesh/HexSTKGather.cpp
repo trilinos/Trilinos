@@ -62,7 +62,7 @@ namespace {
 void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_centroid)
 {
   using namespace stk::mesh;
-  typedef Field<double,Cartesian> VectorField;
+  typedef Field<double> VectorField;
 
   const MetaData& meta = bulk.mesh_meta_data();
   const unsigned spatial_dim = meta.spatial_dimension();
@@ -70,7 +70,7 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
 
   std::vector<double> elem_centroid(spatial_dim, 0);
 
-  const VectorField * coord_field = meta.get_field<VectorField>(stk::topology::NODE_RANK, "coordinates");
+  const VectorField * coord_field = meta.get_field<double>(stk::topology::NODE_RANK, "coordinates");
   ThrowAssert(coord_field != nullptr);
 
   Selector local = meta.locally_owned_part();

@@ -2535,9 +2535,8 @@ TEST(UnitTestEvaluator, testAvoidEvaluatingUnsafeTernaryBranch)
   stk::expreval::getCFunctionMap().erase("length_two_array");
 }
 
-void testRandom(const char * expression)
-{
-  const int NUM_SAMPLES = 10000;
+void checkUniformDist(const Kokkos::View<double*>& vals) {
+  const int NUM_SAMPLES = (int)vals.size();
   const double EXPECTED_MEAN = 0.5;
   const double EXPECTED_SIGMA = 1./std::sqrt(12.);
   std::vector<int> bins(10, 0);
@@ -2545,7 +2544,7 @@ void testRandom(const char * expression)
   double sigma = 0;
 
   for (int i = 0; i < NUM_SAMPLES; ++i) {
-    const double result = evaluate(expression);
+    const double result = vals[i];
     const int binIndex = static_cast<int>(result*10);
     bins[binIndex] += 1;
 
@@ -2564,6 +2563,16 @@ void testRandom(const char * expression)
 
   EXPECT_NEAR(maxN, NUM_SAMPLES/10, 100);
   EXPECT_NEAR(minN, NUM_SAMPLES/10, 100);
+}
+
+void testRandom(const char * expression)
+{
+  const int NUM_SAMPLES = 10000;
+  Kokkos::View<double*> results("Results", NUM_SAMPLES);
+  for (int i = 0; i < NUM_SAMPLES; ++i) {
+    results[i] = evaluate(expression);
+  }
+  checkUniformDist(results);
 }
 
 TEST(UnitTestEvaluator, testFunction_rand)
@@ -2574,32 +2583,11 @@ TEST(UnitTestEvaluator, testFunction_rand)
 void Ngp_testRandom(const char * expression)
 {
   const int NUM_SAMPLES = 10000;
-  const double EXPECTED_MEAN = 0.5;
-  const double EXPECTED_SIGMA = 1./std::sqrt(12.);
-  std::vector<int> bins(10, 0);
-  double mean = 0;
-  double sigma = 0;
-
+  Kokkos::View<double*> results("Results", NUM_SAMPLES);
   for (int i = 0; i < NUM_SAMPLES; ++i) {
-    const double result = device_evaluate(expression);
-    const int binIndex = static_cast<int>(result*10);
-    bins[binIndex] += 1;
-
-    mean += result;
-    sigma += (result-EXPECTED_MEAN)*(result-EXPECTED_MEAN);
+    results[i] = device_evaluate(expression);
   }
-
-  mean /= NUM_SAMPLES;
-  sigma = std::sqrt(sigma/NUM_SAMPLES);
-
-  EXPECT_NEAR(mean, EXPECTED_MEAN, 0.01);
-  EXPECT_NEAR(sigma, EXPECTED_SIGMA, 0.005);
-
-  const int maxN = *std::max_element(bins.begin(), bins.end());
-  const int minN = *std::min_element(bins.begin(), bins.end());
-
-  EXPECT_NEAR(maxN, NUM_SAMPLES/10, 100);
-  EXPECT_NEAR(minN, NUM_SAMPLES/10, 100);
+  checkUniformDist(results);
 }
 
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
@@ -2697,7 +2685,30 @@ TEST(UnitTestEvaluator, testFunction_ts_random_repeatability)
   }
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
+TEST(UnitTestEvaluator, testFunction_ts_random_distribution)
+{
+  const int NX = 50;
+  const int NY = 50;
+  const int NZ = 10;
+
+  Kokkos::View<double*> result("Result", NX*NY*NZ);
+
+  int n = 0;
+
+  for(int i = 0; i < NX; ++i) {
+    for(int j = 0; j < NY; ++j) {
+      for(int k = 0; k < NZ; ++k) {
+        const double x = (i-10)*1.1e-3;
+        const double y = (j-20)*1.23e-4;
+        const double z = (k+1)*1.1e-1;
+        result[n++] = evaluate("ts_random(0.1,x,y,z)", {{"x",x}, {"y",y}, {"z",z}});
+      }
+    }
+  }
+
+  checkUniformDist(result);
+}
+
 TEST(UnitTestEvaluator, Ngp_testFunction_ts_random_repeatability)
 {
   std::vector<double> result(10);
@@ -2713,7 +2724,6 @@ TEST(UnitTestEvaluator, Ngp_testFunction_ts_random_repeatability)
     time += 0.1;
   }
 }
-#endif
 
 TEST(UnitTestEvaluator, testFunction_ts_normal_repeatability)
 {
@@ -2731,7 +2741,6 @@ TEST(UnitTestEvaluator, testFunction_ts_normal_repeatability)
   }
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 TEST(UnitTestEvaluator, Ngp_testFunction_ts_normal_repeatability)
 {
   std::vector<double> result(10);
@@ -2747,7 +2756,6 @@ TEST(UnitTestEvaluator, Ngp_testFunction_ts_normal_repeatability)
     time += 0.1;
   }
 }
-#endif
 
 TEST(UnitTestEvaluator, testFunction_ts_normal_clipping)
 {
@@ -2765,7 +2773,6 @@ TEST(UnitTestEvaluator, testFunction_ts_normal_clipping)
   }
 }
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 TEST(UnitTestEvaluator, Ngp_testFunction_ts_normal_clipping)
 {
   const size_t NUM_SAMPLES = 10000;
@@ -2781,7 +2788,6 @@ TEST(UnitTestEvaluator, Ngp_testFunction_ts_normal_clipping)
     EXPECT_LE(result, upperBound);
   }
 }
-#endif
 
 TEST(UnitTestEvaluator, testFunction_time)
 {

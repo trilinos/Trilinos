@@ -57,82 +57,83 @@ namespace Ioss { class DatabaseIO; }
 
 namespace {
 
-  TEST(StkMeshIoBrokerHowTo, readInitialConditionTwoFieldSubset)
+TEST(StkMeshIoBrokerHowTo, readInitialConditionTwoFieldSubset)
+{
+  //-BEGIN
+  std::string dbFieldNameShell = "ElementBlock_1";
+  std::string dbFieldNameOther = "ElementBlock_2";
+  std::string appFieldName = "pressure";
+
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs != 1) {
+    return;
+  }
+
   {
-    //-BEGIN
-    std::string dbFieldNameShell = "ElementBlock_1";
-    std::string dbFieldNameOther = "ElementBlock_2";
-    std::string appFieldName = "pressure";
-    
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(communicator);
-    if (numProcs != 1) {
-      return;
+    // ============================================================
+    // INITIALIZATION
+    //+ Create a generated mesh containg hexes and shells with two
+    //+ element variables -- ElementBlock_1 and ElementBlock_2
+    std::string input_filename = "9x9x9|shell:xyzXYZ|variables:element,2|times:1";
+
+    stk::io::StkMeshIoBroker stkIo(communicator);
+    stkIo.use_simple_fields();
+    stkIo.add_mesh_database(input_filename, "generated", stk::io::READ_MESH);
+    stkIo.create_input_mesh();
+
+    stk::mesh::MetaData &meta_data = stkIo.meta_data();
+
+    // Declare the element "pressure" field...
+    stk::mesh::Field<double> &pressure =
+        stkIo.meta_data().declare_field<double>(stk::topology::ELEMENT_RANK, appFieldName,1);
+
+    stk::io::MeshField mf_shell(pressure, dbFieldNameShell);
+    stk::io::MeshField mf_other(pressure, dbFieldNameOther);
+
+    const stk::mesh::PartVector &all_parts = meta_data.get_mesh_parts();
+    for (size_t i=0; i < all_parts.size(); i++) {
+      const stk::mesh::Part *part = all_parts[i];
+
+      //+ Put the field on all element block parts...
+      stk::mesh::put_field_on_mesh(pressure, *part,
+                                   (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+
+      stk::topology topo = part->topology();
+      if (topo == stk::topology::SHELL_QUAD_4) {
+        //+ The shell blocks will have the pressure field initialized
+        //+ from the dbFieldNameShell database variable.
+        mf_shell.add_subset(*part);
+      }
+      else {
+        //+ The non-shell blocks will have the pressure field initialized
+        //+ from the dbFieldNameOther database variable.
+        mf_other.add_subset(*part);
+      }
     }
 
-    {
-      // ============================================================
-      // INITIALIZATION
-      //+ Create a generated mesh containg hexes and shells with two 
-      //+ element variables -- ElementBlock_1 and ElementBlock_2
-      std::string input_filename = "9x9x9|shell:xyzXYZ|variables:element,2|times:1";
+    stkIo.add_input_field(mf_shell);
+    stkIo.add_input_field(mf_other);
+    stkIo.populate_bulk_data();
 
-      stk::io::StkMeshIoBroker stkIo(communicator);
-      stkIo.add_mesh_database(input_filename, "generated", stk::io::READ_MESH);
-      stkIo.create_input_mesh();
+    double time = stkIo.get_input_io_region()->get_state_time(1);
 
-      stk::mesh::MetaData &meta_data = stkIo.meta_data();
+    //+ Populate the fields with data from the input mesh.
+    stkIo.read_defined_input_fields(time);
 
-      // Declare the element "pressure" field...
-      stk::mesh::Field<double> &pressure = stkIo.meta_data().
-	declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, appFieldName,1);
+    //-END
+    // ============================================================
+    //+ VERIFICATION
+    //+ The value of the field on all elements should be sqrt(i+1)
+    std::vector<stk::mesh::Entity> elements;
+    stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::ELEMENT_RANK,
+                            elements);
+    EXPECT_TRUE(elements.size() >= 729);
 
-      stk::io::MeshField mf_shell(pressure, dbFieldNameShell);
-      stk::io::MeshField mf_other(pressure, dbFieldNameOther);
-
-      const stk::mesh::PartVector &all_parts = meta_data.get_mesh_parts();
-      for (size_t i=0; i < all_parts.size(); i++) {
-	const stk::mesh::Part *part = all_parts[i];
-	
-	//+ Put the field on all element block parts...
-	stk::mesh::put_field_on_mesh(pressure, *part,
-                                     (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
-
-	stk::topology topo = part->topology();
-	if (topo == stk::topology::SHELL_QUAD_4) {
-	  //+ The shell blocks will have the pressure field initialized
-	  //+ from the dbFieldNameShell database variable.
-	  mf_shell.add_subset(*part);
-	}
-	else {
-	  //+ The non-shell blocks will have the pressure field initialized
-	  //+ from the dbFieldNameOther database variable.
-	  mf_other.add_subset(*part);
-	}
-      }
-
-      stkIo.add_input_field(mf_shell);
-      stkIo.add_input_field(mf_other);
-      stkIo.populate_bulk_data();
-
-      double time = stkIo.get_input_io_region()->get_state_time(1);
-
-      //+ Populate the fields with data from the input mesh.
-      stkIo.read_defined_input_fields(time);
-
-      //-END
-      // ============================================================
-      //+ VERIFICATION
-      //+ The value of the field on all elements should be sqrt(i+1)
-      std::vector<stk::mesh::Entity> elements;
-      stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::ELEMENT_RANK,
-                              elements);
-      EXPECT_TRUE(elements.size() >= 729);
-      
-      for(size_t i=0; i<elements.size(); i++) {
-        double *fieldDataForElement = stk::mesh::field_data(pressure, elements[i]);
-        EXPECT_DOUBLE_EQ(sqrt(i+1), *fieldDataForElement);
-      }
+    for(size_t i=0; i<elements.size(); i++) {
+      double *fieldDataForElement = stk::mesh::field_data(pressure, elements[i]);
+      EXPECT_DOUBLE_EQ(sqrt(i+1), *fieldDataForElement);
     }
   }
+}
 }

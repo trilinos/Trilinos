@@ -385,7 +385,7 @@ TEST( skinning_large_cube, skinning_large_cube)
     //create the mesh
 
     start_time = stk::wall_time();
-    stk::mesh::fixtures::HexFixture fixture(pm,NX,NY,NZ);
+    stk::mesh::fixtures::simple_fields::HexFixture fixture(pm,NX,NY,NZ);
     const EntityRank element_rank = stk::topology::ELEMENT_RANK;
     const EntityRank side_rank = fixture.m_meta.side_rank();
 
@@ -553,7 +553,7 @@ double run_skinning_large_cube_test(bool createEdges, unsigned numRuns, std::vec
   double skinningTime = 0.0;
 
   for (unsigned testRun = 0; testRun < numRuns; ++testRun) {
-    stk::mesh::fixtures::HexFixture fixture(pm,NX,NY,NZ);
+    stk::mesh::fixtures::simple_fields::HexFixture fixture(pm,NX,NY,NZ);
 
     stk::mesh::MetaData & fem_meta = fixture.m_meta;
 

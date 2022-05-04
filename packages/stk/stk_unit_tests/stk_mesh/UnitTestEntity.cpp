@@ -66,36 +66,36 @@ namespace {
 
 TEST(UnitTestEntity, testHashEntity)
 {
-    std::unordered_set<stk::mesh::Entity, std::hash<stk::mesh::Entity>> set_of_entities;
-    stk::mesh::Entity entity1, entity2, entity3, entity4;
-    entity1.set_local_offset(1);
-    entity2.set_local_offset(2);
-    entity3.set_local_offset(3);
-    entity4.set_local_offset(4);
-    set_of_entities.insert(entity2);
-    set_of_entities.insert(entity3);
-    set_of_entities.insert(entity1);
-    set_of_entities.insert(entity2);//insert entity2 redundantly
-    EXPECT_EQ(3u, set_of_entities.size());
-    EXPECT_FALSE(set_of_entities.find(entity1) == set_of_entities.end());
-    EXPECT_TRUE(set_of_entities.find(entity4) == set_of_entities.end());//entity4 not in set
+  std::unordered_set<stk::mesh::Entity, std::hash<stk::mesh::Entity>> set_of_entities;
+  stk::mesh::Entity entity1, entity2, entity3, entity4;
+  entity1.set_local_offset(1);
+  entity2.set_local_offset(2);
+  entity3.set_local_offset(3);
+  entity4.set_local_offset(4);
+  set_of_entities.insert(entity2);
+  set_of_entities.insert(entity3);
+  set_of_entities.insert(entity1);
+  set_of_entities.insert(entity2);//insert entity2 redundantly
+  EXPECT_EQ(3u, set_of_entities.size());
+  EXPECT_FALSE(set_of_entities.find(entity1) == set_of_entities.end());
+  EXPECT_TRUE(set_of_entities.find(entity4) == set_of_entities.end());//entity4 not in set
 }
 
 TEST(UnitTestEntity, testHashEntityKey)
 {
-    std::unordered_set<stk::mesh::EntityKey, std::hash<stk::mesh::EntityKey>> set_of_keys;
-    stk::mesh::EntityKey
-         key1(stk::topology::NODE_RANK,1),
-         key2(stk::topology::EDGE_RANK,1),
-         key3(stk::topology::FACE_RANK,1),
-         key4(stk::topology::ELEM_RANK,1);
-    set_of_keys.insert(key2);
-    set_of_keys.insert(key3);
-    set_of_keys.insert(key1);
-    set_of_keys.insert(key2);//insert key2 redundantly
-    EXPECT_EQ(3u, set_of_keys.size());
-    EXPECT_FALSE(set_of_keys.find(key1) == set_of_keys.end());
-    EXPECT_TRUE(set_of_keys.find(key4) == set_of_keys.end());//key4 not in set
+  std::unordered_set<stk::mesh::EntityKey, std::hash<stk::mesh::EntityKey>> set_of_keys;
+  stk::mesh::EntityKey
+      key1(stk::topology::NODE_RANK,1),
+      key2(stk::topology::EDGE_RANK,1),
+      key3(stk::topology::FACE_RANK,1),
+      key4(stk::topology::ELEM_RANK,1);
+  set_of_keys.insert(key2);
+  set_of_keys.insert(key3);
+  set_of_keys.insert(key1);
+  set_of_keys.insert(key2);//insert key2 redundantly
+  EXPECT_EQ(3u, set_of_keys.size());
+  EXPECT_FALSE(set_of_keys.find(key1) == set_of_keys.end());
+  EXPECT_TRUE(set_of_keys.find(key4) == set_of_keys.end());//key4 not in set
 }
 
 TEST(UnitTestEntity,testEntityKey)

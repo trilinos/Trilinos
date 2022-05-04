@@ -48,12 +48,6 @@
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
 #include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
 
-
-
-
-
-
-
 using stk::mesh::MetaData;
 
 TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
@@ -62,7 +56,7 @@ TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -103,7 +97,7 @@ TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
   const size_t NY = 3;
   const size_t NZ = 3;
 
-  stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::simple_fields::HexFixture fixture(MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -134,9 +128,9 @@ TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
 
   stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
   for ( stk::mesh::BucketVector::iterator b_itr = elem_buckets.begin();
-       b_itr != elem_buckets.end();
-       ++b_itr
-      )
+        b_itr != elem_buckets.end();
+        ++b_itr
+        )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
@@ -148,9 +142,9 @@ TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
 
   stk::mesh::BucketVector  face_buckets = fixture.m_bulk_data.buckets(face_rank);
   for ( stk::mesh::BucketVector::iterator b_itr = face_buckets.begin();
-       b_itr != face_buckets.end();
-       ++b_itr
-      )
+        b_itr != face_buckets.end();
+        ++b_itr
+        )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
@@ -161,9 +155,9 @@ TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
 
   stk::mesh::BucketVector  edge_buckets = fixture.m_bulk_data.buckets(edge_rank);
   for ( stk::mesh::BucketVector::iterator b_itr = edge_buckets.begin();
-       b_itr != edge_buckets.end();
-       ++b_itr
-      )
+        b_itr != edge_buckets.end();
+        ++b_itr
+        )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
@@ -181,7 +175,7 @@ TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
   const size_t NX = 3;
   const size_t NY = 3;
 
-  stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, NX, NY);
+  stk::mesh::fixtures::simple_fields::QuadFixture fixture(MPI_COMM_WORLD, NX, NY);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -210,9 +204,9 @@ TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
 
   stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
   for ( stk::mesh::BucketVector::iterator b_itr = elem_buckets.begin();
-       b_itr != elem_buckets.end();
-       ++b_itr
-      )
+        b_itr != elem_buckets.end();
+        ++b_itr
+        )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
@@ -223,9 +217,9 @@ TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
 
   stk::mesh::BucketVector  edge_buckets = fixture.m_bulk_data.buckets(edge_rank);
   for ( stk::mesh::BucketVector::iterator b_itr = edge_buckets.begin();
-       b_itr != edge_buckets.end();
-       ++b_itr
-      )
+        b_itr != edge_buckets.end();
+        ++b_itr
+        )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {

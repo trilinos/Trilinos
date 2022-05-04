@@ -35,6 +35,7 @@
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
@@ -57,14 +58,9 @@
 #include <vector>                       // for vector
 namespace stk { namespace mesh { class Bucket; } }
 
-
-
-
-// Unit test the Selector in isolation
-
 namespace {
 
-using stk::mesh::fixtures::SelectorFixture ;
+using stk::mesh::fixtures::simple_fields::SelectorFixture;
 
 void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[]);
 
@@ -179,48 +175,53 @@ TEST(Verify, emptyPartSelector)
 
 TEST(Verify, selectorEmptyDuringMeshMod)
 {
-    const unsigned spatialDim=3;
-    stk::mesh::MetaData meta(spatialDim, stk::mesh::entity_rank_names());
-    stk::mesh::Part& block1 = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
-    meta.commit();
-    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  const unsigned spatialDim=3;
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_spatial_dimension(spatialDim);
+  builder.set_entity_rank_names(stk::mesh::entity_rank_names());
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  meta.use_simple_fields();
+  stk::mesh::Part& block1 = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
+  meta.commit();
 
-    stk::mesh::Selector block1Selector = block1;
-    EXPECT_TRUE(block1Selector.is_empty(stk::topology::NODE_RANK));
+  stk::mesh::Selector block1Selector = block1;
+  EXPECT_TRUE(block1Selector.is_empty(stk::topology::NODE_RANK));
+  EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+
+  bulk.modification_begin();
+
+  if (bulk.parallel_rank()==0) {
+
+    stk::mesh::EntityId elem1Id = 1;
+    stk::mesh::Entity elem1 = bulk.declare_element(elem1Id, stk::mesh::ConstPartVector{&block1});
+
+    EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+
+    stk::mesh::PartVector addParts;
+    stk::mesh::PartVector removeParts(1, &block1);
+    bulk.change_entity_parts(elem1, addParts, removeParts);
+
     EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
 
-    bulk.modification_begin();
+    addParts.push_back(&block1);
+    removeParts.clear();
 
-    if (bulk.parallel_rank()==0) {
+    bulk.change_entity_parts(elem1, addParts, removeParts);
 
-        stk::mesh::EntityId elem1Id = 1;
-        stk::mesh::Entity elem1 = bulk.declare_element(elem1Id, stk::mesh::ConstPartVector{&block1});
+    EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+  }
 
-        EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+  //cannot call modification_end which requires all elements, faces, edges to have connected nodes - which we have not defined
+  //bulk.modification_end();
 
-        stk::mesh::PartVector addParts;
-        stk::mesh::PartVector removeParts(1, &block1);
-        bulk.change_entity_parts(elem1, addParts, removeParts);
-
-        EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
-
-        addParts.push_back(&block1);
-        removeParts.clear();
-
-        bulk.change_entity_parts(elem1, addParts, removeParts);
-
-        EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
-    }
-
-    //cannot call modification_end which requires all elements, faces, edges to have connected nodes - which we have not defined
-    //bulk.modification_end();
-
-    if (bulk.parallel_rank()==0) {
-        EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
-    }
-    else {
-        EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
-    }
+  if (bulk.parallel_rank()==0) {
+    EXPECT_FALSE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+  }
+  else {
+    EXPECT_TRUE(block1Selector.is_empty(stk::topology::ELEM_RANK));
+  }
 }
 
 TEST(Verify, complementOfPartASelector)
@@ -342,28 +343,28 @@ TEST(Verify, differenceSelector)
 
 TEST(Verify, variousSelectorCombinations)
 {
-    SelectorFixture fix ;
-    initialize(fix);
+  SelectorFixture fix ;
+  initialize(fix);
 
-    stk::mesh::Part & partA = fix.m_partA;
-    stk::mesh::Part & partB = fix.m_partB;
-    stk::mesh::Part & partC = fix.m_partC;
+  stk::mesh::Part & partA = fix.m_partA;
+  stk::mesh::Part & partB = fix.m_partB;
+  stk::mesh::Part & partC = fix.m_partC;
 
-    stk::mesh::Selector complexSelector = partA & !(partB | partC);
+  stk::mesh::Selector complexSelector = partA & !(partB | partC);
 
-    const int numEntities = 5;
-    bool gold_shouldEntityBeInPartBSelector[numEntities]           = {false, true , true , false, false};
-    bool gold_shouldEntityBeInPartCSelector[numEntities]           = {false, false, true , true , false};
-    bool gold_shouldEntityBeInPartBOrPartCSelector[numEntities]    = {false, true , true , true , false};
-    bool gold_shouldEntityNotBeInPartBOrPartCSelector[numEntities] = {true , false, false, false, true };
-    bool gold_shouldEntityBeInPartASelector[numEntities]           = {true , true , false, false, false};
-    bool gold_shouldEntityBeInComplexSelector[numEntities]         = {true , false, false, false, false};
-    testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
-    testSelectorWithBuckets(fix, partC, gold_shouldEntityBeInPartCSelector);
-    testSelectorWithBuckets(fix, partB|partC, gold_shouldEntityBeInPartBOrPartCSelector);
-    testSelectorWithBuckets(fix, !(partB|partC), gold_shouldEntityNotBeInPartBOrPartCSelector);
-    testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
-    testSelectorWithBuckets(fix, complexSelector, gold_shouldEntityBeInComplexSelector);
+  const int numEntities = 5;
+  bool gold_shouldEntityBeInPartBSelector[numEntities]           = {false, true , true , false, false};
+  bool gold_shouldEntityBeInPartCSelector[numEntities]           = {false, false, true , true , false};
+  bool gold_shouldEntityBeInPartBOrPartCSelector[numEntities]    = {false, true , true , true , false};
+  bool gold_shouldEntityNotBeInPartBOrPartCSelector[numEntities] = {true , false, false, false, true };
+  bool gold_shouldEntityBeInPartASelector[numEntities]           = {true , true , false, false, false};
+  bool gold_shouldEntityBeInComplexSelector[numEntities]         = {true , false, false, false, false};
+  testSelectorWithBuckets(fix, partB, gold_shouldEntityBeInPartBSelector);
+  testSelectorWithBuckets(fix, partC, gold_shouldEntityBeInPartCSelector);
+  testSelectorWithBuckets(fix, partB|partC, gold_shouldEntityBeInPartBOrPartCSelector);
+  testSelectorWithBuckets(fix, !(partB|partC), gold_shouldEntityNotBeInPartBOrPartCSelector);
+  testSelectorWithBuckets(fix, partA, gold_shouldEntityBeInPartASelector);
+  testSelectorWithBuckets(fix, complexSelector, gold_shouldEntityBeInComplexSelector);
 }
 
 TEST(Verify, complementOfSelectorComplement)
@@ -392,18 +393,18 @@ TEST(Verify, complementOfSelectorComplement)
 
 TEST(Verify, complementOfDefaultConstructedSelector)
 {
-    SelectorFixture fix ;
-    initialize(fix);
+  SelectorFixture fix ;
+  initialize(fix);
 
-    const int numEntities = 5;
-    bool goldEntityInDefaultCtor[numEntities]           = {false, false, false, false, false};
-    bool goldEntityInDefaultCtorComplement[numEntities] = {true , true , true , true , true };
+  const int numEntities = 5;
+  bool goldEntityInDefaultCtor[numEntities]           = {false, false, false, false, false};
+  bool goldEntityInDefaultCtorComplement[numEntities] = {true , true , true , true , true };
 
-    stk::mesh::Selector defaultConstructedSelector;
-    testSelectorWithBuckets(fix, defaultConstructedSelector, goldEntityInDefaultCtor);
+  stk::mesh::Selector defaultConstructedSelector;
+  testSelectorWithBuckets(fix, defaultConstructedSelector, goldEntityInDefaultCtor);
 
-    stk::mesh::Selector complementOfDefault = defaultConstructedSelector.complement();
-    testSelectorWithBuckets(fix, complementOfDefault, goldEntityInDefaultCtorComplement);
+  stk::mesh::Selector complementOfDefault = defaultConstructedSelector.complement();
+  testSelectorWithBuckets(fix, complementOfDefault, goldEntityInDefaultCtorComplement);
 }
 
 TEST(Verify, usingPartVectorToSelectIntersection)
@@ -472,7 +473,7 @@ TEST(Verify, usingPartVectorToSelectUnion)
   std::ostringstream msg;
   msg << selector;
   std::cout << "msg.str() = " << msg.str() << std::endl;
-  EXPECT_EQ( "((PartA | PartB) | PartC)", msg.str() );
+  EXPECT_EQ( "(PartA | PartB | PartC)", msg.str() );
 }
 
 TEST(Verify, defaultConstructorForSelector)
@@ -490,50 +491,50 @@ TEST(Verify, defaultConstructorForSelector)
 
 TEST(Verify, usingEqualityOperator)
 {
-    SelectorFixture fix;
-    initialize(fix);
+  SelectorFixture fix;
+  initialize(fix);
 
-    stk::mesh::Part & partA = fix.m_partA;
-    stk::mesh::Selector partASelector(partA);
-    stk::mesh::Selector anotherPartASelector(partA);
-    EXPECT_TRUE(partASelector == anotherPartASelector);
+  stk::mesh::Part & partA = fix.m_partA;
+  stk::mesh::Selector partASelector(partA);
+  stk::mesh::Selector anotherPartASelector(partA);
+  EXPECT_TRUE(partASelector == anotherPartASelector);
 
-    stk::mesh::Part & partB = fix.m_partB;
-    stk::mesh::Selector unionPartAPartB(partA | partB);
-    stk::mesh::Selector anotherUnionPartAPartB(partA | partB);
-    EXPECT_TRUE(unionPartAPartB == anotherUnionPartAPartB);
+  stk::mesh::Part & partB = fix.m_partB;
+  stk::mesh::Selector unionPartAPartB(partA | partB);
+  stk::mesh::Selector anotherUnionPartAPartB(partA | partB);
+  EXPECT_TRUE(unionPartAPartB == anotherUnionPartAPartB);
 
-    stk::mesh::Selector intersectionPartAPartB(partA & partB);
-    stk::mesh::Selector anotherIntersectionPartAPartB(partA & partB);
-    EXPECT_TRUE(intersectionPartAPartB == anotherIntersectionPartAPartB);
+  stk::mesh::Selector intersectionPartAPartB(partA & partB);
+  stk::mesh::Selector anotherIntersectionPartAPartB(partA & partB);
+  EXPECT_TRUE(intersectionPartAPartB == anotherIntersectionPartAPartB);
 
-    EXPECT_FALSE(unionPartAPartB == intersectionPartAPartB);
+  EXPECT_FALSE(unionPartAPartB == intersectionPartAPartB);
 
-    stk::mesh::Selector complementPartA(!partA);
-    stk::mesh::Selector anotherComplementPartA(!partA);
-    EXPECT_TRUE(complementPartA == anotherComplementPartA);
+  stk::mesh::Selector complementPartA(!partA);
+  stk::mesh::Selector anotherComplementPartA(!partA);
+  EXPECT_TRUE(complementPartA == anotherComplementPartA);
 
-    EXPECT_FALSE(partASelector == complementPartA);
-    EXPECT_FALSE(complementPartA == partASelector);
+  EXPECT_FALSE(partASelector == complementPartA);
+  EXPECT_FALSE(complementPartA == partASelector);
 
-    stk::mesh::Selector complementPartB(!partB);
-    EXPECT_FALSE(complementPartA == complementPartB);
+  stk::mesh::Selector complementPartB(!partB);
+  EXPECT_FALSE(complementPartA == complementPartB);
 
-    stk::mesh::Selector notNotPartA(!!partA);
-    EXPECT_FALSE(partASelector == notNotPartA);
+  stk::mesh::Selector notNotPartA(!!partA);
+  EXPECT_FALSE(partASelector == notNotPartA);
 }
 
 TEST(Verify, usingCopyConstructor)
 {
-    SelectorFixture fix;
-    initialize(fix);
+  SelectorFixture fix;
+  initialize(fix);
 
-    stk::mesh::Part & partA = fix.m_partA;
-    stk::mesh::Part & partB = fix.m_partB;
-    stk::mesh::Part & partC = fix.m_partC;
-    stk::mesh::Selector selector = (partA & partB) | partC;
-    stk::mesh::Selector anotherSelector(selector);
-    EXPECT_TRUE(selector == anotherSelector);
+  stk::mesh::Part & partA = fix.m_partA;
+  stk::mesh::Part & partB = fix.m_partB;
+  stk::mesh::Part & partC = fix.m_partC;
+  stk::mesh::Selector selector = (partA & partB) | partC;
+  stk::mesh::Selector anotherSelector(selector);
+  EXPECT_TRUE(selector == anotherSelector);
 }
 
 
@@ -542,8 +543,8 @@ TEST(Verify, usingSelectField)
   SelectorFixture fix ;
   initialize(fix);
 
-  stk::mesh::Selector selectFieldA = stk::mesh::selectField(fix.m_fieldA);
-  stk::mesh::Selector selectFieldABC = stk::mesh::selectField(fix.m_fieldABC);
+  stk::mesh::Selector selectFieldA = stk::mesh::selectField(*fix.m_fieldA);
+  stk::mesh::Selector selectFieldABC = stk::mesh::selectField(*fix.m_fieldABC);
 
   stk::mesh::Part & partA = fix.m_partA;
   stk::mesh::Part & partB = fix.m_partB;
@@ -589,7 +590,7 @@ TEST(Verify, usingSelectField)
 
   EXPECT_TRUE (selectFieldA(partsAB));
   EXPECT_FALSE(selectFieldA(partsCD));
-  
+
   //
   //  Check selection of buckets also works in a mesh modification cycle
   //
@@ -608,31 +609,31 @@ TEST(Verify, usingSelectField)
 
 TEST(Verify, selectorContainsPart)
 {
-    SelectorFixture fix;
-    initialize(fix);
+  SelectorFixture fix;
+  initialize(fix);
 
-    stk::mesh::Part & partA = fix.m_partA;
-    stk::mesh::Part & partB = fix.m_partB;
-    stk::mesh::Part & partC = fix.m_partC;
-    stk::mesh::Part & partD = fix.m_partD;
-    stk::mesh::Selector selector = partA | partB | (!partC) | partD;
-    std::cout << "select_part selector = " << selector << std::endl;
-    EXPECT_TRUE(selector(partA));
-    EXPECT_TRUE(selector(partB));
-    EXPECT_FALSE(selector(partC));
-    EXPECT_TRUE(selector(partD));
+  stk::mesh::Part & partA = fix.m_partA;
+  stk::mesh::Part & partB = fix.m_partB;
+  stk::mesh::Part & partC = fix.m_partC;
+  stk::mesh::Part & partD = fix.m_partD;
+  stk::mesh::Selector selector = partA | partB | (!partC) | partD;
+  std::cout << "select_part selector = " << selector << std::endl;
+  EXPECT_TRUE(selector(partA));
+  EXPECT_TRUE(selector(partB));
+  EXPECT_FALSE(selector(partC));
+  EXPECT_TRUE(selector(partD));
 
-    selector = partA | ((!((partA & partB) | partC)) & ((!partD) | partB));
-    EXPECT_TRUE(selector(partA));
-    EXPECT_TRUE(selector(partB));
-    EXPECT_FALSE(selector(partC));
-    EXPECT_FALSE(selector(partD));
+  selector = partA | ((!((partA & partB) | partC)) & ((!partD) | partB));
+  EXPECT_TRUE(selector(partA));
+  EXPECT_TRUE(selector(partB));
+  EXPECT_FALSE(selector(partC));
+  EXPECT_FALSE(selector(partD));
 
-    selector = partC & (!partD);
-    EXPECT_FALSE(selector(partA));
-    EXPECT_FALSE(selector(partB));
-    EXPECT_TRUE(selector(partC));
-    EXPECT_FALSE(selector(partD));
+  selector = partC & (!partD);
+  EXPECT_FALSE(selector(partA));
+  EXPECT_FALSE(selector(partB));
+  EXPECT_TRUE(selector(partC));
+  EXPECT_FALSE(selector(partD));
 }
 
 TEST(Verify, printingOfSelectorUnion)
@@ -648,7 +649,7 @@ TEST(Verify, printingOfSelectorUnion)
   std::cout << "A|B|C|D = " << selector << std::endl;
   std::ostringstream msg;
   msg << selector;
-  EXPECT_EQ( "(((PartA | PartB) | PartC) | PartD)" , msg.str() );
+  EXPECT_EQ( "(PartA | PartB | PartC | PartD)" , msg.str() );
 }
 
 TEST(Verify, printingOfSelectorIntersection)
@@ -663,7 +664,7 @@ TEST(Verify, printingOfSelectorIntersection)
   std::cout << "A&B&C = " << selector << std::endl;
   std::ostringstream msg;
   msg << selector;
-  EXPECT_TRUE( msg.str() == "((PartA & PartB) & PartC)" );
+  EXPECT_TRUE( msg.str() == "(PartA & PartB & PartC)" );
 }
 
 TEST(Verify, printingOfGeneralSelector)
@@ -684,27 +685,27 @@ TEST(Verify, printingOfGeneralSelector)
 
 TEST(Verify, printingOfNothingForComplementOfDefaultSelector)
 {
-    stk::mesh::Selector selectAll;
-    selectAll.complement();
+  stk::mesh::Selector selectAll;
+  selectAll.complement();
 
-    stk::mesh::Selector anotherSelectAll;
-    anotherSelectAll.complement();
+  stk::mesh::Selector anotherSelectAll;
+  anotherSelectAll.complement();
 
-    {
-        stk::mesh::Selector selectAllANDAll = selectAll & anotherSelectAll;
-        std::ostringstream description;
-        description << selectAllANDAll;
-        EXPECT_EQ( "(!(NOTHING) & !(NOTHING))", description.str());
+  {
+    stk::mesh::Selector selectAllANDAll = selectAll & anotherSelectAll;
+    std::ostringstream description;
+    description << selectAllANDAll;
+    EXPECT_EQ( "(!(NOTHING) & !(NOTHING))", description.str());
 
-        //will throw because the selector doesn't have access to a mesh
-        EXPECT_THROW(selectAllANDAll.get_buckets(stk::topology::NODE_RANK), std::logic_error);
-    }
-    {
-        stk::mesh::Selector selectAllORAll = selectAll | anotherSelectAll;
-        std::ostringstream description;
-        description << selectAllORAll;
-        EXPECT_EQ( "(!(NOTHING) | !(NOTHING))", description.str());
-    }
+    //will throw because the selector doesn't have access to a mesh
+    EXPECT_THROW(selectAllANDAll.get_buckets(stk::topology::NODE_RANK), std::logic_error);
+  }
+  {
+    stk::mesh::Selector selectAllORAll = selectAll | anotherSelectAll;
+    std::ostringstream description;
+    description << selectAllORAll;
+    EXPECT_EQ( "(!(NOTHING) | !(NOTHING))", description.str());
+  }
 }
 
 TEST(Verify, usingLessThanOperator)
@@ -736,7 +737,7 @@ TEST(Verify, usingLessThanOperator)
 
   stk::mesh::Selector partCIntersectPartBSelectorOrderMatters = partC & partB;
   stk::mesh::Selector partDIntersectPartASelectorOrderMatters = partD & partA;
-  EXPECT_TRUE(partCIntersectPartBSelectorOrderMatters < partDIntersectPartASelectorOrderMatters);
+  EXPECT_TRUE(partDIntersectPartASelectorOrderMatters < partCIntersectPartBSelectorOrderMatters);
 
   stk::mesh::Selector partAUnionPartBSelector     = partA | partB;
   stk::mesh::Selector partAIntersectPartBSelector = partA & partB;
@@ -777,11 +778,22 @@ void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::
   }
 }
 
+std::shared_ptr<stk::mesh::BulkData> create_mesh(stk::ParallelMachine comm,
+                                                 unsigned spatialDim)
+{
+  stk::mesh::MeshBuilder builder(comm);
+  builder.set_spatial_dimension(spatialDim);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+  bulk->mesh_meta_data().use_simple_fields();
+  return bulk;
+}
+
 void check_selector_does_not_return_root_topology_parts(stk::ParallelMachine pm, const std::string &part_name, stk::topology topo )
 {
   const unsigned spatialDim = 3;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData mesh(meta, pm);
+  std::shared_ptr<stk::mesh::BulkData> meshPtr = create_mesh(pm, spatialDim);
+  stk::mesh::BulkData& mesh = *meshPtr;
+  stk::mesh::MetaData& meta = mesh.mesh_meta_data();
 
   stk::mesh::Part * part = &meta.declare_part_with_topology(part_name, topo);
   meta.commit();
@@ -807,16 +819,16 @@ void check_selector_does_not_return_root_topology_parts(stk::ParallelMachine pm,
 
 TEST( UnitTestRootTopology, getPartsDoesNotFindAutoCreatedRootParts )
 {
-    stk::ParallelMachine pm = MPI_COMM_WORLD;
-    int p_size = stk::parallel_machine_size(pm);
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  int p_size = stk::parallel_machine_size(pm);
 
-    if(p_size > 1)
-    {
-        return;
-    }
+  if(p_size > 1)
+  {
+    return;
+  }
 
-    std::vector < stk::topology > test_topologies {
-          stk::topology::NODE
+  std::vector < stk::topology > test_topologies {
+    stk::topology::NODE
         //EDGE_RANK
         , stk::topology::LINE_2
         , stk::topology::LINE_3
@@ -853,82 +865,110 @@ TEST( UnitTestRootTopology, getPartsDoesNotFindAutoCreatedRootParts )
         , stk::topology::HEX_20
         , stk::topology::HEX_27};
 
-    for (unsigned i = 0; i < test_topologies.size(); ++i)
-    {
-      check_selector_does_not_return_root_topology_parts(pm, "topo_part" , test_topologies[i]);
-    }
+  for (unsigned i = 0; i < test_topologies.size(); ++i)
+  {
+    check_selector_does_not_return_root_topology_parts(pm, "topo_part" , test_topologies[i]);
+  }
 }
 
+TEST(Selector, get_parts_intersection_ranked)
+{
+  const unsigned spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
+
+  stk::mesh::Part& rankedPart = meta.declare_part("ranked", stk::topology::ELEM_RANK);
+  stk::mesh::Part& unrankedPart = meta.declare_part("unranked");
+  meta.commit();
+
+  EXPECT_TRUE(unrankedPart.primary_entity_rank() == stk::topology::INVALID_RANK);
+
+  //It doesn't seem right that an intersection selector should only return the ranked
+  //part in get_parts, but applications have come to depend on this. So this test
+  //codifies the behavior to make sure that stk testing will catch any unintentional
+  //breakages in stk changes.
+  stk::mesh::Selector selector1 = rankedPart & unrankedPart;
+  stk::mesh::PartVector selector1Parts;
+  selector1.get_parts(selector1Parts);
+  EXPECT_EQ(1u, selector1Parts.size());
+  EXPECT_EQ(rankedPart.mesh_meta_data_ordinal(), selector1Parts[0]->mesh_meta_data_ordinal());
+
+  stk::mesh::Selector selector2 = unrankedPart & rankedPart;
+  stk::mesh::PartVector selector2Parts;
+  selector1.get_parts(selector2Parts);
+  EXPECT_EQ(1u, selector2Parts.size());
+  EXPECT_EQ(rankedPart.mesh_meta_data_ordinal(), selector2Parts[0]->mesh_meta_data_ordinal());
+}
 
 
 
 TEST( UnitTestRootTopology, bucketAlsoHasAutoCreatedRootParts )
 {
-    stk::ParallelMachine pm = MPI_COMM_WORLD;
-    int p_size = stk::parallel_machine_size(pm);
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  int p_size = stk::parallel_machine_size(pm);
 
-    if(p_size > 1)
-    {
-        return;
-    }
+  if(p_size > 1)
+  {
+    return;
+  }
 
-    const unsigned spatialDim = 3;
-    stk::mesh::MetaData meta(spatialDim);
-    stk::mesh::BulkData mesh(meta, pm);
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> meshPtr = create_mesh(pm, spatialDim);
+  stk::mesh::BulkData& mesh = *meshPtr;
+  stk::mesh::MetaData& meta = mesh.mesh_meta_data();
 
-    stk::mesh::Part * triPart = &meta.declare_part_with_topology("tri_part", stk::topology::TRI_3);
-    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_TRI_3);
-    meta.commit();
+  stk::mesh::Part * triPart = &meta.declare_part_with_topology("tri_part", stk::topology::TRI_3);
+  stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_TRI_3);
+  meta.commit();
 
-    mesh.modification_begin();
+  mesh.modification_begin();
 
-    std::array<int, 3> node_ids = {{1,2,3}};
-    stk::mesh::ConstPartVector empty;
-    stk::mesh::Entity shell3 = mesh.declare_element(1u, stk::mesh::ConstPartVector{shellPart});
-    for(unsigned i = 0; i<node_ids.size(); ++i) {
-        stk::mesh::Entity node = mesh.declare_node(node_ids[i], empty);
-        mesh.declare_relation(shell3, node, i);
-    }
-    mesh.declare_element_side(shell3, 0u, stk::mesh::ConstPartVector{triPart} );
+  std::array<int, 3> node_ids = {{1,2,3}};
+  stk::mesh::ConstPartVector empty;
+  stk::mesh::Entity shell3 = mesh.declare_element(1u, stk::mesh::ConstPartVector{shellPart});
+  for(unsigned i = 0; i<node_ids.size(); ++i) {
+    stk::mesh::Entity node = mesh.declare_node(node_ids[i], empty);
+    mesh.declare_relation(shell3, node, i);
+  }
+  mesh.declare_element_side(shell3, 0u, stk::mesh::ConstPartVector{triPart} );
 
-    mesh.modification_end();
+  mesh.modification_end();
 
-    stk::mesh::Selector triSelector(*triPart);
+  stk::mesh::Selector triSelector(*triPart);
 
-    const stk::mesh::BucketVector & buckets = mesh.get_buckets(stk::topology::FACE_RANK, triSelector);
+  const stk::mesh::BucketVector & buckets = mesh.get_buckets(stk::topology::FACE_RANK, triSelector);
 
-    EXPECT_EQ(1u, buckets.size());
+  EXPECT_EQ(1u, buckets.size());
 
-    {
-      const stk::mesh::PartVector &triBucketParts = buckets[0]->supersets();
+  {
+    const stk::mesh::PartVector &triBucketParts = buckets[0]->supersets();
 
-      stk::mesh::Part &triRootPart= meta.get_topology_root_part(stk::topology::TRI_3);
+    stk::mesh::Part &triRootPart= meta.get_topology_root_part(stk::topology::TRI_3);
 
-      auto triIterator = std::find(triBucketParts.begin(), triBucketParts.end(), &triRootPart );
+    auto triIterator = std::find(triBucketParts.begin(), triBucketParts.end(), &triRootPart );
 
-      EXPECT_TRUE(triBucketParts.end() != triIterator);
+    EXPECT_TRUE(triBucketParts.end() != triIterator);
 
-      EXPECT_TRUE(triRootPart.contains(*triPart));
-    }
-    {
-      stk::mesh::OrdinalVector ordinals;
-      buckets[0]->supersets(ordinals);
+    EXPECT_TRUE(triRootPart.contains(*triPart));
+  }
+  {
+    stk::mesh::OrdinalVector ordinals;
+    buckets[0]->supersets(ordinals);
 
-      stk::mesh::Part &triRootPart= meta.get_topology_root_part(stk::topology::TRI_3);
+    stk::mesh::Part &triRootPart= meta.get_topology_root_part(stk::topology::TRI_3);
 
-      auto triIterator = std::find(ordinals.begin(), ordinals.end(), triRootPart.mesh_meta_data_ordinal());
+    auto triIterator = std::find(ordinals.begin(), ordinals.end(), triRootPart.mesh_meta_data_ordinal());
 
-      EXPECT_TRUE(ordinals.end() != triIterator);
-    }
-    {
-      std::pair<const unsigned *, const unsigned *> ords_range = buckets[0]->superset_part_ordinals();
+    EXPECT_TRUE(ordinals.end() != triIterator);
+  }
+  {
+    std::pair<const unsigned *, const unsigned *> ords_range = buckets[0]->superset_part_ordinals();
 
-      stk::mesh::Part &triRootPart= meta.get_topology_root_part(stk::topology::TRI_3);
+    stk::mesh::Part &triRootPart= meta.get_topology_root_part(stk::topology::TRI_3);
 
-      auto triIterator = std::find(ords_range.first, ords_range.second, triRootPart.mesh_meta_data_ordinal());
+    auto triIterator = std::find(ords_range.first, ords_range.second, triRootPart.mesh_meta_data_ordinal());
 
-      EXPECT_TRUE(ords_range.second != triIterator);
-    }
+    EXPECT_TRUE(ords_range.second != triIterator);
+  }
 }
 
 } // namespace

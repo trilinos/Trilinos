@@ -64,7 +64,7 @@ namespace stk { namespace mesh { class FieldBase; } }
 namespace {
 
 using namespace stk::mesh;
-using stk::mesh::fixtures::HexFixture;
+using stk::mesh::fixtures::simple_fields::HexFixture;
 
 template <typename T>
 T do_operation(Operation Op, T lhs, T rhs)
@@ -103,7 +103,7 @@ void do_assemble(Operation Op, BulkData & bulk, FieldVector const& field_vector)
 }
 
 typedef Field<double> ScalarField;
-typedef Field<double, Cartesian> CartesianField;
+typedef Field<double> CartesianField;
 typedef Field<long double> LongDoubleField;
 typedef Field<int> IntField;
 typedef Field<unsigned long> IdField;
@@ -129,30 +129,30 @@ void do_parallel_assemble()
   MetaData& meta = fixture.m_meta;
   BulkData& bulk = fixture.m_bulk_data;
 
-  ScalarField& universal_scalar_node_field       = meta.declare_field< ScalarField >( stk::topology::NODE_RANK,    "universal_scalar_node_field" );
-  ScalarField& non_universal_scalar_node_field   = meta.declare_field< ScalarField >( stk::topology::NODE_RANK,    "non_universal_scalar_node_field" );
-  CartesianField& universal_cartesian_node_field = meta.declare_field< CartesianField >( stk::topology::NODE_RANK, "universal_cartesian_node_field" );
-  IntField& universal_scalar_int_node_field      = meta.declare_field< IntField >( stk::topology::NODE_RANK,       "universal_scalar_int_node_field" );
-  ScalarField& universal_scalar_edge_field       = meta.declare_field< ScalarField >( stk::topology::EDGE_RANK,    "universal_scalar_edge_field" );
-  LongDoubleField& universal_scalar_long_double_node_field = meta.declare_field< LongDoubleField >( stk::topology::NODE_RANK, "universal_scalar_long_double_node_field" );
-  IdField& universal_scalar_id_node_field        = meta.declare_field< IdField >( stk::topology::NODE_RANK, "universal_scalar_id_node_field" );
+  ScalarField& universal_scalar_node_field       = meta.declare_field<double>( stk::topology::NODE_RANK,    "universal_scalar_node_field" );
+  ScalarField& non_universal_scalar_node_field   = meta.declare_field<double>( stk::topology::NODE_RANK,    "non_universal_scalar_node_field" );
+  CartesianField& universal_cartesian_node_field = meta.declare_field<double>( stk::topology::NODE_RANK, "universal_cartesian_node_field" );
+  IntField& universal_scalar_int_node_field      = meta.declare_field<int>( stk::topology::NODE_RANK,       "universal_scalar_int_node_field" );
+  ScalarField& universal_scalar_edge_field       = meta.declare_field<double>( stk::topology::EDGE_RANK,    "universal_scalar_edge_field" );
+  LongDoubleField& universal_scalar_long_double_node_field = meta.declare_field<long double>( stk::topology::NODE_RANK, "universal_scalar_long_double_node_field" );
+  IdField& universal_scalar_id_node_field        = meta.declare_field<unsigned long>( stk::topology::NODE_RANK, "universal_scalar_id_node_field" );
 
   Part& center_part = meta.declare_part("center_part", stk::topology::NODE_RANK);
 
-  put_field_on_mesh( universal_scalar_node_field , meta.universal_part() ,
-                     (stk::mesh::FieldTraits<ScalarField>::data_type*) nullptr);
-  put_field_on_mesh( universal_cartesian_node_field , meta.universal_part() ,
-                     (stk::mesh::FieldTraits<CartesianField>::data_type*) nullptr);
-  put_field_on_mesh( universal_scalar_int_node_field , meta.universal_part() ,
-                     (stk::mesh::FieldTraits<IntField>::data_type*) nullptr);
-  put_field_on_mesh( universal_scalar_edge_field , meta.universal_part() ,
-                     (stk::mesh::FieldTraits<ScalarField>::data_type*) nullptr);
-  put_field_on_mesh( non_universal_scalar_node_field, center_part,
-                     (stk::mesh::FieldTraits<ScalarField>::data_type*) nullptr);
-  put_field_on_mesh( universal_scalar_long_double_node_field , meta.universal_part() ,
-                     (stk::mesh::FieldTraits<LongDoubleField>::data_type*) nullptr);
-  put_field_on_mesh( universal_scalar_id_node_field , meta.universal_part() ,
-                     (stk::mesh::FieldTraits<IdField>::data_type*) nullptr);
+  put_field_on_mesh(universal_scalar_node_field, meta.universal_part(),
+                    (stk::mesh::FieldTraits<ScalarField>::data_type*) nullptr);
+  put_field_on_mesh(universal_cartesian_node_field, meta.universal_part(), 3,
+                    (stk::mesh::FieldTraits<CartesianField>::data_type*) nullptr);
+  put_field_on_mesh(universal_scalar_int_node_field, meta.universal_part(),
+                    (stk::mesh::FieldTraits<IntField>::data_type*) nullptr);
+  put_field_on_mesh(universal_scalar_edge_field, meta.universal_part(),
+                    (stk::mesh::FieldTraits<ScalarField>::data_type*) nullptr);
+  put_field_on_mesh(non_universal_scalar_node_field, center_part,
+                    (stk::mesh::FieldTraits<ScalarField>::data_type*) nullptr);
+  put_field_on_mesh(universal_scalar_long_double_node_field, meta.universal_part(),
+                    (stk::mesh::FieldTraits<LongDoubleField>::data_type*) nullptr);
+  put_field_on_mesh(universal_scalar_id_node_field, meta.universal_part(),
+                    (stk::mesh::FieldTraits<IdField>::data_type*) nullptr);
 
   // TODO - Need a field that gets shared between more than 2 procs.
 
@@ -370,24 +370,24 @@ void do_parallel_assemble_including_ghosts()
   MetaData& meta = fixture.m_meta;
   BulkData& bulk = fixture.m_bulk_data;
 
-  ScalarField& universal_scalar_node_field       = meta.declare_field< ScalarField >( stk::topology::NODE_RANK,    "universal_scalar_node_field" );
-  ScalarField& non_universal_scalar_node_field   = meta.declare_field< ScalarField >( stk::topology::NODE_RANK,    "non_universal_scalar_node_field" );
-  CartesianField& universal_cartesian_node_field = meta.declare_field< CartesianField >( stk::topology::NODE_RANK, "universal_cartesian_node_field" );
-  IntField& universal_scalar_int_node_field      = meta.declare_field< IntField >( stk::topology::NODE_RANK,       "universal_scalar_int_node_field" );
-  IdField& universal_scalar_id_node_field        = meta.declare_field< IdField >( stk::topology::NODE_RANK, "universal_scalar_id_node_field" );
+  ScalarField& universal_scalar_node_field       = meta.declare_field<double>( stk::topology::NODE_RANK,    "universal_scalar_node_field" );
+  ScalarField& non_universal_scalar_node_field   = meta.declare_field<double>( stk::topology::NODE_RANK,    "non_universal_scalar_node_field" );
+  CartesianField& universal_cartesian_node_field = meta.declare_field<double>( stk::topology::NODE_RANK, "universal_cartesian_node_field" );
+  IntField& universal_scalar_int_node_field      = meta.declare_field<int>( stk::topology::NODE_RANK,       "universal_scalar_int_node_field" );
+  IdField& universal_scalar_id_node_field        = meta.declare_field<unsigned long>( stk::topology::NODE_RANK, "universal_scalar_id_node_field" );
 
   Part& center_part = meta.declare_part("center_part", stk::topology::NODE_RANK);
 
-  put_field_on_mesh( universal_scalar_node_field , meta.universal_part() ,
-                     (stk::mesh::FieldTraits<ScalarField>::data_type*) nullptr);
-  put_field_on_mesh( universal_cartesian_node_field , meta.universal_part() ,
-                     (stk::mesh::FieldTraits<CartesianField>::data_type*) nullptr);
-  put_field_on_mesh( universal_scalar_int_node_field , meta.universal_part() ,
-                     (stk::mesh::FieldTraits<IntField>::data_type*) nullptr);
-  put_field_on_mesh( non_universal_scalar_node_field, center_part,
-                     (stk::mesh::FieldTraits<ScalarField>::data_type*) nullptr);
-  put_field_on_mesh( universal_scalar_id_node_field , meta.universal_part() ,
-                     (stk::mesh::FieldTraits<IdField>::data_type*) nullptr);
+  put_field_on_mesh(universal_scalar_node_field, meta.universal_part(),
+                    (stk::mesh::FieldTraits<ScalarField>::data_type*) nullptr);
+  put_field_on_mesh(universal_cartesian_node_field, meta.universal_part(), 3,
+                    (stk::mesh::FieldTraits<CartesianField>::data_type*) nullptr);
+  put_field_on_mesh(universal_scalar_int_node_field, meta.universal_part(),
+                    (stk::mesh::FieldTraits<IntField>::data_type*) nullptr);
+  put_field_on_mesh(non_universal_scalar_node_field, center_part,
+                    (stk::mesh::FieldTraits<ScalarField>::data_type*) nullptr);
+  put_field_on_mesh(universal_scalar_id_node_field, meta.universal_part(),
+                    (stk::mesh::FieldTraits<IdField>::data_type*) nullptr);
 
   meta.commit();
 

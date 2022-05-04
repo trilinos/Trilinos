@@ -31,40 +31,70 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#ifndef _MetaDataTester_hpp_
-#define _MetaDataTester_hpp_
 
-#include <stk_mesh/base/MetaData.hpp>
+#ifndef stk_expreval_DeviceVariable_decl_hpp
+#define stk_expreval_DeviceVariable_decl_hpp
 
+#include <Kokkos_Core.hpp>
+#include <stk_expreval/Variable.hpp>
 
-namespace stk { namespace mesh { namespace unit_test {
+namespace stk {
+namespace expreval {
 
-
-
-class MetaDataTester : public stk::mesh::MetaData
+class DeviceVariable
 {
 public:
+  KOKKOS_FUNCTION
+  DeviceVariable();
 
-    enum RootTopologiesInduceOption { NO_INDUCE = 0, INDUCE = 1};
+  KOKKOS_FUNCTION
+  DeviceVariable(const Variable::Type variableType, int variableSize, int variableStride=1);
 
-    explicit MetaDataTester(size_t spatial_dimension,
-                            RootTopologiesInduceOption root_topos_induce,
-                            const std::vector<std::string>& rank_names = std::vector<std::string>());
+  KOKKOS_DEFAULTED_FUNCTION
+  DeviceVariable(const DeviceVariable& deviceVariable) = default;
 
-    MetaDataTester() : MetaData(), m_rootTopologiesInduce(true) { }
+  KOKKOS_DEFAULTED_FUNCTION
+  ~DeviceVariable() = default;
 
-    virtual ~MetaDataTester() {}
+  KOKKOS_FUNCTION
+  DeviceVariable& operator=(const DeviceVariable& deviceVariable);
+
+  KOKKOS_FUNCTION
+  double& getArrayValue(int index, Variable::ArrayOffset arrayOffsetType) const;
+
+  KOKKOS_FUNCTION
+  double getValue() const;
+
+  KOKKOS_FUNCTION
+  void bind(double& value_ref, int definedLength, int strideLength);
+
+  KOKKOS_FUNCTION
+  void bind(int& value_ref, int definedLength, int strideLength);
+
+  KOKKOS_FUNCTION
+  DeviceVariable& operator=(const double& value);
+
+  KOKKOS_FUNCTION
+  DeviceVariable& operator=(const int& value);
 
 private:
+  Variable::Type m_type;
+  int m_size;
+  int m_stride;
 
-    bool m_rootTopologiesInduce;
+  union {
+    double * m_doublePtr;
+    int * m_intPtr;
+  };
 
-    MetaDataTester( const MetaData & );                ///< \brief  Not allowed
-    MetaDataTester & operator = ( const MetaData & );  ///< \brief  Not allowed
-
-    virtual Part & declare_internal_part( const std::string & p_name, EntityRank rank);
+  union {
+    double m_doubleValue;
+    int m_intValue;
+  };
 };
 
-}}}
+}
+}
 
-#endif
+#endif // stk_expreval_DeviceVariable_decl_hpp
+

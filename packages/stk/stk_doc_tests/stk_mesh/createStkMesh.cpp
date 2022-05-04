@@ -37,6 +37,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <string>                       // for string
@@ -49,22 +50,22 @@ namespace
 //-BEGIN    
 TEST(StkMeshHowTo, UseStkIO)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if(stk::parallel_machine_size(communicator) == 1)
-    {
-        stk::mesh::MetaData meta;
-        stk::mesh::BulkData bulk(meta, communicator);
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if(stk::parallel_machine_size(communicator) == 1)
+  {
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
+    bulkPtr->mesh_meta_data().use_simple_fields();
 
-        stk::io::StkMeshIoBroker meshReader;
-        meshReader.set_bulk_data(bulk);
-        meshReader.add_mesh_database("generated:8x8x8", stk::io::READ_MESH);
-        meshReader.create_input_mesh();
-        meshReader.add_all_mesh_fields_as_input_fields();
-        meshReader.populate_bulk_data();
+    stk::io::StkMeshIoBroker meshReader;
+    meshReader.set_bulk_data(*bulkPtr);
+    meshReader.add_mesh_database("generated:8x8x8", stk::io::READ_MESH);
+    meshReader.create_input_mesh();
+    meshReader.add_all_mesh_fields_as_input_fields();
+    meshReader.populate_bulk_data();
 
-        unsigned numElems = stk::mesh::count_selected_entities(meta.universal_part(), bulk.buckets(stk::topology::ELEM_RANK));
-        EXPECT_EQ(512u, numElems);
-    }
+    unsigned numElems = stk::mesh::count_selected_entities(bulkPtr->mesh_meta_data().universal_part(), bulkPtr->buckets(stk::topology::ELEM_RANK));
+    EXPECT_EQ(512u, numElems);
+  }
 }
 //-END
 }

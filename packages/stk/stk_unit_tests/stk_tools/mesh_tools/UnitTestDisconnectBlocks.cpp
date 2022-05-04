@@ -21,17 +21,19 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/ConstructedMesh.hpp>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <string>
 
-class TestDisconnectBlocks2D : public stk::unit_test_util::MeshFixture
+using stk::unit_test_util::build_mesh;
+
+class TestDisconnectBlocks2D : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
-  TestDisconnectBlocks2D() : stk::unit_test_util::MeshFixture(2)
+  TestDisconnectBlocks2D() : stk::unit_test_util::simple_fields::MeshFixture(2)
   {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   }
-
 };
 
 TEST_F(TestDisconnectBlocks2D, disconnect_1block_1quad)
@@ -637,10 +639,10 @@ TEST_F(TestReconnectList2D, reconnect_9block_9quad_permutation2)
 }
 
 
-class TestDisconnectBlocks : public stk::unit_test_util::MeshFixture
+class TestDisconnectBlocks : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
-  TestDisconnectBlocks() : stk::unit_test_util::MeshFixture(3)
+  TestDisconnectBlocks() : stk::unit_test_util::simple_fields::MeshFixture(3)
   {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
   }
@@ -797,10 +799,10 @@ TEST(DisconnectBlocks, input_mesh)
 {
   double startTime = stk::wall_time();
 
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::mesh::BulkData& bulk = *bulkPtr;
 
-  std::string exodusFileName = stk::unit_test_util::get_option("-f", "");
+  std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-f", "");
   if (exodusFileName.empty()) return;
 
   stk::io::fill_mesh_with_auto_decomp(exodusFileName, bulk);
@@ -1924,13 +1926,13 @@ TEST(TestDisconnectInputFile, input_mesh)
 {
   double startTime = stk::wall_time();
 
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
 
-  std::string exodusFileName = stk::unit_test_util::get_option("-exoFile", "");
+  std::string exodusFileName = stk::unit_test_util::simple_fields::get_option("-exoFile", "");
   if (exodusFileName.empty()) return;
 
-  std::string disconnectBlockFile = stk::unit_test_util::get_option("-blockFile", "");
+  std::string disconnectBlockFile = stk::unit_test_util::simple_fields::get_option("-blockFile", "");
   if (disconnectBlockFile.empty()) return;
 
   stk::io::fill_mesh(exodusFileName, bulk);
@@ -1942,6 +1944,7 @@ TEST(TestDisconnectInputFile, input_mesh)
   stk::tools::BlockPairVector disconnectBlockVec;
 
   while(infile >> block1 >> block2) {
+    stk::mesh::MetaData& meta = bulk.mesh_meta_data();
     stk::mesh::Part* block1Part = meta.get_part(block1);
     stk::mesh::Part* block2Part = meta.get_part(block2);
 
@@ -2069,7 +2072,7 @@ TEST_F(TestBlockPairCreation, test_block_pair_creation)
 
 void create_ngs_jtd_sub_mesh(stk::mesh::BulkData& bulk)
 {
-  stk::unit_test_util::ConstructedMesh data(3);
+  stk::unit_test_util::simple_fields::ConstructedMesh data(3);
 
   data.set_x_coordinates({ 2.69902090331971, 2.66623140978201, 2.75874573101832, 2.69902090331971,
                            2.69659806972163, 2.68053633989566, 2.66870203682596, 2.7137889539581,
@@ -2100,7 +2103,7 @@ void create_ngs_jtd_sub_mesh(stk::mesh::BulkData& bulk)
                                {30822787, 1}, {30824958, 1}, {26778235, 1}, {30822789, 1}, {30162567, 0},
                                {27186527, 1}, {29861241, 1}, {29528157, 0}, {30162566, 0}} );
 
-  stk::unit_test_util::ConstructedElementBlock block1(stk::topology::TET_4, "block_1", 202, { {2, 8, 9, 10},
+  stk::unit_test_util::simple_fields::ConstructedElementBlock block1(stk::topology::TET_4, "block_1", 202, { {2, 8, 9, 10},
                                                                                               {10, 8, 9, 6},
                                                                                               {5, 15, 16, 8},
                                                                                               {2, 8, 10, 5},
@@ -2113,13 +2116,13 @@ void create_ngs_jtd_sub_mesh(stk::mesh::BulkData& bulk)
                                                                                               {6, 8, 7, 10} });
   data.add_elem_block(block1);
 
-  stk::unit_test_util::ConstructedElementBlock block2(stk::topology::TET_4, "block_2", 223, { {15, 12, 8, 6},
+  stk::unit_test_util::simple_fields::ConstructedElementBlock block2(stk::topology::TET_4, "block_2", 223, { {15, 12, 8, 6},
                                                                                               {8, 13, 9, 6},
                                                                                               {12, 16, 15, 8},
                                                                                               {8, 12, 13, 6} });
   data.add_elem_block(block2);
 
-  stk::unit_test_util::ConstructedElementBlock block3(stk::topology::TET_4, "block_3", 245, { {2, 8, 4, 1},
+  stk::unit_test_util::simple_fields::ConstructedElementBlock block3(stk::topology::TET_4, "block_3", 245, { {2, 8, 4, 1},
                                                                                               {2, 8, 1, 9},
                                                                                               {8, 11, 3, 4},
                                                                                               {8, 12, 11, 4},
@@ -2135,8 +2138,9 @@ void create_ngs_jtd_sub_mesh(stk::mesh::BulkData& bulk)
 
 TEST(TestNGSDisconnect, jtd_sub_mesh)
 {
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
   create_ngs_jtd_sub_mesh(bulk);
 
   stk::mesh::Part* block1 = meta.get_part("block_1");

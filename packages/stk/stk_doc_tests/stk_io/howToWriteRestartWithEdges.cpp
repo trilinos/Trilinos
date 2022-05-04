@@ -9,71 +9,75 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-
-extern int gl_argc;
-extern char** gl_argv;
+#include <stk_mesh/base/MeshBuilder.hpp>
 
 namespace
 {
 
 TEST(StkIoHowTo, WriteRestartWithEdges)
 {
-    std::string filename = "output.rst";
-    unsigned numStates = 1;
-    int outputTimeStep = 1;
-    double outputTime = 0.0;
-    {
-        stk::mesh::MetaData meta(3);
-        stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::mesh::Part* part = &meta.declare_part_with_topology("edgeBlock", stk::topology::LINE_2);
-        stk::mesh::Field<double>& edgeField = meta.declare_field<stk::mesh::Field<double> >(stk::topology::EDGE_RANK, "edgeField", numStates);
-        stk::mesh::put_field_on_mesh(edgeField, meta.universal_part(),
-                                    (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
-        stk::io::put_edge_block_io_part_attribute(*part);
-        stk::io::fill_mesh("generated:1x1x1", bulk);
-        stk::mesh::create_edges(bulk, meta.universal_part(), part);
+  std::string filename = "output.rst";
+  unsigned numStates = 1;
+  int outputTimeStep = 1;
+  double outputTime = 0.0;
+  {
+    stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+    builder.set_spatial_dimension(3);
+    std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+    stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+    meta.use_simple_fields();
 
-        stk::mesh::EntityVector edges;
-        stk::mesh::get_entities(bulk, stk::topology::EDGE_RANK, meta.universal_part(), edges);
+    stk::mesh::Part* part = &meta.declare_part_with_topology("edgeBlock", stk::topology::LINE_2);
+    stk::mesh::Field<double>& edgeField = meta.declare_field<double>(stk::topology::EDGE_RANK, "edgeField", numStates);
+    stk::mesh::put_field_on_mesh(edgeField, meta.universal_part(),
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::io::put_edge_block_io_part_attribute(*part);
+    stk::io::fill_mesh("generated:1x1x1", *bulk);
+    stk::mesh::create_edges(*bulk, meta.universal_part(), part);
 
-        for(auto edge : edges) {
-          double* data = reinterpret_cast<double*>(stk::mesh::field_data(edgeField, edge));
+    stk::mesh::EntityVector edges;
+    stk::mesh::get_entities(*bulk, stk::topology::EDGE_RANK, meta.universal_part(), edges);
 
-          *data = bulk.identifier(edge);
-        }
+    for(auto edge : edges) {
+      double* data = reinterpret_cast<double*>(stk::mesh::field_data(edgeField, edge));
 
-        stk::io::StkMeshIoBroker ioBroker;
-        ioBroker.set_bulk_data(bulk);
-        stk::io::write_mesh_with_fields(filename, ioBroker, outputTimeStep, outputTime, stk::io::WRITE_RESTART);
+      *data = bulk->identifier(edge);
     }
 
-    {
-        stk::mesh::MetaData meta;
-        stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::mesh::Field<double>& edgeField = meta.declare_field<stk::mesh::Field<double> >(stk::topology::EDGE_RANK, "edgeField", numStates);
-        stk::mesh::put_field_on_mesh(edgeField, meta.universal_part(),
-                                    (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::io::StkMeshIoBroker ioBroker;
+    ioBroker.set_bulk_data(bulk);
+    stk::io::write_mesh_with_fields(filename, ioBroker, outputTimeStep, outputTime, stk::io::WRITE_RESTART);
+  }
 
-        stk::io::set_field_role(edgeField, Ioss::Field::TRANSIENT);
+  {
+    std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
+    stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+    meta.use_simple_fields();
 
-        stk::io::StkMeshIoBroker stkIo;
-        stk::io::fill_mesh_with_fields(filename, stkIo, bulk, stk::io::READ_RESTART);
+    stk::mesh::Field<double>& edgeField = meta.declare_field<double>(stk::topology::EDGE_RANK, "edgeField", numStates);
+    stk::mesh::put_field_on_mesh(edgeField, meta.universal_part(),
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
-        int numSteps = stkIo.get_num_time_steps();
-        EXPECT_EQ(1, numSteps);
+    stk::io::set_field_role(edgeField, Ioss::Field::TRANSIENT);
 
-        stk::mesh::EntityVector edges;
-        stk::mesh::get_entities(bulk, stk::topology::EDGE_RANK, edges);
+    stk::io::StkMeshIoBroker stkIo;
+    stk::io::fill_mesh_with_fields(filename, stkIo, *bulk, stk::io::READ_RESTART);
 
-        for(auto edge : edges) {
-            double* data = reinterpret_cast<double*>(stk::mesh::field_data(edgeField, edge));
-            double expectedValue = bulk.identifier(edge);
+    int numSteps = stkIo.get_num_time_steps();
+    EXPECT_EQ(1, numSteps);
 
-            EXPECT_EQ(expectedValue, *data);
-        }
+    stk::mesh::EntityVector edges;
+    stk::mesh::get_entities(*bulk, stk::topology::EDGE_RANK, edges);
+
+    for(auto edge : edges) {
+      double* data = reinterpret_cast<double*>(stk::mesh::field_data(edgeField, edge));
+      double expectedValue = bulk->identifier(edge);
+
+      EXPECT_EQ(expectedValue, *data);
     }
+  }
 
-    unlink(filename.c_str());
+  unlink(filename.c_str());
 }
 
 }

@@ -39,8 +39,10 @@
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_mesh/base/Part.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowAssert
 #include <vector>                       // for vector, operator!=, etc
+#include <utility>                       // for vector, operator!=, etc
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class FieldBase; } }
@@ -55,6 +57,8 @@ struct SelectorNodeType
 {
   enum node_type {
     PART,
+    PART_UNION,
+    PART_INTERSECTION,
     UNION,
     INTERSECTION,
     DIFFERENCE,
@@ -68,14 +72,24 @@ namespace impl {
 // A node in the expression tree of a selector
 struct SelectorNode
 {
-  SelectorNode(Part const* arg_part = nullptr) : m_type(SelectorNodeType::PART)
+  SelectorNode(Part const* arg_part = nullptr)
+   : m_type(SelectorNodeType::PART),
+     m_partOrds(),
+     m_field_ptr(nullptr),
+     left_offset(0)
   {
-    m_value.part_ord = arg_part==nullptr ? InvalidPartOrdinal : arg_part->mesh_meta_data_ordinal();
+    m_partOrd = (arg_part==nullptr) ? InvalidPartOrdinal : arg_part->mesh_meta_data_ordinal();
+    m_partIsRanked = arg_part==nullptr ? false : arg_part->primary_entity_rank()!=stk::topology::INVALID_RANK;
   }
 
-  SelectorNode(FieldBase const* arg_field) : m_type(SelectorNodeType::FIELD)
+  SelectorNode(FieldBase const* arg_field)
+   : m_type(SelectorNodeType::FIELD),
+     m_partOrd(InvalidPartOrdinal),
+     m_partOrds(),
+     m_partIsRanked(false),
+     left_offset(0)
   {
-    m_value.field_ptr = arg_field;
+    m_field_ptr = arg_field;
   }
   //
   //  Data structure deisgn:
@@ -108,46 +122,43 @@ struct SelectorNode
   //    S1    S2   &   S3   !    &
   //
 
-  // Either leaf (part_ord) or unary (no data) or binary (offset from current pos to rhs)
-  union value_type
-  {
-    enum { right_offset = 1 };
-    enum { unary_offset = 1 };
-
-    PartOrdinal part_ord;
-    FieldBase const* field_ptr;
-    unsigned left_offset; // for binary op
-    // no storage required for unary op
-  };
+  // Either leaf (partOrd) or unary (no data) or binary (offset from current pos to rhs)
+  enum { right_offset = 1 };
+  enum { unary_offset = 1 };
 
   SelectorNode const* lhs() const
   {
     ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
-    return this - m_value.left_offset;
+    return this - left_offset;
   }
 
   SelectorNode const* rhs() const
   {
     ThrowAssert(m_type == SelectorNodeType::UNION || m_type == SelectorNodeType::INTERSECTION || m_type == SelectorNodeType::DIFFERENCE);
-    return this - m_value.right_offset;
+    return this - right_offset;
   }
 
   SelectorNode const* unary() const
   {
     ThrowAssert(m_type == SelectorNodeType::COMPLEMENT);
-    return this - m_value.unary_offset;
+    return this - unary_offset;
   }
 
   PartOrdinal part() const
   {
     ThrowAssert(m_type == SelectorNodeType::PART);
-    return m_value.part_ord;
+    return m_partOrd;
+  }
+
+  bool part_is_ranked() const
+  {
+    return m_partIsRanked;
   }
 
   FieldBase const* field() const
   {
     ThrowAssert(m_type == SelectorNodeType::FIELD);
-    return m_value.field_ptr;
+    return m_field_ptr;
   }
 
   SelectorNodeType::node_type node_type() const
@@ -158,7 +169,11 @@ struct SelectorNode
   bool operator==(SelectorNode const& arg_rhs) const;
 
   SelectorNodeType::node_type  m_type;
-  value_type                   m_value;
+  Ordinal                      m_partOrd;
+  OrdinalVector                m_partOrds;
+  bool                         m_partIsRanked;
+  FieldBase const*             m_field_ptr;
+  unsigned left_offset; // for binary op
 };
 
 } // namespace impl
@@ -293,14 +308,15 @@ public:
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
 
 private:
+  bool select_bucket_impl(Bucket const& bucket, impl::SelectorNode const* root) const;
 
   const BulkData* find_mesh() const;
 
   bool is_null() const {
     if(m_expr.size() > 1) return false;
-    if(m_expr.back().m_type == SelectorNodeType::PART  && m_expr.back().m_value.part_ord  == InvalidPartOrdinal) {
+    if(m_expr.back().m_type == SelectorNodeType::PART  && m_expr.back().part()  == InvalidPartOrdinal) {
       return true;
-    } else if(m_expr.back().m_type == SelectorNodeType::FIELD && m_expr.back().m_value.field_ptr == nullptr) {
+    } else if(m_expr.back().m_type == SelectorNodeType::FIELD && m_expr.back().field() == nullptr) {
       return true;
     }
     return false;
@@ -308,9 +324,47 @@ private:
 
   Selector& add_binary_op(SelectorNodeType::node_type type, const Selector& rhs)
   {
+    impl::SelectorNode& lhsNode = m_expr.back();
+    const impl::SelectorNode& rhsNode = rhs.m_expr.back();
+    if (type == SelectorNodeType::INTERSECTION && rhs.m_expr.size() == 1 &&
+        (rhsNode.m_type == SelectorNodeType::PART || rhsNode.m_type == SelectorNodeType::PART_INTERSECTION) &&
+        (lhsNode.m_type == SelectorNodeType::PART || lhsNode.m_type == SelectorNodeType::PART_INTERSECTION)) {
+      if (lhsNode.m_type == SelectorNodeType::PART) {
+        lhsNode.m_partOrds.push_back(lhsNode.m_partOrd);
+        lhsNode.m_partOrd = InvalidPartOrdinal;
+      }
+      if (rhsNode.m_type == SelectorNodeType::PART) {
+        stk::util::insert_keep_sorted_and_unique(rhsNode.m_partOrd, lhsNode.m_partOrds);
+      }
+      if (rhsNode.m_type == SelectorNodeType::PART_INTERSECTION) {
+        stk::util::insert_keep_sorted_and_unique(rhsNode.m_partOrds, lhsNode.m_partOrds);
+      }
+      lhsNode.m_type = SelectorNodeType::PART_INTERSECTION;
+
+      return *this;
+    }
+
+    if (type == SelectorNodeType::UNION && rhs.m_expr.size() == 1 &&
+        (rhsNode.m_type == SelectorNodeType::PART || rhsNode.m_type == SelectorNodeType::PART_UNION) &&
+        (lhsNode.m_type == SelectorNodeType::PART || lhsNode.m_type == SelectorNodeType::PART_UNION)) {
+      if (lhsNode.m_type == SelectorNodeType::PART) {
+        lhsNode.m_partOrds.push_back(lhsNode.m_partOrd);
+        lhsNode.m_partOrd = InvalidPartOrdinal;
+      }
+      if (rhsNode.m_type == SelectorNodeType::PART) {
+        stk::util::insert_keep_sorted_and_unique(rhsNode.m_partOrd, lhsNode.m_partOrds);
+      }
+      if (rhsNode.m_type == SelectorNodeType::PART_UNION) {
+        stk::util::insert_keep_sorted_and_unique(rhsNode.m_partOrds, lhsNode.m_partOrds);
+      }
+      lhsNode.m_type = SelectorNodeType::PART_UNION;
+
+      return *this;
+    }
+
     impl::SelectorNode root;
     root.m_type = type;
-    root.m_value.left_offset = 1 + rhs.m_expr.size();
+    root.left_offset = 1 + rhs.m_expr.size();
 
     m_expr.insert(m_expr.end(), rhs.m_expr.begin(), rhs.m_expr.end());
     m_expr.push_back(root);
@@ -322,7 +376,7 @@ private:
   }
 
   std::vector<impl::SelectorNode> m_expr;
-  const MetaData* m_meta;
+  mutable const MetaData* m_meta;
 };
 
 inline

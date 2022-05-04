@@ -37,6 +37,7 @@
 #include <sstream>                      // for ostringstream, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <string>                       // for string
@@ -67,28 +68,29 @@ TEST(StkMeshHowTo, changeEntityPartsUsingSelector)
   MPI_Comm communicator = MPI_COMM_WORLD;
   if(stk::parallel_machine_size(communicator) > 1) { return;}
 
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, communicator);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  meta.use_simple_fields();
 
   unsigned elementCount = 10;
-  stk::io::fill_mesh("generated:1x1x" + std::to_string(elementCount), bulk);
+  stk::io::fill_mesh("generated:1x1x" + std::to_string(elementCount), *bulkPtr);
 
   stk::mesh::Part* block1Part = meta.get_part("block_1");
   stk::mesh::Part& newBlock2Part = meta.declare_part("block_2", stk::topology::ELEM_RANK);
   stk::mesh::Selector block1Selector(*block1Part);
   stk::mesh::EntityVector entities;
 
-  stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK,  block1Selector, entities);
+  stk::mesh::get_entities(*bulkPtr, stk::topology::ELEM_RANK,  block1Selector, entities);
   EXPECT_EQ(elementCount, entities.size());
-  EXPECT_TRUE(entities_have_part(bulk, entities, block1Part));
+  EXPECT_TRUE(entities_have_part(*bulkPtr, entities, block1Part));
 
   stk::mesh::PartVector addParts{&newBlock2Part};
   stk::mesh::PartVector removeParts{block1Part};
-  bulk.batch_change_entity_parts(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK,
+  bulkPtr->batch_change_entity_parts(stk::mesh::Selector(*block1Part), stk::topology::ELEM_RANK,
                                  addParts, removeParts);
 
-  EXPECT_TRUE(entities_have_part(bulk, entities, &newBlock2Part));
-  EXPECT_FALSE(entities_have_part(bulk, entities, block1Part));
+  EXPECT_TRUE(entities_have_part(*bulkPtr, entities, &newBlock2Part));
+  EXPECT_FALSE(entities_have_part(*bulkPtr, entities, block1Part));
 }
 //END
 }

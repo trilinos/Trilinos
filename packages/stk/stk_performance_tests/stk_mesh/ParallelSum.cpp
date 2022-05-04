@@ -13,6 +13,7 @@
 #include <stk_util/parallel/ParallelComm.hpp>  // for parallel_data_exchange...
 #include <stk_mesh/base/Bucket.hpp>            // for Bucket
 #include <stk_mesh/base/BulkData.hpp>          // for BulkData, BulkData::NO...
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/FieldBase.hpp>         // for field_data, FieldBase
 #include <stk_mesh/base/FieldParallel.hpp>     // for parallel_sum, parallel...
 #include <stk_mesh/base/GetEntities.hpp>       // for count_selected_entities
@@ -76,8 +77,14 @@ void do_stk_test(bool with_ghosts=false)
   std::ostringstream oss;
   oss << "generated:" << X_DIM << "x" << Y_DIM << "x" << z_dim;
 
+  stk::mesh::MeshBuilder builder(pm);
   unsigned spatialDim = 3;
-  stk::mesh::MetaData meta(spatialDim);
+  builder.set_spatial_dimension(spatialDim);
+  builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  meta.use_simple_fields();
   if (parallel_rank == 0)
   {
       std::cerr << "Mesh: " << oss.str() << std::endl;
@@ -87,14 +94,12 @@ void do_stk_test(bool with_ghosts=false)
   for (int i = 0; i < NUM_FIELDS; ++i) {
     std::ostringstream oss2;
     oss2 << "field_" << i;
-    FieldBase* field = &meta.declare_field<ScalarField>(stk::topology::NODE_RANK, oss2.str());
+    FieldBase* field = &meta.declare_field<double>(stk::topology::NODE_RANK, oss2.str());
     fields[i] = field;
     stk::mesh::put_field_on_mesh(*field, meta.universal_part(), nullptr);
   }
 
   PartVector hex_topo(1, &meta.declare_part_with_topology("hex_part", stk::topology::HEX_8));
-
-  stk::mesh::BulkData bulk(meta, pm, stk::mesh::BulkData::NO_AUTO_AURA);
 
   stk::io::fill_mesh(oss.str(),bulk);
 
