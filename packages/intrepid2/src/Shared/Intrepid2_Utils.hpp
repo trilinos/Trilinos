@@ -384,8 +384,7 @@ namespace Intrepid2 {
     }
   }
 
-  template< bool B, class T >
-  using enable_if_t = typename std::enable_if<B,T>::type;
+  using std::enable_if_t;
 
   /**
     \brief Tests whether a class has a member rank.  Used in getFixedRank() method below, which in turn is used in the supports_rank_n helpers.
