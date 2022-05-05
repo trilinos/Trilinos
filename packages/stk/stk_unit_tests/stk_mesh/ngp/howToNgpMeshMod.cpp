@@ -17,7 +17,7 @@
 
 typedef Kokkos::DualView<int*, Kokkos::LayoutRight, stk::ngp::ExecSpace> IntViewType;
 
-class NgpMeshModHowTo : public stk::unit_test_util::MeshFixture {};
+class NgpMeshModHowTo : public stk::unit_test_util::simple_fields::MeshFixture {};
 
 void test_change_entity_parts(stk::mesh::BulkData& bulk, stk::mesh::Entity elem, unsigned active_ordinal)
 {
@@ -64,7 +64,7 @@ TEST_F(NgpMeshModHowTo, changeEntityParts)
       "0,1,HEX_8,1,2,3,4,5,6,7,8\n"
       "0,2,HEX_8,1,2,3,4,5,6,7,8\n"
       "0,3,SHELL_QUAD_4,5,6,7,8";
-  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+  stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
 
   stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
   test_change_entity_parts(get_bulk(), elem, active.mesh_meta_data_ordinal());

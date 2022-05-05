@@ -11,6 +11,9 @@
 #include <Akri_DiagWriter.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/environment/RuntimeDoomed.hpp>
+#include "Akri_BoundingSurface.hpp"
+#include "Akri_Phase_Support.hpp"
+#include "Akri_Surface_Manager.hpp"
 
 namespace krino{
 
@@ -36,6 +39,11 @@ CDFEM_Support::get(const stk::mesh::MetaData & meta)
   return *support;
 }
 
+bool CDFEM_Support::is_active(const stk::mesh::MetaData & meta)
+{
+  return Phase_Support::exists_and_has_phases_defined(meta);
+}
+
 CDFEM_Support::CDFEM_Support(stk::mesh::MetaData & meta)
   : my_meta(meta),
     my_aux_meta(AuxMetaData::get(meta)),
@@ -55,6 +63,8 @@ CDFEM_Support::CDFEM_Support(stk::mesh::MetaData & meta)
     my_flag_use_hierarchical_dofs(false),
     my_flag_constrain_CDFEM_to_XFEM_space(false),
     my_flag_use_nonconformal_element_size(true),
+    myFlagDoNearbyRefinementBeforeInterfaceRefinement(false),
+    myFlagUseVelocityToEvaluateInterfaceCFL(false),
     my_timer_cdfem("CDFEM", sierra::Diag::sierraTimer()),
     my_timer_adapt("Nonconformal Adapt", my_timer_cdfem)
 {
@@ -128,36 +138,15 @@ CDFEM_Support::get_post_cdfem_refinement_selector() const
 void
 CDFEM_Support::setup_fields()
 {
-  my_coords_field = LevelSet::get_current_coordinates(my_meta);
+  my_coords_field = my_aux_meta.get_current_coordinates();
 
   Phase_Support::get(my_meta).check_phase_parts();
 
-  my_ls_fields.clear();
-  const LevelSetManager & region_ls = LevelSetManager::get(my_meta);
-  for (auto&& ls : region_ls)
+  myLevelSetFields.clear();
+  const Surface_Manager & surfaceManager = Surface_Manager::get(my_meta);
+  for (auto&& ls : surfaceManager.get_levelsets())
   {
-    LS_Field calc_ls_field(ls->name(),ls->get_identifier(),ls->get_isovar_field(),ls->get_isoval(),ls.get());
-    my_ls_fields.push_back(calc_ls_field);
-  }
-
-  const unsigned num_ls = region_ls.numberLevelSets();
-  my_death_specs.resize(num_ls, nullptr);
-  for (unsigned i=0; i<num_ls; ++i)
-  {
-    const LevelSet & ls = LevelSetManager::get(my_meta).levelSet(i);
-
-    if ( CDFEM_Irreversible_Phase_Support::get(my_meta).is_active() )
-    {
-      const CDFEM_Inequality_Spec_Vec & death_specs = CDFEM_Irreversible_Phase_Support::get(my_meta).get_death_specs();
-
-      for (auto && death_spec : death_specs)
-      {
-        if (&death_spec.get_levelset() == &ls)
-        {
-          my_death_specs[i] = &death_spec;
-        }
-      }
-    }
+    myLevelSetFields.insert(ls->get_isovar_field());
   }
 }
 
@@ -182,6 +171,32 @@ CDFEM_Support::add_interpolation_field(const FieldRef field)
   {
     const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
     my_interpolation_fields.insert(field.field_state(state));
+  }
+}
+
+void
+CDFEM_Support::set_snap_fields()
+{
+  mySnapFields = get_interpolation_fields();
+
+  FieldRef cdfemSnapField = get_cdfem_snap_displacements_field();
+  if (cdfemSnapField.valid())
+  {
+    for ( unsigned is = 0; is < cdfemSnapField.number_of_states(); ++is )
+    {
+      const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
+      mySnapFields.erase(cdfemSnapField.field_state(state));
+    }
+
+    for (auto && lsField : get_levelset_fields())
+    {
+      for ( unsigned is = 0; is < lsField.number_of_states(); ++is )
+      {
+        const stk::mesh::FieldState state = static_cast<stk::mesh::FieldState>(is);
+        if (state != stk::mesh::StateNew)
+          mySnapFields.erase(lsField.field_state(state));
+      }
+    }
   }
 }
 
@@ -249,6 +264,8 @@ CDFEM_Support::finalize_fields()
     my_zeroed_fields.insert(field);
   }
   krinolog << stk::diag::pop << stk::diag::dendl;
+
+  set_snap_fields();
 }
 
 void CDFEM_Support::force_ale_prolongation_for_field(const std::string & field_name)
@@ -333,16 +350,6 @@ CDFEM_Support::setup_refinement_marker()
 
   my_aux_meta.register_field(my_nonconformal_adapt_marker_name, FieldType::INTEGER, stk::topology::ELEMENT_RANK, 1, 1, get_universal_part());
   my_aux_meta.register_field(my_nonconformal_adapt_marker_name, FieldType::INTEGER, stk::topology::NODE_RANK, 1, 1, get_universal_part());
-}
-
-int
-CDFEM_Support::get_ls_index(const LevelSet * ls) const
-{
-  for ( unsigned ls_index = 0; ls_index < my_ls_fields.size(); ++ls_index )
-  {
-    if (ls == ls_field(ls_index).ptr) return ls_index;
-  }
-  ThrowRuntimeError("Invalid level set field index");
 }
 
 void

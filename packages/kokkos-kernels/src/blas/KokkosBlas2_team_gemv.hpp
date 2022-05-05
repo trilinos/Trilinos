@@ -45,29 +45,29 @@
 #ifndef KOKKOSBLAS2_TEAM_GEMV_HPP_
 #define KOKKOSBLAS2_TEAM_GEMV_HPP_
 
-#include<KokkosBlas2_team_gemv_spec.hpp>
+#include <KokkosBlas2_team_gemv_spec.hpp>
 
 namespace KokkosBlas {
 namespace Experimental {
 
-template<class TeamType, class MatrixType, class XVector,class YVector>
-void KOKKOS_INLINE_FUNCTION gemv (const TeamType& team,
-                 const char trans,
-                 const typename MatrixType::non_const_value_type& alpha,
-                 const MatrixType& A,
-                 const XVector& x,
-                 const typename YVector::non_const_value_type& beta,
-                 const YVector& y)
-{
+template <class TeamType, class MatrixType, class XVector, class YVector>
+void KOKKOS_INLINE_FUNCTION
+gemv(const TeamType& team, const char trans,
+     const typename MatrixType::non_const_value_type& alpha,
+     const MatrixType& A, const XVector& x,
+     const typename YVector::non_const_value_type& beta, const YVector& y) {
   if (trans == 'N' || trans == 'n')
-    return Impl::TeamGEMV<TeamType,MatrixType,XVector,YVector,0>::team_gemv(team,alpha,A,x,beta,y);
+    return Impl::TeamGEMV<TeamType, MatrixType, XVector, YVector, 0>::team_gemv(
+        team, alpha, A, x, beta, y);
   if (trans == 'T' || trans == 't')
-    return Impl::TeamGEMV<TeamType,MatrixType,XVector,YVector,1>::team_gemv(team,alpha,A,x,beta,y);
+    return Impl::TeamGEMV<TeamType, MatrixType, XVector, YVector, 1>::team_gemv(
+        team, alpha, A, x, beta, y);
   if (trans == 'C' || trans == 'c')
-    return Impl::TeamGEMV<TeamType,MatrixType,XVector,YVector,2>::team_gemv(team,alpha,A,x,beta,y);
+    return Impl::TeamGEMV<TeamType, MatrixType, XVector, YVector, 2>::team_gemv(
+        team, alpha, A, x, beta, y);
 }
 
-}
-}
+}  // namespace Experimental
+}  // namespace KokkosBlas
 
 #endif

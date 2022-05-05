@@ -43,99 +43,99 @@
 //BEGINCommSparse
 TEST(ParallelComm, HowToCommunicateOneValue)
 {
-    MPI_Comm comm = MPI_COMM_WORLD;
-    stk::CommSparse commSparse(comm);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  stk::CommSparse commSparse(comm);
 
-    int myProcId = commSparse.parallel_rank();
-    int numProcs = commSparse.parallel_size();
+  int myProcId = commSparse.parallel_rank();
+  int numProcs = commSparse.parallel_size();
 
-    double sendSomeNumber = 100-myProcId;
+  double sendSomeNumber = 100-myProcId;
 
-    for(int phase = 0; phase < 2; ++phase)
-    {
-        for (int proc=0;proc<numProcs;proc++)
-        {
-            if ( proc != myProcId )
-            {
-                stk::CommBuffer& proc_buff = commSparse.send_buffer(proc);
-                proc_buff.pack<double>(sendSomeNumber);
-            }
-        }
-        if(phase == 0)
-        {
-            commSparse.allocate_buffers();
-        }
-        else
-        {
-            commSparse.communicate();
-        }
-    }
-
-
+  for(int phase = 0; phase < 2; ++phase)
+  {
     for (int proc=0;proc<numProcs;proc++)
     {
-        if ( proc != myProcId )
-        {
-            stk::CommBuffer& dataReceived = commSparse.recv_buffer(proc);
-            double val = -1;
-            dataReceived.unpack(val);
-            EXPECT_EQ(100-proc, val);
-        }
+      if ( proc != myProcId )
+      {
+        stk::CommBuffer& proc_buff = commSparse.send_buffer(proc);
+        proc_buff.pack<double>(sendSomeNumber);
+      }
     }
+    if(phase == 0)
+    {
+      commSparse.allocate_buffers();
+    }
+    else
+    {
+      commSparse.communicate();
+    }
+  }
+
+
+  for (int proc=0;proc<numProcs;proc++)
+  {
+    if ( proc != myProcId )
+    {
+      stk::CommBuffer& dataReceived = commSparse.recv_buffer(proc);
+      double val = -1;
+      dataReceived.unpack(val);
+      EXPECT_EQ(100-proc, val);
+    }
+  }
 }
 //ENDCommSparse
 //BEGINCommSparse2
 TEST(ParallelComm, HowToCommunicateAnArbitraryNumberOfValues)
 {
-    MPI_Comm comm = MPI_COMM_WORLD;
-    stk::CommSparse commSparse(comm);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  stk::CommSparse commSparse(comm);
 
-    int myProcId = commSparse.parallel_rank();
-    int numProcs = commSparse.parallel_size();
+  int myProcId = commSparse.parallel_rank();
+  int numProcs = commSparse.parallel_size();
 
-    double sendSomeNumber = 100-myProcId;
+  double sendSomeNumber = 100-myProcId;
 
-    for(int phase = 0; phase < 2; ++phase)
+  for(int phase = 0; phase < 2; ++phase)
+  {
+    for (int proc=0;proc<numProcs;proc++)
     {
-        for (int proc=0;proc<numProcs;proc++)
+      if ( proc != myProcId )
+      {
+        stk::CommBuffer& proc_buff = commSparse.send_buffer(proc);
+        for (int i=0;i<myProcId;i++)
         {
-            if ( proc != myProcId )
-            {
-                stk::CommBuffer& proc_buff = commSparse.send_buffer(proc);
-                for (int i=0;i<myProcId;i++)
-                {
-                    proc_buff.pack<double>(sendSomeNumber+i);
-                }
-            }
+          proc_buff.pack<double>(sendSomeNumber+i);
         }
-        if(phase == 0)
-        {
-            commSparse.allocate_buffers();
-        }
-        else
-        {
-            commSparse.communicate();
-        }
+      }
     }
-
-
-    for (int procFromWhichDataIsReceived=0;procFromWhichDataIsReceived<numProcs;procFromWhichDataIsReceived++)
+    if(phase == 0)
     {
-        if ( procFromWhichDataIsReceived != myProcId )
-        {
-            stk::CommBuffer& dataReceived = commSparse.recv_buffer(procFromWhichDataIsReceived);
-            int numItemsReceived = 0;
-            while ( dataReceived.remaining() )
-            {
-                double val = -1;
-                dataReceived.unpack(val);
-                EXPECT_EQ(100-procFromWhichDataIsReceived+numItemsReceived, val);
-                numItemsReceived++;
-            }
-            int goldNumItemsReceived = procFromWhichDataIsReceived;
-            EXPECT_EQ(goldNumItemsReceived, numItemsReceived);
-        }
+      commSparse.allocate_buffers();
     }
+    else
+    {
+      commSparse.communicate();
+    }
+  }
+
+
+  for (int procFromWhichDataIsReceived=0;procFromWhichDataIsReceived<numProcs;procFromWhichDataIsReceived++)
+  {
+    if ( procFromWhichDataIsReceived != myProcId )
+    {
+      stk::CommBuffer& dataReceived = commSparse.recv_buffer(procFromWhichDataIsReceived);
+      int numItemsReceived = 0;
+      while ( dataReceived.remaining() )
+      {
+        double val = -1;
+        dataReceived.unpack(val);
+        EXPECT_EQ(100-procFromWhichDataIsReceived+numItemsReceived, val);
+        numItemsReceived++;
+      }
+      int goldNumItemsReceived = procFromWhichDataIsReceived;
+      EXPECT_EQ(goldNumItemsReceived, numItemsReceived);
+    }
+  }
 }
 //ENDCommSparse2
 #endif

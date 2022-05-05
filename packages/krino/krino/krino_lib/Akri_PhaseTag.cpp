@@ -10,9 +10,9 @@
 
 namespace krino{
 
-std::map<LevelSet_Identifier, LevelSet_Identifier> LS_SideTag::the_composite_ls_map;
+std::map<Surface_Identifier, Surface_Identifier> LS_SideTag::the_composite_ls_map;
 
-void LS_SideTag::declare_composite(const LevelSet_Identifier constituent, const LevelSet_Identifier composite)
+void LS_SideTag::declare_composite(const Surface_Identifier constituent, const Surface_Identifier composite)
 {
   LS_SideTag constituent_tag(constituent,0);
   LS_SideTag composite_tag(composite,0);

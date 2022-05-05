@@ -37,6 +37,7 @@
 #include <sstream>                      // for ostringstream, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/GetEntities.hpp>
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector
@@ -49,36 +50,42 @@ namespace
 void expectNumElementsInAura(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption,
                              unsigned numExpectedElementsInAura)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) == 2)
-    {
-        stk::mesh::MetaData meta;
-        stk::mesh::BulkData bulk(meta, communicator, autoAuraOption);
-        stk::io::fill_mesh("generated:1x1x2", bulk);
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) == 2)
+  {
+    stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+    builder.set_aura_option(autoAuraOption);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+    bulkPtr->mesh_meta_data().use_simple_fields();
+    stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+    stk::mesh::BulkData& bulk = *bulkPtr;
+    stk::io::fill_mesh("generated:1x1x2", bulk);
 
-        EXPECT_EQ(numExpectedElementsInAura,
-                  stk::mesh::count_selected_entities(meta.aura_part(), bulk.buckets(stk::topology::ELEMENT_RANK)));
-    }
+    EXPECT_EQ(numExpectedElementsInAura,
+              stk::mesh::count_selected_entities(meta.aura_part(), bulk.buckets(stk::topology::ELEMENT_RANK)));
+  }
 }
 TEST(StkMeshHowTo, useNoAura)
 {
-    expectNumElementsInAura(stk::mesh::BulkData::NO_AUTO_AURA, 0);
+  expectNumElementsInAura(stk::mesh::BulkData::NO_AUTO_AURA, 0);
 }
 TEST(StkMeshHowTo, useAutomaticGeneratedAura)
 {
-    expectNumElementsInAura(stk::mesh::BulkData::AUTO_AURA, 1);
+  expectNumElementsInAura(stk::mesh::BulkData::AUTO_AURA, 1);
 }
 TEST(StkMeshHowTo, useAuraDefaultBehavior)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) == 2)
-    {
-        stk::mesh::MetaData meta;
-        stk::mesh::BulkData bulk(meta, communicator);
-        stk::io::fill_mesh("generated:1x1x2", bulk);
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) == 2)
+  {
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(communicator).create();
+    bulkPtr->mesh_meta_data().use_simple_fields();
+    stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+    stk::mesh::BulkData& bulk = *bulkPtr;
+    stk::io::fill_mesh("generated:1x1x2", bulk);
 
-        EXPECT_EQ(1u, stk::mesh::count_selected_entities(meta.aura_part(), bulk.buckets(stk::topology::ELEMENT_RANK)));
-    }
+    EXPECT_EQ(1u, stk::mesh::count_selected_entities(meta.aura_part(), bulk.buckets(stk::topology::ELEMENT_RANK)));
+  }
 }
 //END_AURA_EXAMPLES
 }

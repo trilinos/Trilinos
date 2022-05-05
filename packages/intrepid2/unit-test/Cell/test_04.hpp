@@ -90,12 +90,6 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
-
-      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-  
       *outStream                                                       
         << "===============================================================================\n"
         << "|                                                                             |\n"
@@ -193,7 +187,7 @@ namespace Intrepid2 {
             
             // create mirror host views
             auto hRefCellNodes = Kokkos::create_mirror_view_and_copy(
-                typename HostSpaceType:: memory_space(), refCellNodes);
+                Kokkos::HostSpace(), refCellNodes);
 
             auto hWorksetCell = Kokkos::create_mirror_view(worksetCell);
 
@@ -239,11 +233,8 @@ namespace Intrepid2 {
             }
             
             // copy to mirror host views
-            auto hControlPoints = Kokkos::create_mirror_view_and_copy(
-                typename HostSpaceType::memory_space(), controlPoints);
-
-            auto hCubPoints = Kokkos::create_mirror_view_and_copy(
-                typename HostSpaceType::memory_space(), cubPoints);
+            auto hControlPoints = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), controlPoints);
+            auto hCubPoints = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubPoints);
 
             // Points in controlPoints should match the originals in cubPoints up to a tolerance
             for (auto cellOrd=0;cellOrd<numCells;++cellOrd) 

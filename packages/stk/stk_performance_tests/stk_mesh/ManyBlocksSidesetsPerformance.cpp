@@ -50,7 +50,7 @@
 namespace stk_perf_many_blocks
 {
 
-class ManyBlocksSidesets : public stk::unit_test_util::MeshFixture
+class ManyBlocksSidesets : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   ManyBlocksSidesets()

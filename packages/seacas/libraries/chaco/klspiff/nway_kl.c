@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -26,18 +26,18 @@ int KL_MAX_PASS = -1; /* max KL passes; infinite if <= 0 */
 int nway_kl(struct vtx_data **graph,       /* data structure for graph */
             int               nvtxs,       /* number of vtxs in graph */
             struct bilist ****buckets,     /* array of lists for bucket sort */
-            struct bilist **  listspace,   /* list data structure for each vertex */
-            int **            tops,        /* 2-D array of top of each set of buckets */
-            int **            dvals,       /* d-values for each transition */
-            int *             sets,        /* processor each vertex is assigned to */
+            struct bilist   **listspace,   /* list data structure for each vertex */
+            int             **tops,        /* 2-D array of top of each set of buckets */
+            int             **dvals,       /* d-values for each transition */
+            int              *sets,        /* processor each vertex is assigned to */
             int               maxdval,     /* maximum d-value for a vertex */
             int               nsets,       /* number of sets divided into */
-            double *          goal,        /* desired set sizes */
-            float *           term_wgts[], /* weights for terminal propagation */
+            double           *goal,        /* desired set sizes */
+            float            *term_wgts[], /* weights for terminal propagation */
             int (*hops)[MAXSETS],          /* cost of set transitions */
             int     max_dev,               /* largest allowed deviation from balance */
             int     using_ewgts,           /* are edge weights being used? */
-            int **  bndy_list,             /* list of vertices on boundary (0 ends) */
+            int   **bndy_list,             /* list of vertices on boundary (0 ends) */
             double *startweight            /* sum of vweights in each set (in and out) */
 )
 
@@ -55,17 +55,17 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
   extern int      KL_UNDO_LIST;               /* should I back out of changes or start over? */
   extern int      KL_MAX_PASS;                /* maximum number of outer KL loops */
   extern double   CUT_TO_HOP_COST;            /* if term_prop; cut/hop importance */
-  struct bilist * movelist;                   /* list of vtxs to be moved */
+  struct bilist  *movelist;                   /* list of vtxs to be moved */
   struct bilist **endlist;                    /* end of movelists */
-  struct bilist * bestptr;                    /* best vertex in linked list */
-  struct bilist * bptr;                       /* loops through bucket list */
-  float *         ewptr     = NULL;           /* loops through edge weights */
-  double *        locked    = NULL;           /* weight of vertices locked in a set */
-  double *        loose     = NULL;           /* weight of vtxs that can move from a set */
-  int *           bspace    = NULL;           /* list of active vertices for bucketsort */
-  double *        weightsum = NULL;           /* sum of vweights for each partition */
-  int *           edges     = NULL;           /* edge list for a vertex */
-  int *           bdy_ptr   = NULL;           /* loops through bndy_list */
+  struct bilist  *bestptr;                    /* best vertex in linked list */
+  struct bilist  *bptr;                       /* loops through bucket list */
+  float          *ewptr     = NULL;           /* loops through edge weights */
+  double         *locked    = NULL;           /* weight of vertices locked in a set */
+  double         *loose     = NULL;           /* weight of vtxs that can move from a set */
+  int            *bspace    = NULL;           /* list of active vertices for bucketsort */
+  double         *weightsum = NULL;           /* sum of vweights for each partition */
+  int            *edges     = NULL;           /* edge list for a vertex */
+  int            *bdy_ptr   = NULL;           /* loops through bndy_list */
   double          time;                       /* timing parameter */
   double          delta;                      /* desire of sets to change size */
   double          bestdelta = -1;             /* strongest delta value */
@@ -113,7 +113,7 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
   int             size;                 /* array spacing */
   int             i, j, k, l;           /* loop counters */
 
-  double drandom(), seconds();
+  double drandom(), seconds(void);
   int    make_kl_list();
   void   bucketsorts(), bucketsorts_bi(), bucketsort1();
   void   pbuckets(), removebilist(), movebilist(), make_bndy_list();

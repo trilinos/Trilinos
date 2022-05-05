@@ -46,7 +46,14 @@ struct EdgeIntersection
   InterfaceID interface;
 };
 
-void communicate_intersection_points(const stk::mesh::BulkData & mesh, std::vector<IntersectionPoint> & intersectionPoints);
+template <typename T>
+bool any_entity_in_first_vector_is_contained_in_second_sorted_vector(const std::vector<T> & firstVec, const std::vector<T> & secondVec)
+{
+  for (auto && first : firstVec)
+    if (std::binary_search(secondVec.begin(), secondVec.end(), first))
+      return true;
+  return false;
+}
 
 typedef std::function<bool(const std::vector<stk::mesh::Entity> &, const std::vector<int> &)> IntersectionPointFilter;
 
@@ -64,7 +71,7 @@ std::vector<IntersectionPoint> build_uncaptured_intersection_points(const stk::m
     const InterfaceGeometry & geometry,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains);
 
-void update_intersection_points_after_snap_iteration(const stk::mesh::BulkData & mesh,
+std::vector<size_t> update_intersection_points_after_snap_iteration(const stk::mesh::BulkData & mesh,
   const InterfaceGeometry & geometry,
   const std::vector<stk::mesh::Entity> & iterationSortedSnapNodes,
   const NodeToCapturedDomainsMap & nodesToCapturedDomains,

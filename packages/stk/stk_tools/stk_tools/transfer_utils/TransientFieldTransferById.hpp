@@ -147,65 +147,65 @@ private:
 class TransientTransferByIdForRank
 {
 public:
-    TransientTransferByIdForRank(stk::mesh::MetaData &metaA, stk::mesh::MetaData &metaB, stk::mesh::EntityRank rank);
-    ~TransientTransferByIdForRank();
+  TransientTransferByIdForRank(stk::mesh::MetaData &metaA, stk::mesh::MetaData &metaB, stk::mesh::EntityRank rank);
+  ~TransientTransferByIdForRank();
 
-    void initialize();
+  void initialize();
 
-    void do_transfer();
+  void do_transfer();
 
-    stk::mesh::EntityRank get_rank() const { return mRank; }
+  stk::mesh::EntityRank get_rank() const { return mRank; }
 
-    stk::mesh::MetaData  &get_metaA() { return mMetaA; }
-    stk::mesh::MetaData  &get_metaB() { return mMetaB; }
+  stk::mesh::MetaData  &get_metaA() { return mMetaA; }
+  stk::mesh::MetaData  &get_metaB() { return mMetaB; }
 
 protected:
-    stk::mesh::MetaData   &mMetaA;
-    stk::mesh::MetaData   &mMetaB;
-    stk::mesh::EntityRank  mRank;
+  stk::mesh::MetaData   &mMetaA;
+  stk::mesh::MetaData   &mMetaB;
+  stk::mesh::EntityRank  mRank;
 
-    RepeatedTransferCopyByIdStkMeshAdapter *mTransferMeshA = nullptr;
-    RepeatedTransferCopyByIdStkMeshAdapter *mTransferMeshB = nullptr;
+  RepeatedTransferCopyByIdStkMeshAdapter *mTransferMeshA = nullptr;
+  RepeatedTransferCopyByIdStkMeshAdapter *mTransferMeshB = nullptr;
 
-    stk::transfer::SearchByIdGeometric  mSearch;
-    stk::transfer::TransferCopyById    *mTransfer = nullptr;
-
-private:
-    TransientTransferByIdForRank();
+  stk::transfer::SearchByIdGeometric  mSearch;
+  stk::transfer::TransferCopyById    *mTransfer = nullptr;
 
 private:
-    RepeatedTransferCopyByIdStkMeshAdapter *create_transfer_mesh(stk::mesh::MetaData &meta);
+  TransientTransferByIdForRank();
+
+private:
+  RepeatedTransferCopyByIdStkMeshAdapter *create_transfer_mesh(stk::mesh::MetaData &meta);
 };
 
 class TransientFieldTransferById
 {
 public:
-    TransientFieldTransferById(stk::io::StkMeshIoBroker &brokerA, stk::io::StkMeshIoBroker &brokerB);
+  TransientFieldTransferById(stk::io::StkMeshIoBroker &brokerA, stk::io::StkMeshIoBroker &brokerB);
 
-    ~TransientFieldTransferById();
+  ~TransientFieldTransferById();
 
-    void writeFields(size_t aOutFileIndex, std::vector<const stk::mesh::FieldBase *> & aTransientFields, std::vector<std::string> & aGlobalVariableNames);
-    void get_field_names(size_t aOutputFileIndex, std::vector<const stk::mesh::FieldBase *> & aTransientFields, std::vector<std::string> & aGlobalVariableNames);
+  void writeFields(size_t aOutFileIndex, std::vector<const stk::mesh::FieldBase *> & aTransientFields, std::vector<std::string> & aGlobalVariableNames);
+  void get_field_names(size_t aOutputFileIndex, std::vector<const stk::mesh::FieldBase *> & aTransientFields, std::vector<std::string> & aGlobalVariableNames);
 
-    size_t transfer_and_write_transient_fields(const std::string &parallelOutputMeshName,  stk::mesh::Selector & aselector);
-    size_t transfer_and_write_transient_fields(const std::string &parallelOutputMeshName);
+  size_t transfer_and_write_transient_fields(const std::string &parallelOutputMeshName,  stk::mesh::Selector & aselector);
+  size_t transfer_and_write_transient_fields(const std::string &parallelOutputMeshName);
 
-    stk::io::StkMeshIoBroker &get_brokerA() { return mBrokerA; }
-    stk::io::StkMeshIoBroker &get_brokerB() { return mBrokerB; }
+  stk::io::StkMeshIoBroker &get_brokerA() { return mBrokerA; }
+  stk::io::StkMeshIoBroker &get_brokerB() { return mBrokerB; }
 
 protected:
-    stk::io::StkMeshIoBroker &mBrokerA;
-    stk::io::StkMeshIoBroker &mBrokerB;
-    std::vector<TransientTransferByIdForRank*> mTransfers;
+  stk::io::StkMeshIoBroker &mBrokerA;
+  stk::io::StkMeshIoBroker &mBrokerB;
+  std::vector<TransientTransferByIdForRank*> mTransfers;
 
 private:
-    TransientFieldTransferById();
+  TransientFieldTransferById();
 
-    void do_transfer();
+  void do_transfer();
 
-    size_t setup_output_transient_fields(const std::string &parallelOutputMeshName);
+  size_t setup_output_transient_fields(const std::string &parallelOutputMeshName);
 
-    void initialize(const std::vector<stk::mesh::EntityRank>& entityRanks);
+  void initialize(const std::vector<stk::mesh::EntityRank>& entityRanks);
 };
 
 }

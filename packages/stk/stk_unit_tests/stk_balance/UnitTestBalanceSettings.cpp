@@ -35,6 +35,9 @@
 #include "stk_balance/balanceUtils.hpp"
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_unit_test_utils/BuildMesh.hpp>
+
+using stk::unit_test_util::build_mesh;
 
 class BalanceSettingsTester : public ::testing::Test
 {
@@ -101,10 +104,9 @@ TEST(BalanceSettings, defaultContactSearchStatus)
   stk::balance::GraphCreationSettingsForZoltan2 graphCreationSettingsForZoltan2;
   EXPECT_TRUE(graphCreationSettingsWithCustomTolerances.includeSearchResultsInGraph());
 
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  stk::balance::DoubleFieldType& field = meta.declare_field<stk::balance::DoubleFieldType>(stk::topology::NODE_RANK, "dummy", 1);
-  stk::balance::FieldVertexWeightSettings fieldVertexWeightSettings(bulk, field);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, MPI_COMM_WORLD);
+  stk::balance::DoubleFieldType& field = bulk->mesh_meta_data().declare_field<double>(stk::topology::NODE_RANK, "dummy", 1);
+  stk::balance::FieldVertexWeightSettings fieldVertexWeightSettings(*bulk, field);
   EXPECT_FALSE(fieldVertexWeightSettings.includeSearchResultsInGraph());
 
   stk::balance::MultipleCriteriaSettings multipleCriteriaSettings({&field});
@@ -147,10 +149,9 @@ TEST(BalanceSettings, toggleContactSearchStatus)
   graphCreationSettingsForZoltan2.setIncludeSearchResultsInGraph(false);
   EXPECT_FALSE(graphCreationSettingsWithCustomTolerances.includeSearchResultsInGraph());
 
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  stk::balance::DoubleFieldType& field = meta.declare_field<stk::balance::DoubleFieldType>(stk::topology::NODE_RANK, "dummy", 1);
-  stk::balance::FieldVertexWeightSettings fieldVertexWeightSettings(bulk, field);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, MPI_COMM_WORLD);
+  stk::balance::DoubleFieldType& field = bulk->mesh_meta_data().declare_field<double>(stk::topology::NODE_RANK, "dummy", 1);
+  stk::balance::FieldVertexWeightSettings fieldVertexWeightSettings(*bulk, field);
   fieldVertexWeightSettings.setIncludeSearchResultsInGraph(true);
   EXPECT_TRUE(fieldVertexWeightSettings.includeSearchResultsInGraph());
 

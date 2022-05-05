@@ -9,6 +9,7 @@
 #include <Akri_CDFEM_Support.hpp>
 #include <Akri_InterfaceID.hpp>
 #include <Akri_PhaseTag.hpp>
+#include <Akri_Phase_Support.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -76,15 +77,15 @@ parts_are_compatible_for_snapping_when_ignoring_phase(const stk::mesh::BulkData 
   return true;
 }
 
-bool phase_matches_interface(const CDFEM_Support & cdfemSupport, const PhaseTag & phase, const InterfaceID interface)
+bool phase_matches_interface(const bool oneLSPerPhase, const std::vector<Surface_Identifier> & surfaceIDs, const PhaseTag & phase, const InterfaceID interface)
 {
-  if(cdfemSupport.num_ls_fields() > 1 && Phase_Support::has_one_levelset_per_phase())
+  if(surfaceIDs.size() > 1 && oneLSPerPhase)
   {
-    return (phase.contain(cdfemSupport.ls_field(interface.first_ls()).identifier, -1) &&
-            phase.contain(cdfemSupport.ls_field(interface.second_ls()).identifier, -1));
+    return (phase.contain(surfaceIDs[interface.first_ls()], -1) &&
+            phase.contain(surfaceIDs[interface.second_ls()], -1));
   }
-  return (phase.contain(cdfemSupport.ls_field(interface.first_ls()).identifier, -1) &&
-         phase.contain(cdfemSupport.ls_field(interface.first_ls()).identifier, +1));
+  return (phase.contain(surfaceIDs[interface.first_ls()], -1) &&
+         phase.contain(surfaceIDs[interface.first_ls()], +1));
 }
 
 bool determine_phase_from_parts(PhaseTag & phase, const stk::mesh::PartVector & parts, const Phase_Support & phaseSupport)
@@ -118,10 +119,10 @@ PhaseTag determine_phase_for_entity(const stk::mesh::BulkData & mesh, stk::mesh:
   return phase;
 }
 
-bool node_is_on_interface(const stk::mesh::BulkData & mesh, const CDFEM_Support & cdfemSupport, const Phase_Support & phaseSupport, stk::mesh::Entity node, const InterfaceID & interface)
+bool node_is_on_interface(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, const std::vector<Surface_Identifier> & surfaceIDs, stk::mesh::Entity node, const InterfaceID & interface)
 {
   const PhaseTag nodePhase = determine_phase_for_entity(mesh, node, phaseSupport);
-  return phase_matches_interface(cdfemSupport, nodePhase, interface);
+  return phase_matches_interface(phaseSupport.has_one_levelset_per_phase(), surfaceIDs, nodePhase, interface);
 }
 
 bool nodes_are_on_any_interface(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, const stk::mesh::Bucket & nodeBucket)

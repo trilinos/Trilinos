@@ -87,9 +87,8 @@ initLocalPrec()
 {
   auto nRows = this->mat_->getLocalNumRows();
   auto& p = this->params_;
-  localPrec_ = Teuchos::rcp(new LocalFILDL(this->localRowPtrs_, this->localColInds_, this->localValues_, nRows,
-        p.nFact, p.nTrisol, p.level, p.omega,
-        p.shift, p.guessFlag ? 1 : 0, p.blockSize));
+  localPrec_ = Teuchos::rcp(new LocalFILDL(this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.standard_sptrsv,
+                                           p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSize));
   localPrec_->initialize();
   this->initTime_ = localPrec_->getInitializeTime();
 }
@@ -106,7 +105,7 @@ computeLocalPrec()
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void Fildl<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-applyLocalPrec(ScalarArray x, ScalarArray y) const
+applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
 {
   localPrec_->apply(x, y);
   //since this may be applied to multiple vectors, add to applyTime_ instead of setting it

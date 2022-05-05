@@ -46,9 +46,11 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
+#include "stk_unit_test_utils/BuildMesh.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 namespace stk { namespace mesh { class Part; } }
 
+using stk::unit_test_util::build_mesh;
 
 TEST( UnitTestChangeEntityId, change_id_small )
 {
@@ -69,11 +71,12 @@ TEST( UnitTestChangeEntityId, change_id_small )
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
   const unsigned spatial_dim = 2;
-  MetaData meta_data(spatial_dim);
+  std::shared_ptr<BulkData> bulkPtr = build_mesh(spatial_dim, pm);
+  MetaData& meta_data = bulkPtr->mesh_meta_data();
   Part &quad4_part = meta_data.declare_part_with_topology("quad4_Part", stk::topology::QUAD_4_2D);
   meta_data.commit();
 
-  BulkData mesh(meta_data, pm);
+  BulkData& mesh = *bulkPtr;
   int p_rank = mesh.parallel_rank();
   int p_numProcs = mesh.parallel_size();
   if (p_numProcs > 1) {
@@ -127,12 +130,11 @@ TEST( UnitTestChangeEntityId, change_id_large )
   const unsigned NZ = 20;
   const unsigned num_elems = NX * NY * NZ;
 
-  fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  fixtures::simple_fields::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
 
-  Field<int> & simple_nodal_field = hf.m_meta.declare_field<Field<int> >(stk::topology::NODE_RANK, "simple_nodal_field");
+  Field<int> & simple_nodal_field = hf.m_meta.declare_field<int>(stk::topology::NODE_RANK, "simple_nodal_field");
 
-  put_field_on_mesh( simple_nodal_field, *hf.m_elem_parts[0],
-                     (stk::mesh::FieldTraits<Field<int> >::data_type*) nullptr);
+  put_field_on_mesh(simple_nodal_field, *hf.m_elem_parts[0], (stk::mesh::FieldTraits<Field<int> >::data_type*) nullptr);
 
   //create nodal field on hex topo
 

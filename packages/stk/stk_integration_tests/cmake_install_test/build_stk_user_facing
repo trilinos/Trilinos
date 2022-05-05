@@ -51,13 +51,6 @@ stk_ctest_log=${output_dir}/stk-user-facing-ctest.out.$date_suffix
 stk_app_config_log=${output_dir}/stk-test-app-user-facing-config.out.$date_suffix
 stk_app_make_log=${output_dir}/stk-test-app-user-facing-make.out.$date_suffix
 
-if [ -d ${trilinos_dir}/packages/seacas ] ; then
-  exe rm -rf ${trilinos_dir}/packages/seacas;
-fi
-if [ ! -L ${trilinos_dir}/packages/seacas ] ; then
-  exe ln -s ${sierra_proj}/seacas ${trilinos_dir}/packages
-fi
-
 if [ -d ${trilinos_dir}/packages/stk ] ; then
   exe rm -rf ${trilinos_dir}/packages/stk;
 fi

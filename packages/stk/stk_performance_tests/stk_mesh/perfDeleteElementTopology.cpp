@@ -10,14 +10,15 @@
 namespace
 {
 
-class DestroyElementTopologyPerformanceTest : public stk::unit_test_util::MeshFixture
+class DestroyElementTopologyPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
     DestroyElementTopologyPerformanceTest()
     {
+        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
         create_num_fields_of_rank(10, stk::topology::NODE_RANK);
         create_num_fields_of_rank(10, stk::topology::ELEM_RANK);
-        setup_mesh("generated:50x50x64", stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::io::fill_mesh("generated:50x50x64", get_bulk());
     }
 
     void expect_no_entities()
@@ -34,16 +35,19 @@ private:
     }
     void create_vector_field_on_universal_part(stk::mesh::EntityRank rank, const std::string& name)
     {
-        auto& field = get_meta().declare_field<stk::mesh::Field<double>>(rank, name, 3);
+        auto& field = get_meta().declare_field<double>(rank, name, 3);
         stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
     }
 };
 
 
-class DestroyElementTopologyPerformance : public stk::unit_test_util::PerformanceTester
+class DestroyElementTopologyPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
 {
 public:
-    DestroyElementTopologyPerformance(stk::mesh::BulkData &bulk) : stk::unit_test_util::PerformanceTester(bulk.parallel()), bulkData(bulk) { }
+    DestroyElementTopologyPerformance(stk::mesh::BulkData &bulk)
+      : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+        bulkData(bulk)
+    { }
 protected:
     virtual void run_algorithm_to_time()
     {
@@ -60,10 +64,13 @@ TEST_F(DestroyElementTopologyPerformanceTest, DestroyElementTopology)
 }
 
 
-class DestroyAllElementsIndividuallyPerformance : public stk::unit_test_util::PerformanceTester
+class DestroyAllElementsIndividuallyPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
 {
 public:
-    DestroyAllElementsIndividuallyPerformance(stk::mesh::BulkData &bulk) : stk::unit_test_util::PerformanceTester(bulk.parallel()), bulkData(bulk) { }
+    DestroyAllElementsIndividuallyPerformance(stk::mesh::BulkData &bulk)
+      : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+        bulkData(bulk)
+    { }
 protected:
     virtual void run_algorithm_to_time()
     {

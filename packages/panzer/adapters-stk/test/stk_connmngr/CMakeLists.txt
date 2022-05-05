@@ -25,7 +25,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   COMM serial mpi
   )
-  
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tSquareTriMeshDOFManager
   SOURCES tSquareTriMeshDOFManager.cpp ${UNIT_TEST_DRIVER}
@@ -33,12 +33,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tEpetraLinObjFactory
-  SOURCES tEpetraLinearObjFactory.cpp ${UNIT_TEST_DRIVER}
-  NUM_MPI_PROCS 2
-  COMM serial mpi
-  )
+IF (PANZER_HAVE_EPETRA)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tEpetraLinObjFactory
+    SOURCES tEpetraLinearObjFactory.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    )
+ENDIF (PANZER_HAVE_EPETRA)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tCubeHexMeshDOFManager

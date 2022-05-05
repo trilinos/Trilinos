@@ -62,22 +62,22 @@ TEST ( UnitTestCrackMesh , VerifyDestroy2D )
   const unsigned nx = 3 , ny = 3 ;
 
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
-  for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-    stk::mesh::fixtures::QuadFixture fixture( pm , nx , ny );
-    fixture.m_meta.commit();
-    fixture.generate_mesh();
+    for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
+      stk::mesh::fixtures::simple_fields::QuadFixture fixture( pm , nx , ny );
+      fixture.m_meta.commit();
+      fixture.generate_mesh();
 
-    fixture.m_bulk_data.modification_begin();
+      fixture.m_bulk_data.modification_begin();
 
-    stk::mesh::Entity elem = fixture.elem( ix , iy );
+      stk::mesh::Entity elem = fixture.elem( ix , iy );
 
-    if ( fixture.m_bulk_data.is_valid(elem) && p_rank == fixture.m_bulk_data.parallel_owner_rank(elem) ) {
-      stk::mesh::Entity tmp = elem ;
-      fixture.m_bulk_data.destroy_entity( tmp );
+      if ( fixture.m_bulk_data.is_valid(elem) && p_rank == fixture.m_bulk_data.parallel_owner_rank(elem) ) {
+        stk::mesh::Entity tmp = elem ;
+        fixture.m_bulk_data.destroy_entity( tmp );
+      }
+
+      fixture.m_bulk_data.modification_end();
     }
-
-    fixture.m_bulk_data.modification_end();
-  }
   }
 }
 
@@ -92,24 +92,24 @@ TEST ( UnitTestCrackMesh , VerifyDestroy3D )
   const unsigned nx = 3 , ny = 3 , nz = 3 ;
 
   for ( unsigned iz = 0 ; iz < nz ; ++iz ) {
-  for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
-  for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-    stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-    fixture.m_meta.commit();
-    fixture.generate_mesh();
+    for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
+      for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
+        stk::mesh::fixtures::simple_fields::HexFixture fixture( pm , nx , ny , nz );
+        fixture.m_meta.commit();
+        fixture.generate_mesh();
 
-    fixture.m_bulk_data.modification_begin();
+        fixture.m_bulk_data.modification_begin();
 
-    stk::mesh::Entity elem = fixture.elem( ix , iy , iz );
+        stk::mesh::Entity elem = fixture.elem( ix , iy , iz );
 
-    if ( fixture.m_bulk_data.is_valid(elem) && p_rank == fixture.m_bulk_data.parallel_owner_rank(elem) ) {
-      stk::mesh::Entity tmp = elem ;
-      fixture.m_bulk_data.destroy_entity( tmp );
+        if ( fixture.m_bulk_data.is_valid(elem) && p_rank == fixture.m_bulk_data.parallel_owner_rank(elem) ) {
+          stk::mesh::Entity tmp = elem ;
+          fixture.m_bulk_data.destroy_entity( tmp );
+        }
+
+        fixture.m_bulk_data.modification_end();
+      }
     }
-
-    fixture.m_bulk_data.modification_end();
-  }
-  }
   }
 }
 
@@ -121,7 +121,7 @@ TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   // if all (incl ghosted) copies get updated.
 
   // Make the hex fixture
-  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2,2,2 );
+  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, 2,2,2 );
   fixture.m_meta.commit();
   fixture.generate_mesh();
 

@@ -195,8 +195,8 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     const bool barrierBetween = Details::barrierBetween_default;
-#endif
     const bool useDistinctTags = Details::useDistinctTags_default;
+#endif
     const bool debug = tpetraDistributorDebugDefault;
 
     Array<std::string> sendTypes = distributorSendTypes ();
@@ -223,9 +223,11 @@ namespace Tpetra {
     setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     plist->set ("Use distinct tags", useDistinctTags, "Whether to use distinct "
                 "MPI message tags for different code paths.  Highly recommended"
                 " to avoid message collisions.");
+#endif
     plist->set ("Debug", debug, "Whether to print copious debugging output on "
                 "all processes.");
     plist->set ("Timer Label","","Label for Time Monitor output");
@@ -343,9 +345,9 @@ namespace Tpetra {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
         << ", Barrier between receives and sends: "
         << (plan_.barrierBetweenRecvSend() ? "true" : "false")
-#endif
         << ", Use distinct tags: "
         << (plan_.useDistinctTags() ? "true" : "false")
+#endif
         << ", Debug: " << (verbose_ ? "true" : "false")
         << "}}";
     return out.str ();
@@ -460,9 +462,9 @@ namespace Tpetra {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
             << "\"Barrier between receives and sends\": "
             << (plan_.barrierBetweenRecvSend() ? "true" : "false") << endl
-#endif
             << "\"Use distinct tags\": "
             << (plan_.useDistinctTags() ? "true" : "false") << endl
+#endif
             << "\"Debug\": " << (verbose_ ? "true" : "false") << endl;
       }
     } // if myRank == 0

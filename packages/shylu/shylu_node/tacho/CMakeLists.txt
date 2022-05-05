@@ -7,7 +7,7 @@ IF (Kokkos_ENABLE_CUDA)
   ENDIF()
 ENDIF()
 
-IF (Kokkos_ENABLE_PTHREAD)
+IF (Kokkos_ENABLE_THREADS)
   IF (NOT Kokkos_ENABLE_OPENMP)
     MESSAGE(FATAL_ERROR "Tacho can not be build with Pthreads as the Kokkos Host Backend.")
   ENDIF()

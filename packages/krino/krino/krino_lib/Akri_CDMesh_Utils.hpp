@@ -17,15 +17,16 @@ class PhaseTag;
 class InterfaceID;
 class AuxMetaData;
 class Phase_Support;
+class Surface_Identifier;
 
 bool parts_are_compatible_for_snapping(const stk::mesh::BulkData & mesh, stk::mesh::Entity possible_snap_node, stk::mesh::Entity fixed_node);
 bool parts_are_compatible_for_snapping_when_ignoring_phase(const stk::mesh::BulkData & mesh, const AuxMetaData & auxMeta, const Phase_Support & phaseSupport, stk::mesh::Entity possible_snap_node, stk::mesh::Entity fixed_node);
-bool phase_matches_interface(const CDFEM_Support & cdfemSupport, const PhaseTag & phase, const InterfaceID interface);
+bool phase_matches_interface(const bool oneLSPerPhase, const std::vector<Surface_Identifier> & surfaceIDs, const PhaseTag & phase, const InterfaceID interface);
 bool determine_phase_from_parts(PhaseTag & phase, const stk::mesh::PartVector & parts, const Phase_Support & phaseSupport);
 PhaseTag determine_phase_for_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const Phase_Support & phaseSupport);
 bool nodes_are_on_any_interface(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, const stk::mesh::Bucket & nodeBucket);
 bool node_is_on_any_interface(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, const stk::mesh::Entity node);
-bool node_is_on_interface(const stk::mesh::BulkData & mesh, const CDFEM_Support & cdfemSupport, const Phase_Support & phaseSupport, stk::mesh::Entity node, const InterfaceID & interface);
+bool node_is_on_interface(const stk::mesh::BulkData & mesh, const Phase_Support & phaseSupport, const std::vector<Surface_Identifier> & surfaceIDs, stk::mesh::Entity node, const InterfaceID & interface);
 
 }
 

@@ -84,11 +84,6 @@
 
 #include "Panzer_DOFManager.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-   #include "mpi.h"
-#endif
-
 #include <iostream>
 
 using Teuchos::RCP;
@@ -105,8 +100,8 @@ namespace {
     pl->set("Y Blocks",2);
     pl->set("X Elements",4);
     pl->set("Y Elements",4);
-    
-    panzer_stk::SquareQuadMeshFactory factory; 
+
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
@@ -116,7 +111,7 @@ namespace {
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
     RCP<Intrepid2::Basis<PHX::exec_space,double,double>> basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
-     
+
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     std::vector<std::string> names;
@@ -144,9 +139,9 @@ namespace {
 
     TEST_EQUALITY(my_DOFManager->getNumFields(), 3);
 
-    const std::vector<int> & vel_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",0); 
-    const std::vector<int> & tem_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",1); 
-    const std::vector<int> & rad_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",2); 
+    const std::vector<int> & vel_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",0);
+    const std::vector<int> & tem_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",1);
+    const std::vector<int> & rad_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",2);
 
     TEST_EQUALITY(vel_offests.size(),tem_offests.size());
     TEST_EQUALITY(tem_offests.size(),rad_offests.size());
@@ -159,8 +154,8 @@ namespace {
     pl->set("Y Blocks",2);
     pl->set("X Elements",4);
     pl->set("Y Elements",4);
-    
-    panzer_stk::SquareQuadMeshFactory factory; 
+
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
@@ -170,7 +165,7 @@ namespace {
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
-     
+
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
@@ -312,8 +307,8 @@ namespace {
     pl->set("Y Blocks",2);
     pl->set("X Elements",4);
     pl->set("Y Elements",4);
-    
-    panzer_stk::SquareQuadMeshFactory factory; 
+
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
@@ -323,7 +318,7 @@ namespace {
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
-     
+
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
@@ -354,15 +349,15 @@ namespace {
     }
   }
 
-  TEUCHOS_UNIT_TEST( DOFManager_tests, gidsAreSet) 
+  TEUCHOS_UNIT_TEST( DOFManager_tests, gidsAreSet)
   {
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
     pl->set("Y Blocks",2);
     pl->set("X Elements",4);
     pl->set("Y Elements",4);
-    
-    panzer_stk::SquareQuadMeshFactory factory; 
+
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
@@ -372,7 +367,7 @@ namespace {
     my_DOFManager->setConnManager(conn,MPI_COMM_WORLD);
 
     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
-     
+
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     std::vector<std::string> names;
@@ -413,8 +408,8 @@ namespace {
     pl->set("Y Blocks",1);
     pl->set("X Elements",4);
     pl->set("Y Elements",2);
-    
-    panzer_stk::SquareQuadMeshFactory factory; 
+
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
@@ -424,7 +419,7 @@ namespace {
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
-     
+
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     std::vector<std::string> names;
@@ -490,8 +485,8 @@ namespace {
     pl->set("X Elements",4);
     pl->set("Y Elements",2);
     pl->set("Z Elements",2);
-    
-    panzer_stk::CubeTetMeshFactory factory; 
+
+    panzer_stk::CubeTetMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
@@ -502,7 +497,7 @@ namespace {
 
     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<PHX::exec_space,double,double>);
     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<PHX::exec_space,double,double>);
-     
+
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(secbasis));
 
@@ -540,8 +535,8 @@ namespace {
     pl->set("X Elements",4);
     pl->set("Y Elements",2);
     pl->set("Z Elements",2);
-    
-    panzer_stk::CubeTetMeshFactory factory; 
+
+    panzer_stk::CubeTetMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
@@ -552,7 +547,7 @@ namespace {
 
     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<PHX::exec_space,double,double>);
     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<PHX::exec_space,double,double>);
-     
+
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(secbasis));
 
@@ -595,8 +590,8 @@ namespace {
     pl->set("X Elements",4);
     pl->set("Y Elements",2);
     pl->set("Z Elements",2);
-    
-    panzer_stk::CubeTetMeshFactory factory; 
+
+    panzer_stk::CubeTetMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
@@ -607,7 +602,7 @@ namespace {
 
     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM<PHX::exec_space,double,double>);
     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > secbasis = Teuchos::rcp(new Intrepid2::Basis_HCURL_TET_I1_FEM<PHX::exec_space,double,double>);
-     
+
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
     RCP< const panzer::FieldPattern> secpattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(secbasis));
 
@@ -662,16 +657,16 @@ namespace {
 
   }
 
-  
-  TEUCHOS_UNIT_TEST( DOFManager_tests, multiBloc) 
+
+  TEUCHOS_UNIT_TEST( DOFManager_tests, multiBloc)
   {
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",1);
     pl->set("Y Blocks",2);
     pl->set("X Elements",5);
     pl->set("Y Elements",5);
-    
-    panzer_stk::SquareQuadMeshFactory factory; 
+
+    panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
     RCP<panzer::ConnManager> conn = rcp(new panzer_stk::STKConnManager(mesh));
@@ -681,7 +676,7 @@ namespace {
     my_DOFManager->setConnManager(conn, MPI_COMM_WORLD);
 
     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<PHX::exec_space,double,double>);
-     
+
     RCP< const panzer::FieldPattern> pattern = Teuchos::rcp(new panzer::Intrepid2FieldPattern(basis));
 
     std::vector<std::string> names;
@@ -705,9 +700,9 @@ namespace {
 
     TEST_EQUALITY(my_DOFManager->getNumFields(), 3);
 
-    //const std::vector<GO> & vel_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",0); 
-    //const std::vector<GO> & tem_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",1); 
-    //const std::vector<GO> & rad_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",2); 
+    //const std::vector<GO> & vel_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",0);
+    //const std::vector<GO> & tem_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",1);
+    //const std::vector<GO> & rad_offests = my_DOFManager->getGIDFieldOffsets("eblock-0_0",2);
     TEST_ASSERT(my_DOFManager->fieldInBlock("Velocity","eblock-0_0"));
     TEST_ASSERT(!my_DOFManager->fieldInBlock("Velocity","eblock-0_1"));
     TEST_ASSERT(my_DOFManager->fieldInBlock("Temperature","eblock-0_1"));
@@ -720,4 +715,4 @@ namespace {
   }
 
 
-} /*generic namespace*/ 
+} /*generic namespace*/

@@ -54,12 +54,6 @@
 
 #include "Shards_BasicTopologies.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
 

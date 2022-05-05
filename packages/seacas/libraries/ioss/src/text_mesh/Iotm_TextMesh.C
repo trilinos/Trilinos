@@ -73,6 +73,7 @@ namespace Iotm {
     m_variableCount[Ioss::INVALID_TYPE] = 0;
     m_variableCount[Ioss::NODEBLOCK]    = 0;
     m_variableCount[Ioss::REGION]       = 0;
+    m_variableCount[Ioss::ASSEMBLY]     = 0;
   }
 
   int64_t TextMesh::node_count() const { return m_data.nodeIds.size(); }
@@ -559,12 +560,15 @@ namespace Iotm {
     else if (type == "surface" || type == "sideset") {
       m_variableCount[Ioss::SIDEBLOCK] = count;
     }
+    else if (type == "assembly") {
+      m_variableCount[Ioss::ASSEMBLY] = count;
+    }
     else {
       std::ostringstream errmsg;
       fmt::print(errmsg,
                  "ERROR: (Iotm::TextMesh::set_variable_count)\n"
                  "       Unrecognized variable type '{}'. Valid types are:\n"
-                 "       global, element, node, nodal, nodeset, surface, sideset.\n",
+                 "       global, element, node, nodal, nodeset, surface, sideset, assembly.\n",
                  type);
       IOSS_ERROR(errmsg);
     }
@@ -614,6 +618,62 @@ namespace Iotm {
     ThrowRequireMsg(nullptr != sideset, "Could not find sideset with name" << name);
     return sideset->id;
   }
+
+  std::vector<std::string> TextMesh::get_assembly_names() const
+  {
+    return m_data.assemblies.get_part_names();
+  }
+
+  std::string TextMesh::get_assembly_name(int64_t id) const
+  {
+    const AssemblyData *assembly = m_data.assemblies.get_group_data(id);
+    ThrowRequireMsg(nullptr != assembly, "Could not find assembly with id" << id);
+    return assembly->name;
+  }
+
+  int64_t TextMesh::get_assembly_id(const std::string &name) const
+  {
+    const AssemblyData *assembly = m_data.assemblies.get_group_data(name);
+    ThrowRequireMsg(nullptr != assembly, "Could not find assembly with name" << name);
+    return assembly->id;
+  }
+
+  Ioss::EntityType TextMesh::assembly_type_to_entity_type(const AssemblyType type) const
+  {
+    if (type == AssemblyType::BLOCK) {
+      return Ioss::ELEMENTBLOCK;
+    }
+    else if (type == AssemblyType::NODESET) {
+      return Ioss::NODESET;
+    }
+    else if (type == AssemblyType::SIDESET) {
+      return Ioss::SIDESET;
+    }
+    else if (type == AssemblyType::ASSEMBLY) {
+      return Ioss::ASSEMBLY;
+    }
+
+    return Ioss::INVALID_TYPE;
+  }
+
+  Ioss::EntityType TextMesh::get_assembly_type(const std::string &name) const
+  {
+    const AssemblyData *assembly = m_data.assemblies.get_group_data(name);
+    ThrowRequireMsg(nullptr != assembly, "Could not find assembly with name" << name);
+
+    AssemblyType type = assembly->get_assembly_type();
+    return assembly_type_to_entity_type(type);
+  }
+
+  std::vector<std::string> TextMesh::get_assembly_members(const std::string &name) const
+  {
+    const AssemblyData *assembly = m_data.assemblies.get_group_data(name);
+    ThrowRequireMsg(nullptr != assembly, "Could not find assembly with name" << name);
+
+    return assembly->data;
+  }
+
+  int64_t TextMesh::assembly_count() const { return m_data.assemblies.get_group_data().size(); }
 
   std::set<int64_t> TextMesh::get_local_element_ids_for_block(int64_t id) const
   {

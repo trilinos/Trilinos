@@ -37,8 +37,8 @@
 #include <iostream>
 #include <string>
 
-namespace unitTestUtils
-{
+namespace stk {
+namespace unit_test_util {
 
 inline bool isNear(double a, double b, double tolerance)
 {
@@ -55,5 +55,19 @@ bool approximatelyEqualAsNumbers(const std::string &expectedWord, const std::str
 
 bool areStringsEqualWithToleranceForNumbers(const std::string &expectedString, const std::string &actualString, double tol);
 
+namespace simple_fields {
+
+inline bool isNear(double a, double b, double tolerance)
+{
+  return stk::unit_test_util::isNear(a, b, tolerance);
+}
+
+bool approximatelyEqualAsNumbers(const std::string &expectedWord, const std::string &actualWord, double tol);
+
+bool areStringsEqualWithToleranceForNumbers(const std::string &expectedString, const std::string &actualString, double tol);
+
+} // namespace simple_fields
+
+}
 }
 #endif

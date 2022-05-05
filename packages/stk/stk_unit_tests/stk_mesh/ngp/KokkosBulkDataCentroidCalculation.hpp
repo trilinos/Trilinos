@@ -53,6 +53,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -74,7 +75,7 @@ typedef Kokkos::Schedule<Kokkos::Dynamic> ScheduleType;
 typedef Kokkos::TeamPolicy<ExecSpace, ScheduleType> TeamPolicyType;
 typedef TeamPolicyType::member_type TeamHandleType;
 
-typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
+typedef stk::mesh::Field<double> CoordFieldType;
 
 #define STRINGIFY(x) #x
 
@@ -184,33 +185,40 @@ public:
 
 struct MyApp {
   MyApp()
-    : meta(3), bulk(nullptr),
-      centroid(meta.declare_field<CoordFieldType>(stk::topology::ELEM_RANK, "centroid")),
-      hostCentroid(meta.declare_field<CoordFieldType>(stk::topology::ELEM_RANK, "hostCentroid")),
+    : meta(nullptr),
+      bulk(),
+      centroid(nullptr),
+      hostCentroid(nullptr),
       coords(nullptr)
   {
-    num_repeat = stk::unit_test_util::get_command_line_option<int>("-n", 1);
-    dim = stk::unit_test_util::get_command_line_option<size_t>("-d", 10);
-    choice = stk::unit_test_util::get_command_line_option<int>("-c", 0);
-    teamSize = stk::unit_test_util::get_command_line_option<int>("-t", 1);
+    stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+    builder.set_spatial_dimension(3);
+    bulk = builder.create();
+    meta = &(bulk->mesh_meta_data()); 
+    meta->use_simple_fields();
+    num_repeat = stk::unit_test_util::simple_fields::get_command_line_option<int>("-n", 1);
+    dim = stk::unit_test_util::simple_fields::get_command_line_option<size_t>("-d", 10);
+    choice = stk::unit_test_util::simple_fields::get_command_line_option<int>("-c", 0);
+    teamSize = stk::unit_test_util::simple_fields::get_command_line_option<int>("-t", 1);
 
     std::ostringstream os;
     os << "generated:" << dim << "x" << dim << "x" << dim << std::endl;
 
-    std::vector<double> init_vec = {0,0,0};
-    stk::mesh::put_field_on_mesh(centroid, meta.universal_part(), init_vec.data());
-    stk::mesh::put_field_on_mesh(hostCentroid, meta.universal_part(), init_vec.data());
+    centroid = &meta->declare_field<double>(stk::topology::ELEM_RANK, "centroid");
+    hostCentroid = &meta->declare_field<double>(stk::topology::ELEM_RANK, "hostCentroid");
 
-    bulk = new stk::mesh::BulkData(meta, MPI_COMM_WORLD);
+    std::vector<double> init_vec = {0,0,0};
+    stk::mesh::put_field_on_mesh(*centroid, meta->universal_part(), 3, init_vec.data());
+    stk::mesh::put_field_on_mesh(*hostCentroid, meta->universal_part(), 3, init_vec.data());
 
     stk::io::fill_mesh(os.str(), *bulk);
 
-    coords = meta.get_field<CoordFieldType>(stk::topology::NODE_RANK, "coordinates");
+    coords = meta->get_field<double>(stk::topology::NODE_RANK, "coordinates");
 
-    calculate_centroids_on_host(*bulk, *coords, hostCentroid, bulk->mesh_meta_data().locally_owned_part());
+    calculate_centroids_on_host(*bulk, *coords, *hostCentroid, bulk->mesh_meta_data().locally_owned_part());
   }
 
-  ~MyApp() { delete bulk; }
+  ~MyApp() { }
 
   void report_bandwidth(double time) const
   {
@@ -238,10 +246,10 @@ struct MyApp {
     gettimeofday(&end,NULL);
   }
 
-  stk::mesh::MetaData meta;
-  stk::mesh::BulkData* bulk;
-  CoordFieldType& centroid;
-  CoordFieldType& hostCentroid;
+  stk::mesh::MetaData* meta = nullptr;
+  std::shared_ptr<stk::mesh::BulkData> bulk;
+  CoordFieldType* centroid;
+  CoordFieldType* hostCentroid;
   CoordFieldType* coords;
   int num_repeat;
   size_t dim;

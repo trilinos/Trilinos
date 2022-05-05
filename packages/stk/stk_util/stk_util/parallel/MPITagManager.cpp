@@ -1,5 +1,4 @@
 #include "stk_util/parallel/MPITagManager.hpp"
-#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg, ThrowRequire
 #include <cassert>
 
 namespace stk {
@@ -12,38 +11,23 @@ MPITagData::~MPITagData()
     m_manager->free_tag(*this);
 }
 
-int delete_mpi_comm_key(MPI_Comm comm,int comm_keyval, void* attribute_val, void* extra_state)
-{
-  auto comm_key_ptr          = reinterpret_cast<MPITagManager::CommKey*>(attribute_val);
-  MPITagManager* tag_manager = reinterpret_cast<MPITagManager*>(extra_state);
-  // the predefined comms sometimes (but not allways) get freed after the
-  // MPICommManager static variable, so we don't need to (and can't)
-  // unregister them
-  bool isSpecial = comm == MPI_COMM_WORLD ||
-                   comm == MPI_COMM_SELF  ||
-                   comm == MPI_COMM_NULL;
-  if (!isSpecial) {
-    tag_manager->free_comm_key(comm_key_ptr);
-  }
-
-  return MPI_SUCCESS;
-}
-
 }  // namespace 
 
-MPITagManager::MPITagManager()
+MPITagManager::MPITagManager() :
+  m_keyManager(std::make_shared<MPIKeyManager>()),
+  m_commCompare(m_keyManager),
+  m_tags(m_commCompare)
 {
   int isInitialized;
   MPI_Initialized(&isInitialized);
   ThrowRequireMsg(isInitialized, "MPI must be initialized prior to constructing MPITagManager");
 
-  MPI_Comm_create_keyval(MPI_COMM_NULL_COPY_FN, &Impl::delete_mpi_comm_key, &m_mpiAttrKey, this);
-
   int flag;
   int* val;
   MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_TAG_UB, &val, &flag);
-  m_tagMax = *val;
   ThrowRequireMsg(flag, "This MPI implementation is erroneous");
+  ThrowRequireMsg(*val >= m_tagMax, "MPI_TAG_UB must be at least " + std::to_string(m_tagMax));
+  m_tagMax = *val;
 }
 
 
@@ -52,11 +36,15 @@ MPITag MPITagManager::get_tag(MPI_Comm comm)
   return get_tag(comm, m_tagMin);
 }
 
-//TODO: make CommRecord non copyable
 MPITag MPITagManager::get_tag(MPI_Comm comm, int tagHint)
 {
-  CommKey key = get_comm_key(comm);
-  auto& commRecord = m_tags[key];
+  if (!m_keyManager->has_key(comm))
+  {
+    m_keyManager->get_key(comm);
+    m_keyManager->register_callback(comm, std::bind(&MPITagManager::free_comm_keys, this, std::placeholders::_1));
+  }
+
+  auto& commRecord = m_tags[comm];
   auto& tags = commRecord.tags;
 
   auto it = tags.find(tagHint);
@@ -85,12 +73,10 @@ MPITag MPITagManager::get_tag(MPI_Comm comm, int tagHint)
 
   assert(newTag != -1);
   ThrowRequireMsg(newTag <= m_tagMax, "New tag must be <= " + std::to_string(m_tagMax));
-  ThrowRequireMsg(tags.count(newTag) == 0, "Error in get_tag(): selected tag is not unique");
   debug_check(comm, newTag);
 
-  auto tagData = std::make_shared<Impl::MPITagData>(this, key, newTag);
-  tags.insert(newTag);
-  commRecord.tagPtrs[newTag] = tagData;
+  auto tagData = std::make_shared<Impl::MPITagData>(this, comm, newTag);
+  commRecord.insert(tagData);
 
   return MPITag(tagData);
 }
@@ -104,16 +90,7 @@ void MPITagManager::free_tag(MPITag& tag)
 
 void MPITagManager::free_tag(Impl::MPITagData& tag)
 {
-  if (m_tags.find(tag.get_comm_key()) == m_tags.end()) {
-    return;
-  }
-
-  auto& commRecord = m_tags.at(tag.get_comm_key());
-  auto it = commRecord.tags.find(tag.get_tag());
-
-  ThrowRequireMsg(it != commRecord.tags.end(), "Cannot free tag that is not assigned (possible double free)");
-  commRecord.tags.erase(it);
-  commRecord.tagPtrs.erase(tag.get_tag());
+  m_tags.at(tag.get_comm()).erase(tag);
   tag.set_free();
 }
 
@@ -121,77 +98,19 @@ void MPITagManager::free_tag(Impl::MPITagData& tag)
 //-----------------------------------------------------------------------------
 // MPI_Comm key management
 
-MPITagManager::CommKey MPITagManager::get_comm_key(MPI_Comm comm)
+
+void MPITagManager::free_comm_keys(MPI_Comm comm)
 {
-  const CommKey* commKey;
-  int foundFlag;
-  MPI_Comm_get_attr(comm, m_mpiAttrKey, &commKey, &foundFlag);
+  ThrowRequireMsg(m_tags.count(comm) == 1, "Cannot free MPI Comm that is not assigned (possible double free)");
 
-  if (!foundFlag) {
-    commKey = generate_comm_key();
-    MPI_Comm_set_attr(comm, m_mpiAttrKey, const_cast<CommKey*>(commKey));
-  }
-
-  return *commKey;
-}
-
-/*
-MPITagManager::CommKey MPITagManager::get_comm_key(MPI_Comm comm)
-{
-  CommKey* commKey;
-  int foundFlag;
-  MPI_Comm_get_attr(comm, m_mpiAttrKey, &commKey, &foundFlag);
-  ThrowRequireMsg(foundFlag, "MPI Comm key should already have been set");
-
-  return *commKey;
-}
-*/
-
-
-const MPITagManager::CommKey* MPITagManager::generate_comm_key()
-{
-  // find first unused key in range [0, int_max]
-  int valPrev = -1, valFound = -1;
-  if (m_usedCommKeys.size() == 0) {
-    valFound = 0;
-  } else {
-    for (auto v : m_usedCommKeys)
-    {
-      if (v - valPrev > 1) {
-        valFound = valPrev + 1;
-        break;
-      }
-
-      valPrev = v;
+  auto& commRecords = m_tags[comm];
+  for (auto& weak_tag_ptr : commRecords.tagPtrs) {
+    if (auto tag_ptr = weak_tag_ptr.second.lock()) {
+      tag_ptr->set_free();
     }
   }
 
-  if (valFound == -1) {
-    valFound = *(std::prev(m_usedCommKeys.end())) + 1;
-  }
-
-  ThrowRequireMsg(valFound >= 0, "generate_comm_key() failed or overflowed");
-
-  auto p = m_usedCommKeys.insert(valFound);
-  ThrowRequireMsg(p.second, "Error in generateCommKey()");
-
-  return &(*p.first);
-}
-
-
-void MPITagManager::free_comm_key(CommKey* key)
-{
-  ThrowRequireMsg(m_tags.count(*key) == 1, "Cannot free MPI Comm that is not assigned (possible double free)");
-
-  auto& commRecords = m_tags.at(*key);
-  for (auto& pw : commRecords.tagPtrs) {
-    if (auto p = pw.second.lock()) {
-      p->set_free();
-    }
-  }
-
-  m_tags.erase(*key);
-  m_usedCommKeys.erase(*key);
+  m_tags.erase(comm);
 }
 
 void MPITagManager::debug_check(MPI_Comm comm, int newVal)
@@ -218,6 +137,28 @@ void MPITagManager::debug_check(MPI_Comm comm, int newVal)
   MPI_Barrier(comm);
 #endif
 
+}
+
+
+//-----------------------------------------------------------------------------
+// CommRecord
+
+void MPITagManager::CommRecord::insert(std::shared_ptr<Impl::MPITagData> new_tag)
+{
+  int tag_val = new_tag->get_tag();
+  ThrowRequireMsg(tags.count(tag_val) == 0, "Cannot create new tag with same value as existing tag");
+
+  tags.insert(tag_val);
+  tagPtrs[tag_val] = new_tag;
+}
+
+void MPITagManager::CommRecord::erase(Impl::MPITagData& tag)
+{
+  int tag_val = tag.get_tag();
+  ThrowRequireMsg(tags.count(tag_val) == 1, "Cannot free tag this has not been assigned (possible double free");
+
+  tags.erase(tag_val);
+  tagPtrs.erase(tag_val);
 }
 
 

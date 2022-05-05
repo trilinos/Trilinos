@@ -128,19 +128,33 @@ struct FortranBLAS
 {
     inline static void axpy(int kmax, const Scalar alpha, const Scalar x[], Scalar y[])
     {
+      if ( alpha != Scalar(1) ) {
         for(int k = 0; k < kmax; ++k) {
             y[k] += alpha * x[k];
         }
+      } else {
+        for(int k = 0; k < kmax; ++k) {
+          y[k] += x[k];
+        }
+      }
     }
 
     inline static void axpby(int kmax, const Scalar alpha, const Scalar x[], const Scalar beta, Scalar y[])
     {
+      if ( beta != Scalar(1) ) {
         for(int k = 0; k < kmax; ++k) {
           y[k] *= beta;
         }
+      }
+      if ( alpha != Scalar(1) ) {
         for(int k = 0; k < kmax; ++k) {
-            y[k] += alpha * x[k];
+          y[k] += alpha * x[k];
         }
+      } else {
+        for(int k = 0; k < kmax; ++k) {
+          y[k] += x[k];
+        }
+      }
     }
 
     inline static void copy(int kmax, const Scalar x[], Scalar y[])
@@ -185,8 +199,12 @@ struct FortranBLAS
     inline static void fill(int kmax, const Scalar alpha, Scalar x[], const int inc=1)
     {
         auto ke = kmax*inc;
-        for(int k = 0; k < ke ; k += inc) {
-            x[k] = alpha;
+        if (alpha == Scalar(0) ) {
+        	std::memset(x,0,ke*sizeof(Scalar));
+        } else {
+          for(int k = 0; k < ke ; k += inc) {
+              x[k] = alpha;
+          }
         }
     }
 
@@ -405,8 +423,12 @@ struct FortranBLAS<double>
     inline static void fill(int kmax, const double alpha, double x[], const int inc=1)
     {
         auto ke = kmax*inc;
-        for(int k = 0; k < ke ; k += inc) {
-            x[k] = alpha;
+        if (alpha == double(0) ) {
+        	std::memset(x,0,ke*sizeof(double));
+        } else {
+          for(int k = 0; k < ke ; k += inc) {
+              x[k] = alpha;
+          }
         }
     }
 
@@ -590,15 +612,27 @@ void field_axpby(const Scalar alpha, const FieldBase& xField, const Scalar beta,
     BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
 
     int orig_thread_count = fix_omp_threads();
+    if ( beta == Scalar(1) ) {
 #ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
 #pragma omp parallel for schedule(static)
 #endif
-    for(size_t i=0; i < buckets.size(); i++) {
+      for(size_t i=0; i < buckets.size(); i++) {
+        Bucket & b = *buckets[i];
+        BucketSpan<Scalar> x(xField, b);
+        BucketSpan<Scalar> y(yField, b);
+        FortranBLAS<Scalar>::axpy(x.size(),alpha,x.data(),y.data());
+      }
+    } else {
+#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
+#pragma omp parallel for schedule(static)
+#endif
+      for(size_t i=0; i < buckets.size(); i++) {
         Bucket & b = *buckets[i];
         BucketSpan<Scalar> x(xField, b);
         BucketSpan<Scalar> y(yField, b);
         ThrowAssert(x.size() == y.size());
         FortranBLAS<Scalar>::axpby(x.size(),alpha,x.data(),beta,y.data());
+      }
     }
     unfix_omp_threads(orig_thread_count);
 }

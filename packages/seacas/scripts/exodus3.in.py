@@ -115,7 +115,7 @@ def getExodusVersion():
     """
     version_major = -1
     version_minor = -1
-    with open(ACCESS + "/include/exodusII.h") as header_file:
+    with open(ACCESS + "/@SEACAS_INCLUDEDIR@/exodusII.h") as header_file:
         for line in header_file:
             fields = line.split()
             if (len(fields) == 3 and
@@ -161,9 +161,9 @@ class ex_options(Enum):
 
 ACCESS = os.getenv('ACCESS', '@ACCESSDIR@')
 if os.uname()[0] == 'Darwin':
-    EXODUS_SO = ACCESS + "/lib/libexodus.dylib"
+    EXODUS_SO = ACCESS + "/@SEACAS_LIBDIR@/libexodus.dylib"
 else:
-    EXODUS_SO = ACCESS + "/lib/libexodus.so"
+    EXODUS_SO = ACCESS + "/@SEACAS_LIBDIR@/libexodus.so"
 EXODUS_LIB = ctypes.cdll.LoadLibrary(EXODUS_SO)
 
 MAX_STR_LENGTH = 32      # match exodus default
@@ -794,7 +794,7 @@ class exodus:
         """
         put initialization information into exodus file
 
-        >>> e.put_info_ext(self,info_struct)
+        >>> e.put_info_ext(info_struct)
         """
         if len(p.title) > MAX_LINE_LENGTH:
             print("WARNING: Exodus title \"{}\" exceeds maximum line length ({}). It will be truncated."
@@ -884,7 +884,7 @@ class exodus:
         """
         Initialize static metadata for the database.
 
-        >>> status = exo.put_info(self, title, num_dims, num_nodes, num_elems,
+        >>> status = exo.put_info(title, num_dims, num_nodes, num_elems,
         ...                      num_blocks, num_ns, num_ss)
 
         Parameters
@@ -1761,9 +1761,9 @@ class exodus:
 
     def put_name(self, object_type, object_id, name):
         """
-        get the name of the specified entity_type and entity
+        put the name of the specified entity_type and entity
 
-        >>> exo.put_name('EX_ELEM_BLOCK', elem_blk_id)
+        >>> exo.put_name('EX_ELEM_BLOCK', elem_blk_id, block_name)
 
         Parameters
         ----------

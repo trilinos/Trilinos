@@ -48,11 +48,11 @@
 namespace KokkosBlas {
 namespace Impl {
 // Specialization struct which defines whether a specialization exists
-template<class RMV, class XMV, int rank = RMV::rank>
+template <class RMV, class XMV, int rank = RMV::rank>
 struct nrm2w_tpl_spec_avail {
   enum : bool { value = false };
 };
-}
-}
+}  // namespace Impl
+}  // namespace KokkosBlas
 
 #endif

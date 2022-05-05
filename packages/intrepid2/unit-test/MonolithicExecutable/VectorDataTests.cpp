@@ -222,7 +222,7 @@ namespace
     Kokkos::View<bool*,DeviceType> vectorDataBools("vectorDataBools", 2);
     Kokkos::View<double*,DeviceType> vectorDataValues("vectorDataValues", 2);
 
-    using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+    using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
     Kokkos::parallel_for(Kokkos::RangePolicy<typename DeviceType::execution_space>(0,2),
     KOKKOS_LAMBDA (const int &i) {
       vectorDataBools(i) = vectorData.getComponent(0,i).isValid();

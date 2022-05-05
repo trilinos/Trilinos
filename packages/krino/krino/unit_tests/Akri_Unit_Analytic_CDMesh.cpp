@@ -15,6 +15,7 @@
 #include <Akri_Facet.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_NodeToCapturedDomains.hpp>
+#include <Akri_Phase_Support.hpp>
 #include <Akri_Snap.hpp>
 #include <Akri_Unit_LogRedirecter.hpp>
 #include <gtest/gtest.h>
@@ -55,23 +56,19 @@ public:
   void setup_phase_support(const stk::mesh::PartVector & blocks)
   {
     PhaseTag p, n;
-    const LevelSet_Identifier id0(0);
-    p.add(id0, 1);
-    n.add(id0, -1);
+    p.add(surfaceIdentifier, 1);
+    n.add(surfaceIdentifier, -1);
     PhaseVec named_phases{{"A", p}, {"B", n}};
 
     Phase_Support & phase_support = Phase_Support::get(fixture.meta_data());
     Block_Surface_Connectivity block_surface_info;
     phase_support.set_input_block_surface_connectivity(block_surface_info);
-    LevelSet * ls_ptr = nullptr;
-    phase_support.register_blocks_for_level_set(ls_ptr, blocks);
+    phase_support.register_blocks_for_level_set(surfaceIdentifier, blocks);
     std::vector<std::tuple<stk::mesh::PartVector, 
       std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
     auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
     ls_sets.push_back(std::make_tuple(blocks,interface_name_gen,named_phases));
     phase_support.decompose_blocks(ls_sets);
-    LS_Field lsField("LS", id0);
-    cdfemSupport.add_ls_field(lsField, nullptr);
   }
 
   stk::mesh::Part & declare_input_block(const std::string & name, const stk::topology topo)
@@ -102,7 +99,7 @@ public:
     krino_mesh->my_old_mesh->stash_field_data(-1, *krino_mesh);
 
 
-    krino_mesh->decompose();
+    krino_mesh->decompose(interfaceGeometry);
     krino_mesh->modify_mesh();
     krino_mesh->prolongation();
   }
@@ -170,6 +167,7 @@ public:
   CDFEM_Support & cdfemSupport;
   std::shared_ptr<CDMesh> krino_mesh;
   LogRedirecter log;
+  Surface_Identifier surfaceIdentifier{0};
 };
 
 template <class MESH_FIXTURE>
@@ -178,7 +176,7 @@ class SphereDecompositionFixture : public AnalyticDecompositionFixture<MESH_FIXT
 public:
   SphereDecompositionFixture()
   {
-    mySphereGeometry.reset(new AnalyticSurfaceInterfaceGeometry(mySphere, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
+    mySphereGeometry.reset(new AnalyticSurfaceInterfaceGeometry(this->surfaceIdentifier, mySphere, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
   const InterfaceGeometry & get_interface_geometry() const { return *mySphereGeometry; }
@@ -247,7 +245,7 @@ public:
       myCube.add( std::move(facet) );
     }
 
-    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry(myCube, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
+    myCubeGeometry.reset(new AnalyticSurfaceInterfaceGeometry(this->surfaceIdentifier, myCube, AuxMetaData::get(this->fixture.meta_data()).active_part(), this->cdfemSupport, Phase_Support::get(this->fixture.meta_data())));
   }
 protected:
   const InterfaceGeometry & get_interface_geometry() const { return *myCubeGeometry; }

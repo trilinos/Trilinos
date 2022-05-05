@@ -42,7 +42,9 @@ namespace {
 #endif
 } // namespace
 
-Ioss::ParallelUtils::ParallelUtils(Ioss_MPI_Comm the_communicator) : communicator_(the_communicator) {}
+Ioss::ParallelUtils::ParallelUtils(Ioss_MPI_Comm the_communicator) : communicator_(the_communicator)
+{
+}
 
 void Ioss::ParallelUtils::add_environment_properties(Ioss::PropertyManager &properties)
 {
@@ -421,7 +423,8 @@ template <> void Ioss::ParallelUtils::broadcast(std::string &my_str, int root) c
 {
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
-    const int success = MPI_Bcast(const_cast<char *>(my_str.data()), (int)my_str.size()+1, MPI_CHAR, root, communicator_);
+    const int success = MPI_Bcast(const_cast<char *>(my_str.data()), (int)my_str.size() + 1,
+                                  MPI_CHAR, root, communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);
@@ -456,11 +459,13 @@ template void Ioss::ParallelUtils::broadcast(std::vector<long long> &, int) cons
 /// \relates Ioss::ParallelUtils::broadcast
 template void Ioss::ParallelUtils::broadcast(std::vector<char> &, int) const;
 /// \relates Ioss::ParallelUtils::broadcast
-template <> void Ioss::ParallelUtils::broadcast(std::vector<std::pair<int,int>> &my_value, int root) const
+template <>
+void Ioss::ParallelUtils::broadcast(std::vector<std::pair<int, int>> &my_value, int root) const
 {
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
-    const int success = MPI_Bcast(my_value.data(), (int)my_value.size() * 2, mpi_type(int(0)), root, communicator_);
+    const int success =
+        MPI_Bcast(my_value.data(), (int)my_value.size() * 2, mpi_type(int(0)), root, communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);
@@ -470,12 +475,12 @@ template <> void Ioss::ParallelUtils::broadcast(std::vector<std::pair<int,int>> 
 #endif
 }
 
-
 template <typename T> void Ioss::ParallelUtils::broadcast(std::vector<T> &my_value, int root) const
 {
 #ifdef SEACAS_HAVE_MPI
   if (parallel_size() > 1) {
-    const int success = MPI_Bcast(my_value.data(), (int)my_value.size(), mpi_type(T()), root, communicator_);
+    const int success =
+        MPI_Bcast(my_value.data(), (int)my_value.size(), mpi_type(T()), root, communicator_);
     if (success != MPI_SUCCESS) {
       std::ostringstream errmsg;
       fmt::print(errmsg, "{} - MPI_Broadcast failed", __func__);

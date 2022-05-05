@@ -46,7 +46,6 @@
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
-#include "Panzer_STK_Utilities.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -70,7 +69,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   //    2. Match the global nodes on the "left" to locally owned nodes on the "right"
   //       - only local work required
   //    3. If a processor requires a node on the left (if it is owned or ghosted)
-  //       communicate matching conditions from the right boundary 
+  //       communicate matching conditions from the right boundary
   //
   // Note: The matching check could definitely be sped up with a sorting operation
   // Note: The communication could be done in a way that requires less global communication
@@ -106,9 +105,9 @@ matchPeriodicSides(const std::string & left,const std::string & right,
      out.setOutputToRootOnly(-1);
 
      out << "Not all sides matched expect failure: \n" << e.what() << std::endl;
-  } 
+  }
 
-  // Get the ids on the left required by this processor (they maybe ghosted), 
+  // Get the ids on the left required by this processor (they maybe ghosted),
   // and using the matched ids computed above over all processors, find the
   // corrsponding node on the right boundary.
   /////////////////////////////////////////////////////////////////////////
@@ -117,11 +116,11 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   // THE REQUEST LIST. THERE ALSO IS A REQUIREMENT OF PER PROC UNIQUENESS IN THE EPETRA
   // IMPORT.  SO THERE IS SOME ADDITIONAL WORK DONE TO REMOVE REPEATED ENTRIES
 
-  // build reverse map 
+  // build reverse map
   std::map<std::size_t,std::vector<std::size_t> > reverseMap;
   for(std::size_t i=0;i<ownedToMapped.size();i++)
      reverseMap[ownedToMapped[i].second].push_back(ownedToMapped[i].first);
-  
+
   Teuchos::RCP<std::vector<std::size_t> > locallyRequiredIds = getLocalSideIds(mesh,left,type_);
   std::vector<std::size_t> saved_locallyRequiredIds = *locallyRequiredIds; // will be required
                                                                            // to check owner/ghostship
@@ -133,12 +132,12 @@ matchPeriodicSides(const std::string & left,const std::string & right,
      std::size_t owned = ownedToMapped[i].first;
      std::size_t mapped = ownedToMapped[i].second;
 
-     std::vector<std::size_t>::iterator itr 
+     std::vector<std::size_t>::iterator itr
         = std::find(locallyRequiredIds->begin(),locallyRequiredIds->end(),owned);
 
      if(itr!=locallyRequiredIds->end())
        *itr = mapped;
-     else 
+     else
        unusedOwnedToMapped.push_back(ownedToMapped[i]);
   }
 
@@ -146,7 +145,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   std::vector<std::size_t> unique_locallyRequiredIds;
   {
      std::set<std::size_t> s;
-     s.insert(locallyRequiredIds->begin(),locallyRequiredIds->end()); 
+     s.insert(locallyRequiredIds->begin(),locallyRequiredIds->end());
      unique_locallyRequiredIds.insert(unique_locallyRequiredIds.begin(),s.begin(),s.end());
   }
 
@@ -162,19 +161,19 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   {
      // fill up set with current globally matched ids (not neccessarily owned/ghosted)
      std::set<std::pair<std::size_t,std::size_t> > gmi_set;
-     gmi_set.insert(globallyMatchedIds->begin(),globallyMatchedIds->end()); 
-   
-     // for each globally matched ID, update IDs from the previous 
+     gmi_set.insert(globallyMatchedIds->begin(),globallyMatchedIds->end());
+
+     // for each globally matched ID, update IDs from the previous
      // run (i.e. from ownedToMapped) using the reverseMap
      for(std::size_t i=0;i<globallyMatchedIds->size();i++) {
         std::pair<std::size_t,std::size_t> pair = (*globallyMatchedIds)[i];
         const std::vector<std::size_t> & others = reverseMap[pair.first];
-        
+
         // add in reverse map (note other[j] is guranteed to be local to this processor
         // if it was when ownedToMapped was passed in)
-        for(std::size_t j=0;j<others.size();j++) 
-           gmi_set.insert(std::make_pair(others[j],pair.second)); 
-   
+        for(std::size_t j=0;j<others.size();j++)
+           gmi_set.insert(std::make_pair(others[j],pair.second));
+
         // remove ids that are not ghosted/owned by this processor
         if(std::find(saved_locallyRequiredIds.begin(),
                      saved_locallyRequiredIds.end(),
@@ -188,7 +187,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
      globallyMatchedIds->insert(globallyMatchedIds->begin(),gmi_set.begin(),gmi_set.end());
   }
 
-  // now you have a pair of ids that maps ids on the left required by this processor 
+  // now you have a pair of ids that maps ids on the left required by this processor
   // to ids on the right
   globallyMatchedIds->insert(globallyMatchedIds->end(),unusedOwnedToMapped.begin(),unusedOwnedToMapped.end());
 
@@ -209,7 +208,7 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   //    2. Match the global nodes on the "left" to locally owned nodes on the "right"
   //       - only local work required
   //    3. If a processor requires a node on the left (if it is owned or ghosted)
-  //       communicate matching conditions from the right boundary 
+  //       communicate matching conditions from the right boundary
   //
   // Note: The matching check could definitely be spead up with a sorting operation
   // Note: The communication could be done in a way that requires less global communication
@@ -245,9 +244,9 @@ matchPeriodicSides(const std::string & left,const std::string & right,
      out.setOutputToRootOnly(-1);
 
      out << "Not all sides matched expect failure: \n" << e.what() << std::endl;
-  } 
+  }
 
-  // Get the ids on the left required by this processor (they maybe ghosted), 
+  // Get the ids on the left required by this processor (they maybe ghosted),
   // and using the matched ids computed above over all processors, find the
   // corrsponding node on the right boundary.
   /////////////////////////////////////////////////////////////////////////
@@ -257,9 +256,9 @@ matchPeriodicSides(const std::string & left,const std::string & right,
   Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > globallyMatchedIds
         = getGlobalPairing(*locallyRequiredIds,*locallyMatchedIds,mesh,failure);
 
-  // now you have a pair of ids that maps ids on the left required by this processor 
+  // now you have a pair of ids that maps ids on the left required by this processor
   // to ids on the right
-  
+
   return globallyMatchedIds;
 }
 
@@ -274,7 +273,7 @@ getLocallyMatchedSideIds(const std::vector<std::size_t> & side_ids,
    using Teuchos::Tuple;
 
    RCP<std::vector<std::pair<std::size_t,std::size_t> > > result
-         = Teuchos::rcp(new std::vector<std::pair<std::size_t,std::size_t> >); 
+         = Teuchos::rcp(new std::vector<std::pair<std::size_t,std::size_t> >);
 
    // grab local IDs and coordinates on this side
    //////////////////////////////////////////////////////////////////
@@ -292,12 +291,12 @@ getLocallyMatchedSideIds(const std::vector<std::size_t> & side_ids,
    // do a slow search for the coordinates: this _can_ be sped
    // up! (considered searches in sorted ranges using the sorted_permutation function)
    ////////////////////////////////////////////////////////
-   for(std::size_t localNode=0;localNode<local_side_ids.size();localNode++) { 
+   for(std::size_t localNode=0;localNode<local_side_ids.size();localNode++) {
       std::size_t local_gid = local_side_ids[localNode];
       const Tuple<double,3> & local_coord = local_side_coords[localNode];
 
       // loop over globally distributed coordinates and find a match
-      for(std::size_t globalNode=0;globalNode<side_ids.size();globalNode++) { 
+      for(std::size_t globalNode=0;globalNode<side_ids.size();globalNode++) {
          std::size_t global_gid = side_ids[globalNode];
          const Tuple<double,3> & global_coord = side_coords[globalNode];
 
@@ -306,13 +305,13 @@ getLocallyMatchedSideIds(const std::vector<std::size_t> & side_ids,
                checkProb = true;       // processor?
 
             result->push_back(std::make_pair(global_gid,local_gid));
-            side_flags[globalNode] = true; 
+            side_flags[globalNode] = true;
             continue;
          }
       }
    }
 
-   // make sure you matched everything you can: If this throws...it can 
+   // make sure you matched everything you can: If this throws...it can
    // cause the process to hang!
    TEUCHOS_TEST_FOR_EXCEPTION(checkProb,std::logic_error,
                       "getLocallyMatchedSideIds: checkProb failed");

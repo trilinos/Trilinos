@@ -83,6 +83,7 @@ public:
   {
     static_assert (std::is_integral<IndexType>::value,
                    "IndexType must be a built-in integer type.");
+    // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy (execSpace, X, alpha);
   }
 };
@@ -256,11 +257,14 @@ struct Fill<ViewType,
         }
       }
       else {
+        // DEEP_COPY REVIEW - NOT TESTED
         Kokkos::deep_copy (X, view_value_type (0.0));
       }
     }
     else {
-      Kokkos::deep_copy (X, alpha);
+      // DEEP_COPY REVIEW - VALUE-TO-DEVICE
+      using execution_space = typename ViewType::execution_space;
+      Kokkos::deep_copy (execution_space(), X, alpha);
     }
   }
 };

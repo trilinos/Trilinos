@@ -1,10 +1,10 @@
 TRIBITS_SUBPACKAGE(Core)
 
-# Consider 'Panzer_ENABLE_Epetra' only if 'Trilinos_ENABLE_Epetra=ON'
-IF(Trilinos_ENABLE_Epetra AND DEFINED Panzer_ENABLE_Epetra)
+# Consider 'Panzer_ENABLE_Epetra' only if '${PROJECT_NAME}_ENABLE_Epetra=ON'
+IF(${PROJECT_NAME}_ENABLE_Epetra AND DEFINED Panzer_ENABLE_Epetra)
    SET(PANZER_HAVE_EPETRA ${Panzer_ENABLE_Epetra})
 ELSE()
-   SET(PANZER_HAVE_EPETRA ${Trilinos_ENABLE_Epetra})
+   SET(PANZER_HAVE_EPETRA ${${PROJECT_NAME}_ENABLE_Epetra})
 ENDIF()
 
 IF(PANZER_HAVE_EPETRA)

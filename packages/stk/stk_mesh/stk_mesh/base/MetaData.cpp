@@ -146,6 +146,7 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
   : m_bulk_data(NULL),
     m_commit( false ),
     m_are_late_fields_enabled( false ),
+    m_use_simple_fields(false),
     m_part_repo( this ),
     m_attributes(),
     m_universal_part( NULL ),
@@ -161,6 +162,10 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
   const size_t numRanks = stk::topology::NUM_RANKS;
   ThrowRequireMsg(entity_rank_names.size() <= numRanks, "MetaData: number of entity-ranks (" << entity_rank_names.size() << ") exceeds limit of stk::topology::NUM_RANKS (" << numRanks <<")");
 
+#ifdef STK_USE_SIMPLE_FIELDS
+  m_use_simple_fields = true;
+#endif
+
   m_universal_part = m_part_repo.universal_part();
   m_owns_part = & declare_internal_part("OWNS");
   m_shares_part = & declare_internal_part("SHARES");
@@ -173,6 +178,7 @@ MetaData::MetaData()
   : m_bulk_data(NULL),
     m_commit( false ),
     m_are_late_fields_enabled( false ),
+    m_use_simple_fields(false),
     m_part_repo( this ),
     m_attributes(),
     m_universal_part( NULL ),
@@ -185,6 +191,10 @@ MetaData::MetaData()
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
     m_surfaceToBlock()
 {
+#ifdef STK_USE_SIMPLE_FIELDS
+  m_use_simple_fields = true;
+#endif
+
   // Declare the predefined parts
 
   m_universal_part = m_part_repo.universal_part();
@@ -502,7 +512,10 @@ void MetaData::commit()
 #endif
 }
 
-MetaData::~MetaData() {}
+MetaData::~MetaData()
+{
+  m_bulk_data = nullptr;
+}
 
 void MetaData::internal_declare_known_cell_topology_parts()
 {

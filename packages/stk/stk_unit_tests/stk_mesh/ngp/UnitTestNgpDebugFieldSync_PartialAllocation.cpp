@@ -83,6 +83,7 @@ public:
 TEST_F(NgpDebugFieldSync_PartialAllocation, FirstBlock_ScalarAccessUsingEntity_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part1"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -102,6 +103,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, FirstBlock_ScalarAccessUsingEntity_P
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -121,6 +123,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -139,6 +142,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntityFieldData_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -158,6 +162,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntityF
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntityFieldData_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -176,6 +181,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntityF
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingMeshIndex_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -195,6 +201,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingMeshInd
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingMeshIndex_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -214,6 +221,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingMeshInd
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -233,6 +241,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -251,6 +260,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketId_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -270,6 +280,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketI
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketId_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -288,6 +299,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketI
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketIdAndOrdinal_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -307,6 +319,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketI
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketIdAndOrdinal_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -325,6 +338,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketI
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketIdAndOrdinalAndSize_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -344,6 +358,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketI
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketIdAndOrdinalAndSize_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -363,6 +378,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucketI
 TEST_F(NgpDebugFieldSync_PartialAllocation, FirstBlock_ScalarAccessUsingEntity_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part1"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -382,6 +398,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, FirstBlock_ScalarAccessUsingEntity_P
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -401,6 +418,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -420,6 +438,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_DeviceEntityFieldDataAccess_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -438,6 +457,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_DeviceEntityFieldDataAcc
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_DeviceEntityFieldDataAccess_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -457,6 +477,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_DeviceEntityFieldDataAcc
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_DeviceMeshIndexAccess_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -476,6 +497,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_DeviceMeshIndexAccess_Pr
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_DeviceMeshIndexAccess_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -495,6 +517,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_DeviceMeshIndexAccess_Mi
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -514,6 +537,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -533,6 +557,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarWriteOnHost_ProperlyMarkAsModified_ClearSyncState_AccessOnDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -552,6 +577,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarWriteOnHost_Proper
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarWriteOnHost_ProperlyMarkAsModified_ClearHostSyncState_AccessOnDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -571,6 +597,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarWriteOnHost_Proper
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarWriteOnDevice_ProperlyMarkAsModified_ClearSyncState_AccessOnHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -590,6 +617,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarWriteOnDevice_Prop
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarWriteOnDevice_ProperlyMarkAsModified_ClearDeviceSyncState_AccessOnHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -610,6 +638,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarWriteOnDevice_Prop
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarDeviceSetAll_AccessOnHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -629,6 +658,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarDeviceSetAll_Acces
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarDeviceSetAll_AccessOnDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -646,6 +676,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarDeviceSetAll_Acces
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarDeviceSetAll_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -664,6 +695,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarDeviceSetAll_Missi
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarDeviceSetAll_MissingAllModifySyncCallsToHost_AccessOnHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -685,6 +717,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarDeviceSetAll_Missi
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarDeviceSetAll_MissingAllModifySyncCallsToHost_AccessOnDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -705,6 +738,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarDeviceSetAll_Missi
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleTimestep_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -727,6 +761,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleTimestep_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -749,6 +784,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleTimestep_ProperlyMarkAsModified_ClearSyncState_AccessOnDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -771,6 +807,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleAccesses_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -792,6 +829,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleStaleAccesses_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -812,6 +850,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleWrites_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -833,6 +872,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleWrites_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -855,6 +895,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleTimestep_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -877,6 +918,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleTimestep_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -899,6 +941,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleAccesses_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -920,6 +963,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleStaleAccesses_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -940,6 +984,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleWrites_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -961,6 +1006,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleWrites_MissingAllModifySyncCallsToDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2"});
   declare_scalar_field<double>("doubleScalarField", {"Part2"});
   build_mesh({{"Part1", 2}, {"Part2", 2}});
@@ -983,6 +1029,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleTimestep_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1005,6 +1052,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleTimestep_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1027,6 +1075,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleTimestep_ProperlyMarkAsModified_ClearSyncState_AccessOnHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1049,6 +1098,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleAccesses_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1070,6 +1120,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleStaleAccesses_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1091,6 +1142,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleWrites_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1112,6 +1164,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MultipleWrites_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1134,6 +1187,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleTimestep_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1156,6 +1210,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleTimestep_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1178,6 +1233,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleAccesses_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1199,6 +1255,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleStaleAccesses_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1220,6 +1277,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleWrites_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1241,6 +1299,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_MultipleWrites_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 1}});
@@ -1263,8 +1322,9 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingBucket_
 TEST_F(NgpDebugFieldSync_PartialAllocation, EmptyField_MeshModification_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
-  get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "doubleScalarField", 1);
+  get_meta().declare_field<double>(stk::topology::ELEM_RANK, "doubleScalarField", 1);
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
 
@@ -1284,6 +1344,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, EmptyField_MeshModification_Properly
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_MoveBucketOffField_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1305,6 +1366,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_MoveBucketOffField_ClearSyncState_AccessOnDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1326,6 +1388,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_MoveBucketOffField_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1345,6 +1408,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_DuringMeshModification_MoveBucketOffField_ProperlySyncToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1364,6 +1428,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_DuringMeshModification_MoveBucketOffField_MissingAllModifySyncCallsToDevice_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1382,6 +1447,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_MoveBucketOffField_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1404,6 +1470,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_MoveBucketOffField_ClearSyncState_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1426,6 +1493,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_MoveBucketOffField_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1446,6 +1514,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_DuringMeshModification_MoveBucketOffField_ProperlySyncToHost_NoWarning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1466,6 +1535,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_DuringMeshModification_MoveBucketOffField_MissingAllModifySyncCallsToHost_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1485,6 +1555,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_MoveBucketOffField_MissingDeviceFieldUpdate_AccessOnDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1506,6 +1577,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_DuringMeshModification_MoveBucketOffField_MissingDeviceFieldUpdate_AccessOnDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1526,6 +1598,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_MoveBucketOffField_StaleDeviceFieldCopy_AccessOnDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});
@@ -1549,10 +1622,11 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_Batch_Empty_MoveBucketOffField_StaleDeviceFieldCopy_AccessOnDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  const unsigned bucketCapacity = 1;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
-  const unsigned bucketCapacity = 1;
-  build_mesh({{"Part1", 1}, {"Part2", 2}}, bucketCapacity);
+  build_mesh({{"Part1", 1}, {"Part2", 2}});
   stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
   stk::mesh::NgpField<double, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
 
@@ -1575,6 +1649,7 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_DuringMeshModification_MoveBucketOffField_StaleDeviceFieldCopy_AccessOnDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   create_parts({"Part1", "Part2", "Part3"});
   declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
   build_mesh({{"Part1", 1}, {"Part2", 1}, {"Part3", 3}});

@@ -1748,6 +1748,7 @@ namespace Tpetra {
          const ViewType& dots) const {
       const Kokkos::View<dot_type*, Kokkos::HostSpace> h_dots("Tpetra::Dots",dots.extent(0));
       this->dot (A, h_dots);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy(dots,h_dots);
     }
 
@@ -1779,6 +1780,7 @@ namespace Tpetra {
       // std::complex conversions, but those two implementations
       // should generally be bitwise compatible.
       // CT: no this can't possible work .....
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (dots, dts);
     }
 
@@ -1877,7 +1879,8 @@ namespace Tpetra {
       using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
       host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
       this->norm1 (h_norms);
-      Kokkos::deep_copy (norms, h_norms);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), norms, h_norms);
     }
 
     /// \brief Compute the one-norm of each vector (column), storing
@@ -1908,6 +1911,7 @@ namespace Tpetra {
       // Sacado and Stokhos packages are likely to care about this use
       // case.  It could also come up with Kokkos::complex ->
       // std::complex conversion.
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (norms, tmpNorms);
     }
 
@@ -1969,6 +1973,7 @@ namespace Tpetra {
       using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
       host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
       this->norm2 (h_norms);
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (norms, h_norms);
     }
 
@@ -1998,6 +2003,7 @@ namespace Tpetra {
       // Sacado and Stokhos packages are likely to care about this use
       // case.  This could also come up with Kokkos::complex ->
       // std::complex conversion.
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (norms, theNorms);
     }
 
@@ -2052,7 +2058,8 @@ namespace Tpetra {
       using host_norms_view_type = Kokkos::View<mag_type*, Kokkos::HostSpace>;
       host_norms_view_type h_norms ("Tpetra::MV::h_norms", norms.extent (0));
       this->normInf (h_norms);
-      Kokkos::deep_copy (norms, h_norms);
+      // DEEP_COPY REVIEW - HOST-TO-DEVICE
+      Kokkos::deep_copy (execution_space(), norms, h_norms);
     }
 
     /// \brief Compute the infinity-norm of each vector (column),
@@ -2081,6 +2088,7 @@ namespace Tpetra {
       // Sacado and Stokhos packages are likely to care about this use
       // case.  This could also come up with Kokkos::complex ->
       // std::complex conversion.
+      // DEEP_COPY REVIEW - NOT TESTED
       Kokkos::deep_copy (norms, theNorms);
     }
 

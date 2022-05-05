@@ -582,6 +582,8 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
           sublist->set(*key_it, M1_Matrix);
         else if (value == "Ms")
           sublist->set(*key_it, Ms_Matrix);
+        else if (value == "Kn")
+          sublist->set(*key_it, Kn_Matrix);
         else if (value == "Coordinates")
           sublist->set(*key_it, coords);
         // else if (*key_it == "Nullspace")
@@ -613,6 +615,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     // Build Stratimikos solver
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
     Stratimikos::enableMueLuRefMaxwell<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+    Stratimikos::enableMueLuMaxwell1<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
 #ifdef HAVE_MUELU_IFPACK2
     typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
