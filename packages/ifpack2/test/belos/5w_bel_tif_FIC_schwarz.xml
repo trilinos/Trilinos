@@ -1,0 +1,28 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="5w.mtx"/>
+  <Parameter name="rhs_mm_file" type="string" value="5w.vec"/>
+
+  <Parameter name="solver_type" type="string" value="PseudoBlock Gmres"/>
+  <ParameterList name="Belos">
+    <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
+    <Parameter name="Num Blocks" type="int" value="3"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Maximum Iterations" type="int" value="300"/>
+    <Parameter name="Orthogonalization" type="string" value="ICGS"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="SCHWARZ"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="schwarz: overlap level" type="int" value="0"/>
+    <Parameter name="schwarz: combine mode" type="string" value="ZERO"/>
+    <Parameter name="schwarz: use reordering" type="bool" value="true"/>
+    <Parameter name="subdomain solver name" type="string" value="FAST_IC"/>
+    <ParameterList name="subdomain solver parameters">
+      <Parameter name="level" type="int" value="2"/>
+      <Parameter name="standard triangular solve" type="bool" value="true"/>
+    </ParameterList>
+  </ParameterList>
+  <Parameter name="expectNumIters" type="int" value="4"/>
+</ParameterList>

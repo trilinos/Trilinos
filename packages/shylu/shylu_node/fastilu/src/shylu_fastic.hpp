@@ -530,28 +530,23 @@ class FastICPrec
             aVal_ = Kokkos::create_mirror(aVal);
 
             //Copy the host matrix into the initialized a;
-            Ordinal aHostPtr = 0;
             for (Ordinal i = 0; i < nRows; i++)
             {
-                #ifdef SHYLU_DEBUG
-                Ordinal check = aHostPtr;
-                #endif
                 for(Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
                 {
                     Ordinal col = aColIdx_[k];
                     #ifdef FASTIC_DEBUG_OUTPUT
                     std::cout << "col =" << col << std::endl;
                     #endif
-                    
-                    if (col == aColIdxHost[aHostPtr])
+                    for(Ordinal aHostPtr = aRowMapHost[i]; aHostPtr < aRowMapHost[i+1]; aHostPtr++)
                     {
-                       aVal_[k] = aValHost[aHostPtr]; 
-                       aHostPtr++;
+                        if (col == aColIdxHost[aHostPtr])
+                        {
+                            aVal_[k] = aValHost[aHostPtr]; 
+                            break;
+                        }
                     }
                 }
-                #ifdef SHYLU_DEBUG
-                assert((aHostPtr - check) == (aRowMapHost[i+1] - aRowMapHost[i]));
-                #endif
             }
             lVal = ScalarArray("lVal", lRowMap_[nRows]);
             ltVal = ScalarArray("ltVal", lRowMap_[nRows]);
