@@ -16,7 +16,11 @@ Kokkos::DefaultExecutionSpace &get_exec_space(int i) {
     if (spaces.size() <= size_t(i)) {
 #ifdef KOKKOS_ENABLE_CUDA
         cudaStream_t stream;
-        cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
+        int loPrio, hiPrio;
+        cudaDeviceGetStreamPriorityRange(&loPrio, &hiPrio);
+        std::cerr << "LOPRIO: " << loPrio << "\n";
+        std::cerr << "HIPRIO: " << hiPrio << "\n";
+        cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, loPrio);
         spaces.push_back(Kokkos::Cuda(stream, true /*Kokkos will manage this stream*/));
 #else
         spaces.push_back(Kokkos::DefaultExecSpace());

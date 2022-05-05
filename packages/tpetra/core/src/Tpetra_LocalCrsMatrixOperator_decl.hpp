@@ -246,16 +246,22 @@ namespace Tpetra {
 #if 0
         Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans>(0, A_.numRows()), *this);
 #else
-        const int vectorLength = 4;
+        const int nnzPerRow = (A_.nnz() + A_.numRows() - 1) / A_.numRows();
+        int vectorLength = 1;
+        while (vectorLength < 32 && vectorLength * 6 < nnzPerRow) {
+          vectorLength *= 2;
+        }
         const int teamSize = 256 / vectorLength;
         const int rowsPerTeam = teamSize;
+        const int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
 
-        int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
-
-        // printf("%s:%d %ld, %d, %d\n", __FILE__, __LINE__, worksets, teamSize, vectorLength);
-        // Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
-        Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,Kokkos::AUTO,vectorLength);
-        Kokkos::parallel_for("on-rank", policy, *this);
+        if (A_.nnz() > 10000000) {
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
+          Kokkos::parallel_for("off-rank", policy, *this);
+        } else {
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
+          Kokkos::parallel_for("off-rank", policy, *this);
+        }
 #endif
       }
 
@@ -394,15 +400,22 @@ namespace Tpetra {
 #if 0
         Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans>(0, A_.numRows()), *this);
 #else
-        const int vectorLength = 4;
+        const int nnzPerRow = (A_.nnz() + A_.numRows() - 1) / A_.numRows();
+        int vectorLength = 1;
+        while (vectorLength < 32 && vectorLength * 6 < nnzPerRow) {
+          vectorLength *= 2;
+        }
         const int teamSize = 256 / vectorLength;
         const int rowsPerTeam = teamSize;
+        const int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
 
-        int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
-
-        // Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(worksets,teamSize,vectorLength);
-        Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,Kokkos::AUTO,vectorLength);
-        Kokkos::parallel_for("off-rank", policy, *this);
+        if (A_.nnz() > 10000000) {
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
+          Kokkos::parallel_for("off-rank", policy, *this);
+        } else {
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,Kokkos::AUTO,vectorLength);
+          Kokkos::parallel_for("off-rank", policy, *this);
+        }
 #endif
       }
       // \brief Kokkos dispatch of non-transpose in get_exec_space(0)

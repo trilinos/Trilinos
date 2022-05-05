@@ -4695,11 +4695,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
      Overlapped        | Non-overlapped
      ------------------|----------------
-     beginImport       | doImport
      localApplyOnRank  |
+     beginImport       | doImport
      endImport         | 
      localApplyOffRank | localApply
      doExport          | doExport
+
+     We start the localApplyOnRank first because it's slower than the communication
   */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -4717,7 +4719,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     const Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero ();
     const Scalar ONE = Teuchos::ScalarTraits<Scalar>::one ();
 
- 
+    
 
     // mfh 05 Jun 2014: Special case for alpha == 0.  I added this to
     // fix an Ifpack2 test (RILUKSingleProcessUnitTests), which was
@@ -4742,6 +4744,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     RCP<const import_type> importer = this->getGraph ()->getImporter ();
     RCP<const export_type> exporter = this->getGraph ()->getExporter ();
+    const bool mustImport = !importer.is_null();
+    const bool mustExport = !exporter.is_null();
 
     // If beta == 0, then the output MV will be overwritten; none of
     // its entries should be read.  (Sparse BLAS semantics say that we
@@ -4763,10 +4767,13 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       beta = ZERO;
     }
 
+    // will depend on whether a temporary MV is used
+    bool xyDefinitelyAlias;
+
     // Temporary MV for Import operation.  After the block of code
     // below, this will be an (Imported if necessary) column Map MV
     // ready to give to localApply(...).
-    const bool mustImport = !importer.is_null();
+  
     RCP<const MV> X_colMap;
     
     /* this is the same as X_colMap for the overlapped case,
@@ -4786,30 +4793,24 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         RCP<MV> X_colMapNonConst = getColumnMapMultiVector (X_in, true);
         Tpetra::deep_copy (*X_colMapNonConst, X_in);
         X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
+        xyDefinitelyAlias = X_colMapNonConst.getRawPtr () == &Y_in;
       }
       else {
         // The domain and column Maps are the same, so do the local
         // multiply using the domain Map input MV X_in.
         X_colMap = rcpFromRef (X_in);
+        xyDefinitelyAlias = X_colMapNonConst.getRawPtr () == &Y_in;
       }
+      
     } else { // need to Import source (multi)vector
       // We're doing an Import anyway, which will copy the relevant
       // elements of the domain Map MV X_in into a separate column Map
       // MV.  Thus, we don't have to worry whether X_in is constant
       // stride.
       X_colMapNonConst = getColumnMapMultiVector (X_in);
-
-      // Import from the domain Map MV to the column Map MV.
-      if (Details::Behavior::overlapCommunicationAndComputation()) {
-        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport");
-        X_colMapNonConst->beginImport (X_in, *importer, INSERT);
-      } else {
-        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: doImport");
-        X_colMapNonConst->doImport (X_in, *importer, INSERT);
-        X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
-      }
+      xyDefinitelyAlias = X_colMapNonConst.getRawPtr () == &Y_in;
     }
-
+    
     /* Cases we can't operate directly on input Y
     1. Must do an export
     2. Non-constant stride multivector.
@@ -4831,8 +4832,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // partial check if X,Y alias. 
     // if this is false, X and Y may still alias, since one may be a subview of the other
     */
-    const bool mustExport = !exporter.is_null();
-    const bool xyDefinitelyAlias = X_colMap.getRawPtr () == &Y_in;
+
 
     // set up temporary output for the cases it will be needed, null otherwise
     // If we have a nontrivial Export object, we must perform an
@@ -4864,6 +4864,18 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       } else {
         this->localApplyOnRank(X_in, Y_in, Teuchos::NO_TRANS, alpha, beta);
         // this->localApplyOnRank(*X_colMap, Y_in, Teuchos::NO_TRANS, alpha, beta);
+      }
+    }
+
+    if (mustImport) {
+      // Import from the domain Map MV to the column Map MV.
+      if (Details::Behavior::overlapCommunicationAndComputation()) {
+        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport");
+        X_colMapNonConst->beginImport (X_in, *importer, INSERT);
+      } else {
+        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: doImport");
+        X_colMapNonConst->doImport (X_in, *importer, INSERT);
+        X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
       }
     }
 
