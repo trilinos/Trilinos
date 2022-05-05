@@ -43,7 +43,8 @@ namespace m2n {
 class OutputSerializerBulkData : public stk::mesh::BulkData
 {
 public:
-  OutputSerializerBulkData(stk::mesh::MetaData& mesh_meta_data, ParallelMachine parallel);
+  OutputSerializerBulkData(ParallelMachine parallel);
+  OutputSerializerBulkData(unsigned spatialDim, ParallelMachine parallel);
   virtual ~OutputSerializerBulkData() override = default;
 
   void switch_to_serial_mesh();

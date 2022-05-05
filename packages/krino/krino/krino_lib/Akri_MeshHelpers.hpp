@@ -105,14 +105,6 @@ const unsigned * get_edge_node_ordinals(stk::topology topology, unsigned edge_or
 std::string debug_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity);
 std::string debug_entity(const stk::mesh::BulkData & mesh, stk::mesh::Entity entity, const bool includeFields);
 
-struct ChildNodeRequest
-{
-    std::vector<stk::mesh::Entity*> parents;
-    stk::mesh::Entity* child;
-
-    ChildNodeRequest(const std::vector<stk::mesh::Entity*> & in_parents, stk::mesh::Entity *in_child)
-    : parents(in_parents), child(in_child) {}
-};
 struct SideRequest
 {
     stk::mesh::Entity element;
@@ -123,7 +115,6 @@ struct SideRequest
     : element(in_element), element_side_ordinal(in_element_side_ordinal), side_parts(in_side_parts) {}
 };
 
-void batch_create_child_nodes(stk::mesh::BulkData & mesh, const std::vector< ChildNodeRequest > & child_node_requests, const stk::mesh::PartVector & node_parts, bool assert_32bit_ids, bool make_64bit_ids);
 void batch_create_sides(stk::mesh::BulkData & mesh, const std::vector< SideRequest > & side_requests);
 void make_side_ids_consistent_with_stk_convention(stk::mesh::BulkData & mesh);
 

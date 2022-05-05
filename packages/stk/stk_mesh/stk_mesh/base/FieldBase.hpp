@@ -71,6 +71,7 @@ namespace impl {
 class FieldRepository;
 NgpFieldBase* get_ngp_field(const FieldBase & field);
 void set_ngp_field(const FieldBase & stkField, NgpFieldBase * ngpField);
+stk::CSet & get_attributes(FieldBase & field);
 }
 
 struct FieldMetaData
@@ -130,7 +131,7 @@ public:
   /** \brief  Multi-dimensional array rank of this field,
    *          which is zero for a scalar field.
    */
-  unsigned field_array_rank() const { return m_field_rank; }
+  unsigned field_array_rank() const;
 
   EntityRank entity_rank() const { return m_entity_rank; }
 
@@ -138,8 +139,7 @@ public:
    *          \ref shards::ArrayDimTag "array dimension tags"
    *          of this field.
    */
-  const shards::ArrayDimTag * const * dimension_tags() const
-  { return m_dim_tags; }
+  const shards::ArrayDimTag * const * dimension_tags() const;
 
   /** \brief  Maximum field data allocation size declared for this
    *          field for the given entity rank.
@@ -285,6 +285,8 @@ public:
     m_execSpace = Kokkos::DefaultExecutionSpace();
   }
 
+  CSet & get_attributes() { return m_attribute; }
+
   template<class A>
     const A * declare_attribute_no_delete(const A * a) {
       return m_attribute.template insert_no_delete<A>(a);
@@ -332,6 +334,7 @@ public:
   friend class ::stk::mesh::MetaData;
   friend class ::stk::mesh::BulkData;
   friend class ::stk::mesh::impl::FieldRepository;
+  friend CSet & impl::get_attributes(stk::mesh::FieldBase & field);
 
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestFieldImpl ;

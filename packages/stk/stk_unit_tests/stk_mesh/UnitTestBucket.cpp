@@ -41,6 +41,7 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/Bucket.hpp>     // for has_superset, Bucket, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field_on_mesh
@@ -95,18 +96,15 @@ TEST(UnitTestingOfBucket, testBucket)
 
   // Create MetaData, BulkData
   unsigned max_bucket_size = 4;
-  stk::mesh::fixtures::BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, max_bucket_size, entity_names);
+  stk::mesh::fixtures::simple_fields::BoxFixture fixture(pm, stk::mesh::BulkData::AUTO_AURA, max_bucket_size, entity_names);
   MetaData& meta = fixture.fem_meta();
   BulkData& bulk = fixture.bulk_data();
   // Create two scalar fields, temperature and volume. Put temperature
   // on all the nodes and put volume on all the elements.
   unsigned number_of_states = 4;
 
-  ScalarFieldType & temperature =
-    meta.declare_field < ScalarFieldType > (stk::topology::NODE_RANK, "temperature" , number_of_states );
-  ScalarFieldType & volume =
-
-    meta.declare_field < ScalarFieldType > ( stk::topology::ELEMENT_RANK, "volume" , number_of_states );
+  ScalarFieldType & temperature = meta.declare_field<double>(stk::topology::NODE_RANK, "temperature", number_of_states);
+  ScalarFieldType & volume =  meta.declare_field<double>(stk::topology::ELEMENT_RANK, "volume", number_of_states);
   Part & universal     = meta.universal_part ();
   put_field_on_mesh ( temperature , universal , (stk::mesh::FieldTraits<ScalarFieldType>::data_type*) nullptr);
   put_field_on_mesh ( volume , universal , (stk::mesh::FieldTraits<ScalarFieldType>::data_type*) nullptr);
@@ -153,10 +151,14 @@ TEST(UnitTestingOfBucket, testBucket)
 TEST(UnitTestingOfBucket, bucketSortChangeEntityId)
 {
   const unsigned spatialDim=3;
-  stk::mesh::MetaData meta(spatialDim);
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_spatial_dimension(spatialDim);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+  stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+  meta.use_simple_fields();
   stk::mesh::Part& part = meta.declare_part_with_topology("node_part", stk::topology::NODE);
   meta.commit();
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   if (bulk.parallel_size() > 1) {
     return;
   }
@@ -194,275 +196,277 @@ TEST(UnitTestingOfBucket, bucketSortChangeEntityId)
 
 void test_nodes_and_permutation(stk::mesh::BulkData& bulk, stk::mesh::Entity elem, stk::mesh::Entity side, stk::mesh::EntityVector& nodes)
 {
-    stk::mesh::EntityRank rank = bulk.entity_rank(side);
-    Entity const *rels_itr = bulk.begin_nodes(side);
-    unsigned num_nodes = bulk.num_nodes(side);
+  stk::mesh::EntityRank rank = bulk.entity_rank(side);
+  Entity const *rels_itr = bulk.begin_nodes(side);
+  unsigned num_nodes = bulk.num_nodes(side);
 
-    for(unsigned i=0;i<num_nodes;++i)
+  for(unsigned i=0;i<num_nodes;++i)
+  {
+    EXPECT_EQ(nodes[i], rels_itr[i]);
+  }
+
+  stk::mesh::Permutation const *perms = bulk.begin_permutations(side, stk::topology::ELEM_RANK);
+  std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
+      stk::mesh::get_ordinal_and_permutation(bulk, elem, rank, nodes);
+
+  stk::mesh::Permutation gold_permutation = ordinalAndPermutation.second;
+  ASSERT_TRUE(gold_permutation!=stk::mesh::INVALID_PERMUTATION);
+
+  unsigned sides_element_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+  unsigned num_elems = bulk.num_elements(side);
+  const stk::mesh::Entity *elements = bulk.begin_elements(side);
+  for (unsigned i=0;i<num_elems;++i)
+  {
+    if (elements[i]==elem)
     {
-        EXPECT_EQ(nodes[i], rels_itr[i]);
+      sides_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
+      break;
     }
+  }
 
-    stk::mesh::Permutation const *perms = bulk.begin_permutations(side, stk::topology::ELEM_RANK);
-    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
-            stk::mesh::get_ordinal_and_permutation(bulk, elem, rank, nodes);
+  EXPECT_EQ(gold_permutation, perms[sides_element_offset]);
 
-    stk::mesh::Permutation gold_permutation = ordinalAndPermutation.second;
-    ASSERT_TRUE(gold_permutation!=stk::mesh::INVALID_PERMUTATION);
+  stk::mesh::ConnectivityOrdinal elements_side_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
 
-    unsigned sides_element_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-    unsigned num_elems = bulk.num_elements(side);
-    const stk::mesh::Entity *elements = bulk.begin_elements(side);
-    for (unsigned i=0;i<num_elems;++i)
+  unsigned num_sides = bulk.num_connectivity(elem, rank);
+  const stk::mesh::Entity *sides = bulk.begin(elem, rank);
+  for (unsigned i=0;i<num_sides;++i)
+  {
+    if (sides[i]==side)
     {
-        if (elements[i]==elem)
-        {
-            sides_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
-            break;
-        }
+      elements_side_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
+      break;
     }
+  }
 
-    EXPECT_EQ(gold_permutation, perms[sides_element_offset]);
-
-    stk::mesh::ConnectivityOrdinal elements_side_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-
-    unsigned num_sides = bulk.num_connectivity(elem, rank);
-    const stk::mesh::Entity *sides = bulk.begin(elem, rank);
-    for (unsigned i=0;i<num_sides;++i)
-    {
-        if (sides[i]==side)
-        {
-            elements_side_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
-            break;
-        }
-    }
-
-    stk::mesh::Permutation const *perms2 = bulk.begin_permutations(elem, rank);
-    EXPECT_EQ(gold_permutation, perms2[elements_side_offset]);
+  stk::mesh::Permutation const *perms2 = bulk.begin_permutations(elem, rank);
+  EXPECT_EQ(gold_permutation, perms2[elements_side_offset]);
 }
 
 bool does_rank_have_permutation(stk::mesh::EntityRank rank)
 {
-    return rank > stk::topology::NODE_RANK && rank < stk::topology::CONSTRAINT_RANK;
+  return rank > stk::topology::NODE_RANK && rank < stk::topology::CONSTRAINT_RANK;
 }
 
-class BucketHex : public stk::mesh::fixtures::TestHexFixture {};
+class BucketHex : public stk::mesh::fixtures::simple_fields::TestHexFixture {};
 
 TEST_F(BucketHex, testing_valid_permutation_on_various_ranks)
 {
-    const int num_procs_this_test_works_for = 1;
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) == num_procs_this_test_works_for)
+  const int num_procs_this_test_works_for = 1;
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == num_procs_this_test_works_for)
+  {
+    const unsigned num_entity_rank_ranks = 5;
+    std::vector< std::string > entity_rank_names(num_entity_rank_ranks);
+    entity_rank_names[stk::topology::NODE_RANK] = std::string("NODE");
+    entity_rank_names[stk::topology::EDGE_RANK] = std::string("EDGE");
+    entity_rank_names[stk::topology::FACE_RANK] = std::string("FACE");
+    entity_rank_names[stk::topology::ELEM_RANK] = std::string("ELEMENT");
+    entity_rank_names[stk::topology::CONSTRAINT_RANK] = std::string("CONSTRAINT");
+
+    setup_mesh(1, 1, 1, entity_rank_names);
+    stk::mesh::MetaData& meta = get_meta();
+    stk::mesh::BulkData& bulk = get_bulk();
+
+    const unsigned num_nodes_on_one_hex = 8;
+    stk::mesh::EntityVector nodes(num_nodes_on_one_hex);
+    for (size_t i=0;i<nodes.size();++i)
     {
-        const unsigned num_entity_rank_ranks = 5;
-        std::vector< std::string > entity_rank_names(num_entity_rank_ranks);
-        entity_rank_names[stk::topology::NODE_RANK] = std::string("NODE");
-        entity_rank_names[stk::topology::EDGE_RANK] = std::string("EDGE");
-        entity_rank_names[stk::topology::FACE_RANK] = std::string("FACE");
-        entity_rank_names[stk::topology::ELEM_RANK] = std::string("ELEMENT");
-        entity_rank_names[stk::topology::CONSTRAINT_RANK] = std::string("CONSTRAINT");
-
-        setup_mesh(1, 1, 1, entity_rank_names);
-        stk::mesh::MetaData& meta = get_meta();
-        stk::mesh::BulkData& bulk = get_bulk();
-
-        const unsigned num_nodes_on_one_hex = 8;
-        stk::mesh::EntityVector nodes(num_nodes_on_one_hex);
-        for (size_t i=0;i<nodes.size();++i)
-        {
-            stk::mesh::EntityId id = i+1;
-            nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, id);
-        }
-
-        stk::mesh::EntityId id = 1;
-        stk::mesh::EntityVector entities(5);
-        entities[stk::topology::NODE_RANK] = bulk.get_entity(stk::topology::NODE_RANK, id);
-        entities[stk::topology::ELEM_RANK] = bulk.get_entity(stk::topology::ELEM_RANK, id);
-
-        bulk.modification_begin();
-
-        entities[stk::topology::CONSTRAINT_RANK] = bulk.declare_constraint(id);
-
-        enum node { FIRST_NODE=0, SECOND_NODE=1, THIRD_NODE=2, FOURTH_NODE=3};
-
-        const unsigned num_nodes_on_edge = 2;
-        stk::mesh::EntityVector edge_nodes(num_nodes_on_edge);
-        edge_nodes[FIRST_NODE]  = nodes[FIRST_NODE];
-        edge_nodes[SECOND_NODE] = nodes[SECOND_NODE];
-
-        entities[stk::topology::EDGE_RANK] = stk::unit_test_util::declare_element_to_edge_with_nodes(bulk, entities[stk::topology::ELEM_RANK],
-                                                                                                     edge_nodes, id, meta.get_topology_root_part(stk::topology::LINE_2));
-
-        const unsigned num_nodes_on_face = 4;
-        stk::mesh::EntityVector face_nodes(num_nodes_on_face);
-        face_nodes[FIRST_NODE]  = nodes[FIRST_NODE];
-        face_nodes[SECOND_NODE] = nodes[SECOND_NODE];
-        face_nodes[THIRD_NODE]  = nodes[FOURTH_NODE];
-        face_nodes[FOURTH_NODE] = nodes[THIRD_NODE];
-
-        entities[stk::topology::FACE_RANK] = stk::unit_test_util::declare_element_side_with_nodes(bulk, entities[stk::topology::ELEM_RANK],
-                                                                                                  face_nodes, id, meta.get_topology_root_part(stk::topology::QUAD_4));
-
-        bulk.modification_end();
-
-        for (stk::mesh::EntityRank irank=stk::topology::BEGIN_RANK; irank<stk::topology::END_RANK; ++irank)
-        {
-            for (size_t i=0;i<entities.size();++i)
-            {
-                ASSERT_TRUE(bulk.is_valid(entities[i]));
-                stk::mesh::EntityRank target_rank = irank;
-                stk::mesh::EntityRank from_rank = bulk.entity_rank(entities[i]);
-                if (does_rank_have_permutation(target_rank) && does_rank_have_permutation(from_rank))
-                {
-                    EXPECT_TRUE(bulk.has_permutation(entities[i], irank));
-                }
-                else
-                {
-                    EXPECT_FALSE(bulk.has_permutation(entities[i], irank));
-                }
-            }
-        }
+      stk::mesh::EntityId id = i+1;
+      nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, id);
     }
+
+    stk::mesh::EntityId id = 1;
+    stk::mesh::EntityVector entities(5);
+    entities[stk::topology::NODE_RANK] = bulk.get_entity(stk::topology::NODE_RANK, id);
+    entities[stk::topology::ELEM_RANK] = bulk.get_entity(stk::topology::ELEM_RANK, id);
+
+    bulk.modification_begin();
+
+    entities[stk::topology::CONSTRAINT_RANK] = bulk.declare_constraint(id);
+
+    enum node { FIRST_NODE=0, SECOND_NODE=1, THIRD_NODE=2, FOURTH_NODE=3};
+
+    const unsigned num_nodes_on_edge = 2;
+    stk::mesh::EntityVector edge_nodes(num_nodes_on_edge);
+    edge_nodes[FIRST_NODE]  = nodes[FIRST_NODE];
+    edge_nodes[SECOND_NODE] = nodes[SECOND_NODE];
+
+    entities[stk::topology::EDGE_RANK] = stk::unit_test_util::simple_fields::declare_element_to_edge_with_nodes(bulk, entities[stk::topology::ELEM_RANK],
+        edge_nodes, id, meta.get_topology_root_part(stk::topology::LINE_2));
+
+    const unsigned num_nodes_on_face = 4;
+    stk::mesh::EntityVector face_nodes(num_nodes_on_face);
+    face_nodes[FIRST_NODE]  = nodes[FIRST_NODE];
+    face_nodes[SECOND_NODE] = nodes[SECOND_NODE];
+    face_nodes[THIRD_NODE]  = nodes[FOURTH_NODE];
+    face_nodes[FOURTH_NODE] = nodes[THIRD_NODE];
+
+    entities[stk::topology::FACE_RANK] = stk::unit_test_util::simple_fields::declare_element_side_with_nodes(bulk, entities[stk::topology::ELEM_RANK],
+        face_nodes, id, meta.get_topology_root_part(stk::topology::QUAD_4));
+
+    bulk.modification_end();
+
+    for (stk::mesh::EntityRank irank=stk::topology::BEGIN_RANK; irank<stk::topology::END_RANK; ++irank)
+    {
+      for (size_t i=0;i<entities.size();++i)
+      {
+        ASSERT_TRUE(bulk.is_valid(entities[i]));
+        stk::mesh::EntityRank target_rank = irank;
+        stk::mesh::EntityRank from_rank = bulk.entity_rank(entities[i]);
+        if (does_rank_have_permutation(target_rank) && does_rank_have_permutation(from_rank))
+        {
+          EXPECT_TRUE(bulk.has_permutation(entities[i], irank));
+        }
+        else
+        {
+          EXPECT_FALSE(bulk.has_permutation(entities[i], irank));
+        }
+      }
+    }
+  }
 }
 
 TEST_F(BucketHex, changing_conn_on_bucket_for_face_to_element)
 {
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
+    setup_mesh(1, 1, 1);
+    stk::mesh::MetaData& meta = get_meta();
+    meta.use_simple_fields();
+    stk::mesh::BulkData& bulk = get_bulk();
+
+    unsigned face_node_ids[] = { 5, 6, 8, 7 };
+    stk::mesh::EntityVector nodes(4);
+    for (size_t i=0;i<nodes.size();++i)
     {
-        setup_mesh(1, 1, 1);
-        stk::mesh::MetaData& meta = get_meta();
-        stk::mesh::BulkData& bulk = get_bulk();
-
-        unsigned face_node_ids[] = { 5, 6, 8, 7 };
-        stk::mesh::EntityVector nodes(4);
-        for (size_t i=0;i<nodes.size();++i)
-        {
-            nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, face_node_ids[i]);
-        }
-
-        stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
-        bulk.modification_begin();
-        stk::mesh::Entity side = stk::unit_test_util::declare_element_side_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::QUAD_4));
-        bulk.modification_end();
-
-        test_nodes_and_permutation(bulk, elem, side, nodes);
-
-        unsigned new_face_node_ids[] = { 5, 7, 8, 6 };
-        stk::mesh::EntityVector new_nodes(4);
-        for (size_t i=0;i<new_nodes.size();++i)
-        {
-            new_nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, new_face_node_ids[i]);
-        }
-
-        std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
-                    stk::mesh::get_ordinal_and_permutation(bulk, elem, stk::topology::FACE_RANK, new_nodes);
-
-        stk::mesh::Permutation new_permutation = ordinalAndPermutation.second;
-
-        unsigned faces_element_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-        unsigned num_elems = bulk.num_elements(side);
-        const stk::mesh::Entity *elements = bulk.begin_elements(side);
-        for (unsigned i=0;i<num_elems;++i)
-        {
-            if (elements[i]==elem)
-            {
-                faces_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
-                break;
-            }
-        }
-
-        unsigned elements_face_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-        unsigned num_faces = bulk.num_faces(elem);
-        const stk::mesh::Entity *faces = bulk.begin_faces(elem);
-        for (unsigned i=0;i<num_faces;++i)
-        {
-            if (faces[i]==side)
-            {
-                elements_face_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
-                break;
-            }
-        }
-
-        ASSERT_TRUE(elements_face_offset!=stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
-
-        stk::mesh::unit_test::BucketTester& bucket_side = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(side));
-        bucket_side.my_change_connected_nodes(bulk.bucket_ordinal(side), &new_nodes[0]);
-        bucket_side.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(side), faces_element_offset, new_permutation);
-
-        stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(elem));
-
-        bucket_elem.my_change_existing_permutation_for_connected_face(bulk.bucket_ordinal(elem), elements_face_offset, new_permutation);
-
-        test_nodes_and_permutation(bulk, elem, side, new_nodes);
+      nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, face_node_ids[i]);
     }
+
+    stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
+    bulk.modification_begin();
+    stk::mesh::Entity side = stk::unit_test_util::simple_fields::declare_element_side_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::QUAD_4));
+    bulk.modification_end();
+
+    test_nodes_and_permutation(bulk, elem, side, nodes);
+
+    unsigned new_face_node_ids[] = { 5, 7, 8, 6 };
+    stk::mesh::EntityVector new_nodes(4);
+    for (size_t i=0;i<new_nodes.size();++i)
+    {
+      new_nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, new_face_node_ids[i]);
+    }
+
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
+        stk::mesh::get_ordinal_and_permutation(bulk, elem, stk::topology::FACE_RANK, new_nodes);
+
+    stk::mesh::Permutation new_permutation = ordinalAndPermutation.second;
+
+    unsigned faces_element_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+    unsigned num_elems = bulk.num_elements(side);
+    const stk::mesh::Entity *elements = bulk.begin_elements(side);
+    for (unsigned i=0;i<num_elems;++i)
+    {
+      if (elements[i]==elem)
+      {
+        faces_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
+        break;
+      }
+    }
+
+    unsigned elements_face_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+    unsigned num_faces = bulk.num_faces(elem);
+    const stk::mesh::Entity *faces = bulk.begin_faces(elem);
+    for (unsigned i=0;i<num_faces;++i)
+    {
+      if (faces[i]==side)
+      {
+        elements_face_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
+        break;
+      }
+    }
+
+    ASSERT_TRUE(elements_face_offset!=stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
+
+    stk::mesh::unit_test::BucketTester& bucket_side = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(side));
+    bucket_side.my_change_connected_nodes(bulk.bucket_ordinal(side), &new_nodes[0]);
+    bucket_side.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(side), faces_element_offset, new_permutation);
+
+    stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(elem));
+
+    bucket_elem.my_change_existing_permutation_for_connected_face(bulk.bucket_ordinal(elem), elements_face_offset, new_permutation);
+
+    test_nodes_and_permutation(bulk, elem, side, new_nodes);
+  }
 }
 
 TEST_F(BucketHex, changing_conn_on_bucket_for_edge_to_element)
 {
-    if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+  {
+    setup_mesh(1, 1, 1);
+    stk::mesh::MetaData& meta = get_meta();
+    meta.use_simple_fields();
+    stk::mesh::BulkData& bulk = get_bulk();
+
+    unsigned edge_node_ids[] = { 5, 6 };
+    stk::mesh::EntityVector nodes(2);
+    for (size_t i=0;i<nodes.size();++i)
+      nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, edge_node_ids[i]);
+
+    stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
+    bulk.modification_begin();
+    stk::mesh::Entity edge = stk::unit_test_util::simple_fields::declare_element_to_edge_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::LINE_2));
+    bulk.modification_end();
+
+    test_nodes_and_permutation(bulk, elem, edge, nodes);
+
+    unsigned new_face_node_ids[] = { 6, 5 };
+    stk::mesh::EntityVector new_nodes(2);
+    for (size_t i=0;i<new_nodes.size();++i)
+      new_nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, new_face_node_ids[i]);
+
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
+        stk::mesh::get_ordinal_and_permutation(bulk, elem, stk::topology::EDGE_RANK, new_nodes);
+
+    stk::mesh::Permutation new_permutation = ordinalAndPermutation.second;
+
+    unsigned edges_element_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+    unsigned num_elems = bulk.num_elements(edge);
+    const stk::mesh::Entity *elements = bulk.begin_elements(edge);
+    for (unsigned i=0;i<num_elems;++i)
     {
-        setup_mesh(1, 1, 1);
-        stk::mesh::MetaData& meta = get_meta();
-        stk::mesh::BulkData& bulk = get_bulk();
-
-        unsigned edge_node_ids[] = { 5, 6 };
-        stk::mesh::EntityVector nodes(2);
-        for (size_t i=0;i<nodes.size();++i)
-            nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, edge_node_ids[i]);
-
-        stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
-        bulk.modification_begin();
-        stk::mesh::Entity edge = stk::unit_test_util::declare_element_to_edge_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::LINE_2));
-        bulk.modification_end();
-
-        test_nodes_and_permutation(bulk, elem, edge, nodes);
-
-        unsigned new_face_node_ids[] = { 6, 5 };
-        stk::mesh::EntityVector new_nodes(2);
-        for (size_t i=0;i<new_nodes.size();++i)
-            new_nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, new_face_node_ids[i]);
-
-        std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
-                    stk::mesh::get_ordinal_and_permutation(bulk, elem, stk::topology::EDGE_RANK, new_nodes);
-
-        stk::mesh::Permutation new_permutation = ordinalAndPermutation.second;
-
-        unsigned edges_element_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-        unsigned num_elems = bulk.num_elements(edge);
-        const stk::mesh::Entity *elements = bulk.begin_elements(edge);
-        for (unsigned i=0;i<num_elems;++i)
-        {
-            if (elements[i]==elem)
-            {
-                edges_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
-                break;
-            }
-        }
-
-        unsigned elements_edge_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-        unsigned num_edges = bulk.num_edges(elem);
-        const stk::mesh::Entity *edges = bulk.begin_edges(elem);
-        for (unsigned i=0;i<num_edges;++i)
-        {
-            if (edges[i]==edge)
-            {
-                elements_edge_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
-                break;
-            }
-        }
-
-        ASSERT_TRUE(elements_edge_offset != stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
-
-        stk::mesh::unit_test::BucketTester& bucket_edge = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(edge));
-
-        bucket_edge.my_change_connected_nodes(bulk.bucket_ordinal(edge), &new_nodes[0]);
-        bucket_edge.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(edge), edges_element_offset, new_permutation);
-
-        stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(elem));
-
-        bucket_elem.my_change_existing_permutation_for_connected_edge(bulk.bucket_ordinal(elem), elements_edge_offset, new_permutation);
-
-        test_nodes_and_permutation(bulk, elem, edge, new_nodes);
+      if (elements[i]==elem)
+      {
+        edges_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
+        break;
+      }
     }
+
+    unsigned elements_edge_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+    unsigned num_edges = bulk.num_edges(elem);
+    const stk::mesh::Entity *edges = bulk.begin_edges(elem);
+    for (unsigned i=0;i<num_edges;++i)
+    {
+      if (edges[i]==edge)
+      {
+        elements_edge_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
+        break;
+      }
+    }
+
+    ASSERT_TRUE(elements_edge_offset != stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
+
+    stk::mesh::unit_test::BucketTester& bucket_edge = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(edge));
+
+    bucket_edge.my_change_connected_nodes(bulk.bucket_ordinal(edge), &new_nodes[0]);
+    bucket_edge.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(edge), edges_element_offset, new_permutation);
+
+    stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(elem));
+
+    bucket_elem.my_change_existing_permutation_for_connected_edge(bulk.bucket_ordinal(elem), elements_edge_offset, new_permutation);
+
+    test_nodes_and_permutation(bulk, elem, edge, new_nodes);
+  }
 }
 
 #ifdef STK_USE_DEVICE_MESH
@@ -487,7 +491,7 @@ void do_modifying_entity_creation(stk::mesh::BulkData & bulk, const stk::mesh::F
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
   bulk.modification_begin();
-  stk::unit_test_util::declare_element_side_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::QUAD_4));
+  stk::unit_test_util::simple_fields::declare_element_side_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::QUAD_4));
   bulk.modification_end();
 
   const stk::mesh::BucketVector & buckets = bulk.buckets(stk::topology::NODE_RANK);

@@ -43,6 +43,7 @@
 #include "stk_topology/topology.hpp"           // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"      // for ParallelMachine, etc
 #include "stk_unit_test_utils/TextMesh.hpp"
+#include "stk_unit_test_utils/BuildMesh.hpp"
 #include "stk_io/FillMesh.hpp"
 #include "stk_io/IossBridge.hpp"
 #include "gtest/gtest.h"
@@ -59,10 +60,11 @@
 
 namespace
 {
+using stk::unit_test_util::build_mesh;
 
-typedef stk::mesh::Field<int>                            ScalarIntField;
-typedef stk::mesh::Field<double>                         ScalarDoubleField;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> VectorDoubleField;
+typedef stk::mesh::Field<int>    ScalarIntField;
+typedef stk::mesh::Field<double> ScalarDoubleField;
+typedef stk::mesh::Field<double> VectorDoubleField;
 
 void build_mesh(stk::mesh::MetaData & meta,
                 stk::mesh::BulkData & mesh,
@@ -84,33 +86,33 @@ void build_mesh(stk::mesh::MetaData & meta,
   stk::mesh::Part * elem_part = &meta.declare_part_with_topology("elem_part", stk::topology::HEX_8);
   stk::mesh::Part * face_part = &meta.declare_part_with_topology("face_part", stk::topology::QUAD_4);
   stk::mesh::Part * shell_part = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
-  ScalarIntField    & scalarIntFieldNode    = meta.declare_field<ScalarIntField>(stk::topology::NODE_RANK, "Node Scalar Int Field");
-  ScalarDoubleField & scalarDoubleFieldNode = meta.declare_field<ScalarDoubleField>(stk::topology::NODE_RANK, "Node Scalar Double Field");
-  VectorDoubleField & vectorDoubleFieldNode = meta.declare_field<VectorDoubleField>(stk::topology::NODE_RANK, "Node Vector Double Field");
-  VectorDoubleField & coordsFieldNode       = meta.declare_field<VectorDoubleField>(stk::topology::NODE_RANK, "coordinates");
+  ScalarIntField    & scalarIntFieldNode    = meta.declare_field<int>(stk::topology::NODE_RANK, "Node Scalar Int Field");
+  ScalarDoubleField & scalarDoubleFieldNode = meta.declare_field<double>(stk::topology::NODE_RANK, "Node Scalar Double Field");
+  VectorDoubleField & vectorDoubleFieldNode = meta.declare_field<double>(stk::topology::NODE_RANK, "Node Vector Double Field");
+  VectorDoubleField & coordsFieldNode       = meta.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
   meta.set_coordinate_field(&coordsFieldNode);
   stk::mesh::put_field_on_mesh(scalarIntFieldNode, meta.universal_part(), &int_init_vals);
   stk::mesh::put_field_on_mesh(scalarDoubleFieldNode, meta.universal_part(), double_init_vals);
-  stk::mesh::put_field_on_mesh(vectorDoubleFieldNode, meta.universal_part(), double_init_vals);
-  stk::mesh::put_field_on_mesh(coordsFieldNode, meta.universal_part(), double_init_vals);
-  ScalarIntField    & scalarIntFieldElement    = meta.declare_field<ScalarIntField>(stk::topology::ELEM_RANK, "Element Scalar Int Field");
-  ScalarDoubleField & scalarDoubleFieldElement = meta.declare_field<ScalarDoubleField>(stk::topology::ELEM_RANK, "Element Scalar Double Field");
-  VectorDoubleField & vectorDoubleFieldElement = meta.declare_field<VectorDoubleField>(stk::topology::ELEM_RANK, "Element Vector Double Field");
+  stk::mesh::put_field_on_mesh(vectorDoubleFieldNode, meta.universal_part(), 3, double_init_vals);
+  stk::mesh::put_field_on_mesh(coordsFieldNode, meta.universal_part(), 3, double_init_vals);
+  ScalarIntField    & scalarIntFieldElement    = meta.declare_field<int>(stk::topology::ELEM_RANK, "Element Scalar Int Field");
+  ScalarDoubleField & scalarDoubleFieldElement = meta.declare_field<double>(stk::topology::ELEM_RANK, "Element Scalar Double Field");
+  VectorDoubleField & vectorDoubleFieldElement = meta.declare_field<double>(stk::topology::ELEM_RANK, "Element Vector Double Field");
   stk::mesh::put_field_on_mesh(scalarIntFieldElement, meta.universal_part(), &int_init_vals);
   stk::mesh::put_field_on_mesh(scalarDoubleFieldElement, meta.universal_part(), double_init_vals);
-  stk::mesh::put_field_on_mesh(vectorDoubleFieldElement, meta.universal_part(), double_init_vals);
-  ScalarIntField    & scalarIntFieldFace    = meta.declare_field<ScalarIntField>(stk::topology::FACE_RANK, "Face Scalar Int Field");
-  ScalarDoubleField & scalarDoubleFieldFace = meta.declare_field<ScalarDoubleField>(stk::topology::FACE_RANK, "Face Scalar Double Field");
-  VectorDoubleField & vectorDoubleFieldFace = meta.declare_field<VectorDoubleField>(stk::topology::FACE_RANK, "Face Vector Double Field");
+  stk::mesh::put_field_on_mesh(vectorDoubleFieldElement, meta.universal_part(), 3, double_init_vals);
+  ScalarIntField    & scalarIntFieldFace    = meta.declare_field<int>(stk::topology::FACE_RANK, "Face Scalar Int Field");
+  ScalarDoubleField & scalarDoubleFieldFace = meta.declare_field<double>(stk::topology::FACE_RANK, "Face Scalar Double Field");
+  VectorDoubleField & vectorDoubleFieldFace = meta.declare_field<double>(stk::topology::FACE_RANK, "Face Vector Double Field");
   stk::mesh::put_field_on_mesh(scalarIntFieldFace, meta.universal_part(), &int_init_vals);
   stk::mesh::put_field_on_mesh(scalarDoubleFieldFace, meta.universal_part(), double_init_vals);
-  stk::mesh::put_field_on_mesh(vectorDoubleFieldFace, meta.universal_part(), double_init_vals);
-  ScalarIntField    & scalarIntFieldShell    = meta.declare_field<ScalarIntField>(stk::topology::ELEM_RANK, "Shell Scalar Int Field");
-  ScalarDoubleField & scalarDoubleFieldShell = meta.declare_field<ScalarDoubleField>(stk::topology::ELEM_RANK, "Shell Scalar Double Field");
-  VectorDoubleField & vectorDoubleFieldShell = meta.declare_field<VectorDoubleField>(stk::topology::ELEM_RANK, "Shell Vector Double Field");
+  stk::mesh::put_field_on_mesh(vectorDoubleFieldFace, meta.universal_part(), 3, double_init_vals);
+  ScalarIntField    & scalarIntFieldShell    = meta.declare_field<int>(stk::topology::ELEM_RANK, "Shell Scalar Int Field");
+  ScalarDoubleField & scalarDoubleFieldShell = meta.declare_field<double>(stk::topology::ELEM_RANK, "Shell Scalar Double Field");
+  VectorDoubleField & vectorDoubleFieldShell = meta.declare_field<double>(stk::topology::ELEM_RANK, "Shell Vector Double Field");
   stk::mesh::put_field_on_mesh(scalarIntFieldShell, *shell_part, &int_init_vals);
   stk::mesh::put_field_on_mesh(scalarDoubleFieldShell, *shell_part, double_init_vals);
-  stk::mesh::put_field_on_mesh(vectorDoubleFieldShell, *shell_part, double_init_vals);
+  stk::mesh::put_field_on_mesh(vectorDoubleFieldShell, *shell_part, 3, double_init_vals);
   meta.commit();
 
   mesh.initialize_face_adjacent_element_graph();
@@ -370,6 +372,7 @@ public:
     if (commOwnsMesh[0])
     {
       metaA = std::unique_ptr<stk::mesh::MetaData>(new stk::mesh::MetaData(spatial_dimension));
+      metaA->use_simple_fields();
       meshA = std::unique_ptr<stk::mesh::BulkData>(new stk::mesh::BulkData(*metaA, pmSub));
       build_mesh(*metaA, *meshA, info.num_elements, info.num_nodes, info.element_ids, element_ownerA, &info.elem_node_ids[0], info.node_sharingA, info.coordinates, create_faces);
     }
@@ -379,6 +382,7 @@ public:
     if (commOwnsMesh[1])
     {
       metaB = std::unique_ptr<stk::mesh::MetaData>(new stk::mesh::MetaData(spatial_dimension));
+      metaB->use_simple_fields();
       meshB = std::unique_ptr<stk::mesh::BulkData>(new stk::mesh::BulkData(*metaB, pmSub));
       build_mesh(*metaB, *meshB, info.num_elements, info.num_nodes, info.element_ids, element_ownerB, &info.elem_node_ids[0], info.node_sharingB, info.coordinates, create_faces);
     }
@@ -1135,10 +1139,10 @@ TEST(Transfer, copy001T011Shell)
 
     // Set up the "source" mesh for the transfer
     //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
+    std::shared_ptr<stk::mesh::BulkData> meshA = build_mesh(spatial_dimension, pm);
+    stk::mesh::MetaData& metaA = meshA->mesh_meta_data();
     build_mesh(metaA,
-               meshA,
+               *meshA,
                num_elements,
                num_nodes,
                element_ids,
@@ -1149,8 +1153,9 @@ TEST(Transfer, copy001T011Shell)
 
     // Set up the "target" mesh for the transfer
     //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
+    std::shared_ptr<stk::mesh::BulkData> meshBPtr = build_mesh(spatial_dimension, pm);
+    stk::mesh::MetaData& metaB = meshBPtr->mesh_meta_data();
+    stk::mesh::BulkData& meshB = *meshBPtr;
     build_mesh(metaB,
                meshB,
                num_elements,
@@ -1178,7 +1183,7 @@ TEST(Transfer, copy001T011Shell)
                                            {1, 1, 1, 1, 1, 1} };
     const int num_shells = 10;
     add_shells_to_mesh(metaA,
-                       meshA,
+                       *meshA,
                        num_elements,
                        element_ids,
                        shell_node_ids,
@@ -1196,7 +1201,7 @@ TEST(Transfer, copy001T011Shell)
 
     // Fill "source" fields with valid data
     //
-    fill_mesh_values(meshA);
+    fill_mesh_values(*meshA);
 
     ScalarIntField    & scalarSourceIntField    = static_cast<ScalarIntField&>(*metaA.get_field(stk::topology::ELEM_RANK, "Shell Scalar Int Field"));
     ScalarDoubleField & scalarSourceDoubleField = static_cast<ScalarDoubleField&>(*metaA.get_field(stk::topology::ELEM_RANK, "Shell Scalar Double Field"));
@@ -1211,7 +1216,7 @@ TEST(Transfer, copy001T011Shell)
 
     std::vector<stk::mesh::Entity> sourceShells;
     const bool sortById = true;
-    stk::mesh::get_entities(meshA, stk::topology::ELEM_RANK,
+    stk::mesh::get_entities(*meshA, stk::topology::ELEM_RANK,
                             metaA.locally_owned_part() & shell_part,
                             sourceShells, sortById);
 
@@ -1224,7 +1229,7 @@ TEST(Transfer, copy001T011Shell)
     sourceFields.push_back(&scalarSourceIntField);
     sourceFields.push_back(&scalarSourceDoubleField);
     sourceFields.push_back(&vectorSourceDoubleField);
-    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(meshA, sourceShells, sourceFields);
+    stk::transfer::TransferCopyByIdStkMeshAdapter transferSource(*meshA, sourceShells, sourceFields);
 
     std::vector<stk::mesh::FieldBase*> targetFields;
     targetFields.push_back(&scalarTargetIntField);
@@ -1753,27 +1758,29 @@ TEST(Transfer, copy0T_)
 
     // Set up the "source" mesh for the transfer
     //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
+    std::shared_ptr<stk::mesh::BulkData> meshAPtr = build_mesh(spatial_dimension, pm);
+    stk::mesh::MetaData& metaA = meshAPtr->mesh_meta_data();
+    stk::mesh::BulkData& meshA = *meshAPtr;
     build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_owner, elem_node_ids, node_sharing, coordinates);
 
     // Set up the "target" mesh for the transfer without creating any elements
     //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
+    std::shared_ptr<stk::mesh::BulkData> meshBPtr = build_mesh(spatial_dimension, pm);
+    stk::mesh::MetaData& metaB = meshBPtr->mesh_meta_data();
+    stk::mesh::BulkData& meshB = *meshBPtr;
 
     int int_init_vals = std::numeric_limits<int>::max();
     double double_init_vals[] = {std::numeric_limits<double>::max(),
       std::numeric_limits<double>::max(),
       std::numeric_limits<double>::max()};
-    ScalarIntField    & scalarTargetIntField    = metaB.declare_field<ScalarIntField>(stk::topology::NODE_RANK, "Node Scalar Int Field");
-    ScalarDoubleField & scalarTargetDoubleField = metaB.declare_field<ScalarDoubleField>(stk::topology::NODE_RANK, "Node Scalar Double Field");
-    VectorDoubleField & vectorTargetDoubleField = metaB.declare_field<VectorDoubleField>(stk::topology::NODE_RANK, "Node Vector Double Field");
-    VectorDoubleField & coordsTargetField = metaB.declare_field<VectorDoubleField>(stk::topology::NODE_RANK, "coordinates");
+    ScalarIntField    & scalarTargetIntField    = metaB.declare_field<int>(stk::topology::NODE_RANK, "Node Scalar Int Field");
+    ScalarDoubleField & scalarTargetDoubleField = metaB.declare_field<double>(stk::topology::NODE_RANK, "Node Scalar Double Field");
+    VectorDoubleField & vectorTargetDoubleField = metaB.declare_field<double>(stk::topology::NODE_RANK, "Node Vector Double Field");
+    VectorDoubleField & coordsTargetField = metaB.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
     stk::mesh::put_field_on_mesh(scalarTargetIntField, metaB.universal_part(), &int_init_vals);
     stk::mesh::put_field_on_mesh(scalarTargetDoubleField, metaB.universal_part(), double_init_vals);
-    stk::mesh::put_field_on_mesh(vectorTargetDoubleField, metaB.universal_part(), double_init_vals);
-    stk::mesh::put_field_on_mesh(coordsTargetField, metaB.universal_part(), double_init_vals);
+    stk::mesh::put_field_on_mesh(vectorTargetDoubleField, metaB.universal_part(), 3, double_init_vals);
+    stk::mesh::put_field_on_mesh(coordsTargetField, metaB.universal_part(), 3, double_init_vals);
     metaB.commit();
 
     // Fill "source" fields with valid data
@@ -1880,27 +1887,29 @@ TEST(Transfer, copy_T0)
 
     // Set up the "source" mesh for the transfer
     //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
+    std::shared_ptr<stk::mesh::BulkData> meshAPtr = build_mesh(spatial_dimension, pm);
+    stk::mesh::MetaData& metaA = meshAPtr->mesh_meta_data();
+    stk::mesh::BulkData& meshA = *meshAPtr;
 
     int int_init_vals = std::numeric_limits<int>::max();
     double double_init_vals[] = {std::numeric_limits<double>::max(),
       std::numeric_limits<double>::max(),
       std::numeric_limits<double>::max()};
-    ScalarIntField    & scalarSourceIntField    = metaA.declare_field<ScalarIntField>(stk::topology::NODE_RANK, "Node Scalar Int Field");
-    ScalarDoubleField & scalarSourceDoubleField = metaA.declare_field<ScalarDoubleField>(stk::topology::NODE_RANK, "Node Scalar Double Field");
-    VectorDoubleField & vectorSourceDoubleField = metaA.declare_field<VectorDoubleField>(stk::topology::NODE_RANK, "Node Vector Double Field");
-    VectorDoubleField & coordsSourceField = metaA.declare_field<VectorDoubleField>(stk::topology::NODE_RANK, "coordinates");
+    ScalarIntField    & scalarSourceIntField    = metaA.declare_field<int>(stk::topology::NODE_RANK, "Node Scalar Int Field");
+    ScalarDoubleField & scalarSourceDoubleField = metaA.declare_field<double>(stk::topology::NODE_RANK, "Node Scalar Double Field");
+    VectorDoubleField & vectorSourceDoubleField = metaA.declare_field<double>(stk::topology::NODE_RANK, "Node Vector Double Field");
+    VectorDoubleField & coordsSourceField = metaA.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
     stk::mesh::put_field_on_mesh(scalarSourceIntField, metaA.universal_part(), &int_init_vals);
     stk::mesh::put_field_on_mesh(scalarSourceDoubleField, metaA.universal_part(), double_init_vals);
-    stk::mesh::put_field_on_mesh(vectorSourceDoubleField, metaA.universal_part(), double_init_vals);
-    stk::mesh::put_field_on_mesh(coordsSourceField, metaA.universal_part(), double_init_vals);
+    stk::mesh::put_field_on_mesh(vectorSourceDoubleField, metaA.universal_part(), 3, double_init_vals);
+    stk::mesh::put_field_on_mesh(coordsSourceField, metaA.universal_part(), 3, double_init_vals);
     metaA.commit();
 
     // Set up the "target" mesh for the transfer without creating any elements
     //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
+    std::shared_ptr<stk::mesh::BulkData> meshBPtr = build_mesh(spatial_dimension, pm);
+    stk::mesh::MetaData& metaB = meshBPtr->mesh_meta_data();
+    stk::mesh::BulkData& meshB = *meshBPtr;
     build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_owner, elem_node_ids, node_sharing, coordinates);
 
     ScalarIntField & scalarTargetIntField       = static_cast<ScalarIntField&>(*metaB.get_field(stk::topology::NODE_RANK, "Node Scalar Int Field"));
@@ -2003,14 +2012,16 @@ TEST(Transfer, copy00_T_11)
 
     // Set up the "source" mesh for the transfer
     //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
+    std::shared_ptr<stk::mesh::BulkData> meshAPtr = build_mesh(spatial_dimension, pm);
+    stk::mesh::MetaData& metaA = meshAPtr->mesh_meta_data();
+    stk::mesh::BulkData& meshA = *meshAPtr;
     build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_ownerA, elem_node_ids, node_sharingA, coordinates);
 
     // Set up the "target" mesh for the transfer
     //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
+    std::shared_ptr<stk::mesh::BulkData> meshBPtr = build_mesh(spatial_dimension, pm);
+    stk::mesh::MetaData& metaB = meshBPtr->mesh_meta_data();
+    stk::mesh::BulkData& meshB = *meshBPtr;
     build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_ownerB, elem_node_ids, node_sharingB, coordinates);
 
     // Fill "source" fields with valid data
@@ -2161,14 +2172,16 @@ TEST(Transfer, copy00___T___11)
 
     // Set up the "source" mesh for the transfer
     //
-    stk::mesh::MetaData metaA(spatial_dimension);
-    stk::mesh::BulkData meshA(metaA, pm);
+    std::shared_ptr<stk::mesh::BulkData> meshAPtr = build_mesh(spatial_dimension, pm);
+    stk::mesh::MetaData& metaA = meshAPtr->mesh_meta_data();
+    stk::mesh::BulkData& meshA = *meshAPtr;
     build_mesh(metaA, meshA, num_elements, num_nodes, element_ids, element_ownerA, elem_node_ids, node_sharingA, coordinates);
 
     // Set up the "target" mesh for the transfer
     //
-    stk::mesh::MetaData metaB(spatial_dimension);
-    stk::mesh::BulkData meshB(metaB, pm);
+    std::shared_ptr<stk::mesh::BulkData> meshBPtr = build_mesh(spatial_dimension, pm);
+    stk::mesh::MetaData& metaB = meshBPtr->mesh_meta_data();
+    stk::mesh::BulkData& meshB = *meshBPtr;
     build_mesh(metaB, meshB, num_elements, num_nodes, element_ids, element_ownerB, elem_node_ids, node_sharingB, coordinates);
 
     // Fill "source" fields with valid data
@@ -2390,19 +2403,21 @@ TEST(Transfer, mismatchedFieldDataTypeCopyTransfer)
   double doubleInitVals = std::numeric_limits<double>::max();
   std::vector<double> coords = {0,0, 1,0, 0,1, 1,1};
 
-  stk::mesh::MetaData metaA(2);
-  stk::mesh::BulkData bulkA(metaA, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkAPtr = build_mesh(2, MPI_COMM_WORLD);
+  stk::mesh::MetaData& metaA = bulkAPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkA = *bulkAPtr;
   create_block_part(metaA, stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::FieldBase* fieldBaseA = &metaA.declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, fieldName);
+  stk::mesh::FieldBase* fieldBaseA = &metaA.declare_field<int>(stk::topology::NODE_RANK, fieldName);
   stk::mesh::put_field_on_mesh(*fieldBaseA, metaA.universal_part(), &intInitVals);
 
   std::string meshDescA = "0,1,QUAD_4_2D,1,2,4,3,block_1";
-  stk::unit_test_util::setup_text_mesh(bulkA, stk::unit_test_util::get_full_text_mesh_desc(meshDescA, coords));
+  stk::unit_test_util::simple_fields::setup_text_mesh(bulkA, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDescA, coords));
 
-  stk::mesh::MetaData metaB(2);
-  stk::mesh::BulkData bulkB(metaB, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkBPtr = build_mesh(2, MPI_COMM_WORLD);
+  stk::mesh::MetaData& metaB = bulkBPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulkB = *bulkBPtr;
   create_block_part(metaB, stk::topology::QUAD_4_2D, "block_1", 1);
-  stk::mesh::FieldBase* fieldBaseB = &metaB.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, fieldName);
+  stk::mesh::FieldBase* fieldBaseB = &metaB.declare_field<double>(stk::topology::NODE_RANK, fieldName);
   stk::mesh::put_field_on_mesh(*fieldBaseB, metaB.universal_part(), &doubleInitVals);
 
   std::string meshDescB;
@@ -2411,7 +2426,7 @@ TEST(Transfer, mismatchedFieldDataTypeCopyTransfer)
   } else {
     meshDescB = "1,1,QUAD_4_2D,1,2,4,3,block_1";
   }
-  stk::unit_test_util::setup_text_mesh(bulkB, stk::unit_test_util::get_full_text_mesh_desc(meshDescB, coords));
+  stk::unit_test_util::simple_fields::setup_text_mesh(bulkB, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDescB, coords));
 
   // Set up CopyTransfer
   stk::mesh::EntityVector entitiesA;

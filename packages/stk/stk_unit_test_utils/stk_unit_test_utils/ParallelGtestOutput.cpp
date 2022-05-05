@@ -269,6 +269,18 @@ void create_parallel_output(int procId)
     create_parallel_output_with_comm(procId, MPI_COMM_WORLD);
 }
 
+namespace simple_fields {
+
+void create_parallel_output(int procId) {
+  stk::unit_test_util::create_parallel_output(procId);
+}
+
+void create_parallel_output_with_comm(int procId, MPI_Comm comm) {
+  stk::unit_test_util::create_parallel_output_with_comm(procId, comm);
+}
+
+} // namespace simple_fields
+
 }
 }
 

@@ -40,12 +40,15 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/BuildMesh.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <Ioss_IOFactory.h>
 #include "Ioss_CommSet.h"
 #include <vector>
 #include <unistd.h>
 
 using NodeIdSharingProc = std::pair<stk::mesh::EntityId, int>;
+using stk::unit_test_util::build_mesh;
 
 struct OriginalTopology {
   std::string blockName;
@@ -59,7 +62,7 @@ struct AssemblyGrouping {
 };
 
 
-class MeshFixtureRebalance : public stk::unit_test_util::MeshFixture
+class MeshFixtureRebalance : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
   MeshFixtureRebalance()
@@ -82,15 +85,27 @@ protected:
 
   void setup_initial_mesh(const std::string & inputMeshSpec)
   {
-    stk::unit_test_util::generated_mesh_to_file_in_serial(inputMeshSpec, get_input_file_name());
+    stk::unit_test_util::simple_fields::generated_mesh_to_file_in_serial(inputMeshSpec, get_input_file_name());
     read_serial_mesh_with_auto_decomp();
+  }
+
+  stk::mesh::EntityId add_disconnected_node(int owningProcessor)
+  {
+    const stk::mesh::EntityId newNodeId = 10000;
+    get_bulk().modification_begin();
+    if (get_parallel_rank() == owningProcessor) {
+      get_bulk().declare_node(newNodeId);
+    }
+    get_bulk().modification_end();
+
+    return newNodeId;
   }
 
   void setup_initial_mesh_textmesh_override_topology(const std::string& inputMeshDesc,
                                                      const std::vector<OriginalTopology>& originalTopologies)
   {
     if (get_parallel_rank() == 0) {
-      stk::unit_test_util::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
+      stk::unit_test_util::simple_fields::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
       tMesh.setup_mesh(inputMeshDesc, get_input_file_name());
 
       for (const OriginalTopology & ot : originalTopologies) {
@@ -107,7 +122,7 @@ protected:
                                                   const std::vector<AssemblyGrouping>& assemblies)
   {
     if (get_parallel_rank() == 0) {
-      stk::unit_test_util::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
+      stk::unit_test_util::simple_fields::TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::AUTO_AURA);
       tMesh.setup_mesh(inputMeshDesc, get_input_file_name());
 
       for (const AssemblyGrouping & ag : assemblies) {
@@ -130,7 +145,7 @@ protected:
 
   void setup_initial_mesh_textmesh(const std::string & inputMeshDesc)
   {
-    stk::unit_test_util::text_mesh_to_file_in_serial(inputMeshDesc, get_input_file_name());
+    stk::unit_test_util::simple_fields::text_mesh_to_file_in_serial(inputMeshDesc, get_input_file_name());
 
     allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
     m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
@@ -142,12 +157,12 @@ protected:
     m_transientTimeSteps = {0.0, 1.0, 2.0};
     m_transientFieldName = "transient_field";
     m_globalVariableName = "global_variable";
-    stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
-                                                                              get_input_file_name(),
-                                                                              m_transientFieldName,
-                                                                              m_globalVariableName,
-                                                                              m_transientTimeSteps,
-                                                                              stk::unit_test_util::IdAndTimeFieldValueSetter());
+    stk::unit_test_util::simple_fields::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
+                                                                                             get_input_file_name(),
+                                                                                             m_transientFieldName,
+                                                                                             m_globalVariableName,
+                                                                                             m_transientTimeSteps,
+                                                                                             stk::unit_test_util::IdAndTimeFieldValueSetter());
 
     allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
     get_meta().set_coordinate_field_name(m_balanceSettings.getCoordinateFieldName());
@@ -155,7 +170,7 @@ protected:
     stk::io::fill_mesh_preexisting(m_ioBroker, get_input_file_name(), get_bulk());
   }
 
-  virtual void rebalance_mesh(int numFinalProcs) = 0;
+  virtual void rebalance_mesh(int numFinalProcs, const std::string & decompMethod = "rcb") = 0;
 
   void clean_up_temporary_files()
   {
@@ -190,10 +205,10 @@ protected:
 
     if (get_parallel_rank() == 0) {
       for (size_t i = 0; i < elemsPerProc.size(); ++i) {
-        stk::unit_test_util::MeshFromFile finalMesh(MPI_COMM_SELF);
+        stk::unit_test_util::simple_fields::MeshFromFile finalMesh(MPI_COMM_SELF);
         finalMesh.fill_from_serial(get_subdomain_filename(elemsPerProc.size(), i));
 
-        stk::unit_test_util::TransientVerifier verifier(MPI_COMM_SELF);
+        stk::unit_test_util::simple_fields::TransientVerifier verifier(MPI_COMM_SELF);
         verifier.verify_time_steps(finalMesh, m_transientTimeSteps);
         verifier.verify_global_variables_at_each_time_step(finalMesh, m_globalVariableName, m_transientTimeSteps);
         verifier.verify_num_transient_fields(finalMesh, 2);
@@ -229,7 +244,7 @@ protected:
   {
     if (get_parallel_rank() == 0) {
       for (size_t subdomain = 0; subdomain < m_balanceSettings.get_num_output_processors(); ++subdomain) {
-        stk::unit_test_util::MeshFromFile finalMesh(MPI_COMM_SELF);
+        stk::unit_test_util::simple_fields::MeshFromFile finalMesh(MPI_COMM_SELF);
         finalMesh.fill_from_serial(get_subdomain_filename(m_balanceSettings.get_num_output_processors(), subdomain));
 
         for (const AssemblyGrouping & ag : expectedAssemblies) {
@@ -282,16 +297,39 @@ protected:
 
   void test_num_elements_this_subdomain(unsigned numProcs, unsigned subdomainId, unsigned expectedNumElements)
   {
-    stk::mesh::MetaData tempMeta;
-    stk::mesh::BulkData tempBulk(tempMeta, MPI_COMM_SELF);
+    std::shared_ptr<stk::mesh::BulkData> tempBulk = build_mesh(MPI_COMM_SELF);
     std::string subdomainFileName = get_subdomain_filename(numProcs, subdomainId);
-    stk::io::fill_mesh(subdomainFileName, tempBulk);
+    stk::io::fill_mesh(subdomainFileName, *tempBulk);
 
     stk::mesh::EntityVector entities;
-    stk::mesh::get_entities(tempBulk, stk::topology::ELEM_RANK, entities);
+    stk::mesh::get_entities(*tempBulk, stk::topology::ELEM_RANK, entities);
 
-    const unsigned numElements = stk::mesh::count_entities(tempBulk, stk::topology::ELEM_RANK, tempMeta.universal_part());
+    const unsigned numElements = stk::mesh::count_entities(*tempBulk, stk::topology::ELEM_RANK, tempBulk->mesh_meta_data().universal_part());
     EXPECT_EQ(numElements, expectedNumElements) << "On subdomain " << subdomainId;
+  }
+
+  void test_node_existence(stk::mesh::EntityId nodeId)
+  {
+    MPI_Barrier(get_comm());
+
+    if (get_parallel_rank() == 0) {
+      const unsigned numOutputProcs = m_balanceSettings.get_num_output_processors();
+      bool foundNode = false;
+
+      for (unsigned subdomainId = 0; subdomainId < numOutputProcs; ++subdomainId) {
+        std::shared_ptr<stk::mesh::BulkData> tempBulk = build_mesh(MPI_COMM_SELF);
+        std::string subdomainFileName = get_subdomain_filename(numOutputProcs, subdomainId);
+        stk::io::fill_mesh(subdomainFileName, *tempBulk);
+
+        const stk::mesh::Entity node = tempBulk->get_entity(stk::topology::NODE_RANK, nodeId);
+        if (tempBulk->is_valid(node)) {
+          foundNode = true;
+          break;
+        }
+      }
+
+      EXPECT_TRUE(foundNode);
+    }
   }
 
   unsigned get_number_width(unsigned number)

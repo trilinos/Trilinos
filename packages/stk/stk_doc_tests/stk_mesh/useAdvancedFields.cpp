@@ -32,9 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, etc
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/Field.hpp>      // for Field
@@ -43,6 +43,7 @@
 #include "stk_mesh/base/FieldBase.hpp"  // for field_scalars_per_entity, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityId
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_io/IossBridge.hpp"
 namespace stk { namespace mesh { class Part; } }
 
 namespace {
@@ -50,67 +51,72 @@ namespace {
 //BEGINUseAdvancedFields
 TEST(stkMeshHowTo, useAdvancedFields)
 {
-    const unsigned spatialDimension = 3;
-    stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());
+  const unsigned spatialDimension = 3;
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_spatial_dimension(spatialDimension);
+  builder.set_entity_rank_names(stk::mesh::entity_rank_names());
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+  bulkPtr->mesh_meta_data().use_simple_fields();
+  stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
 
-    typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorField;
-    typedef stk::mesh::Field<double, stk::mesh::FullTensor36> TensorField;
-    TensorField& tensorField = metaData.declare_field<TensorField>(stk::topology::ELEM_RANK, "tensor");
-    VectorField& variableSizeField = metaData.declare_field<VectorField>(stk::topology::ELEM_RANK, "variableSizeField");
+  typedef stk::mesh::Field<double> DoubleField;
+  DoubleField& tensorField = metaData.declare_field<double>(stk::topology::ELEM_RANK, "tensor");
+  DoubleField& variableSizeField = metaData.declare_field<double>(stk::topology::ELEM_RANK, "variableSizeField");
 
-    stk::mesh::Part &tetPart = metaData.declare_part_with_topology("tetElementPart", stk::topology::TET_4);
-    stk::mesh::Part &hexPart = metaData.declare_part_with_topology("hexElementPart", stk::topology::HEX_8);
+  stk::mesh::Part &tetPart = metaData.declare_part_with_topology("tetElementPart", stk::topology::TET_4);
+  stk::mesh::Part &hexPart = metaData.declare_part_with_topology("hexElementPart", stk::topology::HEX_8);
 
-    double initialTensorValue[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-    stk::mesh::put_field_on_entire_mesh_with_initial_value(tensorField, initialTensorValue);
+  double initialTensorValue[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+  stk::mesh::put_field_on_mesh(tensorField, metaData.universal_part(), 9, initialTensorValue);
+  stk::io::set_field_output_type(tensorField, "Full_Tensor_36");
 
-    double initialVectorValue[] = {1, 2, 3, 4, 5, 6, 7, 8};
-    const unsigned nodesPerTet = 4;
-    stk::mesh::put_field_on_mesh(variableSizeField, tetPart, nodesPerTet, initialVectorValue);
-    const unsigned nodesPerHex = 8;
-    stk::mesh::put_field_on_mesh(variableSizeField, hexPart, nodesPerHex, initialVectorValue);
+  double initialVectorValue[] = {1, 2, 3, 4, 5, 6, 7, 8};
+  const unsigned nodesPerTet = 4;
+  stk::mesh::put_field_on_mesh(variableSizeField, tetPart, nodesPerTet, initialVectorValue);
+  const unsigned nodesPerHex = 8;
+  stk::mesh::put_field_on_mesh(variableSizeField, hexPart, nodesPerHex, initialVectorValue);
 
-    metaData.commit();
-    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
-    mesh.modification_begin();
-    stk::mesh::EntityId tetId = 1;
-    stk::mesh::EntityIdVector tetNodes {1, 2, 3, 4};
-    stk::mesh::Entity tetElem=stk::mesh::declare_element(mesh, tetPart, tetId, tetNodes);
-    stk::mesh::EntityId hexId = 2;
-    stk::mesh::EntityIdVector hexNodes {5, 6, 7, 8, 9, 10, 11, 12};
-    stk::mesh::Entity hexElem=stk::mesh::declare_element(mesh, hexPart, hexId, hexNodes);
-    mesh.modification_end();
+  metaData.commit();
+  stk::mesh::BulkData& mesh = *bulkPtr;
+  mesh.modification_begin();
+  stk::mesh::EntityId tetId = 1;
+  stk::mesh::EntityIdVector tetNodes {1, 2, 3, 4};
+  stk::mesh::Entity tetElem=stk::mesh::declare_element(mesh, tetPart, tetId, tetNodes);
+  stk::mesh::EntityId hexId = 2;
+  stk::mesh::EntityIdVector hexNodes {5, 6, 7, 8, 9, 10, 11, 12};
+  stk::mesh::Entity hexElem=stk::mesh::declare_element(mesh, hexPart, hexId, hexNodes);
+  mesh.modification_end();
 
-    const unsigned tensor_scalars_per_hex = stk::mesh::field_scalars_per_entity(tensorField, hexElem);
-    const unsigned tensor_scalars_per_tet = stk::mesh::field_scalars_per_entity(tensorField, tetElem);
+  const unsigned tensor_scalars_per_hex = stk::mesh::field_scalars_per_entity(tensorField, hexElem);
+  const unsigned tensor_scalars_per_tet = stk::mesh::field_scalars_per_entity(tensorField, tetElem);
 
-    EXPECT_EQ(tensor_scalars_per_hex, tensor_scalars_per_tet);
-    const unsigned tensor_enum_size = stk::mesh::FullTensor36::Size;
-    EXPECT_EQ(tensor_scalars_per_hex, tensor_enum_size);
+  EXPECT_EQ(tensor_scalars_per_hex, tensor_scalars_per_tet);
+  const unsigned tensor_enum_size = stk::mesh::FullTensor36::Size;
+  EXPECT_EQ(tensor_scalars_per_hex, tensor_enum_size);
 
-    double* tensorData = stk::mesh::field_data(tensorField, hexElem);
-    for(unsigned i=0; i<tensor_scalars_per_hex; i++)
-    {
-        EXPECT_EQ(initialTensorValue[i], tensorData[i]);
-    }
+  double* tensorData = stk::mesh::field_data(tensorField, hexElem);
+  for(unsigned i=0; i<tensor_scalars_per_hex; i++)
+  {
+    EXPECT_EQ(initialTensorValue[i], tensorData[i]);
+  }
 
-    const unsigned scalars_per_tet = stk::mesh::field_scalars_per_entity(variableSizeField, tetElem);
-    EXPECT_EQ(nodesPerTet, scalars_per_tet);
+  const unsigned scalars_per_tet = stk::mesh::field_scalars_per_entity(variableSizeField, tetElem);
+  EXPECT_EQ(nodesPerTet, scalars_per_tet);
 
-    const unsigned scalars_per_hex = stk::mesh::field_scalars_per_entity(variableSizeField, hexElem);
-    EXPECT_EQ(nodesPerHex, scalars_per_hex);
+  const unsigned scalars_per_hex = stk::mesh::field_scalars_per_entity(variableSizeField, hexElem);
+  EXPECT_EQ(nodesPerHex, scalars_per_hex);
 
-    double* vectorHexData = stk::mesh::field_data(variableSizeField, hexElem);
-    for(unsigned i=0; i<scalars_per_hex; i++)
-    {
-        EXPECT_EQ(initialVectorValue[i], vectorHexData[i]);
-    }
+  double* vectorHexData = stk::mesh::field_data(variableSizeField, hexElem);
+  for(unsigned i=0; i<scalars_per_hex; i++)
+  {
+    EXPECT_EQ(initialVectorValue[i], vectorHexData[i]);
+  }
 
-    double* vectorTetData = stk::mesh::field_data(variableSizeField, tetElem);
-    for(unsigned i=0; i<scalars_per_tet; i++)
-    {
-        EXPECT_EQ(initialVectorValue[i], vectorTetData[i]);
-    }
+  double* vectorTetData = stk::mesh::field_data(variableSizeField, tetElem);
+  for(unsigned i=0; i<scalars_per_tet; i++)
+  {
+    EXPECT_EQ(initialVectorValue[i], vectorTetData[i]);
+  }
 }
 //ENDUseAdvancedFields
 

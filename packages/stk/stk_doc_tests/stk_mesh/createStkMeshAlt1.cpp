@@ -37,6 +37,7 @@
 #include <unistd.h>                     // for unlink
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
@@ -60,18 +61,19 @@ TEST(StkMeshHowTo, CreateStkMesh)
   create_example_exodus_file(communicator, exodusFileName);
   // Creation of STK Mesh objects.
   // MetaData creates the universal_part, locally-owned part, and globally shared part.
-  const int spatialDim = 3;
-  stk::mesh::MetaData stkMeshMetaData(spatialDim);
-  stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator);
+  std::shared_ptr<stk::mesh::BulkData> stkMeshBulkDataPtr = stk::mesh::MeshBuilder(communicator).create();
+  stk::mesh::MetaData& stkMeshMetaData = stkMeshBulkDataPtr->mesh_meta_data();
+  stkMeshMetaData.use_simple_fields();
 
   // STK IO module will be described in separate chapter.
   // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
   // The order of the following lines in {} are important
   {
     stk::io::StkMeshIoBroker exodusFileReader(communicator);
+    exodusFileReader.use_simple_fields();
 
     // Inform STK IO which STK Mesh objects to populate later
-    exodusFileReader.set_bulk_data(stkMeshBulkData);
+    exodusFileReader.set_bulk_data(*stkMeshBulkDataPtr);
 
     exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
 
@@ -85,7 +87,7 @@ TEST(StkMeshHowTo, CreateStkMesh)
   // Test if the STK Mesh has 512 elements. Other examples will discuss details below.
   stk::mesh::Selector allEntities = stkMeshMetaData.universal_part();
   std::vector<size_t> entityCounts;
-  stk::mesh::count_entities(allEntities, stkMeshBulkData, entityCounts);
+  stk::mesh::count_entities(allEntities, *stkMeshBulkDataPtr, entityCounts);
   EXPECT_EQ(512u, entityCounts[stk::topology::ELEMENT_RANK]);
   unlink(exodusFileName.c_str());
 }
@@ -97,6 +99,7 @@ void create_example_exodus_file(MPI_Comm communicator, const std::string & exodu
   //+ INITIALIZATION:
   //+ Create a mesh
   stk::io::StkMeshIoBroker stkIo(communicator);
+  stkIo.use_simple_fields();
 
   const std::string generatedFileName = "generated:8x8x8";
   size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);

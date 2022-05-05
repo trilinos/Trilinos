@@ -474,7 +474,7 @@ private:
 
     newDeviceSelectedBucketOffset = UnsignedViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, hostField->name() + "_bucket_offset"),
                                                      allBuckets.size());
-    newHostSelectedBucketOffset = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), newDeviceSelectedBucketOffset);
+    newHostSelectedBucketOffset = Kokkos::create_mirror_view(Kokkos::HostSpace(), newDeviceSelectedBucketOffset, Kokkos::WithoutInitializing);
 
     for(unsigned i = 0; i < allBuckets.size(); i++) {
       if(selector(*allBuckets[i])) {

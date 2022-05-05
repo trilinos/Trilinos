@@ -62,7 +62,7 @@ namespace Details
 
 //Utility for getting the local values, rowptrs and colinds (in Kokkos::Views) for any RowMatrix
 //Used by Fic, Filu and Fildl but may also be useful in other classes
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template<typename Scalar, typename ImplScalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 struct CrsArrayReader
 {
   typedef typename Node::device_type device_type;
@@ -71,11 +71,11 @@ struct CrsArrayReader
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TCrsMatrix;
   typedef Ifpack2::LocalFilter<TRowMatrix> Filter;
   typedef Ifpack2::ReorderFilter<TRowMatrix> ReordFilter;
-  typedef KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, execution_space> KCrsMatrix;
+  typedef KokkosSparse::CrsMatrix<ImplScalar, LocalOrdinal, execution_space> KCrsMatrix;
   typedef Kokkos::View<LocalOrdinal*, execution_space> OrdinalArray;
-  typedef Kokkos::View<Scalar*, execution_space> ScalarArray;
+  typedef Kokkos::View<ImplScalar*, execution_space> ScalarArray;
   typedef Kokkos::View<LocalOrdinal*, Kokkos::HostSpace> OrdinalArrayHost;
-  typedef Kokkos::View<Scalar*, Kokkos::HostSpace> ScalarArrayHost;
+  typedef Kokkos::View<ImplScalar*, Kokkos::HostSpace> ScalarArrayHost;
   //! The execution space to used to run the row access functors.
   typedef Kokkos::Serial functor_space;
   typedef Kokkos::RangePolicy<functor_space, int> RangePol;

@@ -112,7 +112,7 @@ computeLocalPrec()
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-applyLocalPrec(ScalarArray x, ScalarArray y) const
+applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const
 {
   localPrec_->apply(x, y);
   //since this may be applied to multiple vectors, add to applyTime_ instead of setting it

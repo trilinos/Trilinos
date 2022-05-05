@@ -12,116 +12,116 @@ namespace
 
 size_t get_num_global_faces(const stk::mesh::BulkData &bulk)
 {
-    std::vector<size_t> meshCounts;
-    stk::mesh::comm_mesh_counts(bulk, meshCounts);
-    return meshCounts[stk::topology::FACE_RANK];
+  std::vector<size_t> meshCounts;
+  stk::mesh::comm_mesh_counts(bulk, meshCounts);
+  return meshCounts[stk::topology::FACE_RANK];
 }
 
 //==============================================================================
-class CreateFacesClassicPerformance : public stk::unit_test_util::PerformanceTester
+class CreateFacesClassicPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
 {
 public:
-    CreateFacesClassicPerformance(stk::mesh::BulkData &bulk)
-      : stk::unit_test_util::PerformanceTester(bulk.parallel()),
-        bulkData(bulk),
-        locallyOwnedElements(bulk.mesh_meta_data().locally_owned_part())
-    {
-    }
+  CreateFacesClassicPerformance(stk::mesh::BulkData &bulk)
+    : stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+      bulkData(bulk),
+      locallyOwnedElements(bulk.mesh_meta_data().locally_owned_part())
+  {
+  }
 
 protected:
-    virtual void run_algorithm_to_time()
-    {
-        stk::mesh::create_faces(bulkData, locallyOwnedElements);
-    }
+  virtual void run_algorithm_to_time()
+  {
+    stk::mesh::create_faces(bulkData, locallyOwnedElements);
+  }
 
-    virtual size_t get_value_to_output_as_iteration_count()
-    {
-        return get_num_global_faces(bulkData);
-    }
+  virtual size_t get_value_to_output_as_iteration_count()
+  {
+    return get_num_global_faces(bulkData);
+  }
 
-    stk::mesh::BulkData &bulkData;
-    stk::mesh::Selector locallyOwnedElements;
+  stk::mesh::BulkData &bulkData;
+  stk::mesh::Selector locallyOwnedElements;
 };
 
 //==============================================================================
-class CreateFacesPerformance : public stk::unit_test_util::PerformanceTester
+class CreateFacesPerformance : public stk::unit_test_util::simple_fields::PerformanceTester
 {
 public:
-    CreateFacesPerformance(stk::mesh::BulkData &bulk) :
-            stk::unit_test_util::PerformanceTester(bulk.parallel()),
-            bulkData(bulk),
-            locallyOwnedElements(bulk.mesh_meta_data().locally_owned_part())
-    {
-    }
+  CreateFacesPerformance(stk::mesh::BulkData &bulk) :
+    stk::unit_test_util::simple_fields::PerformanceTester(bulk.parallel()),
+    bulkData(bulk),
+    locallyOwnedElements(bulk.mesh_meta_data().locally_owned_part())
+  {
+  }
 
 protected:
-    virtual void run_algorithm_to_time()
-    {
-        stk::mesh::experimental::create_faces(bulkData, locallyOwnedElements);
-    }
+  virtual void run_algorithm_to_time()
+  {
+    stk::mesh::experimental::create_faces(bulkData, locallyOwnedElements);
+  }
 
-    virtual size_t get_value_to_output_as_iteration_count()
-    {
-        return get_num_global_faces(bulkData);
-    }
+  virtual size_t get_value_to_output_as_iteration_count()
+  {
+    return get_num_global_faces(bulkData);
+  }
 
-    stk::mesh::BulkData &bulkData;
-    stk::mesh::Selector locallyOwnedElements;
+  stk::mesh::BulkData &bulkData;
+  stk::mesh::Selector locallyOwnedElements;
 };
 
 //==============================================================================
-class CreateFacesClassicPerformanceTest : public stk::unit_test_util::MeshFixture
+class CreateFacesClassicPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
-    void run_create_faces_perf_test()
-    {
-        CreateFacesClassicPerformance perfTester(get_bulk());
-        perfTester.run_performance_test();
-    }
+  void run_create_faces_perf_test()
+  {
+    CreateFacesClassicPerformance perfTester(get_bulk());
+    perfTester.run_performance_test();
+  }
 
-    std::string get_mesh_spec()
-    {
-        return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
-    }
+  std::string get_mesh_spec()
+  {
+    return stk::unit_test_util::simple_fields::get_option("-file", "NO_FILE_SPECIFIED");
+  }
 };
 
 //==============================================================================
-class CreateFacesPerformanceTest : public stk::unit_test_util::MeshFixture
+class CreateFacesPerformanceTest : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
-    void run_create_faces_perf_test()
-    {
-        CreateFacesPerformance perfTester(get_bulk());
-        perfTester.run_performance_test();
-    }
+  void run_create_faces_perf_test()
+  {
+    CreateFacesPerformance perfTester(get_bulk());
+    perfTester.run_performance_test();
+  }
 
-    std::string get_mesh_spec()
-    {
-        return stk::unit_test_util::get_option("-file", "NO_FILE_SPECIFIED");
-    }
+  std::string get_mesh_spec()
+  {
+    return stk::unit_test_util::simple_fields::get_option("-file", "NO_FILE_SPECIFIED");
+  }
 };
 
 //==============================================================================
 TEST_F(CreateFacesClassicPerformanceTest, read_mesh)
 {
-    setup_mesh(get_mesh_spec(), stk::mesh::BulkData::AUTO_AURA);
+  setup_mesh(get_mesh_spec(), stk::mesh::BulkData::AUTO_AURA);
 
-    run_create_faces_perf_test();
+  run_create_faces_perf_test();
 }
 
 TEST_F(CreateFacesPerformanceTest, read_mesh_with_auto_decomp)
 {
-    allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
-    stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
+  allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
+  stk::unit_test_util::simple_fields::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
 
-    run_create_faces_perf_test();
+  run_create_faces_perf_test();
 }
 
 TEST_F(CreateFacesPerformanceTest, read_mesh)
 {
-    setup_mesh(get_mesh_spec(), stk::mesh::BulkData::AUTO_AURA);
+  setup_mesh(get_mesh_spec(), stk::mesh::BulkData::AUTO_AURA);
 
-    run_create_faces_perf_test();
+  run_create_faces_perf_test();
 }
 
 }

@@ -47,6 +47,13 @@ namespace unit_test_util
 void create_parallel_output(int procId);
 void create_parallel_output_with_comm(int procId, MPI_Comm comm);
 
+namespace simple_fields {
+
+void create_parallel_output(int procId);
+void create_parallel_output_with_comm(int procId, MPI_Comm comm);
+
+} // namespace simple_fields
+
 }
 }
 

@@ -147,7 +147,8 @@ StkMeshIoBroker::StkMeshIoBroker()
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
   m_autoLoadDistributionFactorPerNodeSet(true),
-  m_enableEdgeIO(false)
+  m_enableEdgeIO(false),
+  m_useSimpleFields(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -158,7 +159,8 @@ StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
   m_autoLoadDistributionFactorPerNodeSet(true),
-  m_enableEdgeIO(false)
+  m_enableEdgeIO(false),
+  m_useSimpleFields(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -220,7 +222,7 @@ size_t StkMeshIoBroker::add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_
 
 void StkMeshIoBroker::create_sideset_observer()
 {
-    ThrowRequireMsg( !Teuchos::is_null(m_bulkData), "Bulk data not initialized");
+    ThrowRequireMsg( !is_bulk_data_null(), "Bulk data not initialized");
     if (!bulk_data().has_observer_type<stk::mesh::SidesetUpdater>()) {
         stk::mesh::Selector activeSelector = get_active_selector();
         if (activeSelector == stk::mesh::Selector()) {
@@ -237,32 +239,53 @@ void StkMeshIoBroker::create_sideset_observer()
     }
 }
 
-void StkMeshIoBroker::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after May 2022
+STK_DEPRECATED void StkMeshIoBroker::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
 {
-    ThrowErrorMsgIf( !Teuchos::is_null(m_bulkData),
+  set_bulk_data(Teuchos::get_shared_ptr(arg_bulk_data));
+}
+
+STK_DEPRECATED void StkMeshIoBroker::replace_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
+{
+  replace_bulk_data(Teuchos::get_shared_ptr(arg_bulk_data));
+}
+#endif
+
+void StkMeshIoBroker::set_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
+{
+    ThrowErrorMsgIf( m_bulkData != nullptr,
                      "Bulk data already initialized" );
     m_bulkData = arg_bulk_data;
 
-    if (Teuchos::is_null(m_metaData)) {
-        m_metaData = Teuchos::rcpFromRef(bulk_data().mesh_meta_data());
+    if (m_metaData == nullptr) {
+        m_metaData = std::shared_ptr<stk::mesh::MetaData>(&(bulk_data().mesh_meta_data()), [](auto pointerWeWontDelete){});
+    }
+
+    if (m_useSimpleFields) {
+      m_metaData->use_simple_fields();
     }
 
     m_communicator = m_bulkData->parallel();
     create_sideset_observer();
 }
 
-void StkMeshIoBroker::replace_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data )
+void StkMeshIoBroker::replace_bulk_data(std::shared_ptr<stk::mesh::BulkData> arg_bulk_data)
 {
-    ThrowErrorMsgIf( Teuchos::is_null(m_bulkData),
+    ThrowErrorMsgIf( m_bulkData == nullptr,
                      "There is  no bulk data to replace." );
-    ThrowErrorMsgIf( Teuchos::is_null(m_metaData),
+    ThrowErrorMsgIf( m_metaData == nullptr,
                      "Meta data must be non-null when calling StkMeshIoBroker::replace_bulk_data." );
 
-    stk::mesh::MetaData &new_meta_data = arg_bulk_data->mesh_meta_data();
-    ThrowErrorMsgIf( &(*m_metaData) != &new_meta_data,
+    std::shared_ptr<stk::mesh::MetaData> new_meta_data(&(arg_bulk_data->mesh_meta_data()), [](auto pointerWeWontDelete){});
+    ThrowErrorMsgIf( m_metaData.get() != new_meta_data.get(),
                      "Meta data for both new and old bulk data must be the same." );
 
     m_bulkData = arg_bulk_data;
+
+    if (m_useSimpleFields) {
+      m_metaData->use_simple_fields();
+    }
+
     create_sideset_observer();
 }
 
@@ -364,7 +387,7 @@ void StkMeshIoBroker::create_ioss_region()
 
 void StkMeshIoBroker::set_rank_name_vector(const std::vector<std::string> &rank_names)
 {
-    ThrowErrorMsgIf(!Teuchos::is_null(m_metaData),
+    ThrowErrorMsgIf(!is_meta_data_null(),
                     "There meta data associated with this StkMeshIoBroker has already been created. "
                     "It is not permissible to set the rank_name_vector() at this time.");
 
@@ -450,8 +473,12 @@ void StkMeshIoBroker::create_input_mesh()
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in create_input_mesh.");
 
     // See if meta data is null, if so, create a new one...
-    if (Teuchos::is_null(m_metaData)) {
-        m_metaData = Teuchos::rcp(new stk::mesh::MetaData());
+    if (is_meta_data_null()) {
+        m_metaData = std::shared_ptr<stk::mesh::MetaData>(new stk::mesh::MetaData());
+    }
+
+    if (m_useSimpleFields) {
+      m_metaData->use_simple_fields();
     }
 
     size_t spatial_dimension = region->get_property("spatial_dimension").get_int();
@@ -779,15 +806,16 @@ void StkMeshIoBroker::create_bulk_data()
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
 
     // Check if bulk_data is null; if so, create a new one...
-    if (Teuchos::is_null(m_bulkData)) {
+    if (is_bulk_data_null()) {
         stk::mesh::FieldDataManager* fieldDataManager = nullptr;
-        set_bulk_data(Teuchos::rcp( new stk::mesh::BulkData(   meta_data()
-                                                               , region->get_database()->util().communicator()
-                                                               , stk::mesh::BulkData::AUTO_AURA
+        set_bulk_data(std::shared_ptr<stk::mesh::BulkData>(
+              new stk::mesh::BulkData(meta_data(),
+                                      region->get_database()->util().communicator(),
+                                      stk::mesh::BulkData::AUTO_AURA,
 #ifdef SIERRA_MIGRATION
-                                                               , false
+                                      false,
 #endif
-       , fieldDataManager)));
+                                      fieldDataManager)));
     }
 }
 
@@ -1237,7 +1265,7 @@ int StkMeshIoBroker::check_integer_size_requirements_serial() const
         }
     }
 
-    if (!Teuchos::is_null(m_bulkData) && m_bulkData->supports_large_ids()) {
+    if (!is_bulk_data_null() && m_bulkData->supports_large_ids()) {
         return 8;
     }
 
@@ -1248,7 +1276,7 @@ int StkMeshIoBroker::check_integer_size_requirements_serial() const
 int StkMeshIoBroker::check_integer_size_requirements_parallel() const
 {
     // 3. If any entity count exceeds INT_MAX, then use 64-bit integers.
-    if ( !Teuchos::is_null(m_bulkData) ) {
+    if ( !is_bulk_data_null() ) {
         std::vector<size_t> entityCounts;
         stk::mesh::comm_mesh_counts(*m_bulkData, entityCounts);
         for (size_t i=0; i < entityCounts.size(); i++) {
@@ -1259,7 +1287,7 @@ int StkMeshIoBroker::check_integer_size_requirements_parallel() const
     }
 
     // 4. check if the maximum id exceeds INT_MAX.
-    if ( !Teuchos::is_null(m_bulkData) ) {
+    if ( !is_bulk_data_null() ) {
         const stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(m_bulkData->mesh_meta_data().entity_rank_count());
         bool foundLargeId = false;
         for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<numRanks; rank++) {

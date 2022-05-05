@@ -53,7 +53,7 @@ using stk::mesh::BulkData;
 using stk::mesh::Entity;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
-using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fixtures::simple_fields::RingFixture;
 
 //----------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
   for ( unsigned i = 0 ; i < nLocalElement ; ++i ) {
     const unsigned n = i + nPerProc * p_rank ;
     Entity const element = bulk.get_entity( stk::topology::ELEMENT_RANK /*entity rank*/,
-                                              ring_mesh.m_element_ids[n] );
+                                            ring_mesh.m_element_ids[n] );
     ASSERT_TRUE( bulk.is_valid(element) );
     ASSERT_TRUE( bulk.bucket(element).member( part_univ ) );
     ASSERT_TRUE( bulk.bucket(element).member( part_owns ) );

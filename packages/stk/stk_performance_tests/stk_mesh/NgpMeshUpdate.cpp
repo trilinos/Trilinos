@@ -43,11 +43,11 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_performance_tests/stk_mesh/timer.hpp>
 
-class NgpMeshChangeElementPartMembership : public stk::unit_test_util::MeshFixture
+class NgpMeshChangeElementPartMembership : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   NgpMeshChangeElementPartMembership()
-    : stk::unit_test_util::MeshFixture(),
+    : stk::unit_test_util::simple_fields::MeshFixture(),
       newPartName("block2")
   { }
 
@@ -87,11 +87,11 @@ private:
   std::string newPartName;
 };
 
-class NgpMeshCreateEntity : public stk::unit_test_util::MeshFixture
+class NgpMeshCreateEntity : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   NgpMeshCreateEntity()
-    : stk::unit_test_util::MeshFixture(),
+    : stk::unit_test_util::simple_fields::MeshFixture(),
       numElements(1000000)
   { }
 
@@ -117,11 +117,11 @@ private:
   int numElements;
 };
 
-class NgpMeshGhosting : public stk::unit_test_util::MeshFixture
+class NgpMeshGhosting : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   NgpMeshGhosting()
-    : stk::unit_test_util::MeshFixture(),
+    : stk::unit_test_util::simple_fields::MeshFixture(),
       numElements(1000000),
       ghostingName("testGhosting")
   { }

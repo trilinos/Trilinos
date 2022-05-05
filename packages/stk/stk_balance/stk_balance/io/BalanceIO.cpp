@@ -36,6 +36,7 @@
 #include "stk_balance/fixSplitCoincidentElements.hpp"
 #include "stk_tools/mesh_clone/MeshClone.hpp"
 #include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
+#include "stk_mesh/base/MeshBuilder.hpp"
 
 #include <sys/stat.h> // move us
 #include <algorithm>
@@ -53,44 +54,49 @@ void read_mesh_with_auto_decomp(stk::io::StkMeshIoBroker & stkIo,
                                 stk::mesh::BulkData& bulkData,
                                 const stk::balance::BalanceSettings & balanceSettings)
 {
-    stkIo.set_bulk_data(bulkData);
-    stkIo.add_mesh_database(meshSpec, stk::io::READ_MESH);
-    stkIo.create_input_mesh();
-    stkIo.add_all_mesh_fields_as_input_fields();
+  stkIo.set_bulk_data(bulkData);
+  stkIo.add_mesh_database(meshSpec, stk::io::READ_MESH);
+  stkIo.create_input_mesh();
+  stkIo.add_all_mesh_fields_as_input_fields();
 
-    internal::register_internal_fields(bulkData, balanceSettings);
+  internal::register_internal_fields(bulkData, balanceSettings);
 
-    stkIo.populate_bulk_data();
+  stkIo.populate_bulk_data();
 
-    if(stkIo.check_integer_size_requirements() == 8) {
-        bulkData.set_large_ids_flag(true);
-    }
+  if(stkIo.check_integer_size_requirements() == 8) {
+    bulkData.set_large_ids_flag(true);
+  }
 }
 
 BalanceIO::BalanceIO(MPI_Comm comm, const BalanceSettings& settings)
   : m_comm(comm),
     m_settings(settings),
-    m_inputBulk(m_inputMeta, m_comm),
-    m_copyBulk(m_copyMeta, m_comm),
+    m_inputBulk(stk::mesh::MeshBuilder(m_comm).create()),
+    m_inputMeta(m_inputBulk->mesh_meta_data()),
+    m_copyBulk(stk::mesh::MeshBuilder(m_comm).create()),
+    m_copyMeta(m_copyBulk->mesh_meta_data()),
     m_mesh(nullptr)
 {
+  m_inputMeta.use_simple_fields();
   m_inputMeta.set_coordinate_field_name(m_settings.getCoordinateFieldName());
+
+  m_copyMeta.use_simple_fields();
 }
 
 BalanceMesh& BalanceIO::initial_decomp()
 {
   internal::logMessage(m_comm, "Reading mesh and performing initial decomposition");
   m_inputBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", m_settings.getInitialDecompMethod()));
-  read_mesh_with_auto_decomp(m_inputBroker, m_settings.get_input_filename(), m_inputBulk, m_settings);
-  make_mesh_consistent_with_parallel_mesh_rule1(m_inputBulk);
+  read_mesh_with_auto_decomp(m_inputBroker, m_settings.get_input_filename(), *m_inputBulk, m_settings);
+  make_mesh_consistent_with_parallel_mesh_rule1(*m_inputBulk);
 
   if(stk::io::get_transient_fields(m_inputMeta).empty()) {
-    m_mesh = std::unique_ptr<BalanceMesh>(new BalanceMesh(m_inputBulk));
+    m_mesh = std::unique_ptr<BalanceMesh>(new BalanceMesh(*m_inputBulk));
   }
   else {
     internal::logMessage(m_comm, "Copying input mesh to handle transient fields");
-    stk::tools::copy_mesh(m_inputBulk, m_inputMeta.universal_part(), m_copyBulk);
-    m_mesh = std::unique_ptr<BalanceMesh>(new BalanceMesh(m_copyBulk));
+    stk::tools::copy_mesh(*m_inputBulk, m_inputMeta.universal_part(), *m_copyBulk);
+    m_mesh = std::unique_ptr<BalanceMesh>(new BalanceMesh(*m_copyBulk));
   }
 
   return *m_mesh;
@@ -99,6 +105,7 @@ BalanceMesh& BalanceIO::initial_decomp()
 void BalanceIO::write(BalanceMesh& mesh)
 {
   stk::io::StkMeshIoBroker outputBroker;
+  outputBroker.use_simple_fields();
   outputBroker.set_bulk_data(mesh.get_bulk());
   outputBroker.set_attribute_field_ordering_stored_by_part_ordinal(m_inputBroker.get_attribute_field_ordering_stored_by_part_ordinal());
 

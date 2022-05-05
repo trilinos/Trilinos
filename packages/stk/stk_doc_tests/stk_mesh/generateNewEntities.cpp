@@ -34,6 +34,7 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names, etc
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -44,8 +45,8 @@ namespace stk { namespace mesh { class Part; } }
 namespace {
 
 void check_connectivities_for_stkMeshHowTo_generateNewEntities(stk::mesh::BulkData &mesh,
-    stk::mesh::Entity tet_elem, stk::mesh::Entity hex_elem,
-    const std::vector<stk::mesh::Entity> &generated_entities)
+                                                               stk::mesh::Entity tet_elem, stk::mesh::Entity hex_elem,
+                                                               const std::vector<stk::mesh::Entity> &generated_entities)
 {
   // Check that entities are connected as expected.
   unsigned node_i = 0;
@@ -70,7 +71,12 @@ TEST(stkMeshHowTo, generateNewEntities)
 {
   const unsigned spatialDimension = 3;
 
-  stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());
+  stk::mesh::MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_spatial_dimension(spatialDimension);
+  builder.set_entity_rank_names(stk::mesh::entity_rank_names());
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = builder.create();
+  bulkPtr->mesh_meta_data().use_simple_fields();
+  stk::mesh::MetaData& metaData = bulkPtr->mesh_meta_data();
   stk::mesh::Part &tetPart = metaData.declare_part_with_topology("tetElementPart", stk::topology::TET_4);
   stk::mesh::Part &hexPart = metaData.declare_part_with_topology("hexElementPart", stk::topology::HEX_8);
   metaData.commit();
@@ -81,7 +87,7 @@ TEST(stkMeshHowTo, generateNewEntities)
   std::vector<stk::mesh::Part *> add_hexPart(1);
   add_hexPart[0] = &hexPart;
 
-  stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
+  stk::mesh::BulkData& mesh = *bulkPtr;
   mesh.modification_begin();
 
   std::vector<size_t> requests(metaData.entity_rank_count(), 0);

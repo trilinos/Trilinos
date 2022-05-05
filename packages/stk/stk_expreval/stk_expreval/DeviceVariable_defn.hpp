@@ -32,12 +32,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include "DeviceVariable.hpp"
+#ifndef stk_expreval_DeviceVariable_defn_hpp
+#define stk_expreval_DeviceVariable_defn_hpp
+
+#include "DeviceVariable_defn.hpp"
 
 namespace stk {
 namespace expreval {
 
-KOKKOS_FUNCTION
+KOKKOS_INLINE_FUNCTION
 DeviceVariable::DeviceVariable()
   : m_type(Variable::Type::DOUBLE),
     m_size(1),
@@ -47,7 +50,7 @@ DeviceVariable::DeviceVariable()
 {
 }
 
-KOKKOS_FUNCTION
+KOKKOS_INLINE_FUNCTION
 DeviceVariable::DeviceVariable(const Variable::Type variableType, int variableSize, int variableStride)
   : m_type(variableType),
     m_size(variableSize),
@@ -65,7 +68,7 @@ DeviceVariable::DeviceVariable(const Variable::Type variableType, int variableSi
   }
 }
 
-KOKKOS_FUNCTION
+KOKKOS_INLINE_FUNCTION
 DeviceVariable &
 DeviceVariable::operator=(const DeviceVariable & deviceVariable)
 {
@@ -86,7 +89,7 @@ DeviceVariable::operator=(const DeviceVariable & deviceVariable)
   return *this;
 }
 
-KOKKOS_FUNCTION
+KOKKOS_INLINE_FUNCTION
 double &
 DeviceVariable::getArrayValue(int index, Variable::ArrayOffset arrayOffsetType) const
 {
@@ -111,7 +114,7 @@ DeviceVariable::getArrayValue(int index, Variable::ArrayOffset arrayOffsetType) 
   }
 }
 
-KOKKOS_FUNCTION
+KOKKOS_INLINE_FUNCTION
 double
 DeviceVariable::getValue() const
 {
@@ -132,7 +135,7 @@ DeviceVariable::getValue() const
   return *m_doublePtr;
 }
 
-KOKKOS_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void
 DeviceVariable::bind(double& value_ref, int definedLength, int strideLength)
 {
@@ -142,7 +145,7 @@ DeviceVariable::bind(double& value_ref, int definedLength, int strideLength)
   m_stride = strideLength;
 }
 
-KOKKOS_FUNCTION
+KOKKOS_INLINE_FUNCTION
 void
 DeviceVariable::bind(int& value_ref, int definedLength, int strideLength)
 {
@@ -152,7 +155,7 @@ DeviceVariable::bind(int& value_ref, int definedLength, int strideLength)
   m_stride = strideLength;
 }
 
-KOKKOS_FUNCTION
+KOKKOS_INLINE_FUNCTION
 DeviceVariable &
 DeviceVariable::operator=(const double& value)
 {
@@ -167,7 +170,7 @@ DeviceVariable::operator=(const double& value)
   return *this;
 }
 
-KOKKOS_FUNCTION
+KOKKOS_INLINE_FUNCTION
 DeviceVariable&
 DeviceVariable::operator=(const int& value)
 {
@@ -184,3 +187,6 @@ DeviceVariable::operator=(const int& value)
 
 }
 }
+
+#endif
+

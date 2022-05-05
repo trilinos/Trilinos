@@ -36,6 +36,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_io/IossBridge.hpp>
+#include <stk_balance/internal/privateDeclarations.hpp>
 
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -74,6 +75,8 @@ private:
   void declare_all_output_subdomain_parts();
   stk::mesh::EntityVector get_nodes_shared_between_subdomains(int this_subdomain_index,
                                                               int other_subdomain_index) const;
+  bool is_connected_to_element(stk::mesh::Entity entity);
+  stk::mesh::EntityVector get_all_orphans();
 
   stk::io::StkMeshIoBroker& m_ioBroker;
   stk::mesh::BulkData& m_bulk;
@@ -82,7 +85,7 @@ private:
   Decomposer* m_decomposer;
   int m_globalNumNodes;
   int m_globalNumElems;
-  stk::mesh::EntityProcVec m_decomp;
+  stk::balance::DecompositionChangeList m_decomp;
   std::vector<unsigned> m_ownerForEachFinalSubdomain;
   stk::mesh::PartVector m_subdomainParts;
 };

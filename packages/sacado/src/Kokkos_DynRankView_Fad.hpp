@@ -350,12 +350,12 @@ namespace Impl {
 template <unsigned> struct AssignDim7 {
   template <typename Dst>
   KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const size_t& src_dim) {}
+  static void eval(Dst& dst, const size_t src_dim) {}
 };
 template <> struct AssignDim7<0u> {
   template <typename Dst>
   KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const size_t& src_dim) {
+  static void eval(Dst& dst, const size_t src_dim) {
     dst.N7 = src_dim;
   }
 };

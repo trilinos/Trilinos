@@ -16,6 +16,7 @@
 #include <Akri_CDMesh.hpp>
 #include <Akri_SubElement.hpp>
 #include <Akri_Element.hpp>
+#include <Akri_CreateInterfaceGeometry.hpp>
 #include <Akri_LevelSetInterfaceGeometry.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_NodeToCapturedDomains.hpp>
@@ -30,14 +31,14 @@ public:
   Mesh_Element_Fixture() :
     elem_fixture(static_cast<stk::topology::topology_t>(TOPO)),
     krino_mesh(elem_fixture.stk_fixture.bulk_data(), std::shared_ptr<CDMesh>()),
-    interfaceGeometry(krino_mesh.get_active_part(),krino_mesh.get_cdfem_support(), krino_mesh.get_phase_support())
+    interfaceGeometry(std::make_unique<LevelSetInterfaceGeometry>(AuxMetaData::get(stk_meta()).active_part(), CDFEM_Support::get(stk_meta()), Phase_Support::get(stk_meta())))
   {
     elem_fixture.generate_mesh();
     check_entity_counts();
     Phase_Support::get(stk_meta()).add_decomposed_part(stk_meta().universal_part());
-    Phase_Support::set_one_levelset_per_phase(false);
+    Phase_Support::get(stk_meta()).set_one_levelset_per_phase(false);
     const NodeToCapturedDomainsMap nodesToCapturedDomains;
-    interfaceGeometry.prepare_to_process_elements(krino_mesh.stk_bulk(), nodesToCapturedDomains);
+    interfaceGeometry->prepare_to_process_elements(krino_mesh.stk_bulk(), nodesToCapturedDomains);
   }
   virtual ~Mesh_Element_Fixture() {};
   void check_entity_counts()
@@ -66,15 +67,15 @@ public:
   void triangulate()
   {
     Mesh_Element & meshElem = get_mesh_element();
-    meshElem.create_cutter(krino_mesh, interfaceGeometry); // update cutter with for edges that now have crossings found
-    get_mesh_element().create_cutter(krino_mesh, interfaceGeometry);
-    krino_mesh.triangulate(interfaceGeometry);
+    meshElem.create_cutter(krino_mesh, *interfaceGeometry); // update cutter with for edges that now have crossings found
+    get_mesh_element().create_cutter(krino_mesh, *interfaceGeometry);
+    krino_mesh.triangulate(*interfaceGeometry);
   }
 
   LevelSetElementCutter & get_cutter()
   {
     Mesh_Element & meshElem = get_mesh_element();
-    meshElem.create_cutter(krino_mesh, interfaceGeometry);
+    meshElem.create_cutter(krino_mesh, *interfaceGeometry);
     LevelSetElementCutter * cutter = dynamic_cast<LevelSetElementCutter *>(meshElem.get_cutter());
     ThrowRequire(cutter);
     return *cutter;
@@ -141,7 +142,7 @@ public:
 
   SingleElementFixture elem_fixture;
   CDMesh krino_mesh;
-  LevelSetInterfaceGeometry interfaceGeometry;
+  std::unique_ptr<LevelSetInterfaceGeometry> interfaceGeometry;
 };
 
 typedef Mesh_Element_Fixture<stk::topology::TRI_3_2D> Mesh_Element_Tri3;
@@ -358,20 +359,18 @@ TEST_F(Mesh_Element_Tri3_One_LS, Node0_1_Snapped_Node2_Neg)
 typedef Mesh_Element_Tri3 Mesh_Element_Tri3_Three_LS;
 TEST_F(Mesh_Element_Tri3_Three_LS, All_Phase2_Unsnapped)
 {
-  const LS_Field ls1("LS1", LevelSet_Identifier(1));
-  const LS_Field ls2("LS2", LevelSet_Identifier(2));
-  const LS_Field ls3("LS3", LevelSet_Identifier(3));
-  CDFEM_Support & cdfem_supp = CDFEM_Support::get(elem_fixture.stk_fixture.meta_data());
-  cdfem_supp.add_ls_field(ls1);
-  cdfem_supp.add_ls_field(ls2);
-  cdfem_supp.add_ls_field(ls3);
+  const LS_Field ls1("LS1", Surface_Identifier(1));
+  const LS_Field ls2("LS2", Surface_Identifier(2));
+  const LS_Field ls3("LS3", Surface_Identifier(3));
+  interfaceGeometry->set_ls_fields({ls1, ls2, ls3});
+
   const InterfaceID iface01(0,1);
   const InterfaceID iface02(0,2);
   const InterfaceID iface12(1,2);
   krino_mesh.add_interface_id(iface01);
   krino_mesh.add_interface_id(iface02);
   krino_mesh.add_interface_id(iface12);
-  Phase_Support::set_one_levelset_per_phase(true);
+  Phase_Support::get(stk_meta()).set_one_levelset_per_phase(true);
 
   std::vector<std::vector<double> > node_LS_values(3);
   node_LS_values[0].resize(3);
@@ -398,20 +397,17 @@ TEST_F(Mesh_Element_Tri3_Three_LS, All_Phase2_Unsnapped)
 
 TEST_F(Mesh_Element_Tri3_Three_LS, One_Interface)
 {
-  const LS_Field ls1("LS1", LevelSet_Identifier(1));
-  const LS_Field ls2("LS2", LevelSet_Identifier(2));
-  const LS_Field ls3("LS3", LevelSet_Identifier(3));
-  CDFEM_Support & cdfem_supp = CDFEM_Support::get(elem_fixture.stk_fixture.meta_data());
-  cdfem_supp.add_ls_field(ls1);
-  cdfem_supp.add_ls_field(ls2);
-  cdfem_supp.add_ls_field(ls3);
+  const LS_Field ls1("LS1", Surface_Identifier(1));
+  const LS_Field ls2("LS2", Surface_Identifier(2));
+  const LS_Field ls3("LS3", Surface_Identifier(3));
+  interfaceGeometry->set_ls_fields({ls1, ls2, ls3});
   const InterfaceID iface01(0,1);
   const InterfaceID iface02(0,2);
   const InterfaceID iface12(1,2);
   krino_mesh.add_interface_id(iface01);
   krino_mesh.add_interface_id(iface02);
   krino_mesh.add_interface_id(iface12);
-  Phase_Support::set_one_levelset_per_phase(true);
+  Phase_Support::get(stk_meta()).set_one_levelset_per_phase(true);
 
   std::vector<std::vector<double> > node_LS_values(3);
   node_LS_values[0].resize(3);
@@ -482,20 +478,17 @@ TEST_F(Mesh_Element_Tri3_Three_LS, One_Interface)
 
 TEST_F(Mesh_Element_Tri3_Three_LS, Handle_Hanging_Child)
 {
-  const LS_Field ls1("LS1", LevelSet_Identifier(1));
-  const LS_Field ls2("LS2", LevelSet_Identifier(2));
-  const LS_Field ls3("LS3", LevelSet_Identifier(3));
-  CDFEM_Support & cdfem_supp = CDFEM_Support::get(elem_fixture.stk_fixture.meta_data());
-  cdfem_supp.add_ls_field(ls1);
-  cdfem_supp.add_ls_field(ls2);
-  cdfem_supp.add_ls_field(ls3);
+  const LS_Field ls1("LS1", Surface_Identifier(1));
+  const LS_Field ls2("LS2", Surface_Identifier(2));
+  const LS_Field ls3("LS3", Surface_Identifier(3));
+  interfaceGeometry->set_ls_fields({ls1, ls2, ls3});
   const InterfaceID iface01(0,1);
   const InterfaceID iface02(0,2);
   const InterfaceID iface12(1,2);
   krino_mesh.add_interface_id(iface01);
   krino_mesh.add_interface_id(iface02);
   krino_mesh.add_interface_id(iface12);
-  Phase_Support::set_one_levelset_per_phase(true);
+  Phase_Support::get(stk_meta()).set_one_levelset_per_phase(true);
 
   std::vector<std::vector<double> > node_LS_values(3);
   node_LS_values[0].resize(3);
@@ -568,20 +561,17 @@ TEST_F(Mesh_Element_Tri3_Three_LS, Handle_Hanging_Child)
 
 TEST_F(Mesh_Element_Tri3_Three_LS, Zero_Crossings_For_Phases_Present_Bug)
 {
-  const LS_Field ls1("LS1", LevelSet_Identifier(1));
-  const LS_Field ls2("LS2", LevelSet_Identifier(2));
-  const LS_Field ls3("LS3", LevelSet_Identifier(3));
-  CDFEM_Support & cdfem_supp = CDFEM_Support::get(elem_fixture.stk_fixture.meta_data());
-  cdfem_supp.add_ls_field(ls1);
-  cdfem_supp.add_ls_field(ls2);
-  cdfem_supp.add_ls_field(ls3);
+  const LS_Field ls1("LS1", Surface_Identifier(1));
+  const LS_Field ls2("LS2", Surface_Identifier(2));
+  const LS_Field ls3("LS3", Surface_Identifier(3));
+  interfaceGeometry->set_ls_fields({ls1, ls2, ls3});
   const InterfaceID iface01(0,1);
   const InterfaceID iface02(0,2);
   const InterfaceID iface12(1,2);
   krino_mesh.add_interface_id(iface01);
   krino_mesh.add_interface_id(iface02);
   krino_mesh.add_interface_id(iface12);
-  Phase_Support::set_one_levelset_per_phase(true);
+  Phase_Support::get(stk_meta()).set_one_levelset_per_phase(true);
 
   std::vector<std::vector<double> > node_LS_values(4);
   node_LS_values[0].resize(3);
@@ -653,7 +643,7 @@ TEST_F(Mesh_Element_Tet4, OneInterfaceCheckNodeScore)
 {
   const InterfaceID iface(0,0);
   krino_mesh.add_interface_id(iface);
-  Phase_Support::set_one_levelset_per_phase(false);
+  Phase_Support::get(stk_meta()).set_one_levelset_per_phase(false);
 
   std::vector<double> node_LS_values(4);
   node_LS_values[0] = 1.;
@@ -687,7 +677,7 @@ TEST_F(Mesh_Element_Tet4, OneInterfaceCheckNodeScore_ScoreBasedOnAngleNotPositio
 
   const InterfaceID iface(0,0);
   krino_mesh.add_interface_id(iface);
-  Phase_Support::set_one_levelset_per_phase(false);
+  Phase_Support::get(stk_meta()).set_one_levelset_per_phase(false);
 
   std::vector<double> node_LS_values(4);
   node_LS_values[0] = -1.0;

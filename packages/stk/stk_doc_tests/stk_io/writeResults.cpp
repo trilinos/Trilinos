@@ -57,201 +57,204 @@ namespace Ioss { class DatabaseIO; }
 
 namespace {
 
-  TEST(StkMeshIoBrokerHowTo, writeResults)
+TEST(StkMeshIoBrokerHowTo, writeResults)
+{
+  std::string mesh_name = "input_mesh_example.e";
+  std::string results_name = "output.results";
+  MPI_Comm communicator = MPI_COMM_WORLD;
+
   {
-    std::string mesh_name = "input_mesh_example.e";
-    std::string results_name = "output.results";
-    MPI_Comm communicator = MPI_COMM_WORLD;
-
-    {
-      // ============================================================
-      //+ INITIALIZATION:
-      //+ Create a basic mesh with a hex block, 3 shell blocks, 3 nodesets, and 3 sidesets.
-      stk::io::StkMeshIoBroker stkIo(communicator);
-
-      const std::string generatedFileName = "generated:8x8x8|shell:xyz|nodeset:xyz|sideset:XYZ";
-      size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-      stkIo.set_active_mesh(index);
-      stkIo.create_input_mesh();
-      stkIo.populate_bulk_data();
-
-      size_t fh = stkIo.create_output_mesh(mesh_name, stk::io::WRITE_RESULTS);
-      stkIo.write_output_mesh(fh);
-    }
-
-    {
-      //-BEGIN
-      // ============================================================
-      //+ EXAMPLE: 
-      //+ Read mesh data from the specified file.
-      stk::io::StkMeshIoBroker stkIo(communicator);
-      stkIo.add_mesh_database(mesh_name, stk::io::READ_MESH);
-
-      //+ Creates meta data; creates parts 
-      stkIo.create_input_mesh();
-
-      //+ Declare a field
-      //+ NOTE: Fields must be declared before "populate_bulk_data()" is called
-      //+       since it commits the meta data.
-      const std::string fieldName = "disp";
-      stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, 1);
-      stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(),
-                                   (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
-
-      //+ commit the meta data and create the bulk data.  
-      //+ populate the bulk data with data from the mesh file.
-      stkIo.populate_bulk_data();
-
-      // ============================================================
-      //+ Create results file. By default, all parts created from the input
-      //+ mesh will be written to the results output file.
-      size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
-
-      //+ The field will be output to the results file with the default field name.
-      stkIo.add_field(fh, field); /*@\label{io:results:add_field}*/
-
-      std::vector<stk::mesh::Entity> nodes;
-      stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
-
-      // Iterate the application's execute loop five times and output
-      // field data each iteration.
-      for (int step=0; step < 5; step++) {
-          double time = step;
-
-          // Application execution...
-          double value = 10.0 * time;
-          for(size_t i=0; i<nodes.size(); i++) {
-              double *node_data = stk::mesh::field_data(field, nodes[i]);
-              *node_data = value;
-          }
-
-          //+ Output the field data calculated by the application.
-          stkIo.begin_output_step(fh, time);
-          stkIo.write_defined_output_fields(fh);
-          stkIo.end_output_step(fh);
-      }
-      //-END      
-    }
     // ============================================================
-    //+ VERIFICATION
-    {
-      Ioss::DatabaseIO *resultsDb = Ioss::IOFactory::create("exodus", results_name,
-							    Ioss::READ_MODEL, communicator);
-      Ioss::Region results(resultsDb);
-      // Should be 5 steps on database...
-      EXPECT_EQ(results.get_property("state_count").get_int(), 5);
-      // Should be 1 nodal field on database named "disp";
-      Ioss::NodeBlock *nb = results.get_node_blocks()[0];
-      EXPECT_EQ(1u, nb->field_count(Ioss::Field::TRANSIENT));
-      EXPECT_TRUE(nb->field_exists("disp"));
+    //+ INITIALIZATION:
+    //+ Create a basic mesh with a hex block, 3 shell blocks, 3 nodesets, and 3 sidesets.
+    stk::io::StkMeshIoBroker stkIo(communicator);
+    stkIo.use_simple_fields();
 
-      // Iterate each step and verify that the correct data was written.
-      for (size_t step=0; step < 5; step++) {
-	double time = step;
+    const std::string generatedFileName = "generated:8x8x8|shell:xyz|nodeset:xyz|sideset:XYZ";
+    size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
+    stkIo.set_active_mesh(index);
+    stkIo.create_input_mesh();
+    stkIo.populate_bulk_data();
 
-	double db_time = results.begin_state(step+1);
-	EXPECT_EQ(time, db_time);
-      
-	std::vector<double> field_data;
-	nb->get_field_data("disp", field_data);
-	double expected = 10.0 * time;
-	for (size_t node = 0; node < field_data.size(); node++) {
-	  EXPECT_EQ(field_data[node], expected);
-	}
-	results.end_state(step+1);
-      }
-    }
-
-    // ============================================================
-    // Cleanup
-    unlink(mesh_name.c_str());
-    unlink(results_name.c_str());
+    size_t fh = stkIo.create_output_mesh(mesh_name, stk::io::WRITE_RESULTS);
+    stkIo.write_output_mesh(fh);
   }
 
-
-  TEST(StkMeshIoBrokerHowTo, DISABLED_brokenWriteResults)
   {
-    std::string mesh_name = "input_mesh_example.e";
-    std::string results_name = "broken_results.e";
-    MPI_Comm communicator = MPI_COMM_WORLD;
+    //-BEGIN
+    // ============================================================
+    //+ EXAMPLE:
+    //+ Read mesh data from the specified file.
+    stk::io::StkMeshIoBroker stkIo(communicator);
+    stkIo.use_simple_fields();
+    stkIo.add_mesh_database(mesh_name, stk::io::READ_MESH);
 
-    {
-      // ============================================================
-      //+ INITIALIZATION:
-      //+ Create a basic mesh with a hex block, 3 shell blocks, 3 nodesets, and 3 sidesets.
-      stk::io::StkMeshIoBroker stkIo(communicator);
+    //+ Creates meta data; creates parts
+    stkIo.create_input_mesh();
 
-      const std::string generatedFileName = "generated:8x8x8|shell:xyz|nodeset:xyz|sideset:XYZ";
-      size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
-      stkIo.set_active_mesh(index);
-      stkIo.create_input_mesh();
-      stkIo.populate_bulk_data();
+    //+ Declare a field
+    //+ NOTE: Fields must be declared before "populate_bulk_data()" is called
+    //+       since it commits the meta data.
+    const std::string fieldName = "disp";
+    stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, fieldName, 1);
+    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(),
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
-      size_t fh = stkIo.create_output_mesh(mesh_name, stk::io::WRITE_RESULTS);
-      stkIo.write_output_mesh(fh);
+    //+ commit the meta data and create the bulk data.
+    //+ populate the bulk data with data from the mesh file.
+    stkIo.populate_bulk_data();
+
+    // ============================================================
+    //+ Create results file. By default, all parts created from the input
+    //+ mesh will be written to the results output file.
+    size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
+
+    //+ The field will be output to the results file with the default field name.
+    stkIo.add_field(fh, field); /*@\label{io:results:add_field}*/
+
+    std::vector<stk::mesh::Entity> nodes;
+    stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
+
+    // Iterate the application's execute loop five times and output
+    // field data each iteration.
+    for (int step=0; step < 5; step++) {
+      double time = step;
+
+      // Application execution...
+      double value = 10.0 * time;
+      for(size_t i=0; i<nodes.size(); i++) {
+        double *node_data = stk::mesh::field_data(field, nodes[i]);
+        *node_data = value;
+      }
+
+      //+ Output the field data calculated by the application.
+      stkIo.begin_output_step(fh, time);
+      stkIo.write_defined_output_fields(fh);
+      stkIo.end_output_step(fh);
     }
+    //-END
+  }
+  // ============================================================
+  //+ VERIFICATION
+  {
+    Ioss::DatabaseIO *resultsDb = Ioss::IOFactory::create("exodus", results_name,
+                                                          Ioss::READ_MODEL, communicator);
+    Ioss::Region results(resultsDb);
+    // Should be 5 steps on database...
+    EXPECT_EQ(results.get_property("state_count").get_int(), 5);
+    // Should be 1 nodal field on database named "disp";
+    Ioss::NodeBlock *nb = results.get_node_blocks()[0];
+    EXPECT_EQ(1u, nb->field_count(Ioss::Field::TRANSIENT));
+    EXPECT_TRUE(nb->field_exists("disp"));
 
+    // Iterate each step and verify that the correct data was written.
+    for (size_t step=0; step < 5; step++) {
+      double time = step;
+
+      double db_time = results.begin_state(step+1);
+      EXPECT_EQ(time, db_time);
+
+      std::vector<double> field_data;
+      nb->get_field_data("disp", field_data);
+      double expected = 10.0 * time;
+      for (size_t node = 0; node < field_data.size(); node++) {
+        EXPECT_EQ(field_data[node], expected);
+      }
+      results.end_state(step+1);
+    }
+  }
+
+  // ============================================================
+  // Cleanup
+  unlink(mesh_name.c_str());
+  unlink(results_name.c_str());
+}
+
+
+TEST(StkMeshIoBrokerHowTo, DISABLED_brokenWriteResults)
+{
+  std::string mesh_name = "input_mesh_example.e";
+  std::string results_name = "broken_results.e";
+  MPI_Comm communicator = MPI_COMM_WORLD;
+
+  {
+    // ============================================================
+    //+ INITIALIZATION:
+    //+ Create a basic mesh with a hex block, 3 shell blocks, 3 nodesets, and 3 sidesets.
+    stk::io::StkMeshIoBroker stkIo(communicator);
+    stkIo.use_simple_fields();
+
+    const std::string generatedFileName = "generated:8x8x8|shell:xyz|nodeset:xyz|sideset:XYZ";
+    size_t index = stkIo.add_mesh_database(generatedFileName, stk::io::READ_MESH);
+    stkIo.set_active_mesh(index);
+    stkIo.create_input_mesh();
+    stkIo.populate_bulk_data();
+
+    size_t fh = stkIo.create_output_mesh(mesh_name, stk::io::WRITE_RESULTS);
+    stkIo.write_output_mesh(fh);
+  }
+
+  {
+    //-BEGIN
+    // ============================================================
+    //+ EXAMPLE:
+    //+ Read mesh data from the specified file.
+    stk::io::StkMeshIoBroker stkIo(communicator);
+    stkIo.use_simple_fields();
+    stkIo.add_mesh_database(mesh_name, stk::io::READ_MESH);
+
+    //+ Creates meta data; creates parts
+    stkIo.create_input_mesh();
+
+    //+ Declare a field
+    //+ NOTE: Fields must be declared before "populate_bulk_data()" is called
+    //+       since it commits the meta data.
+    const std::string fieldName = "disp";
+    stk::mesh::Field<double> &field =
+        stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, fieldName, 1);
+    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), 3, 2,
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::io::set_field_output_type(field, "Vector_3D");
+
+    //+ commit the meta data and create the bulk data.
+    //+ populate the bulk data with data from the mesh file.
+    stkIo.populate_bulk_data();
+
+    // ============================================================
+    //+ Create results file. By default, all parts created from the input
+    //+ mesh will be written to the results output file.
+    size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
+
+    //+ The field will be output to the results file with the default field name.
+    stkIo.add_field(fh, field); /*@\label{io:results:add_field}*/
+
+    std::vector<stk::mesh::Entity> nodes;
+    stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
+
+    // Iterate the application's execute loop five times and output
+    // field data each iteration.
+    for(int step = 0; step < 5; step++)
     {
-      //-BEGIN
-      // ============================================================
-      //+ EXAMPLE:
-      //+ Read mesh data from the specified file.
-      stk::io::StkMeshIoBroker stkIo(communicator);
-      stkIo.add_mesh_database(mesh_name, stk::io::READ_MESH);
+      double time = step;
 
-      //+ Creates meta data; creates parts
-      stkIo.create_input_mesh();
-
-      //+ Declare a field
-      //+ NOTE: Fields must be declared before "populate_bulk_data()" is called
-      //+       since it commits the meta data.
-      const std::string fieldName = "disp";
-      stk::mesh::Field<double, stk::mesh::Cartesian> &field =
-          stkIo.meta_data().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK,
-              fieldName,
-              1);
-      stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), 6u,
-                                   (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
-
-      //+ commit the meta data and create the bulk data.
-      //+ populate the bulk data with data from the mesh file.
-      stkIo.populate_bulk_data();
-
-      // ============================================================
-      //+ Create results file. By default, all parts created from the input
-      //+ mesh will be written to the results output file.
-      size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
-
-      //+ The field will be output to the results file with the default field name.
-      stkIo.add_field(fh, field); /*@\label{io:results:add_field}*/
-
-      std::vector<stk::mesh::Entity> nodes;
-      stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
-
-      // Iterate the application's execute loop five times and output
-      // field data each iteration.
-      for(int step = 0; step < 5; step++)
+      // Application execution...
+      double value = 10.0 * time;
+      for(size_t i = 0; i < nodes.size(); i++)
       {
-        double time = step;
-
-        // Application execution...
-        double value = 10.0 * time;
-        for(size_t i = 0; i < nodes.size(); i++)
-        {
-          double *node_data = stk::mesh::field_data(field, nodes[i]);
-          node_data[0] = value;
-          node_data[1] = value + 1;
-          node_data[2] = value + 2;
-          EXPECT_EQ(stk::mesh::field_scalars_per_entity(field,nodes[i]),  6u);
-        }
-
-        //+ Output the field data calculated by the application.
-        stkIo.begin_output_step(fh, time);
-        stkIo.write_defined_output_fields(fh);
-        stkIo.end_output_step(fh);
+        double *node_data = stk::mesh::field_data(field, nodes[i]);
+        node_data[0] = value;
+        node_data[1] = value + 1;
+        node_data[2] = value + 2;
+        EXPECT_EQ(stk::mesh::field_scalars_per_entity(field,nodes[i]),  6u);
       }
-      //-END
+
+      //+ Output the field data calculated by the application.
+      stkIo.begin_output_step(fh, time);
+      stkIo.write_defined_output_fields(fh);
+      stkIo.end_output_step(fh);
     }
-    //see output exodus -- FAIL
+    //-END
   }
+  //see output exodus -- FAIL
+}
 }

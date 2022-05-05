@@ -46,57 +46,60 @@
 namespace
 {
 
-class StkIoHowToAppend : public stk::unit_test_util::MeshFixture
+class StkIoHowToAppend : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
-    void initialize_mesh_and_field()
-    {
-        nodeField = &get_meta().declare_field < stk::mesh::Field<double> > (stk::topology::NODE_RANK, "nodal");
-        stk::mesh::put_field_on_mesh(*nodeField, get_meta().universal_part(),
-                                     (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
-        setup_mesh("generated:8x8x8|sideset:xX|nodeset:xX", stk::mesh::BulkData::AUTO_AURA);
-    }
+  void initialize_mesh_and_field()
+  {
+    setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+    nodeField = &get_meta().declare_field<double> (stk::topology::NODE_RANK, "nodal");
+    stk::mesh::put_field_on_mesh(*nodeField, get_meta().universal_part(),
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::io::fill_mesh("generated:8x8x8|sideset:xX|nodeset:xX", get_bulk());
+  }
 
-    void write_five_steps_to_file(const std::string& ouputName,
-                               stk::io::DatabasePurpose purpose)
-    {
-        stk::io::StkMeshIoBroker stkIo(get_comm());
-        stkIo.set_bulk_data(get_bulk());
-        size_t outputFileIndex = stkIo.create_output_mesh(ouputName, purpose);
-        stkIo.add_field(outputFileIndex, *nodeField);
-        stkIo.write_output_mesh(outputFileIndex);
-        write_num_steps_to_file(stkIo, outputFileIndex, 5);
-    }
+  void write_five_steps_to_file(const std::string& ouputName,
+                                stk::io::DatabasePurpose purpose)
+  {
+    stk::io::StkMeshIoBroker stkIo(get_comm());
+    stkIo.use_simple_fields();
+    stkIo.set_bulk_data(get_bulk());
+    size_t outputFileIndex = stkIo.create_output_mesh(ouputName, purpose);
+    stkIo.add_field(outputFileIndex, *nodeField);
+    stkIo.write_output_mesh(outputFileIndex);
+    write_num_steps_to_file(stkIo, outputFileIndex, 5);
+  }
 
-    void write_num_steps_to_file(stk::io::StkMeshIoBroker &stkIo, size_t outputFileIndex, int numSteps)
+  void write_num_steps_to_file(stk::io::StkMeshIoBroker &stkIo, size_t outputFileIndex, int numSteps)
+  {
+    for(int i = 0; i < numSteps; ++i)
     {
-        for(int i = 0; i < numSteps; ++i)
-        {
-            stkIo.process_output_request(outputFileIndex, time);
-            time += 1.0;
-        }
+      stkIo.process_output_request(outputFileIndex, time);
+      time += 1.0;
     }
+  }
 
-    void expect_ten_steps_in_file(const std::string& ouputName)
-    {
-        stk::io::StkMeshIoBroker stkIo(get_comm());
-        stkIo.add_mesh_database(ouputName, stk::io::READ_MESH);
-        stkIo.create_input_mesh();
-        EXPECT_EQ(10, stkIo.get_num_time_steps());
-    }
+  void expect_ten_steps_in_file(const std::string& ouputName)
+  {
+    stk::io::StkMeshIoBroker stkIo(get_comm());
+    stkIo.use_simple_fields();
+    stkIo.add_mesh_database(ouputName, stk::io::READ_MESH);
+    stkIo.create_input_mesh();
+    EXPECT_EQ(10, stkIo.get_num_time_steps());
+  }
 
-    double time = 1.0;
-    stk::mesh::FieldBase *nodeField;
+  double time = 1.0;
+  stk::mesh::FieldBase *nodeField;
 };
 
 TEST_F(StkIoHowToAppend, toResultsFile)
 {
-    initialize_mesh_and_field();
-    std::string ouputName = "output.exo";
-    write_five_steps_to_file(ouputName, stk::io::WRITE_RESULTS);
-    write_five_steps_to_file(ouputName, stk::io::APPEND_RESULTS);
-    expect_ten_steps_in_file(ouputName);
-    unlink(ouputName.c_str());
+  initialize_mesh_and_field();
+  std::string ouputName = "output.exo";
+  write_five_steps_to_file(ouputName, stk::io::WRITE_RESULTS);
+  write_five_steps_to_file(ouputName, stk::io::APPEND_RESULTS);
+  expect_ten_steps_in_file(ouputName);
+  unlink(ouputName.c_str());
 }
 
 }

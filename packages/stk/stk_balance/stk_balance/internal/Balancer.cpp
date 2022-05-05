@@ -58,59 +58,53 @@ void verify_mesh_ids_are_not_too_large(const stk::mesh::BulkData& bulk)
 
 bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, unsigned numSubdomainsToCreate, const std::vector<stk::mesh::Selector>& selectors)
 {
-    internal::logMessage(stkMeshBulkData.parallel(), "Computing new decomposition using '" +
-                         balanceSettings.getDecompMethod() + "' method");
+  internal::logMessage(stkMeshBulkData.parallel(), "Computing new decomposition using '" +
+                       balanceSettings.getDecompMethod() + "' method");
 
-    internal::EnableAura enableAura(stkMeshBulkData);
+  internal::EnableAura enableAura(stkMeshBulkData);
 
-    if (sizeof(BalanceGlobalNumber) < sizeof(stk::mesh::EntityId)) {
-      verify_mesh_ids_are_not_too_large(stkMeshBulkData);
-    }
+  if (sizeof(BalanceGlobalNumber) < sizeof(stk::mesh::EntityId)) {
+    verify_mesh_ids_are_not_too_large(stkMeshBulkData);
+  }
 
-    stk::mesh::EntityProcVec decomp;
-    internal::calculateGeometricOrGraphBasedDecomp(stkMeshBulkData, selectors,
-                                                   stkMeshBulkData.parallel(), numSubdomainsToCreate,
-                                                   balanceSettings, decomp);
+  stk::mesh::EntityProcVec decomp;
+  internal::calculateGeometricOrGraphBasedDecomp(stkMeshBulkData, selectors,
+                                                 stkMeshBulkData.parallel(), numSubdomainsToCreate,
+                                                 balanceSettings, decomp);
 
-    DecompositionChangeList changeList(stkMeshBulkData, decomp);
-    balanceSettings.modifyDecomposition(changeList);
+  DecompositionChangeList changeList(stkMeshBulkData, decomp);
+  balanceSettings.modifyDecomposition(changeList);
 
-    internal::logMessage(stkMeshBulkData.parallel(), "Moving coincident elements to the same processor");
-    keep_coincident_elements_together(stkMeshBulkData, changeList);
+  internal::logMessage(stkMeshBulkData.parallel(), "Moving coincident elements to the same processor");
+  keep_coincident_elements_together(stkMeshBulkData, changeList);
 
-    if (balanceSettings.shouldFixSpiders()) {
-        internal::logMessage(stkMeshBulkData.parallel(), "Preventing unnecessary movement of spider elements");
-        internal::keep_spiders_on_original_proc(stkMeshBulkData, balanceSettings, changeList);
-    }
+  if (balanceSettings.shouldFixSpiders()) {
+    internal::logMessage(stkMeshBulkData.parallel(), "Fixing spider elements");
+    stk::balance::internal::fix_spider_elements(balanceSettings, stkMeshBulkData, changeList);
+  }
 
-    const size_t num_global_entity_migrations = changeList.get_num_global_entity_migrations();
-    const size_t max_global_entity_migrations = changeList.get_max_global_entity_migrations();
+  const size_t num_global_entity_migrations = changeList.get_num_global_entity_migrations();
+  const size_t max_global_entity_migrations = changeList.get_max_global_entity_migrations();
 
-    if (num_global_entity_migrations > 0)
+  if (num_global_entity_migrations > 0)
+  {
+    internal::logMessage(stkMeshBulkData.parallel(), "Moving elements to new processors");
+    internal::rebalance(changeList);
+
+    if (balanceSettings.shouldFixMechanisms())
     {
-        internal::logMessage(stkMeshBulkData.parallel(), "Moving elements to new processors");
-        internal::rebalance(changeList);
-
-        if (balanceSettings.shouldFixMechanisms())
-        {
-            internal::logMessage(stkMeshBulkData.parallel(), "Fixing mechanisms found during decomposition");
-            stk::balance::internal::detectAndFixMechanisms(balanceSettings, stkMeshBulkData);
-        }
-
-        if (balanceSettings.shouldFixSpiders())
-        {
-            internal::logMessage(stkMeshBulkData.parallel(), "Fixing spider elements");
-            stk::balance::internal::fix_spider_elements(balanceSettings, stkMeshBulkData);
-        }
-
-        if (balanceSettings.shouldPrintMetrics())
-            internal::print_rebalance_metrics(num_global_entity_migrations, max_global_entity_migrations, stkMeshBulkData);
+      internal::logMessage(stkMeshBulkData.parallel(), "Fixing mechanisms found during decomposition");
+      stk::balance::internal::detectAndFixMechanisms(balanceSettings, stkMeshBulkData);
     }
 
-    internal::logMessage(stkMeshBulkData.parallel(), "Finished rebalance");
+    if (balanceSettings.shouldPrintMetrics())
+      internal::print_rebalance_metrics(num_global_entity_migrations, max_global_entity_migrations, stkMeshBulkData);
+  }
+
+  internal::logMessage(stkMeshBulkData.parallel(), "Finished rebalance");
 
 
-    return (num_global_entity_migrations > 0);
+  return (num_global_entity_migrations > 0);
 }
 
 Balancer::Balancer(const BalanceSettings& settings)

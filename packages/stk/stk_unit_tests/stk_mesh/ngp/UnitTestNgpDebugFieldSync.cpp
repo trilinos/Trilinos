@@ -337,7 +337,7 @@ public:
   {
     unsigned numStates = 1;
     const T init = 1;
-    stk::mesh::Field<T> & field = get_meta().declare_field<stk::mesh::Field<T>>(rank, name, numStates);
+    stk::mesh::Field<T> & field = get_meta().declare_field<T>(rank, name, numStates);
     stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
     return field;
   }
@@ -347,7 +347,7 @@ public:
   {
     unsigned numStates = 2;
     const T init = 1;
-    stk::mesh::Field<T> & field = get_meta().declare_field<stk::mesh::Field<T>>(rank, name, numStates);
+    stk::mesh::Field<T> & field = get_meta().declare_field<T>(rank, name, numStates);
     stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
     return field;
   }
@@ -358,7 +358,7 @@ public:
     unsigned numStates = 1;
     unsigned numScalarsPerEntity = 3;
     const T init[] = {1, 2, 3};
-    stk::mesh::Field<T> & field = get_meta().declare_field<stk::mesh::Field<T>>(rank, name, numStates);
+    stk::mesh::Field<T> & field = get_meta().declare_field<T>(rank, name, numStates);
     stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), numScalarsPerEntity, init);
     return field;
   }
@@ -376,6 +376,7 @@ public:
                                                                       const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart,
                                                                       unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
   {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Field<T> & stkField = create_scalar_field<T>(stk::topology::ELEM_RANK, fieldName);
     create_parts(numElemsInEachPart);
 
@@ -383,7 +384,7 @@ public:
     for (const auto & elemCountAndPart : numElemsInEachPart) {
       numElems += elemCountAndPart.first;
     }
-    setup_mesh("generated:1x1x" + std::to_string(numElems), stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    stk::io::fill_mesh("generated:1x1x" + std::to_string(numElems), get_bulk());
 
     set_initial_part_membership(numElemsInEachPart);
     fill_initial_field<T>(stkField);
@@ -396,6 +397,7 @@ public:
                                                      const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart,
                                                      unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
   {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
     stk::mesh::Field<T> & stkField = create_scalar_field<T>(stk::topology::ELEM_RANK, fieldName);
     create_parts(numElemsInEachPart);
 
@@ -404,27 +406,7 @@ public:
       numElems += elemCountAndPart.first;
     }
 
-    setup_mesh("generated:1x1x" + std::to_string(numElems), stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
-
-    set_initial_part_membership(numElemsInEachPart);
-    fill_initial_field<T>(stkField);
-    initialize_ngp_field(stkField);
-    return stkField;
-  }
-
-  template <typename T>
-  stk::mesh::Field<T> & build_mesh_with_scalar_multistate_field(const std::string & fieldName,
-                                                                const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart,
-                                                                unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
-  {
-    stk::mesh::Field<T> & stkField = create_scalar_multistate_field<T>(stk::topology::ELEM_RANK, fieldName);
-    create_parts(numElemsInEachPart);
-
-    unsigned numElems = 0;
-    for (const auto & elemCountAndPart : numElemsInEachPart) {
-      numElems += elemCountAndPart.first;
-    }
-    setup_mesh("generated:1x1x" + std::to_string(numElems), stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    stk::io::fill_mesh("generated:1x1x" + std::to_string(numElems), get_bulk());
 
     set_initial_part_membership(numElemsInEachPart);
     fill_initial_field<T>(stkField);
@@ -437,6 +419,7 @@ public:
                                                      const std::vector<std::pair<unsigned, std::string>> & numElemsInEachPart,
                                                      unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity)
   {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
     stk::mesh::Field<T> & stkField = create_vector_field<T>(stk::topology::ELEM_RANK, fieldName);
     create_parts(numElemsInEachPart);
 
@@ -444,7 +427,7 @@ public:
     for (const auto & elemCountAndPart : numElemsInEachPart) {
       numElems += elemCountAndPart.first;
     }
-    setup_mesh("generated:1x1x" + std::to_string(numElems), stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    stk::io::fill_mesh("generated:1x1x" + std::to_string(numElems), get_bulk());
 
     set_initial_part_membership(numElemsInEachPart);
     fill_initial_field<T>(stkField);
@@ -2287,11 +2270,12 @@ class NgpDebugFieldSync_SeparateFieldRestrictions : public NgpDebugFieldSyncFixt
 public:
   void setup_mesh_and_field_with_multiple_restrictions(const std::string& fieldName)
   {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Part& part1 = get_meta().declare_part_with_topology("Part1", stk::topology::HEX_8);
     stk::mesh::Part& part2 = get_meta().declare_part_with_topology("Part2", stk::topology::HEX_8);
 
     const unsigned numStates = 1;
-    stk::mesh::Field<double> & field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, fieldName, numStates);
+    stk::mesh::Field<double> & field = get_meta().declare_field<double>(stk::topology::ELEM_RANK, fieldName, numStates);
 
     double init = 0.0;
     stk::mesh::put_field_on_mesh(field, part1, &init);

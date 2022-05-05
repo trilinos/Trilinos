@@ -146,6 +146,8 @@ void prune_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNo
 
 void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, HingeEdgeVector& hingeEdges);
 
+void fill_mesh_hinges(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes);
+
 bool hinge_node_is_locally_owned(const stk::mesh::BulkData& bulk, const HingeNode& node);
 
 bool hinge_edge_is_locally_owned(const stk::mesh::BulkData& bulk, const HingeEdge& edge);

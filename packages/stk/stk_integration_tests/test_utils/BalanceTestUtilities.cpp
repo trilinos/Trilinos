@@ -33,7 +33,7 @@ stk::mesh::EntityProcVec convert_vector_data_into_entity_proc_vec(stk::mesh::Bul
 void putEntityProcOnMeshField(stk::mesh::BulkData &bulkData, const stk::mesh::EntityProcVec& coloring)
 {
     const std::string fieldName2 = "Coloring";
-    stk::mesh::Field<double> &field2 = *bulkData.mesh_meta_data().get_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName2);
+    stk::mesh::Field<double> &field2 = *bulkData.mesh_meta_data().get_field<double>(stk::topology::ELEMENT_RANK, fieldName2);
     stk::balance::internal::put_entity_data_to_field(coloring, &field2);
     putDecompFieldDataOnMesh(bulkData, bulkData.parallel_rank());
 }
@@ -49,7 +49,7 @@ void putDecompFieldDataOnMesh(stk::mesh::BulkData &bulkData, int proc_rank)
     const stk::mesh::BucketVector &buckets = bulkData.buckets(stk::topology::ELEMENT_RANK);
 
     const std::string fieldName1 = "DomainProc";
-    stk::mesh::Field<double> &field1 = *bulkData.mesh_meta_data().get_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName1);
+    stk::mesh::Field<double> &field1 = *bulkData.mesh_meta_data().get_field<double>(stk::topology::ELEMENT_RANK, fieldName1);
 
     for(size_t i = 0; i < buckets.size(); i++)
     {

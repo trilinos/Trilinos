@@ -12,14 +12,14 @@
 
 namespace {
 
-class UpdateNgpMesh : public stk::unit_test_util::MeshFixture
+class UpdateNgpMesh : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   void setup_test_mesh()
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n";
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
   }
 };
 
@@ -94,7 +94,7 @@ TEST_F(UpdateNgpMesh, OnlyOneDeviceMesh_TwoExternal)
 #endif
 }
 
-class BucketLayoutModification : public stk::unit_test_util::MeshFixture
+class BucketLayoutModification : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   void setup_mesh_3hex_3block(unsigned bucketCapacity)

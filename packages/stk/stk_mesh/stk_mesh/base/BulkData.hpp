@@ -84,6 +84,7 @@ namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { class FaceCreator; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { namespace mesh { class ElemElemGraphUpdater; } }
+namespace stk { namespace mesh { class MeshBuilder; } }
 namespace stk { namespace mesh { class NgpMeshBase; } }
 namespace stk { class CommSparse; }
 namespace stk { namespace mesh { class ModificationObserver; } }
@@ -186,8 +187,8 @@ public:
 
   //------------------------------------
   /** \brief  The meta data manager for this bulk data manager. */
-  const MetaData & mesh_meta_data() const { return m_mesh_meta_data ; }
-        MetaData & mesh_meta_data()       { return m_mesh_meta_data ; }
+  const MetaData & mesh_meta_data() const { return *m_meta_raw_ptr_to_be_deprecated ; }
+        MetaData & mesh_meta_data()       { return *m_meta_raw_ptr_to_be_deprecated ; }
 
   /** \brief  The parallel machine */
   ParallelMachine parallel() const { return m_parallel.parallel() ; }
@@ -874,6 +875,16 @@ void get_entities(EntityRank rank, Selector const& selector, EntityVector& outpu
   void set_large_ids_flag(bool largeIds) { m_supportsLargeIds = largeIds; }
 
 protected: //functions
+  BulkData(   std::shared_ptr<MetaData> mesh_meta_data
+            , ParallelMachine parallel
+            , enum AutomaticAuraOption auto_aura_option = AUTO_AURA
+#ifdef SIERRA_MIGRATION
+            , bool add_fmwk_data = false
+#endif
+            , FieldDataManager *field_dataManager = nullptr
+            , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
+            );
+
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id);// Mod Mark
 
 
@@ -1361,6 +1372,7 @@ private:
 
   // Forbidden
   BulkData();
+
   BulkData( const BulkData & );
   BulkData & operator = ( const BulkData & );
 
@@ -1458,6 +1470,7 @@ private:
 
   inline bool is_valid_connectivity(Entity entity, EntityRank rank) const;
 
+  friend class MeshBuilder;
   friend class ::stk::mesh::MetaData;
   friend class ::stk::mesh::impl::BucketRepository;
   friend class stk::mesh::Bucket; // for field callback
@@ -1532,7 +1545,8 @@ protected: //data
   static const uint16_t orphaned_node_marking;
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;
-  MetaData &m_mesh_meta_data;
+  MetaData *m_meta_raw_ptr_to_be_deprecated;
+  std::shared_ptr<MetaData> m_meta_data;
   std::vector<EntitySharing> m_mark_entity; //indexed by Entity
   bool m_add_node_sharing_called;
   std::vector<uint16_t> m_closure_count; //indexed by Entity

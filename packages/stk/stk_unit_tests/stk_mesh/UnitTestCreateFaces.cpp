@@ -55,54 +55,56 @@
 #include "stk_unit_test_utils/stk_mesh_fixtures/TetFixture.hpp"  // for TetFixture
 #include "stk_unit_test_utils/stk_mesh_fixtures/degenerate_mesh.hpp"
 #include "stk_unit_test_utils/stk_mesh_fixtures/heterogeneous_mesh.hpp"
+#include "stk_unit_test_utils/BuildMesh.hpp"
 
 using stk::mesh::MetaData;
+using stk::unit_test_util::build_mesh;
 
 namespace {
-  const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
-  const stk::mesh::EntityRank face_rank = stk::topology::FACE_RANK;
-  const stk::mesh::EntityRank edge_rank = stk::topology::EDGE_RANK;
-  const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
+const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
+const stk::mesh::EntityRank face_rank = stk::topology::FACE_RANK;
+const stk::mesh::EntityRank edge_rank = stk::topology::EDGE_RANK;
+const stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
 
-  const size_t nodes_per_hex = 8;
-  const size_t faces_per_hex = 6;
-  const size_t nodes_per_quad= 4;
-  
-  const size_t nodes_per_tet = 4;
-  const size_t faces_per_tet = 4;
-  const size_t nodes_per_tri = 3;
-  
-  size_t exp_hex_face_count(size_t nx, size_t ny, size_t nz)
-  {
-    size_t exp_face = 3 * nx * ny * nz;
-    exp_face += ny * nz + nz * nx + nx * ny;
-    return exp_face;
-  }
+const size_t nodes_per_hex = 8;
+const size_t faces_per_hex = 6;
+const size_t nodes_per_quad= 4;
 
-  size_t exp_tet_face_count(size_t nx, size_t ny, size_t nz)
-  {
-    size_t exp_face = 12 * nx * ny * nz;
-    exp_face += 2* (ny * nz + nz * nx + nx * ny);
-    return exp_face;
-  }
+const size_t nodes_per_tet = 4;
+const size_t faces_per_tet = 4;
+const size_t nodes_per_tri = 3;
 
-  size_t exp_node_count(size_t nx, size_t ny, size_t nz)
-  {
-    size_t exp_node = (nx+1) * (ny+1) * (nz+1);
-    return exp_node;
-  }
+size_t exp_hex_face_count(size_t nx, size_t ny, size_t nz)
+{
+  size_t exp_face = 3 * nx * ny * nz;
+  exp_face += ny * nz + nz * nx + nx * ny;
+  return exp_face;
+}
 
-  size_t exp_hex_count(size_t nx, size_t ny, size_t nz)
-  {
-    size_t exp_elem = nx * ny * nz;
-    return exp_elem;
-  }
+size_t exp_tet_face_count(size_t nx, size_t ny, size_t nz)
+{
+  size_t exp_face = 12 * nx * ny * nz;
+  exp_face += 2* (ny * nz + nz * nx + nx * ny);
+  return exp_face;
+}
 
-  size_t exp_tet_count(size_t nx, size_t ny, size_t nz)
-  {
-    size_t exp_elem = 6 * nx * ny * nz;
-    return exp_elem;
-  }
+size_t exp_node_count(size_t nx, size_t ny, size_t nz)
+{
+  size_t exp_node = (nx+1) * (ny+1) * (nz+1);
+  return exp_node;
+}
+
+size_t exp_hex_count(size_t nx, size_t ny, size_t nz)
+{
+  size_t exp_elem = nx * ny * nz;
+  return exp_elem;
+}
+
+size_t exp_tet_count(size_t nx, size_t ny, size_t nz)
+{
+  size_t exp_elem = 6 * nx * ny * nz;
+  return exp_elem;
+}
 
 
 TEST ( UnitTestCreateFaces, Hex_2x1x1 )
@@ -111,7 +113,7 @@ TEST ( UnitTestCreateFaces, Hex_2x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -146,7 +148,7 @@ TEST ( UnitTestCreateFaces, Tet_2x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::simple_fields::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -181,7 +183,7 @@ TEST( UnitTestCreateFaces , Hex_3x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -215,7 +217,7 @@ TEST( UnitTestCreateFaces , Tet_3x1x1 )
   const size_t NY = 1;
   const size_t NZ = 1;
 
-  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::simple_fields::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -249,7 +251,7 @@ TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
   const size_t NY = 3;
   const size_t NZ = 3;
 
-  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::simple_fields::HexFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -278,9 +280,9 @@ TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
 
   stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
   for ( stk::mesh::BucketVector::iterator b_itr = elem_buckets.begin();
-       b_itr != elem_buckets.end();
-       ++b_itr
-      )
+        b_itr != elem_buckets.end();
+        ++b_itr
+        )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
@@ -292,9 +294,9 @@ TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
 
   stk::mesh::BucketVector  face_buckets = fixture.m_bulk_data.buckets(face_rank);
   for ( stk::mesh::BucketVector::iterator b_itr = face_buckets.begin();
-       b_itr != face_buckets.end();
-       ++b_itr
-      )
+        b_itr != face_buckets.end();
+        ++b_itr
+        )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
@@ -311,9 +313,9 @@ TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
   stk::mesh::BucketVector  ghosted_elem_buckets = fixture.m_bulk_data.get_buckets(elem_rank,ghosted_part);
 
   for ( stk::mesh::BucketVector::iterator b_itr = ghosted_elem_buckets.begin();
-      b_itr != ghosted_elem_buckets.end();
-      ++b_itr
-  )
+        b_itr != ghosted_elem_buckets.end();
+        ++b_itr
+        )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
@@ -368,7 +370,7 @@ TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
   const size_t NY = 3;
   const size_t NZ = 3;
 
-  stk::mesh::fixtures::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
+  stk::mesh::fixtures::simple_fields::TetFixture fixture( MPI_COMM_WORLD, NX, NY, NZ);
 
   fixture.m_meta.commit();
   fixture.generate_mesh();
@@ -397,9 +399,9 @@ TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
 
   stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
   for ( stk::mesh::BucketVector::iterator b_itr = elem_buckets.begin();
-       b_itr != elem_buckets.end();
-       ++b_itr
-      )
+        b_itr != elem_buckets.end();
+        ++b_itr
+        )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
@@ -411,9 +413,9 @@ TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
 
   stk::mesh::BucketVector  face_buckets = fixture.m_bulk_data.buckets(face_rank);
   for ( stk::mesh::BucketVector::iterator b_itr = face_buckets.begin();
-       b_itr != face_buckets.end();
-       ++b_itr
-      )
+        b_itr != face_buckets.end();
+        ++b_itr
+        )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
@@ -430,9 +432,9 @@ TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
   stk::mesh::BucketVector  ghosted_elem_buckets = fixture.m_bulk_data.get_buckets(elem_rank,ghosted_part);
 
   for ( stk::mesh::BucketVector::iterator b_itr = ghosted_elem_buckets.begin();
-      b_itr != ghosted_elem_buckets.end();
-      ++b_itr
-  )
+        b_itr != ghosted_elem_buckets.end();
+        ++b_itr
+        )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
@@ -483,8 +485,8 @@ TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
 
 TEST ( UnitTestCreateFaces, Gears )
 {
-  stk::mesh::fixtures::GearsFixture fixture( MPI_COMM_WORLD, 1,
-					     stk::mesh::fixtures::GearParams(0.1, 0.4, 1.0, -0.4, 0.4));
+  stk::mesh::fixtures::simple_fields::GearsFixture fixture( MPI_COMM_WORLD, 1,
+                                                            stk::mesh::fixtures::simple_fields::GearParams(0.1, 0.4, 1.0, -0.4, 0.4));
 
   fixture.meta_data.commit();
   fixture.generate_mesh();
@@ -518,18 +520,19 @@ void heterogeneous_create_faces_test(stk::mesh::BulkData::AutomaticAuraOption au
   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
   if (numprocs > 1)
     return;
-  
-  stk::mesh::MetaData meta_data(3);
-  stk::mesh::fixtures::VectorFieldType & node_coord =
-    meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD, autoAuraOption);
+  stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulk_data = *bulkPtr;
+  stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord =
+      meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
   stk::mesh::put_field_on_mesh( node_coord , meta_data.universal_part() , 3,
                                 (stk::mesh::FieldTraits<stk::mesh::fixtures::VectorFieldType>::data_type*) nullptr);
 
-  stk::mesh::fixtures::heterogeneous_mesh_meta_data( meta_data , node_coord );
+  stk::mesh::fixtures::simple_fields::heterogeneous_mesh_meta_data( meta_data , node_coord );
   meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_WORLD, autoAuraOption );
-  stk::mesh::fixtures::heterogeneous_mesh_bulk_data( bulk_data , node_coord );
+  stk::mesh::fixtures::simple_fields::heterogeneous_mesh_bulk_data( bulk_data , node_coord );
 
   /*
    * Three hexes, three wedges, three tets, two pyramids,
@@ -598,12 +601,12 @@ void heterogeneous_create_faces_test(stk::mesh::BulkData::AutomaticAuraOption au
 
 TEST ( UnitTestCreateFaces, HeterogeneousWithAura )
 {
-    heterogeneous_create_faces_test(stk::mesh::BulkData::AUTO_AURA );
+  heterogeneous_create_faces_test(stk::mesh::BulkData::AUTO_AURA );
 }
 
 TEST ( UnitTestCreateFaces, HeterogeneousNoAura )
 {
-    heterogeneous_create_faces_test(stk::mesh::BulkData::NO_AUTO_AURA );
+  heterogeneous_create_faces_test(stk::mesh::BulkData::NO_AUTO_AURA );
 }
 
 TEST ( UnitTestCreateFaces, Degenerate )
@@ -612,25 +615,26 @@ TEST ( UnitTestCreateFaces, Degenerate )
   if (numprocs > 1)
     return;
 
-  stk::mesh::MetaData meta_data(3);
-  stk::mesh::fixtures::VectorFieldType & node_coord =
-    meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
+  stk::mesh::MetaData& meta_data = bulkPtr->mesh_meta_data();
+  stk::mesh::BulkData& bulk_data = *bulkPtr;
+  stk::mesh::fixtures::simple_fields::VectorFieldType & node_coord =
+      meta_data.declare_field<double>(stk::topology::NODE_RANK, "coordinates");
   stk::mesh::put_field_on_mesh( node_coord , meta_data.universal_part() , 3,
                                 (stk::mesh::FieldTraits<stk::mesh::fixtures::VectorFieldType>::data_type*) nullptr);
 
-  stk::mesh::fixtures::degenerate_mesh_meta_data( meta_data , node_coord );
+  stk::mesh::fixtures::simple_fields::degenerate_mesh_meta_data( meta_data , node_coord );
   meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_WORLD );
-  stk::mesh::fixtures::degenerate_mesh_bulk_data( bulk_data , node_coord );
+  stk::mesh::fixtures::simple_fields::degenerate_mesh_bulk_data( bulk_data , node_coord );
 
   /*
    *  Z = 0 plane:
    *
    *    Y
-   *    ^ 
+   *    ^
    *    !
-   *     
+   *
    *   4*       *5
    *    |\     /|
    *    | \   / |
@@ -641,9 +645,9 @@ TEST ( UnitTestCreateFaces, Degenerate )
    *  Z = -1 plane:
    *
    *    Y
-   *    ^ 
+   *    ^
    *    !
-   *     
+   *
    *   9*       *10
    *    |\     /|
    *    | \   / |
