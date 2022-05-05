@@ -59,6 +59,8 @@ ELSE()
   find_library(CUDA_cusolver_LIBRARY
     cusolver
     HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib
+          ENV TRILINOS_CUSOLVER_ROOT_DIR
+    PATH_SUFFIXES include lib lib64
   )
   IF(CUDA_cusolver_LIBRARY STREQUAL "CUDA_cusolver_LIBRARY-NOTFOUND") 
     MESSAGE(FATAL_ERROR "\nCUSOLVER: could not find cusolver library.")
