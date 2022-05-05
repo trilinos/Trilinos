@@ -405,14 +405,19 @@ int main(int narg, char *arg[])
     }
     if(me == 0)
       std::cout << "Done with reading/creating the matrix." << std::endl;
-  RCP<MultiVector<ST> > V; 
-  V = Tpetra::MatrixMarket::Reader<MultiVector<ST> >::readDenseFile(vector_file,comm); 
-  RCP<const Tpetra::Map<> > map = V->getData();
+  Teuchos::RCP<const Tpetra::Map<> > map = tmatrix->getMap();
+  using ST = double;
+  using MultiVector  = Tpetra::MultiVector<ST>;
+    typedef Belos::MultiVecTraits<ST,MultiVector>    MVT;
+  Teuchos::RCP<MultiVector > V = Teuchos::rcp(new MultiVector(map, 10));
+  V->randomize();
+  std::cout << "Randomized some pretend evects." << std::endl;
+   //MVT::MvPrint(*V,std::cout);
    // TODO Insert MultiVector Reader 
-  if(vector_file ~= ""){
+  /*if(vector_file ~= ""){
   else{
   }
-  }
+  }*/
     adapter = Teuchos::rcp(new adapter_type(tmatrix->getCrsGraph(), 1));
     adapter->setVertexWeightIsDegree(0);
     
@@ -476,7 +481,7 @@ int main(int narg, char *arg[])
 	}//TODO: Change constructor problem_type to take in vector_file *if it exists*//
 	{
 	  Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Partitioning::Solve"));
-	  problem->solve();
+	  problem->solve(V);
 	}
 	pComm->barrier();
       }
@@ -493,7 +498,7 @@ int main(int narg, char *arg[])
 
     Teuchos::TimeMonitor::summarize();
     
-  }
+  } //End Tpetra scope guard
 
   return 0;
 } 

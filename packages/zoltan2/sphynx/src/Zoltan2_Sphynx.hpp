@@ -174,6 +174,7 @@ namespace Zoltan2 {
     ///////////////////////////////////////////////////////////////////////////
 
     void partition(const RCP<PartitioningSolution<Adapter> > &solution);
+    void partition(const RCP<PartitioningSolution<Adapter>> &solution, RCP<mvector_t> &userEigenVects);
 
  
     int LOBPCGwrapper(const int numEigenVectors);
@@ -559,9 +560,9 @@ namespace Zoltan2 {
 			   "               Increase either max iters or tolerance.\n");
     
     }
-
     // Transform the eigenvectors into coordinates 
     Teuchos::RCP<mvector_t> coordinates;
+
     Sphynx::eigenvecsToCoords(eigenVectors_, computedNumEv, coordinates);
 
     // Get the weights from the adapter
@@ -575,6 +576,45 @@ namespace Zoltan2 {
 
   }
 
+  template <typename Adapter>
+  void Sphynx<Adapter>::partition(const RCP<PartitioningSolution<Adapter>> &solution, RCP<mvector_t> &userEigenVects)
+  {
+    // Return a trivial solution if only one part is requested
+    if(numGlobalParts_ == 1) {
+      std::cout << "NumGlobalParts 1 block " << std::endl;
+      size_t numRows =adapter_->getUserGraph()->getLocalNumRows();
+      Teuchos::ArrayRCP<part_t> parts(numRows,0);
+      solution->setParts(parts);
+      
+      return;
+
+    }
+
+    // The number of eigenvectors to be computed
+    int numEigenVectors = (int) log2(numGlobalParts_)+1;
+
+    int computedNumEv = (int) userEigenVects->getNumVectors();
+
+    if(computedNumEv <= numEigenVectors) {
+      throw 
+	std::runtime_error("\nSphynx Error: Number of eigenvectors given by user\n"
+        " is less than number of Eigenvectors needed for partition." );
+    
+    }
+    // Transform the eigenvectors into coordinates 
+    Teuchos::RCP<mvector_t> coordinates;
+    Sphynx::eigenvecsToCoords(userEigenVects, numEigenVectors, coordinates);
+
+    // Get the weights from the adapter
+    std::vector<const weight_t *> weights;
+    std::vector<int> wstrides;
+    Sphynx::computeWeights(weights, wstrides);
+  
+    
+    // Compute the partition using MJ on coordinates
+    Sphynx::MJwrapper(coordinates, weights, wstrides, solution);
+
+  }
 
   ///////////////////////////////////////////////////////////////////////////
   // Call LOBPCG on the Laplacian matrix.
@@ -879,7 +919,6 @@ namespace Zoltan2 {
     }
     coordinates = eigenVectors->subCopy (columns());
     coordinates->setCopyOrView (Teuchos::View);
-
   }
 
 

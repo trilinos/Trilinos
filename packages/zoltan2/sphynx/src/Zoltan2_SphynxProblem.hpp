@@ -73,6 +73,11 @@ namespace Zoltan2 {
 
     using part_t = typename Adapter::part_t;
     using weight_t = typename Adapter::scalar_t;
+    using scalar_t = double; // Sphynx with scalar_t=double obtains better cutsize
+    using lno_t = typename Adapter::lno_t;
+    using gno_t = typename Adapter::gno_t;
+    using node_t = typename Adapter::node_t;
+    using mvector_t = Tpetra::MultiVector<scalar_t, lno_t, gno_t, node_t>;  
 
     ///////////////////////////////////////////////////////////////////////////
     ///////////////////////// CONSTRUCTORS ////////////////////////////////////
@@ -144,6 +149,7 @@ namespace Zoltan2 {
     ///////////////////////////////////////////////////////////////////////////
 
     void solve();
+    void solve(Teuchos::RCP<mvector_t> &userEigenVects);
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -164,7 +170,8 @@ namespace Zoltan2 {
     Teuchos::RCP<Adapter> inputAdapter_;
     Teuchos::RCP<Teuchos::ParameterList> params_;
     Teuchos::RCP<const Teuchos::Comm<int>> comm_;
-    Teuchos::RCP<Algorithm<Adapter> > algorithm_;
+    //Teuchos::RCP<Algorithm<Adapter> > algorithm_;
+    Teuchos::RCP<Sphynx<Adapter> > algorithm_;
 
     Teuchos::RCP<Teuchos::ParameterList> envParams_;
     Teuchos::RCP<Environment> env_;
@@ -213,6 +220,34 @@ namespace Zoltan2 {
     Z2_FORWARD_EXCEPTIONS;
   }
 
+  template <typename Adapter>
+  void SphynxProblem<Adapter>::solve(Teuchos::RCP<mvector_t> &userEigenVects)
+  {
+    this->algorithm_ = Teuchos::rcp(new Zoltan2::Sphynx<Adapter>(this->envConst_,
+								 this->params_,
+								 this->comm_, 
+								 this->inputAdapter_));
+  
+
+    PartitioningSolution<Adapter> *soln = NULL;
+
+    try{
+    
+      soln = new PartitioningSolution<Adapter>(this->envConst_, this->comm_, numberOfWeights_,
+					       partIds_.view(0, numberOfCriteria_),
+					       partSizes_.view(0, numberOfCriteria_), this->algorithm_);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+
+    solution_ = Teuchos::rcp(soln);
+
+    // Call the algorithm
+
+    try {
+      this->algorithm_->partition(solution_, userEigenVects);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+  }
 
 } // namespace Zoltan2
 
