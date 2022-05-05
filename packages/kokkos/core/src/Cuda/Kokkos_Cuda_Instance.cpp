@@ -413,6 +413,13 @@ Kokkos::Cuda::initialize WARNING: Cuda is allocating into UVMSpace by default
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaEventCreate(&constantMemReusable));
   }
 
+  // CWP May 05 2022
+  // hack to use a higher-priority stream vs. default
+  // apmere is -5 to 0, highest to lowest
+  if (nullptr == stream) {
+    std::cerr << "USING NEW STREAM INSTEAD OF DEFAULT\n";
+    cudaStreamCreateWithPriority(&stream, 0, -2);
+  }
 
   m_stream        = stream;
   m_manage_stream = manage_stream;
