@@ -456,6 +456,7 @@ static void spmv_beta_no_transpose(
   SPMV_Functor<AMatrix, XVector, YVector, dobeta, conjugate> func(
       alpha, A, x, beta, y, rows_per_team);
 
+<<<<<<< HEAD
   if (((A.nnz() > 10000000) || use_dynamic_schedule) && !use_static_schedule) {
     Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>
         policy(1, 1);
@@ -482,6 +483,28 @@ static void spmv_beta_no_transpose(
               worksets, team_size, vector_length);
     Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>", policy,
                          func);
+=======
+  if(((A.nnz()>10000000) || use_dynamic_schedule) && !use_static_schedule) {
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> > policy(1,1);
+    if(team_size<0) {
+      printf("CWP SpMV %s:%d %ld %d %d\n", __FILE__, __LINE__, rows_per_team, team_size, vector_length);
+      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,Kokkos::AUTO,vector_length);
+    } else {
+      printf("CWP SpMV %s:%d %ld %d %d\n", __FILE__, __LINE__, rows_per_team, team_size, vector_length);
+      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic> >(worksets,team_size,vector_length);
+    }
+    Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Dynamic>",policy,func);
+  } else {
+    Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> > policy(1,1);
+    if(team_size<0) {
+      printf("CWP SpMV %s:%d %ld %d %d\n", __FILE__, __LINE__, rows_per_team, team_size, vector_length);
+      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,Kokkos::AUTO,vector_length);
+    } else {
+      printf("CWP SpMV %s:%d %ld %d %d\n", __FILE__, __LINE__, rows_per_team, team_size, vector_length);
+      policy = Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static> >(worksets,team_size,vector_length);
+    }
+    Kokkos::parallel_for("KokkosSparse::spmv<NoTranspose,Static>",policy,func);
+>>>>>>> 8855bc9643a (Annotate KokkosSparse::spmv launch parameters)
   }
 }
 
