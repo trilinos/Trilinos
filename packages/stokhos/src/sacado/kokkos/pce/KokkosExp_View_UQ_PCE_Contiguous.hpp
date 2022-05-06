@@ -1371,15 +1371,6 @@ public:
     return record ;
   }
 
-  template< class ... P >
-  SharedAllocationRecord<> *
-  allocate_shared( ViewCtorProp< P... > const & prop
-                 , typename Traits::array_layout const & layout
-                 , bool /*execution_space_specified*/)
-  {
-    allocate_shared(prop, layout);
-  }
-
 };
 
 } // namespace Impl

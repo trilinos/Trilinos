@@ -1130,8 +1130,7 @@ public:
   template< class ... P >
   SharedAllocationRecord<> *
   allocate_shared( ViewCtorProp< P... > const & prop
-                 , typename Traits::array_layout const & local_layout
-                 , bool execution_space_specified)
+                 , typename Traits::array_layout const & local_layout )
   {
     typedef ViewCtorProp< P... > ctor_prop ;
 
@@ -1182,17 +1181,11 @@ public:
       if ( ctor_prop::initialize ) {
         // Assume destruction is only required when construction is requested.
         // The ViewValueFunctor has both value construction and destruction operators.
-        if (execution_space_specified)
-          record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
-                                          , (fad_value_type *) m_impl_handle
-                                          , m_array_offset.span()
-                                          , record->get_label()
-                                          );
-        else
-          record->m_destroy = functor_type((fad_value_type *) m_impl_handle
-                                          , m_array_offset.span()
-                                          , record->get_label()
-                                          );
+        record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
+                                        , (fad_value_type *) m_impl_handle
+                                        , m_array_offset.span()
+                                        , record->get_label()
+                                        );
 
         // Construct values
         record->m_destroy.construct_shared_allocation();
