@@ -67,12 +67,15 @@ public:
     using std::vector;
     vector<ordinal_type> fullBasisOrdinals;
     vector<vector<ordinal_type>> polynomialDegreeOfField;
+    vector<vector<ordinal_type>> polynomialH1DegreeOfField;
     ordinal_type fullCardinality = fullBasis_->getCardinality();
+    ordinal_type basisH1Degree = (this->functionSpace_ == FUNCTION_SPACE_HVOL) ? this->basisDegree_ + 1 : this->basisDegree_;
     for (ordinal_type i=0; i<fullCardinality; i++)
     {
-      vector<ordinal_type> fieldDegree = fullBasis_->getPolynomialDegreeOfFieldAsVector(i);
+      vector<ordinal_type> fieldDegree   = fullBasis_->getPolynomialDegreeOfFieldAsVector(i);
+      vector<ordinal_type> fieldH1Degree = fullBasis_->getH1PolynomialDegreeOfFieldAsVector(i);
       ordinal_type superlinearDegree = 0;
-      for (const ordinal_type & p : fieldDegree)
+      for (const ordinal_type & p : fieldH1Degree)
       {
         if (p > 1)
         {
@@ -80,11 +83,12 @@ public:
           superlinearDegree += p;
         }
       }
-      if (superlinearDegree <= this->basisDegree_)
+      if (superlinearDegree <= basisH1Degree)
       {
         // satisfies serendipity criterion
         fullBasisOrdinals.push_back(i);
         polynomialDegreeOfField.push_back(fieldDegree);
+        polynomialH1DegreeOfField.push_back(fieldH1Degree);
       }
     }
     this->basisCardinality_  = fullBasisOrdinals.size();
@@ -107,12 +111,14 @@ public:
     // fill in degree lookup:
     int degreeSize = fullBasis_->getPolynomialDegreeLength();
     this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("TensorBasis - field ordinal polynomial degree", this->basisCardinality_, degreeSize);
+    this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("TensorBasis - field ordinal H^1 degree", this->basisCardinality_, degreeSize);
     
     for (ordinal_type fieldOrdinal1 = 0; fieldOrdinal1 < this->basisCardinality_; fieldOrdinal1++)
     {
       for (int d=0; d<degreeSize; d++)
       {
-        this->fieldOrdinalPolynomialDegree_(fieldOrdinal1,d) = polynomialDegreeOfField[fieldOrdinal1][d];
+        this->fieldOrdinalPolynomialDegree_  (fieldOrdinal1,d) = polynomialDegreeOfField  [fieldOrdinal1][d];
+        this->fieldOrdinalH1PolynomialDegree_(fieldOrdinal1,d) = polynomialH1DegreeOfField[fieldOrdinal1][d];
       }
     }
     

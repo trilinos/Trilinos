@@ -328,7 +328,7 @@ namespace Intrepid2
     using Family1 = Basis_Derived_HCURL_Family1_QUAD<HGRAD_LINE, HVOL_LINE>;
     using Family2 = Basis_Derived_HCURL_Family2_QUAD<HGRAD_LINE, HVOL_LINE>;
     using DirectSumBasis = Basis_DirectSumBasis <typename HGRAD_LINE::BasisBase>;
-    
+  public:
     using BasisBase = typename HGRAD_LINE::BasisBase;
 
   protected:

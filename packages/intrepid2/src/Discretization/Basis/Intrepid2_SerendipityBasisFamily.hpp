@@ -85,21 +85,21 @@ namespace Intrepid2 {
     using PointViewType          = typename BasisBase::PointViewType;
     
     //! single-argument constructor, for isotropic bases.
-    SerendipityBasisWrapper(int polyOrder)
+    SerendipityBasisWrapper(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
     :
     SerendipityBasis<typename FullBasis::BasisBase>(Teuchos::rcp(new FullBasis(polyOrder)) )
     {}
     
     //! two-argument constructor; enabled if numPolyOrderArgs is 2.
     template<bool M=(numPolyOrderArgs==2)>
-    SerendipityBasisWrapper(int polyOrder_x, int polyOrder_y, typename std::enable_if<M>::type* = 0)
+    SerendipityBasisWrapper(int polyOrder_x, int polyOrder_y, const EPointType pointType=POINTTYPE_DEFAULT, typename std::enable_if<M>::type* = 0)
     :
     SerendipityBasis<typename FullBasis::BasisBase>(Teuchos::rcp(new FullBasis(polyOrder_x, polyOrder_y)) )
     {}
     
     //! three-argument constructor; enabled if numPolyOrderArgs is 3.
     template<bool M=(numPolyOrderArgs==3)>
-    SerendipityBasisWrapper(int polyOrder_x, int polyOrder_y, int polyOrder_z, typename std::enable_if<M>::type* = 0)
+    SerendipityBasisWrapper(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType=POINTTYPE_DEFAULT, typename std::enable_if<M>::type* = 0)
     :
     SerendipityBasis<typename FullBasis::BasisBase>(Teuchos::rcp(new FullBasis(polyOrder_x, polyOrder_y, polyOrder_z)) )
     {}

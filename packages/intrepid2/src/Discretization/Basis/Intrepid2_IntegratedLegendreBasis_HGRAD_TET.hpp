@@ -654,6 +654,7 @@ namespace Intrepid2
       
       const int degreeLength = 1;
       this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) tetrahedron polynomial degree lookup", this->basisCardinality_, degreeLength);
+      this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("Integrated Legendre H(grad) tetrahedron polynomial H^1 degree lookup", this->basisCardinality_, degreeLength);
       
       int fieldOrdinalOffset = 0;
       // **** vertex functions **** //
@@ -664,11 +665,13 @@ namespace Intrepid2
       {
         // for H(grad) on tetrahedron, if defineVertexFunctions is false, first four basis members are linear
         // if not, then the only difference is that the first member is constant
-        this->fieldOrdinalPolynomialDegree_(i,0) = 1;
+        this->fieldOrdinalPolynomialDegree_  (i,0) = 1;
+        this->fieldOrdinalH1PolynomialDegree_(i,0) = 1;
       }
       if (!defineVertexFunctions)
       {
-        this->fieldOrdinalPolynomialDegree_(0,0) = 0;
+        this->fieldOrdinalPolynomialDegree_  (0,0) = 0;
+        this->fieldOrdinalH1PolynomialDegree_(0,0) = 0;
       }
       fieldOrdinalOffset += numVertexFunctions;
       
@@ -679,7 +682,8 @@ namespace Intrepid2
       {
         for (int i=0; i<numFunctionsPerEdge; i++)
         {
-          this->fieldOrdinalPolynomialDegree_(i+fieldOrdinalOffset,0) = i+2; // vertex functions are 1st order; edge functions start at order 2
+          this->fieldOrdinalPolynomialDegree_(i+fieldOrdinalOffset,0)   = i+2; // vertex functions are 1st order; edge functions start at order 2
+          this->fieldOrdinalH1PolynomialDegree_(i+fieldOrdinalOffset,0) = i+2; // vertex functions are 1st order; edge functions start at order 2
         }
         fieldOrdinalOffset += numFunctionsPerEdge;
       }
@@ -696,7 +700,8 @@ namespace Intrepid2
           const int faceDofsForPolyOrder  = totalFaceDofs - totalFaceDofsPrevious;
           for (int i=0; i<faceDofsForPolyOrder; i++)
           {
-            this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = totalPolyOrder;
+            this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = totalPolyOrder;
+            this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = totalPolyOrder;
             fieldOrdinalOffset++;
           }
         }
@@ -715,7 +720,8 @@ namespace Intrepid2
           
           for (int i=0; i<interiorDofsForPolyOrder; i++)
           {
-            this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = totalPolyOrder;
+            this->fieldOrdinalPolynomialDegree_  (fieldOrdinalOffset,0) = totalPolyOrder;
+            this->fieldOrdinalH1PolynomialDegree_(fieldOrdinalOffset,0) = totalPolyOrder;
             fieldOrdinalOffset++;
           }
         }

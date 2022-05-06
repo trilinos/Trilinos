@@ -717,7 +717,8 @@ struct OperatorTensorDecomposition
       {
         // fill in degree lookup:
         int degreeSize = basis1_->getPolynomialDegreeLength() + basis2_->getPolynomialDegreeLength();
-        this->fieldOrdinalPolynomialDegree_ = OrdinalTypeArray2DHost("TensorBasis - field ordinal polynomial degree", this->basisCardinality_, degreeSize);
+        this->fieldOrdinalPolynomialDegree_   = OrdinalTypeArray2DHost("TensorBasis - field ordinal polynomial degree", this->basisCardinality_, degreeSize);
+        this->fieldOrdinalH1PolynomialDegree_ = OrdinalTypeArray2DHost("TensorBasis - field ordinal polynomial H^1 degree", this->basisCardinality_, degreeSize);
         
         const ordinal_type basis1Cardinality = basis1_->getCardinality();
         const ordinal_type basis2Cardinality = basis2_->getCardinality();
@@ -727,19 +728,23 @@ struct OperatorTensorDecomposition
         
         for (ordinal_type fieldOrdinal1 = 0; fieldOrdinal1 < basis1Cardinality; fieldOrdinal1++)
         {
-          OrdinalTypeArray1DHost degreesField1 = basis1_->getPolynomialDegreeOfField(fieldOrdinal1);
+          OrdinalTypeArray1DHost degreesField1   = basis1_->getPolynomialDegreeOfField(fieldOrdinal1);
+          OrdinalTypeArray1DHost h1DegreesField1 = basis1_->getH1PolynomialDegreeOfField(fieldOrdinal1);
           for (ordinal_type fieldOrdinal2 = 0; fieldOrdinal2 < basis2Cardinality; fieldOrdinal2++)
           {
-            OrdinalTypeArray1DHost degreesField2 = basis2_->getPolynomialDegreeOfField(fieldOrdinal2);
+            OrdinalTypeArray1DHost degreesField2   = basis2_->getPolynomialDegreeOfField(fieldOrdinal2);
+            OrdinalTypeArray1DHost h1DegreesField2 = basis2_->getH1PolynomialDegreeOfField(fieldOrdinal2);
             const ordinal_type tensorFieldOrdinal = fieldOrdinal2 * basis1Cardinality + fieldOrdinal1;
             
             for (int d3=0; d3<degreeLengthField1; d3++)
             {
-              this->fieldOrdinalPolynomialDegree_(tensorFieldOrdinal,d3) = degreesField1(d3);
+              this->fieldOrdinalPolynomialDegree_  (tensorFieldOrdinal,d3) =   degreesField1(d3);
+              this->fieldOrdinalH1PolynomialDegree_(tensorFieldOrdinal,d3) = h1DegreesField1(d3);
             }
             for (int d3=0; d3<degreeLengthField2; d3++)
             {
-              this->fieldOrdinalPolynomialDegree_(tensorFieldOrdinal,d3+degreeLengthField1) = degreesField2(d3);
+              this->fieldOrdinalPolynomialDegree_  (tensorFieldOrdinal,d3+degreeLengthField1) =   degreesField2(d3);
+              this->fieldOrdinalH1PolynomialDegree_(tensorFieldOrdinal,d3+degreeLengthField1) = h1DegreesField2(d3);
             }
           }
         }

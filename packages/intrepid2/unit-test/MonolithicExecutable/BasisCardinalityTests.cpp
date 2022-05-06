@@ -50,6 +50,7 @@
 
 #include "Intrepid2_HierarchicalBasisFamily.hpp"
 #include "Intrepid2_NodalBasisFamily.hpp"
+#include "Intrepid2_SerendipityBasisFamily.hpp"
 #include "Intrepid2_Types.hpp"
 
 #include "Intrepid2_TestUtils.hpp"
@@ -74,7 +75,7 @@ namespace
       case Intrepid2::FUNCTION_SPACE_HCURL:
       case Intrepid2::FUNCTION_SPACE_HDIV:
         expectedCardinality = (polyOrder_x    ) * (polyOrder_y + 1)
-        + (polyOrder_x + 1) * (polyOrder_y    );
+                            + (polyOrder_x + 1) * (polyOrder_y    );
         break;
       default:
         out << "Unsupported function space.\n";
@@ -82,6 +83,102 @@ namespace
         return;
     }
     auto basis = getHierarchicalBasis<defineVertexFunctions>(cellTopo, fs, polyOrder_x, polyOrder_y, -1);
+    if (basis->getCardinality() != expectedCardinality)
+    {
+      out << "FAILURE: expected cardinality of " << expectedCardinality << " but got " << basis->getCardinality() << std::endl;
+      success = false;
+    }
+  }
+
+  void testSerendipityQuadBasisCardinality(Intrepid2::EFunctionSpace fs, int polyOrder_x, int polyOrder_y, Teuchos::FancyOStream &out, bool &success)
+  {
+    using BasisFamily = SerendipityBasisFamily<DefaultTestDeviceType>;
+    
+    shards::CellTopology cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<> >() );
+    const bool defineVertexFunctions = true;
+    int expectedCardinality = 0;
+    int maxDegree = std::max(polyOrder_x,polyOrder_y);
+    int maxH1Degree = (fs == FUNCTION_SPACE_HVOL) ? maxDegree + 1 : maxDegree;
+    
+    switch (fs)
+    {
+      case Intrepid2::FUNCTION_SPACE_HVOL:  out << "Testing HVOL"; break;
+      case Intrepid2::FUNCTION_SPACE_HGRAD: out << "Testing HGRAD"; break;
+      case Intrepid2::FUNCTION_SPACE_HDIV:  out << "Testing HDIV"; break;
+      case Intrepid2::FUNCTION_SPACE_HCURL: out << "Testing HCURL"; break;
+      default:
+        out << "Unhandled function space\n";
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unhandled function space");
+    }
+    out << " for polyOrder_x = " << polyOrder_x << ", polyOrder_y = " << polyOrder_y << "\n";
+    
+    switch (fs)
+    {
+      case Intrepid2::FUNCTION_SPACE_HVOL:
+      case Intrepid2::FUNCTION_SPACE_HGRAD:
+        for (int i=0; i<=polyOrder_x; i++)
+        {
+          const int i_H1 = (fs == FUNCTION_SPACE_HVOL) ? i + 1 : i;
+          const int i_sl = (i_H1 > 1) ? i_H1 : 0; // superlinear part of i_H1
+          for (int j=0; j<=polyOrder_y; j++)
+          {
+            const int j_H1 = (fs == FUNCTION_SPACE_HVOL) ? j + 1 : j;
+            const int j_sl = (j_H1 > 1) ? j_H1 : 0;
+            const int superlinearDegree = i_sl + j_sl;
+            if (superlinearDegree <= maxH1Degree)
+            {
+              expectedCardinality++;
+            }
+          }
+        }
+        break;
+      case Intrepid2::FUNCTION_SPACE_HCURL:
+      case Intrepid2::FUNCTION_SPACE_HDIV:
+      {
+        /*
+         In the H(div) and H(curl) bases, we want to include any members whose H^1 orders satisfy the Serendipity criterion.
+         
+         Have not worked out what the closed form for this is; let's just count in a brute-force manner.
+         */
+        
+        // family H(vol) x H(grad)
+        for (int i_vol=0; i_vol<polyOrder_x; i_vol++)
+        {
+          int i_grad = i_vol + 1;
+          const int i_sl = (i_grad > 1) ? i_grad : 0; // superlinear part of i_grad
+          for (int j=0; j<=polyOrder_y; j++)
+          {
+            const int j_sl = (j > 1) ? j : 0;
+            const int superlinearDegree = i_sl + j_sl;
+            if (superlinearDegree <= maxH1Degree)
+            {
+              expectedCardinality++;
+            }
+          }
+        }
+        // family H(grad) x H(vol)
+        for (int i=0; i<=polyOrder_x; i++)
+        {
+          const int i_sl = (i > 1) ? i : 0; // superlinear part of i_grad
+          for (int j_vol=0; j_vol<polyOrder_y; j_vol++)
+          {
+            const int j_grad = j_vol + 1;
+            const int j_sl = (j_grad > 1) ? j_grad : 0;
+            const int superlinearDegree = i_sl + j_sl;
+            if (superlinearDegree <= maxDegree)
+            {
+              expectedCardinality++;
+            }
+          }
+        }
+      }
+        break;
+      default:
+        out << "Unsupported function space.\n";
+        success = false;
+        return;
+    }
+    auto basis = getQuadrilateralBasis<BasisFamily>(fs, polyOrder_x, polyOrder_y);
     if (basis->getCardinality() != expectedCardinality)
     {
       out << "FAILURE: expected cardinality of " << expectedCardinality << " but got " << basis->getCardinality() << std::endl;
@@ -102,13 +199,13 @@ namespace
         break;
       case Intrepid2::FUNCTION_SPACE_HCURL:
         expectedCardinality = (polyOrder_x    ) * (polyOrder_y + 1) * (polyOrder_z + 1)
-        + (polyOrder_x + 1) * (polyOrder_y    ) * (polyOrder_z + 1)
-        + (polyOrder_x + 1) * (polyOrder_y + 1) * (polyOrder_z    );
+                            + (polyOrder_x + 1) * (polyOrder_y    ) * (polyOrder_z + 1)
+                            + (polyOrder_x + 1) * (polyOrder_y + 1) * (polyOrder_z    );
         break;
       case Intrepid2::FUNCTION_SPACE_HDIV:
         expectedCardinality = (polyOrder_x + 1) * (polyOrder_y    ) * (polyOrder_z    )
-        + (polyOrder_x    ) * (polyOrder_y + 1) * (polyOrder_z    )
-        + (polyOrder_x    ) * (polyOrder_y    ) * (polyOrder_z + 1);
+                            + (polyOrder_x    ) * (polyOrder_y + 1) * (polyOrder_z    )
+                            + (polyOrder_x    ) * (polyOrder_y    ) * (polyOrder_z + 1);
         break;
       default:
         out << "Unsupported function space.\n";
@@ -137,6 +234,24 @@ namespace
       for (auto testCase : cardinalityTestCases)
       {
         testQuadBasisCardinality(fs, testCase[0], testCase[1], out, success);
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisCardinality, Quadrilateral_Serendipity )
+  {
+    std::vector<Intrepid2::EFunctionSpace> functionSpaces_2D = {FUNCTION_SPACE_HGRAD,FUNCTION_SPACE_HCURL,FUNCTION_SPACE_HDIV,FUNCTION_SPACE_HVOL};
+    
+    const int maxDegreeForCardinalityTests = 3;
+
+    for (auto fs : functionSpaces_2D)
+    {
+      const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+      int spaceDim = 2;
+      auto cardinalityTestCases = getBasisTestCasesUpToDegree(spaceDim, minDegree, maxDegreeForCardinalityTests, maxDegreeForCardinalityTests);
+      for (auto testCase : cardinalityTestCases)
+      {
+        testSerendipityQuadBasisCardinality(fs, testCase[0], testCase[1], out, success);
       }
     }
   }
@@ -242,7 +357,74 @@ namespace
     return result;
   }
 
-  TEUCHOS_UNIT_TEST( BasisCardinality, Serendipity )
+  TEUCHOS_UNIT_TEST( BasisCardinality, Serendipity_HDIV_HEX )
+  {
+    // TODO: finish this test.  (Can we do something templated on the BasisFamily??)
+    
+    std::vector<Intrepid2::EFunctionSpace> functionSpaces = {FUNCTION_SPACE_HDIV};
+
+    const int maxSpaceDim = 7;
+    const int maxDegreeForCardinalityTests = 7;
+    
+    using BasisFamily = SerendipityBasisFamily<DefaultTestDeviceType>;
+    using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+    
+    for (auto fs : functionSpaces)
+    {
+      if (fs == FUNCTION_SPACE_HGRAD)
+      {
+        out << "Testing HGRAD.\n";
+      }
+      else if (fs == FUNCTION_SPACE_HVOL)
+      {
+        out << "Testing HVOL.\n";
+      }
+      
+      const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+      for (int polyDegree = minDegree; polyDegree <= maxDegreeForCardinalityTests; polyDegree++)
+      {
+        out << "** polyDegree " << polyDegree << " **\n";
+        for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
+        {
+          out << "** spaceDim " << spaceDim << " **\n";
+          int expectedCardinality = 0; // we'll sum into this
+          int i_max = std::min(spaceDim,polyDegree/2);
+          
+          if (polyDegree == 0)
+          {
+            expectedCardinality = 1; // serendipity of constant basis is a constant basis
+          }
+          else
+          {
+            for (int i = 0; i <= i_max; i++)
+            {
+              int d_choose_i = choose(spaceDim, i);
+              int p_minus_i_choose_i = choose(polyDegree - i, i);
+              int two_to_the_d_minus_i = 1 << (spaceDim-i);
+              expectedCardinality += two_to_the_d_minus_i * d_choose_i * p_minus_i_choose_i;
+            }
+          }
+          int expectedExtrusionCount = spaceDim - 1;
+          if (fs == FUNCTION_SPACE_HGRAD)
+          {
+            auto fullBasis        = getHypercubeBasis_HGRAD<BasisFamily>(polyDegree, spaceDim);
+            auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(fullBasis));
+            
+            TEST_EQUALITY(expectedCardinality, serendipityBasis->getCardinality());
+          }
+          else if (fs == FUNCTION_SPACE_HVOL)
+          {
+            auto fullBasis        = getHypercubeBasis_HVOL<BasisFamily>(polyDegree, spaceDim);
+            auto serendipityBasis = Teuchos::rcp(new SerendipityBasis<BasisBase>(fullBasis));
+            
+            TEST_EQUALITY(expectedCardinality, serendipityBasis->getCardinality());
+          }
+        }
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisCardinality, Serendipity_Hypercube )
   {
     std::vector<Intrepid2::EFunctionSpace> functionSpaces = {FUNCTION_SPACE_HGRAD,FUNCTION_SPACE_HVOL};
 
