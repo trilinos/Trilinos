@@ -312,7 +312,7 @@ namespace MueLu {
 
     // build the dof-based column map containing the local dof ids belonging to blkSize rows in matrix
     // the DofIds may not be sorted.
-    template<class MatrixType, class NnzType, class blkSizeType, class ColDofType>
+    template<class MatrixType, class NnzType, class blkSizeType, class ColDofType, class BdryNodeTypeConst, class BdryNodeType>
     class Stage1bVectorFunctor {
     private:
       typedef typename MatrixType::ordinal_type LO;
@@ -324,25 +324,35 @@ namespace MueLu {
       NnzType nnz;             //< View containing dof offsets for dof columns
       blkSizeType blkSize;     //< block size (or partial block size in strided maps)
       ColDofType coldofs;      //< view containing the local dof ids associated with columns for the blkSize rows (not sorted)
+      BdryNodeTypeConst  singleentrydof;  //< view containing with numNodes booleans. True if node is (full) dirichlet boundardy node.
+      BdryNodeType  bdrynode;  //< view containing with numNodes booleans. True if node is (full) dirichlet boundardy node.
 
     public:
       Stage1bVectorFunctor(MatrixType kokkosMatrix_,
                            NnzType nnz_,
                            blkSizeType blkSize_,
-                           ColDofType coldofs_) :
+                           ColDofType coldofs_,
+                           BdryNodeTypeConst singleentrydof_,
+                           BdryNodeType bdrynode_) :
         kokkosMatrix(kokkosMatrix_),
         nnz(nnz_),
         blkSize(blkSize_),
-        coldofs(coldofs_) {
+        coldofs(coldofs_),
+        singleentrydof(singleentrydof_),
+        bdrynode(bdrynode_) {
       }
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const LO rowNode) const {
 
         LO pos = nnz(rowNode);
+        bdrynode(rowNode) = false;
         for (LO j = 0; j < blkSize; j++) {
           auto rowView = kokkosMatrix.row(rowNode * blkSize + j);
           auto numIndices = rowView.length;
+
+          if (singleentrydof(rowNode * blkSize + j))
+              bdrynode(rowNode) = true;
 
           for (decltype(numIndices) k = 0; k < numIndices; k++) {
             auto dofID = rowView.colidx(k);
@@ -357,7 +367,7 @@ namespace MueLu {
     // sort column ids
     // translate them into (unique) node ids
     // count the node column ids per node row
-    template<class MatrixType, class ColDofNnzType, class ColDofType, class Dof2NodeTranslationType, class BdryNodeType>
+    template<class MatrixType, class ColDofNnzType, class ColDofType, class Dof2NodeTranslationType, class BdryNodeTypeConst, class BdryNodeType>
     class Stage1cVectorFunctor {
     private:
       typedef typename MatrixType::ordinal_type LO;
@@ -367,14 +377,16 @@ namespace MueLu {
       ColDofType coldofs;      //< view containing the local dof ids associated with columns for the blkSize rows (not sorted)
       Dof2NodeTranslationType dof2node; //< view containing the local node id associated with the local dof id
       ColDofNnzType colnodennz; //< view containing number of column nodes for each node row
+      BdryNodeTypeConst  dirichletdof;  //< view containing with numNodes booleans. True if node is (full) dirichlet boundardy node.
       BdryNodeType  bdrynode;  //< view containing with numNodes booleans. True if node is (full) dirichlet boundardy node.
 
     public:
-      Stage1cVectorFunctor(ColDofNnzType coldofnnz_, ColDofType coldofs_, Dof2NodeTranslationType dof2node_, ColDofNnzType colnodennz_, BdryNodeType bdrynode_) :
+      Stage1cVectorFunctor(ColDofNnzType coldofnnz_, ColDofType coldofs_, Dof2NodeTranslationType dof2node_, ColDofNnzType colnodennz_, BdryNodeTypeConst dirichletdof_, BdryNodeType bdrynode_) :
         coldofnnz(coldofnnz_),
         coldofs(coldofs_),
         dof2node(dof2node_),
         colnodennz(colnodennz_),
+        dirichletdof(dirichletdof_),
         bdrynode(bdrynode_) {
       }
 
@@ -406,7 +418,115 @@ namespace MueLu {
         if(cnt == 1)
           bdrynode(rowNode) = true;
         else
+          bdrynode(rowNode) = dirichletdof(rowNode);//false;
+        colnodennz(rowNode+1) = cnt;
+        nnz += cnt;
+      }
+
+    };
+
+    // sort column ids
+    // translate them into (unique) node ids
+    // count the node column ids per node row
+    template<class MatrixType, class NnzType, class blkSizeType, class ColDofType, class Dof2NodeTranslationType, class BdryNodeTypeConst, class BdryNodeType, class boolType>
+    class Stage1bcVectorFunctor {
+    private:
+      typedef typename MatrixType::ordinal_type LO;
+
+    private:
+      MatrixType kokkosMatrix; //< local matrix part
+      NnzType coldofnnz; //< view containing start and stop indices for subviews
+      blkSizeType blkSize;     //< block size (or partial block size in strided maps)
+      ColDofType coldofs;      //< view containing the local dof ids associated with columns for the blkSize rows (not sorted)
+      Dof2NodeTranslationType dof2node; //< view containing the local node id associated with the local dof id
+      NnzType colnodennz; //< view containing number of column nodes for each node row
+      BdryNodeTypeConst  dirichletdof;  //< view containing with numNodes booleans. True if node is (full) dirichlet boundardy node.
+      BdryNodeType  bdrynode;  //< view containing with numNodes booleans. True if node is (full) dirichlet boundardy node.
+      boolType usegreedydirichlet;
+
+    public:
+      Stage1bcVectorFunctor(MatrixType kokkosMatrix_,
+                           NnzType coldofnnz_,
+                           blkSizeType blkSize_,
+                           ColDofType coldofs_,
+                           Dof2NodeTranslationType dof2node_,
+                           NnzType colnodennz_,
+                           BdryNodeTypeConst dirichletdof_,
+                           BdryNodeType bdrynode_,
+                           boolType usegreedydirichlet_) :
+        kokkosMatrix(kokkosMatrix_),
+        coldofnnz(coldofnnz_),
+        blkSize(blkSize_),
+        coldofs(coldofs_),
+        dof2node(dof2node_),
+        colnodennz(colnodennz_),
+        dirichletdof(dirichletdof_),
+        bdrynode(bdrynode_),
+        usegreedydirichlet(usegreedydirichlet_) {
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO rowNode, LO& nnz) const {
+
+        LO pos = coldofnnz(rowNode);
+        if( usegreedydirichlet ){
           bdrynode(rowNode) = false;
+          for (LO j = 0; j < blkSize; j++) {
+            auto rowView = kokkosMatrix.row(rowNode * blkSize + j);
+            auto numIndices = rowView.length;
+
+            // if any dof in the node is Dirichlet
+            if( dirichletdof(rowNode * blkSize + j) )
+              bdrynode(rowNode) = true;
+
+            for (decltype(numIndices) k = 0; k < numIndices; k++) {
+              auto dofID = rowView.colidx(k);
+              coldofs(pos) = dofID;
+              pos ++;
+            }
+          }
+        }else{
+          bdrynode(rowNode) = true;
+          for (LO j = 0; j < blkSize; j++) {
+            auto rowView = kokkosMatrix.row(rowNode * blkSize + j);
+            auto numIndices = rowView.length;
+
+            // if any dof in the node is not Dirichlet
+            if( dirichletdof(rowNode * blkSize + j) == false )
+              bdrynode(rowNode) = false;
+
+            for (decltype(numIndices) k = 0; k < numIndices; k++) {
+              auto dofID = rowView.colidx(k);
+              coldofs(pos) = dofID;
+              pos ++;
+            }
+          }
+        }
+
+        // sort coldofs
+        LO begin = coldofnnz(rowNode);
+        LO end   = coldofnnz(rowNode+1);
+        LO n     = end - begin;
+        for (LO i = 0; i < (n-1); i++) {
+          for (LO j = 0; j < (n-i-1); j++) {
+            if (coldofs(j+begin) > coldofs(j+begin+1)) {
+              LO temp = coldofs(j+begin);
+              coldofs(j+begin) = coldofs(j+begin+1);
+              coldofs(j+begin+1) = temp;
+            }
+          }
+        }
+        size_t cnt = 0;
+        LO lastNodeID = -1;
+        for (LO i = 0; i < n; i++) {
+          LO dofID  = coldofs(begin + i);
+          LO nodeID = dof2node(dofID);
+          if(nodeID != lastNodeID) {
+            lastNodeID = nodeID;
+            coldofs(begin+cnt) = nodeID;
+            cnt++;
+          }
+        }
         colnodennz(rowNode+1) = cnt;
         nnz += cnt;
       }
@@ -459,6 +579,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: Dirichlet threshold");
     SET_VALID_ENTRY("aggregation: drop scheme");
     SET_VALID_ENTRY("aggregation: dropping may create Dirichlet");
+    SET_VALID_ENTRY("aggregation: greedy Dirichlet");
     SET_VALID_ENTRY("filtered matrix: use lumping");
     SET_VALID_ENTRY("filtered matrix: reuse graph");
     SET_VALID_ENTRY("filtered matrix: reuse eigenvalue");
@@ -848,16 +969,18 @@ namespace MueLu {
       CoalesceDrop_Kokkos_Details::ScanFunctor<LO,decltype(dofNnz)> scanFunctor(dofNnz);
       Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:stage1_scan", range_type(0,numNodes+1), scanFunctor);
 
+      // Detect and record dof rows that correspond to Dirichlet boundary conditions
+      boundary_nodes_type singleEntryRows = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
+
       typename entries_type::non_const_type dofcols("dofcols", numDofCols/*dofNnz(numNodes)*/); // why does dofNnz(numNodes) work? should be a parallel reduce, i guess
-      CoalesceDrop_Kokkos_Details::Stage1bVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize), decltype(dofcols)> stage1bFunctor(kokkosMatrix, dofNnz, blkPartSize, dofcols);
-      Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:stage1b", range_type(0,numNodes), stage1bFunctor);
 
       // we have dofcols and dofids from Stage1dVectorFunctor
       LO numNodeCols = 0;
       typename row_map_type::non_const_type rows("nnz_nodemap", numNodes + 1);
       typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numNodes);
-      CoalesceDrop_Kokkos_Details::Stage1cVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(dofcols), decltype(colTranslation), decltype(bndNodes)> stage1cFunctor(dofNnz, dofcols, colTranslation,rows,bndNodes);
-      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1c", range_type(0,numNodes), stage1cFunctor,numNodeCols);
+
+      CoalesceDrop_Kokkos_Details::Stage1bcVectorFunctor <decltype(kokkosMatrix), decltype(dofNnz), decltype(blkPartSize), decltype(dofcols), decltype(colTranslation), decltype(singleEntryRows), decltype(bndNodes), bool> stage1bcFunctor(kokkosMatrix, dofNnz, blkPartSize, dofcols, colTranslation, rows, singleEntryRows, bndNodes, pL.get<bool>("aggregation: greedy Dirichlet"));
+      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1c", range_type(0,numNodes), stage1bcFunctor,numNodeCols);
 
       // parallel_scan (exclusive)
       CoalesceDrop_Kokkos_Details::ScanFunctor<LO,decltype(rows)> scanNodeFunctor(rows);
