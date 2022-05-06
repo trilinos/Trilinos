@@ -18,21 +18,21 @@
 
 using namespace Tacho;
 
-typedef Kokkos::DualView<ValueType**,Kokkos::LayoutLeft,DeviceType> matrix_type;
+typedef Kokkos::DualView<value_type**,Kokkos::LayoutLeft,device_type> matrix_type;
 
 namespace Test {
   struct Functor_TeamGemm {
     char _transa, _transb;
     int _m, _n, _k;
     matrix_type _A, _B, _C;
-    ValueType _alpha, _beta;
+    value_type _alpha, _beta;
 
     Functor_TeamGemm(const char transa, const char transb,
                      const int m, const int n, const int k, 
-                     const ValueType alpha, 
+                     const value_type alpha, 
                      const matrix_type &A,
                      const matrix_type &B,
-                     const ValueType beta,
+                     const value_type beta,
                      const matrix_type &C) 
       : _transa(transa), _transb(transb), 
         _m(m), _n(n), _k(k), 
@@ -42,14 +42,14 @@ namespace Test {
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void operator()(const MemberType &member) const {
-      ::BlasTeam<ValueType>::gemm(member,
+      ::BlasTeam<value_type>::gemm(member,
                                   _transa, _transb,
                                   _m, _n, _k,
                                   _alpha, 
-                                  (const ValueType*)_A.d_view.data(), (int)_A.d_view.stride_1(),
-                                  (const ValueType*)_B.d_view.data(), (int)_B.d_view.stride_1(),
+                                  (const value_type*)_A.d_view.data(), (int)_A.d_view.stride_1(),
+                                  (const value_type*)_B.d_view.data(), (int)_B.d_view.stride_1(),
                                   _beta,
-                                  (      ValueType*)_C.d_view.data(), (int)_C.d_view.stride_1());
+                                  (      value_type*)_C.d_view.data(), (int)_C.d_view.stride_1());
     }
     
     inline
@@ -60,7 +60,7 @@ namespace Test {
       _C.sync_device();
       _C.modify_device();
 
-      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename device_type::execution_space>(1, Kokkos::AUTO), *this);
 
       _C.sync_host();
     }
@@ -69,10 +69,10 @@ namespace Test {
 
 
 TEST( DenseLinearAlgebra, team_gemm_nn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10, k = 15;
   const char transa = 'N', transb = 'N';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   // test problem setup
   matrix_type A1("A1", m, k), B1("B1", k, n), C1("C1", m, n);
@@ -82,11 +82,11 @@ TEST( DenseLinearAlgebra, team_gemm_nn ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
 
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(B1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(B1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(B2.h_view, B1.d_view);
@@ -99,7 +99,7 @@ TEST( DenseLinearAlgebra, team_gemm_nn ) {
   test.run();
 
   // reference test 
-  Blas<ValueType>::gemm(transa, transb, 
+  Blas<value_type>::gemm(transa, transb, 
                         m, n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -107,19 +107,19 @@ TEST( DenseLinearAlgebra, team_gemm_nn ) {
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
   
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_gemm_nt ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10, k = 15;
   const char transa = 'N', transb = 'T';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", m, k), B1("B1", n, k), C1("C1", m, n);
   matrix_type A2("A2", m, k), B2("B2", n, k), C2("C2", m, n);
@@ -129,11 +129,11 @@ TEST( DenseLinearAlgebra, team_gemm_nt ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(B1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(B1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(B2.h_view, B1.d_view);
@@ -146,7 +146,7 @@ TEST( DenseLinearAlgebra, team_gemm_nt ) {
   test.run();
   
   // reference test 
-  Blas<ValueType>::gemm(transa, transb, 
+  Blas<value_type>::gemm(transa, transb, 
                         m, n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -154,28 +154,28 @@ TEST( DenseLinearAlgebra, team_gemm_nt ) {
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_gemm_nc ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10, k = 15;
   const char transa = 'N', transb = 'C';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", m, k), B1("B1", n, k), C1("C1", m, n);
   matrix_type   A2("A2", m, k), B2("B2", n, k), C2("C2", m, n);
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(B1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(B1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(B2.h_view, B1.d_view);
@@ -186,7 +186,7 @@ TEST( DenseLinearAlgebra, team_gemm_nc ) {
                                 alpha, A1, B1, beta, C1);
   test.run();
   
-  Blas<ValueType>::gemm(transa, transb, 
+  Blas<value_type>::gemm(transa, transb, 
                         m, n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -194,28 +194,28 @@ TEST( DenseLinearAlgebra, team_gemm_nc ) {
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
   
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_gemm_tn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10, k = 15;
   const char transa = 'T', transb = 'N';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", k, m), B1("B1", k, n), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", k, n), C2("C2", m, n);
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(B1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(B1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(B2.h_view, B1.d_view);
@@ -226,7 +226,7 @@ TEST( DenseLinearAlgebra, team_gemm_tn ) {
                                 alpha, A1, B1, beta, C1);
   test.run();
   
-  Blas<ValueType>::gemm(transa, transb, 
+  Blas<value_type>::gemm(transa, transb, 
                         m, n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -234,19 +234,19 @@ TEST( DenseLinearAlgebra, team_gemm_tn ) {
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_gemm_tt ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10, k = 15;
   const char transa = 'T', transb = 'T';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", k, m), B1("B1", n, k), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", n, k), C2("C2", m, n);
@@ -255,11 +255,11 @@ TEST( DenseLinearAlgebra, team_gemm_tt ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(B1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(B1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(B2.h_view, B1.d_view);
@@ -270,7 +270,7 @@ TEST( DenseLinearAlgebra, team_gemm_tt ) {
                                 alpha, A1, B1, beta, C1);
   test.run();
   
-  Blas<ValueType>::gemm(transa, transb, 
+  Blas<value_type>::gemm(transa, transb, 
                         m, n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -278,19 +278,19 @@ TEST( DenseLinearAlgebra, team_gemm_tt ) {
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_gemm_tc ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10, k = 15;
   const char transa = 'T', transb = 'C';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", k, m), B1("B1", n, k), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", n, k), C2("C2", m, n);
@@ -299,11 +299,11 @@ TEST( DenseLinearAlgebra, team_gemm_tc ) {
   B1.modify_device();
   C1.modify_device();
   
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(B1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(B1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(B2.h_view, B1.d_view);
@@ -314,7 +314,7 @@ TEST( DenseLinearAlgebra, team_gemm_tc ) {
                                 alpha, A1, B1, beta, C1);
   test.run();
   
-  Blas<ValueType>::gemm(transa, transb, 
+  Blas<value_type>::gemm(transa, transb, 
                         m, n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -322,19 +322,19 @@ TEST( DenseLinearAlgebra, team_gemm_tc ) {
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_gemm_cn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10, k = 15;
   const char transa = 'C', transb = 'N';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
   
   matrix_type A1("A1", k, m), B1("B1", k, n), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", k, n), C2("C2", m, n);
@@ -343,11 +343,11 @@ TEST( DenseLinearAlgebra, team_gemm_cn ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(B1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(B1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(B2.h_view, B1.d_view);
@@ -358,7 +358,7 @@ TEST( DenseLinearAlgebra, team_gemm_cn ) {
                                 alpha, A1, B1, beta, C1);
   test.run();
   
-  Blas<ValueType>::gemm(transa, transb, 
+  Blas<value_type>::gemm(transa, transb, 
                         m, n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -366,19 +366,19 @@ TEST( DenseLinearAlgebra, team_gemm_cn ) {
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_gemm_ct ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10, k = 15;
   const char transa = 'C', transb = 'T';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", k, m), B1("B1", n, k), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", n, k), C2("C2", m, n);
@@ -387,11 +387,11 @@ TEST( DenseLinearAlgebra, team_gemm_ct ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(B1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(B1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(B2.h_view, B1.d_view);
@@ -402,7 +402,7 @@ TEST( DenseLinearAlgebra, team_gemm_ct ) {
                                 alpha, A1, B1, beta, C1);
   test.run();
   
-  Blas<ValueType>::gemm(transa, transb, 
+  Blas<value_type>::gemm(transa, transb, 
                         m, n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -410,19 +410,19 @@ TEST( DenseLinearAlgebra, team_gemm_ct ) {
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_gemm_cc ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10, k = 15;
   const char transa = 'C', transb = 'C';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", k, m), B1("B1", n, k), C1("C1", m, n);
   matrix_type A2("A2", k, m), B2("B2", n, k), C2("C2", m, n);
@@ -431,11 +431,11 @@ TEST( DenseLinearAlgebra, team_gemm_cc ) {
   B1.modify_device();
   C1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(B1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(B1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(B2.h_view, B1.d_view);
@@ -446,7 +446,7 @@ TEST( DenseLinearAlgebra, team_gemm_cc ) {
                                 alpha, A1, B1, beta, C1);
   test.run();
   
-  Blas<ValueType>::gemm(transa, transb, 
+  Blas<value_type>::gemm(transa, transb, 
                         m, n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -454,11 +454,11 @@ TEST( DenseLinearAlgebra, team_gemm_cc ) {
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 namespace Test {
@@ -466,14 +466,14 @@ namespace Test {
     char _trans;
     int _m, _n;
     matrix_type _A, _x, _y;
-    ValueType _alpha, _beta;
+    value_type _alpha, _beta;
 
     Functor_TeamGemv(const char trans,
                      const int m, const int n, 
-                     const ValueType alpha, 
+                     const value_type alpha, 
                      const matrix_type &A,
                      const matrix_type &x,
-                     const ValueType beta,
+                     const value_type beta,
                      const matrix_type &y) 
       : _trans(trans), 
         _m(m), _n(n),
@@ -483,14 +483,14 @@ namespace Test {
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void operator()(const MemberType &member) const {
-      ::BlasTeam<ValueType>::gemv(member,
+      ::BlasTeam<value_type>::gemv(member,
                                   _trans,
                                   _m, _n,
                                   _alpha, 
-                                  (const ValueType*)_A.d_view.data(), (int)_A.d_view.stride_1(),
-                                  (const ValueType*)_x.d_view.data(), (int)_x.d_view.stride_0(),
+                                  (const value_type*)_A.d_view.data(), (int)_A.d_view.stride_1(),
+                                  (const value_type*)_x.d_view.data(), (int)_x.d_view.stride_0(),
                                   _beta,
-                                  (      ValueType*)_y.d_view.data(), (int)_y.d_view.stride_0());
+                                  (      value_type*)_y.d_view.data(), (int)_y.d_view.stride_0());
     }
     
     inline
@@ -501,7 +501,7 @@ namespace Test {
       _y.sync_device();
       _y.modify_device();
 
-      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename device_type::execution_space>(1, Kokkos::AUTO), *this);
 
       _y.sync_host();
     }
@@ -510,10 +510,10 @@ namespace Test {
 
 
 TEST( DenseLinearAlgebra, team_gemv_n ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char trans = 'N';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", m, n), x1("B1", n, 1), y1("C1", m, 1);
   matrix_type A2("A2", m, n), x2("B2", n, 1), y2("C2", m, 1);
@@ -522,11 +522,11 @@ TEST( DenseLinearAlgebra, team_gemv_n ) {
   x1.modify_device();
   y1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(x1.d_view, random, ValueType(1));
-  Kokkos::fill_random(y1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(x1.d_view, random, value_type(1));
+  Kokkos::fill_random(y1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(x2.h_view, x1.d_view);
@@ -537,7 +537,7 @@ TEST( DenseLinearAlgebra, team_gemv_n ) {
                                 alpha, A1, x1, beta, y1);
   test.run();
   
-  Blas<ValueType>::gemv(trans,
+  Blas<value_type>::gemv(trans,
                         m, n, 
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -545,18 +545,18 @@ TEST( DenseLinearAlgebra, team_gemv_n ) {
                         beta,
                         y2.h_view.data(), y2.h_view.stride_0());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     EXPECT_NEAR(abs(y1.h_view(i,0)), abs(y2.h_view(i,0)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_gemv_t ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char trans = 'T';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", m, n), x1("x1", m, 1), y1("y1", n, 1);
   matrix_type A2("A2", m, n), x2("x2", m, 1), y2("y2", n, 1);
@@ -565,11 +565,11 @@ TEST( DenseLinearAlgebra, team_gemv_t ) {
   x1.modify_device();
   y1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(x1.d_view, random, ValueType(1));
-  Kokkos::fill_random(y1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(x1.d_view, random, value_type(1));
+  Kokkos::fill_random(y1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(x2.h_view, x1.d_view);
@@ -580,7 +580,7 @@ TEST( DenseLinearAlgebra, team_gemv_t ) {
                                 alpha, A1, x1, beta, y1);
   test.run();
   
-  Blas<ValueType>::gemv(trans,
+  Blas<value_type>::gemv(trans,
                         m, n, 
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -588,18 +588,18 @@ TEST( DenseLinearAlgebra, team_gemv_t ) {
                         beta,
                         y2.h_view.data(), y2.h_view.stride_0());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<n;++i)
     EXPECT_NEAR(abs(y1.h_view(i,0)), abs(y2.h_view(i,0)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_gemv_c ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char trans = 'C';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", m, n), x1("x1", m, 1), y1("y1", n, 1);
   matrix_type A2("A2", m, n), x2("x2", m, 1), y2("y2", n, 1);
@@ -608,11 +608,11 @@ TEST( DenseLinearAlgebra, team_gemv_c ) {
   x1.modify_device();
   y1.modify_device();
 
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(x1.d_view, random, ValueType(1));
-  Kokkos::fill_random(y1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(x1.d_view, random, value_type(1));
+  Kokkos::fill_random(y1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(x2.h_view, x1.d_view);
@@ -623,7 +623,7 @@ TEST( DenseLinearAlgebra, team_gemv_c ) {
                                 alpha, A1, x1, beta, y1);
   test.run();
 
-  Blas<ValueType>::gemv(trans,
+  Blas<value_type>::gemv(trans,
                         m, n, 
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
@@ -631,10 +631,10 @@ TEST( DenseLinearAlgebra, team_gemv_c ) {
                         beta,
                         y2.h_view.data(), y2.h_view.stride_0());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<n;++i)
     EXPECT_NEAR(abs(y1.h_view(i,0)), abs(y2.h_view(i,0)), eps);
-  TEST_END;
+  
 }
 
 namespace Test {
@@ -642,13 +642,13 @@ namespace Test {
     char _uplo, _trans;
     int _n, _k;
     matrix_type _A, _C;
-    ValueType _alpha, _beta;
+    value_type _alpha, _beta;
 
     Functor_TeamHerk(const char uplo, const char trans,
                      const int n, const int k, 
-                     const ValueType alpha, 
+                     const value_type alpha, 
                      const matrix_type &A,
-                     const ValueType beta,
+                     const value_type beta,
                      const matrix_type &C) 
       : _uplo(uplo), _trans(trans), 
         _n(n), _k(k),
@@ -658,13 +658,13 @@ namespace Test {
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void operator()(const MemberType &member) const {
-      ::BlasTeam<ValueType>::herk(member,
+      ::BlasTeam<value_type>::herk(member,
                                   _uplo, _trans,
                                   _n, _k,
                                   _alpha, 
-                                  (const ValueType*)_A.d_view.data(), (int)_A.d_view.stride_1(),
+                                  (const value_type*)_A.d_view.data(), (int)_A.d_view.stride_1(),
                                   _beta,
-                                  (      ValueType*)_C.d_view.data(), (int)_C.d_view.stride_1());
+                                  (      value_type*)_C.d_view.data(), (int)_C.d_view.stride_1());
     }
     
     inline
@@ -674,7 +674,7 @@ namespace Test {
       _C.sync_device();
       _C.modify_device();
 
-      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename device_type::execution_space>(1, Kokkos::AUTO), *this);
 
       _C.sync_host();
     }
@@ -683,11 +683,11 @@ namespace Test {
 
 
 TEST( DenseLinearAlgebra, team_herk_un ) {
-  TEST_BEGIN;
+  
   const ordinal_type n = 20, k = 10;
   const char uplo  = 'U';
   const char trans = 'N';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", n, k), C1("C1", n, n);
   matrix_type A2("A2", n, k), C2("C2", n, n);
@@ -695,10 +695,10 @@ TEST( DenseLinearAlgebra, team_herk_un ) {
   A1.modify_device();
   C1.modify_device();
   
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(C2.h_view, C1.d_view);
@@ -708,27 +708,27 @@ TEST( DenseLinearAlgebra, team_herk_un ) {
                                 alpha, A1, beta, C1);
   test.run();
 
-  Blas<ValueType>::herk(uplo, trans,
+  Blas<value_type>::herk(uplo, trans,
                         n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
   
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<n;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_herk_uc ) {
-  TEST_BEGIN;
+  
   const ordinal_type n = 20, k = 10;
   const char uplo  = 'U';
   const char trans = 'C';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", k, n), C1("C1", n, n);
   matrix_type A2("A2", k, n), C2("C2", n, n);
@@ -736,10 +736,10 @@ TEST( DenseLinearAlgebra, team_herk_uc ) {
   A1.modify_device();
   C1.modify_device();
   
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(C2.h_view, C1.d_view);
@@ -749,27 +749,27 @@ TEST( DenseLinearAlgebra, team_herk_uc ) {
                                 alpha, A1, beta, C1);
   test.run();
 
-  Blas<ValueType>::herk(uplo, trans,
+  Blas<value_type>::herk(uplo, trans,
                         n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
   
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<n;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_herk_ln ) {
-  TEST_BEGIN;
+  
   const ordinal_type n = 20, k = 10;
   const char uplo  = 'L';
   const char trans = 'N';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", n, k), C1("C1", n, n);
   matrix_type A2("A2", n, k), C2("C2", n, n);
@@ -777,10 +777,10 @@ TEST( DenseLinearAlgebra, team_herk_ln ) {
   A1.modify_device();
   C1.modify_device();
   
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(C2.h_view, C1.d_view);
@@ -790,27 +790,27 @@ TEST( DenseLinearAlgebra, team_herk_ln ) {
                                 alpha, A1, beta, C1);
   test.run();
 
-  Blas<ValueType>::herk(uplo, trans,
+  Blas<value_type>::herk(uplo, trans,
                         n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<n;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_herk_lc ) {
-  TEST_BEGIN;
+  
   const ordinal_type n = 20, k = 10;
   const char uplo  = 'L';
   const char trans = 'C';
-  const ValueType alpha = 1.3, beta = 2.5;
+  const value_type alpha = 1.3, beta = 2.5;
 
   matrix_type A1("A1", k, n), C1("C1", n, n);
   matrix_type A2("A2", k, n), C2("C2", n, n);
@@ -818,10 +818,10 @@ TEST( DenseLinearAlgebra, team_herk_lc ) {
   A1.modify_device();
   C1.modify_device();
   
-  Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
+  Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
   
-  Kokkos::fill_random(A1.d_view, random, ValueType(1));
-  Kokkos::fill_random(C1.d_view, random, ValueType(1));
+  Kokkos::fill_random(A1.d_view, random, value_type(1));
+  Kokkos::fill_random(C1.d_view, random, value_type(1));
   
   Kokkos::deep_copy(A2.h_view, A1.d_view);
   Kokkos::deep_copy(C2.h_view, C1.d_view);
@@ -831,18 +831,18 @@ TEST( DenseLinearAlgebra, team_herk_lc ) {
                                 alpha, A1, beta, C1);
   test.run();
 
-  Blas<ValueType>::herk(uplo, trans,
+  Blas<value_type>::herk(uplo, trans,
                         n, k,
                         alpha, 
                         A2.h_view.data(), A2.h_view.stride_1(),
                         beta,
                         C2.h_view.data(), C2.h_view.stride_1());
 
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<n;++i)
     for (int j=0;j<n;++j) 
       EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
-  TEST_END;
+  
 }
 
 
@@ -863,11 +863,11 @@ namespace Test {
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void operator()(const MemberType &member) const {
-      ::BlasTeam<ValueType>::trsv(member,
+      ::BlasTeam<value_type>::trsv(member,
                                   _uplo, _trans, _diag,
                                   _m,
-                                  (const ValueType*)_A.d_view.data(), (int)_A.d_view.stride_1(),
-                                  (      ValueType*)_b.d_view.data(), (int)_b.d_view.stride_0());
+                                  (const value_type*)_A.d_view.data(), (int)_A.d_view.stride_1(),
+                                  (      value_type*)_b.d_view.data(), (int)_b.d_view.stride_0());
     }
     
     inline
@@ -877,7 +877,7 @@ namespace Test {
       _b.sync_device();
       _b.modify_device();
       
-      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename device_type::execution_space>(1, Kokkos::AUTO), *this);
       
       _b.sync_host();
     }
@@ -892,10 +892,10 @@ namespace Test {
     A1.modify_device();                                       \
     b1.modify_device();                                       \
                                                                         \
-    Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);      \
+    Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);      \
                                                                         \
-    Kokkos::fill_random(A1.d_view, random, ValueType(1));               \
-    Kokkos::fill_random(b1.d_view, random, ValueType(1));               \
+    Kokkos::fill_random(A1.d_view, random, value_type(1));               \
+    Kokkos::fill_random(b1.d_view, random, value_type(1));               \
                                                                         \
     Kokkos::deep_copy(A2.h_view, A1.d_view);                            \
     Kokkos::deep_copy(b2.h_view, b1.d_view);                            \
@@ -905,82 +905,82 @@ namespace Test {
                                   A1, b1);                              \
     test.run();                                                         \
                                                                         \
-    Blas<ValueType>::trsv(uplo, trans, diag,                            \
+    Blas<value_type>::trsv(uplo, trans, diag,                            \
                           m,                                            \
                           A2.h_view.data(), A2.h_view.stride_1(),       \
                           b2.h_view.data(), b2.h_view.stride_0());      \
                                                                         \
-    const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 10000; \
+    const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 10000; \
     for (int i=0;i<m;++i)                                               \
       EXPECT_NEAR(abs(b1.h_view(i,0)), abs(b2.h_view(i,0)), eps*abs(b2.h_view(i,0))); \
   }
 
 TEST( DenseLinearAlgebra, team_trsv_unu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 4;
   const char uplo  = 'U';
   const char trans = 'N';
   const char diag  = 'U';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsv_unn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20;
   const char uplo  = 'U';
   const char trans = 'N';
   const char diag  = 'N';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsv_utu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20;
   const char uplo  = 'U';
   const char trans = 'T';
   const char diag  = 'U';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 
 TEST( DenseLinearAlgebra, team_trsv_utn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20;
   const char uplo  = 'U';
   const char trans = 'T';
   const char diag  = 'N';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 
 TEST( DenseLinearAlgebra, team_trsv_ucu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20;
   const char uplo  = 'U';
   const char trans = 'C';
   const char diag  = 'U';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 
 TEST( DenseLinearAlgebra, team_trsv_ucn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20;
   const char uplo  = 'U';
   const char trans = 'C';
   const char diag  = 'N';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 
 
@@ -988,71 +988,71 @@ TEST( DenseLinearAlgebra, team_trsv_ucn ) {
 
 
 TEST( DenseLinearAlgebra, team_trsv_lnu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20;
   const char uplo  = 'L';
   const char trans = 'N';
   const char diag  = 'U';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsv_lnn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20;
   const char uplo  = 'L';
   const char trans = 'N';
   const char diag  = 'N';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsv_ltu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20;
   const char uplo  = 'L';
   const char trans = 'T';
   const char diag  = 'U';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 
 TEST( DenseLinearAlgebra, team_trsv_ltn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20;
   const char uplo  = 'L';
   const char trans = 'T';
   const char diag  = 'N';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 
 TEST( DenseLinearAlgebra, team_trsv_lcu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20;
   const char uplo  = 'L';
   const char trans = 'C';
   const char diag  = 'U';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 
 TEST( DenseLinearAlgebra, team_trsv_lcn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20;
   const char uplo  = 'L';
   const char trans = 'C';
   const char diag  = 'N';
 
   TEAM_TRSV_TEST_BODY;
-  TEST_END;
+  
 }
 #undef TEAM_TRSV_TEST_BODY
 
@@ -1062,11 +1062,11 @@ namespace Test {
     char _side, _uplo, _trans, _diag;
     int _m, _n;
     matrix_type _A, _B;
-    ValueType _alpha;
+    value_type _alpha;
 
     Functor_TeamTrsm(const char side, const char uplo, const char trans, const char diag,
                      const int m, const int n,
-                     const ValueType alpha,
+                     const value_type alpha,
                      const matrix_type &A,
                      const matrix_type &B) 
       : _side(side), _uplo(uplo), _trans(trans), _diag(diag),
@@ -1077,12 +1077,12 @@ namespace Test {
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void operator()(const MemberType &member) const {
-      ::BlasTeam<ValueType>::trsm(member,
+      ::BlasTeam<value_type>::trsm(member,
                                   _side, _uplo, _trans, _diag,
                                   _m, _n,
                                   _alpha,
-                                  (const ValueType*)_A.d_view.data(), (int)_A.d_view.stride_1(),
-                                  (      ValueType*)_B.d_view.data(), (int)_B.d_view.stride_1());
+                                  (const value_type*)_A.d_view.data(), (int)_A.d_view.stride_1(),
+                                  (      value_type*)_B.d_view.data(), (int)_B.d_view.stride_1());
     }
     
     inline
@@ -1092,7 +1092,7 @@ namespace Test {
       _B.sync_device();
       _B.modify_device();
       
-      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename device_type::execution_space>(1, Kokkos::AUTO), *this);
 
       _B.sync_host();
     }
@@ -1106,10 +1106,10 @@ namespace Test {
     A1.modify_device();                                       \
     B1.modify_device();                                       \
                                                                         \
-    Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);      \
+    Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);      \
                                                                         \
-    Kokkos::fill_random(A1.d_view, random, ValueType(1));               \
-    Kokkos::fill_random(B1.d_view, random, ValueType(1));               \
+    Kokkos::fill_random(A1.d_view, random, value_type(1));               \
+    Kokkos::fill_random(B1.d_view, random, value_type(1));               \
                                                                         \
     Kokkos::deep_copy(A2.h_view, A1.d_view);                            \
     Kokkos::deep_copy(B2.h_view, B1.d_view);                            \
@@ -1120,183 +1120,183 @@ namespace Test {
                                   A1, B1);                              \
     test.run();                                                         \
                                                                         \
-    Blas<ValueType>::trsm(side, uplo, trans, diag,                      \
+    Blas<value_type>::trsm(side, uplo, trans, diag,                      \
                           m, n,                                         \
                           alpha,                                        \
                           A2.h_view.data(), A2.h_view.stride_1(),       \
                           B2.h_view.data(), B2.h_view.stride_1());      \
                                                                         \
-    const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 100000; \
+    const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 100000; \
     for (int i=0;i<m;++i)                                               \
       for (int j=0;j<n;++j)                                             \
         EXPECT_NEAR(abs(B1.h_view(i,j)), abs(B2.h_view(i,j)), eps*abs(B2.h_view(i,j))); \
   }
 
 TEST( DenseLinearAlgebra, team_trsm_lunu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'U';
   const char trans = 'N';
   const char diag  = 'U';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsm_lunn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'U';
   const char trans = 'N';
   const char diag  = 'N';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsm_lutu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'U';
   const char trans = 'T';
   const char diag  = 'U';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsm_lutn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'U';
   const char trans = 'T';
   const char diag  = 'N';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsm_lucu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'U';
   const char trans = 'C';
   const char diag  = 'U';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsm_lucn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'U';
   const char trans = 'C';
   const char diag  = 'N';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsm_llnu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'L';
   const char trans = 'N';
   const char diag  = 'U';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsm_llnn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'L';
   const char trans = 'N';
   const char diag  = 'N';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsm_lltu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'L';
   const char trans = 'T';
   const char diag  = 'U';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsm_lltn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'L';
   const char trans = 'T';
   const char diag  = 'N';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsm_llcu ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'L';
   const char trans = 'C';
   const char diag  = 'U';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 
 
 TEST( DenseLinearAlgebra, team_trsm_llcn ) {
-  TEST_BEGIN;
+  
   const ordinal_type m = 20, n = 10;
   const char side  = 'L';
   const char uplo  = 'L';
   const char trans = 'C';
   const char diag  = 'N';
-  const ValueType alpha = 1.2;
+  const value_type alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
-  TEST_END;
+  
 }
 #undef TEAM_TRSM_TEST_BODY
 
@@ -1317,10 +1317,10 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator()(const MemberType &member) const {
       int r_val = 0;
-      ::LapackTeam<ValueType>::potrf(member,
+      ::LapackTeam<value_type>::potrf(member,
                                      _uplo,
                                      _m,
-                                     (ValueType*)_A.d_view.data(), (int)_A.d_view.stride_1(),
+                                     (value_type*)_A.d_view.data(), (int)_A.d_view.stride_1(),
                                      &r_val);
     }
     
@@ -1329,7 +1329,7 @@ namespace Test {
       _A.sync_device();
       _A.modify_device();
       
-      Kokkos::parallel_for(Kokkos::TeamPolicy<typename DeviceType::execution_space>(1, Kokkos::AUTO), *this);
+      Kokkos::parallel_for(Kokkos::TeamPolicy<typename device_type::execution_space>(1, Kokkos::AUTO), *this);
 
       _A.sync_host();
     }
@@ -1338,7 +1338,7 @@ namespace Test {
 
 
 TEST( DenseLinearAlgebra, team_chol_u ) {
-  TEST_BEGIN;
+
   const ordinal_type m = 20;
   const char uplo = 'U';
   
@@ -1363,16 +1363,16 @@ TEST( DenseLinearAlgebra, team_chol_u ) {
   test.run();
   
   int r_val = 0;
-  Lapack<ValueType>::potrf(uplo,
+  Lapack<value_type>::potrf(uplo,
                            m, 
-                           (ValueType*)A2.h_view.data(), (int)A2.h_view.stride_1(),
+                           (value_type*)A2.h_view.data(), (int)A2.h_view.stride_1(),
                            &r_val);
   
-  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  const magnitude_type eps = std::numeric_limits<magnitude_type>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<m;++j) 
       EXPECT_NEAR(abs(A1.h_view(i,j)), abs(A2.h_view(i,j)), eps);
-  TEST_END;
+ 
 }
 
 
