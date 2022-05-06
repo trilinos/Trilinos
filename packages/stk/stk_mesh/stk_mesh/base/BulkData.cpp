@@ -323,6 +323,7 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, 
     stk::mesh::impl::delete_entities_and_upward_relations(*this, entities);
 }
 
+
 //----------------------------------------------------------------------
 BulkData::BulkData(MetaData & mesh_meta_data,
                    ParallelMachine parallel,
@@ -339,7 +340,7 @@ BulkData::BulkData(MetaData & mesh_meta_data,
     m_entity_comm_map(),
     m_ghosting(),
     m_meta_raw_ptr_to_be_deprecated( &mesh_meta_data ),
-    m_meta_data(),
+    m_meta_data(&mesh_meta_data, [](MetaData* metadata) {}),
     m_mark_entity(),
     m_add_node_sharing_called(false),
     m_closure_count(),

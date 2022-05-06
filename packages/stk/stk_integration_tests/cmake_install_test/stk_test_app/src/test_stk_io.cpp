@@ -30,7 +30,7 @@ void test_stk_io(stk::ParallelMachine comm, const std::string& meshSource, bool 
   std::vector<size_t> meshCounts(meta.entity_rank_count());
   stk::mesh::comm_mesh_counts(*bulk, meshCounts);
 
-  if (bulk.parallel_rank() == 0) {
+  if (bulk->parallel_rank() == 0) {
     std::cout<<"   global number of elements = "<<meshCounts[stk::topology::ELEM_RANK]<<std::endl;
   }
 }
