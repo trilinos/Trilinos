@@ -302,27 +302,32 @@ double GraphCreationSettings::getGraphEdgeWeightForSearch() const
 
 double GraphCreationSettings::getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
 {
-  const double defaultWeight = 1.0;
-  const double lin3dlin3d = defaultWeight;
   const double noConnection = 0;
-  const double s = noConnection;
-  const double largeWeight = 5;
-  const double L = largeWeight;
+  const double A = noConnection; // super element
+  const double defaultWeight = 1.0;
+  const double linTetlinTet = defaultWeight;
+  const double linTetlinHex = defaultWeight;
+  const double linHexlinHex = defaultWeight;
+  const double B = linTetlinTet;
+  const double C = linTetlinHex;
+  const double D = linHexlinHex;
+  const double E = defaultWeight;
   const double twoDimWeight = 5;
-  const double q = twoDimWeight;
-  const double D = defaultWeight;
-  const double heaviest = 9.;
-  const double H = heaviest;
-  const double N = lin3dlin3d;
-  const static double weightTable[8][8] = {
-    {L, L, L, L, L, L, H, s}, // 0 dim
-    {L, L, L, L, L, L, H, s}, // 1 dim
-    {L, L, q, q, q, q, H, s}, // 2 dim linear
-    {L, L, q, N, q, D, H, s}, // 3 dim linear
-    {L, L, q, q, q, q, H, s}, // 2 dim higher-order
-    {L, L, q, D, q, D, H, s}, // 3 dim higher-order
-    {H, H, H, H, H, H, H, s}, // misc heavy
-    {s, s, s, s, s, s, s, s}  // super element        7
+  const double F = twoDimWeight;
+  const double largeWeight = 5;  
+  const double G = largeWeight;
+  const double H = 9.;
+
+  const static double weightTable[9][9] = {
+    {G, G, G, G, G, G, G, H, A}, // 0 dim
+    {G, G, G, G, G, G, G, H, A}, // 1 dim
+    {G, G, F, F, F, F, F, H, A}, // 2 dim linear
+    {G, G, F, B, C, F, E, H, A}, // 3 dim linear tet
+    {G, G, F, C, D, F, E, H, A}, // 3 dim linear hex
+    {G, G, F, F, F, F, F, H, A}, // 2 dim higher-order
+    {G, G, F, E, E, F, E, H, A}, // 3 dim higher-order
+    {H, H, H, H, H, H, H, H, A}, // miAc heavy
+    {A, A, A, A, A, A, A, A, A}  // Auper element        7
   };
 
   int element1Index = getEdgeWeightTableIndex(element1Topology);
@@ -561,15 +566,17 @@ int GraphCreationSettings::getEdgeWeightTableIndex(stk::topology elementTopology
   case stk::topology::TET_4:
   case stk::topology::PYRAMID_5:
   case stk::topology::WEDGE_6:
-  case stk::topology::HEX_8:
     tableIndex = 3;
+    break;
+  case stk::topology::HEX_8:
+    tableIndex = 4;
     break;
   case stk::topology::TRI_6_2D:
   case stk::topology::QUAD_8_2D:
   case stk::topology::QUAD_9_2D:
   case stk::topology::SHELL_TRI_6:
   case stk::topology::SHELL_QUAD_9:
-    tableIndex = 4;
+    tableIndex = 5;
     break;
   case stk::topology::SHELL_QUAD_8:
   case stk::topology::TET_8:
@@ -581,15 +588,15 @@ int GraphCreationSettings::getEdgeWeightTableIndex(stk::topology elementTopology
   case stk::topology::WEDGE_15:
   case stk::topology::WEDGE_18:
   case stk::topology::HEX_27:
-    tableIndex = 5;
+    tableIndex = 6;
     break;
   case stk::topology::HEX_20:
-    tableIndex = 6;
+    tableIndex = 7;
     break;
   default:
     if(elementTopology.is_superelement())
     {
-      tableIndex = 7;
+      tableIndex = 8;
     }
     else
     {
