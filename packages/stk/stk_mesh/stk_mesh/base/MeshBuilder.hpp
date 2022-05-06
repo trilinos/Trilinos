@@ -46,18 +46,20 @@ namespace mesh {
 class MeshBuilder
 {
 public:
+  MeshBuilder();
   explicit MeshBuilder(ParallelMachine comm);
 
   MeshBuilder& set_spatial_dimension(unsigned spatialDimension);
   MeshBuilder& set_entity_rank_names(const std::vector<std::string>& entityRankNames);
 
+  MeshBuilder& set_communicator(ParallelMachine comm);
   MeshBuilder& set_aura_option(BulkData::AutomaticAuraOption auraOption);
   MeshBuilder& set_add_fmwk_data(bool addFmwkData);
   MeshBuilder& set_field_data_manager(FieldDataManager* fieldDataManager);
   MeshBuilder& set_bucket_capacity(unsigned bucketCapacity);
 
-  std::shared_ptr<BulkData> create();
-  std::shared_ptr<BulkData> create(std::shared_ptr<MetaData> metaData);
+  std::unique_ptr<BulkData> create();
+  std::unique_ptr<BulkData> create(std::shared_ptr<MetaData> metaData);
 
   std::shared_ptr<MetaData> create_meta_data();
 

@@ -315,37 +315,11 @@ setMatrix(const Teuchos::RCP<const TRowMatrix>& A)
   {
     throw std::invalid_argument(std::string("Ifpack2::Details::") + getName() + "::setMatrix() called with a null matrix. Pass a non-null matrix.");
   }
-  typedef Tpetra::RowGraph<LocalOrdinal, GlobalOrdinal, Node> RGraph;
-  Teuchos::RCP<const RGraph> aGraph;    //graph of A
-  Teuchos::RCP<const RGraph> matGraph;  //graph of current mat_
-  try
-  {
-    aGraph = A->getGraph();
-  }
-  catch(...)
-  {
-    aGraph = Teuchos::null;
-  }
-  if(!mat_.is_null())
-  {
-    try
-    {
-      matGraph = mat_->getGraph();
-    }
-    catch(...)
-    {
-      matGraph = Teuchos::null;
-    }
-  }
   //bmk note: this modeled after RILUK::setMatrix
   if(mat_.get() != A.get())
   {
     mat_ = A;
-    if(matGraph.is_null() || (matGraph.getRawPtr() != aGraph.getRawPtr()))
-    {
-      //must assume that matrix's graph changed, so need to copy the structure again in initialize()
-      initFlag_ = false;
-    }
+    initFlag_ = false;
     computedFlag_ = false;
   }
 }
