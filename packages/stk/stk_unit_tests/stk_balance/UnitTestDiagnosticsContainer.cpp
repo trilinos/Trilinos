@@ -66,10 +66,13 @@ TEST_F(UnitTestDiagnosticsContainer, registration)
   diagContainer.register_diagnostic<UnsignedDiagnosticTester>();
   diagContainer.register_diagnostic<UnsignedDiagnosticTester2>();
 
-  ASSERT_NE(diagContainer.get<UnsignedDiagnosticTester>(), nullptr);
-  ASSERT_NE(diagContainer.get<UnsignedDiagnosticTester2>(), nullptr);
-  EXPECT_EQ(typeid(*diagContainer.get<UnsignedDiagnosticTester>()), typeid(UnsignedDiagnosticTester));
-  EXPECT_EQ(typeid(*diagContainer.get<UnsignedDiagnosticTester2>()), typeid(UnsignedDiagnosticTester2));
+  auto retrievedUnsignedDiagnosticTester = diagContainer.get<UnsignedDiagnosticTester>();
+  auto retrievedUnsignedDiagnosticTester2 = diagContainer.get<UnsignedDiagnosticTester2>();
+
+  ASSERT_NE(retrievedUnsignedDiagnosticTester, nullptr);
+  ASSERT_NE(retrievedUnsignedDiagnosticTester2, nullptr);
+  EXPECT_EQ(typeid(*retrievedUnsignedDiagnosticTester), typeid(UnsignedDiagnosticTester));
+  EXPECT_EQ(typeid(*retrievedUnsignedDiagnosticTester2), typeid(UnsignedDiagnosticTester2));
 }
 
 TEST_F(UnitTestDiagnosticsContainer, duplicateRegistration)
@@ -90,7 +93,8 @@ TEST_F(UnitTestDiagnosticsContainer, iterateDiagnostics)
 
   unsigned index = 0;
   for (auto it = diagContainer.begin(); it != diagContainer.end(); ++it, ++index) {
-    EXPECT_EQ(typeid(**it), *expectedTypes[index]);
+    auto diagContainerEntry = *it;
+    EXPECT_EQ(typeid(*diagContainerEntry), *expectedTypes[index]);
   }
 }
 

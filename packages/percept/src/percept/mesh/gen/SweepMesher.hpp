@@ -167,8 +167,6 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
 
       ~SweepMesher()
       {
-        delete m_bulkData;
-        delete m_metaData;
       }
 
       void initialize()
@@ -192,14 +190,14 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
           m_elems[i] = source.m_elems[i];
       }
 
-      stk::mesh::BulkData * get_bulk_data() { return m_bulkData;}
-      stk::mesh::MetaData * getMetaData() { return m_metaData; }
+      stk::mesh::BulkData * get_bulk_data() { return m_bulkData.get();}
+      stk::mesh::MetaData * getMetaData() { return m_metaData.get(); }
 
     private:
       bool m_dump;
       unsigned m_spatial_dimension;
-      stk::mesh::MetaData * m_metaData;
-      stk::mesh::BulkData * m_bulkData;
+      std::shared_ptr<stk::mesh::MetaData> m_metaData;
+      std::shared_ptr<stk::mesh::BulkData> m_bulkData;
       std::vector<stk::mesh::Part *> m_parts;
       stk::mesh::Part *m_block_hex;
       stk::mesh::Part *m_block_wedge;
