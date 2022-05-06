@@ -12,21 +12,21 @@ namespace internal {
 void Vertices::fillVertexIds(const stk::mesh::BulkData& bulkData,
                              const stk::mesh::EntityVector &entities)
 {
-    mVertexIds.resize(entities.size(), 0);
-    for(size_t i=0;i<entities.size();++i) {
-        mVertexIds[i] = bulkData.identifier(entities[i]);
-    }
+  mVertexIds.resize(entities.size(), 0);
+  for(size_t i=0;i<entities.size();++i) {
+    mVertexIds[i] = bulkData.identifier(entities[i]);
+  }
 }
 
 void Vertices::fillCoordinates(const stk::mesh::BulkData& bulkData,
                                const std::string& coords_field_name,
                                const stk::mesh::EntityVector &entities)
 {
-    mVertexCoordinates.resize(entities.size()*mSpatialDim, 0);
-    const stk::mesh::FieldBase * coord = bulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, coords_field_name);
+  mVertexCoordinates.resize(entities.size()*mSpatialDim, 0);
+  const stk::mesh::FieldBase * coord = bulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, coords_field_name);
 
-    for(size_t i=0;i<entities.size();++i)
-        stk::balance::internal::fillEntityCentroid(bulkData, coord, entities[i], &mVertexCoordinates[mSpatialDim*i]);
+  for(size_t i=0;i<entities.size();++i)
+    stk::balance::internal::fillEntityCentroid(bulkData, coord, entities[i], &mVertexCoordinates[mSpatialDim*i]);
 }
 
 void Vertices::fillVertexWeights(const stk::mesh::BulkData& bulkData,
@@ -70,28 +70,28 @@ void Vertices::fillFieldVertexWeights(const stk::balance::BalanceSettings& balan
                                       const std::vector<stk::mesh::Selector>& selectors,
                                       const stk::mesh::EntityVector &entitiesToBalance)
 {
-    unsigned numSelectors = selectors.size();
-    unsigned numEntities = entitiesToBalance.size();
-    unsigned numCriteria = balanceSettings.getNumCriteria();
+  unsigned numSelectors = selectors.size();
+  unsigned numEntities = entitiesToBalance.size();
+  unsigned numCriteria = balanceSettings.getNumCriteria();
 
-    mVertexWeights.resize(numSelectors*numEntities*numCriteria);
-    for (double &weight : mVertexWeights) { weight = 0.0; }
+  mVertexWeights.resize(numSelectors*numEntities*numCriteria);
+  for (double &weight : mVertexWeights) { weight = 0.0; }
 
-    for(size_t i=0;i<entitiesToBalance.size();++i)
+  for(size_t i=0;i<entitiesToBalance.size();++i)
+  {
+    for (unsigned sel=0 ; sel<numSelectors ; ++sel)
     {
-        for (unsigned sel=0 ; sel<numSelectors ; ++sel)
+      stk::mesh::Selector selector = selectors[sel];
+      if (selector(stkMeshBulkData.bucket(entitiesToBalance[i])))
+      {
+        for(size_t weight_index=0;weight_index<numCriteria;weight_index++)
         {
-            stk::mesh::Selector selector = selectors[sel];
-            if (selector(stkMeshBulkData.bucket(entitiesToBalance[i])))
-            {
-                for(size_t weight_index=0;weight_index<numCriteria;weight_index++)
-                {
-                    unsigned index = stk::balance::internal::get_index(numSelectors, numCriteria, i, sel, weight_index);
-                    mVertexWeights[index] = balanceSettings.getGraphVertexWeight(entitiesToBalance[i], weight_index);
-                }
-            }
+          unsigned index = stk::balance::internal::get_index(numSelectors, numCriteria, i, sel, weight_index);
+          mVertexWeights[index] = balanceSettings.getGraphVertexWeight(entitiesToBalance[i], weight_index);
         }
+      }
     }
+  }
 }
 
 }

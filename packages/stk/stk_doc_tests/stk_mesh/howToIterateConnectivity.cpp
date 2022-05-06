@@ -54,99 +54,101 @@ namespace
 //-BEGIN
 TEST(StkMeshHowTo, iterateConnectivityThroughBulkData)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1) { return; }
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    // Generate a mesh of hexes with a sideset
-    const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
-    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
-    stkMeshIoBroker.populate_bulk_data();
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1) { return; }
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
+  // Generate a mesh of hexes with a sideset
+  const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
+  stkMeshIoBroker.populate_bulk_data();
 
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
-    const stk::mesh::BucketVector &elementBuckets =
-        stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+  const stk::mesh::BucketVector &elementBuckets =
+      stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
 
-    typedef stk::mesh::Field<double, stk::mesh::Cartesian> CoordinatesField_t;
-    CoordinatesField_t const & coord_field =
-          *dynamic_cast<CoordinatesField_t const *>(stkMeshMetaData.coordinate_field());
+  typedef stk::mesh::Field<double> CoordinatesField_t;
+  CoordinatesField_t const & coord_field =
+      *dynamic_cast<CoordinatesField_t const *>(stkMeshMetaData.coordinate_field());
 
-    const unsigned nodesPerHex = 8;
-    const unsigned spatialDim = 3;
-    unsigned count = 0;
-    double elementNodeCoords[nodesPerHex][spatialDim];
-    for (size_t bucketIndex = 0; bucketIndex < elementBuckets.size(); ++bucketIndex)
+  const unsigned nodesPerHex = 8;
+  const unsigned spatialDim = 3;
+  unsigned count = 0;
+  double elementNodeCoords[nodesPerHex][spatialDim];
+  for (size_t bucketIndex = 0; bucketIndex < elementBuckets.size(); ++bucketIndex)
+  {
+    stk::mesh::Bucket &elemBucket = *elementBuckets[bucketIndex];
+    for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex)
     {
-        stk::mesh::Bucket &elemBucket = *elementBuckets[bucketIndex];
-        for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex)
-        {
-            stk::mesh::Entity elem = elemBucket[elemIndex];
-            unsigned numNodes = stkMeshBulkData.num_nodes(elem);
-            EXPECT_EQ(numNodes, nodesPerHex);
-            stk::mesh::Entity const* nodes = stkMeshBulkData.begin_nodes(elem);
-            for (unsigned inode = 0; inode < numNodes; ++inode)
-            {
-              double *coords = stk::mesh::field_data(coord_field, nodes[inode]);
-              elementNodeCoords[inode][0] = coords[0];
-              elementNodeCoords[inode][1] = coords[1];
-              elementNodeCoords[inode][2] = coords[2];
-              EXPECT_NE(elementNodeCoords[inode][0], std::numeric_limits<double>::max());
-              EXPECT_NE(elementNodeCoords[inode][1], std::numeric_limits<double>::max());
-              EXPECT_NE(elementNodeCoords[inode][2], std::numeric_limits<double>::max());
-              ++count;
-            }
-        }
+      stk::mesh::Entity elem = elemBucket[elemIndex];
+      unsigned numNodes = stkMeshBulkData.num_nodes(elem);
+      EXPECT_EQ(numNodes, nodesPerHex);
+      stk::mesh::Entity const* nodes = stkMeshBulkData.begin_nodes(elem);
+      for (unsigned inode = 0; inode < numNodes; ++inode)
+      {
+        double *coords = stk::mesh::field_data(coord_field, nodes[inode]);
+        elementNodeCoords[inode][0] = coords[0];
+        elementNodeCoords[inode][1] = coords[1];
+        elementNodeCoords[inode][2] = coords[2];
+        EXPECT_NE(elementNodeCoords[inode][0], std::numeric_limits<double>::max());
+        EXPECT_NE(elementNodeCoords[inode][1], std::numeric_limits<double>::max());
+        EXPECT_NE(elementNodeCoords[inode][2], std::numeric_limits<double>::max());
+        ++count;
+      }
     }
-    EXPECT_GE(count, 1u);
+  }
+  EXPECT_GE(count, 1u);
 }
 
 TEST(StkMeshHowTo, iterateConnectivityThroughBuckets)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1) { return; }
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    // Generate a mesh of hexes with a sideset
-    const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
-    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
-    stkMeshIoBroker.populate_bulk_data();
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1) { return; }
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
+  // Generate a mesh of hexes with a sideset
+  const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
+  stkMeshIoBroker.populate_bulk_data();
 
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
-    const stk::mesh::BucketVector &elementBuckets =
-        stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+  const stk::mesh::BucketVector &elementBuckets =
+      stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
 
-    typedef stk::mesh::Field<double, stk::mesh::Cartesian> CoordinatesField_t;
-    CoordinatesField_t const & coord_field =
-          *dynamic_cast<CoordinatesField_t const *>(stkMeshMetaData.coordinate_field());
+  typedef stk::mesh::Field<double> CoordinatesField_t;
+  CoordinatesField_t const & coord_field =
+      *dynamic_cast<CoordinatesField_t const *>(stkMeshMetaData.coordinate_field());
 
-    const unsigned nodesPerHex = 8;
-    const unsigned spatialDim = 3;
-    unsigned count = 0;
-    double elementNodeCoords[nodesPerHex][spatialDim];
-    for (size_t bucketIndex = 0; bucketIndex < elementBuckets.size(); ++bucketIndex)
+  const unsigned nodesPerHex = 8;
+  const unsigned spatialDim = 3;
+  unsigned count = 0;
+  double elementNodeCoords[nodesPerHex][spatialDim];
+  for (size_t bucketIndex = 0; bucketIndex < elementBuckets.size(); ++bucketIndex)
+  {
+    stk::mesh::Bucket &elemBucket = *elementBuckets[bucketIndex];
+    for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex)
     {
-        stk::mesh::Bucket &elemBucket = *elementBuckets[bucketIndex];
-        for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex)
-        {
-            unsigned numNodes = elemBucket.num_nodes(elemIndex);
-            EXPECT_EQ(numNodes, nodesPerHex);
-            stk::mesh::Entity const* nodes = elemBucket.begin_nodes(elemIndex);
-            for (unsigned inode = 0; inode < numNodes; ++inode)
-            {
-              double *coords = stk::mesh::field_data(coord_field, nodes[inode]);
-              elementNodeCoords[inode][0] = coords[0];
-              elementNodeCoords[inode][1] = coords[1];
-              elementNodeCoords[inode][2] = coords[2];
-              EXPECT_NE(elementNodeCoords[inode][0], std::numeric_limits<double>::max());
-              EXPECT_NE(elementNodeCoords[inode][1], std::numeric_limits<double>::max());
-              EXPECT_NE(elementNodeCoords[inode][2], std::numeric_limits<double>::max());
-              ++count;
-            }
-        }
+      unsigned numNodes = elemBucket.num_nodes(elemIndex);
+      EXPECT_EQ(numNodes, nodesPerHex);
+      stk::mesh::Entity const* nodes = elemBucket.begin_nodes(elemIndex);
+      for (unsigned inode = 0; inode < numNodes; ++inode)
+      {
+        double *coords = stk::mesh::field_data(coord_field, nodes[inode]);
+        elementNodeCoords[inode][0] = coords[0];
+        elementNodeCoords[inode][1] = coords[1];
+        elementNodeCoords[inode][2] = coords[2];
+        EXPECT_NE(elementNodeCoords[inode][0], std::numeric_limits<double>::max());
+        EXPECT_NE(elementNodeCoords[inode][1], std::numeric_limits<double>::max());
+        EXPECT_NE(elementNodeCoords[inode][2], std::numeric_limits<double>::max());
+        ++count;
+      }
     }
-    EXPECT_GE(count, 1u);
+  }
+  EXPECT_GE(count, 1u);
 }
 //-END
 }

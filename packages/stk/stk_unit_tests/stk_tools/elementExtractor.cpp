@@ -8,55 +8,55 @@
 namespace
 {
 
-class StkToolsC : public stk::unit_test_util::MeshFixture
+class StkToolsC : public stk::unit_test_util::simple_fields::MeshFixture
 {};
 
 TEST_F(StkToolsC, DeleteMeshExceptSpecifiedElems)
 {
-    const std::string unNamed = "mesh not specified";
-    const std::string meshName = stk::unit_test_util::get_option("-i", unNamed);
-    ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
-    setup_mesh(meshName, stk::mesh::BulkData::NO_AUTO_AURA);
+  const std::string unNamed = "mesh not specified";
+  const std::string meshName = stk::unit_test_util::simple_fields::get_option("-i", unNamed);
+  ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
+  setup_mesh(meshName, stk::mesh::BulkData::NO_AUTO_AURA);
 
-    std::string invalidElemId = "-1";
-    std::string inputElemIds = stk::unit_test_util::get_command_line_option("-e", invalidElemId);
-    ThrowRequireMsg(inputElemIds != invalidElemId, "Please specify element list with -e.");
+  std::string invalidElemId = "-1";
+  std::string inputElemIds = stk::unit_test_util::simple_fields::get_command_line_option("-e", invalidElemId);
+  ThrowRequireMsg(inputElemIds != invalidElemId, "Please specify element list with -e.");
 
-    std::set<stk::mesh::EntityId> elemIdsToKeep;
-    std::vector<std::string> elemIdSegments = stk::split_csv_string(inputElemIds);
-    for (const std::string & elemIdSegment : elemIdSegments) {
-      const std::string trimmedElemId = stk::trim_string(elemIdSegment);
-      const int elemId = std::stoi(trimmedElemId);
-      elemIdsToKeep.insert(elemId);
-    }
+  std::set<stk::mesh::EntityId> elemIdsToKeep;
+  std::vector<std::string> elemIdSegments = stk::split_csv_string(inputElemIds);
+  for (const std::string & elemIdSegment : elemIdSegments) {
+    const std::string trimmedElemId = stk::trim_string(elemIdSegment);
+    const int elemId = std::stoi(trimmedElemId);
+    elemIdsToKeep.insert(elemId);
+  }
 
-    const stk::mesh::BucketVector &buckets = get_bulk().get_buckets(stk::topology::ELEM_RANK, get_meta().locally_owned_part());
+  const stk::mesh::BucketVector &buckets = get_bulk().get_buckets(stk::topology::ELEM_RANK, get_meta().locally_owned_part());
 
-    std::vector<size_t> entityCounts;
-    stk::mesh::comm_mesh_counts(get_bulk(), entityCounts);
+  std::vector<size_t> entityCounts;
+  stk::mesh::comm_mesh_counts(get_bulk(), entityCounts);
 
-    std::cout << "num entities = " << entityCounts[stk::topology::ELEMENT_RANK] << std::endl;
+  std::cout << "num entities = " << entityCounts[stk::topology::ELEMENT_RANK] << std::endl;
 
-    stk::mesh::EntityVector elementsToDestroy;
-    for(size_t i=0;i<buckets.size();++i)
+  stk::mesh::EntityVector elementsToDestroy;
+  for(size_t i=0;i<buckets.size();++i)
+  {
+    const stk::mesh::Bucket& bucket = *buckets[i];
+    for(size_t j=0;j<bucket.size();j++)
     {
-        const stk::mesh::Bucket& bucket = *buckets[i];
-        for(size_t j=0;j<bucket.size();j++)
-        {
-            stk::mesh::Entity element = bucket[j];
-            stk::mesh::EntityId elemId = get_bulk().identifier(element);
-            if (elemIdsToKeep.find(elemId) == elemIdsToKeep.end())
-            {
-                elementsToDestroy.push_back(element);
-            }
-            else
-            {
-                std::cout << "keeping element ID: " << elemId << std::endl;
-            }
-        }
+      stk::mesh::Entity element = bucket[j];
+      stk::mesh::EntityId elemId = get_bulk().identifier(element);
+      if (elemIdsToKeep.find(elemId) == elemIdsToKeep.end())
+      {
+        elementsToDestroy.push_back(element);
+      }
+      else
+      {
+        std::cout << "keeping element ID: " << elemId << std::endl;
+      }
     }
-    destroy_elements(get_bulk(), elementsToDestroy);
-    stk::io::write_mesh("modified.e", get_bulk());
+  }
+  destroy_elements(get_bulk(), elementsToDestroy);
+  stk::io::write_mesh("modified.e", get_bulk());
 }
 
 void stk_determine_centroid(const unsigned spatial_dim, stk::mesh::Entity element,
@@ -86,18 +86,18 @@ void stk_determine_centroid(const unsigned spatial_dim, stk::mesh::Entity elemen
 TEST_F(StkToolsC, DeleteMeshExceptWithinBoundingBox)
 {
   const std::string unNamed = "mesh not specified";
-  const std::string inputMeshName = stk::unit_test_util::get_option("-i", unNamed);
+  const std::string inputMeshName = stk::unit_test_util::simple_fields::get_option("-i", unNamed);
   ThrowRequireMsg(inputMeshName!=unNamed, "Please specify mesh with -i option.");
   setup_mesh(inputMeshName, stk::mesh::BulkData::NO_AUTO_AURA);
 
-  const std::string outputMeshName = stk::unit_test_util::get_option("-o", "modified.g");
+  const std::string outputMeshName = stk::unit_test_util::simple_fields::get_option("-o", "modified.g");
 
-  double xLo = stk::unit_test_util::get_command_line_option("-x", std::numeric_limits<double>::lowest());
-  double xHi = stk::unit_test_util::get_command_line_option("-X", std::numeric_limits<double>::max());
-  double yLo = stk::unit_test_util::get_command_line_option("-y", std::numeric_limits<double>::lowest());
-  double yHi = stk::unit_test_util::get_command_line_option("-Y", std::numeric_limits<double>::max());
-  double zLo = stk::unit_test_util::get_command_line_option("-z", std::numeric_limits<double>::lowest());
-  double zHi = stk::unit_test_util::get_command_line_option("-Z", std::numeric_limits<double>::max());
+  double xLo = stk::unit_test_util::simple_fields::get_command_line_option("-x", std::numeric_limits<double>::lowest());
+  double xHi = stk::unit_test_util::simple_fields::get_command_line_option("-X", std::numeric_limits<double>::max());
+  double yLo = stk::unit_test_util::simple_fields::get_command_line_option("-y", std::numeric_limits<double>::lowest());
+  double yHi = stk::unit_test_util::simple_fields::get_command_line_option("-Y", std::numeric_limits<double>::max());
+  double zLo = stk::unit_test_util::simple_fields::get_command_line_option("-z", std::numeric_limits<double>::lowest());
+  double zHi = stk::unit_test_util::simple_fields::get_command_line_option("-Z", std::numeric_limits<double>::max());
 
   const stk::mesh::BucketVector &buckets = get_bulk().get_buckets(stk::topology::ELEM_RANK, get_meta().locally_owned_part());
   const stk::mesh::FieldBase * coordinates = get_meta().coordinate_field();
@@ -125,47 +125,47 @@ TEST_F(StkToolsC, DeleteMeshExceptWithinBoundingBox)
 
 TEST_F(StkToolsC, FlipElementConnectivity)
 {
-    const std::string unNamed = "mesh not specified";
-    const std::string meshName = stk::unit_test_util::get_option("-i", unNamed);
-    ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
-    setup_mesh(meshName, stk::mesh::BulkData::NO_AUTO_AURA);
+  const std::string unNamed = "mesh not specified";
+  const std::string meshName = stk::unit_test_util::simple_fields::get_option("-i", unNamed);
+  ThrowRequireMsg(meshName!=unNamed, "Please specify mesh with -i option.");
+  setup_mesh(meshName, stk::mesh::BulkData::NO_AUTO_AURA);
 
-    int invalidBlockId = -1;
-    int inputBlockId = stk::unit_test_util::get_command_line_option("-b", invalidBlockId);
-    ThrowRequireMsg(inputBlockId!=invalidBlockId, "Please specify block with -b.");
+  int invalidBlockId = -1;
+  int inputBlockId = stk::unit_test_util::simple_fields::get_command_line_option("-b", invalidBlockId);
+  ThrowRequireMsg(inputBlockId!=invalidBlockId, "Please specify block with -b.");
 
-    std::ostringstream os;
-    os << "block_" << inputBlockId;
-    stk::mesh::Part* elemBlock = get_meta().get_part(os.str());
+  std::ostringstream os;
+  os << "block_" << inputBlockId;
+  stk::mesh::Part* elemBlock = get_meta().get_part(os.str());
 
-    stk::mesh::EntityVector elems;
-    stk::mesh::BucketVector buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
-    stk::mesh::get_selected_entities(stk::mesh::Selector(*elemBlock), buckets, elems);
+  stk::mesh::EntityVector elems;
+  stk::mesh::BucketVector buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
+  stk::mesh::get_selected_entities(stk::mesh::Selector(*elemBlock), buckets, elems);
 
-    get_bulk().modification_begin();
-    for (auto elem : elems)
+  get_bulk().modification_begin();
+  for (auto elem : elems)
+  {
+    stk::topology topology = get_bulk().bucket(elem).topology();
+    ThrowRequireMsg(topology == stk::topology::HEX_8, "Input block must have HEX_8 topology but found topology " << topology);
+
+    stk::mesh::EntityVector storedNodes;
+    const stk::mesh::Entity* node = get_bulk().begin_nodes(elem);
+    unsigned numNodes = get_bulk().num_nodes(elem);
+    for (unsigned i = 0; i < numNodes; ++i)
     {
-        stk::topology topology = get_bulk().bucket(elem).topology();
-        ThrowRequireMsg(topology == stk::topology::HEX_8, "Input block must have HEX_8 topology but found topology " << topology);
-
-        stk::mesh::EntityVector storedNodes;
-        const stk::mesh::Entity* node = get_bulk().begin_nodes(elem);
-        unsigned numNodes = get_bulk().num_nodes(elem);
-        for (unsigned i = 0; i < numNodes; ++i)
-        {
-            storedNodes.push_back(node[i]);
-        }
-        for (unsigned i = 0; i < numNodes; ++i)
-        {
-            get_bulk().destroy_relation(elem, storedNodes[i], i);
-        }
-        for (unsigned i = 0; i < numNodes; ++i)
-        {
-            unsigned correctNodeId = (i+4)%8;
-            get_bulk().declare_relation(elem, storedNodes[correctNodeId], i);
-        }
+      storedNodes.push_back(node[i]);
     }
-    get_bulk().modification_end();
-    stk::io::write_mesh("flipped.e", get_bulk());
+    for (unsigned i = 0; i < numNodes; ++i)
+    {
+      get_bulk().destroy_relation(elem, storedNodes[i], i);
+    }
+    for (unsigned i = 0; i < numNodes; ++i)
+    {
+      unsigned correctNodeId = (i+4)%8;
+      get_bulk().declare_relation(elem, storedNodes[correctNodeId], i);
+    }
+  }
+  get_bulk().modification_end();
+  stk::io::write_mesh("flipped.e", get_bulk());
 }
 }

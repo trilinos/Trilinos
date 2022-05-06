@@ -51,29 +51,28 @@
 #include <stk_performance_tests/stk_mesh/timer.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
 
-class NgpFieldSyncTest : public stk::unit_test_util::MeshFixture
+class NgpFieldSyncTest : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
-  NgpFieldSyncTest() : stk::unit_test_util::MeshFixture()
+  NgpFieldSyncTest() : stk::unit_test_util::simple_fields::MeshFixture()
   {}
 
-  void setup_mesh_with_many_blocks_many_elements(unsigned numBlocks, unsigned numElemPerDim,
-                                                 stk::mesh::BulkData::AutomaticAuraOption auraOption)
+  void setup_mesh_with_many_blocks_many_elements(unsigned numBlocks, unsigned numElemPerDim)
   {
     std::string meshDesc = "generated:" + std::to_string(numElemPerDim) + "x"
                                         + std::to_string(numElemPerDim) + "x"
                                         + std::to_string(numElemPerDim);
     stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
-    setup_mesh(meshDesc, auraOption);
+    stk::io::fill_mesh(meshDesc, get_bulk());
     stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemPerDim);
   }
 
   void setup_fields(unsigned numComponent, unsigned tensorFieldSizePerElem, unsigned vectorFieldSizePerElem)
   {
     const std::vector<int> init(numComponent, 1);
-    auto tensorField = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::ELEMENT_RANK, "TensorField");
-    auto vectorField = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::ELEMENT_RANK, "VectorField");
-    auto stkIntField = &get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::ELEMENT_RANK, "intField", 1);
+    auto tensorField = &get_meta().declare_field<double>(stk::topology::ELEMENT_RANK, "TensorField");
+    auto vectorField = &get_meta().declare_field<double>(stk::topology::ELEMENT_RANK, "VectorField");
+    auto stkIntField = &get_meta().declare_field<int>(stk::topology::ELEMENT_RANK, "intField", 1);
 
     stk::mesh::put_field_on_mesh(*tensorField, get_meta().universal_part(), tensorFieldSizePerElem, static_cast<double*>(nullptr));
     stk::mesh::put_field_on_mesh(*vectorField, get_meta().universal_part(), vectorFieldSizePerElem, static_cast<double*>(nullptr));
@@ -125,11 +124,11 @@ public:
   }
 };
 
-class NgpFieldUpdateFixture : public stk::unit_test_util::MeshFixture
+class NgpFieldUpdateFixture : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
  NgpFieldUpdateFixture()
-   : stk::unit_test_util::MeshFixture(),
+   : stk::unit_test_util::simple_fields::MeshFixture(),
       tensorField(nullptr),
       vectorField(nullptr),
       tensorFieldSizePerElem(72),
@@ -141,7 +140,8 @@ public:
 
   virtual void setup_host_mesh()
   {
-    setup_mesh_with_fields("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh_with_fields("generated:100x100x100");
   }
 
   std::string generate_stacked_block_mesh_desc(unsigned numBlocks)
@@ -179,19 +179,19 @@ public:
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     std::string meshDesc = generate_stacked_block_mesh_desc(numBlocks);
 
-    stk::mesh::FieldBase* field = &get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEMENT_RANK, "FieldA");
+    stk::mesh::FieldBase* field = &get_meta().declare_field<double>(stk::topology::ELEMENT_RANK, "FieldA");
     stk::mesh::put_field_on_mesh(*field, get_meta().universal_part(), &init);
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
   }
 
-  void setup_mesh_with_fields(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+  void setup_mesh_with_fields(const std::string &meshSpecification)
   {
-    tensorField = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::ELEMENT_RANK, "TensorField");
-    vectorField = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::ELEMENT_RANK, "VectorField");
+    tensorField = &get_meta().declare_field<double>(stk::topology::ELEMENT_RANK, "TensorField");
+    vectorField = &get_meta().declare_field<double>(stk::topology::ELEMENT_RANK, "VectorField");
     stk::mesh::put_field_on_mesh(*tensorField, get_meta().universal_part(), tensorFieldSizePerElem, static_cast<double*>(nullptr));
     stk::mesh::put_field_on_mesh(*vectorField, get_meta().universal_part(), vectorFieldSizePerElem, static_cast<double*>(nullptr));
     stk::performance_tests::setup_multiple_blocks(get_meta(), numElemBlocks);
-    setup_mesh(meshSpecification, auraOption);
+    stk::io::fill_mesh(meshSpecification, get_bulk());
     stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemsPerDim);
   }
 
@@ -205,8 +205,8 @@ public:
   }
 
 protected:
-  stk::mesh::Field<double, stk::mesh::Cartesian>* tensorField;
-  stk::mesh::Field<double, stk::mesh::Cartesian>* vectorField;
+  stk::mesh::Field<double>* tensorField;
+  stk::mesh::Field<double>* vectorField;
   unsigned tensorFieldSizePerElem;
   unsigned vectorFieldSizePerElem;
   unsigned numElemBlocks;
@@ -223,8 +223,9 @@ public:
 
   void setup_host_mesh() override
   {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     get_meta().declare_part(newPartName);
-    setup_mesh_with_fields("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh_with_fields("generated:100x100x100");
   }
 
   void change_element_part_membership(int cycle)
@@ -259,10 +260,13 @@ public:
     : NgpFieldUpdateFixture()
   { }
 
-  void create_entity(int cycle)
+  void create_entity(int cycle, int numElemsToCreatePerModCycle)
   {
     get_bulk().modification_begin();
-    get_bulk().declare_element(get_new_entity_id(cycle));
+    for(int i=0; i<numElemsToCreatePerModCycle; ++i) {
+      const int index = cycle*numElemsToCreatePerModCycle + i;
+      get_bulk().declare_element(get_new_entity_id(index));
+    }
     get_bulk().modification_end();
     stk::mesh::get_updated_ngp_mesh(get_bulk());
   }
@@ -285,7 +289,8 @@ public:
 
   void setup_host_mesh() override
   {
-    setup_mesh_with_fields("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh_with_fields("generated:100x100x100");
     get_bulk().modification_begin();
     ghosting = &get_bulk().create_ghosting(ghostingName);
     get_bulk().modification_end();
@@ -336,18 +341,20 @@ TEST_F( NgpMeshCreateEntityWithFields, Timing )
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 400;
+  const int numModCycles = 400;
+  const int numElemsToCreatePerModCycle = 40;
 
   stk::performance_tests::Timer timer(get_comm());
+  timer.start_timing();
+
   setup_host_mesh();
 
-  timer.start_timing();
-  for (int i=0; i<NUM_RUNS; i++) {
-    create_entity(i);
+  for (int i=0; i<numModCycles; i++) {
+    create_entity(i, numElemsToCreatePerModCycle);
     update_fields();
   }
   timer.update_timing();
-  timer.print_timing(NUM_RUNS);
+  timer.print_timing(numModCycles);
 };
 
 TEST_F( NgpMeshGhostingEntityWithFields, Timing )
@@ -373,20 +380,21 @@ TEST_F(NgpFieldSyncTest, PartialSyncTiming)
 {
   if(get_parallel_size() != 1) return;
 
-  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 1000);
-  unsigned numComponents = stk::unit_test_util::get_command_line_option("-c", 1);
-  unsigned numBlocks = stk::unit_test_util::get_command_line_option("-b", 100);
-  unsigned numBlocksToSync = stk::unit_test_util::get_command_line_option("-s", 10);
-  unsigned numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 500);
-  unsigned tensorFieldSizePerElem = stk::unit_test_util::get_command_line_option("--tensorField", 72);
-  unsigned vectorFieldSizePerElem = stk::unit_test_util::get_command_line_option("-vectorField", 8);
-  bool justSyncAll = stk::unit_test_util::get_command_line_option("-a", false);
-  bool contiguousBlocks = stk::unit_test_util::get_command_line_option("-t", true);
+  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 1000);
+  unsigned numComponents = stk::unit_test_util::simple_fields::get_command_line_option("-c", 1);
+  unsigned numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 100);
+  unsigned numBlocksToSync = stk::unit_test_util::simple_fields::get_command_line_option("-s", 10);
+  unsigned numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 500);
+  unsigned tensorFieldSizePerElem = stk::unit_test_util::simple_fields::get_command_line_option("--tensorField", 72);
+  unsigned vectorFieldSizePerElem = stk::unit_test_util::simple_fields::get_command_line_option("-vectorField", 8);
+  bool justSyncAll = stk::unit_test_util::simple_fields::get_command_line_option("-a", false);
+  bool contiguousBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-t", true);
   numBlocksToSync = std::min(numBlocks, numBlocksToSync);
   stk::performance_tests::Timer timer(MPI_COMM_WORLD);
   
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   setup_fields(numComponents, tensorFieldSizePerElem, vectorFieldSizePerElem);
-  setup_mesh_with_many_blocks_many_elements(numBlocks, numElemPerDim, stk::mesh::BulkData::NO_AUTO_AURA);
+  setup_mesh_with_many_blocks_many_elements(numBlocks, numElemPerDim);
 
   stk::mesh::FieldBase* fieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "intField");
   stk::mesh::FieldBase* tensorFieldBase = get_meta().get_field(stk::topology::ELEMENT_RANK, "TensorField");

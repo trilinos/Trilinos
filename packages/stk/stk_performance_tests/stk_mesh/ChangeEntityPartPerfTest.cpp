@@ -45,10 +45,10 @@
 namespace
 {
 
-class ChangePartsTest : public stk::unit_test_util::MeshFixture
+class ChangePartsTest : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
-  ChangePartsTest() : stk::unit_test_util::MeshFixture(),
+  ChangePartsTest() : stk::unit_test_util::simple_fields::MeshFixture(),
     timer(get_comm()),
     elementsOnBlock1(true)
   {
@@ -59,9 +59,10 @@ public:
     std::string meshDesc = "generated:" + std::to_string(numElemPerDim) + "x"
                                         + std::to_string(numElemPerDim) + "x"
                                         + std::to_string(numElemPerDim);
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     setup_multiple_blocks();
 
-    setup_mesh(meshDesc, stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::io::fill_mesh(meshDesc, get_bulk());
 
     setup_block_part_vectors();
   }
@@ -163,8 +164,8 @@ TEST_F(ChangePartsTest, changeEntityPartsUsingEntityVectorSimplePerfTest)
 {
   if(get_parallel_size() > 1) { return; }
 
-  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 100);
-  numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 50);
+  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 100);
+  numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   numBlocks = 1;
 
   setup_mesh_with_many_blocks_many_elements_in_one_block();
@@ -189,8 +190,8 @@ TEST_F(ChangePartsTest, changeEntityPartsUsingSelectorSimplePerfTest)
 {
   if(get_parallel_size() > 1) { return; }
 
-  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 100);
-  numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 50);
+  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 100);
+  numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 50);
   numBlocks = 1;
 
   setup_mesh_with_many_blocks_many_elements_in_one_block();
@@ -213,9 +214,9 @@ TEST_F(ChangePartsTest, cacheRemovalImpactChangeEntityPartsWithEntityVector)
 {
   if(get_parallel_size() > 1) { return; }
 
-  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 50);
-  numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 80);
-  numBlocks = stk::unit_test_util::get_command_line_option("-b", 125);
+  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 50);
+  numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 80);
+  numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 125);
 
   setup_mesh_with_many_blocks_many_elements_in_one_block();
 
@@ -237,9 +238,9 @@ TEST_F(ChangePartsTest, cacheRemovalImpactChangeEntityPartsWithSelector)
 {
   if(get_parallel_size() > 1) { return; }
 
-  unsigned NUM_RUNS = stk::unit_test_util::get_command_line_option("-r", 50);
-  numElemPerDim = stk::unit_test_util::get_command_line_option("-e", 80);
-  numBlocks = stk::unit_test_util::get_command_line_option("-b", 125);
+  unsigned NUM_RUNS = stk::unit_test_util::simple_fields::get_command_line_option("-r", 50);
+  numElemPerDim = stk::unit_test_util::simple_fields::get_command_line_option("-e", 80);
+  numBlocks = stk::unit_test_util::simple_fields::get_command_line_option("-b", 125);
 
   setup_mesh_with_many_blocks_many_elements_in_one_block();
 

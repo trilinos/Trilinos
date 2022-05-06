@@ -73,6 +73,7 @@ TEST(UnitTestGhostParts, Aura)
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x3";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -85,7 +86,7 @@ TEST(UnitTestGhostParts, Aura)
   stk::mesh::Part& aura_part = stkMeshMetaData.aura_part();
   std::cerr<<"...got aura part with name="<<aura_part.name()<<std::endl;
   stk::mesh::Selector aura_selector = aura_part;
-  
+
   stk::mesh::Ghosting& aura_ghosting = stkMeshBulkData.aura_ghosting();
   EXPECT_EQ(aura_part.mesh_meta_data_ordinal(), stkMeshBulkData.ghosting_part(aura_ghosting).mesh_meta_data_ordinal());
 
@@ -104,8 +105,8 @@ TEST(UnitTestGhostParts, Aura)
   size_t counted_aura_nodes = 0;
   for(size_t i=0; i<not_owned_nor_shared_node_buckets.size(); ++i)
   {
-      counted_nodes += not_owned_nor_shared_node_buckets[i]->size();
-      counted_aura_nodes += aura_node_buckets[i]->size();
+    counted_nodes += not_owned_nor_shared_node_buckets[i]->size();
+    counted_aura_nodes += aura_node_buckets[i]->size();
   }
   EXPECT_EQ(expected_num_ghost_nodes, counted_nodes);
   EXPECT_EQ(expected_num_ghost_nodes, counted_aura_nodes);
@@ -121,6 +122,7 @@ TEST(UnitTestGhostParts, Custom1)
   }
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
   const std::string generatedMeshSpecification = "generated:1x1x4";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
@@ -173,17 +175,18 @@ TEST(UnitTestAura, test_num_communicated_entities)
 
   int numProcs = stk::parallel_machine_size(communicator);
   if (numProcs == 2) {
-      stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-      const std::string generatedMeshSpecification = "generated:1x1x4";
-      stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-      stkMeshIoBroker.create_input_mesh();
-      stkMeshIoBroker.populate_bulk_data();
+    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+    stkMeshIoBroker.use_simple_fields();
+    const std::string generatedMeshSpecification = "generated:1x1x4";
+    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+    stkMeshIoBroker.create_input_mesh();
+    stkMeshIoBroker.populate_bulk_data();
 
-      stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-      size_t num_comm_entities = stkMeshBulkData.get_num_communicated_entities();
+    size_t num_comm_entities = stkMeshBulkData.get_num_communicated_entities();
 
-      const size_t expected_num_comm_entities = 14;
-      EXPECT_EQ(expected_num_comm_entities, num_comm_entities);
+    const size_t expected_num_comm_entities = 14;
+    EXPECT_EQ(expected_num_comm_entities, num_comm_entities);
   }
 }

@@ -55,78 +55,80 @@ namespace
 //-BEGIN
 TEST(StkMeshHowTo, iterateSidesetNodesMostEfficientlyForFieldDataAccess)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1) { return; }
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    // syntax creates faces for the surface on the positive 'x-side' of the 2x2x2 cube,
-    // this part is given the name 'surface_1' when it is created [create_input_mesh()]
-    const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
-    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1) { return; }
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
+  // syntax creates faces for the surface on the positive 'x-side' of the 2x2x2 cube,
+  // this part is given the name 'surface_1' when it is created [create_input_mesh()]
+  const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
 
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::Field<double> &temperatureField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature");
-    stk::mesh::put_field_on_entire_mesh(temperatureField);
-    stkMeshIoBroker.populate_bulk_data();
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::Field<double> &temperatureField = stkMeshMetaData.declare_field<double>(stk::topology::NODE_RANK, "temperature");
+  stk::mesh::put_field_on_entire_mesh(temperatureField);
+  stkMeshIoBroker.populate_bulk_data();
 
-    stk::mesh::Part &boundaryConditionPart = *stkMeshMetaData.get_part("surface_1");
-    stk::mesh::Selector boundaryNodesSelector(boundaryConditionPart);
+  stk::mesh::Part &boundaryConditionPart = *stkMeshMetaData.get_part("surface_1");
+  stk::mesh::Selector boundaryNodesSelector(boundaryConditionPart);
 
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
-    const stk::mesh::BucketVector &boundaryNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, boundaryNodesSelector);
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+  const stk::mesh::BucketVector &boundaryNodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, boundaryNodesSelector);
 
-    double prescribedTemperatureValue = 2.0;
-    std::set<stk::mesh::EntityId> boundaryNodeIds;
-    for (size_t bucketIndex = 0; bucketIndex < boundaryNodeBuckets.size(); ++bucketIndex)
+  double prescribedTemperatureValue = 2.0;
+  std::set<stk::mesh::EntityId> boundaryNodeIds;
+  for (size_t bucketIndex = 0; bucketIndex < boundaryNodeBuckets.size(); ++bucketIndex)
+  {
+    stk::mesh::Bucket &nodeBucket = *boundaryNodeBuckets[bucketIndex];
+    double *temperatureValues = stk::mesh::field_data(temperatureField, nodeBucket);
+    for (size_t nodeIndex = 0; nodeIndex < nodeBucket.size(); ++nodeIndex)
     {
-        stk::mesh::Bucket &nodeBucket = *boundaryNodeBuckets[bucketIndex];
-        double *temperatureValues = stk::mesh::field_data(temperatureField, nodeBucket);
-        for (size_t nodeIndex = 0; nodeIndex < nodeBucket.size(); ++nodeIndex)
-        {
-            stk::mesh::Entity node = nodeBucket[nodeIndex];
-            boundaryNodeIds.insert(stkMeshBulkData.identifier(node));
-            temperatureValues[nodeIndex] = prescribedTemperatureValue;
-        }
+      stk::mesh::Entity node = nodeBucket[nodeIndex];
+      boundaryNodeIds.insert(stkMeshBulkData.identifier(node));
+      temperatureValues[nodeIndex] = prescribedTemperatureValue;
     }
+  }
 
-    testUtils::testTemperatureFieldSetCorrectly(temperatureField, prescribedTemperatureValue, boundaryNodeIds);
+  testUtils::testTemperatureFieldSetCorrectly(temperatureField, prescribedTemperatureValue, boundaryNodeIds);
 }
 
 TEST(StkMeshHowTo, iterateSidesetNodesWithFieldDataAccess)
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    if (stk::parallel_machine_size(communicator) != 1) { return; }
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    // syntax creates faces for the surface on the positive 'x-side' of the 2x2x2 cube,
-    // this part is given the name 'surface_1' when it is created [create_input_mesh()]
-    const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
-    stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-    stkMeshIoBroker.create_input_mesh();
+  MPI_Comm communicator = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(communicator) != 1) { return; }
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  stkMeshIoBroker.use_simple_fields();
+  // syntax creates faces for the surface on the positive 'x-side' of the 2x2x2 cube,
+  // this part is given the name 'surface_1' when it is created [create_input_mesh()]
+  const std::string generatedMeshSpecification = "generated:2x2x2|sideset:X";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
 
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
-    stk::mesh::Field<double> &temperatureField = stkMeshMetaData.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "temperature");
-    stk::mesh::put_field_on_entire_mesh(temperatureField);
-    stkMeshIoBroker.populate_bulk_data();
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::Field<double> &temperatureField = stkMeshMetaData.declare_field<double>(stk::topology::NODE_RANK, "temperature");
+  stk::mesh::put_field_on_entire_mesh(temperatureField);
+  stkMeshIoBroker.populate_bulk_data();
 
-    stk::mesh::Part &boundaryConditionPart = *stkMeshMetaData.get_part("surface_1");
-    stk::mesh::Selector boundaryNodesSelector(boundaryConditionPart);
+  stk::mesh::Part &boundaryConditionPart = *stkMeshMetaData.get_part("surface_1");
+  stk::mesh::Selector boundaryNodesSelector(boundaryConditionPart);
 
-    stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-    stk::mesh::EntityVector nodes;
-    stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, boundaryNodesSelector, nodes);
+  stk::mesh::EntityVector nodes;
+  stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, boundaryNodesSelector, nodes);
 
-    double prescribedTemperatureValue = 2.0;
-    std::set<stk::mesh::EntityId> boundaryNodeIds;
+  double prescribedTemperatureValue = 2.0;
+  std::set<stk::mesh::EntityId> boundaryNodeIds;
 
-    for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
-    {
-        boundaryNodeIds.insert(stkMeshBulkData.identifier(nodes[nodeIndex]));
-        double *temperatureValues = stk::mesh::field_data(temperatureField, nodes[nodeIndex]);
-        *temperatureValues = prescribedTemperatureValue;
-    }
+  for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
+  {
+    boundaryNodeIds.insert(stkMeshBulkData.identifier(nodes[nodeIndex]));
+    double *temperatureValues = stk::mesh::field_data(temperatureField, nodes[nodeIndex]);
+    *temperatureValues = prescribedTemperatureValue;
+  }
 
-    testUtils::testTemperatureFieldSetCorrectly(temperatureField, prescribedTemperatureValue, boundaryNodeIds);
+  testUtils::testTemperatureFieldSetCorrectly(temperatureField, prescribedTemperatureValue, boundaryNodeIds);
 }
 //-END
 }

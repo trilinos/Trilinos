@@ -45,45 +45,45 @@ std::string get_long_example(std::string execPath)
 
 int main(int argc, const char**argv)
 {
-    MPI_Init(&argc, const_cast<char***>(&argv));
-    MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Init(&argc, const_cast<char***>(&argv));
+  MPI_Comm comm = MPI_COMM_WORLD;
 
-    stk::CommandLineParserParallel commandLine(comm);
-    commandLine.add_required<std::string>({"infile", "i", "input file"});
-    commandLine.add_required<std::string>({"outfile", "o", "output file"});
-    commandLine.add_optional<std::string>({"extract-blocks", "b", "Comma-separated list of block IDs or ID ranges of the "
-                                           "form first:last:stride. (Example: \"1,10:15,20:30:2,100\")"},{});
-    commandLine.add_optional<std::string>({"extract-nodesets","n","Comma-separated list of nodeset IDs or ID ranges"},{});
+  stk::CommandLineParserParallel commandLine(comm);
+  commandLine.add_required<std::string>({"infile", "i", "input file"});
+  commandLine.add_required<std::string>({"outfile", "o", "output file"});
+  commandLine.add_optional<std::string>({"extract-blocks", "b", "Comma-separated list of block IDs or ID ranges of the "
+                                         "form first:last:stride. (Example: \"1,10:15,20:30:2,100\")"},{});
+  commandLine.add_optional<std::string>({"extract-nodesets","n","Comma-separated list of nodeset IDs or ID ranges"},{});
 
-    std::string quickExample = get_short_example(argv[0]);
-    std::string longExample = get_long_example(argv[0]);
+  std::string quickExample = get_short_example(argv[0]);
+  std::string longExample = get_long_example(argv[0]);
 
-    stk::parse_command_line(argc, argv, quickExample, longExample, commandLine, comm);
+  stk::parse_command_line(argc, argv, quickExample, longExample, commandLine, comm);
 
-    std::string inFile = commandLine.get_option_value<std::string>("infile");
-    std::string outFile = commandLine.get_option_value<std::string>("outfile");
+  std::string inFile = commandLine.get_option_value<std::string>("infile");
+  std::string outFile = commandLine.get_option_value<std::string>("outfile");
 
-    std::string csvBlocks;
-    if (commandLine.is_option_provided("extract-blocks")) {
-      csvBlocks = commandLine.get_option_value<std::string>("extract-blocks");
-    }
-    std::vector<int> block_ids = stk::tools::get_ids_from_strings(stk::split_csv_string(csvBlocks));
+  std::string csvBlocks;
+  if (commandLine.is_option_provided("extract-blocks")) {
+    csvBlocks = commandLine.get_option_value<std::string>("extract-blocks");
+  }
+  std::vector<int> block_ids = stk::tools::get_ids_from_strings(stk::split_csv_string(csvBlocks));
 
-    std::string csvNodesets;
-    if (commandLine.is_option_provided("extract-nodesets")) {
-      csvNodesets = commandLine.get_option_value<std::string>("extract-nodesets");
-    }
-    std::vector<int> nodeset_ids = stk::tools::get_ids_from_strings(stk::split_csv_string(csvNodesets));
+  std::string csvNodesets;
+  if (commandLine.is_option_provided("extract-nodesets")) {
+    csvNodesets = commandLine.get_option_value<std::string>("extract-nodesets");
+  }
+  std::vector<int> nodeset_ids = stk::tools::get_ids_from_strings(stk::split_csv_string(csvNodesets));
 
-    print_ids_to_extract("blocks", block_ids);
+  print_ids_to_extract("blocks", block_ids);
 
-    if (!nodeset_ids.empty()) {
-      print_ids_to_extract("nodesets", nodeset_ids);
-    }
+  if (!nodeset_ids.empty()) {
+    print_ids_to_extract("nodesets", nodeset_ids);
+  }
 
-    stk::tools::extract_blocks_and_ns_from_file(inFile, outFile, block_ids, nodeset_ids, comm);
+  stk::tools::extract_blocks_and_ns_from_file(inFile, outFile, block_ids, nodeset_ids, comm);
 
-    MPI_Finalize();
-    return 0;
+  MPI_Finalize();
+  return 0;
 }
 

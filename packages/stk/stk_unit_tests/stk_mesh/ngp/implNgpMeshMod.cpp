@@ -16,13 +16,13 @@
 
 typedef Kokkos::DualView<int*, Kokkos::LayoutRight, stk::ngp::ExecSpace> IntViewType;
 
-class NgpMeshModImpl : public stk::unit_test_util::MeshFixture
+class NgpMeshModImpl : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
   void initialize_mesh(const std::string& meshDesc)
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+    stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
   }
 };
 

@@ -200,12 +200,24 @@ struct Nrm2<RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 
     const size_type numRows = X.extent(0);
     const size_type numCols = X.extent(1);
-    if (numRows < static_cast<size_type>(INT_MAX) &&
-        numRows * numCols < static_cast<size_type>(INT_MAX)) {
-      MV_Nrm2_Invoke<RV, XMV, int>(R, X, take_sqrt);
+    if (numCols == Kokkos::ArithTraits<size_type>::one()) {
+      auto R0 = Kokkos::subview(R, 0);
+      auto X0 = Kokkos::subview(X, Kokkos::ALL(), 0);
+      if (numRows < static_cast<size_type>(INT_MAX)) {
+        V_Nrm2_Invoke<decltype(R0), decltype(X0), int>(R0, X0, take_sqrt);
+      } else {
+        typedef std::int64_t index_type;
+        V_Nrm2_Invoke<decltype(R0), decltype(X0), index_type>(R0, X0,
+                                                              take_sqrt);
+      }
     } else {
-      typedef std::int64_t index_type;
-      MV_Nrm2_Invoke<RV, XMV, index_type>(R, X, take_sqrt);
+      if (numRows < static_cast<size_type>(INT_MAX) &&
+          numRows * numCols < static_cast<size_type>(INT_MAX)) {
+        MV_Nrm2_Invoke<RV, XMV, int>(R, X, take_sqrt);
+      } else {
+        typedef std::int64_t index_type;
+        MV_Nrm2_Invoke<RV, XMV, index_type>(R, X, take_sqrt);
+      }
     }
     Kokkos::Profiling::popRegion();
   }

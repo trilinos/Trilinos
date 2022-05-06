@@ -23,13 +23,13 @@ namespace balance {
 class FaceSearchTolerance
 {
 public:
-    FaceSearchTolerance() {}
-    virtual ~FaceSearchTolerance() {}
+  FaceSearchTolerance() {}
+  virtual ~FaceSearchTolerance() {}
 
-    virtual double compute(const stk::mesh::BulkData & mesh,
-                           const stk::mesh::FieldBase & coordField,
-                           const stk::mesh::Entity * faceNodes,
-                           const unsigned numFaceNodes) const = 0;
+  virtual double compute(const stk::mesh::BulkData & mesh,
+                         const stk::mesh::FieldBase & coordField,
+                         const stk::mesh::Entity * faceNodes,
+                         const unsigned numFaceNodes) const = 0;
 };
 
 }

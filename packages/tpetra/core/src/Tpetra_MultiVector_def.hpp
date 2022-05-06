@@ -1133,7 +1133,6 @@ namespace Tpetra {
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
    const CombineMode CM)
   {
-    using execution_space = typename device_type::execution_space;
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
     using ::Tpetra::Details::ProfilingRegion;
@@ -1234,7 +1233,7 @@ namespace Tpetra {
           else { 
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOSTMIRROR
-            Kokkos::deep_copy (execution_space(), tgt_j, src_j);
+            Kokkos::deep_copy (tgt_j, src_j); 
           }
         }
       }
@@ -1261,7 +1260,7 @@ namespace Tpetra {
           else { 
             // Copy src_j into tgt_j
             // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-            Kokkos::deep_copy (execution_space(), tgt_j, src_j); // Copy src_j into tgt_j
+            Kokkos::deep_copy (tgt_j, src_j); 
           }
         }
       }
@@ -1989,7 +1988,7 @@ namespace Tpetra {
       else {
         whichVecs.modify_device ();
         // DEEP_COPY REVIEW - HOST-TO-DEVICE
-        Kokkos::deep_copy (execution_space(), whichVecs.view_device (), whichVecsIn);
+        Kokkos::deep_copy (whichVecs.view_device (), whichVecsIn);
       }
     }
     auto whichVecs_d = whichVecs.view_device ();
@@ -3773,11 +3772,11 @@ namespace Tpetra {
       if (this->isConstantStride ()) {
         if (useHostView) {
           auto srcView_host = this->getLocalViewHost(Access::ReadOnly);
-           // DEEP_COPY REVIEW - NOT TESTED
+          // DEEP_COPY REVIEW - NOT TESTED
           Kokkos::deep_copy (A_view, srcView_host);
         } else {
           auto srcView_device = this->getLocalViewDevice(Access::ReadOnly);
-          // DEEP_COPY REVIEW - NOT TESTED
+           // DEEP_COPY REVIEW - NOT TESTED
           Kokkos::deep_copy (A_view, srcView_device);
         }
       }
@@ -3789,15 +3788,14 @@ namespace Tpetra {
           if (useHostView) {
             auto srcView_host = this->getLocalViewHost(Access::ReadOnly);
             auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
-            // DEEP_COPY REVIEW - NOT TESTED
+             // DEEP_COPY REVIEW - NOT TESTED
             Kokkos::deep_copy (dstColView, srcColView_host);
           } else {
             auto srcView_device = this->getLocalViewDevice(Access::ReadOnly);
             auto srcColView_device = Kokkos::subview (srcView_device, rowRange, srcCol);
-            // DEEP_COPY REVIEW - NOT TESTED
+             // DEEP_COPY REVIEW - NOT TESTED
             Kokkos::deep_copy (dstColView, srcColView_device);
           }
-
         }
       }
     }

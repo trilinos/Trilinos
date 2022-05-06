@@ -196,6 +196,7 @@ int test_dot_mv() {
   Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(0, 5);
   Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(13, 5);
   Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(1024, 5);
+  Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(789, 1);
   // Test::impl_test_dot_mv<view_type_a_ll, view_type_b_ll, Device>(132231,5);
 #endif
 
@@ -207,6 +208,7 @@ int test_dot_mv() {
   Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(0, 5);
   Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(13, 5);
   Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(1024, 5);
+  Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(789, 1);
   // Test::impl_test_dot_mv<view_type_a_lr, view_type_b_lr, Device>(132231,5);
 #endif
 
@@ -218,6 +220,7 @@ int test_dot_mv() {
   Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(0, 5);
   Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(13, 5);
   Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(1024, 5);
+  Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(789, 1);
   // Test::impl_test_dot_mv<view_type_a_ls, view_type_b_ls, Device>(132231,5);
 #endif
 

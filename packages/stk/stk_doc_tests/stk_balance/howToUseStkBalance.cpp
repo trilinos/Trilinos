@@ -25,7 +25,7 @@ public:
 };
 //ENDRcbSettings
 
-class StkBalanceHowTo : public stk::unit_test_util::MeshFixture
+class StkBalanceHowTo : public stk::unit_test_util::simple_fields::MeshFixture
 {};
 
 bool is_mesh_balanced(const stk::mesh::BulkData& bulk)
@@ -270,9 +270,10 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithFieldSpecifiedVertexWeights)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
     {
-        stk::mesh::Field<double> &weightField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights");
+        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::mesh::Field<double> &weightField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "vertex_weights");
         stk::mesh::put_field_on_mesh(weightField, get_meta().universal_part(), nullptr);
-        setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::io::fill_mesh("generated:4x4x4|sideset:xX", get_bulk());
         set_vertex_weights(get_bulk(), get_meta().locally_owned_part(), weightField);
 
         FieldVertexWeightSettings balanceSettings(weightField);
@@ -287,9 +288,10 @@ TEST_F(StkBalanceHowTo, DISABLED_UseRebalanceWithFieldSpecifiedVertexWeightsOnLo
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
     {
-        stk::mesh::Field<double> &weightField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights");
+        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::mesh::Field<double> &weightField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "vertex_weights");
         stk::mesh::put_field_on_mesh(weightField, get_meta().locally_owned_part(), nullptr);
-        setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::io::fill_mesh("generated:4x4x4|sideset:xX", get_bulk());
         set_vertex_weights(get_bulk(), get_meta().locally_owned_part(), weightField);
 
         FieldVertexWeightSettings balanceSettings(weightField);
@@ -353,9 +355,10 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithMultipleCriteriaWithSelectors)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
     {
+        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
         stk::mesh::Part &part1 = get_meta().declare_part("madeup_part_1", stk::topology::ELEM_RANK);
         stk::mesh::Part &part2 = get_meta().declare_part("part_2", stk::topology::ELEM_RANK);
-        setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::io::fill_mesh("generated:4x4x4|sideset:xX", get_bulk());
 
         put_elements_in_different_parts(get_bulk(), part1, part2);
 
@@ -462,13 +465,14 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithMultipleCriteriaWithFields)
 {
     if(stk::parallel_machine_size(get_comm()) == 2)
     {
-        stk::mesh::Field<double> &weightField1 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights1");
+        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::mesh::Field<double> &weightField1 = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "vertex_weights1");
         stk::mesh::put_field_on_mesh(weightField1, get_meta().universal_part(), nullptr);
 
-        stk::mesh::Field<double> &weightField2 = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "vertex_weights2");
+        stk::mesh::Field<double> &weightField2 = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "vertex_weights2");
         stk::mesh::put_field_on_mesh(weightField2, get_meta().universal_part(), nullptr);
 
-        setup_mesh("generated:4x4x4|sideset:xX", stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::io::fill_mesh("generated:4x4x4|sideset:xX", get_bulk());
 
         set_vertex_weights_checkerboard(get_bulk(), get_meta().locally_owned_part(), weightField1, weightField2);
 

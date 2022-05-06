@@ -9,72 +9,77 @@
 
 namespace {
 
-TEST_F(TwoElemTwoSharedSideTester, skin_mesh)
+class SkinMesh_TwoElemTwoSharedSide : public simple_fields::TwoElemTwoSharedSideTester {};
+
+TEST_F(SkinMesh_TwoElemTwoSharedSide, skin_mesh)
 {
-     if(bulkData.parallel_size() <= 2)
-     {
-         stk::mesh::create_exposed_block_boundary_sides(bulkData, activePart, {&activePart, &skinPart});
-         test_skinned_mesh(bulkData, 4u);
-     }
+  if(bulkData.parallel_size() <= 2)
+  {
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, activePart, {&activePart, &skinPart});
+    test_skinned_mesh(bulkData, 4u);
+  }
 }
 
-TEST_F(TwoElemTwoSharedSideTester, skin_one_hex)
+TEST_F(SkinMesh_TwoElemTwoSharedSide, skin_one_hex)
 {
-     if(bulkData.parallel_size() <= 2)
-     {
-         remove_element_from_part(bulkData, 2, activePart);
-         stk::mesh::Selector activeSelector = activePart;
-         stk::mesh::Selector sel = activeSelector;
-         stk::mesh::Selector air = !activeSelector;
-         stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, air);
-         test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 2u});
-     }
-}
-
-
-TEST_F(TwoElemThreeSharedSideTester, skin_mesh)
-{
-     if(bulkData.parallel_size() <= 2)
-     {
-         stk::mesh::create_exposed_block_boundary_sides(bulkData, activePart, {&activePart, &skinPart});
-         test_skinned_mesh(bulkData, 3u);
-     }
-}
-
-TEST_F(TwoElemThreeSharedSideTester, skin_one_hex)
-{
-     if(bulkData.parallel_size() <= 2)
-     {
-         remove_element_from_part(bulkData, 2, activePart);
-         stk::mesh::Selector activeSelector = activePart;
-         stk::mesh::Selector sel = activeSelector;
-         stk::mesh::Selector air = !activeSelector;
-         stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, air);
-         test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 3u});
-     }
+  if(bulkData.parallel_size() <= 2)
+  {
+    remove_element_from_part(bulkData, 2, activePart);
+    stk::mesh::Selector activeSelector = activePart;
+    stk::mesh::Selector sel = activeSelector;
+    stk::mesh::Selector air = !activeSelector;
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, air);
+    test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 2u});
+  }
 }
 
 
-TEST_F(TwoElemThreeSharedSideNoAuraTester, skin_mesh)
+class SkinMesh_TwoElemThreeSharedSide : public simple_fields::TwoElemThreeSharedSideTester {};
+
+TEST_F(SkinMesh_TwoElemThreeSharedSide, skin_mesh)
 {
-     if(bulkData.parallel_size() <= 2)
-     {
-         stk::mesh::create_exposed_block_boundary_sides(bulkData, activePart, {&activePart, &skinPart});
-         test_skinned_mesh(bulkData, 3u);
-     }
+  if(bulkData.parallel_size() <= 2)
+  {
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, activePart, {&activePart, &skinPart});
+    test_skinned_mesh(bulkData, 3u);
+  }
 }
 
-TEST_F(TwoElemThreeSharedSideNoAuraTester, skin_one_hex)
+TEST_F(SkinMesh_TwoElemThreeSharedSide, skin_one_hex)
 {
-     if(bulkData.parallel_size() <= 2)
-     {
-         remove_element_from_part(bulkData, 2, activePart);
-         stk::mesh::Selector activeSelector = activePart;
-         stk::mesh::Selector sel = activeSelector;
-         stk::mesh::Selector air = !activeSelector;
-         stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, air);
-         test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 3u});
-     }
+  if(bulkData.parallel_size() <= 2)
+  {
+    remove_element_from_part(bulkData, 2, activePart);
+    stk::mesh::Selector activeSelector = activePart;
+    stk::mesh::Selector sel = activeSelector;
+    stk::mesh::Selector air = !activeSelector;
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, air);
+    test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 3u});
+  }
+}
+
+class SkinMesh_TwoElemThreeSharedSideNoAura : public simple_fields::TwoElemThreeSharedSideNoAuraTester {};
+
+TEST_F(SkinMesh_TwoElemThreeSharedSideNoAura, skin_mesh)
+{
+  if(bulkData.parallel_size() <= 2)
+  {
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, activePart, {&activePart, &skinPart});
+    test_skinned_mesh(bulkData, 3u);
+  }
+}
+
+TEST_F(SkinMesh_TwoElemThreeSharedSideNoAura, skin_one_hex)
+{
+  if(bulkData.parallel_size() <= 2)
+  {
+    remove_element_from_part(bulkData, 2, activePart);
+    stk::mesh::Selector activeSelector = activePart;
+    stk::mesh::Selector sel = activeSelector;
+    stk::mesh::Selector air = !activeSelector;
+    stk::mesh::create_exposed_block_boundary_sides(bulkData, sel, {&activePart, &skinPart}, air);
+    test_total_sides_and_sides_per_element(bulkData, 6u, {6u, 3u});
+  }
 }
 
 }

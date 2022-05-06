@@ -44,48 +44,48 @@
 namespace {
 static const unsigned num_test_topologies = 30;
 static const stk::topology test_topologies[num_test_topologies] = {
-                                                       stk::topology::NODE
-                                                     //EDGE_RANK
-                                                     , stk::topology::LINE_2
-                                                     , stk::topology::LINE_3
-                                                     //FACE_RANK
-                                                     , stk::topology::TRI_3
-                                                     , stk::topology::TRI_4
-                                                     , stk::topology::TRI_6
-                                                     , stk::topology::QUAD_4
-                                                     , stk::topology::QUAD_8
-                                                     , stk::topology::QUAD_9
-                                                     //ELEMENT_RANK
-                                                     , stk::topology::PARTICLE
-                                                     , stk::topology::BEAM_2
-                                                     , stk::topology::BEAM_3
-                                                     , stk::topology::SHELL_TRI_3
-                                                     // Cannot create SHELL_TRI_4 entities because Shards does not support!
-                                                     // , stk::topology::SHELL_TRI_4
-                                                     , stk::topology::SHELL_TRI_6
-                                                     , stk::topology::SHELL_QUAD_4
-                                                     , stk::topology::SHELL_QUAD_8
-                                                     , stk::topology::SHELL_QUAD_9
-                                                     , stk::topology::TET_4
-                                                     , stk::topology::TET_8
-                                                     , stk::topology::TET_10
-                                                     , stk::topology::TET_11
-                                                     , stk::topology::PYRAMID_5
-                                                     , stk::topology::PYRAMID_13
-                                                     , stk::topology::PYRAMID_14
-                                                     , stk::topology::WEDGE_6
-                                                     , stk::topology::WEDGE_15
-                                                     , stk::topology::WEDGE_18
-                                                     , stk::topology::HEX_8
-                                                     , stk::topology::HEX_20
-                                                     , stk::topology::HEX_27};
-
+  stk::topology::NODE,
+  //EDGE_RANK
+  stk::topology::LINE_2,
+  stk::topology::LINE_3,
+  //FACE_RANK
+  stk::topology::TRI_3,
+  stk::topology::TRI_4,
+  stk::topology::TRI_6,
+  stk::topology::QUAD_4,
+  stk::topology::QUAD_8,
+  stk::topology::QUAD_9,
+  //ELEMENT_RANK
+  stk::topology::PARTICLE,
+  stk::topology::BEAM_2,
+  stk::topology::BEAM_3,
+  stk::topology::SHELL_TRI_3,
+  // Cannot create SHELL_TRI_4 entities because Shards does not support!
+  // , stk::topology::SHELL_TRI_4
+  stk::topology::SHELL_TRI_6,
+  stk::topology::SHELL_QUAD_4,
+  stk::topology::SHELL_QUAD_8,
+  stk::topology::SHELL_QUAD_9,
+  stk::topology::TET_4,
+  stk::topology::TET_8,
+  stk::topology::TET_10,
+  stk::topology::TET_11,
+  stk::topology::PYRAMID_5,
+  stk::topology::PYRAMID_13,
+  stk::topology::PYRAMID_14,
+  stk::topology::WEDGE_6,
+  stk::topology::WEDGE_15,
+  stk::topology::WEDGE_18,
+  stk::topology::HEX_8,
+  stk::topology::HEX_20,
+  stk::topology::HEX_27};
 }
 
 TEST(UnitTestRootTopology, TestRootTopologyPartGetters)
 {
   const int spatial_dim = 3;
   stk::mesh::MetaData meta(spatial_dim);
+  meta.use_simple_fields();
   meta.commit();
 
   for (unsigned i = 0; i < num_test_topologies; ++i)
@@ -122,6 +122,7 @@ TEST(UnitTestRootTopology, TestRootTopologySubsets)
 {
   const int spatial_dim = 3;
   stk::mesh::MetaData meta(spatial_dim);
+  meta.use_simple_fields();
 
   for (unsigned i = 0; i < num_test_topologies; ++i)
   {

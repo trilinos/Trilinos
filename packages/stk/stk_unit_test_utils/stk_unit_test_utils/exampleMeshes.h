@@ -103,6 +103,22 @@ Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes)
             blockTopologicalData, globalNumberOfNodes, globalIdsOfLocalElements, globalIdsOfLocalNodes);
 }
 
+namespace simple_fields {
+
+inline void fillDataForUnitCube(std::vector<double> &coordinates) {
+  unitTestUtils::exampleMeshes::fillDataForUnitCube(coordinates);
+}
+
+inline void fillDataForRectangloid(std::vector<double> &coordinates) {
+  unitTestUtils::exampleMeshes::fillDataForRectangloid(coordinates);
+}
+
+inline
+Iogn::ExodusData createExodusDataForDisconnectedHex8s(int numberOfHexes) {
+  return unitTestUtils::exampleMeshes::createExodusDataForDisconnectedHex8s(numberOfHexes);
+}
+
+} // namespace simple_fields
 
 }
 }

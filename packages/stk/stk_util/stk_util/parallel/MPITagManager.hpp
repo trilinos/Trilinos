@@ -39,8 +39,10 @@
 #include <set>
 #include <memory>
 #include <iostream>
+#include "MPICommKey.hpp"
 #include "stk_util/parallel/Parallel.hpp"   // for MPI
-
+#include "stk_util/parallel/MPICommKey.hpp"  // for MPIKeyManager
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg, ThrowRequire
 
 namespace stk {
 
@@ -48,8 +50,6 @@ class MPITag;
 
 namespace Impl {
   class MPITagData;
-
-  int delete_mpi_comm_key(MPI_Comm comm,int comm_keyval, void* attribute_val, void* extra_state);
 }
 
 
@@ -60,7 +60,7 @@ namespace Impl {
 class MPITagManager
 {
   public:
-    MPITagManager();
+
 
     ~MPITagManager() {}
 
@@ -68,7 +68,7 @@ class MPITagManager
 
     MPITagManager& operator=(const MPITagManager&) = delete;
 
-    using CommKey = int;
+    //using CommKey = int;
 
     // get an unused tag
     MPITag get_tag(MPI_Comm comm);
@@ -76,10 +76,9 @@ class MPITagManager
     // try to get tag given tag, or a nearby one if that specified one is unavailable
     MPITag get_tag(MPI_Comm comm, int tagHint);
 
-    // sets the CommKey for the given comm if it hasn't been set already, returning the CommKey
-    CommKey get_comm_key(MPI_Comm comm);
-
   private:
+
+    MPITagManager();
 
     struct CommRecord
     {
@@ -89,6 +88,10 @@ class MPITagManager
 
       CommRecord& operator=(const CommRecord&) = delete;
 
+      void insert(std::shared_ptr<Impl::MPITagData> new_tag);
+
+      void erase(Impl::MPITagData& tag);
+
       std::set<int> tags;
       std::map<int, std::weak_ptr<Impl::MPITagData>> tagPtrs;  // maps tag values to the MPITagData objects (pointers)
     };
@@ -97,15 +100,14 @@ class MPITagManager
 
     void free_tag(Impl::MPITagData& tag);
 
-    const CommKey* generate_comm_key();
-
-    void free_comm_key(CommKey* key);
+    void free_comm_keys(MPI_Comm comm);
 
     // checks that new_val is the same on all procs (in debug mode only)
     void debug_check(MPI_Comm comm, int newVal);
 
-    std::map<CommKey, CommRecord> m_tags;
-    std::set<CommKey> m_usedCommKeys;
+    std::shared_ptr<MPIKeyManager> m_keyManager;
+    CommCompare m_commCompare;
+    std::map<MPI_Comm, CommRecord, CommCompare> m_tags;
 
     const int m_tagMin = 1024;
     int m_tagMax = 32767;
@@ -113,11 +115,8 @@ class MPITagManager
 
     friend Impl::MPITagData;
     friend MPITag;
-    friend int Impl::delete_mpi_comm_key(MPI_Comm comm,int comm_keyval, void* attribute_val, void* extra_state);
+    friend MPITagManager& get_mpi_tag_manager();
 };
-
-
-
 
 namespace Impl {
 
@@ -125,9 +124,9 @@ class MPITagData
 {
   public:
 
-    MPITagData(MPITagManager* manager, MPITagManager::CommKey comm_key, int tag) :
+    MPITagData(MPITagManager* manager, MPI_Comm comm, int tag) :
       m_manager(manager),
-      m_commKey(comm_key),
+      m_comm(comm),
       m_tag(tag)
     {}
 
@@ -135,19 +134,24 @@ class MPITagData
 
     int get_tag() { return m_tag;}
 
-    MPITagManager::CommKey get_comm_key() { return m_commKey;}
+    MPI_Comm get_comm() { return m_comm;}
+
+    MPIKeyManager::CommKey get_comm_key() { return m_manager->m_keyManager->get_key(m_comm); }
 
     void set_free() { m_isFree = true;}
 
     bool is_free() { return m_isFree; }
 
+    MPITagManager* get_tag_manager() { return m_manager; }
+
   private:
     MPITagManager* m_manager;
-    MPITagManager::CommKey m_commKey;
+    MPI_Comm m_comm;
     int m_tag;
     bool m_isFree = false;
 };
-}
+
+}  // namespace Impl
 
 // an MPI tag that is currently in use.  Note that it is implicitly convertable
 // to int, so it can be passed directly into MPI routines.
@@ -177,9 +181,12 @@ class MPITag
 
 inline bool operator==(const MPITag& lhs, const MPITag& rhs)
 {
+  ThrowRequireMsg(lhs.m_data->get_tag_manager() == rhs.m_data->get_tag_manager(),
+                  "Cannot compare MPITags on different MPITagManagers");
+
   return static_cast<int>(lhs) == static_cast<int>(rhs) &&
-         lhs.m_data->get_comm_key() == rhs.m_data->get_comm_key() &&
-         !lhs.m_data->is_free() && !rhs.m_data->is_free();
+         !lhs.m_data->is_free() && !rhs.m_data->is_free() &&
+         lhs.m_data->get_comm_key() == rhs.m_data->get_comm_key();       
 }
 
 inline bool operator!=(const MPITag& lhs, const MPITag& rhs)
@@ -194,8 +201,6 @@ inline std::ostream&  operator<<(std::ostream& os, const MPITag& tag)
 
   return os;
 }
-
-
 
 
 MPITagManager& get_mpi_tag_manager();

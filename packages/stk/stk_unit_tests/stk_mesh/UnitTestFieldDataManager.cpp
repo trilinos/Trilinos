@@ -50,6 +50,7 @@
 #include <vector>                       // for vector, vector<>::iterator
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
 
@@ -83,16 +84,15 @@ void createPart(stk::mesh::MetaData& meshMetaData)
 template <typename T>
 void initializeTestField(stk::mesh::MetaData& meshMetaData)
 {
-  stk::mesh::Field<T> &field1 = meshMetaData.declare_field<stk::mesh::Field<T>>(stk::topology::NODE_RANK, field_name(1));
+  stk::mesh::Field<T> &field1 = meshMetaData.declare_field<T>(stk::topology::NODE_RANK, field_name(1));
   T initial_value1 = 13;
   stk::mesh::put_field_on_entire_mesh_with_initial_value(field1, &initial_value1);
-  stk::mesh::Field<T> &field2 = meshMetaData.declare_field<stk::mesh::Field<T>>(stk::topology::NODE_RANK, field_name(2));
+  stk::mesh::Field<T> &field2 = meshMetaData.declare_field<T>(stk::topology::NODE_RANK, field_name(2));
   T initial_value2 = 4;
   stk::mesh::put_field_on_entire_mesh_with_initial_value(field2, &initial_value2);
-  stk::mesh::Field<T, stk::mesh::Cartesian3d> &field3 =
-      meshMetaData.declare_field<stk::mesh::Field<T, stk::mesh::Cartesian3d>>(stk::topology::NODE_RANK, field_name(3));
+  stk::mesh::Field<T> &field3 = meshMetaData.declare_field<T>(stk::topology::NODE_RANK, field_name(3));
   T initial_value3[3] = {1, 2, 3};
-  stk::mesh::put_field_on_entire_mesh_with_initial_value(field3, initial_value3);
+  stk::mesh::put_field_on_mesh(field3, meshMetaData.universal_part(), 3, initial_value3);
   meshMetaData.commit();
 }
 
@@ -233,9 +233,19 @@ void testTwoEntitiesTwoBuckets(stk::mesh::BulkData &bulkData, stk::mesh::FieldDa
   EXPECT_EQ(expectedNumBuckets, bulkData.buckets(stk::topology::NODE_RANK).size());
 }
 
+std::shared_ptr<stk::mesh::BulkData> build_mesh(unsigned spatialDim,
+                                                stk::ParallelMachine comm,
+                                                stk::mesh::FieldDataManager* fieldDataManager)
+{
+  stk::mesh::MeshBuilder builder(comm);
+  builder.set_spatial_dimension(spatialDim);
+  builder.set_field_data_manager(fieldDataManager);
+  return builder.create();
+}
+
 using TestTypes = ::testing::Types<char, unsigned char, signed char, short, unsigned short, int, unsigned int,
-                                   long, unsigned long, long long, unsigned long long, float, double, long double,
-                                   std::complex<float>, std::complex<double>>;
+long, unsigned long, long long, unsigned long long, float, double, long double,
+std::complex<float>, std::complex<double>>;
 
 template <typename T>
 class TestDefaultFieldDataManager : public testing::Test {};
@@ -247,21 +257,18 @@ TYPED_TEST(TestDefaultFieldDataManager, AllocateFieldData)
 
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
-  stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
-  const size_t numRanks = meshMetaData.entity_rank_count();
-  initializeTestField<FieldDataType>(meshMetaData);
 
+  const size_t numRanks = stk::mesh::entity_rank_names().size();
   stk::mesh::DefaultFieldDataManager fieldDataManager(numRanks);
-  stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
-                               #ifdef SIERRA_MIGRATION
-                                 false,
-                               #endif
-                               &fieldDataManager);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, &fieldDataManager);
+  stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
+  meshMetaData.use_simple_fields();
+  initializeTestField<FieldDataType>(meshMetaData);
 
   size_t bucketCapacity = 512;
   size_t numNodes = 20;
   size_t extraCapacity = 0;
-  testAllocateFieldData<FieldDataType>(bulkData, &fieldDataManager, bucketCapacity, extraCapacity, numNodes);
+  testAllocateFieldData<FieldDataType>(*bulkDataPtr, &fieldDataManager, bucketCapacity, extraCapacity, numNodes);
 }
 
 TYPED_TEST(TestDefaultFieldDataManager, AllocateFieldDataTwoBuckets)
@@ -270,23 +277,20 @@ TYPED_TEST(TestDefaultFieldDataManager, AllocateFieldDataTwoBuckets)
 
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
-  stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
-  initializeTestField<FieldDataType>(meshMetaData);
 
-  const size_t numRanks = meshMetaData.entity_rank_count();
+  const size_t numRanks = stk::mesh::entity_rank_names().size();
   stk::mesh::DefaultFieldDataManager fieldDataManager(numRanks);
-  stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
-                               #ifdef SIERRA_MIGRATION
-                                 false,
-                               #endif
-                               &fieldDataManager);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, &fieldDataManager);
+  stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
+  meshMetaData.use_simple_fields();
+  initializeTestField<FieldDataType>(meshMetaData);
 
   const size_t bucketCapacity = 512;
   const size_t numNodes = 700;
   const int numBuckets = 2;
   const size_t sizeOfStuff = numBuckets * bucketCapacity;
   const size_t extraCapacity = 0;
-  testAllocateFieldData<FieldDataType>(bulkData, &fieldDataManager, sizeOfStuff, extraCapacity, numNodes);
+  testAllocateFieldData<FieldDataType>(*bulkDataPtr, &fieldDataManager, sizeOfStuff, extraCapacity, numNodes);
 }
 
 TYPED_TEST(TestDefaultFieldDataManager, TwoEntitiesTwoBuckets)
@@ -295,19 +299,16 @@ TYPED_TEST(TestDefaultFieldDataManager, TwoEntitiesTwoBuckets)
 
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
-  stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
+
+  const size_t numRanks = stk::mesh::entity_rank_names().size();
+  stk::mesh::DefaultFieldDataManager fieldDataManager(numRanks);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, &fieldDataManager);
+  stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
+  meshMetaData.use_simple_fields();
   createPart(meshMetaData);
   initializeTestField<FieldDataType>(meshMetaData);
 
-  const size_t numRanks = meshMetaData.entity_rank_count();
-  stk::mesh::DefaultFieldDataManager fieldDataManager(numRanks);
-  stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
-                               #ifdef SIERRA_MIGRATION
-                                 false,
-                               #endif
-                               &fieldDataManager);
-
-  testTwoEntitiesTwoBuckets(bulkData, &fieldDataManager);
+  testTwoEntitiesTwoBuckets(*bulkDataPtr, &fieldDataManager);
 }
 
 template <typename T>
@@ -320,20 +321,17 @@ TYPED_TEST(TestContiguousFieldDataManager, AllocateFieldData)
 
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
-  stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
-  initializeTestField<FieldDataType>(meshMetaData);
 
   stk::mesh::ContiguousFieldDataManager fieldDataManager;
-  stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
-                               #ifdef SIERRA_MIGRATION
-                                 false,
-                               #endif
-                               &fieldDataManager);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, &fieldDataManager);
+  stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
+  meshMetaData.use_simple_fields();
+  initializeTestField<FieldDataType>(meshMetaData);
   size_t numNodes = 20;
   size_t bucketSize = numNodes;
   const size_t extraCapacity = fieldDataManager.get_extra_capacity();
 
-  testAllocateFieldData<FieldDataType>(bulkData, &fieldDataManager, bucketSize, extraCapacity, numNodes);
+  testAllocateFieldData<FieldDataType>(*bulkDataPtr, &fieldDataManager, bucketSize, extraCapacity, numNodes);
 }
 
 TYPED_TEST(TestContiguousFieldDataManager, AllocateFieldDataAndReorderBuckets)
@@ -342,26 +340,23 @@ TYPED_TEST(TestContiguousFieldDataManager, AllocateFieldDataAndReorderBuckets)
 
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
-  stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
-  initializeTestField<FieldDataType>(meshMetaData);
 
   stk::mesh::ContiguousFieldDataManager fieldDataManager;
-  stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
-                               #ifdef SIERRA_MIGRATION
-                                 false,
-                               #endif
-                               &fieldDataManager);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, &fieldDataManager);
+  stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
+  meshMetaData.use_simple_fields();
+  initializeTestField<FieldDataType>(meshMetaData);
   size_t numNodes = 10000;
   size_t sizeOfStuff = numNodes;
   const size_t extraCapacity = fieldDataManager.get_extra_capacity();
-  testAllocateFieldData<FieldDataType>(bulkData, &fieldDataManager, sizeOfStuff, extraCapacity, numNodes);
+  testAllocateFieldData<FieldDataType>(*bulkDataPtr, &fieldDataManager, sizeOfStuff, extraCapacity, numNodes);
 
   const int num_buckets = static_cast<int>(numNodes/512 + 1);
   std::vector<unsigned> reorderedBucketIds(num_buckets,0);
   for (size_t i=0; i<reorderedBucketIds.size(); i++) {
     reorderedBucketIds[i] = reorderedBucketIds.size()-i-1;
   }
-  testReorderBucketFieldData<FieldDataType>(bulkData, &fieldDataManager, stk::topology::NODE_RANK,
+  testReorderBucketFieldData<FieldDataType>(*bulkDataPtr, &fieldDataManager, stk::topology::NODE_RANK,
                                             meshMetaData.get_fields(), reorderedBucketIds);
 }
 
@@ -371,18 +366,15 @@ TYPED_TEST(TestContiguousFieldDataManager, TwoEntitiesTwoBuckets)
 
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
-  stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
+
+  stk::mesh::ContiguousFieldDataManager fieldDataManager;
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, &fieldDataManager);
+  stk::mesh::MetaData& meshMetaData = bulkDataPtr->mesh_meta_data();
+  meshMetaData.use_simple_fields();
   createPart(meshMetaData);
   initializeTestField<FieldDataType>(meshMetaData);
 
-  stk::mesh::ContiguousFieldDataManager fieldDataManager;
-  stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
-                               #ifdef SIERRA_MIGRATION
-                                 false,
-                               #endif
-                               &fieldDataManager);
-
-  testTwoEntitiesTwoBuckets(bulkData, &fieldDataManager);
+  testTwoEntitiesTwoBuckets(*bulkDataPtr, &fieldDataManager);
 }
 
 template <typename T>
@@ -391,11 +383,11 @@ void initialize2Parts2Fields(stk::mesh::MetaData &meshMetaData)
   stk::mesh::Part &part1 = meshMetaData.declare_part("part1");
   stk::mesh::Part &part2 = meshMetaData.declare_part("part2");
 
-  stk::mesh::Field<T> &field1 = meshMetaData.declare_field<stk::mesh::Field<T>>(stk::topology::NODE_RANK, field_name(1));
+  stk::mesh::Field<T> &field1 = meshMetaData.declare_field<T>(stk::topology::NODE_RANK, field_name(1));
   T initial_value1 = 13;
   stk::mesh::put_field_on_mesh( field1, part1, &initial_value1);
 
-  stk::mesh::Field<T> &field2 = meshMetaData.declare_field<stk::mesh::Field<T>>(stk::topology::NODE_RANK, field_name(2));
+  stk::mesh::Field<T> &field2 = meshMetaData.declare_field<T>(stk::topology::NODE_RANK, field_name(2));
   T initial_value2 = 4;
   stk::mesh::put_field_on_mesh( field2, part2, &initial_value2);
 
@@ -431,15 +423,13 @@ TYPED_TEST(TestContiguousFieldDataManager, nodalFieldNotOnAllNodeBuckets)
 
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
-  stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
-  initialize2Parts2Fields<FieldDataType>(meshMetaData);
 
   stk::mesh::ContiguousFieldDataManager fieldDataManager;
-  stk::mesh::BulkData bulkData(meshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA,
-                               #ifdef SIERRA_MIGRATION
-                                 false,
-                               #endif
-                               &fieldDataManager);
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, &fieldDataManager);
+  stk::mesh::BulkData& bulkData = *bulkDataPtr;
+  stk::mesh::MetaData& meshMetaData = bulkData.mesh_meta_data();
+  meshMetaData.use_simple_fields();
+  initialize2Parts2Fields<FieldDataType>(meshMetaData);
 
   bulkData.deactivate_field_updating();
 
@@ -483,8 +473,8 @@ TYPED_TEST(TestContiguousFieldDataManager, nodalFieldNotOnAllNodeBuckets)
 
   bulkData.allocate_field_data();
 
-  stk::mesh::Field<FieldDataType> &field1 = *meshMetaData.get_field<stk::mesh::Field<FieldDataType>>(stk::topology::NODE_RANK, field_name(1));
-  stk::mesh::Field<FieldDataType> &field2 = *meshMetaData.get_field<stk::mesh::Field<FieldDataType>>(stk::topology::NODE_RANK, field_name(2));
+  stk::mesh::Field<FieldDataType> &field1 = *meshMetaData.get_field<FieldDataType>(stk::topology::NODE_RANK, field_name(1));
+  stk::mesh::Field<FieldDataType> &field2 = *meshMetaData.get_field<FieldDataType>(stk::topology::NODE_RANK, field_name(2));
   testPartToNodeMapping(bulkData, part1, part1Nodes, field1, field2);
   testPartToNodeMapping(bulkData, part2, part2Nodes, field2, field1);
 }
@@ -495,10 +485,13 @@ TYPED_TEST(TestContiguousFieldDataManager, allocate_bucket_field_data)
 
   using FieldDataType = TypeParam;
   const size_t spatialDim = 3;
-  stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
-  initialize2Parts2Fields<FieldDataType>(meshMetaData);
 
   stk::mesh::ContiguousFieldDataManager fieldDataManager;
+  std::shared_ptr<stk::mesh::BulkData> bulkDataPtr = build_mesh(spatialDim, MPI_COMM_WORLD, &fieldDataManager);
+  stk::mesh::BulkData& bulkData = *bulkDataPtr;
+  stk::mesh::MetaData& meshMetaData = bulkData.mesh_meta_data();
+  meshMetaData.use_simple_fields();
+  initialize2Parts2Fields<FieldDataType>(meshMetaData);
 
   const stk::mesh::FieldVector &allFields = meshMetaData.get_fields();
   const stk::mesh::FieldVector fields = extract_test_fields(allFields);
@@ -616,6 +609,7 @@ void allocate_bucket_field_data_tableBased(stk::mesh::FieldDataManager *fieldDat
 
   const size_t spatialDim = 3;
   stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
+  meshMetaData.use_simple_fields();
   initialize2Parts2Fields<T>(meshMetaData);
 
 
@@ -702,7 +696,7 @@ void testAddingSingleEntity(stk::mesh::MetaData &meshMetaData, stk::mesh::Contig
   const unsigned alignment = fieldDataManager.alignment_increment_bytes;
 
   std::vector<size_t> expectedNumBytesAllocated {stk::adjust_up_to_alignment_boundary(bytesPerEntity, alignment) +
-                                                 fieldDataManager.get_extra_capacity(), 0};
+        fieldDataManager.get_extra_capacity(), 0};
   EXPECT_EQ(expectedNumBytesAllocated[field1Ordinal], numBytesAllocated[field1Ordinal]);
   EXPECT_EQ(expectedNumBytesAllocated[field2Ordinal], numBytesAllocated[field2Ordinal]);
 
@@ -722,6 +716,7 @@ TYPED_TEST(TestContiguousFieldDataManager, add_field_data_for_entity)
   stk::mesh::ContiguousFieldDataManager fieldDataManager;
   const size_t spatialDim = 3;
   stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
+  meshMetaData.use_simple_fields();
 
   testAddingSingleEntity<FieldDataType>(meshMetaData, fieldDataManager);
 
@@ -752,7 +747,7 @@ TYPED_TEST(TestContiguousFieldDataManager, add_field_data_for_entity)
   ASSERT_EQ(fields.size(), numBytesAllocated.size());
   const unsigned alignment = fieldDataManager.alignment_increment_bytes;
   std::vector<size_t> expectedNumBytesAllocated {stk::adjust_up_to_alignment_boundary(sizeof(FieldDataType), alignment) +
-                                                 fieldDataManager.get_extra_capacity(), 0};
+        fieldDataManager.get_extra_capacity(), 0};
   EXPECT_EQ(expectedNumBytesAllocated[field1Ordinal], numBytesAllocated[field1Ordinal]);
   EXPECT_EQ(expectedNumBytesAllocated[field2Ordinal], numBytesAllocated[field2Ordinal]);
 
@@ -794,6 +789,7 @@ TYPED_TEST(TestContiguousFieldDataManager, deallocate_nonempty_bucket)
   stk::mesh::ContiguousFieldDataManager fieldDataManager;
   const size_t spatialDim = 3;
   stk::mesh::MetaData meshMetaData(spatialDim, stk::mesh::entity_rank_names());
+  meshMetaData.use_simple_fields();
 
   testAddingSingleEntity<FieldDataType>(meshMetaData, fieldDataManager);
 

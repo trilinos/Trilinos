@@ -57,7 +57,7 @@
 namespace ngp_field_perf_test
 {
 
-class NgpFieldAccess : public stk::unit_test_util::MeshFixture
+class NgpFieldAccess : public stk::unit_test_util::simple_fields::MeshFixture
 {
 public:
   NgpFieldAccess()
@@ -67,30 +67,30 @@ public:
 protected:
   void declare_centroid_field()
   {
-    centroid = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::ELEM_RANK, "centroid");
+    centroid = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "centroid");
     stk::mesh::put_field_on_mesh(*centroid, get_meta().universal_part(), 3,
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian3d> >::data_type*) nullptr);
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
 
-    hostCentroid = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::ELEM_RANK, "hostCentroid");
+    hostCentroid = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "hostCentroid");
     stk::mesh::put_field_on_mesh(*hostCentroid, get_meta().universal_part(), 3,
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian3d> >::data_type*) nullptr);
+                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
   }
 
   void declare_centroid_partial_mesh(unsigned numBlocks)
   {
-    centroid = &get_meta().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::ELEM_RANK, "centroid");
+    centroid = &get_meta().declare_field<double>(stk::topology::ELEM_RANK, "centroid");
     for(unsigned i = 1; i <= numBlocks; i++) {
       const std::string partName = "block_" + std::to_string(i);
       stk::mesh::Part& part = get_meta().declare_part(partName, stk::topology::ELEM_RANK);
       stk::mesh::put_field_on_mesh(*centroid, part, 3,
-                                  (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian3d> >::data_type*) nullptr);
+                                  (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
     }
   }
 
   void setup_multi_block_mesh(unsigned numElemsPerDim, unsigned numBlocks)
   {
     stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
-    setup_mesh(stk::unit_test_util::get_mesh_spec(numElemsPerDim), stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(numElemsPerDim), get_bulk());
     stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemsPerDim);
   }
 
@@ -122,8 +122,8 @@ protected:
   }
 
   stk::performance_tests::Timer timer;
-  stk::mesh::Field<double, stk::mesh::Cartesian3d> *centroid;
-  stk::mesh::Field<double, stk::mesh::Cartesian3d> *hostCentroid;
+  stk::mesh::Field<double> *centroid;
+  stk::mesh::Field<double> *hostCentroid;
 };
 
 TEST_F(NgpFieldAccess, Centroid)
@@ -133,8 +133,9 @@ TEST_F(NgpFieldAccess, Centroid)
   const int NUM_RUNS = 1000;
   const int ELEMS_PER_DIM = 120;
 
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   declare_centroid_field();
-  setup_mesh(stk::unit_test_util::get_mesh_spec(ELEMS_PER_DIM), stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(ELEMS_PER_DIM), get_bulk());
 
   timer.start_timing();
   for (int run=0; run<NUM_RUNS; run++) {
@@ -152,8 +153,9 @@ TEST_F(NgpFieldAccess, HostCentroid)
   const int NUM_RUNS = 1000;
   const int ELEMS_PER_DIM = 120;
 
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   declare_centroid_field();
-  setup_mesh(stk::unit_test_util::get_mesh_spec(ELEMS_PER_DIM), stk::mesh::BulkData::NO_AUTO_AURA);
+  stk::io::fill_mesh(stk::unit_test_util::simple_fields::get_mesh_spec(ELEMS_PER_DIM), get_bulk());
 
   for (int run=0; run<NUM_RUNS; run++) {
     stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(get_bulk(), *centroid);
@@ -176,6 +178,7 @@ TEST_F(NgpFieldAccess, CentroidMultiBlock)
   const int ELEMS_PER_DIM = 100;
   const int NUM_BLOCKS = 100;
 
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   declare_centroid_field();
   setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS);
 
@@ -202,10 +205,11 @@ TEST_F(NgpFieldAccess, CentroidPartialBlock)
   const int NUM_RUNS = 500;
   const int ELEMS_PER_DIM = 100;
   const int NUM_BLOCKS = 100;
-  int BLOCKS = stk::unit_test_util::get_command_line_option<int>("-n", 50);
+  int BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option<int>("-n", 50);
   BLOCKS = std::max(BLOCKS, 1);
   BLOCKS = std::min(BLOCKS, NUM_BLOCKS);
 
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   declare_centroid_partial_mesh(BLOCKS);
   setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS);
 

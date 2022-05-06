@@ -189,8 +189,6 @@ struct RelationType
   {
     USES      = 0 ,
     USED_BY   = 1 ,
-    CONTACT   = 0x00ff , // 5
-    AUXILIARY = 0x00ff ,
     INVALID   = 10
   };
 

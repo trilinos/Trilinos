@@ -8,16 +8,18 @@
 
 #ifndef AKRI_INTERFACEGEOMETRY_H_
 #define AKRI_INTERFACEGEOMETRY_H_
+
 #include <Akri_Element_Cutter.hpp>
-#include <Akri_InterfaceID.hpp>
 #include <Akri_Intersection_Points.hpp>
-#include <Akri_PhaseTag.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <string>
 
 namespace krino {
 
+class InterfaceID;
+class PhaseTag;
 class SnapInfo;
+class Surface_Identifier;
 
 class ElementCutter
 {
@@ -50,6 +52,10 @@ public:
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const NodeToCapturedDomainsMap & nodesToCapturedDomains) const = 0;
 
+  virtual std::vector<stk::mesh::Entity> get_possibly_cut_elements(const stk::mesh::BulkData & mesh) const = 0;
+
+  virtual bool snapped_elements_may_have_new_intersections() const = 0;
+
   virtual std::vector<IntersectionPoint> get_edge_intersection_points(const stk::mesh::BulkData & mesh,
       const NodeToCapturedDomainsMap & nodesToCapturedDomains) const = 0;
 
@@ -58,6 +64,8 @@ public:
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints) const = 0;
+
+  virtual const std::vector<Surface_Identifier> & get_surface_identifiers() const = 0;
 
   // FIXME: Temporary methods
   virtual void store_phase_for_uncut_elements(const stk::mesh::BulkData & mesh) const = 0;

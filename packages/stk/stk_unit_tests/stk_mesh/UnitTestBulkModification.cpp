@@ -60,11 +60,6 @@
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
-
-
-
-
-
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Bucket;
@@ -72,15 +67,15 @@ using stk::mesh::BucketIterator;
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;
 using stk::mesh::BucketVector;
-using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fixtures::simple_fields::RingFixture;
 
 class UnitTestStkMeshBulkModification {
- public:
-  UnitTestStkMeshBulkModification(stk::ParallelMachine pm) :
-    m_comm(pm),
-    m_num_procs(stk::parallel_machine_size( m_comm )),
-    m_rank(stk::parallel_machine_rank( m_comm )),
-    m_ring_mesh(pm)
+public:
+  UnitTestStkMeshBulkModification(stk::ParallelMachine pm)
+    : m_comm(pm),
+      m_num_procs(stk::parallel_machine_size( m_comm )),
+      m_rank(stk::parallel_machine_rank( m_comm )),
+      m_ring_mesh(pm)
   { }
 
   void test_bulkdata_not_synchronized();
@@ -185,8 +180,8 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 
     // Get the buckets that will give us the locally used nodes
     stk::mesh::Selector locally_used_selector =
-      m_ring_mesh.m_meta_data.locally_owned_part() |
-      m_ring_mesh.m_meta_data.globally_shared_part();
+        m_ring_mesh.m_meta_data.locally_owned_part() |
+        m_ring_mesh.m_meta_data.globally_shared_part();
 
     buckets = bulk_data.get_buckets(stk::topology::NODE_RANK, locally_used_selector);
 
@@ -252,8 +247,8 @@ void UnitTestStkMeshBulkModification::test_all_local_elements()
 
     // get the buckets that we need to traverse to get the locally used elements
     stk::mesh::Selector locally_used_selector =
-      m_ring_mesh.m_meta_data.locally_owned_part() |
-      m_ring_mesh.m_meta_data.globally_shared_part();
+        m_ring_mesh.m_meta_data.locally_owned_part() |
+        m_ring_mesh.m_meta_data.globally_shared_part();
 
     buckets = bulk_data.get_buckets(stk::topology::ELEMENT_RANK, locally_used_selector);
 
@@ -296,8 +291,8 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   // procs, leave entities empty.
   if (m_rank == 0) {
     stk::mesh::Selector locally_used_selector =
-      m_ring_mesh.m_meta_data.locally_owned_part() |
-      m_ring_mesh.m_meta_data.globally_shared_part();
+        m_ring_mesh.m_meta_data.locally_owned_part() |
+        m_ring_mesh.m_meta_data.globally_shared_part();
 
     BucketVector const& buckets = bulk_data.get_buckets(stk::topology::NODE_RANK, locally_used_selector);
 
@@ -318,7 +313,7 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
 
   // pack entities for sizing
   for (std::vector<Entity>::const_iterator
-          ep = entities.begin() ; ep != entities.end() ; ++ep ) {
+       ep = entities.begin() ; ep != entities.end() ; ++ep ) {
     all.send_buffer().pack<stk::mesh::EntityKey>(bulk_data.entity_key(*ep));
   }
 
@@ -326,7 +321,7 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
 
   // pack for real
   for (std::vector<Entity>::const_iterator
-         ep = entities.begin() ; ep != entities.end() ; ++ep ) {
+       ep = entities.begin() ; ep != entities.end() ; ++ep ) {
     all.send_buffer().pack<stk::mesh::EntityKey>(bulk_data.entity_key(*ep));
   }
 

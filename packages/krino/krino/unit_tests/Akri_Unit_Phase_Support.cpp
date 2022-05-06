@@ -145,8 +145,8 @@ TEST_F(Part_Decomposition_Fixture, find_conformal_io_part)
 
   stk::mesh::Part * block_1 = findPart("block_1");
   performDecomposition({block_1}, block_surface_info, false, 2);
-  const LevelSet_Identifier id0(0);
-  const LevelSet_Identifier id1(1);
+  const Surface_Identifier id0(0);
+  const Surface_Identifier id1(1);
   LS_SideTag p0(id0,1);
   LS_SideTag p1(id1,1);
   LS_SideTag n0(id0,-1);

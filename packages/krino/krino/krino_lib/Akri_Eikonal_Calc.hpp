@@ -23,15 +23,31 @@ double calculate_gradient_magnitude(const int npe,
     const FieldRef dRef,
     const std::function<const Vector3d &(stk::mesh::Entity)> & get_coordinates);
 
+double calculate_gradient_magnitude(const int npe,
+    const stk::mesh::Entity * elem_nodes,
+    const FieldRef dRef,
+    const FieldRef xRef);
+
 double eikonal_solve_triangle(const std::array<Vector3d,3> & x,
-    const std::array<double,3> & d,
+    const std::array<double,2> & d,
     const int sign,
-    const int dim,
+    const double far,
+    const double speed);
+
+double eikonal_solve_triangle(const std::array<Vector3d,3> & x,
+    const std::array<double,2> & d,
+    const double far,
     const double speed);
 
 double eikonal_solve_tetrahedron(const std::array<Vector3d,4> & x,
-    const std::array<double,4> & d,
+    const std::array<double,3> & d,
     const int sign,
+    const double far,
+    const double speed);
+
+double eikonal_solve_tetrahedron(const std::array<Vector3d,4> & x,
+    const std::array<double,3> & d,
+    const double far,
     const double speed);
 
 

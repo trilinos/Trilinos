@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
+#include <stk_unit_test_utils/CommandLineArgs.hpp>
 
 #include "src/test_stk_simd.hpp"
 #include "src/test_stk_io.hpp"

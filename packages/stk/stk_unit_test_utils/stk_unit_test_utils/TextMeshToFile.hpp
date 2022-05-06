@@ -40,6 +40,7 @@
 #include <stk_mesh/base/MetaData.hpp>           // for MetaData
 #include <string>                               // for string
 #include "stk_util/parallel/Parallel.hpp"       // for ParallelMachine
+#include "stk_unit_test_utils/BuildMesh.hpp"
 
 namespace stk
 {
@@ -59,11 +60,36 @@ public:
   stk::mesh::MetaData& get_meta() { return m_meta; }
 
 protected:
-  stk::mesh::MetaData m_meta;
-  stk::mesh::BulkData m_bulk;
+  std::shared_ptr<stk::mesh::BulkData> m_bulkPtr;
+  stk::mesh::BulkData& m_bulk;
+  stk::mesh::MetaData& m_meta;
   stk::io::StkMeshIoBroker m_broker;
   size_t m_outputFileIndex = 0;
 };
+
+namespace simple_fields {
+
+class TextMeshToFile
+{
+public:
+  TextMeshToFile(stk::ParallelMachine comm, stk::mesh::BulkData::AutomaticAuraOption auraOption);
+  ~TextMeshToFile() = default;
+
+  void setup_mesh(const std::string& meshDesc, const std::string& outputFileName);
+  void write_mesh();
+
+  stk::mesh::BulkData& get_bulk() { return m_bulk; }
+  stk::mesh::MetaData& get_meta() { return m_meta; }
+
+protected:
+  std::shared_ptr<stk::mesh::BulkData> m_bulkPtr;
+  stk::mesh::BulkData& m_bulk;
+  stk::mesh::MetaData& m_meta;
+  stk::io::StkMeshIoBroker m_broker;
+  size_t m_outputFileIndex = 0;
+};
+
+} // namespace simple_fields
 
 }
 }

@@ -72,6 +72,8 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typedef typename Node::device_type device_type;
     //! Kokkos execution space
     typedef typename device_type::execution_space execution_space;
+    //! Kokkos scalar type
+    typedef typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type ImplScalar;
     //! Tpetra row matrix
     typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TRowMatrix;
     //! Tpetra CRS matrix
@@ -85,10 +87,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     //! Array of LocalOrdinal on host
     typedef Kokkos::View<LocalOrdinal *, Kokkos::HostSpace> OrdinalArrayHost;
     //! Array of Scalar on device
+    typedef Kokkos::View<  ImplScalar *, execution_space>  ImplScalarArray;
     typedef Kokkos::View<      Scalar *, execution_space>      ScalarArray;
     typedef Kokkos::View<const Scalar *, execution_space> ConstScalarArray;
-    //! Array of Scalar on host
-    typedef Kokkos::View<Scalar *, Kokkos::HostSpace> ScalarArrayHost;
 
     //! Constructor
     FastILU_Base(Teuchos::RCP<const TRowMatrix> mat_);
@@ -186,7 +187,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     int nComputed_;
     mutable int nApply_;
     //store the local CRS components
-    ScalarArray localValues_;     //set at beginning of compute()
+    ImplScalarArray localValues_; //set at beginning of compute()
     OrdinalArray localRowPtrs_;   //set in initialize()
     OrdinalArray localColInds_;   //set in initialize()
     OrdinalArrayHost localRowPtrsHost_; //set in initialize() and used to get localValues_ in compute()
@@ -219,7 +220,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     //! Get values array from the matrix and then call compute() on the underlying preconditioner
     virtual void computeLocalPrec() = 0;
     //! Apply the local preconditioner with 1-D views of the local parts of X and Y (one vector only)
-    virtual void applyLocalPrec(ScalarArray x, ScalarArray y) const = 0;
+    virtual void applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const = 0;
     //! Get the name of the underlying preconditioner ("Filu", "Fildl" or "Fic")
     virtual std::string getName() const = 0;
 };

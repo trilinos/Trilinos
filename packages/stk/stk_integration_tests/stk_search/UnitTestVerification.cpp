@@ -49,9 +49,9 @@ void runTwoSpheresTest(stk::search::SearchMethod searchMethod, const double dist
     MPI_Comm comm = MPI_COMM_WORLD;
     int procId = stk::parallel_machine_rank(comm);
 
-    std::vector< std::pair<Sphere,Ident> > boxVector1 = { generateBoundingVolume<Sphere>(0, 0, 0, radius, 1, procId) };
+    std::vector< std::pair<Sphere,Ident> > boxVector1 = { stk::unit_test_util::simple_fields::generateBoundingVolume<Sphere>(0, 0, 0, radius, 1, procId) };
 
-    std::vector< std::pair<Sphere,Ident> > boxVector2 = { generateBoundingVolume<Sphere>(distanceBetweenSphereCenters, 0, 0, radius, 2, procId) };
+    std::vector< std::pair<Sphere,Ident> > boxVector2 = { stk::unit_test_util::simple_fields::generateBoundingVolume<Sphere>(distanceBetweenSphereCenters, 0, 0, radius, 2, procId) };
 
     stk::search::coarse_search(boxVector1, boxVector2, searchMethod, comm, boxIdPairResults);
 }
@@ -118,21 +118,21 @@ void runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMethod searchMeth
     std::vector< std::pair<OuterBoundingBoxType,Ident> > boxVector1;
     if(procId == 0)
     {
-        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(0, 0, 0, radius, 1, procId));
-        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(1, 0, 0, radius, 2, procId));
-        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(2, 0, 0, radius, 3, procId));
-        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(0, 1, 0, radius, 4, procId));
+        boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<OuterBoundingBoxType>(0, 0, 0, radius, 1, procId));
+        boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<OuterBoundingBoxType>(1, 0, 0, radius, 2, procId));
+        boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<OuterBoundingBoxType>(2, 0, 0, radius, 3, procId));
+        boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<OuterBoundingBoxType>(0, 1, 0, radius, 4, procId));
         //skip middle one
-        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(2, 1, 0, radius, 6, procId));
-        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(0, 2, 0, radius, 7, procId));
-        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(1, 2, 0, radius, 8, procId));
-        boxVector1.push_back(generateBoundingVolume<OuterBoundingBoxType>(2, 2, 0, radius, 9, procId));
+        boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<OuterBoundingBoxType>(2, 1, 0, radius, 6, procId));
+        boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<OuterBoundingBoxType>(0, 2, 0, radius, 7, procId));
+        boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<OuterBoundingBoxType>(1, 2, 0, radius, 8, procId));
+        boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<OuterBoundingBoxType>(2, 2, 0, radius, 9, procId));
     }
 
     std::vector< std::pair<InnerBoundingBoxType,Ident> > boxVector2;
     if(procId == numProc-1)
     {
-        boxVector2.push_back(generateBoundingVolume<InnerBoundingBoxType>(1, 1, 0, radius, 5, procId));
+        boxVector2.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<InnerBoundingBoxType>(1, 1, 0, radius, 5, procId));
     }
 
     std::vector< std::pair<Ident, Ident> > boxIdPairResults;
@@ -236,13 +236,13 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
         switch(axis)
         {
             case xDim:
-                boxVector1.push_back(generateBoundingVolume<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
+                boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
                 break;
             case yDim:
-                boxVector1.push_back(generateBoundingVolume<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
+                boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
                 break;
             case zDim:
-                boxVector1.push_back(generateBoundingVolume<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
+                boxVector1.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
                 break;
         }
     }
@@ -251,13 +251,13 @@ void runLineOfBoundingBoxes(stk::search::SearchMethod searchMethod, enum Axis ax
         switch(axis)
         {
             case xDim:
-                boxVector2.push_back(generateBoundingVolume<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
+                boxVector2.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(paramCoord, 0, 0, radius, 1, procId));
                 break;
             case yDim:
-                boxVector2.push_back(generateBoundingVolume<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
+                boxVector2.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(0, paramCoord, 0, radius, 1, procId));
                 break;
             case zDim:
-                boxVector2.push_back(generateBoundingVolume<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
+                boxVector2.push_back(stk::unit_test_util::simple_fields::generateBoundingVolume<BoundingBoxType>(0, 0, paramCoord, radius, 1, procId));
                 break;
         }
     }

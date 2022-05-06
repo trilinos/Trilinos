@@ -89,8 +89,7 @@ void process_node_sharing(Ioss::Region &region, stk::mesh::BulkData &bulk)
     // Assume that if the node sharing list is non-empty, then no matter  what the
     // global node count is, the data is most likely ok.
     size_t global_node_count = region.get_property("global_node_count").get_int();
-    size_t local_node_count = stk::mesh::count_selected_entities(bulk.mesh_meta_data().locally_owned_part(),
-                                                                 bulk.buckets(stk::topology::NODE_RANK));
+    size_t local_node_count = stk::mesh::count_entities(bulk, stk::topology::NODE_RANK, bulk.mesh_meta_data().locally_owned_part());
 
     ThrowErrorMsgIf (num_sharings == 0 && global_node_count < local_node_count,
                     "ERROR: Invalid communication/node sharing information found in file '"

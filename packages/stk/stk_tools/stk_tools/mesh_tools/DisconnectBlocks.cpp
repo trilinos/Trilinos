@@ -91,7 +91,7 @@ void disconnect_user_blocks_locally(stk::mesh::BulkData& bulk, const BlockPairVe
 }
 
 void disconnect_user_blocks_globally(stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect,
-                                         LinkInfo& info)
+                                     LinkInfo& info)
 {
   info.startTime = stk::wall_time();
 

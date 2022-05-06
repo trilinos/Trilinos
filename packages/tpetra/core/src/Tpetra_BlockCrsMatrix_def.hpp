@@ -154,10 +154,11 @@ namespace Impl {
     static_assert (std::is_same<MatrixValuesType,
                    typename MatrixValuesType::const_type>::value,
                    "MatrixValuesType must be a const Kokkos::View.");
-    static_assert (std::is_same<OutVecType,
-                   typename OutVecType::non_const_type>::value,
+    static_assert (std::is_same<typename OutVecType::value_type,
+                   typename OutVecType::non_const_value_type>::value,
                    "OutVecType must be a nonconst Kokkos::View.");
-    static_assert (std::is_same<InVecType, typename InVecType::const_type>::value,
+    static_assert (std::is_same<typename InVecType::value_type,
+                   typename InVecType::const_value_type>::value,
                    "InVecType must be a const Kokkos::View.");
     static_assert (static_cast<int> (MatrixValuesType::rank) == 1,
                    "MatrixValuesType must be a rank-1 Kokkos::View.");
@@ -306,10 +307,11 @@ namespace Impl {
     static_assert (std::is_same<MatrixValuesType,
                    typename MatrixValuesType::const_type>::value,
                    "MatrixValuesType must be a const Kokkos::View.");
-    static_assert (std::is_same<OutVecType,
-                   typename OutVecType::non_const_type>::value,
+    static_assert (std::is_same<typename OutVecType::value_type,
+                   typename OutVecType::non_const_value_type>::value,
                    "OutVecType must be a nonconst Kokkos::View.");
-    static_assert (std::is_same<InVecType, typename InVecType::const_type>::value,
+    static_assert (std::is_same<typename InVecType::value_type,
+                   typename InVecType::const_value_type>::value,
                    "InVecType must be a const Kokkos::View.");
     static_assert (static_cast<int> (MatrixValuesType::rank) == 1,
                    "MatrixValuesType must be a rank-1 Kokkos::View.");
