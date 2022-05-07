@@ -43,6 +43,7 @@ SET(SOURCES_NEED_IO
   )
 
 SET(HEADERS_NEED_MESH_BUT_NOT_IO
+  BuildMesh.hpp
   BucketTester.hpp
   MeshFixture.hpp
   MeshFileFixture.hpp
