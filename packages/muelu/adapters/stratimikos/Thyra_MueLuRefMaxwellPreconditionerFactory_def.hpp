@@ -150,7 +150,7 @@ namespace Thyra {
       // Convert to Xpetra
       std::list<std::string> convertXpetra = {"Coordinates", "Nullspace", "M1", "Ms", "D0", "M0inv"};
       for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
-        replaceWithXpetra<Scalar,LocalOrdinal,GlobalOrdinal,Node>(paramList,*it);
+        Converters<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceWithXpetra(paramList,*it);
 
       paramList.set<bool>("refmaxwell: use as preconditioner", true);
       if (useHalfPrecision) {

@@ -70,7 +70,7 @@
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
 // Stratimikos includes
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_LinearSolverBuilder.hpp>
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Teuchos_AbstractFactoryStd.hpp"
 // Ifpack2 includes
@@ -272,7 +272,7 @@ namespace MueLu {
       // Build Thyra linear algebra objects
       RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(A)->getCrsMatrix());
       
-      Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+      Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;
       typedef Thyra::PreconditionerFactoryBase<Scalar>                                     Base;
       typedef Thyra::MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> ImplMueLu;
       linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, ImplMueLu>(), "MueLu");
