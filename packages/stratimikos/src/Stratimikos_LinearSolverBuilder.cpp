@@ -1,4 +1,3 @@
-/*
 // @HEADER
 // ***********************************************************************
 //
@@ -39,19 +38,18 @@
 //
 // ***********************************************************************
 // @HEADER
-*/
 
-#include "Thyra_Amesos2LinearOpWithSolve_decl.hpp"
+#include "Stratimikos_LinearSolverBuilder_decl.hpp"
 
-#ifdef HAVE_THYRA_EXPLICIT_INSTANTIATION
+#ifdef HAVE_STRATIMIKOS_EXPLICIT_INSTANTIATION
 
-#include "Thyra_Amesos2LinearOpWithSolve_def.hpp"
+#include "Stratimikos_LinearSolverBuilder_def.hpp"
 #include "Teuchos_ExplicitInstantiationHelpers.hpp"
 
-namespace Thyra {
+namespace Stratimikos {
 
-TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(Amesos2LinearOpWithSolve)
+TEUCHOS_MACRO_TEMPLATE_INSTANT_SCALAR_TYPES(STRATIMIKOS_LINEARSOLVERBUILDER_INSTANT)
 
-} // namespace Thyra
+} // namespace Stratimikos
 
-#endif // HAVE_THYRA_EXPLICIT_INSTANTIATION
+#endif // HAVE_STRATIMIKOS_EXPLICIT_INSTANTIATION

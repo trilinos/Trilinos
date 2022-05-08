@@ -50,7 +50,7 @@
 
 namespace Thyra {
 
-TEUCHOS_CLASS_TEMPLATE_INSTANT_REAL_SCALAR_TYPES(GeneralSolveCriteriaBelosStatusTest)
+TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(GeneralSolveCriteriaBelosStatusTest)
 
 } // namespace Thyra
 

@@ -42,7 +42,7 @@
 //#define THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDER_DUMP
 
 #include "Stratimikos_InternalConfig.h"
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#include "Stratimikos_LinearSolverBuilder.hpp"
 #include "Thyra_DelayedLinearOpWithSolveFactory.hpp"
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -90,7 +90,8 @@ namespace Stratimikos {
 // Constructors/Initializers/Accessors
 
 
-DefaultLinearSolverBuilder::DefaultLinearSolverBuilder(
+template<class Scalar>
+LinearSolverBuilder<Scalar>::LinearSolverBuilder(
   const std::string    &paramsXmlFileName_in
   ,const std::string   &extraParamsXmlString_in
   ,const std::string   &paramsUsedXmlOutFileName_in
@@ -110,7 +111,8 @@ DefaultLinearSolverBuilder::DefaultLinearSolverBuilder(
 }
 
 
-DefaultLinearSolverBuilder::~DefaultLinearSolverBuilder()
+template<class Scalar>
+LinearSolverBuilder<Scalar>::~LinearSolverBuilder<Scalar>()
 {
 #ifdef TEUCHOS_DEBUG
   // Validate that we read the parameters correctly!
@@ -121,8 +123,9 @@ DefaultLinearSolverBuilder::~DefaultLinearSolverBuilder()
 }
 
 
-void DefaultLinearSolverBuilder::setLinearSolveStrategyFactory(
-  const RCP<const AbstractFactory<Thyra::LinearOpWithSolveFactoryBase<double> > >
+template<class Scalar>
+void LinearSolverBuilder<Scalar>::setLinearSolveStrategyFactory(
+  const RCP<const AbstractFactory<Thyra::LinearOpWithSolveFactoryBase<Scalar> > >
   &solveStrategyFactory,
   const std::string &solveStrategyName,
   const bool makeDefault
@@ -137,15 +140,17 @@ void DefaultLinearSolverBuilder::setLinearSolveStrategyFactory(
 }
 
 
-void DefaultLinearSolverBuilder::setDefaultLinearSolveStrategyFactoryName(
+template<class Scalar>
+void LinearSolverBuilder<Scalar>::setDefaultLinearSolveStrategyFactoryName(
   const std::string &solveStrategyName)
 {
   defaultLOWSF_ = solveStrategyName;
 }
 
 
-void DefaultLinearSolverBuilder::setPreconditioningStrategyFactory(
-  const RCP<const AbstractFactory<Thyra::PreconditionerFactoryBase<double> > >
+template<class Scalar>
+void LinearSolverBuilder<Scalar>::setPreconditioningStrategyFactory(
+  const RCP<const AbstractFactory<Thyra::PreconditionerFactoryBase<Scalar> > >
   &precStrategyFactory,
   const std::string &precStrategyName,
   const bool makeDefault
@@ -160,14 +165,16 @@ void DefaultLinearSolverBuilder::setPreconditioningStrategyFactory(
 }
 
 
-void DefaultLinearSolverBuilder::setDefaultPreconditioningStrategyFactoryName(
+template<class Scalar>
+void LinearSolverBuilder<Scalar>::setDefaultPreconditioningStrategyFactoryName(
   const std::string &precStrategyName)
 {
   defaultPF_ = precStrategyName;
 }
 
 
-void DefaultLinearSolverBuilder::setupCLP( Teuchos::CommandLineProcessor *clp )
+template<class Scalar>
+void LinearSolverBuilder<Scalar>::setupCLP( Teuchos::CommandLineProcessor *clp )
 {
   TEUCHOS_TEST_FOR_EXCEPT(clp==NULL);
   clp->setOption(
@@ -187,7 +194,8 @@ void DefaultLinearSolverBuilder::setupCLP( Teuchos::CommandLineProcessor *clp )
 }
 
 
-void DefaultLinearSolverBuilder::readParameters( std::ostream *out )
+template<class Scalar>
+void LinearSolverBuilder<Scalar>::readParameters( std::ostream *out )
 {
   using Teuchos::parameterList;
   using Teuchos::ptr;
@@ -196,7 +204,7 @@ void DefaultLinearSolverBuilder::readParameters( std::ostream *out )
   using std::endl;
   
   if (!paramList_.get()) {
-    paramList_ = parameterList("DefaultLinearSolverBuilder");
+    paramList_ = parameterList("LinearSolverBuilder");
   }
   if (paramsXmlFileName().length()) {
     if (out) {
@@ -216,8 +224,9 @@ void DefaultLinearSolverBuilder::readParameters( std::ostream *out )
 }
 
 
-void DefaultLinearSolverBuilder::writeParamsFile(
-  const Thyra::LinearOpWithSolveFactoryBase<double> &/* lowsFactory */,
+template<class Scalar>
+void LinearSolverBuilder<Scalar>::writeParamsFile(
+  const Thyra::LinearOpWithSolveFactoryBase<Scalar> &/* lowsFactory */,
   const std::string &outputXmlFileName
   ) const
 {
@@ -230,8 +239,9 @@ void DefaultLinearSolverBuilder::writeParamsFile(
 }
 
 
+template<class Scalar>
 std::string
-DefaultLinearSolverBuilder::getLinearSolveStrategyName() const
+LinearSolverBuilder<Scalar>::getLinearSolveStrategyName() const
 {
   justInTimeInitialize();
   return lowsfValidator_->getStringValue(*paramList_, LinearSolverType_name,
@@ -239,8 +249,9 @@ DefaultLinearSolverBuilder::getLinearSolveStrategyName() const
 }
 
 
+template<class Scalar>
 std::string
-DefaultLinearSolverBuilder::getPreconditionerStrategyName() const
+LinearSolverBuilder<Scalar>::getPreconditionerStrategyName() const
 {
   justInTimeInitialize();
   return pfValidator_->getStringValue(*paramList_, PreconditionerType_name,
@@ -251,7 +262,8 @@ DefaultLinearSolverBuilder::getPreconditionerStrategyName() const
 // Overridden from ParameterListAcceptor
 
 
-void DefaultLinearSolverBuilder::setParameterList(
+template<class Scalar>
+void LinearSolverBuilder<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
@@ -263,15 +275,17 @@ void DefaultLinearSolverBuilder::setParameterList(
 }
 
 
+template<class Scalar>
 RCP<Teuchos::ParameterList>
-DefaultLinearSolverBuilder::getNonconstParameterList()
+LinearSolverBuilder<Scalar>::getNonconstParameterList()
 {
   return paramList_;
 }
 
 
+template<class Scalar>
 RCP<Teuchos::ParameterList>
-DefaultLinearSolverBuilder::unsetParameterList()
+LinearSolverBuilder<Scalar>::unsetParameterList()
 {
   RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
@@ -279,15 +293,17 @@ DefaultLinearSolverBuilder::unsetParameterList()
 }
 
 
+template<class Scalar>
 RCP<const Teuchos::ParameterList>
-DefaultLinearSolverBuilder::getParameterList() const
+LinearSolverBuilder<Scalar>::getParameterList() const
 {
   return paramList_;
 }
 
 
+template<class Scalar>
 RCP<const Teuchos::ParameterList>
-DefaultLinearSolverBuilder::getValidParameters() const
+LinearSolverBuilder<Scalar>::getValidParameters() const
 {
   using Teuchos::rcp_implicit_cast;
   typedef Teuchos::ParameterEntryValidator PEV;
@@ -318,7 +334,7 @@ DefaultLinearSolverBuilder::getValidParameters() const
     for( int i = 0; i < static_cast<int>(lowsfArray_.size()); ++i ) {
       const std::string
         &lsname = validLowsfNames_[i];
-      const RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+      const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
         lowsf = lowsfArray_[i]->create();
       linearSolverTypesSL.sublist(lsname).setParameters(*lowsf->getValidParameters()
         ).disableRecursiveValidation();
@@ -347,7 +363,7 @@ DefaultLinearSolverBuilder::getValidParameters() const
     for( int i = 0; i < static_cast<int>(pfArray_.size()); ++i ) {
       const std::string
         &pfname = validPfNames_[i+1]; // "None" is the 0th entry!
-      const RCP<Thyra::PreconditionerFactoryBase<double> >
+      const RCP<Thyra::PreconditionerFactoryBase<Scalar> >
         pf = pfArray_[i]->create();
       precTypesSL.sublist(pfname).setParameters(*pf->getValidParameters()
         ).disableRecursiveValidation();
@@ -373,8 +389,9 @@ DefaultLinearSolverBuilder::getValidParameters() const
 // Overridden from LinearSolverBuilderBase.
 
 
-RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-DefaultLinearSolverBuilder::createLinearSolveStrategy(
+template<class Scalar>
+RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+LinearSolverBuilder<Scalar>::createLinearSolveStrategy(
   const std::string &linearSolveStrategyName
   ) const
 {
@@ -382,7 +399,7 @@ DefaultLinearSolverBuilder::createLinearSolveStrategy(
 
   // Get the name of the linear solve strategy
 #ifdef THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDER_DUMP
-  std::cout << "\nEntering DefaultLinearSolverBuilder"
+  std::cout << "\nEntering LinearSolverBuilder"
             << "::createLinearSolveStrategy(...) ...\n";
   std::cout << "\nlinearSolveStrategyName = \""
             << linearSolveStrategyName << "\"\n";
@@ -405,13 +422,13 @@ DefaultLinearSolverBuilder::createLinearSolveStrategy(
     ls_idx = lowsfValidator_->getIntegralValue(lsname, LinearSolverType_name);
 
   // Create the uninitialized LOWSFB object
-  RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+  RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
     lowsf = lowsfArray_[ls_idx]->create();
 
   // First, set the preconditioner factory and its parameters
   if(lowsf->acceptsPreconditionerFactory()) {
     const std::string &pfName = this->getPreconditionerStrategyName();
-    RCP<Thyra::PreconditionerFactoryBase<double> >
+    RCP<Thyra::PreconditionerFactoryBase<Scalar> >
       pf = this->createPreconditioningStrategy(pfName);
     if(pf.get())
       lowsf->setPreconditionerFactory(pf,pfName);
@@ -424,7 +441,7 @@ DefaultLinearSolverBuilder::createLinearSolveStrategy(
   //
   if (enableDelayedSolverConstruction_) {
     return Teuchos::rcp(
-      new Thyra::DelayedLinearOpWithSolveFactory<double>(lowsf)
+      new Thyra::DelayedLinearOpWithSolveFactory<Scalar>(lowsf)
       );
   }
 
@@ -433,8 +450,9 @@ DefaultLinearSolverBuilder::createLinearSolveStrategy(
 }
 
 
-RCP<Thyra::PreconditionerFactoryBase<double> >
-DefaultLinearSolverBuilder::createPreconditioningStrategy(
+template<class Scalar>
+RCP<Thyra::PreconditionerFactoryBase<Scalar> >
+LinearSolverBuilder<Scalar>::createPreconditioningStrategy(
   const std::string &preconditioningStrategyName
   ) const
 {
@@ -445,7 +463,7 @@ DefaultLinearSolverBuilder::createPreconditioningStrategy(
     pfname = ( preconditioningStrategyName.length()
              ? preconditioningStrategyName
              : this->getPreconditionerStrategyName() );
-  RCP<Thyra::PreconditionerFactoryBase<double> >
+  RCP<Thyra::PreconditionerFactoryBase<Scalar> >
     pf = Teuchos::null;
 
   // Get the index of this preconditioning strategy (this will validate!)
@@ -464,8 +482,8 @@ DefaultLinearSolverBuilder::createPreconditioningStrategy(
 
 // private
 
-
-void DefaultLinearSolverBuilder::initializeDefaults()
+template<class Scalar>
+void LinearSolverBuilder<Scalar>::initializeDefaults()
 {
 
   using Teuchos::rcp;
@@ -483,23 +501,60 @@ void DefaultLinearSolverBuilder::initializeDefaults()
 
 #ifdef HAVE_STRATIMIKOS_AMESOS2
   setLinearSolveStrategyFactory(
-    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<double>,
-    Thyra::Amesos2LinearOpWithSolveFactory<double>>(),
+    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<Scalar>,
+    Thyra::Amesos2LinearOpWithSolveFactory<Scalar>>(),
     "Amesos2", true
     );
 #endif
 
 #ifdef HAVE_STRATIMIKOS_BELOS
   setLinearSolveStrategyFactory(
-    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<double>,
-    Thyra::BelosLinearOpWithSolveFactory<double> >(),
+    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<Scalar>,
+    Thyra::BelosLinearOpWithSolveFactory<Scalar> >(),
+    "Belos", true
+    );
+#endif
+
+  // Note: Above, the last PF object set will be the default!
+
+}
+
+template<>
+void LinearSolverBuilder<double>::initializeDefaults()
+{
+  using Scalar = double;
+  using Teuchos::rcp;
+  using Teuchos::abstractFactoryStd;
+
+  defaultLOWSF_ = "";
+  defaultPF_ = None_name;
+  validLowsfNames_.resize(0);
+  validPfNames_.resize(0);
+  validPfNames_.push_back(None_name); // This will offset everything!
+
+  //
+  // Linear Solvers
+  //
+
+#ifdef HAVE_STRATIMIKOS_AMESOS2
+  setLinearSolveStrategyFactory(
+    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<Scalar>,
+    Thyra::Amesos2LinearOpWithSolveFactory<Scalar>>(),
+    "Amesos2", true
+    );
+#endif
+
+#ifdef HAVE_STRATIMIKOS_BELOS
+  setLinearSolveStrategyFactory(
+    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<Scalar>,
+    Thyra::BelosLinearOpWithSolveFactory<Scalar> >(),
     "Belos", true
     );
 #endif
 
 #ifdef HAVE_STRATIMIKOS_AMESOS
   setLinearSolveStrategyFactory(
-    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<double>,
+    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<Scalar>,
     Thyra::AmesosLinearOpWithSolveFactory>(),
     "Amesos", true
     );
@@ -507,7 +562,7 @@ void DefaultLinearSolverBuilder::initializeDefaults()
 
 #if defined(HAVE_STRATIMIKOS_EPETRAEXT) && defined(HAVE_STRATIMIKOS_AZTECOO)
   setLinearSolveStrategyFactory(
-    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<double>,
+    abstractFactoryStd<Thyra::LinearOpWithSolveFactoryBase<Scalar>,
     Thyra::AztecOOLinearOpWithSolveFactory>(),
     "AztecOO", true
     );
@@ -528,7 +583,7 @@ void DefaultLinearSolverBuilder::initializeDefaults()
 
 #ifdef HAVE_STRATIMIKOS_ML
   setPreconditioningStrategyFactory(
-    abstractFactoryStd<Thyra::PreconditionerFactoryBase<double>,
+    abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
     Thyra::MLPreconditionerFactory>(),
     "ML", true
     );
@@ -536,7 +591,7 @@ void DefaultLinearSolverBuilder::initializeDefaults()
 
 #ifdef HAVE_STRATIMIKOS_IFPACK
   setPreconditioningStrategyFactory(
-    abstractFactoryStd<Thyra::PreconditionerFactoryBase<double>,
+    abstractFactoryStd<Thyra::PreconditionerFactoryBase<Scalar>,
     Thyra::IfpackPreconditionerFactory>(),
     "Ifpack", true
     );
@@ -546,8 +601,8 @@ void DefaultLinearSolverBuilder::initializeDefaults()
 
 }
 
-
-void DefaultLinearSolverBuilder::justInTimeInitialize() const
+template<class Scalar>
+void LinearSolverBuilder<Scalar>::justInTimeInitialize() const
 {
   paramList_.assert_not_null();
   if (is_null(validParamList_)) {
@@ -555,6 +610,18 @@ void DefaultLinearSolverBuilder::justInTimeInitialize() const
     this->getValidParameters();
   }
 }
+
+
+//
+// Explicit instantiation macro
+//
+// Must be expanded from within the Stratimikos namespace!
+//
+
+
+#define STRATIMIKOS_LINEARSOLVERBUILDER_INSTANT(SCALAR) \
+  \
+  template class LinearSolverBuilder<SCALAR >;
 
 
 
