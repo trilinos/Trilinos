@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Step").set("Type","Fletcher");
 
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_ROSENBROCK; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
-      if ((prob != ROL::TESTOPTPROBLEM_HS55) && (prob != ROL::TESTOPTPROBLEM_HS14) && (prob != ROL::TESTOPTPROBLEM_HS63)) {
+      if ((prob != ROL::TESTOPTPROBLEM_HS55) && (prob != ROL::TESTOPTPROBLEM_HS14) && (prob != ROL::TESTOPTPROBLEM_HS63) && (prob != ROL::TESTOPTPROBLEM_HS41)) {
         // Get Objective Function
         ROL::Ptr<ROL::Vector<RealT> > x0;
         std::vector<ROL::Ptr<ROL::Vector<RealT> > > z;
