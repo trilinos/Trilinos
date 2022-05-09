@@ -311,8 +311,6 @@ namespace MueLu {
 
 
     // build the dof-based column map containing the local dof ids belonging to blkSize rows in matrix
-    // the DofIds may not be sorted.
-
     // sort column ids
     // translate them into (unique) node ids
     // count the node column ids per node row
@@ -328,9 +326,9 @@ namespace MueLu {
       ColDofType coldofs;      //< view containing the local dof ids associated with columns for the blkSize rows (not sorted)
       Dof2NodeTranslationType dof2node; //< view containing the local node id associated with the local dof id
       NnzType colnodennz; //< view containing number of column nodes for each node row
-      BdryNodeTypeConst  dirichletdof;  //< view containing with numNodes booleans. True if node is (full) dirichlet boundardy node.
+      BdryNodeTypeConst  dirichletdof;  //< view containing with num dofs booleans. True if dof (not necessarily entire node) is dirichlet boundardy dof.
       BdryNodeType  bdrynode;  //< view containing with numNodes booleans. True if node is (full) dirichlet boundardy node.
-      boolType usegreedydirichlet;
+      boolType usegreedydirichlet;    //< boolean for use of greedy Dirichlet (if any dof is Dirichlet, entire node is dirichlet) default false (need all dofs in node to be Dirichlet for node to be Dirichlet)
 
     public:
       Stage1bcVectorFunctor(MatrixType kokkosMatrix_,
