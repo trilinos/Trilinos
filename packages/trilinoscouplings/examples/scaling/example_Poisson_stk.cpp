@@ -508,14 +508,22 @@ int main(int argc, char *argv[]) {
   for (stk::mesh::PartVector::const_iterator i  = all_parts.begin(); i != all_parts.end(); ++i) {
 
     stk::mesh::Part & part = **i ;
-
-    // if part only contains nodes, then it is a node set
-    //   ! this assumes that the only node set defined is the set
-    //   ! of boundary nodes
-    if (part.primary_entity_rank() == NODE_RANK) {
+    //printf("Loading mesh part %s isnode=%s\n",part.name().c_str(),part.primary_entity_rank() == NODE_RANK ? "YES" : "NO");
+    // if part only contains nodes and isn't the ROOT_CELL_TOPOLOGY guy, then it is a node set
+    if (part.primary_entity_rank() == NODE_RANK && part.name() != "{FEM_ROOT_CELL_TOPOLOGY_PART_NODE}") {
       stk::mesh::Selector partSelector(part);
       stk::mesh::Selector bcNodeSelector = partSelector & locallyOwnedSelector;
-      stk::mesh::get_selected_entities(bcNodeSelector, nodeBuckets, bcNodes);
+
+      if(bcNodes.size() == 0)
+        stk::mesh::get_selected_entities(bcNodeSelector, nodeBuckets, bcNodes);
+      else {
+        std::vector<entity_type> myBcNodes;
+        stk::mesh::get_selected_entities(bcNodeSelector, nodeBuckets, myBcNodes);
+        std::copy(myBcNodes.begin(),myBcNodes.end(),std::back_inserter(bcNodes));
+      }        
+
+      if(MyPID==0) printf("Adding nodeset %s\n",part.name().c_str());
+
     }
     else if(part.primary_entity_rank() == ELEMENT_RANK) {
       // Here the topology is defined from the mesh. Note that it is assumed
@@ -525,7 +533,7 @@ int main(int argc, char *argv[]) {
 	cellType =  myCell;
       }
     }
-    
+
   } // end loop over mesh parts
 
   int numNodesPerElem = cellType.getNodeCount();  
@@ -646,15 +654,36 @@ int main(int argc, char *argv[]) {
       for (unsigned inode = 0; inode < numNodes; ++inode) {
 	double *coord = stk::mesh::field_data(*coords, nodes[inode]);
 	int lid = globalMapG.LID((int)bulkData.identifier(nodes[inode]) -1);
-	nCoord[0][lid] = coord[0];
-	nCoord[1][lid] = coord[1];
-	if(spaceDim==3)
-	  nCoord[2][lid] = coord[2];
+        if(lid != -1) {
+          nCoord[0][lid] = coord[0];
+          nCoord[1][lid] = coord[1];
+          if(spaceDim==3)
+            nCoord[2][lid] = coord[2];
+        }
       }
     }      
   } // end loop over elements
   if(coordsFilename != "") {
+    // WARNING: This does *NOT* output the coordinates in an ordering that corresponds
+    // to the matrix unless the matrix is (a) in serial and (b) has identical global and ordering
+    // The ifdef'd code below will do processor-by-processor output with global IDs for matching
+    // in all other cases
     EpetraExt::MultiVectorToMatrixMarketFile(coordsFilename.c_str(),nCoord,0,0,false);
+
+#if 0
+    // Processor-by-processor output
+    char fn[80];
+    sprintf(fn,"test-%d-%s",MyPID,coordsFilename.c_str());
+    FILE *f = fopen(fn,"w");
+    for(int i=0;i<nCoord.MyLength(); i++) {
+      fprintf(f,"%d ",nCoord.Map().GID(i));
+      for(int j=0; j<nCoord.NumVectors(); j++)
+        fprintf(f,"%22.16e ",nCoord[j][i]);
+      fprintf(f,"\n");
+    }
+    fclose(f);
+#endif
+
     if(MyPID==0) {Time.ResetStartTime();}
   }
 
@@ -1231,9 +1260,13 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   }
 
   RCP<Epetra_Operator> M;
-  if(precondType == "ML") {
-    ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
-    M = rcp(new ML_Epetra::MultiLevelPreconditioner(A, MLList, true));
+  if(precondType == "ML") {    
+    Teuchos::ParameterList mylist;
+    if(MLList.isSublist("ML")) mylist = MLList.sublist("ML");
+    else  mylist = MLList;
+    
+    ML_Epetra::SetDefaults("SA", mylist, 0, 0, false);
+    M = rcp(new ML_Epetra::MultiLevelPreconditioner(A, mylist, true));
   }
 #if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   else if(precondType == "MueLu") {
@@ -1242,7 +1275,8 @@ int TestMultiLevelPreconditioner(char ProblemType[],
     if (MLList.isSublist("MueLu"))
       mueluParams = MLList.sublist("MueLu");
     mueluParams.sublist("user data").set("Coordinates",Teuchos::rcpFromRef(coords));
-    std::cout<<"*** MueLu Params ***" <<std::endl<<mueluParams<<std::endl;
+    if(A.Comm().MyPID()==0)
+      std::cout<<"*** MueLu Params ***" <<std::endl<<mueluParams<<std::endl;
     M = MueLu::CreateEpetraPreconditioner(Teuchos::rcpFromRef(A),mueluParams);
   }
 
