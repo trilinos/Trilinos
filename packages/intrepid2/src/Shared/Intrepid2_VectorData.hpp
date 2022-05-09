@@ -190,7 +190,6 @@ namespace Intrepid2 {
       static_assert(numComponents <= Parameters::MaxVectorComponents, "numComponents must be less than Parameters::MaxVectorComponents");
       for (unsigned i=0; i<numFamilies; i++)
       {
-        vectorComponents_[i] = VectorArray(numComponents);
         for (unsigned j=0; j<numComponents; j++)
         {
           vectorComponents_[i][j] = vectorComponents[i][j];
@@ -219,7 +218,6 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION(numComponents_ > Parameters::MaxVectorComponents,   std::invalid_argument, "numComponents must be at most Parameters::MaxVectorComponents");
       for (unsigned i=0; i<numFamilies_; i++)
       {
-        vectorComponents_[i] = VectorArray(numComponents_);
         for (unsigned j=0; j<numComponents_; j++)
         {
           vectorComponents_[i][j] = vectorComponents[i][j];
@@ -244,7 +242,6 @@ namespace Intrepid2 {
         numComponents_ = numComponents;
         for (unsigned d=0; d<numComponents_; d++)
         {
-          vectorComponents_[d] = VectorArray(numComponents);
           vectorComponents_[d][d] = vectorComponents[d];
         }
       }
@@ -252,7 +249,6 @@ namespace Intrepid2 {
       {
         numFamilies_   = 1;
         numComponents_ = numComponents;
-        vectorComponents_[0] = VectorArray(numComponents);
         for (unsigned d=0; d<numComponents_; d++)
         {
           vectorComponents_[0][d] = vectorComponents[d];
@@ -276,14 +272,12 @@ namespace Intrepid2 {
         numFamilies_   = numComponents_;
         for (unsigned d=0; d<numComponents_; d++)
         {
-          vectorComponents_[d] = VectorArray(numComponents_);
           vectorComponents_[d][d] = vectorComponents[d];
         }
       }
       else
       {
         numFamilies_   = 1;
-        vectorComponents_[0] = VectorArray(numComponents_);
         for (unsigned d=0; d<numComponents_; d++)
         {
           vectorComponents_[0][d] = vectorComponents[d];
@@ -304,7 +298,6 @@ namespace Intrepid2 {
       {
         for (unsigned i=0; i<numFamilies_; i++)
         {
-          vectorComponents_[i] = VectorArray(numComponents_);
           for (unsigned j=0; j<numComponents_; j++)
           {
             vectorComponents_[i][j] = vectorData.getComponent(i, j);
@@ -325,7 +318,6 @@ namespace Intrepid2 {
       {
         for (unsigned i=0; i<numFamilies_; i++)
         {
-          vectorComponents_[i] = VectorArray(numComponents_);
           for (unsigned j=0; j<numComponents_; j++)
           {
             vectorComponents_[i][j] = vectorData.getComponent(i, j);

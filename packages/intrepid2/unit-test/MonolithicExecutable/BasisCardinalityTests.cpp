@@ -94,7 +94,6 @@ namespace
   {
     using BasisFamily = SerendipityBasisFamily<DefaultTestDeviceType>;
     
-    shards::CellTopology cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<> >() );
     const bool defineVertexFunctions = true;
     int expectedCardinality = 0;
     int maxDegree = std::max(polyOrder_x,polyOrder_y);
@@ -219,6 +218,207 @@ namespace
       success = false;
     }
   }
+
+  void testSerendipityHexBasisCardinality(Intrepid2::EFunctionSpace fs, int polyOrder_x, int polyOrder_y, int polyOrder_z, Teuchos::FancyOStream &out, bool &success)
+  {
+    using BasisFamily = SerendipityBasisFamily<DefaultTestDeviceType>;
+    
+    int expectedCardinality = 0;
+    using std::max;
+    int maxDegree = max(max(polyOrder_x,polyOrder_y),polyOrder_z);
+    int maxH1Degree = (fs == FUNCTION_SPACE_HVOL) ? maxDegree + 1 : maxDegree;
+    
+    switch (fs)
+    {
+      case Intrepid2::FUNCTION_SPACE_HVOL:  out << "Testing HVOL"; break;
+      case Intrepid2::FUNCTION_SPACE_HGRAD: out << "Testing HGRAD"; break;
+      case Intrepid2::FUNCTION_SPACE_HDIV:  out << "Testing HDIV"; break;
+      case Intrepid2::FUNCTION_SPACE_HCURL: out << "Testing HCURL"; break;
+      default:
+        out << "Unhandled function space\n";
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unhandled function space");
+    }
+    out << " for polyOrder_x = " << polyOrder_x << ", polyOrder_y = " << polyOrder_y << ", polyOrder_z = " << polyOrder_z << "\n";
+    
+    switch (fs)
+    {
+      case Intrepid2::FUNCTION_SPACE_HVOL:
+      case Intrepid2::FUNCTION_SPACE_HGRAD:
+        for (int i=0; i<=polyOrder_x; i++)
+        {
+          const int i_H1 = (fs == FUNCTION_SPACE_HVOL) ? i + 1 : i;
+          const int i_sl = (i_H1 > 1) ? i_H1 : 0; // superlinear part of i_H1
+          for (int j=0; j<=polyOrder_y; j++)
+          {
+            const int j_H1 = (fs == FUNCTION_SPACE_HVOL) ? j + 1 : j;
+            const int j_sl = (j_H1 > 1) ? j_H1 : 0;
+            for (int k=0; k<=polyOrder_z; k++)
+            {
+              const int k_H1 = (fs == FUNCTION_SPACE_HVOL) ? k + 1 : k;
+              const int k_sl = (k_H1 > 1) ? k_H1 : 0;
+              const int superlinearDegree = i_sl + j_sl + k_sl;
+              if (superlinearDegree <= maxH1Degree)
+              {
+                expectedCardinality++;
+              }
+            }
+          }
+        }
+        break;
+      case Intrepid2::FUNCTION_SPACE_HCURL:
+      {
+        /*
+         In the H(div) and H(curl) bases, we want to include any members whose H^1 orders satisfy the Serendipity criterion.
+         
+         Have not worked out what the closed form for this is; let's just count in a brute-force manner.
+         */
+        
+        // H(curl) is H(vol) x H(grad) x H(grad), and permutations thereof
+        
+        // family H(vol) x H(grad) x H(grad)
+        for (int i_vol=0; i_vol<polyOrder_x; i_vol++)
+        {
+          int i_grad = i_vol + 1;
+          const int i_sl = (i_grad > 1) ? i_grad : 0; // superlinear part of i_grad
+          for (int j=0; j<=polyOrder_y; j++)
+          {
+            const int j_sl = (j > 1) ? j : 0;
+            for (int k=0; k<=polyOrder_z; k++)
+            {
+              const int k_sl = (k > 1) ? k : 0;
+              const int superlinearDegree = i_sl + j_sl + k_sl;
+              if (superlinearDegree <= maxH1Degree)
+              {
+                expectedCardinality++;
+              }
+            }
+          }
+        }
+        // family H(grad) x H(vol) x H(grad)
+        for (int i=0; i<=polyOrder_x; i++)
+        {
+          const int i_sl = (i > 1) ? i : 0;
+          for (int j_vol=0; j_vol<polyOrder_y; j_vol++)
+          {
+            int j_grad = j_vol + 1;
+            const int j_sl = (j_grad > 1) ? j_grad : 0; // superlinear part of j_grad
+            for (int k=0; k<=polyOrder_z; k++)
+            {
+              const int k_sl = (k > 1) ? k : 0;
+              const int superlinearDegree = i_sl + j_sl + k_sl;
+              if (superlinearDegree <= maxH1Degree)
+              {
+                expectedCardinality++;
+              }
+            }
+          }
+        }
+        
+        // family H(grad) x H(grad) x H(vol)
+        for (int i=0; i<=polyOrder_x; i++)
+        {
+          const int i_sl = (i > 1) ? i : 0;
+          for (int j=0; j<=polyOrder_y; j++)
+          {
+            const int j_sl = (j > 1) ? j : 0;
+            for (int k_vol=0; k_vol<polyOrder_z; k_vol++)
+            {
+              int k_grad = k_vol + 1;
+              const int k_sl = (k_grad > 1) ? k_grad : 0; // superlinear part of k_grad
+              const int superlinearDegree = i_sl + j_sl + k_sl;
+              if (superlinearDegree <= maxH1Degree)
+              {
+                expectedCardinality++;
+              }
+            }
+          }
+        }
+      }
+      case Intrepid2::FUNCTION_SPACE_HDIV:
+      {
+        /*
+         In the H(div) and H(curl) bases, we want to include any members whose H^1 orders satisfy the Serendipity criterion.
+         
+         Have not worked out what the closed form for this is; let's just count in a brute-force manner.
+         */
+        
+        // H(vol) is H(vol) x H(vol) x H(grad), and permutations thereof
+        
+        // family H(vol) x H(vol) x H(grad)
+        for (int i_vol=0; i_vol<polyOrder_x; i_vol++)
+        {
+          const int i_grad = i_vol + 1;
+          const int i_sl = (i_grad > 1) ? i_grad : 0; // superlinear part of i_grad
+          for (int j_vol=0; j_vol<polyOrder_y; j_vol++)
+          {
+            const int j_grad = j_vol + 1;
+            const int j_sl = (j_grad > 1) ? j_grad : 0; // superlinear part of j_grad
+            for (int k=0; k<=polyOrder_z; k++)
+            {
+              const int k_sl = (k > 1) ? k : 0;
+              const int superlinearDegree = i_sl + j_sl + k_sl;
+              if (superlinearDegree <= maxH1Degree)
+              {
+                expectedCardinality++;
+              }
+            }
+          }
+        }
+        // family H(vol) x H(grad) x H(vol)
+        for (int i_vol=0; i_vol<polyOrder_x; i_vol++)
+        {
+          const int i_grad = i_vol + 1;
+          const int i_sl = (i_grad > 1) ? i_grad : 0; // superlinear part of i_grad
+          for (int j=0; j<=polyOrder_y; j++)
+          {
+            const int j_sl = (j > 1) ? j : 0;
+            for (int k_vol=0; k_vol<polyOrder_z; k_vol++)
+            {
+              int k_grad = k_vol + 1;
+              const int k_sl = (k_grad > 1) ? k_grad : 0; // superlinear part of k_grad
+              const int superlinearDegree = i_sl + j_sl + k_sl;
+              if (superlinearDegree <= maxH1Degree)
+              {
+                expectedCardinality++;
+              }
+            }
+          }
+        }
+        
+        // family H(grad) x H(vol) x H(vol)
+        for (int i=0; i<=polyOrder_y; i++)
+        {
+          const int i_sl = (i > 1) ? i : 0;
+          for (int j_vol=0; j_vol<polyOrder_y; j_vol++)
+          {
+            const int j_grad = j_vol + 1;
+            const int j_sl = (j_grad > 1) ? j_grad : 0; // superlinear part of j_grad
+            for (int k_vol=0; k_vol<polyOrder_z; k_vol++)
+            {
+              int k_grad = k_vol + 1;
+              const int k_sl = (k_grad > 1) ? k_grad : 0; // superlinear part of k_grad
+              const int superlinearDegree = i_sl + j_sl + k_sl;
+              if (superlinearDegree <= maxH1Degree)
+              {
+                expectedCardinality++;
+              }
+            }
+          }
+        }
+      }
+        break;
+      default:
+        out << "Unsupported function space.\n";
+        success = false;
+        return;
+    }
+    auto basis = getHexahedronBasis<BasisFamily>(fs, polyOrder_x, polyOrder_y, polyOrder_z);
+    if (basis->getCardinality() != expectedCardinality)
+    {
+      out << "FAILURE: expected cardinality of " << expectedCardinality << " but got " << basis->getCardinality() << std::endl;
+      success = false;
+    }
+  }
   
   TEUCHOS_UNIT_TEST( BasisCardinality, Quadrilateral )
   {
@@ -270,6 +470,24 @@ namespace
       for (auto testCase : cardinalityTestCases)
       {
         testHexBasisCardinality(fs, testCase[0], testCase[1], testCase[2], out, success);
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisCardinality, Hexahedron_Serendipity )
+  {
+    std::vector<Intrepid2::EFunctionSpace> functionSpaces_3D = {FUNCTION_SPACE_HGRAD,FUNCTION_SPACE_HCURL,FUNCTION_SPACE_HDIV,FUNCTION_SPACE_HVOL};
+    
+    const int maxDegreeForCardinalityTests = 3;
+
+    for (auto fs : functionSpaces_3D)
+    {
+      const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+      int spaceDim = 3;
+      auto cardinalityTestCases = getBasisTestCasesUpToDegree(spaceDim, minDegree, maxDegreeForCardinalityTests, maxDegreeForCardinalityTests, maxDegreeForCardinalityTests);
+      for (auto testCase : cardinalityTestCases)
+      {
+        testSerendipityHexBasisCardinality(fs, testCase[0], testCase[1], testCase[2], out, success);
       }
     }
   }
