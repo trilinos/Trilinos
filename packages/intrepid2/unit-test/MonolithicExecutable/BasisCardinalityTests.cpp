@@ -334,6 +334,7 @@ namespace
           }
         }
       }
+      break;
       case Intrepid2::FUNCTION_SPACE_HDIV:
       {
         /*
@@ -386,7 +387,7 @@ namespace
         }
         
         // family H(grad) x H(vol) x H(vol)
-        for (int i=0; i<=polyOrder_y; i++)
+        for (int i=0; i<=polyOrder_x; i++)
         {
           const int i_sl = (i > 1) ? i : 0;
           for (int j_vol=0; j_vol<polyOrder_y; j_vol++)
@@ -413,6 +414,7 @@ namespace
         return;
     }
     auto basis = getHexahedronBasis<BasisFamily>(fs, polyOrder_x, polyOrder_y, polyOrder_z);
+    TEST_EQUALITY(basis->getCardinality(), expectedCardinality);
     if (basis->getCardinality() != expectedCardinality)
     {
       out << "FAILURE: expected cardinality of " << expectedCardinality << " but got " << basis->getCardinality() << std::endl;
