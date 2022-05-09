@@ -60,7 +60,7 @@
 #endif
 
 #ifdef HAVE_MUELU_STRATIMIKOS
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_LinearSolverBuilder.hpp>
 #include <Stratimikos_MueLuHelpers.hpp>
 #endif
 
@@ -329,12 +329,12 @@ int main(int argc, char *argv[]) {
     typedef Thyra::LinearOpWithSolveBase<SC>                 LOWSB;
     typedef Thyra::MultiVectorBase<SC>                       TH_Mvb;
 
-    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+    Stratimikos::LinearSolverBuilder<SC> linearSolverBuilder;
 
     //Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);
 
-    Stratimikos::enableMueLu(linearSolverBuilder);                                          // Epetra
-    Stratimikos::enableMueLuTpetraQ2Q1<LO,GO,NO>(linearSolverBuilder, "MueLu-TpetraQ2Q1");  // Tpetra
+    Stratimikos::enableMueLu<SC,LO,GO,NO>(linearSolverBuilder);                                          // Epetra
+    Stratimikos::enableMueLuTpetraQ2Q1<SC,LO,GO,NO>(linearSolverBuilder, "MueLu-TpetraQ2Q1");  // Tpetra
 
     linearSolverBuilder.setParameterList(stratimikosList);
     RCP<const LOWSFB> lowsFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
