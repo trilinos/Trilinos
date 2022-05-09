@@ -67,9 +67,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
-//#include "Epetra_Comm.h"
-//#include "Epetra_MpiComm.h"
-
 #include "user_app_STKClosureModel_Factory_TemplateBuilder.hpp"
 
 #include <vector>
@@ -206,10 +203,10 @@ namespace panzer {
                                          vec);
 
     auto x = tloc->get_x();
-    auto xData = x->getData(0);
+    auto xData = x->getLocalViewHost(Tpetra::Access::ReadOnly);;
     out << x->getGlobalLength() << " " << xData.size() << std::endl;
-    for (int i=0; i < xData.size(); ++i) {
-      double v = xData[i];
+    for (size_t i=0; i < xData.size(); ++i) {
+      double v = xData(i,0);
       TEST_ASSERT(v==3.0 || v==9.0);
     }
 

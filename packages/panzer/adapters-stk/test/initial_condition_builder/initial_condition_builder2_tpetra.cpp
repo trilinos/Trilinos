@@ -227,10 +227,10 @@ namespace panzer {
     panzer::evaluateInitialCondition(*wkstContainer, phx_ic_field_managers, loc, *tlof, 0.0);
 
     auto x = tloc->get_x();
-    auto xData = x->getData(0);
-    out << x->getGlobalLength() << " " << xData.size() << std::endl;
-    for (int i=0; i < xData.size(); ++i)
-      TEST_FLOATING_EQUALITY(xData[i], 3.0, 1.0e-10);
+    auto xData = x->getLocalViewHost(Tpetra::Access::ReadOnly);
+    out << x->getGlobalLength() << " " << xData.size();
+    for (size_t i=0; i < xData.size(); ++i)
+      TEST_FLOATING_EQUALITY(xData(i,0), 3.0, 1.0e-10);
   }
 
   void testInitialzation_blockStructure_tpetra(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
