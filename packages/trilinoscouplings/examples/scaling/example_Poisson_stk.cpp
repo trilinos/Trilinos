@@ -1275,7 +1275,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
     if (MLList.isSublist("MueLu"))
       mueluParams = MLList.sublist("MueLu");
     mueluParams.sublist("user data").set("Coordinates",Teuchos::rcpFromRef(coords));
-    if(MyPID==0)
+    if(A.Comm().MyPID()==0)
       std::cout<<"*** MueLu Params ***" <<std::endl<<mueluParams<<std::endl;
     M = MueLu::CreateEpetraPreconditioner(Teuchos::rcpFromRef(A),mueluParams);
   }
