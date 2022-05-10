@@ -376,7 +376,7 @@ int main(int argc, char *argv[]) {
     parlist.sublist("General").sublist("Krylov").set("Iteration Limit",10);
     parlist.sublist("General").sublist("Krylov").set("Absolute Tolerance",1e-4);
     parlist.sublist("General").sublist("Secant").set("Type","Limited-Memory BFGS");
-    parlist.sublist("General").sublist("Secant").set("Use as Hessian",true);
+    parlist.sublist("General").sublist("Secant").set("Use as Hessian",false);
     parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist.sublist("Status Test").set("Iteration Limit",100);
