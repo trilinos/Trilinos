@@ -169,33 +169,72 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Tpetra_INST_INT_INT)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND Tpetra_INST_DOUBLE)
+IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Stratimikos_cp
     SOURCE_FILES stratimikos_jacobi.xml stratimikos_jacobi_half.xml
     )
 
   TRIBITS_ADD_EXECUTABLE(
-   GaleriDriver
-   SOURCES galeri_driver.cpp
-   COMM serial mpi
-   )
+    GaleriDriver
+    SOURCES
+    galeri_driver.cpp
+    COMM serial mpi
+    )
 
- TRIBITS_ADD_TEST(
-   GaleriDriver
-   NAME "Galeri_Jacobi"
-   ARGS "--xml=stratimikos_jacobi.xml"
-   NUM_MPI_PROCS 4
-   )
+  IF (Tpetra_INST_DOUBLE)
 
- IF (Tpetra_INST_FLOAT)
-   TRIBITS_ADD_TEST(
-     GaleriDriver
-     NAME "Galeri_Jacobi_HalfPrecision"
-     ARGS "--xml=stratimikos_jacobi_half.xml"
-     NUM_MPI_PROCS 4
-     )
- ENDIF()
+    TRIBITS_ADD_TEST(
+      GaleriDriver
+      NAME "Galeri_double_Jacobi"
+      ARGS "--scalarType=double --xml=stratimikos_jacobi.xml"
+      NUM_MPI_PROCS 4
+      )
+
+    IF (Tpetra_INST_FLOAT)
+      TRIBITS_ADD_TEST(
+        GaleriDriver
+        NAME "Galeri_double_Jacobi_HalfPrecision"
+        ARGS "--scalarType=double --xml=stratimikos_jacobi_half.xml"
+        NUM_MPI_PROCS 4
+        )
+    ENDIF()
+
+  ENDIF()
+
+  IF (Tpetra_INST_FLOAT)
+
+    TRIBITS_ADD_TEST(
+      GaleriDriver
+      NAME "Galeri_float_Jacobi"
+      ARGS "--scalarType=float --xml=stratimikos_jacobi.xml"
+      NUM_MPI_PROCS 4
+      )
+
+  ENDIF()
+
+  ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
+  IF (Tpetra_INST_COMPLEX_DOUBLE AND Teuchos_ENABLE_COMPLEX)
+
+    TRIBITS_ADD_TEST(
+      GaleriDriver
+      NAME "Galeri_complex_double_Jacobi"
+      ARGS "--scalarType=\"complex<double>\" --xml=stratimikos_jacobi.xml"
+      NUM_MPI_PROCS 4
+      )
+
+  ENDIF()
+
+  IF (Tpetra_INST_COMPLEX_FLOAT AND Teuchos_ENABLE_COMPLEX)
+
+    TRIBITS_ADD_TEST(
+      GaleriDriver
+      NAME "Galeri_complex_float_Jacobi"
+      ARGS "--scalarType=\"complex<float>\" --xml=stratimikos_jacobi.xml"
+      NUM_MPI_PROCS 4
+      )
+
+  ENDIF()
 
 ENDIF ()
 
