@@ -86,6 +86,7 @@
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
+#include "AztecOO.h"
 #endif
 
 #include "BelosPseudoBlockGmresSolMgr.hpp"
@@ -94,8 +95,6 @@
 #include "Example_BCStrategy_Factory.hpp"
 #include "Example_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "Example_EquationSetFactory.hpp"
-
-#include "AztecOO.h"
 
 #include <sstream>
 
