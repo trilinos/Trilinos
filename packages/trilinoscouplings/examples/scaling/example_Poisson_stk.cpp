@@ -76,6 +76,8 @@
 /**************************************************************/
 
 #include <unistd.h>
+#include <vector>
+#include <map>
 
 #include "TrilinosCouplings_config.h"
 
@@ -166,6 +168,12 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityId
+
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#include "TrilinosCouplings_Statistics.hpp"
+#else 
+#error "BORK"
+#endif
 
 /*********************************************************/
 /*                     Typedefs                          */
@@ -481,16 +489,20 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<numRanks; ++i) {
       if (MyPID == i) {
         std::cout << "(" << MyPID << ")    Number of local Elements: " << numLocalElems << std::endl
-                  << "(" << MyPID << ")       Number of local Nodes: " << numLocalNodes << std::endl << std::endl;
+                  << "(" << MyPID << ")    Number of local Nodes   : " << numLocalNodes << std::endl << std::endl;
       }
       Comm.Barrier();
     }
   }
 
-  int numGlobalNodes = 0;
+  int numGlobalNodes = 0, numGlobalElements = 0;
   Comm.SumAll(&numLocalNodes,&numGlobalNodes,1);
-  if (MyPID == 0)
-    std::cout << "       Number of global Nodes: " << numGlobalNodes << std::endl;
+  Comm.SumAll(&numLocalElems,&numGlobalElements,1);
+  if (MyPID == 0) {
+    std::cout << "       Number of global Nodes   : " << numGlobalNodes << std::endl;
+    std::cout << "       Number of global Elements: " << numGlobalElements << std::endl;
+  }
+ 
 
   typedef stk::mesh::Field<double, stk::mesh::Cartesian>  CoordFieldType;
   // get coordinates field
@@ -537,6 +549,17 @@ int main(int argc, char *argv[]) {
   } // end loop over mesh parts
 
   int numNodesPerElem = cellType.getNodeCount();  
+  int numEdgesPerElem = cellType.getEdgeCount();  
+
+  if(MyPID==0) {
+    std::cout<<"Cell Topology: "<<cellType.getName() << " ("<<cellType.getBaseName()<<")"<<std::endl;
+  }
+
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+  MachineLearningStatistics_Hex3D<double, int, int, Xpetra::EpetraNode> MLStatistics(numGlobalElements);
+  bool do_statistics = !strcmp(cellType.getName(),"Hexahedron_8");
+  std::cout<<"do_statistics = "<<do_statistics<<std::endl;
+#endif
 
   // if no boundary node set was found give a warning
   int numLocalBCs = bcNodes.size();
@@ -670,7 +693,7 @@ int main(int argc, char *argv[]) {
     // in all other cases
     EpetraExt::MultiVectorToMatrixMarketFile(coordsFilename.c_str(),nCoord,0,0,false);
 
-#if 0
+#if 1
     // Processor-by-processor output
     char fn[80];
     sprintf(fn,"test-%d-%s",MyPID,coordsFilename.c_str());
@@ -687,6 +710,80 @@ int main(int argc, char *argv[]) {
     if(MyPID==0) {Time.ResetStartTime();}
   }
 
+
+  /**********************************************************************************/
+  /****************************** STATISTICS (Part I) *******************************/
+  /**********************************************************************************/
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+  if(do_statistics) {
+    Intrepid::FieldContainer<int> elemToNode(numLocalElems,numNodesPerElem);
+    Intrepid::FieldContainer<int> elemToEdge(numLocalElems,numEdgesPerElem);
+    Intrepid::FieldContainer<double> nodeCoord (numLocalNodes, spaceDim);
+    Intrepid::FieldContainer<double> sigmaVal(numLocalElems);
+    
+    int elem_ct=0;
+    std::map<std::pair<int,int>,int> local_edge_hash;
+    std::vector<std::pair<int,int> > edge_vector;
+
+    for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
+      stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
+      for (size_t elemIndex = 0; elemIndex < elemBucket.size(); ++elemIndex) {
+        stk::mesh::Entity elem = elemBucket[elemIndex];
+        //TODO (Optimization) It's assumed all elements are the same type, so this is constant.
+        //TODO Therefore there's no need to do this everytime.
+        unsigned numNodes = bulkData.num_nodes(elem);
+        stk::mesh::Entity const* nodes = bulkData.begin_nodes(elem);
+        for (unsigned inode = 0; inode < numNodes; ++inode) {
+          double *coord = stk::mesh::field_data(*coords, nodes[inode]);
+          int lid = globalMapG.LID((int)bulkData.identifier(nodes[inode]) -1);
+          elemToNode(elem_ct,inode) = lid;
+          if(lid != -1) {
+            nodeCoord(lid,0) = coord[0];
+            nodeCoord(lid,1) = coord[1];
+            if(spaceDim==3)
+              nodeCoord(lid,2) = coord[2];
+          }
+        }//end node loop
+        
+        auto data = cellType.getCellTopologyData();
+        for(unsigned iedge=0; iedge<cellType.getEdgeCount(); iedge++) {
+          int n0 = data->edge[iedge].node[0];
+          int n1 = data->edge[iedge].node[1];
+          int lid0 = globalMapG.LID((int)bulkData.identifier(nodes[n0]) -1);
+          int lid1 = globalMapG.LID((int)bulkData.identifier(nodes[n1]) -1);
+          if(lid0 != -1 && lid1 != -1) {
+            int lo = std::min(lid0,lid1);            
+            int hi = std::max(lid0,lid1);
+            std::pair<int,int> key(lo,hi);
+            if (local_edge_hash.find(key) == local_edge_hash.end()) {
+              int new_edge_id = edge_vector.size();
+              local_edge_hash[key] = new_edge_id;
+              edge_vector.push_back(key);
+              elemToEdge(elem_ct,iedge) = new_edge_id;
+            }
+            else {
+              elemToEdge(elem_ct,iedge) = local_edge_hash[key];
+            }
+          }
+        }//end edge loop
+      
+        sigmaVal(elem_ct) = 1;// Not doing sigma here
+        
+        elem_ct++;
+      }//end element loop
+    }//end bucket loop
+
+    Intrepid::FieldContainer<int> edgeToNode(edge_vector.size(), 2);
+    for(int i=0; i<(int)edge_vector.size(); i++) {
+      edgeToNode(i,0) = edge_vector[i].first;
+      edgeToNode(i,1) = edge_vector[i].second;
+    }
+
+
+    MLStatistics.Phase1(elemToNode,elemToEdge,edgeToNode,nodeCoord,sigmaVal);
+
+  }
+#endif
 
   /**********************************************************************************/
   /******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
@@ -873,6 +970,17 @@ int main(int argc, char *argv[]) {
       Time.ResetStartTime();
     }
 
+    
+
+
+    /**********************************************************************************/
+    /***************************** STATISTICS (Part II) ******************************/
+    /**********************************************************************************/
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+    if(do_statistics)
+      MLStatistics.Phase2a(worksetJacobDet,worksetCubWeights);
+#endif
+
     /**********************************************************************************/
     /*                         Assemble into Global Matrix                            */
     /**********************************************************************************/
@@ -917,6 +1025,7 @@ int main(int argc, char *argv[]) {
 
   }// end workset loop
 
+
   StiffMatrix.GlobalAssemble();
   StiffMatrix.FillComplete();
   rhsVector.GlobalAssemble();
@@ -926,6 +1035,26 @@ int main(int argc, char *argv[]) {
               << Time.ElapsedTime() << " seconds" << std::endl;
     Time.ResetStartTime();
   }
+/**********************************************************************************/
+/***************************** STATISTICS (Part IIb) ******************************/
+/**********************************************************************************/
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+  if(do_statistics){
+    MLStatistics.Phase2b(Teuchos::rcp(&StiffMatrix.Graph(),false),Teuchos::rcp(&nCoord,false));
+  }
+#endif
+/**********************************************************************************/
+/***************************** STATISTICS (Part III) ******************************/
+/**********************************************************************************/
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+  if(do_statistics){
+    MLStatistics.Phase3();
+    Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
+    if(MyPID==0) std::cout<<"*** Problem Statistics ***"<<std::endl<<problemStatistics<<std::endl;
+  }
+#endif
+
+ 
 
   /**********************************************************************************/
   /************************** DIRICHLET BC SETUP ************************************/
@@ -1022,8 +1151,12 @@ int main(int argc, char *argv[]) {
 template<typename Scalar>
 const Scalar exactSolution(const Scalar& x, const Scalar& y, const Scalar& z) {
 
+  // Patch test: tri-linear function is in the FE space and should be recovered
+  return 1. + x + y + z + x*y + x*z + y*z + x*y*z;
+
+
   // Patch test - tet: function is in the FE space and should be recovered
-     return 1. + x + y + z ;
+  //     return 1. + x + y + z ;
 
   // Patch test - hex: tri-linear function is in the FE space and should be recovered
   // return 1. + x + y + z + x*y + x*z + y*z + x*y*z;
