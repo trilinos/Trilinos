@@ -1,8 +1,12 @@
 #include "Kokkos_Core.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosViewOfViews.hpp"
+#include <vector>
 
+// ********************************
 // This test demonstrates how to create a view of views for double and FAD types.
+// Original implementation
+// ********************************
 using exec_t = Kokkos::DefaultExecutionSpace;
 using mem_t = Kokkos::DefaultExecutionSpace::memory_space;
 
@@ -58,6 +62,9 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,OldImpl) {
       }
 }
 
+// ********************************
+// New implementation (automatically adds the unmanaged memory trait to inner view) 
+// ********************************
 TEUCHOS_UNIT_TEST(PhalanxViewOfViews,NewImpl) {
 
   const int num_cells = 10;
@@ -114,4 +121,110 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,NewImpl) {
         TEST_FLOATING_EQUALITY(d_host(cell,pt,eq),9.0,tol);
       }
 
+}
+
+// ********************************
+// Demonstrates an alternative path for ViewOfViews that uses a user
+// defined wrapper and the assignment operator on device to disable
+// the reference tracking.
+// ********************************
+
+// Force this test to always run without UVM.
+// For Cuda builds, ignore the default memory space in the Cuda
+// execution space since it can be set to UVM in Trilinos
+// configure. For non-Cuda builds, just use the default memory space
+// in the execution space.
+namespace Kokkos {
+  class Cuda;
+  class CudaSpace;
+}
+using DeviceExecutionSpace = Kokkos::DefaultExecutionSpace;
+using DeviceMemorySpace = std::conditional<std::is_same<DeviceExecutionSpace,Kokkos::Cuda>::value,
+                                           Kokkos::CudaSpace,
+                                           Kokkos::DefaultExecutionSpace::memory_space>::type;
+using view = Kokkos::View<double*,DeviceMemorySpace>;
+using view_host = view::HostMirror;
+
+class Wrapper {
+public:
+  view a_;
+  view b_;
+  KOKKOS_INLINE_FUNCTION
+  Wrapper() : a_(nullptr,0),b_(nullptr,0) {}
+
+  Wrapper(const view_host& a, const view_host& b)
+    : a_(a.label(),a.layout()),b_(b.label(),b.layout())
+  {
+    Kokkos::deep_copy(a_,a);
+    Kokkos::deep_copy(b_,b);
+  }
+
+  KOKKOS_DEFAULTED_FUNCTION
+  Wrapper& operator=(const Wrapper& src) = default;
+
+  KOKKOS_INLINE_FUNCTION
+  double multiply(int i) const {return a_(i) * b_(i);}
+};
+
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,WrapperExample) {
+
+  constexpr int num_objects = 3;
+  constexpr int view_size = 20;
+
+  // This object must exist for lifetime if v_of_uo to keep inner
+  // views in scope.
+  std::vector<Wrapper> uo(num_objects);
+  {
+    view_host a("a",view_size);
+    view_host b("b",view_size);
+    view_host c("c",view_size);
+    view_host d("d",view_size);
+    view_host e("e",view_size);
+    view_host f("f",view_size);
+
+    Kokkos::deep_copy(a,0.0);
+    Kokkos::deep_copy(b,1.0);
+    Kokkos::deep_copy(c,2.0);
+    Kokkos::deep_copy(d,3.0);
+    Kokkos::deep_copy(e,4.0);
+    Kokkos::deep_copy(f,5.0);
+
+    uo[0] = Wrapper(a,b);
+    uo[1] = Wrapper(c,d);
+    uo[2] = Wrapper(e,f);
+  }
+
+  Kokkos::View<Wrapper*,DeviceMemorySpace> v_of_uo("v_of_uo",num_objects);
+
+  for (int i=0; i < 3; ++i) {
+    Wrapper tmp = uo[i];
+    Kokkos::parallel_for("initialize view_of_uo",1,KOKKOS_LAMBDA(const int ) {
+      // reference counting is disabled on device
+      v_of_uo(i) = tmp;
+    });
+    Kokkos::fence();
+  }
+
+  Kokkos::View<double**,DeviceMemorySpace> results("results",num_objects,view_size);
+  Kokkos::MDRangePolicy<exec_t,Kokkos::Rank<2>> policy({0,0},{num_objects,view_size});
+  Kokkos::parallel_for("v_of_uo",policy,KOKKOS_LAMBDA(const int i,const int j) {
+    results(i,j) = v_of_uo(i).multiply(j) + static_cast<double>(j);
+  });
+  Kokkos::fence();
+
+  auto results_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),results);
+
+  constexpr auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+  for (int i=0; i < num_objects; ++i) {
+    for (int j=0; j < view_size; ++j) {
+
+      double gold_value = static_cast<double>(j);
+      if (i == 1)
+        gold_value += 6.0;
+      else if (i == 2)
+        gold_value += 20.0;
+
+      TEST_FLOATING_EQUALITY(results_host(i,j),gold_value,tol);
+    }
+  }
 }
