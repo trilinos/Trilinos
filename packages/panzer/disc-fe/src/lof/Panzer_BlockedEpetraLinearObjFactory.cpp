@@ -42,8 +42,12 @@
 
 #include "PanzerDiscFE_config.hpp"
 
+#ifdef PANZER_HAVE_EPETRA
+
 #include "Panzer_Traits.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory_impl.hpp"
 
 template class panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>;
+
+#endif // PANZER_HAVE_EPETRA

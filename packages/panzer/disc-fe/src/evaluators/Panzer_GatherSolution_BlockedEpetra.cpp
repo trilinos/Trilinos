@@ -42,6 +42,8 @@
 
 #include "PanzerDiscFE_config.hpp"
 
+#ifdef PANZER_HAVE_EPETRA
+
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
 #include "Panzer_GatherSolution_BlockedEpetra_decl.hpp"
@@ -52,3 +54,5 @@
 #endif
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherSolution_BlockedEpetra,int,int)
+
+#endif // PANZER_HAVE_EPETRA

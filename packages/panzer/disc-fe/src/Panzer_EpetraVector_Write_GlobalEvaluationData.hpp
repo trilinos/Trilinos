@@ -40,6 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
+#ifdef PANZER_HAVE_EPETRA
+
 #ifndef   __Panzer_EpetraVector_Write_GlobalEvaluationData_hpp__
 #define   __Panzer_EpetraVector_Write_GlobalEvaluationData_hpp__
 
@@ -152,7 +154,7 @@ namespace panzer
         int mem);
 
       /**
-       *  \brief Clear out the ghosted vector.                                   // JMG:  Is this right?                          
+       *  \brief Clear out the ghosted vector.                                   // JMG:  Is this right?
        */
       virtual void
       initializeData();
@@ -160,7 +162,7 @@ namespace panzer
       /**
        *  \brief Determine if a Dirichlet adjustment is necessary.
        *
-       *  \returns False.                                                        // JMG:  But why?                                
+       *  \returns False.                                                        // JMG:  But why?
        */
       virtual bool
       requiresDirichletAdjustment() const
@@ -284,3 +286,5 @@ namespace panzer
 } // end of namespace panzer
 
 #endif // __Panzer_EpetraVector_Write_GlobalEvaluationData_hpp__
+
+#endif // PANZER_HAVE_EPETRA

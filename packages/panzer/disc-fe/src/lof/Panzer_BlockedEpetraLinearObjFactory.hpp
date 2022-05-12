@@ -40,6 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
+#ifdef PANZER_HAVE_EPETRA
+
 #ifndef   __Panzer_BlockedEpetraLinearObjFactory_hpp__
 #define   __Panzer_BlockedEpetraLinearObjFactory_hpp__
 
@@ -106,12 +108,12 @@ public:
 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;
 
-   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveLinearObjContainer() const
    { return buildLinearObjContainer(); }
 
    virtual Teuchos::RCP<LinearObjContainer> buildGhostedLinearObjContainer() const;
 
-   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const 
+   virtual Teuchos::RCP<LinearObjContainer> buildPrimitiveGhostedLinearObjContainer() const
    { return buildGhostedLinearObjContainer(); }
 
    virtual void globalToGhostContainer(const LinearObjContainer & container,
@@ -153,7 +155,7 @@ public:
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
-   { 
+   {
      if(!colDOFManagerContainer_->containsBlockedDOFManager() &&
         !rowDOFManagerContainer_->containsBlockedDOFManager())
        return Teuchos::rcp(new ScatterResidual_Epetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()[0],
@@ -162,36 +164,36 @@ public:
 
      return Teuchos::rcp(new ScatterResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers(),
                                                                                            colDOFManagerContainer_->getFieldDOFManagers(),
-                                                                                           useDiscreteAdjoint_)); 
+                                                                                           useDiscreteAdjoint_));
    }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
-   { 
+   {
      if(!colDOFManagerContainer_->containsBlockedDOFManager() &&
         !rowDOFManagerContainer_->containsBlockedDOFManager())
        return Teuchos::rcp(new GatherSolution_Epetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()[0]));
-     return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers())); 
+     return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()));
    }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherTangent() const
-   { 
+   {
      if(!colDOFManagerContainer_->containsBlockedDOFManager() &&
         !rowDOFManagerContainer_->containsBlockedDOFManager())
        return Teuchos::rcp(new GatherTangent_Epetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()[0]));
-     return Teuchos::rcp(new GatherTangent_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers())); 
+     return Teuchos::rcp(new GatherTangent_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()));
    }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherDomain() const
-   { 
+   {
      if(!colDOFManagerContainer_->containsBlockedDOFManager())
        return Teuchos::rcp(new GatherSolution_Epetra<EvalT,Traits,LocalOrdinalT,int>(colDOFManagerContainer_->getFieldDOFManagers()[0]));
-     return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(colDOFManagerContainer_->getFieldDOFManagers())); 
+     return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(colDOFManagerContainer_->getFieldDOFManagers()));
    }
 
    //! Use preconstructed gather evaluators
@@ -202,17 +204,17 @@ public:
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
-   { 
+   {
      if(!colDOFManagerContainer_->containsBlockedDOFManager() &&
         !rowDOFManagerContainer_->containsBlockedDOFManager())
        return Teuchos::rcp(new ScatterDirichletResidual_Epetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()[0],
-                                                                                               colDOFManagerContainer_->getFieldDOFManagers()[0])); 
+                                                                                               colDOFManagerContainer_->getFieldDOFManagers()[0]));
      return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers(),
-                                                                                                    colDOFManagerContainer_->getFieldDOFManagers())); 
+                                                                                                    colDOFManagerContainer_->getFieldDOFManagers()));
    }
 
 /*************** Generic helper functions for container setup *******************/
-   
+
    /** Initialize container with a specific set of member values.
      *
      * \note This will overwrite everything in the container and zero out values
@@ -453,9 +455,9 @@ protected:
     */
   class DOFManagerContainer {
   public:
-    DOFManagerContainer() {} 
-    DOFManagerContainer(const Teuchos::RCP<const GlobalIndexer> & ugi) 
-    { setGlobalIndexer(ugi); } 
+    DOFManagerContainer() {}
+    DOFManagerContainer(const Teuchos::RCP<const GlobalIndexer> & ugi)
+    { setGlobalIndexer(ugi); }
 
     void setGlobalIndexer(const Teuchos::RCP<const GlobalIndexer> & ugi)
     {
@@ -468,7 +470,7 @@ protected:
       if(blockedDOFManager!=Teuchos::null) {
         // set BlockedDOFManager
         blockedDOFManager_ = blockedDOFManager;
- 
+
         // get all GID providers
         auto dofManagers =  blockedDOFManager_->getFieldDOFManagers();
         for(auto itr=dofManagers.begin();itr!=dofManagers.end();++itr)
@@ -503,11 +505,11 @@ protected:
       TEUCHOS_ASSERT(containsBlockedDOFManager());
       return blockedDOFManager_;
     }
- 
+
     //! Get the "parent" global indexer (if <code>getFieldBlocks()>1</code> this will be blocked, otherwise it may be either)
     Teuchos::RCP<const GlobalIndexer> getGlobalIndexer() const
     {
-      if(blockedDOFManager_!=Teuchos::null) 
+      if(blockedDOFManager_!=Teuchos::null)
         return blockedDOFManager_;
 
       TEUCHOS_ASSERT(gidProviders_.size()==1);
@@ -540,7 +542,7 @@ protected:
 
    // which block entries are ignored
    std::unordered_set<std::pair<int,int>,panzer::pair_hash> excludedPairs_;
-  
+
 /*************** Thyra based methods/members *******************/
 
    void ghostToGlobalThyraVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & in,
@@ -723,3 +725,5 @@ protected:
 } // end of namespace panzer
 
 #endif // __Panzer_BlockedEpetraLinearObjFactory_hpp__
+
+#endif // PANZER_HAVE_EPETRA
