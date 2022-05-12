@@ -959,6 +959,11 @@ struct OperatorTensorDecomposition
       // We support total spaceDim <= 7.
       switch (spaceDim1)
       {
+        case 0:
+        {
+          INTREPID2_TEST_FOR_EXCEPTION(operatorOrder1 > 0, std::invalid_argument, "For spaceDim1 = 0, operatorOrder1 must be 0.");
+          return dkEnum2;
+        }
         case 1:
           switch (spaceDim2)
         {
@@ -1186,6 +1191,20 @@ struct OperatorTensorDecomposition
       
       // check that points has enough tensor components
       ordinal_type numBasisComponents = tensorComponents_.size();
+      if (numBasisComponents > points.numTensorComponents())
+      {
+        // Then we require points to have a trivial tensor structure.  (Subclasses could be more sophisticated.)
+        // (More sophisticated approaches are possible here, too, but likely the most common use case in which there is not a one-to-one correspondence
+        //  between basis components and point components will involve trivial tensor structure in the points...)
+        INTREPID2_TEST_FOR_EXCEPTION(points.numTensorComponents() != 1, std::invalid_argument, "If points does not have the same number of tensor components as the basis, then it should have trivial tensor structure.");
+        const ordinal_type numPoints = points.extent_int(0);
+        auto outputView = this->allocateOutputView(numPoints, operatorType);
+        
+        Data<OutputValueType,DeviceType> outputData(outputView);
+        TensorData<OutputValueType,DeviceType> outputTensorData(outputData);
+        
+        return BasisValues<OutputValueType,DeviceType>(outputTensorData);
+      }
       INTREPID2_TEST_FOR_EXCEPTION(numBasisComponents > points.numTensorComponents(), std::invalid_argument, "points must have at least as many tensorial components as basis.");
       
       OperatorTensorDecomposition opDecomposition = getOperatorDecomposition(operatorType);
@@ -1427,6 +1446,19 @@ struct OperatorTensorDecomposition
                const TensorPoints<PointValueType,DeviceType>  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const override
     {
+      if (inputPoints.numTensorComponents() != tensorComponents_.size())
+      {
+        // then we require that both inputPoints and outputValues trivial tensor structure
+        INTREPID2_TEST_FOR_EXCEPTION( inputPoints.numTensorComponents() != 1, std::invalid_argument, "If inputPoints differs from the tensor basis in component count, then inputPoints must have trivial tensor product structure" );
+        INTREPID2_TEST_FOR_EXCEPTION( outputValues.numFamilies() != 1, std::invalid_argument, "If inputPoints differs from the tensor basis in component count, outputValues must have a single family with trivial tensor product structure" );
+        INTREPID2_TEST_FOR_EXCEPTION( outputValues.tensorData().numTensorComponents() != 1, std::invalid_argument, "If inputPoints differs from the tensor basis in component count, outputValues must have a single family with trivial tensor product structure" );
+        
+        OutputViewType outputView = outputValues.tensorData().getTensorComponent(0).getUnderlyingView();
+        PointViewType   pointView = inputPoints.getTensorComponent(0);
+        this->getValues(outputView, pointView, operatorType);
+        return;
+      }
+      
       OperatorTensorDecomposition operatorDecomposition = getOperatorDecomposition(operatorType);
       
       const ordinal_type numVectorComponents = operatorDecomposition.numVectorComponents();
