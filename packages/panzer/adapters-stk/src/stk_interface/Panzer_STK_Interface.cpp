@@ -690,7 +690,7 @@ setupExodusFile(const std::string& filename,
 
   ParallelMachine comm = *mpiComm_->getRawMpiComm();
   meshData_ = rcp(new StkMeshIoBroker(comm));
-  meshData_->set_bulk_data(bulkData_);
+  meshData_->set_bulk_data(Teuchos::get_shared_ptr(bulkData_));
   Ioss::PropertyManager props;
   props.add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", "FALSE"));
   if (append) {
