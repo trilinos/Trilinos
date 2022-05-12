@@ -134,6 +134,10 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,NewImpl) {
 // execution space since it can be set to UVM in Trilinos
 // configure. For non-Cuda builds, just use the default memory space
 // in the execution space.
+namespace Kokkos {
+  class Cuda;
+  class CudaSpace;
+}
 using DeviceExecutionSpace = Kokkos::DefaultExecutionSpace;
 using DeviceMemorySpace = std::conditional<std::is_same<DeviceExecutionSpace,Kokkos::Cuda>::value,
                                            Kokkos::CudaSpace,
