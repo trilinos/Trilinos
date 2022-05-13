@@ -691,7 +691,7 @@ int main(int argc, char *argv[]) {
     // in all other cases
     EpetraExt::MultiVectorToMatrixMarketFile(coordsFilename.c_str(),nCoord,0,0,false);
 
-#if 1
+#if 0
     // Processor-by-processor output
     char fn[80];
     sprintf(fn,"test-%d-%s",MyPID,coordsFilename.c_str());
