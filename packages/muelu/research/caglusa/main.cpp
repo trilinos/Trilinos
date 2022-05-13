@@ -908,6 +908,102 @@ namespace Xpetra {
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+struct IOhelpers {
+
+  static
+  Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Read(const std::string&   filename,
+       const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap,
+       RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap,
+       const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > domainMap        = Teuchos::null,
+       const RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rangeMap         = Teuchos::null,
+       const bool           callFillComplete = true,
+       const bool           binary           = false,
+       const bool           readLocal        = false) {
+    using IO = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
+    if (readLocal)
+      A = IO::ReadLocal(filename, rowMap, colMap, domainMap, rangeMap, callFillComplete, binary);
+    else
+      A = IO::Read(filename, rowMap, colMap, domainMap, rangeMap, callFillComplete, binary);
+    return A;
+  }
+
+  static
+  Teuchos::RCP<Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Read(Teuchos::ParameterList& hierarchicalParams,
+       RCP< const Teuchos::Comm<int> >& comm) {
+    using HOp = Xpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using blocked_matrix_type = typename HOp::blocked_matrix_type;
+    using blocked_map_type = typename blocked_matrix_type::blocked_map_type;
+    using matrix_type = typename HOp::matrix_type;
+    using map_type = typename HOp::map_type;
+    using lo_vec_type = typename blocked_map_type::lo_vec_type;
+
+    auto  lib = Xpetra::UseTpetra;
+    RCP<HOp>                       op;
+    RCP<const map_type>            map, near_colmap, clusterCoeffMap, ghosted_clusterCoeffMap, clusterMap, ghosted_clusterMap;
+    RCP<matrix_type>               nearField, basisMatrix, kernelApproximations, kernelBlockGraph;
+
+    std::vector<RCP<blocked_matrix_type> > transferMatrices;
+    RCP<lo_vec_type>               clusterSizes;
+    RCP<blocked_map_type>          blockMap;
+    RCP<blocked_matrix_type>       blockKernelApproximations;
+
+    const bool readBinary = hierarchicalParams.get<bool>("read binary", false);
+    const bool readLocal = hierarchicalParams.get<bool>("read local", false);
+
+    using IO = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+
+    // row, domain and range map of the operator
+    map = IO::ReadMap(hierarchicalParams.get<std::string>("map"), lib, comm);
+    // colmap of near field
+    near_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("near colmap"), lib, comm);
+    // 1-to-1 map for the cluster coefficients
+    clusterCoeffMap = IO::ReadMap(hierarchicalParams.get<std::string>("coefficient map"), lib, comm);
+    // overlapping map for the cluster coefficients
+    ghosted_clusterCoeffMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted coefficient map"), lib, comm);
+    // 1-to-1 map for the clusters
+    clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("cluster map"), lib, comm);
+    // overlapping map for the clusters
+    ghosted_clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted cluster map"), lib, comm);
+
+
+    clusterSizes = Xpetra::IO<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierarchicalParams.get<std::string>("gid_cluster_to_gid_coeff"), clusterMap)->getVectorNonConst(0);
+    blockMap = rcp(new blocked_map_type(clusterCoeffMap, clusterSizes));
+
+    // near field interactions
+    nearField = Read(hierarchicalParams.get<std::string>("near field matrix"), map, near_colmap, map, map, true, readBinary, readLocal);
+
+    // far field basis expansion coefficients
+    basisMatrix = IOhelpers::Read(hierarchicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map, true, readBinary, readLocal);
+
+    // far field interactions
+    kernelApproximations = IOhelpers::Read(hierarchicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary, readLocal);
+    // block graph of far field interactions
+    kernelBlockGraph = IOhelpers::Read(hierarchicalParams.get<std::string>("far field interaction matrix")+".block", clusterMap, ghosted_clusterMap, clusterMap, clusterMap, true, readBinary, readLocal);
+
+    blockKernelApproximations = rcp(new blocked_matrix_type(kernelApproximations, kernelBlockGraph, blockMap));
+
+    // Transfer matrices
+    auto transfersList = hierarchicalParams.sublist("shift coefficient matrices");
+    for (int i = 0; i < transfersList.numParams(); i++) {
+      std::string filename = transfersList.get<std::string>(std::to_string(i));
+      auto transferPoint = IOhelpers::Read(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary, readLocal);
+      auto transferBlock = IOhelpers::Read(filename+".block", clusterMap, clusterMap, clusterMap, clusterMap, true, readBinary, readLocal);
+      auto transfer = rcp(new blocked_matrix_type(transferPoint, transferBlock, blockMap));
+      transferMatrices.push_back(transfer);
+    }
+
+    op = rcp(new HOp(nearField, blockKernelApproximations, basisMatrix, transferMatrices));
+
+    return op;
+  }
+
+};
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
   #include "MueLu_UseShortNames.hpp"
 
@@ -917,6 +1013,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   clp.setOption("xml",    &xmlHierarchical);
   clp.setOption("xmlMueLu", &xmlMueLu);
   clp.setOption("xmlAux", &xmlAuxHierarchy);
+  bool        printTimings      = true;               clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -941,8 +1038,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   using vec_type = typename HOp::vec_type;
   using lo_vec_type = typename blocked_map_type::lo_vec_type;
   using coord_mv = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>;
-
+  using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using IO = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using IOhelpers = IOhelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
   RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   Teuchos::FancyOStream& out = *fancy;
@@ -950,94 +1048,38 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   bool success = true;
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const MagnitudeType tol = 100*Teuchos::ScalarTraits<MagnitudeType>::eps();
 
   Teuchos::ParameterList         hierarchicalParams;
-  RCP<const map_type>            map, near_colmap, clusterCoeffMap, ghosted_clusterCoeffMap, clusterMap, ghosted_clusterMap, aux_colmap;
-  RCP<matrix_type>               nearField, basisMatrix, kernelApproximations, kernelBlockGraph, auxOp;
-  RCP<vec_type>                  X_ex, RHS, X;
-  RCP<coord_mv>                  coords;
-  std::vector<RCP<blocked_matrix_type> > transferMatrices;
-  RCP<lo_vec_type>               clusterSizes;
-  RCP<blocked_map_type>          blockMap;
-  RCP<blocked_matrix_type>       blockKernelApproximations;
-  {
-    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Read files")));
+  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlHierarchical, Teuchos::Ptr<Teuchos::ParameterList>(&hierarchicalParams), *comm);
 
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlHierarchical, Teuchos::Ptr<Teuchos::ParameterList>(&hierarchicalParams), *comm);
+  RCP<HOp> op;
+  {
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Read hierarchical matrix")));
+    op = IOhelpers::Read(hierarchicalParams, comm);
+  }
+
+  out << "Compression: " << op->getCompression() << " of dense matrix."<< std::endl;
+
+  RCP<const map_type> map = op->getDomainMap();
+  RCP<matrix_type>    auxOp;
+  RCP<vec_type>       X_ex, RHS, X;
+  RCP<coord_mv>       coords;
+  {
+    // Read in auxiliary stuff
+
     const bool readBinary = hierarchicalParams.get<bool>("read binary", false);
     const bool readLocal = hierarchicalParams.get<bool>("read local", false);
 
-    // row, domain and range map of the operator
-    map = IO::ReadMap(hierarchicalParams.get<std::string>("map"), lib, comm);
-    // colmap of near field
-    near_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("near colmap"), lib, comm);
-    // 1-to-1 map for the cluster coefficients
-    clusterCoeffMap = IO::ReadMap(hierarchicalParams.get<std::string>("coefficient map"), lib, comm);
-    // overlapping map for the cluster coefficients
-    ghosted_clusterCoeffMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted coefficient map"), lib, comm);
-    // 1-to-1 map for the clusters
-    clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("cluster map"), lib, comm);
-    // overlapping map for the clusters
-    ghosted_clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted cluster map"), lib, comm);
     // colmap of auxiliary operator
-    aux_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("aux colmap"), lib, comm);
+    RCP<const map_type> aux_colmap = IO::ReadMap(hierarchicalParams.get<std::string>("aux colmap"), lib, comm);
 
-    clusterSizes = Xpetra::IO<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierarchicalParams.get<std::string>("gid_cluster_to_gid_coeff"), clusterMap)->getVectorNonConst(0);
-    blockMap = rcp(new blocked_map_type(clusterCoeffMap, clusterSizes));
-
-    if (readLocal) {
-      // near field interactions
-      nearField = IO::ReadLocal(hierarchicalParams.get<std::string>("near field matrix"), map, near_colmap, map, map, true, readBinary);
-
-      // far field basis expansion coefficients
-      basisMatrix = IO::ReadLocal(hierarchicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map, true, readBinary);
-      // far field interactions
-      kernelApproximations = IO::ReadLocal(hierarchicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
-      // block graph of far field interactions
-      kernelBlockGraph = IO::ReadLocal(hierarchicalParams.get<std::string>("far field interaction matrix")+".block", clusterMap, ghosted_clusterMap, clusterMap, clusterMap, true, readBinary);
-
-      auto transfersList = hierarchicalParams.sublist("shift coefficient matrices");
-      for (int i = 0; i < transfersList.numParams(); i++) {
-        std::string filename = transfersList.get<std::string>(std::to_string(i));
-        auto transferPoint = IO::ReadLocal(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
-        auto transferBlock = IO::ReadLocal(filename+".block", clusterMap, clusterMap, clusterMap, clusterMap, true, readBinary);
-        auto transfer = rcp(new blocked_matrix_type(transferPoint, transferBlock, blockMap));
-        transferMatrices.push_back(transfer);
-      }
-
-      const std::string auxOpStr = hierarchicalParams.get<std::string>("auxiliary operator");
-      if (auxOpStr == "near")
-        auxOp = nearField;
-      else
-        auxOp  = IO::ReadLocal(auxOpStr, map, aux_colmap, map, map, true, readBinary);
-    } else {
-      // near field interactions
-      nearField = IO::Read(hierarchicalParams.get<std::string>("near field matrix"), map, near_colmap, map, map, true, readBinary);
-
-      // far field basis expansion coefficients
-      basisMatrix = IO::Read(hierarchicalParams.get<std::string>("basis expansion coefficient matrix"), map, clusterCoeffMap, clusterCoeffMap, map, true, readBinary);
-      // far field interactions
-      kernelApproximations = IO::Read(hierarchicalParams.get<std::string>("far field interaction matrix"), clusterCoeffMap, ghosted_clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
-      // block graph of far field interactions
-      kernelBlockGraph = IO::Read(hierarchicalParams.get<std::string>("far field interaction matrix")+".block", clusterMap, ghosted_clusterMap, clusterMap, clusterMap, true, readBinary);
-
-      auto transfersList = hierarchicalParams.sublist("shift coefficient matrices");
-      for (int i = 0; i < transfersList.numParams(); i++) {
-        std::string filename = transfersList.get<std::string>(std::to_string(i));
-        auto transferPoint = IO::Read(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary);
-        auto transferBlock = IO::Read(filename+".block", clusterMap, clusterMap, clusterMap, clusterMap, true, readBinary);
-        auto transfer = rcp(new blocked_matrix_type(transferPoint, transferBlock, blockMap));
-        transferMatrices.push_back(transfer);
-      }
-
-      const std::string auxOpStr = hierarchicalParams.get<std::string>("auxiliary operator");
-      if (auxOpStr == "near")
-        auxOp = nearField;
-      else
-        auxOp  = IO::Read(auxOpStr, map, aux_colmap, map, map, true, readBinary);
-    }
-
-    blockKernelApproximations = rcp(new blocked_matrix_type(kernelApproximations, kernelBlockGraph, blockMap));
+    // Auxiliary matrix used for multigrid construction
+    const std::string auxOpStr = hierarchicalParams.get<std::string>("auxiliary operator");
+    if (auxOpStr == "near")
+      auxOp = op->nearFieldMatrix();
+    else
+      auxOp  = IOhelpers::Read(auxOpStr, map, aux_colmap, map, map, true, readBinary, readLocal);
 
     X_ex = IO::ReadMultiVector(hierarchicalParams.get<std::string>("exact solution"), map);
     RHS  = IO::ReadMultiVector(hierarchicalParams.get<std::string>("right-hand side"), map);
@@ -1046,15 +1088,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierarchicalParams.get<std::string>("coordinates"), map);
   }
 
-  RCP<HOp> op;
-  {
-    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Operator construction")));
-    op = rcp(new HOp(nearField, blockKernelApproximations, basisMatrix, transferMatrices));
-
-    out << "Compression: " << op->getCompression() << " of dense matrix."<< std::endl;
-  }
-
-
+  // Some simple apply tests
   Scalar opX_exRHS, MopX_exRHS, MopTX_exRHS;
   {
     op->apply(*X_ex, *X);
@@ -1086,9 +1120,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff2.mtx", *X);
   }
 
-  TEUCHOS_ASSERT(opX_exRHS < 1e-9);
-  TEUCHOS_ASSERT(MopX_exRHS < 1e-9);
-  TEUCHOS_ASSERT(MopTX_exRHS < 1e-9);
+  TEUCHOS_ASSERT(opX_exRHS < tol);
+  TEUCHOS_ASSERT(MopX_exRHS < tol);
+  TEUCHOS_ASSERT(MopTX_exRHS < tol);
 
 #ifdef HAVE_MUELU_BELOS
   {
@@ -1284,7 +1318,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     stacked_timer->stop("Hierarchical Driver");
     Teuchos::StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
-    stacked_timer->report(out, comm, options);
+    if (printTimings)
+      stacked_timer->report(out, comm, options);
 
 #endif // HAVE_MUELU_BELOS
   }
