@@ -171,8 +171,6 @@
 
 #ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 #include "TrilinosCouplings_Statistics.hpp"
-#else 
-#error "BORK"
 #endif
 
 /*********************************************************/
