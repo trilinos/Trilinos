@@ -988,6 +988,7 @@ int main(int argc, char *argv[]) {
     //"WORKSET CELL" loop: local cell ordinal is relative to numLocalElems
     //JJH runs from 0 to (#local cells - 1)
     int worksetCellOrdinal = 0;
+
     for (size_t bucketIndex = 0; bucketIndex < localElementBuckets.size(); ++bucketIndex) {
 
       stk::mesh::Bucket &elemBucket = *localElementBuckets[bucketIndex];
@@ -1018,8 +1019,9 @@ int main(int argc, char *argv[]) {
 
         }// end cell row loop
 
+        worksetCellOrdinal++;
       }// end workset cell loop
-      worksetCellOrdinal++;
+
 
     } //for (size_t bucketIndex = 0; ...
 
@@ -1086,6 +1088,8 @@ int main(int argc, char *argv[]) {
   //  and add one to diagonal.
   ML_Epetra::Apply_BCsToMatrixRows(&(ownedBoundaryNodes[0]), ownedBoundaryNodes.size(), StiffMatrix);
   ML_Epetra::Remove_Zeroed_Rows(StiffMatrix,0.0);
+
+
 
   if(MyPID==0) {
     std::cout << "Adjust global matrix and rhs due to BCs     "
