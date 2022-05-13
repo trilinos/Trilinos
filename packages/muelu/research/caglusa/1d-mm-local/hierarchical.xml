@@ -1,5 +1,5 @@
 
-<ParameterList name="1d fractional Laplacian, s=0.4">
+<ParameterList name="1d fractional Laplacian, s=0.75">
   <Parameter name="read binary" type="bool" value="false"/>
   <Parameter name="read local" type="bool" value="true"/>
   <Parameter name="map" type="string" value="1d-mm-local/rowmap"/>

@@ -46,6 +46,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Tpetra_RowMatrix.hpp>
+#include <MatrixMarket_Tpetra.hpp>
 
 #include <Xpetra_IO.hpp>
 
@@ -69,6 +70,63 @@ using Teuchos::rcp_dynamic_cast;
 
 namespace Tpetra {
 
+
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  removeSmallEntries(Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+                     typename Teuchos::ScalarTraits<Scalar>::magnitudeType tol) {
+
+    using crs_matrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using row_ptr_type = typename crs_matrix::local_graph_device_type::row_map_type::non_const_type;
+    using col_idx_type = typename crs_matrix::local_graph_device_type::entries_type::non_const_type;
+    using vals_type = typename crs_matrix::local_matrix_device_type::values_type;
+
+    auto lclA = A->getLocalMatrixHost();
+
+    auto rowptr = row_ptr_type("rowptr", lclA.numRows()+1);
+
+    for (LocalOrdinal rlid = 0; rlid < lclA.numRows(); ++rlid) {
+      auto row = lclA.row(rlid);
+      for (size_t k = 0; k<row.length; ++k) {
+        if (Teuchos::ScalarTraits<Scalar>::magnitude(row.value(k)) > tol) {
+          rowptr(rlid+1) += 1;
+        }
+      }
+    }
+    for (LocalOrdinal rlid = 0; rlid < lclA.numRows(); ++rlid) {
+      rowptr(rlid+1) += rowptr(rlid);
+    }
+
+    auto nnz = rowptr(lclA.numRows());
+    auto idx = col_idx_type("idx", nnz);
+    auto vals = vals_type("vals", nnz);
+
+    for (LocalOrdinal rlid = 0; rlid < lclA.numRows(); ++rlid) {
+      auto row = lclA.row(rlid);
+      auto I = rowptr(rlid);
+      for (size_t k = 0; k<row.length; ++k) {
+        if (Teuchos::ScalarTraits<Scalar>::magnitude(row.value(k)) > tol) {
+          idx(I) = row.colidx(k);
+          vals(I) = row.value(k);
+          I += 1;
+        }
+      }
+    }
+
+    auto newA =  Teuchos::rcp(new crs_matrix(A->getRowMap(), A->getColMap(), rowptr, idx, vals));
+    newA->fillComplete(A->getDomainMap(),
+                       A->getRangeMap());
+    return newA;
+  }
+
+
+  /*
+    A standard map that is broken up into blocks of consecutive LIDs.
+   */
+
   template <class LocalOrdinal,
             class GlobalOrdinal,
             class Node>
@@ -86,10 +144,18 @@ namespace Tpetra {
       blockSizes_(blockSizes)
     {
       auto lclBlockSizes = blockSizes_->getLocalViewHost(Tpetra::Access::ReadOnly);
+      LocalOrdinal minClusterSize = Teuchos::OrdinalTraits<LocalOrdinal>::max();
+      LocalOrdinal maxClusterSize = 0;
       offsets_ = Kokkos::View<size_t*>("offsets", blockMap_->getLocalNumElements()+1);
       offsets_(0) = 0;
-      for (size_t blockNum = 0; blockNum < blockMap_->getLocalNumElements(); ++blockNum)
+      for (size_t blockNum = 0; blockNum < blockMap_->getLocalNumElements(); ++blockNum) {
         offsets_(blockNum+1) = offsets_(blockNum) + lclBlockSizes(blockNum, 0);
+        minClusterSize = std::min(minClusterSize, lclBlockSizes(blockNum, 0));
+        maxClusterSize = std::max(maxClusterSize, lclBlockSizes(blockNum, 0));
+      }
+      TEUCHOS_ASSERT_EQUALITY(offsets_(blockMap_->getLocalNumElements()), pointMap->getLocalNumElements());
+      minClusterSize_ = minClusterSize;
+      maxClusterSize_ = maxClusterSize;
     }
 
     // private:
@@ -97,6 +163,8 @@ namespace Tpetra {
     RCP<const map_type> blockMap_;
     RCP<lo_vec_type>    blockSizes_;
     Kokkos::View<size_t*> offsets_;
+    LocalOrdinal minClusterSize_;
+    LocalOrdinal maxClusterSize_;
 
   };
 
@@ -113,11 +181,13 @@ namespace Tpetra {
 
     BlockedMatrix(const RCP<matrix_type>& pointA,
                   const RCP<matrix_type>& blockA,
-                  const RCP<blocked_map_type>& blockMap)
+                  const RCP<blocked_map_type>& blockMap,
+                  const RCP<blocked_map_type>& ghosted_blockMap=Teuchos::null)
       :
       pointA_(pointA),
       blockA_(blockA),
-      blockMap_(blockMap)
+      blockMap_(blockMap),
+      ghosted_blockMap_(ghosted_blockMap)
     {
       TEUCHOS_ASSERT(blockA_->getDomainMap()->isSameAs(*blockA_->getRangeMap()));
       TEUCHOS_ASSERT(blockA_->getDomainMap()->isSameAs(*blockA_->getRowMap()));
@@ -126,6 +196,31 @@ namespace Tpetra {
       TEUCHOS_ASSERT(pointA_->getDomainMap()->isSameAs(*pointA_->getRangeMap()));
       TEUCHOS_ASSERT(pointA_->getDomainMap()->isSameAs(*pointA_->getRowMap()));
       TEUCHOS_ASSERT(pointA_->getDomainMap()->isSameAs(*blockMap_->pointMap_));
+
+      // {
+      // auto lcl_block = blockA_->getLocalMatrixHost();
+      // auto lcl_point = pointA_->getLocalMatrixHost();
+      // auto lcl_offsets = blockMap_->offsets_;
+      // auto lcl_ghosted_offsets = ghosted_blockMap_->offsets_;
+
+      // for (LocalOrdinal brlid = 0; brlid < ; ++brlid) {
+      //   auto brow = lcl_block.row(brlid);
+      //   for (LocalOrdinal n = 0; n < brow.length; ++n) {
+      //     auto bclid = brow.colidx(n);
+
+      //     const LocalOrdinal row_start = lcl_offsets(brlid);
+      //     const LocalOrdinal row_end = lcl_offsets(brlid+1);
+      //     const LocalOrdinal col_start = lcl_ghosted_offsets(bclid);
+      //     const LocalOrdinal col_end = lcl_ghosted_offsets(bclid+1);
+
+      //     for (LocalOrdinal rlid = row_start; rlid < row_end; ++rlid) {
+      //       auto row = lcl_point.row(rlid);
+
+      //     }
+      //   }
+      // }
+
+      // }
 
     }
 
@@ -149,8 +244,40 @@ namespace Tpetra {
     RCP<matrix_type>      pointA_;
     RCP<matrix_type>      blockA_;
     RCP<blocked_map_type> blockMap_;
+    RCP<blocked_map_type> ghosted_blockMap_;
 
   };
+
+  /*
+    The unknowns of the kernel approximations are collected in the clusterMap.
+    For H-matrices, this is just a concatenation.
+    For H2-matrices, the map also contains the intermediate clusters that might be needed in upward/downward pass.
+
+
+    H = nearField
+        + basisMatrix *
+          ((I+transferMatrices[K-1]^T) * ... * (I+transferMatrices[0]^T)) *
+          kernelApproximations *
+          ((I+transferMatrices[0]) * ... * (I+transferMatrices[K-1])) *
+          basisMatrix^T
+
+   nearField and basisMatrix are CRS matrices.
+   kernelApproximations and transferMatrices[.] are blocked CRS matrices
+
+   Maps:
+   map (standard): domain and range of H;
+                   domain, range, row of nearField
+   clusterMap (blocked map): domain, range, row, column of transferMatrices;
+                             domain, range, row of kernelApproximations
+   ghosted_clusterMap (blocked map): column of kernelApproximations
+
+
+   For H-matrices:
+   K = 0, i.e. no transfer matrices
+
+   For H2-matrices:
+   upward and downward pass in the cluster hierarchy are encoded in transfer matrices
+   */
 
   template <class Scalar = Tpetra::Operator<>::scalar_type,
             class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
@@ -160,7 +287,7 @@ namespace Tpetra {
 
   public:
     using matrix_type = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using vec_type = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using mv_type = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using map_type = Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
 
     //! The RowMatrix representing the base class of CrsMatrix
@@ -237,6 +364,7 @@ namespace Tpetra {
         }
       }
 
+      // Set the two importers to Isend
       RCP<Teuchos::ParameterList> distParams = rcp(new Teuchos::ParameterList());
       distParams->set("Send type", "Isend");
       {
@@ -255,6 +383,7 @@ namespace Tpetra {
           revDistor->setParameterList(distParams);
       }
 
+      // Allocate memory for apply with vectors
       allocateMemory(1);
     }
 
@@ -284,8 +413,8 @@ namespace Tpetra {
 
       allocateMemory(X.getNumVectors());
 
-      RCP<vec_type> X_colmap, Y_colmap;
-      RCP<vec_type> coefficients_colmap, coefficients2_colmap;
+      RCP<mv_type> X_colmap, Y_colmap;
+      RCP<mv_type> coefficients_colmap, coefficients2_colmap;
 
       // near field - part 1
       RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > nearFieldImporter = nearField_->getGraph()->getImporter();
@@ -303,6 +432,8 @@ namespace Tpetra {
 
       // upward pass
       {
+        Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("upward pass")));
+
         basisMatrix_->localApply(X, *coefficients_, Teuchos::TRANS);
 
         for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--)
@@ -319,6 +450,8 @@ namespace Tpetra {
 
       // far field interactions - part 1
       {
+        Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("far field 1")));
+
         RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > kernelApproximationsImporter = kernelApproximations_->pointA_->getGraph()->getImporter();
         if (flip) {
           if (mode == Teuchos::NO_TRANS) {
@@ -345,6 +478,8 @@ namespace Tpetra {
 
       // near field - part 2
       {
+        Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("near field 2")));
+
         if (mode == Teuchos::NO_TRANS) {
           X_colmap->endImport(X, *nearFieldImporter, INSERT);
           nearField_->localApply(*X_colmap, Y, mode, alpha, beta);
@@ -355,6 +490,8 @@ namespace Tpetra {
 
       // far field interactions - part 2
       {
+        Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("far field 2")));
+
         RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > kernelApproximationsImporter = kernelApproximations_->pointA_->getGraph()->getImporter();
         if (flip) {
           if (mode == Teuchos::NO_TRANS) {
@@ -375,6 +512,8 @@ namespace Tpetra {
 
       // downward pass
       {
+        Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("downward pass")));
+
         for (size_t i = 0; i<transferMatrices_.size(); i++)
           if (flip) {
             coefficients_->assign(*coefficients2_);
@@ -394,36 +533,33 @@ namespace Tpetra {
 
 
     RCP<HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > restrict(const RCP<matrix_type>& P) {
-
+      // H_c = P^T * H * P
       using lo_vec_type = typename blocked_map_type::lo_vec_type;
-
-      // P^T * nearField * P
-      RCP<matrix_type> temp = rcp(new matrix_type(nearField_->getRowMap(), 0));
-      MatrixMatrix::Multiply(*nearField_, false, *P, false, *temp);
-      RCP<matrix_type> newNearField = rcp(new matrix_type(P->getDomainMap(), 0));
-      MatrixMatrix::Multiply(*P, true, *temp, false, *newNearField);
+      using vec_type = typename Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+      using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
 
       // P^T * basisMatrix
       RCP<matrix_type> newBasisMatrix = rcp(new matrix_type(P->getDomainMap(), clusterCoeffMap_, 0));
       MatrixMatrix::Multiply(*P, true, *basisMatrix_, false, *newBasisMatrix);
 
-      RCP<matrix_type> newKernelBlockGraph = rcp(new matrix_type(*kernelApproximations_->blockA_));
-      auto clusterMap = newKernelBlockGraph->getRowMap();
+      //
+      auto clusterMap = kernelApproximations_->blockA_->getRowMap();
       auto clusterSizes = kernelApproximations_->blockMap_->blockSizes_;
       auto ghosted_clusterMap = kernelApproximations_->blockA_->getColMap();
-      RCP<lo_vec_type> ghosted_clusterSizes = rcp(new lo_vec_type(ghosted_clusterMap, false));
-      auto import = kernelApproximations_->blockA_->getCrsGraph()->getImporter();
-      ghosted_clusterSizes->doImport(*clusterSizes, *import, Tpetra::INSERT);
+      auto ghosted_clusterSizes = kernelApproximations_->ghosted_blockMap_->blockSizes_;
       auto lcl_clusterSizes = clusterSizes->getLocalViewHost(Tpetra::Access::ReadOnly);
       auto lcl_ghosted_clusterSizes = ghosted_clusterSizes->getLocalViewHost(Tpetra::Access::ReadOnly);
 
-      auto numEntriesPerCluster = Kokkos::View<LocalOrdinal*>("numEntriesPerCluster", clusterMap->getLocalNumElements());
+      // get number of unknowns associated with cluster via new basisMatrix
+      RCP<vec_type> numUnknownsPerCluster = rcp(new vec_type(clusterMap, false));
       {
+        auto lcl_numUnknownsPerCluster = numUnknownsPerCluster->getLocalViewHost(Tpetra::Access::OverwriteAll);
         // Compute the transpose of the newBasisMatrix.
         RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > newBasisMatrixT;
         Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(newBasisMatrix);
         RCP<Teuchos::ParameterList> transposeParams = rcp(new Teuchos::ParameterList);
         newBasisMatrixT = transposer.createTranspose(transposeParams);
+
         auto rowptr = newBasisMatrixT->getLocalRowPtrsHost();
         LocalOrdinal clusterStart = 0;
         LocalOrdinal clusterEnd = 0;
@@ -435,43 +571,194 @@ namespace Tpetra {
             LocalOrdinal numEntriesPerRow = rowptr(row+1)-rowptr(row);
             maxEntries = std::max(maxEntries, numEntriesPerRow);
           }
-          numEntriesPerCluster(cluster) = maxEntries;
-          std::cout << maxEntries << std::endl;
+          lcl_numUnknownsPerCluster(cluster, 0) = maxEntries;
         }
         TEUCHOS_ASSERT_EQUALITY(clusterEnd+1, rowptr.extent(0));
       }
 
-      newKernelBlockGraph->resumeFill();
-      RCP<matrix_type> diffKernelApprox = rcp(new matrix_type(kernelApproximations_->pointA_->getCrsGraph()));
-      // diffKernelApprox->resumeFill();
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--)
+        transferMatrices_[i]->blockA_->localApply(*numUnknownsPerCluster, *numUnknownsPerCluster, Teuchos::NO_TRANS, one, one);
 
+      // get ghosted numUnknownsPerCluster
+      RCP<vec_type> ghosted_numUnknownsPerCluster = rcp(new vec_type(ghosted_clusterMap, false));
+      auto import = kernelApproximations_->blockA_->getCrsGraph()->getImporter();
+      ghosted_numUnknownsPerCluster->doImport(*numUnknownsPerCluster, *import, Tpetra::INSERT);
+
+      // coarse cluster pair graph
+      RCP<matrix_type> newKernelBlockGraph = rcp(new matrix_type(kernelApproximations_->blockA_->getCrsGraph()));
+      newKernelBlockGraph->resumeFill();
+      // point entries of cluster pairs that should be moved to the near field
+      RCP<matrix_type> diffKernelApprox = rcp(new matrix_type(kernelApproximations_->pointA_->getCrsGraph()));
 
       {
-        auto lclBlockGraph = newKernelBlockGraph->getLocalMatrixHost();
+        auto lcl_BlockGraph = kernelApproximations_->blockA_->getLocalMatrixHost();
+        auto lcl_newBlockGraph = newKernelBlockGraph->getLocalMatrixHost();
+        auto lcl_KernelApprox = kernelApproximations_->pointA_->getLocalMatrixHost();
+        auto lcl_diffKernelApprox = diffKernelApprox->getLocalMatrixHost();
+        auto lcl_numUnknownsPerCluster = numUnknownsPerCluster->getLocalViewHost(Tpetra::Access::ReadOnly);
+        auto lcl_ghosted_numUnknownsPerCluster = ghosted_numUnknownsPerCluster->getLocalViewHost(Tpetra::Access::ReadOnly);
+        auto lcl_offsets = kernelApproximations_->blockMap_->offsets_;
+        auto lcl_ghosted_offsets = kernelApproximations_->ghosted_blockMap_->offsets_;
 
-        for (LocalOrdinal brlid = 0; brlid < lclBlockGraph.numRows(); ++brlid) {
+        int dropped = 0;
+        int kept = 0;
+        int ignored = 0;
+        // loop over cluster pairs
+        for (LocalOrdinal brlid = 0; brlid < lcl_BlockGraph.numRows(); ++brlid) {
           size_t brsize = lcl_clusterSizes(brlid, 0);
-          auto brow = lclBlockGraph.row(brlid);
+          auto brow = lcl_BlockGraph.row(brlid);
+          auto new_brow = lcl_newBlockGraph.row(brlid);
           for (LocalOrdinal k = 0; k < brow.length; ++k) {
             if (brow.value(k) > 0.5) {
               LocalOrdinal bclid = brow.colidx(k);
               size_t bcsize = lcl_ghosted_clusterSizes(bclid, 0);
               size_t bsize = brsize*bcsize;
 
-              std::cout << brsize << " " << bcsize << std::endl;
-              if (false) {
-                brow.value(k) = 0;
+              if (brsize * bcsize >= lcl_numUnknownsPerCluster(brlid, 0) * lcl_ghosted_numUnknownsPerCluster(bclid, 0)) {
+                ++dropped;
+                new_brow.value(k) = 0;
 
+                const LocalOrdinal row_start = lcl_offsets(brlid);
+                const LocalOrdinal row_end = lcl_offsets(brlid+1);
+                const LocalOrdinal col_start = lcl_ghosted_offsets(bclid);
+                const LocalOrdinal col_end = lcl_ghosted_offsets(bclid+1);
+                TEUCHOS_ASSERT_EQUALITY(row_end-row_start, brsize);
+                TEUCHOS_ASSERT_EQUALITY(col_end-col_start, bcsize);
+                // loop over rows of kernelApproximations in pointwise indexing
+                for (LocalOrdinal rlid = row_start; rlid <  row_end; ++rlid) {
+                  auto diff_row = lcl_diffKernelApprox.row(rlid);
+                  auto row = lcl_KernelApprox.row(rlid);
+                  int removed = 0;
+                  for (LocalOrdinal n = 0; n < row.length; ++n) {
+                    if ((col_start <= row.colidx(n)) && (col_end > row.colidx(n))) {
+                      diff_row.value(n) = row.value(n);
+                      ++removed;
+                    }
+                  }
+                  if (removed != bcsize) {
+                    std::ostringstream oss;
+                    oss << "brlid " << brlid << " row " << rlid << std::endl;
+                    oss << "col_start "<< col_start << " col_end " << col_end << std::endl;
+                    for (LocalOrdinal n = 0; n < row.length; ++n) {
+                      oss << row.colidx(n) << " " << row.value(n) << std::endl;
+                    }
+                    std::cout << oss.str();
+                  }
+                  TEUCHOS_ASSERT_EQUALITY(removed, bcsize);
+                }
+
+              } else {
+                ++kept;
+                new_brow.value(k) = brow.value(k);
               }
+            } else {
+              ++ignored;
+              new_brow.value(k) = brow.value(k);
             }
           }
         }
+
+        // std::cout << "dropped " << dropped << " kept " << kept << " ignored " << ignored << std::endl;
       }
-      newKernelBlockGraph->fillComplete();
-      // diffKernelApprox->fillComplete();
+      newKernelBlockGraph->fillComplete(kernelApproximations_->blockA_->getDomainMap(),
+                                        kernelApproximations_->blockA_->getRangeMap());
+      newKernelBlockGraph = removeSmallEntries(newKernelBlockGraph, Teuchos::ScalarTraits<MagnitudeType>::eps());
+      diffKernelApprox->fillComplete(clusterCoeffMap_,
+                                     clusterCoeffMap_);
 
+      std::vector<RCP<blocked_matrix_type> > newTransferMatrices;
+      {
+        const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+        RCP<mv_type> mv_temp = rcp(new mv_type(newKernelBlockGraph->getDomainMap(), 1));
+        mv_temp->putScalar(one);
+        RCP<mv_type> clusterUseCount = rcp(new mv_type(newKernelBlockGraph->getDomainMap(), 1));
+        clusterUseCount->putScalar(zero);
+        newKernelBlockGraph->apply(*mv_temp, *clusterUseCount, Teuchos::NO_TRANS);
+        newKernelBlockGraph->apply(*mv_temp, *clusterUseCount, Teuchos::TRANS, one, one);
 
-      return rcp(new HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(newNearField, kernelApproximations_, newBasisMatrix, transferMatrices_));
+        std::vector<int> keepTransfers;
+        auto comm = getComm();
+        // std::ostringstream oss;
+        for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--) {
+          transferMatrices_[i]->blockA_->localApply(*clusterUseCount, *mv_temp, Teuchos::TRANS);
+          auto lcl_counts = mv_temp->getLocalViewHost(Tpetra::Access::ReadOnly);
+          Scalar lcl_count = zero, gbl_count = zero;
+          for (LocalOrdinal n = 0; n < lcl_counts.extent(0); ++n) {
+            lcl_count += lcl_counts(n, 0);
+          }
+          Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &lcl_count, &gbl_count);
+          // oss << "Transfer " << i << " count " << gbl_count << std::endl;
+
+          if (gbl_count < 0.5) {
+            RCP<matrix_type> temp = rcp(new matrix_type(P->getDomainMap(), clusterCoeffMap_, 0));
+            MatrixMatrix::Multiply(*newBasisMatrix, false, *transferMatrices_[i]->pointA_, true, *temp);
+            newBasisMatrix = temp;
+          } else
+            keepTransfers.push_back(i);
+        }
+        // std::cout << oss.str();
+
+        for (auto it = keepTransfers.begin(); it != keepTransfers.end(); ++it) {
+          newTransferMatrices.insert(newTransferMatrices.begin(), transferMatrices_[*it]);
+        }
+      }
+
+      // coarse point matrix of cluster pairs
+      RCP<matrix_type> newKernelApprox;
+      {
+        RCP<matrix_type> temp = MatrixMatrix::add(one, false, *kernelApproximations_->pointA_, -one, false, *diffKernelApprox);
+        newKernelApprox = removeSmallEntries(temp, Teuchos::ScalarTraits<MagnitudeType>::eps());
+      }
+
+      // static int lvlNo = 1;
+      // Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeSparseFile("kernel"+std::to_string(lvlNo), *newKernelApprox);
+      // Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeSparseFile("diffKernel"+std::to_string(lvlNo), *diffKernelApprox);
+      // Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeSparseFile("kernelGraph"+std::to_string(lvlNo), *newKernelBlockGraph);
+      // Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeDenseFile("numUnknownsPerCluster"+std::to_string(lvlNo), numUnknownsPerCluster);
+      // ++lvlNo;
+
+      RCP<blocked_matrix_type> newBlockedKernelApproximation = rcp(new blocked_matrix_type(newKernelApprox, newKernelBlockGraph, kernelApproximations_->blockMap_, kernelApproximations_->ghosted_blockMap_));
+
+      // construct identity on clusterCoeffMap_
+      RCP<matrix_type> identity = rcp(new matrix_type(clusterCoeffMap_, 1));
+      Teuchos::ArrayView<const GlobalOrdinal> gblRows = clusterCoeffMap_->getLocalElementList ();
+      for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
+        Teuchos::Array<GlobalOrdinal> col (1, *it);
+        Teuchos::Array<Scalar> val (1, one);
+        identity->insertGlobalValues (*it, col (), val ());
+      }
+      identity->fillComplete ();
+
+      // transfer = basisMatrix_ * (identity + transferMatrices_[0]) * ... * (identity + transferMatrices_[n-1])
+      RCP<matrix_type> transfer = rcp(new matrix_type(*newBasisMatrix));
+      for (size_t i = 0; i<transferMatrices_.size(); i++) {
+        RCP<matrix_type> temp = MatrixMatrix::add(one, false, *identity, one, false, *transferMatrices_[i]->pointA_);
+        RCP<matrix_type> temp2 = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
+        MatrixMatrix::Multiply(*transfer, false, *temp, true, *temp2);
+        transfer = temp2;
+      }
+
+      // diffFarField = transfer * diffKernelApprox * transfer^T
+      RCP<matrix_type> diffFarField;
+      {
+        RCP<matrix_type> temp = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
+        MatrixMatrix::Multiply(*transfer, false, *diffKernelApprox, false, *temp);
+        diffFarField = rcp(new matrix_type(newBasisMatrix->getRowMap(), 0));
+        MatrixMatrix::Multiply(*temp, false, *transfer, true, *diffFarField);
+      }
+
+      // P^T * nearField * P
+      RCP<matrix_type> newNearField;
+      {
+        RCP<matrix_type> temp = rcp(new matrix_type(nearField_->getRowMap(), 0));
+        MatrixMatrix::Multiply(*nearField_, false, *P, false, *temp);
+        RCP<matrix_type> temp2 = rcp(new matrix_type(P->getDomainMap(), 0));
+        MatrixMatrix::Multiply(*P, true, *temp, false, *temp2);
+        newNearField = MatrixMatrix::add(one, false, *temp2, one, false, *diffFarField);
+      }
+
+      return rcp(new HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>(newNearField, newBlockedKernelApproximation, newBasisMatrix, newTransferMatrices));
     }
 
     RCP<matrix_type> toMatrix() {
@@ -692,6 +979,7 @@ namespace Tpetra {
       const size_t nnzNearField = nearField_->getGlobalNumEntries();
       const double nnzNearPerRow = Teuchos::as<double>(nnzNearField)/numRows;
       const size_t nnzKernelApprox = kernelApproximations_->pointA_->getGlobalNumEntries();
+      const size_t numClusterPairs = kernelApproximations_->blockA_->getGlobalNumEntries();
       const size_t nnzBasis = basisMatrix_->getGlobalNumEntries();
       size_t nnzTransfer = 0;
       for (size_t i = 0; i<transferMatrices_.size(); i++)
@@ -700,8 +988,8 @@ namespace Tpetra {
       const double nnzTotalPerRow = Teuchos::as<double>(nnzTotal)/numRows;
       std::ostringstream oss;
       oss << std::left;
-      oss << setw(9) << "rows"  << setw(12) << "nnz(near)"  << setw(14) << "nnz(near)/row" << setw(12) << "nnz(basis)" << setw(12) << "nnz(kernel)"    << setw(14) << "nnz(transfer)" << setw(12) << "nnz(total)" << setw(14) << "nnz(total)/row" << endl;
-      oss << setw(9) << numRows << setw(12) << nnzNearField << setw(14) << nnzNearPerRow   << setw(12) << nnzBasis      << setw(12) << nnzKernelApprox << setw(14) << nnzTransfer     << setw(12) << nnzTotal     << setw(14) << nnzTotalPerRow   << endl;
+      oss << setw(9) << "rows"  << setw(12) << "nnz(near)"  << setw(14) << "nnz(near)/row" << setw(12) << "nnz(basis)" << setw(15) << "#cluster pairs" << setw(12)<< "nnz(kernel)"    << setw(14) << "nnz(transfer)" << setw(12) << "nnz(total)" << setw(14) << "nnz(total)/row" << endl;
+      oss << setw(9) << numRows << setw(12) << nnzNearField << setw(14) << nnzNearPerRow   << setw(12) << nnzBasis     << setw(15) << numClusterPairs  << setw(12) << nnzKernelApprox << setw(14) << nnzTransfer     << setw(12) << nnzTotal     << setw(14) << nnzTotalPerRow   << endl;
       out << oss.str();
     }
 
@@ -709,8 +997,8 @@ namespace Tpetra {
 
     void allocateMemory(size_t numVectors) const {
       if (coefficients_.is_null() || coefficients_->getNumVectors() != numVectors) {
-        coefficients_  = rcp(new vec_type(clusterCoeffMap_, numVectors));
-        coefficients2_ = rcp(new vec_type(clusterCoeffMap_, numVectors));
+        coefficients_  = rcp(new mv_type(clusterCoeffMap_, numVectors));
+        coefficients2_ = rcp(new mv_type(clusterCoeffMap_, numVectors));
       }
     }
 
@@ -719,7 +1007,7 @@ namespace Tpetra {
     RCP<matrix_type> basisMatrix_;
     std::vector<RCP<blocked_matrix_type> > transferMatrices_;
     RCP<const map_type> clusterCoeffMap_;
-    mutable RCP<vec_type> coefficients_, coefficients2_;
+    mutable RCP<mv_type> coefficients_, coefficients2_;
   };
 
 }
@@ -767,13 +1055,18 @@ namespace Xpetra {
 
     BlockedMatrix(const RCP<matrix_type>& pointA,
                   const RCP<matrix_type>& blockA,
-                  const RCP<blocked_map_type>& blockMap)
+                  const RCP<blocked_map_type>& blockMap,
+                  const RCP<blocked_map_type>& ghosted_blockMap=Teuchos::null)
     {
       using TpCrs = TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
       using CrsWrap = CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+      RCP<typename blocked_map_type::tpetra_blocked_map_type> tp_ghosted_blockMap;
+      if (!ghosted_blockMap.is_null())
+        tp_ghosted_blockMap = ghosted_blockMap->getTpetra_BlockedMap();
       blockMatrix_ = rcp(new tpetra_blocked_matrix_type(rcp_dynamic_cast<TpCrs>(rcp_dynamic_cast<CrsWrap>(pointA)->getCrsMatrix(), true)->getTpetra_CrsMatrixNonConst(),
                                                         rcp_dynamic_cast<TpCrs>(rcp_dynamic_cast<CrsWrap>(blockA)->getCrsMatrix(), true)->getTpetra_CrsMatrixNonConst(),
-                                                        blockMap->getTpetra_BlockedMap()));
+                                                        blockMap->getTpetra_BlockedMap(),
+                                                        tp_ghosted_blockMap));
     }
 
     void apply(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
@@ -810,7 +1103,7 @@ namespace Xpetra {
   public:
     using tHOp = Tpetra::HierarchicalOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using map_type = Map<LocalOrdinal,GlobalOrdinal,Node>;
-    using vec_type = MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+    using mv_type = MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using matrix_type = Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
     using blocked_matrix_type = BlockedMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
@@ -856,7 +1149,7 @@ namespace Xpetra {
         - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
         - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
      */
-    void apply (const vec_type& X, vec_type& Y,
+    void apply (const mv_type& X, mv_type& Y,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
                 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const {
@@ -864,9 +1157,9 @@ namespace Xpetra {
     }
 
     //! Compute a residual R = B - (*this) * X
-    void residual(const vec_type & X,
-                  const vec_type & B,
-                  vec_type& R) const {
+    void residual(const mv_type & X,
+                  const mv_type & B,
+                  mv_type& R) const {
       Tpetra::Details::residual(*op_, toTpetra(X), toTpetra(B), toTpetra(R));
     }
 
@@ -947,7 +1240,7 @@ struct IOhelpers {
 
     std::vector<RCP<blocked_matrix_type> > transferMatrices;
     RCP<lo_vec_type>               clusterSizes;
-    RCP<blocked_map_type>          blockMap;
+    RCP<blocked_map_type>          blockedClusterMap, ghosted_blockedClusterMap;
     RCP<blocked_matrix_type>       blockKernelApproximations;
 
     const bool readBinary = hierarchicalParams.get<bool>("read binary", false);
@@ -968,9 +1261,9 @@ struct IOhelpers {
     // overlapping map for the clusters
     ghosted_clusterMap = IO::ReadMap(hierarchicalParams.get<std::string>("ghosted cluster map"), lib, comm);
 
-
+    // blocked cluster map
     clusterSizes = Xpetra::IO<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierarchicalParams.get<std::string>("gid_cluster_to_gid_coeff"), clusterMap)->getVectorNonConst(0);
-    blockMap = rcp(new blocked_map_type(clusterCoeffMap, clusterSizes));
+    blockedClusterMap = rcp(new blocked_map_type(clusterCoeffMap, clusterSizes));
 
     // near field interactions
     nearField = Read(hierarchicalParams.get<std::string>("near field matrix"), map, near_colmap, map, map, true, readBinary, readLocal);
@@ -983,7 +1276,14 @@ struct IOhelpers {
     // block graph of far field interactions
     kernelBlockGraph = IOhelpers::Read(hierarchicalParams.get<std::string>("far field interaction matrix")+".block", clusterMap, ghosted_clusterMap, clusterMap, clusterMap, true, readBinary, readLocal);
 
-    blockKernelApproximations = rcp(new blocked_matrix_type(kernelApproximations, kernelBlockGraph, blockMap));
+    {
+      auto import = kernelBlockGraph->getCrsGraph()->getImporter();
+      RCP<lo_vec_type> ghosted_clusterSizes = Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(ghosted_clusterMap);
+      ghosted_clusterSizes->doImport(*clusterSizes, *import, Xpetra::INSERT);
+      ghosted_blockedClusterMap = rcp(new blocked_map_type(ghosted_clusterCoeffMap, ghosted_clusterSizes));
+    }
+
+    blockKernelApproximations = rcp(new blocked_matrix_type(kernelApproximations, kernelBlockGraph, blockedClusterMap, ghosted_blockedClusterMap));
 
     // Transfer matrices
     auto transfersList = hierarchicalParams.sublist("shift coefficient matrices");
@@ -991,7 +1291,7 @@ struct IOhelpers {
       std::string filename = transfersList.get<std::string>(std::to_string(i));
       auto transferPoint = IOhelpers::Read(filename, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, clusterCoeffMap, true, readBinary, readLocal);
       auto transferBlock = IOhelpers::Read(filename+".block", clusterMap, clusterMap, clusterMap, clusterMap, true, readBinary, readLocal);
-      auto transfer = rcp(new blocked_matrix_type(transferPoint, transferBlock, blockMap));
+      auto transfer = rcp(new blocked_matrix_type(transferPoint, transferBlock, blockedClusterMap));
       transferMatrices.push_back(transfer);
     }
 
@@ -1035,7 +1335,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   using blocked_map_type = typename blocked_matrix_type::blocked_map_type;
   using matrix_type = typename HOp::matrix_type;
   using map_type = typename HOp::map_type;
-  using vec_type = typename HOp::vec_type;
+  using mv_type = typename HOp::mv_type;
   using lo_vec_type = typename blocked_map_type::lo_vec_type;
   using coord_mv = Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>;
   using MagnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
@@ -1048,7 +1348,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   bool success = true;
   const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  const MagnitudeType tol = 100*Teuchos::ScalarTraits<MagnitudeType>::eps();
+  const MagnitudeType tol = 10000*Teuchos::ScalarTraits<MagnitudeType>::eps();
 
   Teuchos::ParameterList         hierarchicalParams;
   Teuchos::updateParametersFromXmlFileAndBroadcast(xmlHierarchical, Teuchos::Ptr<Teuchos::ParameterList>(&hierarchicalParams), *comm);
@@ -1063,7 +1363,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
   RCP<const map_type> map = op->getDomainMap();
   RCP<matrix_type>    auxOp;
-  RCP<vec_type>       X_ex, RHS, X;
+  RCP<mv_type>       X_ex, RHS, X;
   RCP<coord_mv>       coords;
   {
     // Read in auxiliary stuff
@@ -1133,7 +1433,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Unpreconditioned solve")));
 
-    using MV = typename HOp::vec_type;
+    using MV = typename HOp::mv_type;
     using OP = Belos::OperatorT<MV>;
 
     X->putScalar(zero);
@@ -1181,12 +1481,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     {
       ////////////////////////////////////////////////////////////////
-      // Build the auxiliary hierachy
+      // Build the auxiliary hierarchy
       out << "\n*********************************************************\n";
-      out << "Building the auxiliary hierachy\n";
+      out << "Building the auxiliary hierarchy\n";
       out << "*********************************************************\n\n";
 
-      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct auxiliary hierachy")));
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct auxiliary hierarchy")));
 
       Teuchos::ParameterList auxParams;
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlAuxHierarchy, Teuchos::Ptr<Teuchos::ParameterList>(&auxParams), *comm);
@@ -1200,10 +1500,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       ////////////////////////////////////////////////////////////////
       // Construct the main hierarchy
       out << "\n*********************************************************\n";
-      out << "Building the main hierachy\n";
+      out << "Building the main hierarchy\n";
       out << "*********************************************************\n\n";
 
-      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct hierachy")));
+      Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Construct hierarchy")));
 
       Teuchos::ParameterList params;
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlMueLu, Teuchos::Ptr<Teuchos::ParameterList>(&params), *comm);
@@ -1273,7 +1573,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
       Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("Preconditioned solve")));
 
-      using MV = typename HOp::vec_type;
+      using MV = typename HOp::mv_type;
       using OP = Belos::OperatorT<MV>;
 
       X->putScalar(zero);

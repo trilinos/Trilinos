@@ -7,6 +7,9 @@
   <!-- reduces setup cost for symmetric problems -->
   <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
 
+
+  <Parameter        name="coarse: type"                       type="string"   value="lapack"/>
+
   <!-- ===========  SMOOTHING  =========== -->
   <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
   <ParameterList    name="smoother: params">
