@@ -100,6 +100,7 @@ class FastILDLPrec
         Ordinal nTrisol;
         Ordinal level;
         Ordinal blkSz;
+        Ordinal blkSzILDL;
         Scalar omega;
         Scalar shift;
 
@@ -163,7 +164,7 @@ class FastILDLPrec
 
     public:
         FastILDLPrec(OrdinalArray &aRowMapIn, OrdinalArray &aColIdxIn, ScalarArray &aValIn, Ordinal nRow_, bool standard_sptrsv_,
-                     Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_, Ordinal blkSz_)
+                     Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_, Ordinal blkSzILDL_, Ordinal blkSz_)
         {
             nRows = nRow_;
             standard_sptrsv = standard_sptrsv_;
@@ -185,6 +186,7 @@ class FastILDLPrec
             omega = omega_;
             guessFlag = guessFlag_;
             shift = shift_;
+            blkSzILDL = blkSzILDL_;
             blkSz = blkSz_;
 
             const Scalar one = Kokkos::ArithTraits<Scalar>::one();
@@ -200,7 +202,7 @@ class FastILDLPrec
             if (level > 0)
             {
                 initGuessPrec = Teuchos::rcp(new FastPrec(aRowMapIn, aColIdxIn, aValIn, nRow_, standard_sptrsv, 3, 5, 
-                                                          level_-1, omega_, shift_, guessFlag_, blkSz_));
+                                                          level_-1, omega_, shift_, guessFlag_, blkSzILDL_, blkSz_));
             }
 
         }
@@ -814,12 +816,11 @@ class FastILDLPrec
 
             Kokkos::Timer timer;
             numericILU();
-            Ordinal blkSzILDLt = 4096;
-            FastILDLFunctor<Ordinal, Scalar, ExecSpace> ildltFunctor(aRowMap_[nRows], blkSzILDLt,
+            FastILDLFunctor<Ordinal, Scalar, ExecSpace> ildltFunctor(aRowMap_[nRows], blkSzILDL,
                     aRowMap, aColIdx, aRowIdx, aVal, lRowMap, lColIdx, lVal, diagElems, omega);
 
-            Ordinal extent = aRowMap_[nRows]/blkSzILDLt;
-            if (aRowMap_[nRows]%blkSzILDLt != 0)
+            Ordinal extent = aRowMap_[nRows]/blkSzILDL;
+            if (aRowMap_[nRows]%blkSzILDL != 0)
             {
                 extent++;
             }

@@ -53,7 +53,8 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <Ifpack2_Preconditioner.hpp>
-#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include <Ifpack2_Details_CanChangeMatrix.hpp>
+#include <shylu_fastutil.hpp>
 
 namespace Ifpack2
 {
@@ -201,13 +202,15 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     {
       Params() {}
       Params(const Teuchos::ParameterList& pL, std::string precType);
-      bool standard_sptrsv;
+      FastILU::SpTRSV sptrsv_algo;
       int nFact;
       int nTrisol;
       int level;
+      int blkSize;
       double omega;
       double shift;
       bool guessFlag;
+      int blockSizeILU;
       int blockSize;
       static Params getDefaults();
     };

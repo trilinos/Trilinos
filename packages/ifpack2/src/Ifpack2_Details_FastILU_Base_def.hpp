@@ -330,14 +330,15 @@ FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Params::getDefaults()
 {
   Params p;
-  p.standard_sptrsv = false;
+  p.sptrsv_algo = FastILU::SpTRSV::Fast;
   p.nFact = 5;
   p.nTrisol = 1;
   p.level = 0;
   p.omega = 0.5;
   p.shift = 0;
   p.guessFlag = true;
-  p.blockSize = 1;
+  p.blockSizeILU = 1;   // # of nonzeros / thread, for fastILU
+  p.blockSize = 1;      // # of rows / thread, for SpTRSV
   return p;
 }
 
@@ -363,9 +364,20 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
     else 
       TYPE_ERROR("sweeps", "int");
   }
+  bool standard_sptrsv = false;
   if(pL.isParameter("standard triangular solve"))
   {
       standard_sptrsv = pL.get<bool>("standard triangular solve");
+  }
+  bool standard_sptrsv_host = false;
+  if(pL.isParameter("host standard triangular solve"))
+  {
+      standard_sptrsv_host = pL.get<bool>("host standard triangular solve");
+  }
+  if (standard_sptrsv_host) {
+    sptrsv_algo = FastILU::SpTRSV::StandardHost;
+  } else if (standard_sptrsv) {
+    sptrsv_algo = FastILU::SpTRSV::Standard;
   }
 
   //"triangular solve iterations" aka nTrisol
@@ -433,12 +445,23 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
       TYPE_ERROR("guess", "bool");
   }
   //"block size" aka blkSz
-  if(pL.isParameter("block size"))
+  if(pL.isParameter("block size for ILU"))
   {
-    if(pL.isType<int>("block size"))
-      blockSize = pL.get<int>("block size");
+    if(pL.isType<int>("block size for ILU"))
+    {
+      blockSizeILU = pL.get<int>("block size for ILU");
+      CHECK_VALUE("block size for ILU", blockSizeILU, blockSizeILU < 1, "must have a value of at least 1");
+    }
+    else 
+      TYPE_ERROR("block size for ILU", "int");
+  }
+  //"block size" aka blkSz
+  if(pL.isParameter("block size for SpTRSV"))
+  {
+    if(pL.isType<int>("block size for SpTRSV"))
+      blockSize = pL.get<int>("block size for SpTRSV");
     else
-      TYPE_ERROR("block size", "int");
+      TYPE_ERROR("block size for SpTRSV", "int");
   }
   #undef CHECK_VALUE
   #undef TYPE_ERROR

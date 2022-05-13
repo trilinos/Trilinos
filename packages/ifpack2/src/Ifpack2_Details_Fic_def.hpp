@@ -87,8 +87,8 @@ initLocalPrec()
 {
   auto nRows = this->mat_->getLocalNumRows();
   auto& p = this->params_;
-  localPrec_ = Teuchos::rcp(new LocalFIC(this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.standard_sptrsv,
-                                         p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSize));
+  localPrec_ = Teuchos::rcp(new LocalFIC(this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, (p.sptrsv_algo != FastILU::SpTRSV::Fast),
+                                         p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
   localPrec_->initialize();
   this->initTime_ = localPrec_->getInitializeTime();
 }
