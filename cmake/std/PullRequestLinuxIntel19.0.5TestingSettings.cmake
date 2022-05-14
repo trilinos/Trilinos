@@ -57,18 +57,6 @@ set (ROL_test_step_TrustRegion_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled
 set (ROL_tutorial_BoundAndInequality_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
 
-# Tests turned off until an issue with Scotch can be resolved
-set (Zoltan2_scotch_example_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Zoltan2_Partitioning1_VWeights_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Zoltan2_Partitioning1_OneProc_VWeights_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Zoltan2_Partitioning1_OneProc_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Zoltan2_Partitioning1_OneProc_EWeights_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Zoltan2_Partitioning1_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Zoltan2_Partitioning1_EWeights_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Zoltan2_pamgenMeshAdapterTest_scotch_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Phalanx_dynamic_data_layout_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (Zoltan_ENABLE_Scotch OFF CACHE BOOL "Temporarily disabled in PR testing")
-
 # Misc options typically added by CI testing mode in TriBITS
 
 # Use the below option only when submitting to the dashboard
