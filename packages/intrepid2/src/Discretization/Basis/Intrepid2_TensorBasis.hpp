@@ -1446,7 +1446,7 @@ struct OperatorTensorDecomposition
                const TensorPoints<PointValueType,DeviceType>  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const override
     {
-      if (inputPoints.numTensorComponents() != tensorComponents_.size())
+      if (inputPoints.numTensorComponents() < tensorComponents_.size())
       {
         // then we require that both inputPoints and outputValues trivial tensor structure
         INTREPID2_TEST_FOR_EXCEPTION( inputPoints.numTensorComponents() != 1, std::invalid_argument, "If inputPoints differs from the tensor basis in component count, then inputPoints must have trivial tensor product structure" );
