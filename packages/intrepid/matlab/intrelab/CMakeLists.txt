@@ -41,8 +41,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(MEX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 if (APPLE)
   # Trilinos doesn't propagate its sysroot
-  message(STATUS "${CMAKE_OSX_SYSROOT} Minimum OS X deployment version: ${CMAKE_OSX_DEPLOYMENT_TARGET}")
-  set(MEX_FLAGS "--sysroot=${CMAKE_OSX_SYSROOT} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET} ${MEX_FLAGS}")
+  message(STATUS "CMAKE_OSX_SYSROOT: ${CMAKE_OSX_SYSROOT}")
+  set(MEX_FLAGS "--sysroot=${CMAKE_OSX_SYSROOT} ${MEX_FLAGS}")
 endif(APPLE)
 
 
