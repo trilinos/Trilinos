@@ -68,6 +68,13 @@ getSweeps() const
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+std::string Fildl<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+getSpTrsvType() const
+{
+  return localPrec_->getSpTrsvType();
+}
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 int Fildl<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getNTrisol() const
 {

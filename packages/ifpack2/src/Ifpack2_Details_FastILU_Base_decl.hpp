@@ -163,6 +163,9 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     //! Get the "sweeps" parameter
     virtual int getSweeps() const = 0;
 
+    //! Get the name of triangular solve algorithm
+    virtual std::string getSpTrsvType() const = 0;
+
     //! Get the "triangular solve iterations" parameter
     virtual int getNTrisol() const = 0;
 

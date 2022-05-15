@@ -53,6 +53,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
+#include <string>
 
 #include <assert.h>
 #include <Kokkos_Core.hpp>
@@ -1267,7 +1268,19 @@ class FastILUPrec
         {
             return nFact;
         }
-        
+
+        std::string getSpTrsvType() const
+        {
+            if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
+                return "Standard Host";
+            } else if (sptrsv_algo == FastILU::SpTRSV::Standard) {
+                return "Standard";
+            } else if (sptrsv_algo == FastILU::SpTRSV::Fast) {
+                return "Fast";
+            }
+            return "Invalid";
+        }
+
         Ordinal getNTrisol() const
         {
             return nTrisol;

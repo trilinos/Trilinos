@@ -53,6 +53,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
+#include <string>
 
 #include <assert.h>
 #include <Kokkos_Core.hpp>
@@ -920,7 +921,12 @@ class FastICPrec
         {
             return nFact;
         }
-        
+
+        std::string getSpTrsvType() const
+        {
+            return (standard_sptrsv ? "Standard" : "Fast");
+        }
+
         Ordinal getNTrisol() const
         {
             return nTrisol;

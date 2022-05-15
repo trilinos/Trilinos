@@ -294,7 +294,10 @@ std::string FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description
   os << "Initialized: " << (isInitialized() ? "true" : "false") << ", ";
   os << "Computed: " << (isComputed() ? "true" : "false") << ", ";
   os << "Sweeps: " << getSweeps() << ", ";
-  os << "# of triangular solve iterations: " << getNTrisol() << ", ";
+  os << "Triangular solve type: " << getSpTrsvType() << ", ";
+  if (getSpTrsvType() == "Fast") {
+    os << "# of triangular solve iterations: " << getNTrisol() << ", ";
+  }
   if(mat_.is_null())
   {
     os << "Matrix: null";
@@ -364,19 +367,13 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
     else 
       TYPE_ERROR("sweeps", "int");
   }
-  bool standard_sptrsv = false;
-  if(pL.isParameter("standard triangular solve"))
-  {
-      standard_sptrsv = pL.get<bool>("standard triangular solve");
+  std::string sptrsv_type = "Fast";
+  if(pL.isParameter("triangular solve type")) {
+    sptrsv_type = pL.get<std::string> ("triangular solve type");
   }
-  bool standard_sptrsv_host = false;
-  if(pL.isParameter("host standard triangular solve"))
-  {
-      standard_sptrsv_host = pL.get<bool>("host standard triangular solve");
-  }
-  if (standard_sptrsv_host) {
+  if (sptrsv_type == "Standard Host") {
     sptrsv_algo = FastILU::SpTRSV::StandardHost;
-  } else if (standard_sptrsv) {
+  } else if (sptrsv_type == "Standard") {
     sptrsv_algo = FastILU::SpTRSV::Standard;
   }
 
