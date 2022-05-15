@@ -112,12 +112,8 @@ void Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 computeLocalPrec()
 {
   //update values in local prec (until compute(), values aren't needed)
-Kokkos::Timer timer;
   localPrec_->setValues(this->localValues_);
-std::cout << " * setValues = " << timer.seconds() << std::endl;
-timer.reset();
   localPrec_->compute();
-std::cout << " * compute = " << timer.seconds() << std::endl;
   this->computeTime_ = localPrec_->getComputeTime();
 }
 
