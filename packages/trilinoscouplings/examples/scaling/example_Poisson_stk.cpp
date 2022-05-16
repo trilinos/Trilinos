@@ -555,8 +555,6 @@ int main(int argc, char *argv[]) {
 
 #if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   MachineLearningStatistics_Hex3D<double, int, int, Xpetra::EpetraNode> MLStatistics(numGlobalElements);
-#else
-
   bool do_statistics = !strcmp(cellType.getName(),"Hexahedron_8");
   std::cout<<"do_statistics = "<<do_statistics<<std::endl;
 #endif
