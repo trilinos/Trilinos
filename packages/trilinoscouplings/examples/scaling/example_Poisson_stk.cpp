@@ -553,8 +553,10 @@ int main(int argc, char *argv[]) {
     std::cout<<"Cell Topology: "<<cellType.getName() << " ("<<cellType.getBaseName()<<")"<<std::endl;
   }
 
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   MachineLearningStatistics_Hex3D<double, int, int, Xpetra::EpetraNode> MLStatistics(numGlobalElements);
+#else
+
   bool do_statistics = !strcmp(cellType.getName(),"Hexahedron_8");
   std::cout<<"do_statistics = "<<do_statistics<<std::endl;
 #endif
@@ -712,7 +714,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
   /****************************** STATISTICS (Part I) *******************************/
   /**********************************************************************************/
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   if(do_statistics) {
     Intrepid::FieldContainer<int> elemToNode(numLocalElems,numNodesPerElem);
     Intrepid::FieldContainer<int> elemToEdge(numLocalElems,numEdgesPerElem);
@@ -974,7 +976,7 @@ int main(int argc, char *argv[]) {
     /**********************************************************************************/
     /***************************** STATISTICS (Part II) ******************************/
     /**********************************************************************************/
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
     if(do_statistics)
       MLStatistics.Phase2a(worksetJacobDet,worksetCubWeights);
 #endif
@@ -1038,7 +1040,7 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 /***************************** STATISTICS (Part IIb) ******************************/
 /**********************************************************************************/
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   if(do_statistics){
     MLStatistics.Phase2b(Teuchos::rcp(&StiffMatrix.Graph(),false),Teuchos::rcp(&nCoord,false));
   }
@@ -1046,7 +1048,7 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 /***************************** STATISTICS (Part III) ******************************/
 /**********************************************************************************/
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   if(do_statistics){
     MLStatistics.Phase3();
     Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
