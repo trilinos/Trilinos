@@ -210,13 +210,18 @@ IF(NOT Kokkos_ENABLE_CUDA AND NOT Kokkos_ENABLE_OPENMP AND MueLu_ENABLE_Epetra A
 
 ENDIF()
 
+# CAG 5/16/22: Commented out tests that rely on 2nd order elements.
+#              The specialization of 2nd order basis functions in
+#              Intrepid2 is missing some functionality and will be
+#              removed. These tests will work once 2nd order has been
+#              replace by p=th order with p=2.
 TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_MueLu_highOrder"
    ARGS
-   "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2"
+   # "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=2"
    "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3"
-   "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule=\"2,1\""
+   # "--solver=MueLu-Maxwell-HO --linAlgebra=Tpetra --inputFile=maxwell-pthOrder.xml --basis-order=3 --pCoarsenSchedule=\"2,1\""
    COMM serial mpi
    NUM_MPI_PROCS 4
    )
