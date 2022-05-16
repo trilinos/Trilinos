@@ -547,7 +547,9 @@ int main(int argc, char *argv[]) {
   } // end loop over mesh parts
 
   int numNodesPerElem = cellType.getNodeCount();  
+#if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   int numEdgesPerElem = cellType.getEdgeCount();  
+#endif
 
   if(MyPID==0) {
     std::cout<<"Cell Topology: "<<cellType.getName() << " ("<<cellType.getBaseName()<<")"<<std::endl;
