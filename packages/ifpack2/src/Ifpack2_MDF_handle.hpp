@@ -352,9 +352,12 @@ struct MDF_factorize_row{
         entryIdx < A.graph.row_map(selected_row + 1);
         ++entryIdx) {
       if(permutation_inv(A.graph.entries(entryIdx)) >= factorization_step) {
-        entriesU(U_entryIdx) = A.graph.entries(entryIdx);
-        valuesU(U_entryIdx) = A.values(entryIdx);
-        ++U_entryIdx;
+        if (A.values(entryIdx) != Kokkos::ArithTraits<value_type>::zero())
+        {
+          entriesU(U_entryIdx) = A.graph.entries(entryIdx);
+          valuesU(U_entryIdx) = A.values(entryIdx);
+          ++U_entryIdx;
+        }
         if(A.graph.entries(entryIdx) == selected_row) {
           diag = A.values(entryIdx);
         }
@@ -392,7 +395,7 @@ struct MDF_factorize_row{
     for(size_type entryIdx = At.graph.row_map(selected_row);
         entryIdx < At.graph.row_map(selected_row + 1);
         ++entryIdx) {
-      if(permutation_inv(At.graph.entries(entryIdx)) > factorization_step) {
+      if(permutation_inv(At.graph.entries(entryIdx)) > factorization_step && At.values(entryIdx) != Kokkos::ArithTraits<value_type>::zero()) {
         entriesL(L_entryIdx) = At.graph.entries(entryIdx);
         valuesL(L_entryIdx) = At.values(entryIdx) / diag;
         ++L_entryIdx;
@@ -541,16 +544,19 @@ struct MDF_handle {
 
   void allocate_data(const size_type nnzL,
                      const size_type nnzU) {
+    
+    if(verbosity>0)
+      printf("Allocating L (%d) and U (%d)\n",nnzL,nnzU);
 
     // Allocate L
-    row_mapL = row_map_type("row map L", numRows + 1);
-    entriesL = col_ind_type("entries L", nnzL);
-    valuesL  = values_type("values L",   nnzL);
+    row_mapL = row_map_type("MDF_handle::rowMapL", numRows + 1);
+    entriesL = col_ind_type("MDF_handle::entriesL", nnzL);
+    valuesL  = values_type("MDF_handle::valuesL",   nnzL);
 
     // Allocate U
-    row_mapU = row_map_type("row map U", numRows + 1);
-    entriesU = col_ind_type("entries U", nnzU);
-    valuesU  = values_type("values U",   nnzU);
+    row_mapU = row_map_type("MDF_handle::rowMapU", numRows + 1);
+    entriesU = col_ind_type("MDF_handle::entriesU", nnzU);
+    valuesU  = values_type("MDF_handle::valuesU",   nnzU);
   }
 
   col_ind_type get_permutation() {return permutation;}
@@ -563,11 +569,21 @@ struct MDF_handle {
       (row_mapU, entriesU, valuesU);
   }
 
-  crs_matrix_type getL() {return crs_matrix_type("L", numRows, numRows, entriesL.extent(0),
-                                                 valuesL, row_mapL, entriesL);}
+  crs_matrix_type getL() {
+    crs_matrix_type Lt("L", numRows, numRows, entriesL.extent(0),
+                       valuesL, row_mapL, entriesL);
 
-  crs_matrix_type getU() {return crs_matrix_type("U", numRows, numRows, entriesU.extent(0),
-                                                 valuesU, row_mapU, entriesU);}
+    crs_matrix_type L = KokkosKernels::Impl::transpose_matrix<crs_matrix_type>(Lt);
+    KokkosKernels::sort_crs_matrix<crs_matrix_type>(L);
+    return L;
+  }
+
+  crs_matrix_type getU() {
+    crs_matrix_type U("U", numRows, numRows, entriesU.extent(0),
+                      valuesU, row_mapU, entriesU);
+    KokkosKernels::sort_crs_matrix<crs_matrix_type>(U);
+    return U;
+  }
 
 };
 
@@ -657,11 +673,12 @@ void mdf_numeric_phase(const crs_matrix_type& A, MDF_handle& handle) {
     }
   }
 
+  if(verbosity_level > 0) printf("Reindexing U\n");
   MDF_reindex_matrix<col_ind_type> reindex_U(handle.permutation_inv, handle.entriesU);
   Kokkos::parallel_for(range_policy_type(0, handle.entriesU.extent(0)),
                        reindex_U);
 
-  printf("Reindexing L\n");
+  if(verbosity_level > 0) printf("Reindexing L\n");
   MDF_reindex_matrix<col_ind_type> reindex_L(handle.permutation_inv, handle.entriesL);
   Kokkos::parallel_for(range_policy_type(0, handle.entriesL.extent(0)),
                        reindex_L);

@@ -68,6 +68,24 @@ namespace Details {
 //     type_enums[1] = KSPILUK;
 //   }
 // };
+namespace MDFImpl
+{
+template<class array_t,class dev_view_t>
+void copy_dev_view_to_host_array(array_t & array, const dev_view_t & dev_view)
+{
+  using host_view_t = typename dev_view_t::HostMirror;
+
+  //Clear out existing and allocate
+  const auto ext = dev_view.extent(0);
+  array = array_t();
+  array = array_t(ext);
+
+  //Wrap array data in view and copy
+  Kokkos::deep_copy(host_view_t(array.get(),ext),dev_view);    
+}
+
+}
+
 }
 
 template<class MatrixType>
@@ -146,6 +164,8 @@ MDF<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     isComputed_ = false;
     A_local_ = Teuchos::null;
     MDF_handle_ = Teuchos::null;
+    permutations_ = Teuchos::null;
+    reversePermutations_ = Teuchos::null;
 
     // The sparse triangular solvers get a triangular factor as their
     // input matrix.  The triangular factors L_ and U_ are getting
@@ -303,7 +323,7 @@ setParameters (const Teuchos::ParameterList& params)
       (fillLevel, params, paramName, prefix);
 
     TEUCHOS_TEST_FOR_EXCEPTION
-      (fillLevel != 0, std::runtime_error, prefix << "MDF with level of fill 1= 0 is not yet implemented.");
+      (fillLevel != 0, std::runtime_error, prefix << "MDF with level of fill != 0 is not yet implemented.");
   }
   {
     const std::string paramName ("Verbosity");
@@ -595,20 +615,10 @@ void MDF<MatrixType>::compute ()
     MDFImpl::mdf_numeric_phase(A_local_crs->getLocalMatrixDevice(),*MDF_handle_);
   }
 
-  { // Populate permuations
-
-    using local_permuation_device_type = typename MDF_handle_device_type::col_ind_type;
-    using local_permuation_host_type = typename local_permuation_device_type::HostMirror;
-
-    local_permuation_device_type permutations_device = MDF_handle_->get_permutation();
-    auto num_perm = permutations_device.extent(0);
-    permutations_ = permutations_type(num_perm);
-    Kokkos::deep_copy(local_permuation_host_type(permutations_.get(),num_perm),permutations_device);    
-    
-    reversePermutations_ = permutations_type(num_perm);
-    Kokkos::deep_copy(local_permuation_host_type(reversePermutations_.get(),num_perm),MDF_handle_->get_permutation_inv());
-  }
-
+  //Populate permuations
+  Details::MDFImpl::copy_dev_view_to_host_array(permutations_, MDF_handle_->get_permutation());
+  Details::MDFImpl::copy_dev_view_to_host_array(reversePermutations_, MDF_handle_->get_permutation_inv());
+  
   L_ = rcp(new crs_matrix_type(
     A_local_->getRowMap (),
     A_local_->getColMap (),
@@ -621,11 +631,10 @@ void MDF<MatrixType>::compute ()
     ));
   L_solver_->setMatrix (L_);
   L_solver_->initialize ();
-  L_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
+  L_solver_->compute ();
   U_solver_->setMatrix (U_);
   U_solver_->initialize ();
-  U_solver_->compute ();//NOTE: It makes sense to do compute here because only the nonzero pattern is involved in trisolve compute
-
+  U_solver_->compute ();
 
   isComputed_ = true;
   ++numCompute_;
