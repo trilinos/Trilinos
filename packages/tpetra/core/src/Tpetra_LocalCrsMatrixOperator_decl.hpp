@@ -257,10 +257,10 @@ namespace Tpetra {
 
         if (A_.nnz() > 10000000) {
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
-          Kokkos::parallel_for("off-rank", policy, *this);
+          Kokkos::parallel_for("on-rank", policy, *this);
         } else {
-          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
-          Kokkos::parallel_for("off-rank", policy, *this);
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,Kokkos::AUTO,vectorLength);
+          Kokkos::parallel_for("on-rank", policy, *this);
         }
 #endif
       }
@@ -397,8 +397,8 @@ namespace Tpetra {
 
       /// \brief Kokkos dispatch of non-transpose
       void launch(TagNonTrans, const Kokkos::DefaultExecutionSpace &space) {
-#if 0
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans>(0, A_.numRows()), *this);
+#if 1
+        Kokkos::parallel_for(Kokkos::RangePolicy<execution_space, TagNonTrans>(space, 0, A_.numRows()), *this);
 #else
         const int nnzPerRow = (A_.nnz() + A_.numRows() - 1) / A_.numRows();
         int vectorLength = 1;
