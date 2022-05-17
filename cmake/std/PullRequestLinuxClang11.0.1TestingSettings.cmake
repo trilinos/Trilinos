@@ -19,21 +19,7 @@ set (MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none" CACHE STRING "Set by default f
 # NOTE: The above is a workaround for the problem of having threads on MPI
 # ranks bind to the same cores (see #2422).
 
-# Disable just one Teko sub-unit test that fails with openmpi 1.10 (#2712)
-set (Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D ON CACHE BOOL "Temporarily disabled in PR testing")
-
-# Disable three ShyLu_DD tests - see #2691
-set (ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_gdsw_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_rgdsw_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set (ShyLU_DDFROSch_test_frosch_interfacesets_2D_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
-#Disable for clang
-set(FEI_elemDOF_Aztec_MPI_2_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set(FEI_lagrange_20quad_old_MPI_2_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set(FEI_lagrange_20quad_old_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set(FEI_multifield_vbr_az_MPI_2_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set(FEI_multifield_vbr_az_MPI_3_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set(ROL_example_PinT_parabolic-control_example_01_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-set(Rythmos_StepperBuilder_UnitTest_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+#Disable failing test in new Clang 11.0.1 build
+set(Zoltan_ch_simple_parmetis_parallel_DISABLE ON CACHE BOOL "Disabled in PR testing")
