@@ -16,17 +16,14 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 set(TRILINOS_INSTALL_DIR "/ascldap/users/pakuber/Compadre/Trilinos-intrelab/build/install")
 if(DEFINED ENV{TRILINOS_INSTALL_DIR})
   set(TRILINOS_INSTALL_DIR $ENV{TRILINOS_INSTALL_DIR})
-else()
-  set(TRILINOS_INSTALL_DIR "/ascldap/users/pakuber/Compadre/Trilinos-intrelab/build/install")
 endif()
 
 
 # --> ACTION: define Matlab binary directory
 #set(MATLAB_BIN_DIR "/Applications/MATLAB_R2020a.app/bin/")
+set(MATLAB_BIN_DIR "/usr/local/matlab/R2021b/bin/")
 if(DEFINED ENV{MATLAB_BIN_DIR})
   set(MATLAB_BIN_DIR $ENV{MATLAB_BIN_DIR})
-else()
-  set(MATLAB_BIN_DIR "/usr/local/matlab/R2021b/bin/")
 endif()
 
 # --> ACTION: define install directory (full path or relative to the intrelab directory)
@@ -111,8 +108,8 @@ foreach(alib ${Trilinos_TPL_LIBRARIES})
   endif()
 endforeach()
 
-set(MEX_LD_FLAGS "")
 if(NOT APPLE)
+  set(MEX_LD_FLAGS "LDFLAGS=")
   foreach(rp ${CMAKE_INSTALL_RPATH})
       set(MEX_LD_FLAGS "${MEX_LD_FLAGS} -Wl,-R,${rp}")
   endforeach()
@@ -158,7 +155,7 @@ function(make_mex fname)
   #    )
 
   add_custom_command(OUTPUT ${fname}.${MEX_EXTENSION}
-      COMMAND "${MEX}" "LDFLAGS=${MEX_LD_FLAGS}" "CXX=${CMAKE_CXX_COMPILER}" "CXXFLAGS=${MEX_FLAGS}" "-largeArrayDims" ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS} ${Trilinos_LIBRARY_DIRS} ${Trilinos_TPL_LIBRARY_DIRS} ${l_Trilinos} ${l_Trilinos_TPL} "${CMAKE_CURRENT_SOURCE_DIR}/src/${fname}.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp"
+      COMMAND "${MEX}" "${MEX_LD_FLAGS}" "CXX=${CMAKE_CXX_COMPILER}" "CXXFLAGS=${MEX_FLAGS}" "-largeArrayDims" ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS} ${Trilinos_LIBRARY_DIRS} ${Trilinos_TPL_LIBRARY_DIRS} ${l_Trilinos} ${l_Trilinos_TPL} "${CMAKE_CURRENT_SOURCE_DIR}/src/${fname}.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp"
       #DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/objs/${fname}.o ${CMAKE_CURRENT_BINARY_DIR}/objs/m2i_helpers.o
       BYPRODUCTS ${fname}.${MEX_EXTENSION}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
