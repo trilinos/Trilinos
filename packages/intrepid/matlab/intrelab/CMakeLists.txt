@@ -54,7 +54,6 @@ set(CMAKE_C_COMPILER ${Trilinos_C_COMPILER})
 set(CMAKE_CXX_FLAGS ${Trilinos_CXX_COMPILER_FLAGS})
 
 # Trilinos doesn't propagate its C++ standard
-set(CMAKE_CXX_STANDARD 17)
 set(MEX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fPIC")
 if (APPLE)
   # Trilinos doesn't propagate its sysroot
@@ -62,6 +61,8 @@ if (APPLE)
   set(MEX_FLAGS "--sysroot=${CMAKE_OSX_SYSROOT} ${MEX_FLAGS}")
 endif(APPLE)
 
+list (APPEND CMAKE_INSTALL_RPATH ${Trilinos_LIBRARY_DIRS})
+list (APPEND CMAKE_INSTALL_RPATH ${Trilinos_TPL_LIBRARY_DIRS})
 
 if (Trilinos_INCLUDE_DIRS) 
     set(Trilinos_INCLUDE_DIRS "-I${Trilinos_INCLUDE_DIRS}")
@@ -110,6 +111,15 @@ foreach(alib ${Trilinos_TPL_LIBRARIES})
   endif()
 endforeach()
 
+set(MEX_LD_FLAGS "")
+if(NOT APPLE)
+  foreach(rp ${CMAKE_INSTALL_RPATH})
+      set(MEX_LD_FLAGS "${MEX_LD_FLAGS} -Wl,-R,${rp}")
+  endforeach()
+  set(MEX_LD_FLAGS "${MEX_LD_FLAGS} -Wl,-R,${MATLAB_BIN_DIR}/glnxa64")
+  set(MEX_LD_FLAGS "${MEX_LD_FLAGS} -Wl,--enable-new-dtags")
+endif()
+
 separate_arguments(ll UNIX_COMMAND ${l_Trilinos})
 set(l_Trilinos ${ll})
 
@@ -148,7 +158,7 @@ function(make_mex fname)
   #    )
 
   add_custom_command(OUTPUT ${fname}.${MEX_EXTENSION}
-      COMMAND "${MEX}" "CXX=${CMAKE_CXX_COMPILER}" "CXXFLAGS=${MEX_FLAGS}" "-largeArrayDims" ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS} ${Trilinos_LIBRARY_DIRS} ${Trilinos_TPL_LIBRARY_DIRS} ${l_Trilinos} ${l_Trilinos_TPL} "${CMAKE_CURRENT_SOURCE_DIR}/src/${fname}.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp"
+      COMMAND "${MEX}" "LDFLAGS=${MEX_LD_FLAGS}" "CXX=${CMAKE_CXX_COMPILER}" "CXXFLAGS=${MEX_FLAGS}" "-largeArrayDims" ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS} ${Trilinos_LIBRARY_DIRS} ${Trilinos_TPL_LIBRARY_DIRS} ${l_Trilinos} ${l_Trilinos_TPL} "${CMAKE_CURRENT_SOURCE_DIR}/src/${fname}.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp"
       #DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/objs/${fname}.o ${CMAKE_CURRENT_BINARY_DIR}/objs/m2i_helpers.o
       BYPRODUCTS ${fname}.${MEX_EXTENSION}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
