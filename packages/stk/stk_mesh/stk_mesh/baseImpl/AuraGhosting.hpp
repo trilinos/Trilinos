@@ -32,54 +32,37 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#ifndef stk_mesh_MeshBuilder_hpp
-#define stk_mesh_MeshBuilder_hpp
-
-#include <stk_mesh/base/BulkData.hpp>
-#include <memory>
-#include <vector>
-#include <string>
+#ifndef stk_mesh_impl_AuraGhosting_hpp
+#define stk_mesh_impl_AuraGhosting_hpp
 
 namespace stk {
 namespace mesh {
 
-class MeshBuilder
+class BulkData;
+class EntityProcMapping;
+
+namespace impl {
+
+class AuraGhosting
 {
 public:
-  MeshBuilder();
-  explicit MeshBuilder(ParallelMachine comm);
+    AuraGhosting();
+    virtual ~AuraGhosting();
 
-  MeshBuilder& set_spatial_dimension(unsigned spatialDimension);
-  MeshBuilder& set_entity_rank_names(const std::vector<std::string>& entityRankNames);
+    virtual void generate_aura(BulkData& bulkData);
+    virtual void remove_aura(BulkData& bulkData);
 
-  MeshBuilder& set_communicator(ParallelMachine comm);
-  MeshBuilder& set_aura_option(BulkData::AutomaticAuraOption auraOption);
-  MeshBuilder& set_add_fmwk_data(bool addFmwkData);
-  MeshBuilder& set_field_data_manager(FieldDataManager* fieldDataManager);
-  MeshBuilder& set_bucket_capacity(unsigned bucketCapacity);
+protected:
+    virtual void fill_send_aura_entities(BulkData& bulkData,
+                                         EntityProcMapping& sendAuraEntityProcs,
+                                         const EntityProcMapping& entitySharing);
 
-  MeshBuilder& set_upward_connectivity(bool onOrOff);
-
-  std::unique_ptr<BulkData> create();
-  std::unique_ptr<BulkData> create(std::shared_ptr<MetaData> metaData);
-
-  std::shared_ptr<MetaData> create_meta_data();
-
-private:
-  std::shared_ptr<impl::AuraGhosting> create_aura_ghosting();
-
-  ParallelMachine m_comm;
-  bool m_haveComm;
-  BulkData::AutomaticAuraOption m_auraOption;
-  bool m_addFmwkData;
-  FieldDataManager* m_fieldDataManager;
-  unsigned m_bucketCapacity;
-  unsigned m_spatialDimension;
-  std::vector<std::string> m_entityRankNames;
-  bool m_upwardConnectivity;
+    virtual void change_ghosting(BulkData& bulkData,
+                                 EntityProcMapping& entityProcMapping,
+                                 const EntityProcMapping& entitySharing);
 };
 
-}
-}
+}}} // end namepsace stk mesh impl
 
-#endif // stk_mesh_MeshBuilder_hpp
+
+#endif

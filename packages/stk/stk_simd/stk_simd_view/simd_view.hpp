@@ -35,9 +35,6 @@
 #define STK_SIMD_VIEW_H
 
 #include <Kokkos_Macros.hpp>
-#ifndef KOKKOS_INVALID_INDEX
-#define KOKKOS_INVALID_INDEX 0
-#endif
 #include <Kokkos_Core.hpp>
 #include <Kokkos_View.hpp>
 #include <stk_simd/Simd.hpp>
@@ -49,6 +46,12 @@
 #define STK_LAMBDA KOKKOS_LAMBDA
 #define STK_INLINE KOKKOS_INLINE_FUNCTION
 #define STK_FORCE_INLINE KOKKOS_FORCEINLINE_FUNCTION
+#define STK_INVALID_INDEX KOKKOS_INVALID_INDEX
+
+#ifndef KOKKOS_INVALID_INDEX
+#undef  STK_INVALID_INDEX
+#define STK_INVALID_INDEX 0
+#endif
 
 namespace stk {
 namespace simd {
@@ -286,14 +289,14 @@ class View
   template< typename Label >
   explicit KOKKOS_INLINE_FUNCTION
   View( const Label & arg_label
-      , const size_t arg_N0 = KOKKOS_INVALID_INDEX 
-      , const size_t arg_N1 = KOKKOS_INVALID_INDEX
-      , const size_t arg_N2 = KOKKOS_INVALID_INDEX
-      , const size_t arg_N3 = KOKKOS_INVALID_INDEX
-      , const size_t arg_N4 = KOKKOS_INVALID_INDEX
-      , const size_t arg_N5 = KOKKOS_INVALID_INDEX
-      , const size_t arg_N6 = KOKKOS_INVALID_INDEX
-      , const size_t arg_N7 = KOKKOS_INVALID_INDEX
+      , const size_t arg_N0 = STK_INVALID_INDEX 
+      , const size_t arg_N1 = STK_INVALID_INDEX
+      , const size_t arg_N2 = STK_INVALID_INDEX
+      , const size_t arg_N3 = STK_INVALID_INDEX
+      , const size_t arg_N4 = STK_INVALID_INDEX
+      , const size_t arg_N5 = STK_INVALID_INDEX
+      , const size_t arg_N6 = STK_INVALID_INDEX
+      , const size_t arg_N7 = STK_INVALID_INDEX
       )
     : Kokkos::View< DataType, array_layout, execution_space, memory_traits >( arg_label,
                                                                               arg_N0 , arg_N1 , arg_N2 , arg_N3,
