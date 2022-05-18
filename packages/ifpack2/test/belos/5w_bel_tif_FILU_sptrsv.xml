@@ -16,7 +16,7 @@
   <Parameter name="Ifpack2::Preconditioner" type="string" value="FAST_ILU"/>
   <ParameterList name="Ifpack2">
     <Parameter name="level" type="int" value="2"/>
-    <Parameter name="standard triangular solve" type="bool" value="true"/>
+    <Parameter name="triangular solve type" type="string" value="Standard"/>
   </ParameterList>
 
   <Parameter name="expectNumIters" type="int" value="4"/>
