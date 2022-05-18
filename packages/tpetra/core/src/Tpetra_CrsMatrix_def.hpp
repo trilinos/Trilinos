@@ -4915,7 +4915,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // but this argument should be carried through localApplyOnRank once it's working
     // properly
     if (Details::Behavior::overlapCommunicationAndComputation()) {
-      get_exec_space(0).fence("wait(localApplyOnRank)");
+      get_space<execution_space>(0).fence("wait(localApplyOnRank)");
     }
 
     // If we have a nontrivial Export object, we must perform an

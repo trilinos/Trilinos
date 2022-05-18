@@ -242,7 +242,8 @@ namespace Tpetra {
       }
 
       /// \brief Kokkos dispatch of non-transpose
-      void launch(TagNonTrans, const Kokkos::DefaultExecutionSpace &space) {
+      // void launch(TagNonTrans, const Kokkos::DefaultExecutionSpace &space) {
+      void launch(TagNonTrans, const execution_space &space) {
 #if 0
         Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans>(0, A_.numRows()), *this);
 #else
@@ -256,7 +257,7 @@ namespace Tpetra {
         const int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
 
         if (A_.nnz() > 10000000) {
-          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets, teamSize, vectorLength);
           Kokkos::parallel_for("on-rank", policy, *this);
         } else {
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,Kokkos::AUTO,vectorLength);
@@ -267,7 +268,7 @@ namespace Tpetra {
 
       // \brief Kokkos dispatch of non-transpose in get_exec_space(0)
       void launch(TagNonTrans t) {
-        launch(t, get_exec_space(0));
+        launch(t, get_space<execution_space>(0));
       }
 
       /// \brief Kokkos dispatch of transpose
@@ -396,8 +397,8 @@ namespace Tpetra {
       }
 
       /// \brief Kokkos dispatch of non-transpose
-      void launch(TagNonTrans, const Kokkos::DefaultExecutionSpace &space) {
-#if 1
+      void launch(TagNonTrans, const execution_space &space) {
+#if 0
         Kokkos::parallel_for(Kokkos::RangePolicy<execution_space, TagNonTrans>(space, 0, A_.numRows()), *this);
 #else
         const int nnzPerRow = (A_.nnz() + A_.numRows() - 1) / A_.numRows();
@@ -420,7 +421,7 @@ namespace Tpetra {
       }
       // \brief Kokkos dispatch of non-transpose in get_exec_space(0)
       void launch(TagNonTrans t) {
-        launch(t, get_exec_space(0));
+        launch(t, get_space<execution_space>(0));
       }
 
       /// \brief Kokkos dispatch of transpose
