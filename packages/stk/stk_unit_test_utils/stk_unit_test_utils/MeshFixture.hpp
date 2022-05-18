@@ -76,11 +76,9 @@ protected:
     {
     }
 
-    MeshFixtureNoTest(unsigned spatial_dim, stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    : communicator(MPI_COMM_WORLD),
-      m_spatialDim(spatial_dim),
-      m_entityRankNames(),
-      metaData(nullptr), bulkData()
+    MeshFixtureNoTest(
+        unsigned spatial_dim, stk::mesh::BulkData::AutomaticAuraOption auraOption, MPI_Comm comm = MPI_COMM_WORLD)
+        : communicator(comm), m_spatialDim(spatial_dim), m_entityRankNames(), metaData(nullptr), bulkData()
     {
       setup_empty_mesh(auraOption);
     }
