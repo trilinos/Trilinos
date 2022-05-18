@@ -44,8 +44,8 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
 
 SET(FILES tTpetraLinearObjFactory.cpp tTpetra_GlbEvalData.cpp UnitTest_GlobalIndexer.cpp)
 IF(PANZER_HAVE_EPETRA)
-  APPEND(FILES tBlockedLinearObjFactory.cpp tBlockedTpetraLinearObjFactory.cpp
-            tEpetra_GlbEvalData.cpp)
+  APPEND_SET(FILES tBlockedLinearObjFactory.cpp tBlockedTpetraLinearObjFactory.cpp
+             tEpetra_GlbEvalData.cpp)
 ENDIF(PANZER_HAVE_EPETRA)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
