@@ -1510,8 +1510,10 @@ namespace Tpetra {
            numImportPacketsPerLID_av);
       }
       else { // pack on device
-      // CWP: okay to remove?
-        // Kokkos::fence("for UVM");
+        // CWP May 19 2022: I don't think this is just for UVM. Consider
+        // packing into a GPU buffer and then calling MPI_Send - we have to
+        // sync the stream first
+        Kokkos::fence("for UVM 1");
         this->imports_.modify_device ();
         distributorActor_.doPosts
           (distributorPlan,
@@ -1557,7 +1559,10 @@ namespace Tpetra {
       }
       else { // pack on device
       // CWP: okay to remove?
-        // Kokkos::fence("for UVM");
+        // CWP May 19 2022: I don't think this is just for UVM. Consider
+        // packing into a GPU buffer and then calling MPI_Send - we have to
+        // sync the stream first
+        Kokkos::fence("for UVM 2");
         this->imports_.modify_device ();
         distributorActor_.doPosts
           (distributorPlan,
