@@ -14,6 +14,7 @@ set (CMAKE_CXX_STANDARD "17" CACHE STRING "Set C++ standard to C++17")
 #set (CTEST_USE_LAUNCHERS ON CACHE BOOL "Set by default for PR testing")
 
 set (Trilinos_ENABLE_OpenMP ON CACHE BOOL "Set by default for PR testing")
+
 set (MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none" CACHE STRING "Set by default for PR testing")
 # NOTE: The above is a workaround for the problem of having threads on MPI
 # ranks bind to the same cores (see #2422).
@@ -32,6 +33,13 @@ set (Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D ON CACHE BOOL "Temporarily di
 set (BUILD_SHARED_LIBS OFF CACHE BOOL "Off by default for PR testing in GCC 4.8.4")
 
 set (Zoltan_ch_simple_parmetis_parallel_DISABLE ON CACHE BOOL "Turned off until fixed")
+
 set(CMAKE_CXX_FLAGS "-fno-strict-aliasing -Wall -Wno-clobbered -Wno-vla -Wno-pragmas -Wno-unknown-pragmas -Wno-parentheses -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-deprecated-declarations -Wno-misleading-indentation -Wno-int-in-bool-context -Wno-maybe-uninitialized -Wno-class-memaccess -Wno-inline -Wno-nonnull-compare -Wno-address -Werror -DTRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS" CACHE STRING "Warnings as errors settings")
+
+# For inital release, a few packages are throwing errors from WError=array-bounds.
+# Disabling until fixed
+set (Intrepid2_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-array-bounds" CACHE STRING "Disable WError=array-bounds for GCC 10 until fixed")
+set (Panzer_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-array-bounds" CACHE STRING "Disable WError=array-bounds for GCC 10 until fixed")
+set (Tpetra_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-array-bounds" CACHE STRING "Disable WError=array-bounds for GCC 10 until fixed")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
