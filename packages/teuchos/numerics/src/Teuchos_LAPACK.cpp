@@ -1360,7 +1360,8 @@ namespace Teuchos
 #ifdef HAVE_TEUCHOS_LAPACKLARND
   std::complex<float> LAPACK<int, std::complex<float> >::LARND( const int& idist, int* seed ) const
   {
-    return(CLARND_F77(&idist, seed));
+    auto val = CLARND_F77(&idist, seed);
+    return(reinterpret_cast<std::complex<float>&>(val));
   }
 #endif
 
@@ -1782,7 +1783,8 @@ namespace Teuchos
 #ifdef HAVE_TEUCHOS_LAPACKLARND
   std::complex<double> LAPACK<int, std::complex<double> >::LARND( const int& idist, int* seed ) const
   {
-    return(ZLARND_F77(&idist, seed));
+    auto val = ZLARND_F77(&idist, seed);
+    return(reinterpret_cast<std::complex<double>&>(val));
   }
 #endif
 
