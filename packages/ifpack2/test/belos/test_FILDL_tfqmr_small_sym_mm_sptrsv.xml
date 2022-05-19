@@ -11,8 +11,9 @@
   <Parameter name="Ifpack2::Preconditioner" type="string" value="FAST_ILDL"/>
   <ParameterList name="Ifpack2">
     <Parameter name="level" type="int" value="1"/>
+    <Parameter name="sweeps" type="int" value="10"/>
     <Parameter name="damping factor" type="double" value="0.9"/>
-    <Parameter name="standard triangular solve" type="bool" value="true"/>
+    <Parameter name="triangular solve type" type="string" value="Standard"/>
   </ParameterList>
 
   <Parameter name="expectNumIters" type="int" value="1"/>

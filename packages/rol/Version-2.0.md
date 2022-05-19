@@ -20,8 +20,9 @@ to ___Version 2.0___.
 2. [Optimization solver](#optimization-solver)
 3. [Algorithms](#algorithms)
 4. [Input XML files](#input-xml-files)
-5. [Stochastic optimization](#stochastic-optimization)
-6. [Avoiding recomputations](#avoiding-recomputations)
+5. [Output to stream and string](#output-to-stream-and-string)
+6. [Stochastic optimization](#stochastic-optimization)
+7. [Avoiding recomputations](#avoiding-recomputations)
 
 
 
@@ -241,6 +242,51 @@ Here is an example of ___Version 1.0___ and ___Version 2.0___ usage.
     algo.run(x, obj, bnd, outStream);
 ```
 
+## Output to stream and string
+
+The interface for ___Version 2.0___ can print to an `std::ostream`, but does not return
+an `std::vector<std::string>` as in ___Version 1.0___.  To reproduce ___Version 1.0___
+behavior, the user can inherit from `std::streambuf`, as follows.
+
+```cpp
+#include <iostream>
+#include <sstream>
+
+template<class charT=char, class Traits=std::char_traits<charT>>
+class mybuffer : public std::basic_streambuf<charT,Traits> {
+public:
+  const std::stringstream& getStringStream() const { return ss; }
+
+protected:
+  inline virtual int overflow(int c = Traits::eof()) {
+    if (c != Traits::eof())          ss << static_cast<charT>(c);
+    if (putchar(c) == Traits::eof()) return Traits::eof();
+    return c;
+  }
+
+private:
+  std::stringstream ss;
+};
+```
+
+The user can then build an `std::ostream` using this buffer, i.e.,
+
+```cpp
+  mybuffer<> buf;
+  std::ostream mystream(&buf);
+  ... // Print something to mystream
+```
+To print the output to file, the user simply grabs the `std::stringstream`
+member, i.e.,
+
+```cpp
+  std::ofstream file;
+  file.open("output.txt");
+  if (file.is_open()) {
+    file << buf.getStringStream().str();
+    file.close();
+  }
+```
 
 
 ## Input XML files

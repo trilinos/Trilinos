@@ -67,7 +67,6 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/ModificationNotifier.hpp>
-#include <stk_mesh/base/EntityProcMapping.hpp>
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include <stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp>
@@ -79,7 +78,7 @@ namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { class EntityProcMapping; } }
+namespace stk { namespace mesh { namespace impl { class AuraGhosting; } } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { class FaceCreator; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
@@ -847,7 +846,7 @@ void get_entities(EntityRank rank, Selector const& selector, EntityVector& outpu
   template<typename ObserverType>
   std::vector<std::shared_ptr<ObserverType>> get_observer_type() const { return notifier.get_observer_type<ObserverType>(); }
 
-  void initialize_face_adjacent_element_graph();
+  bool initialize_face_adjacent_element_graph();
   void delete_face_adjacent_element_graph();
   stk::mesh::ElemElemGraph& get_face_adjacent_element_graph();
   const stk::mesh::ElemElemGraph& get_face_adjacent_element_graph() const;
@@ -878,15 +877,16 @@ void get_entities(EntityRank rank, Selector const& selector, EntityVector& outpu
   void set_large_ids_flag(bool largeIds) { m_supportsLargeIds = largeIds; }
 
 protected: //functions
-  BulkData(   std::shared_ptr<MetaData> mesh_meta_data
-            , ParallelMachine parallel
-            , enum AutomaticAuraOption auto_aura_option = AUTO_AURA
+  BulkData(std::shared_ptr<MetaData> mesh_meta_data,
+           ParallelMachine parallel,
+           enum AutomaticAuraOption auto_aura_option = AUTO_AURA,
 #ifdef SIERRA_MIGRATION
-            , bool add_fmwk_data = false
+           bool add_fmwk_data = false,
 #endif
-            , FieldDataManager *field_dataManager = nullptr
-            , unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity
-            );
+           FieldDataManager *field_dataManager = nullptr,
+           unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity,
+           std::shared_ptr<impl::AuraGhosting> auraGhosting = std::shared_ptr<impl::AuraGhosting>(),
+           bool createUpwardConnectivity = true);
 
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id);// Mod Mark
 
@@ -1055,10 +1055,6 @@ protected: //functions
                                  const std::vector<Entity> & remove_receive,
                                  bool add_send_is_globally_empty = false);
 
-  void internal_change_ghosting( Ghosting & ghosts,
-                                 EntityProcMapping& entityProcMapping,
-                                 const EntityProcMapping& entitySharing);
-
   void internal_add_to_ghosting( Ghosting &ghosting, const std::vector<EntityProc> &add_send); // Mod Mark
 
   template<typename PARTVECTOR>
@@ -1190,8 +1186,6 @@ protected: //functions
    */
   void internal_regenerate_aura();
   void internal_remove_aura();
-  void fill_list_of_entities_to_send_for_aura_ghosting(EntityProcMapping& send,
-                                                const EntityProcMapping& entitySharing);
 
   void require_ok_to_modify() const ;
   void internal_update_fast_comm_maps() const;
@@ -1479,6 +1473,7 @@ private:
   friend class stk::mesh::Bucket; // for field callback
   friend class Ghosting; // friend until Ghosting is refactored to be like Entity
   friend class ::stk::mesh::impl::MeshModification;
+  friend class ::stk::mesh::impl::AuraGhosting;
   friend class ::stk::mesh::FaceCreator;
   friend class ::stk::mesh::EntityLess;
   friend class ::stk::io::StkMeshIoBroker;
@@ -1544,6 +1539,8 @@ public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
 
 protected: //data
+  bool m_createUpwardConnectivity = true;
+  std::shared_ptr<impl::AuraGhosting> m_auraGhosting;
   mutable ModificationNotifier notifier;
   static const uint16_t orphaned_node_marking;
   EntityCommDatabase m_entity_comm_map;

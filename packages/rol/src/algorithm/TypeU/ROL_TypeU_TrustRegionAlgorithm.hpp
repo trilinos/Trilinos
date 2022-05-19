@@ -78,6 +78,10 @@ private:
   int                           SPflag_; ///< Subproblem solver termination flag.
   int                           SPiter_; ///< Subproblem solver iteration count.
 
+  // NONMONOTONE INFORMATION
+  bool useNM_;
+  int  NMstorage_;
+
   // SECANT INFORMATION
   ESecant esec_; ///< Secant type.
   bool useSecantPrecond_;

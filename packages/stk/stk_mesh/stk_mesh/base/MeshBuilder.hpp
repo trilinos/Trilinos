@@ -58,19 +58,25 @@ public:
   MeshBuilder& set_field_data_manager(FieldDataManager* fieldDataManager);
   MeshBuilder& set_bucket_capacity(unsigned bucketCapacity);
 
+  MeshBuilder& set_upward_connectivity(bool onOrOff);
+
   std::unique_ptr<BulkData> create();
   std::unique_ptr<BulkData> create(std::shared_ptr<MetaData> metaData);
 
   std::shared_ptr<MetaData> create_meta_data();
 
 private:
+  std::shared_ptr<impl::AuraGhosting> create_aura_ghosting();
+
   ParallelMachine m_comm;
+  bool m_haveComm;
   BulkData::AutomaticAuraOption m_auraOption;
   bool m_addFmwkData;
   FieldDataManager* m_fieldDataManager;
   unsigned m_bucketCapacity;
   unsigned m_spatialDimension;
   std::vector<std::string> m_entityRankNames;
+  bool m_upwardConnectivity;
 };
 
 }

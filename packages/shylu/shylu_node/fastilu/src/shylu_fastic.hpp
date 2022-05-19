@@ -53,6 +53,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
+#include <string>
 
 #include <assert.h>
 #include <Kokkos_Core.hpp>
@@ -97,6 +98,7 @@ class FastICPrec
         Ordinal nFact;
         Ordinal nTrisol;
         Ordinal level;
+        Ordinal blkSzIC;
         Ordinal blkSz;
         Scalar omega;
         Scalar shift;
@@ -157,7 +159,7 @@ class FastICPrec
 
     public:
         FastICPrec(OrdinalArray &aRowMapIn, OrdinalArray &aColIdxIn, ScalarArray &aValIn, Ordinal nRow_, bool standard_sptrsv_,
-                   Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_, Ordinal blkSz_)
+                   Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_, Ordinal blkSzIC_, Ordinal blkSz_)
         {
             nRows = nRow_;
             standard_sptrsv = standard_sptrsv_;
@@ -179,6 +181,7 @@ class FastICPrec
             omega = omega_;
             guessFlag = guessFlag_;
             shift = shift_;
+            blkSzIC = blkSzIC_;
             blkSz = blkSz_;
 
             const Scalar one = STS::one();
@@ -194,7 +197,7 @@ class FastICPrec
             if (level > 0)
             {
                 initGuessPrec = Teuchos::rcp(new FastPrec(aRowMapIn, aColIdxIn, aValIn, nRow_, standard_sptrsv, 3, 5, 
-                                                          level_-1, omega_, shift_, guessFlag_, blkSz_));
+                                                          level_-1, omega_, shift_, guessFlag_, blkSzIC_, blkSz_));
             }
 
         }
@@ -832,7 +835,6 @@ class FastICPrec
                 initGuessPrec->compute();
             }
             numericILU();
-            Ordinal blkSzIC = 4096;
             FastICFunctor<Ordinal, Scalar, ExecSpace> icFunctor(aRowMap_[nRows], blkSzIC,
                     aRowMap, aColIdx, aRowIdx, aVal, lRowMap, lColIdx, lVal, diagElems, omega);
             ExecSpace().fence();
@@ -919,7 +921,12 @@ class FastICPrec
         {
             return nFact;
         }
-        
+
+        std::string getSpTrsvType() const
+        {
+            return (standard_sptrsv ? "Standard" : "Fast");
+        }
+
         Ordinal getNTrisol() const
         {
             return nTrisol;

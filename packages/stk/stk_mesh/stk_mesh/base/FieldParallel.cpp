@@ -528,6 +528,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
   };
 
   MPI_Comm comm = mesh.parallel();
+  std::cout << "mesh comm = " << comm << ", rank " << stk::parallel_machine_rank(comm) << " of " << stk::parallel_machine_size(comm) << std::endl;
   stk::parallel_data_exchange_sym_pack_unpack<T>(comm, comm_procs, msgPacker, msgUnpacker, deterministic);
 }
 

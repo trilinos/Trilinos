@@ -32,6 +32,7 @@
 #include <stk_io/IossBridge.hpp>
 #include <Ionit_Initializer.h>
 #include <stk_mesh/base/MeshUtils.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 
 namespace percept
   {
@@ -84,10 +85,11 @@ namespace percept
 
     void SweepMesher::stkMeshCreateMetaNoCommit(stk::ParallelMachine& comm)
     {
-      //m_metaData = new stk::mesh::MetaData(3); //  stk::mesh::fem_entity_rank_names() );  // FAMILY_TREE search
-      m_metaData = new stk::mesh::MetaData(3, get_entity_rank_names(3u) ); //  stk::mesh::fem_entity_rank_names() );
-      //m_metaData = & stk::mesh::MetaData::get_meta_data(*m_metaData);
-      m_bulkData = new stk::mesh::BulkData( *m_metaData, comm );
+      stk::mesh::MeshBuilder builder(comm);
+      builder.set_spatial_dimension(3);
+      builder.set_entity_rank_names(get_entity_rank_names(3u));
+      m_bulkData = builder.create();
+      m_metaData = std::shared_ptr<stk::mesh::MetaData>(&m_bulkData->mesh_meta_data(), [](auto ptrWeWontDelete){});
       m_parts.resize(NUM_ELEM_TYPES);
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
@@ -182,7 +184,7 @@ namespace percept
       const std::string out_filename(filename);
 
       stk::io::StkMeshIoBroker mesh;
-      mesh.set_bulk_data(*m_bulkData);
+      mesh.set_bulk_data(m_bulkData);
       size_t result_file_index = mesh.create_output_mesh(out_filename, stk::io::WRITE_RESULTS);
       mesh.write_output_mesh(result_file_index);
     }

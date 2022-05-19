@@ -87,7 +87,7 @@ namespace ROL {
 template <class Real>
 class ProgressiveHedging {
 private:
-  const Ptr<OptimizationProblem<Real>> input_;
+  const Ptr<Problem<Real>> input_;
   const Ptr<SampleGenerator<Real>> sampler_;
   ParameterList parlist_;
   bool usePresolve_;
@@ -105,22 +105,21 @@ private:
   Ptr<Vector<Real>>                 ph_vector_;
   Ptr<BoundConstraint<Real>>        ph_bound_;
   Ptr<Constraint<Real>>             ph_constraint_;
-  Ptr<OptimizationProblem<Real>>    ph_problem_;
-  Ptr<Problem<Real>>                ph_problem_new_;
+  Ptr<Problem<Real>>                ph_problem_;
   Ptr<Solver<Real>>                 ph_solver_;
   Ptr<PH_StatusTest<Real>>          ph_status_;
   Ptr<Vector<Real>> z_psum_, z_gsum_;
   std::vector<Ptr<Vector<Real>>> wvec_;
 
   void presolve(void) {
-    OptimizationSolver<Real> solver(*input_,parlist_);
+    Solver<Real> solver(input_,parlist_);
     for (int j = 0; j < sampler_->numMySamples(); ++j) {
       input_->getObjective()->setParameter(sampler_->getMyPoint(j));
       if (input_->getConstraint() != nullPtr) {
         input_->getConstraint()->setParameter(sampler_->getMyPoint(j));
       }
       solver.solve();
-      z_psum_->axpy(sampler_->getMyWeight(j),*input_->getSolutionVector());
+      z_psum_->axpy(sampler_->getMyWeight(j),*input_->getPrimalOptimizationVector());
       solver.reset();
     }
     // Aggregation
@@ -129,7 +128,7 @@ private:
   }
 
 public:
-  ProgressiveHedging(const Ptr<OptimizationProblem<Real>> &input,
+  ProgressiveHedging(const Ptr<Problem<Real>> &input,
                      const Ptr<SampleGenerator<Real>> &sampler,
                      ParameterList &parlist)
     : input_(input), sampler_(sampler), parlist_(parlist), hasStat_(false) {
@@ -155,10 +154,10 @@ public:
     Ptr<ParameterList> parlistptr = makePtrFromRef<ParameterList>(olist);
     if (hasStat_) {
       ph_vector_  = makePtr<RiskVector<Real>>(parlistptr,
-                                              input_->getSolutionVector());
+                                              input_->getPrimalOptimizationVector());
     }
     else {
-      ph_vector_  = input_->getSolutionVector();
+      ph_vector_  = input_->getPrimalOptimizationVector();
     }
     // Create progressive hedging objective function
     ph_objective_ = makePtr<PH_Objective<Real>>(input_->getObjective(),
@@ -184,37 +183,30 @@ public:
       }
     }
     // Build progressive hedging subproblems
-    ph_problem_  = makePtr<OptimizationProblem<Real>>(ph_objective_,
-                                                      ph_vector_,
-                                                      ph_bound_,
-                                                      ph_constraint_,
-                                                      input_->getMultiplierVector());
-    ph_problem_new_ = makePtr<Problem<Real>>(ph_problem_->getObjective(),
-                                             ph_problem_->getSolutionVector());
-    if (ph_problem_->getBoundConstraint() != nullPtr) {
-      if (ph_problem_->getBoundConstraint()->isActivated()) {
-        ph_problem_new_->addBoundConstraint(ph_problem_->getBoundConstraint());
+    ph_problem_ = makePtr<Problem<Real>>(ph_objective_, ph_vector_);
+    if (ph_bound_ != nullPtr) {
+      if (ph_bound_->isActivated()) {
+        ph_problem_->addBoundConstraint(ph_bound_);
       }
     }
-    if (ph_problem_->getConstraint() != nullPtr) {
-      ph_problem_new_->addConstraint("PH Constraint",ph_problem_->getConstraint(),
-                                     ph_problem_->getMultiplierVector());
+    if (ph_constraint_ != nullPtr) {
+      ph_problem_->addConstraint("PH Constraint",ph_constraint_,
+                                 input_->getMultiplierVector());
     }
     // Build progressive hedging subproblem solver
-    ph_solver_    = makePtr<Solver<Real>>(ph_problem_new_, parlist);
+    ph_solver_    = makePtr<Solver<Real>>(ph_problem_, parlist);
     // Build progressive hedging status test for inexact solves
     if (useInexact_) {
       ph_status_  = makePtr<PH_StatusTest<Real>>(parlist,
                                                  *ph_vector_);
-//*input_->getSolutionVector());
     }
     else {
       ph_status_  = nullPtr;
     }
     // Initialize vector storage
-    z_psum_       = ph_problem_->getSolutionVector()->clone();
-    z_gsum_       = ph_problem_->getSolutionVector()->clone();
-    z_gsum_->set(*ph_problem_->getSolutionVector());
+    z_psum_       = ph_problem_->getPrimalOptimizationVector()->clone();
+    z_gsum_       = ph_problem_->getPrimalOptimizationVector()->clone();
+    z_gsum_->set(*ph_problem_->getPrimalOptimizationVector());
     wvec_.resize(sampler_->numMySamples());
     for (int i = 0; i < sampler_->numMySamples(); ++i) {
       wvec_[i] = z_psum_->clone(); wvec_[i]->zero();
@@ -232,7 +224,7 @@ public:
       if (ph_constraint_ != nullPtr) {
         ph_constraint_->setParameter(sampler_->getMyPoint(i));
       }
-      ph_problem_->check(outStream);
+      ph_problem_->check(true,outStream);
     }
   }
 
@@ -254,7 +246,7 @@ public:
               << std::endl;
     for (iter = 0; iter < maxit_; ++iter) {
       z_psum_->zero(); vec_p[0] = zero; vec_p[1] = zero;
-      ph_problem_->getSolutionVector()->set(*z_gsum_);
+      ph_problem_->getPrimalOptimizationVector()->set(*z_gsum_);
       // Solve concurrent optimization problems
       for (int j = 0; j < sampler_->numMySamples(); ++j) {
         ph_objective_->setData(z_gsum_,wvec_[j],penaltyParam_);
@@ -271,12 +263,12 @@ public:
         else {
           ph_solver_->solve(ph_status_,true);
         }
-        wvec_[j]->axpy(penaltyParam_,*ph_problem_->getSolutionVector());
+        wvec_[j]->axpy(penaltyParam_,*ph_problem_->getPrimalOptimizationVector());
         vec_p[0] += sampler_->getMyWeight(j)
-                   *ph_problem_->getSolutionVector()->dot(
-                   *ph_problem_->getSolutionVector());
+                   *ph_problem_->getPrimalOptimizationVector()->dot(
+                   *ph_problem_->getPrimalOptimizationVector());
         vec_p[1] += static_cast<Real>(ph_solver_->getAlgorithmState()->iter);
-        z_psum_->axpy(sampler_->getMyWeight(j),*ph_problem_->getSolutionVector());
+        z_psum_->axpy(sampler_->getMyWeight(j),*ph_problem_->getPrimalOptimizationVector());
         converged = (ph_solver_->getAlgorithmState()->statusFlag == EXITSTATUS_CONVERGED
                    ||ph_solver_->getAlgorithmState()->statusFlag == EXITSTATUS_USERDEFINED
                     ? converged : false);
@@ -315,10 +307,10 @@ public:
       penaltyParam_ = std::min(penaltyParam_,maxPen_);
     }
     if (hasStat_) {
-      input_->getSolutionVector()->set(*dynamicPtrCast<RiskVector<Real>>(z_gsum_)->getVector());
+      input_->getPrimalOptimizationVector()->set(*dynamicPtrCast<RiskVector<Real>>(z_gsum_)->getVector());
     }
     else {
-      input_->getSolutionVector()->set(*z_gsum_);
+      input_->getPrimalOptimizationVector()->set(*z_gsum_);
     }
     // Output reason for termination
     if (iter >= maxit_ && flag != 0) {

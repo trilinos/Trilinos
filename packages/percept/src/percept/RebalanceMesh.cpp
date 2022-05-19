@@ -57,7 +57,7 @@ namespace percept {
 
             // FIXME
             bool found_shared = (eMesh.shared(root) || !eMesh.owned(root))
-              || eMesh.get_bulk_data()->in_send_ghost(eMesh.key(root));
+              || eMesh.get_bulk_data()->in_send_ghost(root);
             if (!found_shared)
               {
                 continue;

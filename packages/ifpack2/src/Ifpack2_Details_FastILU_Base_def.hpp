@@ -294,7 +294,10 @@ std::string FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description
   os << "Initialized: " << (isInitialized() ? "true" : "false") << ", ";
   os << "Computed: " << (isComputed() ? "true" : "false") << ", ";
   os << "Sweeps: " << getSweeps() << ", ";
-  os << "# of triangular solve iterations: " << getNTrisol() << ", ";
+  os << "Triangular solve type: " << getSpTrsvType() << ", ";
+  if (getSpTrsvType() == "Fast") {
+    os << "# of triangular solve iterations: " << getNTrisol() << ", ";
+  }
   if(mat_.is_null())
   {
     os << "Matrix: null";
@@ -330,14 +333,15 @@ FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Params::getDefaults()
 {
   Params p;
-  p.standard_sptrsv = false;
+  p.sptrsv_algo = FastILU::SpTRSV::Fast;
   p.nFact = 5;
   p.nTrisol = 1;
   p.level = 0;
   p.omega = 0.5;
   p.shift = 0;
   p.guessFlag = true;
-  p.blockSize = 1;
+  p.blockSizeILU = 1;   // # of nonzeros / thread, for fastILU
+  p.blockSize = 1;      // # of rows / thread, for SpTRSV
   return p;
 }
 
@@ -363,9 +367,14 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
     else 
       TYPE_ERROR("sweeps", "int");
   }
-  if(pL.isParameter("standard triangular solve"))
-  {
-      standard_sptrsv = pL.get<bool>("standard triangular solve");
+  std::string sptrsv_type = "Fast";
+  if(pL.isParameter("triangular solve type")) {
+    sptrsv_type = pL.get<std::string> ("triangular solve type");
+  }
+  if (sptrsv_type == "Standard Host") {
+    sptrsv_algo = FastILU::SpTRSV::StandardHost;
+  } else if (sptrsv_type == "Standard") {
+    sptrsv_algo = FastILU::SpTRSV::Standard;
   }
 
   //"triangular solve iterations" aka nTrisol
@@ -433,12 +442,23 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
       TYPE_ERROR("guess", "bool");
   }
   //"block size" aka blkSz
-  if(pL.isParameter("block size"))
+  if(pL.isParameter("block size for ILU"))
   {
-    if(pL.isType<int>("block size"))
-      blockSize = pL.get<int>("block size");
+    if(pL.isType<int>("block size for ILU"))
+    {
+      blockSizeILU = pL.get<int>("block size for ILU");
+      CHECK_VALUE("block size for ILU", blockSizeILU, blockSizeILU < 1, "must have a value of at least 1");
+    }
+    else 
+      TYPE_ERROR("block size for ILU", "int");
+  }
+  //"block size" aka blkSz
+  if(pL.isParameter("block size for SpTRSV"))
+  {
+    if(pL.isType<int>("block size for SpTRSV"))
+      blockSize = pL.get<int>("block size for SpTRSV");
     else
-      TYPE_ERROR("block size", "int");
+      TYPE_ERROR("block size for SpTRSV", "int");
   }
   #undef CHECK_VALUE
   #undef TYPE_ERROR

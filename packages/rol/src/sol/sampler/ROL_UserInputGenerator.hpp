@@ -45,6 +45,7 @@
 #define ROL_USERINPUTGENERATOR_HPP
 
 #include "ROL_SampleGenerator.hpp"
+#include "ROL_ParameterList.hpp"
 #include "ROL_BatchManager.hpp"
 #include <fstream>
 #include <iostream>
@@ -52,36 +53,33 @@
 
 namespace ROL {
 
-template<class Real> 
+template<typename Real> 
 class UserInputGenerator : public SampleGenerator<Real> {
 private:
   int nSamp_;
 
-  void sample(const std::string &file_pt,
-              const std::string &file_wt,
-              const int n,
-              const int dim,
-              const ROL::Ptr<BatchManager<Real> > &bman) {
+  void sample(std::string file_pt, std::string file_wt,
+              int n, int dim,
+              const ROL::Ptr<BatchManager<Real>> &bman) {
     nSamp_ = n;
     // Read in full point data and weight data
-    std::fstream input_pt;
+    std::fstream input_pt, input_wt;
     input_pt.open(file_pt.c_str(),std::ios::in);
-    std::fstream input_wt;
     input_wt.open(file_wt.c_str(),std::ios::in);
     if ( !input_pt.is_open() || !input_wt.is_open() ) {
       if ( !input_pt.is_open() ) {
         if ( bman->batchID() == 0 ) {
-          std::cout << "CANNOT OPEN " << file_pt.c_str() << "\n";
+          std::cout << "CANNOT OPEN " << file_pt.c_str() << std::endl;
         }
       }
       if ( !input_wt.is_open() ) {
         if ( bman->batchID() == 0 ) {
-          std::cout << "CANNOT OPEN " << file_wt.c_str() << "\n";
+          std::cout << "CANNOT OPEN " << file_wt.c_str() << std::endl;
         }
       }
     }
     else {
-      std::vector<std::vector<Real> > pt(n);
+      std::vector<std::vector<Real>> pt(n);
       std::vector<Real> wt(n,0.0);
       std::vector<Real> point(dim,0.0);;
       for (int i = 0; i < n; i++) {
@@ -98,10 +96,8 @@ private:
       int frac = n/nProc;
       int rem  = n%nProc;
       int N    = frac;
-      if ( rank < rem ) {
-        N++;
-      }
-      std::vector<std::vector<Real> > my_pt(N);
+      if ( rank < rem ) N++;
+      std::vector<std::vector<Real>> my_pt(N);
       std::vector<Real> my_wt(N,0.0);
       int index = 0;
       for (int i = 0; i < N; i++) {
@@ -118,7 +114,7 @@ private:
 
 public:
   UserInputGenerator(ROL::ParameterList &parlist,
-               const ROL::Ptr<BatchManager<Real> > &bman)
+               const ROL::Ptr<BatchManager<Real>> &bman)
     : SampleGenerator<Real>(bman) {
     ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Sample Generator").sublist("User Input");
@@ -138,11 +134,11 @@ public:
     }
   }
 
-  UserInputGenerator(const std::string file_pt,
-                     const std::string file_wt,
-                     const int n,
-                     const int dim,
-                     const ROL::Ptr<BatchManager<Real> > &bman)
+  UserInputGenerator(std::string file_pt,
+                     std::string file_wt,
+                     int n,
+                     int dim,
+                     const ROL::Ptr<BatchManager<Real>> &bman)
     : SampleGenerator<Real>(bman) {
     sample(file_pt,file_wt,n,dim,bman);
   }

@@ -86,16 +86,20 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_tfqmr_small_sym_mm.xml
   test_FILU_tfqmr_small_sym_mm.xml
   test_FILU_tfqmr_small_sym_mm_sptrsv.xml
+  test_FILU_tfqmr_small_sym_mm_schwarz.xml
   test_FIC_tfqmr_small_sym_mm.xml
   test_FIC_tfqmr_small_sym_mm_sptrsv.xml
+  test_FIC_tfqmr_small_sym_mm_schwarz.xml
   test_FILDL_tfqmr_small_sym_mm.xml
   test_FILDL_tfqmr_small_sym_mm_sptrsv.xml
+  test_FILDL_tfqmr_small_sym_mm_schwarz.xml
   test_ILUT_tfqmr_calore1_mm.xml
   5w.mtx 
   5w.vec
   5w_bel_tif_ILUT.xml
   5w_bel_tif_FILU.xml
   5w_bel_tif_FILU_sptrsv.xml
+  5w_bel_tif_FILU_sptrsv_host.xml
   5w_bel_tif_FILU_schwarz.xml
   5w_bel_tif_FIC.xml
   5w_bel_tif_FIC_sptrsv.xml
@@ -479,6 +483,14 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
   )
   TRIBITS_ADD_TEST(
     tif_belos
+    NAME FILU_5w_sptrsv_host
+    ARGS "--xml_file=5w_bel_tif_FILU_sptrsv_host.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
     NAME FILU_5w_schwarz
     ARGS "--xml_file=5w_bel_tif_FILU_schwarz.xml"
     COMM serial mpi
@@ -552,6 +564,14 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
   )
   TRIBITS_ADD_TEST(
     tif_belos
+    NAME FILU_small_sym_schwarz
+    ARGS "--xml_file=test_FILU_tfqmr_small_sym_mm_schwarz.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
     NAME FIC_small_sym
     ARGS "--xml_file=test_FIC_tfqmr_small_sym_mm.xml"
     COMM serial mpi
@@ -568,6 +588,14 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
   )
   TRIBITS_ADD_TEST(
     tif_belos
+    NAME FIC_small_sym_schwarz
+    ARGS "--xml_file=test_FIC_tfqmr_small_sym_mm_schwarz.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
     NAME FILDL_small_sym
     ARGS "--xml_file=test_FILDL_tfqmr_small_sym_mm.xml"
     COMM serial mpi
@@ -578,6 +606,14 @@ IF(Tpetra_INST_DOUBLE AND Ifpack2_ENABLE_ShyLU_NodeFastILU)
     tif_belos
     NAME FILDL_small_sym_sptrsv
     ARGS "--xml_file=test_FILDL_tfqmr_small_sym_mm_sptrsv.xml"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    tif_belos
+    NAME FILDL_small_sym_schwarz
+    ARGS "--xml_file=test_FILDL_tfqmr_small_sym_mm_schwarz.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT

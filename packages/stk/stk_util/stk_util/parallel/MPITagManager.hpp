@@ -35,23 +35,26 @@
 #ifndef stk_util_parallel_MPITagManager
 #define stk_util_parallel_MPITagManager
 
+#include "stk_util/stk_config.h"            // for STK_HAS_MPI
+#ifdef STK_HAS_MPI
+
 #include <map>
 #include <set>
+#include <forward_list>
+#include <deque>
 #include <memory>
 #include <iostream>
+#include <iterator>
 #include "MPICommKey.hpp"
 #include "stk_util/parallel/Parallel.hpp"   // for MPI
 #include "stk_util/parallel/MPICommKey.hpp"  // for MPIKeyManager
+#include "stk_util/parallel/MPITag.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg, ThrowRequire
+#include "stk_util/parallel/CommReplacer.hpp"
+#include "stk_util/parallel/CommTagInUseList.hpp"
+
 
 namespace stk {
-
-class MPITag;
-
-namespace Impl {
-  class MPITagData;
-}
-
 
 // class for managing which MPI tags are in use on which communicator
 // Note: all operations on this class are logically collective: they
@@ -59,152 +62,67 @@ namespace Impl {
 //       same order.
 class MPITagManager
 {
+  protected:
+    //TODO: writeup delayCount theory into manual
+    MPITagManager(int deletionGroupSize, int delayCount);
+
   public:
 
-
-    ~MPITagManager() {}
+    ~MPITagManager();
 
     MPITagManager(const MPITagManager&) = delete;
 
     MPITagManager& operator=(const MPITagManager&) = delete;
 
-    //using CommKey = int;
+    MPITagManager(MPITagManager&&) = delete;
 
-    // get an unused tag
-    MPITag get_tag(MPI_Comm comm);
+    MPITagManager& operator=(MPITagManager&&) = delete;
 
     // try to get tag given tag, or a nearby one if that specified one is unavailable
-    MPITag get_tag(MPI_Comm comm, int tagHint);
+    // Note: this is a collective operation
+    MPITag get_tag(MPI_Comm comm, int tagHint=MPI_ANY_TAG);
 
   private:
+    //-------------------------------------------------------------------------
+    // Tag generation
 
-    MPITagManager();
+    int get_new_tag(impl::CommTagInUseList& commData, int tagHint);
 
-    struct CommRecord
-    {
-      CommRecord() = default;
+    int get_any_tag(impl::CommTagInUseList& commData);
 
-      CommRecord(const CommRecord&) = delete;
+    int new_tag_search(impl::CommTagInUseList& commData, int tagHint);
 
-      CommRecord& operator=(const CommRecord&) = delete;
+    //-------------------------------------------------------------------------
+    // Tag and Comm freeing
 
-      void insert(std::shared_ptr<Impl::MPITagData> new_tag);
+    void free_tag_local(impl::MPITagData& tag);
 
-      void erase(Impl::MPITagData& tag);
+    void erase_comm(MPI_Comm comm);
 
-      std::set<int> tags;
-      std::map<int, std::weak_ptr<Impl::MPITagData>> tagPtrs;  // maps tag values to the MPITagData objects (pointers)
-    };
+    void check_same_value_on_all_procs_debug_only(MPI_Comm comm, int newVal);
 
-    void free_tag(MPITag& tag);
+    std::shared_ptr<impl::MPIKeyManager> m_keyManager;
+    std::map<MPI_Comm, impl::CommTagInUseList, impl::CommCompare> m_commData;
+#ifdef MPI_KEY_MANAGER_COMM_DESTRUCTOR_CALLBACK_BROKEN
+    impl::CommReplacer m_commReplacer;
+#endif
 
-    void free_tag(Impl::MPITagData& tag);
-
-    void free_comm_keys(MPI_Comm comm);
-
-    // checks that new_val is the same on all procs (in debug mode only)
-    void debug_check(MPI_Comm comm, int newVal);
-
-    std::shared_ptr<MPIKeyManager> m_keyManager;
-    CommCompare m_commCompare;
-    std::map<MPI_Comm, CommRecord, CommCompare> m_tags;
-
+    const unsigned int m_deletionGroupSize;  // number of tags to free as a group
+    const unsigned int m_delayCount;         // wait on MPI_Ibarriers after this many
+                                             // entries to get_tag() with the same MPI_Comm
     const int m_tagMin = 1024;
     int m_tagMax = 32767;
-    int m_mpiAttrKey;
+    impl::MPIKeyManager::CallerUID m_callbackUID = 0;
 
-    friend Impl::MPITagData;
-    friend MPITag;
+    friend impl::MPITagData;
     friend MPITagManager& get_mpi_tag_manager();
 };
 
-namespace Impl {
-
-class MPITagData
-{
-  public:
-
-    MPITagData(MPITagManager* manager, MPI_Comm comm, int tag) :
-      m_manager(manager),
-      m_comm(comm),
-      m_tag(tag)
-    {}
-
-    ~MPITagData();
-
-    int get_tag() { return m_tag;}
-
-    MPI_Comm get_comm() { return m_comm;}
-
-    MPIKeyManager::CommKey get_comm_key() { return m_manager->m_keyManager->get_key(m_comm); }
-
-    void set_free() { m_isFree = true;}
-
-    bool is_free() { return m_isFree; }
-
-    MPITagManager* get_tag_manager() { return m_manager; }
-
-  private:
-    MPITagManager* m_manager;
-    MPI_Comm m_comm;
-    int m_tag;
-    bool m_isFree = false;
-};
-
-}  // namespace Impl
-
-// an MPI tag that is currently in use.  Note that it is implicitly convertable
-// to int, so it can be passed directly into MPI routines.
-class MPITag
-{
-  public:
-    explicit MPITag(std::shared_ptr<Impl::MPITagData> data) :
-      m_data(data)
-    {}
-
-    operator int() const { return m_data->get_tag(); }
-
-  private:
-    void set_free()
-    {
-      m_data->set_free();
-    }
-
-    std::shared_ptr<Impl::MPITagData> m_data;
-
-    friend MPITagManager;
-
-    friend bool operator==(const MPITag& lhs, const MPITag& rhs);
-    friend bool operator!=(const MPITag& lhs, const MPITag& rhs);
-    friend std::ostream& operator<<(std::ostream& os, const MPITag& tag);
-};
-
-inline bool operator==(const MPITag& lhs, const MPITag& rhs)
-{
-  ThrowRequireMsg(lhs.m_data->get_tag_manager() == rhs.m_data->get_tag_manager(),
-                  "Cannot compare MPITags on different MPITagManagers");
-
-  return static_cast<int>(lhs) == static_cast<int>(rhs) &&
-         !lhs.m_data->is_free() && !rhs.m_data->is_free() &&
-         lhs.m_data->get_comm_key() == rhs.m_data->get_comm_key();       
-}
-
-inline bool operator!=(const MPITag& lhs, const MPITag& rhs)
-{
-  return !(lhs == rhs);
-}
-
-inline std::ostream&  operator<<(std::ostream& os, const MPITag& tag)
-{
-  os << "MPITag with value " << tag.m_data->get_tag() << " on Comm with key "
-     << tag.m_data->get_comm_key() << ", is_free = " << tag.m_data->is_free();
-
-  return os;
-}
-
 
 MPITagManager& get_mpi_tag_manager();
-
 }
 
+
+
+#endif
 #endif
