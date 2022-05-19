@@ -56,6 +56,7 @@
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_MDF.hpp>
+#include <Ifpack2_AdditiveSchwarz.hpp>
 
 #include <type_traits>
 
@@ -101,6 +102,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test0, Scalar, LocalOrdinal, Globa
   Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
 
   TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+
+  // Test that permuation arrays are updated not overwritten
+  Teuchos::ArrayRCP<const LocalOrdinal> permuations = prec.getPermutations();
+  Teuchos::ArrayRCP<const LocalOrdinal> reversePermuations = prec.getReversePermutations();
+  prec.compute();
+  TEST_EQUALITY(permuations,prec.getPermutations());
+  TEST_EQUALITY(reversePermuations,prec.getReversePermutations());
 }
 
 template<size_t maxEntrPerRow,typename Scalar,typename LO,typename GO,typename Node>
@@ -114,6 +122,7 @@ void test_mdf_reference_problem(
   const LO * known_Perm,
   const Scalar * known_sln)
 {
+  using row_matrix_t = Tpetra::RowMatrix<Scalar,LO,GO,Node>;
   using crs_matrix_t = Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
   Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > rowmap(tif_utest::create_tpetra_map<LO,GO,Node>(locNumRow));
   Teuchos::RCP<crs_matrix_t> crsmatrix(new crs_matrix_t(rowmap,maxEntrPerRow));
@@ -139,11 +148,11 @@ void test_mdf_reference_problem(
   }
 
   //Create prec
-  Ifpack2::MDF<Tpetra::RowMatrix<Scalar,LO,GO,Node> > prec(crsmatrix.getConst());
+  Ifpack2::MDF<row_matrix_t> prec(crsmatrix.getConst());
   {
     Teuchos::ParameterList params;
     params.set("fact: mdf level-of-fill", 0.0);
-    params.set("Verbosity", 0);
+    params.set("Verbosity",3);
     TEST_NOTHROW(prec.setParameters(params));
   }
 
@@ -152,22 +161,22 @@ void test_mdf_reference_problem(
   prec.compute();
 
   //Check the permutations are correct
+  if (known_Perm != nullptr)
   {
     Teuchos::ArrayRCP<LO> refPermuations(locNumRow);
     refPermuations.assign(known_Perm,known_Perm+locNumRow);
-    TEST_COMPARE_ARRAYS(prec.getPermutations(),refPermuations);
-  }
-  {
-    Teuchos::ArrayRCP<LO> refReversePermuations(locNumRow);
+    TEST_COMPARE_ARRAYS(prec.getReversePermutations(),refPermuations);
+
+    Teuchos::ArrayRCP<LO> refPermuationsInv(locNumRow);
     for (LO i=0;i<locNumRow;++i)
-      refReversePermuations[known_Perm[i]] = i;
-    TEST_COMPARE_ARRAYS(prec.getReversePermutations(),refReversePermuations);
+      refPermuationsInv[known_Perm[i]] = i;
+    TEST_COMPARE_ARRAYS(prec.getPermutations(),refPermuationsInv);
   }
 
   //Apply prec
-  Tpetra::MultiVector<Scalar,LO,GO,Node> x(rowmap,2), y(rowmap,2);
+  Tpetra::MultiVector<Scalar,LO,GO,Node> x(rowmap,2), yMDF(rowmap,2), yILU(rowmap,2);
   x.putScalar(1);
-  prec.apply(x, y);
+  prec.apply(x, yMDF);
 
   // Check result if known
   if (known_sln != nullptr)
@@ -176,11 +185,54 @@ void test_mdf_reference_problem(
     for (LO i=0;i<locNumRow;++i)
       knownSln[i] = knownSln[i+locNumRow] = known_sln[i];
 
-    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+    Teuchos::ArrayRCP<const Scalar> yview = yMDF.get1dView();
 
     const Scalar tol = 1e-8;
     TEST_COMPARE_FLOATING_ARRAYS(yview, knownSln, tol);
   }
+
+  // Now apply reordering with AdditiveSchwarz
+  Ifpack2::AdditiveSchwarz<row_matrix_t> reorderedPrec(crsmatrix.getConst());
+  {
+    Teuchos::ParameterList params;
+    params.set ("schwarz: overlap level", static_cast<int> (0));
+    params.set ("schwarz: combine mode", "add");
+    params.set ("inner preconditioner name", "RILUK");
+    params.set ("schwarz: zero starting solution", true);
+    params.set ("schwarz: num iterations", 1);
+    {
+      Teuchos::ParameterList innerParams;
+      innerParams.set ("fact: iluk level-of-fill", static_cast<int> (0));
+      innerParams.set ("fact: iluk level-of-overlap", static_cast<int> (0));
+
+      params.set ("inner preconditioner parameters", innerParams);
+    }
+    params.set ("schwarz: use reordering", true);
+    {
+      Teuchos::ParameterList zlist;
+      zlist.set ("order_method", "user");
+      zlist.set ("order_method_type", "local");
+      zlist.set ("user ordering", prec.getPermutations());
+      zlist.set ("user reverse ordering", prec.getReversePermutations());
+
+      params.set ("schwarz: reordering list", zlist);
+    }
+    reorderedPrec.setParameters(params);
+  }
+
+  //Compute prec
+  reorderedPrec.initialize();
+  reorderedPrec.compute();
+
+  //Apply prec
+  reorderedPrec.apply(x, yILU);
+
+  //Check if results match mdf impl
+  {
+    Teuchos::ArrayRCP<const Scalar> yMDFview = yMDF.get1dView();
+    Teuchos::ArrayRCP<const Scalar> yILUview = yILU.get1dView();
+    TEST_COMPARE_FLOATING_ARRAYS(yMDFview, yILUview, 10*Teuchos::ScalarTraits<Scalar>::eps());
+  }  
 };
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test1, Scalar, LocalOrdinal, GlobalOrdinal)
@@ -195,7 +247,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test1, Scalar, LocalOrdinal, Globa
   const LocalOrdinal maxEntrPerRow = 5;
 
   const LocalOrdinal known_Perm[] = {0, 3, 12, 15, 1, 2, 4, 8, 7, 11, 13, 14, 5, 6, 9, 10};
-  const Scalar known_sln[] = {0.667850672, 0.6521907175, 0.6521907175, 0.6492629293, 0.8357013441, 0.7697237194, 0.8357013441, 0.7697237194, 0.8390391506, 0.7985258586, 0.8390391506, 0.7985258586, 1.114156321, 1.097870956, 1.097870956, 1.198198407};
+  const Scalar known_sln[] = {0.667850672, 0.8357013441, 0.7697237194, 0.6521907175, 0.8357013441, 1.114156321, 1.097870956, 0.8390391506, 0.7697237194, 1.097870956, 1.198198407, 0.7985258586, 0.6521907175, 0.8390391506, 0.7985258586, 0.6492629293};
 
   const LocalOrdinal crs_row_map[locNumRow + 1] = {0, 3, 7, 11, 14, 18, 23, 28, 32, 36, 41, 46, 50, 53, 57, 61, 64};
   const LocalOrdinal crs_col_ind[] = {0,   1,  4,
@@ -242,9 +294,38 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test1, Scalar, LocalOrdinal, Globa
     known_sln);
 }
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test2, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  // Finite difference Advection-difussion problem with uniform spacing, D = 0.1, and v = {1,0}.
+  //     0 = D lapl(c) - v div(c)
+  // Matrix generated in matlab
+
+  const LocalOrdinal locNumRow = 16;
+  const LocalOrdinal maxEntrPerRow = 5;
+
+  const LocalOrdinal * known_Perm = nullptr;
+  const Scalar known_sln[] = {1, 1, 1, 1, 0.003672225191, 0.009579029377, 0.009561484324, 0.008916905477, -0.9618401019, -0.9531149984, -0.9530909277, -0.9620706929, -1.709605523, -1.644630677, -1.644823672, -1.65191404};
+
+  const LocalOrdinal crs_row_map[locNumRow + 1] = {0, 1, 2, 3, 4, 8, 13, 18, 22, 26, 31, 36, 40, 43, 47, 51, 54};
+  const LocalOrdinal crs_col_ind[54] = {0, 1, 2, 3, 0, 4, 5, 8, 1, 4, 5, 6, 9, 2, 5, 6, 7, 10, 3, 6, 7, 11, 4, 8, 9, 12, 5, 8, 9, 10, 13, 6, 9, 10, 11, 14, 7, 10, 11, 15, 8, 12, 13, 9, 12, 13, 14, 10, 13, 14, 15, 11, 14, 15};
+  const Scalar crs_values[54] = {1, 1, 1, 1, 1.1, -1.3, 0.1, 0.1, 1.1, 0.1, -1.4, 0.1, 0.1, 1.1, 0.1, -1.4, 0.1, 0.1, 1.1, 0.1, -1.3, 0.1, 1.1, -1.3, 0.1, 0.1, 1.1, 0.1, -1.4, 0.1, 0.1, 1.1, 0.1, -1.4, 0.1, 0.1, 1.1, 0.1, -1.3, 0.1, 1.1, -1.3, 0.1, 1.1, 0.1, -1.4, 0.1, 1.1, 0.1, -1.4, 0.1, 1.1, 0.1, -1.3};
+
+  test_mdf_reference_problem<maxEntrPerRow,Scalar,LocalOrdinal,GlobalOrdinal,Node>(
+    success,
+    out,
+    locNumRow,
+    crs_row_map,
+    crs_col_ind,
+    crs_values,
+    known_Perm,
+    known_sln);
+}
+
 #define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2MDF, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2MDF, Test1, Scalar, LocalOrdinal,GlobalOrdinal) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2MDF, Test1, Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2MDF, Test2, Scalar, LocalOrdinal,GlobalOrdinal) 
 
 #include "Ifpack2_ETIHelperMacros.h"
 

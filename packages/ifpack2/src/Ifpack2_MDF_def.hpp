@@ -75,13 +75,36 @@ void copy_dev_view_to_host_array(array_t & array, const dev_view_t & dev_view)
 {
   using host_view_t = typename dev_view_t::HostMirror;
 
-  //Clear out existing and allocate
+  // Clear out existing and allocate
   const auto ext = dev_view.extent(0);
-  array = array_t();
-  array = array_t(ext);
+
+  // Do not overwrite in case array is already referenced elsewhere
+  if (array.is_null()) array = array_t(ext);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    ext != array.size(), std::logic_error, "Ifpack2::MDF::copy_dev_view_to_host_array: "
+    "Size of permuations on host and device do not match.  "
+    "Please report this bug to the Ifpack2 developers.");
 
   //Wrap array data in view and copy
   Kokkos::deep_copy(host_view_t(array.get(),ext),dev_view);    
+}
+
+template<class scalar_type,class local_ordinal_type,class global_ordinal_type,class node_type>
+void applyReorderingPermutations(
+  const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+  Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+  const Teuchos::ArrayRCP<local_ordinal_type> & perm)
+{ 
+  TEUCHOS_TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+                             "Ifpack2::MDF::applyReorderingPermuations ERROR: X.getNumVectors() != Y.getNumVectors().");
+
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr = X.get2dView();
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> >       y_ptr = Y.get2dViewNonConst();
+
+  for(size_t k=0; k < X.getNumVectors(); k++)
+    for(local_ordinal_type i=0; (size_t)i< X.getLocalLength(); i++)
+      y_ptr[k][perm[i]] = x_ptr[k][i];
 }
 
 }
@@ -471,6 +494,8 @@ void MDF<MatrixType>::initialize ()
     isAllocated_   = false;
     isComputed_    = false;
     MDF_handle_ = Teuchos::null;
+    permutations_ = Teuchos::null;
+    reversePermutations_ = Teuchos::null;
 
     A_local_ = makeLocalFilter (A_);
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -615,10 +640,10 @@ void MDF<MatrixType>::compute ()
     MDFImpl::mdf_numeric_phase(A_local_crs->getLocalMatrixDevice(),*MDF_handle_);
   }
 
-  //Populate permuations
-  Details::MDFImpl::copy_dev_view_to_host_array(permutations_, MDF_handle_->get_permutation());
-  Details::MDFImpl::copy_dev_view_to_host_array(reversePermutations_, MDF_handle_->get_permutation_inv());
-  
+  // Ordering convention for MDF impl and here are reversed. Do reverse here to avoid confusion
+  Details::MDFImpl::copy_dev_view_to_host_array(reversePermutations_, MDF_handle_->get_permutation());
+  Details::MDFImpl::copy_dev_view_to_host_array(permutations_, MDF_handle_->get_permutation_inv());
+
   L_ = rcp(new crs_matrix_type(
     A_local_->getRowMap (),
     A_local_->getColMap (),
@@ -640,7 +665,6 @@ void MDF<MatrixType>::compute ()
   ++numCompute_;
   computeTime_ += (timer.wallTime() - startTime);
 }
-
 
 template<class MatrixType>
 void
@@ -695,16 +719,19 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
+      MV tmp (Y.getMap (), Y.getNumVectors ());
+      Details::MDFImpl::applyReorderingPermutations(X,tmp,permutations_);
       if (mode == Teuchos::NO_TRANS) { // Solve L (D (U Y)) = X for Y.      
         // Start by solving L Y = X for Y.
-        L_solver_->apply (X, Y, mode);
-        U_solver_->apply (Y, Y, mode); // Solve U Y = Y.
+        L_solver_->apply (tmp, Y, mode);
+        U_solver_->apply (Y, tmp, mode); // Solve U Y = Y.
       }
       else { // Solve U^P (D^P (L^P Y)) = X for Y (where P is * or T).      
         // Start by solving U^P Y = X for Y.
-        U_solver_->apply (X, Y, mode);
-        L_solver_->apply (Y, Y, mode); // Solve L^P Y = Y.
+        U_solver_->apply (tmp, Y, mode);
+        L_solver_->apply (Y, tmp, mode); // Solve L^P Y = Y.
       }
+      Details::MDFImpl::applyReorderingPermutations(tmp,Y,reversePermutations_);
     }
     else { // alpha != 1 or beta != 0
       if (alpha == zero) {
