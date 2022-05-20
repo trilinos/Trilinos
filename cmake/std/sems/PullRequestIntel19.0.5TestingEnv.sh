@@ -1,5 +1,5 @@
 # This script can be used to load the appropriate environment for the
-# GCC 4.9.3 Pull Request testing build on a Linux machine that has access to
+# Intel 19.0.5 Pull Request testing build on a Linux machine that has access to
 # the SEMS NFS mount.
 
 # usage: $ source PullRequestIntel19.0.5TestingEnv.sh
@@ -10,27 +10,25 @@
 
 module purge
 
-source /projects/sems/modulefiles/utils/sems-archive-modules-init.sh
+source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
-export SEMS_FORCE_LOCAL_COMPILER_VERSION=4.9.3
-module load sems-archive-gcc/6.1.0
-module load sems-archive-intel/19.0.5
-module load sems-archive-mpich/3.2
-module load sems-archive-boost/1.63.0/base
-module load sems-archive-zlib/1.2.8/base
-module load sems-archive-hdf5/1.10.6/parallel
-module load sems-archive-netcdf/4.7.3/parallel
-module load sems-archive-parmetis/4.0.3/parallel
-module load sems-archive-scotch/6.0.3/nopthread_64bit_parallel
-module load sems-archive-superlu/4.3/base
+module load sems-git/2.11.1
+module load sems-openmpi/4.0.5
+module load sems-boost/1.74.0
+module load sems-zlib/1.2.11
+module load sems-hdf5/1.10.7
+module load sems-netcdf-c/4.7.3
+module load sems-netcdf-cxx/4.2
+module load sems-netcdf-fortran/4.5.3
+module load sems-parallel-netcdf/1.12.1
+module load sems-metis-int64/5.1.0
+module load sems-parmetis-int64/4.0.3
+module load sems-scotch-int64/6.0.3
+module load sems-superlu/4.3
+module load sems-cmake/3.18.4
 
-module load sems-archive-cmake/3.17.1
-module load sems-archive-ninja_fortran/1.8.2
-
-module load sems-archive-git/2.10.1
-
-module unload sems-archive-python
-module load sems-archive-python/3.5.2
+module load sems-intel/19.0.5
+module load sems-mpich/3.2.1
 
 # add the OpenMP environment variable we need
 export OMP_NUM_THREADS=2
