@@ -55,6 +55,7 @@
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TRI.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TET.hpp"
 #include "Intrepid2_LegendreBasis_HVOL_LINE.hpp"
+#include "Intrepid2_LegendreBasis_HVOL_TRI.hpp"
 
 namespace Intrepid2 {
   
@@ -80,7 +81,7 @@ namespace Intrepid2 {
     using HGRAD = IntegratedLegendreBasis_HGRAD_TRI<DeviceType,OutputScalar,PointScalar,defineVertexFunctions>;
     using HCURL = dummyBasis<DeviceType,OutputScalar,PointScalar>;
     using HDIV  = dummyBasis<DeviceType,OutputScalar,PointScalar>;
-    using HVOL  = dummyBasis<DeviceType,OutputScalar,PointScalar>;
+    using HVOL  = LegendreBasis_HVOL_TRI<DeviceType,OutputScalar,PointScalar>;
   };
   
   template<typename DeviceType,

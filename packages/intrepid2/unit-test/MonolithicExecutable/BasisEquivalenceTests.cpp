@@ -692,7 +692,7 @@ namespace
     using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HGRAD_TRI;
     
     // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD, OPERATOR_D1};
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -713,7 +713,7 @@ namespace
     using DGBasis = DGHierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_TRI;
     
     // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD, OPERATOR_D1};
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -725,6 +725,26 @@ namespace
       CGBasis cgBasis(polyOrder);
       DGBasis dgBasis(polyOrder);
       testBasisEquivalence<DefaultTestDeviceType>(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleNodalVersusHierarchical_HVOL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_TRI;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HVOL_TRI;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-11; // -- is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    const double absTol=1e-12; // -- is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    
+    for (int polyOrder=0; polyOrder<5; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
     }
   }
   
