@@ -108,19 +108,14 @@ namespace Intrepid2
     void operator()( const TeamMember & teamMember ) const
     {
       auto pointOrdinal = teamMember.league_rank();
-      // TODO: edit this to match scratch that we actually need.  (What's here is copied from H^1 basis on triangles…)
-      OutputScratchView legendre_field_values_at_point, jacobi_values_at_point, other_values_at_point, other_values2_at_point;
+      OutputScratchView legendre_field_values_at_point, jacobi_values_at_point;
       if (fad_size_output_ > 0) {
         legendre_field_values_at_point = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
         jacobi_values_at_point         = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
-        other_values_at_point          = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
-        other_values2_at_point         = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
       }
       else {
         legendre_field_values_at_point = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
         jacobi_values_at_point         = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
-        other_values_at_point      = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
-        other_values2_at_point     = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
       }
       
       const auto & x = inputPoints_(pointOrdinal,0);
@@ -135,8 +130,6 @@ namespace Intrepid2
         {
           // face functions
           {
-            // TODO: edit this.  (What's here is copied from H^1 basis on triangles…)  Should be a product of Legendre and Jacobi polynomial values.
-            // these functions multiply the edge functions from the 01 edge by integrated Jacobi functions, appropriately scaled
             const double jacobiScaling = 1.0; // s0 + s1 + s2
             
             const PointScalar tLegendre = lambda[0] + lambda[1];
@@ -175,9 +168,9 @@ namespace Intrepid2
       // we will use shared memory to create a fast buffer for basis computations
       size_t shmem_size = 0;
       if (fad_size_output_ > 0)
-        shmem_size += 4 * OutputScratchView::shmem_size(polyOrder_ + 1, fad_size_output_);
+        shmem_size += 2 * OutputScratchView::shmem_size(polyOrder_ + 1, fad_size_output_);
       else
-        shmem_size += 4 * OutputScratchView::shmem_size(polyOrder_ + 1);
+        shmem_size += 2 * OutputScratchView::shmem_size(polyOrder_ + 1);
       
       return shmem_size;
     }
