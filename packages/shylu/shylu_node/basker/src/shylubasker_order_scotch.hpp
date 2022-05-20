@@ -269,13 +269,7 @@ namespace BaskerNS
         /*for (Int i = 0; i < num_doms; i++) {
           printf( " post[%d] = %d, ipost[%d]=%d\n",i,post_order(i),i,post_iorder(i) );
         }*/
-        //printf( " M = [\n" );
-        /*FILE *fp = fopen("A.dat","w");
-        for(Int i = 0; i < M.nrow; i++) {
-          for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) fprintf(fp, "%d %d\n",i,M.row_idx(k) );
-        }
-        fclose(fp);*/
-        //printf( "];\n" );
+        //M.print_matrix("A.dat");
 
         // initial partition
         sg.cblk = 1;

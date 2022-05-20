@@ -765,7 +765,6 @@ namespace BaskerNS
         // to revert BLK_MWM ordering
         for (Int k = 0; k < (Int)ncol; k++) order_blk_mwm_inv(k) = k;
         permute_inv(order_blk_mwm_inv, order_blk_mwm_array, ncol);
-        //BTF_A.print_matrix("A.dat");
 
         // --------------------------------------------
         // reset the large A block
@@ -1775,7 +1774,6 @@ namespace BaskerNS
       if(Options.verbose == BASKER_TRUE) {
         std::cout << " No MWM on diagonal blocks " << std::endl;
       }
-      //BTF_A.print_matrix("A1.dat");
       if (Options.matrix_scaling != 0)
       {
         using STS = Teuchos::ScalarTraits<Entry>;
@@ -1878,15 +1876,8 @@ namespace BaskerNS
           }
         }
       }
-      //BTF_A.print_matrix("A2.dat");
     }
     reset_error();
-
-    //BTF_A.print_matrix("qA.dat");
-    //BTF_B.print_matrix("qB.dat");
-    //BTF_C.print_matrix("qC.dat");
-    //BTF_D.print_matrix("qD.dat");
-    //BTF_E.print_matrix("qE.dat");
 
     #ifdef BASKER_DEBUG_DIAG
     // Look for zeros on the diagonal - an Option / parameter list option should be used to enable this

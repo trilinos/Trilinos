@@ -1445,14 +1445,11 @@ namespace BaskerNS
           //What we want to think about is how to 
           //do this in a dense way
           //#pragma ivdep (may be slower)
-          //printf( " gperm(%d+%d) = %d, scol=%d, %d:%d\n",(int)j,(int)brow,(int)t, (int)L.scol, (int)L.col_ptr(t-local_offset)+1,(int)pend );
-          //if (kid == 1) printf( " t_back_solve(%d):\n",t-local_offset );
           for(Int p = L.col_ptr(t-local_offset)+1; p < pend; ++p)
           {
             const Int row_idx = L.row_idx(p);
             const Entry update_val = L.val(p)*xj;
 
-            //if (kid == 1) printf( " %d: x(row_idx=%d) = %e - %e*%e = %e\n",(int)p,(int)row_idx, X(row_idx),xj,L.val(p),X(row_idx)-update_val );
             X(row_idx) -= update_val;
             flops += 2;
           }//end for() over each nnz in the column
