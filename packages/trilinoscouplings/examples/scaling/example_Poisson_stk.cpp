@@ -557,8 +557,8 @@ int main(int argc, char *argv[]) {
 
 #if defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_MUELU_EPETRA)
   MachineLearningStatistics_Hex3D<double, int, int, Xpetra::EpetraNode> MLStatistics(numGlobalElements);
-  bool do_statistics = !strcmp(cellType.getName(),"Hexahedron_8");
-  std::cout<<"do_statistics = "<<do_statistics<<std::endl;
+  bool do_statistics = !strcmp(cellType.getName(),"Hexahedron_8") && (Comm.NumProc() == 1);
+  if(MyPID==0) std::cout<<"do_statistics = "<<do_statistics<<std::endl;
 #endif
 
   // if no boundary node set was found give a warning
