@@ -210,7 +210,7 @@ namespace PHX {
       is_initialized_ = true;
     }
 
-    /// Set an innder device view on the outer view. Indices are the outer view indices. 
+    /// Set an inner device view on the outer view. Indices are the outer view indices. 
     template<typename... Indices>
     void setView(InnerViewType v,Indices... i)
     {
@@ -274,7 +274,7 @@ namespace PHX {
       constructing the view with a raw pointer. This thrid
       implementation does that here.
   */
-  template<int OuterViewRank,typename InnerViewType,typename MemorySpace>
+  template<int OuterViewRank,typename InnerViewType,typename... OuterViewProps>
   class ViewOfViews3 {
 
   public:
@@ -282,7 +282,7 @@ namespace PHX {
     // use a raw Kokkos::View instead of PHX::View. The inner views are
     // what is important for performance.
     using OuterDataType = typename PHX::v_of_v_utils::add_pointer<InnerViewType,OuterViewRank>::type;
-    using OuterViewType = Kokkos::View<OuterDataType,MemorySpace>;
+    using OuterViewType = Kokkos::View<OuterDataType,OuterViewProps...>;
 
   private:
     // Inner views are mananged - used to prevent early deletion
@@ -295,6 +295,8 @@ namespace PHX {
     OuterViewType view_device_;
     // True if the host view has not been synced to device
     bool device_view_is_synced_;
+    // True if the outer view has been initialized
+    bool is_initialized_;
 
   public:
     template<typename... Extents>
@@ -302,7 +304,13 @@ namespace PHX {
       : view_host_(name,extents...),
         view_host_unmanaged_(name,extents...),
         view_device_(name,extents...),
-        device_view_is_synced_(false)
+        device_view_is_synced_(false),
+        is_initialized_(true)
+    {}
+
+    ViewOfViews3()
+      : device_view_is_synced_(false),
+        is_initialized_(false)
     {}
 
     ~ViewOfViews3()
@@ -313,9 +321,24 @@ namespace PHX {
         Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
     }
 
+    /// Allocate the out view objects. Extents are for the outer view.
+    template<typename... Extents>
+    void initialize(const std::string name,Extents... extents)
+    {
+      view_host_ = typename OuterViewType::HostMirror(name,extents...);
+      view_host_unmanaged_ = typename OuterViewType::HostMirror(name,extents...);
+      view_device_ = OuterViewType(name,extents...);
+      device_view_is_synced_ = false;
+      is_initialized_ = true;
+    }
+
+    // Returns true if the outer view has been initialized.
+    bool is_initialized() {return is_initialized_;}
+
     template<typename... Indices>
     void addView(InnerViewType v,Indices... i)
     {
+      TEUCHOS_ASSERT(is_initialized_);
       // Store the managed version so it doesn't get deleted.
       view_host_(i...) = v;
       // Store a runtime unmanaged view to prevent double deletion on device
@@ -323,20 +346,27 @@ namespace PHX {
       device_view_is_synced_ = false;
     }
 
+    /// Note this only syncs the outer view. The inner views are
+    /// assumed to be on device for both host and device outer views.
     void syncHostToDevice()
     {
+      TEUCHOS_ASSERT(is_initialized_);
       Kokkos::deep_copy(view_device_,view_host_unmanaged_);
       device_view_is_synced_ = true;
     }
 
+    /// Returns a host mirror view for the outer view, where the inner
+    /// views are still on device.
     auto getViewHost()
     {
+      TEUCHOS_ASSERT(is_initialized_);
       return view_host_;
     }
 
+    /// Returns device view of views
     auto getViewDevice()
     {
-      TEUCHOS_ASSERT(device_view_is_synced_);
+      KOKKOS_ASSERT(device_view_is_synced_);
       return view_device_;
     }
   };
