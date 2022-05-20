@@ -36,10 +36,10 @@ set (Zoltan_ch_simple_parmetis_parallel_DISABLE ON CACHE BOOL "Turned off until 
 
 set(CMAKE_CXX_FLAGS "-fno-strict-aliasing -Wall -Wno-clobbered -Wno-vla -Wno-pragmas -Wno-unknown-pragmas -Wno-parentheses -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-deprecated-declarations -Wno-misleading-indentation -Wno-int-in-bool-context -Wno-maybe-uninitialized -Wno-class-memaccess -Wno-inline -Wno-nonnull-compare -Wno-address -Werror -DTRILINOS_HIDE_DEPRECATED_HEADER_WARNINGS" CACHE STRING "Warnings as errors settings")
 
-# For inital release, a few packages are throwing errors from WError=array-bounds.
+# For inital release, a few packages are throwing errors from WError=array-bounds & unused-variable.
 # Disabling until fixed
 set (Intrepid2_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-array-bounds" CACHE STRING "Disable WError=array-bounds for GCC 10 until fixed")
-set (Panzer_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-array-bounds" CACHE STRING "Disable WError=array-bounds for GCC 10 until fixed")
+set (Panzer_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-array-bounds -Wno-unused-variable" CACHE STRING "Disable WError=array-bounds for GCC 10 until fixed")
 set (Tpetra_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-array-bounds" CACHE STRING "Disable WError=array-bounds for GCC 10 until fixed")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
