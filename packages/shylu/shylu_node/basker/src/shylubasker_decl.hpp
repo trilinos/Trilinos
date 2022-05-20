@@ -17,7 +17,6 @@
 #else
 #include <omp.h>
 #endif
-#include "Teuchos_ScalarTraits.hpp"
 
 //System Includes
 #include <iostream>
