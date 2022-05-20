@@ -302,11 +302,10 @@ namespace PHX {
     template<typename... Extents>
     ViewOfViews3(const std::string name,Extents... extents)
       : view_host_(name,extents...),
-        view_host_unmanaged_(name,extents...),
         view_device_(name,extents...),
         device_view_is_synced_(false),
         is_initialized_(true)
-    {}
+    { view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::HostSpace(),view_device_); }
 
     ViewOfViews3()
       : device_view_is_synced_(false),
@@ -326,8 +325,8 @@ namespace PHX {
     void initialize(const std::string name,Extents... extents)
     {
       view_host_ = typename OuterViewType::HostMirror(name,extents...);
-      view_host_unmanaged_ = typename OuterViewType::HostMirror(name,extents...);
       view_device_ = OuterViewType(name,extents...);
+      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::HostSpace(),view_device_);
       device_view_is_synced_ = false;
       is_initialized_ = true;
     }
