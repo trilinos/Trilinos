@@ -168,6 +168,24 @@ namespace Amesos2 {
 
     //@} End Mathematical Functions
 
+    static const int defaultNumIters = 2;
+    virtual int solve_ir(const Teuchos::Ptr<Vector> X,
+                         const Teuchos::Ptr<const Vector> B,
+                         const Teuchos::Ptr<Vector> R,
+                         const Teuchos::Ptr<Vector> E,
+                         const int maxNumIters = defaultNumIters,
+                         const bool verbose = false) const = 0;
+    virtual int solve_ir(Vector* X, const Vector* B, Vector* R, Vector* E,
+                         const int maxNumIters = defaultNumIters,
+                         const bool verbose = false) const = 0;
+    virtual int solve_ir(const Teuchos::Ptr<Vector> R,
+                         const Teuchos::Ptr<Vector> E,
+                         const int maxNumIters = defaultNumIters,
+                         const bool verbose = false) = 0;
+    virtual int solve_ir(Vector* R, Vector* E,
+                         const int maxNumIters = defaultNumIters,
+                         const bool verbose = false) = 0;
+
 
     /** \name Parameter Methods
      * @{

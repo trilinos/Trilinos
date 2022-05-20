@@ -232,13 +232,22 @@ namespace Amesos2 {
      * \sa preOrdering(), symbolicFactorization(), and numericFactorization()
      */
     void solve();
-
-
     void solve(const Teuchos::Ptr<Vector> X, const Teuchos::Ptr<const Vector> B) const;
-
-
     void solve(Vector* X, const Vector* B) const;
-  
+
+    static const int defaultNumIters = 2;
+    int solve_ir(const Teuchos::Ptr<Vector> X, const Teuchos::Ptr<const Vector> B, const Teuchos::Ptr<Vector> R, const Teuchos::Ptr<Vector> E,
+                 const int maxNumIters = defaultNumIters,
+                 const bool verbose = false) const;
+    int solve_ir(Vector* X, const Vector* B, Vector* R, Vector* E,
+                 const int maxNumIters = defaultNumIters,
+                 const bool verbose = false) const;
+    int solve_ir(const Teuchos::Ptr<Vector> R, const Teuchos::Ptr<Vector> E,
+                 const int maxNumIters = defaultNumIters,
+                 const bool verbose = false);
+    int solve_ir(Vector* R, Vector* E,
+                 const int maxNumIters = defaultNumIters,
+                 const bool verbose = false);
 
     //@}  End Mathematical Functions group
 
@@ -485,7 +494,6 @@ namespace Amesos2 {
 
     /// Index base of column map of \c matrixA_
     global_size_type columnIndexBase_;
-
 
     /// Holds status information about a solver
     mutable Status status_;

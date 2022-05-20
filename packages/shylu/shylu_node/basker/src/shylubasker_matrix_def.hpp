@@ -552,6 +552,9 @@ namespace BaskerNS
 
     anorm = abs(zero);
     Int temp_count = 0;
+    //char filename[200];
+    //sprintf(filename,"ALM%d_%d_%d.dat",kid,nrow,ncol);
+    //FILE *fp = fopen(filename,"w");
     for(Int k = scol; k < scol+ncol; ++k)
     {
       //note col_ptr[k-scol] contains the starting index (by find_2D_convert)
@@ -607,9 +610,9 @@ namespace BaskerNS
           sprintf(error_msg, " ERROR: j is less than srow (j=%d, srow=%d, kid=%d)",(int)j,(int)srow,(int)kid);
           BASKER_ASSERT(0 == 1, error_msg);
         }
-        /*if (kid == 1) 
+        /*if (kid == 0) 
         {
-          printf( " %d:%d:%d: %d %d, %e\n",kid,i,temp_count,j-srow,k,M.val(i) );
+          fprintf(fp, " %d %d, %.16e\n", j-srow, k-scol, M.val(i));
         }*/
         if (keep_zeros || M.val(i) != zero)
         {
@@ -630,6 +633,7 @@ namespace BaskerNS
       }*/
       col_ptr(k-scol) = temp_count;
     }
+    //fclose(fp);
 
     //NO!!1
     //Slide over the col counts
@@ -691,7 +695,21 @@ namespace BaskerNS
     std::cout << "\n END PRINT " << std::endl;
 
   }//end print()
-
+  
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  void BaskerMatrix<Int,Entry,Exe_Space>::print_matrix(const char *filename)
+  {
+    FILE *fp = fopen(filename, "w");
+    if (nrow > 0 && ncol > 0) {
+      for(Int j = 0; j < ncol; j++) {
+        for(Int k = col_ptr[j]; k < col_ptr[j+1]; k++) {
+          fprintf(fp,"%d %d %.16e\n", (int)row_idx[k], (int)j, val[k]);
+        }
+      }
+    }
+    fclose(fp);
+  }
 }//end namespace basker
 
 #endif //end BASKER_MATRIX_DEF_HPP

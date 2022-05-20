@@ -255,14 +255,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       vals_perm_composition(i) = i;
     }
     permute_inv(vals_perm_composition, vals_crs_transpose, A.nnz);
-
-    /*printf( " a=[\n" );
-    for(Int j = 0; j < A.ncol; j++) {
-      for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-        printf( "%d %d %e\n", A.row_idx[k], j, A.val[k]);
-      }
-    }
-    printf( "];\n" );*/
+    //A.print_matrix("a.dat");
 
     //--------------------------------------------------
     // 0: Basker, 1: trilinos, 2: MC64
@@ -279,13 +272,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     /*printf( " matchP=[\n" );
     for (int i = 0; i < A.ncol; i++) printf( "%d\n", order_match_array(i));
     printf( "];\n" );
-    printf( " c=[\n" );
-    for(Int j = 0; j < A.ncol; j++) {
-      for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-        printf( "%d %d %e\n", A.row_idx[k], j, A.val[k]);
-      }
-    }
-    printf( "];\n" );*/
+    A.print_matrix("c.dat");*/
 
 
     #ifdef BASKER_TIMER
@@ -590,19 +577,20 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     if (option < 0) {
       // no matching
+      match_flag = BASKER_FALSE;
       if(Options.verbose == BASKER_TRUE) {
         std::cout << " ++ calling NO matching ++ " << std::endl;
       }
-      match_flag = BASKER_FALSE;
+      if (Options.matrix_scaling != 0) {
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " ++ allocate matrix sscaling ++ " << std::endl;
+        }
+        MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
+        MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
+      }
     } else {
       match_flag = BASKER_TRUE;
-      /*printf( " A = [\n" );
-      for(Int j = 0; j < A.ncol; j++) {
-        for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-          printf( " %d %d %e\n", A.row_idx[k],j,A.val[k]);
-        }
-      }
-      printf("];\n");*/
+      //A.print_matrix("A.dat");
 
       Entry one(1.0);
       int num_match = min(A.nrow, A.ncol);
@@ -687,13 +675,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       }
       //printf( " match_array\n" );
       //for(Int j = 0; j < A.ncol; j++) printf( " > %d\n",order_match_array(j) );
-      /*printf( " B = [\n" );
-      for(Int j = 0; j < A.ncol; j++) {
-        for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
-          printf( " %d %d %e\n", A.row_idx[k],j,A.val[k]);
-        }
-      }
-      printf("];\n");*/
+      //A.print_matrix("B.dat");
       if(num_match < min(A.nrow, A.ncol)) {
         if(Options.verbose == BASKER_TRUE) {
           std::cout << " ++ Num of matches returned " << num_match
@@ -819,15 +801,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //currently finds ND and permute BTF_A
     //Would like to change so finds permuation, 
     //and move into 2D-Structure
-    /*printf(" in apply_scotch_partition\n" );
-    printf(" T = [\n" );
-    for(Int j = 0; j < BTF_A.ncol; j++) {
-      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-      }
-    }
-    printf("];\n");*/
-
+    //printf(" in apply_scotch_partition\n" );
+    //AAT.print_matrix("T.dat");
     BASKER_MATRIX AAT;
     if(Options.symmetric == BASKER_TRUE) {
       AAT = BTF_A;
@@ -835,13 +810,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       // compute AAT here
       AplusAT(BTF_A, AAT, keep_zeros);
     }
-    /*printf(" AAT = [\n" );
-    for(Int j = 0; j < AAT.ncol; j++) {
-      for(Int k = AAT.col_ptr[j]; k < AAT.col_ptr[j+1]; k++) {
-        printf("%d %d\n", AAT.row_idx[k], j);
-      }
-    }
-    printf("];\n");*/
+    //AAT.print_matrix("AAT_.dat");
     #ifdef BASKER_TIMER
     double apat_time = scotch_timer.seconds();
     std::cout << " ++ Basker apply_scotch : ++ AplusAT  : nnz = " << BTF_A.nnz << " -> " << AAT.nnz
@@ -852,13 +821,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     // tree is prepped; permutation then applied to BTF_A
     /*printf(" Before permute:\n" );
-    printf(" A1 = [\n" );
-    for(Int j = 0; j < BTF_A.ncol; j++) {
-      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val(k));
-      }
-    }
-    printf("];\n");*/
+    BTF_A.print_matrix("A1.dat");*/
     int info_scotch = 0;
     if (compute_nd) {
       if (Options.symmetric == BASKER_TRUE) {
@@ -871,15 +834,10 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       permute_row(BTF_A, part_tree.permtab);
       permute_col(BTF_A, part_tree.permtab);
     }
-    /*printf(" After permute:\n" );
-    for(Int j = 0; j < AAT.ncol; j++) printf( " %d %d %d\n",j,part_tree.permtab(j),part_tree.ipermtab(j) );
-    printf(" A2 = [\n" );
-    for(Int j = 0; j < BTF_A.ncol; j++) {
-      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val(k));
-      }
-    }
-    printf("];\n");*/
+    //printf(" After permute:\n" );
+    //for(Int j = 0; j < AAT.ncol; j++) printf( " %d %d %d\n",j,part_tree.permtab(j),part_tree.ipermtab(j) );
+    //BTF_A.print_matrix("A2.dat");
+
     if (info_scotch != BASKER_SUCCESS || !apply_nd) {
       if(Options.verbose == BASKER_TRUE) {
         std::cout << " > scotch_partition returned info = " << info_scotch << " with apply_nd = " << apply_nd << std::endl;
@@ -922,20 +880,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       printf("%d\n",part_tree.permtab(j) );
     }
     printf("];\n");
-    printf(" ppT = [\n" );
-    for(Int j = 0; j < BTF_A.ncol; j++) {
-      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-      }
-    }
-    printf("];\n");
-    printf(" AAT = [\n" );
-    for(Int j = 0; j < AAT.ncol; j++) {
-      for(Int k = AAT.col_ptr[j]; k < AAT.col_ptr[j+1]; k++) {
-        printf("%d %d\n", AAT.row_idx[k], j);
-      }
-    }
-    printf("];\n");*/
+    BTF_A.print_matrix("pA.dat");
+    AAT.print_matrix("AAT.dat");*/
 
     //need to do a col perm on BTF_E and a row perm on BTF_B too
     if (BTF_E.ncol > 0) {
@@ -949,6 +895,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     {
       permute_row(BTF_B, part_tree.permtab);
     }
+    //BTF_A.print_matrix("pT.dat");
 
     //--------------------------------------------------------------
     //4. Init tree structure
@@ -968,7 +915,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //5. Constrained symamd on A
     //Init for Constrained symamd on A
     bool run_nd_on_leaves  = Options.run_nd_on_leaves;
-    bool run_amd_on_leaves = false; //Options.run_amd_on_leaves;
+    bool run_amd_on_leaves = Options.run_amd_on_leaves;
     //if (Options.amd_dom && Options.static_delayed_pivot == 0)
     if (Options.amd_dom && (!run_nd_on_leaves && !run_amd_on_leaves)) // still compute csymamd in symbolic for delayed pivot (to reduce cost of setup in numeric)
     {
@@ -1059,14 +1006,10 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //sort_matrix_store_valperms(BTF_A, vals_order_ndbtfa_array);
     permute_row(BTF_A, order_csym_array);
 
-    /*printf(" After cAMD\n");
-    printf(" ppT = [\n" );
-    for(Int j = 0; j < BTF_A.ncol; j++) {
-      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %e\n", (int)BTF_A.row_idx[k], (int)j, BTF_A.val[k]);
-      }
-    }
-    printf("];\n");*/
+    //printf("pp=[");
+    //for(Int j = 0; j < BTF_A.ncol; j++) printf("%d\n",order_csym_array(j));
+    //printf("]\n");
+    //BTF_A.print_matrix("ppT.dat");
 
     // ----------------------------------------------
     // sort matrix(BTF_A);
@@ -1086,15 +1029,6 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
               << " ( " << sortA_time1 << " )" << std::endl;
     scotch_timer.reset();
     #endif
-    /*printf( " After sort(A)\n" );
-    for (Int j = 0; j < BTF_A.nnz; j++) printf( " + vals_ndbtfa(%d) = %d\n",j,vals_order_ndbtfa_array(j) );
-    printf(" ppT = [\n" );
-    for(Int j = 0; j < BTF_A.ncol; j++) {
-      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
-        printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
-      }
-    }
-    printf("];\n");*/
 
     if (BTF_E.ncol > 0) {
       //permute_col(BTF_E, order_csym_array);

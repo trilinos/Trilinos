@@ -58,7 +58,8 @@
 
 #include "Amesos2_Util.hpp"
 
-
+#include "KokkosSparse_spmv.hpp"
+#include "KokkosBlas.hpp"
 namespace Amesos2 {
 
 
@@ -218,6 +219,205 @@ void
 SolverCore<ConcreteSolver,Matrix,Vector>::solve(Vector* X, const Vector* B) const
 {
   solve(Teuchos::ptr(X), Teuchos::ptr(B));
+}
+
+
+template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
+int
+SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(Vector* R, Vector* E, const int maxNumIters, const bool verbose)
+{
+  return solve_ir(multiVecX_.ptr(), multiVecB_.ptr(), Teuchos::ptr(R), Teuchos::ptr(E), maxNumIters, verbose);
+}
+
+template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
+int
+SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(Vector* X, const Vector* B, Vector* R, Vector* E, const int maxNumIters, const bool verbose) const
+{
+  return solve_ir(Teuchos::ptr(X), Teuchos::ptr(B), Teuchos::ptr(R), Teuchos::ptr(E), maxNumIters, verbose);
+}
+
+template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
+int
+SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<Vector> R,
+                                                   const Teuchos::Ptr<Vector> E,
+                                                   const int maxNumIters,
+                                                   const bool verbose)
+{
+  return solve_ir(R.ptr(), E.ptr(), maxNumIters, verbose);
+}
+
+template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
+int
+SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vector> x,
+                                                   const Teuchos::Ptr<const Vector> b,
+                                                   const Teuchos::Ptr<      Vector> r,
+                                                   const Teuchos::Ptr<      Vector> e, 
+                                                   const int maxNumIters,
+                                                   const bool verbose) const
+{
+  using STS = Teuchos::ScalarTraits<scalar_type>;
+  using magni_type = typename STS::magnitudeType;
+  using host_execution_space = Kokkos::DefaultHostExecutionSpace;
+  using host_crsmat_t    = KokkosSparse::CrsMatrix<scalar_type, int, host_execution_space, void, int>;
+  using host_graph_t     = typename host_crsmat_t::StaticCrsGraphType;
+  using host_values_t    = typename host_crsmat_t::values_type::non_const_type;
+  using host_row_map_t   = typename host_graph_t::row_map_type::non_const_type;
+  using host_colinds_t   = typename host_graph_t::entries_type::non_const_type;
+  using host_mvector_t   = Kokkos::View<scalar_type **, Kokkos::LayoutLeft, host_execution_space>;
+  using host_vector_t    = Kokkos::View<scalar_type *,  Kokkos::LayoutLeft, host_execution_space>;
+  using host_magni_view  = Kokkos::View<magni_type  *,  Kokkos::LayoutLeft, host_execution_space>;
+
+  const scalar_type one(1.0);
+  const magni_type eps = STS::eps ();
+
+  //
+  // first solve
+  this->solve(x, b);
+
+
+  // get data needed for IR
+  using MVAdapter = MultiVecAdapter<Vector>;
+  Teuchos::RCP<      MVAdapter> X = createMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(x));
+  Teuchos::RCP<const MVAdapter> B = createConstMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(b));
+  Teuchos::RCP<      MVAdapter> R = createMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(r));
+  Teuchos::RCP<      MVAdapter> E = createMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(e));
+
+  const size_t nrhs = X->getGlobalNumVectors();
+  const int nnz   = this->matrixA_->getGlobalNNZ();
+  const int nrows = this->matrixA_->getGlobalNumRows();
+  host_row_map_t rowmap_view ("rowptr", 1+nrows);
+  host_colinds_t colind_view ("colind", nnz);
+  host_values_t  values_view ("nzvals", nnz);
+
+  // get local matriix
+  int nnz_ret = 0;
+  Util::get_crs_helper_kokkos_view<
+    MatrixAdapter<Matrix>, host_values_t, host_colinds_t, host_row_map_t>::do_get(
+      this->matrixA_.ptr(),
+      values_view, colind_view, rowmap_view,
+      nnz_ret, ROOTED, SORTED_INDICES, this->rowIndexBase_);
+  host_graph_t static_graph(colind_view, rowmap_view);
+  host_crsmat_t crsmat ("CrsMatrix", nrows, values_view, static_graph);
+
+  // auxiliary scalar Kokkos views
+  const int ldx = X->getLocalLength();
+  const int ldb = B->getLocalLength();
+  const int ldr = R->getLocalLength();
+  const int lde = E->getLocalLength();
+  const bool     initialize_data = true;
+  const bool not_initialize_data = true;
+  host_mvector_t X_view;
+  host_mvector_t B_view;
+  host_mvector_t R_view;
+  host_mvector_t E_view;
+
+  global_size_type rowIndexBase = this->rowIndexBase_;
+  auto Xptr = Teuchos::Ptr<      MVAdapter>(X.ptr());
+  auto Bptr = Teuchos::Ptr<const MVAdapter>(B.ptr());
+  auto Rptr = Teuchos::Ptr<      MVAdapter>(R.ptr());
+  auto Eptr = Teuchos::Ptr<      MVAdapter>(E.ptr());
+  Util::get_1d_copy_helper_kokkos_view<MVAdapter, host_mvector_t>::
+    do_get(    initialize_data, Xptr, X_view, ldx, CONTIGUOUS_AND_ROOTED, rowIndexBase);
+  Util::get_1d_copy_helper_kokkos_view<MVAdapter, host_mvector_t>::
+    do_get(    initialize_data, Bptr, B_view, ldb, CONTIGUOUS_AND_ROOTED, rowIndexBase);
+  Util::get_1d_copy_helper_kokkos_view<MVAdapter, host_mvector_t>::
+    do_get(not_initialize_data, Rptr, R_view, ldr, CONTIGUOUS_AND_ROOTED, rowIndexBase);
+  Util::get_1d_copy_helper_kokkos_view<MVAdapter, host_mvector_t>::
+    do_get(not_initialize_data, Eptr, E_view, lde, CONTIGUOUS_AND_ROOTED, rowIndexBase);
+
+  // compute initial solution norms (used for stopping criteria)
+  host_magni_view enorms ("enorms", nrhs);
+  host_magni_view x0norms("x0norms", nrhs);
+  for (size_t j = 0; j < nrhs; j++) { 
+    auto x_subview = Kokkos::subview(X_view, Kokkos::ALL(), j);
+    host_vector_t x_1d (const_cast<scalar_type*>(x_subview.data()), x_subview.extent(0));
+    x0norms(j) = KokkosBlas::nrm2(x_1d);
+  }
+  if (verbose) {
+    std::cout << std::endl
+              << " SolverCore :: solve_ir (maxNumIters = " << maxNumIters
+              << ", tol = " << x0norms(0) << " * " << eps << " = " << x0norms(0)*eps
+              << ")" << std::endl;
+  }
+
+  // compute residual norm
+  host_magni_view bnorms("bnorms", nrhs);
+  if (verbose) {
+    std::cout << " bnorm = ";
+    for (size_t j = 0; j < nrhs; j++) { 
+      auto b_subview = Kokkos::subview(B_view, Kokkos::ALL(), j);
+      host_vector_t b_1d (const_cast<scalar_type*>(b_subview.data()), b_subview.extent(0));
+      bnorms(j) = KokkosBlas::nrm2(b_1d);
+      std::cout << bnorms(j) << ", ";
+    }
+    std::cout << std::endl;
+  }
+
+  int numIters = 0;
+  bool converged = false;
+  for (numIters = 0; numIters < maxNumIters && !converged; ++numIters) {
+    // r = b - Ax
+    Kokkos::deep_copy(R_view, B_view);
+    KokkosSparse::spmv("N", -one, crsmat, X_view, one, R_view);
+    Kokkos::fence();
+
+    if (verbose) {
+      // compute residual norm
+      std::cout << " > " << numIters << " : norm(r,x,e) = ";
+      for (size_t j = 0; j < nrhs; j++) { 
+        auto r_subview = Kokkos::subview(R_view, Kokkos::ALL(), j);
+        auto x_subview = Kokkos::subview(X_view, Kokkos::ALL(), j);
+        host_vector_t r_1d (const_cast<scalar_type*>(r_subview.data()), r_subview.extent(0));
+        host_vector_t x_1d (const_cast<scalar_type*>(x_subview.data()), x_subview.extent(0));
+        scalar_type rnorm = KokkosBlas::nrm2(r_1d);
+        scalar_type xnorm = KokkosBlas::nrm2(x_1d);
+        std::cout << rnorm << " -> " << rnorm/bnorms(j) << " " << xnorm << " " << enorms(j) << ", ";
+      }
+      std::cout << std::endl;
+    }
+
+    // e = A^{-1} r
+    Util::put_1d_data_helper_kokkos_view<MVAdapter, host_mvector_t>::
+      do_put(Rptr, R_view, ldx, CONTIGUOUS_AND_ROOTED, rowIndexBase);
+    this->solve(e, r);
+    Util::get_1d_copy_helper_kokkos_view<MVAdapter, host_mvector_t>::
+      do_get(initialize_data, Eptr, E_view, lde, CONTIGUOUS_AND_ROOTED, rowIndexBase);
+    
+    // x = x + e
+    KokkosBlas::axpy(one, E_view, X_view);
+
+    // compute norm of corrections for "convergence" check
+    converged = true;
+    for (size_t j = 0; j < nrhs; j++) { 
+      auto e_subview = Kokkos::subview(E_view, Kokkos::ALL(), j);
+      host_vector_t e_1d (const_cast<scalar_type*>(e_subview.data()), e_subview.extent(0));
+      enorms(j) = KokkosBlas::nrm2(e_1d);
+      if (enorms(j) > eps * x0norms(j)) {
+        converged = false;
+      }
+    }
+  }
+
+  if (verbose) {
+    // r = b - Ax
+    Kokkos::deep_copy(R_view, B_view);
+    KokkosSparse::spmv("N", -one, crsmat, X_view, one, R_view);
+    Kokkos::fence();
+    std::cout << " > final residual norm = ";
+    for (size_t j = 0; j < nrhs; j++) { 
+      auto r_subview = Kokkos::subview(R_view, Kokkos::ALL(), j);
+      host_vector_t r_1d (const_cast<scalar_type*>(r_subview.data()), r_subview.extent(0));
+      scalar_type rnorm = KokkosBlas::nrm2(r_1d);
+      std::cout << rnorm << " -> " << rnorm/bnorms(j) << ", ";
+    }
+    std::cout << std::endl << std::endl;
+  }
+
+  // put X for output
+  Util::put_1d_data_helper_kokkos_view<MVAdapter, host_mvector_t>::
+    do_put(Xptr, X_view, ldx, CONTIGUOUS_AND_ROOTED, rowIndexBase);
+
+  return numIters;
 }
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
