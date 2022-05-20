@@ -344,10 +344,9 @@ namespace Intrepid2
   };
   
   /** \class  Intrepid2::IntegratedLegendreBasis_HGRAD_TRI
-      \brief  Basis defining integrated Legendre basis on the line, a polynomial subspace of H(grad) on the line.
+      \brief  Basis defining integrated Legendre basis on the line, a polynomial subspace of H(grad) on the line: extension to triangle using Jacobi blending functions.
 
-              This is used in the construction of hierarchical bases on higher-dimensional topologies.  For
-              mathematical details of the construction, see:
+              For mathematical details of the construction, see:
    
                Federico Fuentes, Brendan Keith, Leszek Demkowicz, Sriram Nagaraj.
                "Orientation embedded high order shape functions for the exact sequence elements of all shapes."
