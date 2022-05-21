@@ -63,7 +63,6 @@ namespace mesh {
 class BulkData;
 class MetaData;
 class UnitTestFieldImpl;
-class DataTraits;
 class FieldBase;
 template<typename T, template <typename> class NgpDebugger> class DeviceField;
 

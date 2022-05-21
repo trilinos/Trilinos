@@ -207,9 +207,8 @@ struct MyApp {
     centroid = &meta->declare_field<double>(stk::topology::ELEM_RANK, "centroid");
     hostCentroid = &meta->declare_field<double>(stk::topology::ELEM_RANK, "hostCentroid");
 
-    std::vector<double> init_vec = {0,0,0};
-    stk::mesh::put_field_on_mesh(*centroid, meta->universal_part(), 3, init_vec.data());
-    stk::mesh::put_field_on_mesh(*hostCentroid, meta->universal_part(), 3, init_vec.data());
+    stk::mesh::put_field_on_mesh(*centroid, meta->universal_part(), 3, nullptr);
+    stk::mesh::put_field_on_mesh(*hostCentroid, meta->universal_part(), 3, nullptr);
 
     stk::io::fill_mesh(os.str(), *bulk);
 

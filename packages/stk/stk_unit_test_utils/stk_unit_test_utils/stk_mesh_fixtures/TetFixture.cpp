@@ -72,8 +72,7 @@ TetFixture::TetFixture(MetaData& meta,
     owns_mesh(false)
 {
   //put coord-field on all nodes:
-  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
 }
 
 TetFixture::TetFixture(stk::ParallelMachine pm,
@@ -97,8 +96,7 @@ TetFixture::TetFixture(stk::ParallelMachine pm,
 {
 
   //put coord-field on all nodes:
-  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
 
 }
 TetFixture::TetFixture(stk::ParallelMachine pm,
@@ -123,8 +121,7 @@ TetFixture::TetFixture(stk::ParallelMachine pm,
 {
 
   //put coord-field on all nodes:
-  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-        (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
 
 }
 
@@ -323,8 +320,7 @@ TetFixture::TetFixture(MetaData& meta,
     owns_mesh(false)
 {
   //put coord-field on all nodes:
-  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
   stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
 }
 
@@ -350,8 +346,7 @@ TetFixture::TetFixture(stk::ParallelMachine pm,
   m_coord_field = &m_meta.declare_field<double>(stk::topology::NODE_RANK, "Coordinates");
 
   //put coord-field on all nodes:
-  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
   stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
 
 }
@@ -378,8 +373,7 @@ TetFixture::TetFixture(stk::ParallelMachine pm,
   m_coord_field = &m_meta.declare_field<double>(stk::topology::NODE_RANK, coordsName);
 
   //put coord-field on all nodes:
-  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension,
-                    (stk::mesh::FieldTraits<CoordFieldType>::data_type*) nullptr);
+  put_field_on_mesh(*m_coord_field, m_meta.universal_part(), m_spatial_dimension, nullptr);
   stk::io::set_field_output_type(*m_coord_field, "Vector_3D");
 
 }

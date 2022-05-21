@@ -77,10 +77,10 @@ void create_one_element_mesh_with_nodeset(stk::mesh::BulkData& bulk, const std::
     stk::io::put_io_part_attribute(*nodesetPart);
 
     stk::mesh::Field<double, stk::mesh::Cartesian> & coordsField = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates", 1);
-    stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), spatialDim, static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), spatialDim, nullptr);
 
     stk::mesh::Field<double> & nodeSetField = meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "nodeSetField", 1);
-    stk::mesh::put_field_on_mesh(nodeSetField, *nodesetPart, 1, static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(nodeSetField, *nodesetPart, 1, nullptr);
 
     meta.commit();
 
@@ -236,7 +236,7 @@ TEST(StkMeshIoBroker, readSubsetFieldData_legacy) {
   stk::mesh::FieldBase* nodeSetField = meta.get_field(stk::topology::NODE_RANK, nodeSetString);
   stk::mesh::Part* nodesetPart = meta.get_part("nodelist_1");
 
-  stk::mesh::put_field_on_mesh(*nodeSetField, *nodesetPart, 1, static_cast<double*>(nullptr));
+  stk::mesh::put_field_on_mesh(*nodeSetField, *nodesetPart, 1, nullptr);
 
   stk::io::MeshField meshField(nodeSetField, nodeSetString);
   meshField.add_subset(*nodesetPart);
@@ -257,7 +257,7 @@ TEST(StkMeshIoBroker, readFieldDataOnUniversalSetButNotDefinedOnSubset_legacy) {
   setup_field_data(inputFile, nodeSetString, *bulk);
 
   stk::mesh::FieldBase* nodeSetField = meta.get_field(stk::topology::NODE_RANK, nodeSetString);
-  stk::mesh::put_field_on_mesh(*nodeSetField, meta.universal_part(), 1, static_cast<double*>(nullptr));
+  stk::mesh::put_field_on_mesh(*nodeSetField, meta.universal_part(), 1, nullptr);
 
   stk::io::MeshField meshField(nodeSetField, nodeSetString);
 
@@ -278,7 +278,7 @@ TEST(StkMeshIoBroker, readFieldDataOnUniversalSetAndDefinedOnSubset_legacy) {
 
   stk::mesh::FieldBase* nodeSetField = meta.get_field(stk::topology::NODE_RANK, nodeSetString);
   stk::mesh::Part* nodesetPart = meta.get_part("nodelist_1");
-  stk::mesh::put_field_on_mesh(*nodeSetField, meta.universal_part(), 1, static_cast<double*>(nullptr));
+  stk::mesh::put_field_on_mesh(*nodeSetField, meta.universal_part(), 1, nullptr);
 
   stk::io::MeshField meshField(nodeSetField, nodeSetString);
   meshField.add_subset(*nodesetPart);
@@ -303,10 +303,10 @@ void create_one_element_mesh_with_nodeset(stk::mesh::BulkData& bulk, const std::
     stk::io::put_io_part_attribute(*nodesetPart);
 
     stk::mesh::Field<double> & coordsField = meta.declare_field<double>(stk::topology::NODE_RANK, "coordinates", 1);
-    stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), spatialDim, static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), spatialDim, nullptr);
 
     stk::mesh::Field<double> & nodeSetField = meta.declare_field<double>(stk::topology::NODE_RANK, "nodeSetField", 1);
-    stk::mesh::put_field_on_mesh(nodeSetField, *nodesetPart, 1, static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(nodeSetField, *nodesetPart, 1, nullptr);
 
     meta.commit();
 
@@ -462,7 +462,7 @@ TEST(StkMeshIoBroker, readSubsetFieldData) {
   stk::mesh::FieldBase* nodeSetField = meta.get_field(stk::topology::NODE_RANK, nodeSetString);
   stk::mesh::Part* nodesetPart = meta.get_part("nodelist_1");
 
-  stk::mesh::put_field_on_mesh(*nodeSetField, *nodesetPart, 1, static_cast<double*>(nullptr));
+  stk::mesh::put_field_on_mesh(*nodeSetField, *nodesetPart, 1, nullptr);
 
   stk::io::MeshField meshField(nodeSetField, nodeSetString);
   meshField.add_subset(*nodesetPart);
@@ -483,7 +483,7 @@ TEST(StkMeshIoBroker, readFieldDataOnUniversalSetButNotDefinedOnSubset) {
   setup_field_data(inputFile, nodeSetString, *bulk);
 
   stk::mesh::FieldBase* nodeSetField = meta.get_field(stk::topology::NODE_RANK, nodeSetString);
-  stk::mesh::put_field_on_mesh(*nodeSetField, meta.universal_part(), 1, static_cast<double*>(nullptr));
+  stk::mesh::put_field_on_mesh(*nodeSetField, meta.universal_part(), 1, nullptr);
 
   stk::io::MeshField meshField(nodeSetField, nodeSetString);
 
@@ -504,7 +504,7 @@ TEST(StkMeshIoBroker, readFieldDataOnUniversalSetAndDefinedOnSubset) {
 
   stk::mesh::FieldBase* nodeSetField = meta.get_field(stk::topology::NODE_RANK, nodeSetString);
   stk::mesh::Part* nodesetPart = meta.get_part("nodelist_1");
-  stk::mesh::put_field_on_mesh(*nodeSetField, meta.universal_part(), 1, static_cast<double*>(nullptr));
+  stk::mesh::put_field_on_mesh(*nodeSetField, meta.universal_part(), 1, nullptr);
 
   stk::io::MeshField meshField(nodeSetField, nodeSetString);
   meshField.add_subset(*nodesetPart);

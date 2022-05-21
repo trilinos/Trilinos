@@ -113,9 +113,8 @@ namespace percept
 
       // Field restrictions:
       stk::mesh::Part & universal = m_metaData->universal_part();
-      stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
 
-      put_field_on_mesh( *m_coordinates_field , universal , init_np);
+      put_field_on_mesh( *m_coordinates_field , universal , nullptr);
 
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)

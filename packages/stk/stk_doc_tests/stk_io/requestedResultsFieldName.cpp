@@ -89,8 +89,7 @@ TEST(StkMeshIoBrokerHowTo, writeResults)
     //+       since it commits the meta data.
     const std::string fieldName = "disp";
     stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, fieldName, 1);
-    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), nullptr);
 
     //+ commit the meta data and create the bulk data.
     //+ populate the bulk data with data from the mesh file.

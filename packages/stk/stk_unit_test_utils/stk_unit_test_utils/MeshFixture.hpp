@@ -42,7 +42,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_ngp_test/ngp_test.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_util/util/ReportHandler.hpp>
+#include "stk_util/util/ReportHandler.hpp"          // for set_report_handler
 
 namespace stk
 {
@@ -233,7 +233,7 @@ protected:
     : communicator(MPI_COMM_WORLD),
       m_spatialDim(3),
       m_entityRankNames(),
-      metaData(nullptr), bulkData()
+      metaData(), bulkData()
     {
     }
 
@@ -241,7 +241,7 @@ protected:
     : communicator(MPI_COMM_WORLD),
       m_spatialDim(spatial_dim),
       m_entityRankNames(),
-      metaData(nullptr), bulkData()
+      metaData(), bulkData()
     {
     }
 
@@ -249,13 +249,13 @@ protected:
     : communicator(MPI_COMM_WORLD),
       m_spatialDim(spatial_dim),
       m_entityRankNames(entityRankNames),
-      metaData(nullptr), bulkData()
+      metaData(), bulkData()
     {
     }
 
     virtual ~MeshFixtureNoTest()
     {
-        metaData = nullptr;
+
     }
 
     void set_spatial_dimension(unsigned spatialDim)
@@ -293,7 +293,7 @@ protected:
     void reset_mesh()
     {
         bulkData.reset();
-        metaData = nullptr;
+        metaData.reset();
     }
 
     int get_parallel_rank() const
@@ -327,23 +327,47 @@ protected:
         builder.set_aura_option(auraOption);
         builder.set_bucket_capacity(bucketCapacity);
 
-        bulkData = builder.create();
-        metaData = &(bulkData->mesh_meta_data());
-        metaData->use_simple_fields();
+        if(nullptr == metaData) {
+          metaData = builder.create_meta_data();
+          metaData->use_simple_fields();
+        }
+
+        if(nullptr == bulkData) {
+          bulkData = builder.create(metaData);
+          m_auraOption = auraOption;
+          m_bucketCapacity = bucketCapacity;
+        }
+
+        ThrowRequireMsg((auraOption == m_auraOption) && (bucketCapacity == m_bucketCapacity),
+           "allocate_bulk being called with different arguments from previous call: auraOption = "
+                                << auraOption << " (previously: " << m_auraOption << ") bucketCapacity = "
+                                 << bucketCapacity << " (previously: " << m_bucketCapacity << ")" );
+    }
+
+    void set_meta(std::shared_ptr<stk::mesh::MetaData> inMetaData)
+    {
+        ThrowRequireMsg(metaData==nullptr, "Unit test error. Trying to reset non NULL meta data.");
+        metaData = inMetaData;
     }
 
     void set_bulk(std::shared_ptr<stk::mesh::BulkData> inBulkData)
     {
         ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
         bulkData = inBulkData;
+
+        ThrowRequireMsg(metaData==nullptr || metaData==bulkData->mesh_meta_data_ptr(),
+                        "Unit test error. Trying to reset non NULL meta data.");
     }
 
 protected:
     MPI_Comm communicator;
     unsigned m_spatialDim;
     std::vector<std::string> m_entityRankNames;
-    stk::mesh::MetaData *metaData = nullptr;
+    std::shared_ptr<stk::mesh::MetaData> metaData;
     std::shared_ptr<stk::mesh::BulkData> bulkData;
+
+    stk::mesh::BulkData::AutomaticAuraOption m_auraOption{stk::mesh::BulkData::AUTO_AURA};
+    unsigned m_bucketCapacity{0};
 };
 
 class MeshFixture : public MeshFixtureNoTest, public ::ngp_testing::Test {

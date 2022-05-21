@@ -30,7 +30,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/TopologyDimensions.hpp>
 #include <stk_mesh/base/MeshUtils.hpp>
-
+#include <stk_mesh/base/MeshBuilder.hpp>
 //----------------------------------------------------------------------
 
   namespace percept {
@@ -39,8 +39,10 @@
                                         stk::mesh::EntityId elem_id_start
                                         ) :
       m_spatial_dimension(3)
-      , m_metaData(m_spatial_dimension)
-      , m_bulkData(m_metaData, comm )
+      , m_bulkDataPtr(stk::mesh::MeshBuilder(comm).set_spatial_dimension(m_spatial_dimension)
+                                                  .create())
+      , m_bulkData(*m_bulkDataPtr)
+      , m_metaData(m_bulkData.mesh_meta_data())
       , m_block_tet(        m_metaData.declare_part_with_topology( "block_1", stk::topology::TET_4 ))
       , m_elem_rank( stk::topology::ELEMENT_RANK )
       , m_coordinates_field( m_metaData.declare_field< CoordinatesFieldType >( stk::topology::NODE_RANK, "coordinates" ))
@@ -50,9 +52,8 @@
     {
       // Define where fields exist on the mesh:
       stk::mesh::Part & universal = m_metaData.universal_part();
-      stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
 
-      put_field_on_mesh( m_coordinates_field , universal, init_np);
+      put_field_on_mesh( m_coordinates_field , universal, nullptr);
 
       if (doCommit)
         m_metaData.commit();
