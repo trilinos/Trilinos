@@ -70,7 +70,7 @@ class CallbackChecker
 
 }  // namespace
 
-
+#ifndef MPI_KEY_MANAGER_COMM_DESTRUCTOR_CALLBACK_BROKEN
 namespace {
   MPI_Request req;
   bool is_complete = false;
@@ -83,7 +83,6 @@ namespace {
   }
 }
 
-#ifndef MPI_KEY_MANAGER_COMM_DESTRUCTOR_CALLBACK_BROKEN
 TEST(KeyManager, IntelMPIBug)
 {
   MPI_Comm comm2;

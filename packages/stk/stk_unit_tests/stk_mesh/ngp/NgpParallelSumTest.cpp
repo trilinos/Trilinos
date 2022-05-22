@@ -124,12 +124,11 @@ void check_field_on_device(stk::mesh::NgpMesh &mesh,
 NGP_TEST_F(NgpParallelSum, simpleVersion)
 {
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  const double initValue = 0.0;
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
   stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
-  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
-  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
 
   stk::io::fill_mesh("generated:1x1x4", get_bulk());
 
@@ -148,12 +147,11 @@ NGP_TEST_F(NgpParallelSum, simpleVersion)
 NGP_TEST_F(NgpParallelSum, simpleVersion_noSyncToDeviceAfterwards)
 {
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  const double initValue = 0.0;
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
   stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
-  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
-  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
 
   stk::io::fill_mesh("generated:1x1x4", get_bulk());
 
@@ -174,12 +172,11 @@ NGP_TEST_F(NgpParallelSum, simpleVersion_noSyncToDeviceAfterwards)
 NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion)
 {
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  const double initValue = 0.0;
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
   stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
-  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
-  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
 
   stk::io::fill_mesh("generated:1x1x4", get_bulk());
 
@@ -198,12 +195,11 @@ NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion)
 NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion_noSyncToDeviceAfterwards)
 {
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  const double initValue = 0.0;
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
   stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
-  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
-  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
 
   stk::io::fill_mesh("generated:1x1x4", get_bulk());
 
@@ -224,12 +220,11 @@ NGP_TEST_F(NgpCopyOwnedToShared, simpleVersion_noSyncToDeviceAfterwards)
 NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting)
 {
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  const double initValue = 0.0;
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
   stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
-  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
-  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
 
   stk::io::fill_mesh("generated:1x1x4", get_bulk());
 
@@ -248,12 +243,11 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting)
 NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting_noSyncToDeviceAfterwards)
 {
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  const double initValue = 0.0;
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
   stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
-  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
-  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
 
   stk::io::fill_mesh("generated:1x1x4", get_bulk());
 
@@ -274,12 +268,11 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesGhosting_noSyncToDeviceAf
 NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData)
 {
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  const double initValue = 0.0;
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
   stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
-  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
-  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
 
   stk::io::fill_mesh("generated:1x1x4", get_bulk());
 
@@ -298,12 +291,11 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData)
 NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData_noSyncToDeviceAfterwards)
 {
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  const double initValue = 0.0;
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
   stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
-  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
-  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
 
   stk::io::fill_mesh("generated:1x1x4", get_bulk());
 
@@ -325,12 +317,11 @@ NGP_TEST_F(NgpParallelSum, DISABLED_DeviceMPIVersion)
   if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
 
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  const double initValue = 0.0;
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
   stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
-  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
-  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
 
   stk::io::fill_mesh("generated:1x1x4", get_bulk());
 
@@ -364,12 +355,11 @@ NGP_TEST_F(NgpParallelSum, Performance)
   }
 
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  const double initValue = 0.0;
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
   stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
-  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), &initValue);
-  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), &initValue);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
 
   stk::io::fill_mesh_with_auto_decomp(serialMeshName, get_bulk());
 

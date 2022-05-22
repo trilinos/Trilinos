@@ -82,17 +82,10 @@ GearsFixture::GearsFixture(ParallelMachine pm, size_t num_gears, GearParams gear
     m_gears()
 {
 
-  put_field_on_mesh(cartesian_coord_field, meta_data.universal_part(), SpatialDimension,
-                    (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian> >::data_type*)nullptr);
-
-  put_field_on_mesh(displacement_field, meta_data.universal_part(), SpatialDimension,
-                    (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian> >::data_type*)nullptr);
-
-  put_field_on_mesh(translation_field, cylindrical_coord_part, SpatialDimension,
-                    (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian> >::data_type*)nullptr);
-
-  put_field_on_mesh(cylindrical_coord_field, cylindrical_coord_part, SpatialDimension,
-                    (stk::mesh::FieldTraits<stk::mesh::Field<double, Cylindrical> >::data_type*)nullptr);
+  put_field_on_mesh(cartesian_coord_field, meta_data.universal_part(), SpatialDimension, nullptr);
+  put_field_on_mesh(displacement_field, meta_data.universal_part(), SpatialDimension, nullptr);
+  put_field_on_mesh(translation_field, cylindrical_coord_part, SpatialDimension, nullptr);
+  put_field_on_mesh(cylindrical_coord_field, cylindrical_coord_part, SpatialDimension, nullptr);
 
   m_gears.resize(NUM_GEARS);
 
@@ -305,20 +298,16 @@ GearsFixture::GearsFixture(ParallelMachine pm, size_t num_gears, GearParams gear
   translation_field       = &meta_data.declare_field<double>(stk::topology::NODE_RANK, "translation", ONE_STATE);
   cylindrical_coord_field = &meta_data.declare_field<double>(stk::topology::NODE_RANK, "cylindrical_coordinates", ONE_STATE);
 
-  put_field_on_mesh(*cartesian_coord_field, meta_data.universal_part(), SpatialDimension,
-                    (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*)nullptr);
+  put_field_on_mesh(*cartesian_coord_field, meta_data.universal_part(), SpatialDimension, nullptr);
   stk::io::set_field_output_type(*cartesian_coord_field, "Vector_3D");
 
-  put_field_on_mesh(*displacement_field, meta_data.universal_part(), SpatialDimension,
-                    (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*)nullptr);
+  put_field_on_mesh(*displacement_field, meta_data.universal_part(), SpatialDimension, nullptr);
   stk::io::set_field_output_type(*displacement_field, "Vector_3D");
 
-  put_field_on_mesh(*translation_field, cylindrical_coord_part, SpatialDimension,
-                    (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*)nullptr);
+  put_field_on_mesh(*translation_field, cylindrical_coord_part, SpatialDimension, nullptr);
   stk::io::set_field_output_type(*translation_field, "Vector_3D");
 
-  put_field_on_mesh(*cylindrical_coord_field, cylindrical_coord_part, SpatialDimension,
-                    (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*)nullptr);
+  put_field_on_mesh(*cylindrical_coord_field, cylindrical_coord_part, SpatialDimension, nullptr);
 
   m_gears.resize(NUM_GEARS);
 

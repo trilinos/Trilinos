@@ -53,8 +53,7 @@ protected:
   {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     nodeField = &get_meta().declare_field<double> (stk::topology::NODE_RANK, "nodal");
-    stk::mesh::put_field_on_mesh(*nodeField, get_meta().universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(*nodeField, get_meta().universal_part(), nullptr);
     stk::io::fill_mesh("generated:8x8x8|sideset:xX|nodeset:xX", get_bulk());
   }
 

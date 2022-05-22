@@ -493,7 +493,7 @@ stk::mesh::FieldBase* add_stk_field(stk::mesh::MetaData& meta,
 {
   using StkField = stk::mesh::Field<double, ArrayTag>;
   StkField& field = meta.declare_field<StkField>(entityRank, fieldName);
-  stk::mesh::put_field_on_mesh(field, part, numComponents, (typename stk::mesh::FieldTraits<StkField>::data_type*)nullptr);
+  stk::mesh::put_field_on_mesh(field, part, numComponents, nullptr);
   return &field;
 }
 
@@ -552,21 +552,18 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       if (field_type == "scalar" || num_components == 1) {
         if (!use_cartesian_for_scalar) {
           stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entity_rank, name);
-          stk::mesh::put_field_on_mesh(field, part,
-                                       (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+          stk::mesh::put_field_on_mesh(field, part, nullptr);
           field_ptr = &field;
         } else {
           stk::mesh::Field<double, stk::mesh::Cartesian> & field =
               meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(entity_rank, name);
-          stk::mesh::put_field_on_mesh(field, part, 1,
-                                       (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian>>::data_type*) nullptr);
+          stk::mesh::put_field_on_mesh(field, part, 1, nullptr);
           field_ptr = &field;
         }
       }
       else if (stk::string_starts_with(sierra::make_lower(field_type), "real[")) {
         stk::mesh::Field<double> & field = meta.declare_field<stk::mesh::Field<double>>(entity_rank, name);
-        stk::mesh::put_field_on_mesh(field, part, num_components,
-                                     (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+        stk::mesh::put_field_on_mesh(field, part, num_components, nullptr);
         field_ptr = &field;
       }
       else if ((field_type == "vector_2d") || (field_type == "vector_3d")) {
