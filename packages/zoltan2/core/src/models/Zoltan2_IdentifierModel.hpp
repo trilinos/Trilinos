@@ -67,7 +67,7 @@ namespace Zoltan2 {
 */
 
 template <typename Adapter>
-class IdentifierModel : public Model<Adapter> 
+class IdentifierModel : public Model<Adapter>
 {
 public:
 
@@ -84,8 +84,8 @@ public:
        \param comm  the problem communicator
        \param modelFlags   bit map of Zoltan2::IdentifierModelFlags
    */
-  
-  IdentifierModel(const RCP<const Adapter> &ia, 
+
+  IdentifierModel(const RCP<const Adapter> &ia,
                   const RCP<const Environment> &env,
                   const RCP<const Comm<int> > &comm, modelFlag_t &modelFlags);
 
@@ -108,7 +108,7 @@ public:
        \return The number of ids in the Ids list.
    */
   inline size_t getIdentifierList(ArrayView<const gno_t> &Ids,
-                                  ArrayView<input_t> &wgts) const 
+                                  ArrayView<input_t> &wgts) const
   {
     Ids = ArrayView<const gno_t>();
     wgts = weights_.view(0, nUserWeights_);
@@ -119,6 +119,11 @@ public:
     }
     return n;
   }
+
+  inline size_t getIdentifierListKokkos(Kokkos::View<const gno_t> &Ids,
+                                        Kokkos::View<input_t> &wgts) const {
+
+                                        }
 
   ////////////////////////////////////////////////////
   // The Model interface.
@@ -139,7 +144,7 @@ private:
 
 ////////////////////////////////////////////////////
 template <typename Adapter>
-  IdentifierModel<Adapter>::IdentifierModel( 
+  IdentifierModel<Adapter>::IdentifierModel(
     const RCP<const Adapter> &ia,
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
@@ -160,7 +165,7 @@ template <typename Adapter>
       &tmp, &nUserWeights_);
 
   // Prepare to store views from input adapter
-  // TODO:  Do we have to store these views, or can we get them on an 
+  // TODO:  Do we have to store these views, or can we get them on an
   // TODO:  as-needed basis?
   Array<const scalar_t *> wgts(nUserWeights_, (const scalar_t *)NULL);
   Array<int> wgtStrides(nUserWeights_, 0);
@@ -171,7 +176,7 @@ template <typename Adapter>
   }
 
   const gno_t *gids=NULL;
-  
+
   // Get the input adapter's views
   try{
     ia->getIDsView(gids);
