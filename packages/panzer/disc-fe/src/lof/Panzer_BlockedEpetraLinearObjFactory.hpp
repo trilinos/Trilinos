@@ -40,8 +40,6 @@
 // ***********************************************************************
 // @HEADER
 
-#ifdef PANZER_HAVE_EPETRA
-
 #ifndef   __Panzer_BlockedEpetraLinearObjFactory_hpp__
 #define   __Panzer_BlockedEpetraLinearObjFactory_hpp__
 
@@ -725,5 +723,3 @@ protected:
 } // end of namespace panzer
 
 #endif // __Panzer_BlockedEpetraLinearObjFactory_hpp__
-
-#endif // PANZER_HAVE_EPETRA

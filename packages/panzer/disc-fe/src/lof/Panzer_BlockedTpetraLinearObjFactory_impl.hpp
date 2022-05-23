@@ -45,7 +45,9 @@
 
 // Panzer
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
+#ifdef PANZER_HAVE_EPETRA
 #include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"                    // JMG:  Remove this eventually.
+#endif
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalIndexer.hpp"
 

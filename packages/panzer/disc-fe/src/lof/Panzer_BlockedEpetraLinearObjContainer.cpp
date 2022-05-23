@@ -40,8 +40,6 @@
 // ***********************************************************************
 // @HEADER
 
-#ifdef PANZER_HAVE_EPETRA
-
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 
 #include "Thyra_VectorBase.hpp"
@@ -163,6 +161,3 @@ clear()
 }
 
 }
-
-
-#endif // PANZER_HAVE_EPETRA

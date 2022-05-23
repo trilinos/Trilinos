@@ -46,8 +46,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef PANZER_HAVE_EPETRA
-
 // Panzer
 #include "Panzer_BlockedVector_Write_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalEvaluationData.hpp"
@@ -239,5 +237,3 @@ namespace panzer
 } // end of namespace panzer
 
 // end of Panzer_BlockedVector_Write_GlobalEvaluationData.cpp
-
-#endif // PANZER_HAVE_EPETRA

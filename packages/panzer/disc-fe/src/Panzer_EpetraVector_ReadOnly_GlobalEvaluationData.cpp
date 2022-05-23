@@ -46,8 +46,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef PANZER_HAVE_EPETRA
-
 // Epetra
 #include "Epetra_Import.h"
 
@@ -325,5 +323,3 @@ namespace panzer
 } // end of namespace panzer
 
 // end of Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.cpp
-
-#endif

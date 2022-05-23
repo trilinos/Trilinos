@@ -42,8 +42,6 @@
 
 #include "PanzerDiscFE_config.hpp"
 
-#ifdef PANZER_HAVE_EPETRA
-
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
@@ -474,6 +472,3 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
 }
 
 } // end namespace panzer
-
-
-#endif // PANZER_HAVE_EPETRA

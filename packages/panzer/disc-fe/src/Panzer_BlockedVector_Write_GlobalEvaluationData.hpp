@@ -40,8 +40,6 @@
 // ***********************************************************************
 // @HEADER
 
-#ifdef PANZER_HAVE_EPETRA
-
 #ifndef   __Panzer_BlockedVector_Write_GlobalEvaluationData_hpp__
 #define   __Panzer_BlockedVector_Write_GlobalEvaluationData_hpp__
 
@@ -270,5 +268,3 @@ namespace panzer
 } // end of namespace panzer
 
 #endif // __Panzer_BlockedVector_Write_GlobalEvaluationData_hpp__
-
-#endif // PANZER_HAVE_EPETRA

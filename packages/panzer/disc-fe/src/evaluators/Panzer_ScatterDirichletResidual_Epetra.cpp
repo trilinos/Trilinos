@@ -42,8 +42,6 @@
 
 #include "PanzerDiscFE_config.hpp"
 
-#ifdef PANZER_HAVE_EPETRA
-
 #include "Kokkos_View_Fad.hpp"
 #include "Panzer_ExplicitTemplateInstantiation.hpp"
 
@@ -55,5 +53,3 @@
 #endif
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterDirichletResidual_Epetra,int,int)
-
-#endif // PANZER_HAVE_EPETRA

@@ -40,8 +40,6 @@
 // ***********************************************************************
 // @HEADER
 
-#ifdef PANZER_HAVE_EPETRA
-
 #ifndef PANZER_MODEL_EVALUATOR_EPETRA_HPP
 #define PANZER_MODEL_EVALUATOR_EPETRA_HPP
 
@@ -426,5 +424,3 @@ namespace panzer {
 }
 
 #endif
-
-#endif // PANZER_HAVE_EPETRA
