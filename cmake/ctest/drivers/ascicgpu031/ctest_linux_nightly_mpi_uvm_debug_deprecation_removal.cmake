@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.ascicgpu031.gcc-cuda.sake.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.ascicgpu031.gcc-cuda.deprecation-removal.cmake")
 
 #
 # Set the options specific to this build case
@@ -65,10 +65,10 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.ascicgpu031.gcc-cuda.
 # details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_NAME_DETAILS NOUVM_NODEPRECATED_SAKE)
+SET(BUILD_NAME_DETAILS VM_DEPRECATION_REMOVAL)
 
 SET(CTEST_PARALLEL_LEVEL 8)
-SET(CTEST_TEST_TYPE Nightly)
+SET(CTEST_TEST_TYPE Experimental)
 SET(Trilinos_TRACK Experimental)    # Set the CDash track
 SET(CTEST_TEST_TIMEOUT 900)
 
@@ -84,10 +84,10 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_INST_INT_LONG_LONG:BOOL=ON"
   "-DTpetra_INST_COMPLEX_FLOAT:BOOL=OFF"
 
-  "-DKokkos_ENABLE_CUDA_UVM:BOOL=OFF"
-  "-DTpetra_ENABLE_CUDA_UVM:BOOL=OFF"
+  "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
+  "-DTpetra_ENABLE_CUDA_UVM:BOOL=ON"
 
-  "-DTpetra_ENABLE_DEPRECATED_CODE:BOOL=OFF"
+  "-DTpetra_ENABLE_DEPRECATED_CODE:BOOL=OFF" 
 
 )
 
