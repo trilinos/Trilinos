@@ -297,6 +297,8 @@ namespace PHX {
     bool device_view_is_synced_;
     // True if the outer view has been initialized
     bool is_initialized_;
+    // Use count after initialization. This changes based on whether the device space is accessible to the host space.
+    int use_count_;
 
   public:
     template<typename... Extents>
@@ -305,18 +307,22 @@ namespace PHX {
         view_device_(name,extents...),
         device_view_is_synced_(false),
         is_initialized_(true)
-    { view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::HostSpace(),view_device_); }
+    {
+      view_host_unmanaged_ = Kokkos::create_mirror_view(view_device_);
+      use_count_ = view_device_.impl_track().use_count();
+    }
 
     ViewOfViews3()
       : device_view_is_synced_(false),
-        is_initialized_(false)
+        is_initialized_(false),
+        use_count_(-1)
     {}
 
     ~ViewOfViews3()
     {
       // Make sure there is not another object pointing to device view
       // since the host view will delete the inner views on exit.
-      if (view_device_.impl_track().use_count() != 1)
+      if (view_device_.impl_track().use_count() != use_count_)
         Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
     }
 
@@ -326,9 +332,10 @@ namespace PHX {
     {
       view_host_ = typename OuterViewType::HostMirror(name,extents...);
       view_device_ = OuterViewType(name,extents...);
-      view_host_unmanaged_ = Kokkos::create_mirror_view(Kokkos::HostSpace(),view_device_);
+      view_host_unmanaged_ = Kokkos::create_mirror_view(view_device_);
       device_view_is_synced_ = false;
       is_initialized_ = true;
+      use_count_ = view_device_.impl_track().use_count();
     }
 
     // Returns true if the outer view has been initialized.
