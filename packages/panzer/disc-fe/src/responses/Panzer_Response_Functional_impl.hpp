@@ -47,6 +47,7 @@
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
+#include "PanzerDiscFE_config.hpp"
 #ifdef PANZER_HAVE_EPETRA
 #include "Epetra_LocalMap.h"
 #endif

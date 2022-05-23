@@ -44,6 +44,7 @@
 #define   __Panzer_WriteVector_GlobalEvaluationData_hpp__
 
 // Panzer
+#include "PanzerDiscFE_config.hpp"
 #ifdef PANZER_HAVE_EPETRA
 #include "Panzer_KokkosUtils_VectorToView.hpp"
 #endif

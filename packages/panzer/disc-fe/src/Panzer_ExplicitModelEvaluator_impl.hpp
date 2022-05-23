@@ -46,6 +46,7 @@
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
+#include "PanzerDiscFE_config.hpp"
 #ifdef PANZER_HAVE_EPETRA
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"

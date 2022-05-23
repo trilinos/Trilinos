@@ -53,6 +53,7 @@
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 
+#include "PanzerDiscFE_config.hpp"
 #ifdef PANZER_HAVE_EPETRA
 #include "Epetra_LocalMap.h"
 #include "Epetra_Map.h"

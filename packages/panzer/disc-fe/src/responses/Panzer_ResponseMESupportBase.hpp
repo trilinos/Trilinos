@@ -47,6 +47,7 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "PanzerDiscFE_config.hpp"
 #ifdef PANZER_HAVE_EPETRA
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
