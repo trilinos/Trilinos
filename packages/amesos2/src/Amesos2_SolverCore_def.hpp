@@ -274,7 +274,6 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
   // first solve
   this->solve(x, b);
 
-
   // get data needed for IR
   using MVAdapter = MultiVecAdapter<Vector>;
   Teuchos::RCP<      MVAdapter> X = createMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(x));
@@ -285,25 +284,36 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
   const size_t nrhs = X->getGlobalNumVectors();
   const int nnz   = this->matrixA_->getGlobalNNZ();
   const int nrows = this->matrixA_->getGlobalNumRows();
-  host_row_map_t rowmap_view ("rowptr", 1+nrows);
-  host_colinds_t colind_view ("colind", nnz);
-  host_values_t  values_view ("nzvals", nnz);
 
   // get local matriix
+  host_crsmat_t crsmat;
+  host_graph_t static_graph;
+  host_row_map_t rowmap_view;
+  host_colinds_t colind_view;
+  host_values_t  values_view;
+  if (this->root_) {
+    rowmap_view = host_row_map_t("rowptr", 1+nrows);
+    colind_view = host_colinds_t("colind", nnz);
+    values_view = host_values_t("nzvals", nnz);
+  }
+
   int nnz_ret = 0;
   Util::get_crs_helper_kokkos_view<
     MatrixAdapter<Matrix>, host_values_t, host_colinds_t, host_row_map_t>::do_get(
       this->matrixA_.ptr(),
       values_view, colind_view, rowmap_view,
       nnz_ret, ROOTED, SORTED_INDICES, this->rowIndexBase_);
-  host_graph_t static_graph(colind_view, rowmap_view);
-  host_crsmat_t crsmat ("CrsMatrix", nrows, values_view, static_graph);
+
+  if (this->root_) {
+    static_graph = host_graph_t(colind_view, rowmap_view);
+    crsmat = host_crsmat_t("CrsMatrix", nrows, values_view, static_graph);
+  }
 
   // auxiliary scalar Kokkos views
-  const int ldx = X->getLocalLength();
-  const int ldb = B->getLocalLength();
-  const int ldr = R->getLocalLength();
-  const int lde = E->getLocalLength();
+  const int ldx = (this->root_ ? X->getGlobalLength() : 0);
+  const int ldb = (this->root_ ? B->getGlobalLength() : 0);
+  const int ldr = (this->root_ ? R->getGlobalLength() : 0);
+  const int lde = (this->root_ ? E->getGlobalLength() : 0);
   const bool     initialize_data = true;
   const bool not_initialize_data = true;
   host_mvector_t X_view;
@@ -325,80 +335,89 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
   Util::get_1d_copy_helper_kokkos_view<MVAdapter, host_mvector_t>::
     do_get(not_initialize_data, Eptr, E_view, lde, CONTIGUOUS_AND_ROOTED, rowIndexBase);
 
-  // compute initial solution norms (used for stopping criteria)
-  host_magni_view enorms ("enorms", nrhs);
   host_magni_view x0norms("x0norms", nrhs);
-  for (size_t j = 0; j < nrhs; j++) { 
-    auto x_subview = Kokkos::subview(X_view, Kokkos::ALL(), j);
-    host_vector_t x_1d (const_cast<scalar_type*>(x_subview.data()), x_subview.extent(0));
-    x0norms(j) = KokkosBlas::nrm2(x_1d);
-  }
-  if (verbose) {
-    std::cout << std::endl
-              << " SolverCore :: solve_ir (maxNumIters = " << maxNumIters
-              << ", tol = " << x0norms(0) << " * " << eps << " = " << x0norms(0)*eps
-              << ")" << std::endl;
-  }
-
-  // compute residual norm
   host_magni_view bnorms("bnorms", nrhs);
-  if (verbose) {
-    std::cout << " bnorm = ";
+  host_magni_view enorms("enorms", nrhs);
+  if (this->root_) {
+    // compute initial solution norms (used for stopping criteria)
     for (size_t j = 0; j < nrhs; j++) { 
-      auto b_subview = Kokkos::subview(B_view, Kokkos::ALL(), j);
-      host_vector_t b_1d (const_cast<scalar_type*>(b_subview.data()), b_subview.extent(0));
-      bnorms(j) = KokkosBlas::nrm2(b_1d);
-      std::cout << bnorms(j) << ", ";
+      auto x_subview = Kokkos::subview(X_view, Kokkos::ALL(), j);
+      host_vector_t x_1d (const_cast<scalar_type*>(x_subview.data()), x_subview.extent(0));
+      x0norms(j) = KokkosBlas::nrm2(x_1d);
     }
-    std::cout << std::endl;
-  }
-
-  int numIters = 0;
-  bool converged = false;
-  for (numIters = 0; numIters < maxNumIters && !converged; ++numIters) {
-    // r = b - Ax
-    Kokkos::deep_copy(R_view, B_view);
-    KokkosSparse::spmv("N", -one, crsmat, X_view, one, R_view);
-    Kokkos::fence();
-
     if (verbose) {
-      // compute residual norm
-      std::cout << " > " << numIters << " : norm(r,x,e) = ";
+      std::cout << std::endl
+                << " SolverCore :: solve_ir (maxNumIters = " << maxNumIters
+                << ", tol = " << x0norms(0) << " * " << eps << " = " << x0norms(0)*eps
+                << ")" << std::endl;
+    }
+
+    // compute residual norm
+    if (verbose) {
+      std::cout << " bnorm = ";
       for (size_t j = 0; j < nrhs; j++) { 
-        auto r_subview = Kokkos::subview(R_view, Kokkos::ALL(), j);
-        auto x_subview = Kokkos::subview(X_view, Kokkos::ALL(), j);
-        host_vector_t r_1d (const_cast<scalar_type*>(r_subview.data()), r_subview.extent(0));
-        host_vector_t x_1d (const_cast<scalar_type*>(x_subview.data()), x_subview.extent(0));
-        scalar_type rnorm = KokkosBlas::nrm2(r_1d);
-        scalar_type xnorm = KokkosBlas::nrm2(x_1d);
-        std::cout << rnorm << " -> " << rnorm/bnorms(j) << " " << xnorm << " " << enorms(j) << ", ";
+        auto b_subview = Kokkos::subview(B_view, Kokkos::ALL(), j);
+        host_vector_t b_1d (const_cast<scalar_type*>(b_subview.data()), b_subview.extent(0));
+        bnorms(j) = KokkosBlas::nrm2(b_1d);
+        std::cout << bnorms(j) << ", ";
       }
       std::cout << std::endl;
     }
+  }
 
-    // e = A^{-1} r
+  int numIters = 0;
+  int converged = 0; // 0 = has not converged, 1 = converged
+  for (numIters = 0; numIters < maxNumIters && converged == 0; ++numIters) {
+    // r = b - Ax (on rank-0)
+    if (this->root_) {
+      Kokkos::deep_copy(R_view, B_view);
+      KokkosSparse::spmv("N", -one, crsmat, X_view, one, R_view);
+      Kokkos::fence();
+    
+      if (verbose) {
+        // compute residual norm
+        std::cout << " > " << numIters << " : norm(r,x,e) = ";
+        for (size_t j = 0; j < nrhs; j++) { 
+          auto r_subview = Kokkos::subview(R_view, Kokkos::ALL(), j);
+          auto x_subview = Kokkos::subview(X_view, Kokkos::ALL(), j);
+          host_vector_t r_1d (const_cast<scalar_type*>(r_subview.data()), r_subview.extent(0));
+          host_vector_t x_1d (const_cast<scalar_type*>(x_subview.data()), x_subview.extent(0));
+          scalar_type rnorm = KokkosBlas::nrm2(r_1d);
+          scalar_type xnorm = KokkosBlas::nrm2(x_1d);
+          std::cout << rnorm << " -> " << rnorm/bnorms(j) << " " << xnorm << " " << enorms(j) << ", ";
+        }
+        std::cout << std::endl;
+      }
+    }
+
+    // e = A^{-1} r 
     Util::put_1d_data_helper_kokkos_view<MVAdapter, host_mvector_t>::
-      do_put(Rptr, R_view, ldx, CONTIGUOUS_AND_ROOTED, rowIndexBase);
+      do_put(Rptr, R_view, ldr, CONTIGUOUS_AND_ROOTED, rowIndexBase);
     this->solve(e, r);
     Util::get_1d_copy_helper_kokkos_view<MVAdapter, host_mvector_t>::
       do_get(initialize_data, Eptr, E_view, lde, CONTIGUOUS_AND_ROOTED, rowIndexBase);
     
-    // x = x + e
-    KokkosBlas::axpy(one, E_view, X_view);
+    // x = x + e (on rank-0)
+    if (this->root_) {
+      KokkosBlas::axpy(one, E_view, X_view);
 
-    // compute norm of corrections for "convergence" check
-    converged = true;
-    for (size_t j = 0; j < nrhs; j++) { 
-      auto e_subview = Kokkos::subview(E_view, Kokkos::ALL(), j);
-      host_vector_t e_1d (const_cast<scalar_type*>(e_subview.data()), e_subview.extent(0));
-      enorms(j) = KokkosBlas::nrm2(e_1d);
-      if (enorms(j) > eps * x0norms(j)) {
-        converged = false;
+      // compute norm of corrections for "convergence" check
+      converged = 1;
+      for (size_t j = 0; j < nrhs; j++) { 
+        auto e_subview = Kokkos::subview(E_view, Kokkos::ALL(), j);
+        host_vector_t e_1d (const_cast<scalar_type*>(e_subview.data()), e_subview.extent(0));
+        enorms(j) = KokkosBlas::nrm2(e_1d);
+        if (enorms(j) > eps * x0norms(j)) {
+          converged = 0;
+        }
       }
     }
-  }
 
-  if (verbose) {
+    // broadcast "converged"
+    Teuchos::broadcast(*(this->matrixA_->getComm()), 0, &converged);
+  } // end of for-loop for IR iteration
+
+  if (verbose && this->root_) {
     // r = b - Ax
     Kokkos::deep_copy(R_view, B_view);
     KokkosSparse::spmv("N", -one, crsmat, X_view, one, R_view);
