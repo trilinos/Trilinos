@@ -2875,6 +2875,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ConstructFromBlockedVector,
   using MapFactory = Xpetra::MapFactory<LO,GO,Node>;
   using MapUtils = Xpetra::MapUtils<LO,GO,Node>;
 
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  typedef typename STS::magnitudeType MT;
+
   RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
   M testMap(1, 0, comm);
@@ -2928,14 +2931,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ConstructFromBlockedVector,
           Teuchos::rcp_dynamic_cast<Xpetra::BlockedVector<Scalar,LO,GO,Node> >(diagonal);
   TEST_ASSERT(!blockDiagonal.is_null());
 
+  const MT tol = 1e-12;
+
   TEST_EQUALITY(gNumElementsPerBlock, blockMatrix->getMatrix(0,0)->getGlobalNumEntries());
-  TEST_FLOATING_EQUALITY(blockVec->getMultiVector(0)->getVector(0)->norm2(), blockDiagonal->getMultiVector(0)->getVector(0)->norm2(), Teuchos::as<Scalar>(1e-12));
-  TEST_FLOATING_EQUALITY(blockVec->getMultiVector(1)->getVector(0)->norm2(), blockDiagonal->getMultiVector(1)->getVector(0)->norm2(), Teuchos::as<Scalar>(1e-12));
+  TEST_FLOATING_EQUALITY(blockVec->getMultiVector(0)->getVector(0)->norm2(), blockDiagonal->getMultiVector(0)->getVector(0)->norm2(), tol);
+  TEST_FLOATING_EQUALITY(blockVec->getMultiVector(1)->getVector(0)->norm2(), blockDiagonal->getMultiVector(1)->getVector(0)->norm2(), tol);
   TEST_EQUALITY(gNumElementsPerBlock, blockMatrix->getMatrix(1,1)->getGlobalNumEntries());
-  TEST_FLOATING_EQUALITY(blockVec->getMultiVector(0)->getVector(0)->norm2(), blockMatrix->getMatrix(0,0)->getFrobeniusNorm(), Teuchos::as<Scalar>(1e-12));
-  TEST_FLOATING_EQUALITY(blockVec->getMultiVector(1)->getVector(0)->norm2(), blockMatrix->getMatrix(1,1)->getFrobeniusNorm(), Teuchos::as<Scalar>(1e-12));
-  TEST_FLOATING_EQUALITY(blockVec->norm2(), blockDiagonal->norm2(), Teuchos::as<Scalar>(1e-12));
-  TEST_FLOATING_EQUALITY(blockVec->norm2(), blockMatrix->getFrobeniusNorm(), Teuchos::as<Scalar>(1e-12));
+  TEST_FLOATING_EQUALITY(blockVec->getMultiVector(0)->getVector(0)->norm2(), blockMatrix->getMatrix(0,0)->getFrobeniusNorm(), tol);
+  TEST_FLOATING_EQUALITY(blockVec->getMultiVector(1)->getVector(0)->norm2(), blockMatrix->getMatrix(1,1)->getFrobeniusNorm(), tol);
+  TEST_FLOATING_EQUALITY(blockVec->norm2(), blockDiagonal->norm2(), tol);
+  TEST_FLOATING_EQUALITY(blockVec->norm2(), blockMatrix->getFrobeniusNorm(), tol);
 }
 
 // simple test for matrix-matrix multiplication for a 2x2 blocked matrix with a 2x1 blocked matrix

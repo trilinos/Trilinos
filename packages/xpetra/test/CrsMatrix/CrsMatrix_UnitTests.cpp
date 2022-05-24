@@ -104,8 +104,10 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, Constructor_Vector, M, Scalar, LO, GO, Node )
   {
-    typedef Xpetra::Map<LO, GO, Node> MapClass;
-    typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
+    using MapClass = Xpetra::Map<LO, GO, Node>;
+    using MapFactoryClass = Xpetra::MapFactory<LO, GO, Node>;
+    using STS = Teuchos::ScalarTraits<Scalar>;
+    typedef typename STS::magnitudeType MT;
 
     // get a comm and node
     RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
@@ -114,19 +116,23 @@ namespace {
     Xpetra::UnderlyingLib lib = testMap.lib();
 
     // generate problem
-    LO nEle = 63;
+    const LO nEle = 63;
     const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
 
     const RCP<Xpetra::Vector<Scalar, LO, GO, Node> > vec = Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(map);
     vec->randomize();
     RCP<Xpetra::Matrix<Scalar,LO,GO,Node> > mat = Xpetra::MatrixFactory<Scalar,LO,GO,Node>::Build(vec.getConst());
+
+    const MT tol = 1e-12;
+
     TEST_ASSERT(!mat.is_null());
     TEST_EQUALITY(nEle, mat->getGlobalNumEntries());
-    TEST_FLOATING_EQUALITY(vec->norm2(), mat->getFrobeniusNorm(), Teuchos::as<Scalar>(1e-12));
+    TEST_FLOATING_EQUALITY(vec->norm2(), mat->getFrobeniusNorm(), tol);
 
     const RCP<Xpetra::Vector<Scalar, LO, GO, Node> > diagonal = Xpetra::VectorFactory<Scalar, LO, GO, Node>::Build(map);
+
     mat->getLocalDiagCopy(*diagonal);
-    TEST_FLOATING_EQUALITY(vec->norm2(), diagonal->norm2(), Teuchos::as<Scalar>(1e-12));
+    TEST_FLOATING_EQUALITY(vec->norm2(), diagonal->norm2(), tol);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, Apply, M, Scalar, LO, GO, Node )
