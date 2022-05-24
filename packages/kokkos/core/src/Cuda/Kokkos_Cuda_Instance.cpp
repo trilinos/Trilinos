@@ -420,7 +420,7 @@ Kokkos::Cuda::initialize WARNING: Cuda is allocating into UVMSpace by default
     const char *overlap = std::getenv("TPETRA_OVERLAP");
     if (overlap && std::atoi(overlap) != 0) {
       if (nullptr == stream) {
-        std::cerr << "USING NEW STREAM INSTEAD OF DEFAULT\n";
+        std::cerr << "TPETRA_OVERLAP: KOKKOS USING PRIO -2 NEW STREAM INSTEAD OF DEFAULT\n";
         cudaStreamCreateWithPriority(&stream, 0, -2);
       }
     } 
