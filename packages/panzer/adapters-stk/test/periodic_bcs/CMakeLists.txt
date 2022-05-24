@@ -5,6 +5,28 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 SET(UNIT_TEST_DRIVER
   ${PANZER_UNIT_TEST_MAIN})
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  periodic_bcs_tpetra
+  SOURCES periodic_bcs_tpetra.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  periodic_mesh_tpetra
+  SOURCES periodic_mesh_tpetra.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  periodic_32bit_int_limit
+  SOURCES periodic_32bit_int_limit.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  )
+
 
 IF (PANZER_HAVE_EPETRA)
 
@@ -22,29 +44,8 @@ IF (PANZER_HAVE_EPETRA)
       NUM_MPI_PROCS 2
       )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      periodic_32bit_int_limit
-      SOURCES periodic_32bit_int_limit.cpp ${UNIT_TEST_DRIVER}
-      COMM serial mpi
-      NUM_MPI_PROCS 2
-      )
-
 ENDIF(PANZER_HAVE_EPETRA)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  periodic_bcs_tpetra
-  SOURCES periodic_bcs_tpetra.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 4
-  )
-
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  periodic_mesh_tpetra
-  SOURCES periodic_mesh_tpetra.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   periodic_mesh_nosubcells

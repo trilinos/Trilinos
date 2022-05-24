@@ -24,7 +24,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-   initial_condition_builder2_tepra
+   initial_condition_builder2_tpetra
    SOURCES initial_condition_builder2_tpetra.cpp ${SOURCES} ${UNIT_TEST_DRIVER}
    COMM serial mpi
    NUM_MPI_PROCS 2
@@ -66,5 +66,5 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ic_builder2_files
   SOURCE_FILES block-decomp.exo block-decomp.exo.2.0 block-decomp.exo.2.1
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/"
-  EXEDEPS initial_condition_builder
+  EXEDEPS initial_condition_builder_tpetra
   )
