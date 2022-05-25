@@ -152,6 +152,7 @@ set (Trilinos_ENABLE_MueLu OFF CACHE BOOL "Turn off packages for non-UVM build")
 set (Trilinos_ENABLE_PanzerAdaptersSTK OFF CACHE BOOL "Turn off packages for non-UVM build")
 set (Trilinos_ENABLE_PanzerMiniEM OFF CACHE BOOL "Turn off packages for non-UVM build")
 set (Trilinos_ENABLE_TrilinosCouplings OFF CACHE BOOL "Turn off packages for non-UVM build")
+set (Trilinos_ENABLE_STK OFF CACHE BOOL "Turn off packages for non-UVM build")
 
 set (Ifpack2_BlockTriDiContainerUnitAndPerfTests_DISABLE ON CACHE BOOL "Turn off tests for cuda 11.4.2 non-UVM build")
 
