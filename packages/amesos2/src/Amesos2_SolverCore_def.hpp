@@ -608,8 +608,8 @@ SolverCore<ConcreteSolver,Matrix,Vector>::describe(
     Util::printLine(out);
     out << this->description() << std::endl << std::endl;
 
-    out << p << "Matrix has " << globalNumRows_ << "rows"
-        << " and " << globalNumNonZeros_ << "nonzeros"
+    out << p << "Matrix has " << globalNumRows_ << " rows"
+        << " and " << globalNumNonZeros_ << " nonzeros"
         << std::endl;
     if( vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME ){
       out << p << "Nonzero elements per row = "

@@ -166,26 +166,40 @@ namespace Amesos2 {
      */
     virtual void solve(Vector* X, const Vector* B) const = 0;
 
-    //@} End Mathematical Functions
 
+    /** \brief Solve \f$ A X = B\f$ using iterative refinements.
+     */
     static const int defaultNumIters = 2;
     virtual int solve_ir(const Teuchos::Ptr<Vector> X,
                          const Teuchos::Ptr<const Vector> B,
                          const Teuchos::Ptr<Vector> R,
                          const Teuchos::Ptr<Vector> E,
-                         const int maxNumIters = defaultNumIters,
-                         const bool verbose = false) const = 0;
+                         const int maxNumIters = 2,
+                         const bool verbose = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error, "Amesos2::Solver::solve_ir not supported.");
+      return 0;
+    }
     virtual int solve_ir(Vector* X, const Vector* B, Vector* R, Vector* E,
                          const int maxNumIters = defaultNumIters,
-                         const bool verbose = false) const = 0;
+                         const bool verbose = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error, "Amesos2::Solver::solve_ir not supported.");
+      return 0;
+    }
     virtual int solve_ir(const Teuchos::Ptr<Vector> R,
                          const Teuchos::Ptr<Vector> E,
                          const int maxNumIters = defaultNumIters,
-                         const bool verbose = false) = 0;
+                         const bool verbose = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error, "Amesos2::Solver::solve_ir not supported.");
+      return 0;
+    }
     virtual int solve_ir(Vector* R, Vector* E,
                          const int maxNumIters = defaultNumIters,
-                         const bool verbose = false) = 0;
+                         const bool verbose = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(1, std::runtime_error, "Amesos2::Solver::solve_ir not supported.");
+      return 0;
+    }
 
+    //@} End Mathematical Functions
 
     /** \name Parameter Methods
      * @{
