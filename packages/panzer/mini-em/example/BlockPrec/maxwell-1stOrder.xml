@@ -21,8 +21,8 @@
 
     <ParameterList name="Inline Mesh">
       <Parameter name="Mesh Dimension" type="int" value="3"/>
-      <Parameter name="Mesh Type" type="string" value="quad"/>
-      <!-- <Parameter name="Mesh Type" type="string" value="tet"/> -->
+      <!-- <Parameter name="Mesh Type" type="string" value="quad"/> -->
+      <Parameter name="Mesh Type" type="string" value="tet"/>
       <Parameter name="CFL" type="double" value="4.0"/>
       <ParameterList name="Mesh Factory Parameter List">
         <!-- <Parameter name="X Procs" type="int" value="-1" /> -->
@@ -31,9 +31,9 @@
         <Parameter name="X Blocks" type="int" value="1" />
         <Parameter name="Y Blocks" type="int" value="1" />
         <Parameter name="Z Blocks" type="int" value="1" />
-        <Parameter name="X Elements" type="int" value="15" />
-        <Parameter name="Y Elements" type="int" value="15" />
-        <Parameter name="Z Elements" type="int" value="15" />
+        <Parameter name="X Elements" type="int" value="5" />
+        <Parameter name="Y Elements" type="int" value="5" />
+        <Parameter name="Z Elements" type="int" value="5" />
         <!-- <ParameterList name="Periodic BCs"> -->
         <!--   <Parameter name="Count" type="int" value="3"/> -->
         <!--   <Parameter name="Periodic Condition 1" type="string" value="xz-all 1e-8: top;bottom"/> -->
@@ -106,14 +106,6 @@
         <Parameter name="Integration Order" type="int"    value="2"/>
         <Parameter name="Model ID"          type="string" value="electromagnetics_aux"/>
       </ParameterList>
-      <!-- Weak gradient used by augmentation preconditioner -->
-      <ParameterList name="Auxiliary Gradient Physics">
-        <Parameter name="Type"              type="string" value="Auxiliary Weak Gradient"/>
-        <Parameter name="Vector Name"       type="string" value="AUXILIARY_EDGE"/>
-        <Parameter name="Scalar Name"       type="string" value="AUXILIARY_NODE"/>
-        <Parameter name="Basis Order"       type="int"    value="1"/>
-        <Parameter name="Integration Order" type="int"    value="2"/>
-      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -167,6 +159,11 @@
         <Parameter name="mu" type="double" value="1.2566370614e-6"/>
         <Parameter name="DoF Name" type="string" value="AUXILIARY_EDGE"/>
       </ParameterList>
+      <ParameterList name="epsilon">
+        <Parameter name="Type" type="string" value="PERMITTIVITY"/>
+        <Parameter name="epsilon" type="double" value="8.854187817e-12"/>
+        <Parameter name="DoF Name" type="string" value="AUXILIARY_EDGE"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -187,20 +184,20 @@
   </ParameterList>
 
   <ParameterList name="Responses">
-    <ParameterList name="Electromagnetic Energy">
-      <Parameter name="Type" type="string" value="Functional"/>
-      <Parameter name="Field Name" type="string" value="EM_ENERGY"/>
-      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
-      <Parameter name="Evaluation Types" type="string" value="Residual"/>
-      <Parameter name="Requires Cell Integral" type="bool" value="true"/>
-    </ParameterList>
-    <ParameterList name="Electromagnetic Energy/dt^2">
-      <Parameter name="Type" type="string" value="Functional"/>
-      <Parameter name="Field Name" type="string" value="EM_ENERGY/dt^2"/>
-      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
-      <Parameter name="Evaluation Types" type="string" value="Residual"/>
-      <Parameter name="Requires Cell Integral" type="bool" value="true"/>
-    </ParameterList>
+    <!-- <ParameterList name="Electromagnetic Energy"> -->
+    <!--   <Parameter name="Type" type="string" value="Functional"/> -->
+    <!--   <Parameter name="Field Name" type="string" value="EM_ENERGY"/> -->
+    <!--   <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/> -->
+    <!--   <Parameter name="Evaluation Types" type="string" value="Residual"/> -->
+    <!--   <Parameter name="Requires Cell Integral" type="bool" value="true"/> -->
+    <!-- </ParameterList> -->
+    <!-- <ParameterList name="Electromagnetic Energy/dt^2"> -->
+    <!--   <Parameter name="Type" type="string" value="Functional"/> -->
+    <!--   <Parameter name="Field Name" type="string" value="EM_ENERGY/dt^2"/> -->
+    <!--   <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/> -->
+    <!--   <Parameter name="Evaluation Types" type="string" value="Residual"/> -->
+    <!--   <Parameter name="Requires Cell Integral" type="bool" value="true"/> -->
+    <!-- </ParameterList> -->
   </ParameterList>
 
   <ParameterList name="Boundary Conditions">

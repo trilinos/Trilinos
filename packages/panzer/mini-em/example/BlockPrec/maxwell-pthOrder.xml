@@ -21,8 +21,8 @@
 
     <ParameterList name="Inline Mesh">
       <Parameter name="Mesh Dimension" type="int" value="3"/>
-      <Parameter name="Mesh Type" type="string" value="quad"/>
-      <!-- <Parameter name="Mesh Type" type="string" value="tet"/> -->
+      <!-- <Parameter name="Mesh Type" type="string" value="quad"/> -->
+      <Parameter name="Mesh Type" type="string" value="tet"/>
       <Parameter name="CFL" type="double" value="4.0"/>
       <ParameterList name="Mesh Factory Parameter List">
         <!-- <Parameter name="X Procs" type="int" value="-1" /> -->
@@ -31,9 +31,9 @@
         <Parameter name="X Blocks" type="int" value="1" />
         <Parameter name="Y Blocks" type="int" value="1" />
         <Parameter name="Z Blocks" type="int" value="1" />
-        <Parameter name="X Elements" type="int" value="15" />
-        <Parameter name="Y Elements" type="int" value="15" />
-        <Parameter name="Z Elements" type="int" value="15" />
+        <Parameter name="X Elements" type="int" value="5" />
+        <Parameter name="Y Elements" type="int" value="5" />
+        <Parameter name="Z Elements" type="int" value="5" />
         <!-- <ParameterList name="Periodic BCs"> -->
         <!--   <Parameter name="Count" type="int" value="3"/> -->
         <!--   <Parameter name="Periodic Condition 1" type="string" value="xz-all 1e-8: top;bottom"/> -->
@@ -54,11 +54,9 @@
     <Parameter name="eblock-0_0_0" type="string" value="Auxiliary Physics Block"/>
   </ParameterList>
 
-   <ParameterList name="Assembly">
-     <Parameter name="Field Order"           type="string" value="blocked: B_face E_edge"/>
-     <Parameter name="Auxiliary Field Order" type="string" value="blocked: AUXILIARY_NODE AUXILIARY_EDGE"/>
-     <Parameter name="Workset Size" type="int" value="2000"/>
-   </ParameterList>
+  <ParameterList name="Assembly">
+    <Parameter name="Field Order" type="string" value="blocked: B_face E_edge"/>
+  </ParameterList>
 
   <ParameterList name="Physics Blocks">
     <!-- The 2x2 Maxwell system -->
@@ -66,53 +64,10 @@
     <ParameterList name="Maxwell Physics">
       <ParameterList name="Maxwell Physics">
         <Parameter name="Type"                 type="string" value="Maxwell"/>
-        <Parameter name="Basis Order"          type="int"    value="1"/>
-        <Parameter name="Integration Order"    type="int"    value="2"/>
         <Parameter name="Model ID"             type="string" value="electromagnetics"/>
         <Parameter name="Permittivity"         type="string" value="epsilon"/>
         <Parameter name="Conductivity"         type="string" value="sigma"/>
         <Parameter name="Inverse Permeability" type="string" value="1/mu"/>
-      </ParameterList>
-    </ParameterList>
-    <!-- Auxiliary operators for the solve -->
-    <!-- Gets dt, 1/dt, mu and 1/mu from closure model 'electromagnetics_aux' -->
-    <ParameterList name="Auxiliary Physics Block">
-      <!-- Curl-Curl term for Schur complement, with weight dt / mu -->
-      <ParameterList name="Auxiliary Edge Curl Curl Physics">
-        <Parameter name="Type"              type="string" value="Auxiliary Curl Curl"/>
-        <Parameter name="DOF Name"          type="string" value="AUXILIARY_EDGE"/>
-        <Parameter name="Basis Type"        type="string" value="HCurl"/>
-        <Parameter name="Basis Order"       type="int"    value="1"/>
-        <Parameter name="Integration Order" type="int"    value="2"/>
-        <Parameter name="Model ID"          type="string" value="electromagnetics_aux"/>
-        <Parameter name="Field Multipliers" type="string" value="dt,1/mu"/>
-      </ParameterList>
-      <!-- Auxiliary nodal mass matrix with weight mu / dt -->
-      <ParameterList name="Auxiliary Mass Physics">
-        <Parameter name="Type"              type="string" value="Auxiliary Mass Matrix"/>
-        <Parameter name="DOF Name"          type="string" value="AUXILIARY_NODE"/>
-        <Parameter name="Basis Type"        type="string" value="HGrad"/>
-        <Parameter name="Basis Order"       type="int"    value="1"/>
-        <Parameter name="Integration Order" type="int"    value="2"/>
-        <Parameter name="Model ID"          type="string" value="electromagnetics_aux"/>
-        <Parameter name="Field Multipliers" type="string" value="mu,1/dt"/>
-      </ParameterList>
-      <!-- Auxiliary edge mass matrix with unit weight -->
-      <ParameterList name="Auxiliary Edge Mass Physics">
-        <Parameter name="Type"              type="string" value="Auxiliary Mass Matrix"/>
-        <Parameter name="DOF Name"          type="string" value="AUXILIARY_EDGE"/>
-        <Parameter name="Basis Type"        type="string" value="HCurl"/>
-        <Parameter name="Basis Order"       type="int"    value="1"/>
-        <Parameter name="Integration Order" type="int"    value="2"/>
-        <Parameter name="Model ID"          type="string" value="electromagnetics_aux"/>
-      </ParameterList>
-      <!-- Weak gradient used by augmentation preconditioner -->
-      <ParameterList name="Auxiliary Gradient Physics">
-        <Parameter name="Type"              type="string" value="Auxiliary Weak Gradient"/>
-        <Parameter name="Vector Name"       type="string" value="AUXILIARY_EDGE"/>
-        <Parameter name="Scalar Name"       type="string" value="AUXILIARY_NODE"/>
-        <Parameter name="Basis Order"       type="int"    value="1"/>
-        <Parameter name="Integration Order" type="int"    value="2"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -167,6 +122,11 @@
         <Parameter name="mu" type="double" value="1.2566370614e-6"/>
         <Parameter name="DoF Name" type="string" value="AUXILIARY_EDGE"/>
       </ParameterList>
+      <ParameterList name="epsilon">
+        <Parameter name="Type" type="string" value="PERMITTIVITY"/>
+        <Parameter name="epsilon" type="double" value="8.854187817e-12"/>
+        <Parameter name="DoF Name" type="string" value="AUXILIARY_EDGE"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 
@@ -178,29 +138,21 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Auxiliary Operators">
-    <ParameterList name="Discrete Gradient">
-      <Parameter name="Source" type="string" value="AUXILIARY_NODE"/>
-      <Parameter name="Target" type="string" value="AUXILIARY_EDGE"/>
-      <Parameter name="Op" type="string" value="grad"/>
-    </ParameterList>
-  </ParameterList>
-
   <ParameterList name="Responses">
-    <ParameterList name="Electromagnetic Energy">
-      <Parameter name="Type" type="string" value="Functional"/>
-      <Parameter name="Field Name" type="string" value="EM_ENERGY"/>
-      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
-      <Parameter name="Evaluation Types" type="string" value="Residual"/>
-      <Parameter name="Requires Cell Integral" type="bool" value="true"/>
-    </ParameterList>
-    <ParameterList name="Electromagnetic Energy/dt^2">
-      <Parameter name="Type" type="string" value="Functional"/>
-      <Parameter name="Field Name" type="string" value="EM_ENERGY/dt^2"/>
-      <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/>
-      <Parameter name="Evaluation Types" type="string" value="Residual"/>
-      <Parameter name="Requires Cell Integral" type="bool" value="true"/>
-    </ParameterList>
+    <!-- <ParameterList name="Electromagnetic Energy"> -->
+    <!--   <Parameter name="Type" type="string" value="Functional"/> -->
+    <!--   <Parameter name="Field Name" type="string" value="EM_ENERGY"/> -->
+    <!--   <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/> -->
+    <!--   <Parameter name="Evaluation Types" type="string" value="Residual"/> -->
+    <!--   <Parameter name="Requires Cell Integral" type="bool" value="true"/> -->
+    <!-- </ParameterList> -->
+    <!-- <ParameterList name="Electromagnetic Energy/dt^2"> -->
+    <!--   <Parameter name="Type" type="string" value="Functional"/> -->
+    <!--   <Parameter name="Field Name" type="string" value="EM_ENERGY/dt^2"/> -->
+    <!--   <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/> -->
+    <!--   <Parameter name="Evaluation Types" type="string" value="Residual"/> -->
+    <!--   <Parameter name="Requires Cell Integral" type="bool" value="true"/> -->
+    <!-- </ParameterList> -->
   </ParameterList>
 
   <ParameterList name="Boundary Conditions">
