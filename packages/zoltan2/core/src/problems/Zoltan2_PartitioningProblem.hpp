@@ -533,7 +533,7 @@ template <typename Adapter>
         if (algName_ == std::string("multijagged")) {
           this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
                                                   this->comm_,
-                                                  this->coordinateModel_));
+                                                  this->baseInputAdapter_));
         }
         else if (algName_ == std::string("zoltan")) {
           this->algorithm_ = rcp(new AlgZoltan<Adapter>(this->envConst_,
@@ -554,7 +554,7 @@ template <typename Adapter>
           using model_t = GraphModel<base_adapter_t>;
           this->algorithm_ = rcp(new AlgParMETIS<Adapter, model_t>(this->envConst_,
                                                 this->comm_,
-                                                this->graphModel_));
+                                                this->baseInputAdapter_));
         }
         else if (algName_ == std::string("quotient")) {
           this->algorithm_ = rcp(new AlgQuotient<Adapter>(this->envConst_,
@@ -569,7 +569,7 @@ template <typename Adapter>
         }
         else if (algName_ == std::string("block")) {
           this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
-                                             this->comm_, this->identifierModel_));
+                                             this->comm_, this->baseInputAdapter_));
         }
         else if (algName_ == std::string("phg") ||
                  algName_ == std::string("patoh")) {
@@ -710,201 +710,106 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 }
 
 template <typename Adapter>
-void PartitioningProblem<Adapter>::processAlgorithmName(const std::string& algorithm, const std::string& defString, const std::string& model,
-                                                   Environment &env, bool& removeSelfEdges, bool& needConsecutiveGlobalIds) {
-    ParameterList &pl = env.getParametersNonConst();
+void PartitioningProblem<Adapter>::processAlgorithmName(
+    const std::string &algorithm, const std::string &defString,
+    const std::string &model, Environment &env, bool &removeSelfEdges,
+    bool &needConsecutiveGlobalIds) {
+  ParameterList &pl = env.getParametersNonConst();
 
-    if (algorithm != defString)
-    {
-
-      // Figure out the model required by the algorithm
-      if (algorithm == std::string("block") ||
-          algorithm == std::string("random") ||
-          algorithm == std::string("cyclic") ){
-
-        //modelType_ = IdentifierModelType;
-        modelAvail_[IdentifierModelType] = true;
-
-        algName_ = algorithm;
-      }
-      else if (algorithm == std::string("zoltan") ||
-               algorithm == std::string("parma") ||
-               algorithm == std::string("forTestingOnly"))
-      {
-        algName_ = algorithm;
-      }
-      else if (algorithm == std::string("rcb") ||
+  if (algorithm != defString) {
+    if (algorithm == std::string("block") ||
+        algorithm == std::string("random") ||
+        algorithm == std::string("cyclic") ||
+        algorithm == std::string("zoltan") ||
+        algorithm == std::string("parma") ||
+        algorithm == std::string("forTestingOnly") ||
+        algorithm == std::string("quotient") ||
+        algorithm == std::string("scotch") ||
+        algorithm == std::string("ptscotch") ||
+        algorithm == std::string("pulp") || algorithm == std::string("sarma") ||
+        algorithm == std::string("patoh") || algorithm == std::string("phg") ||
+        algorithm == std::string("multijagged")) {
+      algName_ = algorithm;
+    } else if (algorithm == std::string("rcb") ||
                algorithm == std::string("rib") ||
-               algorithm == std::string("hsfc"))
-      {
-        // rcb, rib, hsfc provided through Zoltan
-        Teuchos::ParameterList &zparams = pl.sublist("zoltan_parameters",false);
-        zparams.set("LB_METHOD", algorithm);
-        if (numberOfWeights_ > 0) {
-          char strval[20];
-          sprintf(strval, "%d", numberOfWeights_);
-          zparams.set("OBJ_WEIGHT_DIM", strval);
-        }
-        algName_ = std::string("zoltan");
+               algorithm == std::string("hsfc")) {
+      // rcb, rib, hsfc provided through Zoltan
+      Teuchos::ParameterList &zparams = pl.sublist("zoltan_parameters", false);
+      zparams.set("LB_METHOD", algorithm);
+      if (numberOfWeights_ > 0) {
+        char strval[20];
+        sprintf(strval, "%d", numberOfWeights_);
+        zparams.set("OBJ_WEIGHT_DIM", strval);
       }
-      else if (algorithm == std::string("multijagged"))
-      {
-        //modelType_ = CoordinateModelType;
-        modelAvail_[CoordinateModelType]=true;
-
-        algName_ = algorithm;
-      }
-      else if (algorithm == std::string("metis") ||
-               algorithm == std::string("parmetis"))
-      {
-
-        //modelType_ = GraphModelType;
-        modelAvail_[GraphModelType]=true;
-        algName_ = algorithm;
-        removeSelfEdges = true;
-        needConsecutiveGlobalIds = true;
-      }
-      else if (algorithm == std::string("quotient"))
-      {
-        algName_ = algorithm;
-      }
-      else if (algorithm == std::string("scotch") ||
-               algorithm == std::string("ptscotch")) // BDD: Don't construct graph for scotch here
-      {
-        algName_ = algorithm;
-      }
-      else if (algorithm == std::string("pulp"))
-      {
-        algName_ = algorithm;
-      }
-      else if (algorithm == std::string("sarma"))
-      {
-          algName_ = algorithm;
-      }
-      else if (algorithm == std::string("patoh") ||
-               algorithm == std::string("phg"))
-      {
-        // if ((modelType_ != GraphModelType) &&
-        //     (modelType_ != HypergraphModelType) )
-        if ((modelAvail_[GraphModelType]==false) &&
-            (modelAvail_[HypergraphModelType]==false) )
-        {
-          //modelType_ = HypergraphModelType;
-          modelAvail_[HypergraphModelType]=true;
-        }
-        algName_ = algorithm;
-      }
+      algName_ = std::string("zoltan");
+    } else if (algorithm == std::string("metis") ||
+               algorithm == std::string("parmetis")) {
+      algName_ = algorithm;
+      removeSelfEdges = true;
+      needConsecutiveGlobalIds = true;
+    } else {
+      // Parameter list should ensure this does not happen.
+      throw std::logic_error("parameter list algorithm is invalid");
+    }
+  } else if (model != defString) {
+    // Figure out the algorithm suggested by the model.
+    if (model == std::string("hypergraph")) {
+      algName_ = std::string("phg");
+    } else if (model == std::string("graph")) {
+#ifdef HAVE_ZOLTAN2_SCOTCH
+      if (this->comm_->getSize() > 1)
+        algName_ = std::string("ptscotch");
       else
-      {
-        // Parameter list should ensure this does not happen.
-        throw std::logic_error("parameter list algorithm is invalid");
-      }
-    }
-    else if (model != defString)
-    {
-      // Figure out the algorithm suggested by the model.
-      if (model == std::string("hypergraph"))
-      {
-        //modelType_ = HypergraphModelType;
-        modelAvail_[HypergraphModelType]=true;
-
-        algName_ = std::string("phg");
-      }
-      else if (model == std::string("graph"))
-      {
-        //modelType_ = GraphModelType;
-        modelAvail_[GraphModelType]=true;
-
-  #ifdef HAVE_ZOLTAN2_SCOTCH
-        modelAvail_[GraphModelType]=false; // graph constructed by AlgPTScotch
-        if (this->comm_->getSize() > 1)
-          algName_ = std::string("ptscotch");
-        else
-          algName_ = std::string("scotch");
-  #else
-  #ifdef HAVE_ZOLTAN2_PARMETIS
-        if (this->comm_->getSize() > 1)
-          algName_ = std::string("parmetis");
-        else
-          algName_ = std::string("metis");
-        removeSelfEdges = true;
-        needConsecutiveGlobalIds = true;
-  #else
-  #ifdef HAVE_ZOLTAN2_PULP
-        // TODO: XtraPuLP
-        //if (this->comm_->getSize() > 1)
-        //  algName_ = std::string("xtrapulp");
-        //else
-        algName_ = std::string("pulp");
-  #else
-        algName_ = std::string("phg");
-  #endif
-  #endif
-  #endif
-      }
-      else if (model == std::string("geometry"))
-      {
-        //modelType_ = CoordinateModelType;
-        modelAvail_[CoordinateModelType]=true;
-
-        algName_ = std::string("multijagged");
-      }
-      else if (model == std::string("ids"))
-      {
-        //modelType_ = IdentifierModelType;
-        modelAvail_[IdentifierModelType]=true;
-
-        algName_ = std::string("block");
-      }
+        algName_ = std::string("scotch");
+#else
+#ifdef HAVE_ZOLTAN2_PARMETIS
+      if (this->comm_->getSize() > 1)
+        algName_ = std::string("parmetis");
       else
-      {
-        // Parameter list should ensure this does not happen.
-        env.localBugAssertion(__FILE__, __LINE__,
-          "parameter list model type is invalid", 1, BASIC_ASSERTION);
-      }
+        algName_ = std::string("metis");
+      removeSelfEdges = true;
+      needConsecutiveGlobalIds = true;
+#else
+#ifdef HAVE_ZOLTAN2_PULP
+      // TODO: XtraPuLP
+      // if (this->comm_->getSize() > 1)
+      //  algName_ = std::string("xtrapulp");
+      // else
+      algName_ = std::string("pulp");
+#else
+      algName_ = std::string("phg");
+#endif
+#endif
+#endif
+    } else if (model == std::string("geometry")) {
+      algName_ = std::string("multijagged");
+    } else if (model == std::string("ids")) {
+      algName_ = std::string("block");
+    } else {
+      // Parameter list should ensure this does not happen.
+      env.localBugAssertion(__FILE__, __LINE__,
+                            "parameter list model type is invalid", 1,
+                            BASIC_ASSERTION);
     }
-    else
-    {
-      // Determine an algorithm and model suggested by the input type.
-      //   TODO: this is a good time to use the time vs. quality parameter
-      //     in choosing an algorithm, and setting some parameters
+  } else {
+    // Determine an algorithm and model suggested by the input type.
+    //   TODO: this is a good time to use the time vs. quality parameter
+    //     in choosing an algorithm, and setting some parameters
 
-      if (inputType_ == MatrixAdapterType)
-      {
-        //modelType_ = HypergraphModelType;
-        modelAvail_[HypergraphModelType]=true;
-
-        algName_ = std::string("phg");
-      }
-      else if (inputType_ == GraphAdapterType ||
-          inputType_ == MeshAdapterType)
-      {
-        //modelType_ = GraphModelType;
-        modelAvail_[GraphModelType]=true;
-
-        algName_ = std::string("phg");
-      }
-      else if (inputType_ == VectorAdapterType)
-      {
-        //modelType_ = CoordinateModelType;
-        modelAvail_[CoordinateModelType]=true;
-
-        algName_ = std::string("multijagged");
-      }
-      else if (inputType_ == IdentifierAdapterType)
-      {
-        //modelType_ = IdentifierModelType;
-        modelAvail_[IdentifierModelType]=true;
-
-        algName_ = std::string("block");
-      }
-      else{
-        // This should never happen
-        throw std::logic_error("input type is invalid");
-      }
+    if (inputType_ == MatrixAdapterType) {
+      algName_ = std::string("phg");
+    } else if (inputType_ == GraphAdapterType ||
+               inputType_ == MeshAdapterType) {
+      algName_ = std::string("phg");
+    } else if (inputType_ == VectorAdapterType) {
+      algName_ = std::string("multijagged");
+    } else if (inputType_ == IdentifierAdapterType) {
+      algName_ = std::string("block");
+    } else {
+      // This should never happen
+      throw std::logic_error("input type is invalid");
     }
-
-
+  }
 }
 
 template <typename Adapter>
