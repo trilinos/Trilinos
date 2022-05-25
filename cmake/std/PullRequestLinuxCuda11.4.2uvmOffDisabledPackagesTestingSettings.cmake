@@ -156,7 +156,7 @@ set (Trilinos_ENABLE_STK OFF CACHE BOOL "Turn off packages for non-UVM build")
 
 set (Ifpack2_BlockTriDiContainerUnitAndPerfTests_DISABLE ON CACHE BOOL "Turn off tests for cuda 11.4.2 non-UVM build")
 
-#set (FEI_lagrange_20quad_old_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for cuda 11.4.2 non-UVM build")
+set (FEI_lagrange_20quad_old_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for cuda 11.4.2 non-UVM build")
 #set (STKUnit_tests_stk_mesh_unit_tests_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for cuda 11.4.2 non-UVM build")
 #set (TpetraCore_CrsMatrix_UnitTests4_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for cuda 11.4.2 non-UVM build")
 
