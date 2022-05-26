@@ -413,20 +413,15 @@ namespace Tpetra {
 
       allocateMemory(X.getNumVectors());
 
-      RCP<mv_type> X_colmap, Y_colmap;
-      RCP<mv_type> coefficients_colmap, coefficients2_colmap;
-
       // near field - part 1
       RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > nearFieldImporter = nearField_->getGraph()->getImporter();
       {
         if (mode == Teuchos::NO_TRANS) {
-          X_colmap = nearField_->getColumnMapMultiVector(X, true);
-          X_colmap->beginImport(X, *nearFieldImporter, INSERT);
+          X_colmap_->beginImport(X, *nearFieldImporter, INSERT);
         } else if (mode == Teuchos::TRANS) {
-          Y_colmap = nearField_->getColumnMapMultiVector(Y, true);
-          nearField_->localApply(X, *Y_colmap, mode, alpha, zero);
+          nearField_->localApply(X, *X_colmap_, mode, alpha, zero);
           Y.scale (beta);
-          Y.beginExport(*Y_colmap, *nearFieldImporter, ADD_ASSIGN);
+          Y.beginExport(*X_colmap_, *nearFieldImporter, ADD_ASSIGN);
         }
       }
 
@@ -455,23 +450,19 @@ namespace Tpetra {
         RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > kernelApproximationsImporter = kernelApproximations_->pointA_->getGraph()->getImporter();
         if (flip) {
           if (mode == Teuchos::NO_TRANS) {
-            coefficients_colmap = kernelApproximations_->pointA_->getColumnMapMultiVector(*coefficients_, true);
-            coefficients_colmap->beginImport(*coefficients_, *kernelApproximationsImporter, INSERT);
+            coefficients_colmap_->beginImport(*coefficients_, *kernelApproximationsImporter, INSERT);
           } else if (mode == Teuchos::TRANS) {
-            coefficients2_colmap = kernelApproximations_->pointA_->getColumnMapMultiVector(*coefficients2_, true);
-            kernelApproximations_->localApply(*coefficients_, *coefficients2_colmap, mode, alpha);
+            kernelApproximations_->localApply(*coefficients_, *coefficients_colmap_, mode, alpha);
             coefficients2_->putScalar(zero);
-            coefficients2_->beginExport(*coefficients2_colmap, *kernelApproximationsImporter, ADD_ASSIGN);
+            coefficients2_->beginExport(*coefficients_colmap_, *kernelApproximationsImporter, ADD_ASSIGN);
           }
         } else {
           if (mode == Teuchos::NO_TRANS) {
-            coefficients2_colmap = kernelApproximations_->pointA_->getColumnMapMultiVector(*coefficients2_, true);
-            coefficients2_colmap->beginImport(*coefficients2_, *kernelApproximationsImporter, INSERT);
+            coefficients_colmap_->beginImport(*coefficients2_, *kernelApproximationsImporter, INSERT);
           } else if (mode == Teuchos::TRANS) {
-            coefficients_colmap = kernelApproximations_->pointA_->getColumnMapMultiVector(*coefficients_, true);
-            kernelApproximations_->localApply(*coefficients2_, *coefficients_colmap, mode, alpha);
+            kernelApproximations_->localApply(*coefficients2_, *coefficients_colmap_, mode, alpha);
             coefficients_->putScalar(zero);
-            coefficients_->beginExport(*coefficients_colmap, *kernelApproximationsImporter, ADD_ASSIGN);
+            coefficients_->beginExport(*coefficients_colmap_, *kernelApproximationsImporter, ADD_ASSIGN);
           }
         }
       }
@@ -481,10 +472,10 @@ namespace Tpetra {
         Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("near field 2")));
 
         if (mode == Teuchos::NO_TRANS) {
-          X_colmap->endImport(X, *nearFieldImporter, INSERT);
-          nearField_->localApply(*X_colmap, Y, mode, alpha, beta);
+          X_colmap_->endImport(X, *nearFieldImporter, INSERT);
+          nearField_->localApply(*X_colmap_, Y, mode, alpha, beta);
         } else if (mode == Teuchos::TRANS) {
-          Y.endExport(*Y_colmap, *nearFieldImporter, ADD_ASSIGN);
+          Y.endExport(*X_colmap_, *nearFieldImporter, ADD_ASSIGN);
         }
       }
 
@@ -495,17 +486,17 @@ namespace Tpetra {
         RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > kernelApproximationsImporter = kernelApproximations_->pointA_->getGraph()->getImporter();
         if (flip) {
           if (mode == Teuchos::NO_TRANS) {
-            coefficients_colmap->endImport(*coefficients_, *kernelApproximationsImporter, INSERT);
-            kernelApproximations_->localApply(*coefficients_colmap, *coefficients2_, mode, alpha);
+            coefficients_colmap_->endImport(*coefficients_, *kernelApproximationsImporter, INSERT);
+            kernelApproximations_->localApply(*coefficients_colmap_, *coefficients2_, mode, alpha);
           } else if (mode == Teuchos::TRANS) {
-            coefficients2_->endExport(*coefficients2_colmap, *kernelApproximationsImporter, ADD_ASSIGN);
+            coefficients2_->endExport(*coefficients_colmap_, *kernelApproximationsImporter, ADD_ASSIGN);
           }
         } else {
           if (mode == Teuchos::NO_TRANS) {
-            coefficients2_colmap->endImport(*coefficients2_, *kernelApproximationsImporter, INSERT);
-            kernelApproximations_->localApply(*coefficients2_colmap, *coefficients_, mode, alpha);
+            coefficients_colmap_->endImport(*coefficients2_, *kernelApproximationsImporter, INSERT);
+            kernelApproximations_->localApply(*coefficients_colmap_, *coefficients_, mode, alpha);
           } else if (mode == Teuchos::TRANS) {
-            coefficients_->endExport(*coefficients_colmap, *kernelApproximationsImporter, ADD_ASSIGN);
+            coefficients_->endExport(*coefficients_colmap_, *kernelApproximationsImporter, ADD_ASSIGN);
           }
         }
       }
@@ -999,6 +990,8 @@ namespace Tpetra {
       if (coefficients_.is_null() || coefficients_->getNumVectors() != numVectors) {
         coefficients_  = rcp(new mv_type(clusterCoeffMap_, numVectors));
         coefficients2_ = rcp(new mv_type(clusterCoeffMap_, numVectors));
+        X_colmap_ = rcp(new mv_type(nearField_->getColMap(), numVectors));
+        coefficients_colmap_  = rcp(new mv_type(kernelApproximations_->pointA_->getColMap(), numVectors));
       }
     }
 
@@ -1008,6 +1001,7 @@ namespace Tpetra {
     std::vector<RCP<blocked_matrix_type> > transferMatrices_;
     RCP<const map_type> clusterCoeffMap_;
     mutable RCP<mv_type> coefficients_, coefficients2_;
+    mutable RCP<mv_type> X_colmap_, coefficients_colmap_;
   };
 
 }
