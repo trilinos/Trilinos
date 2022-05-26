@@ -28,6 +28,7 @@
 
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <percept/FieldTypes.hpp>
+#include <memory>
 
 /** stk_mesh Use Case 3 - copied and modified here */
 
@@ -53,8 +54,9 @@
       void populate();
 
       const int m_spatial_dimension;
-      stk::mesh::MetaData m_metaData;
-      stk::mesh::BulkData m_bulkData;
+      std::shared_ptr<stk::mesh::BulkData> m_bulkDataPtr;
+      stk::mesh::BulkData& m_bulkData;
+      stk::mesh::MetaData& m_metaData;
 
       stk::mesh::Part & m_block_hex;
       stk::mesh::Part & m_block_wedge;

@@ -45,6 +45,8 @@
 
 namespace {
 
+using ViewInt1DHostType = Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::HostSpace>;
+
 bool
 has_variable(const std::vector<std::string>& variableNames, const std::string& variableName)
 {
@@ -104,26 +106,29 @@ double device_evaluate(const std::string & expression,
   stk::expreval::Eval eval(expression, arrayOffsetType);
   eval.parse();
 
-  int    variableIndices[10];
-  int    variableSizes[10];
+  auto variableIndicesHost = ViewInt1DHostType("variableIndices", 10);
+  auto variableSizesHost = ViewInt1DHostType("variableSizes", 10);
   Kokkos::View<double[10][10], Kokkos::LayoutRight, stk::ngp::MemSpace> variableDeviceValues("device values");
   Kokkos::View<double[10][10], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror variableHostValues("input variables");
 
   for (unsigned varIndex = 0; varIndex < boundScalars.size(); ++varIndex) {
-    variableIndices[varIndex] = eval.get_variable_index(boundScalars[varIndex].varName);
-    variableSizes[varIndex]   = 1;
+    variableIndicesHost(varIndex) = eval.get_variable_index(boundScalars[varIndex].varName);
+    variableSizesHost(varIndex)   = 1;
     variableHostValues(varIndex, 0)  = boundScalars[varIndex].varValue;
   }
 
   for (unsigned varIndex = 0; varIndex < boundVectors.size(); ++varIndex) {
-    variableIndices[varIndex + boundScalars.size()] = eval.get_variable_index(boundVectors[varIndex].varName);
-    variableSizes[varIndex + boundScalars.size()]   = boundVectors[varIndex].varValues.size();
+    variableIndicesHost(varIndex + boundScalars.size()) = eval.get_variable_index(boundVectors[varIndex].varName);
+    variableSizesHost(varIndex + boundScalars.size())   = boundVectors[varIndex].varValues.size();
     for (unsigned varComponent = 0; varComponent < boundVectors[varIndex].varValues.size(); ++varComponent) {
       variableHostValues(varIndex + boundScalars.size(), varComponent) = boundVectors[varIndex].varValues[varComponent];
     }
   }
 
+  auto variableIndicesDevice = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace(), variableIndicesHost);
+  auto variableSizesDevice = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace(), variableSizesHost);
   Kokkos::deep_copy(variableDeviceValues, variableHostValues);
+
   const unsigned numBoundVariables = boundScalars.size() + boundVectors.size();
   auto & parsedEval = eval.get_parsed_eval();
 
@@ -131,7 +136,7 @@ double device_evaluate(const std::string & expression,
   Kokkos::parallel_reduce(Kokkos::RangePolicy<stk::ngp::ExecSpace>(0,1), KOKKOS_LAMBDA (const int& i, double& localResult) {
     stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
     for (unsigned varIndex = 0; varIndex < numBoundVariables; ++varIndex) {
-      deviceVariableMap.bind(variableIndices[varIndex], variableDeviceValues(varIndex, 0), variableSizes[varIndex], 1);
+      deviceVariableMap.bind(variableIndicesDevice(varIndex), variableDeviceValues(varIndex, 0), variableSizesDevice(varIndex), 1);
     }
     localResult = parsedEval.evaluate(deviceVariableMap);
   }, result);
@@ -148,8 +153,8 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   stk::expreval::Eval eval(expression, arrayOffsetType);
   eval.parse();
 
-  int    variableIndices[10];
-  int    variableSizes[10];
+  auto variableIndicesHost = ViewInt1DHostType("variableIndices", 10);
+  auto variableSizesHost = ViewInt1DHostType("variableSizes", 10);
   Kokkos::View<double[10][10][10], Kokkos::LayoutRight, stk::ngp::MemSpace> variableDeviceValues("device values");
   Kokkos::View<double[10][10][10], Kokkos::LayoutRight, stk::ngp::MemSpace>::HostMirror variableHostValues("input variables");
 
@@ -157,8 +162,8 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   typename Kokkos::View<double[numThreads], stk::ngp::MemSpace>::HostMirror hostResults = Kokkos::create_mirror_view(deviceResults);
 
   for (unsigned varIndex = 0; varIndex < boundScalars.size(); ++varIndex) {
-    variableIndices[varIndex] = eval.get_variable_index(boundScalars[varIndex].varName);
-    variableSizes[varIndex]   = 1;
+    variableIndicesHost(varIndex) = eval.get_variable_index(boundScalars[varIndex].varName);
+    variableSizesHost(varIndex)   = 1;
     ThrowRequireMsg(numThreads == boundScalars[varIndex].varValue.size(), "Number of threads doesn't match declared number of threads in scalar bound data");
     for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       variableHostValues(threadIndex, varIndex, 0)  = boundScalars[varIndex].varValue[threadIndex];
@@ -166,8 +171,8 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   }
 
   for (unsigned varIndex = 0; varIndex < boundVectors.size(); ++varIndex) {
-    variableIndices[varIndex + boundScalars.size()] = eval.get_variable_index(boundVectors[varIndex].varName);
-    variableSizes[varIndex + boundScalars.size()]   = boundVectors[varIndex].varValues.size();
+    variableIndicesHost(varIndex + boundScalars.size()) = eval.get_variable_index(boundVectors[varIndex].varName);
+    variableSizesHost(varIndex + boundScalars.size())  = boundVectors[varIndex].varValues.size();
     ThrowRequireMsg(numThreads == boundVectors[varIndex].varValues.size(), "Number of threads doesn't match declared number of threads in vector bound data");
     for (unsigned threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
       for (unsigned varComponent = 0; varComponent < boundVectors[varIndex].varValues[threadIndex].size(); ++varComponent) {
@@ -176,14 +181,17 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
     }
   }
 
+  auto variableIndicesDevice = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace(), variableIndicesHost);
+  auto variableSizesDevice = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace(), variableSizesHost);
   Kokkos::deep_copy(variableDeviceValues, variableHostValues);
+
   const unsigned numBoundVariables = boundScalars.size() + boundVectors.size();
   auto & parsedEval = eval.get_parsed_eval();
 
   Kokkos::parallel_for(numThreads, KOKKOS_LAMBDA (const int& i) {
     stk::expreval::DeviceVariableMap<> deviceVariableMap(parsedEval);
     for (unsigned varIndex = 0; varIndex < numBoundVariables; ++varIndex) {
-      deviceVariableMap.bind(variableIndices[varIndex], variableDeviceValues(i, varIndex, 0), variableSizes[varIndex], 1);
+      deviceVariableMap.bind(variableIndicesDevice(varIndex), variableDeviceValues(i, varIndex, 0), variableSizesDevice(varIndex), 1);
     }
     deviceResults(i) = parsedEval.evaluate(deviceVariableMap);
   });

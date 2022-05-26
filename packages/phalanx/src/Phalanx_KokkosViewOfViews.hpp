@@ -102,7 +102,7 @@ namespace PHX {
   };
 
   // ****************************
-  // ViewOfViews: new version
+  // ViewOfViews: new version (inner views use Unmanaged template parameter)
   // ****************************
 
   namespace details {
@@ -210,7 +210,7 @@ namespace PHX {
       is_initialized_ = true;
     }
 
-    /// Set an innder device view on the outer view. Indices are the outer view indices. 
+    /// Set an inner device view on the outer view. Indices are the outer view indices. 
     template<typename... Indices>
     void setView(InnerViewType v,Indices... i)
     {
@@ -235,6 +235,138 @@ namespace PHX {
     {
       TEUCHOS_ASSERT(is_initialized_);
       return view_host_managed_;
+    }
+
+    /// Returns device view of views
+    auto getViewDevice()
+    {
+      KOKKOS_ASSERT(device_view_is_synced_);
+      return view_device_;
+    }
+  };
+
+  // ****************************
+  // ViewOfViews: third version (inner views are runtime unmanaged - no Unmanaged template parameter)
+  // ****************************
+
+  /** Wrapper class that correctly handles ViewOfViews construction
+      and object lifetime. This class makes sure the host view stays
+      in scope for the life of the device view and makes sure that the
+      device is synced to host before use.
+
+      Main restrictions:
+
+      1. When UVM is not used in the outer view, we need to allocate
+      the outer VofV on host and copy to device to initialize the
+      inner views correctly (tracking object).
+
+      2. Step 1 means that the host view must exist as long as the
+      device view is being used, otherwise the views may go out of
+      scope. This object exists to pair up the host and device view to
+      make sure the inner views are not deleted early.
+
+      3. Normally we use an unmanaged view (constructed with the
+      Unmanaged template parameter) for the inner views to prevent
+      double deletion. However, there are use cases where it's painful
+      to pass around views built with the unmanaged template parameter
+      (libraries with finctions that block the unmanaged argument). We
+      can generate an unmanged view without the template parameter by
+      constructing the view with a raw pointer. This thrid
+      implementation does that here.
+  */
+  template<int OuterViewRank,typename InnerViewType,typename... OuterViewProps>
+  class ViewOfViews3 {
+
+  public:
+    // Layout of the outer view doesn't matter for performance so we
+    // use a raw Kokkos::View instead of PHX::View. The inner views are
+    // what is important for performance.
+    using OuterDataType = typename PHX::v_of_v_utils::add_pointer<InnerViewType,OuterViewRank>::type;
+    using OuterViewType = Kokkos::View<OuterDataType,OuterViewProps...>;
+
+  private:
+    // Inner views are mananged - used to prevent early deletion
+    typename OuterViewType::HostMirror view_host_;
+    // Inner views are unmanaged by runtime construction with pointer
+    // (avoids template parameter). Used to correctly initialize outer
+    // device view on device.
+    typename OuterViewType::HostMirror view_host_unmanaged_;
+    // Device view
+    OuterViewType view_device_;
+    // True if the host view has not been synced to device
+    bool device_view_is_synced_;
+    // True if the outer view has been initialized
+    bool is_initialized_;
+    // Use count after initialization. This changes based on whether the device space is accessible to the host space.
+    int use_count_;
+
+  public:
+    template<typename... Extents>
+    ViewOfViews3(const std::string name,Extents... extents)
+      : view_host_(name,extents...),
+        view_device_(name,extents...),
+        device_view_is_synced_(false),
+        is_initialized_(true)
+    {
+      view_host_unmanaged_ = Kokkos::create_mirror_view(view_device_);
+      use_count_ = view_device_.impl_track().use_count();
+    }
+
+    ViewOfViews3()
+      : device_view_is_synced_(false),
+        is_initialized_(false),
+        use_count_(-1)
+    {}
+
+    ~ViewOfViews3()
+    {
+      // Make sure there is not another object pointing to device view
+      // since the host view will delete the inner views on exit.
+      if (view_device_.impl_track().use_count() != use_count_)
+        Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
+    }
+
+    /// Allocate the out view objects. Extents are for the outer view.
+    template<typename... Extents>
+    void initialize(const std::string name,Extents... extents)
+    {
+      view_host_ = typename OuterViewType::HostMirror(name,extents...);
+      view_device_ = OuterViewType(name,extents...);
+      view_host_unmanaged_ = Kokkos::create_mirror_view(view_device_);
+      device_view_is_synced_ = false;
+      is_initialized_ = true;
+      use_count_ = view_device_.impl_track().use_count();
+    }
+
+    // Returns true if the outer view has been initialized.
+    bool is_initialized() {return is_initialized_;}
+
+    template<typename... Indices>
+    void addView(InnerViewType v,Indices... i)
+    {
+      TEUCHOS_ASSERT(is_initialized_);
+      // Store the managed version so it doesn't get deleted.
+      view_host_(i...) = v;
+      // Store a runtime unmanaged view to prevent double deletion on device
+      view_host_unmanaged_(i...) = InnerViewType(v.data(),v.layout());
+      device_view_is_synced_ = false;
+    }
+
+    /// Note this only syncs the outer view. The inner views are
+    /// assumed to be on device for both host and device outer views.
+    void syncHostToDevice()
+    {
+      TEUCHOS_ASSERT(is_initialized_);
+      Kokkos::deep_copy(view_device_,view_host_unmanaged_);
+      device_view_is_synced_ = true;
+    }
+
+    /// Returns a host mirror view for the outer view, where the inner
+    /// views are still on device.
+    auto getViewHost()
+    {
+      TEUCHOS_ASSERT(is_initialized_);
+      return view_host_;
     }
 
     /// Returns device view of views

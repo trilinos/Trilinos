@@ -48,6 +48,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Details_residual.hpp"
+#include <Tpetra_RowMatrixTransposer.hpp>
 #include <cmath>
 #include <iostream>
 #include <sstream>
@@ -58,15 +59,18 @@ template <class MatrixType>
 Hiptmair<MatrixType>::
 Hiptmair (const Teuchos::RCP<const row_matrix_type>& A,
           const Teuchos::RCP<const row_matrix_type>& PtAP,
-          const Teuchos::RCP<const row_matrix_type>& P) :
+          const Teuchos::RCP<const row_matrix_type>& P,
+          const Teuchos::RCP<const row_matrix_type>& Pt) :
   A_ (A),
   PtAP_ (PtAP),
   P_ (P),
+  Pt_ (Pt),
   // Default values
   precType1_ ("CHEBYSHEV"),
   precType2_ ("CHEBYSHEV"),
   preOrPost_ ("both"),
   ZeroStartingSolution_ (true),
+  ImplicitTranspose_ (Pt.is_null()),
   // General
   IsInitialized_ (false),
   IsComputed_ (false),
@@ -87,11 +91,13 @@ Hiptmair (const Teuchos::RCP<const row_matrix_type>& A):
   A_ (A),
   PtAP_ (),
   P_ (),
+  Pt_ (),
   // Default values
   precType1_ ("CHEBYSHEV"),
   precType2_ ("CHEBYSHEV"),
   preOrPost_ ("both"),
   ZeroStartingSolution_ (true),
+  ImplicitTranspose_ (true),
   // General
   IsInitialized_ (false),
   IsComputed_ (false),
@@ -129,6 +135,7 @@ void Hiptmair<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
   Teuchos::ParameterList precList1 = precList1_;
   Teuchos::ParameterList precList2 = precList2_;
   bool zeroStartingSolution = ZeroStartingSolution_;
+  bool implicitTranspose = ImplicitTranspose_;
 
   precType1 = params.get("hiptmair: smoother type 1", precType1);
   precType2 = params.get("hiptmair: smoother type 2", precType2);
@@ -137,6 +144,7 @@ void Hiptmair<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
   preOrPost = params.get("hiptmair: pre or post",     preOrPost);
   zeroStartingSolution = params.get("hiptmair: zero starting solution",
                                     zeroStartingSolution);
+  implicitTranspose = params.get("hiptmair: implicit transpose", implicitTranspose);
 
   // Grab the matrices off of the parameter list if we need them
   // This will intentionally throw if they're not there and we need them
@@ -144,6 +152,8 @@ void Hiptmair<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
     PtAP_ = params.get<RCP<row_matrix_type> >("PtAP");
   if(P_.is_null()) 
     P_ = params.get<RCP<row_matrix_type> >("P");
+  if (params.isType<RCP<row_matrix_type> >("Pt"))
+    Pt_ = params.get<RCP<row_matrix_type> >("Pt");
 
 
   // "Commit" the new values to the instance data.
@@ -153,6 +163,7 @@ void Hiptmair<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
   precList2_ = precList2;
   preOrPost_ = preOrPost;
   ZeroStartingSolution_ = zeroStartingSolution;
+  ImplicitTranspose_ = implicitTranspose;
 }
 
 
@@ -249,6 +260,8 @@ void Hiptmair<MatrixType>::initialize ()
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  const char methodName[] = "Ifpack2::Hiptmair::initialize";
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::Hiptmair::initialize: "
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
@@ -258,10 +271,13 @@ void Hiptmair<MatrixType>::initialize ()
   IsInitialized_ = false;
   IsComputed_ = false;
 
-  Teuchos::Time timer ("initialize");
-  double startTime = timer.wallTime();
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter (methodName);
+
+  double startTime = timer->wallTime();
+
   { // The body of code to time
-    Teuchos::TimeMonitor timeMon (timer);
+    Teuchos::TimeMonitor timeMon (*timer);
 
     Details::OneLevelFactory<row_matrix_type> factory;
 
@@ -276,13 +292,15 @@ void Hiptmair<MatrixType>::initialize ()
   }
   IsInitialized_ = true;
   ++NumInitialize_;
-  InitializeTime_ += (timer.wallTime() - startTime);
+  InitializeTime_ += (timer->wallTime() - startTime);
 }
 
 
 template <class MatrixType>
 void Hiptmair<MatrixType>::compute ()
 {
+  const char methodName[] = "Ifpack2::Hiptmair::initialize";
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::Hiptmair::compute: "
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
@@ -293,16 +311,30 @@ void Hiptmair<MatrixType>::compute ()
     initialize ();
   }
 
-  Teuchos::Time timer ("compute");
-  double startTime = timer.wallTime();
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter (methodName);
+
+  double startTime = timer->wallTime();
   { // The body of code to time
-    Teuchos::TimeMonitor timeMon (timer);
+    Teuchos::TimeMonitor timeMon (*timer);
     ifpack2_prec1_->compute();
     ifpack2_prec2_->compute();
+
+    if (!ImplicitTranspose_ && Pt_.is_null()) {
+      using crs_type = Tpetra::CrsMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type>;
+      Teuchos::RCP<const crs_type> crsP = Teuchos::rcp_dynamic_cast<const crs_type>(P_);
+      if (!crsP.is_null()) {
+        using transposer_type = Tpetra::RowMatrixTransposer<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type>;
+        Pt_ = transposer_type(crsP).createTranspose();
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Ifpack2::Hiptmair::compute: "
+                                   "ImplicitTranspose == false, but no Pt was provided and transposing P was not possible.");
+      }
+    }
   }
   IsComputed_ = true;
   ++NumCompute_;
-  ComputeTime_ += (timer.wallTime() - startTime);
+  ComputeTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -345,10 +377,14 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     mode != Teuchos::NO_TRANS, std::logic_error,
     "Ifpack2::Hiptmair::apply: mode != Teuchos::NO_TRANS has not been implemented.");
 
-  Teuchos::Time timer ("apply");
-  double startTime = timer.wallTime();
+  const std::string timerName ("Ifpack2::Hiptmair::apply");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
+  double startTime = timer->wallTime();
   { // The body of code to time
-    Teuchos::TimeMonitor timeMon (timer);
+    Teuchos::TimeMonitor timeMon (*timer);
 
     // If X and Y are pointing to the same memory location,
     // we need to create an auxiliary vector, Xcopy
@@ -371,7 +407,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
 
   }
   ++NumApply_;
-  ApplyTime_ += (timer.wallTime() - startTime);
+  ApplyTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -417,28 +453,47 @@ applyHiptmairSmoother(const Tpetra::MultiVector<typename MatrixType::scalar_type
   const scalar_type ZERO = STS::zero ();
   const scalar_type ONE = STS::one ();
 
+  const std::string timerName1 ("Ifpack2::Hiptmair::apply 1");
+  const std::string timerName2 ("Ifpack2::Hiptmair::apply 2");
+
+  Teuchos::RCP<Teuchos::Time> timer1 = Teuchos::TimeMonitor::lookupCounter (timerName1);
+  if (timer1.is_null ()) {
+    timer1 = Teuchos::TimeMonitor::getNewCounter (timerName1);
+  }
+  Teuchos::RCP<Teuchos::Time> timer2 = Teuchos::TimeMonitor::lookupCounter (timerName2);
+  if (timer2.is_null ()) {
+    timer2 = Teuchos::TimeMonitor::getNewCounter (timerName2);
+  }
+
   updateCachedMultiVectors (A_->getRowMap (),
                             PtAP_->getRowMap (),
                             X.getNumVectors ());
 
   if (preOrPost_ == "pre" || preOrPost_ == "both") {
     // apply initial relaxation to primary space
+    Teuchos::TimeMonitor timeMon (*timer1);
     Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
     cachedSolution1_->putScalar (ZERO);
     ifpack2_prec1_->apply (*cachedResidual1_, *cachedSolution1_);
     Y.update (ONE, *cachedSolution1_, ONE);
   }
 
-  // project to auxiliary space and smooth
-  Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
-  P_->apply (*cachedResidual1_, *cachedResidual2_, Teuchos::TRANS);
-  cachedSolution2_->putScalar (ZERO);
-  ifpack2_prec2_->apply (*cachedResidual2_, *cachedSolution2_);
-  P_->apply (*cachedSolution2_, *cachedSolution1_, Teuchos::NO_TRANS);
-  Y.update (ONE,*cachedSolution1_,ONE);
+  {
+    // project to auxiliary space and smooth
+    Teuchos::TimeMonitor timeMon (*timer2);
+    Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
+    if (!Pt_.is_null())
+      Pt_->apply (*cachedResidual1_, *cachedResidual2_, Teuchos::NO_TRANS);
+    else
+      P_->apply (*cachedResidual1_, *cachedResidual2_, Teuchos::TRANS);
+    cachedSolution2_->putScalar (ZERO);
+    ifpack2_prec2_->apply (*cachedResidual2_, *cachedSolution2_);
+    P_->apply (*cachedSolution2_, Y, Teuchos::NO_TRANS, ONE, ONE);
+  }
 
   if (preOrPost_ == "post" || preOrPost_ == "both") {
     // smooth again on primary space
+    Teuchos::TimeMonitor timeMon (*timer1);
     Tpetra::Details::residual(*A_,Y,X,*cachedResidual1_);
     cachedSolution1_->putScalar (ZERO);
     ifpack2_prec1_->apply (*cachedResidual1_, *cachedSolution1_);

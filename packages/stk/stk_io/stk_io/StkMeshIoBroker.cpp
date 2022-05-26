@@ -83,6 +83,7 @@
 #include "stk_mesh/base/SideSetEntry.hpp"            // for SideSet
 #include "stk_mesh/base/SidesetUpdater.hpp"          // for SidesetUpdater
 #include "stk_mesh/base/Types.hpp"                   // for FieldVector, Ent...
+#include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_topology/topology.hpp"                 // for operator++, topo...
 #include "stk_util/parallel/Parallel.hpp"            // for parallel_machine...
 #include "stk_util/parallel/ParallelReduce.hpp"      // for all_reduce_max
@@ -805,17 +806,10 @@ void StkMeshIoBroker::create_bulk_data()
     ThrowErrorMsgIf (region==nullptr,
                      "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
 
-    // Check if bulk_data is null; if so, create a new one...
     if (is_bulk_data_null()) {
-        stk::mesh::FieldDataManager* fieldDataManager = nullptr;
-        set_bulk_data(std::shared_ptr<stk::mesh::BulkData>(
-              new stk::mesh::BulkData(meta_data(),
-                                      region->get_database()->util().communicator(),
-                                      stk::mesh::BulkData::AUTO_AURA,
-#ifdef SIERRA_MIGRATION
-                                      false,
-#endif
-                                      fieldDataManager)));
+        set_bulk_data(stk::mesh::MeshBuilder(region->get_database()->util().communicator())
+                                          .set_aura_option(stk::mesh::BulkData::AUTO_AURA)
+                                          .create(meta_data_ptr()));
     }
 }
 

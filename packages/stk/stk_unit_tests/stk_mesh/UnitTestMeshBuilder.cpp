@@ -47,6 +47,28 @@ void verify_comm(stk::ParallelMachine expectedComm, const stk::mesh::BulkData& b
   EXPECT_EQ(stk::parallel_machine_rank(expectedComm), bulk.parallel_rank());
 }
 
+TEST(MeshBuilder, create_meta_no_comm)
+{
+  std::shared_ptr<stk::mesh::MetaData> meta = stk::mesh::MeshBuilder().create_meta_data();
+  EXPECT_TRUE(nullptr != meta);
+}
+
+TEST(MeshBuilder, create_bulkdata_no_comm_throws)
+{
+  EXPECT_ANY_THROW(stk::mesh::MeshBuilder().create());
+}
+
+TEST(MeshBuilder, construct_builder_then_set_comm)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::mesh::MeshBuilder builder;
+  builder.set_communicator(comm);
+  std::shared_ptr<stk::mesh::BulkData> bulk = builder.create();
+
+  EXPECT_TRUE(nullptr != bulk);
+  verify_comm(comm, *bulk);
+}
+
 TEST(MeshBuilder, create_simplest_comm_world)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;

@@ -117,11 +117,7 @@ class BulkDataTester : public stk::mesh::BulkData
 {
 public:
     BulkDataTester(std::shared_ptr<stk::mesh::MetaData> mesh_meta_data, stk::ParallelMachine parallel)
-      : stk::mesh::BulkData(mesh_meta_data, parallel, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-            , false
-#endif
-            )
+      : stk::mesh::BulkData(mesh_meta_data, parallel, stk::mesh::BulkData::AUTO_AURA)
     { }
 };
 
@@ -173,11 +169,7 @@ class BulkDataTester : public stk::mesh::BulkData
 {
 public:
   BulkDataTester(stk::mesh::MetaData & mesh_meta_data, stk::ParallelMachine parallel)
-    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), parallel, stk::mesh::BulkData::AUTO_AURA,
-#ifdef SIERRA_MIGRATION
-                          false,
-#endif
-                          (stk::mesh::FieldDataManager*)nullptr)
+    : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), parallel, stk::mesh::BulkData::AUTO_AURA)
   {
   }
 };

@@ -3,20 +3,12 @@
 
 namespace stk {
 
-namespace Impl {
+MPITagManager::MPITagManager(int deletionGroupSize, int delayCount) :
+  m_keyManager(std::make_shared<impl::MPIKeyManager>()),
+  m_commData(impl::CommCompare(m_keyManager)),
 
-MPITagData::~MPITagData()
-{
-  if (!m_isFree)
-    m_manager->free_tag(*this);
-}
-
-}  // namespace 
-
-MPITagManager::MPITagManager() :
-  m_keyManager(std::make_shared<MPIKeyManager>()),
-  m_commCompare(m_keyManager),
-  m_tags(m_commCompare)
+  m_deletionGroupSize(deletionGroupSize),
+  m_delayCount(delayCount)
 {
   int isInitialized;
   MPI_Initialized(&isInitialized);
@@ -28,92 +20,135 @@ MPITagManager::MPITagManager() :
   ThrowRequireMsg(flag, "This MPI implementation is erroneous");
   ThrowRequireMsg(*val >= m_tagMax, "MPI_TAG_UB must be at least " + std::to_string(m_tagMax));
   m_tagMax = *val;
+
+  m_callbackUID = m_keyManager->get_UID();
+}
+
+MPITagManager::~MPITagManager()
+{
+  m_keyManager->execute_callbacks_immediately(m_callbackUID);
 }
 
 
-MPITag MPITagManager::get_tag(MPI_Comm comm)
+MPITag MPITagManager::get_tag(MPI_Comm userComm, int tagHint)
 {
-  return get_tag(comm, m_tagMin);
-}
+  MPI_Comm comm;
+#ifdef MPI_KEY_MANAGER_COMM_DESTRUCTOR_CALLBACK_BROKEN
+  comm = m_commReplacer.get_copied_comm(userComm);
+#else
+  comm = userComm;
+#endif
 
-MPITag MPITagManager::get_tag(MPI_Comm comm, int tagHint)
-{
   if (!m_keyManager->has_key(comm))
   {
-    m_keyManager->get_key(comm);
-    m_keyManager->register_callback(comm, std::bind(&MPITagManager::free_comm_keys, this, std::placeholders::_1));
+    m_keyManager->register_callback(userComm, m_callbackUID, std::bind(&MPITagManager::erase_comm, this, std::placeholders::_1));
+    m_commData.emplace(std::piecewise_construct, std::make_tuple(comm), std::make_tuple(comm, m_tagMin, m_deletionGroupSize, m_delayCount));
   }
 
-  auto& commRecord = m_tags[comm];
-  auto& tags = commRecord.tags;
+  auto& commData = m_commData.at(comm);
+  auto newTag = get_new_tag(commData, tagHint);
 
-  auto it = tags.find(tagHint);
-
-  int newTag = -1;
-  if (it == tags.end()) {
-    newTag = tagHint;
-  } else {
-    // find next available tag
-    int prevVal = *it;
-    while (it != tags.end())
-    {
-      if ( (*it - prevVal) > 1)
-      {
-        newTag = prevVal + 1;
-        break;
-      }
-      prevVal = *it;
-      it++;
-    }
-
-    if (newTag == -1) { // if no spaces between existing tags found
-      newTag = *(std::prev(tags.end())) + 1;
-    }
-  }
-
-  assert(newTag != -1);
-  ThrowRequireMsg(newTag <= m_tagMax, "New tag must be <= " + std::to_string(m_tagMax));
-  debug_check(comm, newTag);
-
-  auto tagData = std::make_shared<Impl::MPITagData>(this, comm, newTag);
-  commRecord.insert(tagData);
+#ifdef MPI_KEY_MANAGER_COMM_DESTRUCTOR_CALLBACK_BROKEN
+  auto tagData = std::make_shared<impl::MPITagData>(this, userComm, comm, newTag);
+#else
+  auto tagData = std::make_shared<impl::MPITagData>(this, comm, newTag);
+#endif
+  commData.insert(tagData);
 
   return MPITag(tagData);
 }
 
 
-void MPITagManager::free_tag(MPITag& tag)
+int MPITagManager::get_new_tag(impl::CommTagInUseList& commData, int tagHint)
 {
-  free_tag(*(tag.m_data));
+  int newTag = -1;
+  if (tagHint == MPI_ANY_TAG) {
+    newTag = get_any_tag(commData);
+  } else {
+    newTag = new_tag_search(commData, tagHint);
+  }
+
+  assert(newTag >= 0);
+  ThrowRequireMsg(newTag <= m_tagMax, "New tag must be <= " + std::to_string(m_tagMax));
+  check_same_value_on_all_procs_debug_only(commData.get_comm(), newTag);
+
+  return newTag;
 }
 
 
-void MPITagManager::free_tag(Impl::MPITagData& tag)
+int MPITagManager::get_any_tag(impl::CommTagInUseList& commData)
 {
-  m_tags.at(tag.get_comm()).erase(tag);
-  tag.set_free();
+  int newTag = commData.get_min_free_tag();
+  ThrowRequireMsg(newTag <= m_tagMax, std::string("MPI tag supply exhausted: there can only be ") + 
+                                      std::to_string(m_tagMax) + " tags in use at any time");
+
+  return newTag;
 }
 
 
-//-----------------------------------------------------------------------------
-// MPI_Comm key management
-
-
-void MPITagManager::free_comm_keys(MPI_Comm comm)
+int MPITagManager::new_tag_search(impl::CommTagInUseList& commData, int tagHint)
 {
-  ThrowRequireMsg(m_tags.count(comm) == 1, "Cannot free MPI Comm that is not assigned (possible double free)");
+  const auto& tags = commData.get_tags();
 
-  auto& commRecords = m_tags[comm];
-  for (auto& weak_tag_ptr : commRecords.tagPtrs) {
-    if (auto tag_ptr = weak_tag_ptr.second.lock()) {
-      tag_ptr->set_free();
+  int newTag = -1;
+  auto it = tags.find(tagHint);
+  if (it == tags.end()) {
+    newTag = tagHint;
+  } else {
+    // find next available tag
+    int prevVal = it->first;
+    while (it != tags.end())
+    {
+      if ( (it->first - prevVal) > 1)
+      {
+        newTag = prevVal + 1;
+        break;
+      }
+      prevVal = it->first;
+      it++;
+    }
+
+    if (newTag == -1) { // if no spaces between existing tags found
+      newTag = (std::prev(tags.end()))->first + 1;
     }
   }
 
-  m_tags.erase(comm);
+  return newTag;
 }
 
-void MPITagManager::debug_check(MPI_Comm comm, int newVal)
+
+void MPITagManager::free_tag_local(impl::MPITagData& tag)
+{
+
+  MPI_Comm comm;
+#ifdef MPI_KEY_MANAGER_COMM_DESTRUCTOR_CALLBACK_BROKEN
+  comm = tag.get_comm_internal();
+#else
+  comm = tag.get_comm();
+#endif
+  m_commData.at(comm).erase(tag);
+}
+
+
+void MPITagManager::erase_comm(MPI_Comm origComm)
+{
+  MPI_Comm comm;
+#ifdef MPI_KEY_MANAGER_COMM_DESTRUCTOR_CALLBACK_BROKEN
+  comm = m_commReplacer.get_copied_comm(origComm);
+#else
+  comm = origComm;
+#endif
+
+  ThrowRequireMsg(m_commData.count(comm) == 1, "Cannot free MPI Comm that is not assigned (possible double free)");
+  m_commData.erase(comm);
+
+#ifdef MPI_KEY_MANAGER_COMM_DESTRUCTOR_CALLBACK_BROKEN
+  m_commReplacer.delete_comm_pair(origComm);
+#endif
+}
+
+
+void MPITagManager::check_same_value_on_all_procs_debug_only(MPI_Comm comm, int newVal)
 {
 #ifndef NDEBUG
   int commSize, myrank;
@@ -136,36 +171,23 @@ void MPITagManager::debug_check(MPI_Comm comm, int newVal)
 
   MPI_Barrier(comm);
 #endif
-
 }
-
-
-//-----------------------------------------------------------------------------
-// CommRecord
-
-void MPITagManager::CommRecord::insert(std::shared_ptr<Impl::MPITagData> new_tag)
-{
-  int tag_val = new_tag->get_tag();
-  ThrowRequireMsg(tags.count(tag_val) == 0, "Cannot create new tag with same value as existing tag");
-
-  tags.insert(tag_val);
-  tagPtrs[tag_val] = new_tag;
-}
-
-void MPITagManager::CommRecord::erase(Impl::MPITagData& tag)
-{
-  int tag_val = tag.get_tag();
-  ThrowRequireMsg(tags.count(tag_val) == 1, "Cannot free tag this has not been assigned (possible double free");
-
-  tags.erase(tag_val);
-  tagPtrs.erase(tag_val);
-}
-
 
 
 MPITagManager& get_mpi_tag_manager()
 {
-  static MPITagManager tagManager;
+  int deletionGroupSize = 32;
+  static int delayCount = -1;
+  if (delayCount < 0)
+  {
+    int commSize;
+    MPI_Comm_size(MPI_COMM_WORLD, &commSize);
+    // some MPI_Barrier algorithms use a tree based algorithm,
+    // travering it down and them up again, which likely takes
+    // 2 * log2(number of ranks)
+    delayCount = std::max(2*std::ceil(std::log2(commSize)), 4.0);
+  }
+  static MPITagManager tagManager(deletionGroupSize, delayCount);
   return tagManager;
 }
 

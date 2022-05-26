@@ -180,7 +180,7 @@ void addDiscreteCurlToRequestHandler(
     Kokkos::deep_copy(curlAtDofCoordsNonOriented, curlAtDofCoordsNonOriented_d);
 
     // create the global curl matrix
-    RCP<matrix> curl_matrix = rcp(new matrix(rowmap,colmap,basisCoeffsLI.extent(1)));
+    RCP<matrix> curl_matrix = rcp(new matrix(rowmap,colmap,hcurlCardinality));
 
     // get IDs for edges and faces
     auto fLIDs_k = face_ugi->getLIDs();

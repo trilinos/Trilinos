@@ -68,6 +68,13 @@ getSweeps() const
 }
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+std::string Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+getSpTrsvType() const
+{
+  return localPrec_->getSpTrsvType();
+}
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 int Filu<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 getNTrisol() const
 {
@@ -94,8 +101,8 @@ initLocalPrec()
 {
   auto nRows = this->mat_->getLocalNumRows();
   auto& p = this->params_;
-  localPrec_ = Teuchos::rcp(new LocalFILU(this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.standard_sptrsv, 
-                                          p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSize));
+  localPrec_ = Teuchos::rcp(new LocalFILU(this->localRowPtrs_, this->localColInds_, this->localValues_, nRows, p.sptrsv_algo,
+                                          p.nFact, p.nTrisol, p.level, p.omega, p.shift, p.guessFlag ? 1 : 0, p.blockSizeILU, p.blockSize));
   localPrec_->initialize();
   this->initTime_ = localPrec_->getInitializeTime();
 }

@@ -34,18 +34,33 @@
 
 #include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/baseImpl/AuraGhostingDownwardConnectivity.hpp>
 
 namespace stk {
 namespace mesh {
 
-MeshBuilder::MeshBuilder(ParallelMachine comm)
- : m_comm(comm),
+MeshBuilder::MeshBuilder()
+ : m_comm(MPI_COMM_NULL),
+   m_haveComm(false),
    m_auraOption(BulkData::AUTO_AURA),
    m_addFmwkData(false),
    m_fieldDataManager(nullptr),
    m_bucketCapacity(impl::BucketRepository::default_bucket_capacity),
    m_spatialDimension(0),
    m_entityRankNames()
+{
+}
+
+MeshBuilder::MeshBuilder(ParallelMachine comm)
+ : m_comm(comm),
+   m_haveComm(true),
+   m_auraOption(BulkData::AUTO_AURA),
+   m_addFmwkData(false),
+   m_fieldDataManager(nullptr),
+   m_bucketCapacity(impl::BucketRepository::default_bucket_capacity),
+   m_spatialDimension(0),
+   m_entityRankNames(),
+   m_upwardConnectivity(true)
 {
 }
 
@@ -58,6 +73,13 @@ MeshBuilder& MeshBuilder::set_spatial_dimension(unsigned spatialDimension)
 MeshBuilder& MeshBuilder::set_entity_rank_names(const std::vector<std::string>& entityRankNames)
 {
   m_entityRankNames = entityRankNames;
+  return *this;
+}
+
+MeshBuilder& MeshBuilder::set_communicator(ParallelMachine comm)
+{
+  m_comm = comm;
+  m_haveComm = true;
   return *this;
 }
 
@@ -85,6 +107,12 @@ MeshBuilder& MeshBuilder::set_bucket_capacity(unsigned bucketCapacity)
   return *this;
 }
 
+MeshBuilder& MeshBuilder::set_upward_connectivity(bool onOrOff)
+{
+  m_upwardConnectivity = onOrOff;
+  return *this;
+}
+
 std::shared_ptr<MetaData> MeshBuilder::create_meta_data()
 {
   if (m_spatialDimension > 0 || !m_entityRankNames.empty()) {
@@ -94,20 +122,33 @@ std::shared_ptr<MetaData> MeshBuilder::create_meta_data()
   return std::make_shared<MetaData>();
 }
 
-std::shared_ptr<BulkData> MeshBuilder::create()
+std::shared_ptr<impl::AuraGhosting> MeshBuilder::create_aura_ghosting()
 {
-  return create(create_meta_data());
+  if (m_upwardConnectivity) {
+    return std::make_shared<impl::AuraGhosting>();
+  }
+  return std::make_shared<impl::AuraGhostingDownwardConnectivity>();
 }
 
-std::shared_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData)
+std::unique_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData)
 {
-  return std::shared_ptr<BulkData>(new BulkData(metaData, m_comm, m_auraOption,
+  ThrowRequireMsg(m_haveComm, "MeshBuilder must be given an MPI communicator before creating BulkData");
+
+  return std::unique_ptr<BulkData>(new BulkData(metaData,
+                                                m_comm,
+                                                m_auraOption,
 #ifdef SIERRA_MIGRATION
-                                   m_addFmwkData,
+                                                m_addFmwkData,
 #endif
-                                   m_fieldDataManager,
-                                   m_bucketCapacity
-                                   ));
+                                                m_fieldDataManager,
+                                                m_bucketCapacity,
+                                                create_aura_ghosting(),
+                                                m_upwardConnectivity));
+}
+
+std::unique_ptr<BulkData> MeshBuilder::create()
+{
+  return create(create_meta_data());
 }
 
 }

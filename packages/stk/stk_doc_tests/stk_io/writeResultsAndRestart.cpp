@@ -98,14 +98,12 @@ TEST(StkMeshIoBrokerHowTo, writeResultsAndRestart)
     //+       since it commits the meta data.
     const std::string fieldName = "disp";
     stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, fieldName, 3);
-    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), nullptr);
 
     const stk::mesh::Part& block_1 = *stkIo.meta_data().get_part("block_1");
     //+ create a two-state field
     stk::mesh::Field<double> &fooSubset = stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, "fooSubset", 2);
-    stk::mesh::put_field_on_mesh(fooSubset, block_1,
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(fooSubset, block_1, nullptr);
 
     //+ commit the meta data and create the bulk data.
     //+ populate the bulk data with data from the mesh file.
@@ -182,15 +180,13 @@ TEST(StkMeshIoBrokerHowTo, writeResultsAndRestart)
     //create a 3-state field
     stk::mesh::Field<double> &foo =
         stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, "foo", 3);
-    stk::mesh::put_field_on_mesh(foo, stkIo.meta_data().universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(foo, stkIo.meta_data().universal_part(), nullptr);
 
     const stk::mesh::Part& block_1 = *stkIo.meta_data().get_part("block_1");
     //create a 3-state field
     stk::mesh::Field<double> &fooSubset = stkIo.meta_data().
         declare_field<double>(stk::topology::NODE_RANK, "fooSubset", 3);
-    stk::mesh::put_field_on_mesh(fooSubset, block_1,
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(fooSubset, block_1, nullptr);
 
     //add the new fields to the stk-io-broker, even though we know it isn't present
     //in the restart database. This is to test the 'missing-fields' argument below.

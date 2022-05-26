@@ -34,12 +34,12 @@ function bootstrap_modules() {
             exit -1
         fi
     else
-	source /projects/sems/modulefiles/utils/sems-modules-init.sh
-	module unload sems-git
-	module unload sems-python
-	module load sems-git/2.29.0
-	module load sems-python/3.8.6
-	export PYTHON_EXE=python3
+      	source /projects/sems/modulefiles/utils/sems-modules-init.sh
+      	module unload sems-git
+      	module unload sems-python
+      	module load sems-git/2.29.0
+      	module load sems-python/3.8.6
+      	export PYTHON_EXE=python3
     fi
 
     module list

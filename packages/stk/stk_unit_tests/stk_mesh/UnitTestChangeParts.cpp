@@ -162,7 +162,7 @@ TEST(UnitTestChangeParts, test_superset_and_subset_part_change)
   metaData.declare_part_subset(supersetPart, subsetPart2);
 
   stk::mesh::FieldBase &field = metaData.declare_field<double>(stk::topology::NODE_RANK, "sam");
-  stk::mesh::put_field_on_mesh(field, supersetPart, (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(field, supersetPart, nullptr);
 
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   stk::unit_test_util::simple_fields::setup_text_mesh(bulkData, meshDesc);

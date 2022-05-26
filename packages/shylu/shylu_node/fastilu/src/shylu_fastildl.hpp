@@ -52,6 +52,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
+#include <string>
 
 #include <assert.h>
 #include <Kokkos_Core.hpp>
@@ -100,6 +101,7 @@ class FastILDLPrec
         Ordinal nTrisol;
         Ordinal level;
         Ordinal blkSz;
+        Ordinal blkSzILDL;
         Scalar omega;
         Scalar shift;
 
@@ -163,7 +165,7 @@ class FastILDLPrec
 
     public:
         FastILDLPrec(OrdinalArray &aRowMapIn, OrdinalArray &aColIdxIn, ScalarArray &aValIn, Ordinal nRow_, bool standard_sptrsv_,
-                     Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_, Ordinal blkSz_)
+                     Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_, Ordinal blkSzILDL_, Ordinal blkSz_)
         {
             nRows = nRow_;
             standard_sptrsv = standard_sptrsv_;
@@ -185,6 +187,7 @@ class FastILDLPrec
             omega = omega_;
             guessFlag = guessFlag_;
             shift = shift_;
+            blkSzILDL = blkSzILDL_;
             blkSz = blkSz_;
 
             const Scalar one = Kokkos::ArithTraits<Scalar>::one();
@@ -200,7 +203,7 @@ class FastILDLPrec
             if (level > 0)
             {
                 initGuessPrec = Teuchos::rcp(new FastPrec(aRowMapIn, aColIdxIn, aValIn, nRow_, standard_sptrsv, 3, 5, 
-                                                          level_-1, omega_, shift_, guessFlag_, blkSz_));
+                                                          level_-1, omega_, shift_, guessFlag_, blkSzILDL_, blkSz_));
             }
 
         }
@@ -539,28 +542,23 @@ class FastILDLPrec
             aVal_ = Kokkos::create_mirror(aVal);
 
             //Copy the host matrix into the initialized a;
-            Ordinal aHostPtr = 0;
             for (Ordinal i = 0; i < nRows; i++)
             {
-                #ifdef SHYLU_DEBUG
-                Ordinal check = aHostPtr;
-                #endif
                 for(Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
                 {
                     Ordinal col = aColIdx_[k];
                     #ifdef FASTILDL_DEBUG_OUTPUT
                     std::cout << "col =" << col << std::endl;
                     #endif
-                    
-                    if (col == aColIdxHost[aHostPtr])
+                    for(Ordinal aHostPtr = aRowMapHost[i]; aHostPtr < aRowMapHost[i+1]; aHostPtr++)
                     {
-                       aVal_[k] = aValHost[aHostPtr]; 
-                       aHostPtr++;
+                        if (col == aColIdxHost[aHostPtr])
+                        {
+                            aVal_[k] = aValHost[aHostPtr]; 
+                            break;
+                        }
                     }
                 }
-                #ifdef SHYLU_DEBUG
-                assert((aHostPtr - check) == (aRowMapHost[i+1] - aRowMapHost[i]));
-                #endif
             }
             lVal = ScalarArray("lVal", lRowMap_[nRows]);
             ltVal = ScalarArray("ltVal", lRowMap_[nRows]);
@@ -819,12 +817,11 @@ class FastILDLPrec
 
             Kokkos::Timer timer;
             numericILU();
-            Ordinal blkSzILDLt = 4096;
-            FastILDLFunctor<Ordinal, Scalar, ExecSpace> ildltFunctor(aRowMap_[nRows], blkSzILDLt,
+            FastILDLFunctor<Ordinal, Scalar, ExecSpace> ildltFunctor(aRowMap_[nRows], blkSzILDL,
                     aRowMap, aColIdx, aRowIdx, aVal, lRowMap, lColIdx, lVal, diagElems, omega);
 
-            Ordinal extent = aRowMap_[nRows]/blkSzILDLt;
-            if (aRowMap_[nRows]%blkSzILDLt != 0)
+            Ordinal extent = aRowMap_[nRows]/blkSzILDL;
+            if (aRowMap_[nRows]%blkSzILDL != 0)
             {
                 extent++;
             }
@@ -907,7 +904,12 @@ class FastILDLPrec
         {
             return nFact;
         }
-        
+
+        std::string getSpTrsvType() const
+        {
+            return (standard_sptrsv ? "Standard" : "Fast");
+        }
+
         Ordinal getNTrisol() const
         {
             return nTrisol;

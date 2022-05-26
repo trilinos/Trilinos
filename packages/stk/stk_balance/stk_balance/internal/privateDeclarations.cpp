@@ -659,19 +659,18 @@ void register_internal_fields(stk::mesh::BulkData & bulk, const stk::balance::Ba
 {
   if (balanceSettings.shouldFixSpiders()) {
     stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-    const int initValue = 0;
 
     stk::mesh::Field<int> & beamField = meta.declare_field<int>(stk::topology::NODE_RANK,
                                                                 balanceSettings.getSpiderBeamConnectivityCountFieldName());
-    stk::mesh::put_field_on_mesh(beamField, meta.universal_part(), &initValue);
+    stk::mesh::put_field_on_mesh(beamField, meta.universal_part(), nullptr);
 
     stk::mesh::Field<int> & volumeField = meta.declare_field<int>(stk::topology::ELEM_RANK,
                                                                   balanceSettings.getSpiderVolumeConnectivityCountFieldName());
-    stk::mesh::put_field_on_mesh(volumeField, meta.universal_part(), &initValue);
+    stk::mesh::put_field_on_mesh(volumeField, meta.universal_part(), nullptr);
 
     stk::mesh::Field<int> & outputSubdomainField = meta.declare_field<int>(stk::topology::ELEM_RANK,
                                                                            balanceSettings.getOutputSubdomainFieldName());
-    stk::mesh::put_field_on_mesh(outputSubdomainField, meta.universal_part(), &initValue);
+    stk::mesh::put_field_on_mesh(outputSubdomainField, meta.universal_part(), nullptr);
   }
 }
 

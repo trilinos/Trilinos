@@ -49,40 +49,36 @@ template <typename EvalT,typename Traits>
 void TensorConductivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   using panzer::index_t;
-  auto conductivity_h = Kokkos::create_mirror_view(conductivity.get_static_view());
   if (ir_dim == 3) {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-      for (int point = 0; point < conductivity_h.extent_int(1); ++point) {
+    Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,conductivity.extent_int(1)});
+    Kokkos::parallel_for("panzer:TensorConductivity 3D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);
         // const ScalarT& z = coords(cell,point,2);
-        conductivity_h(cell,point,0,0) = sigma * (1.0 + betax*betax);
-        conductivity_h(cell,point,0,1) = sigma * (      betax*betay - betaz);
-        conductivity_h(cell,point,0,2) = sigma * (      betax*betaz + betay);
+        conductivity(cell,point,0,0) = sigma * (1.0 + betax*betax);
+        conductivity(cell,point,0,1) = sigma * (      betax*betay - betaz);
+        conductivity(cell,point,0,2) = sigma * (      betax*betaz + betay);
 
-        conductivity_h(cell,point,1,0) = sigma * (      betay*betax + betaz);
-        conductivity_h(cell,point,1,1) = sigma * (1.0 + betay*betay);
-        conductivity_h(cell,point,1,2) = sigma * (      betay*betaz - betax);
+        conductivity(cell,point,1,0) = sigma * (      betay*betax + betaz);
+        conductivity(cell,point,1,1) = sigma * (1.0 + betay*betay);
+        conductivity(cell,point,1,2) = sigma * (      betay*betaz - betax);
 
-        conductivity_h(cell,point,2,0) = sigma * (      betaz*betax - betay);
-        conductivity_h(cell,point,2,1) = sigma * (      betaz*betay + betax);
-        conductivity_h(cell,point,2,2) = sigma * (1.0 + betaz*betaz);
-      }
-    }
+        conductivity(cell,point,2,0) = sigma * (      betaz*betax - betay);
+        conductivity(cell,point,2,1) = sigma * (      betaz*betay + betax);
+        conductivity(cell,point,2,2) = sigma * (1.0 + betaz*betaz);
+      });
   } else {
-    for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-      for (int point = 0; point < conductivity_h.extent_int(1); ++point) {
+    Kokkos::MDRangePolicy<PHX::exec_space,Kokkos::Rank<2>> policy({0,0},{workset.num_cells,conductivity.extent_int(1)});
+    Kokkos::parallel_for("panzer:TensorConductivity 2D",policy,KOKKOS_LAMBDA (const int cell,const int point) {
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);
-        conductivity_h(cell,point,0,0) = sigma;
-        conductivity_h(cell,point,0,1) = 0.;
+        conductivity(cell,point,0,0) = sigma;
+        conductivity(cell,point,0,1) = 0.;
 
-        conductivity_h(cell,point,1,0) = 0.;
-        conductivity_h(cell,point,1,1) = sigma;
-      }
-    }
+        conductivity(cell,point,1,0) = 0.;
+        conductivity(cell,point,1,1) = sigma;
+      });
   }
-  Kokkos::deep_copy(conductivity.get_static_view(), conductivity_h);
 }
 
 //**********************************************************************
