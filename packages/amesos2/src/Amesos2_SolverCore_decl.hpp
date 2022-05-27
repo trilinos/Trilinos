@@ -235,19 +235,11 @@ namespace Amesos2 {
     void solve(const Teuchos::Ptr<Vector> X, const Teuchos::Ptr<const Vector> B) const;
     void solve(Vector* X, const Vector* B) const;
 
-    static const int defaultNumIters = 2;
-    int solve_ir(const Teuchos::Ptr<Vector> X, const Teuchos::Ptr<const Vector> B, const Teuchos::Ptr<Vector> R, const Teuchos::Ptr<Vector> E,
-                 const int maxNumIters = defaultNumIters,
-                 const bool verbose = false) const;
-    int solve_ir(Vector* X, const Vector* B, Vector* R, Vector* E,
-                 const int maxNumIters = defaultNumIters,
-                 const bool verbose = false) const;
-    int solve_ir(const Teuchos::Ptr<Vector> R, const Teuchos::Ptr<Vector> E,
-                 const int maxNumIters = defaultNumIters,
-                 const bool verbose = false);
-    int solve_ir(Vector* R, Vector* E,
-                 const int maxNumIters = defaultNumIters,
-                 const bool verbose = false);
+    int solve_ir(const Teuchos::Ptr<Vector> X, const Teuchos::Ptr<const Vector> B,
+                 const int maxNumIters, const bool verbose) const;
+    int solve_ir(Vector* X, const Vector* B,
+                 const int maxNumIters, const bool verbose) const;
+    int solve_ir(const int maxNumIters, const bool verbose);
 
     //@}  End Mathematical Functions group
 

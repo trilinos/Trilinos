@@ -60,6 +60,7 @@
 
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosBlas.hpp"
+
 namespace Amesos2 {
 
 
@@ -178,6 +179,11 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(const Teuchos::Ptr<Vector> X,
   X.assert_not_null();
   B.assert_not_null();
 
+  if (control_.useIterRefine_) {
+    solve_ir(X, B, control_.maxNumIterRefines_, control_.verboseIterRefine_);
+    return;
+  }
+
   const Teuchos::RCP<MultiVecAdapter<Vector> > x =
     createMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(X));
   const Teuchos::RCP<const MultiVecAdapter<Vector> > b =
@@ -224,34 +230,22 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve(Vector* X, const Vector* B) cons
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 int
-SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(Vector* R, Vector* E, const int maxNumIters, const bool verbose)
+SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const int maxNumIters, const bool verbose)
 {
-  return solve_ir(multiVecX_.ptr(), multiVecB_.ptr(), Teuchos::ptr(R), Teuchos::ptr(E), maxNumIters, verbose);
+  return solve_ir(multiVecX_.ptr(), multiVecB_.ptr(), maxNumIters, verbose);
 }
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 int
-SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(Vector* X, const Vector* B, Vector* R, Vector* E, const int maxNumIters, const bool verbose) const
+SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(Vector* X, const Vector* B, const int maxNumIters, const bool verbose) const
 {
-  return solve_ir(Teuchos::ptr(X), Teuchos::ptr(B), Teuchos::ptr(R), Teuchos::ptr(E), maxNumIters, verbose);
-}
-
-template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
-int
-SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<Vector> R,
-                                                   const Teuchos::Ptr<Vector> E,
-                                                   const int maxNumIters,
-                                                   const bool verbose)
-{
-  return solve_ir(R.ptr(), E.ptr(), maxNumIters, verbose);
+  return solve_ir(Teuchos::ptr(X), Teuchos::ptr(B), maxNumIters, verbose);
 }
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 int
 SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vector> x,
                                                    const Teuchos::Ptr<const Vector> b,
-                                                   const Teuchos::Ptr<      Vector> r,
-                                                   const Teuchos::Ptr<      Vector> e, 
                                                    const int maxNumIters,
                                                    const bool verbose) const
 {
@@ -270,14 +264,15 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
   const scalar_type one(1.0);
   const magni_type eps = STS::eps ();
 
-  //
-  // first solve
-  this->solve(x, b);
-
   // get data needed for IR
   using MVAdapter = MultiVecAdapter<Vector>;
   Teuchos::RCP<      MVAdapter> X = createMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(x));
   Teuchos::RCP<const MVAdapter> B = createConstMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(b));
+
+  auto r_ = B->clone();
+  auto e_ = X->clone();
+  auto r = r_.ptr();
+  auto e = e_.ptr();
   Teuchos::RCP<      MVAdapter> R = createMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(r));
   Teuchos::RCP<      MVAdapter> E = createMultiVecAdapter<Vector>(Teuchos::rcpFromPtr(e));
 
@@ -335,6 +330,11 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
   Util::get_1d_copy_helper_kokkos_view<MVAdapter, host_mvector_t>::
     do_get(not_initialize_data, Eptr, E_view, lde, CONTIGUOUS_AND_ROOTED, rowIndexBase);
 
+
+  //
+  // first solve
+  static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*X), Teuchos::ptrInArg(*B));
+
   host_magni_view x0norms("x0norms", nrhs);
   host_magni_view bnorms("bnorms", nrhs);
   host_magni_view enorms("enorms", nrhs);
@@ -365,6 +365,9 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
     }
   }
 
+
+  //
+  // iterative refinement
   int numIters = 0;
   int converged = 0; // 0 = has not converged, 1 = converged
   for (numIters = 0; numIters < maxNumIters && converged == 0; ++numIters) {
@@ -393,7 +396,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
     // e = A^{-1} r 
     Util::put_1d_data_helper_kokkos_view<MVAdapter, host_mvector_t>::
       do_put(Rptr, R_view, ldr, CONTIGUOUS_AND_ROOTED, rowIndexBase);
-    this->solve(e, r);
+    static_cast<const solver_type*>(this)->solve_impl(Teuchos::outArg(*E), Teuchos::ptrInArg(*R));
     Util::get_1d_copy_helper_kokkos_view<MVAdapter, host_mvector_t>::
       do_get(initialize_data, Eptr, E_view, lde, CONTIGUOUS_AND_ROOTED, rowIndexBase);
     
@@ -540,8 +543,12 @@ SolverCore<ConcreteSolver,Matrix,Vector>::getValidParameters() const
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  RCP<ParameterList> control_params = rcp(new ParameterList("Amesos2 Control"));
+  //RCP<ParameterList> control_params = rcp(new ParameterList("Amesos2 Control"));
+  RCP<ParameterList> control_params = rcp(new ParameterList("Amesos2"));
   control_params->set("Transpose", false, "Whether to solve with the matrix transpose");
+  control_params->set("Iterative refinement", false, "Whether to solve with iterative refinement");
+  control_params->set("Number of iterative refinements", 2, "Number of iterative refinements");
+  control_params->set("Verboes for iterative refinement", false, "Verbosity for iterative refinements");
   //  control_params->set("AddToDiag", "");
   //  control_params->set("AddZeroToDiag", false);
   //  control_params->set("MatrixProperty", "general");
@@ -621,6 +628,8 @@ SolverCore<ConcreteSolver,Matrix,Vector>::describe(
     }
     if( vl == VERB_HIGH || vl == VERB_EXTREME ){
       out << p << "Use transpose = " << control_.useTranspose_
+          << std::endl;
+      out << p << "Use iterative refinement = " << control_.useIterRefine_
           << std::endl;
     }
     if ( vl == VERB_EXTREME ){
