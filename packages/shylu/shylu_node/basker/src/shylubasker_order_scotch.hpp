@@ -357,8 +357,8 @@ namespace BaskerNS
             }
 
             if (level_k < num_levels) {
-              Int num_leaves = pow(2.0, (double)(level_k));       // number of leaves at this level
-              for (Int leaf_id = 0; leaf_id < num_leaves; leaf_id++) {
+              Int num_leaves_k = pow(2.0, (double)(level_k));       // number of leaves at this level
+              for (Int leaf_id = 0; leaf_id < num_leaves_k; leaf_id++) {
                 Int dom_id = 2 * leaf_id + first_leaf1;
                 Int dom_id1 = dom_id;     // id of left-child after bisection
                 Int dom_id2 = dom_id + 1; // id of right-child after bisection
