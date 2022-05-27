@@ -143,9 +143,9 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_EmptyCtor) {
     constexpr int OuterViewRank = 2;
     PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v;
 
-    TEST_ASSERT(!v_of_v.is_initialized());
+    TEST_ASSERT(!v_of_v.isInitialized());
     v_of_v.initialize("outer host",2,2);
-    TEST_ASSERT(v_of_v.is_initialized());
+    TEST_ASSERT(v_of_v.isInitialized());
 
     v_of_v.addView(a,0,0);
     v_of_v.addView(b,0,1);
@@ -162,6 +162,8 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_EmptyCtor) {
       });
     }
 
+    v_of_v.disableSafetyCheck();
+    v_of_v.enableSafetyCheck();
     // Uncomment the line below to prove the ViewOfViews prevents
     // device views from outliving host view. This line will cause a
     // Kokkos::abort() and error message since v_dev above is still in
@@ -199,7 +201,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_TwoArgCtor) {
     constexpr int OuterViewRank = 2;
     PHX::ViewOfViews3<OuterViewRank,InnerView,mem_t> v_of_v("outer host",2,2);
 
-    TEST_ASSERT(v_of_v.is_initialized());
+    TEST_ASSERT(v_of_v.isInitialized());
 
     v_of_v.addView(a,0,0);
     v_of_v.addView(b,0,1);
@@ -231,6 +233,19 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_TwoArgCtor) {
       for (int eq=0; eq < num_equations; ++eq) {
         TEST_FLOATING_EQUALITY(d_host(cell,pt,eq),9.0,tol);
       }
+}
+
+// Make sure that an uninitialized ViewOviews3 can be default
+// constructed and destoryed. Happens in application unit tests.
+struct MeshEvaluationTestStruct {
+    using InnerView = Kokkos::View<double***,mem_t>;
+    PHX::ViewOfViews3<2,InnerView,mem_t> v_of_v_;
+};
+
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,ViewOfView3_DefaultCtorDtor) {
+  auto mesh_eval = std::make_shared<MeshEvaluationTestStruct>();
+  TEST_ASSERT(!mesh_eval->v_of_v_.isInitialized());
+  mesh_eval = nullptr;
 }
 
 // ********************************

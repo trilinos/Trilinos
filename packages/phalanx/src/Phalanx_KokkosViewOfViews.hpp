@@ -299,6 +299,8 @@ namespace PHX {
     bool is_initialized_;
     // Use count after initialization. This changes based on whether the device space is accessible to the host space.
     int use_count_;
+    // A safety check. If true, this makes sure there are no external references to the device view of views.
+    bool check_use_count_;
 
   public:
     template<typename... Extents>
@@ -306,7 +308,9 @@ namespace PHX {
       : view_host_(name,extents...),
         view_device_(name,extents...),
         device_view_is_synced_(false),
-        is_initialized_(true)
+        is_initialized_(true),
+        use_count_(0),
+        check_use_count_(true)
     {
       view_host_unmanaged_ = Kokkos::create_mirror_view(view_device_);
       use_count_ = view_device_.impl_track().use_count();
@@ -315,16 +319,23 @@ namespace PHX {
     ViewOfViews3()
       : device_view_is_synced_(false),
         is_initialized_(false),
-        use_count_(-1)
+        use_count_(0),
+        check_use_count_(true)
     {}
 
     ~ViewOfViews3()
     {
       // Make sure there is not another object pointing to device view
       // since the host view will delete the inner views on exit.
-      if (view_device_.impl_track().use_count() != use_count_)
+      if ( check_use_count_ && (view_device_.impl_track().use_count() != use_count_) )
         Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
     }
+
+    /// Enable safety check in dtor for external references.
+    void enableSafetyCheck() { check_use_count_ = true; }
+
+    /// Disable safety check in dtor for external references.
+    void disableSafetyCheck() { check_use_count_ = false; }
 
     /// Allocate the out view objects. Extents are for the outer view.
     template<typename... Extents>
@@ -339,7 +350,7 @@ namespace PHX {
     }
 
     // Returns true if the outer view has been initialized.
-    bool is_initialized() {return is_initialized_;}
+    bool isInitialized() {return is_initialized_;}
 
     template<typename... Indices>
     void addView(InnerViewType v,Indices... i)
