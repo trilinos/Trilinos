@@ -1143,7 +1143,7 @@ class FastILUPrec
             Timer.reset();
             #endif
             FastILUFunctor<Ordinal, Scalar, ExecSpace> iluFunctor(aRowMap_[nRows], blkSzILU,
-                    aRowMap, aColIdx, aRowIdx, aVal, 
+                    aRowMap, aRowIdx, aColIdx, aVal,
                     lRowMap, lColIdx, lVal, uRowMap, uColIdx, uVal, diagElems, omega);
             Ordinal extent = aRowMap_[nRows]/blkSzILU;
             if (aRowMap_[nRows]%blkSzILU != 0)
