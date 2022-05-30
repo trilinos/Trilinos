@@ -1,0 +1,24 @@
+
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+SET(UNIT_TEST_DRIVER
+  ${PANZER_UNIT_TEST_MAIN})
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tTpetraGather
+  SOURCES tTpetraGather.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tTpetraScatter
+  SOURCES tTpetraScatter.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tTpetraScatterDirichlet
+  SOURCES tTpetraScatterDirichlet.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  )
