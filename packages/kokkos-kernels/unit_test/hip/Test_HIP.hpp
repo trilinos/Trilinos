@@ -10,17 +10,13 @@
 #endif
 
 class hip : public ::testing::Test {
-protected:
-  static void SetUpTestCase()
-  {
-  }
+ protected:
+  static void SetUpTestCase() {}
 
-  static void TearDownTestCase()
-  {
-  }
+  static void TearDownTestCase() {}
 };
 
 #define TestCategory hip
 #define TestExecSpace Kokkos::Experimental::HIP
 
-#endif // TEST_HIP_HPP
+#endif  // TEST_HIP_HPP

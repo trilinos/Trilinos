@@ -532,6 +532,10 @@ The valid set of parameters is the same for FAST\_ILU, FAST\_IC, and FAST\_ILDL:
     {int}
     {5}
     {Number of iterations of ILU/IC/ILDL factorization algorithm.}
+\ccc{triangular solve type}
+    {string}
+    {Fast}
+    {Type of triangular solve algorithm to use: ``Fast'' for the block Jacobi triangular solver, ``Standard'' for the standard (forward/backward) substitution based triangular solver (calls Kokkos-Kernels {\bf sptrsv}), or "Standard Host" for the standard triangular solver on host CPU (calls Kokkos-Kernels {\bf trsv} on the host).}
 \ccc{triangular solve iterations}
     {int}
     {1}
@@ -552,7 +556,11 @@ The valid set of parameters is the same for FAST\_ILU, FAST\_IC, and FAST\_ILDL:
     {bool}
     {true}
     {Whether to run another instance of FastILU/IC/ILDL (but with a lower level of fill) to compute the initial guess (only has an effect if level of fill $> 0$).} 
-\ccc{block size}
+\ccc{block size for ILU}
+    {int}
+    {1}
+    {Block size for the iterative factorization algorithm.}
+\ccc{block size for SpTRSV}
     {int}
     {1}
     {Block size for the block Jacobi solver.}

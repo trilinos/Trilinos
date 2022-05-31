@@ -41,13 +41,13 @@ namespace {
 class Rebalance : public MeshFixtureRebalance
 {
 public:
-  virtual void rebalance_mesh(int numFinalProcs) override
+  virtual void rebalance_mesh(int numFinalProcs, const std::string & decompMethod = "rcb") override
   {
     m_balanceSettings.set_is_rebalancing(true);
     m_balanceSettings.set_output_filename(get_output_file_name());
     m_balanceSettings.set_num_input_processors(stk::parallel_machine_size(get_comm()));
     m_balanceSettings.set_num_output_processors(numFinalProcs);
-    m_balanceSettings.setDecompMethod("rcb");
+    m_balanceSettings.setDecompMethod(decompMethod);
 
     stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
     stk::balance::rebalance(m_ioBroker, m_balanceSettings);
@@ -109,6 +109,35 @@ TEST_F(Rebalance, 2elems_1procTo2proc)
   test_decomposed_mesh_element_distribution({1, 1});
   test_decomposed_mesh_node_sharing({ {{5,1}, {6,1}, {7,1}, {8,1}},
                                       {{5,0}, {6,0}, {7,0}, {8,0}} });
+  clean_up_temporary_files();
+}
+
+TEST_F(Rebalance, 2elems_1disconnectedNode_1procTo2proc)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) return;
+
+  setup_initial_mesh("1x1x2");
+  const int owningProc = 0;
+  const stk::mesh::EntityId disconnectedNodeId = add_disconnected_node(owningProc);
+
+  rebalance_mesh(2);
+  test_decomposed_mesh_element_distribution({1, 1});
+  test_decomposed_mesh_node_sharing({ {{5,1}, {6,1}, {7,1}, {8,1}},
+                                      {{5,0}, {6,0}, {7,0}, {8,0}} });
+  test_node_existence(disconnectedNodeId);
+//  clean_up_temporary_files();
+}
+
+TEST_F(Rebalance, 2elems_1disconnectedNode_1procTo2proc_graphBased)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) return;
+
+  setup_initial_mesh("1x1x2");
+  const int owningProc = 0;
+  const stk::mesh::EntityId disconnectedNodeId = add_disconnected_node(owningProc);
+
+  rebalance_mesh(2, "parmetis");
+  test_node_existence(disconnectedNodeId);
   clean_up_temporary_files();
 }
 

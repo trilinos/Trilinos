@@ -61,13 +61,15 @@
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
-
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_GraphBase.hpp"
+#include "MueLu_Graph.hpp"
+#include "MueLu_LWGraph.hpp"
+
 
 namespace MueLu {
 
@@ -86,9 +88,6 @@ namespace MueLu {
 
     validParamList->set< RCP<const FactoryBase> >("A",           Teuchos::null, "Generating factory for matrix");
     validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Generating factory for coordinates");
-    validParamList->set< RCP<const FactoryBase> >("Graph"      , Teuchos::null, "Generating factory of the graph");
-    validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
-
     return validParamList;
   }
 
@@ -191,6 +190,9 @@ namespace MueLu {
     GetOStream(Runtime0) << "Using brick size: " << bx_
                                                  << (nDim_ > 1 ? "x " + toString(by_) : "")
                                                  << (nDim_ > 2 ? "x " + toString(bz_) : "") << std::endl;
+
+    // Build the graph
+    BuildGraph(currentLevel,A);
 
     // Construct aggregates
     RCP<Aggregates> aggregates = rcp(new Aggregates(colMap));
@@ -478,6 +480,106 @@ namespace MueLu {
       return Teuchos::as<GlobalOrdinal>(kk*naggy_*naggx_) + Teuchos::as<GlobalOrdinal>(jj*naggx_) + ii;
     
   }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildGraph(Level& currentLevel, const RCP<Matrix>& A) const {
+    // TODO: Currently only works w/ 1 DOF per node
+    double dirichletThreshold = 0.0;
+
+    if(bx_ > 1 && (nDim_ <= 1 || by_ > 1) && (nDim_ <=2 || bz_>1) ) {
+      FactoryMonitor m(*this, "Generating Graph (trivial)", currentLevel);
+      /*** Case 1: Use the matrix is the graph ***/
+      // Bricks are of non-trivial size in all active dimensions
+      RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
+      ArrayRCP<bool > boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold));
+      graph->SetBoundaryNodeMap(boundaryNodes);
+      
+      if (GetVerbLevel() & Statistics1) {
+        GO numLocalBoundaryNodes  = 0;
+        GO numGlobalBoundaryNodes = 0;
+        for (LO i = 0; i < boundaryNodes.size(); ++i)
+          if (boundaryNodes[i])
+            numLocalBoundaryNodes++;
+        RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+        MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+        GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+      }      
+      Set(currentLevel, "DofsPerNode", 1);
+      Set(currentLevel, "Graph", graph);
+      Set(currentLevel, "Filtering",false);
+    }
+    else {
+      FactoryMonitor m(*this, "Generating Graph", currentLevel);
+      /*** Case 2: Dropping required ***/
+      // There is at least one active dimension in which we are not coarsening.  
+      // Those connections need to be dropped
+      bool drop_x = (bx_ == 1);
+      bool drop_y = (nDim_> 1 && by_ == 1);
+      bool drop_z = (nDim_> 2 && bz_ == 1);
+      
+      ArrayRCP<LO> rows   (A->getLocalNumRows()+1);
+      ArrayRCP<LO> columns(A->getLocalNumEntries());
+      
+      size_t N = A->getRowMap()->getLocalNumElements();
+
+      // FIXME: Do this on the host because indexing functions are host functions
+      auto G = A->getLocalMatrixHost().graph;
+      auto rowptr = G.row_map;
+      auto colind = G.entries;
+
+      int ct=0;
+      rows[0] = 0;
+      for(size_t row=0; row<N; row++) {
+        // NOTE: Assumes that the first part of the colmap is the rowmap
+        int ir,jr,kr;
+        LO row2 = A->getColMap()->getLocalElement(A->getRowMap()->getGlobalElement(row));
+        getIJK(row2,ir,jr,kr);
+
+        for(size_t cidx=rowptr[row]; cidx<rowptr[row+1]; cidx++) {
+          int ic,jc,kc;
+          LO col = colind[cidx];          
+          getIJK(col,ic,jc,kc);
+
+          if( (row2 !=col) && ((drop_x && ir != ic) || (drop_y && jr != jc) || (drop_z && kr != kc) )) {
+            // Drop it
+            //            printf("[%4d] DROP row = (%d,%d,%d) col = (%d,%d,%d)\n",(int)row,ir,jr,kr,ic,jc,kc);
+          }
+          else {
+            // Keep it
+            //            printf("[%4d] KEEP row = (%d,%d,%d) col = (%d,%d,%d)\n",(int)row,ir,jr,kr,ic,jc,kc);
+            columns[ct] = col;
+            ct++;
+          }
+        }
+        rows[row+1] = ct;
+      }//end for
+
+      RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
+
+
+      ArrayRCP<bool > boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold));
+      graph->SetBoundaryNodeMap(boundaryNodes);
+      
+      if (GetVerbLevel() & Statistics1) {
+        GO numLocalBoundaryNodes  = 0;
+        GO numGlobalBoundaryNodes = 0;
+        for (LO i = 0; i < boundaryNodes.size(); ++i)
+          if (boundaryNodes[i])
+            numLocalBoundaryNodes++;
+        RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+        MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+        GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+      }      
+      Set(currentLevel, "DofsPerNode", 1);
+      Set(currentLevel, "Graph", graph);
+      Set(currentLevel, "Filtering",true);
+    }//end else
+
+
+  }//end BuildGraph
+
+  
 
 
 } //namespace MueLu

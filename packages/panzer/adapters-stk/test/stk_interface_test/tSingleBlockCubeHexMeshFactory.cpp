@@ -53,12 +53,6 @@
 
 #include "Shards_BasicTopologies.hpp"
 
-#ifdef HAVE_MPI
-   #include "Epetra_MpiComm.h"
-#else
-   #include "Epetra_SerialComm.h"
-#endif
-
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
@@ -91,7 +85,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, test_four)
 
 TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, element_counts)
 {
-   int colors[] = 
+   int colors[] =
       { 1,
         2,2,
         4,4,4,4,
@@ -141,8 +135,8 @@ void test1(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm)
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
    pl->set("Z Elements",5);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(comm);
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -162,7 +156,7 @@ void test1(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm)
 void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
 {
    int size; MPI_Comm_size(comm, &size); TEST_EQUALITY(size,2);
-   int rank; MPI_Comm_rank(comm, &rank); 
+   int rank; MPI_Comm_rank(comm, &rank);
 
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Procs",1);
@@ -171,8 +165,8 @@ void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
    pl->set("Z Elements",5);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(comm);
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -217,7 +211,7 @@ void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
 void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
 {
    int size; MPI_Comm_size(comm, &size); TEST_EQUALITY(size,4);
-   int rank; MPI_Comm_rank(comm, &rank); 
+   int rank; MPI_Comm_rank(comm, &rank);
 
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Procs",1);
@@ -226,8 +220,8 @@ void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
    pl->set("Z Elements",5);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(comm);
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -290,7 +284,7 @@ void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
 void test27(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
 {
    int size; MPI_Comm_size(comm, &size); TEST_EQUALITY(size,27);
-   int rank; MPI_Comm_rank(comm, &rank); 
+   int rank; MPI_Comm_rank(comm, &rank);
 
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Procs",3);
@@ -299,8 +293,8 @@ void test27(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    pl->set("X Elements",6);
    pl->set("Y Elements",9);
    pl->set("Z Elements",12);
-   
-   CubeHexMeshFactory factory; 
+
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(comm);
    TEST_ASSERT(mesh!=Teuchos::null);

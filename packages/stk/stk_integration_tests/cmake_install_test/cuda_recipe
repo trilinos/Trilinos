@@ -1,9 +1,10 @@
 #! /bin/bash
 
 #this may be user-specific or system-specific:
-sierra_code=/scratch/$USER/code
+sierra_code=/scratch/$USER/code_v
 
 #depending on the system, you may need sierra-devel or sierra-devel/nvidia
+module purge
 module load sierra-devel/nvidia
 
 #now the magic currently necessary for CUDA:
@@ -11,9 +12,9 @@ module load sierra-devel/nvidia
 export mpicxx_path=`type -p mpicxx`
 export MPI_ROOT=$(dirname ${mpicxx_path})
 export LLNL_USE_OMPI_VARS=y
-export OMPI_CXX=${sierra_code}/TPLs_src/trilinos/packages/kokkos/bin/nvcc_wrapper
+export OMPI_CXX=/scratch/william/stk-cmake-testing/Trilinos/packages/kokkos/bin/nvcc_wrapper
 
 cd ${sierra_code}
 
-CUDA=ON ./stk/stk_integration_tests/cmake_install_test/build_stk_using_cmake
+CUDA=ON CLEAR_CACHE=OFF ./stk/stk_integration_tests/cmake_install_test/build_stk_using_cmake
 

@@ -37,10 +37,6 @@
 namespace stk {
 namespace simd {
 
-namespace hidden {
-static const simd::Bool TRUE_VAL(true);
-}
-
 STK_MATH_FORCE_INLINE simd::Double operator+ (const simd::Double& a, const simd::Double& b) {
   return simd::Double((a._data + b._data));
 }

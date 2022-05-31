@@ -58,12 +58,6 @@
 #include "stk_util/util/NamedPair.hpp"
 namespace stk { namespace mesh { class Part; } }
 
-
-
-
-
-
-
 static const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 using stk::mesh::MetaData;
@@ -121,7 +115,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   }
 
   // set up grid_mesh
-  stk::mesh::fixtures::GridFixture grid_mesh(MPI_COMM_WORLD);
+  stk::mesh::fixtures::simple_fields::GridFixture grid_mesh(MPI_COMM_WORLD);
 
   stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
@@ -170,7 +164,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   std::vector<stk::mesh::Entity> closure;
   unsigned num_elems_in_closure = 6;
   stk::mesh::EntityId ids_of_entities_in_closure[] =
-    {6, 7, 10, 11, 14, 15, 23, 24, 25, 28, 29, 30, 33, 34, 35, 38, 39, 40};
+  {6, 7, 10, 11, 14, 15, 23, 24, 25, 28, 29, 30, 33, 34, 35, 38, 39, 40};
   for (unsigned i = 0;
        i < sizeof(ids_of_entities_in_closure)/sizeof(stk::mesh::EntityId);
        ++i) {
@@ -182,7 +176,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
       rank_of_entity = NODE_RANK;
     }
     stk::mesh::Entity closure_entity =
-      bulk_data.get_entity(rank_of_entity, ids_of_entities_in_closure[i]);
+        bulk_data.get_entity(rank_of_entity, ids_of_entities_in_closure[i]);
     closure.push_back(closure_entity);
   }
   // sort the closure (boundary analysis expects it this way)
@@ -267,28 +261,29 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
 
 TEST(BoundaryAnalysis, get_adjacent_entities)
 {
-    MPI_Comm comm = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(comm);
-    if (numProcs > 1)
-    {
-        return;
-    }
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(comm);
+  if (numProcs > 1)
+  {
+    return;
+  }
 
-    stk::io::StkMeshIoBroker meshReader(comm);
-    std::string mesh_spec("generated:3x3x3");
-    meshReader.add_mesh_database(mesh_spec, stk::io::READ_MESH);
-    meshReader.create_input_mesh();
-    meshReader.populate_bulk_data();
+  stk::io::StkMeshIoBroker meshReader(comm);
+  meshReader.use_simple_fields();
+  std::string mesh_spec("generated:3x3x3");
+  meshReader.add_mesh_database(mesh_spec, stk::io::READ_MESH);
+  meshReader.create_input_mesh();
+  meshReader.populate_bulk_data();
 
-    stk::mesh::BulkData& stkMeshBulkData = meshReader.bulk_data();
+  stk::mesh::BulkData& stkMeshBulkData = meshReader.bulk_data();
 
-//    unsigned file_index = meshReader.create_output_mesh("alan.exo", stk::io::WRITE_RESULTS);
-//    meshReader.write_output_mesh(file_index);
+  //    unsigned file_index = meshReader.create_output_mesh("alan.exo", stk::io::WRITE_RESULTS);
+  //    meshReader.write_output_mesh(file_index);
 
-    unsigned numEntitiesToTest = 4;
-    stk::mesh::EntityId ids[] = { 14, 1, 2, 5 };
-    unsigned goldNumConnectedEntities[] = { 6, 3, 4, 5 };
-    stk::mesh::EntityId nodeIdsForFace[][4] = {
+  unsigned numEntitiesToTest = 4;
+  stk::mesh::EntityId ids[] = { 14, 1, 2, 5 };
+  unsigned goldNumConnectedEntities[] = { 6, 3, 4, 5 };
+  stk::mesh::EntityId nodeIdsForFace[][4] = {
     {22,       23,      39,      38},
     {23,       27,      43,      39},
     {27,       26,      42,      43},
@@ -313,47 +308,47 @@ TEST(BoundaryAnalysis, get_adjacent_entities)
     {6 ,       22,      26,      10},
     {6 ,       10,      11,      7 },
     {22,       23,      27,      26}
-    };
+  };
 
-    unsigned testCounter=0;
-    for (unsigned int i=0;i<numEntitiesToTest;i++)
+  unsigned testCounter=0;
+  for (unsigned int i=0;i<numEntitiesToTest;i++)
+  {
+    stk::mesh::Entity element = stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, ids[i]);
+
+    std::vector<stk::mesh::EntitySideComponent> adjacent_entities;
+    stk::topology elemTopology = stkMeshBulkData.bucket(element).topology();
+
+    unsigned numConnectedEntities = 0;
+    for(unsigned faceIndex = 0; faceIndex < elemTopology.num_faces(); ++faceIndex)
     {
-        stk::mesh::Entity element = stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, ids[i]);
+      stk::mesh::get_adjacent_entities(stkMeshBulkData,
+                                       element,
+                                       stk::topology::FACE_RANK,
+                                       faceIndex,
+                                       adjacent_entities);
 
-        std::vector<stk::mesh::EntitySideComponent> adjacent_entities;
-        stk::topology elemTopology = stkMeshBulkData.bucket(element).topology();
+      numConnectedEntities += adjacent_entities.size();
+      stk::mesh::EntityVector subcell_nodes;
+      stk::topology stksubcell_topo = stk::mesh::get_subcell_nodes(stkMeshBulkData,
+                                                                   element,
+                                                                   stk::topology::FACE_RANK,
+                                                                   faceIndex,
+                                                                   subcell_nodes);
+      EXPECT_FALSE(stksubcell_topo == stk::topology::INVALID_TOPOLOGY);
 
-        unsigned numConnectedEntities = 0;
-        for(unsigned faceIndex = 0; faceIndex < elemTopology.num_faces(); ++faceIndex)
-        {
-            stk::mesh::get_adjacent_entities(stkMeshBulkData,
-                                             element,
-                                             stk::topology::FACE_RANK,
-                                             faceIndex,
-                                             adjacent_entities);
+      for(size_t j = 0; j < subcell_nodes.size(); j++)
+      {
+        EXPECT_EQ(nodeIdsForFace[testCounter][j], stkMeshBulkData.identifier(subcell_nodes[j]));
+      }
 
-            numConnectedEntities += adjacent_entities.size();
-            stk::mesh::EntityVector subcell_nodes;
-            stk::topology stksubcell_topo = stk::mesh::get_subcell_nodes(stkMeshBulkData,
-                                                                                     element,
-                                                                                     stk::topology::FACE_RANK,
-                                                                                     faceIndex,
-                                                                                     subcell_nodes);
-            EXPECT_FALSE(stksubcell_topo == stk::topology::INVALID_TOPOLOGY);
-
-            for(size_t j = 0; j < subcell_nodes.size(); j++)
-            {
-                EXPECT_EQ(nodeIdsForFace[testCounter][j], stkMeshBulkData.identifier(subcell_nodes[j]));
-            }
-
-            size_t local_subcell_num = stk::mesh::get_entity_subcell_id(stkMeshBulkData,
-                                                                        element,
-                                                                        stk::topology::FACE_RANK,
-                                                                        stksubcell_topo,
-                                                                        subcell_nodes);
-            EXPECT_EQ(faceIndex, local_subcell_num);
-            testCounter++;
-        }
-        EXPECT_EQ(goldNumConnectedEntities[i], numConnectedEntities);
+      size_t local_subcell_num = stk::mesh::get_entity_subcell_id(stkMeshBulkData,
+                                                                  element,
+                                                                  stk::topology::FACE_RANK,
+                                                                  stksubcell_topo,
+                                                                  subcell_nodes);
+      EXPECT_EQ(faceIndex, local_subcell_num);
+      testCounter++;
     }
+    EXPECT_EQ(goldNumConnectedEntities[i], numConnectedEntities);
+  }
 }

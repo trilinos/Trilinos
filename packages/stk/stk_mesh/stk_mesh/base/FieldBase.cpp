@@ -94,22 +94,23 @@ std::pair<bool,bool> check_for_existing_subsets_or_supersets(FieldRestriction& t
   return std::make_pair(found_superset, found_subset);
 }
 
-std::ostream & operator << ( std::ostream & s , const FieldBase & field )
+std::ostream & operator<<(std::ostream & s, const FieldBase & field)
 {
-  s << "Field<" ;
-  s << field.data_traits().name ;
-  for ( unsigned i = 0 ; i < field.field_array_rank() ; ++i ) {
-    s << "," << field.dimension_tags()[i]->name();
+  if (field.mesh_meta_data().is_using_simple_fields()) {
+    s << "Field<" << field.data_traits().name << ">";
   }
-  s << ">" ;
-
-  s << "[\"" << field.name() << "\", #states: " << field.number_of_states() << "]" ;
+  else {
+    s << "Field<" << field.data_traits().name;
+    for (unsigned i = 0; i < field.field_array_rank(); ++i) {
+      s << "," << field.dimension_tags()[i]->name();
+    }
+    s << ">";
+  }
+  s << "[\"" << field.name() << "\", #states: " << field.number_of_states() << "]";
   return s ;
 }
 
-std::ostream & print( std::ostream & s ,
-                      const char * const b ,
-                      const FieldBase & field )
+std::ostream & print(std::ostream & s, const char * const b, const FieldBase & field)
 {
   s << b << field << std::endl;
   std::string indent = b;
@@ -118,15 +119,13 @@ std::ostream & print( std::ostream & s ,
   return s ;
 }
 
-std::ostream & print_restrictions(std::ostream & s ,
-                                  const char * const b ,
-                                  const FieldBase & field )
+std::ostream & print_restrictions(std::ostream & s, const char * const b, const FieldBase & field)
 {
   const std::vector<FieldBase::Restriction> & rMap = field.restrictions();
 
   for ( const FieldBase::Restriction& r : rMap ) {
     s << b;
-    r.print( s, r.selector(), field.field_array_rank() );
+    r.print(s, r.selector());
     s << std::endl;
   }
   return s;
@@ -153,12 +152,7 @@ void FieldBase::insert_restriction(
   FieldRestriction tmp( arg_selector );
 
   tmp.set_num_scalars_per_entity(arg_num_scalars_per_entity);
-  if ( m_field_rank ) { 
-    tmp.set_dimension(arg_first_dimension);
-  }
-  else { // Scalar field has m_field_rank==0
-    tmp.set_dimension(1);
-  }
+  tmp.set_dimension(arg_first_dimension);
 
   if (arg_init_value != NULL) {
     //insert_restriction can be called multiple times for the same field, giving
@@ -240,19 +234,15 @@ void FieldBase::insert_restriction(
         }
 
         if (found_superset) {
-          ThrowErrorMsgIf( i_num_scalars_per_entity != arg_num_scalars_per_entity,
-                       " FAILED to add new field-restriction " <<
-                       print_restriction( *i, arg_selector, m_field_rank ) <<
-                       " WITH INCOMPATIBLE REDECLARATION " <<
-                       print_restriction( tmp, arg_selector, m_field_rank ));
+          ThrowErrorMsgIf(i_num_scalars_per_entity != arg_num_scalars_per_entity,
+                          "FAILED to add new field-restriction " << print_restriction(*i, arg_selector) <<
+                          " WITH INCOMPATIBLE REDECLARATION " << print_restriction(tmp, arg_selector));
           return;
-        }
+          }
         if (found_subset) {
-          ThrowErrorMsgIf( i_num_scalars_per_entity != arg_num_scalars_per_entity,
-                           arg_method << " FAILED for " << *this << " " <<
-                           print_restriction( *i, arg_selector, m_field_rank ) <<
-                           " WITH INCOMPATIBLE REDECLARATION " <<
-                           print_restriction( tmp, arg_selector, m_field_rank ));
+          ThrowErrorMsgIf(i_num_scalars_per_entity != arg_num_scalars_per_entity,
+                          arg_method << " FAILED for " << *this << " " << print_restriction(*i, arg_selector) <<
+                          " WITH INCOMPATIBLE REDECLARATION " << print_restriction(tmp, arg_selector));
         }
       }
       if (!found_subset) {
@@ -265,11 +255,9 @@ void FieldBase::insert_restriction(
       }
     }
     else {
-      ThrowErrorMsgIf( restr->num_scalars_per_entity() != tmp.num_scalars_per_entity(),
-                       arg_method << " FAILED for " << *this << " " <<
-                       print_restriction( *restr, arg_selector, m_field_rank ) <<
-                       " WITH INCOMPATIBLE REDECLARATION " <<
-                       print_restriction( tmp, arg_selector, m_field_rank ));
+      ThrowErrorMsgIf(restr->num_scalars_per_entity() != tmp.num_scalars_per_entity(),
+                      arg_method << " FAILED for " << *this << " " << print_restriction(*restr, arg_selector) <<
+                      " WITH INCOMPATIBLE REDECLARATION " << print_restriction(tmp, arg_selector));
     }
   }
 }
@@ -331,10 +319,31 @@ bool FieldBase::defined_on(const stk::mesh::Part& part) const
   return (length(part) > 0);
 }
 
+unsigned
+FieldBase::field_array_rank() const
+{
+  if (m_meta_data->is_using_simple_fields()) {
+    ThrowErrorMsg("FieldBase::field_array_rank() is no longer supported since it represents" << std::endl
+               << "the number of extra template parameters, which are being removed.");
+  }
+
+  return m_field_rank;
+}
+
+const shards::ArrayDimTag * const *
+FieldBase::dimension_tags() const
+{
+  if (m_meta_data->is_using_simple_fields()) {
+    ThrowErrorMsg("FieldBase::dimension_tags() is no longer supported since it holds the" << std::endl
+               << "extra template parameters, which are being removed.");
+  }
+
+  return m_dim_tags;
+}
+
 unsigned FieldBase::length(const stk::mesh::Part& part) const
 {
-  const stk::mesh::FieldRestriction& restriction =
-    stk::mesh::find_restriction(*this, entity_rank(), part);
+  const stk::mesh::FieldRestriction& restriction = stk::mesh::find_restriction(*this, entity_rank(), part);
   return restriction.num_scalars_per_entity();
 }
 
@@ -506,6 +515,14 @@ FieldBase::increment_num_syncs_to_device() const
 {
   ++m_numSyncsToDevice;
 }
+
+namespace impl {
+
+stk::CSet & get_attributes(FieldBase & field) {
+  return field.get_attributes();
+}
+
+} // namespace impl
 
 } // namespace mesh
 } // namespace stk

@@ -11,4 +11,3 @@ TEST_F( TestCategory, batched_scalar_serial_eigendecomposition_double ) {
 }
 #endif
 */
-

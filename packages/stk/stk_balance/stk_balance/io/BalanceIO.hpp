@@ -43,6 +43,8 @@
 #include "stk_balance/balanceUtils.hpp"
 #include "stk_balance/mesh/BalanceMesh.hpp"
 
+#include <memory>
+
 namespace stk {
 namespace balance {
 
@@ -58,11 +60,11 @@ private:
   const MPI_Comm m_comm;
   const BalanceSettings& m_settings;
 
-  stk::mesh::MetaData m_inputMeta;
-  stk::mesh::BulkData m_inputBulk;
+  std::shared_ptr<stk::mesh::BulkData> m_inputBulk;
+  stk::mesh::MetaData& m_inputMeta;
 
-  stk::mesh::MetaData m_copyMeta;
-  stk::mesh::BulkData m_copyBulk;
+  std::shared_ptr<stk::mesh::BulkData> m_copyBulk;
+  stk::mesh::MetaData& m_copyMeta;
 
   std::unique_ptr<BalanceMesh> m_mesh;
 

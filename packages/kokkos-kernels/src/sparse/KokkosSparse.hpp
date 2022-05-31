@@ -60,4 +60,3 @@
 #include "KokkosSparse_trsv.hpp"
 #include "KokkosSparse_spgemm.hpp"
 #include "KokkosSparse_gauss_seidel.hpp"
-

@@ -22,11 +22,12 @@ Indices and tables
 Docs
 ====
 
-.. doxygennamespace:: Kokkos
-   :members:
 .. doxygennamespace:: KokkosBlas
+   :project: KokkosKernels
    :members:
 .. doxygennamespace:: KokkosSparse
+   :project: KokkosKernels
    :members:
 .. doxygennamespace:: KokkosBatched
+   :project: KokkosKernels
    :members:

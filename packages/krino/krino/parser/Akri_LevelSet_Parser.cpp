@@ -14,42 +14,53 @@
 #include <Akri_IO_Helpers.hpp>
 #include <Akri_LevelSet.hpp>
 #include <Akri_Phase_Support.hpp>
-#include <Akri_RegionInterface.hpp>
 #include <Akri_Vec.hpp>
 #include <Akri_Parser.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/environment/RuntimeDoomed.hpp>
 #include <stk_util/environment/RuntimeWarning.hpp>
+#include <Akri_BoundingSurface.hpp>
+#include <Akri_Surface_Parser.hpp>
+#include <Akri_Surface_Manager.hpp>
 
 namespace krino {
 
 namespace {
 
 void
-register_blocks_for_level_set(RegionInterface & reg, LevelSet & ls)
+register_blocks_for_level_set(Surface_Manager & surfaceManager, Phase_Support & phaseSupport, LevelSet & ls)
 {
   const std::string composite_name = ls.get_composite_name();
   if (!composite_name.empty())
   {
-    LS_SideTag::declare_composite(ls.get_identifier(), LevelSet::get_identifier(composite_name));
+    LS_SideTag::declare_composite(ls.get_identifier(), surfaceManager.get_identifier(composite_name));
   }
 
-  Phase_Support & phase_support = Phase_Support::get(reg.get_stk_mesh_meta_data());
-  const PhaseVec & mesh_phases = Phase_Support::get_phases(reg.name_of_input_mesh());
-  const std::vector<unsigned> ls_phases = Phase_Support::get_level_set_phases(mesh_phases, ls);
-  const std::vector<stk::mesh::Part*> decomposed_blocks = phase_support.get_blocks_decomposed_by_levelset(ls_phases);
-  phase_support.register_blocks_for_level_set(&ls, decomposed_blocks);
+  const PhaseVec & mesh_phases = phaseSupport.get_mesh_phases();
+  const std::vector<unsigned> ls_phases = Phase_Support::get_level_set_phases(phaseSupport.has_one_levelset_per_phase(), mesh_phases, ls);
+  const std::vector<stk::mesh::Part*> decomposed_blocks = phaseSupport.get_blocks_decomposed_by_levelset(ls_phases);
+  phaseSupport.register_blocks_for_level_set(ls.get_identifier(), decomposed_blocks);
+}
+
+void
+register_blocks_for_bounding_surface(Surface_Manager & surfaceManager, Phase_Support & phaseSupport, const std::string & boundingSurfaceName)
+{
+  const Surface_Identifier boundingSurfaceID = surfaceManager.get_identifier(boundingSurfaceName);
+  const std::vector<stk::mesh::Part*> decomposedBlocks = phaseSupport.get_blocks_decomposed_by_bounding_surface(boundingSurfaceID.get());
+  phaseSupport.register_blocks_for_level_set(boundingSurfaceID, decomposedBlocks);
 }
 
 }
 
 void
-LevelSet_Parser::parse(const Parser::Node & region_node, RegionInterface & region)
+LevelSet_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & meta, const stk::diag::Timer & parentTimer)
 {
   const Parser::Node ls_nodes = region_node.get_sequence_if_present("level_set_interfaces");
   if ( ls_nodes )
   {
+    Surface_Manager & surfaceManager = Surface_Manager::get(meta);
+    Phase_Support & phaseSupport = Phase_Support::get(meta);
     for ( auto && ls_node : ls_nodes )
     {
       std::string ls_name;
@@ -58,7 +69,7 @@ LevelSet_Parser::parse(const Parser::Node & region_node, RegionInterface & regio
       {
         stk::RuntimeDoomedAdHoc() << "Blank or missing levelset name.\n";
       }
-      LevelSet & ls = LevelSet::build(region.get_stk_mesh_meta_data(), ls_name, region.getRegionTimer());
+      LevelSet & ls = LevelSet::build(meta, ls_name, parentTimer);
 
       std::string distance_name;
       if (ls_node.get_if_present("distance_variable", distance_name))
@@ -101,6 +112,8 @@ LevelSet_Parser::parse(const Parser::Node & region_node, RegionInterface & regio
           redistance_method = CLOSEST_POINT;
         else if (redistance_method_name == "FAST_MARCHING")
           redistance_method = FAST_MARCHING;
+        else if (redistance_method_name == "FAST_ITERATIVE")
+          redistance_method = FAST_ITERATIVE;
         else
           stk::RuntimeWarningAdHoc() << "Unrecognized redistance method:  " << redistance_method_name << std::endl;
 
@@ -159,7 +172,32 @@ LevelSet_Parser::parse(const Parser::Node & region_node, RegionInterface & regio
 
       IC_Parser::parse(ls_node, ls);
 
-      register_blocks_for_level_set(region, ls);
+      register_blocks_for_level_set(surfaceManager, phaseSupport, ls);
+    }
+  }
+}
+
+void
+BoundingSurface_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & meta, const stk::diag::Timer & parentTimer)
+{
+  const Parser::Node boundingSurfaceNodes = region_node.get_sequence_if_present("bounding_surfaces");
+  if ( boundingSurfaceNodes )
+  {
+    Surface_Manager & surfaceManager = Surface_Manager::get(meta);
+    Phase_Support & phaseSupport = Phase_Support::get(meta);
+    for ( auto && boundingSurfaceNode : boundingSurfaceNodes )
+    {
+      std::string boundingSurfaceName;
+      boundingSurfaceNode.get_if_present("name", boundingSurfaceName);
+      if (boundingSurfaceName.empty())
+      {
+        stk::RuntimeDoomedAdHoc() << "Blank or missing bounding surface name.\n";
+      }
+
+      Surface * surface = Surface_Parser::parse(boundingSurfaceNode, meta, parentTimer);
+      BoundingSurface::build(meta, boundingSurfaceName, surface);
+
+      register_blocks_for_bounding_surface(surfaceManager, phaseSupport, boundingSurfaceName);
     }
   }
 }

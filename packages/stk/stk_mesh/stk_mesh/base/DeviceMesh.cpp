@@ -48,7 +48,11 @@ void DeviceBucket::initialize_bucket_attributes(const stk::mesh::Bucket &bucket)
 void DeviceBucket::allocate(const stk::mesh::Bucket &bucket)
 {
   nodeOffsets = OrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "NodeOffsets"), bucket.size()+1);
+#ifndef NEW_TRILINOS_INTEGRATION
   hostNodeOffsets = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeOffsets, Kokkos::WithoutInitializing);
+#else
+  hostNodeOffsets = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), nodeOffsets);
+#endif
 
   unsigned maxNodesPerEntity = bucketTopology.num_nodes();
   unsigned totalNumNodes = bucketTopology.num_nodes()*bucketCapacity;
@@ -64,17 +68,33 @@ void DeviceBucket::allocate(const stk::mesh::Bucket &bucket)
   const stk::mesh::PartVector& parts = bucket.supersets();
 
   entities = EntityViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "BucketEntities"), bucketCapacity);
+#ifndef NEW_TRILINOS_INTEGRATION
   hostEntities = Kokkos::create_mirror_view(Kokkos::HostSpace(), entities, Kokkos::WithoutInitializing);
+#else
+  hostEntities = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), entities);
+#endif
 
   nodeConnectivity = BucketConnectivityType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "BucketConnectivity"), totalNumNodes);
+#ifndef NEW_TRILINOS_INTEGRATION
   hostNodeConnectivity = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeConnectivity, Kokkos::WithoutInitializing);
+#else
+  hostNodeConnectivity = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), nodeConnectivity);
+#endif
 
   nodeOrdinals = OrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "NodeOrdinals"),
                                  static_cast<size_t>(maxNodesPerEntity));
+#ifndef NEW_TRILINOS_INTEGRATION
   hostNodeOrdinals = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeOrdinals, Kokkos::WithoutInitializing);
+#else
+  hostNodeOrdinals = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), nodeOrdinals);
+#endif
 
   partOrdinals = PartOrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "PartOrdinals"), parts.size());
+#ifndef NEW_TRILINOS_INTEGRATION
   hostPartOrdinals = Kokkos::create_mirror_view(Kokkos::HostSpace(), partOrdinals, Kokkos::WithoutInitializing);
+#else
+  hostPartOrdinals = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), partOrdinals);
+#endif
 }
 
 void DeviceBucket::initialize_from_host(const stk::mesh::Bucket &bucket)
@@ -107,7 +127,11 @@ void DeviceBucket::update_from_host(const stk::mesh::Bucket &bucket)
 
   if (bucketSize+1 != hostNodeOffsets.size()) {
     nodeOffsets = OrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "NodeOffsets"), bucketSize+1);
+#ifndef NEW_TRILINOS_INTEGRATION
     hostNodeOffsets = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeOffsets, Kokkos::WithoutInitializing);
+#else
+    hostNodeOffsets = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), nodeOffsets);
+#endif
   }
 
   unsigned totalNumNodes = bucket.topology().num_nodes()*bucketCapacity;
@@ -123,13 +147,23 @@ void DeviceBucket::update_from_host(const stk::mesh::Bucket &bucket)
 
   if (totalNumNodes != hostNodeConnectivity.size()) {
     nodeConnectivity = BucketConnectivityType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "BucketConnectivity"), totalNumNodes);
-    hostNodeConnectivity = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeConnectivity, Kokkos::WithoutInitializing);
+#ifndef NEW_TRILINOS_INTEGRATION
+    hostNodeConnectivity =
+        Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeConnectivity, Kokkos::WithoutInitializing);
+#else
+    hostNodeConnectivity =
+        Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), nodeConnectivity);
+#endif
   }
 
   if (maxNodesPerEntity != hostNodeOrdinals.size()) {
     nodeOrdinals = OrdinalViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "NodeOrdinals"),
                                    static_cast<size_t>(maxNodesPerEntity));
+#ifndef NEW_TRILINOS_INTEGRATION
     hostNodeOrdinals = Kokkos::create_mirror_view(Kokkos::HostSpace(), nodeOrdinals, Kokkos::WithoutInitializing);
+#else
+    hostNodeOrdinals = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), nodeOrdinals);
+#endif
     for (unsigned i = 0; i < maxNodesPerEntity; ++i) {
       hostNodeOrdinals(i) = static_cast<stk::mesh::ConnectivityOrdinal>(i);
     }
@@ -243,7 +277,11 @@ inline void reallocate_views(DEVICE_VIEW & deviceView, HOST_VIEW & hostView, siz
   if (needGrowth || needShrink) {
     const size_t newSize = requiredSize + static_cast<size_t>(resizeFactor*requiredSize);
     deviceView = DEVICE_VIEW(Kokkos::view_alloc(Kokkos::WithoutInitializing, deviceView.label()), newSize);
+#ifndef NEW_TRILINOS_INTEGRATION
     hostView = Kokkos::create_mirror_view(Kokkos::HostSpace(), deviceView, Kokkos::WithoutInitializing);
+#else
+    hostView = Kokkos::create_mirror_view(Kokkos::WithoutInitializing, Kokkos::HostSpace(), deviceView);
+#endif
   }
 }
 
@@ -472,4 +510,3 @@ void DeviceMesh::copy_volatile_fast_shared_comm_map_to_device()
 
 }
 }
-

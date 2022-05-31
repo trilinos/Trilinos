@@ -32,36 +32,20 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/environment/CPUTime.hpp>
 #include <gtest/gtest.h>
-#include <stk_util/environment/perf_util.hpp>
-
-#include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_performance_tests/stk_mesh/timer.hpp>
 
-#include <sstream>
-
 TEST(many_parts, many_parts)
 {
-  // vector of mesh-dimensions holds the number of elements in each dimension.
-  // Hard-wired to 3. This test can run with spatial-dimension less than 3,
-  // (if generated-mesh can do that) but not greater than 3.
-  //
-  // Doesn't really matter what the mesh size is since we never commit
-  std::vector<int> mesh_dims(3, 42);
-
-  std::ostringstream oss;
-  oss << mesh_dims[0] << "x" << mesh_dims[1] << "x" << mesh_dims[2];
-
-  stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, oss.str());
-  stk::mesh::MetaData& meta = fixture.getMetaData();
-
   stk::performance_tests::Timer timer(MPI_COMM_WORLD);
   timer.start_timing();
+
+  const unsigned spatialDim = 3;
+  stk::mesh::MetaData meta(spatialDim);
 
   stk::mesh::Part& super1 = meta.declare_part("super1");
   stk::mesh::Part& super2 = meta.declare_part("super2");
@@ -76,9 +60,8 @@ TEST(many_parts, many_parts)
   stk::mesh::PartVector parts;
   unsigned num_parts = 5000;
   for(unsigned i=0; i<num_parts; ++i) {
-    std::ostringstream ossname;
-    ossname << "part_"<<i;
-    stk::mesh::Part& part = meta.declare_part(ossname.str());
+    std::string partName = "part_" + std::to_string(i);
+    stk::mesh::Part& part = meta.declare_part(partName);
     meta.declare_part_subset(super1, part);
     meta.declare_part_subset(super2, part);
     meta.declare_part_subset(super3, part);
@@ -88,8 +71,8 @@ TEST(many_parts, many_parts)
     parts.push_back(&part);
   }
 
-  typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorField;
-  VectorField& field = meta.declare_field<VectorField>(stk::topology::NODE_RANK, "field");
+  typedef stk::mesh::Field<double> VectorField;
+  VectorField& field = meta.declare_field<double>(stk::topology::NODE_RANK, "field");
   for(size_t i=0; i<parts.size(); ++i) {
     const stk::mesh::Part& part = *parts[i];
     stk::mesh::put_field_on_mesh(field, part, 3, nullptr);

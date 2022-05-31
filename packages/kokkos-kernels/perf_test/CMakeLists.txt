@@ -35,6 +35,7 @@ if (KokkosKernels_ENABLE_TESTS_AND_PERFSUITE)
         blas/blas2/KokkosBlas2_gemv_tracked_perf_test.cpp
         blas/blas1/KokkosBlas_dot_tracked_perf_test.cpp
         blas/blas1/KokkosBlas_team_dot_tracked_perf_test.cpp
+        blas/blas3/KokkosBlas3_gemm_tracked_perf_test.cpp
         PerfTestUtilities.cpp
         sparse/spmv/OpenMPSmartStatic_SPMV.cpp
         #sparse / KokkosSparse_spgemm_test.cpp

@@ -31,9 +31,15 @@ set_stk_version() {
   exe "sed -i 's/$SEARCH_LINE/$REPLACE_LINE/' $STK_FILE"
 }
 
-export SIERRA=${SIERRA:-/scratch/$USER/trilinos-snapshot/code}
+update_package() {
+  exe rm -rf packages/$1
+  exe cp -r $SIERRA/$1 packages/$1
+  exe git add --all packages/$1
+}
+
+export SIERRA=${SIERRA:-/fgs/$USER/trilinos-snapshot/code}
 export SIERRA_BRANCH=master
-export TRILINOS=${TRILINOS:-/scratch/$USER/trilinos-snapshot/Trilinos}
+export TRILINOS=${TRILINOS:-/fgs/$USER/trilinos-snapshot/Trilinos}
 export TRILINOS_BRANCH=develop
 
 export COMMIT_MESSAGE="STK: Snapshot $(date +'%m-%d-%y %H:%M')"
@@ -59,9 +65,18 @@ exe git pull
 
 exe git checkout $SNAPSHOT_BRANCH
 exe git reset --hard $TRILINOS_BRANCH
-exe rm -rf packages/stk
-exe cp -r $SIERRA/stk packages/stk
-exe git add --all packages/stk
+
+update_package stk
+if [[ -v UPDATE_PERCEPT ]]; then
+  update_package percept/src
+  exe git restore --staged *percept*CMakeLists.txt
+  exe git restore *percept*CMakeLists.txt
+fi
+if [[ -v UPDATE_KRINO ]]; then
+  update_package krino
+  exe git rm -rf packages/krino/krino_sierra packages/krino/Jamfile packages/krino/.clang-format
+fi
+
 set_stk_version $STK_VERSION_STRING
 exe git commit -am '"'$COMMIT_MESSAGE'"'
 exe git push --force origin $SNAPSHOT_BRANCH

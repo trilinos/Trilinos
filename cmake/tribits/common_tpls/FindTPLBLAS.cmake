@@ -54,7 +54,7 @@
 # @HEADER
 
 
-IF (MSVC AND NOT
+if (MSVC AND NOT
     (BLAS_LIBRARY_DIRS  OR
      (NOT "${BLAS_LIBRARY_NAMES}" STREQUAL "blas blas_win32" AND
       NOT "${BLAS_LIBRARY_NAMES}" STREQUAL "") OR
@@ -69,12 +69,12 @@ IF (MSVC AND NOT
   # be called every configure or this does not work!
   # If the user has specified alternate name or location of their blas that
   # will be used instead.
-  FIND_PACKAGE(CLAPACK 3.2.1 NO_MODULE)
-  IF (CLAPACK_FOUND)
-    ADVANCED_SET(TPL_BLAS_LIBRARIES blas
+  find_package(CLAPACK 3.2.1 NO_MODULE)
+  if (CLAPACK_FOUND)
+    advanced_set(TPL_BLAS_LIBRARIES blas
       CACHE FILEPATH "Set from MSVC CLAPACK specialization")
-  ENDIF()
-ENDIF()
+  endif()
+endif()
 
-TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( BLAS
+tribits_tpl_find_include_dirs_and_libraries( BLAS
   REQUIRED_LIBS_NAMES "blas blas_win32")

@@ -118,7 +118,8 @@ namespace Ifpack2 {
     //! Constructor that takes 3 Tpetra matrices.
     explicit Hiptmair (const Teuchos::RCP<const row_matrix_type>& A,
                        const Teuchos::RCP<const row_matrix_type>& PtAP,
-                       const Teuchos::RCP<const row_matrix_type>& P);
+                       const Teuchos::RCP<const row_matrix_type>& P,
+                       const Teuchos::RCP<const row_matrix_type>& Pt=Teuchos::null);
 
     //! Destructor
     virtual ~Hiptmair ();
@@ -247,13 +248,16 @@ namespace Ifpack2 {
     //  A - matrix in primary space
     //  PtAP - matrix in auxiliary space
     //  P  - prolongator matrix
-    Teuchos::RCP<const row_matrix_type> A_, PtAP_, P_;
+    Teuchos::RCP<const row_matrix_type> A_, PtAP_, P_, Pt_;
 
     //! Preconditioner types
     std::string precType1_, precType2_, preOrPost_;
 
     //! If true, the starting solution is always the zero vector.
     bool ZeroStartingSolution_;
+
+    //! If false, explicitely apply Pt
+    bool ImplicitTranspose_;
 
     //! Preconditioner parameters.
     Teuchos::ParameterList precList1_, precList2_;

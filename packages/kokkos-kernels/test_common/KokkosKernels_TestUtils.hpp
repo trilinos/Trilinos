@@ -48,7 +48,8 @@
 #include "KokkosKernels_Utils.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "KokkosSparse_spmv.hpp"
-#include "gtest/gtest.h"  //for EXPECT_**
+// Make this include-able from all subdirectories
+#include "../tpls/gtest/gtest/gtest.h"  //for EXPECT_**
 
 namespace Test {
 template <class ViewType,
@@ -93,10 +94,11 @@ struct multivector_layout_adapter<ViewType, false> {
 };
 
 template <class Scalar1, class Scalar2, class Scalar3>
-void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol) {
+void EXPECT_NEAR_KK(Scalar1 val1, Scalar2 val2, Scalar3 tol,
+                    std::string msg = "") {
   typedef Kokkos::Details::ArithTraits<Scalar1> AT1;
   typedef Kokkos::Details::ArithTraits<Scalar3> AT3;
-  EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol));
+  EXPECT_LE((double)AT1::abs(val1 - val2), (double)AT3::abs(tol)) << msg;
 }
 
 template <class ViewType1, class ViewType2, class Scalar>
@@ -116,9 +118,26 @@ void EXPECT_NEAR_KK_1DVIEW(ViewType1 v1, ViewType2 v2, Scalar tol) {
   }
 }
 
+/// This function returns a descriptive user defined failure string for
+/// insertion into gtest macros such as FAIL() and EXPECT_LE(). \param file The
+/// filename where the failure originated \param func The function where the
+/// failure originated \param line The line number where the failure originated
+/// \return a new string containing: "  > from file:func:line\n    > "
+static inline const std::string kk_failure_str(std::string file,
+                                               std::string func,
+                                               const int line) {
+  std::string failure_msg = "  > from ";
+  failure_msg += (file + ":" + func + ":" + std::to_string(line) + "\n    > ");
+  return std::string(failure_msg);
+}
+
 #if defined(KOKKOS_HALF_T_IS_FLOAT)
 using halfScalarType = Kokkos::Experimental::half_t;
 #endif  // KOKKOS_HALF_T_IS_FLOAT
+
+#if defined(KOKKOS_BHALF_T_IS_FLOAT)
+using bhalfScalarType = Kokkos::Experimental::bhalf_t;
+#endif  // KOKKOS_BHALF_T_IS_FLOAT
 
 template <class ViewTypeA, class ViewTypeB, class ViewTypeC,
           class ExecutionSpace>
@@ -238,29 +257,27 @@ struct Functor_BatchedVanillaGEMM {
     Kokkos::parallel_for(
         "Test::VanillaGEMM",
         Kokkos::TeamPolicy<ExecutionSpace>(
-            batch_size_last_dim ? C.extent(2) : C.extent(0), Kokkos::AUTO, 16),
+            batch_size_last_dim ? C.extent(2) : C.extent(0), Kokkos::AUTO,
+            KokkosKernels::Impl::kk_get_max_vector_size<ExecutionSpace>()),
         *this);
   }
 };
 
-//Compute C := alpha * AB + beta * C
+// Compute C := alpha * AB + beta * C
 template <class ViewTypeA, class ViewTypeB, class ViewTypeC>
 void vanillaGEMM(typename ViewTypeC::non_const_value_type alpha,
                  const ViewTypeA& A, const ViewTypeB& B,
                  typename ViewTypeC::non_const_value_type beta,
                  const ViewTypeC& C) {
   using value_type = typename ViewTypeC::non_const_value_type;
-  using KAT = Kokkos::ArithTraits<value_type>;
-  int m = A.extent(0);
-  int k = A.extent(1);
-  int n = B.extent(1);
-  for(int i = 0; i < m; i++)
-  {
-    for(int j = 0; j < n; j++)
-    {
+  using KAT        = Kokkos::ArithTraits<value_type>;
+  int m            = A.extent(0);
+  int k            = A.extent(1);
+  int n            = B.extent(1);
+  for (int i = 0; i < m; i++) {
+    for (int j = 0; j < n; j++) {
       value_type sum = KAT::zero();
-      for(int ii = 0; ii < k; ii++)
-      {
+      for (int ii = 0; ii < k; ii++) {
         sum += A(i, ii) * B(ii, j);
       }
       C(i, j) = alpha * sum + beta * C(i, j);
@@ -323,103 +340,104 @@ class epsilon<Kokkos::Experimental::half_t> {
 
 using KokkosKernels::Impl::getRandomBounds;
 
-  template<typename scalar_t, typename lno_t, typename size_type, typename device, typename crsMat_t>
-  crsMat_t symmetrize(crsMat_t A)
-  {
-    typedef typename crsMat_t::StaticCrsGraphType graph_t;
-    typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
-    typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-    typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-    auto host_rowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
-    auto host_entries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
-    auto host_values = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
-    lno_t numRows = A.numRows();
-    //symmetrize as input_mat + input_mat^T, to still have a diagonally dominant matrix
-    typedef std::map<lno_t, scalar_t> Row;
-    std::vector<Row> symRows(numRows);
-    for(lno_t r = 0; r < numRows; r++)
-    {
-      auto& row = symRows[r];
-      for(size_type i = host_rowmap(r); i < host_rowmap(r + 1); i++)
-      {
-        lno_t c = host_entries(i);
-        auto& col = symRows[c];
-        auto it = row.find(c);
-        if(it == row.end())
-          row[c] = host_values(i);
-        else
-          row[c] += host_values(i);
-        it = col.find(r);
-        if(it == col.end())
-          col[r] = host_values(i);
-        else
-          col[r] += host_values(i);
-      }
+template <typename scalar_t, typename lno_t, typename size_type,
+          typename device, typename crsMat_t>
+crsMat_t symmetrize(crsMat_t A) {
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  auto host_rowmap =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
+  auto host_entries =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
+  auto host_values =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
+  lno_t numRows = A.numRows();
+  // symmetrize as input_mat + input_mat^T, to still have a diagonally dominant
+  // matrix
+  typedef std::map<lno_t, scalar_t> Row;
+  std::vector<Row> symRows(numRows);
+  for (lno_t r = 0; r < numRows; r++) {
+    auto& row = symRows[r];
+    for (size_type i = host_rowmap(r); i < host_rowmap(r + 1); i++) {
+      lno_t c   = host_entries(i);
+      auto& col = symRows[c];
+      auto it   = row.find(c);
+      if (it == row.end())
+        row[c] = host_values(i);
+      else
+        row[c] += host_values(i);
+      it = col.find(r);
+      if (it == col.end())
+        col[r] = host_values(i);
+      else
+        col[r] += host_values(i);
     }
-    //Count entries
-    Kokkos::View<size_type*, Kokkos::LayoutLeft, Kokkos::HostSpace> new_host_rowmap("Rowmap", numRows + 1);
-    size_t accum = 0;
-    for(lno_t r = 0; r <= numRows; r++)
-    {
-      new_host_rowmap(r) = accum;
-      if(r < numRows)
-        accum += symRows[r].size();
-    }
-    //Allocate new entries/values
-    Kokkos::View<lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> new_host_entries("Entries", accum);
-    Kokkos::View<scalar_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> new_host_values("Values", accum);
-    for(lno_t r = 0; r < numRows; r++)
-    {
-      auto rowIt = symRows[r].begin();
-      for(size_type i = new_host_rowmap(r); i < new_host_rowmap(r + 1); i++)
-      {
-        new_host_entries(i) = rowIt->first;
-        new_host_values(i) = rowIt->second;
-        rowIt++;
-      }
-    }
-    lno_view_t new_rowmap("Rowmap", numRows + 1);
-    lno_nnz_view_t new_entries("Entries", accum);
-    scalar_view_t new_values("Values", accum);
-    Kokkos::deep_copy(new_rowmap, new_host_rowmap);
-    Kokkos::deep_copy(new_entries, new_host_entries);
-    Kokkos::deep_copy(new_values, new_host_values);
-    return crsMat_t("SymA", numRows, numRows, accum, new_values, new_rowmap, new_entries);
   }
+  // Count entries
+  Kokkos::View<size_type*, Kokkos::LayoutLeft, Kokkos::HostSpace>
+      new_host_rowmap("Rowmap", numRows + 1);
+  size_t accum = 0;
+  for (lno_t r = 0; r <= numRows; r++) {
+    new_host_rowmap(r) = accum;
+    if (r < numRows) accum += symRows[r].size();
+  }
+  // Allocate new entries/values
+  Kokkos::View<lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> new_host_entries(
+      "Entries", accum);
+  Kokkos::View<scalar_t*, Kokkos::LayoutLeft, Kokkos::HostSpace>
+      new_host_values("Values", accum);
+  for (lno_t r = 0; r < numRows; r++) {
+    auto rowIt = symRows[r].begin();
+    for (size_type i = new_host_rowmap(r); i < new_host_rowmap(r + 1); i++) {
+      new_host_entries(i) = rowIt->first;
+      new_host_values(i)  = rowIt->second;
+      rowIt++;
+    }
+  }
+  lno_view_t new_rowmap("Rowmap", numRows + 1);
+  lno_nnz_view_t new_entries("Entries", accum);
+  scalar_view_t new_values("Values", accum);
+  Kokkos::deep_copy(new_rowmap, new_host_rowmap);
+  Kokkos::deep_copy(new_entries, new_host_entries);
+  Kokkos::deep_copy(new_values, new_host_values);
+  return crsMat_t("SymA", numRows, numRows, accum, new_values, new_rowmap,
+                  new_entries);
+}
 
-  //create_random_x_vector and create_random_y_vector can be used together to generate a random 
-  //linear system Ax = y.
-  template<typename vec_t>
-  vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
-    typedef typename vec_t::value_type scalar_t;
-    auto h_x = Kokkos::create_mirror_view (kok_x);
-    for (size_t j = 0; j < h_x.extent(1); ++j){
-      for (size_t i = 0; i < h_x.extent(0); ++i){
-        scalar_t r =
-            static_cast <scalar_t> (rand()) /
-            static_cast <scalar_t> (RAND_MAX / max_value);
-        h_x.access(i, j) = r;
-      }
+// create_random_x_vector and create_random_y_vector can be used together to
+// generate a random linear system Ax = y.
+template <typename vec_t>
+vec_t create_random_x_vector(vec_t& kok_x, double max_value = 10.0) {
+  typedef typename vec_t::value_type scalar_t;
+  auto h_x = Kokkos::create_mirror_view(kok_x);
+  for (size_t j = 0; j < h_x.extent(1); ++j) {
+    for (size_t i = 0; i < h_x.extent(0); ++i) {
+      scalar_t r = static_cast<scalar_t>(rand()) /
+                   static_cast<scalar_t>(RAND_MAX / max_value);
+      h_x.access(i, j) = r;
     }
-    Kokkos::deep_copy (kok_x, h_x);
-    return kok_x;
   }
+  Kokkos::deep_copy(kok_x, h_x);
+  return kok_x;
+}
 
-  template <typename crsMat_t, typename vector_t>
-  vector_t create_random_y_vector(crsMat_t crsMat, vector_t x_vector){
-    vector_t y_vector (Kokkos::view_alloc(Kokkos::WithoutInitializing, "Y VECTOR"),
-        crsMat.numRows());
-    KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-    return y_vector;
-  }
+template <typename crsMat_t, typename vector_t>
+vector_t create_random_y_vector(crsMat_t crsMat, vector_t x_vector) {
+  vector_t y_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Y VECTOR"),
+                    crsMat.numRows());
+  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
+  return y_vector;
+}
 
-  template <typename crsMat_t, typename vector_t>
-  vector_t create_random_y_vector_mv(crsMat_t crsMat, vector_t x_vector){
-    vector_t y_vector (Kokkos::view_alloc(Kokkos::WithoutInitializing, "Y VECTOR"),
-        crsMat.numRows(), x_vector.extent(1));
-    KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-    return y_vector;
-  }
+template <typename crsMat_t, typename vector_t>
+vector_t create_random_y_vector_mv(crsMat_t crsMat, vector_t x_vector) {
+  vector_t y_vector(Kokkos::view_alloc(Kokkos::WithoutInitializing, "Y VECTOR"),
+                    crsMat.numRows(), x_vector.extent(1));
+  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
+  return y_vector;
+}
 
 /// \brief SharedParamTag class used to specify how to invoke templates within
 ///                       batched unit tests
@@ -433,5 +451,42 @@ struct SharedParamTag {
   using transB      = TB;
   using batchLayout = BL;
 };
+
+/// \brief value_type_name returns a string with the value type name
+template <typename T>
+std::string value_type_name() {
+  return "::UnknownValueType";
+}
+
+template <>
+std::string value_type_name<float>() {
+  return "::Float";
+}
+
+template <>
+std::string value_type_name<double>() {
+  return "::Double";
+}
+
+template <>
+std::string value_type_name<Kokkos::complex<float>>() {
+  return "::ComplexFloat";
+}
+
+template <>
+std::string value_type_name<Kokkos::complex<double>>() {
+  return "::ComplexDouble";
+}
+
+int string_compare_no_case(const char* str1, const char* str2) {
+  std::string str1_s(str1);
+  std::string str2_s(str2);
+  for (size_t i = 0; i < str1_s.size(); i++)
+    str1_s[i] = std::tolower(str1_s[i]);
+  for (size_t i = 0; i < str2_s.size(); i++)
+    str2_s[i] = std::tolower(str2_s[i]);
+  return strcmp(str1_s.c_str(), str2_s.c_str());
+}
+
 }  // namespace Test
 #endif

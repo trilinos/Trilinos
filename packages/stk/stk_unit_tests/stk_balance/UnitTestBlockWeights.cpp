@@ -47,19 +47,19 @@ namespace
 class BalanceSettingsTester : public stk::balance::GraphCreationSettings
 {
 public:
-    BalanceSettingsTester(const std::string& decompMethod)
-      : localMethod(decompMethod) { }
-    virtual ~BalanceSettingsTester() = default;
+  BalanceSettingsTester(const std::string& decompMethod)
+    : localMethod(decompMethod) { }
+  virtual ~BalanceSettingsTester() = default;
 
-    virtual std::string getDecompMethod() const override { return localMethod; }
+  virtual std::string getDecompMethod() const override { return localMethod; }
 
 private:
-    const std::string& localMethod;
+  const std::string& localMethod;
 };
 
 using BlockWeightsMap = std::map<std::string, double>;
 
-class TestBlockWeights : public stk::unit_test_util::MeshFixture
+class TestBlockWeights : public stk::unit_test_util::simple_fields::MeshFixture
 {
 protected:
   void set_up_1x1x8_mesh_one_block()

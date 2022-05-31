@@ -62,6 +62,17 @@ namespace stk { namespace io { class BulkData; } }
 namespace stk {
 namespace io {
 
+namespace impl {
+
+stk::mesh::Selector internal_build_selector(const stk::mesh::Selector *subset_selector,
+                                            const stk::mesh::Selector *output_selector,
+                                            const stk::mesh::Selector *shared_selector,
+                                            const stk::mesh::Part &part,
+                                            bool include_shared);
+
+} // namespace impl
+
+
 size_t get_entities(OutputParams &params,
                     const stk::mesh::Part &part,
                     stk::mesh::EntityRank type,

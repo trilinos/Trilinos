@@ -37,19 +37,21 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_balance/rebalance.hpp>
 #include <vector>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 namespace {
+using stk::unit_test_util::build_mesh;
 
 class RebalanceFileOutput : public MeshFixtureRebalance
 {
 public:
-  virtual void rebalance_mesh(int numFinalProcs) override
+  virtual void rebalance_mesh(int numFinalProcs, const std::string & decompMethod = "rcb") override
   {
     m_balanceSettings.set_is_rebalancing(true);
     m_balanceSettings.set_output_filename(get_output_file_name());
     m_balanceSettings.set_num_input_processors(stk::parallel_machine_size(get_comm()));
     m_balanceSettings.set_num_output_processors(numFinalProcs);
-    m_balanceSettings.setDecompMethod("rcb");
+    m_balanceSettings.setDecompMethod(decompMethod);
 
     stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
     stk::balance::rebalance(m_ioBroker, m_balanceSettings);
@@ -78,11 +80,10 @@ std::vector<std::pair<stk::mesh::EntityId, int>> getSharingInfo(stk::mesh::BulkD
 
 void verify_node_sharing_info(const std::vector<std::pair<stk::mesh::EntityId, int>> &nodeSharingInfo, const std::string& filename)
 {
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  stk::io::fill_mesh(filename, bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, MPI_COMM_WORLD);
+  stk::io::fill_mesh(filename, *bulk);
 
-  std::vector<std::pair<stk::mesh::EntityId, int>> nodeSharingInfoAfter = getSharingInfo(bulk);
+  std::vector<std::pair<stk::mesh::EntityId, int>> nodeSharingInfoAfter = getSharingInfo(*bulk);
 
   EXPECT_TRUE(nodeSharingInfo == nodeSharingInfoAfter);
 }

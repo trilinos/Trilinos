@@ -167,6 +167,9 @@ typedef MueLu::InitialBlockNumberFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>
 #ifdef MUELU_INTREPIDPCOARSENFACTORY_SHORT
 typedef MueLu::IntrepidPCoarsenFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> IntrepidPCoarsenFactory;
 #endif
+#ifdef MUELU_INVERSEAPPROXIMATIONFACTORY_SHORT
+typedef MueLu::InverseApproximationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> InverseApproximationFactory;
+#endif
 #ifdef MUELU_LINEDETECTIONFACTORY_SHORT
 typedef MueLu::LineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> LineDetectionFactory;
 #endif

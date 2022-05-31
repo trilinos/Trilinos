@@ -74,21 +74,13 @@ class BulkDataTester : public stk::mesh::BulkData
 public:
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-            stk::mesh::BulkData(mesh_meta_data, comm, stk::mesh::BulkData::AUTO_AURA
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr)
+            stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, stk::mesh::BulkData::AUTO_AURA)
     {
     }
 
     BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm,
                    enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
-            : stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option
-#ifdef SIERRA_MIGRATION
-, false
-#endif
-, (stk::mesh::FieldDataManager*)nullptr)
+            : stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, auto_aura_option)
     {
     }
 
@@ -98,7 +90,7 @@ public:
                    bool _add_fmwk_data,
                    stk::mesh::FieldDataManager *field_data_manager,
                    unsigned bucket_capacity) :
-            stk::mesh::BulkData(mesh_meta_data, comm, auto_aura_option
+                     stk::mesh::BulkData(std::shared_ptr<stk::mesh::MetaData>(&mesh_meta_data, [](auto pointerWeWontDelete){}), comm, auto_aura_option
 #ifdef SIERRA_MIGRATION
 , _add_fmwk_data
 #endif

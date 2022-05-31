@@ -41,6 +41,9 @@
 // @HEADER
 
 #include "PanzerAdaptersSTK_config.hpp"
+
+#ifdef PANZER_HAVE_EPETRA
+
 #include "Panzer_STK_SetupLOWSFactory.hpp"
 #include "Panzer_STK_ParameterListCallback.hpp"
 #include "Panzer_STK_ParameterListCallbackBlocked.hpp"
@@ -63,8 +66,6 @@
 #endif
 
 #ifdef PANZER_HAVE_MUELU
-#include <Thyra_MueLuPreconditionerFactory.hpp>
-#include <Thyra_MueLuRefMaxwellPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
 //#include "MatrixMarket_Tpetra.hpp"
 #include "Xpetra_MapFactory.hpp"
@@ -180,6 +181,7 @@ namespace {
     {
       Stratimikos::enableMueLu<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu");
       Stratimikos::enableMueLuRefMaxwell<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell");
+      Stratimikos::enableMueLuMaxwell1<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuMaxwell1");
       #ifndef PANZER_HIDE_DEPRECATED_CODE
       // the next two are only for backwards compatibility
       Stratimikos::enableMueLu<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
@@ -526,3 +528,5 @@ namespace {
     return Teuchos::null;
   }
 }
+
+#endif // PANZER_HAVE_EPETRA

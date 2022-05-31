@@ -108,6 +108,29 @@ public:
            const Ptr<Vector<Real>>    &x,
            const Ptr<Vector<Real>>    &g = nullPtr);
 
+  /** \brief Copy constructor for OptimizationProblem
+
+      @param[in] problem  objective function object
+  */
+   Problem(const Problem &problem)
+     : isFinalized_(false),
+       hasBounds_(problem.hasBounds_),
+       hasEquality_(problem.hasEquality_),
+       hasInequality_(problem.hasInequality_),
+       hasLinearEquality_(problem.hasLinearEquality_),
+       hasLinearInequality_(problem.hasLinearInequality_),
+       cnt_econ_(problem.cnt_econ_),
+       cnt_icon_(problem.cnt_icon_),
+       cnt_linear_econ_(problem.cnt_linear_econ_),
+       cnt_linear_icon_(problem.cnt_linear_icon_),
+       ppa_list_(problem.ppa_list_),
+       INPUT_obj_(problem.INPUT_obj_),
+       INPUT_xprim_(problem.INPUT_xprim_),
+       INPUT_xdual_(problem.INPUT_xdual_),
+       INPUT_bnd_(problem.INPUT_bnd_),
+       INPUT_con_(problem.INPUT_con_),
+       INPUT_linear_con_(problem.INPUT_linear_con_) {}
+
   /***************************************************************************/
   /*** Set and remove methods for constraints ********************************/
   /***************************************************************************/

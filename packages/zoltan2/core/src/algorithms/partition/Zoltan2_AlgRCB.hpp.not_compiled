@@ -479,7 +479,7 @@ void AlgRCB<Adapter>::partition(
     ////////////////////////////////////////////////////////
     // Create a new multivector for my smaller group.
 
-    ArrayView<const gno_t> gnoList = mvector->getMap()->getNodeElementList();
+    ArrayView<const gno_t> gnoList = mvector->getMap()->getLocalElementList();
   
     // Tpetra will calculate the globalSize.
     size_t globalSize = Teuchos::OrdinalTraits<size_t>::invalid();
@@ -552,7 +552,7 @@ void AlgRCB<Adapter>::partition(
   ////////////////////////////////////////////////////////
   // Done: update the solution
 
-  ArrayView<const gno_t> gnoList = mvector->getMap()->getNodeElementList();
+  ArrayView<const gno_t> gnoList = mvector->getMap()->getLocalElementList();
 
   if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS && 
      (numGlobalCoords < 500)){
@@ -579,7 +579,7 @@ void AlgRCB<Adapter>::partition(
     std::ostringstream oss;
     oss << "OrderedSolution: ";
     for (size_t i=0; i < ordered.getLocalLength(); i++)
-      oss << inputmap->getNodeElementList()[i] << " ("
+      oss << inputmap->getLocalElementList()[i] << " ("
           << orderedpartId[i] << ") ";
     
     env->debug(VERBOSE_DETAILED_STATUS, oss.str());

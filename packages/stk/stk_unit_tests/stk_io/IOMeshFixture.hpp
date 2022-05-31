@@ -128,9 +128,86 @@ protected:
   }
 };
 
+namespace simple_fields {
+
+class IOMeshFixture : public stk::unit_test_util::simple_fields::MeshFixture
+{
+protected:
+  stk::mesh::Part& create_io_part(const std::string& partName,
+                                  int id = -1,
+                                  stk::topology topo = stk::topology::HEX_8)
+  {
+    stk::mesh::Part& part = get_meta().declare_part_with_topology(partName, topo);
+    if (id != -1) {
+      get_meta().set_part_id(part, id);
+    }
+    stk::io::put_io_part_attribute(part);
+    return part;
+  }
+
+  void move_element(const stk::mesh::EntityId elemId,
+                    stk::mesh::Part& sourcePart,
+                    stk::mesh::Part& destPart)
+  {
+    stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
+    get_bulk().batch_change_entity_parts({elem}, {&destPart}, {&sourcePart});
+  }
+
+  void move_face(const stk::mesh::EntityId faceId, stk::mesh::Part& sourcePart, stk::mesh::Part& destPart)
+  {
+    stk::mesh::Entity face = get_bulk().get_entity(get_meta().side_rank(), faceId);
+    get_bulk().batch_change_entity_parts({face}, {&destPart}, {&sourcePart});
+  }
+
+  void add_nodes(const stk::mesh::EntityIdVector nodeIds, stk::mesh::Part& destPart)
+  {
+    stk::mesh::EntityVector nodes;
+    nodes.reserve(nodeIds.size());
+
+    for (stk::mesh::EntityId nodeId : nodeIds) {
+      stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, nodeId);
+      ThrowRequire(get_bulk().is_valid(node));
+      nodes.push_back(node);
+    }
+
+    get_bulk().batch_change_entity_parts(nodes, {&destPart}, {});
+  }
+
+  void add_node(const stk::mesh::EntityId nodeId, stk::mesh::Part& destPart) { add_nodes({nodeId}, destPart); }
+
+  void create_side(const stk::mesh::EntityId elemId,
+                   stk::mesh::ConnectivityOrdinal sideOrd,
+                   stk::mesh::Part& sidePart)
+  {
+    stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
+    ASSERT_TRUE(get_bulk().is_valid(elem));
+    get_bulk().modification_begin();
+    get_bulk().declare_element_side(elem, sideOrd, stk::mesh::PartVector{&sidePart});
+    get_bulk().modification_end();
+  }
+
+  stk::mesh::Selector create_block_subset_selector(const stk::mesh::PartVector& blocksToExclude)
+  {
+    stk::mesh::Selector meshSubsetSelector = get_meta().universal_part();
+    if (!blocksToExclude.empty()) {
+      stk::mesh::PartVector elemBlocks;
+      stk::mesh::fill_element_block_parts(get_meta(), stk::topology::INVALID_TOPOLOGY, elemBlocks);
+      for(const stk::mesh::Part* excludedBlock : blocksToExclude) {
+        auto foundBlock = std::find(elemBlocks.begin(), elemBlocks.end(), excludedBlock);
+        ThrowRequire(foundBlock != elemBlocks.end());
+        elemBlocks.erase(foundBlock);
+      }
+      meshSubsetSelector = stk::mesh::selectUnion(elemBlocks);
+    }
+
+    return meshSubsetSelector;
+  }
+};
+
+} // namespace simple_fields
+
 }  // namespace unit_test
 }  // namespace io
 }  // namespace stk
-
 #endif
 

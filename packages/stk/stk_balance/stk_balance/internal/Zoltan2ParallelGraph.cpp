@@ -58,25 +58,25 @@ void Zoltan2ParallelGraph::adjust_vertex_weights(const stk::balance::BalanceSett
 
 void Zoltan2ParallelGraph::adjust_weights_for_small_meshes()
 {
-    for(size_t i=0;i<mVertexWeights.size();++i)
-        mVertexWeights[i] += 0.05;
+  for(size_t i=0;i<mVertexWeights.size();++i)
+    mVertexWeights[i] += 0.05;
 }
 
 BalanceGlobalNumber getAdjacencyId(const stk::mesh::BulkData &stkMeshBulkData,
-                                 stk::mesh::Entity adjacentVertex,
-                                 bool useLocalIds,
-                                 const stk::mesh::impl::LocalIdMapper& localIds)
+                                   stk::mesh::Entity adjacentVertex,
+                                   bool useLocalIds,
+                                   const stk::mesh::impl::LocalIdMapper& localIds)
 {
-    BalanceGlobalNumber adjacencyId = -1;
-    if(useLocalIds)
-    {
-        adjacencyId = stk::balance::internal::get_local_id(localIds, adjacentVertex);
-    }
-    else
-    {
-        adjacencyId = stkMeshBulkData.identifier(adjacentVertex);
-    }
-    return adjacencyId;
+  BalanceGlobalNumber adjacencyId = -1;
+  if(useLocalIds)
+  {
+    adjacencyId = stk::balance::internal::get_local_id(localIds, adjacentVertex);
+  }
+  else
+  {
+    adjacencyId = stkMeshBulkData.identifier(adjacentVertex);
+  }
+  return adjacencyId;
 }
 
 bool areElementsConnected(const stk::mesh::BulkData& stkMeshBulkData,
@@ -84,9 +84,9 @@ bool areElementsConnected(const stk::mesh::BulkData& stkMeshBulkData,
                           const stk::mesh::Entity & element1,
                           const stk::mesh::Entity & element2)
 {
-    size_t nodesSharedBetweenElements = stk::balance::internal::get_num_common_nodes_between_elements(stkMeshBulkData, element1, element2);
-    bool elementsAreConnected = (nodesSharedBetweenElements >= numNodesRequiredForConnection);
-    return elementsAreConnected;
+  size_t nodesSharedBetweenElements = stk::balance::internal::get_num_common_nodes_between_elements(stkMeshBulkData, element1, element2);
+  bool elementsAreConnected = (nodesSharedBetweenElements >= numNodesRequiredForConnection);
+  return elementsAreConnected;
 }
 
 bool is_valid_graph_connectivity(const stk::mesh::BulkData &stkMeshBulkData,
@@ -139,8 +139,8 @@ bool should_create_graph_edge(const stk::mesh::BulkData &bulk,
                               const stk::mesh::Entity & element2)
 {
   const bool isValidGraphEdge = is_valid_graph_connectivity(bulk, selector, balanceSettings, element1, element2);
-  const bool notSpiderElement1 = !stk::balance::internal::shouldOmitSpiderElement(bulk, balanceSettings, element1);
-  const bool notSpiderElement2 = !stk::balance::internal::shouldOmitSpiderElement(bulk, balanceSettings, element2);
+  const bool notSpiderElement1 = !stk::balance::internal::should_omit_spider_element(bulk, balanceSettings, element1);
+  const bool notSpiderElement2 = !stk::balance::internal::should_omit_spider_element(bulk, balanceSettings, element2);
 
   return isValidGraphEdge && notSpiderElement1 && notSpiderElement2;
 }
@@ -152,52 +152,52 @@ void Zoltan2ParallelGraph::convertGraphEdgesToZoltanGraph(const stk::mesh::BulkD
                                                           std::vector<int>& adjacencyProcs,
                                                           const stk::mesh::impl::LocalIdMapper& localIds)
 {
-    mOffsets.clear();
-    mAdjacency.clear();
-    mEdgeWeights.clear();
+  mOffsets.clear();
+  mAdjacency.clear();
+  mEdgeWeights.clear();
 
-    mOffsets.resize(numElements+1,0);
+  mOffsets.resize(numElements+1,0);
 
-    // Need to resize
-    for (size_t i=0;i<graphEdges.size();i++)
-    {
-        unsigned localId = stk::balance::internal::get_local_id(localIds, graphEdges[i].vertex1());
-        mOffsets[localId+1]++;
-        // Only need if graph is NOT symmetric here
-        // offsets[graphEdges[i].vertex2().local_offset()]++;
+  // Need to resize
+  for (size_t i=0;i<graphEdges.size();i++)
+  {
+    unsigned localId = stk::balance::internal::get_local_id(localIds, graphEdges[i].vertex1());
+    mOffsets[localId+1]++;
+    // Only need if graph is NOT symmetric here
+    // offsets[graphEdges[i].vertex2().local_offset()]++;
+  }
+
+  for (size_t i=1;i<mOffsets.size();i++)
+  {
+    mOffsets[i] += mOffsets[i-1];
+  }
+
+  std::ostringstream os;
+  size_t aboutToAllocate = mOffsets[numElements]*(sizeof(BalanceGlobalNumber) + sizeof(int) + sizeof(double));
+  os << "About to allocate " << stk::human_bytes(aboutToAllocate) << " bytes";
+  stk::balance::internal::logMessage(stkMeshBulkData.parallel(), os.str());
+
+  mAdjacency.resize(mOffsets[numElements]);
+  adjacencyProcs.resize(mOffsets[numElements]);
+  mEdgeWeights.resize(mOffsets[numElements]);
+
+  std::vector<int> numElementsConnectedSoFar(numElements,0);
+
+  bool usingColoring = balanceSettings.usingColoring();
+  for (size_t i=0;i<graphEdges.size();i++)
+  {
+    unsigned localId = stk::balance::internal::get_local_id(localIds, graphEdges[i].vertex1());
+    int offset = numElementsConnectedSoFar[localId];
+    int index = mOffsets[localId] + offset;
+
+    if (usingColoring) {
+      ThrowRequireMsg(graphEdges[i].vertex2_id() < numElements, "Adding invalid element to ZoltanII graph");
     }
-
-    for (size_t i=1;i<mOffsets.size();i++)
-    {
-        mOffsets[i] += mOffsets[i-1];
-    }
-
-    std::ostringstream os;
-    size_t aboutToAllocate = mOffsets[numElements]*(sizeof(BalanceGlobalNumber) + sizeof(int) + sizeof(double));
-    os << "About to allocate " << stk::human_bytes(aboutToAllocate) << " bytes";
-    stk::balance::internal::logMessage(stkMeshBulkData.parallel(), os.str());
-
-    mAdjacency.resize(mOffsets[numElements]);
-    adjacencyProcs.resize(mOffsets[numElements]);
-    mEdgeWeights.resize(mOffsets[numElements]);
-
-    std::vector<int> numElementsConnectedSoFar(numElements,0);
-
-    bool usingColoring = balanceSettings.usingColoring();
-    for (size_t i=0;i<graphEdges.size();i++)
-    {
-        unsigned localId = stk::balance::internal::get_local_id(localIds, graphEdges[i].vertex1());
-        int offset = numElementsConnectedSoFar[localId];
-        int index = mOffsets[localId] + offset;
-
-        if (usingColoring) {
-            ThrowRequireMsg(graphEdges[i].vertex2_id() < numElements, "Adding invalid element to ZoltanII graph");
-        }
-        mAdjacency[index] = graphEdges[i].vertex2_id();
-        adjacencyProcs[index] = graphEdges[i].vertex2_owning_proc();
-        mEdgeWeights[index] = graphEdges[i].weight();
-        numElementsConnectedSoFar[localId]++;
-    }
+    mAdjacency[index] = graphEdges[i].vertex2_id();
+    adjacencyProcs[index] = graphEdges[i].vertex2_owning_proc();
+    mEdgeWeights[index] = graphEdges[i].weight();
+    numElementsConnectedSoFar[localId]++;
+  }
 }
 
 class GraphEdgeCreator
@@ -207,9 +207,9 @@ public:
                    const stk::mesh::Selector& selector,
                    const stk::balance::BalanceSettings& balanceSettings,
                    const stk::mesh::impl::LocalIdMapper& localIds)
-  : m_bulk(bulk), m_selector(selector),
-    m_balanceSettings(balanceSettings), m_localIds(localIds),
-    m_allElementsPossiblyConnected()
+    : m_bulk(bulk), m_selector(selector),
+      m_balanceSettings(balanceSettings), m_localIds(localIds),
+      m_allElementsPossiblyConnected()
   {
   }
 
@@ -308,7 +308,7 @@ void Zoltan2ParallelGraph::createGraphEdgesUsingNodeConnectivity(stk::mesh::Bulk
         unsigned local_id = stk::balance::internal::get_local_id(localIds, elementOfConcern);
         mVertexIds[local_id] = getAdjacencyId(stkMeshBulkData, elementOfConcern, useLocalIds, localIds);
 
-        if (!stk::balance::internal::shouldOmitSpiderElement(stkMeshBulkData, balanceSettings, elementOfConcern)) {
+        if (not stk::balance::internal::should_omit_spider_element(stkMeshBulkData, balanceSettings, elementOfConcern)) {
           mVertexWeights[local_id] = balanceSettings.getGraphVertexWeight(bucket.topology());
           stk::balance::internal::fillEntityCentroid(stkMeshBulkData, coord, elementOfConcern, &mVertexCoordinates[local_id*spatialDimension]);
           graphEdgeCreator.create_graph_edges_for_element(elementOfConcern, graphEdges);

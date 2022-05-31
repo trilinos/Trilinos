@@ -890,7 +890,9 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
 #endif
     const Details::EDistributorSendType sendType =
       getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
+#endif
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     {
@@ -929,8 +931,8 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
 #endif
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     barrierBetweenRecvSend_ = barrierBetween;
-#endif
     useDistinctTags_ = useDistinctTags;
+#endif
 
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
@@ -963,8 +965,8 @@ DistributorPlan::getValidParameters() const
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   const bool barrierBetween = Details::barrierBetween_default;
-#endif
   const bool useDistinctTags = Details::useDistinctTags_default;
+#endif
 
   Array<std::string> sendTypes = distributorSendTypes ();
   const std::string defaultSendType ("Send");
@@ -991,9 +993,11 @@ DistributorPlan::getValidParameters() const
   setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   plist->set ("Use distinct tags", useDistinctTags, "Whether to use distinct "
       "MPI message tags for different code paths.  Highly recommended"
       " to avoid message collisions.");
+#endif
   plist->set ("Timer Label","","Label for Time Monitor output");
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE

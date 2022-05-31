@@ -8,11 +8,14 @@
 
 #ifndef KRINO_INCLUDE_AKRI_DECOMPOSITIONHASCHANGED_H_
 #define KRINO_INCLUDE_AKRI_DECOMPOSITIONHASCHANGED_H_
-#include <Akri_CDFEM_Support.hpp>
-#include <Akri_Phase_Support.hpp>
+
 #include <stk_mesh/base/BulkData.hpp>
-#include "../interface_geometry_interface/Akri_InterfaceGeometry.hpp"
+
 namespace krino {
+
+class CDFEM_Support;
+class InterfaceGeometry;
+class Phase_Support;
 
 bool decomposition_has_changed(const stk::mesh::BulkData & mesh,
     const InterfaceGeometry & interfaceGeometry,

@@ -119,24 +119,26 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
   int nvecs = X.getNumVectors();
   if(nvecs == 1)
   {
-    auto x2d = X.template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
-    auto y2d = Y.template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
-    auto x1d = Kokkos::subview(x2d, Kokkos::ALL(), 0);
-    auto y1d = Kokkos::subview(y2d, Kokkos::ALL(), 0);
+    auto x2d = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto y2d = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
+    ImplScalarArray x1d (const_cast<ImplScalar*>(x2d.data()), x1d.extent(0));
+    ImplScalarArray y1d (const_cast<ImplScalar*>(y2d.data()), y1d.extent(0));
+
     applyLocalPrec(x1d, y1d);
   }
   else
   {
     //Solve each vector one at a time (until FastILU supports multiple RHS)
+    auto x2d = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto y2d = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
     for(int i = 0; i < nvecs; i++)
     {
-      auto Xcol = X.getVector(i);
-      auto Ycol = Y.getVector(i);
-      auto xColView2d = Xcol->template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
-      auto yColView2d = Ycol->template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
-      auto xColView1d = Kokkos::subview(xColView2d, Kokkos::ALL(), 0);
-      auto yColView1d = Kokkos::subview(yColView2d, Kokkos::ALL(), 0);
-      applyLocalPrec(xColView1d, yColView1d);
+      auto xColView1d = Kokkos::subview(x2d, Kokkos::ALL(), i);
+      auto yColView1d = Kokkos::subview(y2d, Kokkos::ALL(), i);
+      ImplScalarArray x1d (const_cast<ImplScalar*>(xColView1d.data()), xColView1d.extent(0));
+      ImplScalarArray y1d (const_cast<ImplScalar*>(yColView1d.data()), yColView1d.extent(0));
+
+      applyLocalPrec(x1d, y1d);
     }
   }
 }
@@ -153,7 +155,6 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 initialize()
 {
-
   const std::string timerName ("Ifpack2::FastILU::initialize");
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {
@@ -165,7 +166,7 @@ initialize()
     throw std::runtime_error(std::string("Called ") + getName() + "::initialize() but matrix was null (call setMatrix() with a non-null matrix first)");
   }
   Kokkos::Timer copyTimer;
-  CrsArrayReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
+  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getStructure(mat_.get(), localRowPtrsHost_, localRowPtrs_, localColInds_);
   crsCopyTime_ = copyTimer.seconds();
   initLocalPrec();  //note: initLocalPrec updates initTime
   initFlag_ = true;
@@ -197,7 +198,7 @@ compute()
 
   //get copy of values array from matrix
   Kokkos::Timer copyTimer;
-  CrsArrayReader<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
+  CrsArrayReader<Scalar, ImplScalar, LocalOrdinal, GlobalOrdinal, Node>::getValues(mat_.get(), localValues_, localRowPtrsHost_);
   crsCopyTime_ += copyTimer.seconds(); //add to the time spent getting rowptrs/colinds
   computeLocalPrec(); //this updates computeTime_
   computedFlag_ = true;
@@ -293,7 +294,10 @@ std::string FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description
   os << "Initialized: " << (isInitialized() ? "true" : "false") << ", ";
   os << "Computed: " << (isComputed() ? "true" : "false") << ", ";
   os << "Sweeps: " << getSweeps() << ", ";
-  os << "# of triangular solve iterations: " << getNTrisol() << ", ";
+  os << "Triangular solve type: " << getSpTrsvType() << ", ";
+  if (getSpTrsvType() == "Fast") {
+    os << "# of triangular solve iterations: " << getNTrisol() << ", ";
+  }
   if(mat_.is_null())
   {
     os << "Matrix: null";
@@ -314,37 +318,11 @@ setMatrix(const Teuchos::RCP<const TRowMatrix>& A)
   {
     throw std::invalid_argument(std::string("Ifpack2::Details::") + getName() + "::setMatrix() called with a null matrix. Pass a non-null matrix.");
   }
-  typedef Tpetra::RowGraph<LocalOrdinal, GlobalOrdinal, Node> RGraph;
-  Teuchos::RCP<const RGraph> aGraph;    //graph of A
-  Teuchos::RCP<const RGraph> matGraph;  //graph of current mat_
-  try
-  {
-    aGraph = A->getGraph();
-  }
-  catch(...)
-  {
-    aGraph = Teuchos::null;
-  }
-  if(!mat_.is_null())
-  {
-    try
-    {
-      matGraph = mat_->getGraph();
-    }
-    catch(...)
-    {
-      matGraph = Teuchos::null;
-    }
-  }
   //bmk note: this modeled after RILUK::setMatrix
   if(mat_.get() != A.get())
   {
     mat_ = A;
-    if(matGraph.is_null() || (matGraph.getRawPtr() != aGraph.getRawPtr()))
-    {
-      //must assume that matrix's graph changed, so need to copy the structure again in initialize()
-      initFlag_ = false;
-    }
+    initFlag_ = false;
     computedFlag_ = false;
   }
 }
@@ -355,13 +333,15 @@ FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Params::getDefaults()
 {
   Params p;
+  p.sptrsv_algo = FastILU::SpTRSV::Fast;
   p.nFact = 5;
   p.nTrisol = 1;
   p.level = 0;
   p.omega = 0.5;
   p.shift = 0;
   p.guessFlag = true;
-  p.blockSize = 1;
+  p.blockSizeILU = 1;   // # of nonzeros / thread, for fastILU
+  p.blockSize = 1;      // # of rows / thread, for SpTRSV
   return p;
 }
 
@@ -387,6 +367,16 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
     else 
       TYPE_ERROR("sweeps", "int");
   }
+  std::string sptrsv_type = "Fast";
+  if(pL.isParameter("triangular solve type")) {
+    sptrsv_type = pL.get<std::string> ("triangular solve type");
+  }
+  if (sptrsv_type == "Standard Host") {
+    sptrsv_algo = FastILU::SpTRSV::StandardHost;
+  } else if (sptrsv_type == "Standard") {
+    sptrsv_algo = FastILU::SpTRSV::Standard;
+  }
+
   //"triangular solve iterations" aka nTrisol
   if(pL.isParameter("triangular solve iterations"))
   {
@@ -452,12 +442,23 @@ Params::Params(const Teuchos::ParameterList& pL, std::string precType)
       TYPE_ERROR("guess", "bool");
   }
   //"block size" aka blkSz
-  if(pL.isParameter("block size"))
+  if(pL.isParameter("block size for ILU"))
   {
-    if(pL.isType<int>("block size"))
-      blockSize = pL.get<int>("block size");
+    if(pL.isType<int>("block size for ILU"))
+    {
+      blockSizeILU = pL.get<int>("block size for ILU");
+      CHECK_VALUE("block size for ILU", blockSizeILU, blockSizeILU < 1, "must have a value of at least 1");
+    }
+    else 
+      TYPE_ERROR("block size for ILU", "int");
+  }
+  //"block size" aka blkSz
+  if(pL.isParameter("block size for SpTRSV"))
+  {
+    if(pL.isType<int>("block size for SpTRSV"))
+      blockSize = pL.get<int>("block size for SpTRSV");
     else
-      TYPE_ERROR("block size", "int");
+      TYPE_ERROR("block size for SpTRSV", "int");
   }
   #undef CHECK_VALUE
   #undef TYPE_ERROR

@@ -88,7 +88,7 @@ namespace Intrepid2 {
       
       using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::DefaultHostExecutionSpace HostSpaceType ;
       
       *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);

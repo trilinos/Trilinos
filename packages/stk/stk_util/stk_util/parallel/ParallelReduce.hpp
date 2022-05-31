@@ -93,6 +93,14 @@ T get_global_max(ParallelMachine comm, T local)
     return global;
 }
 
+template<typename T>
+T get_global_min(ParallelMachine comm, T local)
+{
+    T global;
+    stk::all_reduce_min(comm, &local, &global, 1);
+    return global;
+}
+
 template<typename T, typename IdType>
 void
 all_reduce_loc_impl(ParallelMachine comm,

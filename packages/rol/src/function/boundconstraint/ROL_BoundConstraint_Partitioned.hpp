@@ -76,7 +76,7 @@ private:
 
   bool hasLvec_;
   bool hasUvec_;
- 
+
 public:
   ~BoundConstraint_Partitioned() {}
 
@@ -99,13 +99,13 @@ public:
           lp[k]->set(*bnd_[k]->getLowerBound());
         }
         else {
-          lp[k]->setScalar(ROL_NINF<Real>());
+          lp[k]->setScalar(-BoundConstraint<Real>::computeInf(*x[k]));
         }
       }
       catch (std::exception &e1) {
         try {
           lp[k] = x[k]->clone();
-          lp[k]->setScalar(ROL_NINF<Real>());
+          lp[k]->setScalar(-BoundConstraint<Real>::computeInf(*x[k]));
         }
         catch (std::exception &e2) {
           lp[k] = nullPtr;
@@ -118,13 +118,13 @@ public:
           up[k]->set(*bnd_[k]->getUpperBound());
         }
         else {
-          up[k]->setScalar(ROL_INF<Real>());
+          up[k]->setScalar( BoundConstraint<Real>::computeInf(*x[k]));
         }
       }
       catch (std::exception &e1) {
         try {
           up[k] = x[k]->clone();
-          up[k]->setScalar(ROL_INF<Real>());
+          up[k]->setScalar( BoundConstraint<Real>::computeInf(*x[k]));
         }
         catch (std::exception &e2) {
           up[k] = nullPtr;
@@ -144,7 +144,7 @@ public:
     const PV &xpv = dynamic_cast<const PV&>(x);
     for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
-        bnd_[k]->update(*(xpv.get(k)),flag,iter);   
+        bnd_[k]->update(*(xpv.get(k)),flag,iter);
       }
     }
   }
@@ -187,7 +187,7 @@ public:
       }
     }
   }
- 
+
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
           PV &vpv = dynamic_cast<PV&>(v);
     const PV &xpv = dynamic_cast<const PV&>(x);
@@ -209,7 +209,7 @@ public:
     }
   }
 
-  bool isFeasible( const Vector<Real> &v ) { 
+  bool isFeasible( const Vector<Real> &v ) {
     bool feasible = true;
     const PV &vs = dynamic_cast<const PV&>(v);
     for( uint k=0; k<dim_; ++k ) {
@@ -219,16 +219,40 @@ public:
     }
     return feasible;
   }
+
+  void applyInverseScalingFunction(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+          PV &dvpv = dynamic_cast<PV&>(dv);
+    const PV &vpv  = dynamic_cast<const PV&>(v);
+    const PV &xpv  = dynamic_cast<const PV&>(x);
+    const PV &gpv  = dynamic_cast<const PV&>(g);
+    for( uint k=0; k<dim_; ++k ) {
+      if( bnd_[k]->isActivated() ) {
+        bnd_[k]->applyInverseScalingFunction(*(dvpv.get(k)),*(vpv.get(k)),*(xpv.get(k)),*(gpv.get(k)));
+      }
+    }
+  }
+
+  void applyScalingFunctionJacobian(Vector<Real> &dv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &g) const {
+          PV &dvpv = dynamic_cast<PV&>(dv);
+    const PV &vpv  = dynamic_cast<const PV&>(v);
+    const PV &xpv  = dynamic_cast<const PV&>(x);
+    const PV &gpv  = dynamic_cast<const PV&>(g);
+    for( uint k=0; k<dim_; ++k ) {
+      if( bnd_[k]->isActivated() ) {
+        bnd_[k]->applyScalingFunctionJacobian(*(dvpv.get(k)),*(vpv.get(k)),*(xpv.get(k)),*(gpv.get(k)));
+      }
+    }
+  }
 }; // class BoundConstraint_Partitioned
 
 
 
 template<typename Real>
-Ptr<BoundConstraint<Real>> 
+Ptr<BoundConstraint<Real>>
 CreateBoundConstraint_Partitioned( const Ptr<BoundConstraint<Real>> &bnd1,
                                    const Ptr<BoundConstraint<Real>> &bnd2 ) {
 
-     
+
   typedef BoundConstraint<Real>             BND;
   typedef BoundConstraint_Partitioned<Real> BNDP;
   Ptr<BND> temp[] = {bnd1, bnd2};

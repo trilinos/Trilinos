@@ -9,7 +9,7 @@
 #ifndef Akri_PhaseTag_h
 #define Akri_PhaseTag_h
 
-#include <Akri_LevelSet_Identifier.hpp>
+#include <Akri_Surface_Identifier.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 
 #include <map>
@@ -20,11 +20,11 @@ namespace krino {
 
 class LS_SideTag {
 public:
-  LS_SideTag(const LevelSet_Identifier ls_identifier, const int ls_sign) : my_ls_identifier(ls_identifier), my_ls_sign(ls_sign) {}
+  LS_SideTag(const Surface_Identifier ls_identifier, const int ls_sign) : my_ls_identifier(ls_identifier), my_ls_sign(ls_sign) {}
   LS_SideTag(const LS_SideTag & orig, const int ls_sign) : my_ls_identifier(orig.my_ls_identifier), my_ls_sign(ls_sign) {}
   ~LS_SideTag() {}
 public:
-  static void declare_composite(const LevelSet_Identifier constituent, const LevelSet_Identifier composite);
+  static void declare_composite(const Surface_Identifier constituent, const Surface_Identifier composite);
   LS_SideTag opposite_side() const {return LS_SideTag(my_ls_identifier,-1*my_ls_sign);}
   LS_SideTag composite() const
   {
@@ -40,15 +40,15 @@ public:
   }
   bool is_interface() const {return (0 == my_ls_sign);}
   int get_ls_sign() const {return my_ls_sign;}
-  LevelSet_Identifier get_ls_identifier() const {return my_ls_identifier;}
+  Surface_Identifier get_ls_identifier() const {return my_ls_identifier;}
   bool operator < ( const LS_SideTag & RHS ) const { return my_ls_identifier < RHS.my_ls_identifier || (my_ls_identifier == RHS.my_ls_identifier && my_ls_sign < RHS.my_ls_sign); }
   bool operator == ( const LS_SideTag & RHS ) const { return (my_ls_identifier == RHS.my_ls_identifier && my_ls_sign == RHS.my_ls_sign); }
   bool operator != ( const LS_SideTag & RHS ) const { return (my_ls_identifier != RHS.my_ls_identifier || my_ls_sign != RHS.my_ls_sign); }
   friend std::ostream& operator<<(std::ostream & os, const LS_SideTag & phase);
 protected:
-  const LevelSet_Identifier my_ls_identifier;
+  const Surface_Identifier my_ls_identifier;
   const int my_ls_sign;
-  static std::map<LevelSet_Identifier, LevelSet_Identifier> the_composite_ls_map;
+  static std::map<Surface_Identifier, Surface_Identifier> the_composite_ls_map;
 };
 
 class PhaseTag {
@@ -59,7 +59,7 @@ public:
   bool empty() const { return my_ls_sides.empty(); }
   void clear() { my_ls_sides.clear(); }
   const std::set<LS_SideTag> & ls_sides() const { return my_ls_sides; }
-  void add(const LevelSet_Identifier ls_identifier, const int ls_sign) { add(LS_SideTag(ls_identifier, ls_sign)); }
+  void add(const Surface_Identifier ls_identifier, const int ls_sign) { add(LS_SideTag(ls_identifier, ls_sign)); }
   void add(const PhaseTag & phase) { for (auto && ls_side : phase.my_ls_sides) add(ls_side); }
   void add_opposite_sides(const PhaseTag & phase) { for (auto && ls_side : phase.my_ls_sides) add(ls_side.opposite_side()); }
   void add(const LS_SideTag & ls_side)
@@ -75,11 +75,11 @@ public:
       }
     }
   }
-  void remove(const LevelSet_Identifier ls_identifier, const int ls_sign){ remove(LS_SideTag(ls_identifier,ls_sign)); }
+  void remove(const Surface_Identifier ls_identifier, const int ls_sign){ remove(LS_SideTag(ls_identifier,ls_sign)); }
   void remove(const LS_SideTag & ls_side) { my_ls_sides.erase(ls_side.composite()); }
 
   bool contain(const PhaseTag & phase) const;
-  bool contain(const LevelSet_Identifier ls_identifier, const int ls_sign) const { return contain(LS_SideTag(ls_identifier,ls_sign)); }
+  bool contain(const Surface_Identifier ls_identifier, const int ls_sign) const { return contain(LS_SideTag(ls_identifier,ls_sign)); }
   bool contain(const LS_SideTag & ls_side) const { return my_ls_sides.count(ls_side.composite()); }
 
   bool is_nonconformal() const;
@@ -105,7 +105,7 @@ public:
     const unsigned num_phases = phase_data.size() / 2;
     for (unsigned phase_index=0; phase_index<num_phases; ++phase_index)
     {
-      add(LS_SideTag(LevelSet_Identifier(phase_data[2*phase_index]),phase_data[2*phase_index+1]));
+      add(LS_SideTag(Surface_Identifier(phase_data[2*phase_index]),phase_data[2*phase_index+1]));
     }
   }
 protected:

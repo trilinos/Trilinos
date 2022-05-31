@@ -24,6 +24,7 @@ class MultipleCriteriaSettings : public stk::balance::GraphCreationSettings
 public:
   MultipleCriteriaSettings(stk::mesh::BulkData & stkMeshBulkData,
       const std::vector<stk::mesh::Field<double> *> critFields,
+      const unsigned max_num_nodal_rebal_iters,
       const double default_weight = 0.0)
       : m_stkMeshBulkData(stkMeshBulkData),
         m_critFields(critFields),
@@ -32,7 +33,7 @@ public:
     method = "rcb";
     setUseNodeBalancer(true);
     setNodeBalancerTargetLoadBalance(getImbalanceTolerance());
-    setNodeBalancerMaxIterations(10);
+    setNodeBalancerMaxIterations(max_num_nodal_rebal_iters);
   }
   virtual ~MultipleCriteriaSettings() = default;
 
@@ -85,8 +86,10 @@ public:
       const std::string & coordinates_field_name,
       const std::vector<stk::mesh::Field<double> *> & weights_fields,
       const double imbalance_threshold,
+      const unsigned max_num_nodal_rebal_iters,
       const double default_weight = 0.)
-      : MultipleCriteriaSettings(bulk_data, weights_fields, default_weight),
+      : MultipleCriteriaSettings(
+            bulk_data, weights_fields, max_num_nodal_rebal_iters, default_weight),
         my_cdmesh(cdmesh),
         my_bulk_data(bulk_data),
         my_coordinates_field_name(coordinates_field_name),
@@ -156,6 +159,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
     const std::string & element_weights_field_name,
     const std::string & coordinates_field_name,
     const std::vector<stk::mesh::Selector> & selections_to_rebalance_separately,
+    const unsigned max_num_nodal_rebal_iters,
     const std::string & decomp_method,
     const double imbalance_threshold)
 {
@@ -170,8 +174,12 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 
   ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
-  CDFEMRebalance balancer(
-      bulk_data, cdmesh, coordinates_field_name, {element_weights_field}, imbalance_threshold);
+  CDFEMRebalance balancer(bulk_data,
+      cdmesh,
+      coordinates_field_name,
+      {element_weights_field},
+      imbalance_threshold,
+      max_num_nodal_rebal_iters);
   balancer.setDecompMethod(decomp_method);
   const bool rebalanced =
           stk::balance::balanceStkMesh(balancer, bulk_data, selections_to_rebalance_separately);
@@ -190,6 +198,7 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
     CDMesh * cdmesh,
     const std::vector<std::string> & element_weights_field_names,
     const std::string & coordinates_field_name,
+    const unsigned max_num_nodal_rebal_iters,
     const std::string & decomp_method,
     const double imbalance_threshold)
 {
@@ -209,8 +218,12 @@ bool rebalance_mesh(stk::mesh::BulkData & bulk_data,
 
   ThrowAssert(impl::check_family_tree_element_and_side_ownership(bulk_data));
 
-  CDFEMRebalance balancer(
-      bulk_data, cdmesh, coordinates_field_name, weights_fields, imbalance_threshold);
+  CDFEMRebalance balancer(bulk_data,
+      cdmesh,
+      coordinates_field_name,
+      weights_fields,
+      imbalance_threshold,
+      max_num_nodal_rebal_iters);
   balancer.setDecompMethod(decomp_method);
   const bool rebalanced = stk::balance::balanceStkMesh(balancer, bulk_data);
   if (rebalanced)

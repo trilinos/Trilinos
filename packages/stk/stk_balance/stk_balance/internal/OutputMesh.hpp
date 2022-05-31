@@ -62,8 +62,8 @@ private:
 
   const InputMesh& m_inputMesh;
   const std::vector<unsigned>& m_targetSubdomains;
-  stk::mesh::MetaData m_meta;
   OutputSerializerBulkData m_bulk;
+  stk::mesh::MetaData& m_meta;
 };
 
 }}

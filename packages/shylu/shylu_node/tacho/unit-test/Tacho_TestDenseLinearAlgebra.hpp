@@ -17,8 +17,6 @@
 #include "Tacho_Lapack_External.hpp"
 
 using namespace Tacho;
-using std::abs;
-using Kokkos::abs;
 
 typedef Kokkos::DualView<ValueType**,Kokkos::LayoutLeft,DeviceType> matrix_type;
 
@@ -112,7 +110,7 @@ TEST( DenseLinearAlgebra, team_gemm_nn ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -159,7 +157,7 @@ TEST( DenseLinearAlgebra, team_gemm_nt ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -199,7 +197,7 @@ TEST( DenseLinearAlgebra, team_gemm_nc ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -239,7 +237,7 @@ TEST( DenseLinearAlgebra, team_gemm_tn ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -283,7 +281,7 @@ TEST( DenseLinearAlgebra, team_gemm_tt ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -327,7 +325,7 @@ TEST( DenseLinearAlgebra, team_gemm_tc ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -371,7 +369,7 @@ TEST( DenseLinearAlgebra, team_gemm_cn ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -415,7 +413,7 @@ TEST( DenseLinearAlgebra, team_gemm_ct ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -459,7 +457,7 @@ TEST( DenseLinearAlgebra, team_gemm_cc ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -549,7 +547,7 @@ TEST( DenseLinearAlgebra, team_gemv_n ) {
 
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<m;++i)
-    EXPECT_NEAR(::abs(y1.h_view(i,0)), ::abs(y2.h_view(i,0)), eps);
+    EXPECT_NEAR(abs(y1.h_view(i,0)), abs(y2.h_view(i,0)), eps);
   TEST_END;
 }
 
@@ -592,7 +590,7 @@ TEST( DenseLinearAlgebra, team_gemv_t ) {
 
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<n;++i)
-    EXPECT_NEAR(::abs(y1.h_view(i,0)), ::abs(y2.h_view(i,0)), eps);
+    EXPECT_NEAR(abs(y1.h_view(i,0)), abs(y2.h_view(i,0)), eps);
   TEST_END;
 }
 
@@ -635,7 +633,7 @@ TEST( DenseLinearAlgebra, team_gemv_c ) {
 
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<n;++i)
-    EXPECT_NEAR(::abs(y1.h_view(i,0)), ::abs(y2.h_view(i,0)), eps);
+    EXPECT_NEAR(abs(y1.h_view(i,0)), abs(y2.h_view(i,0)), eps);
   TEST_END;
 }
 
@@ -720,7 +718,7 @@ TEST( DenseLinearAlgebra, team_herk_un ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<n;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -761,7 +759,7 @@ TEST( DenseLinearAlgebra, team_herk_uc ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<n;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -802,7 +800,7 @@ TEST( DenseLinearAlgebra, team_herk_ln ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<n;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -843,7 +841,7 @@ TEST( DenseLinearAlgebra, team_herk_lc ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<n;++i)
     for (int j=0;j<n;++j) 
-      EXPECT_NEAR(::abs(C1.h_view(i,j)), ::abs(C2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(C1.h_view(i,j)), abs(C2.h_view(i,j)), eps);
   TEST_END;
 }
 
@@ -914,7 +912,7 @@ namespace Test {
                                                                         \
     const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 10000; \
     for (int i=0;i<m;++i)                                               \
-      EXPECT_NEAR(::abs(b1.h_view(i,0)), ::abs(b2.h_view(i,0)), eps*::abs(b2.h_view(i,0))); \
+      EXPECT_NEAR(abs(b1.h_view(i,0)), abs(b2.h_view(i,0)), eps*abs(b2.h_view(i,0))); \
   }
 
 TEST( DenseLinearAlgebra, team_trsv_unu ) {
@@ -1131,7 +1129,7 @@ namespace Test {
     const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 100000; \
     for (int i=0;i<m;++i)                                               \
       for (int j=0;j<n;++j)                                             \
-        EXPECT_NEAR(::abs(B1.h_view(i,j)), ::abs(B2.h_view(i,j)), eps*::abs(B2.h_view(i,j))); \
+        EXPECT_NEAR(abs(B1.h_view(i,j)), abs(B2.h_view(i,j)), eps*abs(B2.h_view(i,j))); \
   }
 
 TEST( DenseLinearAlgebra, team_trsm_lunu ) {
@@ -1373,7 +1371,7 @@ TEST( DenseLinearAlgebra, team_chol_u ) {
   const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
   for (int i=0;i<m;++i)
     for (int j=0;j<m;++j) 
-      EXPECT_NEAR(::abs(A1.h_view(i,j)), ::abs(A2.h_view(i,j)), eps);
+      EXPECT_NEAR(abs(A1.h_view(i,j)), abs(A2.h_view(i,j)), eps);
   TEST_END;
 }
 

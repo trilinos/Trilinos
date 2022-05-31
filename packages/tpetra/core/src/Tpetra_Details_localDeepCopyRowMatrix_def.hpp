@@ -148,8 +148,12 @@ localDeepCopyLocallyIndexedRowMatrix
     std::copy (inVals, inVals + numEnt, val_h.data () + curPos);
     curPos += offset_type (numEnt);
   }
-  Kokkos::deep_copy (ind, ind_h);
-  Kokkos::deep_copy (val, val_h);
+
+  using execution_space = typename inds_type::execution_space;
+  // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
+  Kokkos::deep_copy (execution_space(), ind, ind_h);
+  // DEEP_COPY REVIEW - HOSTMIRROR-TO-DEVICE
+  Kokkos::deep_copy (execution_space(), val, val_h);
 
   local_graph_device_type lclGraph (ind, ptr);
   const size_t numCols = A.getColMap ()->getLocalNumElements ();

@@ -58,4 +58,14 @@ void print_type(T& t)
 #endif
 }
 
+namespace simple_fields {
+
+template <typename T>
+void print_type(T& t)
+{
+  stk::unit_test_util::print_type(t);
+}
+
+} // namespace simple_fields
+
 } }

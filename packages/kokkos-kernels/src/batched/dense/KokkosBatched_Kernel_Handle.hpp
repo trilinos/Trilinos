@@ -47,12 +47,14 @@
 #ifndef KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
 #define KOKKOSKERNELS_KOKKOSBATCHED_KERNEL_HEADER_HPP
 
+#include "KokkosKernels_Error.hpp"
+
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
 #include <mkl.h>
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-// TODO: Add armpl handle type to expose nintern & nbatch?
+#include "armpl.h"
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
@@ -83,17 +85,22 @@ enum BASE_KOKKOS_BATCHED_ALGOS : int { KK_SERIAL = BaseTplAlgos::N, N };
 }
 
 #define N_BASE_ALGOS BaseKokkosBatchedAlgos::N
+#define BASE_ALGO_STRS                                                      \
+  "BaseHeuristicAlgos::SQUARE", "BaseHeuristicAlgos::TALL",                 \
+      "BaseHeuristicAlgos::WIDE", "BaseTplAlgos::ARMPL", "BaseTplAlgosMKL", \
+      "BaseKokkosBatchedAlgos::KK_SERIAL"
 
 /// \brief TplParams abstracts underlying handle or execution queue type.
 struct TplParams {
   union {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-    //queue mkl_queue;
-    // TODO: Add queue header? Cannot find any declarations in intel-18, let alone oneAPI 2021
+    // queue mkl_queue;
+    // TODO: Add queue header? Cannot find any declarations in intel-18, let
+    // alone oneAPI 2021
 #endif  // KOKKOSKERNELS_ENABLE_TPL_MKL
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-    // TODO: Add armpl handle type in KokkosKernels to expose nintern & nbatch?
+    armpl_int_t ninter = 1;
 #endif  // KOKKOSKERNELS_ENABLE_TPL_ARMPL
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
@@ -169,20 +176,33 @@ class BatchedKernelHandle {
 
   BatchedKernelHandle(int kernelAlgoType = BaseHeuristicAlgos::SQUARE,
                       int teamSize = 0, int vecLength = 0)
-      : teamSz(teamSize), vecLen(vecLength), _kernelAlgoType(kernelAlgoType){};
+      : teamSz(teamSize), vecLen(vecLength), _kernelAlgoType(kernelAlgoType) {
+#if !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || ARMPL_BUILD < 1058
+    if (_kernelAlgoType == BaseTplAlgos::ARMPL) {
+      std::ostringstream os;
+      os << "KokkosBatched::BatchedKernelHandle requires "
+            "KOKKOSKERNELS_ENABLE_TPL_ARMPL and armpl version 21.0.0+"
+         << std::endl;
+      KokkosKernels::Impl::throw_runtime_exception(os.str());
+    }
+#endif  // !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+  };
 
-  decltype(auto) get_tpl_params() {
+  int get_kernel_algo_type() const { return _kernelAlgoType; }
+
+  std::string get_kernel_algo_type_str() const {
+    return algo_type_strs[_kernelAlgoType];
+  }
+
+  decltype(auto) get_tpl_params() const {
 #if _kernelAlgoType == ARMPL && defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-    return "BaseTplAlgos::ARMPL does not support any tpl parameters";
+    return &_tplParamsSingleton.ninter;
 #elif _kernelAlgoType == MKL && defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
     return "BaseTplAlgos::MKL does not support any tpl parameters";
 #else
-    return "Unsupported kernelAlgoType = " + std::to_string(_kernelAlgoType) +
-           ".";
+    return "Unsupported kernelAlgoType:" + get_kernel_algo_type_str() + ".";
 #endif
   }
-
-  int get_kernel_algo_type() const { return _kernelAlgoType; }
 
   // clang-format off
   /// \var _kernelAlgoType Specifies which algorithm to use for invocation (default, SQUARE).
@@ -201,6 +221,9 @@ class BatchedKernelHandle {
   int _kernelAlgoType            = BaseHeuristicAlgos::SQUARE;
   TplParams &_tplParamsSingleton = _get_tpl_params_singleton();
   bool _tplParamsSet             = false;
+
+ private:
+  const char *algo_type_strs[N_BASE_ALGOS] = {BASE_ALGO_STRS};
 };
 
 }  // namespace KokkosBatched
