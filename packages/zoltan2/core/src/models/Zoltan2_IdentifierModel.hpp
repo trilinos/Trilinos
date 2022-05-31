@@ -75,6 +75,7 @@ public:
   typedef typename Adapter::scalar_t  scalar_t;
   typedef typename Adapter::gno_t     gno_t;
   typedef typename Adapter::lno_t     lno_t;
+  typedef typename Adapter::node_t    node_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 #endif
 
@@ -120,10 +121,17 @@ public:
     return n;
   }
 
-  inline size_t getIdentifierListKokkos(Kokkos::View<const gno_t> &Ids,
-                                        Kokkos::View<input_t> &wgts) const {
+  inline size_t getIdentifierListKokkos(
+      Kokkos::View<const gno_t *, typename node_t::device_type> &Ids,
+      Kokkos::View<scalar_t **, typename node_t::device_type> &wgts) const {
+    try {
+      adapter_->getIDsKokkosView(Ids);
+      adapter_->getWeightsKokkosView(wgts);
+    }
+    Z2_FORWARD_EXCEPTIONS;
 
-                                        }
+    return getLocalNumIdentifiers();
+  }
 
   ////////////////////////////////////////////////////
   // The Model interface.
@@ -138,6 +146,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gno_t> gids_;
+  const RCP<const Adapter> adapter_;
   int nUserWeights_;
   ArrayRCP<input_t> weights_;
 };
@@ -150,7 +159,7 @@ template <typename Adapter>
     const RCP<const Comm<int> > &comm,
     modelFlag_t &/* modelFlags */):
       numGlobalIdentifiers_(), env_(env), comm_(comm),
-      gids_(), nUserWeights_(0), weights_()
+      gids_(), adapter_(ia), nUserWeights_(0), weights_()
 {
   // Get the local and global problem size
   size_t nLocalIds = ia->getLocalNumIDs();

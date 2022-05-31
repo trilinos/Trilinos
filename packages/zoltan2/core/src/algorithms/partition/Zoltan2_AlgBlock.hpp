@@ -74,7 +74,7 @@ enum blockParams{
  *
  *  \param env   library configuration and problem parameters
  *  \param problemComm  the communicator for the problem
- *  \param ids    an Identifier model
+ *  \param adapter    adapter used to create IdentifierModel
  *
  *  Preconditions: The parameters in the environment have been
  *    processed (committed).  No special requirements on the

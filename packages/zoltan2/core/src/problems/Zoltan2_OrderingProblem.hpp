@@ -301,6 +301,10 @@ void OrderingProblem<Adapter>::solve(bool /* updateInputData */)
       this->comm_);
     ZOLTAN2_COMPUTE_ORDERING
   }
+  else if (method.compare("metis") == 0) {
+    AlgMetis<base_adapter_t> alg(this->graphModel_, this->params_, this->comm_);
+    ZOLTAN2_COMPUTE_ORDERING
+  }
   else if (method.compare("minimum_degree") == 0) {
     std::string pkg = this->params_->template get<std::string>(
       "order_package", "amd");

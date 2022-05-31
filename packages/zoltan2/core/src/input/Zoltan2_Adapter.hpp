@@ -140,9 +140,11 @@ public:
     // Allows forward and backwards compatibility.
     const gno_t * ptr_ids;
     getIDsView(ptr_ids);
+
     typedef Kokkos::View<gno_t *, typename node_t::device_type> view_t;
     view_t non_const_ids = view_t("ptr_ids", getLocalNumIDs());
-    typename view_t::HostMirror host_ids = Kokkos::create_mirror_view(non_const_ids);
+
+    auto host_ids = Kokkos::create_mirror_view(non_const_ids);
     for(size_t i = 0; i < this->getLocalNumIDs(); ++i) {
        host_ids(i) = ptr_ids[i];
     }

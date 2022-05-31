@@ -174,7 +174,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
     values.push_back(x);
     if (y) {
       values.push_back(y);
-      if (z) 
+      if (z)
         values.push_back(z);
     }
     for (int wdim=0; wdim < nWeights; wdim++){
@@ -205,7 +205,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
   RCP<model_t> model;
-  
+
 
   try{
     model = rcp(new model_t(base_ia, env, comm, modelFlags));
@@ -234,11 +234,11 @@ void testCoordinateModel(std::string &fname, int nWeights,
 
   if (gfail)
     printFailureCode(*comm, fail);
-  
+
   ArrayView<const zgno_t> gids;
   ArrayView<input_t> xyz;
   ArrayView<input_t> wgts;
-  
+
   model->getCoordinates(gids, xyz, wgts);
 
   if (!fail && gids.size() != nLocalIds)
@@ -272,6 +272,14 @@ void testCoordinateModel(std::string &fname, int nWeights,
 
   if (gfail)
     printFailureCode(*comm, fail);
+
+
+  Kokkos::View<const gno_t *, typename node_t::device_type> IdsKokkos;
+
+  Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> xyzKokkos;
+  Kokkos::View<scalar_t **, typename node_t::device_type> wgtsKokkos;
+
+  model->getCoordinatesKokkos(IdsKokkos, xyzKokkos, wgtsKokkos);
 }
 
 int main(int narg, char *arg[])
