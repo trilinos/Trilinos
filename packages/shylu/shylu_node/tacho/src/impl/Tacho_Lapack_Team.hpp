@@ -62,6 +62,12 @@ namespace Tacho {
           
         using arith_traits = ArithTraits<T>;
         using mag_type = typename arith_traits::mag_type;
+
+        Kokkos::parallel_for
+          (Kokkos::TeamVectorRange(member, m),
+           [&](const int &i) {
+            ipiv[i] = i+1;
+          });
           
         const int as = as0+as1;
         const mag_type mu = 0.6404;
