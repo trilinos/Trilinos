@@ -9,7 +9,8 @@
 
   <Parameter        name="coarse: max size"                     type="int"      value="32"/>
 
-  <Parameter        name="multigrid algorithm"                  type="string"   value="unsmoothed"/>
+  <!-- <Parameter        name="multigrid algorithm"                  type="string"   value="unsmoothed"/> -->
+  <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
 
   <!-- reduces setup cost for symmetric problems -->
   <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>

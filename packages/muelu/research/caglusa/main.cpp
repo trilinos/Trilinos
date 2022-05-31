@@ -90,7 +90,7 @@ namespace Tpetra {
 
     for (LocalOrdinal rlid = 0; rlid < lclA.numRows(); ++rlid) {
       auto row = lclA.row(rlid);
-      for (size_t k = 0; k<row.length; ++k) {
+      for (LocalOrdinal k = 0; k<row.length; ++k) {
         if (Teuchos::ScalarTraits<Scalar>::magnitude(row.value(k)) > tol) {
           rowptr(rlid+1) += 1;
         }
@@ -107,7 +107,7 @@ namespace Tpetra {
     for (LocalOrdinal rlid = 0; rlid < lclA.numRows(); ++rlid) {
       auto row = lclA.row(rlid);
       auto I = rowptr(rlid);
-      for (size_t k = 0; k<row.length; ++k) {
+      for (LocalOrdinal k = 0; k<row.length; ++k) {
         if (Teuchos::ScalarTraits<Scalar>::magnitude(row.value(k)) > tol) {
           idx(I) = row.colidx(k);
           vals(I) = row.value(k);
@@ -196,31 +196,6 @@ namespace Tpetra {
       TEUCHOS_ASSERT(pointA_->getDomainMap()->isSameAs(*pointA_->getRangeMap()));
       TEUCHOS_ASSERT(pointA_->getDomainMap()->isSameAs(*pointA_->getRowMap()));
       TEUCHOS_ASSERT(pointA_->getDomainMap()->isSameAs(*blockMap_->pointMap_));
-
-      // {
-      // auto lcl_block = blockA_->getLocalMatrixHost();
-      // auto lcl_point = pointA_->getLocalMatrixHost();
-      // auto lcl_offsets = blockMap_->offsets_;
-      // auto lcl_ghosted_offsets = ghosted_blockMap_->offsets_;
-
-      // for (LocalOrdinal brlid = 0; brlid < ; ++brlid) {
-      //   auto brow = lcl_block.row(brlid);
-      //   for (LocalOrdinal n = 0; n < brow.length; ++n) {
-      //     auto bclid = brow.colidx(n);
-
-      //     const LocalOrdinal row_start = lcl_offsets(brlid);
-      //     const LocalOrdinal row_end = lcl_offsets(brlid+1);
-      //     const LocalOrdinal col_start = lcl_ghosted_offsets(bclid);
-      //     const LocalOrdinal col_end = lcl_ghosted_offsets(bclid+1);
-
-      //     for (LocalOrdinal rlid = row_start; rlid < row_end; ++rlid) {
-      //       auto row = lcl_point.row(rlid);
-
-      //     }
-      //   }
-      // }
-
-      // }
 
     }
 
@@ -348,7 +323,6 @@ namespace Tpetra {
         TEUCHOS_ASSERT(map->isSameAs(*basisMatrix->getRangeMap()));
         TEUCHOS_ASSERT(map->isSameAs(*basisMatrix->getRowMap()));
         // TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*basisMatrix->getDomainMap()));
-        TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*basisMatrix->getColMap()));
 
         // kernel approximations live on clusterCoeffMap and are nonlocal
         TEUCHOS_ASSERT(clusterCoeffMap_->isSameAs(*kernelApproximations_->pointA_->getDomainMap()));
@@ -429,7 +403,7 @@ namespace Tpetra {
       {
         Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("upward pass")));
 
-        basisMatrix_->localApply(X, *coefficients_, Teuchos::TRANS);
+        basisMatrix_->apply(X, *coefficients_, Teuchos::TRANS);
 
         for (int i = Teuchos::as<int>(transferMatrices_.size())-1; i>=0; i--)
           if (flip) {
@@ -516,9 +490,9 @@ namespace Tpetra {
             flip = true;
           }
         if (flip)
-          basisMatrix_->localApply(*coefficients2_, Y, Teuchos::NO_TRANS, one, one);
+          basisMatrix_->apply(*coefficients2_, Y, Teuchos::NO_TRANS, one, one);
         else
-          basisMatrix_->localApply(*coefficients_, Y, Teuchos::NO_TRANS, one, one);
+          basisMatrix_->apply(*coefficients_, Y, Teuchos::NO_TRANS, one, one);
       }
     }
 
@@ -1269,7 +1243,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   clp.setOption("xml",    &xmlHierarchical);
   clp.setOption("xmlMueLu", &xmlMueLu);
   clp.setOption("xmlAux", &xmlAuxHierarchy);
-  bool        printTimings      = true;               clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
+  bool printTimings  = true; clp.setOption("timings", "notimings", &printTimings,  "print timings to screen");
+  bool doTests       = true; clp.setOption("tests",   "notests",   &doTests,       "Test operator using known LHS & RHS.");
+  bool doUnPrecSolve = true; clp.setOption("unPrec",  "noUnPrec",  &doUnPrecSolve, "Solve unpreconditioned");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -1319,7 +1295,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
   RCP<const map_type> map = op->getDomainMap();
   RCP<matrix_type>    auxOp;
-  RCP<mv_type>       X_ex, RHS, X;
+  RCP<mv_type>        X_ex, RHS, X;
   RCP<coord_mv>       coords;
   {
     // Read in auxiliary stuff
@@ -1344,44 +1320,46 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     coords = Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::coordinateType,LocalOrdinal,GlobalOrdinal,Node>::ReadMultiVector(hierarchicalParams.get<std::string>("coordinates"), map);
   }
 
-  // Some simple apply tests
-  Scalar opX_exRHS, MopX_exRHS, MopTX_exRHS;
-  {
-    op->apply(*X_ex, *X);
+  if (doTests) {
+    // Some simple apply tests
+    Scalar opX_exRHS, MopX_exRHS, MopTX_exRHS;
+    {
+      op->apply(*X_ex, *X);
 
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X.mtx", *X);
-    X->update(one, *RHS, -one);
-    opX_exRHS = X->getVector(0)->norm2();
-    out << "|op*X_ex - RHS| = " << opX_exRHS << std::endl;
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff.mtx", *X);
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X.mtx", *X);
+      X->update(one, *RHS, -one);
+      opX_exRHS = X->getVector(0)->norm2();
+      out << "|op*X_ex - RHS| = " << opX_exRHS << std::endl;
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff.mtx", *X);
+    }
+
+    {
+      op->apply(*X_ex, *X, Teuchos::NO_TRANS, -one);
+
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X2.mtx", *X);
+      X->update(one, *RHS, one);
+      MopX_exRHS = X->getVector(0)->norm2();
+      out << "|(-op)*X_ex + RHS| = " << MopX_exRHS << std::endl;
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff2.mtx", *X);
+    }
+
+    {
+      op->apply(*X_ex, *X, Teuchos::TRANS, -one);
+
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X2.mtx", *X);
+      X->update(one, *RHS, one);
+      MopTX_exRHS = X->getVector(0)->norm2();
+      out << "|(-op^T)*X_ex + RHS| = " << MopTX_exRHS << std::endl;
+      // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff2.mtx", *X);
+    }
+
+    TEUCHOS_ASSERT(opX_exRHS < tol);
+    TEUCHOS_ASSERT(MopX_exRHS < tol);
+    TEUCHOS_ASSERT(MopTX_exRHS < tol);
   }
-
-  {
-    op->apply(*X_ex, *X, Teuchos::NO_TRANS, -one);
-
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X2.mtx", *X);
-    X->update(one, *RHS, one);
-    MopX_exRHS = X->getVector(0)->norm2();
-    out << "|(-op)*X_ex + RHS| = " << MopX_exRHS << std::endl;
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff2.mtx", *X);
-  }
-
-  {
-    op->apply(*X_ex, *X, Teuchos::TRANS, -one);
-
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("X2.mtx", *X);
-    X->update(one, *RHS, one);
-    MopTX_exRHS = X->getVector(0)->norm2();
-    out << "|(-op^T)*X_ex + RHS| = " << MopTX_exRHS << std::endl;
-    // Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("diff2.mtx", *X);
-  }
-
-  TEUCHOS_ASSERT(opX_exRHS < tol);
-  TEUCHOS_ASSERT(MopX_exRHS < tol);
-  TEUCHOS_ASSERT(MopTX_exRHS < tol);
 
 #ifdef HAVE_MUELU_BELOS
-  {
+  if (doUnPrecSolve) {
     // Solve linear system using unpreconditioned Krylov method
     out << "\n*********************************************************\n";
     out << "Unpreconditioned Krylov method\n";
@@ -1447,7 +1425,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       Teuchos::ParameterList auxParams;
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlAuxHierarchy, Teuchos::Ptr<Teuchos::ParameterList>(&auxParams), *comm);
       auxParams.sublist("user data").set("Coordinates", coords);
-      TEUCHOS_ASSERT_EQUALITY(auxParams.get("multigrid algorithm", "unsmoothed"), "unsmoothed");
+      // TEUCHOS_ASSERT_EQUALITY(auxParams.get("multigrid algorithm", "unsmoothed"), "unsmoothed");
 
       auxH = MueLu::CreateXpetraPreconditioner(auxOp, auxParams);
     }
@@ -1465,7 +1443,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlMueLu, Teuchos::Ptr<Teuchos::ParameterList>(&params), *comm);
       params.set("coarse: max size", 1);
       params.set("max levels", auxH->GetNumLevels());
-      const std::string multigridAlgo = params.get("multigrid algorithm", "unsmoothed");
 
       op->describe(out, Teuchos::VERB_EXTREME);
 
@@ -1482,29 +1459,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         lvl = H->GetLevel(lvlNo);
         auto P = auxLvl->Get<RCP<Matrix> >("P");
         auto fineA = rcp_dynamic_cast<HOp>(fineLvl->Get<RCP<Operator> >("A"));
-
-        if (multigridAlgo == "sa") {
-          // MueLu::Level lvl0, lvl1;
-          // lvl0.SetFactoryManager(Teuchos::null);
-          // lvl1.SetFactoryManager(Teuchos::null);
-          // lvl0.setlib(P->getDomainMap()->lib());
-          // lvl1.setlib(P->getDomainMap()->lib());
-          // lvl0.SetLevelID(0);
-          // lvl1.SetLevelID(1);
-          // lvl1.SetPreviousLevel(rcpFromRef(lvl0));
-          // lvl0.Set("A", fineA->nearFieldMatrix());
-
-          // lvl1.Set("Ptent", P);
-          // auto sapFact = rcp(new MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>());
-          // lvl1.Request("A", sapFact.get());
-
-          // P = lvl1.Get< RCP<Matrix> >("P", sapFact.get());
-
-        }
-
         lvl->Set("P", P);
         params.sublist("level "+std::to_string(lvlNo)).set("P", P);
-
 
         auto coarseA = fineA->restrict(P);
         coarseA->describe(out, Teuchos::VERB_EXTREME);
