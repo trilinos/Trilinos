@@ -71,7 +71,7 @@ namespace Tacho {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       static_assert(ViewTypeP::rank == 1,"P is not rank 1 view.");
 
-      TACHO_TEST_FOR_EXCEPTION(P.extent(0) < 4*m, std::runtime_error,
+      TACHO_TEST_FOR_EXCEPTION(int(P.extent(0)) < 4*m, std::runtime_error,
                                "P should be 4*m.");
 
       if (m > 0) {

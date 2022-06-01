@@ -427,6 +427,11 @@ namespace Tacho {
         printf("==========================\n");
         break;
       }
+      case SymLU: {
+        printf("TachoSolver: Factorize SymLU\n");
+        printf("============================\n");
+        break;
+      }
       }
     }
 
@@ -454,7 +459,8 @@ namespace Tacho {
         for (size_type j=jbeg;j<jend;++j) {
           const ordinal_type col = _h_aj(j);
           const bool flag = ((_mode == Cholesky && i <= col) || /// upper  
-                             (_mode == LDL      && i >= col));  /// lower
+                             (_mode == LDL      && i >= col) || /// lower
+                             (_mode == SymLU));  /// full matrix
           if (flag) 
             _A(i, col) = h_ax(j);
         }
@@ -473,6 +479,12 @@ namespace Tacho {
         auto W = value_type_array_host("W", 32*_m);
         Tacho::LDL<Uplo::Lower,Algo::External>::invoke(_A, _P, W);
         Tacho::LDL<Uplo::Lower,Algo::External>::modify(_A, _P, _D);
+        break;
+      }
+      case SymLU: {
+        _P = ordinal_type_array_host("P", 4*_m);
+        Tacho::LU<Algo::External>::invoke(_A, _P);
+        Tacho::LU<Algo::External>::modify(_m, _P);
         break;
       }
       default: {
@@ -512,6 +524,11 @@ namespace Tacho {
       case LDL: {
         printf("TachoSolver: Solve LDL\n");
         printf("======================\n");
+        break;
+      }
+      case SymLU: {
+        printf("TachoSolver: Solve SymLU\n");
+        printf("========================\n");
         break;
       }
       }
@@ -559,7 +576,7 @@ namespace Tacho {
       case LDL: {
         auto perm = ordinal_type_array_host(_P.data()+2*_m, _m);
         auto peri = ordinal_type_array_host(_P.data()+3*_m, _m);
-        auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); 
+        auto h_x = Kokkos::create_mirror_view_and_copy(host_memory_space(), x); 
         auto h_t = Kokkos::create_mirror_view(host_memory_space(), t); 
         
         ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal>
@@ -572,6 +589,20 @@ namespace Tacho {
           ::invoke(Diag::Unit(), 1.0, _A, h_t);
         ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal>
           ::invoke(h_t, peri, h_x);        
+        Kokkos::deep_copy(x, h_x);         
+        break;
+      }
+      case SymLU: {
+        auto perm = ordinal_type_array_host(_P.data()+2*_m, _m);
+        auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); 
+        auto h_t = Kokkos::create_mirror_view(host_memory_space(), t); 
+        Kokkos::deep_copy(h_t, x);
+        ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal>
+          ::invoke(h_t, perm, h_x);              
+        Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Algo::External>
+          ::invoke(Diag::Unit(), 1.0, _A, h_x);
+        Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
+          ::invoke(Diag::NonUnit(), 1.0, _A, h_x);
         Kokkos::deep_copy(x, h_x);         
         break;
       }
