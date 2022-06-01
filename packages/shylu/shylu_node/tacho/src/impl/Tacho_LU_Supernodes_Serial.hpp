@@ -68,6 +68,7 @@ namespace Tacho {
           /// LU factorize ATL
           value_type *uptr = s.u_buf;
           UnmanagedViewType<value_type_matrix> AT(uptr, m, m+n); 
+
           LU<LU_AlgoType>::invoke(member, AT, P);
           LU<LU_AlgoType>::modify(member, m, P);
 
@@ -135,8 +136,8 @@ namespace Tacho {
 
           if (n > 0) {
             value_type *lptr = s.l_buf; 
-            UnmanagedViewType<value_type_matrix> AB(lptr, m, n); 
-            Gemv<Trans::Transpose,GemvAlgoType>
+            UnmanagedViewType<value_type_matrix> AB(lptr, n, m); 
+            Gemv<Trans::NoTranspose,GemvAlgoType>
               ::invoke(member, -one, AB, xT, zero, xB);
           }
         }

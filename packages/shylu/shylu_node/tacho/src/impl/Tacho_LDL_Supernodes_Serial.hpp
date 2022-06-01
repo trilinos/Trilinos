@@ -66,6 +66,7 @@ namespace Tacho {
           UnmanagedViewType<value_type_matrix> ATL(ptr, m, m); ptr += m*m;
 
           Symmetrize<Uplo::Upper,Algo::Internal>::invoke(member, ATL);
+
           LDL<Uplo::Lower,LDL_AlgoType>::invoke(member, ATL, P, W);
           LDL<Uplo::Lower,LDL_AlgoType>::modify(member, ATL, P, D);
 
@@ -131,7 +132,7 @@ namespace Tacho {
 
           ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
             ::invoke(member, fpiv, xT);
-          
+
           Trsv<Uplo::Lower,Trans::NoTranspose,TrsvAlgoType>
             ::invoke(member, Diag::Unit(), AL, xT);
 
