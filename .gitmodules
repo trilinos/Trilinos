@@ -1,0 +1,8 @@
+[submodule "packages/framework/srn-ini-files"]
+	path = packages/framework/srn-ini-files
+	url = git@cee-gitlab.sandia.gov:trilinos-project/srn-ini-files.git
+	branch = master
+[submodule "packages/framework/GenConfig"]
+	path = packages/framework/GenConfig
+	url = git@gitlab-ex.sandia.gov:trilinos-devops-consolidation/code/GenConfig.git
+	branch = master
