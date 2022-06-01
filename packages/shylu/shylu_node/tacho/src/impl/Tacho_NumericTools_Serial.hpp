@@ -93,6 +93,16 @@ namespace Tacho {
         }
         break;
       }
+      case 3: {
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+          auto &s = h_supernodes(sid);
+          const ordinal_type m = s.m, n = s.n - s.m;
+          flop += DenseFlopCount<value_type>::LU(m,m);
+          flop += 2*DenseFlopCount<value_type>::Trsm(true,  m, n);
+          flop += DenseFlopCount<value_type>::Gemm(n, n, m);
+        }
+        break;
+      }
       default: {
         TACHO_TEST_FOR_EXCEPTION(false,
                                  std::logic_error,
@@ -485,8 +495,8 @@ namespace Tacho {
       stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: NumericTools, LDL (SerialSolve: %3d)\n", ordinal_type(x.extent(1)));
-        printf("=============================================\n");
+        printf("Summary: NumericTools, LU (SerialSolve: %3d)\n", ordinal_type(x.extent(1)));
+        printf("============================================\n");
 
         print_stat_solve();
       }

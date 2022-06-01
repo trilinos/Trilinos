@@ -97,8 +97,8 @@ namespace Tacho {
              const typename SupernodeInfoType::value_type_matrix &ABR,
              const ordinal_type sid,
              const size_type bufsize,
-             /* */ void *buf) {
-
+             /* */ void *buf,
+             const bool update_lower = false) {
         typedef SupernodeInfoType supernode_info_type;
 
         typedef typename supernode_info_type::value_type value_type;
