@@ -479,12 +479,13 @@ namespace Tacho {
           
         /// recursive tree traversal
         const ordinal_type member = 0, nroots = _stree_roots.extent(0);
-        for (ordinal_type i=0;i<nroots;++i) {
+        for (ordinal_type i=0;i<nroots;++i) 
           LU_Supernodes<Algo::Workflow::Serial>
             ::solve_lower_recursive_serial(member, _info, _stree_roots(i), true, _piv.data(), buf.data(), bufsize);
+        for (ordinal_type i=0;i<nroots;++i)
           LU_Supernodes<Algo::Workflow::Serial>
             ::solve_upper_recursive_serial(member, _info, _stree_roots(i), true, _piv.data(), buf.data(), bufsize);
-        }
+
         track_free(bufsize);
       }
       stat.t_solve = timer.seconds();
