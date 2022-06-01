@@ -134,10 +134,11 @@ namespace Tacho {
             for (ordinal_type j=0;j<srcsize;++j) {
               const value_type *__restrict__ ss = src + j*srcsize;
               /* */ value_type *__restrict__ tt = tgt + j*srcsize;
+              const ordinal_type iend = update_lower ? srcsize : j+1;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-              for (ordinal_type i=0;i<(j+1);++i)
+              for (ordinal_type i=0;i<iend;++i)
                 tt[i] += ss[i];
             }
 
@@ -149,8 +150,9 @@ namespace Tacho {
               (Kokkos::TeamThreadRange(member, srcsize), [&](const ordinal_type &j) {
                 const value_type *__restrict__ ss = src + j*srcsize;
                 /* */ value_type *__restrict__ tt = tgt + j*srcsize;
+                const ordinal_Type iend = update_lower ? srcsize : j+1;
                 Kokkos::parallel_for
-                  (Kokkos::ThreadVectorRange(member, j+1), [&](const ordinal_type &i) {
+                  (Kokkos::ThreadVectorRange(member, iend), [&](const ordinal_type &i) {
                     Kokkos::atomic_add(&tt[i], ss[i]);
                   });
               });
@@ -188,9 +190,13 @@ namespace Tacho {
           }
 
           {
-            dense_block_type A;
-            A.set_view(s.m, s.n);
-            A.attach_buffer(1, s.m, s.u_buf);
+            dense_block_type U, L;
+            U.set_view(s.m, s.n);
+            U.attach_buffer(1, s.m, s.u_buf);
+            
+            const ordinal_type s_nm = s.n - s.m;
+            L.set_view(s_nm, s.m);
+            L.attach_buffer(1, s_nm, s.l_buf);
             
             ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
 
@@ -198,15 +204,21 @@ namespace Tacho {
             while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
             Kokkos::store_fence();            
 
-            for (ordinal_type jj=ijbeg;jj<srcsize;++jj) 
+            for (ordinal_type jj=ijbeg;jj<srcsize;++jj) {
+              const ordinal_type col = s2t[jj];
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
               for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
                 const ordinal_type row = s2t[ii];
-                if (row < s.m) A(row, s2t[jj]) += ABR(ii, jj);
-                else break;
+                if (row < s.m) {
+                  U(row, col) += ABR(ii, jj);
+                  if (update_lower && col > s.m) {
+                    L(col-s.m, row) += ABR(jj, ii);
+                  }
+                } else break;
               }
+            }
             
             // unlock
             s.lock = 0;
@@ -217,7 +229,7 @@ namespace Tacho {
         // CUDA version
         const size_type s2tsize = srcsize*sizeof(ordinal_type)*member.team_size();
         TACHO_TEST_FOR_ABORT(bufsize < s2tsize, "bufsize is smaller than required s2t workspace");       
-#if 0 // single version works
+#if 0 // single version for testing only 
         Kokkos::single(Kokkos::PerTeam(member), [&]() {
             ordinal_type *s2t = (ordinal_type*)buf;        
             for (ordinal_type i=sbeg;i<send;++i) {
@@ -240,20 +252,28 @@ namespace Tacho {
               }
               
               {
-                dense_block_type A;
-                A.set_view(s.m, s.n);
-                A.attach_buffer(1, s.m, s.u_buf);
+                dense_block_type U, L;
+                U.set_view(s.m, s.n);
+                U.attach_buffer(1, s.m, s.u_buf);
                 
+                const ordinal_type s_nm = s.n - s.m;
+                L.set_view(s_nm, s.m);
+                L.attach_buffer(1, s_nm, s.l_buf);
+
                 ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
                 
-                for (ordinal_type jj=ijbeg;jj<srcsize;++jj) 
+                for (ordinal_type jj=ijbeg;jj<srcsize;++jj) {
+                  const ordinal_type col = s2t[jj];
                   for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
                     const ordinal_type row = s2t[ii];
-                    if (row < s.m) 
-                      Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
-                    else 
-                      break;
+                    if (row < s.m) {
+                      Kokkos::atomic_add(&U(row, col), ABR(ii, jj));
+                      if (update_lower && col > s.m) {
+                        Kokkos::atomic_add(&L(col-s.m, row), ABR(jj, ii));
+                      }
+                    } else break;
                   }
+                }
               }
             }
           });
@@ -288,19 +308,28 @@ namespace Tacho {
                 });
             }
             {
-              dense_block_type A;
-              A.set_view(s.m, s.n);
-              A.attach_buffer(1, s.m, s.u_buf);
+              dense_block_type U, L;
+              U.set_view(s.m, s.n);
+              U.attach_buffer(1, s.m, s.u_buf);
+
+              const ordinal_type s_nm = s.n - s.m;
+              L.set_view(s_nm, s.m);
+              L.attach_buffer(1, s_nm, s.l_buf);
               
               ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
       
               Kokkos::parallel_for
-                (Kokkos::ThreadVectorRange(member, srcsize-ijbeg), [&](const ordinal_type &iii) {
-                  const ordinal_type ii = ijbeg + iii;
+                (Kokkos::ThreadVectorRange(member, ijbeg, srcsize), [&](const ordinal_type &ii) {
                   const ordinal_type row = s2t[ii];
-                  if (row < s.m) 
-                    for (ordinal_type jj=ijbeg;jj<srcsize;++jj) 
-                      Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
+                  if (row < s.m) { 
+                    for (ordinal_type jj=ijbeg;jj<srcsize;++jj) {
+                      const ordinal_type col = s2t[jj];
+                      Kokkos::atomic_add(&U(row, col), ABR(ii, jj));
+                      if (update_lower && col > s.m) {
+                        Kokkos::atomic_add(&L(col-s.m, row), ABR(jj, ii));
+                      }
+                    } 
+                  }
                 });              
               // Kokkos::parallel_for
               //   (Kokkos::ThreadVectorRange(member, srcsize-ijbeg), [&](const ordinal_type &jjj) {
