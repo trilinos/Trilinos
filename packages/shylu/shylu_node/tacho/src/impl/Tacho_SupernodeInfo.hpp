@@ -348,75 +348,76 @@ namespace Tacho {
                               const ordinal_type_array &peri) {
         const ordinal_type nsupernodes = self.supernodes.extent(0);
         using policy_type = Kokkos::TeamPolicy<exec_space,Kokkos::Schedule<Kokkos::Static> >;
-        policy_type policy(nsupernodes, Kokkos::AUTO()); // team and vector sizes are AUTO selected.
 
-        Kokkos::parallel_for
-          (policy, KOKKOS_LAMBDA (const typename policy_type::member_type &member) {
-            const ordinal_type sid = member.league_rank();
-            const auto s = self.supernodes(sid);
-            /// copy to upper triangular
-            {
-              dense_block_type tgt(s.u_buf, s.m, s.n);   
+        value_type_array axt;
+        if (copy_to_l_buf) {
+          axt = value_type_array("axt", ax.extent(0));
+          policy_type policy(ap.extent(0) - 1, Kokkos::AUTO());
+          Kokkos::parallel_for
+            (policy, KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
+              const ordinal_type row = member.league_rank();
+              const ordinal_type kbeg = ap(row), kend = ap(row+1);
               
-              // row major access to sparse src
               Kokkos::parallel_for
-                (Kokkos::TeamThreadRange(member, 0, s.m), [&](const ordinal_type &i) {
-                  const ordinal_type 
-                    ii = i + s.row_begin,  // row in U
-                    row = perm(ii), kbeg = ap(row), kend = ap(row+1);   // row in A
-
-                  const ordinal_type jjbeg = (copy_to_l_buf ? s.row_begin : ii);
-                  const ordinal_type kcnt = kend - kbeg;
-                  Kokkos::parallel_for
-                    (Kokkos::ThreadVectorRange(member, kcnt),
-                     [&, jjbeg, kbeg, ii](const ordinal_type &kk) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-                      const ordinal_type k  = kk + kbeg;
-                      const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
-                      if (jjbeg <= jj) {
-                        ordinal_type *first = self.gid_colidx.data() + s.gid_col_begin; 
-                        ordinal_type *last  = self.gid_colidx.data() + s.gid_col_end;
-                        ordinal_type *loc   = lower_bound
-                          (first, last, jj,
-                           [](ordinal_type left, ordinal_type right) { 
-                            return left < right; });                      
-                        TACHO_TEST_FOR_ABORT(*loc != jj, " copy is wrong" );
-                        tgt(i, loc-first) = ax(k);
-                      }
-                    });
+                (Kokkos::TeamVectorRange(member, kbeg, kend), [&](const ordinal_type &k) {
+                  const ordinal_type i = aj(k), j = row;
+                  { 
+                    const ordinal_type lbeg = ap(i), lend = ap(i+1);
+                    ordinal_type *first = &aj(lbeg);
+                    ordinal_type *last  = &aj(lend);
+                    ordinal_type *loc = lower_bound
+                      (first, last, j,
+                       [](ordinal_type left, ordinal_type right) { 
+                        return left < right; });                      
+                    TACHO_TEST_FOR_ABORT(*loc != j, "transpose fail" );
+                    axt(lbeg + loc - first) = ax(k);
+                  }
                 });
-            }
-            if (copy_to_l_buf) {
-              dense_block_type tgt(s.l_buf, s.n-s.m, s.m);   
+            });
+        }
 
-              /// row major access to sparse src
-              Kokkos::parallel_for
-                (Kokkos::TeamThreadRange(member, 0, s.n-s.m), [&](const ordinal_type &i) {
-                  const ordinal_type 
-                    ii = i + s.row_begin + s.m,  // row in U
-                    row = perm(ii), kbeg = ap(row), kend = ap(row+1);   // row in A
-
-                  const ordinal_type jjbeg = s.row_begin, jjend = jjbeg + s.m;
-                  const ordinal_type kcnt = kend - kbeg;
-                  Kokkos::parallel_for
-                    (Kokkos::ThreadVectorRange(member, kcnt),
-                     [&, jjbeg, jjend, kbeg, ii](const ordinal_type &kk) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-                      const ordinal_type k  = kk + kbeg;
-                      const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
-                      
-                      if (jj >= jjbeg && jj < jjend) {
-                        ordinal_type *first = self.gid_colidx.data() + s.gid_col_begin; 
-                        ordinal_type *last  = self.gid_colidx.data() + s.gid_col_end;
-                        ordinal_type *loc   = lower_bound
-                          (first, last, jj,
-                           [](ordinal_type left, ordinal_type right) { 
-                            return left < right; });                      
-                        TACHO_TEST_FOR_ABORT(*loc != jj, " copy is wrong" );
-                        tgt(i, loc-first) = ax(k);
-                      }
-                    });
-                });              
-            }
-          });
+        {
+          policy_type policy(nsupernodes, Kokkos::AUTO()); // team and vector sizes are AUTO selected.
+          Kokkos::parallel_for
+            (policy, KOKKOS_LAMBDA (const typename policy_type::member_type &member) {
+              const ordinal_type sid = member.league_rank();
+              const auto s = self.supernodes(sid);
+              /// copy to upper triangular
+              {
+                dense_block_type tgt_u(s.u_buf, s.m, s.n);   
+                dense_block_type tgt_l(s.l_buf, s.n-s.m, s.m);                 
+                
+                // row major access to sparse src
+                Kokkos::parallel_for
+                  (Kokkos::TeamThreadRange(member, 0, s.m), [&](const ordinal_type &i) {
+                    const ordinal_type 
+                      ii = i + s.row_begin,  // row in U
+                      row = perm(ii), kbeg = ap(row), kend = ap(row+1);   // row in A
+                    
+                    const ordinal_type jjbeg = (copy_to_l_buf ? s.row_begin : ii);
+                    Kokkos::parallel_for
+                      (Kokkos::ThreadVectorRange(member, kbeg, kend),
+                       [&, jjbeg, ii](const ordinal_type &k) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
+                        const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
+                        if (jjbeg <= jj) {
+                          ordinal_type *first = self.gid_colidx.data() + s.gid_col_begin; 
+                          ordinal_type *last  = self.gid_colidx.data() + s.gid_col_end;
+                          ordinal_type *loc   = lower_bound
+                            (first, last, jj,
+                             [](ordinal_type left, ordinal_type right) { 
+                              return left < right; });                      
+                          TACHO_TEST_FOR_ABORT(*loc != jj, "copy is wrong" );
+                          const ordinal_type j = loc - first;
+                          tgt_u(i, j) = ax(k);
+                          if (j >= s.m && copy_to_l_buf) {
+                            tgt_l(j-s.m, i) = axt(k);
+                          }
+                        }
+                      });
+                  });
+              }
+            });
+        }
       }
 
       inline
