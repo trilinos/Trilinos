@@ -64,6 +64,7 @@ namespace Tacho {
         if (m > 0) {
           /// LDL factorize ATL, extract diag, symmetrize ATL with unit diagonals
           UnmanagedViewType<value_type_matrix> ATL(ptr, m, m); ptr += m*m;
+
           Symmetrize<Uplo::Upper,Algo::Internal>::invoke(member, ATL);
           LDL<Uplo::Lower,LDL_AlgoType>::invoke(member, ATL, P, W);
           LDL<Uplo::Lower,LDL_AlgoType>::modify(member, ATL, P, D);
@@ -133,7 +134,7 @@ namespace Tacho {
           
           Trsv<Uplo::Lower,Trans::NoTranspose,TrsvAlgoType>
             ::invoke(member, Diag::Unit(), AL, xT);
-            
+
           if (n > 0) {
             UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
             Gemv<Trans::Transpose,GemvAlgoType>

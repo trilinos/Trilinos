@@ -171,7 +171,8 @@ namespace Tacho {
         TACHO_TEST_FOR_ABORT(bufsize < s2tsize, "bufsize is smaller than required s2t workspace");       
  
         for (ordinal_type i=sbeg;i<send;++i) {
-          const auto &s = info.supernodes(info.sid_block_colidx(i).first);
+          const ordinal_type tgtsid = info.sid_block_colidx(i).first;
+          const auto &s = info.supernodes(tgtsid);
           {
             const ordinal_type 
               tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
@@ -213,7 +214,7 @@ namespace Tacho {
                 const ordinal_type row = s2t[ii];
                 if (row < s.m) {
                   U(row, col) += ABR(ii, jj);
-                  if (update_lower && col > s.m) {
+                  if (update_lower && col >= s.m) {
                     L(col-s.m, row) += ABR(jj, ii);
                   }
                 } else break;
@@ -268,7 +269,7 @@ namespace Tacho {
                     const ordinal_type row = s2t[ii];
                     if (row < s.m) {
                       Kokkos::atomic_add(&U(row, col), ABR(ii, jj));
-                      if (update_lower && col > s.m) {
+                      if (update_lower && col >= s.m) {
                         Kokkos::atomic_add(&L(col-s.m, row), ABR(jj, ii));
                       }
                     } else break;
@@ -325,7 +326,7 @@ namespace Tacho {
                     for (ordinal_type jj=ijbeg;jj<srcsize;++jj) {
                       const ordinal_type col = s2t[jj];
                       Kokkos::atomic_add(&U(row, col), ABR(ii, jj));
-                      if (update_lower && col > s.m) {
+                      if (update_lower && col >= s.m) {
                         Kokkos::atomic_add(&L(col-s.m, row), ABR(jj, ii));
                       }
                     } 

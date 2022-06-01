@@ -68,8 +68,9 @@ namespace Tacho {
           /// LU factorize ATL
           value_type *uptr = s.u_buf;
           UnmanagedViewType<value_type_matrix> AT(uptr, m, m+n); 
-
           LU<LU_AlgoType>::invoke(member, AT, P);
+          LU<LU_AlgoType>::modify(member, m, P);
+
           if (n > 0) {
             const value_type one(1), zero(0);
 
@@ -77,6 +78,7 @@ namespace Tacho {
 
             value_type *lptr = s.l_buf;
             UnmanagedViewType<value_type_matrix> ABL(lptr, n, m); 
+
             Trsm<Side::Right,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
               ::invoke(member, Diag::NonUnit(), one, ATL, ABL);
 
@@ -121,21 +123,21 @@ namespace Tacho {
           const value_type one(1), zero(0);
           const ordinal_type offm = s.row_begin;
           value_type *uptr = s.u_buf; 
-          UnmanagedViewType<value_type_matrix> AL(uptr, m, m); 
+          UnmanagedViewType<value_type_matrix> AT(uptr, m, m); 
           const auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
           const auto fpiv = ordinal_type_array(P.data()+m, m);
 
           ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
             ::invoke(member, fpiv, xT);
-          
+
           Trsv<Uplo::Lower,Trans::NoTranspose,TrsvAlgoType>
-            ::invoke(member, Diag::Unit(), AL, xT);
-            
+            ::invoke(member, Diag::Unit(), AT, xT);
+
           if (n > 0) {
             value_type *lptr = s.l_buf; 
-            UnmanagedViewType<value_type_matrix> AR(lptr, m, n); 
+            UnmanagedViewType<value_type_matrix> AB(lptr, m, n); 
             Gemv<Trans::Transpose,GemvAlgoType>
-              ::invoke(member, -one, AR, xT, zero, xB);
+              ::invoke(member, -one, AB, xT, zero, xB);
           }
         }
         return 0;
@@ -180,8 +182,8 @@ namespace Tacho {
             Gemv<Trans::NoTranspose,GemvAlgoType>
               ::invoke(member, -one, AR, xB, one, xT);
           }
-          Trsv<Uplo::Lower,Trans::Transpose,TrsvAlgoType>
-            ::invoke(member, Diag::NonUnit(), AL, xT);
+          Trsv<Uplo::Upper,Trans::NoTranspose,TrsvAlgoType>
+            ::invoke(member, Diag::NonUnit(), AL, xT);          
         }
         return 0;
       }
