@@ -7,13 +7,26 @@ SET(UNIT_TEST_DRIVER
   ${PANZER_UNIT_TEST_MAIN})
 
 IF(PANZER_HAVE_EPETRA)
-  SET(GATHER_SOURCES epetra_gather_solution.cpp)
-  SET(SCATTER_SOURCES epetra_scatter_residual.cpp)
-  SET(SCATTER_DIRICHLET_SOURCES epetra_scatter_dirichlet_residual.cpp)
-ELSE(PANZER_HAVE_EPETRA)
-  SET(GATHER_SOURCES tpetra_gather_solution.cpp)
-  SET(SCATTER_SOURCES tpetra_scatter_residual.cpp)
-  SET(SCATTER_DIRICHLET_SOURCES tpetra_scatter_dirichlet_residual.cpp)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tGatherSolution_Epetra
+    SOURCES epetra_gather_solution.cpp ${UNIT_TEST_DRIVER}
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tScatterResidual_Epetra
+    SOURCES epetra_scatter_residual.cpp ${UNIT_TEST_DRIVER}
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      tScatterDirichletResidual_Epetra
+      SOURCES epetra_scatter_dirichlet_residual.cpp ${UNIT_TEST_DRIVER}
+      COMM serial mpi
+      NUM_MPI_PROCS 2
+      )
 ENDIF(PANZER_HAVE_EPETRA)
 
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -24,22 +37,22 @@ ENDIF(PANZER_HAVE_EPETRA)
 #  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tGatherSolution
-  SOURCES ${GATHER_SOURCES} ${UNIT_TEST_DRIVER}
+  tGatherSolution_Tpetra
+  SOURCES tpetra_gather_solution.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 2
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tScatterResidual
-  SOURCES ${SCATTER_SOURCES} ${UNIT_TEST_DRIVER}
+  tScatterResidual_Tpetra
+  SOURCES tpetra_scatter_residual.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 2
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tScatterDirichletResidual
-  SOURCES ${SCATTER_DIRICHLET_SOURCES} ${UNIT_TEST_DRIVER}
+  tScatterDirichletResidual_Tpetra
+  SOURCES tpetra_scatter_dirichlet_residual.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 2
   )
