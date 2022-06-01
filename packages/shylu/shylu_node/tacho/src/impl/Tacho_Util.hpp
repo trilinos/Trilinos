@@ -450,6 +450,14 @@ namespace Tacho {
     };
   };
 
+  struct ActiveAlgorithm {
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
+    using type = Algo::Internal;
+#else
+    using type = Algo::External;
+#endif    
+  };
+
   template <typename MemoryTraitsType, Kokkos::MemoryTraitsFlags flag>
   using MemoryTraits = Kokkos::MemoryTraits<MemoryTraitsType::is_unmanaged |
                                             MemoryTraitsType::is_random_access |

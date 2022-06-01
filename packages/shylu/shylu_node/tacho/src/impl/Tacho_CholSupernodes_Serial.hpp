@@ -54,17 +54,9 @@ namespace Tacho {
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
         // algorithm choice
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type CholAlgoType;
-
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type TrsmAlgoType;
-
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type HerkAlgoType;
+        using CholAlgoType = typename CholAlgorithm::type;
+        using TrsmAlgoType = typename TrsmAlgorithm::type;
+        using HerkAlgoType = typename HerkAlgorithm::type;
 
         // get current supernode
         const auto &s = info.supernodes(sid);
@@ -354,13 +346,8 @@ namespace Tacho {
 
         const auto &s = info.supernodes(sid);
 
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type TrsmAlgoType;
-
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type GemmAlgoType;
+        using TrsmAlgoType = typename TrsmAlgorithm::type;
+        using GemmAlgoType = typename GemmAlgorithm::type;
 
         // get panel pointer
         value_type *ptr = s.u_buf; 
@@ -468,13 +455,8 @@ namespace Tacho {
 
         typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type GemmAlgoType;
-
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type TrsmAlgoType;
+        using GemmAlgoType = typename GemmAlgorithm::type;
+        using TrsmAlgoType = typename TrsmAlgorithm::type;
 
         // get current supernode
         const auto &s = info.supernodes(sid);

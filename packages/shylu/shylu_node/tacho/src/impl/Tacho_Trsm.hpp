@@ -19,6 +19,10 @@ namespace Tacho {
            typename ArgAlgo>
   struct Trsm;
 
+  struct TrsmAlgorithm {
+    using type = ActiveAlgorithm::type;
+  };
+
   // /// task construction for the above chol implementation
   // /// Trsm<ArgSide,ArgUplo,ArgTrans,ArgAlgo>::invoke(_sched, member, ArgDiag(), _alpha, _A, _B);
   // template<typename SchedulerType,

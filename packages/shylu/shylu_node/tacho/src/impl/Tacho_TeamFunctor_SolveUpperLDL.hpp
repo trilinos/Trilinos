@@ -28,12 +28,6 @@ namespace Tacho {
     using value_type_array = typename supernode_info_type::value_type_array;
     using value_type_matrix = typename supernode_info_type::value_type_matrix;
 
-    using MainAlgoType = typename std::conditional
-      <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-       Algo::External,Algo::Internal>::type;
-    using TrsvAlgoType = MainAlgoType;
-    using GemvAlgoType = MainAlgoType;
-
   private:
     ConstUnmanagedViewType<supernode_type_array> _supernodes;
     ConstUnmanagedViewType<ordinal_type_array> _gid_colidx;
@@ -90,6 +84,9 @@ namespace Tacho {
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void solve(MemberType &member, const supernode_type &s, value_type *bptr) const {
+      using TrsvAlgoType = typename TrsvAlgorithm::type;
+      using GemvAlgoType = typename GemvAlgorithm::type;
+
       const value_type minus_one(-1), one(1);
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;

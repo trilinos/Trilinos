@@ -25,10 +25,6 @@ namespace Tacho {
     typedef typename supernode_info_type::value_type_array value_type_array;
     typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-    typedef typename std::conditional
-    <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-     Algo::External,Algo::Internal>::type TrsmAlgoType;
-
   private:
     supernode_info_type _info;
     ordinal_type_array _prepare_mode;
@@ -72,6 +68,7 @@ namespace Tacho {
                 const value_type use_this_one,
                 const value_type_matrix &A, 
                 const value_type_matrix &P) const {
+      using TrsmAlgoType = typename TrsmAlgorithm::type;
       Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
         ::invoke(member, Diag::NonUnit(), use_this_one, A, P);
     }

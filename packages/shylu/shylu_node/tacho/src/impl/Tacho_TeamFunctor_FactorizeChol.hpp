@@ -27,18 +27,6 @@ namespace Tacho {
 
     typedef typename supernode_info_type::dense_block_type dense_block_type; 
 
-    typedef typename std::conditional
-    <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-     Algo::External,Algo::Internal>::type CholAlgoType;
-
-    typedef typename std::conditional
-    <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-     Algo::External,Algo::Internal>::type TrsmAlgoType;
-
-    typedef typename std::conditional
-    <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-     Algo::External,Algo::Internal>::type HerkAlgoType;
-
   private:
     supernode_info_type _info;
     ordinal_type_array _compute_mode, _level_sids;
@@ -82,6 +70,10 @@ namespace Tacho {
     void factorize_var0(MemberType &member,
                    const supernode_type &s,
                    const value_type_matrix &ABR) const {
+      using CholAlgoType = typename CholAlgorithm::type;
+      using TrsmAlgoType = typename TrsmAlgorithm::type;
+      using HerkAlgoType = typename HerkAlgorithm::type;
+
       const ordinal_type m = s.m, n = s.n, n_m = n-m;
       if (m > 0) {
         value_type *aptr = s.u_buf;
@@ -107,6 +99,10 @@ namespace Tacho {
                         const supernode_type &s,
                         const value_type_matrix &T, 
                         const value_type_matrix &ABR) const {
+      using CholAlgoType = typename CholAlgorithm::type;
+      using TrsmAlgoType = typename TrsmAlgorithm::type;
+      using HerkAlgoType = typename HerkAlgorithm::type;
+
       const value_type one(1), minus_one(-1), zero(0);
       const ordinal_type m = s.m, n = s.n, n_m = n-m;
       if (m > 0) {
@@ -146,6 +142,10 @@ namespace Tacho {
                         const supernode_type &s,
                         const value_type_matrix &T,
                         const value_type_matrix &ABR) const {
+      using CholAlgoType = typename CholAlgorithm::type;
+      using TrsmAlgoType = typename TrsmAlgorithm::type;
+      using HerkAlgoType = typename HerkAlgorithm::type;
+
       const value_type one(1), minus_one(-1), zero(0);
       const ordinal_type m = s.m, n = s.n, n_m = n-m;
       if (m > 0) {

@@ -47,13 +47,9 @@ namespace Tacho {
         using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
 
         // algorithm choice
-        using MainAlgoType = typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type;
-
-        using LDL_AlgoType = MainAlgoType;
-        using TrsmAlgoType = MainAlgoType;
-        using GemmAlgoType = MainAlgoType;
+        using LDL_AlgoType = typename LDL_Algorithm::type;
+        using TrsmAlgoType = typename TrsmAlgorithm::type;
+        using GemmAlgoType = typename GemmAlgorithm::type;
 
         // get current supernode
         const auto &s = info.supernodes(sid);
@@ -115,12 +111,8 @@ namespace Tacho {
 
         const auto &s = info.supernodes(sid);
 
-        using MainAlgoType = typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type;
-
-        using TrsvAlgoType = MainAlgoType;
-        using GemvAlgoType = MainAlgoType;
+        using TrsvAlgoType = typename TrsvAlgorithm::type;
+        using GemvAlgoType = typename GemvAlgorithm::type;
 
         // get panel pointer
         value_type *ptr = s.u_buf; 
@@ -169,11 +161,8 @@ namespace Tacho {
 
         using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
 
-        using MainAlgoType = typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type;
-        using GemvAlgoType = MainAlgoType;
-        using TrsvAlgoType = MainAlgoType;
+        using GemvAlgoType = typename GemvAlgorithm::type;
+        using TrsvAlgoType = typename TrsvAlgorithm::type;
 
         // get current supernode
         const auto &s = info.supernodes(sid);

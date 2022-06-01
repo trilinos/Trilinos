@@ -18,7 +18,11 @@ namespace Tacho {
   template<typename ArgUplo, 
            typename ArgAlgo>
   struct Chol;
-    
+
+  struct CholAlgorithm {
+    using type = ActiveAlgorithm::type;
+  };
+
   // /// task construction for the above chol implementation
   // // Chol<ArgUplo,ArgAlgo>::invoke(_sched, member, _A);
   // template<typename SchedulerType,

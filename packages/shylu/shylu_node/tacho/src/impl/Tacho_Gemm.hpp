@@ -17,6 +17,10 @@ namespace Tacho {
   template<typename ArgTransA, typename ArgTransB, typename ArgAlgo>
   struct Gemm;
 
+  struct GemmAlgorithm {
+    using type = ActiveAlgorithm::type;
+  };
+
   // /// task construction for the above chol implementation
   // /// Gemm<ArgTransA,ArgTransB,ArgAlgo>::invoke(_sched, member, _alpha, _A, _B, _beta, _C);
   // template<typename SchedulerType,

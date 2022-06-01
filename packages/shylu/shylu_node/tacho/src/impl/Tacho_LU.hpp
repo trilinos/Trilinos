@@ -17,6 +17,10 @@ namespace Tacho {
   /// various implementation for different uplo and algo parameters
   template<typename ArgAlgo>
   struct LU;
+
+  struct LU_Algorithm {
+    using type = ActiveAlgorithm::type;
+  };
   
 }
 

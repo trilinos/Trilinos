@@ -16,6 +16,10 @@ namespace Tacho {
   /// various implementation for different uplo and algo parameters    
   template<typename ArgUplo, typename ArgTrans, typename ArgAlgo>
   struct Herk;
+
+  struct HerkAlgorithm {
+    using type = ActiveAlgorithm::type;
+  };
     
   // /// task construction for the above chol implementation
   // /// Herk<ArgUplo,ArgTrans,ArgAlgo> ::invoke(_sched, member, _alpha, _A, _beta, _C);

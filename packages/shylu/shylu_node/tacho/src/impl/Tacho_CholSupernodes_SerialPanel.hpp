@@ -53,13 +53,8 @@ namespace Tacho {
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
         // algorithm choice
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type CholAlgoType;
-
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type TrsmAlgoType;
+        using CholAlgoType = typename CholAlgorithm::type;
+        using TrsmAlgoType = typename TrsmAlgorithm::type;
 
         // get current supernode 
         const auto &s = info.supernodes(sid);
@@ -103,13 +98,8 @@ namespace Tacho {
         typedef typename supernode_info_type::dense_block_type dense_block_type;
 
         // algorithm choice
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type HerkAlgoType;
-
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type GemmAlgoType;
+        using HerkAlgoType = typename HerkAlgorithm::type;
+        using GemmAlgoType = typename GemmAlgorithm::type;
 
 #if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
 #else

@@ -27,15 +27,6 @@ namespace Tacho {
 
     using dense_block_type = typename supernode_info_type::dense_block_type;
 
-    using MainAlgoType = typename std::conditional
-      <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-       Algo::External,Algo::Internal>::type;
-    /// testing purpose
-    /// using MainAlgoType = Algo::Internal;
-    using LDL_AlgoType = MainAlgoType;
-    using TrsmAlgoType = MainAlgoType;
-    using GemmAlgoType = MainAlgoType;
-
   private:
     supernode_info_type _info;
     ordinal_type_array _compute_mode, _level_sids;
@@ -88,6 +79,10 @@ namespace Tacho {
                    const value_type_matrix &D,
                    const value_type_array &W, /// STR and workspace for LDL
                    const value_type_matrix &ABR) const {
+      using LDL_AlgoType = typename LDL_Algorithm::type;
+      using TrsmAlgoType = typename TrsmAlgorithm::type;
+      using GemmAlgoType = typename GemmAlgorithm::type;
+
       const ordinal_type m = s.m, n = s.n, n_m = n-m;
       if (m > 0) {
         value_type *aptr = s.u_buf;
@@ -281,5 +276,6 @@ namespace Tacho {
 
   };
 }
+
 
 #endif
