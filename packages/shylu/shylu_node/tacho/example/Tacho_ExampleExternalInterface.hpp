@@ -19,8 +19,7 @@ namespace tacho {
     {USEDEFAULTSOLVERPARAMETERS,
      VERBOSITY,
      SMALLPROBLEMTHRESHOLDSIZE,
-     MATRIX_SYMMETRIC,
-     MATRIX_POSITIVE_DEFINITE,
+     SOLUTION_METHOD,
      TASKING_OPTION_BLOCKSIZE,
      TASKING_OPTION_PANELSIZE,
      TASKING_OPTION_MAXNUMSUPERBLOCKS, 
@@ -371,8 +370,8 @@ namespace tacho {
       m_Solver.setVerbose                       (solverParams[VERBOSITY]);
       m_Solver.setSmallProblemThresholdsize     (solverParams[SMALLPROBLEMTHRESHOLDSIZE]);
 
-      // matrix type
-      m_Solver.setMatrixType(solverParams[MATRIX_SYMMETRIC], solverParams[MATRIX_POSITIVE_DEFINITE]);
+      // solution method
+      m_Solver.setSolutionMethod(solverParams[SOLUTION_METHOD]);
 
       // tasking options
       m_Solver.setBlocksize                     (solverParams[TASKING_OPTION_BLOCKSIZE]);

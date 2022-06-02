@@ -33,8 +33,7 @@ void testTachoSolver(int nSolvers,
                      int* rowBegin,
                      int* columns,
                      double* values,
-                     const int symmetric = 2, /// 0 - unsym, 1 - structure sym and value unsym, 2 - symmetric
-                     const int posDef = 1,
+                     const int solutionMethod = 1, /// 1 - chol, 2 - LDL, 3 - SymLU
                      const int numRuns = 1)
 {
   Kokkos::Timer timer;
@@ -48,8 +47,7 @@ void testTachoSolver(int nSolvers,
   tachoParams[tacho::VERBOSITY] = 0;
   tachoParams[tacho::SMALLPROBLEMTHRESHOLDSIZE] = 1024;
 
-  tachoParams[tacho::MATRIX_SYMMETRIC] = symmetric;
-  tachoParams[tacho::MATRIX_POSITIVE_DEFINITE] = posDef;
+  tachoParams[tacho::SOLUTION_METHOD] = solutionMethod;
 
 #if defined (KOKKOS_ENABLE_CUDA)
   tachoParams[tacho::TASKING_OPTION_MAXNUMSUPERBLOCKS] = 32;
@@ -181,15 +179,13 @@ int main(int argc, char *argv[]) {
   int nsolver = 0;
   bool verbose = true;
   bool sanitize = false;
-  int symmetric = 2;
-  bool posdef = true;
+  int solution_method = 1; /// 1 - chol, 2 - LDL, 3 - SymLU
 
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("nsolver", "# of solvers for testing array solver interface", &nsolver);
   opts.set_option<int>("niter", "# of solver iterations", &niter);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
-  opts.set_option<int>("symmetric", "Symmetric type 1 - structure symmetric, 2 - symmetric", &symmetric);
-  opts.set_option<bool>("posdef", "Flag to indicate that the matrix positive definite", &posdef);
+  opts.set_option<int>("method", "Solution method 1 - chol, 2 - LDL, 3 - SymLU", &solution_method);
 
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; // print help return
@@ -225,7 +221,7 @@ int main(int argc, char *argv[]) {
       } else {
         values = A.Values().data();
       }
-      testTachoSolver(nsolver, numRows, rowBegin, columns, values, symmetric, posdef, niter);
+      testTachoSolver(nsolver, numRows, rowBegin, columns, values, solution_method, niter);
     }
   }
   Kokkos::finalize();
