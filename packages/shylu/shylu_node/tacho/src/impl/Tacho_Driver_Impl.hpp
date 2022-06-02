@@ -13,7 +13,7 @@ namespace Tacho {
   template<typename VT, typename DT>
   Driver<VT,DT>
   ::Driver()
-    : _mode(1), _order_connected_graph_separately(0),
+    : _method(1), _order_connected_graph_separately(0),
       _m(0), _nnz(0),
       _ap(), _h_ap(), _aj(), _h_aj(),
       _perm(), _h_perm(), _peri(), _h_peri(),
@@ -79,8 +79,8 @@ namespace Tacho {
   ::setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric
                   const bool is_positive_definite) { 
     switch (symmetric) {
-    case 0: { _mode = LU; break; }
-    case 1: { _mode = SymLU; break; }
+    case 0: { _method = LU; break; }
+    case 1: { _method = SymLU; break; }
     case 2: {
       if (is_positive_definite) {
         if (std::is_same<value_type,double>::value ||
@@ -88,10 +88,10 @@ namespace Tacho {
             std::is_same<value_type,Kokkos::complex<float> >::value || 
             std::is_same<value_type,Kokkos::complex<double> >::value) {
           // real symmetric posdef
-          _mode = Cholesky;
+          _method = Cholesky;
         } 
       } else { // real or complex symmetric indef
-        _mode = LDL;
+        _method = LDL;
       }
       break;
     }
@@ -99,6 +99,14 @@ namespace Tacho {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "symmetric argument is wrong");
     }
     }
+  }
+  
+  template<typename VT, typename DT>  
+  void 
+  Driver<VT,DT>
+  ::setSolutionMethod(const int method) { // 1 - Chol, 2 - LDL, 3 - LU
+    TACHO_TEST_FOR_EXCEPTION(method != Cholesky && method != LDL && method != SymLU, std::logic_error, "method is not supported 1 - Chol, 2 - LDL , and 3 - SymLU");    
+    _method = method;
   }
 
   template<typename VT, typename DT>
@@ -391,7 +399,7 @@ namespace Tacho {
       /// create numeric tools serial for host space 
       ///
       NumericToolsFactory<VT,DT> factory;
-      factory.setBaseMember(_mode, 
+      factory.setBaseMember(_method, 
                             _m, _ap, _aj,
                             _perm, _peri,
                             _nsupernodes, _supernodes,
@@ -416,7 +424,7 @@ namespace Tacho {
   Driver<VT,DT>      
   ::factorize(const value_type_array &ax) {
     if (_verbose) {
-      switch (_mode) {
+      switch (_method) {
       case Cholesky: {
         printf("TachoSolver: Factorize Cholesky\n");
         printf("===============================\n");
@@ -458,9 +466,9 @@ namespace Tacho {
         const size_type jbeg = _h_ap(i), jend = _h_ap(i+1);
         for (size_type j=jbeg;j<jend;++j) {
           const ordinal_type col = _h_aj(j);
-          const bool flag = ((_mode == Cholesky && i <= col) || /// upper  
-                             (_mode == LDL      && i >= col) || /// lower
-                             (_mode == SymLU));  /// full matrix
+          const bool flag = ((_method == Cholesky && i <= col) || /// upper  
+                             (_method == LDL      && i >= col) || /// lower
+                             (_method == SymLU));  /// full matrix
           if (flag) 
             _A(i, col) = h_ax(j);
         }
@@ -468,7 +476,7 @@ namespace Tacho {
       t_copy = timer.seconds();
         
       timer.reset();
-      switch (_mode) {
+      switch (_method) {
       case Cholesky: {
         Tacho::Chol<Uplo::Upper,Algo::External>::invoke(_A);
         break;
@@ -515,7 +523,7 @@ namespace Tacho {
           const value_type_matrix &b,
           const value_type_matrix &t) {
     if (_verbose) {
-      switch (_mode) {
+      switch (_method) {
       case Cholesky: {
         printf("TachoSolver: Solve Cholesky\n");
         printf("===========================\n");
@@ -563,7 +571,7 @@ namespace Tacho {
       t_copy = timer.seconds();
       
       timer.reset();
-      switch (_mode) {
+      switch (_method) {
       case Cholesky: {
         auto h_x = Kokkos::create_mirror_view_and_copy(host_memory_space(), x); 
         Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
@@ -694,7 +702,7 @@ namespace Tacho {
       delete _N; _N = nullptr;
     }
     {
-      _mode = 0;
+      _method = 0;
         
       _m = 0;
       _nnz = 0;

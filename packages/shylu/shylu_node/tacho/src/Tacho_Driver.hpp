@@ -74,7 +74,7 @@ namespace Tacho {
                  LU       = 4 };
 
     // ** solver mode
-    ordinal_type _mode;
+    ordinal_type _method;
 
     // ** ordering options
     ordinal_type _order_connected_graph_separately;
@@ -170,6 +170,7 @@ namespace Tacho {
     void setSmallProblemThresholdsize(const ordinal_type small_problem_thres = 1024);
     void setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric
                        const bool is_positive_definite);
+    void setSolutionMethod(const int method); /// 1 - cholesky, 2 - LDL, 3 - LU
 
     ///
     /// Graph options

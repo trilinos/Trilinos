@@ -17,8 +17,7 @@ int driver (int argc, char *argv[]) {
   std::string graph_file = "";
   std::string weight_file = "";
   int nrhs = 1;
-  int sym = 2;
-  int posdef = 1;
+  int method = 1; // 1 - Chol, 2 - LDL, 3 - SymLU
   int small_problem_thres = 1024;
   int device_factor_thres = 64;
   int device_solve_thres = 128;
@@ -35,8 +34,7 @@ int driver (int argc, char *argv[]) {
   opts.set_option<std::string>("graph", "Input condensed graph", &graph_file);
   opts.set_option<std::string>("weight", "Input condensed graph weight", &weight_file);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
-  opts.set_option<int>("symmetric", "Symmetric type: 0 - unsym, 1 - structure sym, 2 - symmetric", &sym);
-  opts.set_option<int>("posdef", "Positive definite: 0 - indef, 1 - positive definite", &posdef);
+  opts.set_option<int>("method", "Solution method: 1 - Cholesky, 2 - LDL, 3 - SymLU", &method);
   opts.set_option<int>("small-problem-thres", "LAPACK is used smaller than this thres", &small_problem_thres);
   opts.set_option<int>("device-factor-thres", "Device function is used above this subproblem size", &device_factor_thres);
   opts.set_option<int>("device-solve-thres", "Device function is used above this subproblem size", &device_solve_thres);
@@ -126,7 +124,7 @@ int driver (int argc, char *argv[]) {
     Tacho::Driver<value_type,device_type> solver;
 
     /// common options
-    solver.setMatrixType(sym, posdef);
+    solver.setSolutionMethod(method);
     solver.setSmallProblemThresholdsize(small_problem_thres);
     solver.setVerbose(verbose);
 
