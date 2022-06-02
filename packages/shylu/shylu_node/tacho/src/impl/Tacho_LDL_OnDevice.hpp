@@ -171,10 +171,11 @@ namespace Tacho {
           ("ExtractDiagonalsAndPostProcessing",
            range_policy,
            KOKKOS_LAMBDA(const ordinal_type j) {
-            const bool single = (j == 0);
-            for (ordinal_type i=0,cnt=0;i<m;++i) {
-              if (ipiv[i] <= 0) {
-                if (++cnt%2) {
+            const bool single = (j == (m-1));
+            for (ordinal_type i=0;i<m;++i) {
+              if (ipiv[i] < 0) {
+                const bool is_first = (i+1) < m ? (ipiv[i+1] == ipiv[i]) : false;
+                if (is_first) {
                   if (single) {
                     ipiv[i] = 0; /// invalidate this pivot
                     fpiv[i] = 0;

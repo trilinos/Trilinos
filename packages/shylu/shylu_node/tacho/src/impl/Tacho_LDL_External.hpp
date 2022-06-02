@@ -104,9 +104,10 @@ namespace Tacho {
 
         const value_type one(1), zero(0);
         for (ordinal_type i=0;i<m;++i) perm[i] = i;
-        for (ordinal_type i=0,cnt=0;i<m;++i) {
+        for (ordinal_type i=0;i<m;++i) {
           if (ipiv[i] < 0) {
-            if (++cnt%2) {
+            const bool is_first = (i+1) < m ? (ipiv[i+1] == ipiv[i]) : false; 
+            if (is_first) {
               ipiv[i] = 0; /// invalidate this pivot
               fpiv[i] = 0;
 

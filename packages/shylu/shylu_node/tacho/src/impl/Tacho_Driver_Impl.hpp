@@ -105,7 +105,12 @@ namespace Tacho {
   void 
   Driver<VT,DT>
   ::setSolutionMethod(const int method) { // 1 - Chol, 2 - LDL, 3 - LU
-    TACHO_TEST_FOR_EXCEPTION(method != Cholesky && method != LDL && method != SymLU, std::logic_error, "method is not supported 1 - Chol, 2 - LDL , and 3 - SymLU");    
+    {
+      std::stringstream ss;
+      ss << "Error: the given method (" << _method << ") is not supported, 1 - Chol, 2 - LDL, 3 - SymLU";
+      TACHO_TEST_FOR_EXCEPTION(method != Cholesky && method != LDL && method != SymLU, 
+                               std::logic_error, ss.str().c_str());
+    }
     _method = method;
   }
 
@@ -496,7 +501,9 @@ namespace Tacho {
         break;
       }
       default: {
-        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Solution method is not implemented");        
+        std::stringstream ss;
+        ss << "Error: the solution method (" << _method << ") is not supported, 1 - Chol, 2 - LDL, 3 - SymLU";
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, ss.str().c_str());        
         break;
       }
       }
