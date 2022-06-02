@@ -254,7 +254,7 @@ namespace Intrepid2 {
 
     // this should be in host
     Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> lineBasis( order, pointType );
-    Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT> bubbleBasis( order - 1, POINTTYPE_GAUSS );
+    Basis_HVOL_LINE_Cn_FEM<DT,OT,PT> bubbleBasis( order - 1, POINTTYPE_GAUSS );
 
     const ordinal_type
       cardLine = lineBasis.getCardinality(),
