@@ -33,6 +33,7 @@ void testTachoSolver(int nSolvers,
                      int* rowBegin,
                      int* columns,
                      double* values,
+                     const int symmetric = 2, /// 0 - unsym, 1 - structure sym and value unsym, 2 - symmetric
                      const int posDef = 1,
                      const int numRuns = 1)
 {
@@ -47,7 +48,7 @@ void testTachoSolver(int nSolvers,
   tachoParams[tacho::VERBOSITY] = 0;
   tachoParams[tacho::SMALLPROBLEMTHRESHOLDSIZE] = 1024;
 
-  tachoParams[tacho::MATRIX_SYMMETRIC] = 2;
+  tachoParams[tacho::MATRIX_SYMMETRIC] = symmetric;
   tachoParams[tacho::MATRIX_POSITIVE_DEFINITE] = posDef;
 
 #if defined (KOKKOS_ENABLE_CUDA)
@@ -180,12 +181,14 @@ int main(int argc, char *argv[]) {
   int nsolver = 0;
   bool verbose = true;
   bool sanitize = false;
+  int symmetric = 2;
   bool posdef = true;
 
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("nsolver", "# of solvers for testing array solver interface", &nsolver);
   opts.set_option<int>("niter", "# of solver iterations", &niter);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<int>("symmetric", "Symmetric type 1 - structure symmetric, 2 - symmetric", &symmetric);
   opts.set_option<bool>("posdef", "Flag to indicate that the matrix positive definite", &posdef);
 
   const bool r_parse = opts.parse(argc, argv);
@@ -222,7 +225,7 @@ int main(int argc, char *argv[]) {
       } else {
         values = A.Values().data();
       }
-      testTachoSolver(nsolver, numRows, rowBegin, columns, values, posdef, niter);
+      testTachoSolver(nsolver, numRows, rowBegin, columns, values, symmetric, posdef, niter);
     }
   }
   Kokkos::finalize();
