@@ -98,6 +98,12 @@ namespace Tacho {
                     "A and W do not have the same memory space.");
       int r_val(0);
       if (std::is_same<memory_space,Kokkos::HostSpace>::value) {
+        TACHO_TEST_FOR_EXCEPTION(A.data() == NULL, 
+                                 std::logic_error,
+                                 "Error: A has null data pointer");
+        TACHO_TEST_FOR_EXCEPTION(P.data() == NULL, 
+                                 std::logic_error,
+                                 "Error: P has null data pointer");
         r_val = lapack_invoke(A, P);
       }
         
@@ -115,9 +121,7 @@ namespace Tacho {
       return r_val;
     }
 
-    template<typename ViewTypeA,
-             typename ViewTypeP,
-             typename ViewTypeD>
+    template<typename ViewTypeP>
     inline
     static int
     lapack_modify(const ordinal_type m,

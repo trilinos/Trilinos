@@ -487,7 +487,7 @@ namespace Tacho {
             }
           }
         }
-        
+                
       };
       
       template<typename MemberType>
@@ -1071,11 +1071,94 @@ namespace Tacho {
             }
           }
         } 
+
         ///
         /// side right 
         ///
         else if (side == 'R' || side == 'r') {
-          Kokkos::abort("right side is not implemented");
+          if (uplo == 'U' || uplo == 'u') {
+            switch (trans) {
+            case 'N':
+            case 'n': {
+              NoConjugate cjA;
+              Impl::trsm_left_lower(member, cjA, 
+                                    diag, 
+                                    n, m, 
+                                    alpha, 
+                                    a, lda, 1,
+                                    b, ldb, 1);
+              break;
+            }
+            case 'T':
+            case 't': {
+              Kokkos::abort("no no no");
+              NoConjugate cjA;
+              Impl::trsm_left_lower(member, cjA, 
+                                     diag, 
+                                     m, n, 
+                                     alpha, 
+                                     a, lda, 1,
+                                     b, 1, ldb);
+              break;
+            }
+            case 'C':
+            case 'c': {
+              Kokkos::abort("no no no");
+              Conjugate cjA;
+              Impl::trsm_left_lower(member, cjA, 
+                                     diag, 
+                                     m, n, 
+                                     alpha, 
+                                     a, lda, 1,
+                                     b, 1, ldb);
+              break;        
+            }
+            default:
+              Kokkos::abort("trans is not valid");
+            }
+          } else if (uplo == 'L' || uplo == 'l') {
+            switch (trans) {
+            case 'N':
+            case 'n': {
+              Kokkos::abort("no no no");
+              NoConjugate cjA;
+              Impl::trsm_left_lower(member, cjA, 
+                                     diag, 
+                                     m, n, 
+                                     alpha, 
+                                     a, 1, lda,
+                                     b, 1, ldb);
+              break;
+            }
+            case 'T':
+            case 't': {
+              Kokkos::abort("no no no");
+              NoConjugate cjA;
+              Impl::trsm_left_upper(member, cjA, 
+                                     diag, 
+                                     m, n, 
+                                     alpha, 
+                                     a, lda, 1,
+                                     b, 1, ldb);
+              break;
+            }
+            case 'C':
+            case 'c': {
+              Kokkos::abort("no no no");
+              Conjugate cjA;
+              Impl::trsm_left_upper(member, cjA, 
+                                     diag, 
+                                     m, n, 
+                                     alpha, 
+                                     a, lda, 1,
+                                     b, 1, ldb);
+              break;        
+            }
+            default:
+              Kokkos::abort("trans is not valid");
+            }
+          }
+
         }
       }
       

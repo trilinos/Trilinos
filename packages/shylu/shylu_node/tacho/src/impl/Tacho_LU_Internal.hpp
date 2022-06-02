@@ -44,7 +44,6 @@ namespace Tacho {
     }
     
     template<typename MemberType,
-             typename ViewTypeA,
              typename ViewTypeP>
     KOKKOS_INLINE_FUNCTION
     static int
@@ -52,10 +51,10 @@ namespace Tacho {
            const ordinal_type m,
            const ViewTypeP &P) {
       static_assert(ViewTypeP::rank == 1,"P is not rank 1 view.");
-
+      
       TACHO_TEST_FOR_ABORT(P.extent(0) < 4*m,
                            "P should be 4*m .");
-
+      
       int r_val = 0;      
       if (m > 0) {
         ordinal_type 
@@ -88,9 +87,9 @@ namespace Tacho {
            [&](const int &i) {
             peri[perm[i]] = i;
           });
-
+        
       }
-
+      
       return r_val;
     }
     
