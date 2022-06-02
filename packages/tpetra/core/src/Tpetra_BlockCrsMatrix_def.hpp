@@ -750,8 +750,6 @@ public:
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
   {
-    using execution_space = typename Node::execution_space;
-
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::"
       "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "

@@ -821,7 +821,6 @@ namespace Tpetra {
       values_type newvals (view_alloc ("val", WithoutInitializing),
                            vals.extent (0));
           // DEEP_COPY REVIEW - DEVICE-TO_DEVICE
-      using execution_space = typename device_type::execution_space;
       Kokkos::deep_copy (newvals, vals);
       valuesPacked_wdv = values_wdv_type(newvals);
       valuesUnpacked_wdv = valuesPacked_wdv;
