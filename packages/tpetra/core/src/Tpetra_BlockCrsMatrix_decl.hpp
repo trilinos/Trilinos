@@ -290,9 +290,9 @@ public:
   global_size_t getGlobalNumRows() const override;
 
   //! get the local number of block rows
-size_t getLocalNumRows() const override;
+  size_t getLocalNumRows() const override;
 
-size_t getLocalMaxNumRowEntries() const override;
+  size_t getLocalMaxNumRowEntries() const override;
 
   /// \brief For this matrix A, compute <tt>Y := beta * Y + alpha * Op(A) * X</tt>.
   ///
@@ -881,7 +881,7 @@ private:
   };
 
 public:
-typename impl_scalar_type_dualview::t_host::const_type
+    typename impl_scalar_type_dualview::t_host::const_type
     getValuesHost() const;
 
     typename impl_scalar_type_dualview::t_dev::const_type
@@ -905,7 +905,7 @@ typename impl_scalar_type_dualview::t_host::const_type
   /// CT: While we reserved the "right" we ignored this and explicitly did const cast away
   /// Hence I made the non-templated functions [getValuesHost and getValuesDevice; see above] const.
   /// KK: This should be deprecated.
-  typename impl_scalar_type_dualview::t_host
+    typename impl_scalar_type_dualview::t_host
     getValuesHostNonConst() const;
 
     typename impl_scalar_type_dualview::t_dev
