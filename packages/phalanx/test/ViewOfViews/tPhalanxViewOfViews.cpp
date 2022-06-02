@@ -63,7 +63,7 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,OldImpl) {
 }
 
 // ********************************
-// New implementation (automatically adds the unmanaged memory trait to inner view) 
+// New implementation (automatically adds the unmanaged memory trait to inner view)
 // ********************************
 TEUCHOS_UNIT_TEST(PhalanxViewOfViews,NewImpl) {
 
@@ -352,4 +352,98 @@ TEUCHOS_UNIT_TEST(PhalanxViewOfViews,WrapperExample) {
       TEST_FLOATING_EQUALITY(results_host(i,j),gold_value,tol);
     }
   }
+}
+
+TEUCHOS_UNIT_TEST(PhalanxViewOfViews,CreateHostHost) {
+
+  const int num_cells = 5;
+
+  using InnerView = Kokkos::View<double*,mem_t>;
+  InnerView a("a",num_cells);
+  InnerView b("b",num_cells);
+  InnerView c("c",num_cells);
+  InnerView d("d",num_cells);
+
+  Kokkos::deep_copy(a,2.0);
+  Kokkos::deep_copy(b,3.0);
+  Kokkos::deep_copy(c,4.0);
+
+  // Rank 1 outer view
+  {
+    PHX::ViewOfViews3<1,InnerView,mem_t> pvov("vov1",4);
+    pvov.addView(a,0);
+    pvov.addView(b,1);
+    pvov.addView(c,2);
+    pvov.addView(d,3);
+    pvov.syncHostToDevice();
+
+    auto vov = pvov.getViewDevice();
+
+    Kokkos::parallel_for("vov1",num_cells,KOKKOS_LAMBDA(const int cell) {
+      vov(3)(cell) = vov(0)(cell) * vov(1)(cell) + vov(2)(cell);
+    });
+
+    auto vov_host = PHX::createHostHostViewOfViews(vov);
+
+    const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+    for (int cell=0; cell < num_cells; ++cell) {
+      TEST_FLOATING_EQUALITY(vov_host(0)(cell),2.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(1)(cell),3.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(2)(cell),4.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(3)(cell),10.0,tol);
+    }
+  }
+
+  // Rank 2 outer view
+  {
+    PHX::ViewOfViews3<2,InnerView,mem_t> pvov("vov1",2,2);
+    pvov.addView(a,0,0);
+    pvov.addView(b,0,1);
+    pvov.addView(c,1,0);
+    pvov.addView(d,1,1);
+    pvov.syncHostToDevice();
+
+    auto vov = pvov.getViewDevice();
+
+    Kokkos::parallel_for("vov1",num_cells,KOKKOS_LAMBDA(const int cell) {
+      vov(1,1)(cell) = vov(0,0)(cell) * vov(0,1)(cell) + vov(1,0)(cell) + 1.0;
+    });
+
+    auto vov_host = PHX::createHostHostViewOfViews(vov);
+
+    const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+    for (int cell=0; cell < num_cells; ++cell) {
+      TEST_FLOATING_EQUALITY(vov_host(0,0)(cell),2.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(0,1)(cell),3.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(1,0)(cell),4.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(1,1)(cell),11.0,tol);
+    }
+  }
+
+  // Rank 3 outer view
+  {
+    PHX::ViewOfViews3<3,InnerView,mem_t> pvov("vov1",3,3,3);
+    pvov.addView(a,0,0,0);
+    pvov.addView(b,1,1,1);
+    pvov.addView(c,2,2,2);
+    pvov.addView(d,0,1,2);
+    pvov.syncHostToDevice();
+
+    auto vov = pvov.getViewDevice();
+
+    Kokkos::parallel_for("vov1",num_cells,KOKKOS_LAMBDA(const int cell) {
+        vov(0,1,2)(cell) = vov(0,0,0)(cell) * vov(1,1,1)(cell) + vov(2,2,2)(cell) + 2.0;
+    });
+
+    auto vov_host = PHX::createHostHostViewOfViews(vov);
+
+    const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
+    for (int cell=0; cell < num_cells; ++cell) {
+      TEST_FLOATING_EQUALITY(vov_host(0,0,0)(cell),2.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(1,1,1)(cell),3.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(2,2,2)(cell),4.0,tol);
+      TEST_FLOATING_EQUALITY(vov_host(0,1,2)(cell),12.0,tol);
+    }
+  }
+
 }

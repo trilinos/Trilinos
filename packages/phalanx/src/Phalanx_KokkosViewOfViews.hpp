@@ -388,6 +388,79 @@ namespace PHX {
     }
   };
 
-}
+  // Rank 1 outer view
+  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
+  auto createHostHostViewOfViews(const Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>*,OuterProps...>& v_of_v) {
+    // Host outer view pointing to device inner views
+    auto host_device = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),v_of_v);
+
+    // Host outer view point to host inner views
+    using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(0)));
+    using HostDeviceMirrorType = decltype(host_device);
+    Kokkos::View<HostInnerViewType *,
+                 typename HostDeviceMirrorType::HostMirror::array_layout,
+                 typename HostDeviceMirrorType::HostMirror::device_type> host_host(host_device.label(),
+                                                                                   host_device.extent(0));
+
+    for (std::size_t i=0; i < host_device.extent(0); ++i) {
+      auto tmp = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(i));
+      // HostInnerViewType t = tmp;
+      host_host(i) = tmp;
+    }
+    return host_host;
+  }
+
+  // Rank 2 outer view
+  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
+  auto createHostHostViewOfViews(const Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>**,OuterProps...>& v_of_v) {
+    // Host outer view pointing to device inner views
+    auto host_device = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),v_of_v);
+
+    // Host outer view point to host inner views
+    using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(0,0)));
+    using HostDeviceMirrorType = decltype(host_device);
+    Kokkos::View<HostInnerViewType **,
+                 typename HostDeviceMirrorType::HostMirror::array_layout,
+                 typename HostDeviceMirrorType::HostMirror::device_type> host_host(host_device.label(),
+                                                                                   host_device.extent(0),
+                                                                                   host_device.extent(1));
+
+    for (std::size_t i=0; i < host_device.extent(0); ++i) {
+      for (std::size_t j=0; j < host_device.extent(1); ++j) {
+        auto tmp = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(i,j));
+        host_host(i,j) = tmp;
+      }
+    }
+    return host_host;
+  }
+
+  // Rank 3 outer view
+  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
+  auto createHostHostViewOfViews(const Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>***,OuterProps...>& v_of_v) {
+    // Host outer view pointing to device inner views
+    auto host_device = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),v_of_v);
+
+    // Host outer view point to host inner views
+    using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(0,0,0)));
+    using HostDeviceMirrorType = decltype(host_device);
+    Kokkos::View<HostInnerViewType ***,
+                 typename HostDeviceMirrorType::HostMirror::array_layout,
+                 typename HostDeviceMirrorType::HostMirror::device_type> host_host(host_device.label(),
+                                                                                   host_device.extent(0),
+                                                                                   host_device.extent(1),
+                                                                                   host_device.extent(2));
+
+    for (std::size_t i=0; i < host_device.extent(0); ++i) {
+      for (std::size_t j=0; j < host_device.extent(1); ++j) {
+        for (std::size_t k=0; k < host_device.extent(2); ++k) {
+          auto tmp = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(i,j,k));
+          host_host(i,j,k) = tmp;
+        }
+      }
+    }
+    return host_host;
+  }
+
+} // namespace PHX
 
 #endif
