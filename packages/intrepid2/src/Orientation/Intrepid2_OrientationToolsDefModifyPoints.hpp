@@ -369,6 +369,48 @@ namespace Intrepid2 {
       }
     }
 
+
+
+    template<typename pointType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    OrientationTools::
+    getJacobianDetOfOrientationMap(pointType* jacobianDet,
+                           const unsigned cellTopoKey,
+                           const ordinal_type cellOrt) {
+      Kokkos::View<pointType**> jacobian;
+      switch (cellTopoKey) {
+      case shards::Line<>::key :
+      {
+        jacobian = Kokkos::View<pointType**>(jacobianDet,1,1);
+        getLineJacobian(jacobian, cellOrt);
+        break;
+      }
+      case shards::Triangle<>::key :
+      {
+          pointType jac[4] = {};
+          jacobian = Kokkos::View<pointType**>(jac,2,2);
+          getTriangleJacobian(jacobian, cellOrt);
+          *jacobianDet = jacobian(0,0)*jacobian(1,1)-jacobian(0,1)*jacobian(1,0);
+        break;
+      }
+      case shards::Quadrilateral<>::key :
+      {
+          pointType jac[4] = {};
+          jacobian = Kokkos::View<pointType**>(jac,2,2);
+          getQuadrilateralJacobian(jacobian, cellOrt);
+          *jacobianDet = jacobian(0,0)*jacobian(1,1)-jacobian(0,1)*jacobian(1,0);
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_ABORT( true,
+                                    ">>> ERROR (Intrepid2::OrientationTools::mapToModifiedReference): " \
+                                    "Invalid cell topology key." );
+        break;
+      }
+      }
+    }
+
     template<typename TanViewType, typename ParamViewType>
     KOKKOS_INLINE_FUNCTION
     void
