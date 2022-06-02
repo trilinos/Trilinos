@@ -6,8 +6,12 @@ pushd $PWD
 
 cd ${script_dir}
 
-# Update submodules
-git submodule update --init --recursive --remote || true
+# Update GenConfig submodules
+# NOTE: Add --remote below to pull in the latest tip of the GenConfig tracked branch
+git submodule update --init --recursive ${script_dir}/GenConfig
+
+# Update ini file submodules
+git submodule update --init --remote ${script_dir}/srn-ini-files || true
 
 # Point to srn ini files if they exist
 if [[ ! -z "$(ls ./srn-ini-files)" && "$ini_file_option" == "--srn" ]]; then
