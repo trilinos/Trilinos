@@ -452,7 +452,23 @@ ProjectionTools<DeviceType>::getL2EvaluationPoints(typename BasisType::ScalarVie
   if(numVols > 0) {
     auto pointsRange = ePointsRange(dim, 0);
     auto cellEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(dim,0,ePointType));
-    RealSpaceTools<DeviceType>::clone(Kokkos::subview(ePoints, Kokkos::ALL(), pointsRange, Kokkos::ALL()), cellEPoints);
+    if(dim == 3)
+      RealSpaceTools<DeviceType>::clone(Kokkos::subview(ePoints, Kokkos::ALL(), pointsRange, Kokkos::ALL()), cellEPoints);
+    else { //if the cell is a side also internal points need orientation
+      const auto topoKey = refTopologyKey(dim,0);
+      RealSpaceTools<DeviceType>::clone(Kokkos::subview(ePoints, Kokkos::ALL(), pointsRange, Kokkos::ALL()), cellEPoints);
+        Kokkos::parallel_for
+      ("Evaluate Points",
+          Kokkos::RangePolicy<ExecSpaceType, int> (0, numCells),
+          KOKKOS_LAMBDA (const size_t ic) {
+          ordinal_type ort = 0;
+          if(dim == 1)
+            orts(ic).getEdgeOrientation(&ort,1);
+          else if (dim == 2)
+            orts(ic).getFaceOrientation(&ort,1);
+          Impl::OrientationTools::mapToModifiedReference(Kokkos::subview(ePoints,  ic, pointsRange, Kokkos::ALL()), cellEPoints,topoKey,ort);
+      });
+    }
   }
 }
 
