@@ -24,28 +24,15 @@
 #include "Tacho_Scale2x2_BlockInverseDiagonals.hpp"
 #include "Tacho_Scale2x2_BlockInverseDiagonals_OnDevice.hpp"
 
-//#include "Tacho_Chol.hpp"
+
 #include "Tacho_Chol_OnDevice.hpp"
-
-//#include "Tacho_LDL.hpp"
 #include "Tacho_LDL_OnDevice.hpp"
-
-//#include "Tacho_Trsm.hpp"
+#include "Tacho_LU_OnDevice.hpp"
 #include "Tacho_Trsm_OnDevice.hpp"
-
-//#include "Tacho_Herk.hpp"
 #include "Tacho_Herk_OnDevice.hpp"
-
-//#include "Tacho_Trsv.hpp"
 #include "Tacho_Trsv_OnDevice.hpp"
-
-//#include "Tacho_Gemv.hpp"
 #include "Tacho_Gemv_OnDevice.hpp"
-
-//#include "Tacho_Gemm.hpp"
 #include "Tacho_Gemm_OnDevice.hpp"
-
-#include "Tacho_GemmTriangular.hpp"
 #include "Tacho_GemmTriangular_OnDevice.hpp"
 
 #include "Tacho_SupernodeInfo.hpp"
