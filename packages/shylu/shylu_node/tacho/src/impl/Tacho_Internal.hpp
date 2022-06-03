@@ -8,21 +8,21 @@
 #include "Tacho_config.h"
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Random.hpp>
 #include <Kokkos_DualView.hpp>
+#include <Kokkos_Random.hpp>
 #include <Kokkos_Timer.hpp>
 
-#include "Tacho_Util.hpp"
 #include "Tacho_Partition.hpp"
+#include "Tacho_Util.hpp"
 
 #include "Tacho_CrsMatrixBase.hpp"
 #include "Tacho_DenseMatrixView.hpp"
 
-#include "Tacho_MatrixMarket.hpp"           
+#include "Tacho_MatrixMarket.hpp"
 
 #include "Tacho_Graph.hpp"
-#include "Tacho_GraphTools.hpp"       
-#include "Tacho_GraphTools_Metis.hpp"       
+#include "Tacho_GraphTools.hpp"
+#include "Tacho_GraphTools_Metis.hpp"
 
 #include "Tacho_SupernodeInfo.hpp"
 #include "Tacho_SymbolicTools.hpp"
@@ -71,7 +71,7 @@
 #include "Tacho_Herk.hpp"
 #include "Tacho_Herk_External.hpp"
 #include "Tacho_Herk_Internal.hpp"
-// #include "Tacho_Herk_ByBlocks.hpp"          
+// #include "Tacho_Herk_ByBlocks.hpp"
 
 #include "Tacho_Gemm.hpp"
 #include "Tacho_Gemm_External.hpp"
@@ -109,14 +109,14 @@
 
 // refactoring
 #include "Tacho_NumericTools_Base.hpp"
-#include "Tacho_NumericTools_Serial.hpp"
 #include "Tacho_NumericTools_LevelSet.hpp"
+#include "Tacho_NumericTools_Serial.hpp"
 
 #include "Tacho_NumericTools_Factory.hpp"
 
-// Do not include this. 
+// Do not include this.
 // In a gcc (4.9.x), this causes some multiple definition link error with gcc headers.
 // No idea yet why it happens as the code is guarded by Tacho::Experimental namespace.
-//#include "Tacho_CommandLineParser.hpp" 
+//#include "Tacho_CommandLineParser.hpp"
 
 #endif

@@ -1,17 +1,17 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
 
+#include "Tacho_CommandLineParser.hpp"
 #include "Tacho_Internal.hpp"
 #include "Tacho_Solver.hpp"
-#include "Tacho_CommandLineParser.hpp"
 
-#if defined (KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 #include "Tacho_CuSparseTriSolve.hpp"
 #endif
 
 using namespace Tacho;
 
-int main (int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 
   CommandLineParser opts("This example program measure the performance of cuSparse TriSolve on Kokkos::Cuda");
 
@@ -41,7 +41,8 @@ int main (int argc, char *argv[]) {
   opts.set_option<int>("nb", "Internal panel size", &nb);
 
   const bool r_parse = opts.parse(argc, argv);
-  if (r_parse) return 0; // print help return
+  if (r_parse)
+    return 0; // print help return
 
   Kokkos::initialize(argc, argv);
 
@@ -51,9 +52,9 @@ int main (int argc, char *argv[]) {
 
   typedef UseThisDevice<Kokkos::Cuda>::type device_type;
   typedef UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
-  
+
   Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
-  Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace",   detail);
+  Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
 
   Kokkos::Timer timer;
   int r_val = 0;
@@ -62,9 +63,9 @@ int main (int argc, char *argv[]) {
     ///
     /// read from crs matrix
     ///
-    typedef Tacho::CrsMatrixBase<value_type,host_device_type> CrsMatrixBaseTypeHost;    
-    typedef Tacho::CrsMatrixBase<value_type,device_type> CrsMatrixBaseType;    
-    typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type> DenseMultiVectorType;
+    typedef Tacho::CrsMatrixBase<value_type, host_device_type> CrsMatrixBaseTypeHost;
+    typedef Tacho::CrsMatrixBase<value_type, device_type> CrsMatrixBaseType;
+    typedef Kokkos::View<value_type **, Kokkos::LayoutLeft, device_type> DenseMultiVectorType;
 
     /// read a spd matrix of matrix market format
     CrsMatrixBaseTypeHost h_A;
@@ -77,18 +78,18 @@ int main (int argc, char *argv[]) {
       }
       Tacho::MatrixMarket<value_type>::read(file, h_A, sanitize, verbose);
     }
-    
+
     ///
     /// A on device
     ///
     CrsMatrixBaseType A;
     A.createConfTo(h_A);
     A.copy(h_A);
-    
+
     ///
     /// Tacho Solver (factorization)
     ///
-    Tacho::Solver<value_type,device_type> solver;
+    Tacho::Solver<value_type, device_type> solver;
     {
       solver.setMatrixType(sym, posdef);
       solver.setVerbose(verbose);
@@ -99,10 +100,8 @@ int main (int argc, char *argv[]) {
     }
 
     /// inputs are used for graph reordering and analysis
-    solver.analyze(A.NumRows(),
-                   A.RowPtr(),
-                   A.Cols());
-    
+    solver.analyze(A.NumRows(), A.RowPtr(), A.Cols());
+
     /// symbolic structure can be reused
     solver.factorize(A.Values());
 
@@ -116,11 +115,11 @@ int main (int argc, char *argv[]) {
         printf("ExampleCuSparseTriSolve: Construction of CrsMatrix of factors\n");
         printf("=============================================================\n");
         printf("  Time\n");
-        printf("             time for construction of F in CRS:               %10.6f s\n", t_factor_export); 
+        printf("             time for construction of F in CRS:               %10.6f s\n", t_factor_export);
         printf("\n");
 
         F.showMe(std::cout, false);
-      }      
+      }
     }
 
     ///
@@ -128,27 +127,21 @@ int main (int argc, char *argv[]) {
     ///
     CuSparseTriSolve trisolve;
     trisolve.setVerbose(verbose);
-    
+
     ///
     /// CuSparse analyze
     ///
-    {
-      trisolve.analyze(F.NumRows(), 
-                       F.RowPtr(),
-                       F.Cols(),
-                       F.Values());
-    }
+    { trisolve.analyze(F.NumRows(), F.RowPtr(), F.Cols(), F.Values()); }
 
     ///
     /// random right hand side
     ///
-    DenseMultiVectorType 
-      b("b", F.NumRows(), nrhs), // rhs multivector
-      x("x", F.NumRows(), nrhs), // solution multivector
-      t("t", F.NumRows(), nrhs), // temporary workvector
-      bb("bb", F.NumRows(), nrhs), // temp workspace (store permuted rhs)
-      xx("xx", F.NumRows(), nrhs); // temp workspace (store permuted rhs)
-    
+    DenseMultiVectorType b("b", F.NumRows(), nrhs), // rhs multivector
+        x("x", F.NumRows(), nrhs),                  // solution multivector
+        t("t", F.NumRows(), nrhs),                  // temporary workvector
+        bb("bb", F.NumRows(), nrhs),                // temp workspace (store permuted rhs)
+        xx("xx", F.NumRows(), nrhs);                // temp workspace (store permuted rhs)
+
     {
       Kokkos::Random_XorShift64_Pool<typename device_type::execution_space> random(13718);
       Kokkos::fill_random(b, random, value_type(1));
@@ -194,12 +187,12 @@ int main (int argc, char *argv[]) {
         printf("             time for permute and solve:                      %10.6f s\n", t_solve); 
         printf("\n");
       }
-#else  
+#else
       timer.reset();
-      for (int iter=0;iter<niter;++iter) {
-        applyRowPermutationToDenseMatrix(bb, b, perm);      
+      for (int iter = 0; iter < niter; ++iter) {
+        applyRowPermutationToDenseMatrix(bb, b, perm);
         trisolve.solve(xx, bb, t);
-        applyRowPermutationToDenseMatrix(x, xx, peri);            
+        applyRowPermutationToDenseMatrix(x, xx, peri);
         Kokkos::fence();
       }
       const double t_solve = timer.seconds();
@@ -207,7 +200,7 @@ int main (int argc, char *argv[]) {
         printf("ExampleCuSparseTriSolve: P b, solve, and P^{-1} x\n");
         printf("=================================================\n");
         printf("  Time\n");
-        printf("             time for permute and solve:                      %10.6f s\n", t_solve); 
+        printf("             time for permute and solve:                      %10.6f s\n", t_solve);
         printf("\n");
       }
 #endif
@@ -216,17 +209,16 @@ int main (int argc, char *argv[]) {
     ///
     /// compute residual to check solutions
     ///
-    const double res = computeRelativeResidual(A, x, b);    
+    const double res = computeRelativeResidual(A, x, b);
 
     std::cout << "For small matrices (test.mtx), the residual can be large; try with a bigger matrix\n";
     std::cout << "CuSparseTriSolve: residual = " << res << "\n\n";
-
   }
 #else
   r_val = -1;
   std::cout << "CUDA is NOT configured in Trilinos" << std::endl;
 #endif
-  
+
   Kokkos::finalize();
 
   return r_val;

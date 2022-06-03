@@ -8,8 +8,7 @@
 
 namespace Tacho {
 
-    template<typename ArgWorkflowAlgo>
-    struct LU_Supernodes;
+template <typename ArgWorkflowAlgo> struct LU_Supernodes;
 
 }
 
