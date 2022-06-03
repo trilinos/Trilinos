@@ -70,7 +70,6 @@ namespace Intrepid2
            class OutputFieldType, class InputPointsType>
   struct Hierarchical_HCURL_TRI_Functor
   {
-    // TODO: revise this functor (everything below is copied from H(grad) implementation)
     using ExecutionSpace     = typename DeviceType::execution_space;
     using ScratchSpace       = typename ExecutionSpace::scratch_memory_space;
     using OutputScratchView  = Kokkos::View<OutputScalar*,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
@@ -98,16 +97,17 @@ namespace Intrepid2
     const int face_family_middle_[numFaceFamilies] = {1,2};
     const int face_family_end_   [numFaceFamilies] = {2,0};
     
-    Hierarchical_HCURL_TRI_Functor(EOperator opType, OutputFieldType output, InputPointsType inputPoints,
-                                    int polyOrder)
+    Hierarchical_HCURL_TRI_Functor(EOperator opType, OutputFieldType output, InputPointsType inputPoints, int polyOrder)
     : opType_(opType), output_(output), inputPoints_(inputPoints),
-      polyOrder_(polyOrder), defineVertexFunctions_(defineVertexFunctions),
+      polyOrder_(polyOrder),
       fad_size_output_(getScalarDimensionForView(output))
     {
       numFields_ = output.extent_int(0);
       numPoints_ = output.extent_int(1);
+      const int expectedCardinality = 3 * polyOrder_ + polyOrder_ * (polyOrder-1);
+      
       INTREPID2_TEST_FOR_EXCEPTION(numPoints_ != inputPoints.extent_int(0), std::invalid_argument, "point counts need to match!");
-      INTREPID2_TEST_FOR_EXCEPTION(numFields_ != (polyOrder_+1)*(polyOrder_+2)/2, std::invalid_argument, "output field size does not match basis cardinality");
+      INTREPID2_TEST_FOR_EXCEPTION(numFields_ != expectedCardinality, std::invalid_argument, "output field size does not match basis cardinality");
     }
     
     KOKKOS_INLINE_FUNCTION
@@ -183,7 +183,6 @@ namespace Intrepid2
                 const auto & edgeValue_y = output_(edgeBasisOrdinal,pointOrdinal,1);
                 const double alpha = i*2.0 + 1;
                 
-                // TODO: looks like we still need to implement shiftedScaledIntegratedJacobiValues()…
                 Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-1, s2, jacobiScaling);
                 for (int j=1; i+j <= max_ij_sum; j++)
                 {
@@ -252,7 +251,7 @@ namespace Intrepid2
            and
              [R^{2i}_{j-1}(s0,s1)] = d/dt L^{2i}_j(s1,s0+s1)
            We have implemented P^{alpha}_{j} as shiftedScaledJacobiValues,
-           and d/dt L^{alpha}_{j} as integratedJacobiValues_dt.
+           and d/dt L^{alpha}_{j} as shiftedScaledIntegratedJacobiValues_dt.
            */
           // rename the scratch memory to match our usage here:
           auto & P_2i_j_minus_1 = edge_field_values_at_point;
@@ -273,8 +272,8 @@ namespace Intrepid2
               const double alpha = i*2.0;
 
               Polynomials::shiftedScaledIntegratedLegendreValues(L_i, polyOrder_, lambda[1], lambda[0]+lambda[1]);
-              Polynomials::integratedJacobiValues_dt(     L_2i_j_dt, alpha, polyOrder_,   lambda[2], jacobiScaling);
-              Polynomials::integratedJacobiValues   (        L_2i_j, alpha, polyOrder_,   lambda[2], jacobiScaling);
+              Polynomials::shiftedScaledIntegratedJacobiValues_dt(L_2i_j_dt, alpha, polyOrder_,   lambda[2], jacobiScaling);
+              Polynomials::shiftedScaledIntegratedJacobiValues(      L_2i_j, alpha, polyOrder_,   lambda[2], jacobiScaling);
               Polynomials::shiftedScaledJacobiValues(P_2i_j_minus_1, alpha, polyOrder_-1, lambda[2], jacobiScaling);
               
               const auto & s0_dx = lambda_dx[0];
@@ -349,7 +348,7 @@ namespace Intrepid2
   template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double,
-           bool useDGBasis = false> // if useDGBasis is true, all basis functions will be associated with the interior
+           bool useCGBasis = true> // if useCGBasis is false, all basis functions will be associated with the interior
   class HierarchicalBasis_HCURL_TRI
   : public Basis<DeviceType,OutputScalar,PointScalar>
   {
@@ -370,8 +369,9 @@ namespace Intrepid2
   public:
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order of the basis.
+        \param [in] pointType - point type for nodal basis.  Ignored here (irrelevant for hierarchical/modal basis).
      */
-    HierarchicalBasis_HCURL_TRI(int polyOrder)
+    HierarchicalBasis_HCURL_TRI(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
     :
     polyOrder_(polyOrder)
     {
@@ -433,7 +433,7 @@ namespace Intrepid2
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
         const ordinal_type vertexDim = 0, edgeDim = 1, faceDim = 2;
 
-        if (!useDGBasis) {
+        if (useCGBasis) {
           {
             int tagNumber = 0;
             for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
@@ -448,6 +448,7 @@ namespace Intrepid2
               }
             }
             const int numFunctionsPerFace = numFaceFunctions; // just one face in the triangle
+            const int numFaces = 1;
             for (int faceOrdinal=0; faceOrdinal<numFaces; faceOrdinal++)
             {
               for (int functionOrdinal=0; functionOrdinal<numFunctionsPerFace; functionOrdinal++)
@@ -529,7 +530,7 @@ namespace Intrepid2
       
       using FunctorType = Hierarchical_HCURL_TRI_Functor<DeviceType, OutputScalar, PointScalar, OutputViewType, PointViewType>;
       
-      FunctorType functor(operatorType, outputValues, inputPoints, polyOrder_, defineVertexFunctions);
+      FunctorType functor(operatorType, outputValues, inputPoints, polyOrder_);
       
       const int outputVectorSize = getVectorSizeForHierarchicalParallelism<OutputScalar>();
       const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointScalar>();
@@ -565,7 +566,7 @@ namespace Intrepid2
     virtual BasisPtr<typename Kokkos::HostSpace::device_type, OutputScalar, PointScalar>
     getHostBasis() const override {
       using HostDeviceType = typename Kokkos::HostSpace::device_type;
-      using HostBasisType  = HierarchicalBasis_HCURL_TRI<HostDeviceType, OutputScalar, PointScalar, defineVertexFunctions>;
+      using HostBasisType  = HierarchicalBasis_HCURL_TRI<HostDeviceType, OutputScalar, PointScalar, useCGBasis>;
       return Teuchos::rcp( new HostBasisType(polyOrder_) );
     }
   };

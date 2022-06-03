@@ -177,7 +177,7 @@ namespace Intrepid2
               const auto & edgeValue = output_(edgeBasisOrdinal,pointOrdinal);
               const double alpha = i*2.0;
               
-              Polynomials::integratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-2, lambda[2], jacobiScaling);
+              Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-2, lambda[2], jacobiScaling);
               for (int j=1; i+j <= polyOrder_; j++)
               {
                 const auto & jacobiValue = jacobi_values_at_point(j);
@@ -265,7 +265,7 @@ namespace Intrepid2
            and
              [R^{2i}_{j-1}(s0,s1)] = d/dt L^{2i}_j(s1,s0+s1)
            We have implemented P^{alpha}_{j} as shiftedScaledJacobiValues,
-           and d/dt L^{alpha}_{j} as integratedJacobiValues_dt.
+           and d/dt L^{alpha}_{j} as shiftedScaledIntegratedJacobiValues_dt.
            */
           // rename the scratch memory to match our usage here:
           auto & P_2i_j_minus_1 = edge_field_values_at_point;
@@ -285,9 +285,9 @@ namespace Intrepid2
               
               const double alpha = i*2.0;
 
-              Polynomials::shiftedScaledIntegratedLegendreValues(L_i, polyOrder_, lambda[1], lambda[0]+lambda[1]);
-              Polynomials::integratedJacobiValues_dt(     L_2i_j_dt, alpha, polyOrder_,   lambda[2], jacobiScaling);
-              Polynomials::integratedJacobiValues   (        L_2i_j, alpha, polyOrder_,   lambda[2], jacobiScaling);
+              Polynomials::shiftedScaledIntegratedLegendreValues (L_i, polyOrder_, lambda[1], lambda[0]+lambda[1]);
+              Polynomials::shiftedScaledIntegratedJacobiValues_dt(L_2i_j_dt, alpha, polyOrder_, lambda[2], jacobiScaling);
+              Polynomials::shiftedScaledIntegratedJacobiValues   (   L_2i_j, alpha, polyOrder_, lambda[2], jacobiScaling);
               Polynomials::shiftedScaledJacobiValues(P_2i_j_minus_1, alpha, polyOrder_-1, lambda[2], jacobiScaling);
               
               const auto & s0_dx = lambda_dx[0];

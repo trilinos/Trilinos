@@ -728,6 +728,26 @@ namespace
     }
   }
 
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleNodalVersusHierarchical_HCURL )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HCURL_TRI;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HCURL_TRI;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-11;
+    const double absTol=1e-12;
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
   TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleNodalVersusHierarchical_HVOL )
   {
     using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_TRI;
@@ -737,8 +757,8 @@ namespace
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
-    const double relTol=1e-11; // -- is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
-    const double absTol=1e-12; // -- is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    const double relTol=1e-11;
+    const double absTol=1e-12;
     
     for (int polyOrder=0; polyOrder<5; polyOrder++)
     {
