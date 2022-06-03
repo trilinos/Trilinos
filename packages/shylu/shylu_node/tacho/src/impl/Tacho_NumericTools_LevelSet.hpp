@@ -2315,9 +2315,9 @@ namespace Tacho {
                 ++stat_level.n_kernel_launching;
               }
 
-              //const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
+              const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
 
-              //factorizeLU_OnDevice(pbeg, pend, h_buf_factor_ptr, work); 
+              factorizeLU_OnDevice(pbeg, pend, h_buf_factor_ptr, work); 
               Kokkos::fence();
 
               Kokkos::parallel_for("update factor", policy_update, functor); 
@@ -2458,7 +2458,7 @@ namespace Tacho {
                 ++stat_level.n_kernel_launching;
               }
               const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);              
-              //solveLU_LowerOnDevice(pbeg, pend, h_buf_solve_ptr, t); 
+              solveLU_LowerOnDevice(pbeg, pend, h_buf_solve_ptr, t); 
               Kokkos::fence();
               
               Kokkos::parallel_for("update lower", 
@@ -2536,7 +2536,7 @@ namespace Tacho {
               }
 
               const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-              //solveLU_UpperOnDevice(pbeg, pend, h_buf_solve_ptr, t);
+              solveLU_UpperOnDevice(pbeg, pend, h_buf_solve_ptr, t);
               Kokkos::fence();
             }
           }
