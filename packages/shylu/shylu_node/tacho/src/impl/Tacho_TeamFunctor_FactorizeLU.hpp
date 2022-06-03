@@ -236,7 +236,7 @@ namespace Tacho {
 
         UnmanagedViewType<ordinal_type_array> P(_piv.data()+offm*4, m*4);
 
-        const int bufbeg = _buf_ptr(lid), bufend = _buf_ptr(lid+1);
+        const int bufbeg = _buf_ptr(lid); //, bufend = _buf_ptr(lid+1);
         value_type * bufptr = _buf.data()+bufbeg;
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m); 
         

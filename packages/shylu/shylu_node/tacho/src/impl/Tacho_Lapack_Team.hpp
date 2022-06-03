@@ -261,6 +261,7 @@ namespace Tacho {
         const int iend = m-p-1, jend = n-p-1;
         T
           *__restrict__ alpha11 = A+(p  )*as0+(p  )*as1,
+          *__restrict__ AB      = A+(p  )*as0,
           *__restrict__ ABR     = alpha11,
           *__restrict__ a21     = A+(p+1)*as0+(p  )*as1,
           *__restrict__ a12     = A+(p  )*as0+(p+1)*as1,
@@ -288,8 +289,8 @@ namespace Tacho {
               ipiv[p] = p+idx+1;
             });
           if (idx) {
-            Kokkos::parallel_for(Kokkos::TeamVectorRange(member,1+jend),[&](const int &j) {
-                swap(ABR[j*as1], ABR[idx*as0+j*as1]);
+            Kokkos::parallel_for(Kokkos::TeamVectorRange(member,n),[&](const int &j) {
+                swap(AB[j*as1], AB[idx*as0+j*as1]);
               });
             member.team_barrier();
           }
