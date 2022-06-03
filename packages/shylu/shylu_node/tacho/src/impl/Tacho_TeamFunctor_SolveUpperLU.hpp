@@ -35,7 +35,6 @@ namespace Tacho {
     ConstUnmanagedViewType<ordinal_type_array> _compute_mode, _level_sids;
     ordinal_type _pbeg, _pend;
     
-    ConstUnmanagedViewType<ordinal_type_array> _piv;
     UnmanagedViewType<value_type_matrix> _t;
     ordinal_type _nrhs;
 
@@ -50,7 +49,6 @@ namespace Tacho {
     TeamFunctor_SolveUpperLU(const supernode_info_type &info,
                              const ordinal_type_array &compute_mode,
                              const ordinal_type_array &level_sids,
-                             const ordinal_type_array &piv,
                              const value_type_matrix &t,
                              const value_type_array &buf)
       :
@@ -58,7 +56,6 @@ namespace Tacho {
       _gid_colidx(info.gid_colidx),
       _compute_mode(compute_mode),
       _level_sids(level_sids),
-      _piv(piv),
       _t(t),
       _nrhs(t.extent(1)),
       _buf(buf)
@@ -93,8 +90,6 @@ namespace Tacho {
           const UnmanagedViewType<value_type_matrix> AL(uptr, m, m); uptr += m*m;
           const ordinal_type offm = s.row_begin;
           const auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
-
-          ConstUnmanagedViewType<ordinal_type_array> P(_piv.data()+offm*4, m*4);
 
           if (n_m > 0) {
             // update

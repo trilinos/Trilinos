@@ -72,7 +72,6 @@ namespace Tacho {
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
     void factorize(MemberType &member,
-                   const ordinal_type sid,
                    const supernode_type &s,
                    const ordinal_type_array &P,
                    const value_type_matrix &ABR) const {
@@ -242,7 +241,7 @@ namespace Tacho {
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m); 
         
         /// check the span does not go more than buf_ptr(lid+1)
-        factorize(member, sid, s, P, ABR);
+        factorize(member, s, P, ABR);
       } else if (mode == -1) {
         printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");
       } else {

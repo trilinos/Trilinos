@@ -91,7 +91,7 @@ namespace Tacho {
         Kokkos::parallel_for
           (Kokkos::TeamVectorRange(member,m),
            [&](const int &j) {
-            const bool single = (j == 0);
+            const bool single = (j == (m-1));
             for (ordinal_type i=0/*,cnt=0*/;i<m;++i) {
               // if (ipiv[i] <= 0) {
               //   if (++cnt%2) {

@@ -66,14 +66,12 @@ namespace Tacho {
           (Kokkos::TeamVectorRange(member, m),
            [&](const int &i) {
             perm[i] = i;
+            fpiv[i] = ipiv[i]-i-1;
           });
         member.team_barrier();
         Kokkos::single
           (Kokkos::PerTeam(member), [&]() {
             for (ordinal_type i=0;i<m;++i) {
-              const ordinal_type fla_pivot = ipiv[i]-i-1;
-              fpiv[i] = fla_pivot;
-
               /// apply pivots to perm vector
               if (fpiv[i]) {
                 const ordinal_type pidx = i+fpiv[i];

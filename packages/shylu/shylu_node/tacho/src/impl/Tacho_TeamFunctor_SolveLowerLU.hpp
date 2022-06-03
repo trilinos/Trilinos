@@ -91,9 +91,8 @@ namespace Tacho {
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (m > 0) {
-          value_type *uptr = s.u_buf;
           // solve
-          UnmanagedViewType<value_type_matrix> AT(uptr, m, m); uptr += m*m;
+          UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, m); 
 
           const ordinal_type offm = s.row_begin;
           auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
@@ -107,7 +106,7 @@ namespace Tacho {
           if (n_m > 0) {
             // update
             member.team_barrier();
-            UnmanagedViewType<value_type_matrix> AB(uptr, n_m, m); // uptr += m*n;
+            UnmanagedViewType<value_type_matrix> AB(s.l_buf, n_m, m); 
             UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
             Gemv<Trans::NoTranspose,GemvAlgoType>
               ::invoke(member, minus_one, AB, tT, zero, bB);

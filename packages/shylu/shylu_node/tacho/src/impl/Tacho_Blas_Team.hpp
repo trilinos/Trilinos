@@ -252,7 +252,7 @@ namespace Tacho {
                 });
             }
             Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
-                b2[i*bs0] -= a21[i*as0] * local_beta1;
+                b2[i*bs0] -= cjA(a21[i*as0]) * local_beta1;
               });
           }
         }
