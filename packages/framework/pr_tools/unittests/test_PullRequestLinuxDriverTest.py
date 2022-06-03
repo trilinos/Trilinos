@@ -76,7 +76,7 @@ class Test_parse_args(unittest.TestCase):
                                          ctest_drop_site='testing.sandia.gov',
                                          pullrequest_cdash_track='Pull Request',
                                          pullrequest_env_config_file='/dev/null/Trilinos_clone/pr_config/pullrequest.ini',
-                                         pullrequest_gen_config_file='/dev/null/Trilinos_clone/pr_config/gen-config.ini',
+                                         pullrequest_gen_config_file='/dev/null/Trilinos_clone/../GenConfig/src/gen-config.ini',
                                          workspace_dir='/dev/null/Trilinos_clone',
                                          filename_packageenables='../packageEnables.cmake',
                                          filename_subprojects='../package_subproject_list.cmake',
