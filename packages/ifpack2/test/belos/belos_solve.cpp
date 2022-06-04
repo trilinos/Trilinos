@@ -189,7 +189,7 @@ int main (int argc, char* argv[])
       prec->describe (*out, Teuchos::VERB_LOW);
     }
 
-    RCP<TMV> R = rcp(new TMV(*problem->getRHS()));
+    RCP<TMV> R = rcp(new TMV(*problem->getRHS(), Teuchos::Copy));
     problem->computeCurrResVec(&*R, &*problem->getLHS(), &*problem->getRHS());
     Teuchos::Array<Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(R->getNumVectors());
     R->norm2(norms);
