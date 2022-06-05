@@ -56,36 +56,32 @@
 #include "Adelus_pcomm.hpp"
 #include "Adelus_mytime.hpp"
 #include "Kokkos_Core.hpp"
+#include "KokkosBlas3_gemm.hpp"
 
 namespace Adelus {
 
-template<class ZView, class RHSView>
+template<class ZViewType, class RHSViewType>
 inline
-void forward(ZView& Z, RHSView& RHS)
+void forward(ZViewType& Z, RHSViewType& RHS, int& my_num_rhs)
 {
-  //NOTE: Currently assume that Z and RHS reside in host memory, and 
-  //                            there is only a single RHS vector
-  using value_type = typename ZView::value_type ;
-#ifdef PRINT_STATUS
-  using execution_space = typename ZView::device_type::execution_space ;
-  using memory_space    = typename ZView::device_type::memory_space ;
-#endif
-  using ViewVectorType  =  Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::HostSpace>;
+  //TODO: add host pinned memory support
+  using value_type      = typename ZViewType::value_type ;
+  using execution_space = typename ZViewType::device_type::execution_space ;
+  using memory_space    = typename ZViewType::device_type::memory_space ;
+  using ViewMatrixType  =  Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space>;
 
-  int rhs_col;     // torus-wrap column containing the rhs
   int k_row;       // torus-wrap row corresponding to kth global row
   int k_col;       // torus-wrap column corresponding to kth global col
   int istart;      // Starting row index for pivot column
   int count_row;   // dummy index
+  value_type d_one     = static_cast<value_type>( 1.0);
+  value_type d_min_one = static_cast<value_type>(-1.0);
 
-  value_type ck;   // rhs corresponding to current column of the backsubstitution
-  ViewVectorType piv_col( "piv_col", my_rows ); // portion of pivot column I am sending
-
-  MPI_Request msgrequest;
-  MPI_Status msgstatus;
+  ViewMatrixType piv_col( "piv_col", my_rows, 1 ); // portion of pivot column I am sending
+  ViewMatrixType ck( "ck", 1, RHS.extent(1) ); // rhs corresponding to current column of the backsubstitution
 
 #ifdef PRINT_STATUS
-  printf("Rank %i -- forward() Begin forward solve with myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", me, myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ncols_matrix, my_rows, my_cols, my_rhs, nrhs, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+  printf("Rank %i -- forward() Begin forward solve with myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, my_num_rhs %d, value_type %s, execution_space %s, memory_space %s\n", me, myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ncols_matrix, my_rows, my_cols, my_rhs, nrhs, my_num_rhs, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
 #endif
 
 #ifdef GET_TIMING
@@ -93,35 +89,43 @@ void forward(ZView& Z, RHSView& RHS)
   t1 = MPI_Wtime();
 #endif
 
-  // Perform the Forward Substitution:
-  rhs_col = 0;
+  // Perform the Forward Substitution
   for (int k=0; k<= nrows_matrix-2; k++) {
     k_row=k%nprocs_col;
     k_col=k%nprocs_row;
     istart = (k+1-myrow)/nprocs_col;
     if (istart * nprocs_col < k+1-myrow) istart++;
-    count_row = 0;
-    for (int i=istart;i<=my_rows-1;i++) {
-      piv_col(count_row)=Z(i,k/nprocs_row);
-      count_row++;
-    }
-    if (mycol == rhs_col && myrow == k_row) ck = RHS(k/nprocs_col,0);
-    if (mycol == rhs_col) {
-      MPI_Irecv(reinterpret_cast<char *>(piv_col.data()), count_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, 0, row_comm, &msgrequest);
-    }
-    if (mycol == k_col) {
-      MPI_Send(reinterpret_cast<char *>(piv_col.data()), count_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, rhs_col, 0, row_comm);
-    }
-    if (mycol == rhs_col) {
-      MPI_Wait(&msgrequest,&msgstatus);
-    }
-    if (mycol == rhs_col) {
-      MPI_Bcast((char *)(&ck),sizeof(ADELUS_DATA_TYPE),MPI_CHAR,k_row,col_comm);
-      count_row=0;
 
-      for (int i=istart;i<=my_rows-1;i++) {
-        RHS(i,0) = RHS(i,0) - piv_col(count_row) * ck;
-        count_row++;
+    if (istart < my_rows) {  
+      Kokkos::deep_copy( subview(piv_col, Kokkos::make_pair(0, my_rows - istart), 0), 
+                         subview(Z, Kokkos::make_pair(istart, my_rows), k/nprocs_row) );
+    }
+    count_row = my_rows - istart;
+
+    //Note: replace MPI_Send/MPI_Irecv with MPI_Bcast
+    //      Rank k_col broadcasts the pivot_col to all
+    //      other ranks in the row_comm
+    MPI_Bcast(reinterpret_cast<char *>(piv_col.data()), count_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
+
+    if (my_num_rhs > 0) {
+      //ck = RHS(k/nprocs_col,0);
+      //MPI_Bcast((char *)(&ck),sizeof(ADELUS_DATA_TYPE),MPI_CHAR,k_row,col_comm);
+      //count_row=0;
+      //printf("Point 2: k %d, istart %d, my_rows %d\n", k, istart, my_rows);
+      //for (int i=istart;i<=my_rows-1;i++) {
+      //  RHS(i,0) = RHS(i,0) - piv_col(count_row) * ck;
+      //  count_row++;
+      //}
+      int curr_lrid = k/nprocs_col;//note: nprocs_col (global var) cannot be read in a device function 
+      Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,RHS.extent(1)), KOKKOS_LAMBDA (const int i) {
+        ck(0,i) = RHS(curr_lrid,i);
+      });
+      Kokkos::fence();
+      MPI_Bcast(reinterpret_cast<char *>(ck.data()), RHS.extent(1)*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_row, col_comm);
+      auto sub_pivot_col = subview(piv_col, Kokkos::make_pair(0, my_rows - istart), Kokkos::ALL());
+      auto sub_rhs       = subview(RHS, Kokkos::make_pair(istart, my_rows), Kokkos::ALL());
+      if (istart < my_rows) {
+        KokkosBlas::gemm("N", "N", d_min_one, sub_pivot_col, ck, d_one, sub_rhs);
       }
     }
     MPI_Barrier(MPI_COMM_WORLD);
