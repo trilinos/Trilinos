@@ -13,18 +13,18 @@ using magnitude_type = typename Tacho::ArithTraits<value_type>::mag_type;
 
 static const std::string MM_TEST_FILE= std::is_same<value_type,magnitude_type>::value ? "test_double.mtx" : "test_dcomplex.mtx";
 
-#if defined(KOKKOS_ENABLE_SERIAL)
-static Kokkos::Impl::HostThreadTeamMember<Kokkos::Serial>                                             
-host_serial_member() {                                                                              
-  auto& data = Kokkos::Serial().impl_internal_space_instance()->m_thread_team_data;                   
-  return Kokkos::Impl::HostThreadTeamMember<Kokkos::Serial>(data);                                    
-}
-#else
-int host_serial_member() { 
-  throw std::logic_error("Error: host serial member is used while serial execution space is not enabled");
-  return -1;
-}                                                                             
-#endif
+// #if defined(KOKKOS_ENABLE_SERIAL)
+// static Kokkos::Impl::HostThreadTeamMember<Kokkos::Serial>                                             
+// host_serial_member() {                                                                              
+//   auto& data = Kokkos::Serial().impl_internal_space_instance()->m_thread_team_data;                   
+//   return Kokkos::Impl::HostThreadTeamMember<Kokkos::Serial>(data);                                    
+// }
+// #else
+// int host_serial_member() { 
+//   throw std::logic_error("Error: host serial member is used while serial execution space is not enabled");
+//   return -1;
+// }                                                                             
+// #endif
 
 #include "Tacho_Test.hpp"
 
