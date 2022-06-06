@@ -469,20 +469,6 @@ LocalFilter<MatrixType>::
   }
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void
-LocalFilter<MatrixType>::
-getGlobalRowCopy (global_ordinal_type globalRow,
-                  const Teuchos::ArrayView<global_ordinal_type>& Indices,
-                  const Teuchos::ArrayView<scalar_type>& Values,
-                  size_t& numEntries) const {
-  using IST = typename row_matrix_type::impl_scalar_type;
-  nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
-  getGlobalRowCopy(globalRow,ind_in,val_in,numEntries);  
-}
-#endif
 
 template<class MatrixType>
 void
@@ -589,22 +575,6 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   }
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void
-LocalFilter<MatrixType>::
-getLocalRowCopy (local_ordinal_type globalRow,
-                 const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                 const Teuchos::ArrayView<scalar_type> &Values,
-             size_t &NumEntries) const
-{
-  using IST = typename row_matrix_type::impl_scalar_type;
-  nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
-  getLocalRowCopy(globalRow,ind_in,val_in,NumEntries);  
-}
-#endif
-
 
 template<class MatrixType>
 void
@@ -617,18 +587,6 @@ getGlobalRowView (global_ordinal_type /*GlobalRow*/,
     "Ifpack2::LocalFilter does not implement getGlobalRowView.");
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void
-LocalFilter<MatrixType>::
-getGlobalRowView (global_ordinal_type /* GlobalRow */,
-                  Teuchos::ArrayView<const global_ordinal_type> &/* indices */,
-                  Teuchos::ArrayView<const scalar_type> &/* values */) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-    "Ifpack2::LocalFilter does not implement getGlobalRowView.");
-}
-#endif
 
 template<class MatrixType>
 void
@@ -640,20 +598,6 @@ getLocalRowView (local_ordinal_type /*LocalRow*/,
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
     "Ifpack2::LocalFilter does not implement getLocalRowView.");
 }
-
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void
-LocalFilter<MatrixType>::
-getLocalRowView (local_ordinal_type /* LocalRow */,
-                 Teuchos::ArrayView<const local_ordinal_type> &/* indices */,
-                 Teuchos::ArrayView<const scalar_type> &/* values */) const
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-    "Ifpack2::LocalFilter does not implement getLocalRowView.");
-}
-#endif
 
 
 template<class MatrixType>
