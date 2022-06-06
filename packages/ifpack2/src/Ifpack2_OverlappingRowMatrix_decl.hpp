@@ -220,13 +220,7 @@ public:
                     nonconst_global_inds_host_view_type &Indices,
                     nonconst_values_host_view_type &Values,
                     size_t& NumEntries) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getGlobalRowCopy (global_ordinal_type GlobalRow,
-                    const Teuchos::ArrayView<global_ordinal_type> &Indices,
-                    const Teuchos::ArrayView<scalar_type> &Values,
-                    size_t &NumEntries) const;
-#endif
+
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
     \param LocalRow - (In) Local row number for which indices are desired.
@@ -243,13 +237,6 @@ public:
                    nonconst_local_inds_host_view_type &Indices,
                    nonconst_values_host_view_type &Values,
                    size_t& NumEntries) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getLocalRowCopy (local_ordinal_type LocalRow,
-                   const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                   const Teuchos::ArrayView<scalar_type> &Values,
-                   size_t &NumEntries) const;
-#endif
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -265,12 +252,7 @@ public:
   getGlobalRowView (global_ordinal_type GlobalRow,
                     global_inds_host_view_type &indices,
                     values_host_view_type &values) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getGlobalRowView (global_ordinal_type GlobalRow,
-                    Teuchos::ArrayView<const global_ordinal_type> &indices,
-                    Teuchos::ArrayView<const scalar_type> &values) const;
-#endif
+
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
     \param LocalRow - (In) Local row number for which indices are desired.
@@ -285,12 +267,6 @@ public:
   getLocalRowView (local_ordinal_type LocalRow,
                    local_inds_host_view_type & indices,
                    values_host_view_type & values) const;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  virtual void
-  getLocalRowView (local_ordinal_type LocalRow,
-                   Teuchos::ArrayView<const local_ordinal_type> &indices,
-                   Teuchos::ArrayView<const scalar_type> &values) const;
-#endif
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
