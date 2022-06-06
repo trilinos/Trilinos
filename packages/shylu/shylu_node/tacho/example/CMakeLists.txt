@@ -9,86 +9,10 @@ FILE(GLOB SOURCES *.cpp)
 SET(LIBRARIES tacho)
 
 TRIBITS_ADD_EXECUTABLE(
-  Tacho_ExampleCombineDataFileToMatrixMarketFile
+  Tacho_ExampleCombineDataFileToMatrixMarketFile.x
   NOEXESUFFIX
   NOEXEPREFIX
   SOURCES Tacho_ExampleCombineDataFileToMatrixMarketFile.cpp
-  COMM serial mpi
-)
-
-TRIBITS_ADD_EXECUTABLE(
-  Tacho_ExampleDeviceDenseSolverDouble
-  NOEXESUFFIX
-  NOEXEPREFIX
-  SOURCES Tacho_ExampleDeviceDenseSolver_double.cpp
-  COMM serial mpi
-)
-TRIBITS_ADD_EXECUTABLE(
-  Tacho_ExampleDeviceDenseSolverDoubleComplex
-  NOEXESUFFIX
-  NOEXEPREFIX
-  SOURCES Tacho_ExampleDeviceDenseSolver_dcomplex.cpp
-  COMM serial mpi
-)
-
-#
-# Supernodes
-# 
-# TRIBITS_ADD_EXECUTABLE(
-#   Tacho_ExampleCholSupernodes
-#   NOEXESUFFIX
-#   NOEXEPREFIX
-#   SOURCES Tacho_ExampleCholSupernodes.cpp
-#   COMM serial mpi
-# )
-# TRIBITS_ADD_EXECUTABLE(
-#   Tacho_ExampleCholTriSolveVar0
-#   TARGET_DEFINES -DTACHO_USE_TRISOLVE_VARIANT=0
-#   NOEXESUFFIX
-#   NOEXEPREFIX
-#   SOURCES Tacho_ExampleCholTriSolve.cpp
-#   COMM serial mpi
-# )
-# TRIBITS_ADD_EXECUTABLE(
-#   Tacho_ExampleCholTriSolveVar1
-#   TARGET_DEFINES -DTACHO_USE_TRISOLVE_VARIANT=1
-#   NOEXESUFFIX
-#   NOEXEPREFIX
-#   SOURCES Tacho_ExampleCholTriSolve.cpp
-#   COMM serial mpi
-# )
-# TRIBITS_ADD_EXECUTABLE(
-#   Tacho_ExampleCholLevelSetVar0
-#   TARGET_DEFINES -DTACHO_USE_TRISOLVE_VARIANT=0
-#   NOEXESUFFIX
-#   NOEXEPREFIX
-#   SOURCES Tacho_ExampleCholLevelSet.cpp
-#   COMM serial mpi
-# )
-# TRIBITS_ADD_EXECUTABLE(
-#   Tacho_ExampleCholLevelSetVar1
-#   TARGET_DEFINES -DTACHO_USE_TRISOLVE_VARIANT=1
-#   NOEXESUFFIX
-#   NOEXEPREFIX
-#   SOURCES Tacho_ExampleCholLevelSet.cpp
-#   COMM serial mpi
-# )
-
-#
-# Solver
-#
-TRIBITS_ADD_EXECUTABLE(
-  Tacho_ExampleSolverDouble
-  NOEXESUFFIX
-  NOEXEPREFIX
-  SOURCES Tacho_ExampleSolver_double.cpp
-  COMM serial mpi
-)
-TRIBITS_ADD_EXECUTABLE(
-  Tacho_ExampleSolverDoubleComplex
-  NOEXESUFFIX
-  NOEXEPREFIX
-  SOURCES Tacho_ExampleSolver_dcomplex.cpp
   COMM serial mpi
 )
 
@@ -96,14 +20,14 @@ TRIBITS_ADD_EXECUTABLE(
 # Driver
 #
 TRIBITS_ADD_EXECUTABLE(
-  Tacho_ExampleDriverDouble
+  Tacho_ExampleDriverDouble.x
   NOEXESUFFIX
   NOEXEPREFIX
   SOURCES Tacho_ExampleDriver_double.cpp
   COMM serial mpi
 )
 TRIBITS_ADD_EXECUTABLE(
-  Tacho_ExampleDriverDoubleComplex
+  Tacho_ExampleDriverDoubleComplex.x
   NOEXESUFFIX
   NOEXEPREFIX
   SOURCES Tacho_ExampleDriver_dcomplex.cpp
@@ -114,7 +38,7 @@ TRIBITS_ADD_EXECUTABLE(
 # External Interface
 # 
 TRIBITS_ADD_EXECUTABLE(
-  Tacho_ExampleExternalInterface
+  Tacho_ExampleExternalInterface.x
   NOEXESUFFIX
   NOEXEPREFIX
   SOURCES Tacho_ExampleExternalInterface.cpp
@@ -122,56 +46,31 @@ TRIBITS_ADD_EXECUTABLE(
 )
 
 #
-# DenseByBlocks 
-#
-# TRIBITS_ADD_EXECUTABLE(
-#   Tacho_ExampleDenseByBlocks
-#   NOEXESUFFIX
-#   NOEXEPREFIX
-#   SOURCES Tacho_ExampleDenseByBlocks.cpp
-#   COMM serial mpi
-# )
-
-#
 # NVIDIA cuSolver
 # 
 IF(Kokkos_ENABLE_CUDA) 
   TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleCholCuSolver
+    Tacho_ExampleCholCuSolver.x
     NOEXESUFFIX
     NOEXEPREFIX
     SOURCES Tacho_ExampleCholCuSolver.cpp
     COMM serial mpi
   )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleCuSparseTriSolve
-  #   NOEXESUFFIX
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleCuSparseTriSolve.cpp
-  #   COMM serial mpi
-  # )
 ENDIF()
 
 #
-# Intel MKL Pardiso and PerfTest
+# Intel MKL Pardiso 
 #
 IF(Kokkos_ENABLE_OPENMP OR Kokkos_ENABLE_SERIAL)
   IF(TPL_ENABLE_MKL)
     TRIBITS_ADD_EXECUTABLE(
-      Tacho_ExampleCholPardiso
+      Tacho_ExampleCholPardiso.x
       NOEXESUFFIX
       NOEXEPREFIX
       SOURCES Tacho_ExampleCholPardiso.cpp
       COMM serial mpi
     )
   ENDIF()
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExamplePerfTest
-  #   NOEXESUFFIX
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExamplePerfTest.cpp
-  #   COMM serial mpi
-  # )
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tacho_SimpleSparseTest_File

@@ -42,6 +42,9 @@
 #include "Tacho_SetIdentity.hpp"
 #include "Tacho_SetIdentity_Internal.hpp"
 
+#include "Tacho_ApplyPivots.hpp"
+#include "Tacho_ApplyPivots_Internal.hpp"
+
 #include "Tacho_ApplyPermutation.hpp"
 #include "Tacho_ApplyPermutation_Internal.hpp"
 

@@ -15,6 +15,7 @@ namespace Tacho {
 
 /// various implementation for different uplo and algo parameters
 template <typename ArgPivotMode, typename ArgSide, typename ArgDirect, typename ArgAlgo> struct ApplyPivots;
+
 } // namespace Tacho
 
 #endif
