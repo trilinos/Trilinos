@@ -171,19 +171,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Kokkos_DistObject
-  TPETRA_ENABLE_KOKKOS_DISTOBJECT
-  "Experimental option to access alternate DistObject interface, DistObjectKA.  This option has been DEPRECATED and must no longer be set.  See Github Issue #387.  Do NOT set this option."
-  OFF
-  )
-IF (DEFINED Tpetra_ENABLE_Kokkos_DistObject)
-  IF (Tpetra_ENABLE_Kokkos_DistObject)
-    MESSAGE(FATAL_ERROR "The Tpetra_ENABLE_Kokkos_DistObject option has been DEPRECATED and must no longer be set.  See Github Issue #387.")
-  ENDIF ()
-ENDIF ()
-
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_MMM_Timings
   HAVE_TPETRA_MMM_TIMINGS
   "Enable the timings for the MMM kernels"
@@ -218,16 +205,6 @@ ENDIF()
 # Set corresponding value of CPP macro
 GLOBAL_SET(TPETRA_HAVE_KOKKOS_REFACTOR ${Tpetra_Have_Kokkos_Refactor})
 
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_Kokkos_Refactor_Map
-  TPETRA_USE_KOKKOS_REFACTOR_MAP
-  "This option has been DEPRECATED and its value will be IGNORED.  We keep it only for backwards compatibility."
-  OFF
-  )
-IF (Tpetra_ENABLE_Kokkos_Refactor_Map)
-  MESSAGE(FATAL_ERROR "The Tpetra_ENABLE_Kokkos_Refactor_Map option has been DEPRECATED and must no longer be set.  It turns out that we took a different path with the refactor of Tpetra::Map, that didn't require two separate versions of the class.  Thus, there is no need to ask for the Kokkos refactor version of Map; there was only ever one version of Map.")
-ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_BCRS_Point_Import
