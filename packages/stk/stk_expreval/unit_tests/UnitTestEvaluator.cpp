@@ -2543,7 +2543,7 @@ TEST(UnitTestEvaluator, testAvoidEvaluatingUnsafeTernaryBranch)
   stk::expreval::getCFunctionMap().erase("length_two_array");
 }
 
-void checkUniformDist(const Kokkos::View<double*>& vals) {
+void checkUniformDist(std::vector<double> const& vals) {
   const int NUM_SAMPLES = (int)vals.size();
   const double EXPECTED_MEAN = 0.5;
   const double EXPECTED_SIGMA = 1./std::sqrt(12.);
@@ -2576,7 +2576,7 @@ void checkUniformDist(const Kokkos::View<double*>& vals) {
 void testRandom(const char * expression)
 {
   const int NUM_SAMPLES = 10000;
-  Kokkos::View<double*> results("Results", NUM_SAMPLES);
+  std::vector<double> results(NUM_SAMPLES);
   for (int i = 0; i < NUM_SAMPLES; ++i) {
     results[i] = evaluate(expression);
   }
@@ -2591,7 +2591,7 @@ TEST(UnitTestEvaluator, testFunction_rand)
 void Ngp_testRandom(const char * expression)
 {
   const int NUM_SAMPLES = 10000;
-  Kokkos::View<double*> results("Results", NUM_SAMPLES);
+  std::vector<double> results(NUM_SAMPLES);
   for (int i = 0; i < NUM_SAMPLES; ++i) {
     results[i] = device_evaluate(expression);
   }
@@ -2677,29 +2677,13 @@ TEST(UnitTestEvaluator, Ngp_testFunction_random1_repeatability)
 }
 #endif
 
-TEST(UnitTestEvaluator, testFunction_ts_random_repeatability)
-{
-  std::vector<double> result(10);
-  double time = 0;
-  for (unsigned i = 0; i < result.size(); ++i) {
-    result[i] = evaluate("ts_random(t, 1.0, 2.0, 3.0)", {{"t", time}});
-    time += 0.1;
-  }
-
-  time = 0;
-  for (unsigned i = 0; i < result.size(); ++i) {
-    EXPECT_DOUBLE_EQ(evaluate("ts_random(t, 1.0, 2.0, 3.0)", {{"t", time}}), result[i]);
-    time += 0.1;
-  }
-}
-
 TEST(UnitTestEvaluator, testFunction_ts_random_distribution)
 {
   const int NX = 50;
   const int NY = 50;
   const int NZ = 10;
 
-  Kokkos::View<double*> result("Result", NX*NY*NZ);
+  std::vector<double> result(NX*NY*NZ);
 
   int n = 0;
 
@@ -2715,6 +2699,46 @@ TEST(UnitTestEvaluator, testFunction_ts_random_distribution)
   }
 
   checkUniformDist(result);
+}
+
+TEST(UnitTestEvaluator, Ngp_testFunction_ts_random_distribution)
+{
+  const int NX = 50;
+  const int NY = 50;
+  const int NZ = 10;
+
+  std::vector<double> result(NX*NY*NZ);
+
+  int n = 0;
+
+  for(int i = 0; i < NX; ++i) {
+    for(int j = 0; j < NY; ++j) {
+      for(int k = 0; k < NZ; ++k) {
+        const double x = (i-10)*1.1e-3;
+        const double y = (j-20)*1.23e-4;
+        const double z = (k+1)*1.1e-1;
+        result[n++] = device_evaluate("ts_random(0.1,x,y,z)", {{"x",x}, {"y",y}, {"z",z}});
+      }
+    }
+  }
+
+  checkUniformDist(result);
+}
+
+TEST(UnitTestEvaluator, testFunction_ts_random_repeatability)
+{
+  std::vector<double> result(10);
+  double time = 0;
+  for (unsigned i = 0; i < result.size(); ++i) {
+    result[i] = evaluate("ts_random(t, 1.0, 2.0, 3.0)", {{"t", time}});
+    time += 0.1;
+  }
+
+  time = 0;
+  for (unsigned i = 0; i < result.size(); ++i) {
+    EXPECT_DOUBLE_EQ(evaluate("ts_random(t, 1.0, 2.0, 3.0)", {{"t", time}}), result[i]);
+    time += 0.1;
+  }
 }
 
 TEST(UnitTestEvaluator, Ngp_testFunction_ts_random_repeatability)

@@ -11,7 +11,6 @@
 #define STK_COUPLING_SPLITCOMMS_HPP
 
 #include <stk_util/parallel/Parallel.hpp>
-#include <stk_coupling/impl_VersionUtils.hpp>
 #include <string>
 #include <vector>
 #include <utility>
@@ -51,7 +50,10 @@ class SplitCommsImpl
 
   PairwiseRanks get_pairwise_root_ranks(int otherColor) const;
 
+#ifndef STK_HIDE_DEPRECATED_CODE  // remove June 2022
+STK_DEPRECATED
   bool is_coupling_version_deprecated() const;
+#endif
 
   bool is_initialized() const;
 
@@ -83,7 +85,6 @@ private:
   bool m_isInitialized = false;
   bool m_freeCommsInDestructor = false;
   bool m_haveFreedComms = false;
-  impl::CouplingCompatibilityMode m_compatibilityMode;
 };
 
 }
@@ -111,7 +112,10 @@ class SplitComms
 
     PairwiseRanks get_pairwise_root_ranks(int otherColor) const { return m_impl->get_pairwise_root_ranks(otherColor); }
 
+#ifndef STK_HIDE_DEPRECATED_CODE  // remove June 2022
+    STK_DEPRECATED
     bool is_coupling_version_deprecated() const { return m_impl->is_coupling_version_deprecated(); }
+#endif
 
     bool is_initialized() const { return m_impl->is_initialized(); }
 

@@ -36,6 +36,8 @@
 #include "stk_balance/internal/privateDeclarations.hpp"
 #include "stk_balance/internal/balanceCoincidentElements.hpp"
 #include "stk_balance/internal/DetectAndFixMechanisms.hpp"
+#include "stk_balance/internal/Diagnostics.hpp"
+#include "stk_balance/internal/DiagnosticsPrinter.hpp"
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <limits>
 
@@ -101,8 +103,9 @@ bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& st
       internal::print_rebalance_metrics(num_global_entity_migrations, max_global_entity_migrations, stkMeshBulkData);
   }
 
-  internal::logMessage(stkMeshBulkData.parallel(), "Finished rebalance");
+  internal::compute_balance_diagnostics(stkMeshBulkData, balanceSettings);
 
+  internal::logMessage(stkMeshBulkData.parallel(), "Finished rebalance");
 
   return (num_global_entity_migrations > 0);
 }

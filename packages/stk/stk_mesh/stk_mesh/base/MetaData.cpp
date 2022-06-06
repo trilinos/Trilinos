@@ -366,6 +366,7 @@ Part & MetaData::declare_internal_part( const std::string & p_name )
 
 Part & MetaData::declare_part( const std::string & p_name , EntityRank rank, bool arg_force_no_induce )
 {
+  ThrowRequireMsg(is_initialized(), "MetaData: Can't declare ranked part until spatial dimension has been set.");
   require_valid_entity_rank(rank);
 
   return *m_part_repo.declare_part( p_name , rank, arg_force_no_induce );

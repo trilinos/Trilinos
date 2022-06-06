@@ -227,19 +227,13 @@ void communicate_field_data(
 }
 
 void communicate_field_data(const BulkData& mesh ,
-                            const std::vector< const FieldBase *> & fields,
-                            bool syncOnlySharedOrGhosted)
+                             const std::vector< const FieldBase *> & fields,
+                             bool syncOnlySharedOrGhosted)
 {
   const int parallel_size = mesh.parallel_size();
   if ( fields.empty() || parallel_size == 1) {
     return;
   }
-
-  const int numFields = fields.size();
-
-  static std::vector<unsigned char> send_and_recv_data;
-
-  const EntityCommListInfoVector &comm_info_vec = mesh.internal_comm_list();
 
   Selector ghostSelector = !mesh.mesh_meta_data().locally_owned_part();
   do_initial_sync_to_host(fields, ghostSelector, syncOnlySharedOrGhosted);
@@ -255,45 +249,32 @@ void communicate_field_data(const BulkData& mesh ,
   ThrowAssertMsg(static_cast<size_t>(std::distance(send_sizes, recvOffsets+parallel_size+1)) == int_buffer.size(),
              "communicate_field_data: sizing error in poor-man's memory-pool.");
 
-  std::vector<std::pair<int,int> > fieldRange(fields.size(), std::make_pair(-1,-1));
-  compute_field_entity_ranges(comm_info_vec, fields, fieldRange);
+  std::vector<int> procs;
 
-  //this first loop calculates send_sizes and recv_sizes.
-  for(int fi=0; fi<numFields; ++fi)
-  {
-      const FieldBase & f = *fields[fi];
-      for(int i = fieldRange[fi].first; i<fieldRange[fi].second; ++i)
-      {
-          const MeshIndex& meshIndex = mesh.mesh_index(comm_info_vec[i].entity);
-          const Bucket& bucket = *meshIndex.bucket;
+  const EntityCommListInfoVector &comm_info_vec = mesh.internal_comm_list();
+  for(const EntityCommListInfo& commInfo : comm_info_vec) {
+    Entity entity = commInfo.entity;
+    const MeshIndex& meshIndex = mesh.mesh_index(entity);
+    const Bucket& bucket = *meshIndex.bucket;
 
-          const unsigned bucketId = bucket.bucket_id();
-          const unsigned e_size = field_bytes_per_entity(f, bucketId);
-
-          if (e_size == 0) {
-              continue;
-          }
-
-          const bool owned = bucket.owned();
-          if(owned)
-          {
-              const EntityCommInfoVector& infovec = comm_info_vec[i].entity_comm->comm_map;
-              const int infovec_size = infovec.size();
-              for(int j=0; j<infovec_size; ++j)
-              {
-                  const int proc = infovec[j].proc;
-
-                  const bool proc_already_found = j>0 && find_proc_before_index(infovec, proc, j); 
-                  if (!proc_already_found) {
-                      send_sizes[proc] += e_size;
-                  }
-              }
-          }
-          else {
-              const int owner = mesh.parallel_owner_rank(comm_info_vec[i].entity);
-              recv_sizes[owner] += e_size;
-          }
+    const unsigned bucketId = bucket.bucket_id();
+    unsigned numBytes = 0;
+    for(const FieldBase* f : fields) {
+      if (f->entity_rank() == bucket.entity_rank()) {
+        numBytes += field_bytes_per_entity(*f, bucketId);
       }
+    }
+
+    if (bucket.owned()) {
+      mesh.comm_procs(entity, procs);
+      for(int p : procs) {
+        send_sizes[p] += numBytes;
+      }
+    }
+    else {
+      int owner = mesh.parallel_owner_rank(entity);
+      recv_sizes[owner] += numBytes;
+    }
   }
 
   size_t totalSendSize = 0;
@@ -311,78 +292,60 @@ void communicate_field_data(const BulkData& mesh ,
   sendOffsets[parallel_size] = totalSendSize;
   recvOffsets[parallel_size] = totalRecvSize;
 
+  static std::vector<unsigned char> send_and_recv_data;
   send_and_recv_data.resize(totalSendSize + totalRecvSize);
   unsigned char* send_data = send_and_recv_data.data();
   unsigned char* recv_data = send_data+totalSendSize;
 
-  //now pack the send buffers
-  for(int fi=0; fi<numFields; ++fi)
-  {
-      const FieldBase & f = *fields[fi];
-      for(int i = fieldRange[fi].first; i<fieldRange[fi].second; ++i)
-      {
-          const MeshIndex& meshIndex = mesh.mesh_index(comm_info_vec[i].entity);
-          const Bucket& bucket = *meshIndex.bucket;
+  for(const EntityCommListInfo& commInfo : comm_info_vec) {
+    Entity entity = commInfo.entity;
+    const MeshIndex& meshIndex = mesh.mesh_index(entity);
+    const Bucket& bucket = *meshIndex.bucket;
 
-          if (bucket.owned()) {
-              const unsigned bucketId = bucket.bucket_id();
-              const unsigned e_size = field_bytes_per_entity(f, bucketId);
-              if (e_size > 0) {
-                const unsigned char* field_data_ptr = reinterpret_cast<unsigned char*>(stk::mesh::field_data(f, bucketId, meshIndex.bucket_ordinal, e_size));
-
-                const EntityCommInfoVector& infovec = comm_info_vec[i].entity_comm->comm_map;
-                const int infovec_size = infovec.size();
-                for(int j=0; j<infovec_size; ++j)
-                {
-                    const int proc = infovec[j].proc;
-    
-                    const bool proc_already_found = j>0 && find_proc_before_index(infovec, proc, j);
-                    if (!proc_already_found) {
-                        unsigned char* dest_ptr = &(send_data[sendOffsets[proc]+send_sizes[proc]]);
-                        std::memcpy(dest_ptr, field_data_ptr, e_size);
-                        send_sizes[proc] += e_size;
-                    }
-                }
-              }
+    if (bucket.owned()) {
+      const unsigned bucketId = bucket.bucket_id();
+      mesh.comm_procs(entity, procs);
+      for(int p : procs) {
+        unsigned char* dest_ptr = &(send_data[sendOffsets[p]+send_sizes[p]]);
+        for(const FieldBase* f : fields) {
+          if (f->entity_rank() == bucket.entity_rank()) {
+            const unsigned numBytes = field_bytes_per_entity(*f, bucketId);
+            if (numBytes > 0) {
+              unsigned char* fieldDataPtr = reinterpret_cast<unsigned char*>(field_data(*f, entity));
+              std::memcpy(dest_ptr, fieldDataPtr, numBytes);
+              dest_ptr += numBytes;
+              send_sizes[p] += numBytes;
+            }
           }
+        }
       }
+    }
   }
 
   parallel_data_exchange_nonsym_known_sizes_t(sendOffsets, send_data,
                                               recvOffsets, recv_data, mesh.parallel());
 
-  //now unpack and store the recvd data
-  for(int fi=0; fi<numFields; ++fi)
-  {
-      const FieldBase & f = *fields[fi];
+  for(const EntityCommListInfo& commInfo : comm_info_vec) {
+    Entity entity = commInfo.entity;
+    const MeshIndex& meshIndex = mesh.mesh_index(entity);
+    const Bucket& bucket = *meshIndex.bucket;
 
-      for(int i = fieldRange[fi].first; i<fieldRange[fi].second; ++i)
-      {
-          const MeshIndex& meshIndex = mesh.mesh_index(comm_info_vec[i].entity);
-          const Bucket& bucket = *meshIndex.bucket;
-          if (bucket.owned()) {
-              continue;
+    if (!bucket.owned()) {
+      const int owner = mesh.parallel_owner_rank(entity);
+      const unsigned bucketId = bucket.bucket_id();
+      unsigned char* dest_ptr = &(recv_data[recvOffsets[owner]+recv_sizes[owner]]);
+      for(const FieldBase* f : fields) {
+        if (f->entity_rank() == bucket.entity_rank()) {
+          const unsigned numBytes = field_bytes_per_entity(*f, bucketId);
+          if (numBytes > 0) {
+            unsigned char* fieldDataPtr = reinterpret_cast<unsigned char*>(field_data(*f, entity));
+            std::memcpy(fieldDataPtr, dest_ptr, numBytes);
+            dest_ptr += numBytes;
+            recv_sizes[owner] += numBytes;
           }
-
-          const int owner = mesh.parallel_owner_rank(comm_info_vec[i].entity);
-          const int recvSize = recvOffsets[owner+1]-recvOffsets[owner];
-          if(recvSize == 0)
-          {
-              continue;
-          }
-
-          {
-              const unsigned bucketId = bucket.bucket_id();
-              const unsigned size = field_bytes_per_entity(f, bucketId);
-              if (size > 0)
-              {
-                  unsigned char * ptr = reinterpret_cast<unsigned char*>(stk::mesh::field_data(f, bucketId, meshIndex.bucket_ordinal, size));
-
-                  std::memcpy(ptr, &(recv_data[recvOffsets[owner]+recv_sizes[owner]]), size);
-                  recv_sizes[owner] += size;
-              }
-          }
+        }
       }
+    }
   }
 }
 
