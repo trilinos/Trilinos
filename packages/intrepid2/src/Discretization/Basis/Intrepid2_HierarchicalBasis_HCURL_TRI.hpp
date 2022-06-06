@@ -136,7 +136,7 @@ namespace Intrepid2
       const PointScalar lambda_dx[3] = {-1., 1., 0.};
       const PointScalar lambda_dy[3] = {-1., 0., 1.};
       
-      const int num1DEdgeFunctions = polyOrder_ - 1;
+      const int num1DEdgeFunctions = polyOrder_; // per edge
       
       switch (opType_)
       {
