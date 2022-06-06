@@ -123,6 +123,5 @@ MPITagManager& get_mpi_tag_manager();
 }
 
 
-
 #endif
 #endif

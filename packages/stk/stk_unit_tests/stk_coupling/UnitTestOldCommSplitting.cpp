@@ -37,7 +37,6 @@
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/OldCommSplitting.hpp>
-#include "TestCompatibilityMode.hpp"
 #include <stdexcept>
 #include <algorithm>
 #include <vector>

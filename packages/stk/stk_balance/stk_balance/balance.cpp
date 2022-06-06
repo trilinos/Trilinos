@@ -55,6 +55,8 @@
 #include <stk_io/FillMesh.hpp>
 #include <stk_io/WriteMesh.hpp>
 #include <stk_tools/mesh_clone/MeshClone.hpp>
+#include "stk_balance/internal/Diagnostics.hpp"
+#include "stk_balance/internal/DiagnosticsPrinter.hpp"
 
 namespace stk
 {
@@ -239,25 +241,58 @@ bool colorMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& bulk
 
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors)
 {
+  stk::balance::internal::register_internal_fields(stkMeshBulkData, balanceSettings);
+
+  if (balanceSettings.shouldPrintDiagnostics()) {
+    set_up_diagnostics(balanceSettings);
+  }
+
   const Balancer balancer(balanceSettings);
   BalanceMesh mesh(stkMeshBulkData);
-  return balancer.balance(mesh, selectors);
+  const bool anyElementMovement = balancer.balance(mesh, selectors);
+
+  DiagnosticsPrinter diagPrinter(stkMeshBulkData.parallel(), stkMeshBulkData.parallel_size());
+  diagPrinter.print(sierra::Env::outputP0());
+
+  return anyElementMovement;
 }
 
 bool balanceStkMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
 {
+  stk::balance::internal::register_internal_fields(stkMeshBulkData, balanceSettings);
+
+  if (balanceSettings.shouldPrintDiagnostics()) {
+    set_up_diagnostics(balanceSettings);
+  }
+
   const Balancer balancer(balanceSettings);
   BalanceMesh mesh(stkMeshBulkData);
-  return balancer.balance(mesh);
+  const bool anyElementMovement = balancer.balance(mesh);
+
+  DiagnosticsPrinter diagPrinter(stkMeshBulkData.parallel(), stkMeshBulkData.parallel_size());
+  diagPrinter.print(sierra::Env::outputP0());
+
+  return anyElementMovement;
 }
 
 bool balanceStkMeshNodes(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData)
 {
   if ((balanceSettings.getGraphOption() == BalanceSettings::LOAD_BALANCE) && balanceSettings.useNodeBalancer())
   {
+    stk::balance::internal::register_internal_fields(stkMeshBulkData, balanceSettings);
+
+    if (balanceSettings.shouldPrintDiagnostics()) {
+      set_up_diagnostics(balanceSettings);
+    }
+
     internal::NodeBalancer nodeBalancer(stkMeshBulkData);
-    return nodeBalancer.balance_node_entities(balanceSettings.getNodeBalancerTargetLoadBalance(),
-                                              balanceSettings.getNodeBalancerMaxIterations());
+    const bool anyChangedOwnership = nodeBalancer.balance_node_entities(balanceSettings.getNodeBalancerTargetLoadBalance(),
+                                                                        balanceSettings.getNodeBalancerMaxIterations());
+
+    DiagnosticsPrinter diagPrinter(stkMeshBulkData.parallel(), stkMeshBulkData.parallel_size());
+    diagPrinter.print(sierra::Env::outputP0());
+
+    return anyChangedOwnership;
   }
   return false;
 }

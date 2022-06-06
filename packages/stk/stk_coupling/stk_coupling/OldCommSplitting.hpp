@@ -11,7 +11,6 @@
 #define STK_COUPLING_OLD_COMM_SPLITTING_HPP
 
 #include <stk_util/parallel/Parallel.hpp>
-#include <stk_coupling/impl_VersionUtils.hpp>
 #include <string>
 #include <vector>
 #include <utility>
