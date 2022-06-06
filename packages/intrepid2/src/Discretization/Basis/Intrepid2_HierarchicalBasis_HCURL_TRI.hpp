@@ -117,15 +117,15 @@ namespace Intrepid2
       OutputScratchView edge_field_values_at_point, jacobi_values_at_point, other_values_at_point, other_values2_at_point;
       if (fad_size_output_ > 0) {
         edge_field_values_at_point = OutputScratchView(teamMember.team_shmem(), polyOrder_, fad_size_output_);
-        jacobi_values_at_point     = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
-        other_values_at_point      = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
-        other_values2_at_point     = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1, fad_size_output_);
+        jacobi_values_at_point     = OutputScratchView(teamMember.team_shmem(), polyOrder_, fad_size_output_);
+        other_values_at_point      = OutputScratchView(teamMember.team_shmem(), polyOrder_, fad_size_output_);
+        other_values2_at_point     = OutputScratchView(teamMember.team_shmem(), polyOrder_, fad_size_output_);
       }
       else {
         edge_field_values_at_point = OutputScratchView(teamMember.team_shmem(), polyOrder_);
-        jacobi_values_at_point     = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
-        other_values_at_point      = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
-        other_values2_at_point     = OutputScratchView(teamMember.team_shmem(), polyOrder_ + 1);
+        jacobi_values_at_point     = OutputScratchView(teamMember.team_shmem(), polyOrder_);
+        other_values_at_point      = OutputScratchView(teamMember.team_shmem(), polyOrder_);
+        other_values2_at_point     = OutputScratchView(teamMember.team_shmem(), polyOrder_);
       }
       
       const auto & x = inputPoints_(pointOrdinal,0);
@@ -198,22 +198,16 @@ namespace Intrepid2
           break;
         case OPERATOR_CURL:
         {
-          // TODO: revise this to implement CURL of H(curl) -- below copied from GRAD of H(grad)
           // edge functions
           int fieldOrdinalOffset = 0;
           /*
-           Per Fuentes et al. (see Appendix E.1, E.2), the edge functions, defined for i ≥ 2, are
-             [L_i](s0,s1) = L_i(s1; s0+s1)
-           and have gradients:
-             grad [L_i](s0,s1) = [P_{i-1}](s0,s1) grad s1 + [R_{i-1}](s0,s1) grad (s0 + s1)
-           where
-             [R_{i-1}](s0,s1) = R_{i-1}(s1; s0+s1) = d/dt L_{i}(s0; s0+s1)
-           The P_i we have implemented in shiftedScaledLegendreValues, while d/dt L_{i+1} is
-           implemented in shiftedScaledIntegratedLegendreValues_dt.
+           Per Fuentes et al. (see Appendix E.1, E.2), the curls of the edge functions, are
+             (i+2) * [P_i](s0,s1) * (grad s0 \times grad s1)
+           The P_i we have implemented in shiftedScaledLegendreValues.
            */
           // rename the scratch memory to match our usage here:
-          auto & P_i_minus_1 = edge_field_values_at_point;
-          auto & L_i_dt      = jacobi_values_at_point;
+          auto & P_i      = edge_field_values_at_point;
+          auto & L_2ip1_j = jacobi_values_at_point;
           for (int edgeOrdinal=0; edgeOrdinal<numEdges; edgeOrdinal++)
           {
             const auto & s0 = lambda[edge_start_[edgeOrdinal]];
@@ -224,72 +218,81 @@ namespace Intrepid2
             const auto & s1_dx = lambda_dx[  edge_end_[edgeOrdinal]];
             const auto & s1_dy = lambda_dy[  edge_end_[edgeOrdinal]];
             
-            Polynomials::shiftedScaledLegendreValues             (P_i_minus_1, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
-            Polynomials::shiftedScaledIntegratedLegendreValues_dt(L_i_dt,      polyOrder_,   PointScalar(s1), PointScalar(s0+s1));
-            for (int edgeFunctionOrdinal=0; edgeFunctionOrdinal<num1DEdgeFunctions; edgeFunctionOrdinal++)
+            const OutputScalar grad_s0_cross_grad_s1 = s0_dx * s1_dy - s1_dx * s0_dy;
+            
+            Polynomials::shiftedScaledLegendreValues(P_i, polyOrder_, PointScalar(s1), PointScalar(s0+s1));
+            for (int i=0; i<num1DEdgeFunctions; i++)
             {
-              // the first two (integrated) Legendre functions are essentially the vertex functions; hence the +2 here:
-              const int i = edgeFunctionOrdinal+2;
-              output_(edgeFunctionOrdinal+fieldOrdinalOffset,pointOrdinal,0) = P_i_minus_1(i-1) * s1_dx + L_i_dt(i) * (s1_dx + s0_dx);
-              output_(edgeFunctionOrdinal+fieldOrdinalOffset,pointOrdinal,1) = P_i_minus_1(i-1) * s1_dy + L_i_dt(i) * (s1_dy + s0_dy);
+              output_(i+fieldOrdinalOffset,pointOrdinal) = (i+2) * P_i(i) * grad_s0_cross_grad_s1;
             }
             fieldOrdinalOffset += num1DEdgeFunctions;
           }
           
           /*
-           Fuentes et al give the face functions as phi_{ij}, with gradient:
-             grad phi_{ij}(s0,s1,s2) = [L^{2i}_j](s0+s1,s2) grad [L_i](s0,s1) + [L_i](s0,s1) grad [L^{2i}_j](s0+s1,s2)
+           Fuentes et al give the face functions as E^f_{ij}, with curl:
+             [L^{2i+1}_j](s0+s1,s2) curl(E^E_i(s0,s1)) + grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
            where:
-           - grad [L_i](s0,s1) is the edge function gradient we computed above
-           - [L_i](s0,s1) is the edge function which we have implemented above (in OPERATOR_VALUE)
-           - L^{2i}_j is a Jacobi polynomial with:
-               [L^{2i}_j](s0,s1) = L^{2i}_j(s1;s0+s1)
-             and the gradient for j ≥ 1 is
-               grad [L^{2i}_j](s0,s1) = [P^{2i}_{j-1}](s0,s1) grad s1 + [R^{2i}_{j-1}(s0,s1)] grad (s0 + s1)
-           Here,
-             [P^{2i}_{j-1}](s0,s1) = P^{2i}_{j-1}(s1,s0+s1)
-           and
-             [R^{2i}_{j-1}(s0,s1)] = d/dt L^{2i}_j(s1,s0+s1)
-           We have implemented P^{alpha}_{j} as shiftedScaledJacobiValues,
-           and d/dt L^{alpha}_{j} as shiftedScaledIntegratedJacobiValues_dt.
+           - E^E_i is the ith edge function on the edge s0 to s1
+           - L^{2i+1}_j is an shifted, scaled integrated Jacobi polynomial.
+           - For family 1, s0s1s2 = 012
+           - For family 2, s0s1s2 = 120
+           - Note that grad[L^(2i+1)_j](s0+s1,s2) is computed as [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2) + [R^{2i+1}_{j-1}] grad (s0+s1+s2),
+             but for triangles (s0+s1+s2) is always 1, so that the grad (s0+s1+s2) is 0.
+           - Here,
+               [P^{2i+1}_{j-1}](s0,s1) = P^{2i+1}_{j-1}(s1,s0+s1)
+             and
+               [R^{2i+1}_{j-1}(s0,s1)] = d/dt L^{2i+1}_j(s1,s0+s1)
+             We have implemented P^{alpha}_{j} as shiftedScaledJacobiValues,
+             and d/dt L^{alpha}_{j} as shiftedScaledIntegratedJacobiValues_dt.
            */
           // rename the scratch memory to match our usage here:
-          auto & P_2i_j_minus_1 = edge_field_values_at_point;
-          auto & L_2i_j_dt      = jacobi_values_at_point;
-          auto & L_i            = other_values_at_point;
-          auto & L_2i_j         = other_values2_at_point;
+          auto & P_2ip1_j    = other_values_at_point;
+          
+          for (int familyOrdinal=1; familyOrdinal<=2; familyOrdinal++)
           {
-            // face functions multiply the edge functions from the 01 edge by integrated Jacobi functions, appropriately scaled
+            const auto &s0_index = face_family_start_ [familyOrdinal-1];
+            const auto &s1_index = face_family_middle_[familyOrdinal-1];
+            const auto &s2_index = face_family_end_   [familyOrdinal-1];
+            const auto &s0 = lambda[s0_index];
+            const auto &s1 = lambda[s1_index];
+            const auto &s2 = lambda[s2_index];
             const double jacobiScaling = 1.0; // s0 + s1 + s2
-
-            for (int i=2; i<polyOrder_; i++)
+            
+            const auto & s0_dx = lambda_dx[s0_index];
+            const auto & s0_dy = lambda_dy[s0_index];
+            const auto & s1_dx = lambda_dx[s1_index];
+            const auto & s1_dy = lambda_dy[s1_index];
+            const auto & s2_dx = lambda_dx[s2_index];
+            const auto & s2_dy = lambda_dy[s2_index];
+            
+            const OutputScalar grad_s0_cross_grad_s1 = s0_dx * s1_dy - s1_dx * s0_dy;
+            
+            Polynomials::shiftedScaledLegendreValues (P_i, polyOrder_, PointScalar(s1), PointScalar(s0+s1));
+            
+            const int max_ij_sum = polyOrder_ - 1;
+            for (int i=0; i<max_ij_sum; i++)
             {
-              // the edge function here is for edge 01, in the first set of edge functions.
-              const int edgeBasisOrdinal = i+numVertices-2; // i+1: where the value of the edge function is stored in output_
-              const auto & grad_L_i_dx = output_(edgeBasisOrdinal,pointOrdinal,0);
-              const auto & grad_L_i_dy = output_(edgeBasisOrdinal,pointOrdinal,1);
+              const OutputScalar edgeCurl = (i+2.) * P_i(i) * grad_s0_cross_grad_s1;
               
-              const double alpha = i*2.0;
-
-              Polynomials::shiftedScaledIntegratedLegendreValues(L_i, polyOrder_, lambda[1], lambda[0]+lambda[1]);
-              Polynomials::shiftedScaledIntegratedJacobiValues_dt(L_2i_j_dt, alpha, polyOrder_,   lambda[2], jacobiScaling);
-              Polynomials::shiftedScaledIntegratedJacobiValues(      L_2i_j, alpha, polyOrder_,   lambda[2], jacobiScaling);
-              Polynomials::shiftedScaledJacobiValues(P_2i_j_minus_1, alpha, polyOrder_-1, lambda[2], jacobiScaling);
+              const double alpha = i*2.0 + 1;
               
-              const auto & s0_dx = lambda_dx[0];
-              const auto & s0_dy = lambda_dy[0];
-              const auto & s1_dx = lambda_dx[1];
-              const auto & s1_dy = lambda_dy[1];
-              const auto & s2_dx = lambda_dx[2];
-              const auto & s2_dy = lambda_dy[2];
+              // shiftedScaledJacobiValues(OutputValueViewType outputValues, double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
+              Polynomials::shiftedScaledJacobiValues(P_2ip1_j, alpha, polyOrder_-1, PointScalar(s2), jacobiScaling);
               
-              for (int j=1; i+j <= polyOrder_; j++)
+              Polynomials::shiftedScaledIntegratedJacobiValues(L_2ip1_j, alpha, polyOrder_-1, s2, jacobiScaling);
+              Polynomials::shiftedScaledLegendreValues(P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
+              
+              for (int j=1; i+j<=max_ij_sum; j++)
               {
-                const OutputScalar basisValue_dx = L_2i_j(j) * grad_L_i_dx + L_i(i) * (P_2i_j_minus_1(j-1) * s2_dx + L_2i_j_dt(j) * (s0_dx + s1_dx + s2_dx));
-                const OutputScalar basisValue_dy = L_2i_j(j) * grad_L_i_dy + L_i(i) * (P_2i_j_minus_1(j-1) * s2_dy + L_2i_j_dt(j) * (s0_dy + s1_dy + s2_dy));
+                // [L^{2i+1}_j](s0+s1,s2) curl(E^E_i(s0,s1)) + grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
+                // grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
+//                - Note that grad[L^(2i+1)_j](s0+s1,s2) is computed as [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2) + [R^{2i+1}_{j-1}] grad (s0+s1+s2),
+                const PointScalar xEdgeWeight = s0 * s1_dx - s1 * s0_dx;
+                const PointScalar yEdgeWeight = s0 * s1_dy - s1 * s0_dy;
+                const PointScalar & edgeValue = P_i(j);
+                OutputScalar grad_s2_cross_xy_edgeWeight = s2_dx * yEdgeWeight - xEdgeWeight * s2_dy;
+                output_(fieldOrdinalOffset,pointOrdinal) = L_2ip1_j(j) * edgeCurl + P_2ip1_j(j-1) * edgeValue * grad_s2_cross_xy_edgeWeight;
                 
-                output_(fieldOrdinalOffset,pointOrdinal,0) = basisValue_dx;
-                output_(fieldOrdinalOffset,pointOrdinal,1) = basisValue_dy;
                 fieldOrdinalOffset++;
               }
             }
