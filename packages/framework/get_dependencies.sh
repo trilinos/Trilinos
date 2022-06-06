@@ -12,15 +12,21 @@ git submodule update --init --recursive ${script_dir}/GenConfig
 
 # Update ini file submodules
 git submodule update --init --remote ${script_dir}/srn-ini-files || true
+git submodule update --init --remote ${script_dir}/son-ini-files || true
 
 # Point to srn ini files if they exist
 if [[ ! -z "$(ls ./srn-ini-files)" && "$ini_file_option" == "--srn" ]]; then
     cd GenConfig/deps/LoadEnv/ini_files
     ln -sf ${script_dir}/srn-ini-files/trilinos/framework/environment-specs.ini
     ln -sf ${script_dir}/srn-ini-files/trilinos/framework/supported-systems.ini
+elif [[ ! -z "$(ls ./son-ini-files)" && "$ini_file_option" == "--son" ]]; then
+    cd GenConfig/deps/LoadEnv/ini_files
+    ln -sf ${script_dir}/son-ini-files/trilinos/framework/environment-specs.ini
+    ln -sf ${script_dir}/son-ini-files/trilinos/framework/supported-systems.ini
 else
-    cd GenConfig/deps/LoadEnv/
-    git reset --hard HEAD
+    echo "ERROR: Invalid ini_file_option=$ini_file_option"
+    echo "Usage: ./get_dependencies.sh [--srn,--son]"
+    exit 1
 fi
 
 popd
