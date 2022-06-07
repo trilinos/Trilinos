@@ -109,7 +109,7 @@
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
 // Stratimikos includes
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_LinearSolverBuilder.hpp>
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Teuchos_AbstractFactoryStd.hpp"
 // Ifpack2 includes

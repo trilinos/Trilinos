@@ -179,13 +179,13 @@ namespace {
 
     #ifdef PANZER_HAVE_MUELU
     {
-      Stratimikos::enableMueLu<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu");
-      Stratimikos::enableMueLuRefMaxwell<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell");
-      Stratimikos::enableMueLuMaxwell1<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuMaxwell1");
+      Stratimikos::enableMueLu<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu");
+      Stratimikos::enableMueLuRefMaxwell<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell");
+      Stratimikos::enableMueLuMaxwell1<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuMaxwell1");
       #ifndef PANZER_HIDE_DEPRECATED_CODE
       // the next two are only for backwards compatibility
-      Stratimikos::enableMueLu<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
-      Stratimikos::enableMueLuRefMaxwell<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell-Tpetra");
+      Stratimikos::enableMueLu<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
+      Stratimikos::enableMueLuRefMaxwell<double,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>(linearSolverBuilder,"MueLuRefMaxwell-Tpetra");
       #endif
     }
     #endif // MUELU

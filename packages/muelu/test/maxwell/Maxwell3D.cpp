@@ -94,7 +94,7 @@ using Teuchos::TimeMonitor;
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
 // Stratimikos includes
-#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_LinearSolverBuilder.hpp>
 #include <Stratimikos_MueLuHelpers.hpp>
 #ifdef HAVE_MUELU_IFPACK2
 #include <Thyra_Ifpack2PreconditionerFactory.hpp>
@@ -253,164 +253,8 @@ struct EpetraSolvers_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSeri
 };
 #endif // HAVE_MUELU_EPETRA
 
-// Setup & solve wrappers struct
-// Because C++ doesn't support partial template specialization of functions.
-// By default, do not try to run Stratimikos, since that only works for Scalar=double.
-template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-struct SetupSolveWrappers {
-  static bool SetupSolve(std::map<std::string, void*> inputs);
-};
-
-
-// Partial template specialization on SC=double
-// This code branch gives the option to run with Stratimikos.
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-struct SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node> {
-  static bool SetupSolve(std::map<std::string, void*> inputs);
-};
-
-
-// By default, do not try to run Stratimikos, since that only works for Scalar=double.
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool SetupSolveWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std::map<std::string, void*> inputs) {
-#include <MueLu_UseShortNames.hpp>
-
-  typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> coordMV;
-
-  RCP<Matrix>            SM_Matrix       = *static_cast<RCP<Matrix>*>(inputs["SM"]);
-  RCP<Matrix>            D0_Matrix       = *static_cast<RCP<Matrix>*>(inputs["D0"]);
-  RCP<Matrix>            M1_Matrix       = *static_cast<RCP<Matrix>*>(inputs["M1"]);
-  RCP<Matrix>            Ms_Matrix       = *static_cast<RCP<Matrix>*>(inputs["Ms"]);
-  RCP<Matrix>            M0inv_Matrix    = *static_cast<RCP<Matrix>*>(inputs["M0inv"]);
-  RCP<Matrix>            Kn_Matrix       = *static_cast<RCP<Matrix>*>(inputs["Kn"]);
-
-  RCP<coordMV>           coords          = *static_cast<RCP<coordMV>*>(inputs["coordinates"]);
-  RCP<MultiVector>       nullspace       = *static_cast<RCP<MultiVector>*>(inputs["nullspace"]);
-  RCP<MultiVector>       material        = *static_cast<RCP<MultiVector>*>(inputs["material"]);
-
-  RCP<MultiVector>       B               = *static_cast<RCP<MultiVector>*>(inputs["B"]);
-  RCP<MultiVector>       X               = *static_cast<RCP<MultiVector>*>(inputs["X"]);
-  RCP<MultiVector>       X0              = *static_cast<RCP<MultiVector>*>(inputs["X0"]);
-
-  Teuchos::ParameterList params          = *static_cast<Teuchos::ParameterList*>(inputs["params"]);
-  Teuchos::ParameterList belosParams     = *static_cast<Teuchos::ParameterList*>(inputs["belosParams"]);
-  std::string            solverName      = *static_cast<std::string*>(inputs["solverName"]);
-  std::string            belosSolverType = *static_cast<std::string*>(inputs["belosSolverType"]);
-  std::string            precType        = *static_cast<std::string*>(inputs["precType"]);
-  int                    numResolves     = *static_cast<int*>(inputs["numResolves"]);
-  bool                   reuse           = *static_cast<bool*>(inputs["reuse"]);
-
-  RCP<const Teuchos::Comm<int> > comm    = *static_cast<RCP<const Teuchos::Comm<int> >*>(inputs["comm"]);
-  RCP<Teuchos::FancyOStream> out         = *static_cast<RCP<Teuchos::FancyOStream>*>(inputs["out"]);
-
-  bool success = false;
-
-  auto tm2 = TimeMonitor::getNewTimer("Maxwell: 2 - Build solver and preconditioner");
-#ifdef HAVE_MUELU_BELOS
-  if (solverName == "Belos") {
-    // construct preconditioner
-    RCP<Operator> preconditioner;
-    if (precType=="MueLu-RefMaxwell") {
-      preconditioner = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Ms_Matrix,M0inv_Matrix,
-                                                               M1_Matrix,nullspace,coords,params) );
-#ifdef HAVE_MUELU_TPETRA
-      {
-        // A test to make sure we can wrap this guy as a MueLu::TpetraOperator
-        RCP<Operator> precOp = Teuchos::rcp_dynamic_cast<Operator>(preconditioner);
-        MueLu::TpetraOperator<SC,LO,GO,NO> OpT(precOp);
-      }
-#endif // HAVE_MUELU_TPETRA
-    }
-    else
-      *out << "Preconditioner not supported\n";
-
-
-#ifdef HAVE_MUELU_TPETRA
-    {
-      // A test to make sure we can wrap this guy as a MueLu::TpetraOperator
-      RCP<Operator> precOp = Teuchos::rcp_dynamic_cast<Operator>(preconditioner);
-      MueLu::TpetraOperator<SC,LO,GO,NO> OpT(precOp);
-    }
-#endif
-
-    // Belos linear problem
-    typedef MultiVector          MV;
-    typedef Belos::OperatorT<MV> OP;
-    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(SM_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
-
-    RCP<Belos::LinearProblem<SC, MV, OP> > problem = rcp( new Belos::LinearProblem<SC, MV, OP>() );
-    problem -> setOperator( belosOp );
-    Teuchos::RCP<OP> belosPrecOp;
-    if (precType != "none") {
-      belosPrecOp = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(preconditioner)); // Turns a Xpetra::Matrix object into a Belos operator
-      problem -> setRightPrec( belosPrecOp );
-    }
-    problem -> setProblem( X, B );
-
-    bool set = problem->setProblem();
-    if (set == false) {
-      *out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-      return false;
-    }
-
-    // Belos solver
-    RCP< Belos::SolverManager<SC, MV, OP> > solver;
-    RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
-    solver = factory->create(belosSolverType,Teuchos::rcpFromRef(belosParams.sublist(belosSolverType)));
-
-    comm->barrier();
-    tm2 = Teuchos::null;
-
-    auto tm3 = TimeMonitor::getNewTimer("Maxwell: 3 - Solve");
-
-    // set problem and solve
-    solver -> setProblem( problem );
-    for(int solveno = 0; solveno<=numResolves; solveno++) {
-      if (X0.is_null())
-        X->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-      else
-        X = X0;
-      Belos::ReturnType status = solver -> solve();
-      int iters = solver -> getNumIters();
-      success = (iters<50 && status == Belos::Converged);
-      if (success)
-        *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
-      else
-        *out << "FAILURE! Belos did not converge fast enough." << std::endl;
-    }
-
-    if (reuse) {
-      TEUCHOS_ASSERT(precType == "MueLu-RefMaxwell");
-      for (int solveno = 0; solveno<2; solveno++) {
-        // SM_Matrix->resumeFill();
-        // SM_Matrix->fillComplete();
-        if (X0.is_null())
-          X->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-        else
-          X = X0;
-        problem -> setProblem( X, B );
-        Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
-        Belos::ReturnType status = solver -> solve();
-        int iters = solver -> getNumIters();
-        success = (iters<50 && status == Belos::Converged);
-        if (success)
-          *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
-        else
-          *out << "FAILURE! Belos did not converge fast enough." << std::endl;
-      }
-    }
-  }
-#endif // HAVE_MUELU_BELOS
-  comm->barrier();
-
-  return success;
-} // SetupSolve
-
-
-// This code branch gives the option to run with Stratimikos.
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
-bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std::map<std::string, void*> inputs) {
-  typedef double Scalar;
+bool SetupSolve(std::map<std::string, void*> inputs) {
 #include <MueLu_UseShortNames.hpp>
 
   typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> coordMV;
@@ -613,9 +457,9 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     RCP<const Thyra::VectorBase<Scalar> >thyraB = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(B->getVector(0));
 
     // Build Stratimikos solver
-    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
-    Stratimikos::enableMueLuRefMaxwell<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
-    Stratimikos::enableMueLuMaxwell1<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
+    Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
+    Stratimikos::enableMueLuRefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+    Stratimikos::enableMueLuMaxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
 #ifdef HAVE_MUELU_IFPACK2
     typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
@@ -629,9 +473,9 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     auto prec = precFactory->createPrec();
 
     // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
-    Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+    Thyra::initializePrec<Scalar>(*precFactory, thyraA, prec.ptr());
     Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > thyraInverseA = solverFactory->createOp();
-    Thyra::initializePreconditionedOp<double>(*solverFactory, thyraA, prec, thyraInverseA.ptr());
+    Thyra::initializePreconditionedOp<Scalar>(*solverFactory, thyraA, prec, thyraInverseA.ptr());
 
     comm->barrier();
     tm2 = Teuchos::null;
@@ -650,7 +494,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     if (reuse) {
       for (int solveno = 0; solveno<2; solveno++) {
         auto tm6 = TimeMonitor::getNewTimer("Maxwell: 4 - Setup Re");
-        Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+        Thyra::initializePrec<Scalar>(*precFactory, thyraA, prec.ptr());
         comm->barrier();
         tm6 = Teuchos::null;
 
@@ -897,7 +741,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   inputs["comm"]            = &comm;
   inputs["out"]             = &out;
 
-  bool success = SetupSolveWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(inputs);
+  bool success = SetupSolve<Scalar,LocalOrdinal,GlobalOrdinal,Node>(inputs);
 
   globalTimeMonitor = Teuchos::null;
 
