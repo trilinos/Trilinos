@@ -57,6 +57,7 @@ APPEND_SET(SOURCES
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR})
 
+APPEND_GLOB(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/*.hpp)
 
 #
 # C) Define the targets for package's library(s)
