@@ -158,10 +158,11 @@ int main (int argc, char* argv[])
 
     // defaullt convergence tol
     Magnitude tol = 1e-7;
-    if (test_params.isParameter ("Convergence Tolerance")) {
-      tol = test_params.get<Magnitude> ("Convergence Tolerance");
+    Teuchos::ParameterList& BelosParams = test_params.sublist("Belos");
+    if (BelosParams.isParameter ("Convergence Tolerance")) {
+      tol = BelosParams.get<Magnitude> ("Convergence Tolerance");
     } else {
-      test_params.set<Magnitude> ("Convergence Tolerance", tol);
+      BelosParams.set<Magnitude> ("Convergence Tolerance", tol);
     }
 
     //Build the preconditioner (if one is enabled), and bind it to the problem
@@ -210,6 +211,7 @@ int main (int argc, char* argv[])
       throw std::runtime_error("ERROR: norms.size()==0 indicates R->getNumVectors()==0.");
     }
 
+    *out << "2-Norm of 0th RHS      vec: " << normsB[0] << std::endl;
     *out << "2-Norm of 0th residual vec: " << normsR[0] << " -> " << normsR[0]/normsB[0] << std::endl;
     *out << "Achieved tolerance: " << solver->achievedTol() << ", Requested tolerance: " << tol << std::endl;
     normsR[0] /= normsB[0];
