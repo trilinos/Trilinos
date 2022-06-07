@@ -260,7 +260,7 @@ namespace Tpetra {
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets, teamSize, vectorLength);
           Kokkos::parallel_for("on-rank", policy, *this);
         } else {
-          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,Kokkos::AUTO,vectorLength);
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
           Kokkos::parallel_for("on-rank", policy, *this);
         }
 #endif
@@ -414,7 +414,7 @@ namespace Tpetra {
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
           Kokkos::parallel_for("off-rank", policy, *this);
         } else {
-          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,Kokkos::AUTO,vectorLength);
+          Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Static>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
           Kokkos::parallel_for("off-rank", policy, *this);
         }
 #endif
