@@ -26,11 +26,10 @@ elif [[ ! -z "$(ls ./son-ini-files)" && "$ini_file_option" == "--son" ]]; then
     ln -sf ${script_dir}/son-ini-files/trilinos/framework/supported-systems.ini
     ln -sf ${script_dir}/ini-files/supported-envs.ini
 else
-    echo "ERROR: Unable to clone ini files repo or invalid ini_file_option=$ini_file_option"
-    echo "Please ensure you have access to the ini files repo"
-    echo ""
-    echo "Usage: ./get_dependencies.sh [--srn,--son]"
-    exit 1
+    cd GenConfig/deps/LoadEnv/ini_files
+    [ -e ${script_dir}/ini-files/environment-specs.ini ] && ln -sf ${script_dir}/ini-files/environment-specs.ini
+    [ -e ${script_dir}/ini-files/supported-systems.ini ] && ln -sf ${script_dir}/ini-files/supported-systems.ini
+    ln -sf ${script_dir}/ini-files/supported-envs.ini
 fi
 
 cd ../../../ini_files
