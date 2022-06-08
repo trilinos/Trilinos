@@ -129,11 +129,14 @@ namespace FROSch {
 
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(globalMatrix->getRowMap(),subdomainRowMap);
         subdomainMatrix->setAllToScalar(zero);
+        subdomainMatrix->resumeFill();
         subdomainMatrix->doImport(*globalMatrix, *scatter, ADD);
 
-#if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+// "fillComplete" is quite expensive, and it seem to be cheaper to replace values each row at a time
+#if 0 //defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
         if (globalMatrix->getRowMap()->lib() == UseTpetra) 
         {
+            // NOTE: this fillComplete is expensive on GPUs
             subdomainMatrix->fillComplete();
             auto devSubdomainMap         = subdomainRowMap->getLocalMap();
             auto devSubdomainMatrix      = subdomainMatrix->getLocalMatrixDevice();

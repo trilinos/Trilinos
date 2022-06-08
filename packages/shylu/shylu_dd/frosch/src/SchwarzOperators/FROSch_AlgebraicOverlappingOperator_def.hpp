@@ -289,14 +289,15 @@ namespace FROSch {
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::updateLocalOverlappingMatrices()
     {
         FROSCH_DETAILTIMER_START_LEVELID(updateLocalOverlappingMatricesTime,"AlgebraicOverlappingOperator::updateLocalOverlappingMatrices");
-        if (this->IsComputed_) { // already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
-            this->OverlappingMatrix_ = this->K_;
-        }
         if (this->ExtractLocalSubdomainMatrix_Symbolic_Done_) {
-            ExtractLocalSubdomainMatrix_Compute(this->OverlappingMatrix_,
-                                                this->subdomainMatrix_, this->localSubdomainMatrix_);
+            // using original K_ as input
+            ExtractLocalSubdomainMatrix_Compute(this->K_, this->subdomainMatrix_, this->localSubdomainMatrix_);
             this->OverlappingMatrix_ = this->localSubdomainMatrix_.getConst();
         } else {
+            if (this->IsComputed_) {
+                // already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
+                this->OverlappingMatrix_ = this->K_;
+            }
             this->OverlappingMatrix_ = ExtractLocalSubdomainMatrix(this->OverlappingMatrix_, this->OverlappingMap_);
         }
         return 0;
@@ -307,9 +308,6 @@ namespace FROSch {
     int AlgebraicOverlappingOperator<SC,LO,GO,NO>::updateLocalOverlappingMatrices_Symbolic()
     {
         FROSCH_DETAILTIMER_START_LEVELID(updateLocalOverlappingMatrices_SymbolicTime, "AlgebraicOverlappingOperator::updateLocalOverlappingMatrices_Symbolic");
-        /*if (this->IsComputed_) { // already computed once and we want to recycle the information. That is why we reset OverlappingMatrix_ to K_, because K_ has been reset at this point
-            this->OverlappingMatrix_ = this->K_;
-        }*/
         this->extractLocalSubdomainMatrix_Symbolic();
         return 0;
     }
