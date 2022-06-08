@@ -57,8 +57,92 @@ public:
   /// Main functions
   ///
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void factorize(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
-                                        const value_type_matrix &ABR) const {
+  KOKKOS_INLINE_FUNCTION void factorize_var0(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
+                                             const value_type_matrix &ABR) const {
+    using LU_AlgoType = typename LU_Algorithm::type;
+    using TrsmAlgoType = typename TrsmAlgorithm::type;
+    using GemmAlgoType = typename GemmAlgorithm::type;
+
+    const ordinal_type m = s.m, n = s.n, n_m = n - m;
+    if (m > 0) {
+      UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
+
+      LU<LU_AlgoType>::invoke(member, AT, P);
+      member.team_barrier();
+
+      LU<LU_AlgoType>::modify(member, m, P);
+      member.team_barrier();
+
+      if (n_m > 0) {
+        const value_type one(1), minus_one(-1), zero(0);
+        UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
+        UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
+        UnmanagedViewType<value_type_matrix> ABL(s.l_buf, n_m, m);
+
+        Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
+                                                                                 ABL);
+        member.team_barrier();
+
+        Gemm<Trans::NoTranspose, Trans::NoTranspose, GemmAlgoType>::invoke(member, minus_one, ABL, ATR, zero, ABR);
+      }
+    }
+  }
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void factorize_var1(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
+                                             const value_type_matrix &T, const value_type_matrix &Y,
+                                             const value_type_matrix &ABR) const {
+    using LU_AlgoType = typename LU_Algorithm::type;
+    using TrsmAlgoType = typename TrsmAlgorithm::type;
+    using GemmAlgoType = typename GemmAlgorithm::type;
+
+    const ordinal_type m = s.m, n = s.n, n_m = n - m;
+    if (m > 0) {
+      UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
+
+      LU<LU_AlgoType>::invoke(member, AT, P);
+      member.team_barrier();
+
+      LU<LU_AlgoType>::modify(member, m, P);
+      member.team_barrier();
+
+      if (n_m > 0) {
+        const value_type one(1), minus_one(-1), zero(0);
+        UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
+        UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
+        UnmanagedViewType<value_type_matrix> ABL(s.l_buf, n_m, m);
+
+        Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
+                                                                                 ABL);
+        Copy<Algo::Internal>::invoke(member, T, ATL);
+        member.team_barrier();
+        SetIdentity<Algo::Internal>::invoke(member, ATL, one);
+        SetIdentity<Algo::Internal>::invoke(member, Y, one);
+        member.team_barrier();
+        Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
+        Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, Y);
+        member.team_barrier();
+        Copy<Algo::Internal>::invoke(member, ATL, Uplo::Lower(), Diag::Unit(), Y);
+        member.team_barrier();
+        Gemm<Trans::NoTranspose, Trans::NoTranspose, GemmAlgoType>::invoke(member, minus_one, ABL, ATR, zero, ABR);
+      } else {
+        const value_type one(1);
+        UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
+        Copy<Algo::Internal>::invoke(member, T, ATL);
+        member.team_barrier();
+        SetIdentity<Algo::Internal>::invoke(member, ATL, one);
+        SetIdentity<Algo::Internal>::invoke(member, Y, one);
+        member.team_barrier();
+        Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
+        Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, Y);
+        member.team_barrier();
+        Copy<Algo::Internal>::invoke(member, ATL, Uplo::Lower(), Diag::Unit(), Y);
+      }
+    }
+  }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void factorize_var2(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
+                                             const value_type_matrix &ABR) const {
     using LU_AlgoType = typename LU_Algorithm::type;
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using GemmAlgoType = typename GemmAlgorithm::type;
@@ -216,17 +300,19 @@ public:
 
       UnmanagedViewType<ordinal_type_array> P(_piv.data() + offm * 4, m * 4);
 
-      const int bufbeg = _buf_ptr(lid); //, bufend = _buf_ptr(lid+1);
-      value_type *bufptr = _buf.data() + bufbeg;
-      UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
-
+      const auto bufptr = _buf.data() + _buf_ptr(lid);
       if (factorize_tag_type::variant == 0) {
-        /// check the span does not go more than buf_ptr(lid+1)
-        factorize(member, s, P, ABR);
+        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+        factorize_var0(member, s, P, ABR);
       } else if (factorize_tag_type::variant == 1) {
-        factorize(member, s, P, ABR);
+        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+        UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
+        UnmanagedViewType<value_type_matrix> Y(bufptr + T.span(), m, m);
+
+        factorize_var1(member, s, P, T, Y, ABR);
       } else if (factorize_tag_type::variant == 2) {
-        factorize(member, s, P, ABR);
+        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+        factorize_var2(member, s, P, ABR);
       }
     } else if (mode == -1) {
       printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");
