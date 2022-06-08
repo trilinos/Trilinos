@@ -126,19 +126,31 @@ public:
     }
   }
 
-  struct SolveTag {};
-  struct UpdateTag {};
+  template <int Var> struct SolveTag {
+    enum { variant = Var };
+  };
+  template <int Var> struct UpdateTag {
+    enum { variant = Var };
+  };
   struct DummyTag {};
 
-  template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const SolveTag &, const MemberType &member) const {
+  template <typename MemberType, int Var>
+  KOKKOS_INLINE_FUNCTION void operator()(const SolveTag<Var> &, const MemberType &member) const {
     const ordinal_type p = _pbeg + member.league_rank();
     const ordinal_type sid = _level_sids(p);
     const ordinal_type mode = _compute_mode(sid);
     if (p < _pend && mode == 1) {
+      using solve_tag_type = SolveTag<Var>;
+
       const supernode_type &s = _supernodes(sid);
       value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
-      solve(member, s, bptr);
+      if (solve_tag_type::variant == 0) {
+        solve(member, s, bptr);
+      } else if (solve_tag_type::variant == 1) {
+        solve(member, s, bptr);
+      } else if (solve_tag_type::variant == 2) {
+        solve(member, s, bptr);
+      }
     }
     if (mode == -1) {
       printf("Error: TeamFunctorSolveLowerChol::SolveTag, computing mode is not determined\n");
@@ -147,14 +159,22 @@ public:
     }
   }
 
-  template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const UpdateTag &, const MemberType &member) const {
+  template <typename MemberType, int Var>
+  KOKKOS_INLINE_FUNCTION void operator()(const UpdateTag<Var> &, const MemberType &member) const {
     const ordinal_type p = _pbeg + member.league_rank();
     if (p < _pend) {
+      using update_tag_type = UpdateTag<Var>;
+
       const ordinal_type sid = _level_sids(p);
       const supernode_type &s = _supernodes(sid);
       value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
-      update(member, s, bptr);
+      if (update_tag_type::variant == 0) {
+        update(member, s, bptr);
+      } else if (update_tag_type::variant == 1) {
+        update(member, s, bptr);
+      } else if (update_tag_type::variant == 2) {
+        update(member, s, bptr);
+      }
     } else {
       // skip
     }

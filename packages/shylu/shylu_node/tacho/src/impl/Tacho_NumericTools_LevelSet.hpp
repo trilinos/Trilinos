@@ -251,6 +251,12 @@ private:
         auto &s = _h_supernodes(sid);
         const ordinal_type m = s.m, n = s.n - s.m;
         flop += DenseFlopCount<value_type>::LDL(m);
+        if (variant == 1) {
+          flop += DenseFlopCount<value_type>::Trsm(true, m, m);
+        } else if (variant == 2) {
+          flop += DenseFlopCount<value_type>::Trsm(true, m, m);
+          flop += DenseFlopCount<value_type>::Trsm(true, m, n);
+        }
         flop += DenseFlopCount<value_type>::Trsm(true, m, n);
         flop += DenseFlopCount<value_type>::Syrk(m, n);
       }
@@ -261,6 +267,12 @@ private:
         auto &s = _h_supernodes(sid);
         const ordinal_type m = s.m, n = s.n - s.m;
         flop += DenseFlopCount<value_type>::LU(m, m);
+        if (variant == 1) {
+          flop += 2 * DenseFlopCount<value_type>::Trsm(true, m, m);
+        } else if (variant == 2) {
+          flop += 2 * DenseFlopCount<value_type>::Trsm(true, m, m);
+          flop += 2 * DenseFlopCount<value_type>::Trsm(true, m, n);
+        }
         flop += 2 * DenseFlopCount<value_type>::Trsm(true, m, n);
         flop += DenseFlopCount<value_type>::Gemm(n, n, m);
       }
@@ -378,14 +390,18 @@ public:
           const ordinal_type chol_factor_work_size_variants[3] = {schur_work_size, max(m * m, schur_work_size),
                                                                   m * m + schur_work_size};
           const ordinal_type chol_factor_work_size = chol_factor_work_size_variants[variant];
-          const ordinal_type ldl_factor_work_size = chol_factor_work_size_variants[0] + max(32 * m, m * n);
-          const ordinal_type lu_factor_work_size = chol_factor_work_size_variants[0];
+          const ordinal_type ldl_factor_work_size_variant_0 = chol_factor_work_size_variants[0] + max(32 * m, m * n);
+          const ordinal_type ldl_factor_work_size_variants[3] = {ldl_factor_work_size_variant_0,
+                                                                 max(m * m, ldl_factor_work_size_variant_0),
+                                                                 m * m + ldl_factor_work_size_variant_0};
+          const ordinal_type ldl_factor_work_size = ldl_factor_work_size_variants[variant];
+          const ordinal_type lu_factor_work_size = chol_factor_work_size_variants[variant];
           const ordinal_type factor_work_size_variants[3] = {chol_factor_work_size, ldl_factor_work_size,
                                                              lu_factor_work_size};
 
           const ordinal_type chol_solve_work_size = (variant == 0 ? n_m : n);
-          const ordinal_type ldl_solve_work_size = n_m;
-          const ordinal_type lu_solve_work_size = n_m;
+          const ordinal_type ldl_solve_work_size = chol_solve_work_size;
+          const ordinal_type lu_solve_work_size = chol_solve_work_size;
           const ordinal_type solve_work_size_variants[3] = {chol_solve_work_size, ldl_solve_work_size,
                                                             lu_solve_work_size};
 
@@ -499,13 +515,13 @@ public:
         break;
       }
       case 2: {
-        printf("Summary: LevelSetTools (InitializeLDL)\n");
-        printf("======================================\n");
+        printf("Summary: LevelSetTools-Variant-%d (InitializeLDL)\n", variant);
+        printf("=================================================\n");
         break;
       }
       case 3: {
-        printf("Summary: LevelSetTools (InitializeLU)\n");
-        printf("=====================================\n");
+        printf("Summary: LevelSetTools-Variant-%d (InitializeLU)\n", variant);
+        printf("================================================\n");
         break;
       }
       }
@@ -524,7 +540,7 @@ public:
     track_free(_level_sids.span() * sizeof(ordinal_type));
     if (verbose) {
       printf("Summary: LevelSetTools-Variant-%d (Release)\n", variant);
-      printf("============================================\n");
+      printf("===========================================\n");
       print_stat_memory();
     }
   }
@@ -838,8 +854,8 @@ public:
     }
   }
 
-  inline void factorizeLDL_OnDevice(const ordinal_type pbeg, const ordinal_type pend,
-                                    const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+  inline void factorizeLDL_OnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                        const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
     ordinal_type q(0);
@@ -919,8 +935,184 @@ public:
     }
   }
 
-  inline void factorizeLU_OnDevice(const ordinal_type pbeg, const ordinal_type pend,
-                                   const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+  inline void factorizeLDL_OnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                        const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+    const value_type one(1), minus_one(-1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_factorize_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceBlasStatus("cublasSetStream");
+        _status = cusolverDnSetStream(_handle_lapack, mystream);
+        checkDeviceLapackStatus("cusolverDnSetStream");
+
+        exec_instance = _exec_instances[qid];
+
+        const size_type worksize = work.extent(0) / _nstreams;
+        value_type_array W(work.data() + worksize * qid, worksize);
+        ++q;
+#else
+        value_type_array W = work;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *aptr = s.u_buf;
+            UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+            aptr += m * m;
+
+            _status = Symmetrize<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL);
+            exec_instance.fence();
+
+            ordinal_type *pivptr = _piv.data() + 4 * offs;
+            UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
+            _status = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, ATL, P, W);
+            checkDeviceLapackStatus("ldl::invoke");
+            exec_instance.fence();
+
+            value_type *dptr = _diag.data() + 2 * offs;
+            UnmanagedViewType<value_type_matrix> D(dptr, m, 2);
+            _status = LDL<Uplo::Lower, Algo::OnDevice>::modify(exec_instance, ATL, P, D);
+            checkDeviceLapackStatus("ldl::modify");
+            exec_instance.fence();
+
+            if (n_m > 0) {
+              UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
+              UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
+              UnmanagedViewType<value_type_matrix> STR(ABR.data() + ABR.span(), m, n_m);
+
+              auto fpiv = ordinal_type_array(P.data() + m, m);
+              _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice>::invoke(
+                  exec_instance, fpiv, ATR);
+              exec_instance.fence();
+
+              _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
+                  _handle_blas, Diag::Unit(), one, ATL, ATR);
+              checkDeviceBlasStatus("trsm");
+              exec_instance.fence();
+
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, STR, ATR);
+              exec_instance.fence();
+
+              _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, P, D, ATR);
+              exec_instance.fence();
+
+              _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
+                  _handle_blas, minus_one, ATR, STR, zero, ABR);
+              exec_instance.fence();
+              checkDeviceBlasStatus("gemm");
+            }
+          }
+        }
+      }
+    }
+  }
+
+  inline void factorizeLDL_OnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                        const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+    const value_type one(1), minus_one(-1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_factorize_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceBlasStatus("cublasSetStream");
+        _status = cusolverDnSetStream(_handle_lapack, mystream);
+        checkDeviceLapackStatus("cusolverDnSetStream");
+
+        exec_instance = _exec_instances[qid];
+
+        const size_type worksize = work.extent(0) / _nstreams;
+        value_type_array W(work.data() + worksize * qid, worksize);
+        ++q;
+#else
+        value_type_array W = work;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *aptr = s.u_buf;
+            UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+            aptr += m * m;
+
+            _status = Symmetrize<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL);
+            exec_instance.fence();
+
+            ordinal_type *pivptr = _piv.data() + 4 * offs;
+            UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
+            _status = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, ATL, P, W);
+            checkDeviceLapackStatus("ldl::invoke");
+            exec_instance.fence();
+
+            value_type *dptr = _diag.data() + 2 * offs;
+            UnmanagedViewType<value_type_matrix> D(dptr, m, 2);
+            _status = LDL<Uplo::Lower, Algo::OnDevice>::modify(exec_instance, ATL, P, D);
+            checkDeviceLapackStatus("ldl::modify");
+            exec_instance.fence();
+
+            if (n_m > 0) {
+              UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
+              UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
+              UnmanagedViewType<value_type_matrix> STR(ABR.data() + ABR.span(), m, n_m);
+
+              auto fpiv = ordinal_type_array(P.data() + m, m);
+              _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice>::invoke(
+                  exec_instance, fpiv, ATR);
+              exec_instance.fence();
+
+              _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
+                  _handle_blas, Diag::Unit(), one, ATL, ATR);
+              checkDeviceBlasStatus("trsm");
+              exec_instance.fence();
+
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, STR, ATR);
+              exec_instance.fence();
+
+              _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, P, D, ATR);
+              exec_instance.fence();
+
+              _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
+                  _handle_blas, minus_one, ATR, STR, zero, ABR);
+              exec_instance.fence();
+              checkDeviceBlasStatus("gemm");
+            }
+          }
+        }
+      }
+    }
+  }
+
+  inline void factorizeLDL_OnDevice(const ordinal_type pbeg, const ordinal_type pend,
+                                    const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+    if (variant == 0)
+      factorizeLDL_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
+    else if (variant == 1)
+      factorizeLDL_OnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
+    else if (variant == 2)
+      factorizeLDL_OnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
+    else {
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "LevelSetTools::factorizeLDL_OnDevice, algorithm variant is not supported");
+    }
+  }
+
+  inline void factorizeLU_OnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                       const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
     ordinal_type q(0);
@@ -985,6 +1177,158 @@ public:
           }
         }
       }
+    }
+  }
+
+  inline void factorizeLU_OnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                       const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+    const value_type one(1), minus_one(-1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_factorize_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceBlasStatus("cublasSetStream");
+        _status = cusolverDnSetStream(_handle_lapack, mystream);
+        checkDeviceLapackStatus("cusolverDnSetStream");
+
+        exec_instance = _exec_instances[qid];
+
+        const size_type worksize = work.extent(0) / _nstreams;
+        value_type_array W(work.data() + worksize * qid, worksize);
+        ++q;
+#else
+        value_type_array W = work;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *uptr = s.u_buf;
+            UnmanagedViewType<value_type_matrix> AT(uptr, m, n);
+
+            ordinal_type *pivptr = _piv.data() + 4 * offs;
+            UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
+            _status = LU<Algo::OnDevice>::invoke(_handle_lapack, AT, P, W);
+            checkDeviceLapackStatus("lu::invoke");
+            exec_instance.fence();
+
+            _status = LU<Algo::OnDevice>::modify(exec_instance, m, P);
+            checkDeviceLapackStatus("lu::modify");
+            exec_instance.fence();
+
+            if (n_m > 0) {
+              UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
+              uptr += m * m;
+              UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m);
+
+              value_type *lptr = s.l_buf;
+              UnmanagedViewType<value_type_matrix> ABL(lptr, n_m, m);
+
+              UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
+
+              _status = Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
+                  _handle_blas, Diag::NonUnit(), one, ATL, ABL);
+              checkDeviceBlasStatus("trsm");
+              exec_instance.fence();
+
+              _status = Gemm<Trans::NoTranspose, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one,
+                                                                                             ABL, ATR, zero, ABR);
+              exec_instance.fence();
+              checkDeviceBlasStatus("gemm");
+            }
+          }
+        }
+      }
+    }
+  }
+
+  inline void factorizeLU_OnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                       const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+    const value_type one(1), minus_one(-1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_factorize_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceBlasStatus("cublasSetStream");
+        _status = cusolverDnSetStream(_handle_lapack, mystream);
+        checkDeviceLapackStatus("cusolverDnSetStream");
+
+        exec_instance = _exec_instances[qid];
+
+        const size_type worksize = work.extent(0) / _nstreams;
+        value_type_array W(work.data() + worksize * qid, worksize);
+        ++q;
+#else
+        value_type_array W = work;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *uptr = s.u_buf;
+            UnmanagedViewType<value_type_matrix> AT(uptr, m, n);
+
+            ordinal_type *pivptr = _piv.data() + 4 * offs;
+            UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
+            _status = LU<Algo::OnDevice>::invoke(_handle_lapack, AT, P, W);
+            checkDeviceLapackStatus("lu::invoke");
+            exec_instance.fence();
+
+            _status = LU<Algo::OnDevice>::modify(exec_instance, m, P);
+            checkDeviceLapackStatus("lu::modify");
+            exec_instance.fence();
+
+            if (n_m > 0) {
+              UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
+              uptr += m * m;
+              UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m);
+
+              value_type *lptr = s.l_buf;
+              UnmanagedViewType<value_type_matrix> ABL(lptr, n_m, m);
+
+              UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
+
+              _status = Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
+                  _handle_blas, Diag::NonUnit(), one, ATL, ABL);
+              checkDeviceBlasStatus("trsm");
+              exec_instance.fence();
+
+              _status = Gemm<Trans::NoTranspose, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one,
+                                                                                             ABL, ATR, zero, ABR);
+              exec_instance.fence();
+              checkDeviceBlasStatus("gemm");
+            }
+          }
+        }
+      }
+    }
+  }
+
+  inline void factorizeLU_OnDevice(const ordinal_type pbeg, const ordinal_type pend,
+                                   const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+    if (variant == 0)
+      factorizeLU_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
+    else if (variant == 1)
+      factorizeLU_OnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
+    else if (variant == 2)
+      factorizeLU_OnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
+    else {
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "LevelSetTools::factorizeLU_OnDevice, algorithm variant is not supported");
     }
   }
 
@@ -1396,8 +1740,8 @@ public:
     }
   }
 
-  inline void solveLDL_LowerOnDevice(const ordinal_type pbeg, const ordinal_type pend,
-                                     const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline void solveLDL_LowerOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -1448,8 +1792,126 @@ public:
     }
   }
 
-  inline void solveLDL_UpperOnDevice(const ordinal_type pbeg, const ordinal_type pend,
+  inline void solveLDL_LowerOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    const ordinal_type nrhs = t.extent(1);
+    const value_type minus_one(-1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceStatus("cublasSetStream");
+        exec_instance = _exec_instances[qid];
+        ++q;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *aptr = s.u_buf;
+            UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+            aptr += m * m;
+
+            const ordinal_type offm = s.row_begin;
+
+            const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
+            const auto fpiv = ordinal_type_array(_piv.data() + 4 * offm + m, m);
+
+            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice> /// row inter-change
+                ::invoke(exec_instance, fpiv, tT);
+            exec_instance.fence();
+
+            _status = Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AL, tT);
+            checkDeviceBlasStatus("trsv");
+            exec_instance.fence();
+            if (n_m > 0) {
+              value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
+              UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // ptr += m*n_m;
+              UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
+              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, tT, zero, bB);
+              checkDeviceBlasStatus("gemv");
+            }
+          }
+        }
+      }
+    }
+  }
+
+  inline void solveLDL_LowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    const ordinal_type nrhs = t.extent(1);
+    const value_type minus_one(-1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceStatus("cublasSetStream");
+        exec_instance = _exec_instances[qid];
+        ++q;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *aptr = s.u_buf;
+            UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+            aptr += m * m;
+
+            const ordinal_type offm = s.row_begin;
+
+            const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
+            const auto fpiv = ordinal_type_array(_piv.data() + 4 * offm + m, m);
+
+            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice> /// row inter-change
+                ::invoke(exec_instance, fpiv, tT);
+            exec_instance.fence();
+
+            _status = Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AL, tT);
+            checkDeviceBlasStatus("trsv");
+            exec_instance.fence();
+            if (n_m > 0) {
+              value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
+              UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // ptr += m*n_m;
+              UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
+              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, tT, zero, bB);
+              checkDeviceBlasStatus("gemv");
+            }
+          }
+        }
+      }
+    }
+  }
+
+  inline void solveLDL_LowerOnDevice(const ordinal_type pbeg, const ordinal_type pend,
                                      const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    if (variant == 0)
+      solveLDL_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+    else if (variant == 1)
+      solveLDL_LowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+    else if (variant == 2)
+      solveLDL_LowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+    else {
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "LevelSetTools::solveLDL_LowerOnDevice, algorithm variant is not supported");
+    }
+  }
+
+  inline void solveLDL_UpperOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -1502,8 +1964,130 @@ public:
     }
   }
 
-  inline void solveLU_LowerOnDevice(const ordinal_type pbeg, const ordinal_type pend,
-                                    const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline void solveLDL_UpperOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    const ordinal_type nrhs = t.extent(1);
+    const value_type minus_one(-1), one(1);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceStatus("cublasSetStream");
+        exec_instance = _exec_instances[qid];
+        ++q;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
+            ;
+            const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+            aptr += m * m;
+            const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
+
+            const ordinal_type offm = s.row_begin;
+            const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
+            const auto P = ordinal_type_array(_piv.data() + 4 * offm, 4 * m);
+            const auto D = value_type_matrix(_diag.data() + 2 * offm, m, 2);
+            _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice> /// row scaling
+                ::invoke(exec_instance, P, D, tT);
+
+            if (n_m > 0) {
+              const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
+              checkDeviceBlasStatus("gemv");
+              exec_instance.fence();
+            }
+            _status = Trsv<Uplo::Lower, Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AL, tT);
+            checkDeviceBlasStatus("trsv");
+
+            const auto fpiv = ordinal_type_array(P.data() + m, m);
+            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::OnDevice> /// row inter-change
+                ::invoke(exec_instance, fpiv, tT);
+          }
+        }
+      }
+    }
+  }
+
+  inline void solveLDL_UpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    const ordinal_type nrhs = t.extent(1);
+    const value_type minus_one(-1), one(1);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceStatus("cublasSetStream");
+        exec_instance = _exec_instances[qid];
+        ++q;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
+            ;
+            const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+            aptr += m * m;
+            const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
+
+            const ordinal_type offm = s.row_begin;
+            const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
+            const auto P = ordinal_type_array(_piv.data() + 4 * offm, 4 * m);
+            const auto D = value_type_matrix(_diag.data() + 2 * offm, m, 2);
+            _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice> /// row scaling
+                ::invoke(exec_instance, P, D, tT);
+
+            if (n_m > 0) {
+              const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
+              checkDeviceBlasStatus("gemv");
+              exec_instance.fence();
+            }
+            _status = Trsv<Uplo::Lower, Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AL, tT);
+            checkDeviceBlasStatus("trsv");
+
+            const auto fpiv = ordinal_type_array(P.data() + m, m);
+            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::OnDevice> /// row inter-change
+                ::invoke(exec_instance, fpiv, tT);
+          }
+        }
+      }
+    }
+  }
+
+  inline void solveLDL_UpperOnDevice(const ordinal_type pbeg, const ordinal_type pend,
+                                     const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    if (variant == 0)
+      solveLDL_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+    else if (variant == 1)
+      solveLDL_UpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+    else if (variant == 2)
+      solveLDL_UpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+    else {
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "LevelSetTools::solveLDL_UpperOnDevice, algorithm variant is not supported");
+    }
+  }
+
+  inline void solveLU_LowerOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -1551,8 +2135,120 @@ public:
     }
   }
 
-  inline void solveLU_UpperOnDevice(const ordinal_type pbeg, const ordinal_type pend,
+  inline void solveLU_LowerOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    const ordinal_type nrhs = t.extent(1);
+    const value_type minus_one(-1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceStatus("cublasSetStream");
+        exec_instance = _exec_instances[qid];
+        ++q;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, m);
+
+            const ordinal_type offm = s.row_begin;
+            const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
+            const auto fpiv = ordinal_type_array(_piv.data() + 4 * offm + m, m);
+
+            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice> /// row inter-change
+                ::invoke(exec_instance, fpiv, tT);
+            exec_instance.fence();
+
+            _status = Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AT, tT);
+            checkDeviceBlasStatus("trsv");
+            exec_instance.fence();
+            if (n_m > 0) {
+              value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
+              UnmanagedViewType<value_type_matrix> AB(s.l_buf, n_m, m);
+              UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AB, tT, zero, bB);
+              checkDeviceBlasStatus("gemv");
+            }
+          }
+        }
+      }
+    }
+  }
+
+  inline void solveLU_LowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    const ordinal_type nrhs = t.extent(1);
+    const value_type minus_one(-1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceStatus("cublasSetStream");
+        exec_instance = _exec_instances[qid];
+        ++q;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, m);
+
+            const ordinal_type offm = s.row_begin;
+            const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
+            const auto fpiv = ordinal_type_array(_piv.data() + 4 * offm + m, m);
+
+            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice> /// row inter-change
+                ::invoke(exec_instance, fpiv, tT);
+            exec_instance.fence();
+
+            _status = Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AT, tT);
+            checkDeviceBlasStatus("trsv");
+            exec_instance.fence();
+            if (n_m > 0) {
+              value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
+              UnmanagedViewType<value_type_matrix> AB(s.l_buf, n_m, m);
+              UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AB, tT, zero, bB);
+              checkDeviceBlasStatus("gemv");
+            }
+          }
+        }
+      }
+    }
+  }
+
+  inline void solveLU_LowerOnDevice(const ordinal_type pbeg, const ordinal_type pend,
                                     const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    if (variant == 0)
+      solveLU_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+    else if (variant == 1)
+      solveLU_LowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+    else if (variant == 2)
+      solveLU_LowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+    else {
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "LevelSetTools::solveLU_LowerOnDevice, algorithm variant is not supported");
+    }
+  }
+
+  inline void solveLU_UpperOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -1595,6 +2291,113 @@ public:
           }
         }
       }
+    }
+  }
+  inline void solveLU_UpperOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    const ordinal_type nrhs = t.extent(1);
+    const value_type minus_one(-1), one(1);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceStatus("cublasSetStream");
+        exec_instance = _exec_instances[qid];
+        ++q;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *uptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
+            ;
+            const UnmanagedViewType<value_type_matrix> AL(uptr, m, m);
+            uptr += m * m;
+            const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
+
+            const ordinal_type offm = s.row_begin;
+            const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
+
+            if (n_m > 0) {
+              const UnmanagedViewType<value_type_matrix> AR(uptr, m, n_m); // uptr += m*n;
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
+              checkDeviceBlasStatus("gemv");
+              exec_instance.fence();
+            }
+            _status =
+                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), AL, tT);
+            checkDeviceBlasStatus("trsv");
+          }
+        }
+      }
+    }
+  }
+
+  inline void solveLU_UpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    const ordinal_type nrhs = t.extent(1);
+    const value_type minus_one(-1), one(1);
+#if defined(KOKKOS_ENABLE_CUDA)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+        const ordinal_type qid = q % _nstreams;
+        const auto mystream = _cuda_streams[qid];
+        _status = cublasSetStream(_handle_blas, mystream);
+        checkDeviceStatus("cublasSetStream");
+        exec_instance = _exec_instances[qid];
+        ++q;
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *uptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
+            ;
+            const UnmanagedViewType<value_type_matrix> AL(uptr, m, m);
+            uptr += m * m;
+            const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
+
+            const ordinal_type offm = s.row_begin;
+            const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
+
+            if (n_m > 0) {
+              const UnmanagedViewType<value_type_matrix> AR(uptr, m, n_m); // uptr += m*n;
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
+              checkDeviceBlasStatus("gemv");
+              exec_instance.fence();
+            }
+            _status =
+                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), AL, tT);
+            checkDeviceBlasStatus("trsv");
+          }
+        }
+      }
+    }
+  }
+
+  inline void solveLU_UpperOnDevice(const ordinal_type pbeg, const ordinal_type pend,
+                                    const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+    if (variant == 0)
+      solveLU_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+    else if (variant == 1)
+      solveLU_UpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+    else if (variant == 2)
+      solveLU_UpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+    else {
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "LevelSetTools::solveLU_UpperOnDevice, algorithm variant is not supported");
     }
   }
 
@@ -1857,7 +2660,8 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::DummyTag>
             team_policy_update;
 #else
-        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::FactorizeTag>
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
+                                   typename functor_type::FactorizeTag<variant>>
             team_policy_factor;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
             team_policy_update;
@@ -1917,8 +2721,8 @@ public:
     stat.t_extra += timer.seconds();
 
     if (verbose) {
-      printf("Summary: LevelSetTools (LDL Factorize)\n");
-      printf("======================================\n");
+      printf("Summary: LevelSetTools-Variant-%d (LDL Factorize)\n", variant);
+      printf("=================================================\n");
       print_stat_factor();
     }
   }
@@ -1977,9 +2781,11 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::DummyTag>
             team_policy_update;
 #else
-        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::SolveTag>
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
+                                   typename functor_type::SolveTag<variant>>
             team_policy_solve;
-        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
+                                   typename functor_type::UpdateTag<variant>>
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, _piv, t, _buf);
@@ -2040,9 +2846,11 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::DummyTag>
             team_policy_update;
 #else
-        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::SolveTag>
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
+                                   typename functor_type::SolveTag<variant>>
             team_policy_solve;
-        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
+                                   typename functor_type::UpdateTag<variant>>
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, _piv, _diag, t, _buf);
@@ -2104,8 +2912,8 @@ public:
     stat.t_extra += timer.seconds();
 
     if (verbose) {
-      printf("Summary: LevelSetTools (LDL Solve: %3d)\n", nrhs);
-      printf("=======================================\n");
+      printf("Summary: LevelSetTools-Variant-%d (LDL Solve: %3d)\n", variant, nrhs);
+      printf("==================================================\n");
       print_stat_solve();
     }
   }
@@ -2168,7 +2976,8 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::DummyTag>
             team_policy_update;
 #else
-        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::FactorizeTag>
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
+                                   typename functor_type::FactorizeTag<variant>>
             team_policy_factor;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
             team_policy_update;
@@ -2228,8 +3037,8 @@ public:
     stat.t_extra += timer.seconds();
 
     if (verbose) {
-      printf("Summary: LevelSetTools (LU Factorize)\n");
-      printf("=====================================\n");
+      printf("Summary: LevelSetTools-Variant-%d (LU Factorize)\n", variant);
+      printf("================================================\n");
       print_stat_factor();
     }
   }
@@ -2288,9 +3097,11 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::DummyTag>
             team_policy_update;
 #else
-        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::SolveTag>
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
+                                   typename functor_type::SolveTag<variant>>
             team_policy_solve;
-        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
+                                   typename functor_type::UpdateTag<variant>>
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, _piv, t, _buf);
@@ -2351,9 +3162,11 @@ public:
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::DummyTag>
             team_policy_update;
 #else
-        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::SolveTag>
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
+                                   typename functor_type::SolveTag<variant>>
             team_policy_solve;
-        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
+        typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
+                                   typename functor_type::UpdateTag<variant>>
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, t, _buf);
@@ -2415,8 +3228,8 @@ public:
     stat.t_extra += timer.seconds();
 
     if (verbose) {
-      printf("Summary: LevelSetTools (LU Solve: %3d)\n", nrhs);
-      printf("======================================\n");
+      printf("Summary: LevelSetTools-Variant-%d (LU Solve: %3d)\n", variant, nrhs);
+      printf("=================================================\n");
       print_stat_solve();
     }
   }

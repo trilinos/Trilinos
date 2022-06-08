@@ -195,17 +195,21 @@ public:
     return;
   }
 
-  struct FactorizeTag {};
+  template <int Var> struct FactorizeTag {
+    enum { variant = Var };
+  };
   struct UpdateTag {};
   struct DummyTag {};
 
-  template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void operator()(const FactorizeTag &, const MemberType &member) const {
+  template <typename MemberType, int Var>
+  KOKKOS_INLINE_FUNCTION void operator()(const FactorizeTag<Var> &, const MemberType &member) const {
     const ordinal_type lid = member.league_rank();
     const ordinal_type p = _pbeg + lid;
     const ordinal_type sid = _level_sids(p);
     const ordinal_type mode = _compute_mode(sid);
     if (p < _pend && mode == 1) {
+      using factorize_tag_type = FactorizeTag<Var>;
+
       const auto &s = _info.supernodes(sid);
       const ordinal_type m = s.m, n = s.n, n_m = n - m;
       const ordinal_type offm = s.row_begin;
@@ -216,8 +220,14 @@ public:
       value_type *bufptr = _buf.data() + bufbeg;
       UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
 
-      /// check the span does not go more than buf_ptr(lid+1)
-      factorize(member, s, P, ABR);
+      if (factorize_tag_type::variant == 0) {
+        /// check the span does not go more than buf_ptr(lid+1)
+        factorize(member, s, P, ABR);
+      } else if (factorize_tag_type::variant == 1) {
+        factorize(member, s, P, ABR);
+      } else if (factorize_tag_type::variant == 2) {
+        factorize(member, s, P, ABR);
+      }
     } else if (mode == -1) {
       printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");
     } else {
