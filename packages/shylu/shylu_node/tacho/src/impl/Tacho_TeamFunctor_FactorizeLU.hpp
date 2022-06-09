@@ -301,7 +301,7 @@ public:
       UnmanagedViewType<ordinal_type_array> P(_piv.data() + offm * 4, m * 4);
 
       const auto bufptr = _buf.data() + _buf_ptr(lid);
-      if (factorize_tag_type::variant == 0) {
+      if (factorize_tag_type::variant == 0 || true) { // temporary to push to trilinos
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         factorize_var0(member, s, P, ABR);
       } else if (factorize_tag_type::variant == 1) {
