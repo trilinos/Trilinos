@@ -149,9 +149,9 @@ namespace MueLu {
       sparsityPattern->getLocalRowView(k, Ik);
 
       // 2. get all local A(Ik,:) rows
-      Array<ArrayView<const GO>> J(Ik.size());
+      Array<ArrayView<const LO>> J(Ik.size());
       Array<ArrayView<const SC>> Ak(Ik.size());
-      Array<GO> Jk;
+      Array<LO> Jk;
       for (size_t i = 0; i < Ik.size(); i++) {
         A->getLocalRowView(Ik[i], J[i], Ak[i]);
         for (size_t j = 0; j < J[i].size(); j++)
@@ -161,7 +161,7 @@ namespace MueLu {
       std::sort(Jk.begin(), Jk.end());
       Jk.erase(std::unique(Jk.begin(), Jk.end()), Jk.end());
       // create map
-      std::map<GO, GO> G;
+      std::map<LO, LO> G;
       for (size_t i = 0; i < Jk.size(); i++) G.insert(std::pair<GO, GO>(Jk[i], i));
 
       // 3. merge rows together

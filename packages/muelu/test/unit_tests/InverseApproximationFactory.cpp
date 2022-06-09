@@ -57,6 +57,7 @@
 #include <Xpetra_MapExtractor_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_IO.hpp>
 
 #include <MueLu_InverseApproximationFactory.hpp>
 
