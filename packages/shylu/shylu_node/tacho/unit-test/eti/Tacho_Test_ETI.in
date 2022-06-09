@@ -9,7 +9,8 @@ static const std::string ETI_TEST_NAME="@ETI_NAME@";
 using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
 using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type;
 using value_type = @ETI_VALUE_TYPE@;
-using magnitude_type = typename Tacho::ArithTraits<value_type>::mag_type;
+using ats = Tacho::ArithTraits<value_type>;
+using magnitude_type = typename ats::mag_type;
 
 static const std::string MM_TEST_FILE= std::is_same<value_type,magnitude_type>::value ? "test_double.mtx" : "test_dcomplex.mtx";
 
