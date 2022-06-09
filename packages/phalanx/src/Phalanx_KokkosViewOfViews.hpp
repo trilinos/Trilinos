@@ -299,6 +299,8 @@ namespace PHX {
     bool is_initialized_;
     // Use count after initialization. This changes based on whether the device space is accessible to the host space.
     int use_count_;
+    // A safety check. If true, this makes sure there are no external references to the device view of views.
+    bool check_use_count_;
 
   public:
     template<typename... Extents>
@@ -306,7 +308,9 @@ namespace PHX {
       : view_host_(name,extents...),
         view_device_(name,extents...),
         device_view_is_synced_(false),
-        is_initialized_(true)
+        is_initialized_(true),
+        use_count_(0),
+        check_use_count_(true)
     {
       view_host_unmanaged_ = Kokkos::create_mirror_view(view_device_);
       use_count_ = view_device_.impl_track().use_count();
@@ -315,16 +319,23 @@ namespace PHX {
     ViewOfViews3()
       : device_view_is_synced_(false),
         is_initialized_(false),
-        use_count_(-1)
+        use_count_(0),
+        check_use_count_(true)
     {}
 
     ~ViewOfViews3()
     {
       // Make sure there is not another object pointing to device view
       // since the host view will delete the inner views on exit.
-      if (view_device_.impl_track().use_count() != use_count_)
+      if ( check_use_count_ && (view_device_.impl_track().use_count() != use_count_) )
         Kokkos::abort("\n ERROR - PHX::ViewOfViews - please free all instances of device ViewOfView \n before deleting the host ViewOfView!\n\n");
     }
+
+    /// Enable safety check in dtor for external references.
+    void enableSafetyCheck() { check_use_count_ = true; }
+
+    /// Disable safety check in dtor for external references.
+    void disableSafetyCheck() { check_use_count_ = false; }
 
     /// Allocate the out view objects. Extents are for the outer view.
     template<typename... Extents>
@@ -339,7 +350,7 @@ namespace PHX {
     }
 
     // Returns true if the outer view has been initialized.
-    bool is_initialized() {return is_initialized_;}
+    bool isInitialized() {return is_initialized_;}
 
     template<typename... Indices>
     void addView(InnerViewType v,Indices... i)
@@ -377,6 +388,79 @@ namespace PHX {
     }
   };
 
-}
+  // Rank 1 outer view
+  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
+  auto createHostHostViewOfViews(const Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>*,OuterProps...>& v_of_v) {
+    // Host outer view pointing to device inner views
+    auto host_device = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),v_of_v);
+
+    // Host outer view point to host inner views
+    using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(0)));
+    using HostDeviceMirrorType = decltype(host_device);
+    Kokkos::View<HostInnerViewType *,
+                 typename HostDeviceMirrorType::HostMirror::array_layout,
+                 typename HostDeviceMirrorType::HostMirror::device_type> host_host(host_device.label(),
+                                                                                   host_device.extent(0));
+
+    for (std::size_t i=0; i < host_device.extent(0); ++i) {
+      auto tmp = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(i));
+      // HostInnerViewType t = tmp;
+      host_host(i) = tmp;
+    }
+    return host_host;
+  }
+
+  // Rank 2 outer view
+  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
+  auto createHostHostViewOfViews(const Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>**,OuterProps...>& v_of_v) {
+    // Host outer view pointing to device inner views
+    auto host_device = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),v_of_v);
+
+    // Host outer view point to host inner views
+    using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(0,0)));
+    using HostDeviceMirrorType = decltype(host_device);
+    Kokkos::View<HostInnerViewType **,
+                 typename HostDeviceMirrorType::HostMirror::array_layout,
+                 typename HostDeviceMirrorType::HostMirror::device_type> host_host(host_device.label(),
+                                                                                   host_device.extent(0),
+                                                                                   host_device.extent(1));
+
+    for (std::size_t i=0; i < host_device.extent(0); ++i) {
+      for (std::size_t j=0; j < host_device.extent(1); ++j) {
+        auto tmp = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(i,j));
+        host_host(i,j) = tmp;
+      }
+    }
+    return host_host;
+  }
+
+  // Rank 3 outer view
+  template<typename InnerViewDataType,typename... InnerProps,typename... OuterProps>
+  auto createHostHostViewOfViews(const Kokkos::View<Kokkos::View<InnerViewDataType,InnerProps...>***,OuterProps...>& v_of_v) {
+    // Host outer view pointing to device inner views
+    auto host_device = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),v_of_v);
+
+    // Host outer view point to host inner views
+    using HostInnerViewType = decltype(Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(0,0,0)));
+    using HostDeviceMirrorType = decltype(host_device);
+    Kokkos::View<HostInnerViewType ***,
+                 typename HostDeviceMirrorType::HostMirror::array_layout,
+                 typename HostDeviceMirrorType::HostMirror::device_type> host_host(host_device.label(),
+                                                                                   host_device.extent(0),
+                                                                                   host_device.extent(1),
+                                                                                   host_device.extent(2));
+
+    for (std::size_t i=0; i < host_device.extent(0); ++i) {
+      for (std::size_t j=0; j < host_device.extent(1); ++j) {
+        for (std::size_t k=0; k < host_device.extent(2); ++k) {
+          auto tmp = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),host_device(i,j,k));
+          host_host(i,j,k) = tmp;
+        }
+      }
+    }
+    return host_host;
+  }
+
+} // namespace PHX
 
 #endif
