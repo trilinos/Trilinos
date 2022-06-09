@@ -6,3 +6,7 @@
 	path = packages/framework/GenConfig
 	url = git@gitlab-ex.sandia.gov:trilinos-devops-consolidation/code/GenConfig.git
 	branch = master
+[submodule "packages/framework/son-ini-files"]
+	path = packages/framework/son-ini-files
+	url = git@gitlab-ex.sandia.gov:trilinos-project/son-ini-files.git
+	branch = master
