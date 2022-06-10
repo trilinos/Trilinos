@@ -91,7 +91,7 @@ entire TriBITS system, the design philosophy that provides the foundation for
 TriBITS and be an expert in CMake, CTest, and CDash.  Much of what needs to be
 known by a TriBITS System Developer and a TriBITS System Architect is
 contained in the document `TriBITS Maintainers Guide and Reference`_.  The
-rest of the the primary documentation for these roles will be in the TriBITS
+rest of the primary documentation for these roles will be in the TriBITS
 CMake source code and various unit tests itself defined in `The TriBITS Test
 Package`_.  At the time of this writing, there is currently there is only one
 TriBITS System Architect (who also happens to be the primary author of this
@@ -315,21 +315,20 @@ CMake language behavior with respect to case sensitivity is also strange:
 * Calls of built-in and user-defined macros and functions is *case
   insensitive*!  That is ``set(...)``, ``set(...)``, ``set()``, and all other
   combinations of upper and lower case characters for 'S', 'E', 'T' all call
-  the built-in ``set()`` function.  The convention in TriBITS is to use all
-  caps for functions and macros (which was adopted by following the
-  conventions used in the early versions of TriBITS, see the `History of
-  TriBITS`_).  The convention in CMake literature from Kitware seems to use
-  lower-case letters for functions and macros.
+  the built-in ``set()`` function.  The convention in TriBITS is to use
+  ``lower_case_with_underscores()`` for functions and macros.
 
 * However, the names of CMake (local or cache/global) variables are *case
   sensitive*!  That is, ``SOME_VAR`` and ``some_var`` are *different*
   variables.  Built-in CMake variables tend use all caps with underscores
   (e.g. ``CMAKE_CURRENT_SOURCE_DIR``) but other built-in CMake variables tend
   to use mixed case with underscores (e.g. ``CMAKE_Fortran_FLAGS``).  TriBITS
-  tends to use a similar naming convention where variables have mostly
-  upper-case letters except for parts that are proper nouns like the project,
-  package or TPL name (e.g. ``TribitsProj_TRIBITS_DIR``,
-  ``TriBITS_SOURCE_DIR``, ``Boost_INCLUDE_DIRS``).
+  tends to use a similar naming convention where project-level and cache
+  variables have mostly upper-case letters except for parts that are proper
+  nouns like the project, package or TPL name
+  (e.g. ``TribitsExProj_TRIBITS_DIR``, ``TriBITS_SOURCE_DIR``,
+  ``Boost_INCLUDE_DIRS``).  Local variables and function/macro parameters can
+  use camelCase or lower_case_with_underscores.
 
 I don't know of any other programming language that uses different case
 sensitivity rules for variables and functions.  However, because we must parse
@@ -341,7 +340,7 @@ keyword-based arguments.
 Other mistakes that people make result from not understanding how CMake scopes
 variables and other entities.  CMake defines a global scope (i.e. "cache"
 variables) and several nested local scopes that are created by
-``add_subdirectory()`` and entering FUNCTIONS.  See `dual_scope_set()`_ for a
+``add_subdirectory()`` and entering functions.  See `dual_scope_set()`_ for a
 short discussion of these scoping rules.  And it is not just variables that
 can have local and global scoping rules.  Other entities, like defines set
 with the built-in command ``add_definitions()`` only apply to the local scope
@@ -700,7 +699,7 @@ The minimum CMake version must also be declared in the top-level
 version avoids strange errors that can occur when someone tries to build the
 project using a version of CMake that is too old.  The project should set the
 minimum CMake version based on the CMake features used in that project's own
-CMake files.  The minimum CMake version required by TriBITS is defined in in
+CMake files.  The minimum CMake version required by TriBITS is defined in
 the variable ``TRIBITS_CMAKE_MINIMUM_REQUIRED`` (the current minimum version
 of CMake required by TriBITS is given at in `Getting set up to use CMake`_) .
 For example, the ``VERA/CMakeLists.txt`` file lists as its first line::
@@ -1578,7 +1577,24 @@ Other TriBITS macros/functions that can be called in this file include
 configured header file.  This file will contain placeholders for variables
 that will be substitute at configure time with `tribits_configure_file()`_.
 This includes usage of ``#cmakedefine <varName>`` and other standard CMake
-file configuration features.
+file configuration features used by CMake's ``configure_file()`` command.
+
+An example of this file is shown in:
+
+  `TribitsExampleProject`_/``packages/simple_cxx/cmake/SimpleCxx_config.h.in``
+
+which is:
+
+.. include:: ../../examples/TribitsExampleProject/packages/simple_cxx/cmake/SimpleCxx_config.h.in
+   :literal:
+
+The variable ``HAVE_SIMPLECXX___INT64`` is set up in the base file
+``SimpleCxx/CMakeLists.txt`` (see `<packageDir>/CMakeLists.txt`_ below).  For
+an explanation of ``HAVE_SIMPLECXX_DEBUG``, see `tribits_add_debug_option()`_.
+For an explanation of ``HAVE_SIMPLECXX_SIMPLETPL``, see `How to add a new
+TriBITS TPL dependency`_.  For an explanation of
+``@SIMPLECXX_DEPRECATED_DECLARATIONS@``, see `Setting up support for
+deprecated code handling`_.
 
 **NOTE:** The file name ``<packageName>_config.h.in`` is not at all fixed and
 the package can call this file anything it wants.  Also, a package can
@@ -1765,7 +1781,13 @@ defined before a (SE) Package's ``CMakeLists.txt`` file is processed:
 
   ``${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}``
 
-    Set to ``ON`` if the package is enabled and is to be processed.
+    Set to ``ON`` if the package is enabled and is to be processed or will be
+    set to ``ON`` or ``OFF`` automatically during enable/disable logic.  For a
+    parent package that is not directly enabled but were one of its
+    subpackages is enabled, this will get set to ``ON`` (but that is not the
+    same as the parent package being directly enabled and therefore does not
+    imply that all of the required subpackages will be enabled, only that the
+    parent package will be processed).
 
   .. _${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}:
 
@@ -1787,6 +1809,10 @@ defined before a (SE) Package's ``CMakeLists.txt`` file is processed:
     turned off by the user even through the packages ``${PACKAGE_NAME}`` and
     ``${OPTIONAL_DEP_PACKAGE_NAME}`` are both enabled at the project level!
     See `Support for optional SE package/TPL can be explicitly disabled`_.
+
+    **NOTE:** This variable will also be set for required dependencies as well
+    to allow for uniform processing such as when looping over the items in
+    `${PACKAGE_NAME}_LIB_ALL_DEPENDENCIES`_.
 
   .. _${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME}:
 
@@ -2159,12 +2185,11 @@ downstream dependencies`_).
 
 For each TPL referenced in a `<repoDir>/TPLsList.cmake`_ file using the macro
 `tribits_repository_define_tpls()`_, there must exist a file, typically called
-``FindTPL${TPL_NAME}.cmake``, that once processed, produces the variables
-``TPL_${TPL_NAME}_LIBRARIES`` and ``TPL_${TPL_NAME}_INCLUDE_DIRS``.  Most
-``FindTPL${TPL_NAME}.cmake`` files just use the function
-`tribits_tpl_find_include_dirs_and_libraries()`_ the define the TriBITS TPL.
-A simple example of such a file is the common TriBITS ``FindTPLPETSC.cmake``
-module which is currently:
+``FindTPL${TPL_NAME}.cmake``, that once processed, produces the target
+```${TPL_NAME}::all_libs``.  Most ``FindTPL${TPL_NAME}.cmake`` files just use
+the function `tribits_tpl_find_include_dirs_and_libraries()`_ to define the
+TriBITS TPL.  A simple example of such a file is the common TriBITS
+``FindTPLPETSC.cmake`` module which is currently:
 
 .. include:: ../../common_tpls/FindTPLPETSC.cmake
    :literal:
@@ -2227,11 +2252,10 @@ override and specialize how a TPL's include directories and libraries are
 determined.  However, note that the TriBITS system does not require the usage
 of the function ``tribits_tpl_find_include_dirs_and_libraries()`` and does not
 even care about the TPL module name ``FindTPL${TPL_NAME}.cmake``.  All that is
-required is that some CMake file fragment exist that once included, will
-define the variables ``${TPL_NAME}_LIBRARIES`` and
-``${TPL_NAME}_INCLUDE_DIRS``.  However, to be user friendly, such a CMake file
-should respond to the same variables as accepted by the standard
-``tribits_tpl_find_include_dirs_and_libraries()`` function.
+required is that some CMake file fragment exist such that, once included, will
+define the target ``${TPL_NAME}::all_libs``.  However, to be user friendly,
+such a CMake file should respond to the same variables as accepted by the
+standard ``tribits_tpl_find_include_dirs_and_libraries()`` function.
 
 The core variables related to an enabled TPL are ``${TPL_NAME}_LIBRARIES``,
 ``${TPL_NAME}_INCLUDE_DIRS``, and ``${TPL_NAME}_TESTGROUP`` as defined in
@@ -3473,8 +3497,16 @@ In more detail, these rules/behaviors are:
     `downstream`_ package declares a dependency on the SE package
     ``ThyraEpetra``, but not the parent package ``Thyra``, then the ``Thyra``
     package (and its other subpackages and their dependencies) will not get
-    auto-enabled.  This is a key aspect of the TriBITS SE package management
-    system.
+    auto-enabled.  Also note that enabling a subset of the required
+    subpackages for a parent package does not require the enable of the other
+    required subpackages.  For example, if both ``ThyraEpetra`` and
+    ``ThyraCore`` were both required subpackages of the parent package
+    ``Thyra``, then enabling ``ThyraCore`` does not require the enabling of
+    ``ThyraEpetra``.  In these cases where one of a parent package's
+    subpackages is enabled for some reason, the final value of
+    ``${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}`` will be set to ``ON`` (but this
+    does imply that all of the required subpackages will be enabled, only that
+    the parent package will be processed.)
 
 .. _Support for optional SE package/TPL is enabled by default:
 
@@ -8140,3 +8172,33 @@ and then the installed versions of GCC, MPICH, CMake, and `gitdist`_ are
 placed in one's path.
 
 See `install_devtools.py --help`_ for more details.
+
+
+.. Words specific to this documentation collection:
+
+.. LocalWords:  projectDir packageDir
+
+.. TriBITS words:
+
+.. LocalWords:  TRIBITS TriBITS tribits TPL TPLs
+.. LocalWords:  Subpackages subpackages Subpackage subpackage
+.. LocalWords:  PackagesList TPLsList
+.. LocalWords:  NativeRepositoriesList ExtraRepositoriesList
+.. LocalWords:  TribitsCTestDriverCore
+.. LocalWords:  TribitsExampleProject TribitsExProj DTribitsExProj SimpleCXX MixedLang
+.. LocalWords:  MockTrilinos
+.. LocalWords:  WithSubpackages WithSubpackagesA WithSubpackagesB WithSubpackagesC 
+
+.. General CMake words:
+
+.. LocalWords:  CMAKE CMake cmake CTEST CTest ctest CDash
+.. LocalWords:  CMakeLists CMakeCache CTestConfig
+.. LocalWords:  Kitware
+.. LocalWords:  endif foreach endforeach endmacro subdirectory
+.. LocalWords:  Fortran
+
+
+.. Other general words:
+
+.. LocalWords:  Trilinos executables Versioning versioning
+.. LocalWords:  Namespaced namespaced symlinks initializations

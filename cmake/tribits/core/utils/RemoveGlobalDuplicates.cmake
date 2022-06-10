@@ -40,7 +40,7 @@
 include(AssertDefined)
 include(GlobalSet)
 
-#
+
 # @FUNCTION: remove_global_duplicates()
 #
 # Remove duplicate elements from a global list variable (removes boiler-plate

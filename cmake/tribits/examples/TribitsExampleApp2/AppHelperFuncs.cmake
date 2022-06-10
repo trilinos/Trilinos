@@ -115,16 +115,14 @@ endmacro()
 #
 function(addAppDepCompileDefines)
   addAppDepCompileDefine("Package1")
-  #addAppDepCompileDefine("Package2")
-  #addAppDepCompileDefine("Package3")
+  addAppDepCompileDefine("Package2")
+  addAppDepCompileDefine("Package3")
 endfunction()
 
 
 function(addAppDepCompileDefine componentName)
   if (${componentName} IN_LIST TribitsExProj2_SELECTED_PACKAGE_LIST)
     string(TOUPPER "${componentName}" componentNameUpper)
-    message("target_compile_definitions(app PRIVATE TRIBITSEXAPP2_HAVE_${componentNameUpper})
-")
     target_compile_definitions(app PRIVATE TRIBITSEXAPP2_HAVE_${componentNameUpper})
   endif()
 endfunction()
@@ -135,26 +133,47 @@ endfunction()
 #
 function(getExpectedAppDepsStr expectedDepsStrOut)
 
-  set(package1Deps "tpl1")
+  set(tpl1 "tpl1")  # ToDo: Change to Tpl1{no deps}?
+  set(tpl2a "Tpl2a{${tpl1}}")
+  set(tpl2b "Tpl2b{no deps}")
+  set(tpl3 "Tpl3{${tpl2a}, ${tpl2b}}")
+  set(tpl4 "Tpl4{${tpl3}, ${tpl2a}, ${tpl2b}}")
 
-  set(depsStr "Package1: ${package1Deps}")
+  set(package1 "Package1{${tpl1}}")
+
+  if (Package2_ENABLE_Tpl3)
+    set(package2_tpl3_deps_str ", ${tpl3}")
+  else()
+    set(package2_tpl3_deps_str "")
+  endif()
+  set(package2 "Package2{${package1}${package2_tpl3_deps_str}}")
+
+  if (Package3_ENABLE_Package2)
+    set(package3_package2_deps_str "${package2}, ")
+  else()
+    set(package3_package2_deps_str "")
+  endif()
+  if (Package3_ENABLE_Tpl4)
+    set(package3_tpl4_deps_str "${tpl4}, ")
+  else()
+    set(package3_tpl4_deps_str "")
+  endif()
+  set(package3
+    "Package3{${package3_package2_deps_str}${package1}, ${package3_tpl4_deps_str}${tpl2a}, ${tpl2b}}")
+
+  if (TARGET Package3::all_libs)
+    set(depsStr "${package3}")
+  elseif (TARGET Package2::all_libs)
+    set(depsStr "${package2}")
+  elseif (TARGET Package1::all_libs)
+    set(depsStr "${package1}")
+  else()
+    message("No package targets exist!")
+    set(depsStr "no deps")
+  endif()
 
   set(${expectedDepsStrOut} "${depsStr}" PARENT_SCOPE)
 
-endfunction()
-
-
-function(appendExpectedAppDepsStr componentName str depsStrOut)
-  set(depsStr "${${depsStrOut}}")  # Should be value of var in parent scope!
-  #message("-- depsStr (inner) = '${depsStr}'")
-  if (${componentName} IN_LIST TribitsExProj2_SELECTED_PACKAGE_LIST)
-    if (depsStr)
-      set(depsStr "${depsStr}[;] ${str}")
-    else()
-      set(depsStr "${str}")
-    endif()
-  endif()
-  set(${depsStrOut} "${depsStr}" PARENT_SCOPE)
 endfunction()
 
 

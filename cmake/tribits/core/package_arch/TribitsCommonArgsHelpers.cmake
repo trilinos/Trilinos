@@ -55,7 +55,9 @@ function(tribits_set_linker_language_from_arg  TARGET_NAME_IN  LINKER_LANGUAGE_I
 
   if (LINKER_LANGUAGE)
 
-    if (${PROJECT_NAME}_VERBOSE_CONFIGURE OR TRIBITS_SET_LINKER_LANGUAGE_FROM_ARG_DEBUG_DUMP)
+    if (${PROJECT_NAME}_VERBOSE_CONFIGURE
+        OR TRIBITS_SET_LINKER_LANGUAGE_FROM_ARG_DEBUG_DUMP
+      )
       message("-- Setting linker language for target '${TARGET_NAME_IN}' to '${LINKER_LANGUAGE}'")
     endif()
 
@@ -63,6 +65,7 @@ function(tribits_set_linker_language_from_arg  TARGET_NAME_IN  LINKER_LANGUAGE_I
       TARGET ${TARGET_NAME_IN}
       APPEND PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE}
       )
+
   endif()
 
 endfunction()

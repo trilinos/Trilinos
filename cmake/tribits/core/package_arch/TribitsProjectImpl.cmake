@@ -323,7 +323,6 @@ macro(tribits_project_impl)
 endmacro()
 
 
-#
 # @MACRO: tribits_project_enable_all()
 #
 # Process a project where you enable all of the packages by default.

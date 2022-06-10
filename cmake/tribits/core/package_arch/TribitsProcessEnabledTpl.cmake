@@ -48,7 +48,6 @@ include(AppendStringVar)
 include(TribitsStandardizePaths)
 
 
-#
 # @FUNCTION: tribits_process_enabled_tpl()
 #
 # Process an enabled TPL's FindTPL${TPL_NAME}.cmake module.
@@ -76,22 +75,14 @@ function(tribits_process_enabled_tpl  TPL_NAME)
     if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       print_var(${TPL_NAME}_FINDMOD)
     endif()
-    #print_var(${TPL_NAME}_FINDMOD)
     if (${TPL_NAME}_FINDMOD STREQUAL "TRIBITS_PKG")
       set(TPL_${TPL_NAME}_PARTS_ALREADY_SET FALSE)  # ToDo: Take out?
       if (NOT TPL_${TPL_NAME}_PARTS_ALREADY_SET)
         find_package(${TPL_NAME} CONFIG REQUIRED)
-        #print_var(${TPL_NAME}_INCLUDE_DIRS)
-        #print_var(${TPL_NAME}_LIBRARIES)
-        tribits_standardize_abs_paths(THIS_TPL_INCLUDE_DIRS
-          ${${TPL_NAME}_INCLUDE_DIRS} ${${TPL_NAME}_TPL_INCLUDE_DIRS})
-        global_set(TPL_${TPL_NAME}_INCLUDE_DIRS ${THIS_TPL_INCLUDE_DIRS})
         global_set(TPL_${TPL_NAME}_LIBRARIES
           "${${TPL_NAME}_LIBRARIES}" "${${TPL_NAME}_TPL_LIBRARIES}")
         global_set(TPL_${TPL_NAME}_PARTS_ALREADY_SET TRUE)
       endif()
-      #print_var(TPL_${TPL_NAME}_INCLUDE_DIRS)
-      #print_var(TPL_${TPL_NAME}_LIBRARIES)
       return()
     elseif (IS_ABSOLUTE ${${TPL_NAME}_FINDMOD})
       #message("${${TPL_NAME}_FINDMOD} is absolute!")
@@ -158,27 +149,21 @@ function(tribits_process_enabled_tpl  TPL_NAME)
     endif()
 
     # Assert that the TPL correctly defined all of these variables
-    assert_defined(TPL_${TPL_NAME}_INCLUDE_DIRS)
     assert_defined(TPL_${TPL_NAME}_LIBRARIES)
-    assert_defined(TPL_${TPL_NAME}_LIBRARY_DIRS)
-    # ToDo: Make TPL_${TPL_NAME}_LIBRARY_DIRS go away.  It is not needed for
-    # anything.
 
     # Generate the <tplName>ConfigVersion.cmake file if it has not been
     # created yet and add install targets for <tplName>Config[Version].cmake
-    if (TARGET ${TPL_NAME}::all_libs)
-      set(buildDirExternalPkgsDir
-        "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}")
-      set(tplConfigFile
-        "${buildDirExternalPkgsDir}/${TPL_NAME}/${TPL_NAME}Config.cmake")
-      set(tplConfigVersionFile
-        "${buildDirExternalPkgsDir}/${TPL_NAME}/${TPL_NAME}ConfigVersion.cmake")
-      tribits_external_package_write_config_version_file(${TPL_NAME}
-        "${tplConfigVersionFile}")
-      tribits_external_package_install_config_file(${TPL_NAME} "${tplConfigFile}")
-      tribits_external_package_install_config_version_file(${TPL_NAME}
-        "${tplConfigVersionFile}")
-    endif()
+    set(buildDirExternalPkgsDir
+      "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}")
+    set(tplConfigFile
+      "${buildDirExternalPkgsDir}/${TPL_NAME}/${TPL_NAME}Config.cmake")
+    set(tplConfigVersionFile
+      "${buildDirExternalPkgsDir}/${TPL_NAME}/${TPL_NAME}ConfigVersion.cmake")
+    tribits_external_package_write_config_version_file(${TPL_NAME}
+      "${tplConfigVersionFile}")
+    tribits_external_package_install_config_file(${TPL_NAME} "${tplConfigFile}")
+    tribits_external_package_install_config_version_file(${TPL_NAME}
+      "${tplConfigVersionFile}")
 
   endif()
 

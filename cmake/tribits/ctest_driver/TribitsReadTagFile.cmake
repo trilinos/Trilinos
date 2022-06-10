@@ -1,3 +1,6 @@
+cmake_policy(SET CMP0007 NEW)
+
+
 # @FUNCTION: tribits_read_ctest_tag_file()
 #
 # Read in the <build>/Testing/TAG file contents

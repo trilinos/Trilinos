@@ -20,7 +20,17 @@ tribits_add_show_deprecated_warnings_option()
 #
 add_subdirectory(src)
 tribits_add_test_directories(test)
-#tribits_add_example_directories(example)
+
+# Set a variable that will be used in downstream packages
+
+if (SimpleCxx_ENABLE_SimpleTpl)
+  set(simpletplText "simpletpl ")
+else()
+  set(simpletplText)
+endif()
+
+global_set(EXPECTED_SIMPLECXX_AND_DEPS
+  "SimpleCxx ${simpletplText}headeronlytpl")
 
 #
 # E) Do standard post processing

@@ -185,15 +185,6 @@ function(tribits_write_flexible_package_client_export_files)
   set(FULL_PACKAGE_SET "")
   set(FULL_LIBRARY_SET "")
 
-  set(SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM TRUE)
-  if (${PACKAGE_NAME}_INCLUDE_DIRS)
-    set(FULL_INCLUDE_DIRS_SET ${${PACKAGE_NAME}_INCLUDE_DIRS})
-    set(FULL_LIBRARY_DIRS_SET ${${PACKAGE_NAME}_LIBRARY_DIRS})
-    set(SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM FALSE)
-  else()
-    set(FULL_INCLUDE_DIRS_SET "")
-    set(FULL_LIBRARY_DIRS_SET "")
-  endif()
 
   if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
     print_var(${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES)
@@ -219,10 +210,6 @@ function(tribits_write_flexible_package_client_export_files)
       list(APPEND FULL_PACKAGE_SET ${TRIBITS_PACKAGE})
       if (APPEND_THE_PACKAGE_LIBS)
         append_set(FULL_LIBRARY_SET ${${TRIBITS_PACKAGE}_LIBRARIES})
-        if (SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM)
-          append_set(FULL_INCLUDE_DIRS_SET ${${TRIBITS_PACKAGE}_INCLUDE_DIRS})
-          append_set(FULL_LIBRARY_DIRS_SET ${${TRIBITS_PACKAGE}_LIBRARY_DIRS})
-        endif()
       else()
         if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
           message("-- " "Skipping adding the package libs!")
@@ -237,10 +224,6 @@ function(tribits_write_flexible_package_client_export_files)
     if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
       print_var(FULL_PACKAGE_SET)
       print_var(FULL_LIBRARY_SET)
-      if (SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM)
-        print_var(FULL_INCLUDE_DIRS_SET)
-        print_var(FULL_LIBRARY_DIRS_SET)
-      endif()
     endif()
 
   endforeach()
@@ -256,21 +239,10 @@ function(tribits_write_flexible_package_client_export_files)
     prepend_set(FULL_LIBRARY_SET ${${PACKAGE_NAME}_LIBRARIES})
   endif()
 
-  if (SET_INCLUDE_LIBRARY_DIRS_FROM_UPSTREAM)
-     if (FULL_INCLUDE_DIRS_SET)
-       list(REMOVE_DUPLICATES FULL_INCLUDE_DIRS_SET)
-     endif()
-     if (FULL_LIBRARY_DIRS_SET)
-       list(REMOVE_DUPLICATES FULL_LIBRARY_DIRS_SET)
-     endif()
-  endif()
-
   if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
     message("-- " "*** Final sets of packages, libs, include dirs, and lib dirs:")
     print_var(FULL_PACKAGE_SET)
     print_var(FULL_LIBRARY_SET)
-    print_var(FULL_INCLUDE_DIRS_SET)
-    print_var(FULL_LIBRARY_DIRS_SET)
   endif()
 
   #
@@ -315,12 +287,8 @@ function(tribits_write_flexible_package_client_export_files)
   #
 
   set(${PACKAGE_NAME}_TPL_LIBRARIES "")
-  set(${PACKAGE_NAME}_TPL_INCLUDE_DIRS "")
-  set(${PACKAGE_NAME}_TPL_LIBRARY_DIRS "")
   foreach(TPL ${ORDERED_FULL_TPL_SET})
-    list(APPEND ${PACKAGE_NAME}_TPL_LIBRARIES ${TPL_${TPL}_LIBRARIES})
-    list(APPEND ${PACKAGE_NAME}_TPL_INCLUDE_DIRS ${TPL_${TPL}_INCLUDE_DIRS})
-    list(APPEND ${PACKAGE_NAME}_TPL_LIBRARY_DIRS ${TPL_${TPL}_LIBRARY_DIRS})
+    list(APPEND ${PACKAGE_NAME}_TPL_LIBRARIES ${TPL}::all_libs)
   endforeach()
 
   # Generate a note discouraging editing of the <package>Config.cmake file
@@ -343,13 +311,15 @@ function(tribits_write_flexible_package_client_export_files)
   # F) Create the contents of the <Package>Config.cmake file for the build tree
   #
 
-  tribits_generate_package_config_file_for_build_tree(${PACKAGE_NAME})
+  tribits_generate_package_config_file_for_build_tree(${PACKAGE_NAME}
+    EXPORT_FILE_VAR_PREFIX ${EXPORT_FILE_VAR_PREFIX})
 
   #
   # G) Create <Package>Config_install.cmake file for the install tree
   #
 
-  tribits_generate_package_config_file_for_install_tree(${PACKAGE_NAME})
+  tribits_generate_package_config_file_for_install_tree(${PACKAGE_NAME}
+    EXPORT_FILE_VAR_PREFIX ${EXPORT_FILE_VAR_PREFIX})
 
 endfunction()
 
@@ -362,7 +332,9 @@ endfunction()
 #
 # Usage::
 #
-#   tribits_generate_package_config_file_for_build_tree(<packageName>)
+#   tribits_generate_package_config_file_for_build_tree( <packageName>
+#     [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
+#     )
 #
 # These files get placed under <buildDir>/cmake_packages/<packageName>/
 #
@@ -370,6 +342,24 @@ endfunction()
 # <buildDir>/cmake_packages/ to CMAKE_PREFIX_PATH.
 #
 function(tribits_generate_package_config_file_for_build_tree  packageName)
+
+  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+    message("tribits_generate_package_config_file_for_build_tree(${ARGV})")
+  endif()
+
+  cmake_parse_arguments(
+     PARSE  #prefix
+     ""    #options
+     "EXPORT_FILE_VAR_PREFIX"  #one_value_keywords
+     "" #multi_value_keywords
+     ${ARGN}
+     )
+
+   if (PARSE_EXPORT_FILE_VAR_PREFIX)
+     set(EXPORT_FILE_VAR_PREFIX ${PARSE_EXPORT_FILE_VAR_PREFIX})
+   else()
+     set(EXPORT_FILE_VAR_PREFIX ${packageName})
+   endif()
 
   set(buildDirExtPkgsDir
      "${${PROJECT_NAME}_BINARY_DIR}/${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}")
@@ -383,7 +373,8 @@ function(tribits_generate_package_config_file_for_build_tree  packageName)
     # below)
     set(PACKAGE_CONFIG_CODE "")
 
-    tribits_append_dependent_package_config_file_includes(${packageName}
+    tribits_append_dependent_package_config_file_includes_and_enables(${packageName}
+      EXPORT_FILE_VAR_PREFIX ${EXPORT_FILE_VAR_PREFIX}
       EXT_PKG_CONFIG_FILE_BASE_DIR "${buildDirExtPkgsDir}"
       PKG_CONFIG_FILE_BASE_DIR "${buildDirCMakePkgsDir}"
       CONFIG_FILE_STR_INOUT PACKAGE_CONFIG_CODE )
@@ -413,12 +404,18 @@ function(tribits_generate_package_config_file_for_build_tree  packageName)
       # Replace " by \".
       string(REGEX REPLACE "\"" "\\\\\"" CMAKE_CXX_FLAGS_ESCAPED ${CMAKE_CXX_FLAGS})
     endif()
+
+    # Used in configured file below
+    set(EXPORTED_PACKAGE_LIBS_NAMES ${${packageName}_EXPORTED_PACKAGE_LIBS_NAMES})
+    set(PDOLLAR "$")
+
     set(tribitsConfigFilesDir
       "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}")
     configure_file(
       "${tribitsConfigFilesDir}/TribitsPackageConfigTemplate.cmake.in"
       "${PARSE_PACKAGE_CONFIG_FOR_BUILD_BASE_DIR}/${packageName}Config.cmake"
       )
+
   endif()
 
 endfunction()
@@ -432,7 +429,9 @@ endfunction()
 #
 # Usage::
 #
-#   tribits_generate_package_config_file_for_install_tree(<packageName>)
+#   tribits_generate_package_config_file_for_install_tree( <packageName>
+#     [EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>]
+#     )
 #
 # The export files are typically installed in
 #     <install-dir>/<lib-path>/cmake/<package-name>/.
@@ -443,6 +442,24 @@ endfunction()
 # allow this function to be unit tested in a cmake -P script.)
 #
 function(tribits_generate_package_config_file_for_install_tree  packageName)
+
+  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+    message("tribits_generate_package_config_file_for_install_tree(${ARGV})")
+  endif()
+
+  cmake_parse_arguments(
+     PARSE  #prefix
+     ""    #options
+     "EXPORT_FILE_VAR_PREFIX"  #one_value_keywords
+     "" #multi_value_keywords
+     ${ARGN}
+     )
+
+   if (PARSE_EXPORT_FILE_VAR_PREFIX)
+     set(EXPORT_FILE_VAR_PREFIX ${PARSE_EXPORT_FILE_VAR_PREFIX})
+   else()
+     set(EXPORT_FILE_VAR_PREFIX ${packageName})
+   endif()
 
   # Set the include and library directories relative to the location
   # at which the ${PROJECT_NAME}Config.cmake file is going to be
@@ -463,15 +480,12 @@ function(tribits_generate_package_config_file_for_install_tree  packageName)
   foreach(PATH ${PATH_LIST})
     set(RELATIVE_PATH "${RELATIVE_PATH}/..")
   endforeach()
-  set(FULL_LIBRARY_DIRS_SET
-    "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_LIB_DIR}")
-  set(FULL_INCLUDE_DIRS_SET
-    "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
 
   # Custom code in configuration file.
   set(PACKAGE_CONFIG_CODE "")
 
-  tribits_append_dependent_package_config_file_includes(${packageName}
+  tribits_append_dependent_package_config_file_includes_and_enables(${packageName}
+    EXPORT_FILE_VAR_PREFIX ${EXPORT_FILE_VAR_PREFIX}
     EXT_PKG_CONFIG_FILE_BASE_DIR
       "\${CMAKE_CURRENT_LIST_DIR}/../../${${PROJECT_NAME}_BUILD_DIR_EXTERNAL_PKGS_DIR}"
     PKG_CONFIG_FILE_BASE_DIR "\${CMAKE_CURRENT_LIST_DIR}/.."
@@ -492,6 +506,10 @@ function(tribits_generate_package_config_file_for_install_tree  packageName)
 
   tribits_set_compiler_vars_for_config_file(INSTALL_DIR)
 
+  # Used in configure file below
+  set(EXPORTED_PACKAGE_LIBS_NAMES ${${packageName}_EXPORTED_PACKAGE_LIBS_NAMES})
+  set(PDOLLAR "$")
+
   if (PARSE_PACKAGE_CONFIG_FOR_INSTALL_BASE_DIR)
     configure_file(
       "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsPackageConfigTemplate.cmake.in"
@@ -502,21 +520,27 @@ function(tribits_generate_package_config_file_for_install_tree  packageName)
 endfunction()
 
 
-# @FUNCTION: tribits_append_dependent_package_config_file_includes()
+# @FUNCTION: tribits_append_dependent_package_config_file_includes_and_enables()
 #
 # Append the includes for upstream external packages (TPLs) and internal
-# packages to a `<Package>Config.cmake` file string.
+# packages as well as the enables/disables for upstream dependencies to an
+# output `<Package>Config.cmake` file string.
 #
 # Usage::
 #
-#   tribits_append_dependent_package_config_file_includes(
+#   tribits_append_dependent_package_config_file_includes_and_enables(
 #     <packageName>
+#     EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>
 #     EXT_PKG_CONFIG_FILE_BASE_DIR <extPkgconfigFileBaseDir>
 #     PKG_CONFIG_FILE_BASE_DIR <pkgConfigFileBaseDir>
 #     CONFIG_FILE_STR_INOUT <configFileStrInOut>
 #     )
 #
-function(tribits_append_dependent_package_config_file_includes packageName)
+function(tribits_append_dependent_package_config_file_includes_and_enables packageName)
+
+  if (TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES_DEBUG_DUMP)
+    message("tribits_append_dependent_package_config_file_includes_and_enables(${ARGV})")
+  endif()
 
   # Parse input
 
@@ -524,46 +548,52 @@ function(tribits_append_dependent_package_config_file_includes packageName)
      PARSE  #prefix
      ""  #options
      #one_value_keywords
-     "EXT_PKG_CONFIG_FILE_BASE_DIR;PKG_CONFIG_FILE_BASE_DIR;CONFIG_FILE_STR_INOUT"
+     "EXPORT_FILE_VAR_PREFIX;EXT_PKG_CONFIG_FILE_BASE_DIR;PKG_CONFIG_FILE_BASE_DIR;CONFIG_FILE_STR_INOUT"
      "" #multi_value_keywords
      ${ARGN}
      )
   tribits_check_for_unparsed_arguments()
 
+   if (PARSE_EXPORT_FILE_VAR_PREFIX)
+     set(EXPORT_FILE_VAR_PREFIX ${PARSE_EXPORT_FILE_VAR_PREFIX})
+   else()
+     set(EXPORT_FILE_VAR_PREFIX ${packageName})
+   endif()
+
   set(extPkgConfigFileBaseDir "${PARSE_EXT_PKG_CONFIG_FILE_BASE_DIR}")
   set(pkgConfigFileBaseDir "${PARSE_PKG_CONFIG_FILE_BASE_DIR}")
   set(configFileStr "${${PARSE_CONFIG_FILE_STR_INOUT}}")
 
-  # Include configurations of dependent packages
+  # Add set of enables/disables for all upstream dependencies
   string(APPEND configFileStr
-    "# Include configuration of dependent packages\n")
-  foreach(depPkg IN LISTS ${packageName}_FULL_ENABLED_DEP_PACKAGES)
-    set(cmakePkgDir "${pkgConfigFileBaseDir}/${depPkg}")
+    "# Enables/Disables for upstream package dependencies\n")
+  foreach(depPkg IN LISTS ${packageName}_LIB_ALL_DEPENDENCIES)
+    if (${packageName}_ENABLE_${depPkg})
+      set(enableVal ON)
+    else()
+      set(enableVal OFF)
+    endif()
     string(APPEND configFileStr
-      "include(\"${cmakePkgDir}/${depPkg}Config.cmake\")\n")
+      "set(${EXPORT_FILE_VAR_PREFIX}_ENABLE_${depPkg} ${enableVal})\n")
   endforeach()
 
-  # Include configurations of dependent external packages/TPLs
+  # Include configurations of dependent packages
   string(APPEND configFileStr
-    "\n# Include configuration of dependent external packages/TPls\n")
-  foreach(depTpl IN LISTS ${packageName}_LIB_REQUIRED_DEP_TPLS)
-    if (TARGET ${depTpl}::all_libs)
-      set(cmakeTplDir "${extPkgConfigFileBaseDir}/${depTpl}")
+    "\n# Include configuration of dependent packages\n")
+  foreach(depPkg IN LISTS ${packageName}_LIB_ENABLED_DEPENDENCIES)
+    set(packageConfigBaseDir "") # Initially, no add include()
+    if (${depPkg}_PACKAGE_BUILD_STATUS STREQUAL "INTERNAL")
+      set(packageConfigBaseDir "${pkgConfigFileBaseDir}/${depPkg}")
+    elseif (${depPkg}_PACKAGE_BUILD_STATUS STREQUAL "EXTERNAL")
+      set(packageConfigBaseDir "${extPkgConfigFileBaseDir}/${depPkg}")
+    else()
+      message(FATAL_ERROR "ERROR: ${depPkg}_PACKAGE_BUILD_STATUS='${${depPkg}_PACKAGE_BUILD_STATUS}' invalid!")
+    endif()
+    if (packageConfigBaseDir)
       string(APPEND configFileStr
-        "include(\"${cmakeTplDir}/${depTpl}Config.cmake\")\n")
+        "include(\"${packageConfigBaseDir}/${depPkg}Config.cmake\")\n")
     endif()
   endforeach()
-  foreach(depTpl IN LISTS ${packageName}_LIB_OPTIONAL_DEP_TPLS)
-    if (${packageName}_ENABLE_${depTpl} AND TARGET ${depTpl}::all_libs)
-      set(cmakeTplDir "${extPkgConfigFileBaseDir}/${depTpl}")
-      string(APPEND configFileStr
-        "include(\"${cmakeTplDir}/${depTpl}Config.cmake\")\n")
-    endif()
-  endforeach()
-  # NOTE: Above, every TPL does not have a <tplName>Config.cmake file written
-  # for it.  For example, special TPLs like "MPI" don't have this file created
-  # or have an MPI::all_libs target corrected.  Therefore, we check for the
-  # defintion <tplName>::all_libs before we include the file above.
 
   # Set the output
   set(${PARSE_CONFIG_FILE_STR_INOUT} "${configFileStr}" PARENT_SCOPE)
@@ -701,14 +731,10 @@ function(tribits_write_project_client_export_files)
   # of all their libraries/includes in the proper order for linking
   set(FULL_PACKAGE_SET "")
   set(FULL_LIBRARY_SET "")
-  set(FULL_INCLUDE_DIRS_SET "")
-  set(FULL_LIBRARY_DIRS_SET "")
   foreach(TRIBITS_PACKAGE ${PACKAGE_LIST})
     if(${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE})
       list(APPEND FULL_PACKAGE_SET ${TRIBITS_PACKAGE})
       list(APPEND FULL_LIBRARY_SET ${${TRIBITS_PACKAGE}_LIBRARIES})
-      list(APPEND FULL_INCLUDE_DIRS_SET ${${TRIBITS_PACKAGE}_INCLUDE_DIRS})
-      list(APPEND FULL_LIBRARY_DIRS_SET ${${TRIBITS_PACKAGE}_LIBRARY_DIRS})
     endif()
   endforeach()
 
@@ -725,27 +751,13 @@ function(tribits_write_project_client_export_files)
   # of all their libraries/includes in the proper order for linking
   set(FULL_TPL_SET "")
   set(FULL_TPL_LIBRARY_SET "")
-  set(FULL_TPL_INCLUDE_DIRS_SET "")
-  set(FULL_TPL_LIBRARY_DIRS_SET "")
   foreach(TPL ${TPL_LIST})
     if(TPL_ENABLE_${TPL})
       list(APPEND FULL_TPL_SET ${TPL})
       list(APPEND FULL_TPL_LIBRARY_SET ${TPL_${TPL}_LIBRARIES})
-      list(APPEND FULL_TPL_INCLUDE_DIRS_SET ${TPL_${TPL}_INCLUDE_DIRS})
-      list(APPEND FULL_TPL_LIBRARY_DIRS_SET ${TPL_${TPL}_LIBRARY_DIRS})
     endif()
   endforeach()
 
-  # it is possible that tpls are in the same directory, to keep from
-  # having a very long include path or library path we will strip out
-  # any duplicates. This shouldn't affect which include or library is
-  # found since the first instance of any path will be the one that is
-  # kept.
-  list(REMOVE_DUPLICATES FULL_TPL_INCLUDE_DIRS_SET)
-  list(REMOVE_DUPLICATES FULL_TPL_LIBRARY_DIRS_SET)
-
-  set(${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS ${FULL_TPL_INCLUDE_DIRS_SET})
-  set(${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS ${FULL_TPL_LIBRARY_DIRS_SET})
   set(${PROJECT_NAME}_CONFIG_TPL_LIBRARIES ${FULL_TPL_LIBRARY_SET})
 
   #
@@ -755,11 +767,6 @@ function(tribits_write_project_client_export_files)
 
   # Generate a note discouraging editing of the <package>Config.cmake file
   set(DISCOURAGE_EDITING "Do not edit: This file was generated automatically by CMake.")
-
-  # Config file for setting variables and finding include/library paths from
-  # the build directory
-  set(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${FULL_INCLUDE_DIRS_SET})
-  set(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${FULL_LIBRARY_DIRS_SET})
 
   # Write the specification of the rpath if necessary. This is only needed if
   # we're building shared libraries.
@@ -813,6 +820,7 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
     set(PDOLLAR "$")
     set(tribitsInstallationDir
       "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}")
+    set(TRIBITS_PROJECT_INSTALL_INCLUDE_DIR "")
     configure_file(
       "${tribitsInstallationDir}/TribitsProjectConfigTemplate.cmake.in"
       "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" )
@@ -843,10 +851,6 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
   foreach(PATH ${PATH_LIST})
     set(RELATIVE_PATH "${RELATIVE_PATH}/..")
   endforeach()
-  set(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS
-    "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
-  set(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS
-    "\${CMAKE_CURRENT_LIST_DIR}/${RELATIVE_PATH}/${${PROJECT_NAME}_INSTALL_LIB_DIR}")
 
   # Write the specification of the rpath if necessary. This is only needed if
   # we're building shared libraries.
@@ -862,6 +866,15 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
 
     # Custom code in configuration file.
     set(PROJECT_CONFIG_CODE "")
+
+    set(PDOLLAR "$")  # Hack used in configure file below
+
+    if (IS_ABSOLUTE "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
+      set(TRIBITS_PROJECT_INSTALL_INCLUDE_DIR "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
+    else()
+      set(TRIBITS_PROJECT_INSTALL_INCLUDE_DIR
+	"${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
+    endif()
 
     configure_file(
       "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.cmake.in"

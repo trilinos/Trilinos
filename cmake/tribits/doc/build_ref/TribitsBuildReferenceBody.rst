@@ -218,7 +218,7 @@ b) Create a ``*.cmake`` file and point to it [Most Recommended].
   MyConfigureOptions.cmake"`` makes it easy see where that variable got set
   when looking an the generated ``CMakeCache.txt`` file.  Also, when this
   ``*.cmake`` fragment file changes, CMake will automatically trigger a
-  reconfgure during a make (because it knows about the file and will check its
+  reconfigure during a make (because it knows about the file and will check its
   time stamp, unlike when using ``-C <file-name>.cmake``, see below).
 
   One can use the ``FORCE`` option in the ``set()`` commands shown above and
@@ -277,7 +277,7 @@ b) Create a ``*.cmake`` file and point to it [Most Recommended].
   contents of the ``*.cmake`` file reread on reconfigures, then one would want
   to use ``-C``.
 
-  3) One can create and use parametrized ``*.cmake`` files that can be used
+  3) One can create and use parameterized ``*.cmake`` files that can be used
   with multiple TriBITS projects.  For example, one can have set statements
   like ``set(${PROJECT_NAME}_ENABLE_Fortran OFF ...)`` since ``PROJECT_NAME``
   is known before the file is included.  One can't do that with ``cmake -C``
@@ -506,7 +506,7 @@ pre-push testing.
 Enable all packages (and optionally all tests)
 ++++++++++++++++++++++++++++++++++++++++++++++
 
-To enable all defined packages and subpakages add the configure option::
+To enable all defined packages and subpackages add the configure option::
 
   -D <Project>_ENABLE_ALL_PACKAGES=ON \
 
@@ -797,7 +797,7 @@ package.
 
 NOTES:
 
-1) Setting ``CMAKE_<LANG>_FLAGS`` as a cache varible by the user on input be
+1) Setting ``CMAKE_<LANG>_FLAGS`` as a cache variable by the user on input be
 listed after and therefore override, but will not replace, any internally set
 flags in ``CMAKE_<LANG>_FLAGS`` defined by the <Project> CMake system.  To get
 rid of these project/TriBITS set compiler flags/options, see the below items.
@@ -1401,6 +1401,52 @@ search for extra required libraries (such as the mpi library and the gfortran
 library for gnu compilers) to locate static versions.
 
 
+Changing include directories in downstream CMake projects to non-system
+-----------------------------------------------------------------------
+
+By default, include directories from IMPORTED library targets from the
+<Project> project's installed ``<Package>Config.cmake`` files will be
+considered ``SYSTEM`` headers and therefore will be included on the compile
+lines of downstream CMake projects with ``-isystem`` with most compilers.
+However, when using CMake 3.23+, by configuring with::
+
+  -D <Project>_IMPORTED_NO_SYSTEM=ON
+
+then all of the IMPORTED library targets in the set of installed
+``<Package>Config.cmake`` files will have the ``IMPORTED_NO_SYSTEM`` target
+property set.  This will cause downstream customer CMake projects to apply the
+include directories from these IMPORTED library targets as non-SYSTEM include
+directories.  On most compilers, that means that the include directories will
+be listed on the compile lines with ``-I`` instead of with ``-isystem`` (for
+compilers that support the ``-isystem`` option).  (Changing from ``-isystem
+<incl-dir>`` to ``-I <incl-dir>`` moves ``<incl-dir>`` forward in the
+compiler's include directory search order and could also result in the found
+header files emitting compiler warnings that would other otherwise be silenced
+when the headers were found in include directories pulled in with
+``-isystem``.)
+
+**NOTE:** Setting ``<Project>_IMPORTED_NO_SYSTEM=ON`` when using a CMake
+version less than 3.23 will result in a fatal configure error (so don't do
+that).
+
+**A workaround for CMake versions less than 3.23** is for **downstream
+customer CMake projects** to set the native CMake cache variable::
+
+  -D CMAKE_NO_SYSTEM_FROM_IMPORTED=TRUE
+
+This will result in **all** include directories from **all** IMPORTED library
+targets used in the downstream customer CMake project to be listed on the
+compile lines using ``-I`` instead of ``-isystem``, and not just for the
+IMPORTED library targets from this <Project> project's installed
+``<Package>Config.cmake`` files!
+
+**NOTE:** Setting ``CMAKE_NO_SYSTEM_FROM_IMPORTED=TRUE`` in the <Project>
+CMake configure will **not** result in changing how include directories from
+<Project>'s IMPORTED targets are handled in a downstream customer CMake
+project!  It will only change how include directories from upstream package's
+IMPORTED targets are handled in the <Project> CMake project build itself.
+
+
 Enabling the usage of resource files to reduce length of build lines
 --------------------------------------------------------------------
 
@@ -1537,7 +1583,11 @@ When the variables ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
 call ``find_package(<TPLNAME>)`` internally by default and some may implement
 the default find in some other way.  To know for sure, see the documentation
 for the specific TPL (e.g. looking in the ``FindTPL<TPLNAME>.cmake`` file to
-be sure).
+be sure).  NOTE: if a given ``FindTPL<TPLNAME>.cmake`` would use
+``find_package(<TPLNAME>)`` by default, this can be disabled by configuring
+with::
+
+  -D<TPLNAME>_ALLOW_PACKAGE_PREFIND=OFF
 
 Most TPLs, however, use a standard system for finding include directories
 and/or libraries based on the function
@@ -2559,7 +2609,7 @@ To add timers to various configure steps, configure with::
 
   -D <Project>_ENABLE_CONFIGURE_TIMING=ON
 
-This will do baulk timing for the major configure steps which is independent
+This will do bulk timing for the major configure steps which is independent
 of the number of packages in the project.
 
 To additionally add timing for the configure of individual packages, configure
@@ -2757,7 +2807,7 @@ trigger warnings in CDash) about missing inserted/external packages will print
 regardless of the setting for ``<Project>_ASSERT_MISSING_PACKAGES``.
 
 Finally, ``<Project>_ENABLE_DEVELOPMENT_MODE=ON`` results in a number of
-checks for invalid usage of TriBITS in the project's ``CMakeList.txt`` files
+checks for invalid usage of TriBITS in the project's ``CMakeLists.txt`` files
 and will abort configure with a fatal error on the first check failure. This
 is appropriate for development mode when a project is clean of all such
 invalid usage patterns but there are times when it makes sense to report these
@@ -3776,17 +3826,17 @@ CMake project's ``CMakeLists.txt`` file as usual using, for example::
     PRIVATE <Package2>::all_libs
     )
 
-Note that in this case, the include directories and other imported compiler
-options from the source tree and the build tree are automatically injected
-into the build targets associated with the ``<downstream-target>`` object
-compile lines and link lines.
+Note that in this case, ``target_link_libraries()`` ensures that the include
+directories and other imported compiler options from the source tree and the
+build tree are automatically injected into the build targets associated with
+the ``<downstream-target>`` object compile lines and link lines.
 
 Also note that package config files for all of the enabled external
 packages/TPLs will also be written into the build tree under
 ``<upstreamBuildDir>/external_packages``.  These contain modern CMake targets
 that are pulled in by the downstream ``<Package>Config.cmake`` files under
 ``<upstreamBuildDir>/external_packages``.  These external package/TPL config
-files are placed in a seprate directory to avoid being found by accident.
+files are placed in a separate directory to avoid being found by accident.
 
 
 Installation Testing
@@ -3907,7 +3957,7 @@ Dashboard submissions
 =====================
 
 All TriBITS projects have built-in support for submitting configure, build,
-and test results to CDash using the custom ``dashbaord`` target.  This uses
+and test results to CDash using the custom ``dashboard`` target.  This uses
 the `tribits_ctest_driver()`_ function internally set up to work correctly
 from an existing binary directory with a valid initial configure.  The few of
 the advantages of using the custom TriBITS-enabled ``dashboard`` target over

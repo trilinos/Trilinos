@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-#
+
 # @FUNCTION: append_cmndline_args()
 #
 # Utility function that appends command-line arguments to a variable of

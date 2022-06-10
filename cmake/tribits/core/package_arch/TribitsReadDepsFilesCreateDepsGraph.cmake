@@ -810,6 +810,8 @@ macro(tribits_parse_subpackages_append_se_packages_add_options
           print_var(${SUBPACKAGE_FULLNAME}_PARENT_REPOSITORY)
         endif()
 
+        set(${SUBPACKAGE_FULLNAME}_PACKAGE_BUILD_STATUS INTERNAL)
+
         # Set up the input options for this subpackage
         tribits_insert_standard_package_options(${SUBPACKAGE_FULLNAME}
           ${SUBPACKAGE_TESTGROUP})
