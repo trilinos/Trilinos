@@ -51,7 +51,7 @@
 
 #define TESTING_AMESOS2_WITH_TPETRA_REMOVE_UVM
 #if defined(TESTING_AMESOS2_WITH_TPETRA_REMOVE_UVM)
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosKernels_Sorting.hpp"
 #endif
 
