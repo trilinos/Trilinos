@@ -178,7 +178,7 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
   local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrixDevice ();
   local_matrix_device_type lclTransposeMatrix = KokkosKernels::Impl::transpose_matrix(lclMatrix);
   if (sort)
-    KokkosKernels::sort_crs_matrix(lclTransposeMatrix);
+    KokkosSparse::sort_crs_matrix(lclTransposeMatrix);
 
   // Prebuild the importers and exporters the no-communication way,
   // flipping the importers and exporters around.
