@@ -48,7 +48,7 @@
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
 #include "Ifpack2_Details_getCrsMatrix.hpp"
 #include "Kokkos_Sort.hpp"
-#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosSparse_Utils.hpp"
 #include "KokkosKernels_Sorting.hpp"
 
 namespace Ifpack2 {
