@@ -40,6 +40,7 @@
 include(TribitsPackageSetupCompilerFlags)
 include(TribitsWriteClientExportFiles)
 include(TribitsGeneralMacros)
+include(TribitsLibIsTestOnly)
 
 include(CMakeParseArguments)
 include(GlobalNullSet)
@@ -60,11 +61,6 @@ include(TribitsCopyFilesToBinaryDir)
 include(TribitsReportInvalidTribitsUsage)
 
 
-###
-### WARNING: See "NOTES TO DEVELOPERS" at the bottom of file!
-###
-
-
 #
 # Utility macros
 #
@@ -77,9 +73,7 @@ include(TribitsReportInvalidTribitsUsage)
 # they are used.
 #
 macro(tribits_define_linkage_vars PACKAGE_NAME_IN)
-  global_null_set(${PACKAGE_NAME_IN}_INCLUDE_DIRS)
-  global_null_set(${PACKAGE_NAME_IN}_LIBRARY_DIRS)
-  global_null_set(${PACKAGE_NAME_IN}_LIBRARIES)
+  global_null_set(${PACKAGE_NAME_IN}_LIBRARIES "")
   global_set(${PACKAGE_NAME_IN}_HAS_NATIVE_LIBRARIES_TO_INSTALL FALSE)
 endmacro()
 
@@ -474,10 +468,12 @@ endmacro()
 #
 #   tribits_add_debug_option()
 #
-# This option is given the default ``${${PROJECT_NAME}_ENABLE_DEBUG}`` and if
-# true, will set the variable ``HAVE_${PACKAGE_NAME_UC}_DEBUG`` (to be used in
-# the package's configured header file).  This macro is typically called in
-# the package's `<packageDir>/CMakeLists.txt`_ file.
+# This option is given the default value ``${${PROJECT_NAME}_ENABLE_DEBUG}``,
+# and if true, this macro will set the variable
+# ``HAVE_${PACKAGE_NAME_UC}_DEBUG`` (to be used in the package's configured
+# header file `<packageDir>/cmake/<packageName>_config.h.in`_).  This macro is
+# typically called in the package's `<packageDir>/CMakeLists.txt`_ file (see
+# the example ``SimpleCxx/CMakeLists.txt``).
 #
 macro(tribits_add_debug_option)
   tribits_add_option_and_define(
@@ -620,9 +616,7 @@ function(tribits_package_finalize_dependency_vars)
     # A package with subpackages should get all of its dependency vars from
     # its enabled subpackages.
 
-    set(PARENT_PACKAGE_INCLUDE_DIRS)
-    set(PARENT_PACKAGE_LIBRARY_DIRS)
-    set(PARENT_PACKAGE_LIBRARIES)
+    set(PARENT_PACKAGE_LIBRARIES "")
 
     set(SUBPACKAGE_IDX 0)
     foreach(TRIBITS_SUBPACKAGE ${${PARENT_PACKAGE_NAME}_SUBPACKAGES})
@@ -631,10 +625,6 @@ function(tribits_package_finalize_dependency_vars)
       set(SUBPACKAGE_FULLNAME ${PARENT_PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
 
       if (${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
-        prepend_set(PARENT_PACKAGE_INCLUDE_DIRS
-          ${${SUBPACKAGE_FULLNAME}_INCLUDE_DIRS})
-        prepend_set(PARENT_PACKAGE_LIBRARY_DIRS
-          ${${SUBPACKAGE_FULLNAME}_LIBRARY_DIRS})
         prepend_set(PARENT_PACKAGE_LIBRARIES
           ${${SUBPACKAGE_FULLNAME}_LIBRARIES})
       endif()
@@ -643,40 +633,9 @@ function(tribits_package_finalize_dependency_vars)
 
     endforeach()
 
-    if (PARENT_PACKAGE_INCLUDE_DIRS)
-      list(REMOVE_DUPLICATES PARENT_PACKAGE_INCLUDE_DIRS)
-    endif()
-    if (PARENT_PACKAGE_LIBRARY_DIRS)
-      list(REMOVE_DUPLICATES PARENT_PACKAGE_LIBRARY_DIRS)
-    endif()
-    # NOTE: Above, in the rare case that none of the subpackages contain any
-    # libraries or any include directories, we need to not call
-    # list(REMOVE_DUPLICATES ...).
-
     # NOTE: There can't be any duplicate libraries in PARENT_PACKAGE_LIBRARIES
     # so no need to remove them.
-
-    global_set(${PACKAGE_NAME}_INCLUDE_DIRS "${PARENT_PACKAGE_INCLUDE_DIRS}")
-    global_set(${PACKAGE_NAME}_LIBRARY_DIRS "${PARENT_PACKAGE_LIBRARY_DIRS}")
     global_set(${PACKAGE_NAME}_LIBRARIES "${PARENT_PACKAGE_LIBRARIES}")
-
-  elseif(NOT ${PACKAGE_NAME}_INCLUDE_DIRS)
-
-    # No libraries have been defined for this package so we are going to set
-    # them based on this package's dependencies.
-
-    tribits_sort_and_append_package_include_and_link_dirs_and_libs(
-      ${PACKAGE_NAME}  LIB  LINK_LIBS)
-
-    tribits_sort_and_append_tpl_include_and_link_dirs_and_libs(
-      ${PACKAGE_NAME}  LIB  LINK_LIBS)
-
-    get_directory_property(INCLUDE_DIRS_CURRENT  INCLUDE_DIRECTORIES)
-    get_directory_property(LIBRARY_DIRS_CURRENT  PACKAGE_LIBRARY_DIRS)
-
-    prepend_global_set(${PACKAGE_NAME}_INCLUDE_DIRS  ${INCLUDE_DIRS_CURRENT})
-    prepend_global_set(${PACKAGE_NAME}_LIBRARY_DIRS  ${LIBRARY_DIRS_CURRENT})
-    prepend_global_set(${PACKAGE_NAME}_LIBRARIES  ${LINK_LIBS})
 
   endif()
 
@@ -689,8 +648,6 @@ macro(tribits_package_postprocess_common)
 
   if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     message("\nTRIBITS_PACKAGE_POSTPROCESS_COMMON: ${PACKAGE_NAME}")
-    print_var(${PACKAGE_NAME}_INCLUDE_DIRS)
-    print_var(${PACKAGE_NAME}_LIBRARY_DIRS)
     print_var(${PACKAGE_NAME}_LIBRARIES)
   endif()
 
@@ -721,13 +678,12 @@ macro(tribits_package_create_all_libs_interface_library)
     #print_var(allPackageBuildableLibTargetsList)
     set(packageLibsInAllLibsList)
     foreach (libTarget IN LISTS allPackageBuildableLibTargetsList)
-      get_target_property(isTestOnlyLib ${libTarget} TRIBITS_TESTONLY_LIB)
+      tribits_lib_is_testonly(${libTarget} isTestOnlyLib)
       #print_var(isTestOnlyLib)
       if (NOT isTestOnlyLib)
         list(APPEND packageLibsInAllLibsList ${libTarget})
       endif()
     endforeach()
-    #print_var(packageLibsInAllLibsList)
     global_set(${PACKAGE_NAME}_EXPORTED_PACKAGE_LIBS_NAMES
       ${packageLibsInAllLibsList})
 
@@ -781,7 +737,7 @@ endmacro()
 # libraries in all subdirectories that don't have the TRIBITS_TESTONLY_LIB
 # target property set on them.
 #
-# NOTE: It is unfortunate that this macro must be called in a packages's
+# NOTE: It is unfortunate that this macro must be called in a package's
 # top-level ``CMakeLists.txt`` file but limitations of the CMake language make
 # it necessary to do so.
 #
@@ -965,25 +921,3 @@ macro(tribits_process_subpackages)
   set(${PACKAGE_NAME}_TRIBITS_PROCESS_SUBPACKAGES_CALLED TRUE)
 
 endmacro()
-
-
-##################################################################
-#
-#                    NOTES TO DEVELOPERS
-#
-# Don't even attempt to touch the logic that goes into setting up and
-# modifying the variables:
-#
-#   ${PACKAGE_NAME}_INCLUDE_DIRS
-#   ${PACKAGE_NAME}_LIBRARY_DIRS
-#   ${PACKAGE_NAME}_LIBRARIES
-#   ${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES_TO_INSTALL
-#   ${PACKAGE_NAME}_FULL_ENABLED_DEP_PACKAGES
-#   ${PARENT_PACKAGE_NAME}_LIB_TARGETS
-#   ${PARENT_PACKAGE_NAME}_ALL_TARGETS
-#
-# without carefully studying the documentation in README.DEPENDENCIES and then
-# carefully studying all of the code and issues that modify these variables!
-#
-# ToDo: Write some good unit tests that pin down the behavior of all of this!
-#

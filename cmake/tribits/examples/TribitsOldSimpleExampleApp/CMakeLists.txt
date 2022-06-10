@@ -44,7 +44,7 @@ target_include_directories(util
 # Build the APP and link to libraries from TribitsExProj packages
 add_executable(app app.cpp)
 target_link_libraries(app
-  PRIVATE ${TribitsExProj_LIBRARIES})
+  PRIVATE ${TribitsExProj_LIBRARIES} ${TribitsExProj_TPL_LIBRARIES})
 target_include_directories(app
   PRIVATE ${TribitsExProj_INCLUDE_DIRS} ${TribitsExProj_TPL_INCLUDE_DIRS})
 

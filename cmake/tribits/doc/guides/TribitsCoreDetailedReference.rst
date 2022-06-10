@@ -760,7 +760,7 @@ These options are described below.
   A project can use the paths given the cmake module ``GNUInstallDirs`` by
   default by setting::
   
-    set(${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT FALSE)
+    set(${PROJECT_NAME}_USE_GNUINSTALLDIRS_DEFAULT TRUE)
 
   in the project's top-level `<projectDir>/CMakeLists.txt`_ file or its
   `<projectDir>/ProjectName.cmake`_ file.  The default is ``FALSE``.

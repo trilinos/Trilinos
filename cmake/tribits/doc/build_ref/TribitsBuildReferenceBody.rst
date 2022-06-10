@@ -218,7 +218,7 @@ b) Create a ``*.cmake`` file and point to it [Most Recommended].
   MyConfigureOptions.cmake"`` makes it easy see where that variable got set
   when looking an the generated ``CMakeCache.txt`` file.  Also, when this
   ``*.cmake`` fragment file changes, CMake will automatically trigger a
-  reconfgure during a make (because it knows about the file and will check its
+  reconfigure during a make (because it knows about the file and will check its
   time stamp, unlike when using ``-C <file-name>.cmake``, see below).
 
   One can use the ``FORCE`` option in the ``set()`` commands shown above and
@@ -277,7 +277,7 @@ b) Create a ``*.cmake`` file and point to it [Most Recommended].
   contents of the ``*.cmake`` file reread on reconfigures, then one would want
   to use ``-C``.
 
-  3) One can create and use parametrized ``*.cmake`` files that can be used
+  3) One can create and use parameterized ``*.cmake`` files that can be used
   with multiple TriBITS projects.  For example, one can have set statements
   like ``set(${PROJECT_NAME}_ENABLE_Fortran OFF ...)`` since ``PROJECT_NAME``
   is known before the file is included.  One can't do that with ``cmake -C``
@@ -506,7 +506,7 @@ pre-push testing.
 Enable all packages (and optionally all tests)
 ++++++++++++++++++++++++++++++++++++++++++++++
 
-To enable all defined packages and subpakages add the configure option::
+To enable all defined packages and subpackages add the configure option::
 
   -D <Project>_ENABLE_ALL_PACKAGES=ON \
 
@@ -797,7 +797,7 @@ package.
 
 NOTES:
 
-1) Setting ``CMAKE_<LANG>_FLAGS`` as a cache varible by the user on input be
+1) Setting ``CMAKE_<LANG>_FLAGS`` as a cache variable by the user on input be
 listed after and therefore override, but will not replace, any internally set
 flags in ``CMAKE_<LANG>_FLAGS`` defined by the <Project> CMake system.  To get
 rid of these project/TriBITS set compiler flags/options, see the below items.
@@ -1583,7 +1583,11 @@ When the variables ``TPL_<TPLNAME>_INCLUDE_DIRS`` and
 call ``find_package(<TPLNAME>)`` internally by default and some may implement
 the default find in some other way.  To know for sure, see the documentation
 for the specific TPL (e.g. looking in the ``FindTPL<TPLNAME>.cmake`` file to
-be sure).
+be sure).  NOTE: if a given ``FindTPL<TPLNAME>.cmake`` would use
+``find_package(<TPLNAME>)`` by default, this can be disabled by configuring
+with::
+
+  -D<TPLNAME>_ALLOW_PACKAGE_PREFIND=OFF
 
 Most TPLs, however, use a standard system for finding include directories
 and/or libraries based on the function
@@ -2605,7 +2609,7 @@ To add timers to various configure steps, configure with::
 
   -D <Project>_ENABLE_CONFIGURE_TIMING=ON
 
-This will do baulk timing for the major configure steps which is independent
+This will do bulk timing for the major configure steps which is independent
 of the number of packages in the project.
 
 To additionally add timing for the configure of individual packages, configure
@@ -2803,7 +2807,7 @@ trigger warnings in CDash) about missing inserted/external packages will print
 regardless of the setting for ``<Project>_ASSERT_MISSING_PACKAGES``.
 
 Finally, ``<Project>_ENABLE_DEVELOPMENT_MODE=ON`` results in a number of
-checks for invalid usage of TriBITS in the project's ``CMakeList.txt`` files
+checks for invalid usage of TriBITS in the project's ``CMakeLists.txt`` files
 and will abort configure with a fatal error on the first check failure. This
 is appropriate for development mode when a project is clean of all such
 invalid usage patterns but there are times when it makes sense to report these
@@ -3832,7 +3836,7 @@ packages/TPLs will also be written into the build tree under
 ``<upstreamBuildDir>/external_packages``.  These contain modern CMake targets
 that are pulled in by the downstream ``<Package>Config.cmake`` files under
 ``<upstreamBuildDir>/external_packages``.  These external package/TPL config
-files are placed in a seprate directory to avoid being found by accident.
+files are placed in a separate directory to avoid being found by accident.
 
 
 Installation Testing
@@ -3953,7 +3957,7 @@ Dashboard submissions
 =====================
 
 All TriBITS projects have built-in support for submitting configure, build,
-and test results to CDash using the custom ``dashbaord`` target.  This uses
+and test results to CDash using the custom ``dashboard`` target.  This uses
 the `tribits_ctest_driver()`_ function internally set up to work correctly
 from an existing binary directory with a valid initial configure.  The few of
 the advantages of using the custom TriBITS-enabled ``dashboard`` target over

@@ -70,7 +70,6 @@ include(TribitsCMakePolicies)
 include(TribitsProjectImpl)
 
 
-#
 # @MACRO: tribits_project()
 #
 # Processes a `TriBITS Project`_'s files and configures its software which is

@@ -1,0 +1,7 @@
+#ifndef PACAKGE3_CONFIG_H
+#define PACAKGE3_CONFIG_H
+
+#cmakedefine HAVE_PACKAGE3_TPL4
+#cmakedefine HAVE_PACKAGE3_PACKAGE2
+
+#endif /** PACAKGE3_CONFIG_H **/

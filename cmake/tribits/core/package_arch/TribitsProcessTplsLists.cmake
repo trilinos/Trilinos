@@ -44,7 +44,7 @@ include(TribitsListHelpers)
 include(PrintVar)
 include(Split)
 
-#
+
 # @MACRO: tribits_repository_define_tpls()
 #
 # Define the list of `TriBITS TPLs`_ for a given `TriBITS Repository`_ which
@@ -215,6 +215,10 @@ macro(tribits_process_tpls_lists  REPOSITORY_NAME  REPOSITORY_DIR)
         list(APPEND ${PROJECT_NAME}_TPLS ${TPL_NAME})
       endif()
 
+      # Set ${TPL_NAME}_PACKAGE_BUILD_STATUS
+
+      SET(${TPL_NAME}_PACKAGE_BUILD_STATUS EXTERNAL)
+
       # Set ${TPL_NAME}_TESTGROUP
 
       if (TPL_TESTGROUP STREQUAL PT
@@ -233,23 +237,18 @@ macro(tribits_process_tpls_lists  REPOSITORY_NAME  REPOSITORY_DIR)
 
       # Set ${TPL_NAME}_FINDMOD
 
-      #print_var(REPOSITORY_DIR)
-
       if ("${REPOSITORY_DIR}" STREQUAL "." OR IS_ABSOLUTE ${TPL_FINDMOD})
         set(REPOSITORY_DIR_AND_SEP "")
       else()
         set(REPOSITORY_DIR_AND_SEP "${REPOSITORY_DIR}/")
       endif()
-      #print_var(REPOSITORY_DIR_AND_SEP)
 
       set(TPL_FINDMOD "${REPOSITORY_DIR_AND_SEP}${TPL_FINDMOD}")
-      #print_var(TPL_FINDMOD)
 
       set(TPL_FINDMOD_STD_NAME "FindTPL${TPL_NAME}.cmake")
 
       if (TPL_FINDMOD)
         string(REGEX MATCH ".+/$" FINDMOD_IS_DIR "${TPL_FINDMOD}")
-        #print_var(FINDMOD_IS_DIR)
         if (FINDMOD_IS_DIR)
           set(${TPL_NAME}_FINDMOD "${TPL_FINDMOD}${TPL_FINDMOD_STD_NAME}")
         else()

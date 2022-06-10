@@ -40,7 +40,7 @@
 
 if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
 
-#
+
 # @FUNCTION: tribits_verbose_print_var()
 #
 # print a variable giving its name then value if

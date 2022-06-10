@@ -40,7 +40,7 @@
 include(ConcatStrings)
 include(PrintVar)
 
-#
+
 # @FUNCTION: append_string_var()
 #
 # Append strings to an existing string variable (reduces boiler-place code and
@@ -68,7 +68,6 @@ function(append_string_var STRING_VAR_OUT)
 endfunction()
 
 
-#
 # @FUNCTION: append_string_var_ext()
 #
 # Append a single string to an existing string variable, ignoring ';' (reduces

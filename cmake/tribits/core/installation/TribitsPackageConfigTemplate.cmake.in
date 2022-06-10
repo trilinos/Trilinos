@@ -45,7 +45,7 @@
 #
 ##############################################################################
 
-include_guard()
+include_guard(GLOBAL)
 
 ## ---------------------------------------------------------------------------
 ## Compilers used by ${PROJECT_NAME}/${PACKAGE_NAME} build
@@ -95,19 +95,19 @@ set(${EXPORT_FILE_VAR_PREFIX}_AR ${CMAKE_AR})
 set(${EXPORT_FILE_VAR_PREFIX}_INSTALL_DIR "@CMAKE_INSTALL_PREFIX@")
 
 ## List of package include dirs
-set(${EXPORT_FILE_VAR_PREFIX}_INCLUDE_DIRS "${FULL_INCLUDE_DIRS_SET}")
+set(${EXPORT_FILE_VAR_PREFIX}_INCLUDE_DIRS "")
 
 ## List of package library paths
-set(${EXPORT_FILE_VAR_PREFIX}_LIBRARY_DIRS "${FULL_LIBRARY_DIRS_SET}")
+set(${EXPORT_FILE_VAR_PREFIX}_LIBRARY_DIRS "")
 
 ## List of package libraries
 set(${EXPORT_FILE_VAR_PREFIX}_LIBRARIES "${FULL_LIBRARY_SET}")
 
 ## Specification of directories for TPL headers
-set(${EXPORT_FILE_VAR_PREFIX}_TPL_INCLUDE_DIRS "${${PACKAGE_NAME}_TPL_INCLUDE_DIRS}")
+set(${EXPORT_FILE_VAR_PREFIX}_TPL_INCLUDE_DIRS "")
 
 ## Specification of directories for TPL libraries
-set(${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARY_DIRS "${${PACKAGE_NAME}_TPL_LIBRARY_DIRS}")
+set(${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARY_DIRS "")
 
 ## List of required TPLs
 set(${EXPORT_FILE_VAR_PREFIX}_TPL_LIBRARIES "${${PACKAGE_NAME}_TPL_LIBRARIES}")

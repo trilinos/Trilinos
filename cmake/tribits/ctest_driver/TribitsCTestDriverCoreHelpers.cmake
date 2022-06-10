@@ -38,7 +38,7 @@
 # @HEADER
 
 
-include(TribitsGetCDashUrlFromTagFile)
+include(TribitsGetCDashUrlsInsideCTestS)
 
 
 # Wrapper used for unit testing purposes

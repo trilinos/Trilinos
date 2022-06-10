@@ -68,11 +68,13 @@ include(GlobalSet)
 # verify that they say the right thing.
 #
 function(message_wrapper)
-  #message("MESSAGE_WRAPPER: ${ARGN}")
+  cmake_parse_arguments(PARSE_ARGV 0 FWD "" "" "")
+  #message("MESSAGE_WRAPPER: ${FWD_UNPARSED_ARGUMENTS}")
   if (MESSAGE_WRAPPER_UNIT_TEST_MODE)
-    global_set(MESSAGE_WRAPPER_INPUT "${MESSAGE_WRAPPER_INPUT}" ${ARGN})
+    global_set(MESSAGE_WRAPPER_INPUT "${MESSAGE_WRAPPER_INPUT}"
+      ${FWD_UNPARSED_ARGUMENTS})
   else()
-    message(${ARGN})
+    message(${FWD_UNPARSED_ARGUMENTS})
   endif()
 endfunction()
 

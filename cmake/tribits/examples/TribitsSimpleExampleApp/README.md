@@ -21,6 +21,6 @@ After building and installing `TribitsExampleProject` under
   ctest
 ```
 
-NOTE: The version of this project that demonstrates using the old interface
-using variables that works with much older versions of TriBITS is given in
+NOTE: The version of this project that demonstrates how to use the old interface, 
+with variables that work with much older versions of TriBITS, is given in
 [`TribitsOldSimpleExampleApp`](../TribitsOldSimpleExampleApp/README.md).
