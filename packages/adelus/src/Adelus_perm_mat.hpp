@@ -56,7 +56,7 @@
 #include "Adelus_mytime.hpp"
 #include "Kokkos_Core.hpp"
 
-//extern int me;	               // processor id information
+//extern int me;	             // processor id information
 //extern int nprocs_row;         // num of procs to which a row is assigned
 //extern int nprocs_col;         // num of procs to which a col is assigned
 //extern int nrows_matrix;       // number of rows in the matrix
@@ -93,20 +93,34 @@ namespace Adelus {
       }
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    // Broadcast to the rest of the processors  in row_comm
+    // Broadcast to the rest of the processors in row_comm
     MPI_Bcast(permute.data(),my_rows,MPI_INT,0,row_comm);
+
   }// End of function exchange_pivots
   
   template<class ZViewType, class PViewType>
   inline
-  void permute_mat(ZViewType& ZV, PViewType& lpiv_view, PViewType& permute) {
-    //NOTE: Currently assume that ZV resides in host memory
+  void permute_mat(ZViewType& Z, PViewType& lpiv_view, PViewType& permute) {
+    //TODO: add host pinned memory support
     using value_type  = typename ZViewType::value_type;
+#ifndef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
+    using execution_space = typename ZViewType::device_type::execution_space ;
+    using memory_space    = typename ZViewType::device_type::memory_space ;
+    using ViewVectorType  = Kokkos::View<value_type*, Kokkos::LayoutLeft, memory_space>;
+#ifdef PRINT_STATUS
+  printf("Rank %i -- permute_mat() Begin permute mat with myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", me, myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ncols_matrix, my_rows, my_cols, my_rhs, nrhs, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+#endif
+#endif
 
     MPI_Status msgstatus;
   
     int pivot_row, k_row;
+#ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
     value_type tmpr, tmps;
+#else
+    ViewVectorType tmpr( "tmpr", Z.extent(1) );
+    ViewVectorType tmps( "tmps", Z.extent(1) );
+#endif
 
 #ifdef GET_TIMING
    double exchpivtime,permutemattime,t1;
@@ -121,7 +135,8 @@ namespace Adelus {
 
     t1 = MPI_Wtime();
 #endif
-  
+
+#ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
     for (int j=0;j<=my_cols-1;j++) {
       int J=j*nprocs_row+mycol; // global column index
       for (int k=J+1;k<=nrows_matrix-1;k++) {
@@ -131,24 +146,100 @@ namespace Adelus {
         MPI_Bcast(&pivot_row,1,MPI_INT,k_row,col_comm);
         if (k != pivot_row) {
           if (myrow == k_row) {
-            tmps = ZV(k/nprocs_col, J/nprocs_row);
+            tmps = Z(k/nprocs_col, J/nprocs_row);
             MPI_Send((char *)(&tmps),sizeof(value_type),MPI_CHAR,pivot_row%nprocs_col,2,col_comm);
           }
           if (myrow == pivot_row%nprocs_col) {
-            tmps = ZV(pivot_row/nprocs_col, J/nprocs_row);
+            tmps = Z(pivot_row/nprocs_col, J/nprocs_row);
             MPI_Send((char *)(&tmps),sizeof(value_type),MPI_CHAR,k_row,3,col_comm);
           }
           if (myrow == k_row) {
             MPI_Recv((char *)(&tmpr),sizeof(value_type),MPI_CHAR,pivot_row%nprocs_col,3,col_comm,&msgstatus);
-            ZV(k/nprocs_col, J/nprocs_row) = tmpr;
+            Z(k/nprocs_col, J/nprocs_row) = tmpr;
           }
           if (myrow == pivot_row%nprocs_col) {
             MPI_Recv((char *)(&tmpr),sizeof(value_type),MPI_CHAR,k_row,2,col_comm,&msgstatus);
-            ZV(pivot_row/nprocs_col, J/nprocs_row)  = tmpr;
+            Z(pivot_row/nprocs_col, J/nprocs_row)  = tmpr;
           }
         }// End of if (k != pivot_row)
-      }// End of for (k=J+1;k<=nrows_matrix-2;k++)
+      }// End of for (k=J+1;k<=nrows_matrix-1;k++)
     }// End of for (j=0;j<=my_cols-1;j++)
+#else
+    for (int k = 1 + mycol; k <= nrows_matrix - 1; k++) {
+      int max_gcol_k=k-1; // max. global column index in the k row
+      int max_lcol_k=0;   // max. local column index in the k row
+      k_row=k%nprocs_col; // mesh row id (in the MPI process mesh) of the process that holds k
+
+      if (myrow==k_row) pivot_row = permute(k/nprocs_col);
+      MPI_Bcast(&pivot_row,1,MPI_INT,k_row,col_comm);
+
+      int max_gcol_pivot=pivot_row-1;          // max. global column index in the pivot row
+      int max_lcol_pivot=0;                    // max. local column index in the pivot row
+      int pivot_row_pid = pivot_row%nprocs_col;// mesh row id (in the MPI process mesh) of the process that holds pivot_row
+
+      //Find max. local column index in the k row that covers the lower triangular part
+      if ( mycol <= max_gcol_k%nprocs_row)
+        max_lcol_k = max_gcol_k/nprocs_row;
+      else
+        max_lcol_k = max_gcol_k/nprocs_row - 1;//one element less
+
+      //Find max. local column index in the pivot row that covers the lower triangular part
+      if ( mycol <= max_gcol_pivot%nprocs_row)
+        max_lcol_pivot = max_gcol_pivot/nprocs_row;
+      else
+        max_lcol_pivot = max_gcol_pivot/nprocs_row - 1;//one element less
+
+      //Find the number of columns needs to be exchanged
+      int min_len = std::min(max_lcol_k,max_lcol_pivot) + 1;
+
+      if (k != pivot_row) {//k row is differrent from pivot_row, i.e. needs permutation
+        if (k_row == pivot_row_pid) {//pivot row is in the same rank
+          if (myrow == k_row) {//I am the right process to do permutation
+            int curr_lrid = k/nprocs_col;
+            int piv_lrid  = pivot_row/nprocs_col;
+            Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,min_len), KOKKOS_LAMBDA (const int i) {
+              value_type tmp = Z(curr_lrid,i);
+              Z(curr_lrid,i) = Z(piv_lrid,i);
+              Z(piv_lrid,i)  = tmp;
+            });
+            Kokkos::fence();
+          }
+        }
+        else {//k row and pivot row are in different processes (rank)
+          if (myrow == k_row) {//I am holding k row
+            int curr_lrid = k/nprocs_col;
+            Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,min_len), KOKKOS_LAMBDA (const int i) {
+              tmps(i) = Z(curr_lrid,i);
+            });
+            Kokkos::fence();
+
+            MPI_Send(reinterpret_cast<char *>(tmps.data()),min_len*sizeof(value_type),MPI_CHAR,pivot_row_pid,2,col_comm);
+            MPI_Recv(reinterpret_cast<char *>(tmpr.data()),min_len*sizeof(value_type),MPI_CHAR,pivot_row_pid,3,col_comm,&msgstatus);
+
+            Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,min_len), KOKKOS_LAMBDA (const int i) {
+              Z(curr_lrid,i) = tmpr(i);
+            });
+            Kokkos::fence();
+          }
+          if (myrow == pivot_row_pid) {//I am holding the pivot row
+            int piv_lrid = pivot_row/nprocs_col;
+            Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,min_len), KOKKOS_LAMBDA (const int i) {
+              tmps(i) = Z(piv_lrid,i);
+            });
+            Kokkos::fence();
+
+            MPI_Recv(reinterpret_cast<char *>(tmpr.data()),min_len*sizeof(value_type),MPI_CHAR,k_row,2,col_comm,&msgstatus);
+            MPI_Send(reinterpret_cast<char *>(tmps.data()),min_len*sizeof(value_type),MPI_CHAR,k_row,3,col_comm);
+
+            Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,min_len), KOKKOS_LAMBDA (const int i) {
+              Z(piv_lrid,i) = tmpr(i);
+            });
+            Kokkos::fence();
+          }
+        }//End of k row and pivot row are in different processes (rank)
+      }// End of if (k != pivot_row)
+    }// End of for (int k=1+mycol;k<=nrows_matrix-1;k++) {
+#endif
 
 #ifdef GET_TIMING
     permutemattime = MPI_Wtime()-t1;

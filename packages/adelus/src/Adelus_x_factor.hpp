@@ -164,17 +164,20 @@ void lu_(ZViewType& Z, PViewType& permute, int *matrix_size, int *num_procsr, do
 #endif
 
   // Permute the lower triangular matrix
-  //NOTE: Currently doing matrix permutation in host memory
 #ifdef ADELUS_HAVE_TIME_MONITOR
   {
     TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: matrix permutation"));
 #endif
+#ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
     typename ZViewType::HostMirror h_Z = Kokkos::create_mirror_view( Z );
     Kokkos::deep_copy (h_Z, Z);
   
     permute_mat(h_Z, lpiv_view, permute);
 
     Kokkos::deep_copy (Z, h_Z);
+#else
+    permute_mat(Z, lpiv_view, permute);
+#endif
 #ifdef ADELUS_HAVE_TIME_MONITOR
   }
 #endif

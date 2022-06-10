@@ -67,8 +67,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-//#define ADELUS_FORWARD_COPY_TO_HOST //NOTE: for perf comparison only
-
 namespace Adelus {
 
 template<class ZViewType, class RHSViewType, class PViewType>
@@ -101,7 +99,7 @@ void solve_(ZViewType& Z, RHSViewType& RHS, PViewType& permute, int *num_rhs, do
   {
     tsecs = get_seconds(0.0);
     
-#ifdef ADELUS_FORWARD_COPY_TO_HOST
+#ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
     typename ZViewType::HostMirror h_Z = Kokkos::create_mirror_view( Z );
     typename RHSViewType::HostMirror h_RHS = Kokkos::create_mirror_view( RHS );
     // Bring data to host memory
@@ -114,7 +112,7 @@ void solve_(ZViewType& Z, RHSViewType& RHS, PViewType& permute, int *num_rhs, do
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: rhs permutation"));
 #endif
       // Permute the RHS
-#ifdef ADELUS_FORWARD_COPY_TO_HOST
+#ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
       permute_rhs(h_RHS, permute, my_rhs);
 #else
       permute_rhs(RHS, permute, my_rhs);
@@ -128,7 +126,7 @@ void solve_(ZViewType& Z, RHSViewType& RHS, PViewType& permute, int *num_rhs, do
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: forward solve"));
 #endif
       //Forward Solve
-#ifdef ADELUS_FORWARD_COPY_TO_HOST
+#ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
       forward(h_Z, h_RHS, my_rhs);
 #else
       forward(Z, RHS, my_rhs);
@@ -137,7 +135,7 @@ void solve_(ZViewType& Z, RHSViewType& RHS, PViewType& permute, int *num_rhs, do
     }
 #endif
 
-#ifdef ADELUS_FORWARD_COPY_TO_HOST
+#ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
     // Copy back to device memory
     Kokkos::deep_copy (Z,   h_Z);  
     Kokkos::deep_copy (RHS, h_RHS);
