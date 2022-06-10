@@ -55,6 +55,7 @@
 #include "Kokkos_Random.hpp"
 #include "KokkosSparse_spmv.hpp"
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TestingHelpers.hpp>
@@ -1458,7 +1459,7 @@ bool do_kokkos_test_with_types(const string& mm_file,
   const size_t numRHS = 5;      // also arbitrary
 
   if(!bEmptyLoad) {
-    *A = KokkosKernels::Impl::read_kokkos_crst_matrix<MAT>(path.c_str());
+    *A = KokkosSparse::Impl::read_kokkos_crst_matrix<MAT>(path.c_str());
   }
 
   if (verbosity > 2) {
@@ -1495,7 +1496,7 @@ bool do_kokkos_test_with_types(const string& mm_file,
     x2 = rcp(new view_t(Kokkos::ViewAllocateWithoutInitializing("x2"), num_rows, numVecs));
     b2 = rcp(new view_t(Kokkos::ViewAllocateWithoutInitializing("b2"), num_rows, numVecs));
     if(!bEmptyLoad) {
-      *A2 = KokkosKernels::Impl::read_kokkos_crst_matrix<MAT>(path.c_str());
+      *A2 = KokkosSparse::Impl::read_kokkos_crst_matrix<MAT>(path.c_str());
       auto vals = A2->values; // don't use RCP in kernel
       // perturb the values just a bit (element-wise square of first row)
       auto row_map = A2->graph.row_map;
