@@ -101,12 +101,18 @@ namespace Adelus {
   template<class ZViewType, class PViewType>
   inline
   void permute_mat(ZViewType& Z, PViewType& lpiv_view, PViewType& permute) {
-    //TODO: add host pinned memory support
     using value_type  = typename ZViewType::value_type;
 #ifndef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
     using execution_space = typename ZViewType::device_type::execution_space ;
     using memory_space    = typename ZViewType::device_type::memory_space ;
     using ViewVectorType  = Kokkos::View<value_type*, Kokkos::LayoutLeft, memory_space>;
+#ifdef ADELUS_HOST_PINNED_MEM_MPI
+  #if defined(KOKKOS_ENABLE_CUDA)
+    using ViewVectorHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::CudaHostPinnedSpace>;//CudaHostPinnedSpace
+  #elif defined(KOKKOS_ENABLE_HIP)
+    using ViewVectorHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
+  #endif
+#endif
 #ifdef PRINT_STATUS
   printf("Rank %i -- permute_mat() Begin permute mat with myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", me, myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ncols_matrix, my_rows, my_cols, my_rhs, nrhs, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
 #endif
@@ -120,6 +126,10 @@ namespace Adelus {
 #else
     ViewVectorType tmpr( "tmpr", Z.extent(1) );
     ViewVectorType tmps( "tmps", Z.extent(1) );
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+    ViewVectorHostPinnType h_tmpr( "h_tmpr", Z.extent(1) );
+    ViewVectorHostPinnType h_tmps( "h_tmps", Z.extent(1) );
+#endif
 #endif
 
 #ifdef GET_TIMING
@@ -211,10 +221,18 @@ namespace Adelus {
             Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,min_len), KOKKOS_LAMBDA (const int i) {
               tmps(i) = Z(curr_lrid,i);
             });
+
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+            Kokkos::deep_copy(h_tmps,tmps);
+            MPI_Send(reinterpret_cast<char *>(h_tmps.data()),min_len*sizeof(value_type),MPI_CHAR,pivot_row_pid,2,col_comm);
+            MPI_Recv(reinterpret_cast<char *>(h_tmpr.data()),min_len*sizeof(value_type),MPI_CHAR,pivot_row_pid,3,col_comm,&msgstatus);
+            Kokkos::deep_copy(tmpr,h_tmpr);
+#else //GPU-aware MPI
             Kokkos::fence();
 
             MPI_Send(reinterpret_cast<char *>(tmps.data()),min_len*sizeof(value_type),MPI_CHAR,pivot_row_pid,2,col_comm);
             MPI_Recv(reinterpret_cast<char *>(tmpr.data()),min_len*sizeof(value_type),MPI_CHAR,pivot_row_pid,3,col_comm,&msgstatus);
+#endif
 
             Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,min_len), KOKKOS_LAMBDA (const int i) {
               Z(curr_lrid,i) = tmpr(i);
@@ -226,10 +244,18 @@ namespace Adelus {
             Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,min_len), KOKKOS_LAMBDA (const int i) {
               tmps(i) = Z(piv_lrid,i);
             });
+
+#if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
+            Kokkos::deep_copy(h_tmps,tmps);
+            MPI_Recv(reinterpret_cast<char *>(h_tmpr.data()),min_len*sizeof(value_type),MPI_CHAR,k_row,2,col_comm,&msgstatus);
+            MPI_Send(reinterpret_cast<char *>(h_tmps.data()),min_len*sizeof(value_type),MPI_CHAR,k_row,3,col_comm);
+            Kokkos::deep_copy(tmpr,h_tmpr);
+#else // GPU-aware MPI
             Kokkos::fence();
 
             MPI_Recv(reinterpret_cast<char *>(tmpr.data()),min_len*sizeof(value_type),MPI_CHAR,k_row,2,col_comm,&msgstatus);
             MPI_Send(reinterpret_cast<char *>(tmps.data()),min_len*sizeof(value_type),MPI_CHAR,k_row,3,col_comm);
+#endif
 
             Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0,min_len), KOKKOS_LAMBDA (const int i) {
               Z(piv_lrid,i) = tmpr(i);
