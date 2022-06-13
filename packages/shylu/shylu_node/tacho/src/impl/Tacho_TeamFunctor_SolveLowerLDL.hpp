@@ -65,7 +65,7 @@ public:
   /// Algorithm Variant 0: trsv - gemv
   ///
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void solve(MemberType &member, const supernode_type &s, value_type *bptr) const {
+  KOKKOS_INLINE_FUNCTION void solve_var0(MemberType &member, const supernode_type &s, value_type *bptr) const {
     using TrsvAlgoType = typename TrsvAlgorithm::type;
     using GemvAlgoType = typename GemvAlgorithm::type;
 
@@ -98,7 +98,7 @@ public:
   }
 
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void update(MemberType &member, const supernode_type &s, value_type *bptr) const {
+  KOKKOS_INLINE_FUNCTION void update_var0(MemberType &member, const supernode_type &s, value_type *bptr) const {
     {
       const ordinal_type m = s.m, n = s.n, n_m = n - m;
       if (n_m > 0) {
@@ -126,6 +126,159 @@ public:
     }
   }
 
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void solve_var1(MemberType &member, const supernode_type &s, value_type *bptr) const {
+    using TrsvAlgoType = typename TrsvAlgorithm::type;
+    using GemvAlgoType = typename GemvAlgorithm::type;
+
+    const value_type minus_one(-1), zero(0);
+    {
+      const ordinal_type m = s.m, n = s.n, n_m = n - m;
+      if (m > 0) {
+        value_type *aptr = s.u_buf;
+        // solve
+        UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+        aptr += m * m;
+
+        const ordinal_type offm = s.row_begin;
+        auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
+        auto fpiv = ConstUnmanagedViewType<ordinal_type_array>(_piv.data() + 4 * offm + m, m);
+
+        ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal> /// row inter-change
+            ::invoke(member, fpiv, tT);
+        Trsv<Uplo::Lower, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), AL, tT);
+
+        if (n_m > 0) {
+          // update
+          member.team_barrier();
+          UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
+          UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
+          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, AR, tT, zero, bB);
+        }
+      }
+    }
+  }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void update_var1(MemberType &member, const supernode_type &s, value_type *bptr) const {
+    {
+      const ordinal_type m = s.m, n = s.n, n_m = n - m;
+      if (m > 0) {
+        UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs);
+        bptr += m * _nrhs;
+
+        const ordinal_type offm = s.row_begin;
+        auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
+
+        // copy to t
+        Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(member, m * _nrhs),
+            [&, m](const ordinal_type &k) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
+              const ordinal_type i = k % m, j = k / m;
+              tT(i, j) = bT(i, j);
+            });
+
+        if (n_m > 0) {
+          UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
+
+          // update
+          const ordinal_type sbeg = s.sid_col_begin + 1, send = s.sid_col_end - 1;
+          for (ordinal_type i = sbeg, ip = 0 /*is=0*/; i < send; ++i) {
+            const ordinal_type tbeg = _sid_block_colidx(i).second, tend = _sid_block_colidx(i + 1).second,
+                               tcnt = tend - tbeg;
+
+            Kokkos::parallel_for(
+                Kokkos::TeamVectorRange(member, tcnt),
+                [&, tbeg](
+                    const ordinal_type &ii) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
+                  const ordinal_type it = tbeg + ii;
+                  const ordinal_type is = ip + ii;
+                  // for (ordinal_type it=tbeg;it<tend;++it,++is) {
+                  const ordinal_type row = _gid_colidx(s.gid_col_begin + it);
+                  for (ordinal_type j = 0; j < _nrhs; ++j)
+                    Kokkos::atomic_add(&_t(row, j), bB(is, j));
+                });
+            ip += tcnt;
+          }
+        }
+      }
+    }
+  }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void solve_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
+    using TrsvAlgoType = typename TrsvAlgorithm::type;
+    using GemvAlgoType = typename GemvAlgorithm::type;
+
+    const value_type minus_one(-1), zero(0);
+    {
+      const ordinal_type m = s.m, n = s.n, n_m = n - m;
+      if (m > 0) {
+        value_type *aptr = s.u_buf;
+        // solve
+        UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+        aptr += m * m;
+
+        const ordinal_type offm = s.row_begin;
+        auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
+        auto fpiv = ConstUnmanagedViewType<ordinal_type_array>(_piv.data() + 4 * offm + m, m);
+
+        ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal> /// row inter-change
+            ::invoke(member, fpiv, tT);
+        Trsv<Uplo::Lower, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), AL, tT);
+
+        if (n_m > 0) {
+          // update
+          member.team_barrier();
+          UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
+          UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
+          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, AR, tT, zero, bB);
+        }
+      }
+    }
+  }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void update_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
+    {
+      const ordinal_type m = s.m, n = s.n, n_m = n - m;
+      UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
+      if (m > 0) {
+        const ordinal_type offm = s.row_begin;
+        auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
+
+        // copy to t
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m * _nrhs),
+                             [&, m](const ordinal_type &k) { /// compiler bug with c++14 lambda capturing and workaround
+                               const ordinal_type i = k % m, j = k / m;
+                               tT(i, j) = b(i, j);
+                             });
+
+        if (n_m > 0) {
+          // update
+          const ordinal_type sbeg = s.sid_col_begin + 1, send = s.sid_col_end - 1;
+          for (ordinal_type i = sbeg, ip = 0 /*is=0*/; i < send; ++i) {
+            const ordinal_type tbeg = _sid_block_colidx(i).second, tend = _sid_block_colidx(i + 1).second,
+                               tcnt = tend - tbeg;
+
+            Kokkos::parallel_for(
+                Kokkos::TeamVectorRange(member, tcnt),
+                [&, ip, m, tbeg,
+                 tcnt](const ordinal_type &ii) { /// compiler bug with c++14 lambda capturing and workaround
+                  const ordinal_type it = tbeg + ii;
+                  const ordinal_type is = ip + ii;
+                  // for (ordinal_type it=tbeg;it<tend;++it,++is) {
+                  const ordinal_type row = _gid_colidx(s.gid_col_begin + it);
+                  for (ordinal_type j = 0; j < _nrhs; ++j)
+                    Kokkos::atomic_add(&_t(row, j), b(is + m, j));
+                });
+            ip += tcnt;
+          }
+        }
+      }
+    }
+  }
+
   template <int Var> struct SolveTag {
     enum { variant = Var };
   };
@@ -145,11 +298,11 @@ public:
       const supernode_type &s = _supernodes(sid);
       value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
       if (solve_tag_type::variant == 0) {
-        solve(member, s, bptr);
+        solve_var0(member, s, bptr);
       } else if (solve_tag_type::variant == 1) {
-        solve(member, s, bptr);
+        solve_var1(member, s, bptr);
       } else if (solve_tag_type::variant == 2) {
-        solve(member, s, bptr);
+        solve_var2(member, s, bptr);
       }
     }
     if (mode == -1) {
@@ -169,11 +322,11 @@ public:
       const supernode_type &s = _supernodes(sid);
       value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
       if (update_tag_type::variant == 0) {
-        update(member, s, bptr);
+        update_var0(member, s, bptr);
       } else if (update_tag_type::variant == 1) {
-        update(member, s, bptr);
+        update_var1(member, s, bptr);
       } else if (update_tag_type::variant == 2) {
-        update(member, s, bptr);
+        update_var2(member, s, bptr);
       }
     } else {
       // skip

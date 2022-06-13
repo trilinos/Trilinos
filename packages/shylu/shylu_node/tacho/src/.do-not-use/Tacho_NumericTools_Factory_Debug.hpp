@@ -147,7 +147,24 @@ public:
   void createObject(numeric_tools_base_type *&object) {
 #if !defined(__CUDA_ARCH__)
     // TACHO_NUMERIC_TOOLS_FACTORY_SERIAL_BODY;
-    TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var0_type);
+    switch (_variant) {
+    case 0: {
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var0_type);
+      break;
+    }
+    case 1: {
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var1_type);
+      break;
+    }
+    case 2: {
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var2_type);
+      break;
+    }
+    default: {
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
+      break;
+    }
+    }
 #endif
   }
 };
@@ -193,7 +210,24 @@ public:
   void createObject(numeric_tools_base_type *&object) {
 #if !defined(__CUDA_ARCH__)
     // TACHO_NUMERIC_TOOLS_FACTORY_SERIAL_BODY;
-    TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var0_type);
+    switch (_variant) {
+    case 0: {
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var0_type);
+      break;
+    }
+    case 1: {
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var1_type);
+      break;
+    }
+    case 2: {
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var2_type);
+      break;
+    }
+    default: {
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
+      break;
+    }
+    }
 #endif
   }
 };

@@ -10,7 +10,7 @@ namespace Tacho {
 template <> struct Copy<Algo::OnDevice> {
   template <typename MemberType, typename ViewTypeA, typename ViewTypeB>
   inline static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeB &B) {
-    const auto exec_instance = member;
+    const auto &exec_instance = member;
     Kokkos::deep_copy(exec_instance, A, B);
 
     return 0;

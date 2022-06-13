@@ -17,7 +17,7 @@ template <> struct ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevi
     if (m == plen) {
       if (A.span() > 0) {
         using exec_space = MemberType;
-        const auto exec_instance = member;
+        const auto &exec_instance = member;
 
         if (n == 1) {
           Kokkos::RangePolicy<exec_space> policy(exec_instance, 0, m);

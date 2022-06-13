@@ -19,7 +19,7 @@ template <> struct ApplyPivots<PivotMode::Lapack, Side::Left, Direct::Forward, A
         using exec_space = MemberType;
         using policy_type = Kokkos::RangePolicy<exec_space>;
 
-        const auto exec_instance = member;
+        const auto &exec_instance = member;
         const auto policy = policy_type(exec_instance, 0, n);
         Kokkos::parallel_for(
             policy, KOKKOS_LAMBDA(const ordinal_type &j) {

@@ -646,6 +646,7 @@ public:
         const auto mystream = _cuda_streams[qid];
         _status = cublasSetStream(_handle_blas, mystream);
         checkDeviceBlasStatus("cublasSetStream");
+
         _status = cusolverDnSetStream(_handle_lapack, mystream);
         checkDeviceLapackStatus("cusolverDnSetStream");
 
@@ -669,15 +670,16 @@ public:
 
             if (n_m > 0) {
               exec_instance.fence();
+
               UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               _status = Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
+
               exec_instance.fence();
               _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR,
                                                                                         zero, ABR);
-              exec_instance.fence();
             }
           }
         }
@@ -701,6 +703,7 @@ public:
         const auto mystream = _cuda_streams[qid];
         _status = cublasSetStream(_handle_blas, mystream);
         checkDeviceBlasStatus("cublasSetStream");
+
         _status = cusolverDnSetStream(_handle_lapack, mystream);
         checkDeviceLapackStatus("cusolverDnSetStream");
 
@@ -726,6 +729,7 @@ public:
             UnmanagedViewType<value_type_matrix> T(bptr, m, m);
             _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, T, one);
             checkDeviceBlasStatus("SetIdentity");
+
             exec_instance.fence();
             _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                 _handle_blas, Diag::NonUnit(), one, ATL, T);
@@ -733,18 +737,19 @@ public:
 
             if (n_m > 0) {
               exec_instance.fence();
+
               UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               _status = Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
+
               exec_instance.fence();
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
               checkDeviceBlasStatus("Copy");
-              exec_instance.fence();
+
               _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR,
                                                                                         zero, ABR);
-              exec_instance.fence();
             } else {
               exec_instance.fence();
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
@@ -986,9 +991,21 @@ public:
             checkDeviceLapackStatus("ldl::modify");
             exec_instance.fence();
 
+            value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
+            UnmanagedViewType<value_type_matrix> T(bptr, m, m);
+
+            _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, T, one);
+            checkDeviceBlasStatus("SetIdentity");
+            exec_instance.fence();
+
+            _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
+                _handle_blas, Diag::Unit(), one, ATL, T);
+            checkDeviceBlasStatus("trsm");
+
             if (n_m > 0) {
+              exec_instance.fence();
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
-              UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
+              UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m);
               UnmanagedViewType<value_type_matrix> STR(ABR.data() + ABR.span(), m, n_m);
 
               auto fpiv = ordinal_type_array(P.data() + m, m);
@@ -1001,6 +1018,7 @@ public:
               checkDeviceBlasStatus("trsm");
               exec_instance.fence();
 
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, STR, ATR);
               exec_instance.fence();
 
@@ -1011,6 +1029,9 @@ public:
                   _handle_blas, minus_one, ATR, STR, zero, ABR);
               exec_instance.fence();
               checkDeviceBlasStatus("gemm");
+            } else {
+              exec_instance.fence();
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
             }
           }
         }
@@ -1104,9 +1125,9 @@ public:
     if (variant == 0)
       factorizeLDL_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 1)
-      factorizeLDL_OnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
+      factorizeLDL_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 2)
-      factorizeLDL_OnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
+      factorizeLDL_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
     else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::factorizeLDL_OnDevice, algorithm variant is not supported");
@@ -1325,9 +1346,9 @@ public:
     if (variant == 0)
       factorizeLU_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 1)
-      factorizeLU_OnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
+      factorizeLU_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 2)
-      factorizeLU_OnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
+      factorizeLU_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
     else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::factorizeLU_OnDevice, algorithm variant is not supported");
@@ -1521,7 +1542,7 @@ public:
             bptr += m * nrhs;
 
             const ordinal_type offm = s.row_begin;
-            auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
+            const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
             _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AL, tT, zero, bT);
             checkDeviceBlasStatus("gemv");
@@ -1661,7 +1682,7 @@ public:
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
             value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-            ;
+
             const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
             aptr += m * m;
             const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
@@ -1680,7 +1701,6 @@ public:
 
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AL, tT, zero, bT);
             checkDeviceBlasStatus("gemv");
-
             exec_instance.fence();
 
             _status = Copy<Algo::OnDevice>::invoke(exec_instance, tT, bT);
@@ -1797,7 +1817,7 @@ public:
   inline void solveLDL_LowerOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
-    const value_type minus_one(-1), zero(0);
+    const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
     ordinal_type q(0);
 #endif
@@ -1821,6 +1841,10 @@ public:
             UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
             aptr += m * m;
 
+            value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
+            UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+            bptr += m * nrhs;
+
             const ordinal_type offm = s.row_begin;
 
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
@@ -1830,14 +1854,15 @@ public:
                 ::invoke(exec_instance, fpiv, tT);
             exec_instance.fence();
 
-            _status = Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AL, tT);
-            checkDeviceBlasStatus("trsv");
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AL, tT, zero, bT);
+            checkDeviceBlasStatus("gemv");
             exec_instance.fence();
+
             if (n_m > 0) {
-              value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-              UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // ptr += m*n_m;
+              UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m);
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, tT, zero, bB);
+
+              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -1969,7 +1994,7 @@ public:
   inline void solveLDL_UpperOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
-    const value_type minus_one(-1), one(1);
+    const value_type minus_one(-1), one(1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
     ordinal_type q(0);
 #endif
@@ -1990,10 +2015,11 @@ public:
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
             value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-            ;
+
             const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
-            aptr += m * m;
-            const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
+            aptr += AL.span();
+            const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+            bptr += bT.span();
 
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
@@ -2003,17 +2029,24 @@ public:
                 ::invoke(exec_instance, P, D, tT);
 
             if (n_m > 0) {
+              const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
               const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
               _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
               exec_instance.fence();
             }
-            _status = Trsv<Uplo::Lower, Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AL, tT);
-            checkDeviceBlasStatus("trsv");
+
+            _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, one, AL, tT, zero, bT);
+            checkDeviceBlasStatus("gemv");
+            exec_instance.fence();
 
             const auto fpiv = ordinal_type_array(P.data() + m, m);
             _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::OnDevice> /// row inter-change
-                ::invoke(exec_instance, fpiv, tT);
+                ::invoke(exec_instance, fpiv, bT);
+            exec_instance.fence();
+
+            _status = Copy<Algo::OnDevice>::invoke(exec_instance, tT, bT);
+            checkDeviceBlasStatus("Copy");
           }
         }
       }
@@ -2663,7 +2696,7 @@ public:
             team_policy_update;
 #else
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::FactorizeTag<variant>>
+                                   typename functor_type::template FactorizeTag<0 /*variant*/>>
             team_policy_factor;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
             team_policy_update;
@@ -2784,10 +2817,10 @@ public:
             team_policy_update;
 #else
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::SolveTag<variant>>
+                                   typename functor_type::template SolveTag<0 /*variant*/>>
             team_policy_solve;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::UpdateTag<variant>>
+                                   typename functor_type::template UpdateTag<0 /*variant*/>>
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, _piv, t, _buf);
@@ -2849,10 +2882,10 @@ public:
             team_policy_update;
 #else
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::SolveTag<variant>>
+                                   typename functor_type::template SolveTag<0 /*variant*/>>
             team_policy_solve;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::UpdateTag<variant>>
+                                   typename functor_type::template UpdateTag<0 /*variant*/>>
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, _piv, _diag, t, _buf);
@@ -2979,7 +3012,7 @@ public:
             team_policy_update;
 #else
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::FactorizeTag<variant>>
+                                   typename functor_type::template FactorizeTag<0 /*variant*/>>
             team_policy_factor;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
             team_policy_update;
@@ -3100,10 +3133,10 @@ public:
             team_policy_update;
 #else
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::SolveTag<variant>>
+                                   typename functor_type::template SolveTag<0 /*variant*/>>
             team_policy_solve;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::UpdateTag<variant>>
+                                   typename functor_type::template UpdateTag<0 /*variant*/>>
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, _piv, t, _buf);
@@ -3165,10 +3198,10 @@ public:
             team_policy_update;
 #else
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::SolveTag<variant>>
+                                   typename functor_type::template SolveTag<0 /*variant*/>>
             team_policy_solve;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::UpdateTag<variant>>
+                                   typename functor_type::template UpdateTag<0 /*variant*/>>
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, t, _buf);

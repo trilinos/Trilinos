@@ -58,10 +58,95 @@ public:
   /// Main functions
   ///
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void factorize(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
-                                        const value_type_matrix &D,
-                                        const value_type_array &W, /// STR and workspace for LDL
-                                        const value_type_matrix &ABR) const {
+  KOKKOS_INLINE_FUNCTION void factorize_var0(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
+                                             const value_type_matrix &D,
+                                             const value_type_array &W, /// STR and workspace for LDL
+                                             const value_type_matrix &ABR) const {
+    using LDL_AlgoType = typename LDL_Algorithm::type;
+    using TrsmAlgoType = typename TrsmAlgorithm::type;
+    using GemmAlgoType = typename GemmAlgorithm::type;
+
+    const ordinal_type m = s.m, n = s.n, n_m = n - m;
+    if (m > 0) {
+      UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
+      Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL);
+      member.team_barrier();
+      LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
+      member.team_barrier();
+      LDL<Uplo::Lower, LDL_AlgoType>::modify(member, ATL, P, D);
+      member.team_barrier();
+
+      if (n_m > 0) {
+        const value_type one(1), minus_one(-1), zero(0);
+        UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
+        UnmanagedViewType<value_type_matrix> STR(W.data(), m, n_m);
+
+        auto fpiv = ordinal_type_array(P.data() + m, m);
+        ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal>::invoke(member, fpiv, ATR);
+        member.team_barrier();
+        Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL, ATR);
+        member.team_barrier();
+        Copy<Algo::Internal>::invoke(member, STR, ATR);
+        member.team_barrier();
+        Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+            ::invoke(member, P, D, ATR);
+        member.team_barrier();
+        GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
+                                                                                                STR, zero, ABR);
+      }
+    }
+  }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void factorize_var1(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
+                                             const value_type_matrix &D,
+                                             const value_type_array &W, /// STR and workspace for LDL
+                                             const value_type_matrix &T, const value_type_matrix &ABR) const {
+    using LDL_AlgoType = typename LDL_Algorithm::type;
+    using TrsmAlgoType = typename TrsmAlgorithm::type;
+    using GemmAlgoType = typename GemmAlgorithm::type;
+
+    const value_type one(1), minus_one(-1), zero(0);
+    const ordinal_type m = s.m, n = s.n, n_m = n - m;
+    if (m > 0) {
+      UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
+      Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL);
+      member.team_barrier();
+      LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
+      member.team_barrier();
+      LDL<Uplo::Lower, LDL_AlgoType>::modify(member, ATL, P, D);
+      member.team_barrier();
+
+      if (n_m > 0) {
+        UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
+        UnmanagedViewType<value_type_matrix> STR(W.data(), m, n_m);
+
+        auto fpiv = ordinal_type_array(P.data() + m, m);
+        ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal>::invoke(member, fpiv, ATR);
+        member.team_barrier();
+        Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL, ATR);
+        member.team_barrier();
+        Copy<Algo::Internal>::invoke(member, STR, ATR);
+        member.team_barrier();
+        Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+            ::invoke(member, P, D, ATR);
+        member.team_barrier();
+        GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
+                                                                                                STR, zero, ABR);
+      }
+
+      /// invert diagonal
+      Copy<Algo::Internal>::invoke(member, T, ATL);
+      SetIdentity<Algo::Internal>::invoke(member, ATL, one);
+      Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, ATL);
+    }
+  }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void factorize_var2(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
+                                             const value_type_matrix &D,
+                                             const value_type_array &W, /// STR and workspace for LDL
+                                             const value_type_matrix &ABR) const {
     using LDL_AlgoType = typename LDL_Algorithm::type;
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using GemmAlgoType = typename GemmAlgorithm::type;
@@ -214,19 +299,19 @@ public:
       UnmanagedViewType<ordinal_type_array> P(_piv.data() + offm * 4, m * 4);
       UnmanagedViewType<value_type_matrix> D(_diag.data() + offm * 2, m, 2);
 
-      const int bufbeg = _buf_ptr(lid), bufend = _buf_ptr(lid + 1);
-      value_type *bufptr = _buf.data() + bufbeg;
+      const ordinal_type bufbeg = _buf_ptr(lid), bufend = _buf_ptr(lid + 1);
+      const auto bufptr = _buf.data() + bufbeg;
       UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
-      bufptr += ABR.span();
-      UnmanagedViewType<value_type_array> W(bufptr, int(bufend - bufbeg - ABR.span()));
+      UnmanagedViewType<value_type_array> W(ABR.data() + ABR.span(), int(bufend - bufbeg - ABR.span()));
 
       if (factorize_tag_type::variant == 0) {
         /// check the span does not go more than buf_ptr(lid+1)
-        factorize(member, s, P, D, W, ABR);
+        factorize_var0(member, s, P, D, W, ABR);
       } else if (factorize_tag_type::variant == 1) {
-        factorize(member, s, P, D, W, ABR);
+        UnmanagedViewType<value_type_matrix> T(ABR.data(), m, m);
+        factorize_var1(member, s, P, D, W, T, ABR);
       } else if (factorize_tag_type::variant == 2) {
-        factorize(member, s, P, D, W, ABR);
+        factorize_var2(member, s, P, D, W, ABR);
       }
     } else if (mode == -1) {
       printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");
