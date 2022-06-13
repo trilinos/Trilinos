@@ -1928,9 +1928,9 @@ public:
     if (variant == 0)
       solveLDL_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveLDL_LowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+      solveLDL_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveLDL_LowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      solveLDL_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveLDL_LowerOnDevice, algorithm variant is not supported");
@@ -2112,9 +2112,9 @@ public:
     if (variant == 0)
       solveLDL_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveLDL_UpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+      solveLDL_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveLDL_UpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      solveLDL_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveLDL_UpperOnDevice, algorithm variant is not supported");
@@ -2273,9 +2273,9 @@ public:
     if (variant == 0)
       solveLU_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveLU_LowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+      solveLU_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveLU_LowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      solveLU_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveLU_LowerOnDevice, algorithm variant is not supported");
@@ -2427,9 +2427,9 @@ public:
     if (variant == 0)
       solveLU_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveLU_UpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+      solveLU_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveLU_UpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      solveLU_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveLU_UpperOnDevice, algorithm variant is not supported");
