@@ -86,8 +86,7 @@ public:
 
   void initialize_status_field()
   {
-    int val = 0;
-    stk::mesh::put_field_on_mesh(m_statusField, m_bulkData.mesh_meta_data().universal_part(), &val);
+    stk::mesh::put_field_on_mesh(m_statusField, m_bulkData.mesh_meta_data().universal_part(), nullptr);
   }
 
   void create_output_mesh()
@@ -139,8 +138,7 @@ void declare_animation_field(stk::mesh::MetaData &metaData, std::string &animati
   if("" != animationFile)
   {
     ScalarIntField &deathField = metaData.declare_field<int>(stk::topology::ELEMENT_RANK, "death");
-    int val = 0;
-    stk::mesh::put_field_on_mesh(deathField, metaData.universal_part(), &val);
+    stk::mesh::put_field_on_mesh(deathField, metaData.universal_part(), nullptr);
   }
 }
 

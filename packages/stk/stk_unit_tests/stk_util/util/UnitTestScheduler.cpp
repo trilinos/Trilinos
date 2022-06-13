@@ -102,7 +102,7 @@ TEST(Scheduler, LogarithmicOutput)
   int step = 0;
   std::vector<double> output_times;
   while (t < 3600.0) {
-    const double fac = 1.1 + 0.1 * noise(rng);
+    const double fac = 1.1 + (0.1 - std::numeric_limits<double>::epsilon()) * noise(rng);
     dt = std::min(dt_max, fac * dt);
     dt = scheduler.adjust_dt(dt, t);
 

@@ -122,14 +122,22 @@ class NgpMeshGhosting : public stk::unit_test_util::simple_fields::MeshFixture
 public:
   NgpMeshGhosting()
     : stk::unit_test_util::simple_fields::MeshFixture(),
+#ifdef NDEBUG
       numElements(1000000),
+#else
+      numElements(10000),
+#endif
       ghostingName("testGhosting")
   { }
 
 protected:
   void setup_host_mesh()
   {
+#ifdef NDEBUG
     setup_mesh("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
+#else
+    setup_mesh("generated:10x10x100", stk::mesh::BulkData::NO_AUTO_AURA);
+#endif
     get_bulk().modification_begin();
     ghosting = &get_bulk().create_ghosting(ghostingName);
     get_bulk().modification_end();
@@ -213,8 +221,13 @@ TEST_F( NgpMeshGhosting, Timing )
 {
   if (get_parallel_size() != 2) return;
 
+#ifdef NDEBUG
   const int NUM_OUTER_RUNS = 5;
   const int NUM_INNER_RUNS = 100;
+#else
+  const int NUM_OUTER_RUNS = 1;
+  const int NUM_INNER_RUNS = 1;
+#endif
 
   stk::performance_tests::Timer timer(get_comm());
   timer.start_timing();

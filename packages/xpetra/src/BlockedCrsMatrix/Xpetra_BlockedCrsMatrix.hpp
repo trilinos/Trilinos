@@ -88,6 +88,10 @@
 */
 namespace Xpetra {
 
+#ifdef HAVE_XPETRA_THYRA
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class ThyraUtils;
+#endif
+
   typedef std::string viewLabel_t;
 
   template <class Scalar,

@@ -76,7 +76,7 @@ class Test_parse_args(unittest.TestCase):
                                          ctest_drop_site='testing.sandia.gov',
                                          pullrequest_cdash_track='Pull Request',
                                          pullrequest_env_config_file='/dev/null/Trilinos_clone/pr_config/pullrequest.ini',
-                                         pullrequest_gen_config_file='/dev/null/Trilinos_clone/pr_config/gen-config.ini',
+                                         pullrequest_gen_config_file='/dev/null/Trilinos_clone/../GenConfig/src/gen-config.ini',
                                          workspace_dir='/dev/null/Trilinos_clone',
                                          filename_packageenables='../packageEnables.cmake',
                                          filename_subprojects='../package_subproject_list.cmake',
@@ -106,7 +106,7 @@ class Test_parse_args(unittest.TestCase):
                 | - [O] num-concurrent-tests        : -1
                 | - [O] pullrequest-cdash-track     : Pull Request
                 | - [O] pullrequest-env-config-file : /dev/null/Trilinos_clone/pr_config/pullrequest.ini
-                | - [O] pullrequest-gen-config-file : /dev/null/Trilinos_clone/pr_config/gen-config.ini
+                | - [O] pullrequest-gen-config-file : /dev/null/Trilinos_clone/../GenConfig/src/gen-config.ini
                 | - [O] req-mem-per-core            : 3.0
                 | - [O] test-mode                   : standard
                 | - [O] workspace-dir               : /dev/null/Trilinos_clone
@@ -176,7 +176,7 @@ class Test_parse_args(unittest.TestCase):
                   --pullrequest-gen-config-file PULLREQUEST_GEN_CONFIG_FILE
                                         The Trilinos PR driver configuration file containing
                                         job mappings to cmake specifications.
-                                        Default=/dev/null/Trilinos_clone/pr_config/gen-
+                                        Default=/dev/null/Trilinos_clone/../GenConfig/src/gen-
                                         config.ini
                   --workspace-dir WORKSPACE_DIR
                                         The local workspace directory that Jenkins set up.

@@ -57,29 +57,49 @@ public:
 class UnsignedDiagnosticTester : public stk::balance::UnsignedDiagnostic
 {
 public:
-  virtual std::string print_header1() override { return "Test"; }
-  virtual std::string print_header2() override { return "Diagnostic"; }
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned ) override { return "Diagnostic"; }
 };
 
 class UnsignedDiagnosticTester2 : public stk::balance::UnsignedDiagnostic
 {
 public:
-  virtual std::string print_header1() override { return "Test"; }
-  virtual std::string print_header2() override { return "Diag"; }
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned ) override { return "Diag"; }
 };
 
 class UnsignedWithPercentDiagnosticTester : public stk::balance::UnsignedWithPercentDiagnostic
 {
 public:
-  virtual std::string print_header1() override { return "Test"; }
-  virtual std::string print_header2() override { return "Diagnostic"; }
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned ) override { return "Diagnostic"; }
 };
 
 class DoubleWithPercentDiagnosticTester : public stk::balance::DoubleWithPercentDiagnostic
 {
 public:
-  virtual std::string print_header1() override { return "Test"; }
-  virtual std::string print_header2() override { return "Diagnostic"; }
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned ) override { return "Diagnostic"; }
+};
+
+class MultiUnsignedDiagnosticTester : public stk::balance::MultiUnsignedDiagnostic
+{
+public:
+  MultiUnsignedDiagnosticTester(unsigned numColumns)
+    : MultiUnsignedDiagnostic(numColumns)
+  {}
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned column) override { return "Diag " + std::to_string(column + 1); }
+};
+
+class MultiUnsignedWithPercentDiagnosticTester : public stk::balance::MultiUnsignedWithPercentDiagnostic
+{
+public:
+  MultiUnsignedWithPercentDiagnosticTester(unsigned numColumns)
+    : MultiUnsignedWithPercentDiagnostic(numColumns)
+  {}
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned column) override { return "Diag " + std::to_string(column + 1); }
 };
 
 TEST_F(UnitTestDiagnosticsPrinter, empty)
@@ -113,7 +133,8 @@ TEST_F(UnitTestDiagnosticsPrinter, unsignedDiagnostic)
   stk::balance::DiagnosticsPrinter diagPrinter(MPI_COMM_WORLD, numLogicalRanks);
   diagPrinter.print(os);
 
-  const std::string expectedResult = "===================\n"
+  const std::string expectedResult = "\n"
+                                     "===================\n"
                                      "  MPI |    Test    \n"
                                      " Rank | Diagnostic \n"
                                      "===================\n"
@@ -158,7 +179,8 @@ TEST_F(UnitTestDiagnosticsPrinter, twoUnsignedDiagnostics)
   stk::balance::DiagnosticsPrinter diagPrinter(MPI_COMM_WORLD, numLogicalRanks);
   diagPrinter.print(os);
 
-  const std::string expectedResult = "================================\n"
+  const std::string expectedResult = "\n"
+                                     "================================\n"
                                      "  MPI |    Test    |    Test    \n"
                                      " Rank | Diagnostic |    Diag    \n"
                                      "================================\n"
@@ -199,7 +221,8 @@ TEST_F(UnitTestDiagnosticsPrinter, twoUnsignedDiagnostics_oneLogicalRank)
   stk::balance::DiagnosticsPrinter diagPrinter(MPI_COMM_WORLD, numLogicalRanks);
   diagPrinter.print(os);
 
-  const std::string expectedResult = "================================\n"
+  const std::string expectedResult = "\n"
+                                     "================================\n"
                                      "  MPI |    Test    |    Test    \n"
                                      " Rank | Diagnostic |    Diag    \n"
                                      "================================\n"
@@ -245,7 +268,8 @@ TEST_F(UnitTestDiagnosticsPrinter, twoUnsignedDiagnostics_threeLogicalRanks)
   stk::balance::DiagnosticsPrinter diagPrinter(MPI_COMM_WORLD, numLogicalRanks);
   diagPrinter.print(os);
 
-  const std::string expectedResult = "================================\n"
+  const std::string expectedResult = "\n"
+                                     "================================\n"
                                      "  MPI |    Test    |    Test    \n"
                                      " Rank | Diagnostic |    Diag    \n"
                                      "================================\n"
@@ -289,7 +313,8 @@ TEST_F(UnitTestDiagnosticsPrinter, unsignedWithPercentDiagnostics)
   stk::balance::DiagnosticsPrinter diagPrinter(MPI_COMM_WORLD, numLogicalRanks);
   diagPrinter.print(os);
 
-  const std::string expectedResult = "======================\n"
+  const std::string expectedResult = "\n"
+                                     "======================\n"
                                      "  MPI |      Test     \n"
                                      " Rank |   Diagnostic  \n"
                                      "======================\n"
@@ -333,7 +358,8 @@ TEST_F(UnitTestDiagnosticsPrinter, doubleWithPercentDiagnostics)
   stk::balance::DiagnosticsPrinter diagPrinter(MPI_COMM_WORLD, numLogicalRanks);
   diagPrinter.print(os);
 
-  const std::string expectedResult = "=========================\n"
+  const std::string expectedResult = "\n"
+                                     "=========================\n"
                                      "  MPI |       Test       \n"
                                      " Rank |    Diagnostic    \n"
                                      "=========================\n"
@@ -354,4 +380,119 @@ TEST_F(UnitTestDiagnosticsPrinter, doubleWithPercentDiagnostics)
     EXPECT_EQ(os.str(), expectedResult);
   }
 }
+
+TEST_F(UnitTestDiagnosticsPrinter, oneUnsignedDiagnostic_oneMultiUnsignedDiagnostic_threeLogicalRanks)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+  const int parallelRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const int numLogicalRanks = 3;
+  const unsigned numColumns = 2;
+  std::ostringstream os;
+
+  stk::balance::register_diagnostic<UnsignedDiagnosticTester>();
+  stk::balance::register_diagnostic<MultiUnsignedDiagnosticTester>(numColumns);
+
+  auto * diag1 = stk::balance::get_diagnostic<UnsignedDiagnosticTester>();
+  auto * diag2 = stk::balance::get_diagnostic<MultiUnsignedDiagnosticTester>();
+  if (parallelRank == 0) {
+    diag1->store_value(0, 10);
+    diag1->store_value(2, 55);
+
+    diag2->store_value(0, 0, 10000000);
+    diag2->store_value(1, 0, 1000000000);
+  }
+  if (parallelRank == 1) {
+    diag1->store_value(1, 100);
+
+    diag2->store_value(0, 1, 10);
+    diag2->store_value(0, 2, 5000005);
+    diag2->store_value(1, 1, 10);
+    diag2->store_value(1, 2, 500000005);
+  }
+
+  stk::balance::DiagnosticsPrinter diagPrinter(MPI_COMM_WORLD, numLogicalRanks);
+  diagPrinter.print(os);
+
+  const std::string expectedResult = "\n"
+                                     "===========================================\n"
+                                     "  MPI |    Test    |   Test   |    Test    \n"
+                                     " Rank | Diagnostic |  Diag 1  |   Diag 2   \n"
+                                     "===========================================\n"
+                                     "   0  |      10    | 10000000 | 1000000000 \n"
+                                     "   1  |     100    |       10 |         10 \n"
+                                     "   2  |      55    |  5000005 |  500000005 \n"
+                                     "===========================================\n"
+                                     "\n"
+                                     "===========================================\n"
+                                     "      |    Test    |   Test   |    Test    \n"
+                                     "  Qty | Diagnostic |  Diag 1  |   Diag 2   \n"
+                                     "===========================================\n"
+                                     "  Min |      10    |       10 |         10 \n"
+                                     "  Max |     100    | 10000000 | 1000000000 \n"
+                                     "  Avg |      55    |  5000005 |  500000005 \n"
+                                     "===========================================\n";
+  if (parallelRank == 0) {
+    EXPECT_EQ(os.str(), expectedResult);
+  }
+}
+
+TEST_F(UnitTestDiagnosticsPrinter, oneUnsignedDiagnostic_oneMultiUnsignedWithPercentDiagnostic_fourLogicalRanks)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+  const int parallelRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  const int numLogicalRanks = 4;
+  const unsigned numColumns = 2;
+  std::ostringstream os;
+
+  stk::balance::register_diagnostic<UnsignedDiagnosticTester>();
+  stk::balance::register_diagnostic<MultiUnsignedWithPercentDiagnosticTester>(numColumns);
+
+  auto * diag1 = stk::balance::get_diagnostic<UnsignedDiagnosticTester>();
+  auto * diag2 = stk::balance::get_diagnostic<MultiUnsignedWithPercentDiagnosticTester>();
+  if (parallelRank == 0) {
+    diag1->store_value(0, 10);
+    diag1->store_value(3, 50);
+
+    diag2->store_value(0, 0, 10);
+    diag2->store_value(0, 3, 170);
+    diag2->store_value(1, 0, 100);
+    diag2->store_value(1, 3, 1700);
+  }
+  if (parallelRank == 1) {
+    diag1->store_value(1, 100);
+    diag1->store_value(2, 40);
+
+    diag2->store_value(0, 1, 400);
+    diag2->store_value(0, 2, 100);
+    diag2->store_value(1, 1, 4000);
+    diag2->store_value(1, 2, 1000);
+  }
+
+  stk::balance::DiagnosticsPrinter diagPrinter(MPI_COMM_WORLD, numLogicalRanks);
+  diagPrinter.print(os);
+
+  const std::string expectedResult = "\n"
+                                     "====================================================\n"
+                                     "  MPI |    Test    |      Test     |      Test      \n"
+                                     " Rank | Diagnostic |     Diag 1    |     Diag 2     \n"
+                                     "====================================================\n"
+                                     "   0  |      10    |  10 ( -94.1%) |  100 ( -94.1%) \n"
+                                     "   1  |     100    | 400 (+135.3%) | 4000 (+135.3%) \n"
+                                     "   2  |      40    | 100 ( -41.2%) | 1000 ( -41.2%) \n"
+                                     "   3  |      50    | 170 (  +0.0%) | 1700 (  +0.0%) \n"
+                                     "====================================================\n"
+                                     "\n"
+                                     "====================================================\n"
+                                     "      |    Test    |      Test     |      Test      \n"
+                                     "  Qty | Diagnostic |     Diag 1    |     Diag 2     \n"
+                                     "====================================================\n"
+                                     "  Min |      10    |  10 ( -94.1%) |  100 ( -94.1%) \n"
+                                     "  Max |     100    | 400 (+135.3%) | 4000 (+135.3%) \n"
+                                     "  Avg |      50    | 170           | 1700           \n"
+                                     "====================================================\n";
+  if (parallelRank == 0) {
+    EXPECT_EQ(os.str(), expectedResult);
+  }
+}
+
 }

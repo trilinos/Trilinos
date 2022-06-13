@@ -54,7 +54,7 @@
 # @HEADER
 
 
-IF (MSVC AND NOT
+if (MSVC AND NOT
     (LAPACK_LIBRARY_DIRS  OR
      (NOT "${LAPACK_LIBRARY_NAMES}" STREQUAL "lapack lapack_win32" AND
       NOT "${LAPACK_LIBRARY_NAMES}" STREQUAL "") OR
@@ -64,11 +64,11 @@ IF (MSVC AND NOT
       NOT "${TPL_LAPACK_LIBRARIES}" STREQUAL "") OR
      TPL_LAPACK_INCLUDE_DIRS)
    )
-  IF(CLAPACK_FOUND)
-    ADVANCED_SET(TPL_LAPACK_LIBRARIES lapack
+  if(CLAPACK_FOUND)
+    advanced_set(TPL_LAPACK_LIBRARIES lapack
         CACHE FILEPATH "Set from MSVC CLAPACK specialization")
-  ENDIF()
-ENDIF()
+  endif()
+endif()
 
-TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( LAPACK
+tribits_tpl_find_include_dirs_and_libraries( LAPACK
   REQUIRED_LIBS_NAMES "lapack lapack_win32")

@@ -87,8 +87,7 @@ TEST(StkMeshIoBrokerHowTo, writeResultsWithMultistateField)
     //+       since it commits the meta data.
     stk::mesh::Field<double> &field =
         stkIo.meta_data().declare_field<double>(stk::topology::NODE_RANK, fieldName, 3);
-    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(field, stkIo.meta_data().universal_part(), nullptr);
 
     stkIo.populate_bulk_data();
 

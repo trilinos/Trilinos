@@ -148,8 +148,8 @@ TEST(stkMeshHowTo, declareVectorFields_omitOutputType_noSubscriptNaming)
   DoubleField& displacements = metaData.declare_field<double>(stk::topology::NODE_RANK, "displacements");
 
   unsigned fieldLength = 3;
-  stk::mesh::put_field_on_mesh(velocities, metaData.universal_part(), fieldLength, static_cast<double*>(nullptr));
-  stk::mesh::put_field_on_mesh(displacements, metaData.universal_part(), fieldLength, static_cast<double*>(nullptr));
+  stk::mesh::put_field_on_mesh(velocities, metaData.universal_part(), fieldLength, nullptr);
+  stk::mesh::put_field_on_mesh(displacements, metaData.universal_part(), fieldLength, nullptr);
 
   stk::io::set_field_output_type(velocities, "Vector_3D");
 

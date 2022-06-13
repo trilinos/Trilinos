@@ -59,6 +59,7 @@ FILE(GLOB SOURCES *.cpp)
 ELSE()
 
 FILE(GLOB HEADERS
+     CommBuffer.hpp
      Parallel.hpp
      ParallelComm.hpp
      ParallelReduce.hpp
@@ -66,6 +67,7 @@ FILE(GLOB HEADERS
      ParallelVectorConcat.hpp
     )
 FILE(GLOB SOURCES
+     CommBuffer.cpp
      Parallel.cpp
      ParallelComm.cpp
      ParallelReduce.cpp

@@ -126,7 +126,7 @@ class UpdateElemElemGraphTest : public ::testing::Test
 {
 public:
   UpdateElemElemGraphTest() :
-    meta(),
+    meta(3),
     bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA),
     activePart(meta.declare_part("active")),
     boundaryPart(meta.declare_part("boundary"))

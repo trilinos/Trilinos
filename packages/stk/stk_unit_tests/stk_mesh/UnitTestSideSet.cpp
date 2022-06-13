@@ -1066,8 +1066,6 @@ TEST_F(InternalSideSet, maintainSingleSidedAfterParallelCreationOnProcessorBound
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
   {
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-
     stk::mesh::EntityId elemId = 1;
     stk::mesh::ConnectivityOrdinal ordinal = 5;
     stk::mesh::EntityId faceId = 16;
@@ -1080,8 +1078,6 @@ TEST_F(InternalSideSet, maintainSingleSidedAfterParallelCreationOnProcessorBound
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
   {
-    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-
     stk::mesh::EntityId elemId = 2;
     stk::mesh::ConnectivityOrdinal ordinal = 4;
     stk::mesh::EntityId faceId = 16;

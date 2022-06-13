@@ -56,9 +56,11 @@
 #include "MiniEM_AddFieldsToMesh.hpp"
 #include "MiniEM_OperatorRequestCallback.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory.hpp"
+#include "MiniEM_HigherOrderMaxwellPreconditionerFactory.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory_Augmentation.hpp"
 #include "MiniEM_DiscreteGradient.hpp"
 #include "MiniEM_DiscreteCurl.hpp"
+#include "MiniEM_Interpolation.hpp"
 
 #include <string>
 #include <iostream>
@@ -117,8 +119,10 @@ void updateParams(const std::string & xml,
 enum solverType {
   AUGMENTATION,
   MUELU_REFMAXWELL,
+  MUELU_MAXWELL_HO,
   ML_REFMAXWELL,
-  CG
+  CG,
+  GMRES
 };
 
 enum linearAlgebraType {
@@ -126,7 +130,7 @@ enum linearAlgebraType {
   linAlgEpetra
 };
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class blockedLinObjFactory>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class blockedLinObjFactory, bool useTpetra>
 int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 {
 
@@ -148,14 +152,16 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   {
     // defaults for command-line options
     int x_elements=-1,y_elements=-1,z_elements=-1,basis_order=1;
+    int workset_size=20;
+    std::string pCoarsenScheduleStr = "1";
     double dt=0.0;
     std::string meshFile = "";
     bool exodus_output = false;
     bool matrix_output = false;
     std::string input_file = "maxwell.xml";
     std::string xml = "";
-    solverType solverValues[4] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL, CG};
-    const char * solverNames[4] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell", "CG"};
+    solverType solverValues[6] = {AUGMENTATION, MUELU_REFMAXWELL, MUELU_MAXWELL_HO, ML_REFMAXWELL, CG, GMRES};
+    const char * solverNames[6] = {"Augmentation", "MueLu-RefMaxwell", "MueLu-Maxwell-HO", "ML-RefMaxwell", "CG", "GMRES"};
     solverType solver = MUELU_REFMAXWELL;
     int numTimeSteps = 1;
     bool resetSolver = false;
@@ -170,13 +176,15 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("y-elements",&y_elements);
     clp.setOption("z-elements",&z_elements);
     clp.setOption("basis-order",&basis_order);
+    clp.setOption("workset-size",&workset_size);
+    clp.setOption("pCoarsenSchedule",&pCoarsenScheduleStr);
     clp.setOption("dt",&dt,"Override \"dt\" specified in input file.");
     clp.setOption("meshFile",&meshFile,"Override input mesh file specified in input file.");
     clp.setOption("exodus-output","no-exodus-output",&exodus_output);
     clp.setOption("matrix-output","no-matrix-output",&matrix_output);
     clp.setOption("inputFile",&input_file,"XML file with the problem definitions");
     clp.setOption("solverFile",&xml,"XML file with the solver params");
-    clp.setOption<solverType>("solver",&solver,4,solverValues,solverNames,"Solver that is used");
+    clp.setOption<solverType>("solver",&solver,6,solverValues,solverNames,"Solver that is used");
     clp.setOption("numTimeSteps",&numTimeSteps);
     clp.setOption("resetSolver","no-resetSolver",&resetSolver,"update the solver in every timestep");
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
@@ -232,11 +240,17 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     Teuchos::ParameterList & assembly_pl             = input_params->sublist("Assembly");
     Teuchos::ParameterList & block_to_physics_pl     = input_params->sublist("Block ID to Physics ID Mapping");
     Teuchos::ParameterList & block_to_aux_physics_pl = input_params->sublist("Block ID to Auxiliary Physics ID Mapping");
+    Teuchos::ParameterList & ops_pl                  = input_params->sublist("Operators");
+    Teuchos::ParameterList & aux_ops_pl              = input_params->sublist("Auxiliary Operators");
     Teuchos::ParameterList & bcs_pl                  = input_params->sublist("Boundary Conditions");
     Teuchos::ParameterList & aux_bcs_pl              = input_params->sublist("Auxiliary Boundary Conditions");
     Teuchos::ParameterList & closure_models          = input_params->sublist("Closure Models");
     Teuchos::ParameterList responses                 = input_params->sublist("Responses");
     Teuchos::ParameterList & user_data               = input_params->sublist("User Data");
+
+    // Set basis order
+    Teuchos::ParameterList& maxwellEqSet = physicsBlock_pl->sublist("Maxwell Physics").sublist("Maxwell Physics");
+    basis_order = maxwellEqSet.get("Basis Order", basis_order);
 
     RCP<panzer_stk::STK_Interface> mesh;
     int dim = 3;
@@ -320,7 +334,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
               min_dx = std::max(x_elements,y_elements);
             // This is only correct when epsilon==epsilon0, mu==mu0
             double c = 299792458.0;
-            dt = cfl * min_dx / c;
+            dt = cfl * min_dx / basis_order / c;
           }
         }
       } else
@@ -349,9 +363,14 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           updateParams("solverCG.xml", lin_solver_pl, comm, out);
         else
           return EXIT_FAILURE;
+      else if (solver == GMRES)
+        if (linAlgebra == linAlgTpetra)
+          updateParams("solverGMRES.xml", lin_solver_pl, comm, out);
+        else
+          return EXIT_FAILURE;
       else if (solver == ML_REFMAXWELL) {
         updateParams("solverMLRefMaxwell.xml", lin_solver_pl, comm, out);
-      } else if (solver == MUELU_REFMAXWELL) {
+      } else if (solver == MUELU_REFMAXWELL || solver == MUELU_MAXWELL_HO) {
         if (linAlgebra == linAlgTpetra) {
           updateParams("solverMueLuRefMaxwell.xml", lin_solver_pl, comm, out);
 
@@ -381,6 +400,18 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
           if (dim == 2)
             updateParams("solverMueLuRefMaxwell2D.xml", lin_solver_pl, comm, out);
         }
+        if (solver == MUELU_MAXWELL_HO) {
+          RCP<Teuchos::ParameterList> lin_solver_pl_lo = lin_solver_pl;
+          lin_solver_pl = rcp(new Teuchos::ParameterList("Linear Solver"));
+          updateParams("solverMueLuMaxwellHO.xml", lin_solver_pl, comm, out);
+#ifdef KOKKOS_ENABLE_CUDA
+          if (typeid(panzer::TpetraNodeType).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+            updateParams("solverMueLuMaxwellHOCuda.xml", lin_solver_pl, comm, out);
+#endif
+          Teuchos::ParameterList& maxwell1list11 = lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").sublist("S_E Preconditioner").sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 11list");
+          if (maxwell1list11.isParameter("coarse: type") && maxwell1list11.get<std::string>("coarse: type") == "RefMaxwell")
+            maxwell1list11.set("coarse: params", lin_solver_pl_lo->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").sublist("S_E Preconditioner").sublist("Preconditioner Types").sublist("MueLuRefMaxwell"));
+        }
       }
     } else
       updateParams(xml, lin_solver_pl, comm, out);
@@ -408,6 +439,132 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     for(auto itr=block_ids_to_aux_physics_ids.begin();itr!=block_ids_to_aux_physics_ids.end();itr++)
       aux_block_ids_to_cell_topo[itr->first] = mesh->getCellTopology(itr->first);
 
+    std::string auxFieldOrder;
+    if (basis_order == 1)
+      auxFieldOrder = assembly_pl.get<std::string>("Auxiliary Field Order");
+    else {
+      auxFieldOrder = "blocked:";
+
+      pCoarsenScheduleStr = assembly_pl.get<std::string>("p coarsen schedule", pCoarsenScheduleStr);
+      std::vector<std::string> pCoarsenScheduleVecStr;
+      std::vector<int> pCoarsenSchedule;
+      panzer::StringTokenizer(pCoarsenScheduleVecStr, pCoarsenScheduleStr, ",");
+      panzer::TokensToInts(pCoarsenSchedule, pCoarsenScheduleVecStr);
+      pCoarsenSchedule.insert(pCoarsenSchedule.begin(), basis_order);
+
+      { // Check that this is a valid schedule.
+        auto it = pCoarsenSchedule.begin();
+        int p = *it;
+        TEUCHOS_ASSERT_EQUALITY(p, basis_order);
+        ++it;
+        while (it != pCoarsenSchedule.end()) {
+          int q = *it;
+          TEUCHOS_ASSERT(q < p);
+          ++it;
+          p = q;
+        }
+        TEUCHOS_ASSERT_EQUALITY(pCoarsenSchedule.back(), 1);
+      }
+
+      if (lin_solver_pl->sublist("Preconditioner Types").isSublist("Teko") &&
+        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").isSublist("Inverse Factory Library") &&
+        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").isSublist("Maxwell"))
+        lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").set("p coarsen schedule",std::to_string(basis_order)+","+pCoarsenScheduleStr);
+
+      Teuchos::ParameterList& auxPhysicsBlocksPL = physicsBlock_pl->sublist("Auxiliary Physics Block");
+
+      for (auto it = pCoarsenSchedule.begin(); it != pCoarsenSchedule.end(); ++it) {
+        if (*it != basis_order) {
+          auxFieldOrder += " AUXILIARY_NODE_" + std::to_string(*it) + " AUXILIARY_EDGE_" + std::to_string(*it);
+
+          auto gradPL = Teuchos::ParameterList();
+          gradPL.set("Source", "AUXILIARY_NODE_"+std::to_string(*it));
+          gradPL.set("Target", "AUXILIARY_EDGE_"+std::to_string(*it));
+          gradPL.set("Op", "grad");
+          aux_ops_pl.sublist("Discrete Gradient "+std::to_string(*it)) = gradPL;
+
+          auto massNodePL = Teuchos::ParameterList();
+          massNodePL.set("Type", "Auxiliary Mass Matrix");
+          massNodePL.set("DOF Name", "AUXILIARY_NODE_"+std::to_string(*it));
+          massNodePL.set("Basis Type", "HGrad");
+          massNodePL.set("Model ID", "electromagnetics_aux");
+          massNodePL.set("Field Multipliers", "mu,1/dt");
+          massNodePL.set("Basis Order", *it);
+          massNodePL.set("Integration Order", 2*(*it));
+          auxPhysicsBlocksPL.sublist("Auxiliary Node Mass Physics "+std::to_string(*it)) = massNodePL;
+
+          auto massEdgePL = Teuchos::ParameterList();
+          massEdgePL.set("Type", "Auxiliary Mass Matrix");
+          massEdgePL.set("DOF Name", "AUXILIARY_EDGE_"+std::to_string(*it));
+          massEdgePL.set("Basis Type", "HCurl");
+          massEdgePL.set("Model ID", "electromagnetics_aux");
+          massEdgePL.set("Basis Order", *it);
+          massEdgePL.set("Integration Order", 2*(*it));
+          auxPhysicsBlocksPL.sublist("Auxiliary Edge Mass Physics "+std::to_string(*it)) = massEdgePL;
+        }
+        else {
+          auxFieldOrder += " AUXILIARY_NODE AUXILIARY_EDGE";
+
+          auto gradPL = Teuchos::ParameterList();
+          gradPL.set("Source", "AUXILIARY_NODE");
+          gradPL.set("Target", "AUXILIARY_EDGE");
+          gradPL.set("Op", "grad");
+          aux_ops_pl.sublist("Discrete Gradient") = gradPL;
+
+          auto massNodePL = Teuchos::ParameterList();
+          massNodePL.set("Type", "Auxiliary Mass Matrix");
+          massNodePL.set("DOF Name", "AUXILIARY_NODE");
+          massNodePL.set("Basis Type", "HGrad");
+          massNodePL.set("Model ID", "electromagnetics_aux");
+          massNodePL.set("Field Multipliers", "mu,1/dt");
+          massNodePL.set("Basis Order", *it);
+          massNodePL.set("Integration Order", 2*(*it));
+          auxPhysicsBlocksPL.sublist("Auxiliary Node Mass Physics") = massNodePL;
+
+          auto massEdgePL = Teuchos::ParameterList();
+          massEdgePL.set("Type", "Auxiliary Mass Matrix");
+          massEdgePL.set("DOF Name", "AUXILIARY_EDGE");
+          massEdgePL.set("Basis Type", "HCurl");
+          massEdgePL.set("Model ID", "electromagnetics_aux");
+          massEdgePL.set("Basis Order", *it);
+          massEdgePL.set("Integration Order", 2*(*it));
+          auxPhysicsBlocksPL.sublist("Auxiliary Edge Mass Physics") = massEdgePL;
+
+          auto curlcurlPL = Teuchos::ParameterList();
+          curlcurlPL.set("Type", "Auxiliary Curl Curl");
+          curlcurlPL.set("DOF Name", "AUXILIARY_EDGE");
+          curlcurlPL.set("Basis Type", "HCurl");
+          curlcurlPL.set("Model ID", "electromagnetics_aux");
+          curlcurlPL.set("Field Multipliers", "dt,1/mu");
+          curlcurlPL.set("Basis Order", *it);
+          curlcurlPL.set("Integration Order", 2*(*it));
+          auxPhysicsBlocksPL.sublist("Auxiliary Edge Mass Physics") = curlcurlPL;
+        }
+      }
+
+      auto it = pCoarsenSchedule.begin();
+      int p = *it;
+      ++it;
+      while (it != pCoarsenSchedule.end()) {
+        int q = *it;
+
+        auto interpPLgrad = Teuchos::ParameterList();
+        interpPLgrad.set("Source", "AUXILIARY_NODE_"+std::to_string(q));
+        interpPLgrad.set("Target", p != basis_order ? "AUXILIARY_NODE_"+std::to_string(p) : "AUXILIARY_NODE");
+        interpPLgrad.set("Op", "value");
+        aux_ops_pl.sublist("Interpolation Hgrad " + std::to_string(q) + "->" + std::to_string(p)) = interpPLgrad;
+
+        auto interpPLcurl = Teuchos::ParameterList();
+        interpPLcurl.set("Source", "AUXILIARY_EDGE_"+std::to_string(q));
+        interpPLcurl.set("Target", p != basis_order ? "AUXILIARY_EDGE_"+std::to_string(p) : "AUXILIARY_EDGE");
+        interpPLcurl.set("Op", "value");
+        aux_ops_pl.sublist("Interpolation Hcurl " + std::to_string(q) + "->" + std::to_string(p)) = interpPLcurl;
+
+        p = q;
+        ++it;
+      }
+    }
+
     // define physics block parameter list and boundary conditions
     std::vector<panzer::BC> bcs;
     panzer::buildBCs(bcs,bcs_pl,globalData);
@@ -415,7 +572,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     std::vector<panzer::BC> aux_bcs;
     panzer::buildBCs(aux_bcs,aux_bcs_pl,globalData);
 
-    int workset_size = assembly_pl.get("Workset Size",20);
+    workset_size = assembly_pl.get("Workset Size", workset_size);
 
     // build the physics blocks objects
     std::vector<RCP<panzer::PhysicsBlock> > physicsBlocks;
@@ -491,7 +648,6 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     RCP<panzer::GlobalIndexer > dofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager,fieldOrder);
 
     // auxiliary dof manager
-    std::string auxFieldOrder = assembly_pl.get<std::string>("Auxiliary Field Order");
     RCP<panzer::GlobalIndexer > auxDofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),auxPhysicsBlocks,conn_manager,auxFieldOrder);
 
     // construct some linear algebra objects, build object to pass to evaluators
@@ -507,10 +663,15 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     mini_em::ClosureModelFactory_TemplateBuilder cm_builder;
     cm_factory.buildObjects(cm_builder);
 
-    // add full maxwell solver to teko
+    // add full maxwell preconditioner to teko
     RCP<Teko::Cloneable> clone = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory>());
     Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner",clone);
 
+    // add higher-order maxwell preconditioner to teko
+    RCP<Teko::Cloneable> cloneHO = rcp(new Teko::AutoClone<mini_em::HigherOrderMaxwellPreconditionerFactory>());
+    Teko::PreconditionerFactory::addPreconditionerFactory("Higher Order Maxwell Preconditioner",cloneHO);
+
+    // add augmentation preconditioner to teko
     RCP<Teko::Cloneable> cloneAug = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory_Augmentation>());
     Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner: Augmentation",cloneAug);
 
@@ -524,16 +685,58 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
                                                        rcp_dynamic_cast<panzer::BlockedDOFManager>(auxDofManager,true)));
     req_handler->addRequestCallback(callback);
 
-    // add discrete gradient
-    {
-      Teuchos::TimeMonitor tMdiscGrad(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient")));
-      addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
-    }
+    if (useTpetra) {
+      for (auto it = ops_pl.begin(); it != ops_pl.end(); ++it) {
+        std::string name = it->first;
+        Teuchos::ParameterList pl = it->second.getValue<Teuchos::ParameterList>(0);
+        const std::string src = pl.get<std::string>("Source");
+        const std::string tgt = pl.get<std::string>("Target");
+        const std::string op = pl.get<std::string>("Op","value");
+        const bool waitForRequest = pl.get<bool>("waitForRequest",true);
+        const bool dump = pl.get<bool>("dump",false);
+        Intrepid2::EOperator eOp;
+        if (op == "value")
+          eOp = Intrepid2::OPERATOR_VALUE;
+        else if (op == "grad")
+            eOp = Intrepid2::OPERATOR_GRAD;
+        else if (op == "curl")
+            eOp = Intrepid2::OPERATOR_CURL;
+        else
+          TEUCHOS_ASSERT(false);
+        addInterpolationToRequestHandler(name, linObjFactory, req_handler, src, tgt, eOp, waitForRequest, dump, workset_size);
+      }
 
-    // add discrete curl
-    {
-      Teuchos::TimeMonitor tMdiscCurl(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete curl")));
-      addDiscreteCurlToRequestHandler(linObjFactory,req_handler);
+      for (auto it = aux_ops_pl.begin(); it != aux_ops_pl.end(); ++it) {
+        std::string name = it->first;
+        Teuchos::ParameterList pl = it->second.getValue<Teuchos::ParameterList>(0);
+        const std::string src = pl.get<std::string>("Source");
+        const std::string tgt = pl.get<std::string>("Target");
+        const std::string op = pl.get<std::string>("Op","value");
+        const bool waitForRequest = pl.get<bool>("waitForRequest",true);
+        const bool dump = pl.get<bool>("dump",false);
+        Intrepid2::EOperator eOp;
+        if (op == "value")
+          eOp = Intrepid2::OPERATOR_VALUE;
+        else if (op == "grad")
+            eOp = Intrepid2::OPERATOR_GRAD;
+        else if (op == "curl")
+            eOp = Intrepid2::OPERATOR_CURL;
+        else
+          TEUCHOS_ASSERT(false);
+        addInterpolationToRequestHandler(name, auxLinObjFactory, req_handler, src, tgt, eOp, waitForRequest, dump, workset_size);
+      }
+    } else if ((solver == MUELU_REFMAXWELL) or (solver == ML_REFMAXWELL)) {
+      // add discrete gradient
+      {
+        Teuchos::TimeMonitor tMdiscGrad(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete gradient")));
+        addDiscreteGradientToRequestHandler(auxLinObjFactory,req_handler);
+      }
+
+      // add discrete curl
+      {
+        Teuchos::TimeMonitor tMdiscCurl(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: add discrete curl")));
+        addDiscreteCurlToRequestHandler(linObjFactory,req_handler);
+      }
     }
 
     // build linear solver
@@ -754,10 +957,10 @@ int main(int argc,char * argv[]){
   const char * linAlgebraNames[2] = {"Tpetra", "Epetra"};
   linearAlgebraType linAlgebra = linAlgTpetra;
   clp.setOption<linearAlgebraType>("linAlgebra",&linAlgebra,2,linAlgebraValues,linAlgebraNames);
-  solverType solverValues[4] = {AUGMENTATION, MUELU_REFMAXWELL, ML_REFMAXWELL, CG};
-  const char * solverNames[4] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell", "CG"};
+  solverType solverValues[6] = {AUGMENTATION, MUELU_REFMAXWELL, MUELU_MAXWELL_HO, ML_REFMAXWELL, CG, GMRES};
+  const char * solverNames[6] = {"Augmentation", "MueLu-RefMaxwell", "MueLu-Maxwell-HO", "ML-RefMaxwell", "CG", "GMRES"};
   solverType solver = MUELU_REFMAXWELL;
-  clp.setOption<solverType>("solver",&solver,4,solverValues,solverNames,"Solver that is used");
+  clp.setOption<solverType>("solver",&solver,6,solverValues,solverNames,"Solver that is used");
   // bool useComplex = false;
   // clp.setOption("complex","real",&useComplex);
   clp.recogniseAllOptions(false);
@@ -778,7 +981,7 @@ int main(int argc,char * argv[]){
     // if (useComplex) {
 // #if defined(HAVE_TPETRA_COMPLEX_DOUBLE)
 //       typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,std::complex<double>,int,panzer::GlobalOrdinal> blockedLinObjFactory;
-//       retVal = main_<std::complex<double>,int,panzer::GlobalOrdinal,blockedLinObjFactory>(clp, argc, argv);
+//       retVal = main_<std::complex<double>,int,panzer::GlobalOrdinal,blockedLinObjFactory,true>(clp, argc, argv);
 // #else
 //       std::cout << std::endl
 //                 << "WARNING" << std::endl
@@ -787,12 +990,12 @@ int main(int argc,char * argv[]){
 // #endif
 //     } else {
       typedef typename panzer::BlockedTpetraLinearObjFactory<panzer::Traits,double,int,panzer::GlobalOrdinal> blockedLinObjFactory;
-      retVal = main_<double,int,panzer::GlobalOrdinal,blockedLinObjFactory>(clp, argc, argv);
+      retVal = main_<double,int,panzer::GlobalOrdinal,blockedLinObjFactory,true>(clp, argc, argv);
 //    }
   } else if (linAlgebra == linAlgEpetra) {
     // TEUCHOS_ASSERT(!useComplex);
     typedef typename panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> blockedLinObjFactory;
-    retVal = main_<double,int,int,blockedLinObjFactory>(clp, argc, argv);
+    retVal = main_<double,int,int,blockedLinObjFactory,false>(clp, argc, argv);
   } else
     TEUCHOS_ASSERT(false);
 
