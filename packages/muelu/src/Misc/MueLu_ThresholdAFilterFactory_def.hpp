@@ -62,9 +62,6 @@ namespace MueLu {
   { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~ThresholdAFilterFactory() {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ThresholdAFilterFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, varName_);
   }
@@ -75,59 +72,12 @@ namespace MueLu {
   {
     FactoryMonitor m (*this, "A filter (thresholding)", currentLevel);
 
-    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> OMatrix; //TODO
-    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsOMatrix; //TODO
-
-    RCP<OMatrix> Ain = Get< RCP<OMatrix> >(currentLevel, varName_);
-
-    // create new empty Matrix
-    RCP<const Map> rowmap = Ain->getRowMap();
-    RCP<const Map> colmap = Ain->getColMap();
-    RCP<CrsOMatrix> Aout = rcp(new CrsOMatrix(rowmap, expectedNNZperRow_ <= 0 ? Ain->getGlobalMaxNumRowEntries() : expectedNNZperRow_));
-    // loop over local rows
-    for(size_t row=0; row<Ain->getLocalNumRows(); row++)
-      {
-        size_t nnz = Ain->getNumEntriesInLocalRow(row);
-
-        Teuchos::ArrayView<const LocalOrdinal> indices;
-        Teuchos::ArrayView<const Scalar> vals;
-        Ain->getLocalRowView(row, indices, vals);
-
-        TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::ThresholdAFilterFactory::Build: number of nonzeros not equal to number of indices? Error.");
-
-        Teuchos::ArrayRCP<GlobalOrdinal> indout(indices.size(),Teuchos::ScalarTraits<GlobalOrdinal>::zero());
-        Teuchos::ArrayRCP<Scalar> valout(indices.size(),Teuchos::ScalarTraits<Scalar>::zero());
-        size_t nNonzeros = 0;
-        if (keepDiagonal_) {
-          GlobalOrdinal glbRow = rowmap->getGlobalElement(row);
-          LocalOrdinal lclColIdx = colmap->getLocalElement(glbRow);
-          for(size_t i=0; i<(size_t)indices.size(); i++) {
-            if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold_) || indices[i]==lclColIdx) {
-              indout[nNonzeros] = colmap->getGlobalElement(indices[i]); // LID -> GID (column)
-              valout[nNonzeros] = vals[i];
-              nNonzeros++;
-            }
-          }
-        } else
-          for(size_t i=0; i<(size_t)indices.size(); i++) {
-            if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(threshold_)) {
-              indout[nNonzeros] = colmap->getGlobalElement(indices[i]); // LID -> GID (column)
-              valout[nNonzeros] = vals[i];
-              nNonzeros++;
-            }
-          }
-
-        indout.resize(nNonzeros);
-        valout.resize(nNonzeros);
-
-        Aout->insertGlobalValues(Ain->getRowMap()->getGlobalElement(row), indout.view(0,indout.size()), valout.view(0,valout.size()));
-      }
-
-    Aout->fillComplete(Ain->getDomainMap(), Ain->getRangeMap());
+    RCP<Matrix> Ain = Get< RCP<Matrix> >(currentLevel, varName_);
+    RCP<CrsMatrixWrap> Aout =
+            MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetThresholdedMatrix(Ain, threshold_, keepDiagonal_, expectedNNZperRow_);
 
     GetOStream(Statistics0) << "Nonzeros in " << varName_ << "(input): " << Ain->getGlobalNumEntries() << ", Nonzeros after filtering " << varName_ << " (parameter: " << threshold_ << "): " << Aout->getGlobalNumEntries() << std::endl;
-
-    currentLevel.Set(varName_, Teuchos::rcp_dynamic_cast<OMatrix>(Aout), this);
+    currentLevel.Set(varName_, Teuchos::rcp_dynamic_cast<Matrix>(Aout), this);
   }
 
 } // namespace MueLu

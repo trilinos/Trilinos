@@ -330,6 +330,35 @@ namespace MueLuTests {
       }
     }
 
+    // Test pre and post filtering of approximate inverse
+    {
+      using STS = Teuchos::ScalarTraits<SC>;
+
+      // Don't test for complex - matrix reader won't work
+      if (STS::isComplex) {success=true; return;}
+      RCP<Matrix> A = Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Read("TestMatrices/beam.mm", lib, comm);
+
+      Level level;
+      TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+
+      RCP<InverseApproximationFactory> invapproxFact = rcp( new InverseApproximationFactory() );
+      invapproxFact->SetFactory("A",MueLu::NoFactory::getRCP());
+      invapproxFact->SetParameter("inverse: drop tolerance", Teuchos::ParameterEntry(Scalar(1e-10)));
+      invapproxFact->SetParameter("inverse: approximation type", Teuchos::ParameterEntry(std::string("sparseapproxinverse")));
+
+      // request InverseApproximation operator
+      level.Request("Ainv", invapproxFact.get());
+
+      // generate Schur complement operator
+      invapproxFact->Build(level);
+
+      RCP<Matrix> Ainv = level.Get<RCP<Matrix> >("Ainv", invapproxFact.get());
+      TEST_EQUALITY(Ainv.is_null(), false);
+      TEST_EQUALITY(Ainv->getGlobalNumEntries(), 117519);
+      TEST_FLOATING_EQUALITY(Ainv->getFrobeniusNorm(), 8.316898282733437e+06, 2e3*TMT::eps());
+    }
+
   } //InverseSpaiConstructor
 
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
