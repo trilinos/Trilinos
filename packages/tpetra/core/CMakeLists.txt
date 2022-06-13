@@ -191,21 +191,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
 )
 
-# The "Kokkos refactor" version of Tpetra currently requires that
-# several Kokkos subpackages be enabled.  These subpackages should be
-# enabled by default (as of 08 Jan 2015).  The following test checks
-# that the subpackages have been enabled.
-
-ASSERT_DEFINED(Tpetra_ENABLE_Kokkos_Refactor)
-IF (Tpetra_ENABLE_Kokkos_Refactor)
-  SET(Tpetra_Have_Kokkos_Refactor ON CACHE INTERNAL "")
-ELSE()
-  SET(Tpetra_Have_Kokkos_Refactor OFF CACHE INTERNAL "")
-ENDIF()
-# Set corresponding value of CPP macro
-GLOBAL_SET(TPETRA_HAVE_KOKKOS_REFACTOR ${Tpetra_Have_Kokkos_Refactor})
-
-
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_BCRS_Point_Import
   HAVE_TPETRA_BCRS_DO_POINT_IMPORT
