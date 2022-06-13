@@ -394,9 +394,11 @@ namespace {
 
     A->apply(*X,*B);            // no transpose
 
+    bool verbose = false;
     Xhat->randomize();
-    Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-
+    if (verbose) {
+      Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    }
 
     // Solve A*Xhat = B for Xhat using the KLU2 solver with iterative refinement
     RCP<Amesos2::Solver<MAT,MV> > solver
@@ -404,16 +406,17 @@ namespace {
 
     Teuchos::ParameterList amesos2_params("Amesos2");
     amesos2_params.set("Iterative refinement", true);
-    amesos2_params.set("Verboes for iterative refinement", true);
+    amesos2_params.set("Verboes for iterative refinement", verbose);
     solver->setParameters( rcpFromRef(amesos2_params) );
 
     solver->symbolicFactorization();
     solver->numericFactorization();
     solver->solve();
-
-    Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-    X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
-    B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    if (verbose) {
+      Xhat->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+      X->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+      B->describe(*(getDefaultOStream()), Teuchos::VERB_EXTREME);
+    }
 
     // Check result of solve
     Array<Mag> xhatnorms(numVecs), xnorms(numVecs);
