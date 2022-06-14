@@ -47,10 +47,10 @@ template <> struct ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Intern
             B(i, 0) = A(idx, 0);
           });
         } else { /// matrix
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
+          Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m * n), [&](const ordinal_type &ij) {
+            const ordinal_type i = ij % m, j = ij / m;
             const ordinal_type idx = P(i);
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n),
-                                 [&](const ordinal_type &j) { B(i, j) = A(idx, j); });
+            B(i, j) = A(idx, j);
           });
         }
       }
@@ -58,7 +58,7 @@ template <> struct ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Intern
       printf("Error: ApplyPermutation<Algo::Internal> A extent(0) does not match to P extent(0)\n");
     }
 #else
-    invoke(A, B, P);
+    invoke(A, P, B);
 #endif
     return 0;
   }

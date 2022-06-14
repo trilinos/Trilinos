@@ -395,7 +395,7 @@ public:
           const ordinal_type chol_factor_work_size = chol_factor_work_size_variants[variant];
           const ordinal_type ldl_factor_work_size_variant_0 = chol_factor_work_size_variants[0] + max(32 * m, m * n);
           const ordinal_type ldl_factor_work_size_variants[3] = {ldl_factor_work_size_variant_0,
-                                                                 max(m * m, ldl_factor_work_size_variant_0),
+                                                                 max(m * m, ldl_factor_work_size_variant_0 + m * n_m),
                                                                  m * m + ldl_factor_work_size_variant_0};
           const ordinal_type ldl_factor_work_size = ldl_factor_work_size_variants[variant];
           const ordinal_type lu_factor_work_size_variants[3] = {schur_work_size, max(2 * m * m, schur_work_size),
@@ -1009,20 +1009,22 @@ public:
               exec_instance.fence();
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m);
-              UnmanagedViewType<value_type_matrix> STR(ABR.data() + ABR.span(), m, n_m);
 
-              auto fpiv = ordinal_type_array(P.data() + m, m);
-              _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice>::invoke(
-                  exec_instance, fpiv, ATR);
+              const ordinal_type used_span = max(ABR.span(), T.span());
+              UnmanagedViewType<value_type_matrix> STR(ABR.data() + used_span, m, n_m);
+
+              ConstUnmanagedViewType<ordinal_type_array> perm(P.data() + 2 * m, m);
+              _status = ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, ATR,
+                                                                                                 perm, STR);
               exec_instance.fence();
 
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::Unit(), one, ATL, ATR);
+                  _handle_blas, Diag::Unit(), one, ATL, STR);
               checkDeviceBlasStatus("trsm");
               exec_instance.fence();
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
-              _status = Copy<Algo::OnDevice>::invoke(exec_instance, STR, ATR);
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATR, STR);
               exec_instance.fence();
 
               _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, P, D, ATR);

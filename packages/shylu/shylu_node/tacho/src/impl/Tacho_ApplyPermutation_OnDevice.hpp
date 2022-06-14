@@ -19,23 +19,22 @@ template <> struct ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevi
         using exec_space = MemberType;
         const auto &exec_instance = member;
 
-        if (n == 1) {
-          Kokkos::RangePolicy<exec_space> policy(exec_instance, 0, m);
-          Kokkos::parallel_for(
-              policy, KOKKOS_LAMBDA(const ordinal_type &i) {
-                const ordinal_type idx = P(i);
-                B(i, 0) = A(idx, 0);
-              });
-        } else {
-          using policy_type = Kokkos::TeamPolicy<exec_space>;
-          policy_type policy(exec_instance, m, Kokkos::AUTO);
-          Kokkos::parallel_for(
-              policy, KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
-                const ordinal_type i = member.league_rank();
-                const ordinal_type idx = P(i);
-                Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n),
-                                     [&](const ordinal_type &j) { B(i, j) = A(idx, j); });
-              });
+        const Kokkos::RangePolicy<exec_space> policy(exec_instance, 0, m * n);
+        if (A.span() > 0) {
+          if (n == 1) {
+            Kokkos::parallel_for(
+                policy, KOKKOS_LAMBDA(const ordinal_type &i) {
+                  const ordinal_type idx = P(i);
+                  B(i, 0) = A(idx, 0);
+                });
+          } else {
+            Kokkos::parallel_for(
+                policy, KOKKOS_LAMBDA(const ordinal_type &ij) {
+                  const ordinal_type i = ij % m, j = ij / m;
+                  const ordinal_type idx = P(i);
+                  B(i, j) = A(idx, j);
+                });
+          }
         }
       }
     } else {

@@ -129,15 +129,15 @@ public:
         UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
         UnmanagedViewType<value_type_matrix> STR(W.data(), m, n_m);
 
-        auto fpiv = ordinal_type_array(P.data() + m, m);
-        ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal>::invoke(member, fpiv, ATR);
+        ConstUnmanagedViewType<ordinal_type_array> perm(P.data() + 2 * m, m);
+        ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, ATR, perm, STR);
         member.team_barrier();
 
-        Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL, ATR);
+        Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL, STR);
         member.team_barrier();
 
         Copy<Algo::Internal>::invoke(member, ATL, T);
-        Copy<Algo::Internal>::invoke(member, STR, ATR);
+        Copy<Algo::Internal>::invoke(member, ATR, STR);
         member.team_barrier();
 
         Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
@@ -310,18 +310,30 @@ public:
       UnmanagedViewType<ordinal_type_array> P(_piv.data() + offm * 4, m * 4);
       UnmanagedViewType<value_type_matrix> D(_diag.data() + offm * 2, m, 2);
 
-      const ordinal_type bufbeg = _buf_ptr(lid), bufend = _buf_ptr(lid + 1);
-      const auto bufptr = _buf.data() + bufbeg;
-      UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
-      UnmanagedViewType<value_type_array> W(ABR.data() + ABR.span(), int(bufend - bufbeg - ABR.span()));
-
       if (factorize_tag_type::variant == 0) {
-        /// check the span does not go more than buf_ptr(lid+1)
+        const ordinal_type bufbeg = _buf_ptr(lid), bufend = _buf_ptr(lid + 1);
+        const auto bufptr = _buf.data() + bufbeg;
+        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+
+        const ordinal_type used_span = ABR.span();
+        UnmanagedViewType<value_type_array> W(ABR.data() + used_span, int(bufend - bufbeg - used_span));
         factorize_var0(member, s, P, D, W, ABR);
       } else if (factorize_tag_type::variant == 1) {
+        const ordinal_type bufbeg = _buf_ptr(lid), bufend = _buf_ptr(lid + 1);
+        const auto bufptr = _buf.data() + bufbeg;
+        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+
         UnmanagedViewType<value_type_matrix> T(ABR.data(), m, m);
+        const ordinal_type used_span = max(ABR.span(), T.span());
+        UnmanagedViewType<value_type_array> W(ABR.data() + used_span, int(bufend - bufbeg - used_span));
         factorize_var1(member, s, P, D, W, T, ABR);
       } else if (factorize_tag_type::variant == 2) {
+        const ordinal_type bufbeg = _buf_ptr(lid), bufend = _buf_ptr(lid + 1);
+        const auto bufptr = _buf.data() + bufbeg;
+        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+
+        const ordinal_type used_span = ABR.span();
+        UnmanagedViewType<value_type_array> W(ABR.data() + used_span, int(bufend - bufbeg - used_span));
         factorize_var2(member, s, P, D, W, ABR);
       }
     } else if (mode == -1) {
