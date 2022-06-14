@@ -1093,31 +1093,53 @@ public:
             checkDeviceLapackStatus("ldl::modify");
             exec_instance.fence();
 
-            if (n_m > 0) {
-              UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
-              UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
-              UnmanagedViewType<value_type_matrix> STR(ABR.data() + ABR.span(), m, n_m);
+            value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
 
-              auto fpiv = ordinal_type_array(P.data() + m, m);
-              _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice>::invoke(
-                  exec_instance, fpiv, ATR);
+            if (n_m > 0) {
+              exec_instance.fence();
+              UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
+              UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m);
+              UnmanagedViewType<value_type_matrix> T(bptr + ABR.span(), m, m);
+
+              const ordinal_type used_span = ABR.span() + T.span();
+              UnmanagedViewType<value_type_matrix> STR(bptr + used_span, m, n_m);
+
+              ConstUnmanagedViewType<ordinal_type_array> perm(P.data() + 2 * m, m);
+              _status = ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, ATR,
+                                                                                                 perm, STR);
               exec_instance.fence();
 
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
-                  _handle_blas, Diag::Unit(), one, ATL, ATR);
+                  _handle_blas, Diag::Unit(), one, ATL, STR);
               checkDeviceBlasStatus("trsm");
               exec_instance.fence();
 
-              _status = Copy<Algo::OnDevice>::invoke(exec_instance, STR, ATR);
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATR, STR);
               exec_instance.fence();
 
+              _status = Symmetrize<Uplo::Lower, Algo::OnDevice>::invoke(exec_instance, T);
+              _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, minus_one);
               _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, P, D, ATR);
               exec_instance.fence();
 
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
                   _handle_blas, minus_one, ATR, STR, zero, ABR);
-              exec_instance.fence();
               checkDeviceBlasStatus("gemm");
+              exec_instance.fence();
+
+              UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
+              _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
+                  _handle_blas, Diag::Unit(), minus_one, T, AT);
+            } else {
+              exec_instance.fence();
+              UnmanagedViewType<value_type_matrix> T(bptr, m, m);
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
+              exec_instance.fence();
+              _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, one);
+              exec_instance.fence();
+              _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
+                  _handle_blas, Diag::Unit(), one, T, ATL);
             }
           }
         }
@@ -1132,7 +1154,7 @@ public:
     else if (variant == 1)
       factorizeLDL_OnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 2)
-      factorizeLDL_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
+      factorizeLDL_OnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
     else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::factorizeLDL_OnDevice, algorithm variant is not supported");
