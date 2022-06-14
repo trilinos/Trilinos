@@ -35,7 +35,7 @@ template <> struct ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Intern
   }
 
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeB>
-  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P,
+  KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const ViewTypeA &A, const ViewTypeP &P,
                                            const ViewTypeB &B) {
 #if defined(__CUDA_ARCH__)
     if (A.extent(0) == P.extent(0)) {

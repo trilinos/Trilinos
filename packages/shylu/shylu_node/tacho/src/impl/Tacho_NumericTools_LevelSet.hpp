@@ -21,6 +21,9 @@
 #include "Tacho_ApplyPivots.hpp"
 #include "Tacho_ApplyPivots_OnDevice.hpp"
 
+#include "Tacho_ApplyPermutation.hpp"
+#include "Tacho_ApplyPermutation_OnDevice.hpp"
+
 #include "Tacho_Scale2x2_BlockInverseDiagonals.hpp"
 #include "Tacho_Scale2x2_BlockInverseDiagonals_OnDevice.hpp"
 
@@ -1848,13 +1851,12 @@ public:
             const ordinal_type offm = s.row_begin;
 
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
-            const auto fpiv = ordinal_type_array(_piv.data() + 4 * offm + m, m);
+            const auto perm = ordinal_type_array(_piv.data() + 4 * offm + 2 * m, m);
 
-            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice> /// row inter-change
-                ::invoke(exec_instance, fpiv, tT);
+            ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, tT, perm, bT);
             exec_instance.fence();
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AL, tT, zero, bT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AL, bT, zero, tT);
             checkDeviceBlasStatus("gemv");
             exec_instance.fence();
 
@@ -1862,7 +1864,7 @@ public:
               UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m);
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
-              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bT, zero, bB);
+              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }

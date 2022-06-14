@@ -144,20 +144,19 @@ public:
 
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
-        auto fpiv = ConstUnmanagedViewType<ordinal_type_array>(_piv.data() + 4 * offm + m, m);
+        auto perm = ConstUnmanagedViewType<ordinal_type_array>(_piv.data() + 4 * offm + 2 * m, m);
 
-        ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal> /// row inter-change
-            ::invoke(member, fpiv, tT);
+        ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, tT, perm, bT);
         member.team_barrier();
 
-        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, AL, tT, zero, bT);
+        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, AL, bT, zero, tT);
 
         if (n_m > 0) {
           // update
           member.team_barrier();
           UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, AR, bT, zero, bB);
+          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, AR, tT, zero, bB);
         }
       }
     }
@@ -173,14 +172,6 @@ public:
 
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
-
-        // copy to t
-        Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(member, m * _nrhs),
-            [&, m](const ordinal_type &k) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-              const ordinal_type i = k % m, j = k / m;
-              tT(i, j) = bT(i, j);
-            });
 
         if (n_m > 0) {
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
