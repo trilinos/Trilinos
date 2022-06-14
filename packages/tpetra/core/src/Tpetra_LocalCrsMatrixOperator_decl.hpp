@@ -247,7 +247,10 @@ namespace Tpetra {
 #if 0
         Kokkos::parallel_for(Kokkos::RangePolicy<TagNonTrans>(0, A_.numRows()), *this);
 #else
-        const int nnzPerRow = (A_.nnz() + A_.numRows() - 1) / A_.numRows();
+
+        const int estNnz = A_.nnz() * 1.00; // entries are mostly on-rank. use simple SpMV off rank
+
+        const int nnzPerRow = (estNnz + A_.numRows() - 1) / A_.numRows();
         int vectorLength = 1;
         while (vectorLength < 32 && vectorLength * 6 < nnzPerRow) {
           vectorLength *= 2;
@@ -256,7 +259,7 @@ namespace Tpetra {
         const int rowsPerTeam = teamSize;
         const int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
 
-        if (A_.nnz() > 10000000) {
+        if (estNnz > 10000000) {
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets, teamSize, vectorLength);
           Kokkos::parallel_for("on-rank", policy, *this);
         } else {
@@ -398,10 +401,13 @@ namespace Tpetra {
 
       /// \brief Kokkos dispatch of non-transpose
       void launch(TagNonTrans, const execution_space &space) {
-#if 0
-        Kokkos::parallel_for(Kokkos::RangePolicy<execution_space, TagNonTrans>(space, 0, A_.numRows()), *this);
+#if 1
+        Kokkos::parallel_for("off-rank simple", Kokkos::RangePolicy<execution_space, TagNonTrans>(space, 0, A_.numRows()), *this);
 #else
-        const int nnzPerRow = (A_.nnz() + A_.numRows() - 1) / A_.numRows();
+
+        const int estNnz = A_.nnz() * 0.05; // mostly on-rank nnz
+
+        const int nnzPerRow = (estNnz + A_.numRows() - 1) / A_.numRows();
         int vectorLength = 1;
         while (vectorLength < 32 && vectorLength * 6 < nnzPerRow) {
           vectorLength *= 2;
@@ -410,7 +416,7 @@ namespace Tpetra {
         const int rowsPerTeam = teamSize;
         const int64_t worksets = (Y_.extent(0)+rowsPerTeam-1)/rowsPerTeam;
 
-        if (A_.nnz() > 10000000) {
+        if (estNnz > 10000000) {
           Kokkos::TeamPolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>, TagNonTrans>policy(space, worksets,teamSize,vectorLength);
           Kokkos::parallel_for("off-rank", policy, *this);
         } else {
