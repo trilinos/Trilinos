@@ -47,11 +47,11 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     return 0; // print help return
 
   if (method_name == "chol")
-    method = 0;
-  else if (method_name == "ldl")
     method = 1;
-  else if (method_name == "lu")
+  else if (method_name == "ldl")
     method = 2;
+  else if (method_name == "lu")
+    method = 3;
   else {
     std::cout << "Error: not supported solution method\n";
     return -1;
