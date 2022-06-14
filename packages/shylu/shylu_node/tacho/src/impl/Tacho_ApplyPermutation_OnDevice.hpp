@@ -9,7 +9,7 @@ namespace Tacho {
 
 template <> struct ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice> {
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeB>
-  inline static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P, const ViewTypeB &B) {
+  inline static int invoke(const MemberType &member, const ViewTypeA &A, const ViewTypeP &P, const ViewTypeB &B) {
     // typedef typename ViewTypeA::non_const_value_type value_type;
 
     const ordinal_type m = A.extent(0), n = A.extent(1), plen = P.extent(0);
