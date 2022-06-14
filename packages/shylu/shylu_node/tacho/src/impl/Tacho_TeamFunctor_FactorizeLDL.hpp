@@ -110,12 +110,20 @@ public:
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
+
       Symmetrize<Uplo::Upper, Algo::Internal>::invoke(member, ATL);
       member.team_barrier();
+
       LDL<Uplo::Lower, LDL_AlgoType>::invoke(member, ATL, P, W);
       member.team_barrier();
+
       LDL<Uplo::Lower, LDL_AlgoType>::modify(member, ATL, P, D);
       member.team_barrier();
+
+      SetIdentity<Algo::Internal>::invoke(member, T, one);
+      member.team_barrier();
+
+      Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::Internal>::invoke(member, Diag::Unit(), one, ATL, T);
 
       if (n_m > 0) {
         UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
@@ -124,21 +132,24 @@ public:
         auto fpiv = ordinal_type_array(P.data() + m, m);
         ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal>::invoke(member, fpiv, ATR);
         member.team_barrier();
+
         Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL, ATR);
         member.team_barrier();
+
+        Copy<Algo::Internal>::invoke(member, ATL, T);
         Copy<Algo::Internal>::invoke(member, STR, ATR);
         member.team_barrier();
+
         Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
             ::invoke(member, P, D, ATR);
         member.team_barrier();
+
         GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
                                                                                                 STR, zero, ABR);
+      } else {
+        member.team_barrier();
+        Copy<Algo::Internal>::invoke(member, ATL, T);
       }
-
-      /// invert diagonal
-      Copy<Algo::Internal>::invoke(member, T, ATL);
-      SetIdentity<Algo::Internal>::invoke(member, ATL, one);
-      Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, ATL);
     }
   }
 

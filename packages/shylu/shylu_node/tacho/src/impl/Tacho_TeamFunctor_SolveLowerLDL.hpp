@@ -128,17 +128,19 @@ public:
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void solve_var1(MemberType &member, const supernode_type &s, value_type *bptr) const {
-    using TrsvAlgoType = typename TrsvAlgorithm::type;
     using GemvAlgoType = typename GemvAlgorithm::type;
 
-    const value_type minus_one(-1), zero(0);
+    const ordinal_type nrhs = _t.extent(1);
+    const value_type one(1), minus_one(-1), zero(0);
     {
       const ordinal_type m = s.m, n = s.n, n_m = n - m;
       if (m > 0) {
         value_type *aptr = s.u_buf;
         // solve
         UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
-        aptr += m * m;
+        aptr += AL.span();
+        UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+        bptr += bT.span();
 
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
@@ -146,14 +148,16 @@ public:
 
         ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal> /// row inter-change
             ::invoke(member, fpiv, tT);
-        Trsv<Uplo::Lower, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), AL, tT);
+        member.team_barrier();
+
+        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, AL, tT, zero, bT);
 
         if (n_m > 0) {
           // update
           member.team_barrier();
           UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, AR, tT, zero, bB);
+          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, AR, bT, zero, bB);
         }
       }
     }

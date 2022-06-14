@@ -1027,7 +1027,7 @@ public:
 
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
                   _handle_blas, minus_one, ATR, STR, zero, ABR);
-              exec_instance.fence();
+              /// exec_instance.fence();
               checkDeviceBlasStatus("gemm");
             } else {
               exec_instance.fence();
@@ -1125,7 +1125,7 @@ public:
     if (variant == 0)
       factorizeLDL_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 1)
-      factorizeLDL_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
+      factorizeLDL_OnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 2)
       factorizeLDL_OnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
     else {
@@ -1928,7 +1928,7 @@ public:
     if (variant == 0)
       solveLDL_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveLDL_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+      solveLDL_LowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
       solveLDL_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else {
@@ -2112,7 +2112,7 @@ public:
     if (variant == 0)
       solveLDL_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveLDL_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+      solveLDL_UpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
       solveLDL_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else {
@@ -2696,7 +2696,7 @@ public:
             team_policy_update;
 #else
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::template FactorizeTag<0 /*variant*/>>
+                                   typename functor_type::template FactorizeTag<variant>>
             team_policy_factor;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space, typename functor_type::UpdateTag>
             team_policy_update;
@@ -2817,10 +2817,10 @@ public:
             team_policy_update;
 #else
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::template SolveTag<0 /*variant*/>>
+                                   typename functor_type::template SolveTag<variant>>
             team_policy_solve;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::template UpdateTag<0 /*variant*/>>
+                                   typename functor_type::template UpdateTag<variant>>
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, _piv, t, _buf);
@@ -2882,10 +2882,10 @@ public:
             team_policy_update;
 #else
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::template SolveTag<0 /*variant*/>>
+                                   typename functor_type::template SolveTag<variant>>
             team_policy_solve;
         typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
-                                   typename functor_type::template UpdateTag<0 /*variant*/>>
+                                   typename functor_type::template UpdateTag<variant>>
             team_policy_update;
 #endif
         functor_type functor(_info, _solve_mode, _level_sids, _piv, _diag, t, _buf);

@@ -123,17 +123,20 @@ public:
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void solve_var1(MemberType &member, const supernode_type &s, value_type *bptr) const {
-    using TrsvAlgoType = typename TrsvAlgorithm::type;
     using GemvAlgoType = typename GemvAlgorithm::type;
 
-    const value_type minus_one(-1), one(1);
+    const ordinal_type nrhs = _t.extent(1);
+    const value_type minus_one(-1), one(1), zero(0);
     {
       const ordinal_type m = s.m, n = s.n, n_m = n - m;
       if (m > 0) {
         value_type *aptr = s.u_buf;
         // solve
         const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
-        aptr += m * m;
+        aptr += AL.span();
+        const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+        bptr += bT.span();
+
         const ordinal_type offm = s.row_begin;
         const auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
@@ -149,11 +152,14 @@ public:
           Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, AR, bB, one, tT);
           member.team_barrier();
         }
-        Trsv<Uplo::Lower, Trans::Transpose, TrsvAlgoType>::invoke(member, Diag::Unit(), AL, tT);
+        Gemv<Trans::Transpose, Algo::Internal>::invoke(member, one, AL, tT, zero, bT);
 
         ConstUnmanagedViewType<ordinal_type_array> fpiv(P.data() + m, m);
         ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::Internal> /// row inter-change
-            ::invoke(member, fpiv, tT);
+            ::invoke(member, fpiv, bT);
+        member.team_barrier();
+
+        Copy<Algo::Internal>::invoke(member, tT, bT);
       }
     }
   }

@@ -16,6 +16,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   std::string graph_file = "";
   std::string weight_file = "";
   int nrhs = 1;
+  std::string method_name = "chol";
   int method = 1; // 1 - Chol, 2 - LDL, 3 - SymLU
   int small_problem_thres = 1024;
   int device_factor_thres = 64;
@@ -33,7 +34,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<std::string>("graph", "Input condensed graph", &graph_file);
   opts.set_option<std::string>("weight", "Input condensed graph weight", &weight_file);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
-  opts.set_option<int>("method", "Solution method: 1 - Cholesky, 2 - LDL, 3 - SymLU", &method);
+  opts.set_option<std::string>("method", "Solution method: chol, ldl, lu", &method_name);
   opts.set_option<int>("small-problem-thres", "LAPACK is used smaller than this thres", &small_problem_thres);
   opts.set_option<int>("device-factor-thres", "Device function is used above this subproblem size",
                        &device_factor_thres);
@@ -44,6 +45,17 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse)
     return 0; // print help return
+
+  if (method_name == "chol")
+    method = 0;
+  else if (method_name == "ldl")
+    method = 1;
+  else if (method_name == "lu")
+    method = 2;
+  else {
+    std::cout << "Error: not supported solution method\n";
+    return -1;
+  }
 
   Kokkos::initialize(argc, argv);
 
@@ -56,7 +68,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
 
   int r_val = 0;
-  {
+  try {
     /// crs matrix format and dense multi vector
     using CrsMatrixBaseTypeHost = Tacho::CrsMatrixBase<value_type, host_device_type>;
     using DenseMultiVectorType = Kokkos::View<value_type **, Kokkos::LayoutLeft, device_type>;
@@ -170,6 +182,8 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     std::cout << "TachoSolver: residual = " << res << "\n\n";
 
     solver.release();
+  } catch (const std::exception &e) {
+    std::cerr << "Error: exception is caught: \n" << e.what() << "\n";
   }
   Kokkos::finalize();
 
