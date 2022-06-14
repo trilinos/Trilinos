@@ -110,7 +110,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsTestMatrices_cp
   SOURCE_FILES filter.mm
   SOURCE_FILES fuego0.mm
   SOURCE_FILES fuego1.mm
-  SOURCE_FILES nonsym.mm
+  SOURCE_FILES nonsym1.mm
+  SOURCE_FILES nonsym2.mm
   SOURCE_FILES SaP_constrainTest_P.mat
   SOURCE_FILES semiRblkTestver.mm
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/TestMatrices

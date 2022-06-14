@@ -132,6 +132,9 @@ namespace MueLu {
     //@}
 
   private:
+    //! Static a priori pattern selection based on powers of a matrix graph
+    RCP<const CrsGraph> GetStaticPattern(const RCP<const CrsGraph>& sparsityPattern, int power) const;
+
     //! Sparse inverse calculation method.
     RCP<Matrix> GetSparseInverse(const RCP<Matrix>& A, const RCP<const CrsGraph>& sparsityPattern) const;
 

@@ -46,6 +46,8 @@
 #ifndef MUELU_INVERSEAPPROXIMATIONFACTORY_DEF_HPP_
 #define MUELU_INVERSEAPPROXIMATIONFACTORY_DEF_HPP_
 
+#include <Xpetra_CrsGraphFactory.hpp>
+#include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
@@ -65,7 +67,10 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_ThresholdAFilterFactory_decl.hpp"
 #include "MueLu_InverseApproximationFactory_decl.hpp"
+
+#include <Tpetra_Import_decl.hpp>
 
 namespace MueLu {
 
@@ -79,6 +84,7 @@ namespace MueLu {
     validParamList->set<std::string>            ("inverse: approximation type",  "diagonal", "Method used to approximate the inverse.");
     validParamList->set<Magnitude>              ("inverse: drop tolerance",      0.0       , "Values below this threshold  are dropped from the matrix (or fixed if diagonal fixing is active).");
     validParamList->set<bool>                   ("inverse: fixing",              false     , "Keep diagonal and fix small entries with 1.0");
+    validParamList->set<int>                    ("inverse: power",               1         , "Factor used to calculate the power of the static inverse sparsity pattern");
 
     return validParamList;
   }
@@ -131,8 +137,19 @@ namespace MueLu {
     else if(method=="sparseapproxinverse")
     {
       RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedGraph(A, tol, A->getGlobalMaxNumRowEntries());
-      GetOStream(Statistics1) << "NNZ Graph(A): " << A->getCrsGraph()->getGlobalNumEntries() << " , NNZ Tresholded Graph(A): " << sparsityPattern->getGlobalNumEntries() << std::endl;
-      RCP<Matrix> pAinv = GetSparseInverse(A, sparsityPattern);
+      GetOStream(Statistics1) << "NNZ Graph(A): " << A->getCrsGraph()->getGlobalNumEntries() << " , NZZ Tresholded Graph(A): " << sparsityPattern->getGlobalNumEntries() << std::endl;
+
+      const int power = pL.get<int>("inverse: power");
+      TEUCHOS_TEST_FOR_EXCEPTION(power < 1, Exceptions::RuntimeError, "MueLu::InverseApproximationFactory::Build: Power has to be greater equal to one.");
+
+      RCP<const CrsGraph> newSparsityPattern;
+      if(power > 1)
+        newSparsityPattern = GetStaticPattern(sparsityPattern.getConst(), power);
+      else
+        newSparsityPattern = sparsityPattern;
+
+      RCP<Matrix> pAinv = GetSparseInverse(A, newSparsityPattern);
+
       Ainv = Utilities::GetThresholdedMatrix(pAinv, tol, fixing, pAinv->getGlobalMaxNumRowEntries());
       GetOStream(Statistics1) << "NNZ Ainv: " << pAinv->getGlobalNumEntries() << ", NNZ Tresholded Ainv (parameter: " << tol << "): " << Ainv->getGlobalNumEntries() << std::endl;
     }
@@ -141,6 +158,60 @@ namespace MueLu {
     GetOStream(Statistics1) << "Ainv has " << Ainv->getGlobalNumRows() << "x" << Ainv->getGlobalNumCols() << " rows and columns." << std::endl;
 
     Set(currentLevel, "Ainv", Ainv);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
+  InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetStaticPattern(const RCP<const CrsGraph>& sparsityPattern, int power) const {
+
+    // gather missing rows from other procs to generate an overlapping map
+    const RCP<const Import> rowImport = ImportFactory::Build(sparsityPattern->getRowMap(), sparsityPattern->getColMap());
+
+    RCP<const CrsGraph> overlappedSparsityPattern;
+    if(sparsityPattern->getRowMap()->lib() == Xpetra::UseTpetra) {
+      overlappedSparsityPattern = CrsGraphFactory::Build(sparsityPattern, *rowImport);
+    } else {
+      // this is not nice, but as far as I understand there's no other way with Epetra
+      RCP<Matrix> overlappedMatrix = MatrixFactory::Build(MatrixFactory::Build(sparsityPattern), *rowImport);
+      overlappedSparsityPattern = overlappedMatrix->getCrsGraph();
+    }
+    
+    //TODO: how to handle nnz?
+    RCP<CrsGraph> newSparsityPattern =
+            CrsGraphFactory::Build(sparsityPattern->getRowMap(), overlappedSparsityPattern->getColMap(), sparsityPattern->getGlobalMaxNumRowEntries()*overlappedSparsityPattern->getGlobalMaxNumRowEntries());
+
+    for(size_t k=0; k<sparsityPattern->getLocalNumRows(); k++)
+    {
+      ArrayView<const LO> Ik;
+      sparsityPattern->getLocalRowView(k, Ik);
+      size_t nnz = sparsityPattern->getNumEntriesInLocalRow(k);
+
+      TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(Ik.size()) != nnz, Exceptions::RuntimeError, "MueLu::InverseApproximationFactory::GetStaticPattern: number of nonzeros not equal to number of indices? Error.");
+
+      ArrayView<const LO> Jk;
+      Array<LO> Iknew;
+
+      for(size_t i = 0; i < Ik.size(); i++) {
+        overlappedSparsityPattern->getLocalRowView(Ik[i], Jk);
+        for(size_t j = 0; j < Jk.size(); j++) {
+          Iknew.append(Jk[j]);
+        }
+      }
+
+      std::sort(Iknew.begin(), Iknew.end());
+      Iknew.erase(std::unique(Iknew.begin(), Iknew.end()), Iknew.end());
+
+      newSparsityPattern->insertLocalIndices(k, Iknew);
+    }
+    newSparsityPattern->fillComplete();
+
+    // decrease power value for recursion
+    power--;
+
+    if(power > 1)
+      return GetStaticPattern(newSparsityPattern, power);
+    else
+      return newSparsityPattern.getConst();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
