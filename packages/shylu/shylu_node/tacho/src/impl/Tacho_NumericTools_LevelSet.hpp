@@ -1851,8 +1851,8 @@ public:
             const ordinal_type offm = s.row_begin;
 
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
-            const auto perm = ordinal_type_array(_piv.data() + 4 * offm + 2 * m, m);
 
+            ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
             ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, tT, perm, bT);
             exec_instance.fence();
 
@@ -2042,13 +2042,9 @@ public:
             checkDeviceBlasStatus("gemv");
             exec_instance.fence();
 
-            const auto fpiv = ordinal_type_array(P.data() + m, m);
-            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::OnDevice> /// row inter-change
-                ::invoke(exec_instance, fpiv, bT);
-            exec_instance.fence();
-
-            _status = Copy<Algo::OnDevice>::invoke(exec_instance, tT, bT);
-            checkDeviceBlasStatus("Copy");
+            ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
+            _status =
+                ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, peri, tT);
           }
         }
       }

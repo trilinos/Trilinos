@@ -153,13 +153,10 @@ public:
           member.team_barrier();
         }
         Gemv<Trans::Transpose, Algo::Internal>::invoke(member, one, AL, tT, zero, bT);
-
-        ConstUnmanagedViewType<ordinal_type_array> fpiv(P.data() + m, m);
-        ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::Internal> /// row inter-change
-            ::invoke(member, fpiv, bT);
         member.team_barrier();
 
-        Copy<Algo::Internal>::invoke(member, tT, bT);
+        ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
+        ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, bT, peri, tT);
       }
     }
   }
