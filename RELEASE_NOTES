@@ -7,21 +7,39 @@
 CMake
 
   - Switch to modern CMake targets in IMPORTED library targets in installed
-    <Package>Config.cmake files which breaks backward compatibility
+    `<Package>Config.cmake` files which **breaks backward compatibility** for
+    some downstream CMake projects:
 
     With the switch to modern CMake IMPORTED targets, now include directories
     (along with critical compiler options and other modern CMake usage
     requirements) are propagated through linking to the IMPORTED library
     targets in downstream customer CMake projects.  This makes the usage of
-    the variables `<Trilinos>_INCLUDE_DIRS` and `Trilinos_TPL_INCLUDE_DIRS`
-    unnecessary in downstream CMake projects.  However, this change will also
-    cause downstream CMake projects to pull in include directories as `SYSTEM`
-    includes (e.g. using `-isystem` instead of `-I`) from IMPORTED library
-    targets.  This changes how these include directories are searched and
-    could break some fragile build environments that have the same header file
-    names in multiple include directories searched by the compiler.  Also,
-    this will silence any regular compiler warnings from headers found under
-    these include directories.  This constitutes a **break in backward
+    the variables `Trilinos_INCLUDE_DIRS` and `Trilinos_TPL_INCLUDE_DIRS`
+    unnecessary in downstream CMake projects.  The variable
+    `Trilinos_INCLUDE_DIRS` is still set but the variable
+    `Trilinos_TPL_INCLUDE_DIRS` is empty in this change to modern CMake.  To
+    get include directories for Trilinos packages and TPLs, one must link
+    against the Trilinos target `Trilinos::all_libs` or
+    `Trilinos::all_selected_libs` or by linking against the individual package
+    targets `<packageName>::all_libs` and/or the TPL targets
+    `<tplName>::all_libs`.  To upgrade downstream CMake projects that are
+    showing missing include directories (i.e. header files can't be found)
+    just add `target_link_libraries()` calls with the appropriate
+    `<prefix>::all_libs` targets for the desired package and/or TPL.  (See the
+    section "Using the installed software in downstream CMake projects" in the
+    updated build reference guide.)  However, backward compatibility is
+    maintained for most customers which are linking all of their libraries
+    against `${Trilinos_LIBRARIES}`.  For these projects, no changes will need
+    to be made.
+
+    However, this change to modern CMake targets will also cause downstream
+    CMake projects to pull in include directories as `SYSTEM` includes
+    (e.g. using `-isystem` instead of `-I`) from IMPORTED library targets.
+    This changes how these include directories are searched and could break
+    some fragile build environments that have the same header file names in
+    multiple include directories searched by the compiler.  Also, this will
+    silence any regular compiler warnings from header files found under these
+    include directories.  This constitutes a **break in backward
     compatibility** that will break some customer CMake project builds that
     use Trilinos on fragile environments where the search order of the include
     directories is important.
