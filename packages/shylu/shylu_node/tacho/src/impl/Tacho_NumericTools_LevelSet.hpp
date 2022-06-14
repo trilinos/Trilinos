@@ -1900,7 +1900,7 @@ public:
   inline void solveLDL_LowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
-    const value_type minus_one(-1), zero(0);
+    const value_type one(1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
     ordinal_type q(0);
 #endif
@@ -1918,31 +1918,26 @@ public:
 #endif
         const auto &s = _h_supernodes(sid);
         {
-          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          const ordinal_type m = s.m, n = s.n;
           if (m > 0) {
-            value_type *aptr = s.u_buf;
-            UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
-            aptr += m * m;
+            value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
+            UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+            UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
 
             const ordinal_type offm = s.row_begin;
-
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
-            const auto fpiv = ordinal_type_array(_piv.data() + 4 * offm + m, m);
+            UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+            ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
 
-            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice> /// row inter-change
-                ::invoke(exec_instance, fpiv, tT);
+            _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
             exec_instance.fence();
 
-            _status = Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AL, tT);
-            checkDeviceBlasStatus("trsv");
+            _status =
+                ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, perm, tT);
             exec_instance.fence();
-            if (n_m > 0) {
-              value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-              UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // ptr += m*n_m;
-              UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, tT, zero, bB);
-              checkDeviceBlasStatus("gemv");
-            }
+
+            _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, one, A, tT, zero, b);
+            checkDeviceBlasStatus("gemv");
           }
         }
       }
@@ -1956,7 +1951,7 @@ public:
     else if (variant == 1)
       solveLDL_LowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveLDL_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+      solveLDL_LowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveLDL_LowerOnDevice, algorithm variant is not supported");
@@ -2078,7 +2073,7 @@ public:
   inline void solveLDL_UpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
-    const value_type minus_one(-1), one(1);
+    const value_type one(1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
     ordinal_type q(0);
 #endif
@@ -2096,33 +2091,32 @@ public:
 #endif
         const auto &s = _h_supernodes(sid);
         {
-          const ordinal_type m = s.m, n = s.n, n_m = n - m;
-          if (m > 0) {
+          const ordinal_type m = s.m, n = s.n;
+          if (m > 0 && n > 0) {
             value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-            ;
-            const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
-            aptr += m * m;
-            const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
+
+            const UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+            const UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
 
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
-            const auto P = ordinal_type_array(_piv.data() + 4 * offm, 4 * m);
-            const auto D = value_type_matrix(_diag.data() + 2 * offm, m, 2);
+            const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+
+            ConstUnmanagedViewType<ordinal_type_array> P(_piv.data() + offm * 4, m * 4);
+            ConstUnmanagedViewType<value_type_matrix> D(_diag.data() + offm * 2, m, 2);
+
             _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice> /// row scaling
-                ::invoke(exec_instance, P, D, tT);
+                ::invoke(exec_instance, P, D, bT);
 
-            if (n_m > 0) {
-              const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
-              checkDeviceBlasStatus("gemv");
-              exec_instance.fence();
-            }
-            _status = Trsv<Uplo::Lower, Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AL, tT);
-            checkDeviceBlasStatus("trsv");
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, A, b, zero, tT);
+            exec_instance.fence();
 
-            const auto fpiv = ordinal_type_array(P.data() + m, m);
-            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::OnDevice> /// row inter-change
-                ::invoke(exec_instance, fpiv, tT);
+            _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
+            exec_instance.fence();
+
+            ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
+            _status =
+                ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, peri, tT);
           }
         }
       }
@@ -2136,7 +2130,7 @@ public:
     else if (variant == 1)
       solveLDL_UpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveLDL_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+      solveLDL_UpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveLDL_UpperOnDevice, algorithm variant is not supported");

@@ -23,13 +23,14 @@ template <> struct Copy<Algo::Internal> {
         value_type *ptrA(A.data());
         const value_type *ptrB(B.data());
 #if defined(__CUDA_ARCH__)
-        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, sA), [&](const ordinal_type &ij) { ptrA[ij] = ptrB[ij]; });
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, sA),
+                             [ptrA, ptrB](const ordinal_type &ij) { ptrA[ij] = ptrB[ij]; });
 #else
         memcpy((void *)ptrA, (const void *)ptrB, sA * sizeof(value_type));
 #endif
       } else {
 #if defined(__CUDA_ARCH__)
-        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, mA * nA), [&](const ordinal_type &ij) {
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, mA * nA), [A, B, mA](const ordinal_type &ij) {
           const ordinal_type i = ij % mA, j = ij / mA;
           A(i, j) = B(i, j);
         });
