@@ -202,6 +202,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Add libraries, tests, and examples
 #
 
+ADD_SUBDIRECTORY(compat)
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(inout)
 ADD_SUBDIRECTORY(ext)
