@@ -396,7 +396,7 @@ public:
           const ordinal_type ldl_factor_work_size_variant_0 = chol_factor_work_size_variants[0] + max(32 * m, m * n);
           const ordinal_type ldl_factor_work_size_variants[3] = {ldl_factor_work_size_variant_0,
                                                                  max(m * m, ldl_factor_work_size_variant_0 + m * n_m),
-                                                                 m * m + ldl_factor_work_size_variant_0};
+                                                                 m * m + ldl_factor_work_size_variant_0 + m * n_m};
           const ordinal_type ldl_factor_work_size = ldl_factor_work_size_variants[variant];
           const ordinal_type lu_factor_work_size_variants[3] = {schur_work_size, max(2 * m * m, schur_work_size),
                                                                 m * m + schur_work_size};

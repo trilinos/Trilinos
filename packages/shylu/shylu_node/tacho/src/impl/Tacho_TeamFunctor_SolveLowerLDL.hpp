@@ -202,33 +202,30 @@ public:
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void solve_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
-    using TrsvAlgoType = typename TrsvAlgorithm::type;
     using GemvAlgoType = typename GemvAlgorithm::type;
 
-    const value_type minus_one(-1), zero(0);
+    const ordinal_type nrhs = _t.extent(1);
+    const value_type one(1), zero(0);
     {
-      const ordinal_type m = s.m, n = s.n, n_m = n - m;
-      if (m > 0) {
+      const ordinal_type m = s.m, n = s.n;
+      if (m > 0 && n > 0) {
         value_type *aptr = s.u_buf;
-        // solve
-        UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
-        aptr += m * m;
+
+        UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+        UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
 
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
-        auto fpiv = ConstUnmanagedViewType<ordinal_type_array>(_piv.data() + 4 * offm + m, m);
+        UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+        ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
 
-        ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal> /// row inter-change
-            ::invoke(member, fpiv, tT);
-        Trsv<Uplo::Lower, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), AL, tT);
+        Copy<Algo::Internal>::invoke(member, bT, tT);
+        member.team_barrier();
 
-        if (n_m > 0) {
-          // update
-          member.team_barrier();
-          UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
-          UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, AR, tT, zero, bB);
-        }
+        ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, bT, perm, tT);
+        member.team_barrier();
+
+        Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, one, A, tT, zero, b);
       }
     }
   }

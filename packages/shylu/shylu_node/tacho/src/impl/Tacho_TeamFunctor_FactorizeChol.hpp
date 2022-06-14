@@ -68,7 +68,7 @@ public:
       Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
 
       if (n_m > 0) {
-        member.team_barrier();
+        // member.team_barrier();
         const value_type one(1), minus_one(-1), zero(0);
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
         Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
@@ -95,19 +95,26 @@ public:
       Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
 
       if (n_m > 0) {
-        member.team_barrier();
+        // member.team_barrier();
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
         Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                   ATR);
         Copy<Algo::Internal>::invoke(member, T, ATL);
+        member.team_barrier();
+
         SetIdentity<Algo::Internal>::invoke(member, ATL, one);
         Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
         member.team_barrier();
+
         Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
       } else {
-        member.team_barrier();
+        // member.team_barrier();
         Copy<Algo::Internal>::invoke(member, T, ATL);
+        member.team_barrier();
+
         SetIdentity<Algo::Internal>::invoke(member, ATL, one);
+        member.team_barrier();
+
         Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
       }
     }
@@ -129,27 +136,32 @@ public:
       Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
 
       if (n_m > 0) {
-        member.team_barrier();
+        // member.team_barrier();
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
         Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                   ATR);
         member.team_barrier();
+
         Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
         member.team_barrier();
-        /// additional things
+
         Copy<Algo::Internal>::invoke(member, T, ATL);
         member.team_barrier();
+
         SetIdentity<Algo::Internal>::invoke(member, ATL, minus_one);
         member.team_barrier();
+
         UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
         Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), minus_one, T,
                                                                                 AT);
       } else {
-        /// additional things
+        // member.team_barrier();
         Copy<Algo::Internal>::invoke(member, T, ATL);
         member.team_barrier();
+
         SetIdentity<Algo::Internal>::invoke(member, ATL, one);
         member.team_barrier();
+
         Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
       }
     }

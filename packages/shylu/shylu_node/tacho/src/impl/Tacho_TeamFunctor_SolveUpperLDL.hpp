@@ -185,37 +185,36 @@ public:
 
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void solve_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
-    using TrsvAlgoType = typename TrsvAlgorithm::type;
     using GemvAlgoType = typename GemvAlgorithm::type;
 
-    const value_type minus_one(-1), one(1);
+    const ordinal_type nrhs = _t.extent(1);
+    const value_type one(1), zero(0);
     {
-      const ordinal_type m = s.m, n = s.n, n_m = n - m;
-      if (m > 0) {
+      const ordinal_type m = s.m, n = s.n;
+      if (m > 0 && n > 0) {
         value_type *aptr = s.u_buf;
-        // solve
-        const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
-        aptr += m * m;
+
+        const UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+        const UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
+
         const ordinal_type offm = s.row_begin;
         const auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
+        const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
 
         ConstUnmanagedViewType<ordinal_type_array> P(_piv.data() + offm * 4, m * 4);
         ConstUnmanagedViewType<value_type_matrix> D(_diag.data() + offm * 2, m, 2);
 
-        Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal>::invoke(member, P, D, tT);
+        Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal>::invoke(member, P, D, bT);
+        member.team_barrier();
 
-        if (n_m > 0) {
-          // update
-          const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
-          const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, AR, bB, one, tT);
-          member.team_barrier();
-        }
-        Trsv<Uplo::Lower, Trans::Transpose, TrsvAlgoType>::invoke(member, Diag::Unit(), AL, tT);
+        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, A, b, zero, tT);
+        member.team_barrier();
 
-        ConstUnmanagedViewType<ordinal_type_array> fpiv(P.data() + m, m);
-        ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::Internal> /// row inter-change
-            ::invoke(member, fpiv, tT);
+        Copy<Algo::Internal>::invoke(member, bT, tT);
+        member.team_barrier();
+
+        ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
+        ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, bT, peri, tT);
       }
     }
   }
