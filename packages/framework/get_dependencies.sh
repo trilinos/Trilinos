@@ -14,7 +14,7 @@ function tril_genconfig_clone_or_update_repo() {
   if [[ -e ${sub_dir} ]] ; then
     cd ${sub_dir}
     git pull
-    cd -
+    cd - > /dev/null
   else
     git clone ${git_url} ${sub_dir}
   fi
@@ -22,7 +22,7 @@ function tril_genconfig_clone_or_update_repo() {
   if [[ "${has_submodules}" == "has-submodules" ]] ; then
     cd ${sub_dir}
     git submodule update --init --recursive
-    cd -
+    cd - > /dev/null
   elif [[ "${has_submodules}" != "" ]] ; then
     echo "ERROR: argument '${has_submodules}' not allowed!  Only 'has-submodules' or ''!"
     exit 1
@@ -48,25 +48,27 @@ if [[ "$ini_file_option" == "--son" ]] ; then
 fi
 
 # Set up symlinks to the desired *.ini files
-if [[ ! -z "$(ls ./srn-ini-files)" && "$ini_file_option" == "--srn" ]]; then
-    cd GenConfig/deps/LoadEnv/ini_files
+cd GenConfig/deps/LoadEnv/ini_files
+if [[ -d ${script_dir}/srn-ini-files ]] && [[ "$ini_file_option" == "--srn" ]]; then
+    echo "Link files from srn-ini-files"
     ln -sf ${script_dir}/srn-ini-files/trilinos/framework/environment-specs.ini
     ln -sf ${script_dir}/srn-ini-files/trilinos/framework/supported-systems.ini
     ln -sf ${script_dir}/ini-files/supported-envs.ini
-elif [[ ! -z "$(ls ./son-ini-files)" && "$ini_file_option" == "--son" ]]; then
-    cd GenConfig/deps/LoadEnv/ini_files
+elif [[ -d ${script_dir}/son-ini-files ]] && [[ "$ini_file_option" == "--son" ]]; then
+    echo "Link files from son-ini-files"
     ln -sf ${script_dir}/son-ini-files/trilinos/framework/environment-specs.ini
     ln -sf ${script_dir}/son-ini-files/trilinos/framework/supported-systems.ini
     ln -sf ${script_dir}/ini-files/supported-envs.ini
 else
-    cd GenConfig/deps/LoadEnv/ini_files
+    echo "Link files from init-files"
     [ -e ${script_dir}/ini-files/environment-specs.ini ] && ln -sf ${script_dir}/ini-files/environment-specs.ini
     [ -e ${script_dir}/ini-files/supported-systems.ini ] && ln -sf ${script_dir}/ini-files/supported-systems.ini
     ln -sf ${script_dir}/ini-files/supported-envs.ini
 fi
+cd - > /dev/null
+cd GenConfig/ini_files
 
-cd ../../../ini_files
 ln -sf ${script_dir}/ini-files/config-specs.ini
 ln -sf ${script_dir}/ini-files/supported-config-flags.ini
 
-popd
+popd > /dev/null
