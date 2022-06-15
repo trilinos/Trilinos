@@ -175,17 +175,18 @@ namespace Intrepid2
             for (int familyOrdinal=1; familyOrdinal<=2; familyOrdinal++)
             {
               const auto &s2 = lambda[ face_family_end_[familyOrdinal-1]];
-              for (int i=0; i<max_ij_sum; i++)
+              for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
               {
-                // family 1 involves edge functions from edge (0,1) (edgeOrdinal 0); family 2 involves functions from edge (1,2) (edgeOrdinal 1)
-                const int edgeBasisOrdinal = i + (familyOrdinal-1)*num1DEdgeFunctions;
-                const auto & edgeValue_x = output_(edgeBasisOrdinal,pointOrdinal,0);
-                const auto & edgeValue_y = output_(edgeBasisOrdinal,pointOrdinal,1);
-                const double alpha = i*2.0 + 1;
-                
-                Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-1, s2, jacobiScaling);
-                for (int j=1; i+j <= max_ij_sum; j++)
+                for (int i=0; i<ij_sum; i++)
                 {
+                  const int j = ij_sum - i; // j >= 1
+                  // family 1 involves edge functions from edge (0,1) (edgeOrdinal 0); family 2 involves functions from edge (1,2) (edgeOrdinal 1)
+                  const int edgeBasisOrdinal = i + (familyOrdinal-1)*num1DEdgeFunctions;
+                  const auto & edgeValue_x = output_(edgeBasisOrdinal,pointOrdinal,0);
+                  const auto & edgeValue_y = output_(edgeBasisOrdinal,pointOrdinal,1);
+                  const double alpha = i*2.0 + 1;
+                  
+                  Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-1, s2, jacobiScaling);
                   const auto & jacobiValue = jacobi_values_at_point(j);
                   output_(fieldOrdinalOffset,pointOrdinal,0) = edgeValue_x * jacobiValue;
                   output_(fieldOrdinalOffset,pointOrdinal,1) = edgeValue_y * jacobiValue;
@@ -270,20 +271,21 @@ namespace Intrepid2
             Polynomials::shiftedScaledLegendreValues (P_i, polyOrder_, PointScalar(s1), PointScalar(s0+s1));
             
             const int max_ij_sum = polyOrder_ - 1;
-            for (int i=0; i<max_ij_sum; i++)
+            for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
             {
-              const OutputScalar edgeCurl = (i+2.) * P_i(i) * grad_s0_cross_grad_s1;
-              
-              const double alpha = i*2.0 + 1;
-              
-              // shiftedScaledJacobiValues(OutputValueViewType outputValues, double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
-              Polynomials::shiftedScaledJacobiValues(P_2ip1_j, alpha, polyOrder_-1, PointScalar(s2), jacobiScaling);
-              
-              Polynomials::shiftedScaledIntegratedJacobiValues(L_2ip1_j, alpha, polyOrder_-1, s2, jacobiScaling);
-              Polynomials::shiftedScaledLegendreValues(P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
-              
-              for (int j=1; i+j<=max_ij_sum; j++)
+              for (int i=0; i<ij_sum; i++)
               {
+                const int j = ij_sum - i; // j >= 1
+                const OutputScalar edgeCurl = (i+2.) * P_i(i) * grad_s0_cross_grad_s1;
+              
+                const double alpha = i*2.0 + 1;
+                
+                // shiftedScaledJacobiValues(OutputValueViewType outputValues, double alpha, Intrepid2::ordinal_type n, ScalarType x, ScalarTypeForScaling t)
+                Polynomials::shiftedScaledJacobiValues(P_2ip1_j, alpha, polyOrder_-1, PointScalar(s2), jacobiScaling);
+                
+                Polynomials::shiftedScaledIntegratedJacobiValues(L_2ip1_j, alpha, polyOrder_-1, s2, jacobiScaling);
+                Polynomials::shiftedScaledLegendreValues(P_i, polyOrder_-1, PointScalar(s1), PointScalar(s0+s1));
+              
                 // [L^{2i+1}_j](s0+s1,s2) curl(E^E_i(s0,s1)) + grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
                 // grad[L^(2i+1)_j](s0+s1,s2) \times E^E_i(s0,s1)
 //                - Note that grad[L^(2i+1)_j](s0+s1,s2) is computed as [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2) + [R^{2i+1}_{j-1}] grad (s0+s1+s2),
@@ -411,11 +413,11 @@ namespace Intrepid2
       const int max_ij_sum = polyOrder-1;
       for (int faceFamilyOrdinal=1; faceFamilyOrdinal<=2; faceFamilyOrdinal++)
       {
-        for (int i=0; i<max_ij_sum; i++)
+        for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
         {
-          for (int j=1; i+j<=max_ij_sum; j++)
+          for (int i=0; i<ij_sum; i++)
           {
-            this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = i+j+1;
+            this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = ij_sum+1;
             fieldOrdinalOffset++;
           }
         }
