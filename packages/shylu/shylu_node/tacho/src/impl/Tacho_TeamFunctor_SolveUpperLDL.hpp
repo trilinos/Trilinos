@@ -93,9 +93,11 @@ public:
         }
         Trsv<Uplo::Lower, Trans::Transpose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
 
-        ConstUnmanagedViewType<ordinal_type_array> fpiv(P.data() + m, m);
-        ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::Internal> /// row inter-change
-            ::invoke(member, fpiv, tT);
+        if (!s.do_not_apply_pivots) {
+          ConstUnmanagedViewType<ordinal_type_array> fpiv(P.data() + m, m);
+          ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::Internal> /// row inter-change
+              ::invoke(member, fpiv, tT);
+        }
       }
     }
   }
@@ -155,8 +157,12 @@ public:
         Gemv<Trans::Transpose, Algo::Internal>::invoke(member, one, ATL, tT, zero, bT);
         member.team_barrier();
 
-        ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
-        ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, bT, peri, tT);
+        if (s.do_not_apply_pivots) {
+          Copy<Algo::Internal>::invoke(member, tT, bT);
+        } else {
+          ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
+          ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, bT, peri, tT);
+        }
       }
     }
   }
@@ -210,11 +216,13 @@ public:
         Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, AT, b, zero, tT);
         member.team_barrier();
 
-        Copy<Algo::Internal>::invoke(member, bT, tT);
-        member.team_barrier();
+        if (!s.do_not_apply_pivots) {
+          Copy<Algo::Internal>::invoke(member, bT, tT);
+          member.team_barrier();
 
-        ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
-        ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, bT, peri, tT);
+          ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
+          ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, bT, peri, tT);
+        }
       }
     }
   }

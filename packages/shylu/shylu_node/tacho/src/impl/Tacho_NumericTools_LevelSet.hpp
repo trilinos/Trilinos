@@ -1818,11 +1818,12 @@ public:
             const ordinal_type offm = s.row_begin;
 
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
-            const auto fpiv = ordinal_type_array(_piv.data() + 4 * offm + m, m);
-
-            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice> /// row inter-change
-                ::invoke(exec_instance, fpiv, tT);
-            exec_instance.fence();
+            if (!s.do_not_apply_pivots) {
+              const auto fpiv = ordinal_type_array(_piv.data() + 4 * offm + m, m);
+              _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice> /// row inter-change
+                  ::invoke(exec_instance, fpiv, tT);
+              exec_instance.fence();
+            }
 
             _status =
                 Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
@@ -1876,9 +1877,13 @@ public:
 
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
-            ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
-            _status =
-                ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, tT, perm, bT);
+            if (s.do_not_apply_pivots) {
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
+            } else {
+              ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
+              _status =
+                  ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, tT, perm, bT);
+            }
             exec_instance.fence();
 
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, bT, zero, tT);
@@ -1928,14 +1933,16 @@ public:
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
             UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
-            ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
 
-            _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
-            exec_instance.fence();
+            if (s.do_not_apply_pivots) {
+              ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
+              exec_instance.fence();
 
-            _status =
-                ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, perm, tT);
-            exec_instance.fence();
+              _status =
+                  ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, perm, tT);
+              exec_instance.fence();
+            }
 
             _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, one, AT, tT, zero, b);
             checkDeviceBlasStatus("gemv");
@@ -2004,9 +2011,11 @@ public:
             _status = Trsv<Uplo::Lower, Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
 
-            const auto fpiv = ordinal_type_array(P.data() + m, m);
-            _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::OnDevice> /// row inter-change
-                ::invoke(exec_instance, fpiv, tT);
+            if (!s.do_not_apply_pivots) {
+              const auto fpiv = ordinal_type_array(P.data() + m, m);
+              _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::OnDevice> /// row inter-change
+                  ::invoke(exec_instance, fpiv, tT);
+            }
           }
         }
       }
@@ -2062,9 +2071,13 @@ public:
             checkDeviceBlasStatus("gemv");
             exec_instance.fence();
 
-            ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
-            _status =
-                ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, peri, tT);
+            if (s.do_not_apply_pivots) {
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, tT, bT);
+            } else {
+              ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
+              _status =
+                  ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, peri, tT);
+            }
           }
         }
       }
@@ -2112,12 +2125,14 @@ public:
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AT, b, zero, tT);
             exec_instance.fence();
 
-            _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
-            exec_instance.fence();
+            if (!s.do_not_apply_pivots) {
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
+              exec_instance.fence();
 
-            ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
-            _status =
-                ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, peri, tT);
+              ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
+              _status =
+                  ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, peri, tT);
+            }
           }
         }
       }
@@ -2764,6 +2779,8 @@ public:
             ++stat_level.n_kernel_launching;
             exec_space().fence(); // Kokkos::fence();
           }
+          const auto exec_instance = exec_space();
+          Kokkos::deep_copy(exec_instance, _h_supernodes, _info.supernodes);
         }
       }
     } // end of LDL

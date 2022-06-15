@@ -79,7 +79,7 @@ public:
         UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
         UnmanagedViewType<value_type_matrix> STR(W.data(), m, n_m);
 
-        auto fpiv = ordinal_type_array(P.data() + m, m);
+        ConstUnmanagedViewType<ordinal_type_array> fpiv(P.data() + m, m);
         ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal>::invoke(member, fpiv, ATR);
         member.team_barrier();
         Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL, ATR);
@@ -304,6 +304,21 @@ public:
     return;
   }
 
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void check(MemberType &member, supernode_type &s, const ordinal_type_array &fpiv) const {
+    ordinal_type val(0);
+    Kokkos::parallel_reduce(
+        Kokkos::TeamVectorRange(member, s.m),
+        [&](const ordinal_type &i, ordinal_type &update) {
+          const ordinal_type fpiv_at_i = fpiv(i);
+          update += (fpiv_at_i < 0 ? -fpiv_at_i : fpiv_at_i);
+        },
+        val);
+    member.team_barrier();
+    Kokkos::single(Kokkos::PerTeam(member), [&]() { s.do_not_apply_pivots = (val == 0); });
+    return;
+  }
+
   template <int Var> struct FactorizeTag {
     enum { variant = Var };
   };
@@ -365,11 +380,15 @@ public:
     const ordinal_type p = _pbeg + lid;
     if (p < _pend) {
       const ordinal_type sid = _level_sids(p);
-      const auto &s = _info.supernodes(sid);
+      auto &s = _info.supernodes(sid);
       const ordinal_type n_m = s.n - s.m;
       value_type *bufptr = _buf.data() + _buf_ptr(lid);
       UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
       update(member, s, ABR);
+
+      const ordinal_type offm = s.row_begin;
+      UnmanagedViewType<ordinal_type_array> fpiv(_piv.data() + offm * 4 + s.m, s.m);
+      check(member, s, fpiv);
     } else {
       // skip
     }

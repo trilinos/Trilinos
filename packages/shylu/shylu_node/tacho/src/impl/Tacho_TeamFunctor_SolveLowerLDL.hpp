@@ -82,8 +82,11 @@ public:
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
         auto fpiv = ConstUnmanagedViewType<ordinal_type_array>(_piv.data() + 4 * offm + m, m);
 
-        ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal> /// row inter-change
-            ::invoke(member, fpiv, tT);
+        if (!s.do_not_apply_pivots) {
+          ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal> /// row inter-change
+              ::invoke(member, fpiv, tT);
+          member.team_barrier();
+        }
         Trsv<Uplo::Lower, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
 
         if (n_m > 0) {
@@ -146,7 +149,11 @@ public:
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
         auto perm = ConstUnmanagedViewType<ordinal_type_array>(_piv.data() + 4 * offm + 2 * m, m);
 
-        ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, tT, perm, bT);
+        if (s.do_not_apply_pivots) {
+          Copy<Algo::Internal>::invoke(member, bT, tT);
+        } else {
+          ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, tT, perm, bT);
+        }
         member.team_barrier();
 
         Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, ATL, bT, zero, tT);
@@ -217,14 +224,15 @@ public:
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
         UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
-        ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
 
-        Copy<Algo::Internal>::invoke(member, bT, tT);
-        member.team_barrier();
+        if (!s.do_not_apply_pivots) {
+          ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
+          Copy<Algo::Internal>::invoke(member, bT, tT);
+          member.team_barrier();
 
-        ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, bT, perm, tT);
-        member.team_barrier();
-
+          ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, bT, perm, tT);
+          member.team_barrier();
+        }
         Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, one, AT, tT, zero, b);
       }
     }
