@@ -88,10 +88,9 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
                                            const typename SupernodeInfoType::value_type_matrix &ABR,
                                            const ordinal_type sid, const size_type bufsize,
                                            /* */ void *buf, const bool update_lower = false) {
-    typedef SupernodeInfoType supernode_info_type;
-
-    typedef typename supernode_info_type::value_type value_type;
-    typedef typename supernode_info_type::dense_block_type dense_block_type;
+    using supernode_info_type = SupernodeInfoType;
+    using value_type = typename supernode_info_type::value_type;
+    using value_type_matrix = typename supernode_info_type::value_type_matrix;
 
     const auto &cur = info.supernodes(sid);
 
@@ -171,13 +170,8 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
       }
 
       {
-        dense_block_type U, L;
-        U.set_view(s.m, s.n);
-        U.attach_buffer(1, s.m, s.u_buf);
-
-        const ordinal_type s_nm = s.n - s.m;
-        L.set_view(s_nm, s.m);
-        L.attach_buffer(1, s_nm, s.l_buf);
+        UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
+        UnmanagedViewType<value_type_matrix> L(s.l_buf, s.n - s.m, s.m);
 
         ordinal_type ijbeg = 0;
         for (; s2t[ijbeg] == -1; ++ijbeg)
@@ -237,13 +231,8 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
               }
               
               {
-                dense_block_type U, L;
-                U.set_view(s.m, s.n);
-                U.attach_buffer(1, s.m, s.u_buf);
-                
-                const ordinal_type s_nm = s.n - s.m;
-                L.set_view(s_nm, s.m);
-                L.attach_buffer(1, s_nm, s.l_buf);
+                UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n); 
+                UnmanagedViewType<value_type_matrix> L(s.l_buf, s.n - s.m, s.m); 
 
                 ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
                 
@@ -289,13 +278,8 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
         });
       }
       {
-        dense_block_type U, L;
-        U.set_view(s.m, s.n);
-        U.attach_buffer(1, s.m, s.u_buf);
-
-        const ordinal_type s_nm = s.n - s.m;
-        L.set_view(s_nm, s.m);
-        L.attach_buffer(1, s_nm, s.l_buf);
+        UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
+        UnmanagedViewType<value_type_matrix> L(s.l_buf, s.n - s.m, s.m);
 
         ordinal_type ijbeg = 0;
         for (; s2t[ijbeg] == -1; ++ijbeg)

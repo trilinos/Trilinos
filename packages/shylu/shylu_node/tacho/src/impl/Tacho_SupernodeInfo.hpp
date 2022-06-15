@@ -75,9 +75,6 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
   using ordinal_pair_type_array = Kokkos::View<ordinal_pair_type *, device_type>;
   using value_type_matrix = Kokkos::View<value_type **, Kokkos::LayoutLeft, device_type>;
 
-  using dense_block_type = DenseMatrixView<value_type, device_type>;
-  using dense_matrix_of_blocks_type = DenseMatrixView<dense_block_type, device_type>;
-
   struct Supernode {
     mutable int32_t lock;
 
@@ -333,8 +330,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
             const auto s = self.supernodes(sid);
             /// copy to upper triangular
             {
-              dense_block_type tgt_u(s.u_buf, s.m, s.n);
-              dense_block_type tgt_l(s.l_buf, s.n - s.m, s.m);
+              UnmanagedViewType<value_type_matrix> tgt_u(s.u_buf, s.m, s.n);
+              UnmanagedViewType<value_type_matrix> tgt_l(s.l_buf, s.n - s.m, s.m);
 
               // row major access to sparse src
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, s.m), [&](const ordinal_type &i) {
@@ -423,9 +420,7 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
     //   (supernodes_range_policy, KOKKOS_LAMBDA(const ordinal_type &sid) {
     //     const auto &s = self.supernodes(sid);
 
-    //     dense_block_type src;
-    //     src.set_view(s.m, s.n);
-    //     src.attach_buffer(1, s.m, s.u_buf);
+    //     UnmanagedViewType<value_type_matrix> src(s.u_buf, s.m, s.n);
 
     //     // row major access to sparse src
     //     const ordinal_type

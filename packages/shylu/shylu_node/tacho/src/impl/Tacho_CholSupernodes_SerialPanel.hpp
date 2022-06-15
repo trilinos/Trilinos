@@ -87,7 +87,6 @@ template <> struct CholSupernodes<Algo::Workflow::SerialPanel> {
 
     typedef typename supernode_info_type::value_type value_type;
     typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-    typedef typename supernode_info_type::dense_block_type dense_block_type;
 
     // algorithm choice
     using HerkAlgoType = typename HerkAlgorithm::type;
@@ -216,9 +215,7 @@ template <> struct CholSupernodes<Algo::Workflow::SerialPanel> {
         }
 
         {
-          dense_block_type A;
-          A.set_view(s.m, s.n);
-          A.attach_buffer(1, s.m, s.buf);
+          UnmanagedViewType<value_type_matrix> A(s.u_buf, s.m, s.n);
 
           ordinal_type ijbeg = 0;
           for (; s2t[ijbeg] == -1; ++ijbeg)
@@ -290,9 +287,7 @@ template <> struct CholSupernodes<Algo::Workflow::SerialPanel> {
         }
 
         {
-          dense_block_type A;
-          A.set_view(s.m, s.n);
-          A.attach_buffer(1, s.m, s.buf);
+          UnmanagedViewType<value_type_matrix> A(s.u_buf, s.m, s.n);
 
           ordinal_type ijbeg = 0;
           for (; s2t[ijbeg] == -1; ++ijbeg)

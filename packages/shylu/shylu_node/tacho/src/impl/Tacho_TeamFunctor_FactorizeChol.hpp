@@ -24,8 +24,6 @@ public:
   typedef typename supernode_info_type::value_type_array value_type_array;
   typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-  typedef typename supernode_info_type::dense_block_type dense_block_type;
-
 private:
   supernode_info_type _info;
   ordinal_type_array _compute_mode, _level_sids;
@@ -228,9 +226,7 @@ public:
                 });
           }
           {
-            dense_block_type A;
-            A.set_view(s.m, s.n);
-            A.attach_buffer(1, s.m, s.u_buf);
+            UnmanagedViewType<value_type_matrix> A(s.u_buf, s.m, s.n);
 
             ordinal_type ijbeg = 0;
             for (; s2t[ijbeg] == -1; ++ijbeg)

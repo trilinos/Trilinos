@@ -16,8 +16,6 @@
 #include "Tacho_Util.hpp"
 
 #include "Tacho_CrsMatrixBase.hpp"
-#include "Tacho_DenseMatrixView.hpp"
-
 #include "Tacho_MatrixMarket.hpp"
 
 #include "Tacho_Graph.hpp"
