@@ -75,7 +75,7 @@ public:
       if (m > 0) {
         value_type *aptr = s.u_buf;
         // solve
-        UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+        UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
         aptr += m * m;
 
         const ordinal_type offm = s.row_begin;
@@ -84,14 +84,14 @@ public:
 
         ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal> /// row inter-change
             ::invoke(member, fpiv, tT);
-        Trsv<Uplo::Lower, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), AL, tT);
+        Trsv<Uplo::Lower, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
 
         if (n_m > 0) {
           // update
           member.team_barrier();
-          UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
+          UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, AR, tT, zero, bB);
+          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, ATR, tT, zero, bB);
         }
       }
     }
@@ -137,8 +137,8 @@ public:
       if (m > 0) {
         value_type *aptr = s.u_buf;
         // solve
-        UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
-        aptr += AL.span();
+        UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+        aptr += ATL.span();
         UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
         bptr += bT.span();
 
@@ -149,14 +149,14 @@ public:
         ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, tT, perm, bT);
         member.team_barrier();
 
-        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, AL, bT, zero, tT);
+        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, ATL, bT, zero, tT);
 
         if (n_m > 0) {
           // update
           member.team_barrier();
-          UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
+          UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, AR, tT, zero, bB);
+          Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, minus_one, ATR, tT, zero, bB);
         }
       }
     }
@@ -211,7 +211,7 @@ public:
       if (m > 0 && n > 0) {
         value_type *aptr = s.u_buf;
 
-        UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+        UnmanagedViewType<value_type_matrix> AT(aptr, m, n);
         UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
 
         const ordinal_type offm = s.row_begin;
@@ -225,7 +225,7 @@ public:
         ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::Internal>::invoke(member, bT, perm, tT);
         member.team_barrier();
 
-        Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, one, A, tT, zero, b);
+        Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, one, AT, tT, zero, b);
       }
     }
   }

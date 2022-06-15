@@ -75,6 +75,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
   using ordinal_pair_type_array = Kokkos::View<ordinal_pair_type *, device_type>;
   using value_type_matrix = Kokkos::View<value_type **, Kokkos::LayoutLeft, device_type>;
 
+  using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
+
   struct Supernode {
     mutable int32_t lock;
 
@@ -214,8 +216,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
           update.max_supernode_size = max(update.max_supernode_size, s.m);
           update.max_schur_size = max(update.max_schur_size, s.n - s.m);
 
-          update.nnz += (s.m * s.n);                               /// upper
-          update.nnz += (allocate_l_buf_ ? s.m * (s.n - s.m) : 0); /// lower
+          update.nnz += (s.m * s.n);                         /// upper
+          update.nnz += (allocate_l_buf_ ? (s.m * s.n) : 0); /// lower
 
           s.max_decendant_supernode_size = s.m;
           s.max_decendant_schur_size = s.n - s.m;
@@ -253,7 +255,7 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
         supernodes_range_policy, KOKKOS_LAMBDA(const ordinal_type &sid, size_type &update, const bool &final) {
           auto &s = supernodes_(sid);
           const ordinal_type u_buf_size = s.m * s.n;
-          const ordinal_type l_buf_size = allocate_l_buf_ ? s.m * (s.n - s.m) : 0;
+          const ordinal_type l_buf_size = allocate_l_buf_ ? (s.m * s.n) : 0;
           if (final) {
             s.u_buf = &superpanel_buf_(update);
             s.l_buf = (allocate_l_buf_ ? s.u_buf + u_buf_size : NULL);
@@ -331,7 +333,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
             /// copy to upper triangular
             {
               UnmanagedViewType<value_type_matrix> tgt_u(s.u_buf, s.m, s.n);
-              UnmanagedViewType<value_type_matrix> tgt_l(s.l_buf, s.n - s.m, s.m);
+              UnmanagedViewType<value_type_matrix> tgt_lp(s.l_buf, s.n, s.m);
+              const auto tgt_l = Kokkos::subview(tgt_lp, range_type(s.m, s.n), Kokkos::ALL());
 
               // row major access to sparse src
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, s.m), [&](const ordinal_type &i) {

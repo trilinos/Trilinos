@@ -74,7 +74,7 @@ public:
       if (m > 0) {
         value_type *aptr = s.u_buf;
         // solve
-        const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+        const UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
         aptr += m * m;
         const ordinal_type offm = s.row_begin;
         const auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
@@ -86,12 +86,12 @@ public:
 
         if (n_m > 0) {
           // update
-          const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
+          const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
           const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, AR, bB, one, tT);
+          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bB, one, tT);
           member.team_barrier();
         }
-        Trsv<Uplo::Lower, Trans::Transpose, TrsvAlgoType>::invoke(member, Diag::Unit(), AL, tT);
+        Trsv<Uplo::Lower, Trans::Transpose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
 
         ConstUnmanagedViewType<ordinal_type_array> fpiv(P.data() + m, m);
         ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, Algo::Internal> /// row inter-change
@@ -132,8 +132,8 @@ public:
       if (m > 0) {
         value_type *aptr = s.u_buf;
         // solve
-        const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
-        aptr += AL.span();
+        const UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+        aptr += ATL.span();
         const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
         bptr += bT.span();
 
@@ -147,12 +147,12 @@ public:
 
         if (n_m > 0) {
           // update
-          const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
+          const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
           const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, AR, bB, one, tT);
+          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bB, one, tT);
           member.team_barrier();
         }
-        Gemv<Trans::Transpose, Algo::Internal>::invoke(member, one, AL, tT, zero, bT);
+        Gemv<Trans::Transpose, Algo::Internal>::invoke(member, one, ATL, tT, zero, bT);
         member.team_barrier();
 
         ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
@@ -194,7 +194,7 @@ public:
       if (m > 0 && n > 0) {
         value_type *aptr = s.u_buf;
 
-        const UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+        const UnmanagedViewType<value_type_matrix> AT(aptr, m, n);
         const UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
 
         const ordinal_type offm = s.row_begin;
@@ -207,7 +207,7 @@ public:
         Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal>::invoke(member, P, D, bT);
         member.team_barrier();
 
-        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, A, b, zero, tT);
+        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, AT, b, zero, tT);
         member.team_barrier();
 
         Copy<Algo::Internal>::invoke(member, bT, tT);

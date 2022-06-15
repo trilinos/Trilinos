@@ -73,19 +73,19 @@ public:
       if (m > 0) {
         value_type *aptr = s.u_buf;
         // solve
-        UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+        UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
         aptr += m * m;
 
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
-        Trsv<Uplo::Upper, Trans::ConjTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), AL, tT);
+        Trsv<Uplo::Upper, Trans::ConjTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, tT);
 
         if (n_m > 0) {
           // update
           member.team_barrier();
-          UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
+          UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, AR, tT, zero, bB);
+          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, tT, zero, bB);
         }
       }
     }
@@ -133,7 +133,7 @@ public:
       if (m > 0) {
         value_type *aptr = s.u_buf;
 
-        UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+        UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
         aptr += m * m;
         UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs);
         bptr += m * _nrhs;
@@ -141,15 +141,15 @@ public:
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
-        Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, AL, tT, zero, bT);
+        Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
 
         if (n_m > 0) {
           // solve offdiag
           member.team_barrier();
-          UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m);
+          UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
 
-          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, AR, bT, zero, bB);
+          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bT, zero, bB);
         }
       }
     }
@@ -214,13 +214,13 @@ public:
       if (m > 0 && n > 0) {
         value_type *aptr = s.u_buf;
 
-        UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+        UnmanagedViewType<value_type_matrix> AT(aptr, m, n);
         UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
 
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
-        Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, A, tT, zero, b);
+        Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, AT, tT, zero, b);
       }
     }
   }

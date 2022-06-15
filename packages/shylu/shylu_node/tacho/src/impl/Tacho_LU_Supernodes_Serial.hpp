@@ -45,7 +45,7 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
     using supernode_info_type = SupernodeInfoType;
     using value_type = typename supernode_info_type::value_type;
     using value_type_matrix = typename supernode_info_type::value_type_matrix;
-    // using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
+    using range_type = typename supernode_info_type::range_type;
 
     using LU_AlgoType = typename LU_Algorithm::type;
     using TrsmAlgoType = typename TrsmAlgorithm::type;
@@ -55,13 +55,13 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
     const auto &s = info.supernodes(sid);
 
     // panel (s.m x s.n) is divided into ATL (m x m) and ATR (m x n)
-    const ordinal_type m = s.m, n = s.n - s.m;
+    const ordinal_type m = s.m, n = s.n, n_m = s.n - s.m;
 
     // m and n are available, then factorize the supernode block
     if (m > 0) {
       /// LU factorize ATL
       value_type *uptr = s.u_buf;
-      UnmanagedViewType<value_type_matrix> AT(uptr, m, m + n);
+      UnmanagedViewType<value_type_matrix> AT(uptr, m, n);
 
       LU<LU_AlgoType>::invoke(member, AT, P);
       LU<LU_AlgoType>::modify(member, m, P);
@@ -72,17 +72,17 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
         UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
         uptr += m * m;
 
-        value_type *lptr = s.l_buf;
-        UnmanagedViewType<value_type_matrix> ABL(lptr, n, m);
+        UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+        const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
 
         Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                  ABL);
 
-        TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.extent(0)) != n ||
-                                 static_cast<ordinal_type>(ABR.extent(1)) != n,
+        TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.extent(0)) != n_m ||
+                                 static_cast<ordinal_type>(ABR.extent(1)) != n_m,
                              "ABR dimension does not match to supernodes");
 
-        UnmanagedViewType<value_type_matrix> ATR(uptr, m, n);
+        UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m);
         Gemm<Trans::NoTranspose, Trans::NoTranspose, GemmAlgoType>::invoke(member, -one, ABL, ATR, zero, ABR);
       }
     }
@@ -107,26 +107,26 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
     using GemvAlgoType = typename GemvAlgorithm::type;
 
     // panel is divided into diagonal and interface block
-    const ordinal_type m = s.m, n = s.n - s.m; //, nrhs = info.x.extent(1);
+    const ordinal_type m = s.m, n = s.n, n_m = s.n - s.m; //, nrhs = info.x.extent(1);
 
     // m and n are available, then factorize the supernode block
     if (m > 0) {
       const value_type one(1), zero(0);
       const ordinal_type offm = s.row_begin;
       value_type *uptr = s.u_buf;
-      UnmanagedViewType<value_type_matrix> AT(uptr, m, m);
+      UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
       const auto xT = Kokkos::subview(info.x, range_type(offm, offm + m), Kokkos::ALL());
       const auto fpiv = ordinal_type_array(P.data() + m, m);
 
       ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal> /// row inter-change
           ::invoke(member, fpiv, xT);
 
-      Trsv<Uplo::Lower, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), AT, xT);
+      Trsv<Uplo::Lower, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, xT);
 
-      if (n > 0) {
-        value_type *lptr = s.l_buf;
-        UnmanagedViewType<value_type_matrix> AB(lptr, n, m);
-        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, -one, AB, xT, zero, xB);
+      if (n_m > 0) {
+        UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+        const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
+        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, -one, ABL, xT, zero, xB);
       }
     }
     return 0;
@@ -151,23 +151,23 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
     const auto &s = info.supernodes(sid);
 
     // panel is divided into diagonal and interface block
-    const ordinal_type m = s.m, n = s.n - s.m; //, nrhs = info.x.extent(1);
+    const ordinal_type m = s.m, n = s.n, n_m = s.n - s.m; //, nrhs = info.x.extent(1);
 
     // m and n are available, then factorize the supernode block
     if (m > 0) {
       const value_type one(1);
       value_type *uptr = s.u_buf;
-      const UnmanagedViewType<value_type_matrix> AL(uptr, m, m);
+      const UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
       uptr += m * m;
 
       const ordinal_type offm = s.row_begin;
       const auto xT = Kokkos::subview(info.x, range_type(offm, offm + m), Kokkos::ALL());
 
-      if (n > 0) {
+      if (n_m > 0) {
         const UnmanagedViewType<value_type_matrix> AR(uptr, m, n); // ptr += m*n;
         Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, -one, AR, xB, one, xT);
       }
-      Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), AL, xT);
+      Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, xT);
     }
     return 0;
   }

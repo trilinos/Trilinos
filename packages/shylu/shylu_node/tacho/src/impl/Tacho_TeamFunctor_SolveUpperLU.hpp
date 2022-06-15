@@ -72,19 +72,19 @@ public:
       if (m > 0) {
         value_type *uptr = s.u_buf;
         // solve
-        const UnmanagedViewType<value_type_matrix> AL(uptr, m, m);
+        const UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
         uptr += m * m;
         const ordinal_type offm = s.row_begin;
         const auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
         if (n_m > 0) {
           // update
-          const UnmanagedViewType<value_type_matrix> AR(uptr, m, n_m); // uptr += m*n;
+          const UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m); // uptr += m*n;
           const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, AR, bB, one, tT);
+          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bB, one, tT);
           member.team_barrier();
         }
-        Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), AL, tT);
+        Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, tT);
       }
     }
   }

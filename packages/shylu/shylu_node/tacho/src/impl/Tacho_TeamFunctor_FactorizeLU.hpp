@@ -75,7 +75,8 @@ public:
         const value_type one(1), minus_one(-1), zero(0);
         UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
         UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
-        UnmanagedViewType<value_type_matrix> ABL(s.l_buf, n_m, m);
+        UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+        const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
 
         Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                  ABL);
@@ -107,7 +108,8 @@ public:
         const value_type one(1), minus_one(-1), zero(0);
         UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
         UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
-        UnmanagedViewType<value_type_matrix> ABL(s.l_buf, n_m, m);
+        UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+        const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
 
         Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                  ABL);
@@ -161,7 +163,8 @@ public:
         UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
         uptr += m * m;
         UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m);
-        UnmanagedViewType<value_type_matrix> ABL(s.l_buf, n_m, m);
+        UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+        const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
 
         Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                  ABL);
@@ -234,7 +237,8 @@ public:
           }
           {
             UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
-            UnmanagedViewType<value_type_matrix> L(s.l_buf, s.n - s.m, s.m);
+            UnmanagedViewType<value_type_matrix> Lp(s.l_buf, s.n, s.m);
+            const auto L = Kokkos::subview(Lp, range_type(s.m, s.n), Kokkos::ALL());
 
             ordinal_type ijbeg = 0;
             for (; s2t[ijbeg] == -1; ++ijbeg)

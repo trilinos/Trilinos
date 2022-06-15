@@ -43,10 +43,10 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
   KOKKOS_INLINE_FUNCTION static int factorize(MemberType &member, const SupernodeInfoType &info,
                                               const typename SupernodeInfoType::value_type_matrix &ABR,
                                               const ordinal_type sid) {
-    typedef SupernodeInfoType supernode_info_type;
+    using supernode_info_type = SupernodeInfoType;
 
-    typedef typename supernode_info_type::value_type value_type;
-    typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+    using value_type = typename supernode_info_type::value_type;
+    using value_type_matrix = typename supernode_info_type::value_type_matrix;
 
     // algorithm choice
     using CholAlgoType = typename CholAlgorithm::type;
@@ -91,6 +91,7 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
     using supernode_info_type = SupernodeInfoType;
     using value_type = typename supernode_info_type::value_type;
     using value_type_matrix = typename supernode_info_type::value_type_matrix;
+    using range_type = typename supernode_info_type::range_type;
 
     const auto &cur = info.supernodes(sid);
 
@@ -171,7 +172,8 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
 
       {
         UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
-        UnmanagedViewType<value_type_matrix> L(s.l_buf, s.n - s.m, s.m);
+        UnmanagedViewType<value_type_matrix> Lp(s.l_buf, s.n, s.m);
+        const auto L = Kokkos::subview(Lp, range_type(s.m, s.n), Kokkos::ALL());
 
         ordinal_type ijbeg = 0;
         for (; s2t[ijbeg] == -1; ++ijbeg)
@@ -232,7 +234,8 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
               
               {
                 UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n); 
-                UnmanagedViewType<value_type_matrix> L(s.l_buf, s.n - s.m, s.m); 
+                UnmanagedViewType<value_type_matrix> Lp(s.l_buf, s.n, s.m);
+                const auto L = Kokkos::subview(Lp, range_type(s.m, s.n), Kokkos::ALL());
 
                 ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
                 
@@ -279,7 +282,8 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
       }
       {
         UnmanagedViewType<value_type_matrix> U(s.u_buf, s.m, s.n);
-        UnmanagedViewType<value_type_matrix> L(s.l_buf, s.n - s.m, s.m);
+        UnmanagedViewType<value_type_matrix> Lp(s.l_buf, s.n, s.m);
+        const auto L = Kokkos::subview(Lp, range_type(s.m, s.n), Kokkos::ALL());
 
         ordinal_type ijbeg = 0;
         for (; s2t[ijbeg] == -1; ++ijbeg)
@@ -328,12 +332,11 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
   KOKKOS_INLINE_FUNCTION static int solve_lower(MemberType &member, const SupernodeInfoType &info,
                                                 const typename SupernodeInfoType::value_type_matrix &xB,
                                                 const ordinal_type sid) {
-    typedef SupernodeInfoType supernode_info_type;
+    using supernode_info_type = SupernodeInfoType;
 
-    typedef typename supernode_info_type::value_type value_type;
-    typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
-    typedef Kokkos::pair<ordinal_type, ordinal_type> range_type;
+    using value_type = typename supernode_info_type::value_type;
+    using value_type_matrix = typename supernode_info_type::value_type_matrix;
+    using range_type = typename supernode_info_type::range_type;
 
     const auto &s = info.supernodes(sid);
 
@@ -374,9 +377,6 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
   KOKKOS_INLINE_FUNCTION static int update_solve_lower(MemberType &member, const SupernodeInfoType &info,
                                                        const typename SupernodeInfoType::value_type_matrix &xB,
                                                        const ordinal_type sid) {
-    // typedef SupernodeInfoType supernode_info_type;
-    // typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
     const auto &cur = info.supernodes(sid);
     const ordinal_type sbeg = cur.sid_col_begin + 1, send = cur.sid_col_end - 1;
 
@@ -424,12 +424,10 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
   KOKKOS_INLINE_FUNCTION static int solve_upper(MemberType &member, const SupernodeInfoType &info,
                                                 const typename SupernodeInfoType::value_type_matrix &xB,
                                                 const ordinal_type sid) {
-    typedef SupernodeInfoType supernode_info_type;
-
-    typedef typename supernode_info_type::value_type value_type;
-    typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
-    typedef Kokkos::pair<ordinal_type, ordinal_type> range_type;
+    using supernode_info_type = SupernodeInfoType;
+    using value_type = typename supernode_info_type::value_type;
+    using value_type_matrix = typename supernode_info_type::value_type_matrix;
+    using range_type = typename supernode_info_type::range_type;
 
     using GemmAlgoType = typename GemmAlgorithm::type;
     using TrsmAlgoType = typename TrsmAlgorithm::type;
@@ -472,9 +470,6 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
                                                        const typename SupernodeInfoType::value_type_matrix &xB,
                                                        const ordinal_type sid) {
 
-    // typedef SupernodeInfoType supernode_info_type;
-    // typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
     const auto &s = info.supernodes(sid);
 
     const ordinal_type m = xB.extent(0), n = xB.extent(1);
@@ -503,10 +498,10 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
   KOKKOS_INLINE_FUNCTION static int
   factorize_recursive_serial(MemberType &member, const SupernodeInfoType &info, const ordinal_type sid,
                              const bool final, typename SupernodeInfoType::value_type *buf, const size_type bufsize) {
-    typedef SupernodeInfoType supernode_info_type;
+    using supernode_info_type = SupernodeInfoType;
 
-    typedef typename supernode_info_type::value_type value_type;
-    typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+    using value_type = typename supernode_info_type::value_type;
+    using value_type_matrix = typename supernode_info_type::value_type_matrix;
 
     const auto &s = info.supernodes(sid);
 
@@ -539,10 +534,10 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
   KOKKOS_INLINE_FUNCTION static int
   solve_lower_recursive_serial(MemberType &member, const SupernodeInfoType &info, const ordinal_type sid,
                                const bool final, typename SupernodeInfoType::value_type *buf, const size_type bufsize) {
-    typedef SupernodeInfoType supernode_info_type;
+    using supernode_info_type = SupernodeInfoType;
 
-    typedef typename supernode_info_type::value_type value_type;
-    typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+    using value_type = typename supernode_info_type::value_type;
+    using value_type_matrix = typename supernode_info_type::value_type_matrix;
 
     const auto &s = info.supernodes(sid);
 
@@ -573,10 +568,10 @@ template <> struct CholSupernodes<Algo::Workflow::Serial> {
                                                                  const ordinal_type sid, const bool final,
                                                                  typename SupernodeInfoType::value_type *buf,
                                                                  const ordinal_type bufsize) {
-    typedef SupernodeInfoType supernode_info_type;
+    using supernode_info_type = SupernodeInfoType;
 
-    typedef typename supernode_info_type::value_type value_type;
-    typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+    using value_type = typename supernode_info_type::value_type;
+    using value_type_matrix = typename supernode_info_type::value_type_matrix;
 
     const auto &s = info.supernodes(sid);
     {

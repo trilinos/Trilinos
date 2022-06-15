@@ -1209,9 +1209,8 @@ public:
               uptr += m * m;
               UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m);
 
-              value_type *lptr = s.l_buf;
-              UnmanagedViewType<value_type_matrix> ABL(lptr, n_m, m);
-
+              UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+              const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
               UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
 
               _status = Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
@@ -1278,8 +1277,8 @@ public:
               uptr += m * m;
               UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m);
 
-              value_type *lptr = s.l_buf;
-              UnmanagedViewType<value_type_matrix> ABL(lptr, n_m, m);
+              UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+              const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
 
               UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
 
@@ -1347,8 +1346,8 @@ public:
               uptr += m * m;
               UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m);
 
-              value_type *lptr = s.l_buf;
-              UnmanagedViewType<value_type_matrix> ABL(lptr, n_m, m);
+              UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+              const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
 
               UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
 
@@ -1518,21 +1517,21 @@ public:
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
             value_type *aptr = s.u_buf;
-            UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
-            aptr += m * m;
+            UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+            aptr += ATL.span();
 
             const ordinal_type offm = s.row_begin;
             auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
             _status =
-                Trsv<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), AL, tT);
+                Trsv<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
 
             if (n_m > 0) {
               // solve offdiag
               value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-              UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n_m;
+              UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, tT, zero, bB);
+              _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -1561,7 +1560,7 @@ public:
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
             value_type *aptr = s.u_buf;
-            UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+            UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
 
             value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
@@ -1571,15 +1570,15 @@ public:
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
-            _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AL, tT, zero, bT);
+            _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, tT, zero, bT);
             checkDeviceBlasStatus("gemv");
 
             if (n_m > 0) {
               // solve offdiag
-              UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m);
+              UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
-              _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bT, zero, bB);
+              _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -1608,7 +1607,7 @@ public:
           const ordinal_type m = s.m, n = s.n;
           if (m > 0) {
             value_type *aptr = s.u_buf;
-            UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+            UnmanagedViewType<value_type_matrix> AT(aptr, m, n);
 
             value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
             UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
@@ -1616,7 +1615,7 @@ public:
             const ordinal_type offm = s.row_begin;
             auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
-            _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, one, A, tT, zero, b);
+            _status = Gemv<Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AT, tT, zero, b);
             checkDeviceBlasStatus("gemv");
           }
         }
@@ -1663,7 +1662,7 @@ public:
           if (m > 0) {
             value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
             ;
-            const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+            const UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
             const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
@@ -1671,13 +1670,13 @@ public:
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
             if (n_m > 0) {
-              const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
+              const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
               exec_instance.fence();
             }
             _status =
-                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), AL, tT);
+                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
           }
         }
@@ -1710,7 +1709,7 @@ public:
           if (m > 0) {
             value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
 
-            const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+            const UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
             const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
             bptr += m * nrhs;
@@ -1719,14 +1718,14 @@ public:
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
             if (n_m > 0) {
-              const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
+              const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
               const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
               exec_instance.fence();
             }
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AL, tT, zero, bT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, tT, zero, bT);
             checkDeviceBlasStatus("gemv");
             exec_instance.fence();
 
@@ -1761,13 +1760,13 @@ public:
           if (m > 0 && n > 0) {
             value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
             ;
-            const UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+            const UnmanagedViewType<value_type_matrix> AT(aptr, m, n);
             const UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
 
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, A, b, zero, tT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AT, b, zero, tT);
             checkDeviceBlasStatus("gemv");
           }
         }
@@ -1813,7 +1812,7 @@ public:
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
             value_type *aptr = s.u_buf;
-            UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+            UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
 
             const ordinal_type offm = s.row_begin;
@@ -1825,14 +1824,15 @@ public:
                 ::invoke(exec_instance, fpiv, tT);
             exec_instance.fence();
 
-            _status = Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AL, tT);
+            _status =
+                Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
             exec_instance.fence();
             if (n_m > 0) {
               value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-              UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // ptr += m*n_m;
+              UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // ptr += m*n_m;
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, tT, zero, bB);
+              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -1865,7 +1865,7 @@ public:
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
             value_type *aptr = s.u_buf;
-            UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+            UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
 
             value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
@@ -1881,15 +1881,15 @@ public:
                 ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, tT, perm, bT);
             exec_instance.fence();
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AL, bT, zero, tT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, bT, zero, tT);
             checkDeviceBlasStatus("gemv");
             exec_instance.fence();
 
             if (n_m > 0) {
-              UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m);
+              UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
-              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, tT, zero, bB);
+              _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -1922,7 +1922,7 @@ public:
           const ordinal_type m = s.m, n = s.n;
           if (m > 0) {
             value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-            UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+            UnmanagedViewType<value_type_matrix> AT(aptr, m, n);
             UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
 
             const ordinal_type offm = s.row_begin;
@@ -1937,7 +1937,7 @@ public:
                 ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, perm, tT);
             exec_instance.fence();
 
-            _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, one, A, tT, zero, b);
+            _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, one, AT, tT, zero, b);
             checkDeviceBlasStatus("gemv");
           }
         }
@@ -1984,7 +1984,7 @@ public:
           if (m > 0) {
             value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
             ;
-            const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
+            const UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
             const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
@@ -1996,12 +1996,12 @@ public:
                 ::invoke(exec_instance, P, D, tT);
 
             if (n_m > 0) {
-              const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
+              const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
               exec_instance.fence();
             }
-            _status = Trsv<Uplo::Lower, Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AL, tT);
+            _status = Trsv<Uplo::Lower, Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
 
             const auto fpiv = ordinal_type_array(P.data() + m, m);
@@ -2038,8 +2038,8 @@ public:
           if (m > 0) {
             value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
 
-            const UnmanagedViewType<value_type_matrix> AL(aptr, m, m);
-            aptr += AL.span();
+            const UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+            aptr += ATL.span();
             const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
             bptr += bT.span();
 
@@ -2052,13 +2052,13 @@ public:
 
             if (n_m > 0) {
               const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
+              const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
               exec_instance.fence();
             }
 
-            _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, one, AL, tT, zero, bT);
+            _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, tT, zero, bT);
             checkDeviceBlasStatus("gemv");
             exec_instance.fence();
 
@@ -2096,7 +2096,7 @@ public:
           if (m > 0 && n > 0) {
             value_type *aptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
 
-            const UnmanagedViewType<value_type_matrix> A(aptr, m, n);
+            const UnmanagedViewType<value_type_matrix> AT(aptr, m, n);
             const UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
 
             const ordinal_type offm = s.row_begin;
@@ -2109,7 +2109,7 @@ public:
             _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice> /// row scaling
                 ::invoke(exec_instance, P, D, bT);
 
-            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, A, b, zero, tT);
+            _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AT, b, zero, tT);
             exec_instance.fence();
 
             _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
@@ -2161,7 +2161,7 @@ public:
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
-            UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, m);
+            UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
 
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
@@ -2171,14 +2171,16 @@ public:
                 ::invoke(exec_instance, fpiv, tT);
             exec_instance.fence();
 
-            _status = Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AT, tT);
+            _status =
+                Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
             exec_instance.fence();
             if (n_m > 0) {
               value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-              UnmanagedViewType<value_type_matrix> AB(s.l_buf, n_m, m);
+              UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+              const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AB, tT, zero, bB);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ABL, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -2210,7 +2212,7 @@ public:
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
-            UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, m);
+            UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
 
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
@@ -2220,14 +2222,16 @@ public:
                 ::invoke(exec_instance, fpiv, tT);
             exec_instance.fence();
 
-            _status = Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AT, tT);
+            _status =
+                Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
             exec_instance.fence();
             if (n_m > 0) {
               value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-              UnmanagedViewType<value_type_matrix> AB(s.l_buf, n_m, m);
+              UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+              const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AB, tT, zero, bB);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ABL, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -2259,7 +2263,7 @@ public:
         {
           const ordinal_type m = s.m, n = s.n, n_m = n - m;
           if (m > 0) {
-            UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, m);
+            UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
 
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
@@ -2269,14 +2273,16 @@ public:
                 ::invoke(exec_instance, fpiv, tT);
             exec_instance.fence();
 
-            _status = Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), AT, tT);
+            _status =
+                Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
             exec_instance.fence();
             if (n_m > 0) {
               value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
-              UnmanagedViewType<value_type_matrix> AB(s.l_buf, n_m, m);
+              UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+              const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
               UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AB, tT, zero, bB);
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ABL, tT, zero, bB);
               checkDeviceBlasStatus("gemv");
             }
           }
@@ -2324,7 +2330,7 @@ public:
           if (m > 0) {
             value_type *uptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
             ;
-            const UnmanagedViewType<value_type_matrix> AL(uptr, m, m);
+            const UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
             uptr += m * m;
             const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
@@ -2332,13 +2338,13 @@ public:
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
             if (n_m > 0) {
-              const UnmanagedViewType<value_type_matrix> AR(uptr, m, n_m); // uptr += m*n;
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
+              const UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m); // uptr += m*n;
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
               exec_instance.fence();
             }
             _status =
-                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), AL, tT);
+                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
           }
         }
@@ -2370,7 +2376,7 @@ public:
           if (m > 0) {
             value_type *uptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
             ;
-            const UnmanagedViewType<value_type_matrix> AL(uptr, m, m);
+            const UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
             uptr += m * m;
             const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
@@ -2378,13 +2384,13 @@ public:
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
             if (n_m > 0) {
-              const UnmanagedViewType<value_type_matrix> AR(uptr, m, n_m); // uptr += m*n;
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
+              const UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m); // uptr += m*n;
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
               exec_instance.fence();
             }
             _status =
-                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), AL, tT);
+                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
           }
         }
@@ -2417,7 +2423,7 @@ public:
           if (m > 0) {
             value_type *uptr = s.u_buf, *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
             ;
-            const UnmanagedViewType<value_type_matrix> AL(uptr, m, m);
+            const UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
             uptr += m * m;
             const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
 
@@ -2425,13 +2431,13 @@ public:
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
             if (n_m > 0) {
-              const UnmanagedViewType<value_type_matrix> AR(uptr, m, n_m); // uptr += m*n;
-              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, AR, bB, one, tT);
+              const UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m); // uptr += m*n;
+              _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
               exec_instance.fence();
             }
             _status =
-                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), AL, tT);
+                Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
           }
         }

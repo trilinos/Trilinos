@@ -74,7 +74,7 @@ public:
       const ordinal_type m = s.m, n = s.n, n_m = n - m;
       if (m > 0) {
         // solve
-        UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, m);
+        UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
 
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
@@ -82,14 +82,15 @@ public:
 
         ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal> /// row inter-change
             ::invoke(member, fpiv, tT);
-        Trsv<Uplo::Lower, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), AT, tT);
+        Trsv<Uplo::Lower, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
 
         if (n_m > 0) {
           // update
           member.team_barrier();
-          UnmanagedViewType<value_type_matrix> AB(s.l_buf, n_m, m);
+          UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+          const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
           UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, AB, tT, zero, bB);
+          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ABL, tT, zero, bB);
         }
       }
     }
