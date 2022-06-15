@@ -338,20 +338,19 @@ namespace Tpetra {
           This is only the remote offsets, so the offsets we want are between
           offRankOffsets_(i) and entries(i+1)
       */
-      KOKKOS_INLINE_FUNCTION void operator()(TagNonTrans, const size_t i) const {
-
-        // beta * Y
-        for (size_t k = 0; k < Y_.extent(1); ++k) {
-          Y_(i,k) = beta_ * Y_(i,k); 
-        }       
-
+      KOKKOS_INLINE_FUNCTION void operator()(TagNonTrans, const size_t i) const { 
         // + alpha A x
-        for (size_type ji = offRankOffsets_(i); ji < A_.graph.row_map(i+1); ++ji) {
-          value_type A_ij = A_.values(ji);
-          ordinal_type j = A_.graph.entries(ji);
-          for (size_t k = 0; k < Y_.extent(1); ++k) {
-            Y_(i,k) += alpha_ * A_ij * X_(j, k); 
+
+        // this is good if Y_.extent(1) is 1, since Y and each element of A is accessed
+        // only once
+        for (size_t k = 0; k < Y_.extent(1); ++k) {
+          auto Y_ik = Y_(i,k);
+          for (size_type ji = offRankOffsets_(i); ji < A_.graph.row_map(i+1); ++ji) {
+            value_type A_ij = A_.values(ji);
+            ordinal_type j = A_.graph.entries(ji);
+            Y_ik += alpha_ * A_ij * X_(j, k); 
           }
+          Y_(i,k) = Y_ik;
         }
       }
 
@@ -404,7 +403,6 @@ namespace Tpetra {
 #if 1
         Kokkos::parallel_for("off-rank simple", Kokkos::RangePolicy<execution_space, TagNonTrans>(space, 0, A_.numRows()), *this);
 #else
-
         const int estNnz = A_.nnz() * 0.05; // mostly on-rank nnz
 
         const int nnzPerRow = (estNnz + A_.numRows() - 1) / A_.numRows();
