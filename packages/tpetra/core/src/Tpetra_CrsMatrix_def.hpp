@@ -4852,19 +4852,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
     }
 
-    // actually do the import if necessary
-    if (mustImport) {
-      // Import from the domain Map MV to the column Map MV.
-      if (Details::Behavior::overlapCommunicationAndComputation()) {
-        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport");
-        X_colMapNonConst->beginImport (X_in, *importer, INSERT);
-      } else {
-        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: doImport");
-        X_colMapNonConst->doImport (X_in, *importer, INSERT);
-        X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
-      }
-    }
-
     /* When overlapping comm / comp, start the on-rank part,
       The on-rank part does not need any imported X.
       Use the temporary Y, or the input Y as needed
@@ -4880,7 +4867,18 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
     }
 
-
+    // actually do the import if necessary
+    if (mustImport) {
+      // Import from the domain Map MV to the column Map MV.
+      if (Details::Behavior::overlapCommunicationAndComputation()) {
+        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: beginImport");
+        X_colMapNonConst->beginImport (X_in, *importer, INSERT);
+      } else {
+        ProfilingRegion("Tpetra::CrsMatrix::applyNonTranspose: doImport");
+        X_colMapNonConst->doImport (X_in, *importer, INSERT);
+        X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
+      }
+    }
 
     // finish an input if it was started
     if (mustImport && Details::Behavior::overlapCommunicationAndComputation()) {
