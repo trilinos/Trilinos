@@ -3254,14 +3254,6 @@ public:
     //@}
 
   public:
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    //! Get the Kokkos local values
-    typename local_matrix_device_type::values_type getLocalValuesView () const {
-      // TODO:  UVM SHOULD ADD ACCESS TAGS; SAFEST TO ASSUME ReadWrite FOR NOW
-      return valuesPacked_wdv.getDeviceView(Access::ReadWrite);
-    }
-#endif
-
     //! Get the Kokkos local values on host, read only
     typename local_matrix_host_type::values_type::const_type
     getLocalValuesHost (Access::ReadOnlyStruct s) const
@@ -3762,9 +3754,6 @@ public:
                                   const bool merged);
 
   public:
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    TPETRA_DEPRECATED void computeGlobalConstants() {};
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const;
