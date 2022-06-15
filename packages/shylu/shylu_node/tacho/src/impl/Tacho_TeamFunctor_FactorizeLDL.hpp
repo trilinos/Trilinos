@@ -353,7 +353,6 @@ public:
         const ordinal_type bufbeg = _buf_ptr(lid), bufend = _buf_ptr(lid + 1);
         auto bufptr = _buf.data() + bufbeg;
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
-
         UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
         const ordinal_type used_span = max(ABR.span(), T.span());
         UnmanagedViewType<value_type_array> W(bufptr + used_span, int(bufend - bufbeg - used_span));

@@ -88,12 +88,12 @@ public:
   }
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void factorize_var1(MemberType &member, const supernode_type &s, const ordinal_type_array &P,
-                                             const value_type_matrix &T, const value_type_matrix &Y,
-                                             const value_type_matrix &ABR) const {
+                                             const value_type_matrix &T, const value_type_matrix &ABR) const {
     using LU_AlgoType = typename LU_Algorithm::type;
     using TrsmAlgoType = typename TrsmAlgorithm::type;
     using GemmAlgoType = typename GemmAlgorithm::type;
 
+    const value_type one(1), minus_one(-1), zero(0);
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
       UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
@@ -105,37 +105,39 @@ public:
       member.team_barrier();
 
       if (n_m > 0) {
-        const value_type one(1), minus_one(-1), zero(0);
         UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
         UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
         UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
+        const auto ATL2 = Kokkos::subview(AL, range_type(0, m), Kokkos::ALL());
         const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
 
+        Copy<Algo::Internal>::invoke(member, T, ATL);
         Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
                                                                                  ABL);
-        Copy<Algo::Internal>::invoke(member, T, ATL);
         member.team_barrier();
+
         SetIdentity<Algo::Internal>::invoke(member, ATL, one);
-        SetIdentity<Algo::Internal>::invoke(member, Y, one);
+        SetIdentity<Algo::Internal>::invoke(member, ATL2, one);
         member.team_barrier();
+
         Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
-        Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, Y);
+        Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, ATL2);
         member.team_barrier();
-        Copy<Algo::Internal>::invoke(member, ATL, Uplo::Lower(), Diag::Unit(), Y);
-        member.team_barrier();
+
         Gemm<Trans::NoTranspose, Trans::NoTranspose, GemmAlgoType>::invoke(member, minus_one, ABL, ATR, zero, ABR);
       } else {
-        const value_type one(1);
         UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
+        UnmanagedViewType<value_type_matrix> ATL2(s.l_buf, m, m);
+
         Copy<Algo::Internal>::invoke(member, T, ATL);
         member.team_barrier();
+
         SetIdentity<Algo::Internal>::invoke(member, ATL, one);
-        SetIdentity<Algo::Internal>::invoke(member, Y, one);
+        SetIdentity<Algo::Internal>::invoke(member, ATL2, one);
         member.team_barrier();
+
         Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
-        Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, Y);
-        member.team_barrier();
-        Copy<Algo::Internal>::invoke(member, ATL, Uplo::Lower(), Diag::Unit(), Y);
+        Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, ATL2);
       }
     }
   }
@@ -276,6 +278,21 @@ public:
     return;
   }
 
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void check(MemberType &member, supernode_type &s, const ordinal_type_array &fpiv) const {
+    ordinal_type val(0);
+    Kokkos::parallel_reduce(
+        Kokkos::TeamVectorRange(member, s.m),
+        [&](const ordinal_type &i, ordinal_type &update) {
+          const ordinal_type fpiv_at_i = fpiv(i);
+          update += (fpiv_at_i < 0 ? -fpiv_at_i : fpiv_at_i);
+        },
+        val);
+    member.team_barrier();
+    Kokkos::single(Kokkos::PerTeam(member), [&]() { s.do_not_apply_pivots = (val == 0); });
+    return;
+  }
+
   template <int Var> struct FactorizeTag {
     enum { variant = Var };
   };
@@ -298,15 +315,13 @@ public:
       UnmanagedViewType<ordinal_type_array> P(_piv.data() + offm * 4, m * 4);
 
       const auto bufptr = _buf.data() + _buf_ptr(lid);
-      if (factorize_tag_type::variant == 0 || true) { // temporary to push to trilinos
+      if (factorize_tag_type::variant == 0) { // temporary to push to trilinos
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         factorize_var0(member, s, P, ABR);
       } else if (factorize_tag_type::variant == 1) {
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
-        UnmanagedViewType<value_type_matrix> Y(bufptr + T.span(), m, m);
-
-        factorize_var1(member, s, P, T, Y, ABR);
+        factorize_var1(member, s, P, T, ABR);
       } else if (factorize_tag_type::variant == 2) {
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         factorize_var2(member, s, P, ABR);
@@ -324,11 +339,15 @@ public:
     const ordinal_type p = _pbeg + lid;
     if (p < _pend) {
       const ordinal_type sid = _level_sids(p);
-      const auto &s = _info.supernodes(sid);
+      auto &s = _info.supernodes(sid);
       const ordinal_type n_m = s.n - s.m;
       value_type *bufptr = _buf.data() + _buf_ptr(lid);
       UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
       update(member, s, ABR);
+
+      const ordinal_type offm = s.row_begin;
+      UnmanagedViewType<ordinal_type_array> fpiv(_piv.data() + offm * 4 + s.m, s.m);
+      check(member, s, fpiv);
     } else {
       // skip
     }

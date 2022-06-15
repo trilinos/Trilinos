@@ -127,7 +127,6 @@ public:
   KOKKOS_INLINE_FUNCTION void solve_var1(MemberType &member, const supernode_type &s, value_type *bptr) const {
     using GemvAlgoType = typename GemvAlgorithm::type;
 
-    const ordinal_type nrhs = _t.extent(1);
     const value_type minus_one(-1), one(1), zero(0);
     {
       const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -136,7 +135,7 @@ public:
         // solve
         const UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
         aptr += ATL.span();
-        const UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+        const UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs);
         bptr += bT.span();
 
         const ordinal_type offm = s.row_begin;
@@ -154,7 +153,7 @@ public:
           Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bB, one, tT);
           member.team_barrier();
         }
-        Gemv<Trans::Transpose, Algo::Internal>::invoke(member, one, ATL, tT, zero, bT);
+        Gemv<Trans::Transpose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
         member.team_barrier();
 
         if (s.do_not_apply_pivots) {

@@ -133,7 +133,6 @@ public:
   KOKKOS_INLINE_FUNCTION void solve_var1(MemberType &member, const supernode_type &s, value_type *bptr) const {
     using GemvAlgoType = typename GemvAlgorithm::type;
 
-    const ordinal_type nrhs = _t.extent(1);
     const value_type one(1), minus_one(-1), zero(0);
     {
       const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -142,7 +141,7 @@ public:
         // solve
         UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
         aptr += ATL.span();
-        UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+        UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs);
         bptr += bT.span();
 
         const ordinal_type offm = s.row_begin;
@@ -211,7 +210,6 @@ public:
   KOKKOS_INLINE_FUNCTION void solve_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
     using GemvAlgoType = typename GemvAlgorithm::type;
 
-    const ordinal_type nrhs = _t.extent(1);
     const value_type one(1), zero(0);
     {
       const ordinal_type m = s.m, n = s.n;
@@ -219,11 +217,11 @@ public:
         value_type *aptr = s.u_buf;
 
         UnmanagedViewType<value_type_matrix> AT(aptr, m, n);
-        UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs);
+        UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
 
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
-        UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
+        UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs);
 
         if (!s.do_not_apply_pivots) {
           ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
