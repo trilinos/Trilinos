@@ -137,9 +137,10 @@ int main(int argc, char *argv[]) {
     ///
     {
       timer.reset();
-      applyRowPermutationToDenseMatrix(bb, b, perm);
+      const auto exec_instance = typename device_type::execution_space();
+      ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, perm, bb);
       cusolver.solve(xx, bb);
-      applyRowPermutationToDenseMatrix(x, xx, peri);
+      ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, xx, peri, x);
       Kokkos::fence();
       const double t_solve = timer.seconds();
       if (verbose) {

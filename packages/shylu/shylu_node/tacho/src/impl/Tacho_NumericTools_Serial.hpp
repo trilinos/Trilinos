@@ -210,7 +210,8 @@ public:
 
     // copy b -> t
     timer.reset();
-    applyRowPermutationToDenseMatrix(t, b, _perm);
+    const auto exec_instance = exec_space();
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -234,7 +235,7 @@ public:
 
     // copy t -> x
     timer.reset();
-    applyRowPermutationToDenseMatrix(x, t, _peri);
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
     stat.t_extra += timer.seconds();
 
     if (verbose) {
@@ -318,7 +319,8 @@ public:
 
     // copy b -> t
     timer.reset();
-    applyRowPermutationToDenseMatrix(t, b, _perm);
+    const auto exec_instance = exec_space();
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -342,7 +344,7 @@ public:
 
     // copy t -> x
     timer.reset();
-    applyRowPermutationToDenseMatrix(x, t, _peri);
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
     stat.t_extra += timer.seconds();
 
     if (verbose) {
@@ -424,7 +426,8 @@ public:
 
     // copy b -> t
     timer.reset();
-    applyRowPermutationToDenseMatrix(t, b, _perm);
+    const auto exec_instance = exec_space();
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -448,7 +451,7 @@ public:
 
     // copy t -> x
     timer.reset();
-    applyRowPermutationToDenseMatrix(x, t, _peri);
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
     stat.t_extra += timer.seconds();
 
     if (verbose) {

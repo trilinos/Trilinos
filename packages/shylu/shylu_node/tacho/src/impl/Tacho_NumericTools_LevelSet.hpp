@@ -1877,7 +1877,8 @@ public:
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
             ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
-            ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, tT, perm, bT);
+            _status =
+                ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, tT, perm, bT);
             exec_instance.fence();
 
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AL, bT, zero, tT);
@@ -2494,7 +2495,8 @@ public:
     allocateWorkspaceSolve(nrhs);
 
     // 0. permute and copy b -> t
-    applyRowPermutationToDenseMatrix(t, b, _perm);
+    const auto exec_instance = exec_space();
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -2641,7 +2643,7 @@ public:
 
     // permute and copy t -> x
     timer.reset();
-    applyRowPermutationToDenseMatrix(x, t, _peri);
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
     stat.t_extra += timer.seconds();
 
     if (verbose) {
@@ -2801,7 +2803,8 @@ public:
     allocateWorkspaceSolve(nrhs);
 
     // 0. permute and copy b -> t
-    applyRowPermutationToDenseMatrix(t, b, _perm);
+    const auto exec_instance = exec_space();
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -2959,7 +2962,7 @@ public:
 
     // permute and copy t -> x
     timer.reset();
-    applyRowPermutationToDenseMatrix(x, t, _peri);
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
     stat.t_extra += timer.seconds();
 
     if (verbose) {
@@ -3117,7 +3120,8 @@ public:
     allocateWorkspaceSolve(nrhs);
 
     // 0. permute and copy b -> t
-    applyRowPermutationToDenseMatrix(t, b, _perm);
+    const auto exec_instance = exec_space();
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -3275,7 +3279,7 @@ public:
 
     // permute and copy t -> x
     timer.reset();
-    applyRowPermutationToDenseMatrix(x, t, _peri);
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
     stat.t_extra += timer.seconds();
 
     if (verbose) {
