@@ -289,7 +289,7 @@ namespace Intrepid2
 //                - Note that grad[L^(2i+1)_j](s0+s1,s2) is computed as [P^{2i+1}_{j-1}](s0+s1,s2) (grad s2) + [R^{2i+1}_{j-1}] grad (s0+s1+s2),
                 const PointScalar xEdgeWeight = s0 * s1_dx - s1 * s0_dx;
                 const PointScalar yEdgeWeight = s0 * s1_dy - s1 * s0_dy;
-                const PointScalar & edgeValue = P_i(j);
+                const PointScalar & edgeValue = P_i(i);
                 OutputScalar grad_s2_cross_xy_edgeWeight = s2_dx * yEdgeWeight - xEdgeWeight * s2_dy;
                 output_(fieldOrdinalOffset,pointOrdinal) = L_2ip1_j(j) * edgeCurl + P_2ip1_j(j-1) * edgeValue * grad_s2_cross_xy_edgeWeight;
                 
