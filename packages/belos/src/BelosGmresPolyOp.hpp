@@ -302,13 +302,6 @@ namespace Belos {
     static constexpr const char * label_default_ = "Belos";
     static constexpr const char * polyType_default_ = "Roots";
     static constexpr const char * orthoType_default_ = "DGKS";
-// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
-#if defined(_WIN32) && defined(__clang__)
-    static constexpr std::ostream * outputStream_default_ =
-       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
-#else
-    static constexpr std::ostream * outputStream_default_ = &std::cout;
-#endif
     static constexpr bool damp_default_ = false;
     static constexpr bool addRoots_default_ = true;
 
@@ -319,7 +312,7 @@ namespace Belos {
 
     // Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
-    Teuchos::RCP<std::ostream> outputStream_ = Teuchos::rcp(outputStream_default_,false);
+    Teuchos::RCP<std::ostream> outputStream_ = Teuchos::rcpFromRef(std::cout);
  
     // Orthogonalization manager.
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;

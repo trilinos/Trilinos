@@ -38,6 +38,8 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
 #include <stk_unit_test_utils/PerformanceTester.hpp>
+#include <stk_util/environment/memory_util.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
@@ -45,8 +47,15 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include "stk_mesh/base/ExodusTranslator.hpp"
 #include <stk_performance_tests/stk_mesh/timer.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
+
+#include <stk_mesh/base/SkinBoundary.hpp>
+#include <stk_tools/mesh_tools/DetectHingesImpl.hpp>
+#include <stk_tools/mesh_tools/DisconnectBlocks.hpp>
+#include <stk_tools/mesh_tools/DisconnectBlocksImpl.hpp>
+#include <stk_tools/mesh_tools/DisconnectUtils.hpp>
 namespace stk_perf_many_blocks
 {
 
@@ -66,13 +75,31 @@ protected:
     return os.str();
   }
 
+  std::string get_mesh_spec_without_sidesets(unsigned numElemsPerDim, unsigned numBlocks)
+  {
+    std::ostringstream os;
+    os<<"generated:"<<numBlocks<<"x"<<numElemsPerDim<<"x"<<numElemsPerDim;
+    return os.str();
+  }
+
   void setup_multi_block_mesh(unsigned numElemsPerDim, unsigned numBlocks)
   {
+    stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::NO_AUTO_AURA;
+    setup_empty_mesh(auraOption);
     stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
     stk::performance_tests::setup_sidesets_between_blocks(get_meta());
-    setup_mesh(get_mesh_spec(numElemsPerDim), stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh(get_mesh_spec(numElemsPerDim), auraOption);
     stk::performance_tests::move_elements_to_other_blocks(get_bulk(), numElemsPerDim);
     stk::performance_tests::fill_sidesets_between_blocks(get_bulk());
+  }
+
+  void setup_multi_block_mesh_without_sidesets(unsigned numElemsPerDim, unsigned numBlocks)
+  {
+    stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::NO_AUTO_AURA;
+    setup_empty_mesh(auraOption);
+    stk::performance_tests::setup_multiple_blocks(get_meta(), numBlocks);
+    setup_mesh(get_mesh_spec_without_sidesets(numElemsPerDim, numBlocks), auraOption);
+    stk::performance_tests::move_elements_to_other_contiguous_blocks(get_bulk(), numBlocks);
   }
 
   void empty_mod_cycle()
@@ -81,10 +108,55 @@ protected:
     get_bulk().modification_end();
   }
 
+  void output_mesh(stk::mesh::BulkData & bulk, const std::string & fileName)
+  {
+    std::string writeOutput = stk::unit_test_util::simple_fields::get_option("--output", "off");
+    if (writeOutput == "on") {
+      stk::io::write_mesh(fileName, bulk);
+    }
+  }
+
+  void output_mesh(stk::mesh::BulkData & bulk)
+  {
+    const std::string fileName = std::string(::testing::UnitTest::GetInstance()->current_test_info()->name()) + ".g";
+    output_mesh(bulk, fileName);
+  }
+
+  void print_memory_stats(const std::string& preamble, std::ostream &stream = std::cout)
+  {
+    size_t maxHwm = 0, minHwm = 0, avgHwm = 0;
+    stk::get_memory_high_water_mark_across_processors(get_comm(), maxHwm, minHwm, avgHwm);
+
+    if (get_parallel_rank() == 0) {
+      std::ostringstream os;
+      const double bytesInMegabyte = 1024*1024;
+      os << preamble << " "
+         << std::setw(6) << std::fixed << std::setprecision(1)
+         << "Max HWM: " <<double(maxHwm)/double(bytesInMegabyte) << "MB"
+         <<", Min HWM: "<<double(minHwm)/double(bytesInMegabyte) << "MB"
+         <<", Avg HWM: "<<double(avgHwm)/double(bytesInMegabyte) << "MB" <<std::endl;
+
+      stream << os.str();
+    }
+  }
+
+  void print_stats(const std::string& preamble, std::ostream &stream = std::cout)
+  {
+    print_memory_stats(preamble, stream);
+
+    unsigned localNumFaces = stk::mesh::count_entities(get_bulk(), stk::topology::FACE_RANK, get_meta().locally_owned_part());
+    unsigned globalNumFaces;
+    stk::all_reduce_sum(get_comm(), &localNumFaces, &globalNumFaces, 1);
+
+    if (get_parallel_rank() == 0) {
+      stream << "Global number of face created: " << globalNumFaces << "\n" << std::endl;
+    }
+  }
+
   stk::performance_tests::Timer timer;
 };
 
-TEST_F(ManyBlocksSidesets, Timing)
+TEST_F(ManyBlocksSidesets, timing)
 {
   if (get_parallel_size() > 10) return;
 
@@ -102,5 +174,51 @@ TEST_F(ManyBlocksSidesets, Timing)
   timer.update_timing();
   timer.print_timing(NUM_RUNS);
 }
+
+TEST_F(ManyBlocksSidesets, disconnect_blocks_face_creation)
+{
+  if (get_parallel_size() > 16) return;
+
+  int NUM_RUNS = 1;
+  int ELEMS_PER_DIM = stk::unit_test_util::simple_fields::get_command_line_option("--ne", 120);
+  int NUM_BLOCKS = stk::unit_test_util::simple_fields::get_command_line_option("--nb", 10);
+  bool verbose = stk::unit_test_util::simple_fields::has_option("--v");
+
+  setup_multi_block_mesh_without_sidesets(ELEMS_PER_DIM, NUM_BLOCKS);
+
+  stk::tools::disconnect_all_blocks(get_bulk());
+
+  stk::performance_tests::setup_sidesets_for_blocks(get_meta());
+
+  stk::mesh::PartVector elemBlocks;
+  stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlocks);
+
+  print_memory_stats("Before face creation:");
+
+  timer.start_timing();
+
+  for(stk::mesh::Part* block : elemBlocks) {
+    stk::mesh::Part& blockPart = *block;
+    unsigned partId = blockPart.id();
+
+    std::string sidesetName = "surface_" + std::to_string(partId);
+
+    stk::mesh::Part* surface = get_meta().get_part(sidesetName);
+    EXPECT_TRUE(nullptr != surface) << "Could not find " << sidesetName;
+    stk::mesh::create_exposed_block_boundary_sides(get_bulk(), *block, stk::mesh::PartVector{surface});
+
+    if(verbose) {
+      print_stats("After face creation for " + sidesetName + ":");
+    }
+  }
+
+  print_stats("After face creation :");
+
+  timer.update_timing();
+  timer.print_timing(NUM_RUNS);
+
+  output_mesh(get_bulk());
+}
+
 
 }

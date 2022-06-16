@@ -64,12 +64,17 @@ namespace stk
 {
 namespace balance
 {
+
+class ElementCountDiagnostic;
+class TotalElementWeightDiagnostic;
+
 namespace internal
 {
 
-inline unsigned get_index(const int second_dim, const int third_dim, const int first_index, const int second_index, const int third_index)
+inline unsigned get_index(const int numSelectors, const int numCriteria, const int entityIndex,
+                          const int selectorIndex, const int criterionIndex)
 {
-  return first_index*third_dim*second_dim + second_index*third_dim + third_index;
+  return entityIndex*numCriteria*numSelectors + selectorIndex*numCriteria + criterionIndex;
 }
 
 void fillEntityCentroid(const stk::mesh::BulkData &stkMeshBulkData,  const stk::mesh::FieldBase* coord, stk::mesh::Entity entityOfConcern, double *elementCentroid);
@@ -166,6 +171,15 @@ void print_solution_statistics(const ZoltanAdapter& stkMeshAdapter, const Zoltan
   print_zoltan_statistics(stkMeshAdapter, ep, parallel_rank);
 }
 
+void compute_connectivity_weight(const stk::mesh::BulkData & bulk,  const BalanceSettings & balanceSettings);
+
+void compute_balance_diagnostics(const stk::mesh::BulkData & bulk, const stk::balance::BalanceSettings & balanceSettings);
+void compute_element_count_diagnostic(ElementCountDiagnostic & diag, const stk::mesh::BulkData & bulk, int rank);
+void compute_total_element_weight_diagnostic(TotalElementWeightDiagnostic & diag, const stk::mesh::BulkData & bulk,
+                                             const stk::balance::BalanceSettings & balanceSettings,
+                                             const stk::mesh::Field<double> & weightField, int rank);
+
+
 class EnableAura
 {
 public:
@@ -177,7 +191,7 @@ private:
   bool m_weTurnedOnAura;
 };
 
-}
-}
-}
+} // namespace internal
+} // namespace balance
+} // namespace stk
 #endif /* PRIVATEDECLARATIONS_HPP_ */

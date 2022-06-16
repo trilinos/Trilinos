@@ -22,9 +22,9 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/DataTraits.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/TopologyDimensions.hpp>
@@ -82,8 +82,11 @@
 
         QuadFixture( stk::ParallelMachine pm ,
                      unsigned nx , unsigned ny, bool generate_sidesets_in, bool debug_geom_side_sets_as_blocks_in=false )
-          : meta_data(2, get_entity_rank_names(2) ),
-            bulk_data(  meta_data, pm ),
+          : bulk_data_ptr(stk::mesh::MeshBuilder(pm).set_spatial_dimension(2)
+                                                    .set_entity_rank_names(get_entity_rank_names(2))
+                                                    .create()),
+            bulk_data(*bulk_data_ptr),
+            meta_data(bulk_data_ptr->mesh_meta_data()),
             quad_part( meta_data.declare_part("block_1", stk::topology::ELEMENT_RANK ) ),
             coord_field( meta_data.declare_field<CoordinatesFieldType>(stk::topology::NODE_RANK, "coordinates") ),
             NX( nx ),
@@ -100,12 +103,11 @@
           stk::io::put_io_part_attribute(quad_part);
 
           //put coord-field on all nodes:
-          stk::mesh::FieldTraits<CoordinatesFieldType>::data_type* init_np = nullptr; // gcc 4.8 hack
           put_field_on_mesh(
                     coord_field,
                     meta_data.universal_part(),
                     SpatialDim,
-                    init_np
+                    nullptr
                     );
 
 #if PERCEPT_QF_USE_COORD_GATHER_FIELD
@@ -300,8 +302,9 @@
 
         }
 
-        stk::mesh::MetaData    meta_data ;
-        stk::mesh::BulkData    bulk_data ;
+        std::shared_ptr<stk::mesh::BulkData> bulk_data_ptr;
+        stk::mesh::BulkData&   bulk_data ;
+        stk::mesh::MetaData&   meta_data ;
         stk::mesh::Part      & quad_part ;
         CoordinatesFieldType       & coord_field ;
         const unsigned         NX ;

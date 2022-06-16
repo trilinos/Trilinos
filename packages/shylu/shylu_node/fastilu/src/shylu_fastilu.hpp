@@ -150,6 +150,12 @@ class FastILUPrec
         OrdinalArrayMirror lColIdx_;
         OrdinalArrayMirror lRowMap_;
 
+        //Lower triangular factor, without (unit) diagonals,
+        // for TRSV (not SpTRSV)
+        ScalarArrayHost lVal_trsv_;
+        OrdinalArrayHost lColIdx_trsv_;
+        OrdinalArrayHost lRowMap_trsv_;
+
         //Upper triangular factor (CSC)
         ScalarArray uVal;
         OrdinalArray uColIdx;
@@ -167,6 +173,14 @@ class FastILUPrec
         ScalarArrayMirror utVal_;
         OrdinalArrayMirror utColIdx_;
         OrdinalArrayMirror utRowMap_;
+
+        //Upper triangular factor (CSR), with diagonal extracted out
+        // for TRSV (not SpTRSV)
+        bool doUnitDiag_TRSV;
+        ScalarArrayHost   dVal_trsv_;
+        ScalarArrayHost  utVal_trsv_;
+        OrdinalArrayHost utColIdx_trsv_;
+        OrdinalArrayHost utRowMap_trsv_;
 
         //Pointer to the copy of input A.
         // device
@@ -895,6 +909,7 @@ class FastILUPrec
             shift = shift_;
             blkSzILU = blkSzILU_;
             blkSz = blkSz_;
+            doUnitDiag_TRSV = true; // perform TRSV with unit diagonals
 
             const Scalar one = STS::one();
             onesVector = ScalarArray("onesVector", nRow_);
@@ -1143,7 +1158,7 @@ class FastILUPrec
             Timer.reset();
             #endif
             FastILUFunctor<Ordinal, Scalar, ExecSpace> iluFunctor(aRowMap_[nRows], blkSzILU,
-                    aRowMap, aColIdx, aRowIdx, aVal, 
+                    aRowMap, aRowIdx, aColIdx, aVal,
                     lRowMap, lColIdx, lVal, uRowMap, uColIdx, uVal, diagElems, omega);
             Ordinal extent = aRowMap_[nRows]/blkSzILU;
             if (aRowMap_[nRows]%blkSzILU != 0)
@@ -1196,6 +1211,51 @@ class FastILUPrec
                 std::cout << "  > sptrsv_symbolic : nnz(L)=" << lColIdx.extent(0) << " nnz(U)=" << utColIdx.extent(0)
                           << ", " << Timer.seconds() << " seconds" << std::endl;
                 #endif
+            } else if (sptrsv_algo == FastILU::SpTRSV::StandardHost && doUnitDiag_TRSV) {
+                // Prepare L for TRSV by removing unit-diagonals
+                lVal_trsv_   = ScalarArrayHost ("lVal_trsv",    lRowMap_[nRows]-nRows);
+                lColIdx_trsv_ = OrdinalArrayHost("lColIdx_trsv", lRowMap_[nRows]-nRows);
+                lRowMap_trsv_ = OrdinalArrayHost("lRowMap_trsv", nRows+1);
+
+                size_t nnzL = 0;
+                lRowMap_trsv_(0) = 0;
+                for (Ordinal i = 0; i < nRows; i++) {
+                    for (Ordinal k = lRowMap_(i); k < lRowMap_[i+1]; k++) {
+                        if (lColIdx_(k) != i) {
+                            lVal_trsv_(nnzL) = lVal_(k);
+                            lColIdx_trsv_(nnzL) = lColIdx_(k);
+                            nnzL++;
+                        }
+                    }
+                    lRowMap_trsv_(i+1)=nnzL;
+                }
+
+                // Prepare U by extracting and scaling D
+                dVal_trsv_     = ScalarArrayHost ("dVal_trsv",     nRows);
+                utVal_trsv_    = ScalarArrayHost ("utVal_trsv",    utRowMap_[nRows]-nRows);
+                utColIdx_trsv_ = OrdinalArrayHost("utColIdx_trsv", utRowMap_[nRows]-nRows);
+                utRowMap_trsv_ = OrdinalArrayHost("utRowMap_trsv", nRows+1);
+
+                size_t nnzU = 0;
+                utRowMap_trsv_(0) = 0;
+                for (Ordinal i = 0; i < nRows; i++) {
+                    for (Ordinal k = utRowMap_(i); k < utRowMap_[i+1]; k++) {
+                        if (utColIdx_(k) == i) {
+                            dVal_trsv_(i) = utVal_(k);
+                        } else {
+                            utVal_trsv_(nnzU) = utVal_(k);
+                            utColIdx_trsv_(nnzU) = utColIdx_(k);
+                            nnzU++;
+                        }
+                    }
+                    utRowMap_trsv_(i+1)=nnzU;
+                }
+                for (Ordinal i = 0; i < nRows; i++) {
+                    for (Ordinal k = utRowMap_trsv_(i); k < utRowMap_trsv_[i+1]; k++) {
+                        utVal_trsv_(k) = utVal_trsv_(k) / dVal_trsv_(i);
+                    }
+                    dVal_trsv_(i) = STS::one() / dVal_trsv_(i);
+                }
             }
             #ifdef FASTILU_TIMER
             std::cout << "  >> compute done " << Timer2.seconds() << " <<" << std::endl << std::endl;
@@ -1227,22 +1287,40 @@ class FastILUPrec
                 auto x_ = Kokkos::create_mirror(x2d);
                 auto y_ = Kokkos::create_mirror(y2d);
 
-                // wrap L into crsmat on host
-                graph_t static_graphL(lColIdx_, lRowMap_);
-                crsmat_t crsmatL("CrsMatrix", nRows, lVal_, static_graphL);
-
-                // wrap U into crsmat on host
-                graph_t static_graphU(utColIdx_, utRowMap_);
-                crsmat_t crsmatU("CrsMatrix", nRows, utVal_, static_graphU);
-
                 // copy x to host
                 Kokkos::deep_copy(x_, x2d);
 
-                // solve with L
-                KokkosSparse::trsv ("L", "N", "N", crsmatL, x_, y_);
-                // solve with U
-                KokkosSparse::trsv ("U", "N", "N", crsmatU, y_, x_);
+                if (doUnitDiag_TRSV) {
+                    // wrap L into crsmat on host
+                    graph_t static_graphL(lColIdx_trsv_, lRowMap_trsv_);
+                    crsmat_t crsmatL("CrsMatrix", nRows, lVal_trsv_, static_graphL);
 
+                    // wrap U into crsmat on host
+                    graph_t static_graphU(utColIdx_trsv_, utRowMap_trsv_);
+                    crsmat_t crsmatU("CrsMatrix", nRows, utVal_trsv_, static_graphU);
+
+                    // solve with L, unit-diag
+                    KokkosSparse::trsv ("L", "N", "U", crsmatL, x_, y_);
+                    // solve with D
+                    for (Ordinal i = 0; i < nRows; i++) {
+                        y_(i, 0) = dVal_trsv_(i) * y_(i, 0);
+                    }
+                    // solve with U, unit-diag
+                    KokkosSparse::trsv ("U", "N", "U", crsmatU, y_, x_);
+                } else {
+                    // wrap L into crsmat on host
+                    graph_t static_graphL(lColIdx_, lRowMap_);
+                    crsmat_t crsmatL("CrsMatrix", nRows, lVal_, static_graphL);
+
+                    // wrap U into crsmat on host
+                    graph_t static_graphU(utColIdx_, utRowMap_);
+                    crsmat_t crsmatU("CrsMatrix", nRows, utVal_, static_graphU);
+
+                    // solve with L
+                    KokkosSparse::trsv ("L", "N", "N", crsmatL, x_, y_);
+                    // solve with U
+                    KokkosSparse::trsv ("U", "N", "N", crsmatU, y_, x_);
+                }
                 // copy x to device
                 Kokkos::deep_copy(x2d, x_);
             } else if (sptrsv_algo == FastILU::SpTRSV::Standard) {

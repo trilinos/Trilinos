@@ -70,9 +70,7 @@ TEST(CommunicateFieldData, communicate)
   stk::mesh::BulkData& bulk = *bulkPtr;
 
   stk::mesh::Field<double>& field = meta.declare_field<double>(stk::topology::NODE_RANK, "field1");
-  stk::mesh::put_field_on_mesh(field, meta.universal_part(),
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
-
+  stk::mesh::put_field_on_mesh(field, meta.universal_part(), nullptr);
 
   stk::mesh::unit_test::setupKeyholeMesh2D_case1(bulk);
 
@@ -126,8 +124,7 @@ TEST(CommunicateFieldData, communicateMultipleGhostings)
   stk::mesh::BulkData& bulk = *bulkPtr;
 
   stk::mesh::Field<double>& field = meta.declare_field<double>(stk::topology::NODE_RANK, "field1");
-  stk::mesh::put_field_on_mesh(field, meta.universal_part(),
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(field, meta.universal_part(), nullptr);
 
   stk::mesh::unit_test::setupKeyholeMesh2D_case2(bulk);
 

@@ -69,7 +69,7 @@ namespace MueLu {
   RCP<const ParameterList> SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    SC one = Teuchos::ScalarTraits<SC>::one();
+    const SC one = Teuchos::ScalarTraits<SC>::one();
 
     validParamList->set<RCP<const FactoryBase> >("A"    , NoFactory::getRCP(), "Generating factory of the matrix A used for building Schur complement (must be a 2x2 blocked operator)");
     validParamList->set<RCP<const FactoryBase> >("Ainv" , Teuchos::null,       "Generating factory of the inverse matrix used in the Schur complement");
@@ -100,10 +100,9 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows() != 2 || bA->Cols() != 2, Exceptions::RuntimeError,
                                "MueLu::SchurComplementFactory::Build: input matrix A is a " << bA->Rows() << "x" << bA->Cols() << " block matrix. We expect a 2x2 blocked operator.");
 
-    RCP<Vector> Ainv = currentLevel.Get<RCP<Vector> >("Ainv", this->GetFactory("Ainv").get());
-
     // Calculate Schur Complement
-    auto S = ComputeSchurComplement(bA, Ainv);
+    RCP<Matrix> Ainv = currentLevel.Get<RCP<Matrix> >("Ainv", this->GetFactory("Ainv").get());
+    RCP<Matrix> S = ComputeSchurComplement(bA, Ainv);
 
     GetOStream(Statistics1) << "S has " << S->getGlobalNumRows() << "x" << S->getGlobalNumCols() << " rows and columns." << std::endl;
 
@@ -113,71 +112,77 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> 
-  SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeSchurComplement(RCP<BlockedCrsMatrix>& bA, RCP<Vector>& Ainv) const {
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+  SchurComplementFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeSchurComplement(RCP<BlockedCrsMatrix>& bA, RCP<Matrix>& Ainv) const {
 
-    typedef Teuchos::ScalarTraits<SC> STS;
-    SC zero = STS::zero(), one = STS::one();
+    using STS = Teuchos::ScalarTraits<SC>;
+    const SC zero = STS::zero(), one = STS::one();
 
     RCP<Matrix> A01 = bA->getMatrix(0,1);
     RCP<Matrix> A10 = bA->getMatrix(1,0);
     RCP<Matrix> A11 = bA->getMatrix(1,1);
 
     RCP<BlockedCrsMatrix> bA01 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A01);
-    bool isBlocked = (bA01 == Teuchos::null ? false : true);
+    const bool isBlocked = (bA01 == Teuchos::null ? false : true);
 
     const ParameterList& pL = GetParameterList();
-    SC omega = pL.get<Scalar>("omega");
+    const SC omega = pL.get<Scalar>("omega");
 
     TEUCHOS_TEST_FOR_EXCEPTION(omega == zero, Exceptions::RuntimeError,
                                "MueLu::SchurComplementFactory::Build: Scaling parameter omega must not be zero to avoid division by zero.");
 
-    RCP<Matrix> S = Teuchos::null;
+    RCP<Matrix> S = Teuchos::null; // Schur complement
+    RCP<Matrix> D = Teuchos::null; // temporary result for A10*Ainv*A01
+
     // only if the off-diagonal blocks A10 and A01 are non-zero we have to do the MM multiplication
     if(A01.is_null() == false && A10.is_null() == false) {
-
       // scale with -1/omega
       Ainv->scale(Teuchos::as<Scalar>(-one/omega));
-      // left scale matrix T with (scaled) diagonal Ainv
-      // Copy the value of A01 so we can do the left scale.
-      RCP<Matrix> T = MatrixFactory::BuildCopy(A01, false);
-      T->leftScale(*Ainv);
 
       // build Schur complement operator
       if (!isBlocked) {
-        TEUCHOS_TEST_FOR_EXCEPTION(T->getRangeMap()->isSameAs(*(A10->getDomainMap())) == false, Exceptions::RuntimeError,
-                                   "MueLu::SchurComplementFactory::Build: RangeMap of A01 and domain map of A10 are not the same.");
         RCP<ParameterList> myparams = rcp(new ParameterList);
         myparams->set("compute global constants", true);
-        S = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A10, false, *T, false, GetOStream(Statistics2),true,true,std::string("SchurComplementFactory"),myparams);
-      } else {
-        // nested blocking
-        RCP<BlockedCrsMatrix> bA10 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A10);
-        RCP<BlockedCrsMatrix> bT   = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(T);
 
-        TEUCHOS_TEST_FOR_EXCEPTION(bA01->Rows() != bA10->Cols(), Exceptions::RuntimeError,
-                                   "MueLu::SchurComplementFactory::Build: Block rows and cols of A01 and A10 are not compatible.");
-        TEUCHOS_TEST_FOR_EXCEPTION(bA01->Rows() != bT->Rows() || bA01->Cols() != bT->Cols(), Exceptions::RuntimeError,
-                                   "MueLu::SchurComplementFactory::Build: The scaled A01 operator has " << bT->Rows() << "x" << bT->Cols() << " blocks, "
-                                   "but should have " << bA01->Rows() << "x" << bA01->Cols() << " blocks.");
-        TEUCHOS_TEST_FOR_EXCEPTION(bA01->Cols() != bA10->Rows(), Exceptions::RuntimeError,
-                                   "MueLu::SchurComplementFactory::Build: Block rows and cols of A01 and A10 are not compatible.");
+        // -1/omega*Ainv*A01
+        TEUCHOS_TEST_FOR_EXCEPTION(A01->getRangeMap()->isSameAs(*(Ainv->getDomainMap())) == false, Exceptions::RuntimeError,
+                                   "MueLu::SchurComplementFactory::Build: RangeMap of A01 and domain map of Ainv are not the same.");
+        RCP<Matrix> C = MatrixMatrix::Multiply(*Ainv, false, *A01, false, GetOStream(Statistics2), true, true, std::string("SchurComplementFactory"), myparams);
 
-        S = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixMultiplyBlock(*bA10, false, *bT, false, GetOStream(Statistics2));
+        // -1/omega*A10*Ainv*A01
+        TEUCHOS_TEST_FOR_EXCEPTION(A01->getRangeMap()->isSameAs(*(A10->getDomainMap())) == false, Exceptions::RuntimeError,
+                                   "MueLu::SchurComplementFactory::Build: RangeMap of A10 and domain map A01 are not the same.");
+        D = MatrixMatrix::Multiply(*A10, false, *C, false, GetOStream(Statistics2), true, true, std::string("SchurComplementFactory"), myparams);
       }
+      else {
+        // nested blocking
+        auto bA10  = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A10);
+        auto bAinv = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Ainv);
+        TEUCHOS_TEST_FOR_EXCEPTION(bAinv == Teuchos::null, Exceptions::RuntimeError,
+                                   "MueLu::SchurComplementFactory::Build: Casting Ainv to BlockedCrsMatrix not possible.");
 
+        // -1/omega*bAinv*bA01
+        TEUCHOS_TEST_FOR_EXCEPTION(bA01->Rows() != bAinv->Cols(), Exceptions::RuntimeError,
+                                   "MueLu::SchurComplementFactory::Build: Block rows and cols of bA01 and bAinv are not compatible.");
+        RCP<BlockedCrsMatrix> C = MatrixMatrix::TwoMatrixMultiplyBlock(*bAinv, false, *bA01, false, GetOStream(Statistics2));
+
+        // -1/omega*A10*Ainv*A01
+        TEUCHOS_TEST_FOR_EXCEPTION(bA10->Rows() != bA01->Cols(), Exceptions::RuntimeError,
+                                   "MueLu::SchurComplementFactory::Build: Block rows and cols of bA10 and bA01 are not compatible.");
+        D = MatrixMatrix::TwoMatrixMultiplyBlock(*bA10, false, *C, false, GetOStream(Statistics2));
+      }
       if (!A11.is_null()) {
-        T = Teuchos::null;
-        Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*A11, false, one, *S, false, one, T, GetOStream(Statistics2));
-        T->fillComplete();
-        S.swap(T);
+        MatrixMatrix::TwoMatrixAdd(*A11, false, one, *D, false, one, S, GetOStream(Statistics2));
+        S->fillComplete();
 
         TEUCHOS_TEST_FOR_EXCEPTION(A11->getRangeMap()->isSameAs(*(S->getRangeMap())) == false, Exceptions::RuntimeError,
                                    "MueLu::SchurComplementFactory::Build: RangeMap of A11 and S are not the same.");
         TEUCHOS_TEST_FOR_EXCEPTION(A11->getDomainMap()->isSameAs(*(S->getDomainMap())) == false, Exceptions::RuntimeError,
                                    "MueLu::SchurComplementFactory::Build: DomainMap of A11 and S are not the same.");
       }
-
+      else {
+        S = MatrixFactory::BuildCopy(D);
+      }
     }
     else {
       if (!A11.is_null()) {

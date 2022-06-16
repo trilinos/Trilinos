@@ -50,7 +50,7 @@
 
 namespace Thyra {
 
-TEUCHOS_CLASS_TEMPLATE_INSTANT_REAL_SCALAR_TYPES(BelosLinearOpWithSolveFactory)
+TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(BelosLinearOpWithSolveFactory)
 
 } // namespace Thyra
 

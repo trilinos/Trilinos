@@ -35,9 +35,9 @@
 #ifndef stk_util_parallel_ParallelReduce_hpp
 #define stk_util_parallel_ParallelReduce_hpp
 
+#include "stk_util/stk_config.h"             // for STK_HAS_MPI
 #include "stk_util/parallel/MPI.hpp"         // for Datatype, get_mpi_loc_op, Loc
 #include "stk_util/parallel/Parallel.hpp"    // for ParallelMachine, ompi_communicator_t, MPI_Op
-#include "stk_util/stk_config.h"             // for STK_HAS_MPI
 #include "stk_util/util/ReportHandler.hpp"   // for ThrowRequire
 #include "stk_util/util/SimpleArrayOps.hpp"  // for BitAnd, BitOr, Copy, Max, Min, Prod, Sum
 #include <cstddef>                           // for size_t

@@ -41,7 +41,7 @@ import argparse
 import multiprocessing
 import subprocess
 
-from LoadEnv import setenvironment
+import setenvironment
 import trilinosprhelpers
 
 
@@ -250,8 +250,8 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         Generate dummy command line arguments
         """
         args = copy.deepcopy(self.dummy_args())
-        args.pullrequest_build_name = "python-3"
-        args.genconfig_build_name = "python-3"
+        args.pullrequest_build_name = "Trilinos_PR_python3"
+        args.genconfig_build_name = "Trilinos_PR_python3"
         return args
 
 

@@ -115,6 +115,12 @@ namespace Teuchos
 {
   // BEGIN INT, FLOAT SPECIALIZATION IMPLEMENTATION //
 
+  std::complex<float> convert_Fortran_complex_to_CXX_complex(_Complex float val)
+  {
+    return reinterpret_cast<std::complex<float>&>(val);
+    // NOTE: The above is guaranteed to be okay given the C99 and C++11 standards
+  }
+
   void LAPACK<int, float>::PTTRF(const int& n, float* d, float* e, int* info) const
   { SPTTRF_F77(&n,d,e,info); }
 
@@ -523,7 +529,11 @@ namespace Teuchos
 
   // BEGIN INT, DOUBLE SPECIALIZATION IMPLEMENTATION //
 
-
+  std::complex<double> convert_Fortran_complex_to_CXX_complex(_Complex double val)
+  {
+    return reinterpret_cast<std::complex<double>&>(val);
+    // NOTE: The above is guaranteed to be okay given the C99 and C++11 standards
+  }
 
   void LAPACK<int, double>::PTTRF(const int& n, double* d, double* e, int* info) const
   { DPTTRF_F77(&n,d,e,info); }
@@ -1360,7 +1370,7 @@ namespace Teuchos
 #ifdef HAVE_TEUCHOS_LAPACKLARND
   std::complex<float> LAPACK<int, std::complex<float> >::LARND( const int& idist, int* seed ) const
   {
-    return(CLARND_F77(&idist, seed));
+    return(convert_Fortran_complex_to_CXX_complex(CLARND_F77(&idist, seed)));
   }
 #endif
 
@@ -1782,7 +1792,7 @@ namespace Teuchos
 #ifdef HAVE_TEUCHOS_LAPACKLARND
   std::complex<double> LAPACK<int, std::complex<double> >::LARND( const int& idist, int* seed ) const
   {
-    return(ZLARND_F77(&idist, seed));
+    return(convert_Fortran_complex_to_CXX_complex(ZLARND_F77(&idist, seed)));
   }
 #endif
 

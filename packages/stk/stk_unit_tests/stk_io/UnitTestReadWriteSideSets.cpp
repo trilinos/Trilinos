@@ -210,9 +210,9 @@ protected:
     coordField = &get_meta().declare_field<VecField>(stk::topology::NODE_RANK, "coordinates");
     get_meta().set_coordinate_field(coordField);
     ssField = &get_meta().declare_field<VecField>(stk::topology::FACE_RANK, "ssfield");
-    stk::mesh::put_field_on_mesh(*coordField, get_meta().universal_part(), 3, static_cast<double*>(nullptr));
-    stk::mesh::put_field_on_mesh(*ssField, *sideBlock1, 4, static_cast<double*>(nullptr));
-    stk::mesh::put_field_on_mesh(*ssField, *sideBlock2, 3, static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(*coordField, get_meta().universal_part(), 3, nullptr);
+    stk::mesh::put_field_on_mesh(*ssField, *sideBlock1, 4, nullptr);
+    stk::mesh::put_field_on_mesh(*ssField, *sideBlock2, 3, nullptr);
   }
 
   void create_hex_with_face()
@@ -889,9 +889,9 @@ protected:
     coordField = &get_meta().declare_field<double>(stk::topology::NODE_RANK, "coordinates");
     get_meta().set_coordinate_field(coordField);
     ssField = &get_meta().declare_field<double>(stk::topology::FACE_RANK, "ssfield");
-    stk::mesh::put_field_on_mesh(*coordField, get_meta().universal_part(), 3, static_cast<double*>(nullptr));
-    stk::mesh::put_field_on_mesh(*ssField, *sideBlock1, 4, static_cast<double*>(nullptr));
-    stk::mesh::put_field_on_mesh(*ssField, *sideBlock2, 3, static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(*coordField, get_meta().universal_part(), 3, nullptr);
+    stk::mesh::put_field_on_mesh(*ssField, *sideBlock1, 4, nullptr);
+    stk::mesh::put_field_on_mesh(*ssField, *sideBlock2, 3, nullptr);
   }
 
   void create_hex_with_face()

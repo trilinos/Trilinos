@@ -42,6 +42,25 @@ IF(Panzer_BUILD_PAPI_SUPPORT)
   APPEND_GLOB(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/papi/*.cpp)
 ENDIF()
 
+IF(NOT PANZER_HAVE_EPETRA)
+  LIST(REMOVE_ITEM SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Panzer_BlockedVector_Write_GlobalEvaluationData.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Panzer_EpetraVector_Write_GlobalEvaluationData.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Panzer_ModelEvaluator_Epetra.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/Panzer_GatherSolution_BlockedEpetra.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/Panzer_GatherSolution_Epetra.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/Panzer_GatherTangent_BlockedEpetra.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/Panzer_GatherTangent_Epetra.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/Panzer_ScatterDirichletResidual_BlockedEpetra.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/Panzer_ScatterDirichletResidual_Epetra.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/Panzer_ScatterResidual_BlockedEpetra.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/evaluators/Panzer_ScatterResidual_Epetra.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lof/Panzer_BlockedEpetraLinearObjContainer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lof/Panzer_BlockedEpetraLinearObjFactory.cpp
+  )
+ENDIF()
+
 #
 # C) Define the targets for package's library(s)
 #

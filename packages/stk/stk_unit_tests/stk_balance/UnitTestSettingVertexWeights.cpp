@@ -22,7 +22,7 @@ public:
   {
     setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
     vertexWeightField = &get_meta().declare_field<double>(stk::topology::ELEMENT_RANK, "vertex_weights", 1);
-    stk::mesh::put_field_on_mesh(*vertexWeightField, get_meta().universal_part(), static_cast<double*>(nullptr));
+    stk::mesh::put_field_on_mesh(*vertexWeightField, get_meta().universal_part(), nullptr);
   }
 
   virtual ~VertexWeightSettings() {}

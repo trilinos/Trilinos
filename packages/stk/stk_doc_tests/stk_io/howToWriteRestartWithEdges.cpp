@@ -29,8 +29,7 @@ TEST(StkIoHowTo, WriteRestartWithEdges)
 
     stk::mesh::Part* part = &meta.declare_part_with_topology("edgeBlock", stk::topology::LINE_2);
     stk::mesh::Field<double>& edgeField = meta.declare_field<double>(stk::topology::EDGE_RANK, "edgeField", numStates);
-    stk::mesh::put_field_on_mesh(edgeField, meta.universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(edgeField, meta.universal_part(), nullptr);
     stk::io::put_edge_block_io_part_attribute(*part);
     stk::io::fill_mesh("generated:1x1x1", *bulk);
     stk::mesh::create_edges(*bulk, meta.universal_part(), part);
@@ -55,8 +54,7 @@ TEST(StkIoHowTo, WriteRestartWithEdges)
     meta.use_simple_fields();
 
     stk::mesh::Field<double>& edgeField = meta.declare_field<double>(stk::topology::EDGE_RANK, "edgeField", numStates);
-    stk::mesh::put_field_on_mesh(edgeField, meta.universal_part(),
-                                 (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+    stk::mesh::put_field_on_mesh(edgeField, meta.universal_part(), nullptr);
 
     stk::io::set_field_role(edgeField, Ioss::Field::TRANSIENT);
 

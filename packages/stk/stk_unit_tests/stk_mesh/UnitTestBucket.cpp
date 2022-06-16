@@ -106,8 +106,8 @@ TEST(UnitTestingOfBucket, testBucket)
   ScalarFieldType & temperature = meta.declare_field<double>(stk::topology::NODE_RANK, "temperature", number_of_states);
   ScalarFieldType & volume =  meta.declare_field<double>(stk::topology::ELEMENT_RANK, "volume", number_of_states);
   Part & universal     = meta.universal_part ();
-  put_field_on_mesh ( temperature , universal , (stk::mesh::FieldTraits<ScalarFieldType>::data_type*) nullptr);
-  put_field_on_mesh ( volume , universal , (stk::mesh::FieldTraits<ScalarFieldType>::data_type*) nullptr);
+  put_field_on_mesh ( temperature , universal , nullptr);
+  put_field_on_mesh ( volume , universal , nullptr);
   meta.commit();
 
   // Generate the mesh

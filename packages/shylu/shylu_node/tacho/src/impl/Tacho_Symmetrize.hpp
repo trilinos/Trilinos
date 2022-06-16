@@ -9,13 +9,12 @@
 
 namespace Tacho {
 
-  ///
-  /// Symmetrize
-  ///
+///
+/// Symmetrize
+///
 
-  /// various implementation for different uplo and algo parameters
-  template<typename ArgUplo, typename ArgAlgo>
-  struct Symmetrize;
-}
+/// various implementation for different uplo and algo parameters
+template <typename ArgUplo, typename ArgAlgo> struct Symmetrize;
+} // namespace Tacho
 
 #endif
