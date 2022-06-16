@@ -103,7 +103,6 @@ namespace Adelus {
   /// Adelus FactorSolve
   /// Factors and solves the dense matrix
 
-  /// \param ahandle (In)     -- handle that contains metadata needed by the Adelus solver
   /// \param AA (InOut)       -- Kokkos View that has the matrix and rhs packed (Note: matrix and rhs are overwritten)
   /// \param my_rows_ (In)    -- number of rows of the matrix on this processor
   /// \param my_cols_ (In)    -- number of columns of the matrix on this processor
@@ -112,25 +111,24 @@ namespace Adelus {
   /// \param num_rhs (In)     -- number of right hand sides
   /// \param secs (Out)       -- factor and solve time in seconds
     
-  template<class HandleType, class ZRHSViewType>
+  template<class ZDView>
   inline
-  void FactorSolve( HandleType& ahandle,
-                    ZRHSViewType& AA,
+  void FactorSolve( ZDView AA,
                     int my_rows_,
                     int my_cols_,
                     int* matrix_size,
                     int* num_procsr,
                     int* num_rhs,
                     double* secs ) {
+    int rank;
 
-    int rank = ahandle.get_myrank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	
 #ifdef PRINT_STATUS
     printf("FactorSolve (Kokkos View interface) in rank %d -- my_rows %u , my_cols %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
-    lusolve_(ahandle,
-             AA,
+    lusolve_(AA,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -141,7 +139,6 @@ namespace Adelus {
   /// Adelus Factor
   /// Factors the dense matrix for later solve
 
-  /// \param ahandle (In)     -- handle that contains metadata needed by the Adelus solver
   /// \param AA (InOut)       -- Kokkos View that has the matrix and rhs packed (Note: matrix and rhs are overwritten)
   /// \param permute (In)     -- Kokkos View that has the global pivot vector
   /// \param my_rows_ (In)    -- number of rows of the matrix on this processor
@@ -150,25 +147,24 @@ namespace Adelus {
   /// \param num_procsr (In)  -- number of processors for a row
   /// \param secs (Out)       -- factor and solve time in seconds
 
-  template<class HandleType, class ZViewType, class PViewType>
+  template<class ZDView, class IDView>
   inline
-  void Factor( HandleType& ahandle,
-               ZViewType& AA,
-               PViewType& permute,
+  void Factor( ZDView AA,
+               IDView permute,
                int my_rows_,
                int my_cols_,
                int* matrix_size,
                int* num_procsr,
                double* secs ) {
+    int rank;
 
-    int rank = ahandle.get_myrank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 #ifdef PRINT_STATUS
     printf("Factor (Kokkos View interface) in rank %d -- my_rows %u , my_cols %u , matrix_size %u, num_procs_per_row %u\n", rank, my_rows_, my_cols_, *matrix_size, *num_procsr);
 #endif
 
-    lu_(ahandle,
-        AA,
+    lu_(AA,
         permute,
         matrix_size,
         num_procsr,
@@ -177,9 +173,8 @@ namespace Adelus {
   }
 
   /// Adelus Solve
-  /// Solves the previously factored dense matrix for provided RHS
+  /// Solves the previously factored dense matrix for provided RHS 
 
-  /// \param ahandle (In)     -- handle that contains metadata needed by the Adelus solver
   /// \param AA (In)          -- Kokkos View that has the LU-factorized matrix
   /// \param BB (InOut)       -- Kokkos View that has the rhs and solution (Note: rhs are overwritten)
   /// \param permute (In)     -- Kokkos View that has the global pivot vector
@@ -189,28 +184,26 @@ namespace Adelus {
   /// \param num_procsr (In)  -- number of processors for a row
   /// \param secs (Out)       -- factor and solve time in seconds
 
-  template<class HandleType, class ZViewType,
-           class RHSViewType, class PViewType>
+  template<class ZDView, class BDView, class IDView>
   inline
-  void Solve( HandleType& ahandle,
-              ZViewType& AA,
-              RHSViewType& BB,
-              PViewType& permute,
+  void Solve( ZDView AA,
+              BDView BB,
+              IDView permute,
               int my_rows_,
               int my_cols_,
               int* matrix_size,
               int* num_procsr,
               int* num_rhs,
               double* secs ) {
+    int rank;
 
-    int rank = ahandle.get_myrank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 #ifdef PRINT_STATUS
     printf("Solve (Kokkos View interface) in rank %d -- my_rows %u , my_cols %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
-    solve_(ahandle,
-           AA,
+    solve_(AA,
            BB,
            permute,
            num_rhs,
@@ -222,10 +215,8 @@ namespace Adelus {
   /// Adelus FactorSolve_devPtr
   /// Matrix and rhs are packed and passed as device pointer
 
-  template<class HandleType>
   inline
-  void FactorSolve_devPtr( HandleType& ahandle,
-                           ADELUS_DATA_TYPE* AA,
+  void FactorSolve_devPtr( ADELUS_DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
                            int my_rhs_,
@@ -233,8 +224,9 @@ namespace Adelus {
                            int* num_procsr,
                            int* num_rhs,
                            double* secs ) {
+    int rank;
 
-    int rank = ahandle.get_myrank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
 
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
@@ -253,8 +245,7 @@ namespace Adelus {
     printf("FactorSolve_devPtr (double complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
-    lusolve_(ahandle,
-             AA_i,
+    lusolve_(AA_i,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -266,10 +257,8 @@ namespace Adelus {
   /// Adelus FactorSolve_hostPtr
   /// Matrix and rhs are packed and passed as host pointer
 
-  template<class HandleType>
   inline
-  void FactorSolve_hostPtr( HandleType& ahandle,
-                            ADELUS_DATA_TYPE* AA,
+  void FactorSolve_hostPtr( ADELUS_DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,
                             int my_rhs_,
@@ -277,8 +266,9 @@ namespace Adelus {
                             int* num_procsr,
                             int* num_rhs,
                             double* secs ) {
+    int rank;
 
-    int rank = ahandle.get_myrank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
 
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
     typedef Kokkos::View<Kokkos::complex<double>**,
@@ -305,8 +295,7 @@ namespace Adelus {
 
     Kokkos::deep_copy( AA_i_dev, AA_i );
 
-    lusolve_(ahandle,
-             AA_i_dev,
+    lusolve_(AA_i_dev,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -318,8 +307,7 @@ namespace Adelus {
     printf("FactorSolve_hostPtr with host solve (double complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
-    lusolve_(ahandle,
-             AA_i,
+    lusolve_(AA_i,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -333,10 +321,8 @@ namespace Adelus {
   /// Adelus FactorSolve_devPtr
   /// Matrix and rhs are packed and passed as device pointer
 
-  template<class HandleType>
   inline
-  void FactorSolve_devPtr( HandleType& ahandle,
-                           ADELUS_DATA_TYPE* AA,
+  void FactorSolve_devPtr( ADELUS_DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
                            int my_rhs_,
@@ -344,8 +330,9 @@ namespace Adelus {
                            int* num_procsr,
                            int* num_rhs,
                            double* secs ) {
+    int rank;
 
-    int rank = ahandle.get_myrank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
 
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
@@ -364,8 +351,7 @@ namespace Adelus {
     printf("FactorSolve_devPtr (double pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
-    lusolve_(ahandle,
-             AA_i,
+    lusolve_(AA_i,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -377,10 +363,8 @@ namespace Adelus {
   /// Adelus FactorSolve_hostPtr
   /// Matrix and rhs are packed and passed as host pointer
 
-  template<class HandleType>
   inline
-  void FactorSolve_hostPtr( HandleType& ahandle,
-                            ADELUS_DATA_TYPE* AA,
+  void FactorSolve_hostPtr( ADELUS_DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,
                             int my_rhs_,
@@ -388,8 +372,9 @@ namespace Adelus {
                             int* num_procsr,
                             int* num_rhs,
                             double* secs ) {
+    int rank;
 
-    int rank = ahandle.get_myrank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
 
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
     typedef Kokkos::View<double**,
@@ -416,8 +401,7 @@ namespace Adelus {
 
     Kokkos::deep_copy( AA_i_dev, AA_i );
 
-    lusolve_(ahandle,
-             AA_i_dev,
+    lusolve_(AA_i_dev,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -429,8 +413,7 @@ namespace Adelus {
     printf("FactorSolve_hostPtr with host solve (double pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
-    lusolve_(ahandle,
-             AA_i,
+    lusolve_(AA_i,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -444,10 +427,8 @@ namespace Adelus {
   /// Adelus FactorSolve_devPtr
   /// Matrix and rhs are packed and passed as device pointer
 
-  template<class HandleType>
   inline
-  void FactorSolve_devPtr( HandleType& ahandle,
-                           ADELUS_DATA_TYPE* AA,
+  void FactorSolve_devPtr( ADELUS_DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
                            int my_rhs_,
@@ -455,8 +436,9 @@ namespace Adelus {
                            int* num_procsr,
                            int* num_rhs,
                            double* secs ) {
+    int rank;
 
-    int rank = ahandle.get_myrank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
 
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
@@ -475,8 +457,7 @@ namespace Adelus {
     printf("FactorSolve_devPtr (float complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
-    lusolve_(ahandle,
-             AA_i,
+    lusolve_(AA_i,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -488,10 +469,8 @@ namespace Adelus {
   /// Adelus FactorSolve_hostPtr
   /// Matrix and rhs are packed and passed as host pointer
 
-  template<class HandleType>
   inline
-  void FactorSolve_hostPtr( HandleType& ahandle,
-                            ADELUS_DATA_TYPE* AA,
+  void FactorSolve_hostPtr( ADELUS_DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,
                             int my_rhs_,
@@ -499,8 +478,9 @@ namespace Adelus {
                             int* num_procsr,
                             int* num_rhs,
                             double* secs ) {
+    int rank;
 
-    int rank = ahandle.get_myrank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
 
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
     typedef Kokkos::View<Kokkos::complex<float>**,
@@ -527,8 +507,7 @@ namespace Adelus {
 
     Kokkos::deep_copy( AA_i_dev, AA_i );
 
-    lusolve_(ahandle,
-             AA_i_dev,
+    lusolve_(AA_i_dev,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -540,8 +519,7 @@ namespace Adelus {
     printf("FactorSolve_hostPtr with host solve (float complex pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
-    lusolve_(ahandle,
-             AA_i,
+    lusolve_(AA_i,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -555,10 +533,8 @@ namespace Adelus {
   /// Adelus FactorSolve_devPtr
   /// Matrix and rhs are packed and passed as device pointer
 
-  template<class HandleType>
   inline
-  void FactorSolve_devPtr( HandleType& ahandle,
-                           ADELUS_DATA_TYPE* AA,
+  void FactorSolve_devPtr( ADELUS_DATA_TYPE* AA,
                            int my_rows_,
                            int my_cols_,
                            int my_rhs_,
@@ -566,8 +542,9 @@ namespace Adelus {
                            int* num_procsr,
                            int* num_rhs,
                            double* secs ) {
+    int rank;
 
-    int rank = ahandle.get_myrank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
 
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
@@ -586,8 +563,7 @@ namespace Adelus {
     printf("FactorSolve_devPtr (float pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
-    lusolve_(ahandle,
-             AA_i,
+    lusolve_(AA_i,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -599,10 +575,8 @@ namespace Adelus {
   /// Adelus FactorSolve_hostPtr
   /// Matrix and rhs are packed and passed as host pointer
 
-  template<class HandleType>
   inline
-  void FactorSolve_hostPtr( HandleType& ahandle,
-                            ADELUS_DATA_TYPE* AA,
+  void FactorSolve_hostPtr( ADELUS_DATA_TYPE* AA,
                             int my_rows_,
                             int my_cols_,
                             int my_rhs_,
@@ -610,8 +584,9 @@ namespace Adelus {
                             int* num_procsr,
                             int* num_rhs,
                             double* secs ) {
+    int rank;
 
-    int rank = ahandle.get_myrank();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
 
     { // Note: To avoid segmentation fault when FactorSolve is called multiple times with the unmanaged View, it's safest to make sure unmanaged View falls out of scope before freeing its memory.
     typedef Kokkos::View<float**,
@@ -638,8 +613,7 @@ namespace Adelus {
 
     Kokkos::deep_copy( AA_i_dev, AA_i );
 
-    lusolve_(ahandle,
-             AA_i_dev,
+    lusolve_(AA_i_dev,
              matrix_size,
              num_procsr,
              num_rhs,
@@ -651,8 +625,7 @@ namespace Adelus {
     printf("FactorSolve_hostPtr with host solve (float pointer interface) in rank %d -- my_rows %u , my_cols %u, my_rhs %u , matrix_size %u, num_procs_per_row %u, num_rhs %u\n", rank, my_rows_, my_cols_, my_rhs_, *matrix_size, *num_procsr, *num_rhs);
 #endif
 
-    lusolve_(ahandle,
-             AA_i,
+    lusolve_(AA_i,
              matrix_size,
              num_procsr,
              num_rhs,

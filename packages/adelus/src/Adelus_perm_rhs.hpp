@@ -70,9 +70,9 @@
 
 namespace Adelus {
   
-  template<class ZViewType, class PViewType>
+  template<class HandleType, class ZViewType, class PViewType>
   inline
-  void permute_rhs(ZViewType& RHS, PViewType& permute, int& my_num_rhs) {
+  void permute_rhs(HandleType& ahandle, ZViewType& RHS, PViewType& permute, int& my_num_rhs) {
     using value_type      = typename ZViewType::value_type;
     using execution_space = typename ZViewType::device_type::execution_space ;
     using memory_space    = typename ZViewType::device_type::memory_space ;

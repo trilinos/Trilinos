@@ -335,12 +335,16 @@ int main(int argc, char *argv[])
 
   Kokkos::deep_copy( subview(A,Kokkos::ALL(),mycols), subview(h_A,Kokkos::ALL(),mycols) );
 
+  // Create handle
+  Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space> 
+    ahandle(MPI_COMM_WORLD, matrix_size, nprocs_per_row, numrhs );
+
   // Now Solve the Problem
 
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Solve   ****" << std::endl;
 
-  Adelus::FactorSolve (A, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
+  Adelus::FactorSolve (ahandle, A, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
 
   if( rank == 0) {
     std::cout << " ----  Solution time  ----   " << secs << "  in secs. " << std::endl;

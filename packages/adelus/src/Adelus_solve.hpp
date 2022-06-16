@@ -104,9 +104,9 @@ void elimination_rhs(int N, ZView& ptr2, RHSView& ptr3, DView& ptr4, int act_col
 #endif
 }
 
-template<class ZViewType, class RHSViewType>
+template<class HandleType, class ZViewType, class RHSViewType>
 inline
-void back_solve6(ZViewType& Z, RHSViewType& RHS)
+void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 {
   using value_type      = typename ZViewType::value_type;
 #ifdef PRINT_STATUS
@@ -324,9 +324,9 @@ void back_solve6(ZViewType& Z, RHSViewType& RHS)
         type[0]  = SOROWTYPE+j;
 
 #if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-        MPI_Irecv(reinterpret_cast<char *>(h_row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], MPI_COMM_WORLD, &msgrequest);
+        MPI_Irecv(reinterpret_cast<char *>(h_row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], ahandle.get_comm(), &msgrequest);
 #else
-        MPI_Irecv(reinterpret_cast<char *>(  row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], MPI_COMM_WORLD, &msgrequest);
+        MPI_Irecv(reinterpret_cast<char *>(  row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], ahandle.get_comm(), &msgrequest);
 #endif
 
         n_rhs_this = bytes[0]/sizeof(ADELUS_DATA_TYPE)/my_rows;
@@ -341,9 +341,9 @@ void back_solve6(ZViewType& Z, RHSViewType& RHS)
         type[1]  = SOROWTYPE+j;
 
 #if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-        MPI_Send(reinterpret_cast<char *>(h_rhs.data()), bytes[1], MPI_CHAR, dest[1], type[1], MPI_COMM_WORLD);
+        MPI_Send(reinterpret_cast<char *>(h_rhs.data()), bytes[1], MPI_CHAR, dest[1], type[1], ahandle.get_comm());
 #else //GPU-aware MPI
-        MPI_Send(reinterpret_cast<char *>(RHS.data()), bytes[1], MPI_CHAR, dest[1], type[1], MPI_COMM_WORLD);
+        MPI_Send(reinterpret_cast<char *>(RHS.data()), bytes[1], MPI_CHAR, dest[1], type[1], ahandle.get_comm());
 #endif
 
         MPI_Wait(&msgrequest,&msgstatus);

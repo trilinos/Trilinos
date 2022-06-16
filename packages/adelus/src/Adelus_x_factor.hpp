@@ -67,9 +67,10 @@
 
 namespace Adelus {
 
-template<class ZViewType, class PViewType>
+template<class HandleType, class ZViewType, class PViewType>
 inline
-void lu_(ZViewType& Z, PViewType& permute, int *matrix_size, int *num_procsr, double *secs)
+void lu_(HandleType& ahandle, ZViewType& Z, PViewType& permute,
+         int *matrix_size, int *num_procsr, double *secs)
 {
 #ifdef ADELUS_HAVE_TIME_MONITOR
   using Teuchos::TimeMonitor;
@@ -86,8 +87,8 @@ void lu_(ZViewType& Z, PViewType& permute, int *matrix_size, int *num_procsr, do
   int totmem;
 
   // Determine who I am (me ) and the total number of nodes (nprocs_cube)
-  MPI_Comm_size(MPI_COMM_WORLD,&nprocs_cube);
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  MPI_Comm_size(ahandle.get_comm(),&nprocs_cube);
+  MPI_Comm_rank(ahandle.get_comm(), &me);
 
   nrows_matrix = *matrix_size;
   ncols_matrix = *matrix_size;
@@ -101,9 +102,9 @@ void lu_(ZViewType& Z, PViewType& permute, int *matrix_size, int *num_procsr, do
   myrow = mesh_row(me);
   mycol = mesh_col(me);
 
-  MPI_Comm_split(MPI_COMM_WORLD,myrow,mycol,&row_comm);
+  MPI_Comm_split(ahandle.get_comm(),myrow,mycol,&row_comm);
 
-  MPI_Comm_split(MPI_COMM_WORLD,mycol,myrow,&col_comm);
+  MPI_Comm_split(ahandle.get_comm(),mycol,myrow,&col_comm);
 
   // Distribution for the matrix on me
   my_first_col = mesh_col(me);
@@ -153,7 +154,8 @@ void lu_(ZViewType& Z, PViewType& permute, int *matrix_size, int *num_procsr, do
   {
     TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: factor"));
 #endif
-    factor(Z,
+    factor(ahandle,
+           Z,
            col1_view,
            row1_view,
            row2_view, 
@@ -172,11 +174,11 @@ void lu_(ZViewType& Z, PViewType& permute, int *matrix_size, int *num_procsr, do
     typename ZViewType::HostMirror h_Z = Kokkos::create_mirror_view( Z );
     Kokkos::deep_copy (h_Z, Z);
   
-    permute_mat(h_Z, lpiv_view, permute);
+    permute_mat(ahandle, h_Z, lpiv_view, permute);
 
     Kokkos::deep_copy (Z, h_Z);
 #else
-    permute_mat(Z, lpiv_view, permute);
+    permute_mat(ahandle, Z, lpiv_view, permute);
 #endif
 #ifdef ADELUS_HAVE_TIME_MONITOR
   }

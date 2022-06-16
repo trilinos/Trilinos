@@ -101,9 +101,9 @@ namespace Adelus {
   
   //  Permutes -- unwraps the torus-wrap for the solution
   //              using the communication buffer
-  template<class ZDView>
+  template<class HandleType, class ZDView>
   inline
-  void perm1_(ZDView& ZV, int *num_my_rhs) {
+  void perm1_(HandleType& ahandle, ZDView& ZV, int *num_my_rhs) {
   
     int i;
     int my_rhs_;
@@ -222,14 +222,14 @@ namespace Adelus {
             bytes = (my_rhs_ + 1)*sizeof(ADELUS_DATA_TYPE);
   
             MPI_Irecv( (char *)(reinterpret_cast<ADELUS_DATA_TYPE *>(rhs_temp.data())+next_s),bytes,MPI_CHAR,MPI_ANY_SOURCE,
-                  MPI_ANY_TAG,MPI_COMM_WORLD,&msgrequest);
+                  MPI_ANY_TAG,ahandle.get_comm(),&msgrequest);
 
            auto sub_ZV = subview(ZV, ptr1_idx, Kokkos::ALL());     				
            zcopy_wr_local_index(my_rhs_, sub_ZV, temp_s, local_index);
   
            type = PERMTYPE+change_send;
            MPI_Send((char *)(reinterpret_cast<ADELUS_DATA_TYPE *>(temp_s.data())),bytes,MPI_CHAR,dest,
-                   type,MPI_COMM_WORLD);
+                   type,ahandle.get_comm());
            change_send++;
   
            next_s = change_send * (my_rhs_+1);
@@ -286,9 +286,9 @@ namespace Adelus {
   
   //  Permutes -- unwraps the torus-wrap for the solution
   //              using the communication buffer
-  template<class ZDView>
+  template<class HandleType, class ZDView>
   inline
-  void perm1_(ZDView& ZV, int *num_my_rhs) {
+  void perm1_(HandleType& ahandle, ZDView& ZV, int *num_my_rhs) {
   
     int i;
     int my_rhs_;

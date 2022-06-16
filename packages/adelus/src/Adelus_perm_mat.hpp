@@ -69,9 +69,9 @@
 
 namespace Adelus {
 
-  template<class PViewType>
+  template<class HandleType, class PViewType>
   inline 
-  void exchange_pivots(PViewType& lpiv_view, PViewType& permute) {
+  void exchange_pivots(HandleType& ahandle, PViewType& lpiv_view, PViewType& permute) {
   
     MPI_Status msgstatus;
     int rank_row,k_row,pivot_col;
@@ -84,23 +84,23 @@ namespace Adelus {
         rank_row = k_row*nprocs_row;
         if (me == pivot_col) {
           int j=k/nprocs_row;
-          MPI_Send(lpiv_view.data()+j,1,MPI_INT,rank_row,0,MPI_COMM_WORLD);
+          MPI_Send(lpiv_view.data()+j,1,MPI_INT,rank_row,0,ahandle.get_comm());
         }
         if (me == rank_row) {
           int i=k/nprocs_col;
-          MPI_Recv(permute.data()+i,1,MPI_INT,pivot_col,0,MPI_COMM_WORLD,&msgstatus);
+          MPI_Recv(permute.data()+i,1,MPI_INT,pivot_col,0,ahandle.get_comm(),&msgstatus);
         }
       }
     }
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(ahandle.get_comm());
     // Broadcast to the rest of the processors in row_comm
     MPI_Bcast(permute.data(),my_rows,MPI_INT,0,row_comm);
 
   }// End of function exchange_pivots
   
-  template<class ZViewType, class PViewType>
+  template<class HandleType, class ZViewType, class PViewType>
   inline
-  void permute_mat(ZViewType& Z, PViewType& lpiv_view, PViewType& permute) {
+  void permute_mat(HandleType& ahandle, ZViewType& Z, PViewType& lpiv_view, PViewType& permute) {
     using value_type  = typename ZViewType::value_type;
 #ifndef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
     using execution_space = typename ZViewType::device_type::execution_space ;
@@ -138,7 +138,7 @@ namespace Adelus {
    t1 = MPI_Wtime();
 #endif
 
-    exchange_pivots(lpiv_view, permute);
+    exchange_pivots(ahandle, lpiv_view, permute);
 
 #ifdef GET_TIMING
     exchpivtime = MPI_Wtime()-t1;

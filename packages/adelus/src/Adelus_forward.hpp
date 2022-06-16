@@ -60,9 +60,9 @@
 
 namespace Adelus {
 
-template<class ZViewType, class RHSViewType>
+template<class HandleType, class ZViewType, class RHSViewType>
 inline
-void forward(ZViewType& Z, RHSViewType& RHS, int& my_num_rhs)
+void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, int& my_num_rhs)
 {
   using value_type      = typename ZViewType::value_type ;
   using execution_space = typename ZViewType::device_type::execution_space ;
@@ -152,7 +152,7 @@ void forward(ZViewType& Z, RHSViewType& RHS, int& my_num_rhs)
         KokkosBlas::gemm("N", "N", d_min_one, sub_pivot_col, ck, d_one, sub_rhs);
       }
     }
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(ahandle.get_comm());
   }// end of for (k=0; k<= nrows_matrix-2; k++)
 
 #ifdef GET_TIMING

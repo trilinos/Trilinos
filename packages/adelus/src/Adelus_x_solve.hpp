@@ -69,9 +69,10 @@
 
 namespace Adelus {
 
-template<class ZViewType, class RHSViewType, class PViewType>
+template<class HandleType, class ZViewType, class RHSViewType, class PViewType>
 inline
-void solve_(ZViewType& Z, RHSViewType& RHS, PViewType& permute, int *num_rhs, double *secs)
+void solve_(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, PViewType& permute,
+            int *num_rhs, double *secs)
 {
 #ifdef ADELUS_HAVE_TIME_MONITOR
   using Teuchos::TimeMonitor;
@@ -113,9 +114,9 @@ void solve_(ZViewType& Z, RHSViewType& RHS, PViewType& permute, int *num_rhs, do
 #endif
       // Permute the RHS
 #ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
-      permute_rhs(h_RHS, permute, my_rhs);
+      permute_rhs(ahandle, h_RHS, permute, my_rhs);
 #else
-      permute_rhs(RHS, permute, my_rhs);
+      permute_rhs(ahandle, RHS, permute, my_rhs);
 #endif
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }
@@ -127,9 +128,9 @@ void solve_(ZViewType& Z, RHSViewType& RHS, PViewType& permute, int *num_rhs, do
 #endif
       //Forward Solve
 #ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
-      forward(h_Z, h_RHS, my_rhs);
+      forward(ahandle, h_Z, h_RHS, my_rhs);
 #else
-      forward(Z, RHS, my_rhs);
+      forward(ahandle, Z, RHS, my_rhs);
 #endif
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }
@@ -147,7 +148,7 @@ void solve_(ZViewType& Z, RHSViewType& RHS, PViewType& permute, int *num_rhs, do
     {
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: backsolve"));
 #endif
-      back_solve6(Z, RHS);
+      back_solve6(ahandle, Z, RHS);
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }
 #endif
@@ -158,7 +159,7 @@ void solve_(ZViewType& Z, RHSViewType& RHS, PViewType& permute, int *num_rhs, do
     {
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: permutation"));
 #endif
-      perm1_(RHS, &my_rhs);
+      perm1_(ahandle, RHS, &my_rhs);
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }
 #endif

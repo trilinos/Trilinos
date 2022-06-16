@@ -68,9 +68,10 @@
 
 namespace Adelus {
 
-template<class ZRHSViewType>
+template<class HandleType, class ZRHSViewType>
 inline
-void lusolve_(ZRHSViewType& ZRHS, int *matrix_size, int *num_procsr, int *num_rhs, double *secs)
+void lusolve_(HandleType& ahandle, ZRHSViewType& ZRHS,
+              int *matrix_size, int *num_procsr, int *num_rhs, double *secs)
 {
 #ifdef ADELUS_HAVE_TIME_MONITOR
   using Teuchos::TimeMonitor;
@@ -87,8 +88,8 @@ void lusolve_(ZRHSViewType& ZRHS, int *matrix_size, int *num_procsr, int *num_rh
   int totmem;
 
   // Determine who I am (me ) and the total number of nodes (nprocs_cube)
-  MPI_Comm_size(MPI_COMM_WORLD,&nprocs_cube);
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  MPI_Comm_size(ahandle.get_comm(),&nprocs_cube);
+  MPI_Comm_rank(ahandle.get_comm(), &me);
 
   nrows_matrix = *matrix_size;
   ncols_matrix = *matrix_size;
@@ -102,9 +103,9 @@ void lusolve_(ZRHSViewType& ZRHS, int *matrix_size, int *num_procsr, int *num_rh
   myrow = mesh_row(me);
   mycol = mesh_col(me);
 
-  MPI_Comm_split(MPI_COMM_WORLD,myrow,mycol,&row_comm);
+  MPI_Comm_split(ahandle.get_comm(),myrow,mycol,&row_comm);
 
-  MPI_Comm_split(MPI_COMM_WORLD,mycol,myrow,&col_comm);
+  MPI_Comm_split(ahandle.get_comm(),mycol,myrow,&col_comm);
 
   // Distribution for the matrix on me
   my_first_col = mesh_col(me);
@@ -161,7 +162,8 @@ void lusolve_(ZRHSViewType& ZRHS, int *matrix_size, int *num_procsr, int *num_rh
   {
     TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: factor"));
 #endif
-    factor(ZRHS,
+    factor(ahandle,
+           ZRHS,
            col1_view,
            row1_view,
            row2_view, 
@@ -184,7 +186,7 @@ void lusolve_(ZRHSViewType& ZRHS, int *matrix_size, int *num_procsr, int *num_rh
     {
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: backsolve"));
 #endif
-      back_solve6(Z, RHS);
+      back_solve6(ahandle, Z, RHS);
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }
 #endif
@@ -198,7 +200,7 @@ void lusolve_(ZRHSViewType& ZRHS, int *matrix_size, int *num_procsr, int *num_rh
     {
       TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: permutation"));
 #endif
-      perm1_(RHS, &my_rhs);
+      perm1_(ahandle, RHS, &my_rhs);
 #ifdef ADELUS_HAVE_TIME_MONITOR
     }
 #endif

@@ -92,9 +92,14 @@ extern MPI_Comm col_comm;
 
 namespace Adelus {
 
-template<class ZDView, class ViewType1D, class ViewType2D, class ViewIntType1D>
+template<class HandleType,
+         class ZDView,
+         class ViewType1D,
+         class ViewType2D,
+         class ViewIntType1D>
 inline
-void factor(ZDView& ZV,                    // matrix and rhs
+void factor(HandleType& ahandle,           // handle containg metadata
+            ZDView&     ZV,                // matrix and rhs
             ViewType2D& col1_view,         // col used for updating a col
             ViewType2D& row1_view,         // diagonal row
             ViewType1D& row2_view,         // pivot row
@@ -178,13 +183,13 @@ void factor(ZDView& ZV,                    // matrix and rhs
 
   // Distribution for the matrix on me
 
-  MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
+  MPI_Comm_size(ahandle.get_comm(),&numprocs);
   if ( (numprocs/nprocs_row) * nprocs_row != numprocs ) {
      if (me == 0) {
        printf("nprocs_row must go into numprocs perfectly!\n");
        printf("Try a different value of nprocs_row.\n");
      }
-     MPI_Barrier(MPI_COMM_WORLD);
+     MPI_Barrier(ahandle.get_comm());
      exit(0);
   }
 
@@ -413,7 +418,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
       for (rdist = 1;rdist <= MAXDIST;rdist++){
         if (rowplus(rdist) == c_owner) break;
         bytes = sizeof(gpivot_row);
-        MPI_Send(&gpivot_row,bytes,MPI_BYTE,rowplus(rdist),LUPIVROWTYPE+j,MPI_COMM_WORLD);
+        MPI_Send(&gpivot_row,bytes,MPI_BYTE,rowplus(rdist),LUPIVROWTYPE+j,ahandle.get_comm());
       }
 #ifdef GET_TIMING
       bcastpivstime += (MPI_Wtime()-t1);
@@ -436,9 +441,9 @@ void factor(ZDView& ZV,                    // matrix and rhs
         if (rowplus(rdist) == c_owner) break;
         bytes=sizeof(ADELUS_DATA_TYPE)*col_len;
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
-        MPI_Send(h_coltmp.data(),bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,MPI_COMM_WORLD);
+        MPI_Send(h_coltmp.data(),bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,ahandle.get_comm());
 #else //GPU-aware MPI
-        MPI_Send(col1_view.data()+sav_col_j*col1_view.stride(1)+sav_col_i,bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,MPI_COMM_WORLD);
+        MPI_Send(col1_view.data()+sav_col_j*col1_view.stride(1)+sav_col_i,bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,ahandle.get_comm());
 #endif
       }
 #ifdef GET_TIMING
@@ -462,10 +467,10 @@ void factor(ZDView& ZV,                    // matrix and rhs
 
       bytes=col_len*sizeof(ADELUS_DATA_TYPE);
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
-      MPI_Irecv(h_coltmp.data(),bytes,MPI_BYTE,MPI_ANY_SOURCE,LUROWTYPE+j,MPI_COMM_WORLD,&msgrequest);
+      MPI_Irecv(h_coltmp.data(),bytes,MPI_BYTE,MPI_ANY_SOURCE,LUROWTYPE+j,ahandle.get_comm(),&msgrequest);
 #else //GPU-aware MPI
       MPI_Irecv(col1_view.data()+sav_col_j*col1_view.stride(1)+sav_col_i,bytes,MPI_BYTE,
-                MPI_ANY_SOURCE,LUROWTYPE+j,MPI_COMM_WORLD,&msgrequest);
+                MPI_ANY_SOURCE,LUROWTYPE+j,ahandle.get_comm(),&msgrequest);
 #endif
 
 #ifdef GET_TIMING
@@ -474,7 +479,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
       bytes = 0; type = LUPIVROWTYPE+j;
       bytes=4;
       bytes = sizeof(gpivot_row);
-      MPI_Recv(&gpivot_row,bytes,MPI_BYTE,MPI_ANY_SOURCE,type,MPI_COMM_WORLD,&msgstatus);
+      MPI_Recv(&gpivot_row,bytes,MPI_BYTE,MPI_ANY_SOURCE,type,ahandle.get_comm(),&msgstatus);
 #ifdef GET_TIMING
       bcastpivrtime += (MPI_Wtime()-t1);
 #endif
@@ -488,7 +493,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
         for (rdist = 1;rdist <= MAXDIST;rdist++) {
           if (rowplus(rdist) == c_owner) break;
           bytes = sizeof(gpivot_row);
-          MPI_Send(&gpivot_row,bytes,MPI_BYTE,rowplus(rdist),LUPIVROWTYPE+j,MPI_COMM_WORLD);
+          MPI_Send(&gpivot_row,bytes,MPI_BYTE,rowplus(rdist),LUPIVROWTYPE+j,ahandle.get_comm());
         }
 #ifdef GET_TIMING
         bcastpivstime += (MPI_Wtime()-t1);
@@ -520,9 +525,9 @@ void factor(ZDView& ZV,                    // matrix and rhs
           if (rowplus(rdist) == c_owner) break;
           bytes=col_len*sizeof(ADELUS_DATA_TYPE);
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
-          MPI_Send(h_coltmp.data(),bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,MPI_COMM_WORLD);
+          MPI_Send(h_coltmp.data(),bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,ahandle.get_comm());
 #else //GPU-aware MPI
-          MPI_Send(col1_view.data()+sav_col_j*col1_view.stride(1)+sav_col_i,bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,MPI_COMM_WORLD);
+          MPI_Send(col1_view.data()+sav_col_j*col1_view.stride(1)+sav_col_i,bytes,MPI_BYTE,rowplus(rdist),LUROWTYPE+j,ahandle.get_comm());
 #endif
         }
 #ifdef GET_TIMING
@@ -728,9 +733,9 @@ void factor(ZDView& ZV,                    // matrix and rhs
 #endif
         bytes=(row_len+colcnt)*sizeof(ADELUS_DATA_TYPE);
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
-        MPI_Send(h_row2.data(),bytes,MPI_BYTE,pivot_owner,LUSENDTYPE+j,MPI_COMM_WORLD);
+        MPI_Send(h_row2.data(),bytes,MPI_BYTE,pivot_owner,LUSENDTYPE+j,ahandle.get_comm());
 #else //GPU-aware MPI
-        MPI_Send(row2_view.data(),bytes,MPI_BYTE,pivot_owner,LUSENDTYPE+j,MPI_COMM_WORLD);
+        MPI_Send(row2_view.data(),bytes,MPI_BYTE,pivot_owner,LUSENDTYPE+j,ahandle.get_comm());
 #endif
 #ifdef GET_TIMING
         sendrowtime += (MPI_Wtime()-t1);
@@ -745,9 +750,9 @@ void factor(ZDView& ZV,                    // matrix and rhs
         if (me != r_owner) {
           bytes=(row_len+colcnt)*sizeof(ADELUS_DATA_TYPE);
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
-          MPI_Recv(h_row2.data(),bytes,MPI_BYTE,r_owner,LUSENDTYPE+j,MPI_COMM_WORLD,&msgstatus);
+          MPI_Recv(h_row2.data(),bytes,MPI_BYTE,r_owner,LUSENDTYPE+j,ahandle.get_comm(),&msgstatus);
 #else //GPU-aware MPI
-          MPI_Recv(row2_view.data(),bytes,MPI_BYTE,r_owner,LUSENDTYPE+j,MPI_COMM_WORLD,&msgstatus);
+          MPI_Recv(row2_view.data(),bytes,MPI_BYTE,r_owner,LUSENDTYPE+j,ahandle.get_comm(),&msgstatus);
 #endif
         }
 #ifdef GET_TIMING

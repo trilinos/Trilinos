@@ -342,12 +342,16 @@ int main(int argc, char *argv[])
 
   Kokkos::deep_copy( B, h_B );
 
+  // Create handle
+  Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space> 
+    ahandle(MPI_COMM_WORLD, matrix_size, nprocs_per_row, numrhs );
+
   // Now Factor the matrix
 
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Factor   ****" << std::endl;
 
-  Adelus::Factor (A, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &secs);
+  Adelus::Factor (ahandle, A, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &secs);
 
   if( rank == 0) {
     std::cout << " ----  Factor time  ----   " << secs << "  in secs. " << std::endl;
@@ -362,7 +366,7 @@ int main(int argc, char *argv[])
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Solve (1st)   ****" << std::endl;
 
-  Adelus::Solve (A, B, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
+  Adelus::Solve (ahandle, A, B, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
 
   if( rank == 0)
     std::cout << " ----  Solution time (1st)  ----   " << secs << "  in secs. " << std::endl;
@@ -374,7 +378,7 @@ int main(int argc, char *argv[])
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Solve (2nd)   ****" << std::endl;
 
-  Adelus::Solve (A, B, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
+  Adelus::Solve (ahandle, A, B, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
 
   if( rank == 0)
     std::cout << " ----  Solution time (2nd)  ----   " << secs << "  in secs. " << std::endl;
