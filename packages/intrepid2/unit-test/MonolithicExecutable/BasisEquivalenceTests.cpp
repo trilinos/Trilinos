@@ -235,7 +235,7 @@ namespace
     const int basisCardinality = basis1.getCardinality();
     
     // get quadrature points for integrating up to 2*polyOrder
-    const int quadratureDegree = 2*basis1.getDegree();
+    const int quadratureDegree = 2*basis1.getDegree() + 2;
     using PointScalar = typename Basis1::PointValueType;
     using WeightScalar = typename Basis1::OutputValueType;
     using Scalar = WeightScalar;
@@ -244,8 +244,8 @@ namespace
     auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = basis1.getBaseCellTopology().getDimension();
-    auto points  = getView<PointScalar,DeviceType>( "quadrature points 1D ref cell",  numRefPoints, spaceDim);
-    auto weights = getView<WeightScalar,DeviceType>("quadrature weights 1D ref cell", numRefPoints);
+    auto points  = getView<PointScalar,DeviceType>( "quadrature points ref cell",  numRefPoints, spaceDim);
+    auto weights = getView<WeightScalar,DeviceType>("quadrature weights ref cell", numRefPoints);
     quadrature->getCubature(points, weights);
     
     auto pointsHost = getHostCopy(points);
@@ -270,6 +270,11 @@ namespace
     
     basis1.getValues(basis1Values, points, OPERATOR_VALUE);
     basis2.getValues(basis2Values, points, OPERATOR_VALUE);
+    
+//    std::cout << "basis1Values:\n";
+//    printFunctor3(basis1Values, std::cout);
+//    std::cout << "basis2Values:\n";
+//    printFunctor3(basis2Values, std::cout);
     
     // integrate basis1 against itself to compute the SPD matrix A that we'll use to set up the basis conversion system
     ViewType<Scalar,DeviceType> basis1_vs_basis1 = getView<Scalar, DeviceType>("basis 1 vs basis 1", basisCardinality, basisCardinality);
@@ -737,14 +742,34 @@ namespace
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
-    const double relTol=1e-11;
-    const double absTol=1e-12;
+    const double relTol=1e-10;
+    const double absTol=1e-10;
     
     for (int polyOrder=1; polyOrder<5; polyOrder++)
     {
       HierarchicalBasis hierarchicalBasis(polyOrder);
       NodalBasis        nodalBasis(polyOrder);
-      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DefaultTestDeviceType>(hierarchicalBasis, nodalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleNodalVersusHierarchical_HDIV )
+  {
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HDIV_TRI;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HDIV_TRI;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-10;
+    const double absTol=1e-10;
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      HierarchicalBasis hierarchicalBasis(polyOrder);
+      NodalBasis        nodalBasis(polyOrder);
+      testBasisEquivalence<DefaultTestDeviceType>(hierarchicalBasis, nodalBasis, opsToTest, relTol, absTol, out, success);
     }
   }
 
