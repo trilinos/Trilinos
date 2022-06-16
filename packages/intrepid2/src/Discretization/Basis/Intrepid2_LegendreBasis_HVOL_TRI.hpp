@@ -136,15 +136,18 @@ namespace Intrepid2
             Polynomials::shiftedScaledLegendreValues(legendre_field_values_at_point, polyOrder_, lambda[1], tLegendre);
 
             int fieldOrdinalOffset = 0;
-            for (int i=0; i<=polyOrder_; i++)
+            const int max_ij_sum = polyOrder_;
+            for (int ij_sum=0; ij_sum<=max_ij_sum; ij_sum++)
             {
-              const auto & legendreValue = legendre_field_values_at_point(i);
-              const double alpha = i*2.0;
-              
-              const PointScalar tJacobi = 1.0;// lambda[0] + lambda[1] + lambda[2];
-              Polynomials::shiftedScaledJacobiValues(jacobi_values_at_point, alpha, polyOrder_, lambda[2], tJacobi);
-              for (int j=0; i+j <= polyOrder_; j++)
+              for (int i=0; i<=ij_sum; i++)
               {
+                const int j = ij_sum - i;
+                const auto & legendreValue = legendre_field_values_at_point(i);
+                const double alpha = i*2.0+1;
+                
+                const PointScalar tJacobi = 1.0;// lambda[0] + lambda[1] + lambda[2];
+                Polynomials::shiftedScaledJacobiValues(jacobi_values_at_point, alpha, polyOrder_, lambda[2], tJacobi);
+                
                 const auto & jacobiValue = jacobi_values_at_point(j);
                 output_(fieldOrdinalOffset,pointOrdinal) = legendreValue * jacobiValue;
                 fieldOrdinalOffset++;
@@ -234,10 +237,11 @@ namespace Intrepid2
       int fieldOrdinalOffset = 0;
       // **** face functions **** //
       const int max_ij_sum = polyOrder;
-      for (int i=0; i<=max_ij_sum; i++)
+      for (int ij_sum=0; ij_sum<=max_ij_sum; ij_sum++)
       {
-        for (int j=0; i+j<=max_ij_sum; j++)
+        for (int i=0; i<=ij_sum; i++)
         {
+          const int j = ij_sum - i;
           this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = i+j;
           fieldOrdinalOffset++;
         }
