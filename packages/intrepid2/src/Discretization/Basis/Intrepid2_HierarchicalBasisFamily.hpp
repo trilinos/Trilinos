@@ -52,6 +52,7 @@
 #include "Intrepid2_DerivedBasisFamily.hpp"
 
 #include "Intrepid2_HierarchicalBasis_HCURL_TRI.hpp"
+#include "Intrepid2_HierarchicalBasis_HDIV_TRI.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_LINE.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TRI.hpp"
 #include "Intrepid2_IntegratedLegendreBasis_HGRAD_TET.hpp"
@@ -81,7 +82,7 @@ namespace Intrepid2 {
     // we will fill these in as we implement them
     using HGRAD = IntegratedLegendreBasis_HGRAD_TRI<DeviceType,OutputScalar,PointScalar,defineVertexFunctions>;
     using HCURL = HierarchicalBasis_HCURL_TRI<DeviceType,OutputScalar,PointScalar,defineVertexFunctions>; // last template argument: useCGBasis; corresponds with defineVertexFunctions.
-    using HDIV  = dummyBasis<DeviceType,OutputScalar,PointScalar>;
+    using HDIV  = HierarchicalBasis_HDIV_TRI<DeviceType,OutputScalar,PointScalar,defineVertexFunctions>; // last template argument: useCGBasis; corresponds with defineVertexFunctions.
     using HVOL  = LegendreBasis_HVOL_TRI<DeviceType,OutputScalar,PointScalar>;
   };
   
