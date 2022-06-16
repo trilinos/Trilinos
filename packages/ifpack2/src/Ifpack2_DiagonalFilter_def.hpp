@@ -214,6 +214,12 @@ size_t DiagonalFilter<MatrixType>::getLocalMaxNumRowEntries() const
 }
 
 template<class MatrixType>
+typename MatrixType::local_ordinal_type DiagonalFilter<MatrixType>::getBlockSize() const
+{
+  return A_->getBlockSize();
+}
+
+template<class MatrixType>
 bool DiagonalFilter<MatrixType>::hasColMap() const
 {
   return A_->hasColMap();

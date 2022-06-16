@@ -2403,6 +2403,9 @@ namespace Tpetra {
     /// zeros count as "entries."
     size_t getLocalMaxNumRowEntries () const override;
 
+    //! The number of degrees of freedom per mesh point.
+    virtual LocalOrdinal getBlockSize () const override { return 1; }
+
     //! Whether the matrix has a well-defined column Map.
     bool hasColMap () const override;
 

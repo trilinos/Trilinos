@@ -58,6 +58,9 @@
 #include <Ifpack2_MDF.hpp>
 #include <Ifpack2_AdditiveSchwarz.hpp>
 
+#include "Tpetra_BlockCrsMatrix.hpp"
+#include <Ifpack2_Experimental_RBILUK.hpp>
+
 #include <type_traits>
 
 namespace {
@@ -152,7 +155,7 @@ void test_mdf_reference_problem(
   {
     Teuchos::ParameterList params;
     params.set("fact: mdf level-of-fill", 0.0);
-    params.set("Verbosity",3);
+    params.set("Verbosity",0);
     TEST_NOTHROW(prec.setParameters(params));
   }
 
@@ -322,11 +325,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2MDF, Test2, Scalar, LocalOrdinal, Globa
     known_sln);
 }
 
+
 #define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2MDF, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2MDF, Test1, Scalar, LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2MDF, Test2, Scalar, LocalOrdinal,GlobalOrdinal) 
-
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2MDF, Test2, Scalar, LocalOrdinal,GlobalOrdinal)
+  
 #include "Ifpack2_ETIHelperMacros.h"
 
 IFPACK2_ETI_MANGLING_TYPEDEFS()

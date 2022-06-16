@@ -164,6 +164,9 @@ public:
   //! Returns the local number of entries in this matrix.
   virtual size_t getLocalNumEntries() const;
 
+  //! The number of degrees of freedom per mesh point.
+  virtual local_ordinal_type getBlockSize () const;
+
   /// \brief The current number of entries in this matrix, stored on
   ///   the calling process, in the row whose global index is \c globalRow.
   ///

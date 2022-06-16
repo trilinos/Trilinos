@@ -390,7 +390,7 @@ public:
   //@{
 
   //! The number of degrees of freedom per mesh point.
-  LO getBlockSize () const { return blockSize_; }
+  virtual LO getBlockSize () const override { return blockSize_; }
 
   //! Get the (mesh) graph.
   virtual Teuchos::RCP<const ::Tpetra::RowGraph<LO,GO,Node> > getGraph () const override;
