@@ -630,12 +630,6 @@ public:
 #endif
   }
 
-  inline void syncStreamDebug(const exec_space &exec_instance) {
-#if defined(TACHO_ENABLE_DEBUG)
-    exec_instance.fence();
-#endif
-  }
-
   ///
   /// Device level functions
   ///
@@ -678,15 +672,12 @@ public:
             checkDeviceLapackStatus("chol");
 
             if (n_m > 0) {
-              syncStreamDebug(exec_instance);
-
               UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               _status = Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
 
-              syncStreamDebug(exec_instance);
               _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR,
                                                                                         zero, ABR);
             }
@@ -739,28 +730,23 @@ public:
             _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, T, one);
             checkDeviceBlasStatus("SetIdentity");
 
-            syncStreamDebug(exec_instance);
             _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                 _handle_blas, Diag::NonUnit(), one, ATL, T);
             checkDeviceBlasStatus("trsm");
 
             if (n_m > 0) {
-              syncStreamDebug(exec_instance);
-
               UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               _status = Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
 
-              syncStreamDebug(exec_instance);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
               checkDeviceBlasStatus("Copy");
 
               _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR,
                                                                                         zero, ABR);
             } else {
-              syncStreamDebug(exec_instance);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
               checkDeviceBlasStatus("Copy");
             }
@@ -809,7 +795,6 @@ public:
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
             if (n_m > 0) {
-              syncStreamDebug(exec_instance);
               UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m);
               bptr += ABR.span();
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
@@ -817,35 +802,31 @@ public:
               _status = Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
-              syncStreamDebug(exec_instance);
+
               _status = Herk<Uplo::Upper, Trans::ConjTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR,
                                                                                         zero, ABR);
-              syncStreamDebug(exec_instance);
 
               /// additional things
               UnmanagedViewType<value_type_matrix> T(bptr, m, m);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
               checkDeviceBlasStatus("Copy");
-              syncStreamDebug(exec_instance);
+
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, minus_one);
               checkDeviceBlasStatus("SetIdentity");
-              syncStreamDebug(exec_instance);
 
               UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), minus_one, T, AT);
               checkDeviceBlasStatus("trsm");
-              syncStreamDebug(exec_instance);
             } else {
-              syncStreamDebug(exec_instance);
               /// additional things
               UnmanagedViewType<value_type_matrix> T(bptr, m, m);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
               checkDeviceBlasStatus("Copy");
-              syncStreamDebug(exec_instance);
+
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, one);
               checkDeviceBlasStatus("SetIdentity");
-              syncStreamDebug(exec_instance);
+
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, T, ATL);
               checkDeviceBlasStatus("trsm");
@@ -905,19 +886,16 @@ public:
             aptr += m * m;
 
             _status = Symmetrize<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL);
-            syncStreamDebug(exec_instance);
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
             _status = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, ATL, P, W);
             checkDeviceLapackStatus("ldl::invoke");
-            syncStreamDebug(exec_instance);
 
             value_type *dptr = _diag.data() + 2 * offs;
             UnmanagedViewType<value_type_matrix> D(dptr, m, 2);
             _status = LDL<Uplo::Lower, Algo::OnDevice>::modify(exec_instance, ATL, P, D);
             checkDeviceLapackStatus("ldl::modify");
-            syncStreamDebug(exec_instance);
 
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
@@ -927,22 +905,17 @@ public:
               auto fpiv = ordinal_type_array(P.data() + m, m);
               _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice>::invoke(
                   exec_instance, fpiv, ATR);
-              syncStreamDebug(exec_instance);
 
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::Unit(), one, ATL, ATR);
               checkDeviceBlasStatus("trsm");
-              syncStreamDebug(exec_instance);
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, STR, ATR);
-              syncStreamDebug(exec_instance);
 
               _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, P, D, ATR);
-              syncStreamDebug(exec_instance);
 
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
                   _handle_blas, minus_one, ATR, STR, zero, ABR);
-              syncStreamDebug(exec_instance);
               checkDeviceBlasStatus("gemm");
             }
           }
@@ -986,33 +959,28 @@ public:
             aptr += m * m;
 
             _status = Symmetrize<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL);
-            syncStreamDebug(exec_instance);
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
             _status = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, ATL, P, W);
             checkDeviceLapackStatus("ldl::invoke");
-            syncStreamDebug(exec_instance);
 
             value_type *dptr = _diag.data() + 2 * offs;
             UnmanagedViewType<value_type_matrix> D(dptr, m, 2);
             _status = LDL<Uplo::Lower, Algo::OnDevice>::modify(exec_instance, ATL, P, D);
             checkDeviceLapackStatus("ldl::modify");
-            syncStreamDebug(exec_instance);
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
             UnmanagedViewType<value_type_matrix> T(bptr, m, m);
 
             _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, T, one);
             checkDeviceBlasStatus("SetIdentity");
-            syncStreamDebug(exec_instance);
 
             _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
                 _handle_blas, Diag::Unit(), one, ATL, T);
             checkDeviceBlasStatus("trsm");
 
             if (n_m > 0) {
-              syncStreamDebug(exec_instance);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m);
 
@@ -1022,25 +990,20 @@ public:
               ConstUnmanagedViewType<ordinal_type_array> perm(P.data() + 2 * m, m);
               _status = ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, ATR,
                                                                                                  perm, STR);
-              syncStreamDebug(exec_instance);
 
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::Unit(), one, ATL, STR);
               checkDeviceBlasStatus("trsm");
-              syncStreamDebug(exec_instance);
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATR, STR);
-              syncStreamDebug(exec_instance);
 
               _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, P, D, ATR);
-              syncStreamDebug(exec_instance);
 
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
                   _handle_blas, minus_one, ATR, STR, zero, ABR);
               checkDeviceBlasStatus("gemm");
             } else {
-              syncStreamDebug(exec_instance);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATL, T);
             }
           }
@@ -1084,24 +1047,20 @@ public:
             aptr += m * m;
 
             _status = Symmetrize<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL);
-            syncStreamDebug(exec_instance);
 
             ordinal_type *pivptr = _piv.data() + 4 * offs;
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
             _status = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, ATL, P, W);
             checkDeviceLapackStatus("ldl::invoke");
-            syncStreamDebug(exec_instance);
 
             value_type *dptr = _diag.data() + 2 * offs;
             UnmanagedViewType<value_type_matrix> D(dptr, m, 2);
             _status = LDL<Uplo::Lower, Algo::OnDevice>::modify(exec_instance, ATL, P, D);
             checkDeviceLapackStatus("ldl::modify");
-            syncStreamDebug(exec_instance);
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
 
             if (n_m > 0) {
-              syncStreamDebug(exec_instance);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
               UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m);
               UnmanagedViewType<value_type_matrix> T(bptr + ABR.span(), m, m);
@@ -1112,37 +1071,31 @@ public:
               ConstUnmanagedViewType<ordinal_type_array> perm(P.data() + 2 * m, m);
               _status = ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, ATR,
                                                                                                  perm, STR);
-              syncStreamDebug(exec_instance);
 
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::Unit(), one, ATL, STR);
               checkDeviceBlasStatus("trsm");
-              syncStreamDebug(exec_instance);
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATR, STR);
-              syncStreamDebug(exec_instance);
 
               _status = Symmetrize<Uplo::Lower, Algo::OnDevice>::invoke(exec_instance, T);
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, minus_one);
               _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, P, D, ATR);
-              syncStreamDebug(exec_instance);
 
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
                   _handle_blas, minus_one, ATR, STR, zero, ABR);
               checkDeviceBlasStatus("gemm");
-              syncStreamDebug(exec_instance);
 
               UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::Unit(), minus_one, T, AT);
             } else {
-              syncStreamDebug(exec_instance);
               UnmanagedViewType<value_type_matrix> T(bptr, m, m);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
-              syncStreamDebug(exec_instance);
+
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, one);
-              syncStreamDebug(exec_instance);
+
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::Unit(), one, T, ATL);
             }
@@ -1203,11 +1156,9 @@ public:
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
             _status = LU<Algo::OnDevice>::invoke(_handle_lapack, AT, P, W);
             checkDeviceLapackStatus("lu::invoke");
-            syncStreamDebug(exec_instance);
 
             _status = LU<Algo::OnDevice>::modify(exec_instance, m, P);
             checkDeviceLapackStatus("lu::modify");
-            syncStreamDebug(exec_instance);
 
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
@@ -1221,7 +1172,6 @@ public:
               _status = Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, ATL, ABL);
               checkDeviceBlasStatus("trsm");
-              syncStreamDebug(exec_instance);
 
               _status = Gemm<Trans::NoTranspose, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one,
                                                                                              ABL, ATR, zero, ABR);
@@ -1269,11 +1219,9 @@ public:
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
             _status = LU<Algo::OnDevice>::invoke(_handle_lapack, AT, P, W);
             checkDeviceLapackStatus("lu::invoke");
-            syncStreamDebug(exec_instance);
 
             _status = LU<Algo::OnDevice>::modify(exec_instance, m, P);
             checkDeviceLapackStatus("lu::modify");
-            syncStreamDebug(exec_instance);
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
             UnmanagedViewType<value_type_matrix> T(bptr, m, m);
@@ -1292,11 +1240,9 @@ public:
               _status = Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, ATL, ABL);
               checkDeviceBlasStatus("trsm");
-              syncStreamDebug(exec_instance);
 
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, one);
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL2, one);
-              syncStreamDebug(exec_instance);
 
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, T, ATL);
@@ -1304,7 +1250,6 @@ public:
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::Unit(), one, T, ATL2);
               checkDeviceBlasStatus("trsm");
-              syncStreamDebug(exec_instance);
 
               _status = Gemm<Trans::NoTranspose, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one,
                                                                                              ABL, ATR, zero, ABR);
@@ -1314,11 +1259,9 @@ public:
               UnmanagedViewType<value_type_matrix> ATL2(s.l_buf, m, m);
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
-              syncStreamDebug(exec_instance);
 
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, one);
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL2, one);
-              syncStreamDebug(exec_instance);
 
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, T, ATL);
@@ -1369,11 +1312,9 @@ public:
             UnmanagedViewType<ordinal_type_array> P(pivptr, 4 * m);
             _status = LU<Algo::OnDevice>::invoke(_handle_lapack, AT, P, W);
             checkDeviceLapackStatus("lu::invoke");
-            syncStreamDebug(exec_instance);
 
             _status = LU<Algo::OnDevice>::modify(exec_instance, m, P);
             checkDeviceLapackStatus("lu::modify");
-            syncStreamDebug(exec_instance);
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
             UnmanagedViewType<value_type_matrix> T(bptr, m, m);
@@ -1392,11 +1333,9 @@ public:
               _status = Trsm<Side::Right, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, ATL, ABL);
               checkDeviceBlasStatus("trsm");
-              syncStreamDebug(exec_instance);
 
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, one);
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL2, one);
-              syncStreamDebug(exec_instance);
 
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, T, ATL);
@@ -1404,7 +1343,6 @@ public:
               _status = Trsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::Unit(), one, T, ATL2);
               checkDeviceBlasStatus("trsm");
-              syncStreamDebug(exec_instance);
 
               _status = Gemm<Trans::NoTranspose, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one,
                                                                                              ABL, ATR, zero, ABR);
@@ -1414,11 +1352,9 @@ public:
               UnmanagedViewType<value_type_matrix> ATL2(s.l_buf, m, m);
 
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
-              syncStreamDebug(exec_instance);
 
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, one);
               _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL2, one);
-              syncStreamDebug(exec_instance);
 
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
                   _handle_blas, Diag::NonUnit(), one, T, ATL);
@@ -1739,7 +1675,6 @@ public:
               const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
               _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
-              syncStreamDebug(exec_instance);
             }
             _status =
                 Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), ATL, tT);
@@ -1788,12 +1723,10 @@ public:
               const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
               _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
-              syncStreamDebug(exec_instance);
             }
 
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, tT, zero, bT);
             checkDeviceBlasStatus("gemv");
-            syncStreamDebug(exec_instance);
 
             _status = Copy<Algo::OnDevice>::invoke(exec_instance, tT, bT);
             checkDeviceBlasStatus("Copy");
@@ -1888,13 +1821,11 @@ public:
               const auto fpiv = ordinal_type_array(_piv.data() + 4 * offm + m, m);
               _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice> /// row inter-change
                   ::invoke(exec_instance, fpiv, tT);
-              syncStreamDebug(exec_instance);
             }
 
             _status =
                 Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
-            syncStreamDebug(exec_instance);
             if (n_m > 0) {
               value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // ptr += m*n_m;
@@ -1950,11 +1881,9 @@ public:
               _status =
                   ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, tT, perm, bT);
             }
-            syncStreamDebug(exec_instance);
 
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, bT, zero, tT);
             checkDeviceBlasStatus("gemv");
-            syncStreamDebug(exec_instance);
 
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
@@ -2003,11 +1932,9 @@ public:
             if (s.do_not_apply_pivots) {
               ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
-              syncStreamDebug(exec_instance);
 
               _status =
                   ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, perm, tT);
-              syncStreamDebug(exec_instance);
             }
 
             _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, one, AT, tT, zero, b);
@@ -2072,7 +1999,6 @@ public:
               const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
               _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
-              syncStreamDebug(exec_instance);
             }
             _status = Trsv<Uplo::Lower, Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
@@ -2130,12 +2056,10 @@ public:
               const UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
               _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
-              syncStreamDebug(exec_instance);
             }
 
             _status = Gemv<Trans::Transpose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, tT, zero, bT);
             checkDeviceBlasStatus("gemv");
-            syncStreamDebug(exec_instance);
 
             if (s.do_not_apply_pivots) {
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, tT, bT);
@@ -2189,11 +2113,9 @@ public:
                 ::invoke(exec_instance, P, D, bT);
 
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, AT, b, zero, tT);
-            syncStreamDebug(exec_instance);
 
             if (!s.do_not_apply_pivots) {
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
-              syncStreamDebug(exec_instance);
 
               ConstUnmanagedViewType<ordinal_type_array> peri(P.data() + 3 * m, m);
               _status =
@@ -2250,15 +2172,12 @@ public:
 
             _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice> /// row inter-change
                 ::invoke(exec_instance, fpiv, tT);
-            syncStreamDebug(exec_instance);
 
             _status =
                 Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
 
             if (n_m > 0) {
-              syncStreamDebug(exec_instance);
-
               value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
               UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
               const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
@@ -2312,13 +2231,11 @@ public:
               _status =
                   ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, tT, perm, bT);
             }
-            syncStreamDebug(exec_instance);
 
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, bT, zero, tT);
             checkDeviceBlasStatus("gemv");
 
             if (n_m > 0) {
-              syncStreamDebug(exec_instance);
               const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
               UnmanagedViewType<value_type_matrix> bB(bptr + bT.span(), n_m, nrhs);
               _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ABL, tT, zero, bB);
@@ -2361,12 +2278,11 @@ public:
 
             _status = ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::OnDevice> /// row inter-change
                 ::invoke(exec_instance, fpiv, tT);
-            syncStreamDebug(exec_instance);
 
             _status =
                 Trsv<Uplo::Lower, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::Unit(), ATL, tT);
             checkDeviceBlasStatus("trsv");
-            syncStreamDebug(exec_instance);
+
             if (n_m > 0) {
               value_type *bptr = _buf.data() + h_buf_solve_ptr(p - pbeg);
               UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
@@ -2431,7 +2347,6 @@ public:
               const UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m); // uptr += m*n;
               _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
-              syncStreamDebug(exec_instance);
             }
             _status =
                 Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), ATL, tT);
@@ -2473,14 +2388,12 @@ public:
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
             _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
-            syncStreamDebug(exec_instance);
 
             if (n_m > 0) {
               const UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
               const UnmanagedViewType<value_type_matrix> bB(bptr + bT.span(), n_m, nrhs);
               _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, bT);
               checkDeviceBlasStatus("gemv");
-              syncStreamDebug(exec_instance);
             }
 
             _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, one, ATL, bT, zero, tT);
@@ -2527,7 +2440,6 @@ public:
               const UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m); // uptr += m*n;
               _status = Gemv<Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, minus_one, ATR, bB, one, tT);
               checkDeviceBlasStatus("gemv");
-              syncStreamDebug(exec_instance);
             }
             _status =
                 Trsv<Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(_handle_blas, Diag::NonUnit(), ATL, tT);
