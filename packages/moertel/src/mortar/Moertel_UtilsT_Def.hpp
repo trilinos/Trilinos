@@ -209,7 +209,7 @@ MoertelT::StripZeros(const Tpetra::CrsMatrix<ST, LO, GO, N>& A, double eps)
     typename Tpetra::CrsMatrix<ST, LO, GO, N>::local_inds_host_view_type lindices;
     typename Tpetra::CrsMatrix<ST, LO, GO, N>::values_host_view_type values;
     //    int err  = A.ExtractMyRowView(lrow,numentries,values,lindices);
-    A.getLocalRowView(lrow,numentries,lindices,values);
+    A.getLocalRowView(lrow,lindices,values);
     int numentries = (int) lindices.size();
     for (int j=0; j<numentries; ++j)
     {
