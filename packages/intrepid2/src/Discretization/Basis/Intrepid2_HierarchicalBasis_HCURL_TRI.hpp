@@ -172,8 +172,12 @@ namespace Intrepid2
             const double jacobiScaling = 1.0; // s0 + s1 + s2
             
             const int max_ij_sum = polyOrder_ - 1;
+            
+            // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
+            const int faceFieldOrdinalOffset = fieldOrdinalOffset;
             for (int familyOrdinal=1; familyOrdinal<=2; familyOrdinal++)
             {
+              int fieldOrdinal = faceFieldOrdinalOffset + familyOrdinal - 1;
               const auto &s2 = lambda[ face_family_end_[familyOrdinal-1]];
               for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
               {
@@ -188,9 +192,10 @@ namespace Intrepid2
                   
                   Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-1, s2, jacobiScaling);
                   const auto & jacobiValue = jacobi_values_at_point(j);
-                  output_(fieldOrdinalOffset,pointOrdinal,0) = edgeValue_x * jacobiValue;
-                  output_(fieldOrdinalOffset,pointOrdinal,1) = edgeValue_y * jacobiValue;
-                  fieldOrdinalOffset++;
+                  output_(fieldOrdinal,pointOrdinal,0) = edgeValue_x * jacobiValue;
+                  output_(fieldOrdinal,pointOrdinal,1) = edgeValue_y * jacobiValue;
+                  
+                  fieldOrdinal += 2; // 2 because there are two face families, and we interleave them.
                 }
               }
             }
@@ -249,8 +254,12 @@ namespace Intrepid2
           // rename the scratch memory to match our usage here:
           auto & P_2ip1_j    = other_values_at_point;
           
+          // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
+          const int faceFieldOrdinalOffset = fieldOrdinalOffset;
           for (int familyOrdinal=1; familyOrdinal<=2; familyOrdinal++)
           {
+            int fieldOrdinal = faceFieldOrdinalOffset + familyOrdinal - 1;
+            
             const auto &s0_index = face_family_start_ [familyOrdinal-1];
             const auto &s1_index = face_family_middle_[familyOrdinal-1];
             const auto &s2_index = face_family_end_   [familyOrdinal-1];
@@ -293,9 +302,9 @@ namespace Intrepid2
                 const PointScalar yEdgeWeight = s0 * s1_dy - s1 * s0_dy;
                 const PointScalar & edgeValue = P_i(i);
                 OutputScalar grad_s2_cross_xy_edgeWeight = s2_dx * yEdgeWeight - xEdgeWeight * s2_dy;
-                output_(fieldOrdinalOffset,pointOrdinal) = L_2ip1_j(j) * edgeCurl + P_2ip1_j(j-1) * edgeValue * grad_s2_cross_xy_edgeWeight;
+                output_(fieldOrdinal,pointOrdinal) = L_2ip1_j(j) * edgeCurl + P_2ip1_j(j-1) * edgeValue * grad_s2_cross_xy_edgeWeight;
                 
-                fieldOrdinalOffset++;
+                fieldOrdinal += 2; // 2 because there are two face families, and we interleave them.
               }
             }
           }
@@ -411,16 +420,20 @@ namespace Intrepid2
       
       // **** face functions **** //
       const int max_ij_sum = polyOrder-1;
+      const int faceFieldOrdinalOffset = fieldOrdinalOffset;
       for (int faceFamilyOrdinal=1; faceFamilyOrdinal<=2; faceFamilyOrdinal++)
       {
+        // following ESEAS, we interleave the face families.  This groups all the face dofs of a given degree together.
+        int fieldOrdinal = faceFieldOrdinalOffset + faceFamilyOrdinal - 1;
         for (int ij_sum=1; ij_sum <= max_ij_sum; ij_sum++)
         {
           for (int i=0; i<ij_sum; i++)
           {
-            this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = ij_sum+1;
-            fieldOrdinalOffset++;
+            this->fieldOrdinalPolynomialDegree_(fieldOrdinal,0) = ij_sum+1;
+            fieldOrdinal += 2; // 2 because there are two face families, and we interleave them.
           }
         }
+        fieldOrdinalOffset = fieldOrdinal - 1; // due to the interleaving increment, we've gone two past the last face ordinal.  Set offset to be one past.
       }
 
       INTREPID2_TEST_FOR_EXCEPTION(fieldOrdinalOffset != this->basisCardinality_, std::invalid_argument, "Internal error: basis enumeration is incorrect");
