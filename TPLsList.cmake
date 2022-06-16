@@ -178,3 +178,15 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
 #     ParMETIS include directories must come before the
 #     Scotch include directories.
 #
+
+
+# Temp hack for setting up TPL dependencies (until we support
+# FindTPL<tplName>Dependencies.cmake files in #63).
+advanced_set(LAPACK_LIB_ENABLED_DEPENDENCIES BLAS
+ CACHE STRING "LAPACK TPL deps")
+advanced_set(ParMETIS_LIB_ENABLED_DEPENDENCIES METIS
+ CACHE STRING "ParMETIS TPL deps")
+advanced_set(SuperLUDist_LIB_ENABLED_DEPENDENCIES ParMETIS BLAS
+ CACHE STRING "SuperLUDist TPL deps")
+advanced_set(CUSPARSE_LIB_ENABLED_DEPENDENCIES  CUBLAS
+ CACHE  STRING "CUSPARSE TPL deps")
