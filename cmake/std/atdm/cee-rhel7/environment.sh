@@ -195,9 +195,6 @@ fi
 # to be safe.  Also, we need to set OMP_* env vars here because the SPARC
 # modules change them!
 
-# Use updated Ninja
-module load sems-ninja/1.10.1
-
 export ATDM_CONFIG_USE_HWLOC=OFF
 
 export ATDM_CONFIG_BINUTILS_LIBS="/usr/lib64/libbfd.so;/usr/lib64/libiberty.a"
