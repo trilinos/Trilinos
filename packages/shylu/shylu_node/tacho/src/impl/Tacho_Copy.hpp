@@ -9,13 +9,12 @@
 
 namespace Tacho {
 
-    ///
-    /// Copy
-    ///
+///
+/// Copy
+///
 
-    /// various implementation for different uplo and algo parameters
-    template<typename ArgAlgo>
-    struct Copy;
-}
+/// various implementation for different uplo and algo parameters
+template <typename ArgAlgo> struct Copy;
+} // namespace Tacho
 
 #endif

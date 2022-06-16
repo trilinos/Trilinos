@@ -9,66 +9,17 @@
 
 namespace Tacho {
 
-    ///
-    /// Gemm:
-    ///
+///
+/// Gemm:
+///
 
-    /// various implementation for different uplo and algo parameters
-    template<typename ArgTransA, typename ArgTransB, typename ArgAlgo>
-    struct Gemm;
+/// various implementation for different uplo and algo parameters
+template <typename ArgTransA, typename ArgTransB, typename ArgAlgo> struct Gemm;
 
-    /// task construction for the above chol implementation
-    /// Gemm<ArgTransA,ArgTransB,ArgAlgo>::invoke(_sched, member, _alpha, _A, _B, _beta, _C);
-    template<typename SchedulerType,
-             typename ScalarType,
-             typename DenseMatrixViewType,
-             typename ArgTransA,
-             typename ArgTransB,
-             typename ArgAlgo>
-    struct TaskFunctor_Gemm {
-    public:
-      typedef SchedulerType scheduler_type;
-      typedef typename scheduler_type::member_type member_type;
+struct GemmAlgorithm {
+  using type = ActiveAlgorithm::type;
+};
 
-      typedef ScalarType scalar_type;
-
-      typedef DenseMatrixViewType dense_block_type;
-      typedef typename dense_block_type::future_type future_type;
-      typedef typename future_type::value_type value_type;
-
-    private:
-      scalar_type _alpha, _beta;
-      dense_block_type _A, _B, _C;
-
-    public:
-      KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Gemm() = delete;
-
-      KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Gemm(const scalar_type alpha,
-                       const dense_block_type &A,
-                       const dense_block_type &B,
-                       const scalar_type beta,
-                       const dense_block_type &C)
-        : _alpha(alpha),
-          _beta(beta),
-          _A(A),
-          _B(B),
-          _C(C) {}
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(member_type &member, value_type &r_val) {
-        const int ierr = Gemm<ArgTransA,ArgTransB,ArgAlgo>
-          ::invoke(member, _alpha, _A, _B, _beta, _C);
-
-        Kokkos::single(Kokkos::PerTeam(member), 
-          [&, ierr]() { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-            _C.set_future();
-            r_val = ierr;
-          });
-      }
-    };
-
-}
+} // namespace Tacho
 
 #endif
