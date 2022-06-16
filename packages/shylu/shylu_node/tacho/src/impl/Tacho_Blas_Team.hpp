@@ -789,9 +789,8 @@ template <typename T> struct BlasTeam {
         switch (trans) {
         case 'N':
         case 'n': {
-          Kokkos::abort("no no no");
           NoConjugate cjA;
-          Impl::trsm_left_lower(member, cjA, diag, m, n, alpha, a, 1, lda, b, 1, ldb);
+          Impl::trsm_left_upper(member, cjA, diag, n, m, alpha, a, lda, 1, b, ldb, 1);
           break;
         }
         case 'T':

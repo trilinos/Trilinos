@@ -170,28 +170,20 @@ public:
   ///
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void solve_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
-    using TrsvAlgoType = typename TrsvAlgorithm::type;
     using GemvAlgoType = typename GemvAlgorithm::type;
 
-    const value_type minus_one(-1), one(1);
+    const value_type one(1), zero(0);
     {
-      const ordinal_type m = s.m, n = s.n, n_m = n - m;
+      const ordinal_type m = s.m, n = s.n;
       if (m > 0) {
-        value_type *uptr = s.u_buf;
         // solve
-        const UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
-        uptr += m * m;
+        const UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
+        const UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
+
         const ordinal_type offm = s.row_begin;
         const auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
-        if (n_m > 0) {
-          // update
-          const UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m); // uptr += m*n;
-          const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
-          Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bB, one, tT);
-          member.team_barrier();
-        }
-        Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, tT);
+        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, one, AT, b, zero, tT);
       }
     }
   }
