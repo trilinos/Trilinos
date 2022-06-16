@@ -101,7 +101,9 @@ namespace Intrepid2
     HierarchicalBasis_HDIV_TRI(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
     :
     CurlBasis(polyOrder,pointType)
-    {}
+    {
+      this->functionSpace_ = FUNCTION_SPACE_HDIV; // CurlBasis will set the other Basis member variables correctly…
+    }
     
     /** \brief  Returns basis name
      
