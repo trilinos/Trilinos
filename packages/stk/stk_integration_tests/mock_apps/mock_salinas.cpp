@@ -9,6 +9,7 @@
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <stk_util/Version.hpp>
+#include <stk_util/parallel/CouplingVersions.hpp>
 #include "MockUtils.hpp"
 #include "StkMesh.hpp"
 #include "StkRecvAdapter.hpp"
@@ -50,7 +51,9 @@ public:
 
     {
       std::ostringstream os;
-      os << m_appName << ": my world rank is: " << myWorldRank << " out of " << numWorldRanks;
+      os << m_appName
+         << ": STK version: " << stk::version_string()
+         << ", Coupling Version: " << stk::util::get_common_coupling_version();
       std::cout << os.str() << std::endl;
     }
 
@@ -77,8 +80,6 @@ public:
 
     {
       std::ostringstream os;
-      os << m_appName << ": STK version: " << stk::version_string() 
-         << " (Coupling Version: " << stk::coupling::version() << ")" << std::endl;
       os << m_appName << ": color="<<color<<", my world rank is: " << myWorldRank << " out of " << numWorldRanks
          << ", my app rank is: " << myAppRank << " out of " << numAppRanks << std::endl;
       os << m_appName << ": my root-rank: " << rootRanks.localColorRoot << ", other app's root-rank: " << rootRanks.otherColorRoot;

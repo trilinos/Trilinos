@@ -58,10 +58,8 @@ GeneratedMeshToFileWithTransientFields::GeneratedMeshToFileWithTransientFields(s
     scalarField(meta.declare_field<stk::mesh::Field<double                      > >(fieldRank, fieldBaseName+"_scalar", 1)),
     vectorField(meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(fieldRank, fieldBaseName+"_vector", 1))
 {
-  stk::mesh::put_field_on_mesh(scalarField, meta.universal_part(),
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh(vectorField, meta.universal_part(), 3,
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double, stk::mesh::Cartesian> >::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(scalarField, meta.universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(vectorField, meta.universal_part(), 3, nullptr);
 }
 
 void GeneratedMeshToFileWithTransientFields::write_mesh_with_field(const std::vector<double>& timeSteps,
@@ -132,10 +130,8 @@ GeneratedMeshToFileWithTransientFields::GeneratedMeshToFileWithTransientFields(s
     scalarField(meta.declare_field<double>(fieldRank, fieldBaseName+"_scalar", 1)),
     vectorField(meta.declare_field<double>(fieldRank, fieldBaseName+"_vector", 1))
 {
-  stk::mesh::put_field_on_mesh(scalarField, meta.universal_part(),
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh(vectorField, meta.universal_part(), 3,
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double>>::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(scalarField, meta.universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(vectorField, meta.universal_part(), 3, nullptr);
 
   stk::io::set_field_output_type(vectorField, "Vector_3D");
 }

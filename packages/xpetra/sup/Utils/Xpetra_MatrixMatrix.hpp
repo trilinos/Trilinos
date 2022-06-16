@@ -548,6 +548,19 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
             if (crmat1.is_null() || crmat2.is_null())
               continue;
 
+            // try unwrapping 1x1 blocked matrix
+            {
+              auto unwrap1 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(crmat1);
+              auto unwrap2 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(crmat2);
+
+              if(unwrap1.is_null() != unwrap2.is_null())  {
+                if(unwrap1 != Teuchos::null && unwrap1->Rows() == 1 && unwrap1->Cols() == 1)
+                  crmat1 = unwrap1->getCrsMatrix();
+                if(unwrap2 != Teuchos::null && unwrap2->Rows() == 1 && unwrap2->Cols() == 1)
+                  crmat2 = unwrap2->getCrsMatrix();
+              }
+            }
+
             RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
             RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);
             TEUCHOS_TEST_FOR_EXCEPTION(crop1.is_null() != crop2.is_null(), Xpetra::Exceptions::RuntimeError,
@@ -1217,6 +1230,19 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
             if (crmat1.is_null() || crmat2.is_null())
               continue;
 
+            // try unwrapping 1x1 blocked matrix
+            {
+              auto unwrap1 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(crmat1);
+              auto unwrap2 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(crmat2);
+
+              if(unwrap1.is_null() != unwrap2.is_null())  {
+                if(unwrap1 != Teuchos::null && unwrap1->Rows() == 1 && unwrap1->Cols() == 1)
+                  crmat1 = unwrap1->getCrsMatrix();
+                if(unwrap2 != Teuchos::null && unwrap2->Rows() == 1 && unwrap2->Cols() == 1)
+                  crmat2 = unwrap2->getCrsMatrix();
+              }
+            }
+
             RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
             RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);
             TEUCHOS_TEST_FOR_EXCEPTION(crop1.is_null() != crop2.is_null(), Xpetra::Exceptions::RuntimeError,
@@ -1803,6 +1829,19 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             if (crmat1.is_null() || crmat2.is_null())
               continue;
+
+            // try unwrapping 1x1 blocked matrix
+            {
+              auto unwrap1 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(crmat1);
+              auto unwrap2 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(crmat2);
+
+              if(unwrap1.is_null() != unwrap2.is_null())  {
+                if(unwrap1 != Teuchos::null && unwrap1->Rows() == 1 && unwrap1->Cols() == 1)
+                  crmat1 = unwrap1->getCrsMatrix();
+                if(unwrap2 != Teuchos::null && unwrap2->Rows() == 1 && unwrap2->Cols() == 1)
+                  crmat2 = unwrap2->getCrsMatrix();
+              }
+            }
 
             RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
             RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);

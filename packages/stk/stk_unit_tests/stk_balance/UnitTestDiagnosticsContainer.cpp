@@ -42,15 +42,15 @@ class UnitTestDiagnosticsContainer : public ::testing::Test {};
 class UnsignedDiagnosticTester : public stk::balance::UnsignedDiagnostic
 {
 public:
-  virtual std::string print_header1() override { return "Test"; }
-  virtual std::string print_header2() override { return "Diagnostic"; }
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned ) override { return "Diagnostic"; }
 };
 
 class UnsignedDiagnosticTester2 : public stk::balance::UnsignedDiagnostic
 {
 public:
-  virtual std::string print_header1() override { return "Test"; }
-  virtual std::string print_header2() override { return "Diag2"; }
+  virtual std::string print_header1(unsigned ) override { return "Test"; }
+  virtual std::string print_header2(unsigned ) override { return "Diag2"; }
 };
 
 

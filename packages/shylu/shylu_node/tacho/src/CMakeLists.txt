@@ -38,63 +38,81 @@ SET(SOURCES "")
 FILE(GLOB HEADERS_PUBLIC *.hpp impl/*.hpp)
 LIST( APPEND HEADERS_PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/Tacho_config.h )
 
-
 APPEND_SET(SOURCES
   impl/Tacho_Util.cpp
   impl/Tacho_Blas_External.cpp
   impl/Tacho_Lapack_External.cpp
   impl/Tacho_GraphTools_Metis.cpp
   impl/Tacho_SymbolicTools.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_Cuda.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_double_Serial.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_float_Cuda.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_float_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_complex_float_Serial.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_double_Cuda.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_double_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_double_Serial.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_float_Cuda.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_float_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_float_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_double_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_double_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_double_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_float_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_float_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_float_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_double_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_double_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_double_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_float_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_float_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_float_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_double_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_double_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_double_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_float_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_float_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_float_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_double_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_double_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_double_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_float_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_float_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskSchedulerMultiple_float_Serial.cpp
-  eti/Tacho_Driver_ETI_complex_double_Cuda.cpp
-  eti/Tacho_Driver_ETI_complex_double_OpenMP.cpp
-  eti/Tacho_Driver_ETI_complex_double_Serial.cpp
-  eti/Tacho_Driver_ETI_complex_float_Cuda.cpp
-  eti/Tacho_Driver_ETI_complex_float_OpenMP.cpp
-  eti/Tacho_Driver_ETI_complex_float_Serial.cpp
-  eti/Tacho_Driver_ETI_double_Cuda.cpp
-  eti/Tacho_Driver_ETI_double_OpenMP.cpp
-  eti/Tacho_Driver_ETI_double_Serial.cpp
-  eti/Tacho_Driver_ETI_float_Cuda.cpp
-  eti/Tacho_Driver_ETI_float_OpenMP.cpp
-  eti/Tacho_Driver_ETI_float_Serial.cpp
-
 )
+
+SET(TACHO_ETI_FILE "Tacho_Driver")
+SET(TACHO_ETI_DEVICE_NAME "")
+SET(TACHO_ETI_DEVICE_TYPE "")
+SET(TACHO_ETI_WITH_TASK "")
+
+IF (Kokkos_ENABLE_SERIAL)
+  LIST(APPEND TACHO_ETI_DEVICE_NAME "Serial")
+  LIST(APPEND TACHO_ETI_DEVICE_TYPE "Kokkos::Device<Kokkos::Serial,Kokkos::HostSpace>")
+  LIST(APPEND TACHO_ETI_WITH_TASK "0")
+ENDIF()
+IF (Kokkos_ENABLE_OPENMP)
+  LIST(APPEND TACHO_ETI_DEVICE_NAME "OpenMP")
+  LIST(APPEND TACHO_ETI_DEVICE_TYPE "Kokkos::Device<Kokkos::OpenMP,Kokkos::HostSpace>")
+  LIST(APPEND TACHO_ETI_WITH_TASK "1")
+ENDIF()
+IF (Kokkos_ENABLE_CUDA)
+  LIST(APPEND TACHO_ETI_DEVICE_NAME "CUDA")
+  LIST(APPEND TACHO_ETI_DEVICE_TYPE "Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>")
+  LIST(APPEND TACHO_ETI_WITH_TASK "0")
+ENDIF()
+IF (Kokkos_ENABLE_HIP)
+  LIST(APPEND TACHO_ETI_DEVICE_NAME "HIP")
+  LIST(APPEND TACHO_ETI_DEVICE_TYPE "Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPSpace>")
+  LIST(APPEND TACHO_ETI_WITH_TASK "0")
+ENDIF()
+
+LIST(LENGTH TACHO_ETI_DEVICE_NAME ETI_DEVICE_COUNT)
+MATH(EXPR ETI_DEVICE_COUNT "${ETI_DEVICE_COUNT}-1")
+
+SET(TACHO_ETI_VALUE_NAME "")
+SET(TACHO_ETI_VALUE_TYPE "")
+
+LIST(APPEND TACHO_ETI_VALUE_NAME "double")
+LIST(APPEND TACHO_ETI_VALUE_TYPE "double")
+
+LIST(APPEND TACHO_ETI_VALUE_NAME "float")
+LIST(APPEND TACHO_ETI_VALUE_TYPE "float")
+
+LIST(APPEND TACHO_ETI_VALUE_NAME "complex_double")
+LIST(APPEND TACHO_ETI_VALUE_TYPE "Kokkos::complex<double>")
+
+LIST(APPEND TACHO_ETI_VALUE_NAME "complex_float")
+LIST(APPEND TACHO_ETI_VALUE_TYPE "Kokkos::complex<float>")
+
+LIST(LENGTH TACHO_ETI_VALUE_NAME ETI_VALUE_COUNT)
+MATH(EXPR ETI_VALUE_COUNT "${ETI_VALUE_COUNT}-1")
+
+FOREACH(I RANGE ${ETI_DEVICE_COUNT})
+  LIST(GET TACHO_ETI_DEVICE_NAME ${I} ETI_DEVICE_NAME)
+  LIST(GET TACHO_ETI_DEVICE_TYPE ${I} ETI_DEVICE_TYPE)
+  LIST(GET TACHO_ETI_WITH_TASK   ${I} ETI_WITH_TASK)
+
+  FOREACH(J RANGE ${ETI_VALUE_COUNT})
+    LIST(GET TACHO_ETI_VALUE_NAME ${J} ETI_VALUE_NAME)
+    LIST(GET TACHO_ETI_VALUE_TYPE ${J} ETI_VALUE_TYPE)
+
+    FOREACH(ETI_FILE IN LISTS TACHO_ETI_FILE)
+      SET(ETI_NAME "${ETI_FILE}_ETI_${ETI_VALUE_NAME}_${ETI_DEVICE_NAME}")
+      MESSAGE(STATUS "Generating ETI: ${ETI_NAME}.cpp")
+      CONFIGURE_FILE(eti/${ETI_FILE}_ETI.in eti/${ETI_NAME}.cpp)
+
+    APPEND_SET(SOURCES
+      eti/${ETI_NAME}.cpp)
+
+    ENDFOREACH()
+  ENDFOREACH()
+ENDFOREACH()
 
 #-----------------------------------------------------------------------------
 

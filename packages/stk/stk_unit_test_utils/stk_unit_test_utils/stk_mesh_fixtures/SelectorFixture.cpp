@@ -67,15 +67,11 @@ SelectorFixture::SelectorFixture()
     m_fieldA(m_meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "FieldA")),
     m_fieldABC(m_meta_data.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "FieldABC"))
 {
-  stk::mesh::put_field_on_mesh(m_fieldA, m_partA,
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(m_fieldA, m_partA, nullptr);
 
-  stk::mesh::put_field_on_mesh(m_fieldABC, m_partA,
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh(m_fieldABC, m_partB,
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh(m_fieldABC, m_partC,
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(m_fieldABC, m_partA, nullptr);
+  stk::mesh::put_field_on_mesh(m_fieldABC, m_partB, nullptr);
+  stk::mesh::put_field_on_mesh(m_fieldABC, m_partC, nullptr);
 }
 
 void SelectorFixture::generate_mesh()
@@ -185,15 +181,11 @@ SelectorFixture::SelectorFixture()
   m_fieldA = &m_meta_data.declare_field<double>(stk::topology::NODE_RANK, "FieldA");
   m_fieldABC = &m_meta_data.declare_field<double>(stk::topology::NODE_RANK, "FieldABC");
 
-  stk::mesh::put_field_on_mesh(*m_fieldA, m_partA,
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(*m_fieldA, m_partA, nullptr);
 
-  stk::mesh::put_field_on_mesh(*m_fieldABC, m_partA,
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh(*m_fieldABC, m_partB,
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
-  stk::mesh::put_field_on_mesh(*m_fieldABC, m_partC,
-                               (stk::mesh::FieldTraits<stk::mesh::Field<double> >::data_type*) nullptr);
+  stk::mesh::put_field_on_mesh(*m_fieldABC, m_partA, nullptr);
+  stk::mesh::put_field_on_mesh(*m_fieldABC, m_partB, nullptr);
+  stk::mesh::put_field_on_mesh(*m_fieldABC, m_partC, nullptr);
 }
 
 void SelectorFixture::generate_mesh()

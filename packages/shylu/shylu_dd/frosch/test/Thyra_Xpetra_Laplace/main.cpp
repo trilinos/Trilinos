@@ -361,7 +361,7 @@ int main(int argc, char *argv[])
         }
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "###################################\n# Stratimikos LinearSolverBuilder #\n###################################\n" << endl;
-        Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+        Stratimikos::LinearSolverBuilder<SC> linearSolverBuilder;
         Stratimikos::enableFROSch<LO,GO,NO>(linearSolverBuilder);
         linearSolverBuilder.setParameterList(parameterList);
 
@@ -379,8 +379,8 @@ int main(int argc, char *argv[])
         linearOpWithSolve(*lowsFactory, K_thyra);
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#########\n# Solve #\n#########" << endl;
-        SolveStatus<double> status =
-        solve<double>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
+        SolveStatus<SC> status =
+        solve<SC>(*lows, Thyra::NOTRANS, *thyraB, thyraX.ptr());
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "\n#############\n# Finished! #\n#############" << endl;
     }

@@ -175,9 +175,31 @@ build_problem (Teuchos::ParameterList& test_params,
   Teuchos::RCP<TMV> x = Teuchos::rcp(new TMV(rowmap, 1));
 
   if (b == Teuchos::null) {
+    bool rhs_unit = false;
+    int rhs_option = 1;
     b = Teuchos::rcp (new TMV (rowmap, 1));
-    x->randomize ();
-    BOPT::Apply (*A, *x, *b);
+    if (rhs_option == 0) {
+      // random B
+      b->randomize ();
+    } else {
+      if (rhs_option == 1) {
+        // b = A * random
+        x->randomize ();
+      } else {
+        // b = A * ones
+        x->putScalar (STS::one ());
+      }
+      BOPT::Apply (*A, *x, *b);
+    }
+    if (rhs_unit) {
+      // scale B to unit-norm
+      Teuchos::Array<typename STS::magnitudeType> normsB(b->getNumVectors());
+      b->norm2(normsB);
+      for (size_t j = 0; j < b->getNumVectors(); j++) {
+        b->getVectorNonConst(j)->scale(STS::one() / normsB[j]);
+      }
+    }
+    // X = zero
     BMVT::MvInit (*x, STS::zero ());
   }
   else {

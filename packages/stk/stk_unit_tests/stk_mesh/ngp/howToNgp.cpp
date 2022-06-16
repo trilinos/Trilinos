@@ -54,8 +54,7 @@ public:
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
     stk::mesh::Part &shellQuadPart = get_meta().get_topology_root_part(stk::topology::SHELL_QUAD_4);
     auto &shellQuadField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "myField");
-    double init = 0.0;
-    stk::mesh::put_field_on_mesh(shellQuadField, shellQuadPart, &init);
+    stk::mesh::put_field_on_mesh(shellQuadField, shellQuadPart, nullptr);
     std::string meshDesc =
         "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
         0,2,SHELL_QUAD_4,5,6,7,8";
@@ -68,8 +67,7 @@ TEST_F(NgpHowTo, loopOverSubsetOfMesh)
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   stk::mesh::Part &shellQuadPart = get_meta().get_topology_root_part(stk::topology::SHELL_QUAD_4);
   auto &shellQuadField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(shellQuadField, shellQuadPart, &init);
+  stk::mesh::put_field_on_mesh(shellQuadField, shellQuadPart, nullptr);
   std::string meshDesc =
       "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
       0,2,SHELL_QUAD_4,5,6,7,8";
@@ -146,8 +144,7 @@ TEST_F(NgpHowTo, fieldOnSubsetOfMesh)
   const stk::mesh::Part &hex8Part = get_meta().get_topology_root_part(stk::topology::HEX_8);
 
   auto &shellQuadField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(shellQuadField, shellQuadPart, &init);
+  stk::mesh::put_field_on_mesh(shellQuadField, shellQuadPart, nullptr);
   std::string meshDesc =
       "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
       0,2,SHELL_QUAD_4,5,6,7,8";
@@ -166,8 +163,7 @@ TEST_F(NgpHowTo, loopOverAllMeshNodes)
 {
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
   double fieldVal = 13.0;
@@ -182,8 +178,7 @@ TEST_F(NgpHowTo, loopOverMeshFaces)
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   stk::mesh::Part &facePart = get_meta().declare_part("facePart", stk::topology::FACE_RANK);
   auto &field = get_meta().declare_field<double>(stk::topology::FACE_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(field, facePart, &init);
+  stk::mesh::put_field_on_mesh(field, facePart, nullptr);
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
 
@@ -247,8 +242,7 @@ TEST_F(NgpHowTo, loopOverElemNodes)
   }
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
 
@@ -263,8 +257,7 @@ TEST_F(NgpHowTo, loopOverElemNodes_bucketCapacity)
   const unsigned bucketCapacity = 8;
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
   stk::unit_test_util::simple_fields::setup_text_mesh(get_bulk(), meshDesc);
 
@@ -380,8 +373,7 @@ TEST_F(NgpHowTo, loopOverElemFaces)
   }
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
   stk::io::fill_mesh("generated:1x1x1|sideset:xXyYzZ", get_bulk());
 
   run_connected_face_test(get_bulk());
@@ -452,8 +444,7 @@ TEST_F(NgpHowToConstraint, checkNodalConnectivity)
   }
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
   stk::io::fill_mesh("generated:1x1x1", get_bulk());
   stk::mesh::EntityId constraintId = 1;
   add_constraint_on_nodes_1_thru_4(get_bulk(), constraintId);
@@ -523,8 +514,7 @@ TEST_F(NgpHowTo, loopOverElemFaceOrdinals)
   }
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
   stk::io::fill_mesh("generated:1x1x1|sideset:xXyYzZ", get_bulk());
 
   run_connected_face_ordinal_test(get_bulk());
@@ -603,8 +593,7 @@ TEST_F(NgpHowTo, loopOverElemFacePermutations)
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   stk::mesh::Part& sidePart = get_meta().declare_part("SidePart");
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
   stk::io::fill_mesh("generated:1x1x2|sideset:xXyYzZ", get_bulk());
   stk::mesh::create_edges(get_bulk());
   bool connectFacesToEdges = true;
@@ -677,8 +666,7 @@ TEST_F(NgpHowTo, anotherElemFacesTest)
   }
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
   stk::io::fill_mesh("generated:1x1x4|sideset:zZ", get_bulk());
   run_another_connected_face_test(get_bulk());
 }
@@ -724,9 +712,8 @@ TEST_F(NgpHowTo, viewOfFields)
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   auto &field1 = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField1");
   auto &field2 = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField2");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(field1, get_meta().universal_part(), &init);
-  stk::mesh::put_field_on_mesh(field2, get_meta().universal_part(), &init);
+  stk::mesh::put_field_on_mesh(field1, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(field2, get_meta().universal_part(), nullptr);
   stk::io::fill_mesh("generated:1x1x4|sideset:zZ", get_bulk());
 
   test_view_of_fields(get_bulk(), field1, field2);
@@ -1281,8 +1268,7 @@ TEST_F(NgpHowTo, checkPartMembership)
   }
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   auto &field = get_meta().declare_field<double>(stk::topology::NODE_RANK, "myField");
-  double init = 0.0;
-  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), &init);
+  stk::mesh::put_field_on_mesh(field, get_meta().universal_part(), nullptr);
 
   stk::mesh::Part& testPart = get_meta().declare_part("testPart", stk::topology::NODE_RANK);
 

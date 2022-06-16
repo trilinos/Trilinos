@@ -31,13 +31,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 #include "stk_util/stk_config.h"            // for STK_HAS_MPI
 #ifdef STK_HAS_MPI
 
 #include "gtest/gtest.h"
 #include "stk_util/parallel/MPICommKey.hpp"
-
 
 namespace {
 
@@ -70,7 +68,7 @@ class CallbackChecker
 
 }  // namespace
 
-
+#ifndef MPI_KEY_MANAGER_COMM_DESTRUCTOR_CALLBACK_BROKEN
 namespace {
   MPI_Request req;
   bool is_complete = false;
@@ -83,7 +81,6 @@ namespace {
   }
 }
 
-#ifndef MPI_KEY_MANAGER_COMM_DESTRUCTOR_CALLBACK_BROKEN
 TEST(KeyManager, IntelMPIBug)
 {
   MPI_Comm comm2;

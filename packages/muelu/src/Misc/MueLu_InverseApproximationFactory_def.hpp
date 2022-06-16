@@ -85,35 +85,37 @@ namespace MueLu {
   void InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
-    typedef Teuchos::ScalarTraits<SC> STS;
-    SC one = STS::one();
+    using STS = Teuchos::ScalarTraits<SC>;
+    const SC one = STS::one();
 
     const ParameterList& pL = GetParameterList();
+    const bool fixing = pL.get<bool>("inverse: fixing");
 
     // check which approximation type to use
-    bool fixing = pL.get<bool>("inverse: fixing");
-    std::string method = pL.get<std::string>("inverse: approximation type");
+    const std::string method = pL.get<std::string>("inverse: approximation type");
     TEUCHOS_TEST_FOR_EXCEPTION(method != "diagonal" && method != "lumping", Exceptions::RuntimeError,
                                "MueLu::InverseApproximationFactory::Build: Approximation type can be 'diagonal' or 'lumping'.");
 
     RCP<Matrix> A = Get<RCP<Matrix> >(currentLevel, "A");
     RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A);
-    bool isBlocked = (bA == Teuchos::null ? false : true);
+    const bool isBlocked = (bA == Teuchos::null ? false : true);
 
     // if blocked operator is used, defaults to A(0,0)
     if(isBlocked) A = bA->getMatrix(0,0);
 
-    RCP<Vector> Ainv = Teuchos::null;
+    RCP<Matrix> Ainv = Teuchos::null;
     if(method=="diagonal") {
-      auto diag = VectorFactory::Build(A->getRangeMap(), true);
+      const auto diag = VectorFactory::Build(A->getRangeMap(), true);
       A->getLocalDiagCopy(*diag);
-      Ainv = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, one));
+      const RCP<const Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, one));
+      Ainv = MatrixFactory::Build(D);
     }
     else if(method=="lumping") {
-      auto diag = Utilities::GetLumpedMatrixDiagonal(*A);
-      Ainv = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, one));
+      const auto diag = Utilities::GetLumpedMatrixDiagonal(*A);
+      const RCP<const Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, one));
+      Ainv = MatrixFactory::Build(D);
     }
-    
+
     GetOStream(Statistics1) << "Approximate inverse calculated by: " << method << "." << std::endl;
 
     Set(currentLevel, "Ainv", Ainv);

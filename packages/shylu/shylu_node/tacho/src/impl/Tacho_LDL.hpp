@@ -8,17 +8,19 @@
 #include "Tacho_Util.hpp"
 
 namespace Tacho {
-  
-    ///
-    /// LDL:
-    /// 
-    /// 
 
-    /// various implementation for different uplo and algo parameters
-    template<typename ArgUplo, 
-             typename ArgAlgo>
-    struct LDL;
-    
-}
+///
+/// LDL:
+///
+///
+
+/// various implementation for different uplo and algo parameters
+template <typename ArgUplo, typename ArgAlgo> struct LDL;
+
+struct LDL_Algorithm {
+  using type = ActiveAlgorithm::type;
+};
+
+} // namespace Tacho
 
 #endif

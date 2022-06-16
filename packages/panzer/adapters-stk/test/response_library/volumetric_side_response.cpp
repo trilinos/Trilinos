@@ -61,7 +61,11 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
+
+#ifdef PANZER_HAVE_EPETRA
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+#endif
+
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_ResponseEvaluatorFactory_Functional.hpp"
 #include "user_app_EquationSetFactory.hpp"
@@ -504,6 +508,7 @@ namespace panzer_stk {
     }
   }
 
+#ifdef PANZER_HAVE_EPETRA
   std::pair<RCP<panzer::ResponseLibrary<panzer::Traits> >,RCP<panzer::LinearObjFactory<panzer::Traits> > > buildResponseLibrary(
                                                            std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
                                                            panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
@@ -623,4 +628,6 @@ namespace panzer_stk {
 
     return std::make_pair(rLibrary,lof);
   }
+#endif // PANZER_HAVE_EPETRA
+
 }

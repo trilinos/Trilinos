@@ -7,68 +7,18 @@
 #include "Tacho_Util.hpp"
 
 namespace Tacho {
-  
-    ///
-    /// Trsm:
-    ///
 
-    /// various implementation for different uplo and algo parameters
-    template<typename ArgSide,
-             typename ArgUplo, 
-             typename ArgTrans, 
-             typename ArgAlgo>
-    struct Trsm;
+///
+/// Trsm:
+///
 
-    /// task construction for the above chol implementation
-    /// Trsm<ArgSide,ArgUplo,ArgTrans,ArgAlgo>::invoke(_sched, member, ArgDiag(), _alpha, _A, _B);
-    template<typename SchedulerType,
-             typename ScalarType,
-             typename DenseMatrixViewType,
-             typename ArgSide,
-             typename ArgUplo,
-             typename ArgTrans,
-             typename ArgDiag,
-             typename ArgAlgo>
-    struct TaskFunctor_Trsm {
-    public:
-      typedef SchedulerType scheduler_type;
-      typedef typename scheduler_type::member_type member_type;
+/// various implementation for different uplo and algo parameters
+template <typename ArgSide, typename ArgUplo, typename ArgTrans, typename ArgAlgo> struct Trsm;
 
-      typedef ScalarType scalar_type;
+struct TrsmAlgorithm {
+  using type = ActiveAlgorithm::type;
+};
 
-      typedef DenseMatrixViewType dense_block_type;
-      typedef typename dense_block_type::future_type future_type;
-      typedef typename future_type::value_type value_type;
-      
-    private:
-      scalar_type _alpha;
-      dense_block_type _A, _B;
-
-    public:
-      KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Trsm() = delete;
-      
-      KOKKOS_INLINE_FUNCTION
-      TaskFunctor_Trsm(const scalar_type alpha,
-                       const dense_block_type &A,
-                       const dense_block_type &B) 
-        : _alpha(alpha),
-          _A(A), 
-          _B(B) {}
-      
-      KOKKOS_INLINE_FUNCTION
-      void operator()(member_type &member, value_type &r_val) {
-        const int ierr = Trsm<ArgSide,ArgUplo,ArgTrans,ArgAlgo>
-          ::invoke(member, ArgDiag(), _alpha, _A, _B);
- 
-        Kokkos::single(Kokkos::PerTeam(member), 
-          [&, ierr] () { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-            _B.set_future();
-            r_val = ierr;
-          });
-      }
-    };
-    
-}
+} // namespace Tacho
 
 #endif

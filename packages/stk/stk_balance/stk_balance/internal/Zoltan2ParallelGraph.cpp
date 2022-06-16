@@ -3,6 +3,7 @@
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
+#include <stk_balance/setup/DefaultSettings.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/human_bytes.hpp>
 
@@ -309,7 +310,20 @@ void Zoltan2ParallelGraph::createGraphEdgesUsingNodeConnectivity(stk::mesh::Bulk
         mVertexIds[local_id] = getAdjacencyId(stkMeshBulkData, elementOfConcern, useLocalIds, localIds);
 
         if (not stk::balance::internal::should_omit_spider_element(stkMeshBulkData, balanceSettings, elementOfConcern)) {
-          mVertexWeights[local_id] = balanceSettings.getGraphVertexWeight(bucket.topology());
+          if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::CONSTANT) {
+            mVertexWeights[local_id] = 1;
+          }
+          else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::TOPOLOGY) {
+            mVertexWeights[local_id] = balanceSettings.getGraphVertexWeight(bucket.topology());
+          }
+          else if (balanceSettings.getVertexWeightMethod() == stk::balance::VertexWeightMethod::CONNECTIVITY) {
+            const stk::mesh::Field<double> & connectivityWeights = *balanceSettings.getVertexConnectivityWeightField(stkMeshBulkData);
+            mVertexWeights[local_id] = *stk::mesh::field_data(connectivityWeights, elementOfConcern);
+          }
+          else {
+            ThrowErrorMsg("Unknown vertex weight method: " << vertex_weight_method_name(balanceSettings.getVertexWeightMethod()));
+          }
+
           stk::balance::internal::fillEntityCentroid(stkMeshBulkData, coord, elementOfConcern, &mVertexCoordinates[local_id*spatialDimension]);
           graphEdgeCreator.create_graph_edges_for_element(elementOfConcern, graphEdges);
         }

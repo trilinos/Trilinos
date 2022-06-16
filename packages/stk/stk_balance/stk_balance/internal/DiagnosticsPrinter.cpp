@@ -49,15 +49,16 @@ DiagnosticsPrinter::DiagnosticsPrinter(stk::ParallelMachine comm, int numLogical
 std::vector<size_t>
 DiagnosticsPrinter::required_column_header_widths()
 {
-  std::vector<size_t> headerWidths(impl::g_diagnosticsContainer.size()+1, 0);
+  std::vector<size_t> headerWidths;
 
-  headerWidths[0] = std::max({print_rank_header1().size(),
-                              print_rank_header2().size()});
+  headerWidths.push_back(std::max({print_rank_header1().size(),
+                                   print_rank_header2().size()}));
 
-  int index = 0;
   for (Diagnostic * diag : impl::g_diagnosticsContainer) {
-    headerWidths[++index] = std::max({diag->print_header1().size(),
-                                      diag->print_header2().size()});
+    for (unsigned column = 0; column < diag->num_columns(); ++column) {
+      headerWidths.push_back(std::max({diag->print_header1(column).size(),
+                                       diag->print_header2(column).size()}));
+    }
   }
 
   return headerWidths;
@@ -66,14 +67,15 @@ DiagnosticsPrinter::required_column_header_widths()
 std::vector<size_t>
 DiagnosticsPrinter::required_column_data_widths()
 {
-  std::vector<size_t> dataWidths(impl::g_diagnosticsContainer.size()+1, 0);
+  std::vector<size_t> dataWidths;
 
-  dataWidths[0] = print_rank(m_numLogicalRanks-1).size();
+  dataWidths.push_back(print_rank(m_numLogicalRanks-1).size());
 
-  int index = 0;
   for (Diagnostic * diag : impl::g_diagnosticsContainer) {
-    dataWidths[++index] = std::max({diag->print_min().size(),
-                                    diag->print_max().size()});
+    for (unsigned column = 0; column < diag->num_columns(); ++column) {
+      dataWidths.push_back(std::max({diag->print_min(column).size(),
+                                     diag->print_max(column).size()}));
+    }
   }
 
   return dataWidths;
@@ -132,7 +134,9 @@ void DiagnosticsPrinter::print_data_header1_row(std::ostream & stream, const std
   stream << " " << centered_in_width(print_rank_header1(), columnWidths[0]);
   int index = 0;
   for (Diagnostic * diag : impl::g_diagnosticsContainer) {
-    stream << ColumnDivider << centered_in_width(diag->print_header1(), columnWidths[++index]);
+    for (unsigned column = 0; column < diag->num_columns(); ++column) {
+      stream << ColumnDivider << centered_in_width(diag->print_header1(column), columnWidths[++index]);
+    }
   }
   stream << " " << std::endl;
 }
@@ -142,7 +146,9 @@ void DiagnosticsPrinter::print_data_header2_row(std::ostream & stream, const std
   stream << " " << centered_in_width(print_rank_header2(), columnWidths[0]);
   int index = 0;
   for (Diagnostic * diag : impl::g_diagnosticsContainer) {
-    stream << ColumnDivider << centered_in_width(diag->print_header2(), columnWidths[++index]);
+    for (unsigned column = 0; column < diag->num_columns(); ++column) {
+      stream << ColumnDivider << centered_in_width(diag->print_header2(column), columnWidths[++index]);
+    }
   }
   stream << " " << std::endl;
 }
@@ -152,7 +158,9 @@ void DiagnosticsPrinter::print_summary_header1_row(std::ostream & stream, const 
   stream << " " << centered_in_width(print_summary_header1(), columnWidths[0]);
   int index = 0;
   for (Diagnostic * diag : impl::g_diagnosticsContainer) {
-    stream << ColumnDivider << centered_in_width(diag->print_header1(), columnWidths[++index]);
+    for (unsigned column = 0; column < diag->num_columns(); ++column) {
+      stream << ColumnDivider << centered_in_width(diag->print_header1(column), columnWidths[++index]);
+    }
   }
   stream << " " << std::endl;
 }
@@ -162,7 +170,9 @@ void DiagnosticsPrinter::print_summary_header2_row(std::ostream & stream, const 
   stream << " " << centered_in_width(print_summary_header2(), columnWidths[0]);
   int index = 0;
   for (Diagnostic * diag : impl::g_diagnosticsContainer) {
-    stream << ColumnDivider << centered_in_width(diag->print_header2(), columnWidths[++index]);
+    for (unsigned column = 0; column < diag->num_columns(); ++column) {
+      stream << ColumnDivider << centered_in_width(diag->print_header2(column), columnWidths[++index]);
+    }
   }
   stream << " " << std::endl;
 }
@@ -173,9 +183,11 @@ void DiagnosticsPrinter::print_summary_min_row(std::ostream & stream, const std:
   stream << " " << centered_in_width(print_summary_min(), columnWidths[0]);
   int index = 0;
   for (Diagnostic * diag : impl::g_diagnosticsContainer) {
-    ++index;
-    stream << ColumnDivider << centered_data_in_width(diag->print_min(),
-                                                      dataWidths[index], columnWidths[index]);
+    for (unsigned column = 0; column < diag->num_columns(); ++column) {
+      ++index;
+      stream << ColumnDivider << centered_data_in_width(diag->print_min(column),
+                                                        dataWidths[index], columnWidths[index]);
+    }
   }
   stream << " " << std::endl;
 }
@@ -186,9 +198,11 @@ void DiagnosticsPrinter::print_summary_max_row(std::ostream & stream, const std:
   stream << " " << centered_in_width(print_summary_max(), columnWidths[0]);
   int index = 0;
   for (Diagnostic * diag : impl::g_diagnosticsContainer) {
-    ++index;
-    stream << ColumnDivider << centered_data_in_width(diag->print_max(),
-                                                      dataWidths[index], columnWidths[index]);
+    for (unsigned column = 0; column < diag->num_columns(); ++column) {
+      ++index;
+      stream << ColumnDivider << centered_data_in_width(diag->print_max(column),
+                                                        dataWidths[index], columnWidths[index]);
+    }
   }
   stream << " " << std::endl;
 }
@@ -199,9 +213,11 @@ void DiagnosticsPrinter::print_summary_avg_row(std::ostream & stream, const std:
   stream << " " << centered_in_width(print_summary_avg(), columnWidths[0]);
   int index = 0;
   for (Diagnostic * diag : impl::g_diagnosticsContainer) {
-    ++index;
-    stream << ColumnDivider << centered_data_in_width(diag->print_avg(),
-                                                      dataWidths[index], columnWidths[index]);
+    for (unsigned column = 0; column < diag->num_columns(); ++column) {
+      ++index;
+      stream << ColumnDivider << centered_data_in_width(diag->print_avg(column),
+                                                        dataWidths[index], columnWidths[index]);
+    }
   }
   stream << " " << std::endl;
 }
@@ -213,9 +229,11 @@ void DiagnosticsPrinter::print_data_rank_rows(std::ostream & stream, const std::
     stream << " " << centered_data_in_width(print_rank(rank), dataWidths[0], columnWidths[0]);
     int index = 0;
     for (Diagnostic * diag : impl::g_diagnosticsContainer) {
-      ++index;
-      stream << ColumnDivider << centered_data_in_width(diag->print_rank_value(rank),
-                                                        dataWidths[index], columnWidths[index]);
+      for (unsigned column = 0; column < diag->num_columns(); ++column) {
+        ++index;
+        stream << ColumnDivider << centered_data_in_width(diag->print_rank_value(column, rank),
+                                                          dataWidths[index], columnWidths[index]);
+      }
     }
     stream << " " << std::endl;
   }
@@ -244,14 +262,15 @@ DiagnosticsPrinter::print(std::ostream & stream)
     std::vector<size_t> columnWidths = required_column_total_widths(headerWidths, dataWidths);
     const size_t totalWidth = total_output_width(columnWidths);
 
+    stream << std::endl;
     print_horizontal_divider(stream, totalWidth);
     print_data_header1_row(stream, columnWidths);
     print_data_header2_row(stream, columnWidths);
     print_horizontal_divider(stream, totalWidth);
     print_data_rank_rows(stream, dataWidths, columnWidths);
     print_horizontal_divider(stream, totalWidth);
-    stream << std::endl;
 
+    stream << std::endl;
     print_horizontal_divider(stream, totalWidth);
     print_summary_header1_row(stream, columnWidths);
     print_summary_header2_row(stream, columnWidths);

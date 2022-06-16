@@ -473,6 +473,10 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
       "support left preconditioning.");
     Teuchos::ParameterList
       &solverTypesSL = validParamList->sublist(SolverTypes_name);
+
+    const bool lapackSupportsScalar = Belos::Details::LapackSupportsScalar<Scalar>::value;
+    const bool scalarIsReal = !Teuchos::ScalarTraits<Scalar>::isComplex;
+
     {
       Belos::BlockGmresSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(BlockGMRES_name).setParameters(
@@ -485,13 +489,13 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         *mgr.getValidParameters()
         );
     }
-    {
+    if (lapackSupportsScalar) {
       Belos::BlockCGSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(BlockCG_name).setParameters(
         *mgr.getValidParameters()
         );
     }
-    {
+    if (lapackSupportsScalar) {
       Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(PseudoBlockCG_name).setParameters(
         *mgr.getValidParameters()
@@ -503,13 +507,13 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         *mgr.getValidParameters()
         );
     }
-    {
+    if (lapackSupportsScalar) {
       Belos::GCRODRSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(GCRODR_name).setParameters(
         *mgr.getValidParameters()
         );
     }
-    {
+    if (lapackSupportsScalar && scalarIsReal) {
       Belos::RCGSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(RCG_name).setParameters(
         *mgr.getValidParameters()

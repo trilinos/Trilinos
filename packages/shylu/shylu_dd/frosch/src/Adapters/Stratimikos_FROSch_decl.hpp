@@ -45,7 +45,7 @@
 #include <ShyLU_DDFROSch_config.h>
 
 #ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#include "Stratimikos_LinearSolverBuilder.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -68,10 +68,17 @@ namespace Stratimikos {
     using namespace Teuchos;
     using namespace Thyra;
 
-    template <typename LO = int,
+    template <typename LO,
+              typename GO,
+              typename NO>
+    void enableFROSch(LinearSolverBuilder<double>& builder,
+                      const string& stratName = "FROSch");
+
+    template <typename SC = double,
+              typename LO = int,
               typename GO = int,
               typename NO = KokkosClassic::DefaultNode::DefaultNodeType>
-    void enableFROSch(DefaultLinearSolverBuilder& builder,
+    void enableFROSch(LinearSolverBuilder<SC>& builder,
                       const string& stratName = "FROSch");
 } // namespace Stratimikos
 

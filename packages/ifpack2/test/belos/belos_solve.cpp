@@ -87,6 +87,8 @@ process_command_line (bool& printedHelp,
 int main (int argc, char* argv[])
 {
   typedef double Scalar;
+  typedef Teuchos::ScalarTraits<Scalar>        STS;
+  typedef STS::magnitudeType                   Magnitude;
   typedef Tpetra::Map<>::local_ordinal_type    LO;
   typedef Tpetra::Map<>::global_ordinal_type   GO;
   typedef Tpetra::Map<>::node_type             Node;
@@ -154,6 +156,15 @@ int main (int argc, char* argv[])
       Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
     }
 
+    // defaullt convergence tol
+    Magnitude tol = 1e-7;
+    Teuchos::ParameterList& BelosParams = test_params.sublist("Belos");
+    if (BelosParams.isParameter ("Convergence Tolerance")) {
+      tol = BelosParams.get<Magnitude> ("Convergence Tolerance");
+    } else {
+      BelosParams.set<Magnitude> ("Convergence Tolerance", tol);
+    }
+
     //Build the preconditioner (if one is enabled), and bind it to the problem
     std::string tifpack_precond("not specified");
     Ifpack2::getParameter (test_params, "Ifpack2::Preconditioner", tifpack_precond);
@@ -189,17 +200,21 @@ int main (int argc, char* argv[])
       prec->describe (*out, Teuchos::VERB_LOW);
     }
 
-    RCP<TMV> R = rcp(new TMV(*problem->getRHS()));
+    RCP<TMV> R = rcp(new TMV(*problem->getRHS(), Teuchos::Copy));
     problem->computeCurrResVec(&*R, &*problem->getLHS(), &*problem->getRHS());
-    Teuchos::Array<Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(R->getNumVectors());
-    R->norm2(norms);
+    Teuchos::Array<Magnitude> normsR(R->getNumVectors());
+    Teuchos::Array<Magnitude> normsB(R->getNumVectors());
+    R->norm2(normsR);
+    problem->getRHS()->norm2(normsB);
 
-    if (norms.size() < 1) {
+    if (normsR.size() < 1) {
       throw std::runtime_error("ERROR: norms.size()==0 indicates R->getNumVectors()==0.");
     }
 
-    *out << "2-Norm of 0th residual vec: " << norms[0] << std::endl;
-    *out << "Achieved tolerance: " << solver->achievedTol() << std::endl;
+    *out << "2-Norm of 0th RHS      vec: " << normsB[0] << std::endl;
+    *out << "2-Norm of 0th residual vec: " << normsR[0] << " -> " << normsR[0]/normsB[0] << std::endl;
+    *out << "Achieved tolerance: " << solver->achievedTol() << ", Requested tolerance: " << tol << std::endl;
+    normsR[0] /= normsB[0];
 
     //If the xml file specified a number of iterations to expect, then we will
     //use that as a test pass/fail criteria.
@@ -208,13 +223,12 @@ int main (int argc, char* argv[])
       int expected_iters = 0;
       Ifpack2::getParameter(test_params, "expectNumIters", expected_iters);
       int actual_iters = solver->getNumIters();
-      if (ret == Belos::Converged && actual_iters <= expected_iters && norms[0] < 1.e-7) {
+      if (ret == Belos::Converged && actual_iters <= expected_iters && normsR[0] < tol) {
       }
       else {
         success = false;
-        *out << "Actual iters("<<actual_iters
-             <<") > expected number of iterations ("
-             <<expected_iters<<"), or resid-norm(" << norms[0] << ") >= 1.e-7"<<std::endl;
+        *out << "Actual iters(" << actual_iters << ") > expected number of iterations ("
+             << expected_iters <<"), or resid-norm(" << normsR[0] << ") >= " << tol << std::endl;
       }
     }
 

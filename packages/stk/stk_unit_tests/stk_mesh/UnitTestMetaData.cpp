@@ -85,6 +85,12 @@ TEST( UnitTestRootTopology, newPartsWithTopologyAfterCommit )
   uncommitted_metadata.commit();
 }
 
+TEST(UnitTestMetaData, declare_ranked_part_without_spatial_dim)
+{
+  MetaData meta;
+  EXPECT_ANY_THROW(meta.declare_part("myPart",stk::topology::NODE_RANK));
+}
+
 TEST(UnitTestMetaData, superElemTopoDeclarePartWithTopology)
 {
     const int spatial_dimension = 3;
