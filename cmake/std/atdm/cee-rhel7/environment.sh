@@ -195,10 +195,8 @@ fi
 # to be safe.  Also, we need to set OMP_* env vars here because the SPARC
 # modules change them!
 
-# Use updated Ninja and CMake
-module load sems-archive-env
-module load sems-archive-cmake/3.19.1
-module load sems-archive-ninja_fortran/1.8.2
+# Use updated Ninja
+module load sems-ninja/1.10.1
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 
