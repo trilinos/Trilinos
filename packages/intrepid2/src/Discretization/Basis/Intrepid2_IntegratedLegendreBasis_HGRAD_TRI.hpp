@@ -171,15 +171,20 @@ namespace Intrepid2
             // these functions multiply the edge functions from the 01 edge by integrated Jacobi functions, appropriately scaled
             const double jacobiScaling = 1.0; // s0 + s1 + s2
             
-            for (int i=2; i<polyOrder_; i++)
+            const int max_ij_sum = polyOrder_;
+            const int min_i = 2;
+            const int min_j = 1;
+            const int min_ij_sum = min_i + min_j;
+            for (int ij_sum = min_ij_sum; ij_sum <= max_ij_sum; ij_sum++)
             {
-              const int edgeBasisOrdinal = i+numVertices-2; // i+1: where the value of the edge function is stored in output_
-              const auto & edgeValue = output_(edgeBasisOrdinal,pointOrdinal);
-              const double alpha = i*2.0;
-              
-              Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-2, lambda[2], jacobiScaling);
-              for (int j=1; i+j <= polyOrder_; j++)
+              for (int i=min_i; i<=ij_sum-min_j; i++)
               {
+                const int j = ij_sum - i;
+                const int edgeBasisOrdinal = i+numVertices-2; // i+1: where the value of the edge function is stored in output_
+                const auto & edgeValue = output_(edgeBasisOrdinal,pointOrdinal);
+                const double alpha = i*2.0;
+                
+                Polynomials::shiftedScaledIntegratedJacobiValues(jacobi_values_at_point, alpha, polyOrder_-2, lambda[2], jacobiScaling);
                 const auto & jacobiValue = jacobi_values_at_point(j);
                 output_(fieldOrdinalOffset,pointOrdinal) = edgeValue * jacobiValue;
                 fieldOrdinalOffset++;
@@ -276,29 +281,34 @@ namespace Intrepid2
             // face functions multiply the edge functions from the 01 edge by integrated Jacobi functions, appropriately scaled
             const double jacobiScaling = 1.0; // s0 + s1 + s2
 
-            for (int i=2; i<polyOrder_; i++)
+            const int max_ij_sum = polyOrder_;
+            const int min_i = 2;
+            const int min_j = 1;
+            const int min_ij_sum = min_i + min_j;
+            for (int ij_sum = min_ij_sum; ij_sum <= max_ij_sum; ij_sum++)
             {
-              // the edge function here is for edge 01, in the first set of edge functions.
-              const int edgeBasisOrdinal = i+numVertices-2; // i+1: where the value of the edge function is stored in output_
-              const auto & grad_L_i_dx = output_(edgeBasisOrdinal,pointOrdinal,0);
-              const auto & grad_L_i_dy = output_(edgeBasisOrdinal,pointOrdinal,1);
-              
-              const double alpha = i*2.0;
-
-              Polynomials::shiftedScaledIntegratedLegendreValues (L_i, polyOrder_, lambda[1], lambda[0]+lambda[1]);
-              Polynomials::shiftedScaledIntegratedJacobiValues_dt(L_2i_j_dt, alpha, polyOrder_, lambda[2], jacobiScaling);
-              Polynomials::shiftedScaledIntegratedJacobiValues   (   L_2i_j, alpha, polyOrder_, lambda[2], jacobiScaling);
-              Polynomials::shiftedScaledJacobiValues(P_2i_j_minus_1, alpha, polyOrder_-1, lambda[2], jacobiScaling);
-              
-              const auto & s0_dx = lambda_dx[0];
-              const auto & s0_dy = lambda_dy[0];
-              const auto & s1_dx = lambda_dx[1];
-              const auto & s1_dy = lambda_dy[1];
-              const auto & s2_dx = lambda_dx[2];
-              const auto & s2_dy = lambda_dy[2];
-              
-              for (int j=1; i+j <= polyOrder_; j++)
+              for (int i=min_i; i<=ij_sum-min_j; i++)
               {
+                const int j = ij_sum - i;
+                // the edge function here is for edge 01, in the first set of edge functions.
+                const int edgeBasisOrdinal = i+numVertices-2; // i+1: where the value of the edge function is stored in output_
+                const auto & grad_L_i_dx = output_(edgeBasisOrdinal,pointOrdinal,0);
+                const auto & grad_L_i_dy = output_(edgeBasisOrdinal,pointOrdinal,1);
+                
+                const double alpha = i*2.0;
+
+                Polynomials::shiftedScaledIntegratedLegendreValues (L_i, polyOrder_, lambda[1], lambda[0]+lambda[1]);
+                Polynomials::shiftedScaledIntegratedJacobiValues_dt(L_2i_j_dt, alpha, polyOrder_, lambda[2], jacobiScaling);
+                Polynomials::shiftedScaledIntegratedJacobiValues   (   L_2i_j, alpha, polyOrder_, lambda[2], jacobiScaling);
+                Polynomials::shiftedScaledJacobiValues(P_2i_j_minus_1, alpha, polyOrder_-1, lambda[2], jacobiScaling);
+                
+                const auto & s0_dx = lambda_dx[0];
+                const auto & s0_dy = lambda_dy[0];
+                const auto & s1_dx = lambda_dx[1];
+                const auto & s1_dy = lambda_dy[1];
+                const auto & s2_dx = lambda_dx[2];
+                const auto & s2_dy = lambda_dy[2];
+                
                 const OutputScalar basisValue_dx = L_2i_j(j) * grad_L_i_dx + L_i(i) * (P_2i_j_minus_1(j-1) * s2_dx + L_2i_j_dt(j) * (s0_dx + s1_dx + s2_dx));
                 const OutputScalar basisValue_dy = L_2i_j(j) * grad_L_i_dy + L_i(i) * (P_2i_j_minus_1(j-1) * s2_dy + L_2i_j_dt(j) * (s0_dy + s1_dy + s2_dy));
                 
@@ -440,10 +450,14 @@ namespace Intrepid2
       
       // **** face functions **** //
       const int max_ij_sum = polyOrder;
-      for (int i=2; i<max_ij_sum; i++)
+      const int min_i = 2;
+      const int min_j = 1;
+      const int min_ij_sum = min_i + min_j;
+      for (int ij_sum = min_ij_sum; ij_sum <= max_ij_sum; ij_sum++)
       {
-        for (int j=1; i+j<=max_ij_sum; j++)
+        for (int i=min_i; i<=ij_sum-min_j; i++)
         {
+          const int j = ij_sum - i;
           this->fieldOrdinalPolynomialDegree_(fieldOrdinalOffset,0) = i+j;
           fieldOrdinalOffset++;
         }
