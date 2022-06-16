@@ -21,7 +21,11 @@ BalanceSettings::BalanceSettings()
     m_numOutputProcessors(0),
     m_isRebalancing(false),
     m_initialDecompMethod("RIB"),
-    m_useNestedDecomp(false)
+    m_useNestedDecomp(false),
+    m_shouldPrintDiagnostics(false),
+    m_diagnosticElementWeightsField(nullptr),
+    m_vertexConnectivityWeightField(nullptr),
+    m_vertexWeightMethod(DefaultSettings::vertexWeightMethod)
 {}
 
 size_t BalanceSettings::getNumNodesRequiredForConnection(stk::topology element1Topology, stk::topology element2Topology) const
@@ -47,6 +51,17 @@ double BalanceSettings::getGraphVertexWeight(stk::mesh::Entity entity, int crite
 BalanceSettings::GraphOption BalanceSettings::getGraphOption() const
 {
   return BalanceSettings::LOAD_BALANCE;
+}
+
+
+void BalanceSettings::setVertexWeightMethod(VertexWeightMethod method)
+{
+  m_vertexWeightMethod = method;
+}
+
+VertexWeightMethod BalanceSettings::getVertexWeightMethod() const
+{
+  return m_vertexWeightMethod;
 }
 
 bool BalanceSettings::includeSearchResultsInGraph() const
@@ -150,6 +165,16 @@ std::string BalanceSettings::getCoordinateFieldName() const
   return std::string("coordinates");
 }
 
+void BalanceSettings::setShouldPrintDiagnostics(bool shouldPrint)
+{
+  m_shouldPrintDiagnostics = shouldPrint;
+}
+
+bool BalanceSettings::shouldPrintDiagnostics() const
+{
+  return m_shouldPrintDiagnostics;
+}
+
 bool BalanceSettings::shouldPrintMetrics() const
 {
   return false;
@@ -205,6 +230,16 @@ std::string BalanceSettings::getOutputSubdomainFieldName() const
   return "stk_balance_output_subdomain";
 }
 
+std::string BalanceSettings::getDiagnosticElementWeightFieldName() const
+{
+  return "stk_balance_diagnostic_element_weight";
+}
+
+std::string BalanceSettings::getVertexConnectivityWeightFieldName() const
+{
+  return "stk_balance_vertex_connectivity_weight";
+}
+
 const stk::mesh::Field<int> * BalanceSettings::getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const
 {
   return nullptr;
@@ -219,6 +254,31 @@ const stk::mesh::Field<int> * BalanceSettings::getOutputSubdomainField(const stk
 {
   return nullptr;
 }
+
+const stk::mesh::Field<double> * BalanceSettings::getDiagnosticElementWeightField(const stk::mesh::BulkData & stkMeshBulkData) const
+{
+  if (m_diagnosticElementWeightsField == nullptr) {
+    m_diagnosticElementWeightsField =
+        stkMeshBulkData.mesh_meta_data().get_field<double>(stk::topology::ELEM_RANK,
+                                                           getDiagnosticElementWeightFieldName());
+    ThrowRequireMsg(m_diagnosticElementWeightsField != nullptr,
+                    "Must create diagnostic element weight field when printing balance diagnostics.");
+  }
+  return m_diagnosticElementWeightsField;
+}
+
+const stk::mesh::Field<double> * BalanceSettings::getVertexConnectivityWeightField(const stk::mesh::BulkData & stkMeshBulkData) const
+{
+  if (m_vertexConnectivityWeightField == nullptr) {
+    m_vertexConnectivityWeightField =
+        stkMeshBulkData.mesh_meta_data().get_field<double>(stk::topology::ELEM_RANK,
+                                                           getVertexConnectivityWeightFieldName());
+    ThrowRequireMsg(m_vertexConnectivityWeightField != nullptr,
+                    "Must create vertex connectivity weight field when printing balance diagnostics.");
+  }
+  return m_vertexConnectivityWeightField;
+}
+
 
 bool BalanceSettings::usingColoring() const
 {
@@ -282,10 +342,10 @@ size_t GraphCreationSettings::getNumNodesRequiredForConnection(stk::topology ele
   const static int connectionTable[7][7] = {
     {1, 1, 1, 1, 1, 1, s}, // 0 dim
     {1, 1, 1, 1, 1, 1, s}, // 1 dim
-    {1, 1, 2, 3, 2, 3, s}, // 2 dim linear
-    {1, 1, 3, 3, 3, 3, s}, // 3 dim linear
-    {1, 1, 2, 3, 3, 4, s}, // 2 dim higher-order
-    {1, 1, 3, 3, 4, 4, s}, // 3 dim higher-order
+    {1, 1, 2, 2, 2, 2, s}, // 2 dim linear
+    {1, 1, 2, 3, 3, 3, s}, // 3 dim linear
+    {1, 1, 2, 3, 3, 3, s}, // 2 dim higher-order
+    {1, 1, 2, 3, 3, 4, s}, // 3 dim higher-order
     {s, s, s, s, s, s, s}  // super element
   };
 
@@ -326,8 +386,8 @@ double GraphCreationSettings::getGraphEdgeWeight(stk::topology element1Topology,
     {G, G, F, C, D, F, E, H, A}, // 3 dim linear hex
     {G, G, F, F, F, F, F, H, A}, // 2 dim higher-order
     {G, G, F, E, E, F, E, H, A}, // 3 dim higher-order
-    {H, H, H, H, H, H, H, H, A}, // miAc heavy
-    {A, A, A, A, A, A, A, A, A}  // Auper element        7
+    {H, H, H, H, H, H, H, H, A}, // misc heavy
+    {A, A, A, A, A, A, A, A, A}  // super element
   };
 
   int element1Index = getEdgeWeightTableIndex(element1Topology);

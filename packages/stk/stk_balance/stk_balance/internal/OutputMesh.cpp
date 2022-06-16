@@ -35,6 +35,8 @@
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include <stk_balance/internal/InputMesh.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
+#include <stk_balance/internal/Diagnostics.hpp>
+#include <stk_balance/internal/DiagnosticsContainer.hpp>
 #include "stk_io/IossBridge.hpp"
 
 namespace stk {
@@ -50,6 +52,7 @@ OutputMesh::OutputMesh(const InputMesh& inputMesh,
   m_meta.use_simple_fields();
   clone_input_mesh();
   move_subdomain_to_owning_processor();
+  compute_rebalance_diagnostics();
 }
 
 void
@@ -98,6 +101,33 @@ OutputMesh::transfer_and_write()
   transientIo.setup_subdomain(m_bulk, m_inputMesh.get_output_file_name(), mySubdomain, nodeSharingInfo,
                               m_inputMesh.get_global_num_nodes(), m_inputMesh.get_global_num_elements());
   transientIo.transfer_and_write_transient_data(mySubdomain);
+}
+
+void
+OutputMesh::compute_rebalance_diagnostics()
+{
+  for (unsigned subdomain : m_targetSubdomains) {
+    if (is_valid_subdomain(subdomain)) {
+      const int owningProcessor = m_inputMesh.get_owner_for_each_final_subdomain()[subdomain];
+      if (m_bulk.parallel_rank() == owningProcessor) {
+
+        auto * elemCountDiag = get_diagnostic<ElementCountDiagnostic>();
+        if (elemCountDiag) {
+          internal::compute_element_count_diagnostic(*elemCountDiag, m_bulk, subdomain);
+        }
+
+        auto * totalElemWeightDiag = get_diagnostic<TotalElementWeightDiagnostic>();
+        if (totalElemWeightDiag) {
+          const stk::mesh::Field<double> & weightField = *m_bulk.mesh_meta_data().get_field<double>(stk::topology::ELEMENT_RANK,
+                                                                                                    m_inputMesh.get_balance_settings().getDiagnosticElementWeightFieldName());
+          internal::compute_total_element_weight_diagnostic(*totalElemWeightDiag, m_bulk, m_inputMesh.get_balance_settings(),
+                                                            weightField, subdomain);
+        }
+
+      }
+    }
+  }
+
 }
 
 }}

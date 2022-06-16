@@ -49,13 +49,17 @@
 #include "Thyra_BlockedLinearOpBase.hpp"
 
 #include "Panzer_ModelEvaluator.hpp"
+
+#ifdef PANZER_HAVE_EPETRA
 #include "Panzer_ModelEvaluator_Epetra.hpp"
+#endif
+
 #include "Panzer_MassMatrixModelEvaluator.hpp"
 
 namespace panzer {
 
 /** This is a model evaluator decorator that will take an implicit model evaluator
-  * and make it explicit. If the model evaluator is not a panzer model evaluator 
+  * and make it explicit. If the model evaluator is not a panzer model evaluator
   * then there may be problems with constructing the dirichlet conditions in the
   * mass matrix. However, for a pzner model evaluator this has been taken care of.
   */
@@ -102,14 +106,16 @@ public:
 
 private: // data members
 
-  /** Apply the dirichlet boundary conditions to the vector "f" using the 
+  /** Apply the dirichlet boundary conditions to the vector "f" using the
     * "x" values as the current solution.
     */
   void applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
                          const Teuchos::RCP<Thyra::VectorBase<Scalar> > & f) const
   {
     if(panzerModel_!=Teuchos::null)       { panzerModel_->applyDirichletBCs(x,f); return; }
+#ifdef PANZER_HAVE_EPETRA
     if(panzerEpetraModel_!=Teuchos::null) { panzerEpetraModel_->applyDirichletBCs(x,f); return; }
+#endif
 
     TEUCHOS_ASSERT(false);
   }
@@ -149,8 +155,10 @@ private: // data members
   //! Access to the panzer model evaluator pointer (thyra version)
   Teuchos::RCP<const panzer::ModelEvaluator<Scalar> > panzerModel_;
 
-  //! Access to the epetra panzer model evaluator pointer 
+#ifdef PANZER_HAVE_EPETRA
+  //! Access to the epetra panzer model evaluator pointer
   Teuchos::RCP<const panzer::ModelEvaluator_Epetra> panzerEpetraModel_;
+#endif
 
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > mass_;
   mutable Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > invMassMatrix_;
@@ -168,4 +176,4 @@ private: // data members
 
 } // end namespace panzer
 
-#endif 
+#endif

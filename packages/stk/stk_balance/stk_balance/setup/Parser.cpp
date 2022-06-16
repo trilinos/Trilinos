@@ -120,7 +120,9 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
   set_fix_mechanisms(settings);
   set_decomp_method(settings);
   set_vertex_weight_block_multiplier(settings);
+  set_vertex_weight_method(settings);
   set_use_nested_decomp(settings);
+  set_print_diagnostics(settings);
   set_logfile(settings);
 }
 
@@ -139,6 +141,9 @@ void Parser::add_options_to_parser()
                            "Output directory for decomposition"};
   stk::CommandLineOption logfile{m_optionNames.logfile, "l",
                            "Output log file path, one of: 'cout', 'cerr', or a file path."};
+  stk::CommandLineOption printDiagnostics{m_optionNames.printDiagnostics, "d",
+                           "Gather and print diagnostic output for each processor to help "
+                           "evaluate the quality of the decomposition."};
   stk::CommandLineOption rebalanceTo{m_optionNames.rebalanceTo, "r",
                            "Rebalance the input mesh that is already decomposed for <inProcs> "
                            "processors into this number of processors.  The decomposition size "
@@ -178,7 +183,7 @@ void Parser::add_options_to_parser()
   stk::CommandLineOption fixMechanisms{m_optionNames.fixMechanisms, "",
                            "Remove mechanisms (partition components connected by a hinge) in "
                            "the decomp by reassigning element ownership [on|off]"};
-  stk::CommandLineOption decompMethod{m_optionNames.decompMethod, "",
+  stk::CommandLineOption decompMethod{m_optionNames.decompMethod, "m",
                            "Use this geometric decomposition method [rcb|rib|multijagged] "
                            "or graph-based decomposition method [parmetis|scotch]. "
                            "Note that geometric methods do not use contact search and "
@@ -193,10 +198,14 @@ void Parser::add_options_to_parser()
                            "within the boundaries of the input decomposition.  The new number "
                            "of processors must be an integer multiple of the input processors."};
 
+  stk::CommandLineOption vertexWeightMethod{m_optionNames.vertexWeightMethod, "",
+                           "Method used to calculate vertex weights given to the partitioner. "
+                           "[constant|topology|connectivity]"};
 
   m_commandLineParser.add_required_positional<std::string>(infile);
   m_commandLineParser.add_optional_positional<std::string>(outputDirectory, DefaultSettings::outputDirectory);
   m_commandLineParser.add_optional<std::string>(logfile, "<mesh>.<inProcs>_to_<outProcs>.log");
+  m_commandLineParser.add_flag(printDiagnostics);
   m_commandLineParser.add_optional<unsigned>(rebalanceTo);
   m_commandLineParser.add_flag(smDefaults);
   m_commandLineParser.add_flag(sdDefaults);
@@ -208,6 +217,8 @@ void Parser::add_options_to_parser()
   m_commandLineParser.add_optional(decompMethod, DefaultSettings::decompMethod);
   m_commandLineParser.add_optional(vertexWeightBlockMultiplier, DefaultSettings::vertexWeightBlockMultiplier);
   m_commandLineParser.add_flag(useNested);
+
+  m_commandLineParser.add_optional(vertexWeightMethod, vertex_weight_method_name(DefaultSettings::vertexWeightMethod));
 
   m_commandLineParser.disallow_unrecognized();
 }
@@ -379,6 +390,35 @@ void Parser::set_use_nested_decomp(BalanceSettings& settings) const
     const bool isValidProcCount = (outputNumProcs % inputNumProcs) == 0;
     ThrowRequireMsg(isValidProcCount, "Output number of processors (" << outputNumProcs << ") must be an integer "
                     << "multiple of input processors (" << inputNumProcs << ") to use a nested decomposition.");
+   }
+ }
+
+void Parser::set_print_diagnostics(BalanceSettings &settings) const
+{
+  const bool printDiagnostics = m_commandLineParser.is_option_provided(m_optionNames.printDiagnostics);
+
+  if (printDiagnostics) {
+    settings.setShouldPrintDiagnostics(true);
+  }
+}
+
+void Parser::set_vertex_weight_method(BalanceSettings &settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.vertexWeightMethod)) {
+    const std::string vertexWeightMethodName = m_commandLineParser.get_option_value<std::string>(m_optionNames.vertexWeightMethod);
+    // FIXME: case-insensitive comparison?  Need this for decomp method too?
+    if (vertexWeightMethodName == vertex_weight_method_name(VertexWeightMethod::CONSTANT)) {
+      settings.setVertexWeightMethod(VertexWeightMethod::CONSTANT);
+    }
+    else if (vertexWeightMethodName == vertex_weight_method_name(VertexWeightMethod::TOPOLOGY)) {
+      settings.setVertexWeightMethod(VertexWeightMethod::TOPOLOGY);
+    }
+    else if (vertexWeightMethodName == vertex_weight_method_name(VertexWeightMethod::CONNECTIVITY)) {
+      settings.setVertexWeightMethod(VertexWeightMethod::CONNECTIVITY);
+    }
+    else {
+      ThrowErrorMsg("Unrecognized vertex weight method: " << vertexWeightMethodName);
+    }
   }
 }
 

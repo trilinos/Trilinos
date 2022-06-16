@@ -123,6 +123,7 @@ size_t PartRepository::size() const
   return m_all_parts.size();
 }
 
+bool is_internal_part_name(const std::string& partName);
 bool is_internal_part(const Part& part);
 std::string convert_to_internal_name(const std::string& part_name);
 

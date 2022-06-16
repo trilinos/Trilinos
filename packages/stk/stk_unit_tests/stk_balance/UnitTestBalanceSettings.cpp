@@ -47,6 +47,24 @@ public:
     return m_settings;
   }
 
+  int numRequiredCommonNodes(const std::vector<stk::topology::topology_t> & topologyListA,
+                             const std::vector<stk::topology::topology_t> & topologyListB)
+  {
+    const int numNodes = m_settings.getNumNodesRequiredForConnection(topologyListA.front(), topologyListB.front());
+
+    for (auto topologyA : topologyListA) {
+      for (auto topologyB : topologyListB) {
+        int numNodes1 = m_settings.getNumNodesRequiredForConnection(topologyA, topologyB);
+        int numNodes2 = m_settings.getNumNodesRequiredForConnection(topologyB, topologyA);
+        EXPECT_EQ(numNodes1, numNodes) << "number of nodes for " << topologyA << " and " << topologyB
+                                       << " do not match expected value of " << numNodes << " for group";
+        EXPECT_EQ(numNodes2, numNodes) << "number of nodes for " << topologyB << " and " << topologyA
+                                       << " do not match expected value of " << numNodes << " for group";
+      }
+    }
+    return numNodes;
+  }
+
 private:
   stk::balance::StkBalanceSettings m_settings;
 };
@@ -168,3 +186,101 @@ TEST(BalanceSettings, toggleContactSearchStatus)
   EXPECT_FALSE(basicColoringByTopologySettings.includeSearchResultsInGraph());
 }
 
+std::vector<stk::topology::topology_t> get_0dim_topologies() {
+  return {stk::topology::PARTICLE};
+}
+
+std::vector<stk::topology::topology_t> get_1dim_topologies() {
+  return {stk::topology::LINE_2,
+          stk::topology::LINE_2_1D,
+          stk::topology::LINE_3_1D,
+          stk::topology::BEAM_2,
+          stk::topology::BEAM_3,
+          stk::topology::SHELL_LINE_2,
+          stk::topology::SHELL_LINE_3,
+          stk::topology::SPRING_2,
+          stk::topology::SPRING_3};
+}
+
+std::vector<stk::topology::topology_t> get_2dim_topologies() {
+  return {stk::topology::TRI_3_2D,
+          stk::topology::TRI_4_2D,
+          stk::topology::QUAD_4_2D,
+          stk::topology::SHELL_TRI_3,
+          stk::topology::SHELL_TRI_4,
+          stk::topology::SHELL_QUAD_4};
+}
+
+std::vector<stk::topology::topology_t> get_3dim_topologies() {
+  return {stk::topology::TET_4,
+          stk::topology::PYRAMID_5,
+          stk::topology::WEDGE_6,
+          stk::topology::HEX_8};
+}
+
+std::vector<stk::topology::topology_t> get_2dim_2ndOrder_topologies() {
+  return {stk::topology::TRI_6_2D,
+          stk::topology::QUAD_8_2D,
+          stk::topology::QUAD_9_2D,
+          stk::topology::SHELL_TRI_6,
+          stk::topology::SHELL_QUAD_8,
+          stk::topology::SHELL_QUAD_9};
+}
+
+std::vector<stk::topology::topology_t> get_3dim_2ndOrder_topologies() {
+  return {stk::topology::TET_8,
+          stk::topology::TET_10,
+          stk::topology::TET_11,
+          stk::topology::PYRAMID_13,
+          stk::topology::PYRAMID_14,
+          stk::topology::WEDGE_15,
+          stk::topology::WEDGE_18,
+          stk::topology::HEX_20,
+          stk::topology::HEX_27};
+}
+
+std::vector<stk::topology::topology_t> get_super_element_topologies() {
+  return {stk::create_superelement_topology(1),
+          stk::create_superelement_topology(10),
+          stk::create_superelement_topology(100)};
+}
+
+constexpr int NoConnection = 1000;
+
+TEST_F(BalanceSettingsTester, numNodesRequiredForConnection)
+{
+  EXPECT_EQ(numRequiredCommonNodes(get_0dim_topologies(), get_0dim_topologies()),          1);
+  EXPECT_EQ(numRequiredCommonNodes(get_0dim_topologies(), get_1dim_topologies()),          1);
+  EXPECT_EQ(numRequiredCommonNodes(get_0dim_topologies(), get_2dim_topologies()),          1);
+  EXPECT_EQ(numRequiredCommonNodes(get_0dim_topologies(), get_3dim_topologies()),          1);
+  EXPECT_EQ(numRequiredCommonNodes(get_0dim_topologies(), get_2dim_2ndOrder_topologies()), 1);
+  EXPECT_EQ(numRequiredCommonNodes(get_0dim_topologies(), get_3dim_2ndOrder_topologies()), 1);
+  EXPECT_EQ(numRequiredCommonNodes(get_0dim_topologies(), get_super_element_topologies()), NoConnection);
+
+  EXPECT_EQ(numRequiredCommonNodes(get_1dim_topologies(), get_1dim_topologies()),          1);
+  EXPECT_EQ(numRequiredCommonNodes(get_1dim_topologies(), get_2dim_topologies()),          1);
+  EXPECT_EQ(numRequiredCommonNodes(get_1dim_topologies(), get_3dim_topologies()),          1);
+  EXPECT_EQ(numRequiredCommonNodes(get_1dim_topologies(), get_2dim_2ndOrder_topologies()), 1);
+  EXPECT_EQ(numRequiredCommonNodes(get_1dim_topologies(), get_3dim_2ndOrder_topologies()), 1);
+  EXPECT_EQ(numRequiredCommonNodes(get_1dim_topologies(), get_super_element_topologies()), NoConnection);
+
+  EXPECT_EQ(numRequiredCommonNodes(get_2dim_topologies(), get_2dim_topologies()),          2);
+  EXPECT_EQ(numRequiredCommonNodes(get_2dim_topologies(), get_3dim_topologies()),          2);
+  EXPECT_EQ(numRequiredCommonNodes(get_2dim_topologies(), get_2dim_2ndOrder_topologies()), 2);
+  EXPECT_EQ(numRequiredCommonNodes(get_2dim_topologies(), get_3dim_2ndOrder_topologies()), 2);
+  EXPECT_EQ(numRequiredCommonNodes(get_2dim_topologies(), get_super_element_topologies()), NoConnection);
+
+  EXPECT_EQ(numRequiredCommonNodes(get_3dim_topologies(), get_3dim_topologies()),          3);
+  EXPECT_EQ(numRequiredCommonNodes(get_3dim_topologies(), get_2dim_2ndOrder_topologies()), 3);
+  EXPECT_EQ(numRequiredCommonNodes(get_3dim_topologies(), get_3dim_2ndOrder_topologies()), 3);
+  EXPECT_EQ(numRequiredCommonNodes(get_3dim_topologies(), get_super_element_topologies()), NoConnection);
+
+  EXPECT_EQ(numRequiredCommonNodes(get_2dim_2ndOrder_topologies(), get_2dim_2ndOrder_topologies()), 3);
+  EXPECT_EQ(numRequiredCommonNodes(get_2dim_2ndOrder_topologies(), get_3dim_2ndOrder_topologies()), 3);
+  EXPECT_EQ(numRequiredCommonNodes(get_2dim_2ndOrder_topologies(), get_super_element_topologies()), NoConnection);
+
+  EXPECT_EQ(numRequiredCommonNodes(get_3dim_2ndOrder_topologies(), get_3dim_2ndOrder_topologies()), 4);
+  EXPECT_EQ(numRequiredCommonNodes(get_3dim_2ndOrder_topologies(), get_super_element_topologies()), NoConnection);
+
+  EXPECT_EQ(numRequiredCommonNodes(get_super_element_topologies(), get_super_element_topologies()), NoConnection);
+}

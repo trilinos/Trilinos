@@ -58,6 +58,7 @@
 #include <string>                       // for char_traits, string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
+#include <functional>
 #include <unordered_map>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
@@ -92,6 +93,14 @@ namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; }
 namespace stk { namespace mesh { namespace impl { NgpMeshBase* get_ngp_mesh(const BulkData & bulk); } } }
 namespace stk { namespace mesh { namespace impl { void set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh); } } }
 
+namespace stk {
+namespace tools {
+
+template<typename T>
+void replace_bulk_data(const stk::mesh::BulkData & inMesh, T & outMesh, std::function<void(T& outMesh)> op);
+
+} }
+
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
 #include "SharedEntityType.hpp"
@@ -109,6 +118,7 @@ namespace stk {
 namespace mesh {
 
 using ModEndOptimizationFlag = impl::MeshModification::modification_optimization;
+
 
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields, bool syncOnlySharedOrGhosted = false);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool syncOnlySharedOrGhosted = false);
@@ -1506,6 +1516,9 @@ private:
                                                    stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
   friend NgpMeshBase * impl::get_ngp_mesh(const BulkData & bulk);
   friend void impl::set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh);
+
+  template<typename T>
+  friend void stk::tools::replace_bulk_data(const stk::mesh::BulkData & in_mesh, T & out_mesh, std::function<void(T& outMesh)> op);
 
   bool verify_parallel_attributes( std::ostream & error_log );
 

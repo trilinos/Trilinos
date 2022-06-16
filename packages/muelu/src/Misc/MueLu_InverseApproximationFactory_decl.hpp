@@ -112,11 +112,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    InverseApproximationFactory() { }
-
-    //! Destructor.
-    virtual ~InverseApproximationFactory() { }
-    //@}
+    InverseApproximationFactory() = default;
 
     //! Input
     //@{

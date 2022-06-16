@@ -47,6 +47,8 @@
 namespace stk {
 namespace balance {
 
+class BalanceSettings;
+
 class Diagnostic
 {
 public:
@@ -56,24 +58,16 @@ public:
   virtual void collect_data(stk::ParallelMachine comm, int numRanks) = 0;
   virtual void process_data(stk::ParallelMachine comm) = 0;
 
-  virtual std::string print_header1() = 0;
-  virtual std::string print_header2() = 0;
+  virtual unsigned num_columns() { return 1; }
 
-  virtual std::string print_rank_value(int rank) = 0;
+  virtual std::string print_header1(unsigned column) = 0;
+  virtual std::string print_header2(unsigned column) = 0;
 
-  virtual std::string print_min() = 0;
-  virtual std::string print_max() = 0;
-  virtual std::string print_avg() = 0;
+  virtual std::string print_rank_value(unsigned column, int rank) = 0;
 
-protected:
-  template <typename T> T compute_min(const std::vector<T> & data);
-  template <typename T> T compute_max(const std::vector<T> & data);
-
-  template <typename T>
-  std::enable_if_t<std::is_integral<T>::value, T> compute_avg(const std::vector<T> & data);
-
-  template <typename T>
-  std::enable_if_t<std::is_floating_point<T>::value, T> compute_avg(const std::vector<T> & data);
+  virtual std::string print_min(unsigned column) = 0;
+  virtual std::string print_max(unsigned column) = 0;
+  virtual std::string print_avg(unsigned column) = 0;
 };
 
 class UnsignedDiagnostic : public Diagnostic
@@ -83,14 +77,15 @@ public:
   virtual ~UnsignedDiagnostic() override = default;
 
   void store_value(int rank, unsigned value) { m_localValues[rank] = value; }
+  unsigned get_rank_value(int rank) { return m_values[rank]; }
 
   virtual void collect_data(stk::ParallelMachine comm, int numRanks) override;
   virtual void process_data(stk::ParallelMachine comm) override;
 
-  virtual std::string print_rank_value(int rank) override { return std::to_string(m_values[rank]); }
-  virtual std::string print_min() override { return std::to_string(m_min); }
-  virtual std::string print_max() override { return std::to_string(m_max); }
-  virtual std::string print_avg() override { return std::to_string(m_avg); }
+  virtual std::string print_rank_value(unsigned , int rank) override { return std::to_string(m_values[rank]); }
+  virtual std::string print_min(unsigned ) override { return std::to_string(m_min); }
+  virtual std::string print_max(unsigned ) override { return std::to_string(m_max); }
+  virtual std::string print_avg(unsigned ) override { return std::to_string(m_avg); }
 
 protected:
   unsigned compute_min(const std::vector<unsigned> & data);
@@ -104,6 +99,7 @@ protected:
   unsigned m_avg = 0;
 };
 
+
 class UnsignedWithPercentDiagnostic : public UnsignedDiagnostic
 {
 public:
@@ -112,10 +108,10 @@ public:
 
   virtual void process_data(stk::ParallelMachine comm) override;
 
-  virtual std::string print_rank_value(int rank) override;
-  virtual std::string print_min() override;
-  virtual std::string print_max() override;
-  virtual std::string print_avg() override;
+  virtual std::string print_rank_value(unsigned , int rank) override;
+  virtual std::string print_min(unsigned ) override;
+  virtual std::string print_max(unsigned ) override;
+  virtual std::string print_avg(unsigned ) override;
 
 protected:
   std::string print_value_with_percent(unsigned value);
@@ -123,21 +119,29 @@ protected:
   unsigned m_percentSize = 0;
 };
 
+
 class DoubleWithPercentDiagnostic : public Diagnostic
 {
 public:
-  DoubleWithPercentDiagnostic() = default;
+  explicit DoubleWithPercentDiagnostic(unsigned decimalOutput = 3)
+    : m_min(0),
+      m_max(0),
+      m_avg(0),
+      m_percentSize(0),
+      m_decimalOutput(decimalOutput)
+  {}
   virtual ~DoubleWithPercentDiagnostic() override = default;
 
   void store_value(int rank, double value) { m_localValues[rank] = value; }
+  double get_rank_value(int rank) { return m_values[rank]; }
 
   virtual void collect_data(stk::ParallelMachine comm, int numRanks) override;
   virtual void process_data(stk::ParallelMachine comm) override;
 
-  virtual std::string print_rank_value(int rank) override;
-  virtual std::string print_min() override;
-  virtual std::string print_max() override;
-  virtual std::string print_avg() override;
+  virtual std::string print_rank_value(unsigned , int rank) override;
+  virtual std::string print_min(unsigned ) override;
+  virtual std::string print_max(unsigned ) override;
+  virtual std::string print_avg(unsigned ) override;
 
 protected:
   double compute_min(const std::vector<double> & data);
@@ -147,11 +151,117 @@ protected:
 
   std::map<int, double> m_localValues;
   std::vector<double> m_values;
-  double m_min = 0;
-  double m_max = 0;
-  double m_avg = 0;
-  double m_percentSize = 0;
+  double m_min;
+  double m_max;
+  double m_avg;
+  double m_percentSize;
+  unsigned m_decimalOutput;
 };
+
+
+class MultiUnsignedDiagnostic : public Diagnostic
+{
+public:
+  explicit MultiUnsignedDiagnostic(unsigned numColumns);
+  virtual ~MultiUnsignedDiagnostic() override = default;
+
+  void store_value(unsigned column, int rank, unsigned value) { m_localValues[column][rank] = value; }
+  double get_rank_value(unsigned column, int rank) { return m_values[column][rank]; }
+
+  virtual unsigned num_columns() { return m_numColumns; }
+
+  virtual void collect_data(stk::ParallelMachine comm, int numRanks) override;
+  virtual void process_data(stk::ParallelMachine comm) override;
+
+  virtual std::string print_rank_value(unsigned column, int rank) override { return std::to_string(m_values[column][rank]); }
+  virtual std::string print_min(unsigned column) override { return std::to_string(m_min[column]); }
+  virtual std::string print_max(unsigned column) override { return std::to_string(m_max[column]); }
+  virtual std::string print_avg(unsigned column) override { return std::to_string(m_avg[column]); }
+
+protected:
+  unsigned compute_min(const std::vector<unsigned> & data);
+  unsigned compute_max(const std::vector<unsigned> & data);
+  unsigned compute_avg(const std::vector<unsigned> & data);
+
+  std::vector<std::map<int, unsigned>> m_localValues;
+  std::vector<std::vector<unsigned>> m_values;
+  std::vector<unsigned> m_min;
+  std::vector<unsigned> m_max;
+  std::vector<unsigned> m_avg;
+  unsigned m_numColumns;
+};
+
+
+class MultiUnsignedWithPercentDiagnostic : public MultiUnsignedDiagnostic
+{
+public:
+  MultiUnsignedWithPercentDiagnostic(unsigned numColumns)
+    : MultiUnsignedDiagnostic(numColumns),
+      m_percentSize(numColumns)
+  {}
+  virtual ~MultiUnsignedWithPercentDiagnostic() override = default;
+
+  virtual void process_data(stk::ParallelMachine comm) override;
+
+  virtual std::string print_rank_value(unsigned column, int rank) override;
+  virtual std::string print_min(unsigned column) override;
+  virtual std::string print_max(unsigned column) override;
+  virtual std::string print_avg(unsigned column) override;
+
+protected:
+  std::string print_value_with_percent(unsigned column, unsigned value);
+
+  std::vector<unsigned> m_percentSize;
+};
+
+
+class ElementCountDiagnostic : public UnsignedWithPercentDiagnostic
+{
+public:
+  virtual std::string print_header1(unsigned ) override { return "Number of"; }
+  virtual std::string print_header2(unsigned ) override { return "Elements"; }
+};
+
+
+class TotalElementWeightDiagnostic : public MultiUnsignedWithPercentDiagnostic
+{
+public:
+  TotalElementWeightDiagnostic(unsigned numColumns)
+    : MultiUnsignedWithPercentDiagnostic(numColumns)
+  {}
+  virtual std::string print_header1(unsigned ) override { return "Total Element"; }
+  virtual std::string print_header2(unsigned column) override {
+    if (m_numColumns == 1) {
+      return "Weight";
+    }
+    else {
+      return "Weight " + std::to_string(column);
+    }
+  }
+};
+
+
+class RelativeNodeInterfaceSizeDiagnostic : public DoubleWithPercentDiagnostic
+{
+public:
+  virtual std::string print_header1(unsigned ) override { return "Relative Node"; }
+  virtual std::string print_header2(unsigned ) override { return "Interface Size"; }
+};
+
+
+class ConnectivityWeightDiagnostic : public DoubleWithPercentDiagnostic
+{
+public:
+  ConnectivityWeightDiagnostic()
+    : DoubleWithPercentDiagnostic(0)
+  {}
+
+  virtual std::string print_header1(unsigned ) override { return "Connectivity"; }
+  virtual std::string print_header2(unsigned ) override { return "Weight"; }
+};
+
+
+void set_up_diagnostics(const stk::balance::BalanceSettings & balanceSettings);
 
 } // namespace balance
 } // namespace stk
