@@ -3,16 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-=====
-MueLu
-=====
+==================
+The MueLu Tutorial
+==================
 
 .. epigraph::
 
    This is the MueLu Tutorial.
-   Additional resources are the `MueLu package web page <https://trilinos.github.io/muelu.html>`_,
-   a `User's Guide <https://github.com/trilinos/Trilinos/tree/master/packages/muelu/doc/UsersGuide>`_
-   and the `source code documentation <https://trilinos.org/docs/dev/packages/muelu/doc/html/index.html>`_ using Doxygen.
+   Additional resources can be found at the `MueLu package web page <https://trilinos.github.io/muelu.html>`_,
+   in the `MueLu User's Guide <https://github.com/trilinos/Trilinos/tree/master/packages/muelu/doc/UsersGuide>`_
+   and the `Doxygen source code documentation <https://trilinos.org/docs/dev/packages/muelu/doc/html/index.html>`_.
 
 Preface
 =======
