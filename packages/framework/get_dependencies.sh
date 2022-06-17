@@ -53,12 +53,13 @@ if [[ "$ini_file_option" == "--srn" ]] ; then
   tril_genconfig_clone_or_update_repo \
     git@cee-gitlab.sandia.gov:trilinos-project/srn-ini-files.git \
     srn-ini-files
-fi
-
-if [[ "$ini_file_option" == "--son" ]] ; then
+elif [[ "$ini_file_option" == "--son" ]] ; then
   tril_genconfig_clone_or_update_repo \
     git@gitlab-ex.sandia.gov:trilinos-project/son-ini-files.git \
     son-ini-files
+elif [[ "$ini_file_option" != "" ]] ; then
+  echo "ERROR: Option '${ini_file_option}' not allowed! Must select '--son', '--srn' or ''."
+  exit 1
 fi
 
 # Set up symlinks to the desired *.ini files
