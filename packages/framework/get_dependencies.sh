@@ -2,6 +2,11 @@
 ini_file_option=$1
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
+# Data that needs to be updated when GenConfig changes!
+genconfig_sha1=b47cbdb1145a9d13f5bc8d4e7e691bab1dcdb60d
+
+# The following code contains no changing data
+
 pushd $PWD
 
 cd ${script_dir}
@@ -42,7 +47,7 @@ function tril_genconfig_clone_or_update_repo() {
 
 tril_genconfig_clone_or_update_repo \
   git@gitlab-ex.sandia.gov:trilinos-devops-consolidation/code/GenConfig.git \
-  GenConfig  has-submodules b47cbdb1145a9d13f5bc8d4e7e691bab1dcdb60d
+  GenConfig  has-submodules ${genconfig_sha1}
 
 if [[ "$ini_file_option" == "--srn" ]] ; then
   tril_genconfig_clone_or_update_repo \
