@@ -53,6 +53,7 @@
 
 #include "Ifpack2_PowerMethod.hpp"
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
+#include "Ifpack2_Details_Chebyshev_Weights.hpp"
 // #include "Ifpack2_Details_ScaledDampedResidual.hpp"
 #include "Ifpack2_Details_ChebyshevKernel.hpp"
 #include "Kokkos_ArithTraits.hpp"
@@ -305,6 +306,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
+  fourthKindAlgorithm_ (false),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
@@ -338,6 +340,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A,
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
+  fourthKindAlgorithm_ (false),
   computeMaxResNorm_ (false),
   computeSpectralRadius_(true),
   ckUseNativeSpMV_(false),
@@ -385,6 +388,7 @@ setParameters (Teuchos::ParameterList& plist)
   const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
   const bool defaultAssumeMatrixUnchanged = false;
   const bool defaultTextbookAlgorithm = false;
+  const bool defaultFourthKindAlgorithm = false;
   const bool defaultComputeMaxResNorm = false;
   const bool defaultComputeSpectralRadius = true;
   const bool defaultCkUseNativeSpMV = false;
@@ -408,6 +412,7 @@ setParameters (Teuchos::ParameterList& plist)
   bool zeroStartingSolution = defaultZeroStartingSolution;
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
+  bool fourthKindAlgorithm = defaultFourthKindAlgorithm;
   bool computeMaxResNorm = defaultComputeMaxResNorm;
   bool computeSpectralRadius = defaultComputeSpectralRadius;
   bool ckUseNativeSpMV = defaultCkUseNativeSpMV;
@@ -641,6 +646,9 @@ setParameters (Teuchos::ParameterList& plist)
   if (plist.isParameter ("chebyshev: textbook algorithm")) {
     textbookAlgorithm = plist.get<bool> ("chebyshev: textbook algorithm");
   }
+  if (plist.isParameter ("chebyshev: fourth kind algorithm")) {
+    fourthKindAlgorithm = plist.get<bool> ("chebyshev: fourth kind algorithm");
+  }
   if (plist.isParameter ("chebyshev: compute max residual norm")) {
     computeMaxResNorm = plist.get<bool> ("chebyshev: compute max residual norm");
   }
@@ -700,6 +708,7 @@ setParameters (Teuchos::ParameterList& plist)
   zeroStartingSolution_ = zeroStartingSolution;
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
+  fourthKindAlgorithm_ = fourthKindAlgorithm;
   computeMaxResNorm_ = computeMaxResNorm;
   computeSpectralRadius_ = computeSpectralRadius;
   ckUseNativeSpMV_ = ckUseNativeSpMV;
@@ -961,7 +970,7 @@ Chebyshev<ScalarType, MV>::compute ()
   lambdaMinForApply_ = lambdaMaxForApply_ / userEigRatio_;
   eigRatioForApply_ = userEigRatio_;
 
-  if (! textbookAlgorithm_) {
+  if (! textbookAlgorithm_ && ! fourthKindAlgorithm_) {
     // Ifpack has a special-case modification of the eigenvalue bounds
     // for the case where the max eigenvalue estimate is close to one.
     const ST one = Teuchos::as<ST> (1);
@@ -1015,7 +1024,10 @@ Chebyshev<ScalarType, MV>::apply (const MV& B, MV& X)
      "diagonal entries of the matrix has not yet been computed."
      << std::endl << computeBeforeApplyReminder);
 
-  if (textbookAlgorithm_) {
+  if (fourthKindAlgorithm_) {
+    fourthKindApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_, *D_);
+  }
+  else if (textbookAlgorithm_) {
     textbookApplyImpl (*A_, B, X, numIters_, lambdaMaxForApply_,
                        lambdaMinForApply_, eigRatioForApply_, *D_);
   }
@@ -1295,6 +1307,58 @@ textbookApplyImpl (const op_type& A,
     // If we compute the residual here, we could either do R = B -
     // A*X, or R = R - alpha*A*P.  Since we choose the former, we
     // can move the computeResidual call to the top of the loop.
+  }
+}
+
+template<class ScalarType, class MV>
+void
+Chebyshev<ScalarType, MV>::
+fourthKindApplyImpl (const op_type& A,
+                     const MV& B,
+                     MV& X,
+                     const int numIters,
+                     const ST lambdaMax,
+                     const V& D_inv) const
+{
+  const auto betas = optimalWeightsImpl<ScalarType>(numIters);
+
+  const ST zero = Teuchos::as<ST> (0);
+  const ST one = Teuchos::as<ST> (1);
+  const ST mone = Teuchos::as<ST> (-1);
+
+  if (zeroStartingSolution_) {
+    X.putScalar (zero);
+  }
+  MV R (B.getMap (), B.getNumVectors (), false);
+  MV P (B.getMap (), B.getNumVectors (), false);
+  MV Z (B.getMap (), B.getNumVectors (), false);
+
+  Z.putScalar(zero);
+
+  if(zeroStartingSolution_){
+    Tpetra::deep_copy (R, B); // R = B, as X = 0
+  } else {
+    computeResidual (R, B, A, X); // R = B - A*X
+  }
+
+  for (int i = 0; i < numIters; ++i) {
+    const auto index = i+1;
+    const ST zScale = (2 * index - 3) / (2 * index + 1);
+    const ST rScale = (8 * index - 4.0) / (2 * index + 1) / lambdaMax;
+
+    solve (P, D_inv, R); // P = D_inv * R, that is, D \ R.
+
+    // Z = zScale * Z + rScale * D_inv * R
+    Z.update(rScale, P, zScale);
+
+    // X = X + betas[i] * Z
+    X.update(betas[i], Z, one);
+
+    // R = R - A*Z (not really the residual!)
+    A.apply(Z, P);
+
+    R.update(mone, P, one);
+
   }
 }
 
