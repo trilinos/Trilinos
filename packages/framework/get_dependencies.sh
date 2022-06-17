@@ -70,5 +70,13 @@ cd GenConfig/ini_files
 
 ln -sf ${script_dir}/ini-files/config-specs.ini
 ln -sf ${script_dir}/ini-files/supported-config-flags.ini
-
+# Print summary of ini file settings
+cd ${script_dir}
+echo "You selected the following LoadEnv ini files:"
+ls -lat GenConfig/deps/LoadEnv/ini_files
+echo ""
+echo "You selected the following GenConfig ini files:"
+ls -lat GenConfig/ini_files
+echo "If these symlinks do not point to the desired ini files, please re-run:
+echo "    $0 [--son, --srn]"
 popd > /dev/null
