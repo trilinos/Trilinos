@@ -24,6 +24,8 @@ function tril_genconfig_clone_or_update_repo() {
 
   if [[ ! -z ${head_sha} ]]; then
     git checkout -f ${head_sha}
+  else
+    git merge @{u} # (FF) merge tip if tracking branch
   fi
 
   if [[ "${has_submodules}" == "has-submodules" ]] ; then
