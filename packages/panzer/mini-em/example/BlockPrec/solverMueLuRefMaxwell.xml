@@ -210,6 +210,8 @@
                     <Parameter name="Send type" type="string" value="Isend"/>
                   </ParameterList>
 
+                  <Parameter name="coarse: type" type="string" value="KLU"/>
+
                   <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/>
                   <ParameterList name="smoother: params">
                     <Parameter name="chebyshev: degree" type="int" value="2"/>
@@ -263,6 +265,8 @@
                     <!-- <Parameter name="Send type" type="string" value="Send"/> -->
                     <Parameter name="Send type" type="string" value="Isend"/>
                   </ParameterList>
+
+                  <Parameter name="coarse: type" type="string" value="KLU"/>
 
                   <Parameter name="smoother: type" type="string" value="CHEBYSHEV"/>
                   <ParameterList name="smoother: params">

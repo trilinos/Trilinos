@@ -15,7 +15,7 @@ namespace blas {
 
 // Register kernels per test
 
-void build_dot_executor(rajaperf::Executor& exec, int , char* [],
+void build_dot_executor(rajaperf::Executor& exec, int, char*[],
                         const rajaperf::RunParams& params) {
   for (auto* kernel : construct_dot_kernel_base(params)) {
     exec.registerKernel("BLAS", kernel);
@@ -23,7 +23,7 @@ void build_dot_executor(rajaperf::Executor& exec, int , char* [],
 }
 // Team Dot build_executor
 
-void build_team_dot_executor(rajaperf::Executor& exec, int , char* [],
+void build_team_dot_executor(rajaperf::Executor& exec, int, char*[],
                              const rajaperf::RunParams& params) {
   for (auto* kernel : construct_team_dot_kernel_base(params)) {
     exec.registerKernel("BLAS", kernel);

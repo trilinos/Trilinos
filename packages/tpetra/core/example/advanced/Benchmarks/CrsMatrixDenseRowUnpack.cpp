@@ -60,12 +60,13 @@ using Teuchos::rcp;
 using Teuchos::Time;
 using Teuchos::TimeMonitor;
 
+using SC = Tpetra::CrsMatrix<>::scalar_type;
 using GST = Tpetra::global_size_t;
 using map_type = Tpetra::Map<>;
 using LO = map_type::local_ordinal_type;
 using GO = map_type::global_ordinal_type;
 using crs_graph_type = Tpetra::CrsGraph<>;
-using crs_matrix_type = Tpetra::CrsMatrix<double>;
+using crs_matrix_type = Tpetra::CrsMatrix<SC>;
 using export_type = Tpetra::Export<>;
 
 struct CmdLineArgs {

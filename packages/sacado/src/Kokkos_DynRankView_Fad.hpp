@@ -350,12 +350,12 @@ namespace Impl {
 template <unsigned> struct AssignDim7 {
   template <typename Dst>
   KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const size_t& src_dim) {}
+  static void eval(Dst& dst, const size_t src_dim) {}
 };
 template <> struct AssignDim7<0u> {
   template <typename Dst>
   KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const size_t& src_dim) {
+  static void eval(Dst& dst, const size_t src_dim) {
     dst.N7 = src_dim;
   }
 };
@@ -606,7 +606,7 @@ public:
   template< class MemoryTraits >
   struct apply {
 
-    static_assert( Kokkos::Impl::is_memory_traits< MemoryTraits >::value , "" );
+    static_assert( Kokkos::is_memory_traits< MemoryTraits >::value , "" );
 
     typedef Kokkos::ViewTraits
       < data_type

@@ -150,11 +150,11 @@ namespace FROSch {
                 << " | " << setw(41) << blockId
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << "| " << left << setw(41) << "Spatial dimensions" << right
                 << " | " << setw(41) << dimension
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(41) << "Numer of degrees of freedom per node" << right
+                << "| " << left << setw(41) << "Number of degrees of freedom per node" << right
                 << " | " << setw(41) << dofsPerNode
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "

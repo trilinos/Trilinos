@@ -69,7 +69,7 @@ TEST_F (NeighborListsTest, 2D_to_CompressedRow_EXTREME_DEBUG) {
     auto nl_f_2d = Convert2DToCompressedRowNeighborLists(internal_2d_nl_view);
     ASSERT_THROW(nl_f_2d.getNumberOfNeighborsHost(4), std::exception);
     ASSERT_THROW(nl_f_2d.getRowOffsetHost(4), std::exception);
-    ASSERT_THROW(nl_f_2d.getNeighborHost(0,1), std::exception);
+    ASSERT_THROW(nl_f_2d.getNeighborHost(0,2), std::exception);
     ASSERT_THROW(nl_f_2d.getNeighborHost(4,0), std::exception);
 }
 #endif

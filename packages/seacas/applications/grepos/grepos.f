@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C Copyright(C) 1999-2022 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -684,7 +684,7 @@ C     old array contents into new (Only needed if EXODUS)
          CALL MDRSRV ('IXELB', KIXELB, NELBLK)
          CALL MDRSRV ('JNELB', KJNELB, NELBLK)
          CALL MDRSRV ('ISCR',  KISCR,  NELBLK)
-         CALL MCRSRV ('NAMSCR', KNMSC, MXSTLN*NELBLK)
+         CALL MCRSRV ('NAMSCR', KNMSC, maxnam*NELBLK)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 40
 
@@ -814,7 +814,7 @@ C     --"Munch" the nodal point sets
          CALL MDRSRV ('ISCR',   KISCR,  NUMNPS)
          CALL MDRSRV ('IDNS0',  KIDNS0, NUMNPS0)
          CALL MDRSRV ('NNNPS0', KNNNS0, NUMNPS0)
-         CALL MCRSRV ('NAMSCR', KNMSC, MXSTLN*NUMNPS)
+         CALL MCRSRV ('NAMSCR', KNMSC,  maxnam*NUMNPS)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 40
 
@@ -898,7 +898,7 @@ C     --"Munch" the element side sets
          CALL MDRSRV ('ISCR',   KISCR,  NUMESS)
          CALL MDRSRV ('IDSS0',  KIDSS0, NUMESS0)
          CALL MDRSRV ('NEESS0', KNESS0, NUMESS0)
-         CALL MCRSRV ('NAMSCR', KNMSC, MXSTLN*NUMESS)
+         CALL MCRSRV ('NAMSCR', KNMSC,  maxnam*NUMESS)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 40
 

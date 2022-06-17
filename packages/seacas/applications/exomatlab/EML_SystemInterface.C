@@ -181,7 +181,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    fmt::print("{}", copyright("2011-2019"));
+    fmt::print("{}", copyright("2011-2021"));
     exit(EXIT_SUCCESS);
   }
 

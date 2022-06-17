@@ -558,6 +558,7 @@ compute ()
      "been called by this point, but isInitialized_ is false.  "
      "Please report this bug to the Ifpack2 developers.");
 
+  if (! isComputed_) {//Only compute if not computed before
   if (Teuchos::nonnull (htsImpl_))
     htsImpl_->compute (*A_crs_, out_);
 
@@ -590,6 +591,7 @@ compute ()
 
   isComputed_ = true;
   ++numCompute_;
+  }
 }
 
 template<class MatrixType>
@@ -887,15 +889,14 @@ description () const
     os << "Matrix: null";
   }
   else {
-    os << "Matrix: not null"
-       << ", Global matrix dimensions: ["
+    os << "Matrix dimensions: ["
        << A_->getGlobalNumRows () << ", "
-       << A_->getGlobalNumCols () << "]";
+       << A_->getGlobalNumCols () << "]"
+       << ", Number of nonzeros: " << A_->getGlobalNumEntries();
   }
 
   if (Teuchos::nonnull (htsImpl_))
     os << ", HTS computed: " << (htsImpl_->isComputed () ? "true" : "false");
-
   os << "}";
   return os.str ();
 }

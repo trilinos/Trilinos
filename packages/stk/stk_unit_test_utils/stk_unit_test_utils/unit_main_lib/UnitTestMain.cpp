@@ -33,6 +33,7 @@
 //
 
 #include <stk_util/stk_config.h>
+#include "stk_unit_test_utils/getOption.h"
 #ifdef STK_HAVE_KOKKOSCORE
 #include <Kokkos_Core.hpp>
 #endif
@@ -43,10 +44,10 @@
 #ifdef STK_HAS_MPI
 #include <stk_unit_test_utils/ParallelGtestOutput.hpp>
 #endif
+#include <stk_unit_test_utils/CommandLineArgs.hpp>
 #include <stk_util/parallel/Parallel.hpp>
-
-int gl_argc = 0;
-char** gl_argv = 0;
+#include <stk_util/parallel/CouplingVersions.hpp>
+#include <stk_util/parallel/CouplingVersions_impl.hpp>
 
 int main(int argc, char **argv)
 {
@@ -64,12 +65,15 @@ int main(int argc, char **argv)
     testing::InitGoogleTest(&argc, argv);
 #endif
 
-    gl_argc = argc;
-    gl_argv = argv;
+    stk::unit_test_util::GlobalCommandLineArguments::self().set_values(argc, argv);
 
 #ifdef STK_HAS_MPI
     int procId = stk::parallel_machine_rank(MPI_COMM_WORLD);
     stk::unit_test_util::create_parallel_output(procId);
+    if (stk::unit_test_util::has_option("-stk_coupling_version")) {
+      int version = stk::unit_test_util::get_command_line_option("-stk_coupling_version", -1);
+      stk::util::impl::set_coupling_version(version);
+    }
 #endif
 
 #ifdef STK_HAVE_STKNGP_TEST

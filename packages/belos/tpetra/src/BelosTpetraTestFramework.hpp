@@ -70,6 +70,14 @@ namespace Belos {
     }
 
     template<>
+    void convertData( const double* dPtr, const int nnz, float* retVals )
+    {
+      for ( int i=0; i<nnz; ++i )
+        retVals[i] = (float) dPtr[i];
+    }
+
+
+    template<>
     void convertData( const double* dPtr, const int nnz, std::complex<double>* retVals )
     {
       for ( int i=0; i<nnz; ++i )

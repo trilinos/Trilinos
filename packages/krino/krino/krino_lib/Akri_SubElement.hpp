@@ -28,6 +28,7 @@ namespace krino {
 class ProlongationNodeData;
 class ProlongationPointData;
 class SubElementNodeAncestry;
+class Surface_Identifier;
 
 bool node_on_negative_side_of_interface(const SubElementNode * node, const InterfaceID key);
 
@@ -64,7 +65,7 @@ public:
   const Mesh_Element & get_owner() const { return *my_owner; }
 
   int parent_side_id(const int iside) const;
-  virtual void determine_decomposed_elem_phase(const CDMesh & mesh) override final;
+  virtual void determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & surfaceIDs) override final;
   std::vector<int> subelement_interface_signs(const InterfaceID interface, const int sign) const;
   const std::vector<int> & get_interface_signs() const { return myInterfaceSigns; }
   void initialize_interface_signs();

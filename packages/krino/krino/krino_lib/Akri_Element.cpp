@@ -13,15 +13,15 @@
 #include <Akri_DiagWriter.hpp>
 #include <Akri_Element_Intersections.hpp>
 #include <Akri_ElementCutterUtils.hpp>
+#include <Akri_InterfaceGeometry.hpp>
 #include <Akri_Intersection_Points.hpp>
+#include <Akri_MasterElementDeterminer.hpp>
 #include <Akri_MathUtil.hpp>
 #include <Akri_Phase_Support.hpp>
 #include <Akri_ProlongationData.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <math.h>
 
-#include "../interface_geometry_interface/Akri_InterfaceGeometry.hpp"
-#include <Akri_MasterElementDeterminer.hpp>
 namespace krino{
 
 ElementObj::ElementObj(const stk::mesh::BulkData & stkMesh, stk::mesh::Entity elemEntity)
@@ -140,24 +140,24 @@ ElementObj::volume(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, 
 }
 
 PhaseTag
-ElementObj::update_phase(const CDMesh & mesh, const PhaseTag & startPhase, const InterfaceID interface_key, const int sign)
+ElementObj::update_phase(const std::vector<Surface_Identifier> & surfaceIDs, const PhaseTag & startPhase, const InterfaceID interface_key, const int sign)
 {
   PhaseTag phase = startPhase;
   if (sign == -1 || sign == 1)
   {
     if (interface_key.is_single_ls())
     {
-      phase.add(mesh.ls_field(interface_key.first_ls()).identifier,sign);
+      phase.add(surfaceIDs[interface_key.first_ls()],sign);
     }
     else
     {
       const int other_ls_id = (sign < 0) ? interface_key.second_ls() : interface_key.first_ls();
-      if (phase.contain(mesh.ls_field(other_ls_id).identifier, -1))
+      if (phase.contain(surfaceIDs[other_ls_id], -1))
       {
         const int ls_id = (sign < 0) ? interface_key.first_ls() : interface_key.second_ls();
 
         phase.clear();
-        phase.add(mesh.ls_field(ls_id).identifier, -1);
+        phase.add(surfaceIDs[ls_id], -1);
       }
     }
   }
@@ -166,7 +166,7 @@ ElementObj::update_phase(const CDMesh & mesh, const PhaseTag & startPhase, const
 }
 
 PhaseTag
-ElementObj::update_phase(const CDMesh & mesh, const PhaseTag & startPhase, const std::vector<InterfaceID> & interfaces, const std::vector<int> & interfaceSigns)
+ElementObj::update_phase(const std::vector<Surface_Identifier> & surfaceIDs, const PhaseTag & startPhase, const std::vector<InterfaceID> & interfaces, const std::vector<int> & interfaceSigns)
 {
   PhaseTag phase = startPhase;
   const int numInterfaces = interfaces.size();
@@ -180,7 +180,7 @@ ElementObj::update_phase(const CDMesh & mesh, const PhaseTag & startPhase, const
     {
       PhaseTag iterationPhase = phase;
       for (int i=0; i<numInterfaces; ++i)
-        phase = update_phase(mesh, phase, interfaces[i], interfaceSigns[i]);
+        phase = update_phase(surfaceIDs, phase, interfaces[i], interfaceSigns[i]);
       if (phase == iterationPhase)
         break;
 
@@ -198,7 +198,7 @@ ElementObj::update_phase(const CDMesh & mesh, const PhaseTag & startPhase, const
     {
       phase = startPhase;
       for (int i=0; i<numInterfaces; ++i)
-        phase = update_phase(mesh, phase, interfaces[i], interfaceSigns[i]);
+        phase = update_phase(surfaceIDs, phase, interfaces[i], interfaceSigns[i]);
     }
   }
 
@@ -460,13 +460,13 @@ ElementObj::evaluate_prolongation_field(const CDMesh & mesh, const FieldRef fiel
 }
 
 void
-Mesh_Element::determine_decomposed_elem_phase(const CDMesh & mesh)
+Mesh_Element::determine_decomposed_elem_phase(const std::vector<Surface_Identifier> & surfaceIDs)
 {
   if(have_subelements())
   {
     for ( auto && subelem : my_subelements )
     {
-      subelem->determine_decomposed_elem_phase(mesh);
+      subelem->determine_decomposed_elem_phase(surfaceIDs);
     }
     // Phase for Mesh_Element with subelements is left empty
     return;

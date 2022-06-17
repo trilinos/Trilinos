@@ -325,7 +325,7 @@ public:
   template< class MemoryTraits >
   struct apply {
 
-    static_assert( Kokkos::Impl::is_memory_traits< MemoryTraits >::value , "" );
+    static_assert( Kokkos::is_memory_traits< MemoryTraits >::value , "" );
 
     typedef Kokkos::ViewTraits
       < data_type
@@ -517,7 +517,7 @@ public:
   template< class MemoryTraits >
   struct apply {
 
-    static_assert( Kokkos::Impl::is_memory_traits< MemoryTraits >::value , "" );
+    static_assert( Kokkos::is_memory_traits< MemoryTraits >::value , "" );
 
     typedef Kokkos::ViewTraits
       < data_type

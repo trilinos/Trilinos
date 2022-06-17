@@ -26,6 +26,12 @@ class StkReportRedirector {
   stk::REH orig_report_handler;
 };
 
+namespace simple_fields {
+
+class StkReportRedirector : public stk::unit_test_util::StkReportRedirector {};
+
+} // namespace simple_fields
+
 }
 }
 

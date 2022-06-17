@@ -123,7 +123,7 @@ example(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   using GST = Tpetra::global_size_t;
 
   // Set up Tpetra typedefs.
-  using SC = double;
+  using SC = Tpetra::CrsMatrix<>::scalar_type;
   using crs_matrix_type = Tpetra::CrsMatrix<SC>;
   using map_type = Tpetra::Map<>;
   using GO = Tpetra::Map<>::global_ordinal_type;

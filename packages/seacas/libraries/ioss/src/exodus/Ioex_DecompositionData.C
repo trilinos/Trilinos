@@ -513,7 +513,7 @@ namespace Ioex {
           // * Broadcast data to other processors
           // * Each processor extracts the entities it manages.
           m_decomposition.show_progress("\tBroadcast entitylist begin");
-	  Ioss::ParallelUtils pu(comm_);
+          Ioss::ParallelUtils pu(comm_);
           pu.broadcast(entitylist, root);
           m_decomposition.show_progress("\tBroadcast entitylist end");
 
@@ -736,9 +736,9 @@ namespace Ioex {
       pu.broadcast(df_valcon, root);
       m_decomposition.show_progress("\tBroadcast df_valcon end");
       for (size_t i = 0; i < set_count; i++) {
-	side_sets[i].distributionFactorValue         = df_valcon[3 * i + 0];
-	side_sets[i].distributionFactorConstant      = (df_valcon[3 * i + 1] == 1.0);
-	side_sets[i].distributionFactorValsPerEntity = static_cast<int>(df_valcon[3 * i + 2]);
+        side_sets[i].distributionFactorValue         = df_valcon[3 * i + 0];
+        side_sets[i].distributionFactorConstant      = (df_valcon[3 * i + 1] == 1.0);
+        side_sets[i].distributionFactorValsPerEntity = static_cast<int>(df_valcon[3 * i + 2]);
       }
     }
 
@@ -770,27 +770,27 @@ namespace Ioex {
       }
 
       {
-	// Broadcast this data to all other processors...
-	m_decomposition.show_progress("\tBroadcast nodes_per_face begin");
-	Ioss::ParallelUtils pu(comm_);
-	pu.broadcast(nodes_per_face, root);
-	m_decomposition.show_progress("\tBroadcast nodes_per_face end");
+        // Broadcast this data to all other processors...
+        m_decomposition.show_progress("\tBroadcast nodes_per_face begin");
+        Ioss::ParallelUtils pu(comm_);
+        pu.broadcast(nodes_per_face, root);
+        m_decomposition.show_progress("\tBroadcast nodes_per_face end");
 
-	// Each processor now has a list of the number of nodes per
-	// face for all sidesets that have a variable number. This can
-	// be used to determine the df field size on the ioss_decomp.
-	size_t offset = 0;
-	for (size_t i = 0; i < set_count; i++) {
-	  if (side_sets[i].distributionFactorValsPerEntity < 0) {
-	    int *npf = &nodes_per_face[offset];
-	    offset += side_sets[i].file_count();
-	    size_t my_count = 0;
-	    for (size_t j = 0; j < side_sets[i].ioss_count(); j++) {
-	      my_count += npf[side_sets[i].entitylist_map[j]];
-	    }
-	    side_sets[i].distributionFactorCount = my_count;
-	  }
-	}
+        // Each processor now has a list of the number of nodes per
+        // face for all sidesets that have a variable number. This can
+        // be used to determine the df field size on the ioss_decomp.
+        size_t offset = 0;
+        for (size_t i = 0; i < set_count; i++) {
+          if (side_sets[i].distributionFactorValsPerEntity < 0) {
+            int *npf = &nodes_per_face[offset];
+            offset += side_sets[i].file_count();
+            size_t my_count = 0;
+            for (size_t j = 0; j < side_sets[i].ioss_count(); j++) {
+              my_count += npf[side_sets[i].entitylist_map[j]];
+            }
+            side_sets[i].distributionFactorCount = my_count;
+          }
+        }
       }
     }
     ex_set_parallel(filePtr, old_par_setting);

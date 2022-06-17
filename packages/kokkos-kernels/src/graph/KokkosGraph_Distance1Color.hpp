@@ -48,70 +48,81 @@
 #include "KokkosGraph_Distance1Color_impl.hpp"
 #include "KokkosKernels_Utils.hpp"
 
-namespace KokkosGraph{
+namespace KokkosGraph {
 
-namespace Experimental{
+namespace Experimental {
 
-
-
-template <class KernelHandle,typename lno_row_view_t_, typename lno_nnz_view_t_>
-void graph_color_symbolic(
-    KernelHandle *handle,
-    typename KernelHandle::nnz_lno_t num_rows,
-    typename KernelHandle::nnz_lno_t /* num_cols */,
-    lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries,
-    bool /* is_symmetric */ = true){
-
+template <class KernelHandle, typename lno_row_view_t_,
+          typename lno_nnz_view_t_>
+void graph_color_symbolic(KernelHandle *handle,
+                          typename KernelHandle::nnz_lno_t num_rows,
+                          typename KernelHandle::nnz_lno_t /* num_cols */,
+                          lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
+                          bool /* is_symmetric */ = true) {
   Kokkos::Timer timer;
 
-  typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
+  typename KernelHandle::GraphColoringHandleType *gch =
+      handle->get_graph_coloring_handle();
 
   ColoringAlgorithm algorithm = gch->get_coloring_algo_type();
 
-  typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
+  typedef typename KernelHandle::GraphColoringHandleType::color_view_t
+      color_view_type;
 
   gch->set_tictoc(handle->get_verbose());
 
   color_view_type colors_out;
-  if(gch->get_vertex_colors().use_count() > 0){
+  if (gch->get_vertex_colors().use_count() > 0) {
     colors_out = gch->get_vertex_colors();
   } else {
     colors_out = color_view_type("Graph Colors", num_rows);
   }
 
-  typedef typename Impl::GraphColor
-      <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> BaseGraphColoring;
+  typedef
+      typename Impl::GraphColor<typename KernelHandle::GraphColoringHandleType,
+                                lno_row_view_t_, lno_nnz_view_t_>
+          BaseGraphColoring;
   BaseGraphColoring *gc = NULL;
 
-  switch (algorithm){
-  case COLORING_SERIAL:
-    gc = new BaseGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
-    break;
+  switch (algorithm) {
+    case COLORING_SERIAL:
+      gc = new BaseGraphColoring(num_rows, entries.extent(0), row_map, entries,
+                                 gch);
+      break;
 
-  case COLORING_VB:
-  case COLORING_VBBIT:
-  case COLORING_VBCS:
-    typedef typename Impl::GraphColor_VB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBGraphColoring;
-    gc = new VBGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
-    break;
+    case COLORING_VB:
+    case COLORING_VBBIT:
+    case COLORING_VBCS:
+      typedef typename Impl::GraphColor_VB<
+          typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,
+          lno_nnz_view_t_>
+          VBGraphColoring;
+      gc = new VBGraphColoring(num_rows, entries.extent(0), row_map, entries,
+                               gch);
+      break;
 
-  case COLORING_VBD:
-  case COLORING_VBDBIT:
-    typedef typename Impl::GraphColor_VBD <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> VBDGraphColoring;
-    gc = new VBDGraphColoring(num_rows, entries.extent(0), row_map, entries, gch);
-    break;
+    case COLORING_VBD:
+    case COLORING_VBDBIT:
+      typedef typename Impl::GraphColor_VBD<
+          typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,
+          lno_nnz_view_t_>
+          VBDGraphColoring;
+      gc = new VBDGraphColoring(num_rows, entries.extent(0), row_map, entries,
+                                gch);
+      break;
 
-  case COLORING_EB:
-    typedef typename Impl::GraphColor_EB <typename KernelHandle::GraphColoringHandleType, lno_row_view_t_, lno_nnz_view_t_> EBGraphColoring;
-    gc = new EBGraphColoring(num_rows, entries.extent(0),row_map, entries, gch);
-    break;
+    case COLORING_EB:
+      typedef typename Impl::GraphColor_EB<
+          typename KernelHandle::GraphColoringHandleType, lno_row_view_t_,
+          lno_nnz_view_t_>
+          EBGraphColoring;
+      gc = new EBGraphColoring(num_rows, entries.extent(0), row_map, entries,
+                               gch);
+      break;
 
-  case COLORING_DEFAULT:
-    break;
+    case COLORING_DEFAULT: break;
 
-  default:
-    break;
+    default: break;
   }
 
   int num_phases = 0;
@@ -125,20 +136,18 @@ void graph_color_symbolic(
   gch->set_vertex_colors(colors_out);
 }
 
-template <class KernelHandle,typename lno_row_view_t_, typename lno_nnz_view_t_>
-void graph_color(
-    KernelHandle *handle,
-    typename KernelHandle::nnz_lno_t num_rows,
-    typename KernelHandle::nnz_lno_t num_cols,
-    lno_row_view_t_ row_map,
-    lno_nnz_view_t_ entries,
-    bool is_symmetric = true)
-{
-  graph_color_symbolic(handle, num_rows, num_cols, row_map, entries, is_symmetric);
+template <class KernelHandle, typename lno_row_view_t_,
+          typename lno_nnz_view_t_>
+void graph_color(KernelHandle *handle,
+                 typename KernelHandle::nnz_lno_t num_rows,
+                 typename KernelHandle::nnz_lno_t num_cols,
+                 lno_row_view_t_ row_map, lno_nnz_view_t_ entries,
+                 bool is_symmetric = true) {
+  graph_color_symbolic(handle, num_rows, num_cols, row_map, entries,
+                       is_symmetric);
 }
 
 }  // end namespace Experimental
 }  // end namespace KokkosGraph
 
-#endif   // _KOKKOSGRAPH_DISTANCE1_COLOR_HPP
-
+#endif  // _KOKKOSGRAPH_DISTANCE1_COLOR_HPP

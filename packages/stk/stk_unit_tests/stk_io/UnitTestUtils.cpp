@@ -37,54 +37,61 @@
 #include "stk_io/IossBridge.hpp"
 #include <stk_util/parallel/Parallel.hpp>
 #include <gtest/gtest.h>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 namespace {
-    TEST(ParallelFileName, serialNameShouldBeUnchanged)
-    {
-        std::string fileName = "filename.exo";
-        EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 1, 0), "filename.exo");
-    }
 
-    TEST(ParallelFileName, singleDigitNames)
-    {
-        std::string fileName = "filename.exo";
-        EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 5, 0), "filename.exo.5.0");
-        EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 9, 0), "filename.exo.9.0");
-        EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 9, 8), "filename.exo.9.8");
-    }
+using stk::unit_test_util::build_mesh;
+using stk::unit_test_util::build_mesh_no_simple_fields;
 
-    TEST(ParallelFileName, multiDigitNames)
-    {
-        std::string fileName = "filename.exo";
-        EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 10, 0),  "filename.exo.10.00");
-        EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 10, 9),  "filename.exo.10.09");
-        EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 0),  "filename.exo.99.00");
-        EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 9),  "filename.exo.99.09");
-        EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 10), "filename.exo.99.10");
-        EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 98), "filename.exo.99.98");
-        EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 100, 98), "filename.exo.100.098");
-    }
+#ifndef STK_USE_SIMPLE_FIELDS
 
-    TEST(ParallelFileName, InvalidInputs) {
-        std::string fileName = "filename.exo";
-        EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName,  -1,  0),  std::exception);
-        EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName, 100, -5),  std::exception);
-        EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName, 107, 107), std::exception);
-        EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName, 107, 130), std::exception);
+TEST(ParallelFileName_legacy, serialNameShouldBeUnchanged)
+{
+  std::string fileName = "filename.exo";
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 1, 0), "filename.exo");
+}
 
-    }
+TEST(ParallelFileName_legacy, singleDigitNames)
+{
+  std::string fileName = "filename.exo";
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 5, 0), "filename.exo.5.0");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 9, 0), "filename.exo.9.0");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 9, 8), "filename.exo.9.8");
+}
 
-TEST(CheckElemBlockTopology, validTopology)
+TEST(ParallelFileName_legacy, multiDigitNames)
+{
+  std::string fileName = "filename.exo";
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 10, 0),  "filename.exo.10.00");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 10, 9),  "filename.exo.10.09");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 0),  "filename.exo.99.00");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 9),  "filename.exo.99.09");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 10), "filename.exo.99.10");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 98), "filename.exo.99.98");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 100, 98), "filename.exo.100.098");
+}
+
+TEST(ParallelFileName_legacy, InvalidInputs) {
+  std::string fileName = "filename.exo";
+  EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName,  -1,  0),  std::exception);
+  EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName, 100, -5),  std::exception);
+  EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName, 107, 107), std::exception);
+  EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName, 107, 130), std::exception);
+
+}
+
+TEST(CheckElemBlockTopology_legacy, validTopology)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  stk::io::fill_mesh("generated:2x2x2", bulk);
-  EXPECT_NO_THROW(stk::io::throw_if_any_elem_block_has_invalid_topology(meta, "test"));
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(spatialDim, MPI_COMM_WORLD);
+  stk::io::fill_mesh("generated:2x2x2", *bulk);
+  EXPECT_NO_THROW(stk::io::throw_if_any_elem_block_has_invalid_topology(bulk->mesh_meta_data(), "test"));
 }
 
-TEST(CheckElemBlockTopology, invalidTopology)
+TEST(CheckElemBlockTopology_legacy, invalidTopology)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
 
@@ -93,5 +100,67 @@ TEST(CheckElemBlockTopology, invalidTopology)
   stk::io::put_io_part_attribute(block2);
   EXPECT_THROW(stk::io::throw_if_any_elem_block_has_invalid_topology(meta, "test"), std::runtime_error);
 }
+
+#endif // STK_USE_SIMPLE_FIELDS
+
+namespace simple_fields {
+
+TEST(ParallelFileName, serialNameShouldBeUnchanged)
+{
+  std::string fileName = "filename.exo";
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 1, 0), "filename.exo");
+}
+
+TEST(ParallelFileName, singleDigitNames)
+{
+  std::string fileName = "filename.exo";
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 5, 0), "filename.exo.5.0");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 9, 0), "filename.exo.9.0");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 9, 8), "filename.exo.9.8");
+}
+
+TEST(ParallelFileName, multiDigitNames)
+{
+  std::string fileName = "filename.exo";
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 10, 0),  "filename.exo.10.00");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 10, 9),  "filename.exo.10.09");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 0),  "filename.exo.99.00");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 9),  "filename.exo.99.09");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 10), "filename.exo.99.10");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 99, 98), "filename.exo.99.98");
+  EXPECT_EQ(stk::io::construct_filename_for_serial_or_parallel(fileName, 100, 98), "filename.exo.100.098");
+}
+
+TEST(ParallelFileName, InvalidInputs) {
+  std::string fileName = "filename.exo";
+  EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName,  -1,  0),  std::exception);
+  EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName, 100, -5),  std::exception);
+  EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName, 107, 107), std::exception);
+  EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName, 107, 130), std::exception);
+
+}
+
+TEST(CheckElemBlockTopology, validTopology)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  const unsigned spatialDim = 3;
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(spatialDim, MPI_COMM_WORLD);
+  stk::io::fill_mesh("generated:2x2x2", *bulk);
+  EXPECT_NO_THROW(stk::io::throw_if_any_elem_block_has_invalid_topology(bulk->mesh_meta_data(), "test"));
+}
+
+TEST(CheckElemBlockTopology, invalidTopology)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  stk::mesh::MetaData meta(3);
+  meta.use_simple_fields();
+  stk::mesh::Part& block2 = meta.declare_part("block_2", stk::topology::ELEM_RANK);
+  stk::io::put_io_part_attribute(block2);
+  EXPECT_THROW(stk::io::throw_if_any_elem_block_has_invalid_topology(meta, "test"), std::runtime_error);
+}
+
+} // namespace simple_fields
 
 }

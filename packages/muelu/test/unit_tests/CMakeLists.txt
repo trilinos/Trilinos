@@ -38,6 +38,7 @@ APPEND_SET(SOURCES
   Hierarchy.cpp
   IndexManager.cpp
   Level.cpp
+  LowPrecision.cpp
   LWGraph.cpp
   MapTransferFactory.cpp
   Memory.cpp
@@ -123,6 +124,7 @@ APPEND_SET(SOURCES_BLOCKED
   BlockedCoarseMapFactory.cpp
   BlockedPFactory.cpp
   BlockedRAPFactory.cpp
+  InverseApproximationFactory.cpp
   SchurComplementFactory.cpp
   SubBlockAFactory.cpp
 )

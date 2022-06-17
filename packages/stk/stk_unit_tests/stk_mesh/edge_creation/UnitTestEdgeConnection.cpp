@@ -44,10 +44,13 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 #include <stk_io/FillMesh.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+
+using stk::unit_test_util::build_mesh;
 
 bool is_valid_element_edge(const stk::mesh::BulkData& bulk, stk::mesh::Entity elem, stk::mesh::Entity edge)
 {
@@ -66,8 +69,8 @@ TEST(EdgeConnectorTest, CheckValidEdge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
 
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   stk::io::fill_mesh("generated:1x1x1", bulk);;
 
   stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1u);
@@ -88,8 +91,8 @@ TEST(EdgeConnectorTest, CheckInvalidEdge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
 
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   stk::io::fill_mesh("generated:1x1x1", bulk);;
 
   stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1u);
@@ -119,8 +122,8 @@ TEST(EdgeConnectorTest, CheckConnectElemToValidEdge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
 
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   stk::io::fill_mesh("generated:1x1x1", bulk);;
 
   stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1u);
@@ -149,8 +152,8 @@ TEST(EdgeConnectorTest, CheckConnectElemToInvalidEdge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { return; }
 
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   stk::io::fill_mesh("generated:1x1x1", bulk);;
 
   stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1u);
@@ -176,13 +179,14 @@ TEST(StkEdgeIo, ParallelWriteMesh)
 
   std::string filename = "output.exo";
   {
-    std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(2, 2);
-    std::vector<double> coords = stk::unit_test_util::get_many_block_coordinates(2);
-    stk::mesh::MetaData meta(3);
-    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+    std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(2, 2);
+    std::vector<double> coords = stk::unit_test_util::simple_fields::get_many_block_coordinates(2);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
+    stk::mesh::BulkData& bulk = *bulkPtr;
+    stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
     stk::mesh::Part* part = &meta.declare_part_with_topology("edgeBlock", stk::topology::LINE_2);
     stk::io::put_edge_block_io_part_attribute(*part);
-    stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+    stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coords));
     stk::mesh::create_edges(bulk, meta.universal_part(), part);
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::EDGE_RANK);
 
@@ -197,8 +201,9 @@ TEST(StkEdgeIo, ParallelWriteMesh)
   }
 
   {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(MPI_COMM_WORLD);
+    stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+    stk::mesh::BulkData& bulk = *bulkPtr;
     stk::io::fill_mesh(filename, bulk);
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::EDGE_RANK);
 
@@ -221,15 +226,16 @@ TEST(StkEdgeIo, ParallelWriteMeshWithFace)
 
   std::string filename = "output.exo";
   {
-    std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(2, 2);
-    std::vector<double> coords = stk::unit_test_util::get_many_block_coordinates(2);
-    stk::mesh::MetaData meta(3);
-    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+    std::string meshDesc = stk::unit_test_util::simple_fields::get_many_block_mesh_desc(2, 2);
+    std::vector<double> coords = stk::unit_test_util::simple_fields::get_many_block_coordinates(2);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
+    stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+    stk::mesh::BulkData& bulk = *bulkPtr;
     stk::mesh::Part* edgePart = &meta.declare_part_with_topology("edgeBlock", stk::topology::LINE_2);
     stk::mesh::Part* facePart = &meta.declare_part_with_topology("faceBlock", stk::topology::QUAD_4);
     stk::io::put_edge_block_io_part_attribute(*edgePart);
     stk::io::put_io_part_attribute(*facePart);
-    stk::unit_test_util::setup_text_mesh(bulk, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+    stk::unit_test_util::simple_fields::setup_text_mesh(bulk, stk::unit_test_util::simple_fields::get_full_text_mesh_desc(meshDesc, coords));
 
     stk::mesh::PartVector faceParts = {facePart};
     stk::mesh::create_interior_block_boundary_sides(bulk, meta.universal_part(), faceParts);
@@ -252,8 +258,9 @@ TEST(StkEdgeIo, ParallelWriteMeshWithFace)
   }
 
   {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+    std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3, MPI_COMM_WORLD);
+    stk::mesh::MetaData& meta = bulkPtr->mesh_meta_data();
+    stk::mesh::BulkData& bulk = *bulkPtr;
     stk::io::fill_mesh(filename, bulk);
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::EDGE_RANK);
 

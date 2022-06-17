@@ -249,7 +249,7 @@ namespace Belos {
       for (int i=0; i<numRHS_; i++)
       {      
         // Get a random number (-1,1) and rescale to (0,1). 
-        r=0.5*randvec_[i] + 1.0;
+        r=0.5*SCT::real(randvec_[i]) + 1.0;
       
         // Odeh and Evans algorithm (as modified by Park & Geyer)
         if(r < 0.5) y=std::sqrt(-2.0 * log(r));

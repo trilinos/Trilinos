@@ -13,6 +13,7 @@ sierra_proj=${SIERRA_PROJ:-${PWD}}
 output_dir=${OUTPUT_DIR:-${PWD}/../stk-cmake-testing}
 trilinos_dir=${output_dir}/Trilinos
 cuda_on_or_off=${CUDA:-OFF}
+clear_cache=${CLEAR_CACHE:-ON}
 build_type=${CMAKE_BUILD_TYPE:-release}
 date_suffix=`date +%F_%H-%M-%S`
 
@@ -53,13 +54,6 @@ stk_ctest_log=${output_dir}/stk-ctest.out.$date_suffix
 stk_app_config_log=${output_dir}/stk-test-app-config.out.$date_suffix
 stk_app_make_log=${output_dir}/stk-test-app-make.out.$date_suffix
 
-if [ -d ${trilinos_dir}/packages/seacas ] ; then
-  exe rm -rf ${trilinos_dir}/packages/seacas;
-fi
-if [ ! -L ${trilinos_dir}/packages/seacas ] ; then
-  exe ln -s ${sierra_proj}/seacas ${trilinos_dir}/packages
-fi
-
 if [ -d ${trilinos_dir}/packages/stk ] ; then
   exe rm -rf ${trilinos_dir}/packages/stk;
 fi
@@ -77,6 +71,7 @@ exe "TRILINOS_DIR=${trilinos_dir} \
      TRILINOS_INSTALL_DIR=${trilinos_install_dir} \
      CMAKE_BUILD_TYPE=${build_type} \
      CUDA=${cuda_on_or_off} \
+     CLEAR_CACHE=${clear_cache} \
      ./run_cmake_stk >& ${stk_config_log}"
 
 printf "Now building trilinos/stk using make...\n";

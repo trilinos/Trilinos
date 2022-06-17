@@ -73,9 +73,9 @@ main (int argc, char *argv[])
   //
   // Typedefs for Tpetra template arguments.
   //
-  typedef double scalar_type;
-  typedef long int global_ordinal_type;
-  typedef int local_ordinal_type;
+  typedef Tpetra::MultiVector<>::scalar_type scalar_type;
+  typedef Tpetra::MultiVector<>::local_ordinal_type local_ordinal_type;
+  typedef Tpetra::MultiVector<>::global_ordinal_type global_ordinal_type;
   //
   // Tpetra objects which are the MV and OP template parameters of the
   // Belos specialization which we are testing.

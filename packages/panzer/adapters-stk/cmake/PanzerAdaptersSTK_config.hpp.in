@@ -14,5 +14,6 @@
 #cmakedefine PANZER_HAVE_TEKO
 #cmakedefine PANZER_HAVE_MUELU
 #cmakedefine PANZER_HAVE_IFPACK2
+#cmakedefine PANZER_HAVE_TEMPUS
 
 #endif

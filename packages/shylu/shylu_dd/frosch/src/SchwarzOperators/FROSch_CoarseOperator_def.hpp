@@ -901,6 +901,7 @@ namespace FROSch {
         GO global,sum,numRanks;
         LO local,minVal,maxVal;
         SC avg;
+        const SC ZERO = Teuchos::ScalarTraits<SC>::zero();
 
         global = coarseMapUnique->getMaxAllGlobalIndex();
         if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
@@ -909,7 +910,7 @@ namespace FROSch {
 
         local = (LO) max((LO) coarseMapUnique->getLocalNumElements(),(LO) 0);
         reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
-        avg = max(sum/SC(this->MpiComm_->getSize()),0.0);
+        avg = max(sum/SC(this->MpiComm_->getSize()),ZERO);
         reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&minVal));
         reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));
 
@@ -954,7 +955,7 @@ namespace FROSch {
             local = (LO) max((LO) GatheringMaps_[i]->getLocalNumElements(),(LO) 0);
             reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
             reduceAll(*this->MpiComm_,REDUCE_SUM,GO(GatheringMaps_[i]->getLocalNumElements()>0),ptr(&numRanks));
-            avg = max(sum/SC(numRanks),0.0);
+            avg = max(sum/SC(numRanks),ZERO);
             reduceAll(*this->MpiComm_,REDUCE_MIN,(GatheringMaps_[i]->getLocalNumElements()>0 ? local : numeric_limits<LO>::max()),ptr(&minVal));
             reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));
 

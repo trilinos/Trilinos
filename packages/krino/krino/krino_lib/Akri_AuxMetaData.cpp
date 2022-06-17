@@ -391,6 +391,17 @@ stk::mesh::Selector AuxMetaData::selectField( const stk::mesh::FieldBase & field
   return stk::mesh::selectField(field);
 }
 
+FieldRef AuxMetaData::get_current_coordinates() const
+{
+  if (!my_current_coordinates.valid())
+  {
+    const stk::mesh::FieldBase * meta_coords = my_meta.coordinate_field();
+    ThrowRequireMsg(nullptr != meta_coords, "Coordinates must be defined before calling AuxMetaData::get_current_coordinates().");
+    my_current_coordinates = FieldRef(meta_coords);
+  }
+  return my_current_coordinates;
+}
+
 //----------------------------------------------------------------------
 
 } // namespace krino

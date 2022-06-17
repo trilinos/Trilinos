@@ -80,7 +80,7 @@
 // Forward declaration needed for ParameterList validation
 namespace LOCA {
   namespace MultiContinuation {
-    class ConstraintModelEvaluator;
+    class ConstraintInterface;
   }
 }
 
@@ -170,7 +170,7 @@ TpetraHouseholder(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 {
   Teuchos::ParameterList validParams;
   validParams.set("Bordered Solver Method", "Householder");
-  validParams.set("Constraint Object",Teuchos::RCP<LOCA::MultiContinuation::ConstraintModelEvaluator>(Teuchos::null));
+  validParams.set("Constraint Object",Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>(Teuchos::null));
   validParams.set("Constraint Parameter Names",Teuchos::RCP<std::vector<std::string>>(Teuchos::null));
   validParams.set("Scale Augmented Rows", true);
   Teuchos::setStringToIntegralParameter<int>("Preconditioner Method",

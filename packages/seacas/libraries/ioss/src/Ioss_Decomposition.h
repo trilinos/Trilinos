@@ -125,7 +125,7 @@ namespace Ioss {
     double distributionFactorValue{
         0.0}; // If distributionFactorConstant == true, the constant value
     Ioss_MPI_Comm setComm_{Ioss::ParallelUtils::comm_null()};
-    bool     distributionFactorConstant{false}; // T if all distribution factors the same value.
+    bool distributionFactorConstant{false}; // T if all distribution factors the same value.
   };
 
   template <typename INT> class Decomposition

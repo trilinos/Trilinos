@@ -56,8 +56,8 @@ using std::endl;
 
 //
 // These typedefs make main() as generic as possible.
-//
-typedef double scalar_type;
+// 
+typedef Tpetra::MultiVector<>::scalar_type scalar_type;
 typedef Tpetra::Map<>::local_ordinal_type local_ordinal_type;
 typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
 typedef Tpetra::Map<>::node_type node_type;
@@ -234,7 +234,7 @@ main (int argc, char *argv[])
       // modify numRows to be the total number of rows in the sparse
       // matrix.  Otherwise, it will leave numRows alone.
       std::pair<RCP<map_type>, RCP<sparse_matrix_type> > results =
-        loadSparseMatrix<local_ordinal_type, global_ordinal_type, node_type> (pComm, filename, numRows, debugOut);
+        loadSparseMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> (pComm, filename, numRows, debugOut);
       map = results.first;
       M = results.second;
     }

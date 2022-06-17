@@ -58,6 +58,7 @@
 #include <string>                       // for char_traits, string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
+#include <functional>
 #include <unordered_map>
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
@@ -67,7 +68,6 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/ModificationNotifier.hpp>
-#include <stk_mesh/base/EntityProcMapping.hpp>
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include <stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp>
@@ -79,11 +79,12 @@ namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { class EntityProcMapping; } }
+namespace stk { namespace mesh { namespace impl { class AuraGhosting; } } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { class FaceCreator; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { namespace mesh { class ElemElemGraphUpdater; } }
+namespace stk { namespace mesh { class MeshBuilder; } }
 namespace stk { namespace mesh { class NgpMeshBase; } }
 namespace stk { class CommSparse; }
 namespace stk { namespace mesh { class ModificationObserver; } }
@@ -91,6 +92,14 @@ namespace stk { namespace io { class StkMeshIoBroker; } }
 namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; } } }
 namespace stk { namespace mesh { namespace impl { NgpMeshBase* get_ngp_mesh(const BulkData & bulk); } } }
 namespace stk { namespace mesh { namespace impl { void set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh); } } }
+
+namespace stk {
+namespace tools {
+
+template<typename T>
+void replace_bulk_data(const stk::mesh::BulkData & inMesh, T & outMesh, std::function<void(T& outMesh)> op);
+
+} }
 
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
@@ -109,6 +118,7 @@ namespace stk {
 namespace mesh {
 
 using ModEndOptimizationFlag = impl::MeshModification::modification_optimization;
+
 
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields, bool syncOnlySharedOrGhosted = false);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool syncOnlySharedOrGhosted = false);
@@ -186,8 +196,11 @@ public:
 
   //------------------------------------
   /** \brief  The meta data manager for this bulk data manager. */
-  const MetaData & mesh_meta_data() const { return m_mesh_meta_data ; }
-        MetaData & mesh_meta_data()       { return m_mesh_meta_data ; }
+  const MetaData & mesh_meta_data() const { return *m_meta_raw_ptr_to_be_deprecated ; }
+        MetaData & mesh_meta_data()       { return *m_meta_raw_ptr_to_be_deprecated ; }
+
+  std::shared_ptr<MetaData> mesh_meta_data_ptr() {return m_meta_data; }
+  const std::shared_ptr<MetaData> mesh_meta_data_ptr() const { return m_meta_data; }
 
   /** \brief  The parallel machine */
   ParallelMachine parallel() const { return m_parallel.parallel() ; }
@@ -843,7 +856,7 @@ void get_entities(EntityRank rank, Selector const& selector, EntityVector& outpu
   template<typename ObserverType>
   std::vector<std::shared_ptr<ObserverType>> get_observer_type() const { return notifier.get_observer_type<ObserverType>(); }
 
-  void initialize_face_adjacent_element_graph();
+  bool initialize_face_adjacent_element_graph();
   void delete_face_adjacent_element_graph();
   stk::mesh::ElemElemGraph& get_face_adjacent_element_graph();
   const stk::mesh::ElemElemGraph& get_face_adjacent_element_graph() const;
@@ -874,6 +887,17 @@ void get_entities(EntityRank rank, Selector const& selector, EntityVector& outpu
   void set_large_ids_flag(bool largeIds) { m_supportsLargeIds = largeIds; }
 
 protected: //functions
+  BulkData(std::shared_ptr<MetaData> mesh_meta_data,
+           ParallelMachine parallel,
+           enum AutomaticAuraOption auto_aura_option = AUTO_AURA,
+#ifdef SIERRA_MIGRATION
+           bool add_fmwk_data = false,
+#endif
+           FieldDataManager *field_dataManager = nullptr,
+           unsigned bucket_capacity = impl::BucketRepository::default_bucket_capacity,
+           std::shared_ptr<impl::AuraGhosting> auraGhosting = std::shared_ptr<impl::AuraGhosting>(),
+           bool createUpwardConnectivity = true);
+
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id);// Mod Mark
 
 
@@ -1041,10 +1065,6 @@ protected: //functions
                                  const std::vector<Entity> & remove_receive,
                                  bool add_send_is_globally_empty = false);
 
-  void internal_change_ghosting( Ghosting & ghosts,
-                                 EntityProcMapping& entityProcMapping,
-                                 const EntityProcMapping& entitySharing);
-
   void internal_add_to_ghosting( Ghosting &ghosting, const std::vector<EntityProc> &add_send); // Mod Mark
 
   template<typename PARTVECTOR>
@@ -1176,8 +1196,6 @@ protected: //functions
    */
   void internal_regenerate_aura();
   void internal_remove_aura();
-  void fill_list_of_entities_to_send_for_aura_ghosting(EntityProcMapping& send,
-                                                const EntityProcMapping& entitySharing);
 
   void require_ok_to_modify() const ;
   void internal_update_fast_comm_maps() const;
@@ -1361,6 +1379,7 @@ private:
 
   // Forbidden
   BulkData();
+
   BulkData( const BulkData & );
   BulkData & operator = ( const BulkData & );
 
@@ -1458,11 +1477,13 @@ private:
 
   inline bool is_valid_connectivity(Entity entity, EntityRank rank) const;
 
+  friend class MeshBuilder;
   friend class ::stk::mesh::MetaData;
   friend class ::stk::mesh::impl::BucketRepository;
   friend class stk::mesh::Bucket; // for field callback
   friend class Ghosting; // friend until Ghosting is refactored to be like Entity
   friend class ::stk::mesh::impl::MeshModification;
+  friend class ::stk::mesh::impl::AuraGhosting;
   friend class ::stk::mesh::FaceCreator;
   friend class ::stk::mesh::EntityLess;
   friend class ::stk::io::StkMeshIoBroker;
@@ -1496,6 +1517,9 @@ private:
   friend NgpMeshBase * impl::get_ngp_mesh(const BulkData & bulk);
   friend void impl::set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh);
 
+  template<typename T>
+  friend void stk::tools::replace_bulk_data(const stk::mesh::BulkData & in_mesh, T & out_mesh, std::function<void(T& outMesh)> op);
+
   bool verify_parallel_attributes( std::ostream & error_log );
 
   void determineEntitiesThatNeedGhosting(stk::mesh::BulkData &stkMeshBulkData,
@@ -1528,11 +1552,14 @@ public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
 
 protected: //data
+  bool m_createUpwardConnectivity = true;
+  std::shared_ptr<impl::AuraGhosting> m_auraGhosting;
   mutable ModificationNotifier notifier;
   static const uint16_t orphaned_node_marking;
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;
-  MetaData &m_mesh_meta_data;
+  MetaData *m_meta_raw_ptr_to_be_deprecated;
+  std::shared_ptr<MetaData> m_meta_data;
   std::vector<EntitySharing> m_mark_entity; //indexed by Entity
   bool m_add_node_sharing_called;
   std::vector<uint16_t> m_closure_count; //indexed by Entity

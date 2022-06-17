@@ -2,7 +2,7 @@
 		coordy:_DeflateLevel = 1 ;
 		coordz:_DeflateLevel = 1 ;
 		nattrb:_DeflateLevel = 1 ;
-		elem_map:_DeflateLevel = 1 ;
+		elem_num_map:_DeflateLevel = 1 ;
 		attrib1:_DeflateLevel = 1 ;
 		connect1:_DeflateLevel = 1 ;
 		attrib2:_DeflateLevel = 1 ;

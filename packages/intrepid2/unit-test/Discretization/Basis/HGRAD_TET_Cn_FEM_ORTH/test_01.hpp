@@ -88,14 +88,6 @@ int HGRAD_TET_Cn_FEM_ORTH_Test01(const bool verbose) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
-  using DeviceSpaceType = typename DeviceType::execution_space;
-  typedef typename Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType;
-
-  *outStream << "DeviceSpace::  ";
-  DeviceSpaceType::print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";
-  HostSpaceType::print_configuration(*outStream, false);
-
   *outStream
   << "===============================================================================\n"
   << "|                                                                             |\n"

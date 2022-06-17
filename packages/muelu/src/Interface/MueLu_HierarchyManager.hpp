@@ -256,6 +256,8 @@ namespace MueLu {
 #ifdef HAVE_MUELU_INTREPID2
       ExportDataSetKeepFlags(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map");
 #endif
+      for(int i=0; i<dataToSave_.size(); i++) 
+        ExportDataSetKeepFlagsAll(H,dataToSave_[i]);
 
       int  levelID     = 0;
       int  lastLevelID = numDesiredLevel_ - 1;
@@ -361,7 +363,7 @@ namespace MueLu {
     //! -2 = no output, -1 = all levels
     int graphOutputLevel_;
 
-    //! Lists of entities to be exported
+    //! Lists of entities to be exported (or saved)
     Teuchos::Array<int> matricesToPrint_;
     Teuchos::Array<int> prolongatorsToPrint_;
     Teuchos::Array<int> restrictorsToPrint_;
@@ -369,6 +371,7 @@ namespace MueLu {
     Teuchos::Array<int> coordinatesToPrint_;
     Teuchos::Array<int> aggregatesToPrint_;
     Teuchos::Array<int> elementToNodeMapsToPrint_;
+    Teuchos::Array<std::string> dataToSave_;
 
     Teuchos::RCP<Teuchos::ParameterList> matvecParams_;
 
@@ -394,6 +397,15 @@ namespace MueLu {
       	  if(!L.is_null()  && data[i]+1 < levelManagers_.size())
       	    L->AddKeepFlag(name, &*levelManagers_[data[i]+1]->GetFactory(name));
         }
+      }
+    }
+
+     // Set the keep flags for Export Data
+    void ExportDataSetKeepFlagsAll(Hierarchy& H, const std::string& name) const {
+      for (int i=0; i < H.GetNumLevels(); i++ ) {
+          RCP<Level> L = H.GetLevel(i);
+      	  if(!L.is_null())
+      	    L->AddKeepFlag(name, &*levelManagers_[i]->GetFactory(name));
       }
     }
 

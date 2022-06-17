@@ -50,8 +50,15 @@ public:
     NgpVector() : NgpVector(get_default_name())
     {
     }
-    NgpVector(const std::string &n, size_t s) : mSize(s), deviceVals(Kokkos::view_alloc(Kokkos::WithoutInitializing, n), mSize), hostVals(Kokkos::create_mirror_view(HostSpace(), deviceVals, Kokkos::WithoutInitializing))
-    {
+    NgpVector(const std::string &n, size_t s)
+        : mSize(s),
+          deviceVals(Kokkos::view_alloc(Kokkos::WithoutInitializing, n), mSize),
+#ifndef NEW_TRILINOS_INTEGRATION
+          hostVals(Kokkos::create_mirror_view(HostSpace(), deviceVals, Kokkos::WithoutInitializing))
+#else
+          hostVals(Kokkos::create_mirror_view(Kokkos::WithoutInitializing, HostSpace(), deviceVals))
+#endif
+        {
     }
     NgpVector(size_t s) : NgpVector(get_default_name(), s)
     {

@@ -48,6 +48,7 @@ int KokkosParser::initialize(int narg, char* argv[], bool print_status) {
             Kokkos::initialize(narg, argv);
             bool success = Kokkos::is_initialized();
             compadre_assert_release(success && "Kokkos did not initialize successfully.\n");
+            _called_initialize = 1;
             if (print_status) {
                 this->status();
             }

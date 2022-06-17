@@ -36,7 +36,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
-//#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/Field.hpp>
 
 namespace stk {
 namespace balance {
@@ -44,11 +44,11 @@ namespace internal {
 
 inline void put_entity_data_to_field(const stk::mesh::EntityProcVec& entityDataToBePutIntoField, stk::mesh::FieldBase *field)
 {
-    for(const stk::mesh::EntityProc& entityProc : entityDataToBePutIntoField)
-    {
-        unsigned *fieldData = static_cast<unsigned*>(stk::mesh::field_data(*field, entityProc.first));
-        *fieldData = static_cast<unsigned>(entityProc.second);
-    }
+  for(const stk::mesh::EntityProc& entityProc : entityDataToBePutIntoField)
+  {
+    unsigned *fieldData = static_cast<unsigned*>(stk::mesh::field_data(*field, entityProc.first));
+    *fieldData = static_cast<unsigned>(entityProc.second);
+  }
 }
 
 }

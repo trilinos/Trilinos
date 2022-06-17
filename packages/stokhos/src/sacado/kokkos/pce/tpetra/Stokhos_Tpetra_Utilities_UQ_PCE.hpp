@@ -170,11 +170,11 @@ namespace Stokhos {
     // Loop over outer rows
     typename Graph::local_inds_host_view_type outer_cols;
     typename Graph::local_inds_host_view_type inner_cols;
-    size_t max_num_row_entries = graph.getNodeMaxNumRowEntries()*block_size;
+    size_t max_num_row_entries = graph.getLocalMaxNumRowEntries()*block_size;
     Array<LocalOrdinal> flat_col_indices;
     flat_col_indices.reserve(max_num_row_entries);
     RCP<Graph> flat_graph = rcp(new Graph(flat_row_map, flat_col_map, max_num_row_entries));
-    const LocalOrdinal num_outer_rows = graph.getNodeNumRows();
+    const LocalOrdinal num_outer_rows = graph.getLocalNumRows();
     for (LocalOrdinal outer_row=0; outer_row < num_outer_rows; outer_row++) {
 
       // Get outer columns for this outer row
@@ -241,7 +241,7 @@ namespace Stokhos {
     typedef typename Storage::value_type BaseScalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename FlatVector::dual_view_type flat_view_type;
+    typedef typename FlatVector::dual_view_type::t_dev flat_view_type;
 
     // Have to do a nasty const-cast because getLocalViewDevice(ReadWrite) is a
     // non-const method, yet getLocalViewDevice(ReadOnly) returns a const-view
@@ -251,13 +251,7 @@ namespace Stokhos {
     mv_type& vec_nc = const_cast<mv_type&>(vec);
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals (vec_nc.getLocalViewDevice(Tpetra::Access::ReadWrite), vec_nc.getLocalViewHost(Tpetra::Access::ReadWrite));
-    if (vec.need_sync_device ()) {
-      flat_vals.modify_host ();
-    }
-    else if (vec.need_sync_host ()) {
-      flat_vals.modify_device ();
-    }
+    flat_view_type flat_vals = vec_nc.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
@@ -284,16 +278,10 @@ namespace Stokhos {
     typedef typename Storage::value_type BaseScalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename FlatVector::dual_view_type flat_view_type;
+    typedef typename FlatVector::dual_view_type::t_dev flat_view_type;
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals (vec.getLocalViewDevice(Tpetra::Access::ReadWrite), vec.getLocalViewHost(Tpetra::Access::ReadWrite));
-    if (vec.need_sync_device ()) {
-      flat_vals.modify_host ();
-    }
-    else if (vec.need_sync_host ()) {
-      flat_vals.modify_device ();
-    }
+    flat_view_type flat_vals = vec.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
@@ -472,8 +460,8 @@ namespace Stokhos {
     typename Matrix::local_inds_host_view_type inner_cols;
     typename Matrix::local_inds_host_view_type flat_cols;
     Array<BaseScalar> flat_values;
-    flat_values.reserve(flat_graph->getNodeMaxNumRowEntries());
-    const LocalOrdinal num_outer_rows = mat.getNodeNumRows();
+    flat_values.reserve(flat_graph->getLocalMaxNumRowEntries());
+    const LocalOrdinal num_outer_rows = mat.getLocalNumRows();
     for (LocalOrdinal outer_row=0; outer_row < num_outer_rows; outer_row++) {
 
       // Get outer columns and values for this outer row

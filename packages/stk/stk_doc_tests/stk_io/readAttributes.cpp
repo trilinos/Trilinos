@@ -52,85 +52,86 @@
 
 namespace {
 
-class ExodusFileWithAttributes : public stk::unit_test_util::MeshFixture { };
+class ExodusFileWithAttributes : public stk::unit_test_util::simple_fields::MeshFixture { };
 
 stk::mesh::FieldVector get_attribute_fields_for_part(const stk::mesh::MetaData &meta, const stk::mesh::Part *ioPart)
 {
-    stk::mesh::FieldVector attributes;
+  stk::mesh::FieldVector attributes;
 
-    for(stk::mesh::FieldBase *field : meta.get_fields())
+  for(stk::mesh::FieldBase *field : meta.get_fields())
+  {
+    const Ioss::Field::RoleType *fieldRole = stk::io::get_field_role(*field);
+    if(fieldRole != nullptr && *fieldRole == Ioss::Field::ATTRIBUTE)
     {
-        const Ioss::Field::RoleType *fieldRole = stk::io::get_field_role(*field);
-        if(fieldRole != nullptr && *fieldRole == Ioss::Field::ATTRIBUTE)
-        {
-            for(const stk::mesh::FieldBase::Restriction &restriction : field->restrictions())
-            {
-                const stk::mesh::Selector &selector = restriction.selector();
-                if(selector(ioPart))
-                    attributes.push_back(field);
-            }
-        }
+      for(const stk::mesh::FieldBase::Restriction &restriction : field->restrictions())
+      {
+        const stk::mesh::Selector &selector = restriction.selector();
+        if(selector(ioPart))
+          attributes.push_back(field);
+      }
     }
-    return attributes;
+  }
+  return attributes;
 }
 
 //-BEGIN
 std::vector<double> get_attributes_of_first_element(const stk::mesh::BulkData &bulk, const stk::mesh::Part *ioPart)
 {
-    stk::mesh::FieldVector attributeFields = get_attribute_fields_for_part(bulk.mesh_meta_data(), ioPart);
+  stk::mesh::FieldVector attributeFields = get_attribute_fields_for_part(bulk.mesh_meta_data(), ioPart);
 
-    stk::mesh::EntityVector elements;
-    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, *ioPart, elements);
+  stk::mesh::EntityVector elements;
+  stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, *ioPart, elements);
 
-    std::vector<double> attributes;
-    if(!elements.empty())
+  std::vector<double> attributes;
+  if(!elements.empty())
+  {
+    for(const stk::mesh::FieldBase *field : attributeFields)
     {
-        for(const stk::mesh::FieldBase *field : attributeFields)
-        {
-            unsigned numAttribute = stk::mesh::field_scalars_per_entity(*field, elements[0]);
-            double *dataForElement = static_cast<double*> (stk::mesh::field_data(*field, elements[0]));
-            for(unsigned i=0; i<numAttribute; ++i)
-                attributes.push_back(dataForElement[i]);
-        }
+      unsigned numAttribute = stk::mesh::field_scalars_per_entity(*field, elements[0]);
+      double *dataForElement = static_cast<double*> (stk::mesh::field_data(*field, elements[0]));
+      for(unsigned i=0; i<numAttribute; ++i)
+        attributes.push_back(dataForElement[i]);
     }
-    return attributes;
+  }
+  return attributes;
 }
 
 TEST_F(ExodusFileWithAttributes, readAttributes_haveFieldsWithAttributes)
 {
-    setup_mesh("hex_spider.exo", stk::mesh::BulkData::AUTO_AURA);
+  setup_mesh("hex_spider.exo", stk::mesh::BulkData::AUTO_AURA);
 
-    const stk::mesh::Part *partBlock2  = get_meta().get_part("block_2");
-    const stk::mesh::Part *partBlock10 = get_meta().get_part("block_10");
+  const stk::mesh::Part *partBlock2  = get_meta().get_part("block_2");
+  const stk::mesh::Part *partBlock10 = get_meta().get_part("block_10");
 
-    EXPECT_EQ(1u, get_attributes_of_first_element(get_bulk(), partBlock2).size());
-    EXPECT_EQ(7u, get_attributes_of_first_element(get_bulk(), partBlock10).size());
+  EXPECT_EQ(1u, get_attributes_of_first_element(get_bulk(), partBlock2).size());
+  EXPECT_EQ(7u, get_attributes_of_first_element(get_bulk(), partBlock10).size());
 }
 
 void mark_field_as_attribute(stk::mesh::FieldBase &field)
 {
-    stk::io::set_field_role(field, Ioss::Field::ATTRIBUTE);
+  stk::io::set_field_role(field, Ioss::Field::ATTRIBUTE);
 }
 
 TEST_F(ExodusFileWithAttributes, addAttribute_haveFieldsWithAttribute)
 {
-    allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
+  allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
 
-    stk::io::StkMeshIoBroker stkIo;
-    stkIo.set_bulk_data(get_bulk());
-    stkIo.add_mesh_database("hex_spider.exo", stk::io::READ_MESH);
-    stkIo.create_input_mesh();
+  stk::io::StkMeshIoBroker stkIo;
+  stkIo.use_simple_fields();
+  stkIo.set_bulk_data(get_bulk());
+  stkIo.add_mesh_database("hex_spider.exo", stk::io::READ_MESH);
+  stkIo.create_input_mesh();
 
-    double initialValue = 0.0;
-    auto &newAttrField = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "newAttr");
-    mark_field_as_attribute(newAttrField);
+  double initialValue = 0.0;
+  auto &newAttrField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "newAttr");
+  mark_field_as_attribute(newAttrField);
 
-    const stk::mesh::Part *partBlock10 = get_meta().get_part("block_10");
-    stk::mesh::put_field_on_mesh(newAttrField, *partBlock10, &initialValue);
+  const stk::mesh::Part *partBlock10 = get_meta().get_part("block_10");
+  stk::mesh::put_field_on_mesh(newAttrField, *partBlock10, &initialValue);
 
-    stkIo.populate_bulk_data();
+  stkIo.populate_bulk_data();
 
-    EXPECT_EQ(8u, get_attributes_of_first_element(get_bulk(), partBlock10).size());
+  EXPECT_EQ(8u, get_attributes_of_first_element(get_bulk(), partBlock10).size());
 }
 //-END
 }

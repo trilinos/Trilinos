@@ -409,6 +409,19 @@ class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
     //! Return a list of the global indices owned by this node.
     Teuchos::ArrayView<const GlobalOrdinal> getLocalElementList() const;
 
+#ifdef XPETRA_ENABLE_DEPRECATED_CODE
+    XPETRA_DEPRECATED
+    size_t getNodeNumElements() const {
+      return getLocalNumElements();
+    }
+
+    XPETRA_DEPRECATED
+    Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const {
+      return getLocalElementList();
+    }
+#endif
+
+
 
     //! Returns true if the local index is valid for this Map on this node; returns false if it isn't.
     bool isNodeLocalElement(LocalOrdinal localIndex) const;

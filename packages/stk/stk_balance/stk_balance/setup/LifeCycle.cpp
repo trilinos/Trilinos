@@ -36,13 +36,15 @@
 #include "stk_util/environment/Env.hpp"
 #include "stk_util/environment/EnvData.hpp"
 #include "stk_util/environment/OutputLog.hpp"
-
+#include "stk_mesh/base/MeshBuilder.hpp"
 #include "stk_balance/mesh/BalanceMesh.hpp"
 #include "stk_balance/io/BalanceIO.hpp"
 #include "stk_balance/internal/Balancer.hpp"
 #include "stk_balance/internal/LogUtils.hpp"
 #include "stk_balance/rebalance.hpp"
 #include "stk_balance/internal/privateDeclarations.hpp"
+#include "stk_balance/internal/Diagnostics.hpp"
+#include "stk_balance/internal/DiagnosticsPrinter.hpp"
 
 #include <stk_io/FillMesh.hpp>
 
@@ -151,27 +153,42 @@ void LifeCycle::balance()
   stk::balance::BalanceIO io(m_comm, m_settings);
   const stk::balance::Balancer balancer(m_settings);
 
+  if (m_settings.shouldPrintDiagnostics()) {
+    set_up_diagnostics(m_settings);
+  }
+
   stk::balance::BalanceMesh& mesh = io.initial_decomp();
   balancer.balance(mesh);
   io.write(mesh);
+
+  DiagnosticsPrinter diagPrinter(m_comm, m_settings.get_num_output_processors());
+  diagPrinter.print(sierra::Env::outputP0());
 }
 
 void LifeCycle::rebalance()
 {
-  stk::mesh::MetaData meta;
-  stk::mesh::BulkData bulk(meta, m_comm);
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(m_comm).create();
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
+  meta.use_simple_fields();
   stk::io::StkMeshIoBroker ioBroker;
 
   meta.set_coordinate_field_name(m_settings.getCoordinateFieldName());
-  stk::balance::internal::register_internal_fields(bulk, m_settings);
-  stk::io::fill_mesh_preexisting(ioBroker, m_settings.get_input_filename(), bulk);
+  stk::balance::internal::register_internal_fields(*bulk, m_settings);
+  stk::io::fill_mesh_preexisting(ioBroker, m_settings.get_input_filename(), *bulk);
 
   if (rebalance_will_corrupt_data(ioBroker, meta)) {
     m_exitCode = LifeCycleStatus::REBALANCE_CORRUPTION_ERROR;
     return;
   }
 
+  if (m_settings.shouldPrintDiagnostics()) {
+    set_up_diagnostics(m_settings);
+  }
+
   stk::balance::rebalance(ioBroker, m_settings);
+
+  DiagnosticsPrinter diagPrinter(m_comm, m_settings.get_num_output_processors());
+  diagPrinter.print(sierra::Env::outputP0());
 }
 
 void LifeCycle::set_output_streams()

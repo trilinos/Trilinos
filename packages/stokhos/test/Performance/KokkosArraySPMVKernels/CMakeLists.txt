@@ -20,7 +20,7 @@ IF (Stokhos_ENABLE_EpetraExt AND Stokhos_ENABLE_KokkosContainers)
     COMM serial mpi
     )
 
-  IF(Kokkos_ENABLE_PTHREAD)
+  IF(Kokkos_ENABLE_THREADS)
     TRIBITS_ADD_EXECUTABLE(
       SPMVHostScaling
       SOURCES TestStochastic.hpp

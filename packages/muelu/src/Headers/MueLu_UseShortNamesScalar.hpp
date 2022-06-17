@@ -167,11 +167,17 @@ typedef MueLu::InitialBlockNumberFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>
 #ifdef MUELU_INTREPIDPCOARSENFACTORY_SHORT
 typedef MueLu::IntrepidPCoarsenFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> IntrepidPCoarsenFactory;
 #endif
+#ifdef MUELU_INVERSEAPPROXIMATIONFACTORY_SHORT
+typedef MueLu::InverseApproximationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> InverseApproximationFactory;
+#endif
 #ifdef MUELU_LINEDETECTIONFACTORY_SHORT
 typedef MueLu::LineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> LineDetectionFactory;
 #endif
 #ifdef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::LocalPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> LocalPermutationStrategy;
+#endif
+#ifdef MUELU_LOWPRECISIONFACTORY_SHORT
+typedef MueLu::LowPrecisionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> LowPrecisionFactory;
 #endif
 #ifdef MUELU_MAPTRANSFERFACTORY_SHORT
 typedef MueLu::MapTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapTransferFactory;

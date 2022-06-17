@@ -210,8 +210,8 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
   if(elmtspace == PureBasis::HDIV and compute_derivatives)
     getDivVectorBasis(false,true,true);
 
-  // Orientations have been applied only if this pointer is valid
-  orientations_applied_ = orientations_ != Teuchos::null;
+  // Orientations have been applied if the number of them is greater than zero
+  orientations_applied_ = (orientations_.size()>0);
 }
 
 template <typename Scalar>
@@ -263,8 +263,8 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
     getBasisCoordinates(true,true);
   }
 
-  // Orientations have been applied only if this pointer is valid
-  orientations_applied_ = orientations_ != Teuchos::null;
+  // Orientations have been applied if the number of them is greater than zero
+  orientations_applied_ = (orientations_.size()>0);
 }
 
 template <typename Scalar>
@@ -324,9 +324,8 @@ evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
     getBasisCoordinates(true,true);
   }
 
-  // Orientations have been applied only if this pointer is valid
-  orientations_applied_ = orientations_ != Teuchos::null;
-
+  // Orientations have been applied if the number of them is greater than zero
+  orientations_applied_ = (orientations_.size()>0);
 }
 
 template <typename Scalar>
@@ -655,16 +654,15 @@ setupUniform(const Teuchos::RCP<const panzer::BasisIRLayout> &  basis,
 template <typename Scalar>
 void
 BasisValues2<Scalar>::
-setOrientations(const Teuchos::RCP<const OrientationsInterface> & orientations,
+setOrientations(const std::vector<Intrepid2::Orientation> & orientations,
                 const int num_orientations_cells)
 {
   if(num_orientations_cells < 0)
     num_orientations_cells_ = num_evaluate_cells_;
   else
     num_orientations_cells_ = num_orientations_cells;
-  if(orientations == Teuchos::null){
+  if(orientations.size() == 0){
     orientations_applied_ = false;
-    orientations_ = Teuchos::null;
     // Normally we would reset arrays here, but it seems to causes a lot of problems
   } else {
     orientations_ = orientations;
@@ -1055,7 +1053,6 @@ getBasisValues(const bool weighted,
   const int num_dim    = basis_layout->dimension();
 
   if(weighted){
-
     TEUCHOS_ASSERT(cubature_weights_.size() > 0);
 
     // Get the basis_scalar values - do not cache
@@ -1181,8 +1178,8 @@ getBasisValues(const bool weighted,
     // the two construction paths in panzer. Unification should help
     // fix the logic.
 
-    if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_basis_scalar.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+    if(orientations_.size() > 0)
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_basis_scalar.get_view(), orientations_, *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(basis_scalar);
@@ -1364,8 +1361,8 @@ getVectorBasisValues(const bool weighted,
       }
     }
 
-    if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_basis_vector.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+    if(orientations_.size() > 0)
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_basis_vector.get_view(), orientations_, *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(basis_vector);
@@ -1511,8 +1508,8 @@ getGradBasisValues(const bool weighted,
       }
     }
 
-    if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_grad_basis.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+    if(orientations_.size() > 0)
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_grad_basis.get_view(), orientations_, *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(grad_basis);
@@ -1656,8 +1653,8 @@ getCurl2DVectorBasis(const bool weighted,
       }
     }
 
-    if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_curl_basis_scalar.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+    if(orientations_.size() > 0)
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_curl_basis_scalar.get_view(), orientations_, *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(curl_basis_scalar);
@@ -1804,8 +1801,8 @@ getCurlVectorBasis(const bool weighted,
       }
     }
 
-    if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_curl_basis_vector.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+    if(orientations_.size() > 0)
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_curl_basis_vector.get_view(), orientations_, *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(curl_basis_vector);
@@ -1942,8 +1939,8 @@ getDivVectorBasis(const bool weighted,
       }
     }
 
-    if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_div_basis.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+    if(orientations_.size() > 0)
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_div_basis.get_view(), orientations_, *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(div_basis);

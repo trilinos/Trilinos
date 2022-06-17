@@ -93,12 +93,6 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
-
-      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
-
       *outStream
         << "===============================================================================\n"
         << "|                                                                             |\n"
@@ -119,9 +113,10 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
+      using HostDeviceType = Kokkos::Device<Kokkos::DefaultHostExecutionSpace,Kokkos::HostSpace>;
       using ct = CellTools<DeviceType>;
       using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
-      using DynRankViewHost = Kokkos::DynRankView<ValueType,HostSpaceType>;
+      using DynRankViewHost = Kokkos::DynRankView<ValueType,Kokkos::HostSpace>;
 
       const ValueType tol = tolerence()*100.0;
 
@@ -172,8 +167,7 @@ namespace Intrepid2 {
           triFaceCubature.getCubature(paramTriFacePoints, paramTriFaceWeights);
           quadFaceCubature.getCubature(paramQuadFacePoints, paramQuadFaceWeights);
           // create mirror host view
-          auto hParamQuadFacePoints = Kokkos::create_mirror_view_and_copy(
-              typename HostSpaceType:: memory_space(), paramQuadFacePoints);
+          auto hParamQuadFacePoints = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), paramQuadFacePoints);
 
           // Loop over admissible topologies
           for (ordinal_type topoOrd=0;topoOrd<topoSize;++topoOrd) {
@@ -196,7 +190,7 @@ namespace Intrepid2 {
 
               // create mirror host view
               auto hRefCellVertices = Kokkos::create_mirror_view_and_copy(
-                  typename HostSpaceType:: memory_space(), refCellVertices);
+                  Kokkos::HostSpace(), refCellVertices);
 
               // Array for physical cell vertices ( must have rank 3 for setJacobians)
               DynRankView ConstructWithLabel(physCellVertices, 1, vCount, cellDim);
@@ -262,7 +256,7 @@ namespace Intrepid2 {
                       hTanY(d) = hPhysCellVertices(0, v2ord, d) - hPhysCellVertices(0, v0ord, d);
                     }
                     
-                    RealSpaceTools<HostSpaceType>::vecprod(hFaceNormal, hTanX, hTanY);
+                    RealSpaceTools<HostDeviceType>::vecprod(hFaceNormal, hTanX, hTanY);
 
                     ExecSpaceType().fence();
 
@@ -340,7 +334,7 @@ namespace Intrepid2 {
                                   hPhysCellVertices(0, v3ord, d)*( 1.0 - hParamQuadFacePoints(pt,0) ) )/4.0;
                     }
 
-                    RealSpaceTools<HostSpaceType>::vecprod(hFaceNormal, hTanX, hTanY);
+                    RealSpaceTools<HostDeviceType>::vecprod(hFaceNormal, hTanX, hTanY);
 
                     ExecSpaceType().fence();
 

@@ -34,8 +34,8 @@ void get_extval(double *alpha,   /* j-vector of Lanczos scalars (using elements 
   double     lambda;      /* the parameter that iterates to extval */
   int        cnt;         /* debug iteration counter */
   double     diff;        /* distance between lambda limits */
-  double     ch_norm(), Tevec();
-  void       tri_solve(), cpvec();
+  double ch_norm(double *vec, int beg, int end), Tevec(double *, double *, int, double, double *);
+  void   tri_solve(), cpvec();
 
   /* Compute the Ritz vector */
   Tevec(alpha, beta - 1, j, ritzval, s);

@@ -606,10 +606,10 @@ void Problem<Real>::checkDerivatives(bool printToStream, std::ostream &outStream
   const Real one(1);
   Ptr<Vector<Real>> x, d, v, g, c, w;
   // Objective check
-  x = INPUT_xprim_->clone(); x->randomize(-one,one);
-  d = INPUT_xprim_->clone(); d->randomize(-one,one);
-  v = INPUT_xprim_->clone(); v->randomize(-one,one);
-  g = INPUT_xdual_->clone(); g->randomize(-one,one);
+  x = INPUT_xprim_->clone(); x->randomize(0.0,one); //-one,one);
+  d = INPUT_xprim_->clone(); d->randomize(0.0,one); //-one,one);
+  v = INPUT_xprim_->clone(); v->randomize(0.0,one); //-one,one);
+  g = INPUT_xdual_->clone(); g->randomize(0.0,one); //-one,one);
   if (printToStream) {
     outStream << std::endl << "  Check objective function" << std::endl << std::endl;
   }

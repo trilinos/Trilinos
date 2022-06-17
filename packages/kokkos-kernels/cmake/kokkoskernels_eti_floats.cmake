@@ -18,6 +18,13 @@ KOKKOSKERNELS_ADD_OPTION(
   "Whether to pre instantiate kernels for the scalar type float.  Disabling this may increase build times. Default: OFF or unless enabled during a Trilinos build with Trilinos_ENABLE_FLOAT."
   )
 
+KOKKOSKERNELS_ADD_OPTION(
+        INST_HALF
+        OFF
+        BOOL
+        "Whether to pre instantiate kernels for the scalar type Kokkos::Experimental::half_t.  Disabling this may increase build times. Default: OFF"
+)
+
 SET(FLOATS
   FLOAT
   DOUBLE
@@ -25,6 +32,7 @@ SET(FLOATS
   COMPLEX_DOUBLE)
 SET(DOUBLE_CPP_TYPE "double")
 SET(FLOAT_CPP_TYPE "float")
+SET(HALF_CPP_TYPE "Kokkos::Experimental::half_t")
 SET(COMPLEX_FLOAT_CPP_TYPE "Kokkos::complex<float>")
 SET(COMPLEX_DOUBLE_CPP_TYPE "Kokkos::complex<double>")
 
@@ -62,6 +70,11 @@ ENDIF()
 IF (KOKKOSKERNELS_INST_FLOAT)
   LIST(APPEND SCALAR_LIST "float")
 ENDIF()
+
+# TODO: Fix build errors in kokkos when half_t is used in ETI
+#IF (KOKKOSKERNELS_INST_HALF)
+#  LIST(APPEND SCALAR_LIST "Kokkos::Experimental::half_t")
+#ENDIF()
 
 IF (KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
   LIST(APPEND SCALAR_LIST "complex<double>")

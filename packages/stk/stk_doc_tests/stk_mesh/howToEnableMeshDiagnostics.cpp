@@ -34,6 +34,7 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_mesh/base/MeshDiagnostics.hpp>
@@ -43,12 +44,12 @@ namespace
 //BEGIN_ENABLE_MESH_DIAGNOSTICS
 TEST(StkMeshHowTo, EnableMeshDiagnostics)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulkData(meta, MPI_COMM_WORLD);
-    stk::io::fill_mesh("generated:4x4x4|sideset:xX", bulkData);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
+  bulkPtr->mesh_meta_data().use_simple_fields();
+  stk::io::fill_mesh("generated:4x4x4|sideset:xX", *bulkPtr);
 
-    bulkData.enable_mesh_diagnostic_rule(stk::mesh::RULE_3);
-    EXPECT_EQ(0u, bulkData.get_mesh_diagnostic_error_count());
+  bulkPtr->enable_mesh_diagnostic_rule(stk::mesh::RULE_3);
+  EXPECT_EQ(0u, bulkPtr->get_mesh_diagnostic_error_count());
 }
 //END_ENABLE_MESH_DIAGNOSTICS
 

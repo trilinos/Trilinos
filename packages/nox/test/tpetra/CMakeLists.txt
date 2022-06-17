@@ -51,6 +51,11 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
       )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Tpetra_HouseholderBorderedSolve_Continuation
+      SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp tTpetra_HouseholderBorderedSolve_Continuation.cpp
+      )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Tpetra_HouseholderBorderedSolve_WithUVInPrec
       SOURCES  ${UNIT_TEST_DRIVER} ME_Tpetra_1DFEM.hpp ME_Tpetra_1DFEM_def.hpp tTpetra_HouseholderBorderedSolve_WithUVInPrec.cpp
       )

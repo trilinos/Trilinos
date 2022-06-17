@@ -116,7 +116,7 @@ int ConvergenceHex(const bool verbose) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
-  using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+  using HostSpaceType = Kokkos::DefaultHostExecutionSpace;
 
   *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
   *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);

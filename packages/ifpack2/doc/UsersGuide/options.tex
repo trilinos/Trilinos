@@ -451,9 +451,11 @@ The following parameters are used in the ILUT method:
 \ccc{fact: ilut level-of-fill}
     {int|magnitude|double}
     {1}
-    {Maximum number of entries to keep in each row of $L$ and $U$. Each row of
-     $L$ ($U$) will have at most $\lceil\frac{(\mbox{\small\tt
-     level-of-fill}-1)nnz(A)}{2n}\rceil$ nonzero entries, where $nnz(A)$ is the
+    {Maximum fill fraction that controls the
+     number of entries to keep in the strict upper triangle of the
+     current row, and in the strict lower triangle of the current
+     row.  This value must be $>= 1.0$.  Each row of $L$ ($U$) will have at most $\lceil\frac{(\mbox{\small\tt
+     level-of-fill}-1)nnz(A)}{2n}\rceil$ nonzero entries, in addition to those from the sparsity pattern of A, where $nnz(A)$ is the
      number of nonzero entries in the matrix, and $n$ is the number of rows.
      ILUT always keeps the diagonal entry in the current row, regardless of the
      drop tolerance or fill level. \textbf{Note:} \textit{This is
@@ -530,6 +532,10 @@ The valid set of parameters is the same for FAST\_ILU, FAST\_IC, and FAST\_ILDL:
     {int}
     {5}
     {Number of iterations of ILU/IC/ILDL factorization algorithm.}
+\ccc{triangular solve type}
+    {string}
+    {Fast}
+    {Type of triangular solve algorithm to use: ``Fast'' for the block Jacobi triangular solver, ``Standard'' for the standard (forward/backward) substitution based triangular solver (calls Kokkos-Kernels {\bf sptrsv}), or "Standard Host" for the standard triangular solver on host CPU (calls Kokkos-Kernels {\bf trsv} on the host).}
 \ccc{triangular solve iterations}
     {int}
     {1}
@@ -550,7 +556,11 @@ The valid set of parameters is the same for FAST\_ILU, FAST\_IC, and FAST\_ILDL:
     {bool}
     {true}
     {Whether to run another instance of FastILU/IC/ILDL (but with a lower level of fill) to compute the initial guess (only has an effect if level of fill $> 0$).} 
-\ccc{block size}
+\ccc{block size for ILU}
+    {int}
+    {1}
+    {Block size for the iterative factorization algorithm.}
+\ccc{block size for SpTRSV}
     {int}
     {1}
     {Block size for the block Jacobi solver.}

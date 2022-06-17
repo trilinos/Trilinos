@@ -39,12 +39,23 @@
 namespace stk {
 namespace balance {
 
+enum class VertexWeightMethod
+{
+  CONSTANT = 0,
+  TOPOLOGY,
+  CONNECTIVITY
+};
+
+std::string vertex_weight_method_name(VertexWeightMethod method);
+
 struct DefaultSettings {
   static constexpr const char * logFile {"stk_balance.log"};
   static constexpr const char * outputDirectory {"."};
   static constexpr const char * decompMethod {"parmetis"};
-  static constexpr const char * contactSearch {"on"};
+
   static constexpr bool useContactSearch {true};
+  static constexpr bool fixSpiders {false};
+  static constexpr bool fixMechanisms {true};
 
   static constexpr double faceSearchRelTol {0.15};
   static constexpr double faceSearchAbsTol {0.0001};
@@ -58,6 +69,8 @@ struct DefaultSettings {
   static constexpr double smFaceSearchEdgeWeight {3.0};
 
   static constexpr const char * vertexWeightBlockMultiplier {""};
+
+  static constexpr VertexWeightMethod vertexWeightMethod {VertexWeightMethod::TOPOLOGY};
 };
 
 } }

@@ -13,26 +13,28 @@ SET(UNIT_TEST_DRIVER
 #  NUM_MPI_PROCS 1
 #  )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tGatherSolution
-  SOURCES gather_solution.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+IF(PANZER_HAVE_EPETRA)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tGatherSolution
+    SOURCES gather_solution.cpp ${UNIT_TEST_DRIVER}
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tScatterResidual
-  SOURCES scatter_residual.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tScatterResidual
+    SOURCES scatter_residual.cpp ${UNIT_TEST_DRIVER}
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tScatterDirichletResidual
-  SOURCES scatter_dirichlet_residual.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tScatterDirichletResidual
+    SOURCES scatter_dirichlet_residual.cpp ${UNIT_TEST_DRIVER}
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+ENDIF(PANZER_HAVE_EPETRA)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tBasisTimesVector

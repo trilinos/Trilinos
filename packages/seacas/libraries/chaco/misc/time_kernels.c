@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -15,7 +15,7 @@ static double checkvec();
 /* Benchmark certain kernel operations */
 void time_kernels(struct vtx_data **A,     /* matrix/graph being analyzed */
                   int               n,     /* number of rows/columns in matrix */
-                  double *          vwsqrt /* square roots of vertex weights */
+                  double           *vwsqrt /* square roots of vertex weights */
 )
 {
   extern int    DEBUG_PERTURB; /* debug flag for matrix perturbation */
@@ -24,8 +24,8 @@ void time_kernels(struct vtx_data **A,     /* matrix/graph being analyzed */
   extern int    DEBUG_TRACE;   /* trace main execution path */
   extern double PERTURB_MAX;   /* maximum size of perturbation */
   int           i, beg, end;
-  double *      dvec1, *dvec2, *dvec3;
-  float *       svec1, *svec2, *svec3, *vwsqrt_float;
+  double       *dvec1, *dvec2, *dvec3;
+  float        *svec1, *svec2, *svec3, *vwsqrt_float;
   double        norm_dvec, norm_svec;
   double        dot_dvec, dot_svec;
   double        time, time_dvec, time_svec;
@@ -35,16 +35,18 @@ void time_kernels(struct vtx_data **A,     /* matrix/graph being analyzed */
   int           loops;
   double        min_time, target_time;
 
-  double *mkvec();
-  float * mkvec_float();
-  void    frvec(), frvec_float();
+  double *mkvec(int nl, int nh);
+  float  *mkvec_float(int nl, int nh);
+  void    frvec(double *v, int nl), frvec_float(float *v, int nl);
   void    vecran();
-  double  ch_norm(), dot();
-  double  norm_float(), dot_float();
-  double  seconds();
-  void    scadd(), scadd_float(), update(), update_float();
-  void    splarax(), splarax_float();
-  void    perturb_init(), perturb_clear();
+  double  ch_norm(double *vec, int beg, int end), dot(double *vec1, int beg, int end, double *vec2);
+  double  norm_float(), dot_float(float *vec1, int beg, int end, float *vec2);
+  double  seconds(void);
+  void    scadd(), scadd_float(),
+      update(double *vec1, int beg, int end, double *vec2, double fac, double *vec3),
+      update_float(float *vec1, int beg, int end, float *vec2, float fac, float *vec3);
+  void splarax(), splarax_float();
+  void perturb_init(), perturb_clear();
 
   if (DEBUG_TRACE > 0) {
     printf("<Entering time_kernels>\n");
@@ -79,8 +81,8 @@ void time_kernels(struct vtx_data **A,     /* matrix/graph being analyzed */
     svec3[i] = dvec3[i];
   }
 
-  /* Set number of loops so that ch_norm() takes about one second. This should
-     insulate against inaccurate timings on faster machines. */
+  /* Set number of loops so that ch_norm(double *vec, int beg, int end) takes about one second. This
+     should insulate against inaccurate timings on faster machines. */
 
   loops       = 1;
   time_dvec   = 0;
