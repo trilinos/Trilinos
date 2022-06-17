@@ -107,7 +107,7 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
 
     // m and n are available, then factorize the supernode block
     if (m > 0) {
-      const value_type one(1), minus_one(-1), zero(0);
+      const value_type minus_one(-1), zero(0);
       const ordinal_type offm = s.row_begin;
       UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
       const auto xT = Kokkos::subview(info.x, range_type(offm, offm + m), Kokkos::ALL());
@@ -252,9 +252,6 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
 
     const auto &s = info.supernodes(sid);
     {
-      const ordinal_type m = s.m;
-      const ordinal_type rbeg = s.row_begin;
-
       const ordinal_type n = s.n - s.m;
       const ordinal_type nrhs = info.x.extent(1);
       const ordinal_type bufsize_required = n * nrhs * sizeof(value_type);
