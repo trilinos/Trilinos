@@ -21,7 +21,7 @@ if(DEFINED ENV{TRILINOS_INSTALL_DIR})
 endif()
 
 
-# --> ACTION: define Matlab binary directory
+# --> ACTION: define Matlab root directory
 #set(Matlab_ROOT_DIR "/Applications/MATLAB_R2020a.app/")
 set(Matlab_ROOT_DIR "/usr/local/matlab/R2021b/")
 if(DEFINED ENV{Matlab_ROOT_DIR})
