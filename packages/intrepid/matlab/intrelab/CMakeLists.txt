@@ -10,6 +10,7 @@
 
 PROJECT(Intrelab)
 CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 #set(MATLAB_FIND_DEBUG TRUE)
 
 # --> ACTION: define Trilinos install directory
@@ -190,7 +191,6 @@ function(make_mex fname)
   else()
     matlab_add_mex(NAME ${fname}
         SHARED
-        #SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/m2i_helpers.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/${fname}.cpp
         SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/${fname}.cpp
     )
   endif()
@@ -201,6 +201,10 @@ endfunction(make_mex)
 foreach(fname ${MOBJS})
   make_mex(${fname})
 endforeach()
+
+install(TARGETS ${MOBJS}
+  DESTINATION ${CMAKE_INSTALL_PREFIX} 
+)
 
 if(APPLE)
   message("\"*.dylib was built for newer macOS version (*.*) than being linked (10.9)\" type warnings can be safely ignored. MEX compiler specifies a -mmacosx-min-version=10.9, which can not be overridden.")
