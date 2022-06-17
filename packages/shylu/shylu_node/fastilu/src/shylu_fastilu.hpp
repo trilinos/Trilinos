@@ -416,6 +416,9 @@ class FastILUPrec
         //according to the level of fill
         void symbolicILU()
         {
+            #ifdef FASTILU_INIT_TIMER
+            Kokkos::Timer timer;
+            #endif
             using std::vector;
             using std::cout;
             using std::stable_sort;
@@ -448,6 +451,10 @@ class FastILUPrec
                      );
             int knzl = *nzl;
             int knzu = *nzu;
+            #ifdef FASTILU_INIT_TIMER
+            std::cout << " findFills time : " << timer.seconds() << std::endl;
+            timer.reset();
+            #endif
 
             #ifdef FASTILU_DEBUG_OUTPUT
             std::cout << "knzl =" << knzl;
@@ -497,17 +504,19 @@ class FastILUPrec
                 }
                 aRowMap_[i+1] = aRowPtr;
             }
-            /*printf("A=[\n");
-            for (i = 0; i < nRows; i++) 
-            {
-                for(Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++) printf( "%d %d \n",i,aColIdx_[k] );
-            }
-            printf("]\n\n");*/
+            #ifdef FASTILU_INIT_TIMER
+            std::cout << " Copy time : " << timer.seconds() << std::endl;
+            timer.reset();
+            #endif
             // sort based on ColIdx, RowIdx stays the same (do we need this?)
             using host_space = Kokkos::HostSpace::execution_space;
             KokkosKernels::sort_crs_matrix<host_space, OrdinalArrayMirror, OrdinalArrayMirror, ScalarArrayMirror>
               (aRowMap_, aColIdx_, aVal_);
             host_space().fence();
+            #ifdef FASTILU_INIT_TIMER
+            std::cout << " Sort time : " << timer.seconds() << std::endl;
+            timer.reset();
+            #endif
 
             Kokkos::deep_copy(aRowMap, aRowMap_);
             Kokkos::deep_copy(aColIdx, aColIdx_);
@@ -554,6 +563,10 @@ class FastILUPrec
             lVal_    = Kokkos::create_mirror(lVal);
             uVal_    = Kokkos::create_mirror(uVal);
             utVal_    = Kokkos::create_mirror(utVal);
+            #ifdef FASTILU_INIT_TIMER
+            std::cout << " Mirror : " << timer.seconds() << std::endl;
+            timer.reset();
+            #endif
         }
 
         void symbolicILU(OrdinalArrayMirror pRowMap_, OrdinalArrayMirror pColIdx_, ScalarArrayMirror pVal_, OrdinalArrayHost pLvlIdx_)
@@ -590,12 +603,6 @@ class FastILUPrec
                 }
                 aRowMap_[i+1] = aRowPtr;
             }
-            /*printf("A=[\n");
-            for (i = 0; i < nRows; i++) 
-            {
-                for(Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++) printf( "%d %d \n",i,aColIdx_[k] );
-            }
-            printf("]\n\n");*/
             // sort based on ColIdx, RowIdx stays the same (do we need this?)
             //using host_space = Kokkos::HostSpace::execution_space;
             //KokkosKernels::sort_crs_matrix<host_space, OrdinalArrayMirror, OrdinalArrayMirror, ScalarArrayMirror>
@@ -649,7 +656,6 @@ class FastILUPrec
         void numericILU()
         {
             const Scalar zero = STS::zero();
-            //#define FASTILU_TIMER
             #ifdef FASTILU_TIMER
             Kokkos::Timer Timer;
             #endif
@@ -850,15 +856,6 @@ class FastILUPrec
             Kokkos::deep_copy(uColIdx, uColIdx_);
             Kokkos::deep_copy(uVal, uVal_);
 #endif
-            /*printf( " U = [\n" );
-            for(Ordinal i = 0; i < nRows; i++)
-            {
-                for(Ordinal k = uRowMap_[i]; k < uRowMap_[i+1]; k++)
-                {
-                    printf( "%d %d %e\n",i,uColIdx_[k],uVal_[k] );
-                }
-            }
-            printf("];\n"); fflush(stdout);*/
 
             if ((level > 0) && (guessFlag !=0))
             {
@@ -1253,13 +1250,26 @@ class FastILUPrec
         void initialize()
         {
             Kokkos::Timer timer;
+            #ifdef FASTILU_INIT_TIMER
+            Kokkos::Timer timer2;
+            #endif
             // call symbolic that generates A with level associated to each nonzero entry
             // then pass that to initialize the initGuessPrec
             #if 1
             symbolicILU();
+            #ifdef FASTILU_INIT_TIMER
+            double tic = timer2.seconds();
+            timer2.reset();
+            std::cout << " + initial SymbolicILU (" << level << ") time : " << tic << std::endl;
+            #endif
             if ((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec->initialize(aRowMap_, aColIdx_, aVal_, aLvlIdx_);
+                #ifdef FASTILU_INIT_TIMER
+                tic = timer2.seconds();
+                timer2.reset();
+                std::cout << "  > SymbolicILU (" << level << ") time : " << tic << std::endl;
+                #endif
             }
             #else
             if ((level > 0) && (guessFlag != 0))
@@ -1294,7 +1304,7 @@ class FastILUPrec
             #endif
             double t = timer.seconds();
 
-            #ifdef FASTILU_DEBUG_OUTPUT
+            #ifdef FASTILU_INIT_TIMER
             std::cout << "Symbolic phase complete." << std::endl;
             std::cout << "Init time: "<< t << "s" << std::endl;
             #endif
@@ -1306,14 +1316,26 @@ class FastILUPrec
         void initialize(OrdinalArrayMirror pRowMap_, OrdinalArrayMirror pColIdx_, ScalarArrayMirror pVal_, OrdinalArrayHost pLvlIdx_)
         {
             Kokkos::Timer timer;
+            #ifdef FASTILU_INIT_TIMER
+            Kokkos::Timer timer2;
+            #endif
             // call symbolic that generates A with level associated to each nonzero entry
             // then pass that to initialize the initGuessPrec
             #if 1
-            //symbolicILU();
             symbolicILU(pRowMap_, pColIdx_, pVal_, pLvlIdx_);
+            #ifdef FASTILU_INIT_TIMER
+            double tic = timer2.seconds();
+            timer2.reset();
+            std::cout << " - initial SymbolicILU (" << level << ") time : " << tic << std::endl;
+            #endif
             if ((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec->initialize(pRowMap_, pColIdx_, pVal_, pLvlIdx_);
+                #ifdef FASTILU_INIT_TIMER
+                double tic = timer2.seconds();
+                timer2.reset();
+                std::cout << "  = SymbolicILU (" << level << ") time : " << tic << std::endl;
+                #endif
             }
             #else
             if ((level > 0) && (guessFlag != 0))
@@ -1348,9 +1370,9 @@ class FastILUPrec
             #endif
             double t = timer.seconds();
 
-            #ifdef FASTILU_DEBUG_OUTPUT
-            std::cout << "Symbolic phase complete." << std::endl;
-            std::cout << "Init time: "<< t << "s" << std::endl;
+            #ifdef FASTILU_INIT_TIMER
+            std::cout << " + Symbolic phase complete." << std::endl;
+            std::cout << " + Init time: "<< t << "s" << std::endl;
             #endif
             initTime = t;
             return;
