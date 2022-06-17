@@ -47,6 +47,27 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
   }
 #endif
 
+#if defined(KOKKOS_ENABLE_HIP)
+  template <typename DiagType, typename ViewTypeA, typename ViewTypeB>
+  inline static int rocblas_invoke(rocblas_handle &handle, const DiagType diagA, const ViewTypeA &A,
+                                   const ViewTypeB &B) {
+    typedef typename ViewTypeA::non_const_value_type value_type;
+    const ordinal_type m = B.extent(0), n = B.extent(1);
+    int r_val(0);
+    if (m > 0 && n > 0) {
+      if (n == 1) {
+        r_val = Blas<value_type>::trsv(handle, ArgUplo::rocblas_param, ArgTransA::rocblas_param, diagA.rocblas_param, m,
+                                       A.data(), A.stride_1(), B.data(), B.stride_0());
+      } else {
+        r_val = Blas<value_type>::trsm(handle, Side::Left::rocblas_param, ArgUplo::rocblas_param,
+                                       ArgTransA::rocblas_param, diagA.rocblas_param, m, n, value_type(1), A.data(),
+                                       A.stride_1(), B.data(), B.stride_1());
+      }
+    }
+    return r_val;
+  }
+#endif
+
   template <typename MemberType, typename DiagType, typename ViewTypeA, typename ViewTypeB>
   inline static int invoke(MemberType &member, const DiagType diagA, const ViewTypeA &A, const ViewTypeB &B) {
     typedef typename ViewTypeA::non_const_value_type value_type;
@@ -68,9 +89,13 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
     if (std::is_same<memory_space, Kokkos::CudaSpace>::value || std::is_same<memory_space, Kokkos::CudaUVMSpace>::value)
       r_val = cublas_invoke(member, diagA, A, B);
 #endif
-    return r_val;
-  }
-};
+#if defined(KOKKOS_ENABLE_HIP)
+    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
+      r_val = rocblas_invoke(member, diagA, A, B);
+#endif
+      return r_val;
+    }
+  };
 
 } // namespace Tacho
 #endif

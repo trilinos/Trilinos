@@ -35,6 +35,11 @@
 #include "cusolverDn.h"
 #endif
 
+#if defined(KOKKOS_ENABLE_HIP)
+#include "rocblas.h"
+#include "rocsolver.h"
+#endif
+
 #include "Tacho.hpp"
 
 /// \file Tacho_Util.hpp
@@ -230,6 +235,9 @@ struct Uplo {
 #if defined(CUBLAS_VERSION)
     static constexpr cublasFillMode_t cublas_param = CUBLAS_FILL_MODE_UPPER;
 #endif
+#if defined(ROCBLAS_VERSION_MAJOR)
+    static constexpr rocblas_fill rocblas_param = rocblas_fill_upper;
+#endif
   };
   struct Lower {
     enum : int { tag = 402 };
@@ -239,6 +247,9 @@ struct Uplo {
 #endif
 #if defined(CUBLAS_VERSION)
     static constexpr cublasFillMode_t cublas_param = CUBLAS_FILL_MODE_LOWER;
+#endif
+#if defined(ROCBLAS_VERSION_MAJOR)
+    static constexpr rocblas_fill rocblas_param = rocblas_fill_lower;
 #endif
   };
 };
@@ -260,6 +271,9 @@ struct Side {
 #if defined(CUBLAS_VERSION)
     static constexpr cublasSideMode_t cublas_param = CUBLAS_SIDE_LEFT;
 #endif
+#if defined(ROCBLAS_VERSION_MAJOR)
+    static constexpr rocblas_side rocblas_param = rocblas_side_left;
+#endif
   };
   struct Right {
     enum : int { tag = 502 };
@@ -269,6 +283,9 @@ struct Side {
 #endif
 #if defined(CUBLAS_VERSION)
     static constexpr cublasSideMode_t cublas_param = CUBLAS_SIDE_RIGHT;
+#endif
+#if defined(ROCBLAS_VERSION_MAJOR)
+    static constexpr rocblas_side rocblas_param = rocblas_side_right;
 #endif
   };
 };
@@ -290,6 +307,9 @@ struct Diag {
 #if defined(CUBLAS_VERSION)
     static constexpr cublasDiagType_t cublas_param = CUBLAS_DIAG_UNIT;
 #endif
+#if defined(ROCBLAS_VERSION_MAJOR)
+    static constexpr rocblas_diagonal rocblas_param = rocblas_diagonal_unit;
+#endif
   };
   struct NonUnit {
     enum : int { tag = 602 };
@@ -299,6 +319,9 @@ struct Diag {
 #endif
 #if defined(CUBLAS_VERSION)
     static constexpr cublasDiagType_t cublas_param = CUBLAS_DIAG_NON_UNIT;
+#endif
+#if defined(ROCBLAS_VERSION_MAJOR)
+    static constexpr rocblas_diagonal rocblas_param = rocblas_diagonal_non_unit;
 #endif
   };
 };
@@ -317,6 +340,9 @@ struct Trans {
 #if defined(CUBLAS_VERSION)
     static constexpr cublasOperation_t cublas_param = CUBLAS_OP_T;
 #endif
+#if defined(ROCBLAS_VERSION_MAJOR)
+    static constexpr rocblas_operation rocblas_param = rocblas_operation_transpose;
+#endif
   };
   struct ConjTranspose {
     enum : int { tag = 702 };
@@ -327,6 +353,9 @@ struct Trans {
 #if defined(CUBLAS_VERSION)
     static constexpr cublasOperation_t cublas_param = CUBLAS_OP_C;
 #endif
+#if defined(ROCBLAS_VERSION_MAJOR)
+    static constexpr rocblas_operation rocblas_param = rocblas_operation_conjugate_transpose;
+#endif
   };
   struct NoTranspose {
     enum : int { tag = 703 };
@@ -336,6 +365,9 @@ struct Trans {
 #endif
 #if defined(CUBLAS_VERSION)
     static constexpr cublasOperation_t cublas_param = CUBLAS_OP_N;
+#endif
+#if defined(ROCBLAS_VERSION_MAJOR)
+    static constexpr rocblas_operation rocblas_param = rocblas_operation_none;
 #endif
   };
 };
@@ -426,7 +458,7 @@ struct Algo {
 };
 
 struct ActiveAlgorithm {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA) || defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP)
   using type = Algo::Internal;
 #else
   using type = Algo::External;
@@ -453,12 +485,23 @@ template <typename T> struct ExecSpaceFactory {
 #if defined(KOKKOS_ENABLE_CUDA)
   static void createInstance(const cudaStream_t &s, T &exec_instance) { exec_instance = T(); }
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+  static void createInstance(const hipStream_t &s, T &exec_instance) { exec_instance = T(); }
+#endif
 };
 
 #if defined(KOKKOS_ENABLE_CUDA)
 template <> struct ExecSpaceFactory<Kokkos::Cuda> {
   static void createInstance(Kokkos::Cuda &exec_instance) { exec_instance = Kokkos::Cuda(); }
   static void createInstance(const cudaStream_t &s, Kokkos::Cuda &exec_instance) { exec_instance = Kokkos::Cuda(s); }
+};
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+template <> struct ExecSpaceFactory<Kokkos::Experimental::HIP> {
+  static void createInstance(Kokkos::Experimental::HIP &exec_instance) { exec_instance = Kokkos::Experimental::HIP(); }
+  static void createInstance(const hipStream_t &s, Kokkos::Experimental::HIP &exec_instance) {
+    exec_instance = Kokkos::Experimental::HIP(s);
+  }
 };
 #endif
 

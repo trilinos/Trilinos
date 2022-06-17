@@ -150,13 +150,20 @@ private:
   bool _is_cublas_created, _is_cusolver_dn_created;
   cublasHandle_t _handle_blas;
   cusolverDnHandle_t _handle_lapack;
-  using cuda_stream_array_host = std::vector<cudaStream_t>;
-  cuda_stream_array_host _cuda_streams;
-
-  using exec_instance_array_host = std::vector<exec_space>;
-  exec_instance_array_host _exec_instances;
+  using stream_array_host = std::vector<cudaStream_t>;
+#elif defined(KOKKOS_ENABLE_HIP)
+  bool _is_rocblas_created;
+  rocblas_handle _handle_blas;
+  rocblas_handle _handle_lapack;
+  using stream_array_host = std::vector<hipStream_t>;
 #else
   int _handle_blas, _handle_lapack; // dummy handle for convenience
+#endif
+
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+  stream_array_host _streams;
+  using exec_instance_array_host = std::vector<exec_space>;
+  exec_instance_array_host _exec_instances;
 #endif
 
   ///
@@ -181,6 +188,9 @@ private:
 #if defined(KOKKOS_ENABLE_CUDA)
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     checkStatus(func, is_host ? "HostLapack" : "CuSolverDn");
+#elif defined(KOKKOS_ENABLE_HIP)
+    constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
+    checkStatus(func, is_host ? "HostLapack" : "RocSolver");
 #else
     checkStatus(func, "HostLapack");
 #endif
@@ -189,6 +199,9 @@ private:
 #if defined(KOKKOS_ENABLE_CUDA)
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     checkStatus(func, is_host ? "HostBlas" : "CuBlas");
+#elif defined(KOKKOS_ENABLE_HIP)
+    constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
+    checkStatus(func, is_host ? "HostBlas" : "RocBlas");
 #else
     checkStatus(func, "HostBlas");
 #endif
@@ -197,6 +210,9 @@ private:
 #if defined(KOKKOS_ENABLE_CUDA)
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     checkStatus(func, is_host ? "Host" : "Cuda");
+#elif defined(KOKKOS_ENABLE_HIP)
+    constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
+    checkStatus(func, is_host ? "Host" : "HIP");
 #else
     checkStatus(func, "Host");
 #endif
@@ -449,6 +465,14 @@ public:
       _is_cusolver_dn_created = true;
     }
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+    if (!_is_rocblas_created) {
+      _status = rocblas_create_handle(&_handle_blas);
+      checkDeviceBlasStatus("rocblasCreate");
+      _is_rocblas_created = true;
+      _handle_lapack = _handle_blas;
+    }
+#endif
     stat.t_init = timer.seconds();
 
     ///
@@ -578,25 +602,42 @@ public:
     _is_cublas_created = 0;
     _is_cusolver_dn_created = 0;
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+    _is_rocblas_created = 0;
+#endif
   }
 
   virtual ~NumericToolsLevelSet() {
 #if defined(KOKKOS_ENABLE_CUDA)
     // destroy previously created streams
     for (ordinal_type i = 0; i < _nstreams; ++i) {
-      _status = cudaStreamDestroy(_cuda_streams[i]);
+      _status = cudaStreamDestroy(_streams[i]);
       checkDeviceStatus("cudaStreamDestroy");
     }
-    _cuda_streams.clear();
+    _streams.clear();
     _exec_instances.clear();
 
-    if (_is_cublas_created) {
+    if (_is_cusolver_dn_created) {
       _status = cusolverDnDestroy(_handle_lapack);
       checkDeviceLapackStatus("cusolverDnDestroy");
     }
-    if (_is_cusolver_dn_created) {
+    if (_is_cublas_created) {
       _status = cublasDestroy(_handle_blas);
       checkDeviceBlasStatus("cublasDestroy");
+    }
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+    // destroy previously created streams
+    for (ordinal_type i = 0; i < _nstreams; ++i) {
+      _status = hipStreamDestroy(_streams[i]);
+      checkDeviceStatus("cudaStreamDestroy");
+    }
+    _streams.clear();
+    _exec_instances.clear();
+
+    if (_is_rocblas_created) {
+      _status = rocblas_destroy_handle(_handle_blas);
+      checkDeviceLapackStatus("rocblasDestroy");
     }
 #endif
   }
@@ -605,28 +646,62 @@ public:
 #if defined(KOKKOS_ENABLE_CUDA)
     // destroy previously created streams
     for (ordinal_type i = 0; i < _nstreams; ++i) {
-      _status = cudaStreamDestroy(_cuda_streams[i]);
+      _status = cudaStreamDestroy(_streams[i]);
       checkDeviceStatus("cudaStreamDestroy");
     }
     // new streams
     _nstreams = nstreams;
-    //_cuda_streams = cuda_stream_array_host(do_not_initialize_tag("cuda streams"), _nstreams);
-    _cuda_streams.clear();
-    _cuda_streams.resize(_nstreams);
+    _streams.clear();
+    _streams.resize(_nstreams);
     for (ordinal_type i = 0; i < _nstreams; ++i) {
-      _status = cudaStreamCreateWithFlags(&_cuda_streams[i], cudaStreamNonBlocking);
+      _status = cudaStreamCreateWithFlags(&_streams[i], cudaStreamNonBlocking);
       checkDeviceStatus("cudaStreamCreate");
     }
-
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+    // destroy previously created streams
+    for (ordinal_type i = 0; i < _nstreams; ++i) {
+      _status = hipStreamDestroy(_streams[i]);
+      checkDeviceStatus("hipStreamDestroy");
+    }
+    // new streams
+    _nstreams = nstreams;
+    _streams.clear();
+    _streams.resize(_nstreams);
+    for (ordinal_type i = 0; i < _nstreams; ++i) {
+      _status = hipStreamCreateWithFlags(&_streams[i], hipStreamNonBlocking);
+      checkDeviceStatus("hipStreamCreate");
+    }
+#endif
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     _exec_instances.clear();
     _exec_instances.resize(_nstreams);
     for (ordinal_type i = 0; i < _nstreams; ++i) {
-      ExecSpaceFactory<exec_space>::createInstance(_cuda_streams[i], _exec_instances[i]);
+      ExecSpaceFactory<exec_space>::createInstance(_streams[i], _exec_instances[i]);
     }
+
     if (verbose) {
       printf("Summary: CreateStream : %3d\n", _nstreams);
       printf("===========================\n");
     }
+#endif
+  }
+
+  inline void setStreamOnHandle(const ordinal_type qid) {
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    // const ordinal_type qid = q % _nstreams;
+    const auto mystream = _streams[qid];
+#if defined(KOKKOS_ENABLE_CUDA)
+    _status = cublasSetStream(_handle_blas, mystream);
+    checkDeviceBlasStatus("cublasSetStream");
+
+    _status = cusolverDnSetStream(_handle_lapack, mystream);
+    checkDeviceLapackStatus("cusolverDnSetStream");
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+    _status = rocblas_set_stream(_handle_blas, mystream);
+    checkDeviceBlasStatus("rocblasSetStream");
+#endif
 #endif
   }
 
@@ -637,22 +712,16 @@ public:
                                             const size_type_array_host &h_buf_factor_ptr,
                                             const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceBlasStatus("cublasSetStream");
-
-        _status = cusolverDnSetStream(_handle_lapack, mystream);
-        checkDeviceLapackStatus("cusolverDnSetStream");
-
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
@@ -691,22 +760,16 @@ public:
                                             const size_type_array_host &h_buf_factor_ptr,
                                             const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceBlasStatus("cublasSetStream");
-
-        _status = cusolverDnSetStream(_handle_lapack, mystream);
-        checkDeviceLapackStatus("cusolverDnSetStream");
-
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
@@ -760,21 +823,16 @@ public:
                                             const size_type_array_host &h_buf_factor_ptr,
                                             const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceBlasStatus("cublasSetStream");
-        _status = cusolverDnSetStream(_handle_lapack, mystream);
-        checkDeviceLapackStatus("cusolverDnSetStream");
-
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
@@ -854,21 +912,16 @@ public:
   inline void factorizeLDL_OnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
                                         const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceBlasStatus("cublasSetStream");
-        _status = cusolverDnSetStream(_handle_lapack, mystream);
-        checkDeviceLapackStatus("cusolverDnSetStream");
-
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
@@ -927,21 +980,16 @@ public:
   inline void factorizeLDL_OnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
                                         const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceBlasStatus("cublasSetStream");
-        _status = cusolverDnSetStream(_handle_lapack, mystream);
-        checkDeviceLapackStatus("cusolverDnSetStream");
-
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
@@ -1015,21 +1063,16 @@ public:
   inline void factorizeLDL_OnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
                                         const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceBlasStatus("cublasSetStream");
-        _status = cusolverDnSetStream(_handle_lapack, mystream);
-        checkDeviceLapackStatus("cusolverDnSetStream");
-
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
@@ -1122,21 +1165,16 @@ public:
   inline void factorizeLU_OnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
                                        const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceBlasStatus("cublasSetStream");
-        _status = cusolverDnSetStream(_handle_lapack, mystream);
-        checkDeviceLapackStatus("cusolverDnSetStream");
-
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
@@ -1186,21 +1224,16 @@ public:
   inline void factorizeLU_OnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
                                        const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceBlasStatus("cublasSetStream");
-        _status = cusolverDnSetStream(_handle_lapack, mystream);
-        checkDeviceLapackStatus("cusolverDnSetStream");
-
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
@@ -1279,21 +1312,16 @@ public:
   inline void factorizeLU_OnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
                                        const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceBlasStatus("cublasSetStream");
-        _status = cusolverDnSetStream(_handle_lapack, mystream);
-        checkDeviceLapackStatus("cusolverDnSetStream");
-
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
@@ -1399,7 +1427,7 @@ public:
       _buf = value_type_array(do_not_initialize_tag("buf"), _bufsize_factorize);
       track_alloc(_buf.span() * sizeof(value_type));
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
       const size_type worksize = Chol<Uplo::Upper, Algo::OnDevice>::invoke(_handle_lapack, T, work);
 
@@ -1487,7 +1515,7 @@ public:
 
     timer.reset();
     {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       track_free(work.span() * sizeof(value_type));
 #endif
       track_free(_buf.span() * sizeof(value_type));
@@ -1506,15 +1534,15 @@ public:
                                              const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
-        _status = cublasSetStream(_handle_blas, _cuda_streams[q % _nstreams]);
-        checkDeviceStatus("cublasSetStream");
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        const ordinal_type qid = q % _nstreams;
+        setStreamOnHandle(qid);
         ++q;
 #endif
         const auto &s = _h_supernodes(sid);
@@ -1549,15 +1577,15 @@ public:
                                              const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
-        _status = cublasSetStream(_handle_blas, _cuda_streams[q % _nstreams]);
-        checkDeviceStatus("cublasSetStream");
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        const ordinal_type qid = q % _nstreams;
+        setStreamOnHandle(qid);
         ++q;
 #endif
         const auto &s = _h_supernodes(sid);
@@ -1596,15 +1624,15 @@ public:
                                              const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
-        _status = cublasSetStream(_handle_blas, _cuda_streams[q % _nstreams]);
-        checkDeviceStatus("cublasSetStream");
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        const ordinal_type qid = q % _nstreams;
+        setStreamOnHandle(qid);
         ++q;
 #endif
         const auto &s = _h_supernodes(sid);
@@ -1646,19 +1674,16 @@ public:
                                              const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
-        exec_instance = _exec_instances[qid];
+        setStreamOnHandle(qid);
         ++q;
 #endif
         const auto &s = _h_supernodes(sid);
@@ -1692,18 +1717,16 @@ public:
                                              const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -1743,17 +1766,15 @@ public:
                                              const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         ++q;
 #endif
         const auto &s = _h_supernodes(sid);
@@ -1794,18 +1815,16 @@ public:
                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -1846,18 +1865,16 @@ public:
                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -1905,18 +1922,16 @@ public:
                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -1966,18 +1981,16 @@ public:
                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -2021,18 +2034,16 @@ public:
                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -2081,18 +2092,16 @@ public:
                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -2148,18 +2157,16 @@ public:
                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -2198,18 +2205,16 @@ public:
                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), minus_one(-1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -2254,18 +2259,16 @@ public:
                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -2316,18 +2319,16 @@ public:
                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -2361,18 +2362,16 @@ public:
                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -2409,18 +2408,16 @@ public:
                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), zero(0);
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        const auto mystream = _cuda_streams[qid];
-        _status = cublasSetStream(_handle_blas, mystream);
-        checkDeviceStatus("cublasSetStream");
+        setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
         ++q;
 #endif
@@ -2668,7 +2665,7 @@ public:
       _buf = value_type_array(do_not_initialize_tag("buf"), _bufsize_factorize);
       track_alloc(_buf.span() * sizeof(value_type));
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
       ordinal_type_array P(NULL, _info.max_supernode_size);
       const size_type worksize = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, T, P, work);
@@ -2706,7 +2703,7 @@ public:
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
 #endif
 #else
-      /// not cuda ... whatever..
+      /// not cuda
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
 #endif
       const ordinal_type team_size_update[2] = {16, 8}, vector_size_update[2] = {32, 32};
@@ -2772,7 +2769,7 @@ public:
 
     timer.reset();
     {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       track_free(work.span() * sizeof(value_type));
 #endif
       track_free(_buf.span() * sizeof(value_type));
@@ -2830,7 +2827,7 @@ public:
       const ordinal_type team_size_solve[2] = {32, 16}, vector_size_solve[2] = {8, 8};
 #endif
 #else
-      /// not cuda whatever...
+      /// not cuda
       const ordinal_type team_size_solve[2] = {64, 16}, vector_size_solve[2] = {8, 8};
 #endif
       const ordinal_type team_size_update[2] = {128, 32}, vector_size_update[2] = {1, 1};
@@ -2989,7 +2986,7 @@ public:
       _buf = value_type_array(do_not_initialize_tag("buf"), _bufsize_factorize);
       track_alloc(_buf.span() * sizeof(value_type));
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
       ordinal_type_array P(NULL, _info.max_supernode_size);
       const size_type worksize = LU<Algo::OnDevice>::invoke(_handle_lapack, T, P, work);
@@ -3025,7 +3022,7 @@ public:
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
 #endif
 #else
-      /// not cuda ... whatever..
+      /// not cuda
       const ordinal_type team_size_factor[2] = {64, 64}, vector_size_factor[2] = {8, 4};
 #endif
       const ordinal_type team_size_update[2] = {16, 8}, vector_size_update[2] = {32, 32};
@@ -3091,7 +3088,7 @@ public:
 
     timer.reset();
     {
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       track_free(work.span() * sizeof(value_type));
 #endif
       track_free(_buf.span() * sizeof(value_type));
@@ -3149,7 +3146,7 @@ public:
       const ordinal_type team_size_solve[2] = {32, 16}, vector_size_solve[2] = {8, 8};
 #endif
 #else
-      /// not cuda whatever...
+      /// not cuda
       const ordinal_type team_size_solve[2] = {64, 16}, vector_size_solve[2] = {8, 8};
 #endif
       const ordinal_type team_size_update[2] = {128, 32}, vector_size_update[2] = {1, 1};

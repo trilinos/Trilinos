@@ -71,18 +71,11 @@ int Lapack<float>::potrf(cusolverDnHandle_t handle, const cublasFillMode_t uplo,
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<float>::potrf_buffersize(hipsolverHandle_t handle, const hipsolverFillMode_t uplo, const int m, float *a,
-                                    const int lda, int *lwork) {
-  const int r_val = hipsolverSpotrf_bufferSize(handle, uplo, m, a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<float>::potrf(hipsolverHandle_t handle, const hipsolverFillMode_t uplo, const int m, float *a, const int lda,
-                         float *w, const int lwork, int *dev) {
-  const int r_val = hipsolverSpotrf(handle, uplo, m, a, lda, w, lwork, dev);
+int Lapack<float>::potrf(rocblas_handle handle, const rocblas_fill uplo, const int m, float *a, const int lda,
+                         int *dev) {
+  const int r_val = rocsolver_spotrf(handle, uplo, m, a, lda, dev);
   return r_val;
 }
 #endif
@@ -108,17 +101,11 @@ int Lapack<float>::sytrf(cusolverDnHandle_t handle, const cublasFillMode_t uplo,
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<float>::sytrf_buffersize(hipsolverHandle_t handle, const int m, float *a, const int lda, int *lwork) {
-  const int r_val = hipsolverSsytrf_bufferSize(handle, m, a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<float>::sytrf(hipsolverHandle_t handle, const hipsolverFillMode_t uplo, const int m, float *a, const int lda,
-                         int *ipiv, float *w, const int lwork, int *dev) {
-  const int r_val = hipsolverSsytrf(handle, uplo, m, a, lda, ipiv, w, lwork, dev);
+int Lapack<float>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m, float *a, const int lda,
+                         int *ipiv, int *dev) {
+  const int r_val = rocsolver_ssytrf(handle, uplo, m, a, lda, ipiv, dev);
   return r_val;
 }
 #endif
@@ -143,18 +130,11 @@ int Lapack<float>::getrf(cusolverDnHandle_t handle, const int m, const int n, fl
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<float>::getrf_buffersize(hipsolverHandle_t handle, const int m, const int n, float *a, const int lda,
-                                    int *lwork) {
-  const int r_val = hipsolverSgetrf_bufferSize(handle, m, n, a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<float>::getrf(hipsolverHandle_t handle, const int m, const int n, float *a, const int lda, float *w,
-                         int *ipiv, int *dev) {
-  const int r_val = hipsolverSgetrf(handle, m, n, a, lda, w, ipiv, dev);
+int Lapack<float>::getrf(rocblas_handle handle, const int m, const int n, float *a, const int lda, int *ipiv,
+                         int *dev) {
+  const int r_val = rocsolver_sgetrf(handle, m, n, a, lda, ipiv, dev);
   return r_val;
 }
 #endif
@@ -178,18 +158,11 @@ int Lapack<double>::potrf(cusolverDnHandle_t handle, const cublasFillMode_t uplo
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<double>::potrf_buffersize(hipsolverHandle_t handle, const hipsolverFillMode_t uplo, const int m, double *a,
-                                     const int lda, int *lwork) {
-  const int r_val = hipsolverDpotrf_bufferSize(handle, uplo, m, a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<double>::potrf(hipsolverHandle_t handle, const hipsolverFillMode_t uplo, const int m, double *a,
-                          const int lda, double *w, const int lwork, int *dev) {
-  const int r_val = hipsolverDpotrf(handle, uplo, m, a, lda, w, lwork, dev);
+int Lapack<double>::potrf(rocblas_handle handle, const rocblas_fill uplo, const int m, double *a, const int lda,
+                          int *dev) {
+  const int r_val = rocsolver_dpotrf(handle, uplo, m, a, lda, dev);
   return r_val;
 }
 #endif
@@ -214,17 +187,11 @@ int Lapack<double>::sytrf(cusolverDnHandle_t handle, const cublasFillMode_t uplo
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<double>::sytrf_buffersize(hipsolverHandle_t handle, const int m, double *a, const int lda, int *lwork) {
-  const int r_val = hipsolverDsytrf_bufferSize(handle, m, a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<double>::sytrf(hipsolverHandle_t handle, const hipsolverFillMode_t uplo, const int m, double *a,
-                          const int lda, int *ipiv, double *w, const int lwork, int *dev) {
-  const int r_val = hipsolverDsytrf(handle, uplo, m, a, lda, ipiv, w, lwork, dev);
+int Lapack<double>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m, double *a, const int lda,
+                          int *ipiv, int *dev) {
+  const int r_val = rocsolver_dsytrf(handle, uplo, m, a, lda, ipiv, dev);
   return r_val;
 }
 #endif
@@ -249,18 +216,11 @@ int Lapack<double>::getrf(cusolverDnHandle_t handle, const int m, const int n, d
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<double>::getrf_buffersize(hipsolverHandle_t handle, const int m, const int n, double *a, const int lda,
-                                     int *lwork) {
-  const int r_val = hipsolverDgetrf_bufferSize(handle, m, n, a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<double>::getrf(hipsolverHandle_t handle, const int m, const int n, double *a, const int lda, double *w,
-                          int *ipiv, int *dev) {
-  const int r_val = hipsolverDgetrf(handle, m, n, a, lda, w, ipiv, dev);
+int Lapack<double>::getrf(rocblas_handle handle, const int m, const int n, double *a, const int lda, int *ipiv,
+                          int *dev) {
+  const int r_val = rocsolver_dgetrf(handle, m, n, a, lda, ipiv, dev);
   return r_val;
 }
 #endif
@@ -288,20 +248,11 @@ int Lapack<Kokkos::complex<float>>::potrf(cusolverDnHandle_t handle, const cubla
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<Kokkos::complex<float>>::potrf_buffersize(hipsolverHandle_t handle, const hipsolverFillMode_t uplo,
-                                                     const int m, Kokkos::complex<float> *a, const int lda,
-                                                     int *lwork) {
-  const int r_val = hipsolverCpotrf_bufferSize(handle, uplo, m, (cuComplex *)a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<Kokkos::complex<float>>::potrf(hipsolverHandle_t handle, const hipsolverFillMode_t uplo, const int m,
-                                          Kokkos::complex<float> *a, const int lda, Kokkos::complex<float> *w,
-                                          const int lwork, int *dev) {
-  const int r_val = hipsolverCpotrf(handle, uplo, m, (cuComplex *)a, lda, (cuComplex *)w, lwork, dev);
+int Lapack<Kokkos::complex<float>>::potrf(rocblas_handle handle, const rocblas_fill uplo, const int m,
+                                          Kokkos::complex<float> *a, const int lda, int *dev) {
+  const int r_val = rocsolver_cpotrf(handle, uplo, m, (rocblas_float_complex *)a, lda, dev);
   return r_val;
 }
 #endif
@@ -329,19 +280,11 @@ int Lapack<Kokkos::complex<float>>::sytrf(cusolverDnHandle_t handle, const cubla
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<Kokkos::complex<float>>::sytrf_buffersize(hipsolverHandle_t handle, const int m, Kokkos::complex<float> *a,
-                                                     const int lda, int *lwork) {
-  const int r_val = hipsolverCsytrf_bufferSize(handle, m, (cuComplex *)a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<Kokkos::complex<float>>::sytrf(hipsolverHandle_t handle, const hipsolverFillMode_t uplo, const int m,
-                                          Kokkos::complex<float> *a, const int lda, int *ipiv,
-                                          Kokkos::complex<float> *w, const int lwork, int *dev) {
-  const int r_val = hipsolverCsytrf(handle, uplo, m, (cuComplex *)a, lda, ipiv, (cuComplex *)w, lwork, dev);
+int Lapack<Kokkos::complex<float>>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m,
+                                          Kokkos::complex<float> *a, const int lda, int *ipiv, int *dev) {
+  const int r_val = rocsolver_csytrf(handle, uplo, m, (rocblas_float_complex *)a, lda, ipiv, dev);
   return r_val;
 }
 #endif
@@ -369,18 +312,11 @@ int Lapack<Kokkos::complex<float>>::getrf(cusolverDnHandle_t handle, const int m
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<Kokkos::complex<float>>::getrf_buffersize(hipsolverHandle_t handle, const int m, const int n,
-                                                     Kokkos::complex<float> *a, const int lda, int *lwork) {
-  const int r_val = hipsolverCgetrf_bufferSize(handle, m, n, (cuComplex *)a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<Kokkos::complex<float>>::getrf(hipsolverHandle_t handle, const int m, const int n, Kokkos::complex<float> *a,
-                                          const int lda, Kokkos::complex<float> *w, int *ipiv, int *dev) {
-  const int r_val = hipsolverCgetrf(handle, m, n, (cuComplex *)a, lda, (cuComplex *)w, ipiv, dev);
+int Lapack<Kokkos::complex<float>>::getrf(rocblas_handle handle, const int m, const int n, Kokkos::complex<float> *a,
+                                          const int lda, int *ipiv, int *dev) {
+  const int r_val = rocsolver_cgetrf(handle, m, n, (rocblas_float_complex *)a, lda, ipiv, dev);
   return r_val;
 }
 #endif
@@ -408,20 +344,11 @@ int Lapack<Kokkos::complex<double>>::potrf(cusolverDnHandle_t handle, const cubl
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<Kokkos::complex<double>>::potrf_buffersize(hipsolverHandle_t handle, const hipsolverFillMode_t uplo,
-                                                      const int m, Kokkos::complex<double> *a, const int lda,
-                                                      int *lwork) {
-  const int r_val = hipsolverZpotrf_bufferSize(handle, uplo, m, (cuDoubleComplex *)a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<Kokkos::complex<double>>::potrf(hipsolverHandle_t handle, const hipsolverFillMode_t uplo, const int m,
-                                           Kokkos::complex<double> *a, const int lda, Kokkos::complex<double> *w,
-                                           const int lwork, int *dev) {
-  const int r_val = hipsolverZpotrf(handle, uplo, m, (cuDoubleComplex *)a, lda, (cuDoubleComplex *)w, lwork, dev);
+int Lapack<Kokkos::complex<double>>::potrf(rocblas_handle handle, const rocblas_fill uplo, const int m,
+                                           Kokkos::complex<double> *a, const int lda, int *dev) {
+  const int r_val = rocsolver_zpotrf(handle, uplo, m, (rocblas_double_complex *)a, lda, dev);
   return r_val;
 }
 #endif
@@ -450,19 +377,11 @@ int Lapack<Kokkos::complex<double>>::sytrf(cusolverDnHandle_t handle, const cubl
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<Kokkos::complex<double>>::sytrf_buffersize(hipsolverHandle_t handle, const int m, Kokkos::complex<double> *a,
-                                                      const int lda, int *lwork) {
-  const int r_val = hipsolverZsytrf_bufferSize(handle, m, (cuDoubleComplex *)a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<Kokkos::complex<double>>::sytrf(hipsolverHandle_t handle, const hipsolverFillMode_t uplo, const int m,
-                                           Kokkos::complex<double> *a, const int lda, int *ipiv,
-                                           Kokkos::complex<double> *w, const int lwork, int *dev) {
-  const int r_val = hipsolverZsytrf(handle, uplo, m, (cuDoubleComplex *)a, lda, ipiv, (cuDoubleComplex *)w, lwork, dev);
+int Lapack<Kokkos::complex<double>>::sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m,
+                                           Kokkos::complex<double> *a, const int lda, int *ipiv, int *dev) {
+  const int r_val = rocsolver_zsytrf(handle, uplo, m, (rocblas_double_complex *)a, lda, ipiv, dev);
   return r_val;
 }
 #endif
@@ -490,19 +409,11 @@ int Lapack<Kokkos::complex<double>>::getrf(cusolverDnHandle_t handle, const int 
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPSOLVER)
+#if defined(TACHO_ENABLE_ROCSOLVER)
 template <>
-int Lapack<Kokkos::complex<double>>::getrf_buffersize(hipsolverHandle_t handle, const int m, const int n,
-                                                      Kokkos::complex<double> *a, const int lda, int *lwork) {
-  const int r_val = hipsolverZgetrf_bufferSize(handle, m, n, (cuDoubleComplex *)a, lda, lwork);
-  return r_val;
-}
-
-template <>
-int Lapack<Kokkos::complex<double>>::getrf(hipsolverHandle_t handle, const int m, const int n,
-                                           Kokkos::complex<double> *a, const int lda, Kokkos::complex<double> *w,
-                                           int *ipiv, int *dev) {
-  const int r_val = hipsolverZgetrf(handle, m, n, (cuDoubleComplex *)a, lda, (cuDoubleComplex *)w, ipiv, dev);
+int Lapack<Kokkos::complex<double>>::getrf(rocblas_handle handle, const int m, const int n, Kokkos::complex<double> *a,
+                                           const int lda, int *ipiv, int *dev) {
+  const int r_val = rocsolver_zgetrf(handle, m, n, (rocblas_double_complex *)a, lda, ipiv, dev);
   return r_val;
 }
 #endif
