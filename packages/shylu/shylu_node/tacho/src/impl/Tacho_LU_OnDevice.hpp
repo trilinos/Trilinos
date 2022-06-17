@@ -112,7 +112,7 @@ template <> struct LU<Algo::OnDevice> {
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   template <typename ExecSpaceType, typename ViewTypeP>
-  inline static int cusolver_modify(ExecSpaceType &exec_instance, const ordinal_type m, const ViewTypeP &P) {
+  inline static int device_modify(ExecSpaceType &exec_instance, const ordinal_type m, const ViewTypeP &P) {
     using exec_space = ExecSpaceType;
 
     int r_val(0);
@@ -159,12 +159,12 @@ template <> struct LU<Algo::OnDevice> {
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<memory_space, Kokkos::CudaSpace>::value ||
         std::is_same<memory_space, Kokkos::CudaUVMSpace>::value) {
-      r_val = cusolver_modify(member, m, P);
+      r_val = device_modify(member, m, P);
     }
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
     if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
-      r_val = cusolver_modify(member, m, P);
+      r_val = device_modify(member, m, P);
     }
 #endif
     return r_val;

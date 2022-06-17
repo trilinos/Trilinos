@@ -40,7 +40,7 @@ template <> struct ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Al
 
   template <typename MemberType, typename ViewTypeP, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeP &P, const ViewTypeA &A) {
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
     typedef typename ViewTypeA::non_const_value_type value_type;
 
     if (A.extent(0) == P.extent(0)) {
@@ -104,7 +104,7 @@ template <> struct ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, A
 
   template <typename MemberType, typename ViewTypeP, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeP &P, const ViewTypeA &A) {
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
     typedef typename ViewTypeA::non_const_value_type value_type;
 
     if (A.extent(0) == P.extent(0)) {
@@ -187,7 +187,7 @@ template <> struct ApplyPivots<PivotMode::Flame, Side::Left, Direct::Backward, A
 //     invoke(MemberType &member,
 //            const ViewTypeP &P,
 //            const ViewTypeA &A) {
-// #if defined(__CUDA_ARCH__)
+// #if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
 //       typedef typename ViewTypeA::non_const_value_type value_type;
 
 //       if (A.extent(0) == P.extent(0)) {
