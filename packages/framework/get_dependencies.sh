@@ -7,11 +7,12 @@ pushd $PWD
 cd ${script_dir}
 
 function tril_genconfig_clone_or_update_repo() {
-  pushd $PWD
   git_url=$1
   sub_dir=$2
   has_submodules=$3
   head_sha=$4
+
+  pushd $PWD
 
   if [[ -e ${sub_dir} ]] ; then
     cd ${sub_dir}
