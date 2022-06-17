@@ -3,7 +3,7 @@ ini_file_option=$1
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 # Data that needs to be updated when GenConfig changes!
-genconfig_sha1=b47cbdb1145a9d13f5bc8d4e7e691bab1dcdb60d
+genconfig_sha1=924a08af66f0a0573b5dd1128179731489339aec
 
 # The following code contains no changing data
 
