@@ -17,12 +17,12 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'MueLu Tutorial'
-copyright = '2021, Matthias Mayr'
-author = 'Matthias Mayr'
+project = "MueLu Tutorial"
+copyright = "2022, The MueLu Team"
+author = "The MueLu Team"
 
 # The full version, including alpha/beta/rc tags
-release = '2021'
+release = "2022"
 
 
 # -- General configuration ---------------------------------------------------
