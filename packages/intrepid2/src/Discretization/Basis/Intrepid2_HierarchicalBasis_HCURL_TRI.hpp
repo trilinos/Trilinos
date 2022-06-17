@@ -449,7 +449,7 @@ namespace Intrepid2
         const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
         
         OrdinalTypeArray1DHost tagView("tag view", cardinality*tagSize);
-        const ordinal_type vertexDim = 0, edgeDim = 1, faceDim = 2;
+        const ordinal_type edgeDim = 1, faceDim = 2;
 
         if (useCGBasis) {
           {

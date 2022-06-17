@@ -130,8 +130,6 @@ namespace Intrepid2
         {
           // face functions
           {
-            const double jacobiScaling = 1.0; // s0 + s1 + s2
-            
             const PointScalar tLegendre = lambda[0] + lambda[1];
             Polynomials::shiftedScaledLegendreValues(legendre_field_values_at_point, polyOrder_, lambda[1], tLegendre);
 
