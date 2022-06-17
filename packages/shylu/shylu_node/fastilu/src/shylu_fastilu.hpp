@@ -119,8 +119,11 @@ class FastILUPrec
                              Kokkos::Serial, Kokkos::MemoryUnmanaged> UMScalarArray;
         typedef FastILUPrec<Ordinal, Scalar, ExecSpace> FastPrec;
 
-        typedef Kokkos::View<Ordinal *, Kokkos::HostSpace> OrdinalArrayHost;
-        typedef Kokkos::View<Scalar  *, Kokkos::HostSpace>  ScalarArrayHost;
+        using HostSpace = typename Kokkos::HostSpace;
+        using MirrorSpace = typename OrdinalArray::host_mirror_space;
+
+        typedef Kokkos::View<Ordinal *, HostSpace> OrdinalArrayHost;
+        typedef Kokkos::View<Scalar  *, HostSpace>  ScalarArrayHost;
         typedef typename OrdinalArray::host_mirror_type OrdinalArrayMirror;
         typedef typename ScalarArray::host_mirror_type  ScalarArrayMirror;
 
@@ -509,7 +512,7 @@ class FastILUPrec
             timer.reset();
             #endif
             // sort based on ColIdx, RowIdx stays the same (do we need this?)
-            using host_space = Kokkos::HostSpace::execution_space;
+            using host_space = typename HostSpace::execution_space;
             KokkosKernels::sort_crs_matrix<host_space, OrdinalArrayMirror, OrdinalArrayMirror, ScalarArrayMirror>
               (aRowMap_, aColIdx_, aVal_);
             host_space().fence();
@@ -1554,8 +1557,6 @@ class FastILUPrec
             //apply D
             applyD(x, xTemp);
             if (sptrsv_algo == FastILU::SpTRSV::StandardHost) {
-                using crsmat_t = KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::HostSpace, void, Ordinal>;
-                using graph_t  = typename crsmat_t::StaticCrsGraphType;
 
                 // wrap x and y into 2D views
                 typedef Kokkos::View<Scalar **, ExecSpace> Scalar2dArray;
@@ -1568,13 +1569,16 @@ class FastILUPrec
                 Kokkos::deep_copy(x_, x2d);
 
                 if (doUnitDiag_TRSV) {
+                    using crsmat_host_t = KokkosSparse::CrsMatrix<Scalar, Ordinal, HostSpace, void, Ordinal>;
+                    using graph_host_t  = typename crsmat_host_t::StaticCrsGraphType;
+
                     // wrap L into crsmat on host
-                    graph_t static_graphL(lColIdx_trsv_, lRowMap_trsv_);
-                    crsmat_t crsmatL("CrsMatrix", nRows, lVal_trsv_, static_graphL);
+                    graph_host_t static_graphL(lColIdx_trsv_, lRowMap_trsv_);
+                    crsmat_host_t crsmatL("CrsMatrix", nRows, lVal_trsv_, static_graphL);
 
                     // wrap U into crsmat on host
-                    graph_t static_graphU(utColIdx_trsv_, utRowMap_trsv_);
-                    crsmat_t crsmatU("CrsMatrix", nRows, utVal_trsv_, static_graphU);
+                    graph_host_t static_graphU(utColIdx_trsv_, utRowMap_trsv_);
+                    crsmat_host_t crsmatU("CrsMatrix", nRows, utVal_trsv_, static_graphU);
 
                     // solve with L, unit-diag
                     KokkosSparse::trsv ("L", "N", "U", crsmatL, x_, y_);
@@ -1585,13 +1589,16 @@ class FastILUPrec
                     // solve with U, unit-diag
                     KokkosSparse::trsv ("U", "N", "U", crsmatU, y_, x_);
                 } else {
+                    using crsmat_mirror_t = KokkosSparse::CrsMatrix<Scalar, Ordinal, MirrorSpace, void, Ordinal>;
+                    using graph_mirror_t  = typename crsmat_mirror_t::StaticCrsGraphType;
+
                     // wrap L into crsmat on host
-                    graph_t static_graphL(lColIdx_, lRowMap_);
-                    crsmat_t crsmatL("CrsMatrix", nRows, lVal_, static_graphL);
+                    graph_mirror_t static_graphL(lColIdx_, lRowMap_);
+                    crsmat_mirror_t crsmatL("CrsMatrix", nRows, lVal_, static_graphL);
 
                     // wrap U into crsmat on host
-                    graph_t static_graphU(utColIdx_, utRowMap_);
-                    crsmat_t crsmatU("CrsMatrix", nRows, utVal_, static_graphU);
+                    graph_mirror_t static_graphU(utColIdx_, utRowMap_);
+                    crsmat_mirror_t crsmatU("CrsMatrix", nRows, utVal_, static_graphU);
 
                     // solve with L
                     KokkosSparse::trsv ("L", "N", "N", crsmatL, x_, y_);
