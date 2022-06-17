@@ -7,12 +7,6 @@ package/optika
 packages/mesquite
 packages/xSDKTrilinos
 packages/framework/GenConfig
-packages/framework/GenConfig/deps/SetEnvironment
-packages/framework/GenConfig/deps/DetermineSystem
-packages/framework/GenConfig/deps/KeywordParser
-packages/framework/GenConfig/deps/LoadEnv
-packages/framework/GenConfig/deps/SetProgramOptions
-packages/framework/GenConfig/deps/ConfigParserEnhanced
 packages/framework/son-ini-files
 packages/framework/srn-ini-files
 TriBITS
