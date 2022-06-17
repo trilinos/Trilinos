@@ -60,7 +60,7 @@ elif [[ -d ${script_dir}/son-ini-files ]] && [[ "$ini_file_option" == "--son" ]]
     ln -sf ${script_dir}/son-ini-files/trilinos/framework/supported-systems.ini
     ln -sf ${script_dir}/ini-files/supported-envs.ini
 else
-    echo "Link files from init-files"
+    echo "Link files from ini-files"
     [ -e ${script_dir}/ini-files/environment-specs.ini ] && ln -sf ${script_dir}/ini-files/environment-specs.ini
     [ -e ${script_dir}/ini-files/supported-systems.ini ] && ln -sf ${script_dir}/ini-files/supported-systems.ini
     ln -sf ${script_dir}/ini-files/supported-envs.ini
