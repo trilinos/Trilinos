@@ -345,7 +345,8 @@ namespace MueLu {
     Kn_Matrix_->setObjectLabel("Maxwell1 (2,2)");
     
     /* Critical ParameterList changes */
-    precList22_.sublist("user data").set("Coordinates",Coords_);
+    if (!Coords_.is_null())
+      precList22_.sublist("user data").set("Coordinates",Coords_);
 
     /* Repartitioning *must* be in sync between hierarchies, but the
      only thing we need to watch here is the subcomms, since ReitzingerPFactory

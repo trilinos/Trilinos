@@ -2,97 +2,68 @@
 #include <Kokkos_Core.hpp>
 
 #include "Tacho.hpp"
-#include "Tacho_MatrixMarket.hpp"
 #include "Tacho_Util.hpp"
+#include "Tacho_MatrixMarket.hpp"
 
-using namespace Tacho;
-
-typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type HostDeviceType;
-typedef typename UseThisDevice<Kokkos::DefaultExecutionSpace>::type DeviceType;
-
-#define TEST_BEGIN 
-#define TEST_END   
-
-template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
-static const char * scheduler_name = "TaskSchedulerMultiple";
+using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
+using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type;
 
 TEST( Util, is_complex_type ) {
-  TEST_BEGIN;
-  EXPECT_FALSE(int(ArithTraits<double>::is_complex));
-  EXPECT_TRUE(int(ArithTraits<std::complex<double> >::is_complex));
-  EXPECT_TRUE(int(ArithTraits<Kokkos::complex<double> >::is_complex));
-  TEST_END;
+  EXPECT_FALSE(int(Tacho::ArithTraits<double>::is_complex));
+  EXPECT_TRUE(int(Tacho::ArithTraits<std::complex<double> >::is_complex));
+  EXPECT_TRUE(int(Tacho::ArithTraits<Kokkos::complex<double> >::is_complex));
 }
 
 
-TEST( util, tag ) {
-  TEST_BEGIN;
-  // EXPECT_TRUE(is_valid_partition_tag<Partition::Top>::value);
-  // EXPECT_TRUE(is_valid_partition_tag<Partition::Bottom>::value);
-  // EXPECT_TRUE(is_valid_partition_tag<Partition::Left>::value);
-  // EXPECT_TRUE(is_valid_partition_tag<Partition::Right>::value);
-  // EXPECT_TRUE(is_valid_partition_tag<Partition::TopLeft>::value);
-  // EXPECT_TRUE(is_valid_partition_tag<Partition::TopRight>::value);
-  // EXPECT_TRUE(is_valid_partition_tag<Partition::BottomLeft>::value);
-  // EXPECT_TRUE(is_valid_partition_tag<Partition::BottomRight>::value);
+TEST( Util, tag ) {
+  using Tacho::NullTag;
+  using Tacho::Partition;
+  EXPECT_TRUE(int(Tacho::is_valid_partition_tag<Partition::Top>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_partition_tag<Partition::Bottom>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_partition_tag<Partition::Left>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_partition_tag<Partition::Right>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_partition_tag<Partition::TopLeft>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_partition_tag<Partition::TopRight>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_partition_tag<Partition::BottomLeft>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_partition_tag<Partition::BottomRight>::value));
 
-  EXPECT_TRUE(int(is_valid_uplo_tag<Uplo::Upper>::value));
-  EXPECT_TRUE(int(is_valid_uplo_tag<Uplo::Lower>::value));
+  using Tacho::Uplo;
+  EXPECT_TRUE(int(Tacho::is_valid_uplo_tag<Uplo::Upper>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_uplo_tag<Uplo::Lower>::value));
+  EXPECT_FALSE(int(Tacho::is_valid_uplo_tag<NullTag>::value));
 
-  EXPECT_TRUE(int(is_valid_side_tag<Side::Left>::value));
-  EXPECT_TRUE(int(is_valid_side_tag<Side::Right>::value));
+  using Tacho::Side;
+  EXPECT_TRUE(int(Tacho::is_valid_side_tag<Tacho::Side::Left>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_side_tag<Tacho::Side::Right>::value));
+  EXPECT_FALSE(int(Tacho::is_valid_side_tag<NullTag>::value));
 
-  EXPECT_TRUE(int(is_valid_diag_tag<Diag::Unit>::value));
-  EXPECT_TRUE(int(is_valid_diag_tag<Diag::NonUnit>::value));
+  using Tacho::Diag;
+  EXPECT_TRUE(int(Tacho::is_valid_diag_tag<Tacho::Diag::Unit>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_diag_tag<Tacho::Diag::NonUnit>::value));
+  EXPECT_FALSE(int(Tacho::is_valid_diag_tag<NullTag>::value));
 
-  EXPECT_TRUE(int(is_valid_trans_tag<Trans::Transpose>::value));
-  EXPECT_TRUE(int(is_valid_trans_tag<Trans::ConjTranspose>::value));
-  EXPECT_TRUE(int(is_valid_trans_tag<Trans::NoTranspose>::value));
-
-  // EXPECT_FALSE(is_valid_partition_tag<NullTag>::value);
-  EXPECT_FALSE(int(is_valid_uplo_tag<NullTag>::value));
-  EXPECT_FALSE(int(is_valid_side_tag<NullTag>::value));
-  EXPECT_FALSE(int(is_valid_diag_tag<NullTag>::value));
-  EXPECT_FALSE(int(is_valid_trans_tag<NullTag>::value));
-  TEST_END;
+  using Tacho::Trans;
+  EXPECT_TRUE(int(Tacho::is_valid_trans_tag<Tacho::Trans::Transpose>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_trans_tag<Tacho::Trans::ConjTranspose>::value));
+  EXPECT_TRUE(int(Tacho::is_valid_trans_tag<Tacho::Trans::NoTranspose>::value));
+  EXPECT_FALSE(int(Tacho::is_valid_trans_tag<NullTag>::value));
 }
 
-TEST( util, task_scheduler ) {
-  TEST_BEGIN;
 
-  size_t span = 1024*8; // 100
-  unsigned int min_block_size  = 8; // 10
-  unsigned int max_block_size  = 1024; // 10
-  unsigned int superblock_size = 1024; // 10
-
-  typedef TaskSchedulerType<typename HostDeviceType::execution_space> host_scheduler_type;
-  host_scheduler_type host_sched(typename host_scheduler_type::memory_space(),
-                             span,
-                             min_block_size,
-                             max_block_size,
-                             superblock_size);
-  typedef TaskSchedulerType<typename DeviceType::execution_space> device_scheduler_type;
-  device_scheduler_type device_sched(typename device_scheduler_type::memory_space(),
-                                 span,
-                                 min_block_size,
-                                 max_block_size,
-                                 superblock_size);
-  TEST_END;
-}
-
+/// TODO:: add task scheduler instanciation test
 int main (int argc, char *argv[]) {
 
+  int r_val(0);
   Kokkos::initialize(argc, argv);
-
-  const bool detail = false;
-  printExecSpaceConfiguration<typename DeviceType::execution_space>("DeviceSpace", detail);
-  printExecSpaceConfiguration<typename HostDeviceType::execution_space>("HostSpace", detail);
+  {
+     const bool detail = false;
+     Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
+     Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
   
-  printf("Scheduler Type = %s\n", scheduler_name); 
+     ::testing::InitGoogleTest(&argc, argv);
 
-  ::testing::InitGoogleTest(&argc, argv);
-
-  int result = RUN_ALL_TESTS();
+     r_val = RUN_ALL_TESTS();
+  }
   Kokkos::finalize();
-  return result;
+  return r_val;
 }

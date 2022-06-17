@@ -10,7 +10,6 @@
 
 #include <Akri_DiagWriter.hpp>
 #include <Akri_CDFEM_Support.hpp>
-#include <Akri_RegionInterface.hpp>
 #include <Akri_Parser.hpp>
 
 #include <stk_util/environment/RuntimeDoomed.hpp>
@@ -18,12 +17,12 @@
 namespace krino {
 
 void
-CDFEM_Options_Parser::parse(const Parser::Node & region_node, RegionInterface & region)
+CDFEM_Options_Parser::parse(const Parser::Node & region_node, stk::mesh::MetaData & meta)
 {
   const Parser::Node cdfem_node = region_node.get_map_if_present("cdfem_options");
   if ( cdfem_node )
   {
-    CDFEM_Support & cdfem_support = CDFEM_Support::get(region.get_stk_mesh_meta_data());
+    CDFEM_Support & cdfem_support = CDFEM_Support::get(meta);
 
     std::string cdfem_edge_degeneracy_handling_string;
     if (cdfem_node.get_if_present("cdfem_edge_degeneracy_handling", cdfem_edge_degeneracy_handling_string))
@@ -133,6 +132,10 @@ CDFEM_Options_Parser::parse(const Parser::Node & region_node, RegionInterface & 
       }
       cdfem_support.set_post_cdfem_refinement_blocks( post_cdfem_refinement_blocks );
     }
+
+    bool myFlagDoNearbyRefinementBeforeInterfaceRefinement = false;
+    cdfem_node.get_if_present("perform_initial_refinement_near_interfaces", myFlagDoNearbyRefinementBeforeInterfaceRefinement);
+    cdfem_support.do_nearby_refinement_before_interface_refinement( myFlagDoNearbyRefinementBeforeInterfaceRefinement );
   }
 }
 

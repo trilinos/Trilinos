@@ -272,6 +272,25 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/testproblems)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/testproblems/*.hpp)
+#
+# oed headers
+#
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/oed)
+INCLUDE_DIRECTORIES(${DIR}
+                    ${DIR}/constraint
+                    ${DIR}/factors
+                    ${DIR}/objective
+                    ${DIR}/objective/het
+                    ${DIR}/objective/hom
+                    ${DIR}/utilities)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp
+                    ${DIR}/constraint/*.hpp
+                    ${DIR}/factors/*.hpp
+                    ${DIR}/objective/*.hpp
+                    ${DIR}/objective/het/*.hpp
+                    ${DIR}/objective/hom/*.hpp
+                    ${DIR}/utilities/*.hpp)
 
 #
 # All sources

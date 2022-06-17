@@ -68,8 +68,6 @@ public:
 
   virtual ~CDMesh();
 
-  static void check_isovariable_field_existence_on_decomposed_blocks(stk::mesh::BulkData & mesh,
-      const bool conformal_parts_require_field);
   static bool decomposition_needs_update(const InterfaceGeometry & interfaceGeometry,
       const std::vector<std::pair<stk::mesh::Entity, stk::mesh::Entity>> & periodic_node_pairs);
   static void handle_possible_failed_time_step( stk::mesh::BulkData & mesh, const int step_count );
@@ -88,7 +86,6 @@ public:
   const CDMesh* get_old_mesh() const { return my_old_mesh.get(); }
   static CDMesh* get_new_mesh() { return the_new_mesh.get(); }
 
-  static void update_cdfem_constrained_nodes();
   void snap_and_update_fields_and_captured_domains(const InterfaceGeometry & interfaceGeometry,
     NodeToCapturedDomainsMap & nodesToCapturedDomains) const;
 
@@ -96,16 +93,13 @@ public:
   const ProlongationPointData * find_prolongation_node(const SubElementNode & node) const;
   const SubElementNode * find_node_with_common_ancestry(const SubElementNode * new_node) const;
 
-  bool is_interface(const PhaseTag & phase, const InterfaceID interface) const;
   PhaseTag determine_entity_phase(stk::mesh::Entity obj) const;
-
-  void check_isovariable_field_existence_on_decomposed_blocks(const bool conformal_parts_require_field) const;
 
   std::vector<stk::mesh::Entity> get_nonconformal_elements() const;
   void generate_nonconformal_elements();
 
   bool triangulate(const InterfaceGeometry & interfaceGeometry); //return value indicates if any changes were made
-  void decompose();
+  void decompose(const InterfaceGeometry & interfaceGeometry);
   void cut_sharp_features();
   void snap_nearby_intersections_to_nodes(const InterfaceGeometry & interfaceGeometry, NodeToCapturedDomainsMap & domainsAtNodes);
   void set_phase_of_uncut_elements(const InterfaceGeometry & interfaceGeometry);
@@ -119,12 +113,8 @@ public:
   bool need_facets_for_prolongation() const { return ALE_NEAREST_POINT == get_prolongation_model() && my_stash_step_count >= 0; }
   Prolongation_Model get_prolongation_model() const { return my_cdfem_support.get_prolongation_model(); }
   Edge_Interpolation_Model get_edge_interpolation_model() const { return my_cdfem_support.get_edge_interpolation_model(); }
-  int num_ls_fields() const { return my_cdfem_support.num_ls_fields(); }
-  int get_ls_index(const LevelSet * ls) const { return my_cdfem_support.get_ls_index(ls); }
-  const LS_Field & ls_field(int i) const { return my_cdfem_support.ls_field(i); }
-  const std::vector<LS_Field> & ls_fields() const { return my_cdfem_support.ls_fields(); }
-  const std::vector<InterfaceID> & all_interface_ids() const;
-  std::vector<InterfaceID> active_interface_ids() const;
+  const std::vector<InterfaceID> & all_interface_ids(const std::vector<Surface_Identifier> & surfaceIdentifiers) const;
+  std::vector<InterfaceID> active_interface_ids(const std::vector<Surface_Identifier> & surfaceIdentifiers) const;
   // This should really only be used for unit test purposes.
   void add_interface_id(const InterfaceID id) { crossing_keys.push_back(id); }
 
@@ -135,8 +125,6 @@ public:
   const FieldSet & get_zeroed_fields() const { return my_cdfem_support.get_zeroed_fields(); }
   const FieldSet & get_element_fields() const { return my_cdfem_support.get_element_fields(); }
   const CDFEM_Snapper & get_snapper() const { return my_cdfem_support.get_snapper(); }
-
-  const CDFEM_Inequality_Spec * get_death_spec(int ls_index) const { return my_cdfem_support.get_death_spec(ls_index); }
 
   stk::mesh::Part & get_parent_part() const { return my_cdfem_support.get_parent_part(); }
   stk::mesh::Part & get_child_part() const { return my_cdfem_support.get_child_part(); }
@@ -191,7 +179,9 @@ public:
   void get_parent_nodes_and_weights(stk::mesh::Entity child, stk::mesh::Entity & parent0, stk::mesh::Entity & parent1, double & position) const;
   stk::mesh::Entity get_parent_element(stk::mesh::Entity elem_mesh_obj) const;
 
-  double compute_cdfem_cfl() const;
+  double compute_cdfem_cfl(const std::function<Vector3d(stk::mesh::Entity)> & get_side_displacement) const;
+  double compute_cdfem_displacement_cfl() const;
+  double compute_interface_velocity_cfl(const FieldRef velocityField, const double dt) const;
 
   int stash_step_count() const { return my_stash_step_count; }
   const ProlongationNodeData * fetch_prolong_node(stk::mesh::EntityId node_id) const { EntityProlongationNodeMap::const_iterator it = my_prolong_node_map.find(node_id); return ( (it == my_prolong_node_map.end()) ? NULL : (it->second) ); }

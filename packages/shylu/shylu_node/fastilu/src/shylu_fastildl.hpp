@@ -52,6 +52,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
+#include <string>
 
 #include <assert.h>
 #include <Kokkos_Core.hpp>
@@ -71,8 +72,10 @@ class FastILDLPrec
 {
 
     public:
+        typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Real;
         typedef Kokkos::View<Ordinal *, ExecSpace> OrdinalArray;
         typedef Kokkos::View<Scalar *, ExecSpace> ScalarArray;
+        typedef Kokkos::View<Real *, ExecSpace> RealArray;
         typedef Kokkos::View<Ordinal *, typename ExecSpace::array_layout, Kokkos::Serial, 
                 Kokkos::MemoryUnmanaged> UMOrdinalArray;
         typedef Kokkos::View<Scalar *, typename ExecSpace::array_layout, Kokkos::Serial, 
@@ -83,6 +86,9 @@ class FastILDLPrec
         typedef Kokkos::View<Scalar  *, Kokkos::HostSpace>  ScalarArrayHost;
         typedef typename OrdinalArray::host_mirror_type OrdinalArrayMirror;
         typedef typename ScalarArray::host_mirror_type  ScalarArrayMirror;
+
+        using STS = Kokkos::ArithTraits<Scalar>;
+        using RTS = Kokkos::ArithTraits<Real>;
 
     private:
         double computeTime;
@@ -95,6 +101,7 @@ class FastILDLPrec
         Ordinal nTrisol;
         Ordinal level;
         Ordinal blkSz;
+        Ordinal blkSzILDL;
         Scalar omega;
         Scalar shift;
 
@@ -133,7 +140,7 @@ class FastILDLPrec
         OrdinalArrayMirror aColIdx_;
 
         //Diagonal scaling factors
-        ScalarArray diagFact;
+        RealArray diagFact;
         ScalarArray diagElems;
         ScalarArray diagElemsInv;
         // mirrors
@@ -158,7 +165,7 @@ class FastILDLPrec
 
     public:
         FastILDLPrec(OrdinalArray &aRowMapIn, OrdinalArray &aColIdxIn, ScalarArray &aValIn, Ordinal nRow_, bool standard_sptrsv_,
-                     Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_, Ordinal blkSz_)
+                     Ordinal nFact_, Ordinal nTrisol_, Ordinal level_, Scalar omega_, Scalar shift_, Ordinal guessFlag_, Ordinal blkSzILDL_, Ordinal blkSz_)
         {
             nRows = nRow_;
             standard_sptrsv = standard_sptrsv_;
@@ -180,13 +187,14 @@ class FastILDLPrec
             omega = omega_;
             guessFlag = guessFlag_;
             shift = shift_;
+            blkSzILDL = blkSzILDL_;
             blkSz = blkSz_;
 
             const Scalar one = Kokkos::ArithTraits<Scalar>::one();
             onesVector = ScalarArray("onesVector", nRow_);
             Kokkos::deep_copy(onesVector, one);
 
-            diagFact = ScalarArray("diagFact", nRow_);
+            diagFact = RealArray("diagFact", nRow_);
             diagElems = ScalarArray("diagElems", nRow_);
             diagElemsInv = ScalarArray("diagElems", nRow_);
             xOld = ScalarArray("xOld", nRow_);
@@ -195,7 +203,7 @@ class FastILDLPrec
             if (level > 0)
             {
                 initGuessPrec = Teuchos::rcp(new FastPrec(aRowMapIn, aColIdxIn, aValIn, nRow_, standard_sptrsv, 3, 5, 
-                                                          level_-1, omega_, shift_, guessFlag_, blkSz_));
+                                                          level_-1, omega_, shift_, guessFlag_, blkSzILDL_, blkSz_));
             }
 
         }
@@ -534,28 +542,23 @@ class FastILDLPrec
             aVal_ = Kokkos::create_mirror(aVal);
 
             //Copy the host matrix into the initialized a;
-            Ordinal aHostPtr = 0;
             for (Ordinal i = 0; i < nRows; i++)
             {
-                #ifdef SHYLU_DEBUG
-                Ordinal check = aHostPtr;
-                #endif
                 for(Ordinal k = aRowMap_[i]; k < aRowMap_[i+1]; k++)
                 {
                     Ordinal col = aColIdx_[k];
                     #ifdef FASTILDL_DEBUG_OUTPUT
                     std::cout << "col =" << col << std::endl;
                     #endif
-                    
-                    if (col == aColIdxHost[aHostPtr])
+                    for(Ordinal aHostPtr = aRowMapHost[i]; aHostPtr < aRowMapHost[i+1]; aHostPtr++)
                     {
-                       aVal_[k] = aValHost[aHostPtr]; 
-                       aHostPtr++;
+                        if (col == aColIdxHost[aHostPtr])
+                        {
+                            aVal_[k] = aValHost[aHostPtr]; 
+                            break;
+                        }
                     }
                 }
-                #ifdef SHYLU_DEBUG
-                assert((aHostPtr - check) == (aRowMapHost[i+1] - aRowMapHost[i]));
-                #endif
             }
             lVal = ScalarArray("lVal", lRowMap_[nRows]);
             ltVal = ScalarArray("ltVal", lRowMap_[nRows]);
@@ -664,6 +667,7 @@ class FastILDLPrec
         void applyDiagonalScaling()
         {
             int anext = 0;
+            const Real one = Kokkos::ArithTraits<Real>::one();
             //First fill Aj and extract the diagonal scaling factors
             //Use diag array to store scaling factors since
             //it gets set to the correct value by findFactorPattern anyway.
@@ -675,8 +679,7 @@ class FastILDLPrec
                     aRowIdx_[anext++] = i;
                     if (aColIdx_[k] == i) 
                     {
-                        diagFact_[i] = 1.0/std::sqrt(std::fabs(aVal_[k]));
-                        //diagFact[i] = std::sqrt(std::fabs(aVal[k]));
+                        diagFact_[i] = one/(RTS::sqrt(STS::abs(aVal_[k])));
                         #ifdef FASTILDL_DEBUG_OUTPUT
                         std::cout << "diagFact["<<i<<"]="<<aVal[k]<<std::endl;
                         #endif
@@ -687,8 +690,7 @@ class FastILDLPrec
             //Now go through each element of A and apply the scaling
             int row;
             int col;
-            double sc1, sc2;
-
+            Real sc1, sc2;
             for (int i = 0; i < nRows; i++) 
             {
                 for (int k = aRowMap_[i]; k < aRowMap_[i+1]; k++) 
@@ -706,6 +708,7 @@ class FastILDLPrec
 
         void applyManteuffelShift()
         {
+            const Scalar one = Kokkos::ArithTraits<Scalar>::one();
             //Scalar shift = 0.05;
             for (Ordinal i = 0; i < nRows; i++) 
             {
@@ -715,7 +718,7 @@ class FastILDLPrec
                     Ordinal col = aColIdx_[k];
                     if (row != col)
                     {
-                        aVal_[k] = (1.0/(1.0 + shift))*aVal_[k];
+                        aVal_[k] = (one/(one + shift))*aVal_[k];
                     }
                 }
             }
@@ -723,7 +726,7 @@ class FastILDLPrec
 
         void applyDD(ScalarArray &x, ScalarArray &y)
         {
-            ParScalFunctor<Ordinal, Scalar, ExecSpace> parScal(nRows, x, y, diagElemsInv);
+            ParScalFunctor<Ordinal, Scalar, Scalar, ExecSpace> parScal(nRows, x, y, diagElemsInv);
             ExecSpace().fence();
             Kokkos::parallel_for(nRows, parScal);
             ExecSpace().fence();
@@ -731,7 +734,7 @@ class FastILDLPrec
         }
         void applyD(ScalarArray &x, ScalarArray &y)
         {
-            ParScalFunctor<Ordinal, Scalar, ExecSpace> parScal(nRows, x, y, diagFact);
+            ParScalFunctor<Ordinal, Scalar, Real, ExecSpace> parScal(nRows, x, y, diagFact);
             ExecSpace().fence();
             Kokkos::parallel_for(nRows, parScal);
             ExecSpace().fence();
@@ -805,6 +808,7 @@ class FastILDLPrec
 
         void compute()
         {
+            const Scalar one = Kokkos::ArithTraits<Scalar>::one();
             if((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec->compute();
@@ -813,12 +817,11 @@ class FastILDLPrec
 
             Kokkos::Timer timer;
             numericILU();
-            Ordinal blkSzILDLt = 4096;
-            FastILDLFunctor<Ordinal, Scalar, ExecSpace> ildltFunctor(aRowMap_[nRows], blkSzILDLt,
+            FastILDLFunctor<Ordinal, Scalar, ExecSpace> ildltFunctor(aRowMap_[nRows], blkSzILDL,
                     aRowMap, aColIdx, aRowIdx, aVal, lRowMap, lColIdx, lVal, diagElems, omega);
 
-            Ordinal extent = aRowMap_[nRows]/blkSzILDLt;
-            if (aRowMap_[nRows]%blkSzILDLt != 0)
+            Ordinal extent = aRowMap_[nRows]/blkSzILDL;
+            if (aRowMap_[nRows]%blkSzILDL != 0)
             {
                 extent++;
             }
@@ -836,7 +839,7 @@ class FastILDLPrec
             diagElemsInv_ = Kokkos::create_mirror(diagElemsInv);
             for (int i = 0; i < nRows; i++) 
             {
-                diagElemsInv_[i] = 1.0/diagElems_[i];
+                diagElemsInv_[i] = one/diagElems_[i];
             }
             Kokkos::deep_copy(diagElemsInv, diagElemsInv_);
             transposeL();
@@ -901,7 +904,12 @@ class FastILDLPrec
         {
             return nFact;
         }
-        
+
+        std::string getSpTrsvType() const
+        {
+            return (standard_sptrsv ? "Standard" : "Fast");
+        }
+
         Ordinal getNTrisol() const
         {
             return nTrisol;
@@ -962,13 +970,13 @@ class FastILDLPrec
                     }
                 }
             }
-            std::cout << "l2 norm of nonlinear residual = " << std::sqrt(sum) << std::endl;
+            std::cout << "l2 norm of nonlinear residual = " << RTS::sqrt(STS::abs(sum)) << std::endl;
         }
         friend class FastILDLFunctor<Ordinal, Scalar, ExecSpace>;
         friend class JacobiIterFunctor<Ordinal, Scalar, ExecSpace>;
         friend class ParCopyFunctor<Ordinal, Scalar, ExecSpace>;
         friend class JacobiIterFunctorT<Ordinal, Scalar, ExecSpace>;
-        friend class ParScalFunctor<Ordinal, Scalar, ExecSpace>;
+        friend class ParScalFunctor<Ordinal, Scalar, Real, ExecSpace>;
         friend class MemoryPrimeFunctorN<Ordinal, Scalar, ExecSpace>;
         friend class MemoryPrimeFunctorNnzCoo<Ordinal, Scalar, ExecSpace>;
         friend class MemoryPrimeFunctorNnzCsr<Ordinal, Scalar, ExecSpace>;
@@ -994,6 +1002,9 @@ class FastILDLFunctor
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal blk_index) const
             {
+                const Scalar zero = Kokkos::ArithTraits<Scalar>::zero();
+                const Scalar one = Kokkos::ArithTraits<Scalar>::one();
+
                 Ordinal start = blk_index * blk_size;
                 Ordinal end = start + blk_size;
 
@@ -1009,8 +1020,8 @@ class FastILDLFunctor
                     Ordinal i = _Ai[nz_index];
                     Ordinal j = _Aj[nz_index];
                     Scalar val = _Ax[nz_index];
-                    Scalar acc_val = 0.0;
-                    Scalar temp = 0.0;
+                    Scalar acc_val = zero;
+                    Scalar temp = zero;
                     Ordinal lptr = _Lp[i];
                     Ordinal ltptr = _Lp[j];
                     Ordinal endpt = j;
@@ -1039,13 +1050,13 @@ class FastILDLFunctor
                             for ( ; _Li[lptr] < j ; lptr++) ; // dummy loop
                             assert (_Li[lptr] == j);
                          //   _Lx[lptr] = val;
-                            _Lx[lptr] = ((1.0 - _omega)*_Lx[lptr]) + (_omega * val);
+                            _Lx[lptr] = ((one - _omega)*_Lx[lptr]) + (_omega * val);
                         }
                         else if (i == j)
                         {
                             //_diag[j] = val - acc_val;
                             temp = val - acc_val;
-                            _diag[j] = ((1.0 - _omega) * _diag[j]) +  (_omega * temp);
+                            _diag[j] = ((one - _omega) * _diag[j]) +  (_omega * temp);
                         }
                     }
                 }

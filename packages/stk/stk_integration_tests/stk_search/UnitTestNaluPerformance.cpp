@@ -89,14 +89,14 @@ struct Options
      void setSphereFile()
      {
          std::string optionString = "-sphere";
-         mSphereFile = stk::unit_test_util::get_option(optionString, "NO_FILE_SPECIFIED");
+         mSphereFile = stk::unit_test_util::simple_fields::get_option(optionString, "NO_FILE_SPECIFIED");
          checkForRequiredFile(optionString, mSphereFile);
      }
 
      void setVolumeFile()
      {
          std::string optionString = "-volume";
-         mVolumeFile = stk::unit_test_util::get_option(optionString, "NO_FILE_SPECIFIED");
+         mVolumeFile = stk::unit_test_util::simple_fields::get_option(optionString, "NO_FILE_SPECIFIED");
          checkForRequiredFile(optionString, mVolumeFile);
      }
 
@@ -104,7 +104,7 @@ struct Options
      {
          std::string optionString = "-method";
          mSearchMethod = stk::search::KDTREE;
-         std::string searchString = stk::unit_test_util::get_option(optionString, "gtk");
+         std::string searchString = stk::unit_test_util::simple_fields::get_option(optionString, "gtk");
          if ( searchString != "gtk" && searchString != "kdtree")
          {
              ThrowRequireMsg(false, "unrecognized search method");
@@ -115,7 +115,7 @@ struct Options
      {
          std::string optionString = "-rangeBoxComm";
          mCommunicateRangeBoxes = true;
-         if ( stk::unit_test_util::get_option(optionString, "yes") == "no" )
+         if ( stk::unit_test_util::simple_fields::get_option(optionString, "yes") == "no" )
          {
              mCommunicateRangeBoxes = false;
          }
@@ -125,7 +125,7 @@ struct Options
      {
          std::string optionString = "-sb";
          mSpheresFirstThenBoxes = false;
-         if ( stk::unit_test_util::get_option(optionString, "no" ) == "yes" )
+         if ( stk::unit_test_util::simple_fields::get_option(optionString, "no" ) == "yes" )
          {
              mSpheresFirstThenBoxes = true;
          }
@@ -135,7 +135,7 @@ struct Options
      {
          mTestToGetGoldResults = false;
          std::string optionString = "-getGold";
-         if ( stk::unit_test_util::get_option(optionString, "no") == "yes" )
+         if ( stk::unit_test_util::simple_fields::get_option(optionString, "no") == "yes" )
          {
              mTestToGetGoldResults = true;
          }
@@ -201,11 +201,11 @@ TEST(NaluPerformance, BoxSphereIntersections)
     }
 
     double elapsedTime = stk::wall_time() - startTime;
-    printPeformanceStats(elapsedTime, comm);
+    stk::unit_test_util::simple_fields::printPeformanceStats(elapsedTime, comm);
 
     if ( !options.mTestToGetGoldResults )
     {
-        gatherResultstoProcZero(comm, searchResults);
+        stk::unit_test_util::simple_fields::gatherResultstoProcZero(comm, searchResults);
 
         int procId = -1;
         MPI_Comm_rank(comm, &procId);
@@ -220,7 +220,7 @@ TEST(NaluPerformance, BoxSphereIntersections)
             std::vector< std::pair<int,int> >::iterator iter_end = std::unique(globalIdMapping.begin(), globalIdMapping.end());
             globalIdMapping.erase(iter_end, globalIdMapping.end());
 
-            size_t numInteractions = getGoldValueForTest();
+            size_t numInteractions = stk::unit_test_util::simple_fields::getGoldValueForTest();
             EXPECT_EQ(numInteractions, globalIdMapping.size());
         }
     }
@@ -270,7 +270,7 @@ TEST(NaluPerformance, BoxBoxIntersections)
     }
 
     double elapsedTime = stk::wall_time() - startTime;
-    printPeformanceStats(elapsedTime, comm);
+    stk::unit_test_util::simple_fields::printPeformanceStats(elapsedTime, comm);
 
     if ( options.mTestToGetGoldResults )
     {
@@ -287,7 +287,7 @@ TEST(NaluPerformance, BoxBoxIntersections)
     }
     else
     {
-        gatherResultstoProcZero(comm, searchResults);
+        stk::unit_test_util::simple_fields::gatherResultstoProcZero(comm, searchResults);
 
         if ( procId == 0 )
         {
@@ -300,7 +300,7 @@ TEST(NaluPerformance, BoxBoxIntersections)
             std::vector< std::pair<int,int> >::iterator iter_end = std::unique(globalIdMapping.begin(), globalIdMapping.end());
             globalIdMapping.erase(iter_end, globalIdMapping.end());
 
-            size_t numInteractions = getGoldValueForTest();
+            size_t numInteractions = stk::unit_test_util::simple_fields::getGoldValueForTest();
             EXPECT_EQ(numInteractions, globalIdMapping.size());
         }
     }

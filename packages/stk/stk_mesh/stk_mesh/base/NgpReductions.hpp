@@ -52,65 +52,10 @@ struct identity {
   }
 };
 
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after December 2021
-template<typename T>
-STK_DEPRECATED KOKKOS_FUNCTION
-T reduction_value_type_from_field_value(const T& i, const int, const T&) 
-{
-  return i;
-}
-
-
-template<typename T>
-STK_DEPRECATED KOKKOS_FUNCTION
-Kokkos::MinMaxScalar<T> reduction_value_type_from_field_value(const T& i, const unsigned, const Kokkos::MinMaxScalar<T>&)
-{
-  return {i,i};
-}
-
-template<typename T>
-STK_DEPRECATED KOKKOS_FUNCTION
-Kokkos::ValLocScalar<T, stk::mesh::EntityId> reduction_value_type_from_field_value(const T& i, const unsigned index, const Kokkos::ValLocScalar<T, stk::mesh::EntityId>&)
-{
-  return {i,index};
-}
-
-template<typename T>
-STK_DEPRECATED KOKKOS_FUNCTION
-Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId> reduction_value_type_from_field_value(const T& i, const unsigned index, const Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId>&)
-{
-  return {i,i,index,index};
-}
-
-template<typename T, typename Mesh>
-STK_DEPRECATED KOKKOS_FUNCTION
-void replace_loc_with_entity_id(T & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
-{
-}
-
-template<typename T, typename Mesh>
-STK_DEPRECATED KOKKOS_FUNCTION
-void replace_loc_with_entity_id(Kokkos::ValLocScalar<T, stk::mesh::EntityId> & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
-{
-  t.loc = mesh.identifier(bucket[t.loc]);
-}
-
-template<typename T, typename Mesh>
-STK_DEPRECATED KOKKOS_FUNCTION
-void replace_loc_with_entity_id(Kokkos::MinMaxLocScalar<T, stk::mesh::EntityId> & t, const Mesh & mesh, const typename Mesh::BucketType & bucket)
-{
-  t.min_loc = mesh.identifier(bucket[t.min_loc]);
-  t.max_loc = mesh.identifier(bucket[t.max_loc]);
-}
-
 template<typename Mesh, typename Field, typename ReductionOp, typename Modifier = identity<typename Field::value_type>>
 struct FieldAccessFunctor{
   using value_type = typename ReductionOp::value_type;
   using reduction_op = ReductionOp;
-  STK_DEPRECATED KOKKOS_FUNCTION
-  FieldAccessFunctor(Field f, ReductionOp r, const int comp = -1) :
-    field(f), bucket_id(0), reduction(r), fm(Modifier()), component(comp) {}
   KOKKOS_FUNCTION
   value_type operator()(const unsigned i, const unsigned j) const
   {
@@ -141,15 +86,17 @@ struct FieldAccessFunctor{
   const int component;
 };
 
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2022
 template <typename Mesh, typename Accessor>
 struct ReductionTeamFunctor
 {
+
+  ReductionTeamFunctor(const Mesh& mesh_, 
+                        const stk::NgpVector<unsigned>& bucketIds_, 
+                        const Accessor& accessor_) : mesh(mesh_), bucketIds(bucketIds_), accessor(accessor_) {}
+                                                
   using ReductionOp = typename Accessor::reduction_op;
   using value_type = typename ReductionOp::value_type;
-  STK_DEPRECATED KOKKOS_FUNCTION
-  ReductionTeamFunctor(const Mesh m, stk::NgpVector<unsigned> b, Accessor a)
-    : mesh(m), bucketIds(b), accessor(a) {}
-
   using TeamHandleType = typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type;
   KOKKOS_FUNCTION
   void join(value_type& dest, const value_type& src) const {
@@ -190,7 +137,6 @@ private:
   Accessor accessor;
 };
 #endif
-
 
 template<typename T>
 KOKKOS_FUNCTION
@@ -275,8 +221,9 @@ private:
 };
 
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after December 2021
+#ifndef STK_HIDE_DEPRECATED_CODE //delete after May 2022
 template <typename Mesh, typename Accessor>
+STK_DEPRECATED 
 void get_field_reduction(Mesh &mesh, const stk::mesh::Selector &selector, Accessor& accessor)
 {
   stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(accessor.get_rank(), selector);

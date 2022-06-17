@@ -36,6 +36,7 @@
 #include <stddef.h>                     // for size_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <string>                       // for string, allocator, etc
 #include <vector>                       // for vector
@@ -50,6 +51,7 @@
 using stk::mesh::Part;
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
+using stk::mesh::MeshBuilder;
 using stk::mesh::PartVector;
 using stk::mesh::EntityProc;
 using stk::mesh::Entity;
@@ -92,13 +94,18 @@ TEST(UnitTestingOfBulkData, aura1DRing_RestoreDeletedAuraEntity)
   std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
   entity_rank_names.push_back("FAMILY_TREE");
 
-  MetaData meta_data(spatial_dim, entity_rank_names);
- Part & elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::LINE_2_1D);
- Part & node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
-
+  MeshBuilder builder(pm);
+  builder.set_spatial_dimension(spatial_dim);
+  builder.set_entity_rank_names(entity_rank_names);
+  std::shared_ptr<BulkData> bulkPtr = builder.create();
+  BulkData& mesh = *bulkPtr;
+  MetaData& meta_data = mesh.mesh_meta_data();
+  meta_data.use_simple_fields();
+  Part & elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::LINE_2_1D);
+  Part & node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
 
   meta_data.commit();
-  BulkData mesh(meta_data, pm);
+
   int p_rank = mesh.parallel_rank();
 
   // Build map for node sharing
@@ -106,8 +113,8 @@ TEST(UnitTestingOfBulkData, aura1DRing_RestoreDeletedAuraEntity)
   {
     for (unsigned ielem=0; ielem < nelems; ielem++) {
       int e_owner = static_cast<int>(elems_0[ielem][3]);
-      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][2], e_owner);
-      stk::mesh::fixtures::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][1], e_owner);
+      stk::mesh::fixtures::simple_fields::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][2], e_owner);
+      stk::mesh::fixtures::simple_fields::AddToNodeProcsMMap(nodes_to_procs, elems_0[ielem][1], e_owner);
     }
   }
 
@@ -121,25 +128,25 @@ TEST(UnitTestingOfBulkData, aura1DRing_RestoreDeletedAuraEntity)
   mesh.modification_begin();
 
   for (unsigned ielem=0; ielem < nelems; ielem++)
+  {
+    if (static_cast<int>(elems_0[ielem][3]) == p_rank)
     {
-      if (static_cast<int>(elems_0[ielem][3]) == p_rank)
-        {
-          elem = mesh.declare_element(elems_0[ielem][0], stk::mesh::ConstPartVector{&elem_part});
+      elem = mesh.declare_element(elems_0[ielem][0], stk::mesh::ConstPartVector{&elem_part});
 
-          EntityVector nodes;
-          // Create node on all procs
-          nodes.push_back( mesh.declare_node(elems_0[ielem][2], stk::mesh::ConstPartVector{&node_part}) );
-          nodes.push_back( mesh.declare_node(elems_0[ielem][1], stk::mesh::ConstPartVector{&node_part}) );
+      EntityVector nodes;
+      // Create node on all procs
+      nodes.push_back( mesh.declare_node(elems_0[ielem][2], stk::mesh::ConstPartVector{&node_part}) );
+      nodes.push_back( mesh.declare_node(elems_0[ielem][1], stk::mesh::ConstPartVector{&node_part}) );
 
-          // Add relations to nodes
-          mesh.declare_relation( elem, nodes[0], 0 );
-          mesh.declare_relation( elem, nodes[1], 1 );
+      // Add relations to nodes
+      mesh.declare_relation( elem, nodes[0], 0 );
+      mesh.declare_relation( elem, nodes[1], 1 );
 
-          // Node sharing
-          stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[0]), nodes[0]);
-          stk::mesh::fixtures::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[1]), nodes[1]);
-        }
+      // Node sharing
+      stk::mesh::fixtures::simple_fields::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[0]), nodes[0]);
+      stk::mesh::fixtures::simple_fields::DoAddNodeSharings(mesh, nodes_to_procs, mesh.identifier(nodes[1]), nodes[1]);
     }
+  }
 
   mesh.modification_end();
 
@@ -149,15 +156,15 @@ TEST(UnitTestingOfBulkData, aura1DRing_RestoreDeletedAuraEntity)
   std::vector<EntityProc> change;
 
   for (unsigned inode=0; inode < nnodes; inode++)
+  {
+    node1 = mesh.get_entity(stk::topology::NODE_RANK, nodes_0[inode][0]);
+    if (mesh.is_valid(node1) && mesh.parallel_owner_rank(node1) == p_rank)
     {
-      node1 = mesh.get_entity(stk::topology::NODE_RANK, nodes_0[inode][0]);
-      if (mesh.is_valid(node1) && mesh.parallel_owner_rank(node1) == p_rank)
-        {
-          int dest = nodes_0[inode][1];
-          EntityProc eproc(node1, dest);
-          change.push_back(eproc);
-        }
+      int dest = nodes_0[inode][1];
+      EntityProc eproc(node1, dest);
+      change.push_back(eproc);
     }
+  }
 
   mesh.change_entity_owner( change );
 
@@ -165,17 +172,17 @@ TEST(UnitTestingOfBulkData, aura1DRing_RestoreDeletedAuraEntity)
   mesh.modification_begin();
 
   if (p_rank == 2)
-    {
-      node1 = mesh.get_entity(stk::topology::NODE_RANK, 21);
-      Entity elem1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 201);
-      Entity elem2 = mesh.get_entity(stk::topology::ELEMENT_RANK, 100);
+  {
+    node1 = mesh.get_entity(stk::topology::NODE_RANK, 21);
+    Entity elem1 = mesh.get_entity(stk::topology::ELEMENT_RANK, 201);
+    Entity elem2 = mesh.get_entity(stk::topology::ELEMENT_RANK, 100);
 
-      bool did_it_elem = mesh.destroy_entity(elem1);
-      did_it_elem = did_it_elem & mesh.destroy_entity(elem2);
-      ASSERT_TRUE(did_it_elem);
-      bool did_it = mesh.destroy_entity(node1);
-      ASSERT_TRUE(did_it);
-    }
+    bool did_it_elem = mesh.destroy_entity(elem1);
+    did_it_elem = did_it_elem & mesh.destroy_entity(elem2);
+    ASSERT_TRUE(did_it_elem);
+    bool did_it = mesh.destroy_entity(node1);
+    ASSERT_TRUE(did_it);
+  }
 
   mesh.modification_end();
 

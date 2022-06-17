@@ -84,7 +84,7 @@ template<typename Real>
 class Algorithm {
 protected:
   const Ptr<CombinedStatusTest<Real>> status_;
-  const Ptr<AlgorithmState<Real>>   state_;
+  const Ptr<AlgorithmState<Real>>     state_;
   Ptr<PolyhedralProjection<Real>>     proj_;
 
   void initialize(const Vector<Real> &x, const Vector<Real> &g); 
@@ -107,7 +107,7 @@ public:
              This is the primary Type-B interface.
   */
   virtual void run( Problem<Real> &problem,
-                    std::ostream                 &outStream = std::cout );
+                    std::ostream  &outStream = std::cout );
 
   /** \brief Run algorithm on bound constrained problems (Type-B).
              This is the primary Type-B interface.

@@ -100,7 +100,7 @@ namespace Teuchos {
  * <li> TypeNameTraits must have a specialization for T.
  * </ul>
  *
- * \section Teuchos_ArrayView_DesignDiscussion_sec Design discussion
+ * \section Teuchos_ArrayRCP_DesignDiscussion_sec Design discussion
  *
  * This class has a partial specialization for <tt>const T</tt> that
  * omits the conversion operator <tt>operator ArrayRCP<const T>()

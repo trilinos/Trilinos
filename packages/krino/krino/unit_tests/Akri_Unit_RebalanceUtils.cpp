@@ -431,8 +431,12 @@ TEST(Rebalance, MultipleWeightFields)
                   owned_part & block_2, mesh.buckets(stk::topology::ELEMENT_RANK)));
   }
 
-  rebalance_utils::rebalance_mesh(
-      mesh, nullptr, {weights_field_1.name(), weights_field_2.name()}, "coordinates", "parmetis");
+  rebalance_utils::rebalance_mesh(mesh,
+      nullptr,
+      {weights_field_1.name(), weights_field_2.name()},
+      "coordinates",
+      10,
+      "parmetis");
 
   EXPECT_EQ(1u,
       stk::mesh::count_selected_entities(

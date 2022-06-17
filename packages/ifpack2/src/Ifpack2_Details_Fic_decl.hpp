@@ -64,15 +64,18 @@ class Fic : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   public:
     typedef FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node> Base;
     typedef typename Base::TRowMatrix TRowMatrix;
-    typedef typename Base::ScalarArray ScalarArray;
-    typedef typename Base::ConstScalarArray ConstScalarArray;
-    typedef FastICPrec<LocalOrdinal, Scalar, typename Base::execution_space> LocalFIC;
+    typedef typename Base::ImplScalar ImplScalar;
+    typedef typename Base::ImplScalarArray ImplScalarArray;
+    typedef FastICPrec<LocalOrdinal, ImplScalar, typename Base::execution_space> LocalFIC;
 
     //! Constructor
     Fic(Teuchos::RCP<const TRowMatrix> mat_);
 
     //! Get the sweeps (\"nFact\") from localPrec_
     int getSweeps() const;
+
+    //! Get the name of triangular solve algorithm
+    std::string getSpTrsvType() const;
 
     //! Get the number of triangular solves (\"nTrisol\") from localPrec_
     int getNTrisol() const;
@@ -86,7 +89,7 @@ class Fic : public FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     void initLocalPrec();
     //compute() takes A's local values
     void computeLocalPrec();
-    void applyLocalPrec(ScalarArray x, ScalarArray y) const;
+    void applyLocalPrec(ImplScalarArray x, ImplScalarArray y) const;
     std::string getName() const;
 };
 

@@ -1,0 +1,46 @@
+#include <Kokkos_Core.hpp>
+#include <Kokkos_Random.hpp>
+#include <Kokkos_Timer.hpp>
+
+#include "Tacho.hpp"
+#include "gtest/gtest.h"
+
+static const std::string ETI_TEST_NAME="@ETI_NAME@";
+using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
+using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type;
+using value_type = @ETI_VALUE_TYPE@;
+using ats = Tacho::ArithTraits<value_type>;
+using magnitude_type = typename ats::mag_type;
+
+static const std::string MM_TEST_FILE= std::is_same<value_type,magnitude_type>::value ? "test_double.mtx" : "test_dcomplex.mtx";
+
+// #if defined(KOKKOS_ENABLE_SERIAL)
+// static Kokkos::Impl::HostThreadTeamMember<Kokkos::Serial>                                             
+// host_serial_member() {                                                                              
+//   auto& data = Kokkos::Serial().impl_internal_space_instance()->m_thread_team_data;                   
+//   return Kokkos::Impl::HostThreadTeamMember<Kokkos::Serial>(data);                                    
+// }
+// #else
+// int host_serial_member() { 
+//   throw std::logic_error("Error: host serial member is used while serial execution space is not enabled");
+//   return -1;
+// }                                                                             
+// #endif
+
+#include "Tacho_Test.hpp"
+
+int main (int argc, char *argv[]) {
+  int r_val(0);
+  Kokkos::initialize();
+  {
+    const bool detail = false;
+    Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("Device space", detail);
+    Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("Host space", detail);
+    
+    ::testing::InitGoogleTest(&argc, argv);
+    r_val = RUN_ALL_TESTS();
+  }
+  Kokkos::finalize();
+
+  return r_val;
+}

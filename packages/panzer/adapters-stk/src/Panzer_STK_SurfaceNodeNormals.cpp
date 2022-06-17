@@ -91,9 +91,16 @@ namespace panzer_stk {
     std::vector<stk::mesh::Entity> sides;
     stk::mesh::get_selected_entities(mySelector,bulkData->buckets(metaData->side_rank()),sides);
 
+    std::vector<std::size_t> missingElementIndices;
     std::vector<std::size_t> localSideTopoIDs;
     std::vector<stk::mesh::Entity> parentElements;
-    panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
+    panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements,missingElementIndices);
+
+    // Delete all sides whose neighboring element in elementBlockName is not in the current process
+    std::vector<std::size_t>::reverse_iterator index;
+    for(index=missingElementIndices.rbegin(); index != missingElementIndices.rend(); ++index) {
+      sides.erase(sides.begin()+*index);
+    }
 
     if (pout != NULL) {
       for (std::size_t i=0; i < localSideTopoIDs.size(); ++i) {
@@ -258,9 +265,16 @@ namespace panzer_stk {
 
     RCP<const shards::CellTopology> parentTopology = mesh->getCellTopology(elementBlockName);
 
+    std::vector<std::size_t> missingElementIndices;
     std::vector<std::size_t> localSideTopoIDs;
     std::vector<stk::mesh::Entity> parentElements;
-    panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
+    panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements,missingElementIndices);
+
+    // Delete all sides whose neighboring element in elementBlockName is not in the current process
+    std::vector<std::size_t>::reverse_iterator index;
+    for(index=missingElementIndices.rbegin(); index != missingElementIndices.rend(); ++index) {
+      sides.erase(sides.begin()+*index);
+    }
     
     std::vector<stk::mesh::Entity>::const_iterator side = sides.begin();
     std::vector<std::size_t>::const_iterator sideID = localSideTopoIDs.begin();

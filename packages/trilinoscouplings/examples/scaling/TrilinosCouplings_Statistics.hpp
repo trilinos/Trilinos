@@ -144,7 +144,7 @@ class MachineLearningStatistics_Hex3D {
     int node3 = edgeToNode(edge, 0);
     int node4 = edgeToNode(edge, 1);
 
-    int numElems = elemToEdge.dimension(0);
+    int numElems = elemToNode.dimension(0);
     for(int i=0; i<numElems; i++) {
       // Set up hex nodes
       int hexnode0 = elemToNode(i, 0);

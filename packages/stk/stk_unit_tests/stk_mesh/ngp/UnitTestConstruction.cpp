@@ -42,10 +42,10 @@ void test_device_field_default_constructor()
 {
   int constructionFinished = 0;
   Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const unsigned& i, int& localFinished) {
-    stk::mesh::DeviceField<double> deviceField;
-    NGP_EXPECT_EQ(stk::topology::INVALID_RANK, deviceField.get_rank());
-    localFinished = 1;
-  }, constructionFinished);
+                            stk::mesh::DeviceField<double> deviceField;
+                            NGP_EXPECT_EQ(stk::topology::INVALID_RANK, deviceField.get_rank());
+                            localFinished = 1;
+                          }, constructionFinished);
 
   EXPECT_EQ(1, constructionFinished);
 }

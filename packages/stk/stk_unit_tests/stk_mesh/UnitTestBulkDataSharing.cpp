@@ -38,6 +38,7 @@
 #include <stddef.h>                                  // for size_t
 #include <iostream>                                  // for operator<<, etc
 #include <stk_mesh/base/BulkData.hpp>                // for BulkData
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_util/parallel/Parallel.hpp>            // for ParallelMachine
 #include <string>                                    // for string, etc
 #include <vector>                                    // for vector
@@ -57,6 +58,7 @@ namespace stk { namespace mesh { class Selector; } }
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
+using stk::mesh::MeshBuilder;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
 using stk::mesh::Entity;
@@ -114,14 +116,17 @@ TEST(UnitTestingOfBulkData, node_sharing)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
-  MetaData meta_data(spatial_dim, entity_rank_names);
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MeshBuilder builder(pm);
+  builder.set_spatial_dimension(spatial_dim);
+  std::shared_ptr<BulkData> meshPtr = builder.create();
+  BulkData& mesh = *meshPtr;
+  MetaData& meta_data = mesh.mesh_meta_data();
+  meta_data.use_simple_fields();
   stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
   stk::mesh::Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
   meta_data.commit();
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  BulkData mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
 
@@ -273,8 +278,12 @@ TEST(UnitTestingOfBulkData, sharedProcsIntersection)
   }
 
   unsigned spatialDim = 3;
-  stk::mesh::MetaData meta(spatialDim);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  MeshBuilder builder(MPI_COMM_WORLD);
+  builder.set_spatial_dimension(spatialDim);
+  std::shared_ptr<BulkData> bulkPtr = builder.create();
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  meta.use_simple_fields();
   stk::io::fill_mesh("generated:1x1x4", bulk);
 
   stk::mesh::Entity sharedNode9 = bulk.get_entity(stk::topology::NODE_RANK, 9);
@@ -376,14 +385,17 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
-  MetaData meta_data(spatial_dim, entity_rank_names);
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MeshBuilder builder(pm);
+  builder.set_spatial_dimension(spatial_dim);
+  std::shared_ptr<BulkData> meshPtr = builder.create();
+  BulkData& mesh = *meshPtr;
+  MetaData& meta_data = mesh.mesh_meta_data();
+  meta_data.use_simple_fields();
   stk::mesh::Part& elem_part = meta_data.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
   stk::mesh::Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
   meta_data.commit();
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  BulkData mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
   int p_size = mesh.parallel_size();
 
@@ -408,10 +420,10 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
 
   bool doNew = true;
   if (doNew)
-    {
-      mesh.declare_node(sharingInfo1[p_rank][0], stk::mesh::ConstPartVector{&node_part}) ;
-      std::cout << "P[" << p_rank << "] declared node= " << sharingInfo1[p_rank][0] << std::endl;
-    }
+  {
+    mesh.declare_node(sharingInfo1[p_rank][0], stk::mesh::ConstPartVector{&node_part}) ;
+    std::cout << "P[" << p_rank << "] declared node= " << sharingInfo1[p_rank][0] << std::endl;
+  }
 
   // Add relations to nodes
   mesh.declare_relation( createdElem, createdNodes[0], 0 );
@@ -428,15 +440,15 @@ TEST(UnitTestingOfBulkData, node_sharing_with_dangling_nodes)
   }
 
   if (doNew)
+  {
+    for (unsigned i = 0; i < numSharings1; ++i)
     {
-      for (unsigned i = 0; i < numSharings1; ++i)
-        {
-          int sharingProc = sharingInfo1[p_rank][i*2+1];
-          Entity node = mesh.get_entity(stk::topology::NODE_RANK, sharingInfo1[p_rank][i*2]);
-          std::cout << "P[" << p_rank << "] add_node_sharing node= " << sharingInfo1[p_rank][i*2] << " sharingProc= " << sharingProc <<  " is_valid= " << mesh.is_valid(node) << std::endl;
-          mesh.add_node_sharing(node, sharingProc);
-        }
+      int sharingProc = sharingInfo1[p_rank][i*2+1];
+      Entity node = mesh.get_entity(stk::topology::NODE_RANK, sharingInfo1[p_rank][i*2]);
+      std::cout << "P[" << p_rank << "] add_node_sharing node= " << sharingInfo1[p_rank][i*2] << " sharingProc= " << sharingProc <<  " is_valid= " << mesh.is_valid(node) << std::endl;
+      mesh.add_node_sharing(node, sharingProc);
     }
+  }
 
   EXPECT_NO_THROW(mesh.modification_end());
 
@@ -603,9 +615,14 @@ TEST(UnitTestBulkData, resolveSharedModifiedFaceNextToUnmodifiedFaces)
   stk::ParallelMachine comm = MPI_COMM_WORLD;
   if (stk::parallel_machine_size(comm) != 2) { GTEST_SKIP(); }
 
-  stk::mesh::MetaData meta(3);
+  MeshBuilder builder(comm);
+  builder.set_aura_option(stk::mesh::BulkData::NO_AUTO_AURA);
+  builder.set_spatial_dimension(3);
+  std::shared_ptr<BulkData> bulkPtr = builder.create();
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  meta.use_simple_fields();
   stk::mesh::Part& block2 = meta.declare_part_with_topology("block_2", stk::topology::HEX_8);
-  stk::mesh::BulkData bulk(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
   stk::io::fill_mesh("generated:3x1x2", bulk);
   stk::mesh::Part& block1 = *meta.get_part("block_1");
 

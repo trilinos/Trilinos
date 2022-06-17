@@ -46,6 +46,7 @@
 #include <stk_tools/mesh_tools/DisconnectBlocksImpl.hpp>
 #include <stk_tools/mesh_tools/DetectHingesImpl.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include "DisconnectBlocksMeshConstruction.hpp"
 #include "stk_unit_test_utils/getOption.h"
@@ -60,11 +61,12 @@
 #include <string>
 #include <algorithm>
 
+using stk::unit_test_util::build_mesh;
+
 TEST(DetectHinge2D, EmptyMesh)
 {
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3,MPI_COMM_WORLD);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(0u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
 }
@@ -73,334 +75,316 @@ TEST(DetectHinge2D, SingleBlockNoHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_1quad(bulk);
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_1quad(*bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(0u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockTwoElementsNoHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_2quad(bulk);
-  two_elements_decomposition(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_2quad(*bulk);
+  two_elements_decomposition(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(0u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockTwoElementsOneNodeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_2quad_1node_hinge(bulk);
-  two_elements_decomposition(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_2quad_1node_hinge(*bulk);
+  two_elements_decomposition(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(1u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockTwoElementsTwoNodeHinges)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_2quad_2hinge(bulk);
-  two_elements_decomposition(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_2quad_2hinge(*bulk);
+  two_elements_decomposition(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(2u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, AreNodesPartOfASide)
 {
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_SELF);
-  setup_mesh_1block_1quad(bulk);
-  stk::mesh::EntityVector elems = get_elements_from_id_range(bulk, 1);
-  stk::mesh::EntityVector nodes = get_nodes_from_id_range(bulk, 4);
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_a_side(bulk, elems, stk::mesh::EntityVector{nodes[0],nodes[1]}));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_a_side(bulk, elems, stk::mesh::EntityVector{nodes[1],nodes[3]}));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_a_side(bulk, elems, stk::mesh::EntityVector{nodes[3],nodes[2]}));
-  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_a_side(bulk, elems, stk::mesh::EntityVector{nodes[2],nodes[0]}));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_a_side(bulk, elems, stk::mesh::EntityVector{nodes[0],nodes[3]}));
-  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_a_side(bulk, elems, stk::mesh::EntityVector{nodes[1],nodes[2]}));
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_SELF);
+  setup_mesh_1block_1quad(*bulk);
+  stk::mesh::EntityVector elems = get_elements_from_id_range(*bulk, 1);
+  stk::mesh::EntityVector nodes = get_nodes_from_id_range(*bulk, 4);
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_a_side(*bulk, elems, stk::mesh::EntityVector{nodes[0],nodes[1]}));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_a_side(*bulk, elems, stk::mesh::EntityVector{nodes[1],nodes[3]}));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_a_side(*bulk, elems, stk::mesh::EntityVector{nodes[3],nodes[2]}));
+  EXPECT_TRUE(stk::tools::impl::common_nodes_are_part_of_a_side(*bulk, elems, stk::mesh::EntityVector{nodes[2],nodes[0]}));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_a_side(*bulk, elems, stk::mesh::EntityVector{nodes[0],nodes[3]}));
+  EXPECT_FALSE(stk::tools::impl::common_nodes_are_part_of_a_side(*bulk, elems, stk::mesh::EntityVector{nodes[1],nodes[2]}));
 }
 
 TEST(DetectHinge2D, SingleBlockThreeElementsOneHinge_Decomp1)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_3quad_1hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_3quad_1hinge(*bulk);
 
-  three_elements_decomposition(bulk);
+  three_elements_decomposition(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(1u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockThreeElementsOneHinge_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_3quad_1hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_3quad_1hinge(*bulk);
 
-  if(bulk.parallel_size() == 2) {
+  if(bulk->parallel_size() == 2) {
     stk::mesh::EntityIdProcVec idProcVec{ {2u,1}, {3u,1} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
-  else if(bulk.parallel_size() == 3) {
+  else if(bulk->parallel_size() == 3) {
     stk::mesh::EntityIdProcVec idProcVec{ {2u,1}, {3u,2} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(1u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockThreeElementsOneHinge_LinearStack)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_3quad_1hinge_linear_stack(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_3quad_1hinge_linear_stack(*bulk);
 
-  three_elements_decomposition(bulk);
+  three_elements_decomposition(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(1u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockFourElementsBowtie_Decomp1)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_4quad_bowtie_1hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_4quad_bowtie_1hinge(*bulk);
 
-  if(bulk.parallel_size() == 2) {
+  if(bulk->parallel_size() == 2) {
     stk::mesh::EntityIdProcVec idProcVec{ {3u,1} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
-  else if(bulk.parallel_size() == 3) {
+  else if(bulk->parallel_size() == 3) {
     stk::mesh::EntityIdProcVec idProcVec{ {2u,1}, {3u,2} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
-  else if(bulk.parallel_size() == 4) {
+  else if(bulk->parallel_size() == 4) {
     stk::mesh::EntityIdProcVec idProcVec{ {2u,1}, {3u,2}, {4u,3} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(1u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockFourElementsBowtie_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_4quad_bowtie_1hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_4quad_bowtie_1hinge(*bulk);
 
-  if(bulk.parallel_size() == 2) {
+  if(bulk->parallel_size() == 2) {
     stk::mesh::EntityIdProcVec idProcVec{ {3u,1}, {4u,1} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
-  else if(bulk.parallel_size() == 3) {
+  else if(bulk->parallel_size() == 3) {
     stk::mesh::EntityIdProcVec idProcVec{ {3u,2} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
-  else if(bulk.parallel_size() == 4) {
+  else if(bulk->parallel_size() == 4) {
     stk::mesh::EntityIdProcVec idProcVec{ {2u,1}, {3u,2}, {4u,3} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(1u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockFourElementsTwoHinge_Decomp1)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_4quad_2hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_4quad_2hinge(*bulk);
 
-  if(bulk.parallel_size() == 2) {
+  if(bulk->parallel_size() == 2) {
     stk::mesh::EntityIdProcVec idProcVec{ {3u,1}, {4u,1} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
-  else if(bulk.parallel_size() == 3) {
+  else if(bulk->parallel_size() == 3) {
     stk::mesh::EntityIdProcVec idProcVec{ {2u,1}, {3u,2} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
-  else if(bulk.parallel_size() == 4) {
+  else if(bulk->parallel_size() == 4) {
     stk::mesh::EntityIdProcVec idProcVec{ {2u,1}, {3u,2}, {4u,3} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(2u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockFourElementsTwoHinge_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_4quad_2hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_4quad_2hinge(*bulk);
 
-  four_elements_decomposition(bulk);
+  four_elements_decomposition(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(2u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockFourElementsFourHinge_Decomp1)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_4quad_4hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_4quad_4hinge(*bulk);
 
-  four_elements_decomposition(bulk);
+  four_elements_decomposition(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(4u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockFourElementsFourHinge_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_4quad_4hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_4quad_4hinge(*bulk);
 
-  if(bulk.parallel_size() == 2) {
+  if(bulk->parallel_size() == 2) {
     stk::mesh::EntityIdProcVec idProcVec{ {1u,1}, {3u,1} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
-  else if(bulk.parallel_size() == 3) {
+  else if(bulk->parallel_size() == 3) {
     stk::mesh::EntityIdProcVec idProcVec{ {3u,2} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
-  else if(bulk.parallel_size() == 4) {
+  else if(bulk->parallel_size() == 4) {
     stk::mesh::EntityIdProcVec idProcVec{ {2u,1}, {3u,2}, {4u,3} };
-    distribute_mesh(bulk, idProcVec);
+    distribute_mesh(*bulk, idProcVec);
   }
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(4u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockFourElementsNoHingePacman)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_4quad_pacman(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_4quad_pacman(*bulk);
 
-  four_elements_decomposition2(bulk);
+  four_elements_decomposition2(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(0u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, SingleBlockFourElementsOneHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_4quad_1hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_1block_4quad_1hinge(*bulk);
 
-  four_elements_decomposition2(bulk);
+  four_elements_decomposition2(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(1u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge2D, TwoBlockFiveElementsOneHinge)
 {
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_2block_3quad_2tri_1hinge(bulk);
-  five_elements_decomposition(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(2,MPI_COMM_WORLD);
+  setup_mesh_2block_3quad_2tri_1hinge(*bulk);
+  five_elements_decomposition(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(1u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge3D, SingleBlockNoHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_1hex(bulk);
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3,MPI_COMM_WORLD);
+  setup_mesh_1block_1hex(*bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(0u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge3D, SingleBlockTwoElementsNoHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_2hex(bulk);
 
   if(bulk.parallel_size() == 2) {
@@ -418,8 +402,8 @@ TEST(DetectHinge3D, SingleBlockTwoElementsNoHingeFaceTest)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_2hex_face_test(bulk);
 
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 7u);
@@ -433,8 +417,8 @@ TEST(DetectHinge3D, SingleBlockTwoElementsOneNodeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_2hex_1node_hinge(bulk);
 
   if(bulk.parallel_size() == 2) {
@@ -452,8 +436,8 @@ TEST(DetectHinge3D, SingleBlockTwoElementsTwoNodeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_2hex_2node_hinge(bulk);
 
   if(bulk.parallel_size() == 2) {
@@ -471,16 +455,15 @@ TEST(DetectHinge3D, SingleBlockThreeElementsOneNodeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_3hex_1node_hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3,MPI_COMM_WORLD);
+  setup_mesh_1block_3hex_1node_hinge(*bulk);
 
-  three_elements_decomposition(bulk);
+  three_elements_decomposition(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(1u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 
@@ -488,8 +471,8 @@ TEST(DetectHinge3D, SingleBlockEightElementsOneNodeHingeFlower)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 8)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_8hex_flower_1node_hinge(bulk);
 
   if(bulk.parallel_size() == 2) {
@@ -515,54 +498,51 @@ TEST(DetectHinge3D, SingleBlockTwoTetsOneNodeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_2tet_1node_hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  setup_mesh_1block_2tet_1node_hinge(*bulkPtr);
 
-  two_elements_decomposition(bulk);
+  two_elements_decomposition(*bulkPtr);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulkPtr);
   EXPECT_EQ(1u, hingeCount.first);
   EXPECT_EQ(0u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulkPtr);
 }
 
 TEST(DetectHinge3D, SingleBlockTwoHexOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_2hex_1edge_hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3,MPI_COMM_WORLD);
+  setup_mesh_1block_2hex_1edge_hinge(*bulk);
 
-  two_elements_decomposition(bulk);
+  two_elements_decomposition(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(0u, hingeCount.first);
   EXPECT_EQ(1u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge3D, SingleBlockThreeHexOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  setup_mesh_1block_3hex_1edge_hinge(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3,MPI_COMM_WORLD);
+  setup_mesh_1block_3hex_1edge_hinge(*bulk);
 
-  three_elements_decomposition(bulk);
+  three_elements_decomposition(*bulk);
 
-  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
+  std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(*bulk);
   EXPECT_EQ(0u, hingeCount.first);
   EXPECT_EQ(1u, hingeCount.second);
-  output_mesh(bulk);
+  output_mesh(*bulk);
 }
 
 TEST(DetectHinge3D, AreNodesPartOfASide)
 {
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_SELF);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_SELF);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_1hex(bulk);
   stk::mesh::EntityVector nodes = get_nodes_from_id_range(bulk, 8);
   stk::mesh::EntityVector elems = get_elements_from_id_range(bulk, 1);
@@ -583,8 +563,8 @@ TEST(DetectHinge3D, AreNodesPartOfASide)
 
 TEST(DetectHinge3D, AreNodesPartOfAnEdge)
 {
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_SELF);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_SELF);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_1hex(bulk);
 
   stk::mesh::EntityVector nodes = get_nodes_from_id_range(bulk, 8);
@@ -625,8 +605,8 @@ TEST(DetectHinge3D, SingleBlockThreeElementsOneNodeHingeOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_3hex_1node_hinge_1edge_hinge(bulk);
 
   three_elements_decomposition(bulk);
@@ -642,8 +622,8 @@ TEST(DetectHinge3D, SingleBlockThreeElementsOneNodeHingeOneEdgeHinge2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_3hex_1node_hinge_1edge_hinge2(bulk);
 
   three_elements_decomposition(bulk);
@@ -658,8 +638,8 @@ TEST(DetectHinge3D, SingleBlockThreeElementsOneNodeHingeOneEdgeHinge3)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_3hex_1node_hinge_1edge_hinge3(bulk);
 
   three_elements_decomposition(bulk);
@@ -675,8 +655,8 @@ TEST(DetectHinge3D, SingleBlockFourElementsBowtieOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_4hex_bowtie_1edge_hinge(bulk);
 
   four_elements_decomposition(bulk);
@@ -692,8 +672,8 @@ TEST(DetectHinge3D, SingleBlockTwoByTwoHexTwoEdgeHinge_Decomp1)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_two_by_two_hex_2edge_hinge(bulk);
 
   four_elements_decomposition(bulk);
@@ -708,8 +688,8 @@ TEST(DetectHinge3D, SingleBlockTwoByTwoHexTwoEdgeHinge_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_two_by_two_hex_2edge_hinge(bulk);
 
   four_elements_decomposition2(bulk);
@@ -724,8 +704,8 @@ TEST(DetectHinge3D, SingleBlockFourHexOneEdgeOneNodeHinge_Decomp1)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_four_hex_one_edge_one_node_hinge(bulk);
 
   four_elements_decomposition(bulk);
@@ -740,8 +720,8 @@ TEST(DetectHinge3D, SingleBlockFourHexOneEdgeOneNodeHinge_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_four_hex_one_edge_one_node_hinge(bulk);
 
   four_elements_decomposition2(bulk);
@@ -756,8 +736,8 @@ TEST(DetectHinge3D, SingleBlockFourHexTwoNodeHinges_Decomp1)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_four_hex_2node_hinge(bulk);
 
   four_elements_decomposition(bulk);
@@ -772,8 +752,8 @@ TEST(DetectHinge3D, SingleBlockFourHexTwoNodeHinges_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_four_hex_2node_hinge(bulk);
 
   four_elements_decomposition2(bulk);
@@ -786,16 +766,22 @@ TEST(DetectHinge3D, SingleBlockFourHexTwoNodeHinges_Decomp2)
 
 TEST(DetectHinge3D, inputFile)
 {
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  std::string inputFileName = stk::unit_test_util::get_option("--inputFile", "");
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  std::string inputFileName = stk::unit_test_util::simple_fields::get_option("--inputFile", "");
+  bool nodesOnly = stk::unit_test_util::simple_fields::has_option("--nodesOnly");
   if(!inputFileName.empty()) {
     double startTime = stk::wall_time();
     stk::io::fill_mesh(inputFileName, bulk);
     double meshReadTime = stk::wall_time();
     stk::tools::impl::HingeNodeVector hingeNodes;
     stk::tools::impl::HingeEdgeVector hingeEdges;
-    fill_mesh_hinges(bulk, hingeNodes, hingeEdges);
+
+    if(nodesOnly) {
+      fill_mesh_hinges(bulk, hingeNodes);
+    } else {
+      fill_mesh_hinges(bulk, hingeNodes, hingeEdges);
+    }
     double detectTime = stk::wall_time();
     print_hinge_info(bulk, hingeNodes, hingeEdges);
     output_mesh(bulk);
@@ -811,8 +797,8 @@ TEST(DetectHinge3D, inputFile)
 
 TEST(DetectHinge3D, GeneratedMesh)
 {
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   std::ostringstream os;
   unsigned nproc = stk::parallel_machine_size(MPI_COMM_WORLD);
   os << "generated:" << nproc << "x" << nproc << "x" << nproc;
@@ -831,8 +817,8 @@ TEST(DetectHinge3D, SingleBlockFourHexTwoNodeHingeOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_four_hex_2node_one_edge_hinge(bulk);
 
   stk::mesh::EntityIdProcVec idProcVec{ {1u,2}, {2u,2}, {4u,1} };
@@ -848,8 +834,8 @@ TEST(DetectHinge3D, SingleBlockFourHexTwoNodeHingeOneEdgeHinge_Manual)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_four_hex_2node_one_edge_hinge_manual(bulk);
 
   std::pair<unsigned, unsigned> hingeCount = stk::tools::impl::get_hinge_count(bulk);
@@ -863,16 +849,16 @@ TEST(DetectHinge3D, DetectHingeRing)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
 
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_with_hinge_ring(bulk);
 
   stk::tools::impl::HingeNodeVector hingeNodes = stk::tools::impl::get_hinge_nodes(bulk);
   stk::tools::impl::HingeEdgeVector hingeEdges = stk::tools::impl::get_hinge_edges(bulk, hingeNodes);
   stk::tools::impl::HingeNodeVector hingeCyclicNodes = stk::tools::impl::get_cyclic_hinge_nodes(bulk, hingeNodes);
 
-  EXPECT_EQ(4u, hingeNodes.size()); 
-  EXPECT_EQ(4u, hingeEdges.size()); 
+  EXPECT_EQ(4u, hingeNodes.size());
+  EXPECT_EQ(4u, hingeEdges.size());
   EXPECT_EQ(4u, hingeCyclicNodes.size());
 }
 
@@ -992,8 +978,8 @@ TEST(GraphTester, SixNodeTwoCycle)
 
 TEST(ElementGroups2D, SingleBlockFourQuadOneNodeHinge)
 {
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_4quad_bowtie_1hinge(bulk);
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 4u);
   stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
@@ -1006,8 +992,8 @@ TEST(ElementGroups2D, SingleBlockFourQuadOneNodeHinge)
 
 TEST(ElementGroups2D, SingleBlockThreeQuadOneNodeHinge)
 {
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_3quad_1hinge(bulk);
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 4u);
   stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, node);
@@ -1021,8 +1007,8 @@ TEST(ElementGroups2D, SingleBlockThreeQuadOneNodeHinge)
 
 TEST(ElementGroups3D, EmptyMesh)
 {
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   stk::mesh::Entity entity;
   stk::tools::impl::HingeGroupVector groupings = stk::tools::impl::get_convex_groupings(bulk, entity);
   if(!groupings.empty()) {
@@ -1032,8 +1018,8 @@ TEST(ElementGroups3D, EmptyMesh)
 
 TEST(ElementGroups3D, SingleBlockOneHex)
 {
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_1hex(bulk);
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 1u);
   stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEMENT_RANK, 1u);
@@ -1050,8 +1036,8 @@ TEST(ElementGroups3D, SingleBlockTwoHex)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2) {
     return;
   }
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_2hex(bulk);
   two_elements_decomposition(bulk);
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 1u);
@@ -1067,8 +1053,8 @@ TEST(ElementGroups3D, SingleBlockTwoHexOneNodeHinge)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2) {
     return;
   }
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_2hex_1node_hinge(bulk);
   two_elements_decomposition(bulk);
   stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, 5u);
@@ -1082,8 +1068,8 @@ TEST(ElementGroups3D, InsertGroupTest)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2) {
     return;
   }
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   stk::io::fill_mesh("generated:2x2x2", bulk);
 
   stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEMENT_RANK, 1u);
@@ -1114,8 +1100,8 @@ TEST(ElementGroups3D, MergeTest)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2) {
     return;
   }
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   stk::io::fill_mesh("generated:2x2x2", bulk);
 
   stk::tools::impl::HingeGroupVector groupings;
@@ -1157,8 +1143,8 @@ TEST(ElementGroups3D, MergeTest)
 
 TEST(ElementGroups2D, TwoBlockFiveElementsOneHinge)
 {
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_2block_3quad_2tri_1hinge(bulk);
   five_elements_decomposition(bulk);
 
@@ -1187,8 +1173,8 @@ TEST(ElementGroups3D, OneBlockFourElementsTwoNodeHinge)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4) {
     return;
   }
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_four_hex_2node_hinge(bulk);
   four_elements_decomposition2(bulk);
   stk::tools::impl::HingeNodeVector hingeNodes;
@@ -1230,8 +1216,8 @@ TEST(ElementGroups3D, OneBlockEightElementsOneNodeHinge)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4) {
     return;
   }
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_eight_tri_1node_hinge(bulk);
 
   if(bulk.parallel_size() == 2) {
@@ -1275,8 +1261,8 @@ TEST(ElementGroups3D, SingleBlockTwoHexOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_2hex_1edge_hinge(bulk);
 
   two_elements_decomposition(bulk);
@@ -1296,8 +1282,8 @@ TEST(ElementGroups3D, SingleBlockFourElementsBowtieOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_4hex_bowtie_1edge_hinge(bulk);
 
   four_elements_decomposition2(bulk);
@@ -1331,8 +1317,8 @@ TEST(ElementGroups3D, SingleBlockTwoByTwoHexTwoEdgeHinge_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_two_by_two_hex_2edge_hinge(bulk);
 
   four_elements_decomposition2(bulk);
@@ -1370,8 +1356,8 @@ TEST(ElementGroups3D, SingleBlockThreeElementsOneNodeHingeOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_1block_3hex_1node_hinge_1edge_hinge(bulk);
 
   three_elements_decomposition(bulk);
@@ -1443,8 +1429,8 @@ TEST(SnipHinge2D, TwoBlockTwoElementsNoHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_2block_2quad_only_on_proc_0(bulk);
   two_elements_decomposition(bulk);
 
@@ -1457,8 +1443,8 @@ TEST(SnipHinge2D, TwoBlockTwoElementsOneNodeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_2block_2quad_1node_hinge(bulk);
   two_elements_decomposition(bulk);
 
@@ -1471,8 +1457,8 @@ TEST(SnipHinge2D, TwoBlockTwoElementsTwoNodeHinges)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_2block_2quad_2hinge(bulk);
   two_elements_decomposition(bulk);
 
@@ -1485,8 +1471,8 @@ TEST(SnipHinge2D, ThreeBlockThreeElementsOneHinge_LinearStack)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_3block_3quad_1hinge_linear_stack(bulk);
   three_elements_decomposition(bulk);
 
@@ -1499,8 +1485,8 @@ TEST(SnipHinge2D, FourBlockFourElementsBowtie_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_4block_4quad_bowtie_1hinge(bulk);
   four_elements_decomposition(bulk);
 
@@ -1513,8 +1499,8 @@ TEST(SnipHinge2D, ThreeBlockThreeElementsOneHinge_HorizontalCut)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_3block_3quad_1hinge(bulk);
   three_elements_decomposition(bulk);
 
@@ -1527,8 +1513,8 @@ TEST(SnipHinge2D, FourBlockFourElementsTwoHinge_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_4block_4quad_2hinge(bulk);
   four_elements_decomposition(bulk);
 
@@ -1541,8 +1527,8 @@ TEST(SnipHinge2D, FourBlockFourElementsFourHinge_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_4block_4quad_4hinge(bulk);
   four_elements_decomposition2(bulk);
 
@@ -1555,8 +1541,8 @@ TEST(SnipHinge2D, FourBlockFourElementsNoHingePacman)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_4block_4quad_pacman(bulk);
   four_elements_decomposition2(bulk);
 
@@ -1569,8 +1555,8 @@ TEST(SnipHinge2D, FourBlockFourElementsOneHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_4block_4quad_1hinge(bulk);
   four_elements_decomposition2(bulk);
 
@@ -1581,8 +1567,8 @@ TEST(SnipHinge2D, FourBlockFourElementsOneHinge)
 
 TEST(SnipHinge2D, FiveBlockFiveElementsOneHinge)
 {
-  stk::mesh::MetaData meta(2);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(2,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_5block_3quad_2tri_1hinge(bulk);
   five_elements_decomposition(bulk);
 
@@ -1595,8 +1581,8 @@ TEST(SnipHinge3D, TwoBlockTwoHexOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_2block_2hex_1edge_hinge(bulk);
   two_elements_decomposition(bulk);
 
@@ -1609,8 +1595,8 @@ TEST(SnipHinge3D, ThreeBlockThreeHexOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_3block_3hex_1edge_hinge(bulk);
   three_elements_decomposition(bulk);
 
@@ -1623,8 +1609,8 @@ TEST(SnipHinge3D, ThreeBlockThreeElementsOneNodeHingeOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_3block_3hex_1node_hinge_1edge_hinge(bulk);
   three_elements_decomposition(bulk);
 
@@ -1637,8 +1623,8 @@ TEST(SnipHinge3D, ThreeBlockThreeElementsOneNodeHingeOneEdgeHinge2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_3block_3hex_1node_hinge_1edge_hinge2(bulk);
   three_elements_decomposition(bulk);
 
@@ -1651,8 +1637,8 @@ TEST(SnipHinge3D, ThreeBlockThreeElementsOneNodeHingeOneEdgeHinge3)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 3)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_3block_3hex_1node_hinge_1edge_hinge3(bulk);
   three_elements_decomposition(bulk);
 
@@ -1665,8 +1651,8 @@ TEST(SnipHinge3D, FourBlockFourElementsBowtieOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_4block_4hex_bowtie_1edge_hinge(bulk);
   four_elements_decomposition(bulk);
 
@@ -1679,8 +1665,8 @@ TEST(SnipHinge3D, FourBlockTwoByTwoHexTwoEdgeHinge_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_4block_two_by_two_hex_2edge_hinge(bulk);
   four_elements_decomposition2(bulk);
 
@@ -1693,8 +1679,8 @@ TEST(SnipHinge3D, FourBlockFourHexOneEdgeOneNodeHinge_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_4block_four_hex_one_edge_one_node_hinge(bulk);
   four_elements_decomposition2(bulk);
 
@@ -1707,8 +1693,8 @@ TEST(SnipHinge3D, FourBlockFourHexTwoNodeHinges_Decomp2)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 4)
     return;
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
   setup_mesh_4block_four_hex_2node_hinge(bulk);
   four_elements_decomposition2(bulk);
 
@@ -1719,9 +1705,9 @@ TEST(SnipHinge3D, FourBlockFourHexTwoNodeHinges_Decomp2)
 
 TEST(SnipHinge, inputFile)
 {
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  std::string inputFileName = stk::unit_test_util::get_option("--inputFile", "");
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  std::string inputFileName = stk::unit_test_util::simple_fields::get_option("--inputFile", "");
   if(!inputFileName.empty()) {
     double startTime = stk::wall_time();
     stk::io::fill_mesh(inputFileName, bulk);

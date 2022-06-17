@@ -131,7 +131,8 @@ void MV_Dot_Invoke(
   }
   // Zero out the result vector
   Kokkos::deep_copy(
-      r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
+      execution_space(), r,
+      Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
   size_type teamsPerDot;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space,
                                                       size_type>(
@@ -156,7 +157,7 @@ void MV_Dot_Invoke(
           Kokkos::view_alloc(Kokkos::WithoutInitializing, "Dot_MV temp result"),
           r.extent(0));
   MV_Dot_Invoke<decltype(tempResult), XV, YV, size_type>(tempResult, x, y);
-  Kokkos::deep_copy(r, tempResult);
+  Kokkos::deep_copy(typename XV::execution_space(), r, tempResult);
 }
 
 }  // namespace Impl

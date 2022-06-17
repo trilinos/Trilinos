@@ -18,6 +18,7 @@ class CDFEM_Support;
 class Phase_Support;
 class InterfaceID;
 class ParentsToChildMapper;
+class LS_Field;
 
 typedef OrderedIdPair ParentEdgeKey;
 typedef std::map<ParentEdgeKey,CDFEM_Parent_Edge> ParentEdgeMap;
@@ -28,26 +29,24 @@ std::set<InterfaceID> get_interfaces_present(const std::vector<const CDFEM_Paren
 
 const CDFEM_Parent_Edge * find_parent_edge(const stk::mesh::BulkData & mesh, const ParentEdgeMap & parentEdges, stk::mesh::Entity node0, stk::mesh::Entity node1);
 
-std::function<bool(stk::mesh::Entity, stk::mesh::Entity)> build_no_linearized_edges_function();
-
-std::function<bool(stk::mesh::Entity, stk::mesh::Entity)> build_all_linearized_edges_function();
-
 ParentEdgeMap
 build_parent_edges_using_elements(const stk::mesh::BulkData & mesh,
     const ParentsToChildMapper & parentsToChildMapper,
-    const std::function<bool(stk::mesh::Entity, stk::mesh::Entity)> & should_build_linear_edge,
+    const bool shouldLinearizeEdges,
     const std::vector<stk::mesh::Entity> & elements,
     const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport);
+    const Phase_Support & phaseSupport,
+    const std::vector<LS_Field> & LSFields);
 
 ParentEdgeMap
 build_parent_edges(const stk::mesh::BulkData & mesh,
     const ParentsToChildMapper & parentsToChildMapper,
-    const std::function<bool(stk::mesh::Entity, stk::mesh::Entity)> & should_build_linear_edge,
+    const bool shouldLinearizeEdges,
     const stk::mesh::Part & activePart,
     const CDFEM_Support & cdfemSupport,
-    const Phase_Support & phaseSupport);
+    const Phase_Support & phaseSupport,
+    const std::vector<LS_Field> & LSFields);
 
 void fill_element_parent_edges(const stk::mesh::BulkData & mesh,
     const stk::mesh::Entity elem,

@@ -26,6 +26,7 @@ private:
    Teko::InverseLibrary invLib;
 
    bool use_discrete_curl_;
+   bool simplifyFaraday_;
    bool dump;
    bool doDebug;
    bool useAsPreconditioner;

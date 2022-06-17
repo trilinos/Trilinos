@@ -1,0 +1,26 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="small_sym.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="TFQMR"/>
+  <ParameterList name="Belos">
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="SCHWARZ"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="schwarz: overlap level" type="int" value="0"/>
+    <Parameter name="schwarz: combine mode" type="string" value="ZERO"/>
+    <Parameter name="schwarz: use reordering" type="bool" value="true"/>
+    <Parameter name="subdomain solver name" type="string" value="FAST_ILDL"/>
+    <ParameterList name="subdomain solver parameters">
+      <Parameter name="level" type="int" value="1"/>
+      <Parameter name="sweeps" type="int" value="10"/>
+      <Parameter name="damping factor" type="double" value="0.9"/>
+      <Parameter name="triangular solve type" type="string" value="Standard"/>
+    </ParameterList>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="1"/>
+</ParameterList>

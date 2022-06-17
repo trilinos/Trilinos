@@ -77,14 +77,10 @@ if(TPL_ENABLE_MATLAB)
 
   # Copy these files over from src tree
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Output_cp
-    SOURCE_FILES muelu.m matlab setup.m
+    SOURCE_FILES muelu.m setup.m
     )
 
-#  TRIBITS_ADD_TEST_DIRECTORIES(../tests/JacobiSmooth)
-#  TRIBITS_ADD_TEST_DIRECTORIES(../tests/Brick)
-#  TRIBITS_ADD_TEST_DIRECTORIES(../tests/ReentrantDemo)
-#  TRIBITS_ADD_TEST_DIRECTORIES(../tests/CustomP)
-#  TRIBITS_ADD_TEST_DIRECTORIES(../tests/Evolution)
+  CONFIGURE_FILE(matlab ${CMAKE_CURRENT_BINARY_DIR}/matlab @ONLY)
 
 ENDIF()
 

@@ -30,6 +30,9 @@
 #include <vector>
 
 #include <cgnslib.h>
+#ifndef CG_BUILD_PARALLEL
+#include <cgnsconfig.h>
+#endif
 #if CG_BUILD_PARALLEL
 #include <pcgnslib.h>
 #endif

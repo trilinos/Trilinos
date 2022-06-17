@@ -36,8 +36,10 @@
 #include <stk_util/environment/EnvData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <vector>
+#include <stk_unit_test_utils/BuildMesh.hpp>
 
 namespace {
+using stk::unit_test_util::build_mesh;
 
 class M2NFileOutput : public MeshFixtureM2NRebalance
 {
@@ -75,11 +77,10 @@ std::vector<std::pair<stk::mesh::EntityId, int>> getSharingInfo(stk::mesh::BulkD
 
 void verify_node_sharing_info(const std::vector<std::pair<stk::mesh::EntityId, int>> &nodeSharingInfo, const std::string& filename)
 {
-  stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  stk::io::fill_mesh(filename, bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(3, MPI_COMM_WORLD);
+  stk::io::fill_mesh(filename, *bulk);
 
-  std::vector<std::pair<stk::mesh::EntityId, int>> nodeSharingInfoAfter = getSharingInfo(bulk);
+  std::vector<std::pair<stk::mesh::EntityId, int>> nodeSharingInfoAfter = getSharingInfo(*bulk);
 
   EXPECT_TRUE(nodeSharingInfo == nodeSharingInfoAfter);
 }

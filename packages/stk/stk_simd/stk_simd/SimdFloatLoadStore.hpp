@@ -47,11 +47,7 @@ STK_MATH_FORCE_INLINE simd::Float load(const float* x) {
 }
     
 STK_MATH_FORCE_INLINE simd::Float load(const float* x, const int offset) {
-  simd::Float result;
-  for(int i=0; i<nfloats; ++i) {
-    result[i] = x[i*offset];
-  }
-  return result; //simd::Float(_mm256_setr_pd(x[0],x[offset],x[2*offset],x[3*offset]));
+  return simd::Float(SIMD_NAMESPACE::native_simd<float>(x, offset));
 }
   
 STK_MATH_FORCE_INLINE void store_aligned(float* x, const simd::Float& z) {

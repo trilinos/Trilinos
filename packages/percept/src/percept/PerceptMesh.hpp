@@ -278,10 +278,10 @@
       void dump_elements_compact(const std::string& partName = "", bool include_family_tree=false);
 
       /// get the low-level bulk data pointer from stk_mesh
-      inline stk::mesh::BulkData * get_bulk_data() { return m_bulkData; }
+      inline stk::mesh::BulkData * get_bulk_data() { return m_bulkData.get(); }
 
       /// get the low-level meta data pointer from stk_mesh
-      inline stk::mesh::MetaData * get_fem_meta_data() { return m_metaData; }
+      inline stk::mesh::MetaData * get_fem_meta_data() { return m_metaData.get(); }
 
       /// get a pointer to a stk_mesh Part with the given name - if @param partial_string_match_ok, allow a
       ///   partial match of the part_name with any part found, in the sense that @param part_name can
@@ -1093,9 +1093,8 @@ private:
       Teuchos::RCP<stk::io::StkMeshIoBroker>  get_ioss_mesh_data_output() { return m_iossMeshDataOut; }
       size_t get_output_file_index() { return m_output_file_index;}
     private:
-      //stk::mesh::MetaData *         m_fem_meta_data;
-      stk::mesh::MetaData *                 m_metaData;
-      stk::mesh::BulkData *                 m_bulkData;
+      std::shared_ptr<stk::mesh::MetaData>                 m_metaData;
+      std::shared_ptr<stk::mesh::BulkData>                 m_bulkData;
       Teuchos::RCP<stk::io::StkMeshIoBroker>       m_iossMeshData;
       Teuchos::RCP<stk::io::StkMeshIoBroker>       m_iossMeshDataOut;
 
@@ -1114,7 +1113,6 @@ private:
       bool                                  m_isOpen;
       bool                                  m_isInitialized;
       bool                                  m_isAdopted;
-      bool                                  m_needsDelete;
       bool                                  m_dontCheckState;
       bool                                  m_outputActiveChildrenOnly;
       std::string                           m_filename;

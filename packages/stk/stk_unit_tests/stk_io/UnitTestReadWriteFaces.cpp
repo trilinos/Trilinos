@@ -53,6 +53,239 @@
 #include <Ioss_FaceBlock.h>
 #include <Ioss_Region.h>
 #include "UnitTestReadWriteFaces.hpp"
+#include <stk_unit_test_utils/BuildMesh.hpp>
+
+using stk::unit_test_util::build_mesh;
+using stk::unit_test_util::build_mesh_no_simple_fields;
+
+#ifndef STK_USE_SIMPLE_FIELDS
+
+void StkFaceIoTest_legacy::setup_face_mesh(unsigned numBlocks)
+{
+  std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(numBlocks, stk::parallel_machine_size(MPI_COMM_WORLD));
+  std::vector<double> coords = stk::unit_test_util::get_many_block_coordinates(numBlocks);
+  stk::mesh::Part* facePart = &get_meta().declare_part_with_topology(facePartName, stk::topology::QUAD_4);
+  stk::io::put_face_block_io_part_attribute(*facePart);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::mesh::PartVector faceParts = {facePart};
+  stk::mesh::create_interior_block_boundary_sides(get_bulk(), get_meta().universal_part(), faceParts);
+}
+
+void StkFaceIoTest_legacy::setup_mesh_with_faces(unsigned numBlocks)
+{
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  setup_face_mesh(numBlocks);
+}
+
+void StkFaceIoTest_legacy::setup_mesh_with_edges_and_faces(unsigned numBlocks)
+{
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(numBlocks, stk::parallel_machine_size(MPI_COMM_WORLD));
+  std::vector<double> coords = stk::unit_test_util::get_many_block_coordinates(numBlocks);
+  stk::mesh::Part* edgePart = &get_meta().declare_part_with_topology(edgePartName, stk::topology::LINE_2);
+  stk::mesh::Part* facePart = &get_meta().declare_part_with_topology(facePartName, stk::topology::QUAD_4);
+  stk::io::put_face_block_io_part_attribute(*facePart);
+  stk::io::put_edge_block_io_part_attribute(*edgePart);
+  stk::unit_test_util::setup_text_mesh(get_bulk(), stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::mesh::PartVector faceParts = {facePart};
+  stk::mesh::create_interior_block_boundary_sides(get_bulk(), get_meta().universal_part(), faceParts);
+  stk::mesh::create_edges(get_bulk(), get_meta().universal_part(), edgePart);
+}
+
+void StkFaceIoTest_legacy::test_connectivity_to_element(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank entityRank)
+{
+  stk::mesh::EntityVector entities;
+  const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  const stk::mesh::BucketVector& buckets = bulk.buckets(entityRank);
+
+  if(bulk.parallel_size() > 1) {
+
+    stk::mesh::Selector ownedAndNotShared = meta.locally_owned_part() & !meta.globally_shared_part();
+    stk::mesh::get_selected_entities(ownedAndNotShared, buckets, entities);
+
+    for(stk::mesh::Entity entity: entities) {
+      EXPECT_EQ(1u, bulk.num_elements(entity));
+    }
+
+    stk::mesh::Selector shared = meta.globally_shared_part();
+    stk::mesh::get_selected_entities(shared, buckets, entities);
+
+    unsigned expectedNumElems = bulk.is_automatic_aura_on() ? 2u : 1u;
+    for(stk::mesh::Entity entity : entities) {
+      EXPECT_EQ(expectedNumElems, bulk.num_elements(entity));
+    }
+  }
+}
+
+void StkFaceIoTest_legacy::test_entity_count(const stk::mesh::BulkData& bulk, stk::mesh::EntityRank entityRank,
+                                      unsigned expectedNumLocalEntities, unsigned expectedNumEntities)
+{
+  stk::mesh::EntityVector entities;
+  const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+  const stk::mesh::BucketVector& buckets = bulk.buckets(entityRank);
+
+  unsigned numLocalEntities = stk::mesh::count_selected_entities(meta.locally_owned_part(), buckets);
+  EXPECT_EQ(expectedNumLocalEntities, numLocalEntities);
+
+  stk::mesh::Selector selector = meta.locally_owned_part() | meta.globally_shared_part();
+  unsigned numEntities = stk::mesh::count_selected_entities(selector, buckets);
+  EXPECT_EQ(expectedNumEntities, numEntities);
+}
+
+void StkFaceIoTest_legacy::test_edges(const stk::mesh::BulkData& bulk)
+{
+  test_entity_count(bulk, stk::topology::EDGE_RANK, expectedValues.numLocalEdgesPerProc[bulk.parallel_rank()],
+                    expectedValues.numEdgesPerProc[bulk.parallel_rank()]);
+  test_connectivity_to_element(bulk, stk::topology::EDGE_RANK);
+}
+
+void StkFaceIoTest_legacy::test_faces(const stk::mesh::BulkData& bulk)
+{
+  test_entity_count(bulk, stk::topology::FACE_RANK, expectedValues.numLocalFacesPerProc[bulk.parallel_rank()],
+                    expectedValues.numFacesPerProc[bulk.parallel_rank()]);
+  test_connectivity_to_element(bulk, stk::topology::FACE_RANK);
+}
+
+void StkFaceIoTest_legacy::output_mesh()
+{
+  stkIoOutput.set_bulk_data(get_bulk());
+  size_t outputFileIndex = stkIoOutput.create_output_mesh(fileName, stk::io::WRITE_RESULTS);
+
+  stkIoOutput.write_output_mesh(outputFileIndex);
+}
+
+void StkFaceIoTest_legacy::test_output_mesh()
+{
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh_no_simple_fields(MPI_COMM_WORLD);
+
+  load_output_mesh(*bulk);
+  test_output_mesh(*bulk);
+}
+
+void StkFaceIoTest_legacy::load_output_mesh(stk::mesh::BulkData& bulk)
+{
+  stk::io::fill_mesh(fileName, bulk, stkIoInput);
+}
+
+void StkFaceIoTest_legacy::test_output_mesh(stk::mesh::BulkData& bulk)
+{
+  std::vector<size_t> entityCounts;
+  stk::mesh::comm_mesh_counts(bulk, entityCounts);
+  EXPECT_EQ(expectedValues.globalEdgeCount, entityCounts[stk::topology::EDGE_RANK]);
+  EXPECT_EQ(expectedValues.globalElemCount, entityCounts[stk::topology::ELEM_RANK]);
+
+  Teuchos::RCP<Ioss::Region> inputRegion = stkIoInput.get_input_io_region();
+  const Ioss::FaceBlockContainer& faceBlocks = inputRegion->get_face_blocks();
+  ASSERT_EQ(1u, faceBlocks.size());
+  EXPECT_TRUE(stk::equal_case(facePartName, faceBlocks[0]->name()));
+
+  test_edges(bulk);
+  test_faces(bulk);
+}
+
+void StkFaceIoTest_legacy::set_expected_values(io_test_utils::ExpectedValues& expectedValues_)
+{
+  expectedValues = expectedValues_;
+}
+
+TEST_F(StkFaceIoTest_legacy, SerialSetupFaceMesh)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  setup_mesh_with_faces(2);
+
+  stk::mesh::Part* facePart = get_meta().get_part(facePartName);
+  EXPECT_FALSE(facePart == nullptr);
+  EXPECT_TRUE(stk::io::is_part_face_block_io_part(*facePart));
+}
+
+TEST_F(StkFaceIoTest_legacy, SerialWriteMesh)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+  io_test_utils::ExpectedValues expectedValues;
+  expectedValues.numEdgesPerProc = std::vector<unsigned>{0};
+  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{0};
+  expectedValues.numFacesPerProc = std::vector<unsigned>{1};
+  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{1};
+  expectedValues.numConnectedEdges = 0;
+  expectedValues.globalEdgeCount = 0;
+  expectedValues.globalElemCount = 2;
+
+  setup_mesh_with_faces(2);
+  set_expected_values(expectedValues);
+  test_faces(get_bulk());
+  output_mesh();
+
+  test_output_mesh();
+}
+
+TEST_F(StkFaceIoTest_legacy, ParallelWriteMesh)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
+  io_test_utils::ExpectedValues expectedValues;
+  expectedValues.numEdgesPerProc = std::vector<unsigned>{0, 0};
+  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{0, 0};
+  expectedValues.numFacesPerProc = std::vector<unsigned>{1, 1};
+  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{1, 0};
+  expectedValues.numConnectedEdges = 0;
+  expectedValues.globalEdgeCount = 0;
+  expectedValues.globalElemCount = 2;
+
+  setup_mesh_with_faces(2);
+  set_expected_values(expectedValues);
+  test_faces(get_bulk());
+  output_mesh();
+
+  test_output_mesh();
+}
+
+TEST_F(StkFaceIoTest_legacy, SerialWriteMeshWithEdge)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+  io_test_utils::ExpectedValues expectedValues;
+  expectedValues.numEdgesPerProc = std::vector<unsigned>{20};
+  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{20};
+  expectedValues.numFacesPerProc = std::vector<unsigned>{1};
+  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{1};
+  expectedValues.numConnectedEdges = 4;
+  expectedValues.globalEdgeCount = 20;
+  expectedValues.globalElemCount = 2;
+
+  setup_mesh_with_edges_and_faces(2);
+  set_expected_values(expectedValues);
+  test_edges(get_bulk());
+  test_faces(get_bulk());
+  output_mesh();
+
+  test_output_mesh();
+}
+
+TEST_F(StkFaceIoTest_legacy, ParallelWriteMeshWithEdge)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
+  io_test_utils::ExpectedValues expectedValues;
+  expectedValues.numEdgesPerProc = std::vector<unsigned>{12, 12};
+  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{12, 8};
+  expectedValues.numFacesPerProc = std::vector<unsigned>{1, 1};
+  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{1, 0};
+  expectedValues.numConnectedEdges = 4;
+  expectedValues.globalEdgeCount = 20;
+  expectedValues.globalElemCount = 2;
+
+  setup_mesh_with_edges_and_faces(2);
+  set_expected_values(expectedValues);
+  test_edges(get_bulk());
+  test_faces(get_bulk());
+  output_mesh();
+
+  test_output_mesh();
+}
+
+#endif // STK_USE_SIMPLE_FIELDS
+
+namespace simple_fields {
 
 void StkFaceIoTest::setup_face_mesh(unsigned numBlocks)
 {
@@ -152,10 +385,10 @@ void StkFaceIoTest::output_mesh()
 
 void StkFaceIoTest::test_output_mesh()
 {
-  stk::mesh::MetaData meta;
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  load_output_mesh(bulk);
-  test_output_mesh(bulk);
+  std::shared_ptr<stk::mesh::BulkData> bulk = build_mesh(MPI_COMM_WORLD);
+
+  load_output_mesh(*bulk);
+  test_output_mesh(*bulk);
 }
 
 void StkFaceIoTest::load_output_mesh(stk::mesh::BulkData& bulk)
@@ -276,3 +509,5 @@ TEST_F(StkFaceIoTest, ParallelWriteMeshWithEdge)
 
   test_output_mesh();
 }
+
+} // namespace simple_fields

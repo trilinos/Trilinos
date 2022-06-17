@@ -11,6 +11,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_util/command_line/CommandLineParser.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
@@ -105,14 +106,14 @@ bool read_command_line( int argc, char *argv[], DeleteSmallElementsInputData & i
 static bool delete_small_elements(const DeleteSmallElementsInputData& inputData,
                 const stk::ParallelMachine comm)
 {
-  stk::mesh::MetaData meta;
-  stk::mesh::BulkData bulk(meta, comm);
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(comm).create();
+  stk::mesh::MetaData& meta = bulk->mesh_meta_data();
 
-  stk::io::fill_mesh_with_auto_decomp(inputData.meshIn, bulk);
+  stk::io::fill_mesh_with_auto_decomp(inputData.meshIn, *bulk);
 
   // delete infinitesimal elements
   double minEdgeLength, maxEdgeLength, minElementVolume, maxElementVolume;
-  compute_element_quality(bulk, minEdgeLength, maxEdgeLength, minElementVolume, maxElementVolume);
+  compute_element_quality(*bulk, minEdgeLength, maxEdgeLength, minElementVolume, maxElementVolume);
   sierra::Env::outputP0() << "Overall mesh size results: minEdgeLength=" << minEdgeLength << ", maxEdgeLength=" << maxEdgeLength << ", minElementVolume=" << minElementVolume << ", maxElementVolume=" << maxElementVolume << std::endl;
 
   stk::mesh::Selector blockSelector = meta.universal_part();
@@ -129,7 +130,7 @@ static bool delete_small_elements(const DeleteSmallElementsInputData& inputData,
 
   const double minRetainedElementVolume = inputData.minNodalVolumeSpecified ? inputData.minNodalVolume : (inputData.minRelativeNodalVolume*maxElementVolume);
   if (minElementVolume < minRetainedElementVolume)
-    delete_all_entities_using_nodes_with_nodal_volume_below_threshold(bulk, blockSelector, minRetainedElementVolume);
+    delete_all_entities_using_nodes_with_nodal_volume_below_threshold(*bulk, blockSelector, minRetainedElementVolume);
   else
     sierra::Env::outputP0() << "All nodes already have nodal volume larger than " << minRetainedElementVolume << "." << std::endl;
 

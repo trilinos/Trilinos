@@ -227,10 +227,10 @@ std::pair<unsigned,unsigned> get_reduced_entity_counts(const stk::mesh::BulkData
 
 struct BlockConnection {
   BlockConnection(const std::string& b1, const std::string& b2)
-  : block1(b1), block2(b2), numExpectedIntersectingNodes(0) { }
+    : block1(b1), block2(b2), numExpectedIntersectingNodes(0) { }
 
   BlockConnection(const std::string& b1, const std::string& b2, unsigned expectedNumNodes)
-  : block1(b1), block2(b2), numExpectedIntersectingNodes(expectedNumNodes) { }
+    : block1(b1), block2(b2), numExpectedIntersectingNodes(expectedNumNodes) { }
 
   std::string block1;
   std::string block2 = 0;

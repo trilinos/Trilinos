@@ -153,37 +153,18 @@ lclNormImpl (const RV& normsOut,
   }
   else { // lclNumRows != 0
     if (constantStride) {
-      if (X.extent(1) == 1) {
-        auto normsOut_0d = Kokkos::subview (normsOut, 0);
-        auto X_1d = Kokkos::subview (X, Kokkos::ALL(), 0);
-        if (whichNorm == NORM_INF) {
-          KokkosBlas::nrminf (normsOut_0d, X_1d);
-        }
-        else if (whichNorm == NORM_ONE) {
-          KokkosBlas::nrm1 (normsOut_0d, X_1d);
-        }
-        else if (whichNorm == NORM_TWO) {
-          KokkosBlas::nrm2_squared (normsOut_0d, X_1d);
-        }
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION
-            (true, std::logic_error, "Should never get here!");
-        }
+      if (whichNorm == NORM_INF) {
+        KokkosBlas::nrminf (normsOut, X);
+      }
+      else if (whichNorm == NORM_ONE) {
+        KokkosBlas::nrm1 (normsOut, X);
+      }
+      else if (whichNorm == NORM_TWO) {
+        KokkosBlas::nrm2_squared (normsOut, X);
       }
       else {
-        if (whichNorm == NORM_INF) {
-          KokkosBlas::nrminf (normsOut, X);
-        }
-        else if (whichNorm == NORM_ONE) {
-          KokkosBlas::nrm1 (normsOut, X);
-        }
-        else if (whichNorm == NORM_TWO) {
-          KokkosBlas::nrm2_squared (normsOut, X);
-        }
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION
-            (true, std::logic_error, "Should never get here!");
-        }
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::logic_error, "Should never get here!");
       }
     }
     else { // not constant stride
