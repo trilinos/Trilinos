@@ -46,6 +46,23 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
   }
 #endif
 
+#if defined(KOKKOS_ENABLE_HIP)
+  template <typename ViewTypeA, typename ViewTypeP, typename ViewTypeW>
+  inline static int rocsolver_invoke(rocblas_handle &handle, const ViewTypeA &A, const ViewTypeP &P,
+                                     const ViewTypeW &W) {
+    typedef typename ViewTypeA::non_const_value_type value_type;
+    typedef typename ViewTypeW::non_const_value_type work_value_type;
+    const ordinal_type m = A.extent(0);
+
+    int r_val(0);
+    if (m > 0) {
+      int *devInfo = (int *)W.data();
+      r_val = Lapack<value_type>::sytrf(handle, rocblas_fill_lower, m, A.data(), A.stride_1(), P.data(), devInfo);
+    }
+    return r_val;
+  }
+#endif
+
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeW>
   inline static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P, const ViewTypeW &W) {
     typedef typename ViewTypeA::non_const_value_type value_type;
@@ -81,6 +98,15 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
         r_val = cusolver_invoke(member, A, P, W);
     }
 #endif
+
+#if defined(KOKKOS_ENABLE_HIP)
+    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
+      if (W.span() == 0) {
+        r_val = 2;
+      } else
+        r_val = rocsolver_invoke(member, A, P, W);
+    }
+#endif
     return r_val;
   }
 
@@ -89,10 +115,10 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
     return LDL<Uplo::Lower, Algo::External>::modify(A, P, D);
   }
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   template <typename ExecSpaceType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeD>
-  inline static int cusolver_modify(ExecSpaceType &exec_instance, const ViewTypeA &A, const ViewTypeP &P,
-                                    const ViewTypeD &D) {
+  inline static int device_modify(ExecSpaceType &exec_instance, const ViewTypeA &A, const ViewTypeP &P,
+                                  const ViewTypeD &D) {
     using exec_space = ExecSpaceType;
     typedef typename ViewTypeA::non_const_value_type value_type;
     const ordinal_type m = A.extent(0);
@@ -100,8 +126,10 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
     int r_val(0);
     if (m > 0) {
       value_type *__restrict__ Aptr = A.data();
-      ordinal_type *__restrict__ ipiv = P.data(), *__restrict__ fpiv = ipiv + m, *__restrict__ perm = fpiv + m,
-                                 *__restrict__ peri = perm + m;
+      ordinal_type *__restrict__ ipiv = P.data();
+      ordinal_type *__restrict__ fpiv = ipiv + m;
+      ordinal_type *__restrict__ perm = fpiv + m;
+      ordinal_type *__restrict__ peri = perm + m;
 
       const value_type one(1), zero(0);
       Kokkos::RangePolicy<exec_space> range_policy(exec_instance, 0, m);
@@ -207,7 +235,12 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<memory_space, Kokkos::CudaSpace>::value ||
         std::is_same<memory_space, Kokkos::CudaUVMSpace>::value) {
-      r_val = cusolver_modify(member, A, P, D);
+      r_val = device_modify(member, A, P, D);
+    }
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
+      r_val = device_modify(member, A, P, D);
     }
 #endif
     return r_val;

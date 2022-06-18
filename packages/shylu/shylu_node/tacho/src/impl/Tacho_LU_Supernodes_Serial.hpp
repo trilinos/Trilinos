@@ -60,18 +60,15 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
     // m and n are available, then factorize the supernode block
     if (m > 0) {
       /// LU factorize ATL
-      value_type *uptr = s.u_buf;
-      UnmanagedViewType<value_type_matrix> AT(uptr, m, n);
+      UnmanagedViewType<value_type_matrix> AT(s.u_buf, m, n);
 
       LU<LU_AlgoType>::invoke(member, AT, P);
       LU<LU_AlgoType>::modify(member, m, P);
 
       if (n > 0) {
-        const value_type one(1), zero(0);
+        const value_type one(1), minus_one(-1), zero(0);
 
-        UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
-        uptr += m * m;
-
+        UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
         UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
         const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
 
@@ -82,8 +79,8 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
                                  static_cast<ordinal_type>(ABR.extent(1)) != n_m,
                              "ABR dimension does not match to supernodes");
 
-        UnmanagedViewType<value_type_matrix> ATR(uptr, m, n_m);
-        Gemm<Trans::NoTranspose, Trans::NoTranspose, GemmAlgoType>::invoke(member, -one, ABL, ATR, zero, ABR);
+        UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m);
+        Gemm<Trans::NoTranspose, Trans::NoTranspose, GemmAlgoType>::invoke(member, minus_one, ABL, ATR, zero, ABR);
       }
     }
     return 0;
@@ -98,8 +95,7 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
     using value_type = typename supernode_info_type::value_type;
     using value_type_matrix = typename supernode_info_type::value_type_matrix;
     using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
-
-    using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
+    using range_type = typename supernode_info_type::range_type;
 
     const auto &s = info.supernodes(sid);
 
@@ -111,12 +107,11 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
 
     // m and n are available, then factorize the supernode block
     if (m > 0) {
-      const value_type one(1), zero(0);
+      const value_type minus_one(-1), zero(0);
       const ordinal_type offm = s.row_begin;
-      value_type *uptr = s.u_buf;
-      UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
+      UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
       const auto xT = Kokkos::subview(info.x, range_type(offm, offm + m), Kokkos::ALL());
-      const auto fpiv = ordinal_type_array(P.data() + m, m);
+      const ConstUnmanagedViewType<ordinal_type_array> fpiv(P.data() + m, m);
 
       ApplyPivots<PivotMode::Flame, Side::Left, Direct::Forward, Algo::Internal> /// row inter-change
           ::invoke(member, fpiv, xT);
@@ -126,7 +121,7 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
       if (n_m > 0) {
         UnmanagedViewType<value_type_matrix> AL(s.l_buf, n, m);
         const auto ABL = Kokkos::subview(AL, range_type(m, n), Kokkos::ALL());
-        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, -one, ABL, xT, zero, xB);
+        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ABL, xT, zero, xB);
       }
     }
     return 0;
@@ -134,15 +129,13 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
 
   template <typename MemberType, typename SupernodeInfoType>
   KOKKOS_INLINE_FUNCTION static int solve_upper(MemberType &member, const SupernodeInfoType &info,
-                                                const typename SupernodeInfoType::ordinal_type_array &P,
                                                 const typename SupernodeInfoType::value_type_matrix &xB,
                                                 const ordinal_type sid) {
     using supernode_info_type = SupernodeInfoType;
 
     using value_type = typename supernode_info_type::value_type;
     using value_type_matrix = typename supernode_info_type::value_type_matrix;
-
-    using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
+    using range_type = typename supernode_info_type::range_type;
 
     using TrsvAlgoType = typename TrsvAlgorithm::type;
     using GemvAlgoType = typename GemvAlgorithm::type;
@@ -151,21 +144,19 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
     const auto &s = info.supernodes(sid);
 
     // panel is divided into diagonal and interface block
-    const ordinal_type m = s.m, n = s.n, n_m = s.n - s.m; //, nrhs = info.x.extent(1);
+    const ordinal_type m = s.m, n_m = s.n - s.m;
 
     // m and n are available, then factorize the supernode block
     if (m > 0) {
-      const value_type one(1);
-      value_type *uptr = s.u_buf;
-      const UnmanagedViewType<value_type_matrix> ATL(uptr, m, m);
-      uptr += m * m;
+      const value_type minus_one(-1), one(1);
+      const UnmanagedViewType<value_type_matrix> ATL(s.u_buf, m, m);
 
       const ordinal_type offm = s.row_begin;
       const auto xT = Kokkos::subview(info.x, range_type(offm, offm + m), Kokkos::ALL());
 
       if (n_m > 0) {
-        const UnmanagedViewType<value_type_matrix> AR(uptr, m, n); // ptr += m*n;
-        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, -one, AR, xB, one, xT);
+        const UnmanagedViewType<value_type_matrix> ATR(s.u_buf + ATL.span(), m, n_m); // ptr += m*n;
+        Gemv<Trans::NoTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, xB, one, xT);
       }
       Trsv<Uplo::Upper, Trans::NoTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, xT);
     }
@@ -232,7 +223,7 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
     {
       const ordinal_type m = s.m;
       const ordinal_type rbeg = s.row_begin;
-      UnmanagedViewType<ordinal_type_array> ipiv(piv + rbeg * 4, 4 * m);
+      UnmanagedViewType<ordinal_type_array> P(piv + rbeg * 4, 4 * m);
 
       const ordinal_type n = s.n - s.m;
       const ordinal_type nrhs = info.x.extent(1);
@@ -242,7 +233,7 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
 
       UnmanagedViewType<value_type_matrix> xB((value_type *)buf, n, nrhs);
 
-      LU_Supernodes<Algo::Workflow::Serial>::solve_lower(member, info, ipiv, xB, sid);
+      LU_Supernodes<Algo::Workflow::Serial>::solve_lower(member, info, P, xB, sid);
 
       CholSupernodes<Algo::Workflow::Serial>::update_solve_lower(member, info, xB, sid);
     }
@@ -258,14 +249,9 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
     using supernode_info_type = SupernodeInfoType;
     using value_type = typename supernode_info_type::value_type;
     using value_type_matrix = typename supernode_info_type::value_type_matrix;
-    using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
 
     const auto &s = info.supernodes(sid);
     {
-      const ordinal_type m = s.m;
-      const ordinal_type rbeg = s.row_begin;
-      UnmanagedViewType<ordinal_type_array> ipiv(piv + rbeg * 4, 4 * m);
-
       const ordinal_type n = s.n - s.m;
       const ordinal_type nrhs = info.x.extent(1);
       const ordinal_type bufsize_required = n * nrhs * sizeof(value_type);
@@ -276,7 +262,7 @@ template <> struct LU_Supernodes<Algo::Workflow::Serial> {
 
       CholSupernodes<Algo::Workflow::Serial>::update_solve_upper(member, info, xB, sid);
 
-      LU_Supernodes<Algo::Workflow::Serial>::solve_upper(member, info, ipiv, xB, sid);
+      LU_Supernodes<Algo::Workflow::Serial>::solve_upper(member, info, xB, sid);
     }
 
     if (final) {
