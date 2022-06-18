@@ -235,7 +235,7 @@ namespace
     const int basisCardinality = basis1.getCardinality();
     
     // get quadrature points for integrating up to 2*polyOrder
-    const int quadratureDegree = 2*basis1.getDegree() + 2;
+    const int quadratureDegree = 2*basis1.getDegree();
     using PointScalar = typename Basis1::PointValueType;
     using WeightScalar = typename Basis1::OutputValueType;
     using Scalar = WeightScalar;
@@ -281,22 +281,53 @@ namespace
     // integrate basis1 against basis2 to compute the RHS b for the basis conversion system
     ViewType<Scalar,DeviceType> basis1_vs_basis2 = getView<Scalar, DeviceType>("basis 1 vs basis 2", basisCardinality, basisCardinality);
     
-    Kokkos::parallel_for(basisCardinality, KOKKOS_LAMBDA(const int basisOrdinal1)
+    if (basis1Values.rank() == 2)
     {
-      // we could use hierarchical parallelism to speed this up
-      for (int basisOrdinal2=0; basisOrdinal2<basisCardinality; basisOrdinal2++)
+      Kokkos::parallel_for(basisCardinality, KOKKOS_LAMBDA(const int basisOrdinal1)
       {
-        Scalar integral1v1 = 0.0, integral1v2 = 0.0;
-        for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
+        // we could use hierarchical parallelism to speed this up
+        for (int basisOrdinal2=0; basisOrdinal2<basisCardinality; basisOrdinal2++)
         {
-          const auto quadratureWeight = weights(pointOrdinal);
-          integral1v1 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal) * basis1Values(basisOrdinal2,pointOrdinal);
-          integral1v2 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal) * basis2Values(basisOrdinal2,pointOrdinal);
+          Scalar integral1v1 = 0.0, integral1v2 = 0.0;
+          for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
+          {
+            const auto quadratureWeight = weights(pointOrdinal);
+            integral1v1 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal) * basis1Values(basisOrdinal2,pointOrdinal);
+            integral1v2 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal) * basis2Values(basisOrdinal2,pointOrdinal);
+          }
+          basis1_vs_basis1(basisOrdinal1,basisOrdinal2) = integral1v1;
+          basis1_vs_basis2(basisOrdinal1,basisOrdinal2) = integral1v2;
         }
-        basis1_vs_basis1(basisOrdinal1,basisOrdinal2) = integral1v1;
-        basis1_vs_basis2(basisOrdinal1,basisOrdinal2) = integral1v2;
-      }
-    });
+      });
+    }
+    else if (basis1Values.rank() == 3)
+    {
+      int spaceDim = basis1Values.extent_int(2);
+      Kokkos::parallel_for(basisCardinality, KOKKOS_LAMBDA(const int basisOrdinal1)
+      {
+        // we could use hierarchical parallelism to speed this up
+        for (int basisOrdinal2=0; basisOrdinal2<basisCardinality; basisOrdinal2++)
+        {
+          Scalar integral1v1 = 0.0, integral1v2 = 0.0;
+          for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
+          {
+            const auto quadratureWeight = weights(pointOrdinal);
+            for (int d=0; d<spaceDim; d++)
+            {
+              integral1v1 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal,d) * basis1Values(basisOrdinal2,pointOrdinal,d);
+              integral1v2 += quadratureWeight * basis1Values(basisOrdinal1,pointOrdinal,d) * basis2Values(basisOrdinal2,pointOrdinal,d);
+            }
+          }
+          basis1_vs_basis1(basisOrdinal1,basisOrdinal2) = integral1v1;
+          basis1_vs_basis2(basisOrdinal1,basisOrdinal2) = integral1v2;
+        }
+      });
+    }
+    else
+    {
+      std::cout << "ERROR: basis1Values has unsupported rank.\n";
+      return -1;
+    }
     
     // each column in the following matrix will represent the corresponding member of basis 2 in terms of members of basis 1
     ViewType<Scalar,DeviceType> basis1Coefficients = getView<Scalar, DeviceType>("basis 1 vs basis 2", basisCardinality, basisCardinality);
