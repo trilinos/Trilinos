@@ -326,7 +326,8 @@ namespace
     else
     {
       std::cout << "ERROR: basis1Values has unsupported rank.\n";
-      return -1;
+      success = false;
+      return;
     }
     
     // each column in the following matrix will represent the corresponding member of basis 2 in terms of members of basis 1
