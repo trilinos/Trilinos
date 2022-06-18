@@ -56,23 +56,22 @@
 #include "Adelus_mytime.hpp"
 #include "Kokkos_Core.hpp"
 
-//extern int me;	             // processor id information
-//extern int nprocs_row;         // num of procs to which a row is assigned
-//extern int nprocs_col;         // num of procs to which a col is assigned
-//extern int nrows_matrix;       // number of rows in the matrix
-//extern int ncols_matrix;       // number of cols in the matrix
-//extern int my_rows;            // num of rows I own
-//extern int my_cols;            // num of cols I own
-//extern int myrow;
-//extern int mycol;
-//extern MPI_Comm col_comm;
-
 namespace Adelus {
 
   template<class HandleType, class PViewType>
   inline 
   void exchange_pivots(HandleType& ahandle, PViewType& lpiv_view, PViewType& permute) {
-  
+
+    MPI_Comm comm     = ahandle.get_comm();
+    MPI_Comm row_comm = ahandle.get_row_comm();
+    int me            = ahandle.get_myrank();
+    int myrow         = ahandle.get_myrow();
+    int mycol         = ahandle.get_mycol();
+    int nprocs_row    = ahandle.get_nprocs_row();
+    int nprocs_col    = ahandle.get_nprocs_col();
+    int nrows_matrix  = ahandle.get_nrows_matrix();
+    int my_rows       = ahandle.get_my_rows();
+
     MPI_Status msgstatus;
     int rank_row,k_row,pivot_col;
 
@@ -84,15 +83,15 @@ namespace Adelus {
         rank_row = k_row*nprocs_row;
         if (me == pivot_col) {
           int j=k/nprocs_row;
-          MPI_Send(lpiv_view.data()+j,1,MPI_INT,rank_row,0,ahandle.get_comm());
+          MPI_Send(lpiv_view.data()+j,1,MPI_INT,rank_row,0,comm);
         }
         if (me == rank_row) {
           int i=k/nprocs_col;
-          MPI_Recv(permute.data()+i,1,MPI_INT,pivot_col,0,ahandle.get_comm(),&msgstatus);
+          MPI_Recv(permute.data()+i,1,MPI_INT,pivot_col,0,comm,&msgstatus);
         }
       }
     }
-    MPI_Barrier(ahandle.get_comm());
+    MPI_Barrier(comm);
     // Broadcast to the rest of the processors in row_comm
     MPI_Bcast(permute.data(),my_rows,MPI_INT,0,row_comm);
 
@@ -113,13 +112,21 @@ namespace Adelus {
     using ViewVectorHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
   #endif
 #endif
+    MPI_Comm col_comm = ahandle.get_col_comm();
+    int myrow         = ahandle.get_myrow();
+    int mycol         = ahandle.get_mycol();
+    int nprocs_row    = ahandle.get_nprocs_row();
+    int nprocs_col    = ahandle.get_nprocs_col();
+    int nrows_matrix  = ahandle.get_nrows_matrix();
+    int my_cols       = ahandle.get_my_cols();
+
 #ifdef PRINT_STATUS
-  printf("Rank %i -- permute_mat() Begin permute mat with myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", me, myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ncols_matrix, my_rows, my_cols, my_rhs, nrhs, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+  printf("Rank %i -- permute_mat() Begin permute mat with myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", ahandle.get_myrank(), myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ahandle.get_ncols_matrix(), ahandle.get_my_rows(), my_cols, ahandle.get_my_rhs(), ahandle.get_nrhs(), typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
 #endif
 #endif
 
     MPI_Status msgstatus;
-  
+
     int pivot_row, k_row;
 #ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
     value_type tmpr, tmps;
@@ -270,8 +277,10 @@ namespace Adelus {
 #ifdef GET_TIMING
     permutemattime = MPI_Wtime()-t1;
 
-    showtime("Time to exchange pivot information",&exchpivtime);
-    showtime("Time to permute matrix",&permutemattime);    
+    showtime(ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+             "Time to exchange pivot information", &exchpivtime);
+    showtime(ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+             "Time to permute matrix", &permutemattime);    
 #endif
   }// End of function permute_mat
 

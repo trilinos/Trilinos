@@ -53,7 +53,6 @@
 #include <mpi.h>
 #include "Adelus_defines.h"
 #include "Adelus_macros.h"
-#include "Adelus_pcomm.hpp"
 #include "Adelus_mytime.hpp"
 #include "Kokkos_Core.hpp"
 #include "KokkosBlas3_gemm.hpp"
@@ -62,7 +61,7 @@ namespace Adelus {
 
 template<class HandleType, class ZViewType, class RHSViewType>
 inline
-void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, int& my_num_rhs)
+void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 {
   using value_type      = typename ZViewType::value_type ;
   using execution_space = typename ZViewType::device_type::execution_space ;
@@ -75,6 +74,14 @@ void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, int& my_num_rh
     using ViewMatrixHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
   #endif
 #endif
+
+  MPI_Comm row_comm = ahandle.get_row_comm();
+  MPI_Comm col_comm = ahandle.get_col_comm();
+  int myrow         = ahandle.get_myrow();
+  int nprocs_row    = ahandle.get_nprocs_row();
+  int nprocs_col    = ahandle.get_nprocs_col();
+  int nrows_matrix  = ahandle.get_nrows_matrix();
+  int my_rows       = ahandle.get_my_rows();
 
   int k_row;       // torus-wrap row corresponding to kth global row
   int k_col;       // torus-wrap column corresponding to kth global col
@@ -91,7 +98,7 @@ void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, int& my_num_rh
 #endif
 
 #ifdef PRINT_STATUS
-  printf("Rank %i -- forward() Begin forward solve with myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, my_num_rhs %d, value_type %s, execution_space %s, memory_space %s\n", me, myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ncols_matrix, my_rows, my_cols, my_rhs, nrhs, my_num_rhs, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+  printf("Rank %i -- forward() Begin forward solve with myrow %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", ahandle.get_myrank(), myrow, nprocs_row, nprocs_col, nrows_matrix, ahandle.get_ncols_matrix(), my_rows, ahandle.get_my_cols(), ahandle.get_my_rhs(), ahandle.get_nrhs(), typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
 #endif
 
 #ifdef GET_TIMING
@@ -123,7 +130,7 @@ void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, int& my_num_rh
     MPI_Bcast(reinterpret_cast<char *>(piv_col.data()), count_row*sizeof(ADELUS_DATA_TYPE), MPI_CHAR, k_col, row_comm);
 #endif
 
-    if (my_num_rhs > 0) {
+    if (ahandle.get_my_rhs() > 0) {
       //ck = RHS(k/nprocs_col,0);
       //MPI_Bcast((char *)(&ck),sizeof(ADELUS_DATA_TYPE),MPI_CHAR,k_row,col_comm);
       //count_row=0;
@@ -157,7 +164,8 @@ void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, int& my_num_rh
 
 #ifdef GET_TIMING
   fwdsolvetime = MPI_Wtime() - t1;
-  showtime("Total time in forward solve",&fwdsolvetime);
+  showtime(ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+           "Total time in forward solve", &fwdsolvetime);
 #endif
 }
 

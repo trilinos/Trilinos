@@ -49,31 +49,6 @@
 
 
 namespace Adelus {
-	
-int   me;               // processor id information
-
-int   nprocs_cube;		// num of procs in the allocated cube
-int   nprocs_row;		// num of procs to which a row is assigned
-int   nprocs_col;		// num of procs to which a col is assigned
-int   max_procs;		// max num of procs in any dimension
-
-int   nrows_matrix;		// number of rows in the matrix
-int   ncols_matrix;		// number of cols in the matrix
-
-int   my_first_row;		// proc position in a row
-int   my_first_col;		// proc position in a col
-
-int   my_rows;			// num of rows I own
-int   my_cols;			// num of cols I own
-
-int   nrhs;             // number of right hand sides in the matrix
-int   my_rhs;           // number of right hand sides that I own
-
-int   blksz;			// block size for BLAS 3 operations
-
-int  myrow,mycol;
-
-MPI_Comm row_comm,col_comm;
 
 template <class ScalarType,
           class ExecutionSpace,
@@ -85,72 +60,71 @@ class AdelusHandle {
   using memory_space    = MemorySpace;
 
  private:
-  int myrank;         // process id information
+  int myrank;        // process id information
 
-  /*int nprocs_cube;    // num of procs in the allocated cube
-  int nprocs_row;     // num of procs to which a row is assigned
-  int nprocs_col;     // num of procs to which a col is assigned
-  //int   max_procs;  // max num of procs in any dimension
+  int nprocs_cube;   // num of procs in the allocated cube
+  int nprocs_row;    // num of procs to which a row is assigned
+  int nprocs_col;    // num of procs to which a col is assigned
 
-  int nrows_matrix;   // number of rows in the matrix
-  int ncols_matrix;   // number of cols in the matrix
+  int nrows_matrix;  // number of rows in the matrix
+  int ncols_matrix;  // number of cols in the matrix
 
-  int my_first_row;   // proc position in a row
-  int my_first_col;   // proc position in a col
+  int my_first_row;  // proc position in a row
+  int my_first_col;  // proc position in a col
   
-  int my_rows;        // num of rows I own
-  int my_cols;        // num of cols I own
+  int my_rows;       // num of rows I own
+  int my_cols;       // num of cols I own
   
-  int nrhs;           // number of right hand sides in the matrix
-  int my_rhs;         // number of right hand sides that I own
+  int nrhs;          // number of right hand sides in the matrix
+  int my_rhs;        // number of right hand sides that I own
   
-  int blksz;          // block size for BLAS 3 operations
-  
-  int myrow;          // process id in the row_comm 
-  int mycol;          // process id in the col_comm
-  
-  MPI_Comm row_comm;
-  MPI_Comm col_comm;*/
-  MPI_Comm comm;
+  int blksz;         // block size for matrix update (matrix-matrix multiply)
+                     // (e.g. blksz = 128 for GPU, or blksz = 96 for CPU)
+
+  int myrow;         // process id in the row_comm 
+  int mycol;         // process id in the col_comm
+
+  MPI_Comm row_comm; // row communicator that I belong to
+  MPI_Comm col_comm; // column communicator that I belong to
+  MPI_Comm comm;     // global communicator that I belong to
 
  public:
   AdelusHandle( MPI_Comm comm_,
                 const int matrix_size_,
                 const int num_procsr_,
-                const int num_rhs_ )
-      : comm(comm_)/*,
+                const int num_rhs_,
+                const int blksz_ = 128 )
+      : comm(comm_),
         nrows_matrix(matrix_size_),
         ncols_matrix(matrix_size_),
         nprocs_row(num_procsr_),
-        nrhs(num_rhs_)*/ {
-    //// Determine who I am (me ) and the total number of nodes (nprocs_cube)
-    //MPI_Comm_size(comm, &nprocs_cube);
+        nrhs(num_rhs_),
+        blksz(blksz_) {
+    // Determine who I am (myrank) and the total number of processes (nprocs_cube)
+    MPI_Comm_size(comm, &nprocs_cube);
     MPI_Comm_rank(comm, &myrank);
-    /*nprocs_col = nprocs_cube/nprocs_row;
+    nprocs_col = nprocs_cube/nprocs_row;
 
     // Set up communicators for rows and columns
-    myrow = mesh_row(myrank);
-    mycol = mesh_col(myrank);
-.
-    MPI_Comm_split(comm, myrow,mycol, &row_comm);
+    mycol = myrank%nprocs_row;
+    myrow = myrank/nprocs_row;
+
+    MPI_Comm_split(comm, myrow, mycol, &row_comm);
 
     MPI_Comm_split(comm, mycol, myrow, &col_comm);
 
     // Distribution for the matrix on myrank
-    my_first_col = mesh_col(myrank);
-    my_first_row = mesh_row(myrank);
+    my_first_col = myrank % nprocs_row;
+    my_first_row = myrank / nprocs_row;
 
     my_rows = nrows_matrix / nprocs_col;
     if (my_first_row < nrows_matrix % nprocs_col) my_rows++;
     my_cols = ncols_matrix / nprocs_row;
     if (my_first_col < ncols_matrix % nprocs_row) my_cols++;
 
-    // blksz parameter must be set
-    blksz = DEFBLKSZ;
-
     // Distribution for the rhs on myrank
     my_rhs = nrhs / nprocs_row;
-    if (my_first_col < nrhs % nprocs_row) my_rhs++;*/
+    if (my_first_col < nrhs % nprocs_row) my_rhs++;
   }
 
   ~AdelusHandle(){}
@@ -158,16 +132,16 @@ class AdelusHandle {
   KOKKOS_INLINE_FUNCTION
   MPI_Comm get_comm() const { return comm; }
 
-  /*KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   MPI_Comm get_row_comm() const { return row_comm; }
 
   KOKKOS_INLINE_FUNCTION
-  MPI_Comm get_col_comm() const { return col_comm; }*/
+  MPI_Comm get_col_comm() const { return col_comm; }
 
   KOKKOS_INLINE_FUNCTION
   int get_myrank() const { return myrank; }
 
-  /*KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   int get_myrow() const { return myrow; }
 
   KOKKOS_INLINE_FUNCTION
@@ -207,7 +181,7 @@ class AdelusHandle {
   int get_my_rhs() const { return my_rhs; }
 
   KOKKOS_INLINE_FUNCTION
-  int get_blksz() const { return blksz; }*/
+  int get_blksz() const { return blksz; }
 };
 
 }//namespace Adelus

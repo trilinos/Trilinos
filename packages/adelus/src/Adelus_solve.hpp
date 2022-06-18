@@ -53,31 +53,11 @@
 #include <mpi.h>
 #include "Adelus_defines.h"
 #include "Adelus_macros.h"
-#include "Adelus_pcomm.hpp"
 #include "Adelus_mytime.hpp"
 #include "Kokkos_Core.hpp"
 #include "KokkosBlas3_gemm.hpp"
 
 #define IBM_MPI_WRKAROUND2
-
-extern int me;
-
-extern int ncols_matrix;  // number of cols in the matrix
-
-extern int nprocs_col;    // num of procs to which a col is assigned
-extern int nprocs_row;    // num of procs to which a row is assigned
-
-extern int my_first_col;  // proc position in a col
-extern int my_first_row;  // proc position in a row
-
-extern int my_rows;       // num of rows I own
-extern int my_cols;       // num of cols I own
-
-extern int nrhs;          // number of right hand sides
-extern int my_rhs;        // number of right hand sides that I own
-
-extern MPI_Comm col_comm;
-
 
 #define SOSTATUSINT 32768
 
@@ -122,6 +102,19 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
   using View2DHostPinnType = Kokkos::View<value_type**, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
 #endif
 #endif
+
+  MPI_Comm comm     = ahandle.get_comm();
+  MPI_Comm col_comm = ahandle.get_col_comm();
+  int me            = ahandle.get_myrank();
+  int nprocs_row    = ahandle.get_nprocs_row();
+  int nprocs_col    = ahandle.get_nprocs_col();
+  int ncols_matrix  = ahandle.get_ncols_matrix();
+  int my_rows       = ahandle.get_my_rows();
+  int my_cols       = ahandle.get_my_cols();
+  int my_first_row  = ahandle.get_my_first_row();
+  int my_first_col  = ahandle.get_my_first_col();
+  int nrhs          = ahandle.get_nrhs();
+  int my_rhs        = ahandle.get_my_rhs();
 
   int  j;         // loop counters
   int end_row;    // row num to end column operations
@@ -324,9 +317,9 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
         type[0]  = SOROWTYPE+j;
 
 #if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-        MPI_Irecv(reinterpret_cast<char *>(h_row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], ahandle.get_comm(), &msgrequest);
+        MPI_Irecv(reinterpret_cast<char *>(h_row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], comm, &msgrequest);
 #else
-        MPI_Irecv(reinterpret_cast<char *>(  row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], ahandle.get_comm(), &msgrequest);
+        MPI_Irecv(reinterpret_cast<char *>(  row2.data()), bytes[0], MPI_CHAR, MPI_ANY_SOURCE, type[0], comm, &msgrequest);
 #endif
 
         n_rhs_this = bytes[0]/sizeof(ADELUS_DATA_TYPE)/my_rows;
@@ -341,9 +334,9 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
         type[1]  = SOROWTYPE+j;
 
 #if (defined(ADELUS_HOST_PINNED_MEM_MPI) || defined(IBM_MPI_WRKAROUND2)) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-        MPI_Send(reinterpret_cast<char *>(h_rhs.data()), bytes[1], MPI_CHAR, dest[1], type[1], ahandle.get_comm());
+        MPI_Send(reinterpret_cast<char *>(h_rhs.data()), bytes[1], MPI_CHAR, dest[1], type[1], comm);
 #else //GPU-aware MPI
-        MPI_Send(reinterpret_cast<char *>(RHS.data()), bytes[1], MPI_CHAR, dest[1], type[1], ahandle.get_comm());
+        MPI_Send(reinterpret_cast<char *>(RHS.data()), bytes[1], MPI_CHAR, dest[1], type[1], comm);
 #endif
 
         MPI_Wait(&msgrequest,&msgstatus);
@@ -383,15 +376,15 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
   totalsolvetime = MPI_Wtime() - t2;
 #endif
 #ifdef GET_TIMING
-  showtime("Time to alloc view",&allocviewtime);
-  showtime("Time to eliminate rhs",&eliminaterhstime);
-  showtime("Time to bcast temp row",&bcastrowtime);
-  showtime("Time to update rhs",&updrhstime);
+  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to alloc view", &allocviewtime);
+  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to eliminate rhs",&eliminaterhstime);
+  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to bcast temp row",&bcastrowtime);
+  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to update rhs",&updrhstime);
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-  showtime("Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);   
+  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);   
 #endif
-  showtime("Time to xchg rhs",&xchgrhstime);
-  showtime("Total time in solve",&totalsolvetime);
+  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to xchg rhs",&xchgrhstime);
+  showtime(comm, me, ahandle.get_nprocs_cube(), "Total time in solve",&totalsolvetime);
 #endif
 }
 

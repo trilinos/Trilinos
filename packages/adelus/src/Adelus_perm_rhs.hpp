@@ -56,23 +56,11 @@
 #include "Adelus_mytime.hpp"
 #include "Kokkos_Core.hpp"
 
-//extern int me;                 // processor id information
-//extern int nprocs_row;         // num of procs to which a row is assigned
-//extern int nprocs_col;         // num of procs to which a col is assigned
-//extern int nrows_matrix;       // number of rows in the matrix
-//extern int ncols_matrix;       // number of cols in the matrix
-//extern int my_rows;            // num of rows I own
-//extern int my_cols;            // num of cols I own
-//extern int my_rhs;             // num of right hand side I own
-//extern int myrow;
-//extern int mycol;
-//extern MPI_Comm col_comm;
-
 namespace Adelus {
   
   template<class HandleType, class ZViewType, class PViewType>
   inline
-  void permute_rhs(HandleType& ahandle, ZViewType& RHS, PViewType& permute, int& my_num_rhs) {
+  void permute_rhs(HandleType& ahandle, ZViewType& RHS, PViewType& permute) {
     using value_type      = typename ZViewType::value_type;
     using execution_space = typename ZViewType::device_type::execution_space ;
     using memory_space    = typename ZViewType::device_type::memory_space ;
@@ -84,6 +72,11 @@ namespace Adelus {
     using ViewVectorHostPinnType = Kokkos::View<value_type*, Kokkos::LayoutLeft, Kokkos::Experimental::HIPHostPinnedSpace>;//HIPHostPinnedSpace
   #endif
 #endif
+
+    MPI_Comm col_comm = ahandle.get_col_comm();
+    int myrow         = ahandle.get_myrow();
+    int nprocs_col    = ahandle.get_nprocs_col();
+    int nrows_matrix  = ahandle.get_nrows_matrix();
 
     int pivot_row, k_row;
     ViewVectorType tmpr( "tmpr", RHS.extent(1) );
@@ -113,7 +106,7 @@ namespace Adelus {
     for (int k=0;k<=nrows_matrix-2;k++) {
       k_row=k%nprocs_col;
 
-      if (my_num_rhs > 0) {
+      if (ahandle.get_my_rhs() > 0) {
         if (myrow==k_row) pivot_row = permute(k/nprocs_col);
         MPI_Bcast(&pivot_row,1,MPI_INT,k_row,col_comm);
         int pivot_row_pid = pivot_row%nprocs_col;
@@ -188,7 +181,8 @@ namespace Adelus {
 #ifdef GET_TIMING
     permuterhstime = MPI_Wtime()-t1;
 
-    showtime("Time to permute rhs",&permuterhstime);    
+    showtime(ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+             "Time to permute rhs", &permuterhstime);
 #endif
   }// End of function permute_rhs
 

@@ -179,16 +179,10 @@ int main(int argc, char *argv[])
 
   // Get Info to build the matrix on a processor
 
-  Adelus::GetDistribution( &nprocs_per_row,
-                           &matrix_size,
-                           &numrhs,
-                           &myrows,
-                           &mycols,
-                           &myfirstrow,
-                           &myfirstcol,
-                           &myrhs,
-                           &my_row,
-                           &my_col );
+  Adelus::GetDistribution( MPI_COMM_WORLD,
+                           nprocs_per_row, matrix_size, numrhs,
+                           myrows, mycols, myfirstrow, myfirstcol,
+                           myrhs, my_row, my_col );
 
   //   Define a new communicator
 
@@ -351,7 +345,7 @@ int main(int argc, char *argv[])
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Factor   ****" << std::endl;
 
-  Adelus::Factor (ahandle, A, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &secs);
+  Adelus::Factor (ahandle, A, h_permute, &secs);
 
   if( rank == 0) {
     std::cout << " ----  Factor time  ----   " << secs << "  in secs. " << std::endl;
@@ -366,7 +360,7 @@ int main(int argc, char *argv[])
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Solve (1st)   ****" << std::endl;
 
-  Adelus::Solve (ahandle, A, B, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
+  Adelus::Solve (ahandle, A, B, h_permute, &secs);
 
   if( rank == 0)
     std::cout << " ----  Solution time (1st)  ----   " << secs << "  in secs. " << std::endl;
@@ -378,7 +372,7 @@ int main(int argc, char *argv[])
   if( rank == 0 )
     std::cout << " ****   Beginning Matrix Solve (2nd)   ****" << std::endl;
 
-  Adelus::Solve (ahandle, A, B, h_permute, myrows, mycols, &matrix_size, &nprocs_per_row, &numrhs, &secs);
+  Adelus::Solve (ahandle, A, B, h_permute, &secs);
 
   if( rank == 0)
     std::cout << " ----  Solution time (2nd)  ----   " << secs << "  in secs. " << std::endl;

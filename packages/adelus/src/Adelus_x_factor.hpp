@@ -50,16 +50,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "Adelus_defines.h"
 #include "mpi.h"
-#include "Adelus_vars.hpp"
+#include "Kokkos_Core.hpp"
+#include "Adelus_defines.h"
 #include "Adelus_macros.h"
-#include "Adelus_block.h"
+#include "Adelus_vars.hpp"
+#include "Adelus_mytime.hpp"
 #include "Adelus_factor.hpp"
 #include "Adelus_perm_mat.hpp"
-#include "Adelus_pcomm.hpp"
-#include "Adelus_mytime.hpp"
-#include "Kokkos_Core.hpp"
+
 
 #ifdef ADELUS_HAVE_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
@@ -69,8 +68,7 @@ namespace Adelus {
 
 template<class HandleType, class ZViewType, class PViewType>
 inline
-void lu_(HandleType& ahandle, ZViewType& Z, PViewType& permute,
-         int *matrix_size, int *num_procsr, double *secs)
+void lu_(HandleType& ahandle, ZViewType& Z, PViewType& permute, double *secs)
 {
 #ifdef ADELUS_HAVE_TIME_MONITOR
   using Teuchos::TimeMonitor;
@@ -82,62 +80,33 @@ void lu_(HandleType& ahandle, ZViewType& Z, PViewType& permute,
 #endif
   using memory_space    = typename ZViewType::device_type::memory_space;
 
-  double run_secs;              // time (in secs) during which the prog ran
-  double tsecs;                 // intermediate storage of timing info
-  int totmem;
+  int blksz   = ahandle.get_blksz();
+  int my_rows = ahandle.get_my_rows();
+  int my_cols = ahandle.get_my_cols();
+  int nrhs    = ahandle.get_nrhs();
 
-  // Determine who I am (me ) and the total number of nodes (nprocs_cube)
-  MPI_Comm_size(ahandle.get_comm(),&nprocs_cube);
-  MPI_Comm_rank(ahandle.get_comm(), &me);
-
-  nrows_matrix = *matrix_size;
-  ncols_matrix = *matrix_size;
-  nprocs_row   = *num_procsr;
-
-  totmem=0;  // Initialize the total memory used
-  nprocs_col = nprocs_cube/nprocs_row;
-  max_procs = (nprocs_row < nprocs_col) ? nprocs_col : nprocs_row;
-
-  // Set up communicators for rows and columns
-  myrow = mesh_row(me);
-  mycol = mesh_col(me);
-
-  MPI_Comm_split(ahandle.get_comm(),myrow,mycol,&row_comm);
-
-  MPI_Comm_split(ahandle.get_comm(),mycol,myrow,&col_comm);
-
-  // Distribution for the matrix on me
-  my_first_col = mesh_col(me);
-  my_first_row = mesh_row(me);
-
-  my_rows = nrows_matrix / nprocs_col;
-  if (my_first_row < nrows_matrix % nprocs_col)
-    ++my_rows;
-  my_cols = ncols_matrix / nprocs_row;
-  if (my_first_col < ncols_matrix % nprocs_row)
-    ++my_cols;
-
-  // blksz parameter must be set
-  blksz = DEFBLKSZ;
-
+  double run_secs; // time (in secs) during which the prog ran
+  double tsecs;    // intermediate storage of timing info
+  int totmem = 0;  // Initialize the total memory used
+  
 #ifdef PRINT_STATUS
-  printf("Rank %i -- factor_() Begin LU with blksz %d, myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", me, blksz, myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ncols_matrix, my_rows, my_cols, my_rhs, nrhs, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+  printf("Rank %i -- factor_() Begin LU with blksz %d, myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", ahandle.get_myrank(), blksz, ahandle.get_myrow(), ahandle.get_mycol(), ahandle.get_nprocs_row(), ahandle.get_nprocs_col(), ahandle.get_nrows_matrix(), ahandle.get_ncols_matrix(), my_rows, my_cols, ahandle.get_my_rhs(), nrhs, typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
 #endif
 
   // Allocate arrays for factor
   using ViewType1D = Kokkos::View<value_type*,  Kokkos::LayoutLeft, memory_space>;
   using ViewType2D = Kokkos::View<value_type**, Kokkos::LayoutLeft, memory_space>;
 
-  totmem += (blksz) * (my_rows) * sizeof(ADELUS_DATA_TYPE);             //col1_view
-  totmem += blksz * (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);//row1_view
-  totmem += (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);        //row2_view
-  totmem += (my_cols + blksz + nrhs) * sizeof(ADELUS_DATA_TYPE);        //row3_view
-  totmem += my_cols * sizeof(int);                                      //lpiv_view
+  totmem += (blksz) * (my_rows) * sizeof(ADELUS_DATA_TYPE);          //col1_view
+  totmem += blksz * (my_cols + blksz + 0) * sizeof(ADELUS_DATA_TYPE);//row1_view
+  totmem += (my_cols + blksz + 0) * sizeof(ADELUS_DATA_TYPE);        //row2_view
+  totmem += (my_cols + blksz + 0) * sizeof(ADELUS_DATA_TYPE);        //row3_view
+  totmem += my_cols * sizeof(int);                                   //lpiv_view
   
   ViewType2D  col1_view ( "col1_view", my_rows, blksz );
-  ViewType2D  row1_view ( "row1_view", blksz, my_cols + blksz + nrhs );
-  ViewType1D  row2_view ( "row2_view", my_cols + blksz + nrhs );
-  ViewType1D  row3_view ( "row3_view", my_cols + blksz + nrhs );
+  ViewType2D  row1_view ( "row1_view", blksz, my_cols + blksz + 0 );
+  ViewType1D  row2_view ( "row2_view", my_cols + blksz + 0 );
+  ViewType1D  row3_view ( "row3_view", my_cols + blksz + 0 );
   PViewType   lpiv_view ( "lpiv_view", my_cols );
 
   {
@@ -145,10 +114,8 @@ void lu_(HandleType& ahandle, ZViewType& Z, PViewType& permute,
 
   tsecs = get_seconds(0.0);
 
-  initcomm();
-
 #ifdef PRINT_STATUS
-  printf("OpenMP or Cuda: Rank %i -- factor() starts ...\n", me);
+  printf("OpenMP or Cuda: Rank %i -- factor() starts ...\n", ahandle.get_myrank());
 #endif
 #ifdef ADELUS_HAVE_TIME_MONITOR
   {
@@ -160,7 +127,8 @@ void lu_(HandleType& ahandle, ZViewType& Z, PViewType& permute,
            row1_view,
            row2_view, 
            row3_view, 
-           lpiv_view);
+           lpiv_view,
+           0, 0);
 #ifdef ADELUS_HAVE_TIME_MONITOR
   }
 #endif
@@ -189,7 +157,8 @@ void lu_(HandleType& ahandle, ZViewType& Z, PViewType& permute,
   run_secs = (double) tsecs;
   
   *secs = run_secs;
-  showtime("Total time in Factor (inl. matrix permutation)",&run_secs);
+  showtime( ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+           "Total time in Factor (inl. matrix permutation)", &run_secs );
   }
 }
 
