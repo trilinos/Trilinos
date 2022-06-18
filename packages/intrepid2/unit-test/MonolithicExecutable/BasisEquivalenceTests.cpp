@@ -281,7 +281,10 @@ namespace
     // integrate basis1 against basis2 to compute the RHS b for the basis conversion system
     ViewType<Scalar,DeviceType> basis1_vs_basis2 = getView<Scalar, DeviceType>("basis 1 vs basis 2", basisCardinality, basisCardinality);
     
-    if (basis1Values.rank() == 2)
+    // HDIV and HCURL under OPERATOR_VALUE are vector-valued; "scalarValued" tests for this case.
+    const bool scalarValued = (functionSpace == FUNCTION_SPACE_HGRAD) || (functionSpace == FUNCTION_SPACE_HVOL);
+    
+    if (scalarValued)
     {
       Kokkos::parallel_for(basisCardinality, KOKKOS_LAMBDA(const int basisOrdinal1)
       {
@@ -300,7 +303,7 @@ namespace
         }
       });
     }
-    else if (basis1Values.rank() == 3)
+    else
     {
       int spaceDim = basis1Values.extent_int(2);
       Kokkos::parallel_for(basisCardinality, KOKKOS_LAMBDA(const int basisOrdinal1)
@@ -322,12 +325,6 @@ namespace
           basis1_vs_basis2(basisOrdinal1,basisOrdinal2) = integral1v2;
         }
       });
-    }
-    else
-    {
-      std::cout << "ERROR: basis1Values has unsupported rank.\n";
-      success = false;
-      return;
     }
     
     // each column in the following matrix will represent the corresponding member of basis 2 in terms of members of basis 1
