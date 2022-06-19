@@ -44,6 +44,9 @@
 //@HEADER
 */
 
+#ifndef __ADELUS_MACROS_H__
+#define __ADELUS_MACROS_H__
+
 //#define grey_c(P)     ((P)^((P)>>1))
 
 #define lrow_to_grow(R) ( (mesh_row(me) + nprocs_col*(R))  )
@@ -65,3 +68,5 @@
 #define proc_num(R,C) ((R)*nprocs_row + (C))
 
 //#define mac_send_msg(D,B,S,T)  MPI_Send(B,S,MPI_CHAR,D,T,MPI_COMM_WORLD)
+
+#endif

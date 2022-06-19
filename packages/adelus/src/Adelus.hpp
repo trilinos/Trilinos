@@ -44,6 +44,9 @@
 //@HEADER
 */
 
+#ifndef __ADELUS_HPP__
+#define __ADELUS_HPP__
+
 #pragma once
 
 #include <Kokkos_Core.hpp>
@@ -565,5 +568,6 @@ namespace Adelus {
   }
 #endif
 
-}
+}//namespace Adelus
 
+#endif

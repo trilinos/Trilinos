@@ -106,8 +106,8 @@ class AdelusHandle {
     nprocs_col = nprocs_cube/nprocs_row;
 
     // Set up communicators for rows and columns
-    mycol = myrank%nprocs_row;
-    myrow = myrank/nprocs_row;
+    mycol = myrank % nprocs_row;
+    myrow = myrank / nprocs_row;
 
     MPI_Comm_split(comm, myrow, mycol, &row_comm);
 

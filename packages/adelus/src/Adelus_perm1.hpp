@@ -41,7 +41,7 @@
 //                    Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
-//@HEADER
+//@HEADER]
 */
 
 #ifndef __ADELUS_PERM1_HPP__
@@ -95,7 +95,6 @@ namespace Adelus {
   void perm1_(HandleType& ahandle, ZDView& ZV) {
 
     MPI_Comm comm     = ahandle.get_comm();
-    MPI_Comm col_comm = ahandle.get_col_comm();
     int me            = ahandle.get_myrank();
     int my_rhs_       = ahandle.get_my_rhs();
     int my_rows       = ahandle.get_my_rows();
@@ -287,7 +286,6 @@ namespace Adelus {
   inline
   void perm1_(HandleType& ahandle, ZDView& ZV) {
 
-    MPI_Comm comm     = ahandle.get_comm();
     MPI_Comm col_comm = ahandle.get_col_comm();
     int myrow         = ahandle.get_myrow();   
     int my_rhs_       = ahandle.get_my_rhs();
@@ -404,10 +402,10 @@ namespace Adelus {
 
   #ifdef GET_TIMING
   #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-    showtime(comm, ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+    showtime(ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
              "Time to copy dev mem --> host pinned mem", &copyhostpinnedtime);   
   #endif
-    showtime(comm, ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+    showtime(ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
              "Total time in perm", &totalpermtime);
   #endif
   }

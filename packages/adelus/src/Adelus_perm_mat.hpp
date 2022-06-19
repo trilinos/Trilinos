@@ -118,10 +118,9 @@ namespace Adelus {
     int nprocs_row    = ahandle.get_nprocs_row();
     int nprocs_col    = ahandle.get_nprocs_col();
     int nrows_matrix  = ahandle.get_nrows_matrix();
-    int my_cols       = ahandle.get_my_cols();
 
 #ifdef PRINT_STATUS
-  printf("Rank %i -- permute_mat() Begin permute mat with myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", ahandle.get_myrank(), myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ahandle.get_ncols_matrix(), ahandle.get_my_rows(), my_cols, ahandle.get_my_rhs(), ahandle.get_nrhs(), typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
+  printf("Rank %i -- permute_mat() Begin permute mat with myrow %d, mycol %d, nprocs_row %d, nprocs_col %d, nrows_matrix %d, ncols_matrix %d, my_rows %d, my_cols %d, my_rhs %d, nrhs %d, value_type %s, execution_space %s, memory_space %s\n", ahandle.get_myrank(), myrow, mycol, nprocs_row, nprocs_col, nrows_matrix, ahandle.get_ncols_matrix(), ahandle.get_my_rows(), ahandle.get_my_cols(), ahandle.get_my_rhs(), ahandle.get_nrhs(), typeid(value_type).name(), typeid(execution_space).name(), typeid(memory_space).name());
 #endif
 #endif
 
@@ -154,7 +153,7 @@ namespace Adelus {
 #endif
 
 #ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
-    for (int j=0;j<=my_cols-1;j++) {
+    for (int j=0;j<=ahandle.get_my_cols()-1;j++) {
       int J=j*nprocs_row+mycol; // global column index
       for (int k=J+1;k<=nrows_matrix-1;k++) {
         k_row=k%nprocs_col;
