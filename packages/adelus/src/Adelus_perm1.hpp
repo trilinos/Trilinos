@@ -41,7 +41,7 @@
 //                    Siva Rajamanickam (srajama@sandia.gov)
 //
 // ************************************************************************
-//@HEADER]
+//@HEADER
 */
 
 #ifndef __ADELUS_PERM1_HPP__
