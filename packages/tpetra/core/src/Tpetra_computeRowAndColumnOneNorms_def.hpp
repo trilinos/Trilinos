@@ -131,6 +131,7 @@ computeLocalRowScaledColumnNorms_RowMatrix (EquilibrationInfo<typename Kokkos::A
 {
   using KAT = Kokkos::ArithTraits<SC>;
   using mag_type = typename KAT::mag_type;
+  using KAV = Kokkos::ArithTraits<typename KAT::val_type>;
 
   auto rowNorms_h = Kokkos::create_mirror_view (result.rowNorms);
 
@@ -145,7 +146,7 @@ computeLocalRowScaledColumnNorms_RowMatrix (EquilibrationInfo<typename Kokkos::A
          std::size_t numEnt) {
       const mag_type rowNorm = rowNorms_h[lclRow];
       for (std::size_t k = 0; k < numEnt; ++k) {
-        const mag_type matrixAbsVal = KAT::abs (val[k]);
+        const mag_type matrixAbsVal = KAV::abs (val[k]);
         const LO lclCol = ind[k];
 
         rowScaledColNorms_h[lclCol] += matrixAbsVal / rowNorm;
@@ -164,6 +165,7 @@ computeLocalRowOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, NT>& A)
 {
   using KAT = Kokkos::ArithTraits<SC>;
   using val_type = typename KAT::val_type;
+  using KAV = Kokkos::ArithTraits<val_type>;
   using mag_type = typename KAT::mag_type;
   using KAM = Kokkos::ArithTraits<mag_type>;
   using device_type = typename NT::device_type;
@@ -190,13 +192,13 @@ computeLocalRowOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, NT>& A)
 
       for (std::size_t k = 0; k < numEnt; ++k) {
         const val_type matrixVal = val[k];
-        if (KAT::isInf (matrixVal)) {
+        if (KAV::isInf (matrixVal)) {
           result_h.foundInf = true;
         }
-        if (KAT::isNan (matrixVal)) {
+        if (KAV::isNan (matrixVal)) {
           result_h.foundNan = true;
         }
-        const mag_type matrixAbsVal = KAT::abs (matrixVal);
+        const mag_type matrixAbsVal = KAV::abs (matrixVal);
         rowNorm += matrixAbsVal;
         const LO lclCol = ind[k];
         if (lclCol == lclDiagColInd) {
@@ -206,7 +208,7 @@ computeLocalRowOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, NT>& A)
 
       // This is a local result.  If the matrix has an overlapping
       // row Map, then the global result might differ.
-      if (diagVal == KAT::zero ()) {
+      if (diagVal == KAV::zero ()) {
         result_h.foundZeroDiag = true;
       }
       if (rowNorm == KAM::zero ()) {
@@ -233,6 +235,7 @@ computeLocalRowAndColumnOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, 
 {
   using KAT = Kokkos::ArithTraits<SC>;
   using val_type = typename KAT::val_type;
+  using KAV = Kokkos::ArithTraits<val_type>;
   using mag_type = typename KAT::mag_type;
   using KAM = Kokkos::ArithTraits<mag_type>;
   using device_type = typename NT::device_type;
@@ -259,13 +262,13 @@ computeLocalRowAndColumnOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, 
 
       for (std::size_t k = 0; k < numEnt; ++k) {
         const val_type matrixVal = val[k];
-        if (KAT::isInf (matrixVal)) {
+        if (KAV::isInf (matrixVal)) {
           result_h.foundInf = true;
         }
-        if (KAT::isNan (matrixVal)) {
+        if (KAV::isNan (matrixVal)) {
           result_h.foundNan = true;
         }
-        const mag_type matrixAbsVal = KAT::abs (matrixVal);
+        const mag_type matrixAbsVal = KAV::abs (matrixVal);
         rowNorm += matrixAbsVal;
         const LO lclCol = ind[k];
         if (lclCol == lclDiagColInd) {
@@ -278,7 +281,7 @@ computeLocalRowAndColumnOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, 
 
       // This is a local result.  If the matrix has an overlapping
       // row Map, then the global result might differ.
-      if (diagVal == KAT::zero ()) {
+      if (diagVal == KAV::zero ()) {
         result_h.foundZeroDiag = true;
       }
       if (rowNorm == KAM::zero ()) {
