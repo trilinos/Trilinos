@@ -84,17 +84,20 @@ class AdelusHandle {
   int myrow;         // process id in the row_comm 
   int mycol;         // process id in the col_comm
 
-  MPI_Comm row_comm; // row communicator that I belong to
-  MPI_Comm col_comm; // column communicator that I belong to
-  MPI_Comm comm;     // global communicator that I belong to
+  MPI_Comm row_comm; // row sub-communicator that I belong to
+  MPI_Comm col_comm; // column sub-communicator that I belong to
+  MPI_Comm comm;     // communicator that I belong to
+  int comm_id;       // communicator id
 
  public:
-  AdelusHandle( MPI_Comm comm_,
+  AdelusHandle( const int comm_id_,
+                MPI_Comm comm_,
                 const int matrix_size_,
                 const int num_procsr_,
                 const int num_rhs_,
                 const int blksz_ = 128 )
-      : comm(comm_),
+      : comm_id(comm_id_),
+        comm(comm_),
         nrows_matrix(matrix_size_),
         ncols_matrix(matrix_size_),
         nprocs_row(num_procsr_),
@@ -128,6 +131,9 @@ class AdelusHandle {
   }
 
   ~AdelusHandle(){}
+
+  KOKKOS_INLINE_FUNCTION
+  int get_comm_id() const { return comm_id; }
 
   KOKKOS_INLINE_FUNCTION
   MPI_Comm get_comm() const { return comm; }

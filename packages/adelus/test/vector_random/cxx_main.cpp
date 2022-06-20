@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
 
   // Create handle
   Adelus::AdelusHandle<typename ViewMatrixType::value_type, execution_space, memory_space> 
-    ahandle(MPI_COMM_WORLD, matrix_size, nprocs_per_row, numrhs );
+    ahandle(0, MPI_COMM_WORLD, matrix_size, nprocs_per_row, numrhs );
 
   // Now Solve the Problem
 

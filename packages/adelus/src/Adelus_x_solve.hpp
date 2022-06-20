@@ -162,7 +162,7 @@ void solve_(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, PViewType& perm
     run_secs = (double) tsecs;
   
     *secs = run_secs;
-    showtime( ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+    showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
               "Total time in Solve", &run_secs );
   }
 }

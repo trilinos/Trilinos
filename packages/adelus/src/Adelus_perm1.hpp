@@ -266,7 +266,7 @@ namespace Adelus {
     totalpermtime = MPI_Wtime() - t2;
   #endif
   #ifdef GET_TIMING
-    showtime(comm, me, ahandle.get_nprocs_cube(), "Total time in perm", &totalpermtime);
+    showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Total time in perm", &totalpermtime);
   #endif
   }
 
@@ -402,10 +402,10 @@ namespace Adelus {
 
   #ifdef GET_TIMING
   #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-    showtime(ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+    showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
              "Time to copy dev mem --> host pinned mem", &copyhostpinnedtime);   
   #endif
-    showtime(ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+    showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
              "Total time in perm", &totalpermtime);
   #endif
   }

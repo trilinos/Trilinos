@@ -376,15 +376,15 @@ void back_solve6(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
   totalsolvetime = MPI_Wtime() - t2;
 #endif
 #ifdef GET_TIMING
-  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to alloc view", &allocviewtime);
-  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to eliminate rhs",&eliminaterhstime);
-  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to bcast temp row",&bcastrowtime);
-  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to update rhs",&updrhstime);
+  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to alloc view", &allocviewtime);
+  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to eliminate rhs",&eliminaterhstime);
+  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to bcast temp row",&bcastrowtime);
+  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to update rhs",&updrhstime);
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);   
+  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to copy host pinned mem <--> dev mem",&copyhostpinnedtime);   
 #endif
-  showtime(comm, me, ahandle.get_nprocs_cube(), "Time to xchg rhs",&xchgrhstime);
-  showtime(comm, me, ahandle.get_nprocs_cube(), "Total time in solve",&totalsolvetime);
+  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Time to xchg rhs",&xchgrhstime);
+  showtime(ahandle.get_comm_id(), comm, me, ahandle.get_nprocs_cube(), "Total time in solve",&totalsolvetime);
 #endif
 }
 

@@ -181,7 +181,7 @@ namespace Adelus {
 #ifdef GET_TIMING
     permuterhstime = MPI_Wtime()-t1;
 
-    showtime(ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+    showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
              "Time to permute rhs", &permuterhstime);
 #endif
   }// End of function permute_rhs

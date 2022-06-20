@@ -164,7 +164,7 @@ void forward(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS)
 
 #ifdef GET_TIMING
   fwdsolvetime = MPI_Wtime() - t1;
-  showtime(ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
+  showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
            "Total time in forward solve", &fwdsolvetime);
 #endif
 }

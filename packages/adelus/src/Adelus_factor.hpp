@@ -934,57 +934,57 @@ void factor(HandleType& ahandle,           // handle containg metadata
   copytime     = pivotswaptime+copycoltime+copyrowtime+copyrow1time+copypivrowtime+copypivrow1time;
   dgemmtime    = updatetime+colupdtime+rowupdtime+scaltime;
 #ifdef ADELUS_SHOW_TIMING_DETAILS
-  showtime(comm,me,numprocs,"Time to do iamax",&iamaxtime);
-  showtime(comm,me,numprocs,"Time to get local pivot",&getlocalpivtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do iamax",&iamaxtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to get local pivot",&getlocalpivtime);
 #endif
-  showtime(comm,me,numprocs,"Total finding local pivot time",&localpivtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total finding local pivot time",&localpivtime);
   double tmp = 100*localpivtime/totalfactortime;
-  showtime(comm,me,numprocs,"Percent finding local pivot time",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent finding local pivot time",&tmp);
 #ifdef ADELUS_SHOW_TIMING_DETAILS
-  showtime(comm,me,numprocs,"Time to xchgpivot",&xpivmsgtime);
-  showtime(comm,me,numprocs,"Time to do send in bcast pivot",&bcastpivstime);
-  showtime(comm,me,numprocs,"Time to do recv in bcast pivot",&bcastpivrtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to xchgpivot",&xpivmsgtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do send in bcast pivot",&bcastpivstime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do recv in bcast pivot",&bcastpivrtime);
   tmp = bcastpivrtime+bcastpivstime;
-  showtime(comm,me,numprocs,"Time to do bcast pivot",&tmp);
-  showtime(comm,me,numprocs,"Time to do send in bcast cur col",&bcastcolstime);
-  showtime(comm,me,numprocs,"Time to do recv bcast cur col",&bcastcolrtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do bcast pivot",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do send in bcast cur col",&bcastcolstime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do recv bcast cur col",&bcastcolrtime);
   tmp = bcastcolrtime+bcastcolstime;
-  showtime(comm,me,numprocs,"Time to do bcast cur col",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do bcast cur col",&tmp);
   tmp = bcastcolrtime+bcastcolstime+bcastpivrtime+bcastpivstime;
-  showtime(comm,me,numprocs,"Time to do bcast cur col and pivot",&tmp);
-  showtime(comm,me,numprocs,"Time to bcast piv row",&bcastrowtime);
-  showtime(comm,me,numprocs,"Time to send cur row",&sendrowtime);
-  showtime(comm,me,numprocs,"Time to recv cur row",&recvrowtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to do bcast cur col and pivot",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to bcast piv row",&bcastrowtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to send cur row",&sendrowtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to recv cur row",&recvrowtime);
 #endif
-  showtime(comm,me,numprocs,"Total msg passing time",&msgtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total msg passing time",&msgtime);
   tmp = 100*msgtime/totalfactortime;
-  showtime(comm,me,numprocs,"Percent msg passing time",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent msg passing time",&tmp);
 #if defined(ADELUS_HOST_PINNED_MEM_MPI) && (defined(KOKKOS_ENABLE_CUDA) || defined (KOKKOS_ENABLE_HIP))
-  showtime(comm,me,numprocs,"Total copy between host pinned mem and dev mem time",&copyhostpinnedtime); 
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total copy between host pinned mem and dev mem time",&copyhostpinnedtime); 
   tmp = 100*copyhostpinnedtime/totalfactortime;
-  showtime(comm,me,numprocs,"Percent copy between host pinned mem and dev mem time",&tmp);  
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent copy between host pinned mem and dev mem time",&tmp);  
 #endif
 #ifdef ADELUS_SHOW_TIMING_DETAILS
-  showtime(comm,me,numprocs,"Time to swap pivot",&pivotswaptime);
-  showtime(comm,me,numprocs,"Time to copy cur col",&copycoltime);
-  showtime(comm,me,numprocs,"Time to copy cur row to sav row",&copyrowtime);
-  showtime(comm,me,numprocs,"Time to copy piv row to sav piv",&copypivrowtime);
-  showtime(comm,me,numprocs,"Time to copy sav row to cur row",&copyrow1time);
-  showtime(comm,me,numprocs,"Time to copy sav piv  to piv row",&copypivrow1time);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to swap pivot",&pivotswaptime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to copy cur col",&copycoltime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to copy cur row to sav row",&copyrowtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to copy piv row to sav piv",&copypivrowtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to copy sav row to cur row",&copyrow1time);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to copy sav piv  to piv row",&copypivrow1time);
 #endif
-  showtime(comm,me,numprocs,"Total copying time",&copytime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total copying time",&copytime);
   tmp = 100*copytime/totalfactortime;
-  showtime(comm,me,numprocs,"Percent copying time",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent copying time",&tmp);
 #ifdef ADELUS_SHOW_TIMING_DETAILS
-  showtime(comm,me,numprocs,"Time to scale cur col",&scaltime);
-  showtime(comm,me,numprocs,"Time to update cur col",&colupdtime);
-  showtime(comm,me,numprocs,"Time to update piv row",&rowupdtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to scale cur col",&scaltime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to update cur col",&colupdtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to update piv row",&rowupdtime);
 #endif
-  showtime(comm,me,numprocs,"Time to update matrix",&updatetime);
-  showtime(comm,me,numprocs,"Total update time",&dgemmtime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Time to update matrix",&updatetime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total update time",&dgemmtime);
   tmp = 100*dgemmtime/totalfactortime;
-  showtime(comm,me,numprocs,"Percent update time",&tmp);
-  showtime(comm,me,numprocs,"Total time in factor",&totalfactortime);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Percent update time",&tmp);
+  showtime(ahandle.get_comm_id(),comm,me,numprocs,"Total time in factor",&totalfactortime);
 #endif
 }
 
