@@ -458,7 +458,7 @@ struct Algo {
 };
 
 struct ActiveAlgorithm {
-#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA) || defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP)
+#if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA) || defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP_GPU)
   using type = Algo::Internal;
 #else
   using type = Algo::External;

@@ -35,7 +35,7 @@ template <> struct LU<Algo::External> {
   }
 
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP>
-  inline static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P) {
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P) {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     int r_val = 0;
     r_val = invoke(A, P);
@@ -80,7 +80,7 @@ template <> struct LU<Algo::External> {
   }
 
   template <typename MemberType, typename ViewTypeP>
-  inline static int modify(MemberType &member, ordinal_type m, const ViewTypeP &P) {
+  KOKKOS_INLINE_FUNCTION static int modify(MemberType &member, ordinal_type m, const ViewTypeP &P) {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     int r_val = 0;
     r_val = modify(m, P);
