@@ -38,6 +38,7 @@ public:
   /// Constructor
   WrapperModelEvaluatorPairPartIMEX_StaggeredFSA(
     const Teuchos::RCP<const WrapperModelEvaluatorPairPartIMEX_Basic<Scalar> >& forwardModel,
+    const bool is_pseudotransient,
     const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null);
 
   /// Destructor

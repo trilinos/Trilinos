@@ -143,12 +143,12 @@ int Blas<float>::gemv(cublasHandle_t handle, const cublasOperation_t trans, int 
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<float>::gemv(hipblasHandle_t handle, const hipblasOperation_t trans, int m, int n, const float alpha,
+int Blas<float>::gemv(rocblas_handle handle, const rocblas_operation trans, int m, int n, const float alpha,
                       const float *a, int lda, const float *b, int ldb, const float beta,
                       /* */ float *c, int ldc) {
-  const int r_val = hipblasSgemv(handle, trans, m, n, &alpha, a, lda, b, ldb, &beta, c, ldc);
+  const int r_val = rocblas_sgemv(handle, trans, m, n, &alpha, a, lda, b, ldb, &beta, c, ldc);
   return r_val;
 }
 #endif
@@ -168,12 +168,12 @@ int Blas<float>::trsv(cublasHandle_t handle, const cublasFillMode_t uplo, const 
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<float>::trsv(hipblasHandle_t handle, const hipblasFillMode_t uplo, const hipblasOperation_t transa,
-                      const hipblasDiagType_t diag, int m, const float *a, int lda,
+int Blas<float>::trsv(rocblas_handle handle, const rocblas_fill uplo, const rocblas_operation transa,
+                      const rocblas_diagonal diag, int m, const float *a, int lda,
                       /* */ float *b, int ldb) {
-  const int r_val = hipblasStrsv(handle, uplo, transa, diag, m, a, lda, b, ldb);
+  const int r_val = rocblas_strsv(handle, uplo, transa, diag, m, a, lda, b, ldb);
   return r_val;
 }
 #endif
@@ -195,13 +195,13 @@ int Blas<float>::gemm(cublasHandle_t handle, const cublasOperation_t transa, con
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<float>::gemm(hipblasHandle_t handle, const hipblasOperation_t transa, const hipblasOperation_t transb, int m,
+int Blas<float>::gemm(rocblas_handle handle, const rocblas_operation transa, const rocblas_operation transb, int m,
                       int n, int k, const float alpha, const float *a, int lda, const float *b, int ldb,
                       const float beta,
                       /* */ float *c, int ldc) {
-  const int r_val = hipblasSgemm(handle, transa, transb, m, n, k, &alpha, a, lda, b, ldb, &beta, c, ldc);
+  const int r_val = rocblas_sgemm(handle, transa, transb, m, n, k, &alpha, a, lda, b, ldb, &beta, c, ldc);
   return r_val;
 }
 #endif
@@ -222,12 +222,12 @@ int Blas<float>::herk(cublasHandle_t handle, const cublasFillMode_t uplo, const 
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<float>::herk(hipblasHandle_t handle, const hipblasFillMode_t uplo, const hipblasOperation_t trans, int n,
-                      int k, const float alpha, const float *a, int lda, const float beta,
+int Blas<float>::herk(rocblas_handle handle, const rocblas_fill uplo, const rocblas_operation trans, int n, int k,
+                      const float alpha, const float *a, int lda, const float beta,
                       /* */ float *c, int ldc) {
-  const int r_val = hipblasSsyrk(handle, uplo, trans, n, k, &alpha, a, lda, &beta, c, ldc);
+  const int r_val = rocblas_ssyrk(handle, uplo, trans, n, k, &alpha, a, lda, &beta, c, ldc);
   return r_val;
 }
 #endif
@@ -249,13 +249,13 @@ int Blas<float>::trsm(cublasHandle_t handle, const cublasSideMode_t side, const 
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<float>::trsm(hipblasHandle_t handle, const hipblasSideMode_t side, const hipblasFillMode_t uplo,
-                      const hipblasOperation_t transa, const hipblasDiagType_t diag, int m, int n, const float alpha,
+int Blas<float>::trsm(rocblas_handle handle, const rocblas_side side, const rocblas_fill uplo,
+                      const rocblas_operation transa, const rocblas_diagonal diag, int m, int n, const float alpha,
                       const float *a, int lda,
                       /* */ float *b, int ldb) {
-  const int r_val = hipblasStrsm(handle, side, uplo, transa, diag, m, n, &alpha, a, lda, b, ldb);
+  const int r_val = rocblas_strsm(handle, side, uplo, transa, diag, m, n, &alpha, a, lda, b, ldb);
   return r_val;
 }
 #endif
@@ -280,12 +280,12 @@ int Blas<double>::gemv(cublasHandle_t handle, const cublasOperation_t trans, int
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<double>::gemv(hipblasHandle_t handle, const hipblasOperation_t trans, int m, int n, const double alpha,
+int Blas<double>::gemv(rocblas_handle handle, const rocblas_operation trans, int m, int n, const double alpha,
                        const double *a, int lda, const double *b, int ldb, const double beta,
                        /* */ double *c, int ldc) {
-  const int r_val = hipblasDgemv(handle, trans, m, n, &alpha, a, lda, b, ldb, &beta, c, ldc);
+  const int r_val = rocblas_dgemv(handle, trans, m, n, &alpha, a, lda, b, ldb, &beta, c, ldc);
   return r_val;
 }
 #endif
@@ -305,12 +305,12 @@ int Blas<double>::trsv(cublasHandle_t handle, const cublasFillMode_t uplo, const
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<double>::trsv(hipblasHandle_t handle, const hipblasFillMode_t uplo, const hipblasOperation_t transa,
-                       const hipblasDiagType_t diag, int m, const double *a, int lda,
+int Blas<double>::trsv(rocblas_handle handle, const rocblas_fill uplo, const rocblas_operation transa,
+                       const rocblas_diagonal diag, int m, const double *a, int lda,
                        /* */ double *b, int ldb) {
-  const int r_val = hipblasDtrsv(handle, uplo, transa, diag, m, a, lda, b, ldb);
+  const int r_val = rocblas_dtrsv(handle, uplo, transa, diag, m, a, lda, b, ldb);
   return r_val;
 }
 #endif
@@ -332,13 +332,13 @@ int Blas<double>::gemm(cublasHandle_t handle, const cublasOperation_t transa, co
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<double>::gemm(hipblasHandle_t handle, const hipblasOperation_t transa, const hipblasOperation_t transb, int m,
+int Blas<double>::gemm(rocblas_handle handle, const rocblas_operation transa, const rocblas_operation transb, int m,
                        int n, int k, const double alpha, const double *a, int lda, const double *b, int ldb,
                        const double beta,
                        /* */ double *c, int ldc) {
-  const int r_val = hipblasDgemm(handle, transa, transb, m, n, k, &alpha, a, lda, b, ldb, &beta, c, ldc);
+  const int r_val = rocblas_dgemm(handle, transa, transb, m, n, k, &alpha, a, lda, b, ldb, &beta, c, ldc);
   return r_val;
 }
 #endif
@@ -359,12 +359,12 @@ int Blas<double>::herk(cublasHandle_t handle, const cublasFillMode_t uplo, const
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<double>::herk(hipblasHandle_t handle, const hipblasFillMode_t uplo, const hipblasOperation_t trans, int n,
-                       int k, const double alpha, const double *a, int lda, const double beta,
+int Blas<double>::herk(rocblas_handle handle, const rocblas_fill uplo, const rocblas_operation trans, int n, int k,
+                       const double alpha, const double *a, int lda, const double beta,
                        /* */ double *c, int ldc) {
-  const int r_val = hipblasDsyrk(handle, uplo, trans, n, k, &alpha, a, lda, &beta, c, ldc);
+  const int r_val = rocblas_dsyrk(handle, uplo, trans, n, k, &alpha, a, lda, &beta, c, ldc);
   return r_val;
 }
 #endif
@@ -386,13 +386,13 @@ int Blas<double>::trsm(cublasHandle_t handle, const cublasSideMode_t side, const
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<double>::trsm(hipblasHandle_t handle, const hipblasSideMode_t side, const hipblasFillMode_t uplo,
-                       const hipblasOperation_t transa, const hipblasDiagType_t diag, int m, int n, const double alpha,
+int Blas<double>::trsm(rocblas_handle handle, const rocblas_side side, const rocblas_fill uplo,
+                       const rocblas_operation transa, const rocblas_diagonal diag, int m, int n, const double alpha,
                        const double *a, int lda,
                        /* */ double *b, int ldb) {
-  const int r_val = hipblasDtrsm(handle, side, uplo, transa, diag, m, n, &alpha, a, lda, b, ldb);
+  const int r_val = rocblas_dtrsm(handle, side, uplo, transa, diag, m, n, &alpha, a, lda, b, ldb);
   return r_val;
 }
 #endif
@@ -421,15 +421,15 @@ int Blas<Kokkos::complex<float>>::gemv(cublasHandle_t handle, const cublasOperat
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<Kokkos::complex<float>>::gemv(hipblasHandle_t handle, const hipblasOperation_t trans, int m, int n,
+int Blas<Kokkos::complex<float>>::gemv(rocblas_handle handle, const rocblas_operation trans, int m, int n,
                                        const Kokkos::complex<float> alpha, const Kokkos::complex<float> *a, int lda,
                                        const Kokkos::complex<float> *b, int ldb, const Kokkos::complex<float> beta,
                                        /* */ Kokkos::complex<float> *c, int ldc) {
-  const int r_val =
-      hipblasCgemv(handle, trans, m, n, (const hipFloatComplex *)&alpha, (const hipFloatComplex *)a, lda,
-                   (const hipFloatComplex *)b, ldb, (const hipFloatComplex *)&beta, (hipFloatComplex *)c, ldc);
+  const int r_val = rocblas_cgemv(handle, trans, m, n, (const rocblas_float_complex *)&alpha,
+                                  (const rocblas_float_complex *)a, lda, (const rocblas_float_complex *)b, ldb,
+                                  (const rocblas_float_complex *)&beta, (rocblas_float_complex *)c, ldc);
   return r_val;
 }
 #endif
@@ -451,14 +451,13 @@ int Blas<Kokkos::complex<float>>::trsv(cublasHandle_t handle, const cublasFillMo
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<Kokkos::complex<float>>::trsv(hipblasHandle_t handle, const hipblasFillMode_t uplo,
-                                       const hipblasOperation_t transa, const hipblasDiagType_t diag, int m,
-                                       const Kokkos::complex<float> *a, int lda,
+int Blas<Kokkos::complex<float>>::trsv(rocblas_handle handle, const rocblas_fill uplo, const rocblas_operation transa,
+                                       const rocblas_diagonal diag, int m, const Kokkos::complex<float> *a, int lda,
                                        /* */ Kokkos::complex<float> *b, int ldb) {
-  const int r_val =
-      hipblasCtrsv(handle, uplo, transa, diag, m, (const hipFloatComplex *)a, lda, (hipFloatComplex *)b, ldb);
+  const int r_val = rocblas_ctrsv(handle, uplo, transa, diag, m, (const rocblas_float_complex *)a, lda,
+                                  (rocblas_float_complex *)b, ldb);
   return r_val;
 }
 #endif
@@ -484,16 +483,16 @@ int Blas<Kokkos::complex<float>>::gemm(cublasHandle_t handle, const cublasOperat
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<Kokkos::complex<float>>::gemm(hipblasHandle_t handle, const hipblasOperation_t transa,
-                                       const hipblasOperation_t transb, int m, int n, int k,
+int Blas<Kokkos::complex<float>>::gemm(rocblas_handle handle, const rocblas_operation transa,
+                                       const rocblas_operation transb, int m, int n, int k,
                                        const Kokkos::complex<float> alpha, const Kokkos::complex<float> *a, int lda,
                                        const Kokkos::complex<float> *b, int ldb, const Kokkos::complex<float> beta,
                                        /* */ Kokkos::complex<float> *c, int ldc) {
-  const int r_val =
-      hipblasCgemm(handle, transa, transb, m, n, k, (const hipFloatComplex *)&alpha, (const hipFloatComplex *)a, lda,
-                   (const hipFloatComplex *)b, ldb, (const hipFloatComplex *)&beta, (hipFloatComplex *)c, ldc);
+  const int r_val = rocblas_cgemm(handle, transa, transb, m, n, k, (const rocblas_float_complex *)&alpha,
+                                  (const rocblas_float_complex *)a, lda, (const rocblas_float_complex *)b, ldb,
+                                  (const rocblas_float_complex *)&beta, (rocblas_float_complex *)c, ldc);
   return r_val;
 }
 #endif
@@ -518,14 +517,14 @@ int Blas<Kokkos::complex<float>>::herk(cublasHandle_t handle, const cublasFillMo
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<Kokkos::complex<float>>::herk(hipblasHandle_t handle, const hipblasFillMode_t uplo,
-                                       const hipblasOperation_t trans, int n, int k, const Kokkos::complex<float> alpha,
+int Blas<Kokkos::complex<float>>::herk(rocblas_handle handle, const rocblas_fill uplo, const rocblas_operation trans,
+                                       int n, int k, const Kokkos::complex<float> alpha,
                                        const Kokkos::complex<float> *a, int lda, const Kokkos::complex<float> beta,
                                        /* */ Kokkos::complex<float> *c, int ldc) {
-  const int r_val = hipblasCherk(handle, uplo, trans, n, k, (const float *)&alpha, (const hipFloatComplex *)a, lda,
-                                 (const float *)&beta, (hipFloatComplex *)c, ldc);
+  const int r_val = rocblas_cherk(handle, uplo, trans, n, k, (const float *)&alpha, (const rocblas_float_complex *)a,
+                                  lda, (const float *)&beta, (rocblas_float_complex *)c, ldc);
   return r_val;
 }
 #endif
@@ -550,15 +549,14 @@ int Blas<Kokkos::complex<float>>::trsm(cublasHandle_t handle, const cublasSideMo
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<Kokkos::complex<float>>::trsm(hipblasHandle_t handle, const hipblasSideMode_t side,
-                                       const hipblasFillMode_t uplo, const hipblasOperation_t transa,
-                                       const hipblasDiagType_t diag, int m, int n, const Kokkos::complex<float> alpha,
-                                       const Kokkos::complex<float> *a, int lda,
+int Blas<Kokkos::complex<float>>::trsm(rocblas_handle handle, const rocblas_side side, const rocblas_fill uplo,
+                                       const rocblas_operation transa, const rocblas_diagonal diag, int m, int n,
+                                       const Kokkos::complex<float> alpha, const Kokkos::complex<float> *a, int lda,
                                        /* */ Kokkos::complex<float> *b, int ldb) {
-  const int r_val = hipblasCtrsm(handle, side, uplo, transa, diag, m, n, (const hipFloatComplex *)&alpha,
-                                 (const hipFloatComplex *)a, lda, (hipFloatComplex *)b, ldb);
+  const int r_val = rocblas_ctrsm(handle, side, uplo, transa, diag, m, n, (const rocblas_float_complex *)&alpha,
+                                  (const rocblas_float_complex *)a, lda, (rocblas_float_complex *)b, ldb);
   return r_val;
 }
 #endif
@@ -588,15 +586,15 @@ int Blas<Kokkos::complex<double>>::gemv(cublasHandle_t handle, const cublasOpera
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<Kokkos::complex<double>>::gemv(hipblasHandle_t handle, const hipblasOperation_t trans, int m, int n,
+int Blas<Kokkos::complex<double>>::gemv(rocblas_handle handle, const rocblas_operation trans, int m, int n,
                                         const Kokkos::complex<double> alpha, const Kokkos::complex<double> *a, int lda,
                                         const Kokkos::complex<double> *b, int ldb, const Kokkos::complex<double> beta,
                                         /* */ Kokkos::complex<double> *c, int ldc) {
-  const int r_val =
-      hipblasZgemv(handle, trans, m, n, (const hipDoubleComplex *)&alpha, (const hipDoubleComplex *)a, lda,
-                   (const hipDoubleComplex *)b, ldb, (const hipDoubleComplex *)&beta, (hipDoubleComplex *)c, ldc);
+  const int r_val = rocblas_zgemv(handle, trans, m, n, (const rocblas_double_complex *)&alpha,
+                                  (const rocblas_double_complex *)a, lda, (const rocblas_double_complex *)b, ldb,
+                                  (const rocblas_double_complex *)&beta, (rocblas_double_complex *)c, ldc);
   return r_val;
 }
 #endif
@@ -620,14 +618,13 @@ int Blas<Kokkos::complex<double>>::trsv(cublasHandle_t handle, const cublasFillM
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<Kokkos::complex<double>>::trsv(hipblasHandle_t handle, const hipblasFillMode_t uplo,
-                                        const hipblasOperation_t transa, const hipblasDiagType_t diag, int m,
-                                        const Kokkos::complex<double> *a, int lda,
+int Blas<Kokkos::complex<double>>::trsv(rocblas_handle handle, const rocblas_fill uplo, const rocblas_operation transa,
+                                        const rocblas_diagonal diag, int m, const Kokkos::complex<double> *a, int lda,
                                         /* */ Kokkos::complex<double> *b, int ldb) {
-  const int r_val =
-      hipblasZtrsv(handle, uplo, transa, diag, m, (const hipDoubleComplex *)a, lda, (hipDoubleComplex *)b, ldb);
+  const int r_val = rocblas_ztrsv(handle, uplo, transa, diag, m, (const rocblas_double_complex *)a, lda,
+                                  (rocblas_double_complex *)b, ldb);
   return r_val;
 }
 #endif
@@ -654,16 +651,16 @@ int Blas<Kokkos::complex<double>>::gemm(cublasHandle_t handle, const cublasOpera
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<Kokkos::complex<double>>::gemm(hipblasHandle_t handle, const hipblasOperation_t transa,
-                                        const hipblasOperation_t transb, int m, int n, int k,
+int Blas<Kokkos::complex<double>>::gemm(rocblas_handle handle, const rocblas_operation transa,
+                                        const rocblas_operation transb, int m, int n, int k,
                                         const Kokkos::complex<double> alpha, const Kokkos::complex<double> *a, int lda,
                                         const Kokkos::complex<double> *b, int ldb, const Kokkos::complex<double> beta,
                                         /* */ Kokkos::complex<double> *c, int ldc) {
-  const int r_val =
-      hipblasZgemm(handle, transa, transb, m, n, k, (const hipDoubleComplex *)&alpha, (const hipDoubleComplex *)a, lda,
-                   (const hipDoubleComplex *)b, ldb, (const hipDoubleComplex *)&beta, (hipDoubleComplex *)c, ldc);
+  const int r_val = rocblas_zgemm(handle, transa, transb, m, n, k, (const rocblas_double_complex *)&alpha,
+                                  (const rocblas_double_complex *)a, lda, (const rocblas_double_complex *)b, ldb,
+                                  (const rocblas_double_complex *)&beta, (rocblas_double_complex *)c, ldc);
   return r_val;
 }
 #endif
@@ -689,15 +686,14 @@ int Blas<Kokkos::complex<double>>::herk(cublasHandle_t handle, const cublasFillM
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<Kokkos::complex<double>>::herk(hipblasHandle_t handle, const hipblasFillMode_t uplo,
-                                        const hipblasOperation_t trans, int n, int k,
-                                        const Kokkos::complex<double> alpha, const Kokkos::complex<double> *a, int lda,
-                                        const Kokkos::complex<double> beta,
+int Blas<Kokkos::complex<double>>::herk(rocblas_handle handle, const rocblas_fill uplo, const rocblas_operation trans,
+                                        int n, int k, const Kokkos::complex<double> alpha,
+                                        const Kokkos::complex<double> *a, int lda, const Kokkos::complex<double> beta,
                                         /* */ Kokkos::complex<double> *c, int ldc) {
-  const int r_val = hipblasZherk(handle, uplo, trans, n, k, (const double *)&alpha, (const hipDoubleComplex *)a, lda,
-                                 (const double *)&beta, (hipDoubleComplex *)c, ldc);
+  const int r_val = rocblas_zherk(handle, uplo, trans, n, k, (const double *)&alpha, (const rocblas_double_complex *)a,
+                                  lda, (const double *)&beta, (rocblas_double_complex *)c, ldc);
   return r_val;
 }
 #endif
@@ -722,15 +718,14 @@ int Blas<Kokkos::complex<double>>::trsm(cublasHandle_t handle, const cublasSideM
   return r_val;
 }
 #endif
-#if defined(TACHO_ENABLE_HIPBLAS)
+#if defined(TACHO_ENABLE_ROCBLAS)
 template <>
-int Blas<Kokkos::complex<double>>::trsm(hipblasHandle_t handle, const hipblasSideMode_t side,
-                                        const hipblasFillMode_t uplo, const hipblasOperation_t transa,
-                                        const hipblasDiagType_t diag, int m, int n, const Kokkos::complex<double> alpha,
-                                        const Kokkos::complex<double> *a, int lda,
+int Blas<Kokkos::complex<double>>::trsm(rocblas_handle handle, const rocblas_side side, const rocblas_fill uplo,
+                                        const rocblas_operation transa, const rocblas_diagonal diag, int m, int n,
+                                        const Kokkos::complex<double> alpha, const Kokkos::complex<double> *a, int lda,
                                         /* */ Kokkos::complex<double> *b, int ldb) {
-  const int r_val = hipblasZtrsm(handle, side, uplo, transa, diag, m, n, (const hipDoubleComplex *)&alpha,
-                                 (const hipDoubleComplex *)a, lda, (hipDoubleComplex *)b, ldb);
+  const int r_val = rocblas_ztrsm(handle, side, uplo, transa, diag, m, n, (const rocblas_double_complex *)&alpha,
+                                  (const rocblas_double_complex *)a, lda, (rocblas_double_complex *)b, ldb);
   return r_val;
 }
 #endif

@@ -123,12 +123,16 @@ bool
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 advanceTime(const Scalar timeFinal)
 {
+  TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::IntegratorPseudoTransientAdjointSensitivity::advanceTime()", TEMPUS_PTAS_AT);
+
   using Teuchos::RCP;
   using Thyra::VectorBase;
   typedef Thyra::ModelEvaluatorBase MEB;
 
   bool state_status = true;
   if (do_forward_integration_) {
+    TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::IntegratorPseudoTransientAdjointSensitivity::advanceTime::state", TEMPUS_PTAS_AT_FWD);
+
     // Run state integrator and get solution
     stepMode_ = SensitivityStepMode::Forward;
     state_status = state_integrator_->advanceTime(timeFinal);
@@ -136,6 +140,8 @@ advanceTime(const Scalar timeFinal)
 
   bool sens_status = true;
   if (do_adjoint_integration_) {
+    TEMPUS_FUNC_TIME_MONITOR_DIFF("Tempus::IntegratorPseudoTransientAdjointSensitivity::advanceTime::adjoint", TEMPUS_PTAS_AT_ADJ);
+
     // For at least some time-stepping methods, the time of the last time step
     // may not be timeFinal (e.g., it may be greater by at most delta_t).
     // But since the adjoint model requires timeFinal in its formulation, reset
@@ -220,6 +226,22 @@ IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 getStepper() const
 {
   return state_integrator_->getStepper();
+}
+
+template<class Scalar>
+Teuchos::RCP<Stepper<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getStateStepper() const
+{
+  return state_integrator_->getStepper();
+}
+
+template<class Scalar>
+Teuchos::RCP<Stepper<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getSensStepper() const
+{
+  return sens_integrator_->getStepper();
 }
 
 #ifndef TEMPUS_HIDE_DEPRECATED_CODE

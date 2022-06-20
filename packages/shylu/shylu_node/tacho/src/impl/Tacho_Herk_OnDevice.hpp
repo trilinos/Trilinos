@@ -47,6 +47,31 @@ template <typename ArgUplo, typename ArgTrans> struct Herk<ArgUplo, ArgTrans, Al
   }
 #endif
 
+#if defined(KOKKOS_ENABLE_HIP)
+  template <typename ScalarType, typename ViewTypeA, typename ViewTypeC>
+  inline static int rocblas_invoke(rocblas_handle &handle, const ScalarType alpha, const ViewTypeA &A,
+                                   const ScalarType beta, const ViewTypeC &C) {
+    typedef typename ViewTypeA::non_const_value_type value_type;
+    const ordinal_type n = C.extent(0),
+                       k = (std::is_same<ArgTrans, Trans::NoTranspose>::value ? A.extent(1) : A.extent(0));
+
+    int r_val(0);
+    if (n > 0 && k > 0) {
+      if (std::is_same<value_type, float>::value || std::is_same<value_type, double>::value)
+        r_val =
+            Blas<value_type>::herk(handle, ArgUplo::rocblas_param,
+                                   std::is_same<ArgTrans, Trans::ConjTranspose>::value ? Trans::Transpose::rocblas_param
+                                                                                       : ArgTrans::rocblas_param,
+                                   n, k, alpha, A.data(), A.stride_1(), beta, C.data(), C.stride_1());
+      else if (std::is_same<value_type, Kokkos::complex<float>>::value ||
+               std::is_same<value_type, Kokkos::complex<double>>::value)
+        r_val = Blas<value_type>::herk(handle, ArgUplo::rocblas_param, ArgTrans::rocblas_param, n, k, alpha, A.data(),
+                                       A.stride_1(), beta, C.data(), C.stride_1());
+    }
+    return r_val;
+  }
+#endif
+
   template <typename MemberType, typename ScalarType, typename ViewTypeA, typename ViewTypeC>
   inline static int invoke(MemberType &member, const ScalarType alpha, const ViewTypeA &A, const ScalarType beta,
                            const ViewTypeC &C) {
@@ -68,6 +93,10 @@ template <typename ArgUplo, typename ArgTrans> struct Herk<ArgUplo, ArgTrans, Al
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<memory_space, Kokkos::CudaSpace>::value || std::is_same<memory_space, Kokkos::CudaUVMSpace>::value)
       r_val = cublas_invoke(member, alpha, A, beta, C);
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value)
+      r_val = hipblas_invoke(member, alpha, A, beta, C);
 #endif
     return r_val;
   }

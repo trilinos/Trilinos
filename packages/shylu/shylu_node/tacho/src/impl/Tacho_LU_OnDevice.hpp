@@ -45,6 +45,23 @@ template <> struct LU<Algo::OnDevice> {
   }
 #endif
 
+#if defined(KOKKOS_ENABLE_HIP)
+  template <typename ViewTypeA, typename ViewTypeP, typename ViewTypeW>
+  inline static int rocsolver_invoke(rocblas_handle &handle, const ViewTypeA &A, const ViewTypeP &P,
+                                     const ViewTypeW &W) {
+    typedef typename ViewTypeA::non_const_value_type value_type;
+    typedef typename ViewTypeW::non_const_value_type work_value_type;
+    const ordinal_type m = A.extent(0), n = A.extent(1);
+
+    int r_val(0);
+    if (m > 0 && n > 0) {
+      int *devInfo = (int *)W.data();
+      r_val = Lapack<value_type>::getrf(handle, m, n, A.data(), A.stride_1(), P.data(), devInfo);
+    }
+    return r_val;
+  }
+#endif
+
   template <typename MemberType, typename ViewTypeA, typename ViewTypeP, typename ViewTypeW>
   inline static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeP &P, const ViewTypeW &W) {
     typedef typename ViewTypeA::non_const_value_type value_type;
@@ -78,6 +95,14 @@ template <> struct LU<Algo::OnDevice> {
         r_val = cusolver_invoke(member, A, P, W);
     }
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
+      if (W.span() == 0) {
+        r_val = 2;
+      } else
+        r_val = rocsolver_invoke(member, A, P, W);
+    }
+#endif
     return r_val;
   }
 
@@ -85,9 +110,9 @@ template <> struct LU<Algo::OnDevice> {
     return LU<Algo::External>::modify(m, P);
   }
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   template <typename ExecSpaceType, typename ViewTypeP>
-  inline static int cusolver_modify(ExecSpaceType &exec_instance, const ordinal_type m, const ViewTypeP &P) {
+  inline static int device_modify(ExecSpaceType &exec_instance, const ordinal_type m, const ViewTypeP &P) {
     using exec_space = ExecSpaceType;
 
     int r_val(0);
@@ -134,7 +159,12 @@ template <> struct LU<Algo::OnDevice> {
 #if defined(KOKKOS_ENABLE_CUDA)
     if (std::is_same<memory_space, Kokkos::CudaSpace>::value ||
         std::is_same<memory_space, Kokkos::CudaUVMSpace>::value) {
-      r_val = cusolver_modify(member, m, P);
+      r_val = device_modify(member, m, P);
+    }
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
+      r_val = device_modify(member, m, P);
     }
 #endif
     return r_val;

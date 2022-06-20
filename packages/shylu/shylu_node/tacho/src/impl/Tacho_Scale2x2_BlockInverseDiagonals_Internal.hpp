@@ -67,7 +67,7 @@ template <> struct Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> {
   template <typename MemberType, typename ViewTypeP, typename ViewTypeD, typename ViewTypeA>
   KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeP &P, const ViewTypeD &D,
                                            const ViewTypeA &A) {
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
     typedef typename ViewTypeA::non_const_value_type value_type;
     if (A.extent(0) == D.extent(0)) {
       if (A.span() > 0) {

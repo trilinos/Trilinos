@@ -49,6 +49,22 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
   }
 #endif
 
+#if defined(KOKKOS_ENABLE_HIP)
+  template <typename ViewTypeA, typename ViewTypeW>
+  inline static int rocsolver_invoke(rocblas_handle &handle, const ViewTypeA &A, const ViewTypeW &W) {
+    typedef typename ViewTypeA::non_const_value_type value_type;
+    typedef typename ViewTypeW::non_const_value_type work_value_type;
+    const ordinal_type m = A.extent(0);
+
+    int r_val(0);
+    if (m > 0) {
+      int *devInfo = (int *)W.data();
+      r_val = Lapack<value_type>::potrf(handle, ArgUplo::rocblas_param, m, A.data(), A.stride_1(), devInfo);
+    }
+    return r_val;
+  }
+#endif
+
   template <typename MemberType, typename ViewTypeA, typename ViewTypeW>
   inline static int invoke(MemberType &member, const ViewTypeA &A, const ViewTypeW &W) {
     typedef typename ViewTypeA::non_const_value_type value_type;
@@ -79,6 +95,16 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
         r_val = cusolver_invoke(member, A, W);
     }
 #endif
+
+#if defined(KOKKOS_ENABLE_HIP)
+    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
+      if (W.span() == 0) {
+        r_val = 2;
+      } else
+        r_val = rocsolver_invoke(member, A, W);
+    }
+#endif
+
     return r_val;
   }
 };
