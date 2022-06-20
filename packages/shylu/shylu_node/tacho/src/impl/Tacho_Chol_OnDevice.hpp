@@ -53,7 +53,6 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
   template <typename ViewTypeA, typename ViewTypeW>
   inline static int rocsolver_invoke(rocblas_handle &handle, const ViewTypeA &A, const ViewTypeW &W) {
     typedef typename ViewTypeA::non_const_value_type value_type;
-    typedef typename ViewTypeW::non_const_value_type work_value_type;
     const ordinal_type m = A.extent(0);
 
     int r_val(0);

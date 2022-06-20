@@ -346,7 +346,7 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
 
                 const ordinal_type jjbeg = (copy_to_l_buf ? s.row_begin : ii);
                 Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, kbeg, kend),
-                                     [&, jjbeg, ii](const ordinal_type &k) { // Value capture is a workaround for cuda +
+                                     [&, jjbeg](const ordinal_type &k) { // Value capture is a workaround for cuda +
                                                                              // gcc-7.2 compiler bug w/c++14
                                        const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
                                        if (jjbeg <= jj) {

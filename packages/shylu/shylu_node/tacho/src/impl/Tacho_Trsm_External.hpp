@@ -36,7 +36,7 @@ struct Trsm<ArgSide, ArgUplo, ArgTransA, Algo::External> {
   }
 
   template <typename MemberType, typename DiagType, typename ScalarType, typename ViewTypeA, typename ViewTypeB>
-  inline static int invoke(MemberType &member, const DiagType diagA, const ScalarType alpha, const ViewTypeA &A,
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const DiagType diagA, const ScalarType alpha, const ViewTypeA &A,
                            const ViewTypeB &B) {
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
     // Kokkos::single(Kokkos::PerTeam(member), [&]() {

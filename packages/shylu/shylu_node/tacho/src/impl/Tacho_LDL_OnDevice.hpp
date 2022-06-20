@@ -20,7 +20,6 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
   inline static int cusolver_invoke(cusolverDnHandle_t &handle, const ViewTypeA &A, const ViewTypeP &P,
                                     const ViewTypeW &W) {
     typedef typename ViewTypeA::non_const_value_type value_type;
-    typedef typename ViewTypeW::non_const_value_type work_value_type;
     const ordinal_type m = A.extent(0);
 
     int r_val(0);
@@ -51,7 +50,6 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
   inline static int rocsolver_invoke(rocblas_handle &handle, const ViewTypeA &A, const ViewTypeP &P,
                                      const ViewTypeW &W) {
     typedef typename ViewTypeA::non_const_value_type value_type;
-    typedef typename ViewTypeW::non_const_value_type work_value_type;
     const ordinal_type m = A.extent(0);
 
     int r_val(0);

@@ -96,7 +96,7 @@ template <typename ArgUplo, typename ArgTrans> struct Herk<ArgUplo, ArgTrans, Al
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
     if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value)
-      r_val = hipblas_invoke(member, alpha, A, beta, C);
+      r_val = rocblas_invoke(member, alpha, A, beta, C);
 #endif
     return r_val;
   }
