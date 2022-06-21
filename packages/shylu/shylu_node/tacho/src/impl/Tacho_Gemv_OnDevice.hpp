@@ -108,12 +108,12 @@ template <typename ArgTrans> struct Gemv<ArgTrans, Algo::OnDevice> {
       r_val = cublas_invoke(member, alpha, A, B, beta, C);
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value) {
+    if (std::is_same<memory_space, Kokkos::Experimental::HIPSpace>::value)
       r_val = rocblas_invoke(member, alpha, A, B, beta, C);
 #endif
-      return r_val;
-    }
-  };
+    return r_val;
+  }
+};
 
 } // namespace Tacho
 #endif

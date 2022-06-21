@@ -260,8 +260,7 @@ public:
 
             Kokkos::parallel_for(
                 Kokkos::TeamVectorRange(member, tcnt),
-                [&, ip, m, tbeg,
-                 tcnt](const ordinal_type &ii) { /// compiler bug with c++14 lambda capturing and workaround
+                [&, ip, m, tbeg](const ordinal_type &ii) { /// compiler bug with c++14 lambda capturing and workaround
                   const ordinal_type it = tbeg + ii;
                   const ordinal_type is = ip + ii;
                   // for (ordinal_type it=tbeg;it<tend;++it,++is) {

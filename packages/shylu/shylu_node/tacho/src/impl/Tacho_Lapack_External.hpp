@@ -13,6 +13,10 @@
 
 #if defined(KOKKOS_ENABLE_HIP)
 #define TACHO_ENABLE_ROCSOLVER
+/// TODO:: for testing, enable the following macro.
+///        once it is confirmed that the LDL solver function is avail then find this macro
+///        and enable the code and remove the macro stuffs
+//#define TACHO_ENABLE_ROCSOLVER_LATEST
 #endif
 
 #if defined(TACHO_ENABLE_CUSOLVER)
@@ -38,8 +42,7 @@ template <typename T> struct Lapack {
                    const int lwork, int *dev);
 #endif
 #if defined(TACHO_ENABLE_ROCSOLVER)
-  static int potrf(rocblas_handle handle, const rocblas_fill uplo, const int m, T *a, const int lda, T *W,
-                   const int lwork, int *dev);
+  static int potrf(rocblas_handle handle, const rocblas_fill uplo, const int m, T *a, const int lda, int *dev);
 #endif
 
   ///
@@ -52,8 +55,8 @@ template <typename T> struct Lapack {
                    T *W, const int lwork, int *dev);
 #endif
 #if defined(TACHO_ENABLE_ROCSOLVER)
-  static int sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m, T *a, const int lda, int *ipiv, T *W,
-                   const int lwork, int *dev);
+  static int sytrf(rocblas_handle handle, const rocblas_fill uplo, const int m, T *a, const int lda, int *ipiv,
+                   int *dev);
 #endif
 
   ///
@@ -65,7 +68,7 @@ template <typename T> struct Lapack {
   static int getrf(cusolverDnHandle_t handle, const int m, const int n, T *a, const int lda, T *w, int *ipiv, int *dev);
 #endif
 #if defined(TACHO_ENABLE_ROCSOLVER)
-  static int getrf(rocblas_handle handle, const int m, const int n, T *a, const int lda, T *w, int *ipiv, int *dev);
+  static int getrf(rocblas_handle handle, const int m, const int n, T *a, const int lda, int *ipiv, int *dev);
 #endif
 };
 } // namespace Tacho

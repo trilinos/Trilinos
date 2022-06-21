@@ -1431,7 +1431,6 @@ public:
       value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
       const size_type worksize = Chol<Uplo::Upper, Algo::OnDevice>::invoke(_handle_lapack, T, work);
 
-      /// TODO:: why do i plus one ? fix this;
       work = value_type_array(do_not_initialize_tag("work"), worksize * (_nstreams + 1));
       track_alloc(work.span() * sizeof(value_type));
 #endif
@@ -2669,7 +2668,7 @@ public:
       value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
       ordinal_type_array P(NULL, _info.max_supernode_size);
       const size_type worksize = LDL<Uplo::Lower, Algo::OnDevice>::invoke(_handle_lapack, T, P, work);
-      /// TODO:: why do i multiply additional max(8, _nstreams); fix this
+
       work = value_type_array(do_not_initialize_tag("work"), worksize * (_nstreams + 1) * max(8, _nstreams));
 #else
       const size_type worksize = 32 * _info.max_supernode_size;
@@ -2990,7 +2989,7 @@ public:
       value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
       ordinal_type_array P(NULL, _info.max_supernode_size);
       const size_type worksize = LU<Algo::OnDevice>::invoke(_handle_lapack, T, P, work);
-      /// TODO:: why do i do this way ?
+
       work = value_type_array(do_not_initialize_tag("work"), worksize * (_nstreams + 1));
       // work = value_type_array(do_not_initialize_tag("work"), worksize*_nstreams);
 #endif
