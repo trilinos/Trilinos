@@ -232,7 +232,7 @@ void Container<MatrixType>::DoJacobi(ConstHostView X, HostView Y, SC dampingFact
 }
 
 template <class MatrixType>
-void Container<MatrixType>::DoOverlappingJacobi(ConstHostView X, HostView Y, ConstHostView W, SC dampingFactor) const
+void Container<MatrixType>::DoOverlappingJacobi(ConstHostView X, HostView Y, ConstHostView W, SC dampingFactor, bool nonsymScaling) const
 {
   using STS = Teuchos::ScalarTraits<SC>;
   // Overlapping Jacobi
@@ -241,8 +241,39 @@ void Container<MatrixType>::DoOverlappingJacobi(ConstHostView X, HostView Y, Con
     // may happen that a partition is empty
     if(blockSizes_[i] == 0)
       continue;
-    if(blockSizes_[i] != 1)
-      weightedApply(X, Y, W, i, Teuchos::NO_TRANS, dampingFactor, STS::one());
+    if(blockSizes_[i] != 1) {
+      if (!nonsymScaling) 
+        weightedApply(X, Y, W, i, Teuchos::NO_TRANS, dampingFactor, STS::one());
+      else {
+        // A crummy way of doing nonsymmetric scaling. We effectively
+        // first reverse scale x, which later gets scaled inside weightedApply
+        // so the net effect is that x is not scaled.
+        // This was done to keep using weightedApply() that is defined in
+        // many spots in the code.
+        HostView tempo("", X.extent(0), X.extent(1));
+        size_t numVecs = X.extent(1);
+        LO  bOffset = blockOffsets_[i];
+        LO LRID = blockRows_[bOffset++];
+        for (LO ii = 0; ii < blockSizes_[i]; ii++) {
+          for (size_t jj = 0; jj < numVecs; jj++) tempo(LRID,jj)=X(LRID,jj)/ W(LRID,0);
+          LRID = blockRows_[bOffset++];
+        }
+        weightedApply(tempo, Y, W, i, Teuchos::NO_TRANS, dampingFactor, STS::one());
+      }
+    }
+    else    // singleton, can't access Containers_[i] as it was never filled and may be null.
+    {
+      size_t numVecs = X.extent(1);
+      LO LRID = blockRows_[blockOffsets_[i]];
+      getMatDiag();
+      auto diagView = Diag_->getLocalViewHost(Tpetra::Access::ReadOnly);
+      ISC d = W(LRID,0)*dampingFactor / diagView(LRID, 0);
+      for(size_t nv = 0; nv < numVecs; nv++)
+      {
+        ISC x = X(LRID, nv);
+        Y(LRID, nv) = x * d + Y(LRID, nv);
+      }
+    }
   }
 }
 

@@ -354,7 +354,12 @@ namespace MueLu {
         ParameterList& subList = paramList.sublist(sublistName);
 
         std::string partName = "partitioner: type";
-        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
+        // Pretty sure no one has been using this. Unfortunately, old if
+        // statement (which checked for equality with "user") prevented
+        // anyone from employing other types of Ifpack2 user partition 
+        // options. Leaving this and switching if to "vanka user" just 
+        // in case some day someone might want to use this.
+        if (subList.isParameter(partName) && subList.get<std::string>(partName) == "vanka user") {
           isBlockedMatrix = true;
 
           RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
@@ -391,6 +396,7 @@ namespace MueLu {
           if (haveBoundary)
             numBlocks++;
 
+          subList.set("partitioner: type","user");
           subList.set("partitioner: map",         blockSeeds);
           subList.set("partitioner: local parts", as<int>(numBlocks));
 

@@ -779,6 +779,26 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
       CombineMode_ = vs2e->getIntegralValue (inputEntry, cmParamName);
     }
   }
+  // If doing user partitioning with Block Jacobi relaxation and overlapping blocks, we might
+  // later need to know whether or not the overlapping Schwarz scheme is "ADD" or "ZERO" (which
+  // is really RAS Schwarz. If it is "ADD", communication will be necessary when computing the
+  // proper weights needed to combine solution values in overlap regions
+  if (plist->isParameter("subdomain solver name")) {
+    if (plist->get<std::string>("subdomain solver name") == "BLOCK_RELAXATION") {
+      if (plist->isSublist("subdomain solver parameters")) {
+        if (plist->sublist("subdomain solver parameters").isParameter("relaxation: type")) {
+          if (plist->sublist("subdomain solver parameters").get<std::string>("relaxation: type") == "Jacobi" ) {
+            if (plist->sublist("subdomain solver parameters").isParameter("partitioner: type")) {
+              if (plist->sublist("subdomain solver parameters").get<std::string>("partitioner: type") == "user") { 
+                 if (CombineMode_ == Tpetra::ADD)  plist->sublist("subdomain solver parameters").set("partitioner: combine mode","ADD");
+                 if (CombineMode_ == Tpetra::ZERO) plist->sublist("subdomain solver parameters").set("partitioner: combine mode","ZERO");
+              }
+            }
+          }   
+        } 
+      }
+    }
+  }
 
   OverlapLevel_ = plist->get ("schwarz: overlap level", OverlapLevel_);
 
