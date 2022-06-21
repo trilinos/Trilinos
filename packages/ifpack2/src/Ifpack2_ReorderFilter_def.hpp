@@ -316,20 +316,6 @@ void ReorderFilter<MatrixType>::
   }
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void ReorderFilter<MatrixType>::
-getGlobalRowCopy (global_ordinal_type globalRow,
-                  const Teuchos::ArrayView<global_ordinal_type>& Indices,
-                  const Teuchos::ArrayView<scalar_type>& Values,
-                  size_t& numEntries) const
-{
-  using IST = typename row_matrix_type::impl_scalar_type;
-  nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
-  getGlobalRowCopy(globalRow,ind_in,val_in,numEntries);  
-}
-#endif
 
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
@@ -371,19 +357,6 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   }
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void ReorderFilter<MatrixType>::getLocalRowCopy (local_ordinal_type LocalRow,
-                 const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                 const Teuchos::ArrayView<scalar_type> &Values,
-                 size_t &NumEntries) const
-{
-  using IST = typename row_matrix_type::impl_scalar_type;
-  nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
-  getLocalRowCopy(LocalRow,ind_in,val_in,NumEntries);  
-}
-#endif
 
 template<class MatrixType>
 void ReorderFilter<MatrixType>::getGlobalRowView(global_ordinal_type /* GlobalRow */,
@@ -393,16 +366,6 @@ void ReorderFilter<MatrixType>::getGlobalRowView(global_ordinal_type /* GlobalRo
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getGlobalRowView.");
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void ReorderFilter<MatrixType>::
-getGlobalRowView (global_ordinal_type /* GlobalRow */,
-                  Teuchos::ArrayView<const global_ordinal_type> &/* indices */,
-                  Teuchos::ArrayView<const scalar_type> &/* values */) const
-{
-  throw std::runtime_error("Ifpack2::ReorderFilter: does not support getGlobalRowView.");
-}
-#endif
 
 
 template<class MatrixType>
@@ -413,16 +376,6 @@ void ReorderFilter<MatrixType>::getLocalRowView(local_ordinal_type /* LocalRow *
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getLocalRowView.");
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class MatrixType>
-void ReorderFilter<MatrixType>::
-getLocalRowView (local_ordinal_type /* LocalRow */,
-                 Teuchos::ArrayView<const local_ordinal_type> &/* indices */,
-                 Teuchos::ArrayView<const scalar_type> &/* values */) const
-{
-  throw std::runtime_error("Ifpack2::ReorderFilter: does not support getLocalRowView.");
-}
-#endif
 
 
 template<class MatrixType>

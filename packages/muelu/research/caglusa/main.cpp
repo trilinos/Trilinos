@@ -887,16 +887,6 @@ namespace Tpetra {
       throw MueLu::Exceptions::RuntimeError("Not implemented.");
     }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    void
-    getGlobalRowCopy (GlobalOrdinal GlobalRow,
-                      const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-                      const Teuchos::ArrayView<Scalar> &Values,
-                      size_t &NumEntries) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-#endif
-
     void
     getLocalRowCopy (LocalOrdinal LocalRow,
                      nonconst_local_inds_host_view_type &Indices,
@@ -905,16 +895,6 @@ namespace Tpetra {
       throw MueLu::Exceptions::RuntimeError("Not implemented.");
     }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    void
-    getLocalRowCopy (LocalOrdinal LocalRow,
-                     const Teuchos::ArrayView<LocalOrdinal> &Indices,
-                     const Teuchos::ArrayView<Scalar> &Values,
-                     size_t &NumEntries) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-#endif
-
     void
     getGlobalRowView (GlobalOrdinal GlobalRow,
                       global_inds_host_view_type &indices,
@@ -922,30 +902,12 @@ namespace Tpetra {
       throw MueLu::Exceptions::RuntimeError("Not implemented.");
     }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    void
-    getGlobalRowView (GlobalOrdinal GlobalRow,
-                      Teuchos::ArrayView<const GlobalOrdinal> &indices,
-                      Teuchos::ArrayView<const Scalar> &values) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-#endif
-
     void
     getLocalRowView (LocalOrdinal LocalRow,
                      local_inds_host_view_type & indices,
                      values_host_view_type & values) const {
       throw MueLu::Exceptions::RuntimeError("Not implemented.");
     }
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    void
-    getLocalRowView (LocalOrdinal LocalRow,
-                     Teuchos::ArrayView<const LocalOrdinal>& indices,
-                     Teuchos::ArrayView<const Scalar>& values) const {
-      throw MueLu::Exceptions::RuntimeError("Not implemented.");
-    }
-#endif
 
     void getLocalDiagCopy (Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag) const {
       nearField_->getLocalDiagCopy(diag);

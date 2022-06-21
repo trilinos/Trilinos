@@ -230,17 +230,6 @@ namespace Xpetra {
 #endif
 #endif
 
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumElements () const {
-      return getLocalNumElements();
-    }
-
-    Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() {
-      return getLocalElementList();
-    };
-#endif
-
     //@}
 
   }; // Map class

@@ -1490,11 +1490,6 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef typename CrsMatrix::local_matrix_type local_matrix_type;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    local_matrix_type getLocalMatrix () const {
-      return getLocalMatrixDevice();
-    }
-#endif
     /// \brief Access the underlying local Kokkos::CrsMatrix object
     local_matrix_type getLocalMatrixDevice () const {
       if (Rows() == 1 && Cols () == 1) {
@@ -1608,28 +1603,6 @@ namespace Xpetra {
       // Set current view
       this->currentViewLabel_ = this->GetDefaultViewLabel();
     }
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumRows() const {
-      return getLocalNumRows();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeNumEntries() const {
-      return getLocalNumEntries();
-    }
-#endif
-
-#ifdef XPETRA_ENABLE_DEPRECATED_CODE
-    XPETRA_DEPRECATED
-    size_t getNodeMaxNumRowEntries() const {
-      return getLocalMaxNumRowEntries();
-    }
-#endif
-
 
   private:
     bool is_diagonal_; ///< If we're diagonal, a bunch of the extraction stuff should work
